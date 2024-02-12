@@ -60,7 +60,6 @@ if __name__ == "__main__":
     dataset_provider = HuggingFaceDataProvider()
 
     embd_pipeline = BasicEmbeddingPipeline(
-        dataset_provider,
         embedding_model,
         embeddings_provider,
         db,
