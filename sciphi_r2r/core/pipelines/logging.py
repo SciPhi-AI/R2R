@@ -79,7 +79,7 @@ def log_execution_to_db(func):
                 (
                     str(arg_pipeline_run_id),
                     func.__name__,
-                    result,
+                    str(result),
                     log_level,
                     message,
                 ),

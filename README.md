@@ -16,18 +16,13 @@ This will create a virtual environment and install all the necessary dependencie
 
 ## Core Abstractions
 
-Currently, the core abstractions of this framework are the embedding and completion pipelines:
-
-## Core Abstractions
-
 The framework primarily revolves around three core abstractions:
 
-- The **Embedding Pipeline**: Utilizes a `DatasetProvider` for input data, an `EmbeddingProvider` for generating embeddings, and a `VectorDBProvider` for storing these embeddings.
+- The **Embedding Pipeline**: Utilizes a `DatasetProvider` for input data, an `EmbeddingProvider` for generating embeddings, and a `VectorDBProvider` for storing these embeddings. The implementation can be found in [`embedding.py`](sciphi_r2r/core/pipelines/embedding.py).
 
-- The **RAG Pipeline**: Combines a `EmbeddingProvider`, `VectorDBProvider`, and a `LLMProvider` to process input queries or context and generate outputs based on retrieved context.
+- The **RAG Pipeline**: Combines a `EmbeddingProvider`, `VectorDBProvider`, and a `LLMProvider` to process input queries or context and generate outputs based on retrieved context. The implementation can be found in [`rag.py`](sciphi_r2r/core/pipelines/rag.py).
 
 Each pipeline incorporates a logging database for operation tracking.
-
 ## Running the Examples
 
 The project includes three basic examples that demonstrate the usage of the embedding and completion pipelines:
@@ -37,7 +32,7 @@ The project includes three basic examples that demonstrate the usage of the embe
     To run this example, use the following command:
 
     ```bash
-    poetry run python sciphi_r2r/examples/basic/rag_pipeline.py
+    poetry run python -m sciphi_r2r.examples.basic.rag_pipeline
     ```
 
 2. `embedding_pipeline.py`: This example demonstrates the usage of the embedding pipeline. It loads datasets from HuggingFace, generates embeddings for the data using the OpenAI API, and stores the embeddings in a PostgreSQL vector database.
@@ -45,7 +40,7 @@ The project includes three basic examples that demonstrate the usage of the embe
     To run this example, use the following command:
 
     ```bash
-    poetry run python sciphi_r2r/examples/basic/embedding_pipeline.py
+    poetry run python -m sciphi_r2r.examples.basic.embedding_pipeline
     ```
 
 3. `app.py`: This is the main application that sets up both the embedding and completion pipelines and starts a Uvicorn server.
@@ -53,5 +48,5 @@ The project includes three basic examples that demonstrate the usage of the embe
     To run this example, use the following command:
 
     ```bash
-    poetry run python sciphi_r2r/examples/basic/app.py
+    poetry run python -m sciphi_r2r.examples.basic.app
     ```
