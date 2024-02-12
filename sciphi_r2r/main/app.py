@@ -4,19 +4,19 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from sciphi_r2r.core import RAGPipeline, EmbeddingPipeline, VectorEntry
+from sciphi_r2r.core import (EmbeddingPipeline, LoggingDatabaseConnection,
+                             RAGPipeline, VectorEntry)
 from sciphi_r2r.main.utils import configure_logging
 
 logger = logging.getLogger("sciphi_r2r")
 
 
-class VectorEntryModel(BaseModel):
+class RawEntryModel(BaseModel):
     id: str
-    vector: list[float]
+    text: str
     metadata: Optional[dict]
 
-
-class SearchQueryModel(BaseModel):
+class RAGQueryModel(BaseModel):
     query: str
     filters: Optional[dict] = {}
     limit: Optional[int] = 10
@@ -30,50 +30,67 @@ def create_app(
     configure_logging()
 
     @app.post("/upsert/")
-    def upsert_entry(entry: VectorEntryModel):
+    def upsert_entry(entry: RawEntryModel):
         try:
-            embedding_pipeline.db.upsert(VectorEntry(**entry.dict()))
+            embedding = embedding_pipeline.embeddings_provider.get_embedding(
+                entry.text, embedding_pipeline.embedding_model
+            )
+            vector_entry = {
+                "entry_id": entry.id,
+                "vector": embedding,
+                "metadata": entry.metadata,
+            }
+            embedding_pipeline.db.upsert(VectorEntry(**vector_entry))
             return {"message": "Entry upserted successfully."}
         except Exception as e:
-            logger.error(f":upsert: [Error](entry.id={entry.id}) - {str(e)}")
+            logger.error(f":upsert: [Error](entry={entry}, error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/upsert_entries/")
-    def upsert_entries(entries: list[VectorEntryModel]):
+    def upsert_entries(entries: list[RawEntryModel]):
         try:
-            embedding_pipeline.db.upsert_entries(
-                [VectorEntry(**entry.dict()) for entry in entries]
-            )
+            vector_entries = []
+            for entry in entries.entries:
+                embedding = (
+                    embedding_pipeline.embeddings_provider.get_embedding(
+                        entry.text, embedding_pipeline.embedding_model
+                    )
+                )
+                vector_entry = {
+                    "entry_id": entry.id,
+                    "vector": embedding,
+                    "metadata": entry.metadata,
+                }
+                vector_entries.append(VectorEntry(**vector_entry))
+            embedding_pipeline.db.upsert_entries(vector_entries)
+
             return {"message": "Entries upserted successfully."}
         except Exception as e:
-            logger.error(f":upsert_entries: [Error]({entries})")
+            logger.error(f":upsert_entries: [Error](entries={entries}, error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/search/")
-    def search(query: SearchQueryModel):
+    def search(query: RAGQueryModel):
         try:
-            query_vector = (
-                embedding_pipeline.embeddings_provider.get_embedding(
-                    query.query, embedding_pipeline.embedding_model
-                )
+            rag_completion = rag_pipeline.run(
+                query.query, query.filters, query.limit, search_only=True
             )
-            search_results = embedding_pipeline.db.search(
-                query_vector=query_vector, **query.dict()
-            )
-            return search_results
+            return rag_completion
         except Exception as e:
-            logger.info(f":search: [Error](query={query})")
+            logger.error(f":search: [Error](query={query}, error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/rag_completion/")
-    def rag_completion(query: SearchQueryModel):
+    def rag_completion(query: RAGQueryModel):
         try:
             rag_completion = rag_pipeline.run(
                 query.query, query.filters, query.limit
             )
             return rag_completion
         except Exception as e:
-            logger.info(f":rag_completion: [Error](query={query}, error={str(e)})")
+            logger.error(
+                f":rag_completion: [Error](query={query}, error={str(e)})"
+            )
             raise HTTPException(status_code=500, detail=str(e))
 
     return app

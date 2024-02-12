@@ -9,10 +9,7 @@ from sciphi_r2r.datasets import HuggingFaceDataProvider
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.llms import OpenAIConfig, OpenAILLM
 from sciphi_r2r.main import create_app
-from sciphi_r2r.pipelines import (
-    BasicRAGPipeline,
-    BasicEmbeddingPipeline,
-)
+from sciphi_r2r.pipelines import BasicEmbeddingPipeline, BasicRAGPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB
 
 if __name__ == "__main__":
@@ -72,6 +69,7 @@ if __name__ == "__main__":
     )
 
     app = create_app(
-        embedding_pipeline=embd_pipeline, rag_pipeline=cmpl_pipeline
+        embedding_pipeline=embd_pipeline,
+        rag_pipeline=cmpl_pipeline,
     )
     uvicorn.run(app, host="0.0.0.0", port=8000)
