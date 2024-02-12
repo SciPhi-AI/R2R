@@ -2,6 +2,7 @@
 A simple example to demonstrate the usage of `BasicRAGPipeline`.
 """
 import logging
+from typing import Optional
 
 from sciphi_r2r.core import (
     GenerationConfig,
@@ -26,11 +27,17 @@ class BasicRAGPipeline(RAGPipeline):
         db: PGVectorDB,
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
+        system_prompt: Optional[str] = None,
+        task_prompt: Optional[str] = None,
     ) -> None:
         logger.debug(f"Initalizing `BasicRAGPipeline`.")
 
         super().__init__(
-            llm, generation_config, logging_database=logging_database
+            llm,
+            generation_config,
+            logging_database=logging_database,
+            system_prompt=system_prompt,
+            task_prompt=task_prompt,
         )
         self.embedding_model = embedding_model
         self.embeddings_provider = embeddings_provider

@@ -128,14 +128,19 @@ class RAGPipeline(ABC):
         Generates a completion based on the prompt.
         """
         if generate_with_chat:
+            print("context = ", context)
             return self.llm.get_chat_completion(
                 [
                     {
                         "role": "system",
                         "content": self.system_prompt,
+                    },
+                    {
                         "role": "user",
-                        "content": prompt_query,
-                    }
+                        "content": self.task_prompt.format(
+                            query=prompt_query, context=context
+                        ),
+                    },
                 ],
                 self.generation_config,
                 **self._get_extra_args(context_query, context),

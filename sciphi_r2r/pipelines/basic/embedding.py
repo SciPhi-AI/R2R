@@ -86,12 +86,12 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
 
         for document in documents:
             chunks = self.chunk_text(document.text)
-            metadata = document.metadata if document.metadata else {}
-            metadata["pipeline_run_id"] = str(self.pipeline_run_id)
 
             for i, chunk in enumerate(chunks):
                 transformed_chunk = self.transform_chunk(chunk)
                 embedded_chunk = self.embed_chunk(transformed_chunk)
+                metadata = document.metadata if document.metadata else {}
+                metadata["pipeline_run_id"] = str(self.pipeline_run_id)
                 metadata["text"] = chunk
                 entries.append(
                     VectorEntry(
