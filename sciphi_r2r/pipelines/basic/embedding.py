@@ -19,11 +19,6 @@ from sciphi_r2r.vector_dbs import PGVectorDB
 
 logger = logging.getLogger("sciphi_r2r")
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
-
 class BasicEmbeddingPipeline(EmbeddingPipeline):
     def __init__(
         self,

@@ -12,12 +12,13 @@ from sciphi_r2r.vector_dbs import PGVectorDB
 
 logger = logging.getLogger("sciphi_r2r")
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
 if __name__ == "__main__":
     dotenv.load_dotenv()
+    logger = logging.getLogger("sciphi_r2r")
+    logging.basicConfig(level=logging.DEBUG)
+
+    logger.debug("Starting the embedding pipeline")
+
     embedding_model = "text-embedding-3-small"
     embeddings_provider = OpenAIEmbeddingProvider()
     embedding_dimension = 1536
