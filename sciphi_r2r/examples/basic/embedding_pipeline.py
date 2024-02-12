@@ -10,8 +10,6 @@ from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.pipelines import BasicEmbeddingPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB
 
-logger = logging.getLogger("sciphi_r2r")
-
 if __name__ == "__main__":
     dotenv.load_dotenv()
     logger = logging.getLogger("sciphi_r2r")
