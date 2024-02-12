@@ -4,7 +4,6 @@ Abstract base class for embedding pipelines.
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
-from ..providers.dataset import DatasetProvider
 from ..providers.embedding import EmbeddingProvider
 from ..providers.vector_db import VectorDBProvider, VectorEntry
 from .logging import LoggingDatabaseConnection
@@ -63,5 +62,5 @@ class EmbeddingPipeline(ABC):
         pass
 
     @abstractmethod
-    def run(self, document: Any):
+    def run(self, document: Any, **kwargs):
         pass

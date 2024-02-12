@@ -4,11 +4,7 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from sciphi_r2r.core import (
-    EmbeddingPipeline,
-    RAGPipeline,
-    VectorEntry,
-)
+from sciphi_r2r.core import EmbeddingPipeline, RAGPipeline
 from sciphi_r2r.main.utils import configure_logging
 
 logger = logging.getLogger("sciphi_r2r")
@@ -36,15 +32,7 @@ def create_app(
     @app.post("/upsert/")
     def upsert_entry(entry: RawEntryModel):
         try:
-            embedding = embedding_pipeline.embeddings_provider.get_embedding(
-                entry.text, embedding_pipeline.embedding_model
-            )
-            vector_entry = {
-                "entry_id": entry.id,
-                "vector": embedding,
-                "metadata": entry.metadata,
-            }
-            embedding_pipeline.db.upsert(VectorEntry(**vector_entry))
+            embedding_pipeline.run(entry)
             return {"message": "Entry upserted successfully."}
         except Exception as e:
             logger.error(f":upsert: [Error](entry={entry}, error={str(e)})")
@@ -53,21 +41,7 @@ def create_app(
     @app.post("/upsert_entries/")
     def upsert_entries(entries: list[RawEntryModel]):
         try:
-            vector_entries = []
-            for entry in entries:
-                embedding = (
-                    embedding_pipeline.embeddings_provider.get_embedding(
-                        entry.text, embedding_pipeline.embedding_model
-                    )
-                )
-                vector_entry = {
-                    "entry_id": entry.id,
-                    "vector": embedding,
-                    "metadata": entry.metadata,
-                }
-                vector_entries.append(VectorEntry(**vector_entry))
-            embedding_pipeline.db.upsert_entries(vector_entries)
-
+            embedding_pipeline.run(entries)
             return {"message": "Entries upserted successfully."}
         except Exception as e:
             logger.error(

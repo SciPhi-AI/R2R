@@ -7,7 +7,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sciphi_r2r.core import DatasetConfig, LoggingDatabaseConnection
 from sciphi_r2r.datasets import HuggingFaceDataProvider
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
-from sciphi_r2r.pipelines import BasicEmbeddingPipeline
+from sciphi_r2r.pipelines import BasicDocument, BasicEmbeddingPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB
 
 if __name__ == "__main__":
@@ -47,9 +47,11 @@ if __name__ == "__main__":
         logging_database=logging_database,
         text_splitter=text_splitter,
     )
-    for document in dataset_provider.stream_text():
-        if document is None:
+    entry_id = 0
+    for text in dataset_provider.stream_text():
+        if text is None:
             break
-        pipeline.run(document)
+        pipeline.run(BasicDocument(id=str(entry_id), text=text, metadata={}))
+        entry_id += 1
 
     pipeline.close()

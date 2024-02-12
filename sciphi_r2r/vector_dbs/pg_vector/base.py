@@ -16,7 +16,7 @@ class PGVectorDB(VectorDBProvider):
             )
         try:
             import vecs
-        except ImportError as _:
+        except ImportError:
             raise ValueError(
                 f"Error, PGVectorDB requires the vecs library. Please run `poetry add vecs`."
             )
