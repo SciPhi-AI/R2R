@@ -24,7 +24,7 @@
         "chunk_overlap": 20
     },
     "api": {
-        "port": 8080,
+        "port": 8000,
         "host": "0.0.0.0"
     }
 }
