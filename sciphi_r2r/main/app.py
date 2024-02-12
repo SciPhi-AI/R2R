@@ -52,24 +52,24 @@ def create_app(
     @app.post("/search/")
     def search(query: RAGQueryModel):
         try:
-            rag_completion = rag_pipeline.run(
+            completion = rag_pipeline.run(
                 query.query, query.filters, query.limit, search_only=True
             )
-            return rag_completion
+            return completion
         except Exception as e:
             logger.error(f":search: [Error](query={query}, error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.post("/rag_completion/")
-    def rag_completion(query: RAGQueryModel):
+    @app.post("/completion/")
+    def completion(query: RAGQueryModel):
         try:
-            rag_completion = rag_pipeline.run(
+            completion = rag_pipeline.run(
                 query.query, query.filters, query.limit
             )
-            return rag_completion
+            return completion
         except Exception as e:
             logger.error(
-                f":rag_completion: [Error](query={query}, error={str(e)})"
+                f":completion: [Error](query={query}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
 

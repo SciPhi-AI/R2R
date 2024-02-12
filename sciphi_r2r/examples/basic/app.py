@@ -1,6 +1,6 @@
-import os
 import json
 import logging
+import os
 
 import dotenv
 import uvicorn
@@ -20,9 +20,7 @@ if __name__ == "__main__":
     # Load configuration from JSON file
     execution_file_path = os.path.dirname(os.path.abspath(__file__))
     with open(
-        os.path.join(
-            execution_file_path, "..", "..", "..", "config.json"
-        )
+        os.path.join(execution_file_path, "..", "..", "..", "config.json")
     ) as f:
         config = json.load(f)
 
