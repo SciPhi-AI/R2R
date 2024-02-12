@@ -1,0 +1,30 @@
+{
+    "logging": {
+        "level": "DEBUG",
+        "name": "sciphi_r2r",
+        "database": "basic_app_logs_v1"
+    },
+    "embedding": {
+        "model": "text-embedding-3-small",
+        "dimension": 1536
+    },
+    "database": {
+        "collection_name": "firebender-local-test-v1"
+    },
+    "language_model": {
+        "model_name": "gpt-4-1106-preview",
+        "temperature": 0.1,
+        "top_p": 0.9,
+        "top_k": 128,
+        "max_tokens_to_sample": 1024,
+        "do_stream": false
+    },
+    "text_splitter": {
+        "chunk_size": 512,
+        "chunk_overlap": 20
+    },
+    "api": {
+        "port": 8080,
+        "host": "0.0.0.0"
+    }
+}
