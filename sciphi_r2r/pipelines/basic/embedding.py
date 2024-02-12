@@ -13,7 +13,6 @@ from sciphi_r2r.core import (
     VectorEntry,
     log_execution_to_db,
 )
-from sciphi_r2r.datasets import HuggingFaceDataProvider
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.vector_dbs import PGVectorDB
 
@@ -23,23 +22,25 @@ logger = logging.getLogger("sciphi_r2r")
 class BasicEmbeddingPipeline(EmbeddingPipeline):
     def __init__(
         self,
-        dataset_provider: HuggingFaceDataProvider,
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
         db: PGVectorDB,
         logging_database: LoggingDatabaseConnection,
         text_splitter: TextSplitter,
+        id_prefix: str = "demo",
+
     ):
         logger.debug(f"Initalizing `BasicEmbeddingPipeline`.")
 
         super().__init__(
-            dataset_provider,
             embedding_model,
             embeddings_provider,
             db,
             logging_database,
         )
         self.text_splitter = text_splitter
+        self.id_prefix = id_prefix
+        self.j = 0
 
     def extract_text(self, document: Any) -> str:
         return next(document)[0]
@@ -65,32 +66,23 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
     def store_chunks(self, chunks: list[VectorEntry]) -> None:
         self.db.upsert_entries(chunks)
 
-    def _stream_texts(self):
-        return self.dataset_provider.stream_text()
-
-    def run(self):
-        logger.debug(f"Running the `DemoEmbeddingPipeline`.")
+    def run(self, document: str):
         self.pipeline_run_id = uuid.uuid4()
+        logger.debug(f"Running the `DemoEmbeddingPipeline` with id={self.pipeline_run_id}.")
 
         entries = []
-        j = 0
-        for text, config, i in self._stream_texts():
-            logging.debug(f"Streaming {text}")
-            chunks = self.chunk_text(text)
-            for chunk in chunks:
-                transformed_chunk = self.transform_chunk(chunk)
-                embedded_chunk = self.embed_chunk(transformed_chunk)
-                entries.append(
-                    VectorEntry(
-                        f"{config.name}_vec_{j}",
-                        embedded_chunk,
-                        {"text": chunk},
-                    )
+        chunks = self.chunk_text(document)
+        for chunk in chunks:
+            transformed_chunk = self.transform_chunk(chunk)
+            embedded_chunk = self.embed_chunk(transformed_chunk)
+            entries.append(
+                VectorEntry(
+                    f"{self.id_prefix}_vec_{self.j}",
+                    embedded_chunk,
+                    {"text": chunk},
                 )
-                j += 1
-            if i >= config.max_entries:
-                j = 0
-                break
+            )
+            self.j += 1
 
         self.store_chunks(entries)
         logger.debug("Finished processing all documents")

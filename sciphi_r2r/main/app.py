@@ -6,7 +6,6 @@ from pydantic import BaseModel
 
 from sciphi_r2r.core import (
     EmbeddingPipeline,
-    LoggingDatabaseConnection,
     RAGPipeline,
     VectorEntry,
 )
@@ -55,7 +54,7 @@ def create_app(
     def upsert_entries(entries: list[RawEntryModel]):
         try:
             vector_entries = []
-            for entry in entries.entries:
+            for entry in entries:
                 embedding = (
                     embedding_pipeline.embeddings_provider.get_embedding(
                         entry.text, embedding_pipeline.embedding_model

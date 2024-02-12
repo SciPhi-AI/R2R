@@ -41,12 +41,15 @@ if __name__ == "__main__":
     )
     logging_database = LoggingDatabaseConnection("embedding_demo_logs_v1")
     pipeline = BasicEmbeddingPipeline(
-        dataset_provider,
         embedding_model,
         embeddings_provider,
         db,
         logging_database=logging_database,
         text_splitter=text_splitter,
     )
-    pipeline.run()
+    for document in dataset_provider.stream_text():
+        if document is None:
+            break
+        pipeline.run(document)
+
     pipeline.close()
