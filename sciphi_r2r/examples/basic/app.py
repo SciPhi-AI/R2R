@@ -17,20 +17,22 @@ from sciphi_r2r.vector_dbs import PGVectorDB
 
 if __name__ == "__main__":
     dotenv.load_dotenv()
+    logger = logging.getLogger("sciphi_r2r")
     logging.basicConfig(level=logging.DEBUG)
-    logging.debug("Starting the completion pipeline")
 
-    logging.debug("Using `OpenAIEmbeddingProvider` to provide embeddings.")
+    logger.debug("Starting the completion pipeline")
+
+    logger.debug("Using `OpenAIEmbeddingProvider` to provide embeddings.")
     embeddings_provider = OpenAIEmbeddingProvider()
     embedding_model = "text-embedding-3-small"
     embedding_dimension = 1536
 
-    logging.debug("Using `PGVectorDB` to store and retrieve embeddings.")
+    logger.debug("Using `PGVectorDB` to store and retrieve embeddings.")
     db = PGVectorDB()
     collection_name = "demo-v1"
     db.initialize_collection(collection_name, embedding_dimension)
 
-    logging.debug("Using `OpenAILLM` to provide language models.")
+    logger.debug("Using `OpenAILLM` to provide language models.")
     llm = OpenAILLM(OpenAIConfig())
     generation_config = GenerationConfig(
         model_name="gpt-4-1106-preview",
