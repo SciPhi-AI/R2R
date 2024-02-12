@@ -8,8 +8,12 @@ from typing import Any, Optional, Union
 from langchain.text_splitter import TextSplitter
 from pydantic import BaseModel
 
-from sciphi_r2r.core import (EmbeddingPipeline, LoggingDatabaseConnection,
-                             VectorEntry, log_execution_to_db)
+from sciphi_r2r.core import (
+    EmbeddingPipeline,
+    LoggingDatabaseConnection,
+    VectorEntry,
+    log_execution_to_db,
+)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.vector_dbs import PGVectorDB
 
@@ -78,9 +82,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         )
 
         entries = []
-        documents = (
-            [document] if isinstance(document, BasicDocument) else document
-        )
+        documents = [document] if not isinstance(document, list) else document
 
         for document in documents:
             chunks = self.chunk_text(document.text)
