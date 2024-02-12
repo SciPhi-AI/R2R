@@ -4,8 +4,12 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from sciphi_r2r.core import (EmbeddingPipeline, LoggingDatabaseConnection,
-                             RAGPipeline, VectorEntry)
+from sciphi_r2r.core import (
+    EmbeddingPipeline,
+    LoggingDatabaseConnection,
+    RAGPipeline,
+    VectorEntry,
+)
 from sciphi_r2r.main.utils import configure_logging
 
 logger = logging.getLogger("sciphi_r2r")
@@ -15,6 +19,7 @@ class RawEntryModel(BaseModel):
     id: str
     text: str
     metadata: Optional[dict]
+
 
 class RAGQueryModel(BaseModel):
     query: str
@@ -66,7 +71,9 @@ def create_app(
 
             return {"message": "Entries upserted successfully."}
         except Exception as e:
-            logger.error(f":upsert_entries: [Error](entries={entries}, error={str(e)})")
+            logger.error(
+                f":upsert_entries: [Error](entries={entries}, error={str(e)})"
+            )
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/search/")

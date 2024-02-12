@@ -46,6 +46,7 @@ class LoggingDatabaseConnection:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.conn.close()
 
+
 def log_execution_to_db(func):
     """A decorator to log the execution of a method to the database."""
 

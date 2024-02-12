@@ -7,8 +7,12 @@ from typing import Any
 
 from langchain.text_splitter import TextSplitter
 
-from sciphi_r2r.core import (EmbeddingPipeline, LoggingDatabaseConnection,
-                             VectorEntry, log_execution_to_db)
+from sciphi_r2r.core import (
+    EmbeddingPipeline,
+    LoggingDatabaseConnection,
+    VectorEntry,
+    log_execution_to_db,
+)
 from sciphi_r2r.datasets import HuggingFaceDataProvider
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.vector_dbs import PGVectorDB

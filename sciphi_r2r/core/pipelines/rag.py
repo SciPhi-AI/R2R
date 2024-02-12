@@ -160,5 +160,7 @@ class RAGPipeline(ABC):
             return search_results
         context = self.construct_context(search_results)
         prompt = self.construct_prompt(transformed_query, context)
-        completion = self.generate_completion(prompt, transformed_query, context)
+        completion = self.generate_completion(
+            prompt, transformed_query, context
+        )
         return completion
