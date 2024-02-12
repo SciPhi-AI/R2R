@@ -32,7 +32,7 @@ The project includes three basic examples that demonstrate the usage of the embe
     To run this example, use the following command:
 
     ```bash
-    poetry run python sciphi_r2r/examples/basic/rag_pipeline.py
+    poetry run python -m sciphi_r2r.examples.basic.rag_pipeline
     ```
 
 2. `embedding_pipeline.py`: This example demonstrates the usage of the embedding pipeline. It loads datasets from HuggingFace, generates embeddings for the data using the OpenAI API, and stores the embeddings in a PostgreSQL vector database.
@@ -40,7 +40,7 @@ The project includes three basic examples that demonstrate the usage of the embe
     To run this example, use the following command:
 
     ```bash
-    poetry run python sciphi_r2r/examples/basic/embedding_pipeline.py
+    poetry run python -m sciphi_r2r.examples.basic.embedding_pipeline
     ```
 
 3. `app.py`: This is the main application that sets up both the embedding and completion pipelines and starts a Uvicorn server.
@@ -48,5 +48,5 @@ The project includes three basic examples that demonstrate the usage of the embe
     To run this example, use the following command:
 
     ```bash
-    poetry run python sciphi_r2r/examples/basic/app.py
+    poetry run python -m sciphi_r2r.examples.basic.app
     ```
