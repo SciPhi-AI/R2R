@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from openai.types import Completion
 from openai.types.chat import ChatCompletion
 
-from sciphi_r2r.core import LLMProvider, GenerationConfig, LLMConfig
+from sciphi_r2r.core import GenerationConfig, LLMConfig, LLMProvider
 
 
 @dataclass

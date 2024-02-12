@@ -4,10 +4,10 @@ A simple example to demonstrate the usage of `BasicRAGPipeline`.
 import logging
 
 from sciphi_r2r.core import (
-    LLMProvider,
-    RAGPipeline,
     GenerationConfig,
+    LLMProvider,
     LoggingDatabaseConnection,
+    RAGPipeline,
     SearchResult,
     log_execution_to_db,
 )

@@ -9,7 +9,7 @@ from typing import Any, Optional, Union
 from openai.types import Completion
 from openai.types.chat import ChatCompletion
 
-from ..providers.llm import LLMProvider, GenerationConfig
+from ..providers.llm import GenerationConfig, LLMProvider
 from .logging import LoggingDatabaseConnection, log_execution_to_db
 
 logger = logging.getLogger("sciphi_r2r")
@@ -146,8 +146,8 @@ class RAGPipeline(ABC):
             )
 
     def run(
-        self, query, filters={}, limit=10, prompt_with_transformed_query=False
-    ) -> Union[ChatCompletion, Completion]:
+        self, query, filters={}, limit=10, search_only=False
+    ) -> Union[ChatCompletion, Completion, list]:
         """
         Runs the completion pipeline.
         """
@@ -156,10 +156,11 @@ class RAGPipeline(ABC):
         search_results = self.retrieve_chunks(
             transformed_query, filters, limit
         )
+        if search_only:
+            return search_results
         context = self.construct_context(search_results)
-        prompt_query = (
-            query if not prompt_with_transformed_query else transformed_query
+        prompt = self.construct_prompt(transformed_query, context)
+        completion = self.generate_completion(
+            prompt, transformed_query, context
         )
-        prompt = self.construct_prompt(prompt_query, context)
-        completion = self.generate_completion(prompt, prompt_query, context)
         return completion

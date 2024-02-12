@@ -9,7 +9,6 @@ from sciphi_r2r.llms import OpenAIConfig, OpenAILLM
 from sciphi_r2r.pipelines import BasicRAGPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB
 
-
 if __name__ == "__main__":
     dotenv.load_dotenv()
     logger = logging.getLogger("sciphi_r2r")

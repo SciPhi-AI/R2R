@@ -59,8 +59,16 @@ def log_execution_to_db(func):
 
         arg_pipeline_run_id = args[0].pipeline_run_id
         arg_log_table_name = args[0].log_table_name
-        # Execute the function and get the result
-        result = func(*args, **kwargs)
+
+        try:
+            # Execute the function and get the result
+            result = func(*args, **kwargs)
+            log_level = "INFO"
+            message = "Method executed"
+        except Exception as e:
+            result = str(e)
+            log_level = "ERROR"
+            message = "Method execution failed"
 
         # Log the execution to the database
         with arg_conn.cursor() as cur:
@@ -71,14 +79,17 @@ def log_execution_to_db(func):
                 (
                     str(arg_pipeline_run_id),
                     func.__name__,
-                    str(result),
-                    "INFO",
-                    "Method executed",
+                    result,
+                    log_level,
+                    message,
                 ),
             )
 
         # Commit the transaction
         arg_conn.commit()
+
+        if log_level == "ERROR":
+            raise Exception(result)
 
         return result
 
