@@ -110,11 +110,11 @@ class RAGPipeline(ABC):
         return self._format_chunks(chunks)
 
     @log_execution_to_db
-    def construct_prompt(self, prompt_query: str, context: str) -> str:
+    def construct_prompt(self, inputs: dict[str, str]) -> str:
         """
         Constructs a prompt for generation based on the reranked chunks.
         """
-        return self.task_prompt.format(query=prompt_query, context=context)
+        return self.task_prompt.format(**inputs)
 
     @log_execution_to_db
     def generate_completion(
@@ -164,7 +164,9 @@ class RAGPipeline(ABC):
         if search_only:
             return search_results
         context = self.construct_context(search_results)
-        prompt = self.construct_prompt(transformed_query, context)
+        prompt = self.construct_prompt(
+            {"query": transformed_query, "context": context}
+        )
         completion = self.generate_completion(
             prompt, transformed_query, context
         )
