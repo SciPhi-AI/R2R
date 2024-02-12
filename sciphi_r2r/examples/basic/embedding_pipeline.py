@@ -7,7 +7,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sciphi_r2r.core import DatasetConfig, LoggingDatabaseConnection
 from sciphi_r2r.datasets import HuggingFaceDataProvider
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
-from sciphi_r2r.pipelines import BasicEmbeddingPipeline, BasicDocument
+from sciphi_r2r.pipelines import BasicDocument, BasicEmbeddingPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB
 
 if __name__ == "__main__":

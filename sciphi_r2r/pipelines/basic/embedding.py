@@ -67,14 +67,20 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
     def store_chunks(self, chunks: list[VectorEntry]) -> None:
         self.db.upsert_entries(chunks)
 
-    def run(self, document: Union[BasicDocument, list[BasicDocument]], **kwargs: Any):
+    def run(
+        self,
+        document: Union[BasicDocument, list[BasicDocument]],
+        **kwargs: Any,
+    ):
         self.pipeline_run_id = uuid.uuid4()
         logger.debug(
             f"Running the `DemoEmbeddingPipeline` with id={self.pipeline_run_id}."
         )
 
         entries = []
-        documents = [document] if isinstance(document, BasicDocument) else document
+        documents = (
+            [document] if isinstance(document, BasicDocument) else document
+        )
 
         for document in documents:
             chunks = self.chunk_text(document.text)

@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from sciphi_r2r.core import EmbeddingPipeline, RAGPipeline, VectorEntry
+from sciphi_r2r.core import EmbeddingPipeline, RAGPipeline
 from sciphi_r2r.main.utils import configure_logging
 
 logger = logging.getLogger("sciphi_r2r")
