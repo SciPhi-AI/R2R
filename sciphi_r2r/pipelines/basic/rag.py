@@ -3,14 +3,9 @@ A simple example to demonstrate the usage of `BasicRAGPipeline`.
 """
 import logging
 
-from sciphi_r2r.core import (
-    GenerationConfig,
-    LLMProvider,
-    LoggingDatabaseConnection,
-    RAGPipeline,
-    SearchResult,
-    log_execution_to_db,
-)
+from sciphi_r2r.core import (GenerationConfig, LLMProvider,
+                             LoggingDatabaseConnection, RAGPipeline,
+                             SearchResult, log_execution_to_db)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.vector_dbs import PGVectorDB
 
