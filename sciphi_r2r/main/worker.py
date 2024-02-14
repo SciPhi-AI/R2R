@@ -16,7 +16,7 @@ def get_worker(
         def __init__(self, embd_pipeline):
             self.embd_pipeline = embd_pipeline
 
-        @hatchet.step()
+        @hatchet.step(timeout="300s")
         def run(self, context: Context):
             input = context.workflow_input()
             if input.get("batch") is None:

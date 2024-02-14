@@ -8,8 +8,12 @@ from typing import Any, Optional, Tuple, Union
 from langchain.text_splitter import TextSplitter
 from pydantic import BaseModel
 
-from sciphi_r2r.core import (EmbeddingPipeline, LoggingDatabaseConnection,
-                             VectorEntry, log_execution_to_db)
+from sciphi_r2r.core import (
+    EmbeddingPipeline,
+    LoggingDatabaseConnection,
+    VectorEntry,
+    log_execution_to_db,
+)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.vector_dbs import PGVectorDB
 
@@ -75,17 +79,15 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         entries = []
 
         # Unpack document IDs, indices, and chunks for transformation and embedding
-        doc_ids, indices, raw_chunks = zip(*batch_data)
+        doc_ids, indices, raw_chunks, metadata = zip(*batch_data)
         transformed_chunks = self.transform_chunks(raw_chunks)
         embedded_chunks = self.embed_chunks(transformed_chunks)  # Batch embed
 
-        for doc_id, i, original_chunk, embedded_chunk in zip(
-            doc_ids, indices, raw_chunks, embedded_chunks
+        for doc_id, i, original_chunk, embedded_chunk, metadata in zip(
+            doc_ids, indices, raw_chunks, embedded_chunks, metadata
         ):
-            metadata = {
-                "pipeline_run_id": str(self.pipeline_run_id),
-                "text": original_chunk,
-            }
+            metadata["pipeline_run_id"] = str(self.pipeline_run_id)
+            metadata["text"] = original_chunk
             entries.append(
                 VectorEntry(f"{doc_id}_chunk_{i}", embedded_chunk, metadata)
             )
@@ -109,7 +111,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         for document in documents:
             chunks = self.chunk_text(document.text)
             for i, chunk in enumerate(chunks):
-                batch_data.append((document.id, i, chunk))
+                batch_data.append((document.id, i, chunk, document.metadata))
 
                 if len(batch_data) == self.embedding_batch_size or (
                     document == documents[-1] and i == len(chunks) - 1

@@ -15,6 +15,9 @@ from sciphi_r2r.main.worker import get_worker
 from sciphi_r2r.pipelines import BasicEmbeddingPipeline, BasicRAGPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB
 
+# Initialize a placeholder for the thread
+worker_thread = None
+
 if __name__ == "__main__":
     dotenv.load_dotenv()
 
@@ -89,13 +92,31 @@ if __name__ == "__main__":
         embedding_pipeline=embd_pipeline,
     )
 
-    # in this case, we start the worker in a separate thread
-    thread = threading.Thread(target=worker.start)
-    thread.start()
-
     app = create_app(
         embedding_pipeline=embd_pipeline,
         rag_pipeline=cmpl_pipeline,
         hatchet=hatchet,
     )
+
+    def get_worker_thread(worker):
+        def start_worker_thread():
+            # This will create and start the thread only once
+            if not hasattr(start_worker_thread, "thread"):
+                start_worker_thread.thread = threading.Thread(
+                    target=worker.start
+                )
+                start_worker_thread.thread.start()
+
+        return start_worker_thread
+
+    @app.on_event("startup")
+    def startup_event():
+        start_worker_thread = get_worker_thread(worker)
+        start_worker_thread()
+
+    @app.on_event("shutdown")
+    def shutdown_event():
+        # Implement any needed shutdown logic for your worker
+        pass
+
     uvicorn.run(app, host=api_config["host"], port=api_config["port"])
