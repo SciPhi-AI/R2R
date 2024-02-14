@@ -35,6 +35,7 @@ docx2txt = "^0.8"
 fastapi = "^0.109.2"
 uvicorn = "^0.27.0.post1"
 tqdm = "^4.66.1"
+python-multipart = "^0.0.9"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"

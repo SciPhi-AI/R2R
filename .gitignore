@@ -1,5 +1,8 @@
 poetry.lock
 .env*
+
 logs/
 workspace/
+upload/
+
 **/__pycache__
