@@ -31,7 +31,16 @@ class TextEntryModel(BaseModel):
     id: str
     text: str
     metadata: Optional[dict]
-    settings: Optional[SettingsModel] = SettingsModel()
+
+
+class UpsertTextEntryRequest(BaseModel):
+    entry: list[TextEntryModel]
+    settings: Optional[IngestionSettingsModel] = IngestionSettingsModel()
+
+
+class UpsertTextEntriesRequest(BaseModel):
+    entries: list[TextEntryModel]
+    settings: Optional[IngestionSettingsModel] = IngestionSettingsModel()
 
 
 class UpsertTextEntryRequest(BaseModel):
@@ -48,12 +57,6 @@ class RAGQueryModel(BaseModel):
     query: str
     filters: Optional[dict] = {}
     limit: Optional[int] = 10
-    settings: Optional[SettingsModel] = SettingsModel()
-
-
-class UpsertTextEntriesRequest(BaseModel):
-    entries: list[TextEntryModel]
-    settings: Optional[SettingsModel] = SettingsModel()
 
 
 def create_app(
