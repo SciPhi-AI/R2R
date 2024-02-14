@@ -35,6 +35,7 @@ if __name__ == "__main__":
     embeddings_provider = OpenAIEmbeddingProvider()
     embedding_model = embedding_config["model"]
     embedding_dimension = embedding_config["dimension"]
+    embedding_batch_size = embedding_config["batch_size"]
 
     logger.debug("Using `PGVectorDB` to store and retrieve embeddings.")
     db = PGVectorDB()
@@ -77,6 +78,7 @@ if __name__ == "__main__":
         db,
         logging_database=all_logging,
         text_splitter=text_splitter,
+        embedding_batch_size=embedding_batch_size,
     )
 
     hatchet = Hatchet(debug=True)

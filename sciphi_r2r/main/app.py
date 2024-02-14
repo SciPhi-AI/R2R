@@ -24,16 +24,27 @@ def find_project_root(current_dir):
     return current_dir  # Fallback to current dir if no marker found
 
 
+class SettingsModel(BaseModel):
+    do_chunking: Optional[bool] = False
+
+
 class TextEntryModel(BaseModel):
     id: str
     text: str
     metadata: Optional[dict]
+    settings: Optional[SettingsModel] = SettingsModel()
 
 
 class RAGQueryModel(BaseModel):
     query: str
     filters: Optional[dict] = {}
     limit: Optional[int] = 10
+    settings: Optional[SettingsModel] = SettingsModel()
+
+
+class UpsertTextEntriesRequest(BaseModel):
+    entries: list[TextEntryModel]
+    settings: Optional[SettingsModel] = SettingsModel()
 
 
 def create_app(
