@@ -16,6 +16,7 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
 
     (
+        api_config,
         logging_config,
         embedding_config,
         database_config,
@@ -80,4 +81,4 @@ if __name__ == "__main__":
         embedding_pipeline=embd_pipeline,
         rag_pipeline=cmpl_pipeline,
     )
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=api_config["host"], port=api_config["port"])
