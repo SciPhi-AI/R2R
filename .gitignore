@@ -3,6 +3,6 @@ poetry.lock
 
 logs/
 workspace/
-upload/
+uploads/
 
 **/__pycache__
