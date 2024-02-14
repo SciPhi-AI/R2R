@@ -8,8 +8,12 @@ from typing import Any, Optional, Tuple, Union
 from langchain.text_splitter import TextSplitter
 from pydantic import BaseModel
 
-from sciphi_r2r.core import (EmbeddingPipeline, LoggingDatabaseConnection,
-                             VectorEntry, log_execution_to_db)
+from sciphi_r2r.core import (
+    EmbeddingPipeline,
+    LoggingDatabaseConnection,
+    VectorEntry,
+    log_execution_to_db,
+)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.vector_dbs import PGVectorDB
 

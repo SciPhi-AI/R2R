@@ -38,6 +38,7 @@ tqdm = "^4.66.1"
 python-multipart = "^0.0.9"
 unstructured = "^0.12.4"
 builtwith = "^1.3.4"
+hatchet-sdk = "^0.9.4"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"

@@ -1,8 +1,9 @@
 import logging
+import threading
 
 import dotenv
-from sciphi_r2r.examples.basic.worker import get_worker
 import uvicorn
+from hatchet_sdk import Hatchet
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from sciphi_r2r.core import GenerationConfig, LoggingDatabaseConnection
@@ -10,9 +11,9 @@ from sciphi_r2r.datasets import HuggingFaceDataProvider
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.llms import OpenAIConfig, OpenAILLM
 from sciphi_r2r.main import create_app, load_config
+from sciphi_r2r.main.worker import get_worker
 from sciphi_r2r.pipelines import BasicEmbeddingPipeline, BasicRAGPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB
-from hatchet_sdk import Hatchet
 
 if __name__ == "__main__":
     dotenv.load_dotenv()
