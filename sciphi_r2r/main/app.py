@@ -1,7 +1,8 @@
 import logging
+from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from sciphi_r2r.core import EmbeddingPipeline, RAGPipeline
@@ -9,8 +10,19 @@ from sciphi_r2r.main.utils import configure_logging
 
 logger = logging.getLogger("sciphi_r2r")
 
+# Current directory where this script is located
+CURRENT_DIR = Path(__file__).resolve().parent
 
-class RawEntryModel(BaseModel):
+
+# Function to find the project root by looking for a .git folder or setup.py file
+def find_project_root(current_dir):
+    for parent in current_dir.parents:
+        if any((parent / marker).exists() for marker in [".git", "setup.py"]):
+            return parent
+    return current_dir  # Fallback to current dir if no marker found
+
+
+class TextEntryModel(BaseModel):
     id: str
     text: str
     metadata: Optional[dict]
@@ -25,21 +37,62 @@ class RAGQueryModel(BaseModel):
 def create_app(
     embedding_pipeline: EmbeddingPipeline,
     rag_pipeline: RAGPipeline,
+    upload_path: Optional[Path] = None,
 ):
     app = FastAPI()
     configure_logging()
 
-    @app.post("/upsert/")
-    def upsert_entry(entry: RawEntryModel):
+    if not upload_path:
+        upload_path = find_project_root(CURRENT_DIR) / "uploads"
+
+    if not upload_path.exists():
+        upload_path.mkdir()
+
+    @app.post("/upload_and_process_file/")
+    async def upload_and_process_file(file: UploadFile = File(...)):
+        # Check if the file is a .txt file
+        if not file.filename.endswith(".txt"):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid file type. Only .txt files are allowed.",
+            )
+
+        file_location = upload_path / file.filename
         try:
-            embedding_pipeline.run(entry)
-            return {"message": "Entry upserted successfully."}
+            # Save the file to disk
+            with open(file_location, "wb+") as file_object:
+                file_content = file.file.read()
+                file_object.write(file_content)
+
+            # Process the file content
+            text = file_content.decode("utf-8")
+            text_entry = TextEntryModel(
+                id="generated_id", text=text, metadata={}
+            )
+            embedding_pipeline.run(text_entry)
+
+            return {
+                "message": f"File '{file.filename}' processed and saved at '{file_location}'"
+            }
         except Exception as e:
-            logger.error(f":upsert: [Error](entry={entry}, error={str(e)})")
+            logger.error(
+                f"upload_and_process_file: [Error](file={file.filename}, error={str(e)})"
+            )
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.post("/upsert_entries/")
-    def upsert_entries(entries: list[RawEntryModel]):
+    @app.post("/upsert_text_entry/")
+    def upsert_text_entry(text_entry: TextEntryModel):
+        try:
+            embedding_pipeline.run(text_entry)
+            return {"message": "Entry upserted successfully."}
+        except Exception as e:
+            logger.error(
+                f":upsert: [Error](entry={text_entry}, error={str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.post("/upsert_text_entries/")
+    def upsert_text_entries(entries: list[TextEntryModel]):
         try:
             embedding_pipeline.run(entries)
             return {"message": "Entries upserted successfully."}
@@ -60,8 +113,8 @@ def create_app(
             logger.error(f":search: [Error](query={query}, error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.post("/completion/")
-    def completion(query: RAGQueryModel):
+    @app.post("/rag_completion/")
+    def rag_completion(query: RAGQueryModel):
         try:
             completion = rag_pipeline.run(
                 query.query, query.filters, query.limit

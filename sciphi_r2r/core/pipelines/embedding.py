@@ -50,11 +50,15 @@ class EmbeddingPipeline(ABC):
         pass
 
     @abstractmethod
-    def transform_chunk(self, chunk: Any) -> Any:
+    def transform_chunks(self, chunks: list[Any]) -> list[Any]:
         pass
 
     @abstractmethod
-    def embed_chunk(self, chunk: Any) -> list[float]:
+    def embed_chunks(self, chunks: list[Any]) -> list[float]:
+        pass
+
+    @abstractmethod
+    def process_batches(self, batch: list[Any]) -> None:
         pass
 
     @abstractmethod

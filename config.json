@@ -6,10 +6,11 @@
     },
     "embedding": {
         "model": "text-embedding-3-small",
-        "dimension": 1536
+        "dimension": 1536,
+        "batch_size": 32
     },
     "database": {
-        "collection_name": "demo-v1"
+        "collection_name": "demo-v1-test"
     },
     "language_model": {
         "model_name": "gpt-4-1106-preview",
