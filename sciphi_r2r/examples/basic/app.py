@@ -1,5 +1,4 @@
 import logging
-import threading
 
 import dotenv
 from sciphi_r2r.examples.basic.worker import get_worker
@@ -19,7 +18,6 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
 
     (
-        api_config,
         logging_config,
         embedding_config,
         database_config,
