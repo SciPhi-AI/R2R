@@ -43,16 +43,6 @@ class UpsertTextEntriesRequest(BaseModel):
     settings: Optional[IngestionSettingsModel] = IngestionSettingsModel()
 
 
-class UpsertTextEntryRequest(BaseModel):
-    entry: list[TextEntryModel]
-    settings: Optional[IngestionSettingsModel] = IngestionSettingsModel()
-
-
-class UpsertTextEntriesRequest(BaseModel):
-    entries: list[TextEntryModel]
-    settings: Optional[IngestionSettingsModel] = IngestionSettingsModel()
-
-
 class RAGQueryModel(BaseModel):
     query: str
     filters: Optional[dict] = {}
