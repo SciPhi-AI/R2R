@@ -7,22 +7,36 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sciphi_r2r.core import DatasetConfig, LoggingDatabaseConnection
 from sciphi_r2r.datasets import HuggingFaceDataProvider
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
+from sciphi_r2r.main import load_config
 from sciphi_r2r.pipelines import BasicDocument, BasicEmbeddingPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB
 
 if __name__ == "__main__":
     dotenv.load_dotenv()
-    logger = logging.getLogger("sciphi_r2r")
-    logging.basicConfig(level=logging.DEBUG)
 
-    logger.debug("Starting the embedding pipeline")
+    (
+        api_config,
+        logging_config,
+        embedding_config,
+        database_config,
+        language_model_config,
+        text_splitter_config,
+    ) = load_config()
 
-    embedding_model = "text-embedding-3-small"
+    logger = logging.getLogger(logging_config["name"])
+    logging.basicConfig(level=logging_config["level"])
+
+    logger.debug("Starting the completion pipeline")
+
+    logger.debug("Using `OpenAIEmbeddingProvider` to provide embeddings.")
     embeddings_provider = OpenAIEmbeddingProvider()
-    embedding_dimension = 1536
+    embedding_model = embedding_config["model"]
+    embedding_dimension = embedding_config["dimension"]
+    embedding_batch_size = embedding_config["batch_size"]
 
+    logger.debug("Using `PGVectorDB` to store and retrieve embeddings.")
     db = PGVectorDB()
-    collection_name = "demo-v1"
+    collection_name = database_config["collection_name"]
     db.initialize_collection(collection_name, embedding_dimension)
 
     dataset_provider = HuggingFaceDataProvider()
@@ -34,24 +48,36 @@ if __name__ == "__main__":
     )
 
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=512,
-        chunk_overlap=20,
+        chunk_size=text_splitter_config["chunk_size"],
+        chunk_overlap=text_splitter_config["chunk_overlap"],
         length_function=len,
         is_separator_regex=False,
     )
-    logging_database = LoggingDatabaseConnection("embedding_demo_logs_v1")
+
+    logging_database = LoggingDatabaseConnection(logging_config["database"])
+
     pipeline = BasicEmbeddingPipeline(
         embedding_model,
         embeddings_provider,
         db,
-        logging_database=logging_database,
         text_splitter=text_splitter,
+        embedding_batch_size=embedding_batch_size,
+        logging_database=logging_database,
     )
     entry_id = 0
+    document_batch = []
     for text in dataset_provider.stream_text():
         if text is None:
             break
-        pipeline.run(BasicDocument(id=str(entry_id), text=text, metadata={}))
+        document_batch.append(
+            BasicDocument(id=str(entry_id), text=text, metadata=None)
+        )
         entry_id += 1
+
+        if len(document_batch) == 16:
+            pipeline.run(document_batch)
+            document_batch = []
+
+    pipeline.run(document_batch)
 
     pipeline.close()

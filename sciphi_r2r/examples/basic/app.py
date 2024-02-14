@@ -1,6 +1,4 @@
-import json
 import logging
-import os
 
 import dotenv
 import uvicorn
@@ -10,26 +8,21 @@ from sciphi_r2r.core import GenerationConfig, LoggingDatabaseConnection
 from sciphi_r2r.datasets import HuggingFaceDataProvider
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.llms import OpenAIConfig, OpenAILLM
-from sciphi_r2r.main import create_app
+from sciphi_r2r.main import create_app, load_config
 from sciphi_r2r.pipelines import BasicEmbeddingPipeline, BasicRAGPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB
 
 if __name__ == "__main__":
     dotenv.load_dotenv()
 
-    # Load configuration from JSON file
-    execution_file_path = os.path.dirname(os.path.abspath(__file__))
-    with open(
-        os.path.join(execution_file_path, "..", "..", "..", "config.json")
-    ) as f:
-        config = json.load(f)
-
-    # Extract configuration parameters
-    logging_config = config["logging"]
-    embedding_config = config["embedding"]
-    database_config = config["database"]
-    language_model_config = config["language_model"]
-    text_splitter_config = config["text_splitter"]
+    (
+        api_config,
+        logging_config,
+        embedding_config,
+        database_config,
+        language_model_config,
+        text_splitter_config,
+    ) = load_config()
 
     logger = logging.getLogger(logging_config["name"])
     logging.basicConfig(level=logging_config["level"])
@@ -88,4 +81,4 @@ if __name__ == "__main__":
         embedding_pipeline=embd_pipeline,
         rag_pipeline=cmpl_pipeline,
     )
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=api_config["host"], port=api_config["port"])
