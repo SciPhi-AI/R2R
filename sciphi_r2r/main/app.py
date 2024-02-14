@@ -8,6 +8,8 @@ from pydantic import BaseModel
 from sciphi_r2r.core import EmbeddingPipeline, RAGPipeline
 from sciphi_r2r.main.utils import configure_logging
 
+from hatchet_sdk import Hatchet
+
 logger = logging.getLogger("sciphi_r2r")
 
 # Current directory where this script is located
@@ -37,6 +39,7 @@ class RAGQueryModel(BaseModel):
 def create_app(
     embedding_pipeline: EmbeddingPipeline,
     rag_pipeline: RAGPipeline,
+    hatchet: Hatchet,
     upload_path: Optional[Path] = None,
 ):
     app = FastAPI()
@@ -83,7 +86,11 @@ def create_app(
     @app.post("/upsert_text_entry/")
     def upsert_text_entry(text_entry: TextEntryModel):
         try:
-            embedding_pipeline.run(text_entry)
+            # TODO: case on whether Hatchet exists or not
+            hatchet.client.event.push("embedding", {"id": text_entry.id, "text": text_entry.text, "metadata": text_entry.metadata})
+
+            # embedding_pipeline.run(text_entry)
+
             return {"message": "Entry upserted successfully."}
         except Exception as e:
             logger.error(
