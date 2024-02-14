@@ -17,6 +17,7 @@ def load_config(config_path=None):
         config = json.load(f)
 
     # Extract configuration parameters
+    api_config = config["api"]
     logging_config = config["logging"]
     embedding_config = config["embedding"]
     database_config = config["database"]
@@ -24,6 +25,7 @@ def load_config(config_path=None):
     text_splitter_config = config["text_splitter"]
 
     return (
+        api_config,
         logging_config,
         embedding_config,
         database_config,
