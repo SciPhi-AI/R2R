@@ -106,7 +106,11 @@ def create_app(
                         "id": text_entry_req.entry.id,
                         "text": text_entry_req.entry.text,
                         "metadata": text_entry_req.entry.metadata,
-                        "settings": text_entry_req.settings.dict(),
+                        "settings": (
+                            text_entry_req.settings.dict()
+                            if text_entry_req.settings
+                            else {}
+                        ),
                     },
                 )
                 # TODO: Add an event id to the response
@@ -114,7 +118,12 @@ def create_app(
 
             else:
                 embedding_pipeline.run(
-                    text_entry_req.entry, **text_entry_req.settings.dict()
+                    text_entry_req.entry,
+                    **(
+                        text_entry_req.settings.dict()
+                        if text_entry_req.settings
+                        else {}
+                    ),
                 )
                 return {"message": "Entry upserted successfully."}
         except Exception as e:

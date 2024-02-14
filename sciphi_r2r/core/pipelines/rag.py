@@ -128,7 +128,6 @@ class RAGPipeline(ABC):
         Generates a completion based on the prompt.
         """
         if generate_with_chat:
-            print("context = ", context)
             return self.llm.get_chat_completion(
                 [
                     {
