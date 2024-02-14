@@ -46,7 +46,7 @@ def get_worker(
             return result
 
     embedding_workflow = EmbeddingWorkflow(embedding_pipeline)
-    worker = hatchet.worker("sciphi-worker", max_threads=4)
+    worker = hatchet.worker("sciphi-worker", max_threads=200)
 
     worker.register_workflow(embedding_workflow)
 
