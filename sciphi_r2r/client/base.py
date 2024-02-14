@@ -14,16 +14,28 @@ class SciPhiR2RClient:
         return response.json()
 
     def upsert_text_entry(
-        self, id: str, text: str, metadata: Optional[Dict[str, Any]] = None
+        self,
+        id: str,
+        text: str,
+        metadata: Optional[Dict[str, Any]] = None,
+        settings: Optional[Dict[str, Any]] = None,
     ):
         url = f"{self.base_url}/upsert_text_entry/"
-        json_data = {"id": id, "text": text, "metadata": metadata}
+        json_data = {
+            "entry": [{"id": id, "text": text, "metadata": metadata}],
+            "settings": settings,
+        }
         response = requests.post(url, json=json_data)
         return response.json()
 
-    def upsert_text_entries(self, entries: List[Dict[str, Any]]):
+    def upsert_text_entries(
+        self,
+        entries: List[Dict[str, Any]],
+        settings: Optional[Dict[str, Any]] = None,
+    ):
         url = f"{self.base_url}/upsert_text_entries/"
-        response = requests.post(url, json=entries)
+        json_data = {"entries": entries, "settings": settings}
+        response = requests.post(url, json=json_data)
         return response.json()
 
     def search(
@@ -31,9 +43,15 @@ class SciPhiR2RClient:
         query: str,
         filters: Optional[Dict[str, Any]] = None,
         limit: Optional[int] = 10,
+        settings: Optional[Dict[str, Any]] = None,
     ):
         url = f"{self.base_url}/search/"
-        json_data = {"query": query, "filters": filters, "limit": limit}
+        json_data = {
+            "query": query,
+            "filters": filters,
+            "limit": limit,
+            "settings": settings,
+        }
         response = requests.post(url, json=json_data)
         return response.json()
 
@@ -42,8 +60,14 @@ class SciPhiR2RClient:
         query: str,
         filters: Optional[Dict[str, Any]] = None,
         limit: Optional[int] = 10,
+        settings: Optional[Dict[str, Any]] = None,
     ):
         url = f"{self.base_url}/rag_completion/"
-        json_data = {"query": query, "filters": filters, "limit": limit}
+        json_data = {
+            "query": query,
+            "filters": filters,
+            "limit": limit,
+            "settings": settings,
+        }
         response = requests.post(url, json=json_data)
         return response.json()
