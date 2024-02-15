@@ -26,7 +26,7 @@ if __name__ == "__main__":
     logger = logging.getLogger(logging_config["name"])
     logging.basicConfig(level=logging_config["level"])
 
-    logger.debug("Starting the completion pipeline")
+    logger.debug("Starting the embedding pipeline")
 
     logger.debug("Using `OpenAIEmbeddingProvider` to provide embeddings.")
     embeddings_provider = OpenAIEmbeddingProvider()
