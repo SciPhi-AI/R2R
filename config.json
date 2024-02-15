@@ -1,6 +1,6 @@
 {
     "logging": {
-        "level": "DEBUG",
+        "level": "INFO",
         "name": "sciphi_r2r",
         "database": "demo_logs_v1"
     },

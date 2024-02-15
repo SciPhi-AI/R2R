@@ -15,7 +15,7 @@ from sciphi_r2r.core import (
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.vector_dbs import PGVectorDB
 
-logger = logging.getLogger("sciphi_r2r")
+logger = logging.getLogger(__name__)
 
 
 class BasicRAGPipeline(RAGPipeline):

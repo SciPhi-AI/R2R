@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Any, Optional
 
@@ -6,9 +7,15 @@ from vecs.collection import Collection
 
 from sciphi_r2r.core import SearchResult, VectorDBProvider, VectorEntry
 
+logger = logging.getLogger(__name__)
+
 
 class PGVectorDB(VectorDBProvider):
     def __init__(self, provider: str = "pgvector") -> None:
+        logger.info(
+            "Initializing `PGVectorDB` to store and retrieve embeddings."
+        )
+
         super().__init__(provider)
         if provider != "pgvector":
             raise ValueError(

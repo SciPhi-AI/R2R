@@ -26,19 +26,20 @@ if __name__ == "__main__":
     logger = logging.getLogger(logging_config["name"])
     logging.basicConfig(level=logging_config["level"])
 
-    logger.debug("Starting the embedding pipeline")
+    logger.info("Starting the embedding pipeline")
 
-    logger.debug("Using `OpenAIEmbeddingProvider` to provide embeddings.")
+    # Specify the embedding provider
     embeddings_provider = OpenAIEmbeddingProvider()
     embedding_model = embedding_config["model"]
     embedding_dimension = embedding_config["dimension"]
     embedding_batch_size = embedding_config["batch_size"]
 
-    logger.debug("Using `PGVectorDB` to store and retrieve embeddings.")
+    # Specify the vector database provider
     db = PGVectorDB()
     collection_name = database_config["collection_name"]
     db.initialize_collection(collection_name, embedding_dimension)
 
+    # Specify the dataset providers
     dataset_provider = HuggingFaceDataProvider()
     dataset_provider.load_datasets(
         [
@@ -47,6 +48,7 @@ if __name__ == "__main__":
         ],
     )
 
+    # Specify the chunking strategy
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=text_splitter_config["chunk_size"],
         chunk_overlap=text_splitter_config["chunk_overlap"],
@@ -64,20 +66,25 @@ if __name__ == "__main__":
         embedding_batch_size=embedding_batch_size,
         logging_database=logging_database,
     )
+
     entry_id = 0
     document_batch = []
     for text in dataset_provider.stream_text():
         if text is None:
             break
         document_batch.append(
-            BasicDocument(id=str(entry_id), text=text, metadata=None)
+            BasicDocument(id=str(entry_id), text=text, metadata={})
         )
         entry_id += 1
 
         if len(document_batch) == 16:
+            logging.info(
+                f"Processing batch of {len(document_batch)} documents."
+            )
             pipeline.run(document_batch)
             document_batch = []
 
+    logging.info(f"Processing final {len(document_batch)} documents.")
     pipeline.run(document_batch)
 
     pipeline.close()

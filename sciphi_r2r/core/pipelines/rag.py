@@ -12,7 +12,7 @@ from openai.types.chat import ChatCompletion
 from ..providers.llm import GenerationConfig, LLMProvider
 from .logging import LoggingDatabaseConnection, log_execution_to_db
 
-logger = logging.getLogger("sciphi_r2r")
+logger = logging.getLogger(__name__)
 
 DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant."
 DEFAULT_TASK_PROMPT = """
