@@ -1,5 +1,6 @@
 """A simple example to demonstrate the usage of `BasicRAGPipeline`."""
 import logging
+import uuid
 
 import dotenv
 
@@ -9,6 +10,28 @@ from sciphi_r2r.llms import OpenAIConfig, OpenAILLM
 from sciphi_r2r.main import load_config
 from sciphi_r2r.pipelines import BasicRAGPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB
+
+
+class DemoRAGPipeline(BasicRAGPipeline):
+    # Modifies `BasicRAGPipeline` run to return search_results and completion
+    def run(self, query, filters={}, limit=10):
+        """
+        Runs the completion pipeline.
+        """
+        self.pipeline_run_id = uuid.uuid4()
+        transformed_query = self.transform_query(query)
+        search_results = self.retrieve_chunks(
+            transformed_query, filters, limit
+        )
+        context = self.construct_context(search_results)
+        prompt = self.construct_prompt(
+            {"query": transformed_query, "context": context}
+        )
+        completion = self.generate_completion(
+            prompt, transformed_query, context
+        )
+        return search_results, completion
+
 
 if __name__ == "__main__":
     dotenv.load_dotenv()
@@ -22,23 +45,22 @@ if __name__ == "__main__":
         text_splitter_config,
     ) = load_config()
 
+    query = "What are the energy levels for a particle in a box?"
+
     logger = logging.getLogger(logging_config["name"])
     logging.basicConfig(level=logging_config["level"])
 
-    logger.debug("Starting the completion pipeline")
+    logger.debug("Starting the rag pipeline.")
 
-    logger.debug("Using `OpenAIEmbeddingProvider` to provide embeddings.")
     embeddings_provider = OpenAIEmbeddingProvider()
     embedding_model = embedding_config["model"]
     embedding_dimension = embedding_config["dimension"]
     embedding_batch_size = embedding_config["batch_size"]
 
-    logger.debug("Using `PGVectorDB` to store and retrieve embeddings.")
     db = PGVectorDB()
     collection_name = database_config["collection_name"]
     db.initialize_collection(collection_name, embedding_dimension)
 
-    logger.debug("Using `OpenAILLM` to provide language models.")
     llm = OpenAILLM(OpenAIConfig())
     generation_config = GenerationConfig(
         model_name=language_model_config["model_name"],
@@ -50,7 +72,7 @@ if __name__ == "__main__":
     )
 
     logging_database = LoggingDatabaseConnection("completion_demo_logs_v1")
-    pipeline = BasicRAGPipeline(
+    pipeline = DemoRAGPipeline(
         llm,
         generation_config,
         logging_database,
@@ -59,7 +81,13 @@ if __name__ == "__main__":
         embeddings_provider=embeddings_provider,
     )
 
-    query = "What is Schrodingers equation?"
-    result = pipeline.run(query)
-    logger.info(f"Final Result:\n{result}")
+    search_results, completion = pipeline.run(query)
+
+    for result in search_results:
+        logger.info("-" * 100)
+        logger.info(f"Search Result:\n{result}")
+    logger.info("-" * 100)
+    logger.info(f"Final Result:\n{completion}")
+    logger.info("-" * 100)
+
     pipeline.close()

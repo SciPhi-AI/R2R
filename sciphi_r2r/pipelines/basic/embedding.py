@@ -17,13 +17,13 @@ from sciphi_r2r.core import (
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.vector_dbs import PGVectorDB
 
-logger = logging.getLogger("sciphi_r2r")
+logger = logging.getLogger(__name__)
 
 
 class BasicDocument(BaseModel):
     id: str
     text: str
-    metadata: Optional[dict]
+    metadata: dict
 
 
 class BasicEmbeddingPipeline(EmbeddingPipeline):
@@ -37,7 +37,9 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         embedding_batch_size: int = 1,
         id_prefix: str = "demo",
     ):
-        logger.debug(f"Initalizing `BasicEmbeddingPipeline`.")
+        logger.info(
+            f"Initalizing a `BasicEmbeddingPipeline` to embed and store documents."
+        )
 
         super().__init__(
             embedding_model,

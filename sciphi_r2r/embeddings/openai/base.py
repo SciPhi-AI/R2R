@@ -22,6 +22,10 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     }
 
     def __init__(self, provider: str = "openai"):
+        logger.info(
+            "Initializing `OpenAIEmbeddingProvider` to provide embeddings."
+        )
+
         super().__init__(provider)
         if provider != "openai":
             raise ValueError(

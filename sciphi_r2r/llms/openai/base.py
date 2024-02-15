@@ -1,4 +1,5 @@
 """A module for creating OpenAI model abstractions."""
+import logging
 import os
 from dataclasses import dataclass
 
@@ -6,6 +7,8 @@ from openai.types import Completion
 from openai.types.chat import ChatCompletion
 
 from sciphi_r2r.core import GenerationConfig, LLMConfig, LLMProvider
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -29,6 +32,7 @@ class OpenAILLM(LLMProvider):
         *args,
         **kwargs,
     ) -> None:
+        logger.info(f"Initializing `OpenAILLM` with config: {config}")
         super().__init__()
         self.config: OpenAIConfig = config
 

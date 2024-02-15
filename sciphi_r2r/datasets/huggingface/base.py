@@ -31,7 +31,9 @@ class HuggingFaceDataProvider(DatasetProvider):
 
         self.datasets = []  # Prepare to store loaded datasets
         for config in dataset_configs:
-            logger.info(f"Loading dataset {config.name}.")
+            logger.info(
+                f"Loading dataset {config.name} with text field {config.text_field} and max entries {config.max_entries}."
+            )
             dataset = load_dataset(
                 config.name, split=config.split, streaming=streaming
             )

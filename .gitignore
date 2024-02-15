@@ -1,5 +1,6 @@
 poetry.lock
 .env*
+.DS_Store
 
 logs/
 workspace/
