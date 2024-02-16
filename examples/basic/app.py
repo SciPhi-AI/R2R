@@ -2,7 +2,6 @@ import logging
 import threading
 
 import dotenv
-import uvicorn
 from hatchet_sdk import Hatchet
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
@@ -14,9 +13,6 @@ from sciphi_r2r.main import create_app, load_config
 from sciphi_r2r.main.worker import get_worker
 from sciphi_r2r.pipelines import BasicEmbeddingPipeline, BasicRAGPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB
-
-# Initialize a placeholder for the thread
-worker_thread = None
 
 dotenv.load_dotenv()
 

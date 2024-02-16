@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Any, Optional
 
-from sciphi_r2r.core import SearchResult, VectorDBProvider, VectorEntry
+from sciphi_r2r.core import VectorDBProvider, VectorEntry, VectorSearchResult
 from sciphi_r2r.vecs.client import Client
 from sciphi_r2r.vecs.collection import Collection
 
@@ -76,7 +76,7 @@ class PGVectorDB(VectorDBProvider):
         filters: dict[str, Any] = {},
         limit: int = 10,
         **kwargs,
-    ) -> list[SearchResult]:
+    ) -> list[VectorSearchResult]:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `search`."
@@ -84,7 +84,7 @@ class PGVectorDB(VectorDBProvider):
         measure = kwargs.get("measure", "cosine_distance")
 
         return [
-            SearchResult(ele[0], 1 - ele[1], ele[2])
+            VectorSearchResult(ele[0], 1 - ele[1], ele[2])
             for ele in self.collection.query(
                 data=query_vector,
                 limit=limit,

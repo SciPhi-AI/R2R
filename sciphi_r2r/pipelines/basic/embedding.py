@@ -3,7 +3,7 @@ A simple example to demonstrate the usage of `BasicEmbeddingPipeline`.
 """
 import logging
 import uuid
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Tuple, Union
 
 from langchain.text_splitter import TextSplitter
 from pydantic import BaseModel
