@@ -20,7 +20,7 @@ class DemoRAGPipeline(BasicRAGPipeline):
         """
         self.pipeline_run_id = uuid.uuid4()
         transformed_query = self.transform_query(query)
-        search_results = self.retrieve_chunks(
+        search_results = self.search(
             transformed_query, filters, limit
         )
         context = self.construct_context(search_results)

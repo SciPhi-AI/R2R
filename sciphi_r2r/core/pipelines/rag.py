@@ -67,7 +67,7 @@ class RAGPipeline(ABC):
         pass
 
     @abstractmethod
-    def retrieve_chunks(
+    def search(
         self,
         transformed_query,
         filters: dict[str, Any],
@@ -157,7 +157,7 @@ class RAGPipeline(ABC):
         """
         self.pipeline_run_id = uuid.uuid4()
         transformed_query = self.transform_query(query)
-        search_results = self.retrieve_chunks(
+        search_results = self.search(
             transformed_query, filters, limit
         )
         if search_only:
