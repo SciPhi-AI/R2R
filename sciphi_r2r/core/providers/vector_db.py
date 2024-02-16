@@ -37,7 +37,7 @@ class VectorEntry:
         return f"VectorEntry(id={self.id}, vector={self.vector}, metadata={self.metadata})"
 
 
-class SearchResult:
+class VectorSearchResult:
     def __init__(
         self, entry_id: str, score: float, metadata: dict[str, Any]
     ) -> None:
@@ -46,12 +46,12 @@ class SearchResult:
         self.metadata = metadata
 
     def __str__(self) -> str:
-        """Return a string representation of the SearchResult."""
-        return f"SearchResult(id={self.id}, score={self.score}, metadata={self.metadata})"
+        """Return a string representation of the VectorSearchResult."""
+        return f"VectorSearchResult(id={self.id}, score={self.score}, metadata={self.metadata})"
 
     def __repr__(self) -> str:
-        """Return an unambiguous string representation of the SearchResult for debugging."""
-        return f"SearchResult(id={self.id}, score={self.score}, metadata={self.metadata})"
+        """Return an unambiguous string representation of the VectorSearchResult for debugging."""
+        return f"VectorSearchResult(id={self.id}, score={self.score}, metadata={self.metadata})"
 
 
 class VectorDBProvider(ABC):
@@ -80,7 +80,7 @@ class VectorDBProvider(ABC):
         filters: dict[str, Any] = {},
         limit: int = 10,
         **kwargs,
-    ) -> list[SearchResult]:
+    ) -> list[VectorSearchResult]:
         pass
 
     @abstractmethod

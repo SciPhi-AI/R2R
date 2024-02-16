@@ -8,28 +8,8 @@ from sciphi_r2r.core import GenerationConfig, LoggingDatabaseConnection
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.llms import OpenAIConfig, OpenAILLM
 from sciphi_r2r.main import load_config
-from sciphi_r2r.pipelines import BasicRAGPipeline
+from sciphi_r2r.pipelines import WebSearchRAGPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB
-
-
-class DemoRAGPipeline(BasicRAGPipeline):
-    # Modifies `BasicRAGPipeline` run to return search_results and completion
-    def run(self, query, filters={}, limit=10):
-        """
-        Runs the completion pipeline.
-        """
-        self.pipeline_run_id = uuid.uuid4()
-        transformed_query = self.transform_query(query)
-        search_results = self.search(transformed_query, filters, limit)
-        context = self.construct_context(search_results)
-        prompt = self.construct_prompt(
-            {"query": transformed_query, "context": context}
-        )
-        completion = self.generate_completion(
-            prompt, transformed_query, context
-        )
-        return search_results, completion
-
 
 if __name__ == "__main__":
     dotenv.load_dotenv()
@@ -70,7 +50,7 @@ if __name__ == "__main__":
     )
 
     logging_database = LoggingDatabaseConnection("completion_demo_logs_v1")
-    pipeline = DemoRAGPipeline(
+    pipeline = WebSearchRAGPipeline(
         llm,
         generation_config,
         logging_database,
@@ -79,13 +59,8 @@ if __name__ == "__main__":
         embeddings_provider=embeddings_provider,
     )
 
-    search_results, completion = pipeline.run(query)
+    completion = pipeline.run(query) #, search_only=True)
 
-    for result in search_results:
-        logger.info("-" * 100)
-        logger.info(f"Search Result:\n{result}")
-    logger.info("-" * 100)
     logger.info(f"Final Result:\n{completion}")
-    logger.info("-" * 100)
 
     pipeline.close()

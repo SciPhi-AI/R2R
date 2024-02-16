@@ -8,12 +8,15 @@ from sciphi_r2r.core import (GenerationConfig, LLMProvider,
                              LoggingDatabaseConnection, RAGPipeline,
                              VectorSearchResult, log_execution_to_db)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
+from sciphi_r2r.integrations import SerperClient
 from sciphi_r2r.vector_dbs import PGVectorDB
+
+from ..basic.rag import BasicRAGPipeline
 
 logger = logging.getLogger(__name__)
 
 
-class BasicRAGPipeline(RAGPipeline):
+class WebSearchRAGPipeline(BasicRAGPipeline):
     def __init__(
         self,
         llm: LLMProvider,
@@ -26,17 +29,17 @@ class BasicRAGPipeline(RAGPipeline):
         task_prompt: Optional[str] = None,
     ) -> None:
         logger.debug(f"Initalizing `BasicRAGPipeline`.")
-
         super().__init__(
             llm,
             generation_config,
-            logging_database=logging_database,
-            system_prompt=system_prompt,
-            task_prompt=task_prompt,
+            logging_database,
+            db,
+            embedding_model,
+            embeddings_provider,
+            system_prompt,
+            task_prompt,
         )
-        self.embedding_model = embedding_model
-        self.embeddings_provider = embeddings_provider
-        self.db = db
+        self.serper_client = SerperClient()
 
     def transform_query(self, query: str) -> str:
         # Placeholder for query transformation - A unit transformation.
@@ -50,27 +53,25 @@ class BasicRAGPipeline(RAGPipeline):
         limit: int,
         search_type="semantic",
     ) -> list[VectorSearchResult]:
-        logger.debug(f"Retrieving results for query: {transformed_query}")
-
-        results = self.db.search(
-            query_vector=self.embeddings_provider.get_embedding(
-                transformed_query,
-                self.embedding_model,
-            ),
-            filters=filters,
-            limit=limit,
+        results = []
+        local_results = super().search(transformed_query, filters, limit)
+        results.extend(
+            [{"type": "local", "result": ele} for ele in local_results]
         )
-        logger.debug(f"Retrieved the raw results shown:\n{results}\n")
+
+        external_results = self.serper_client.get_raw(transformed_query, limit)
+        results.extend(
+            [{"type": "external", "result": ele} for ele in external_results]
+        )
+
         return results
 
-    def rerank_results(
-        self, results: list[VectorSearchResult]
-    ) -> list[VectorSearchResult]:
-        # Placeholder for reranking logic - A unit transformation.
-        return results
-
-    def _format_results(self, results: list[VectorSearchResult]) -> str:
-        return "\n\n".join([ele.metadata["text"] for ele in results])
-
-    def _get_extra_args(self, query, context):
-        return {}
+    @log_execution_to_db
+    def construct_context(self, results: list) -> str:
+        local_context = super().construct_context(
+            [ele["result"] for ele in results if ele["type"] == "local"]
+        )
+        web_context = self.serper_client.construct_context(
+            [ele["result"] for ele in results if ele["type"] == "external"]
+        )
+        return local_context + "\n\n" + web_context

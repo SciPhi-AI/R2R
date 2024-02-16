@@ -59,6 +59,9 @@ class RAGPipeline(ABC):
         if self.logging_database:
             self.logging_database.__exit__(None, None, None)
 
+    def initialize_pipeline(self):
+        self.pipeline_run_id = uuid.uuid4()
+
     @abstractmethod
     def transform_query(self, query: str) -> Any:
         """
@@ -75,16 +78,16 @@ class RAGPipeline(ABC):
         search_type="semantic",
     ) -> list:
         """
-        Retrieves chunks based on the transformed query.
+        Retrieves results based on the transformed query.
         The search_type parameter allows for specifying the type of search,
         e.g., 'semantic' or 'keyword'. Currently, only 'semantic' search is implemented.
         """
         pass
 
     @abstractmethod
-    def rerank_chunks(self, chunks: list) -> list:
+    def rerank_results(self, results: list) -> list:
         """
-        Reranks the retrieved chunks based on relevance or other criteria.
+        Reranks the retrieved results based on relevance or other criteria.
         """
         pass
 
@@ -96,18 +99,19 @@ class RAGPipeline(ABC):
         pass
 
     @abstractmethod
-    def _format_chunks(self, chunks: list) -> str:
+    def _format_results(self, results: list) -> str:
         """
-        Formats the chunks for generation.
+        Formats the results for generation.
         """
         pass
 
     @log_execution_to_db
     def construct_context(
         self,
-        chunks: list,
+        results: list,
     ) -> str:
-        return self._format_chunks(chunks)
+        reranked_results = self.rerank_results(results)
+        return self._format_results(reranked_results)
 
     @log_execution_to_db
     def construct_prompt(self, inputs: dict[str, str]) -> str:
@@ -155,11 +159,9 @@ class RAGPipeline(ABC):
         """
         Runs the completion pipeline.
         """
-        self.pipeline_run_id = uuid.uuid4()
+        self.initialize_pipeline()
         transformed_query = self.transform_query(query)
-        search_results = self.search(
-            transformed_query, filters, limit
-        )
+        search_results = self.search(transformed_query, filters, limit)
         if search_only:
             return search_results
         context = self.construct_context(search_results)
