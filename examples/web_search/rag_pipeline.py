@@ -1,4 +1,4 @@
-"""A simple example to demonstrate the usage of `BasicRAGPipeline`."""
+"""A simple example to demonstrate the usage of `WebSearchRAGPipeline`."""
 import logging
 
 import dotenv
