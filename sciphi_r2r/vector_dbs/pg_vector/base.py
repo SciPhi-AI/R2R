@@ -2,19 +2,16 @@ import logging
 import os
 from typing import Any, Optional
 
-from vecs.client import Client
-from vecs.collection import Collection
-
 from sciphi_r2r.core import SearchResult, VectorDBProvider, VectorEntry
+from sciphi_r2r.vecs.client import Client
+from sciphi_r2r.vecs.collection import Collection
 
 logger = logging.getLogger(__name__)
 
 
 class PGVectorDB(VectorDBProvider):
     def __init__(self, provider: str = "pgvector") -> None:
-        logger.info(
-            "Initializing `PGVectorDB` to store and retrieve embeddings."
-        )
+        print("Initializing `PGVectorDB` to store and retrieve embeddings.")
 
         super().__init__(provider)
         if provider != "pgvector":
@@ -22,7 +19,7 @@ class PGVectorDB(VectorDBProvider):
                 "PGVectorDB must be initialized with provider `pgvector`."
             )
         try:
-            import vecs
+            import sciphi_r2r.vecs
         except ImportError:
             raise ValueError(
                 f"Error, PGVectorDB requires the vecs library. Please run `poetry add vecs`."
@@ -37,7 +34,7 @@ class PGVectorDB(VectorDBProvider):
             DB_CONNECTION = (
                 f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
             )
-            self.vx: Client = vecs.create_client(DB_CONNECTION)
+            self.vx: Client = sciphi_r2r.vecs.create_client(DB_CONNECTION)
         except Exception as e:
             raise ValueError(
                 f"Error {e} occurred while attempting to connect to the pgvector provider."

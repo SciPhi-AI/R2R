@@ -5,7 +5,7 @@ base_url = "http://localhost:8000"  # Change this to your actual API base URL
 client = SciPhiR2RClient(base_url)
 
 # Example file path for upload
-file_path = "test.txt"  # Ensure this file exists in your script's directory
+file_path = "config.json"  # Ensure this file exists in your script's directory
 
 # Upload and process a file
 upload_response = client.upload_and_process_file(file_path)
