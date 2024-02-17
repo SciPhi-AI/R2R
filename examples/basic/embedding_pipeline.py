@@ -1,5 +1,6 @@
 """A simple example to demonstrate the usage of `BasicEmbeddingPipeline`."""
 import logging
+import uuid
 
 import dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -9,7 +10,7 @@ from sciphi_r2r.datasets import HuggingFaceDataProvider
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.main import load_config
 from sciphi_r2r.pipelines import BasicDocument, BasicEmbeddingPipeline
-from sciphi_r2r.vector_dbs import PGVectorDB
+from sciphi_r2r.vector_dbs import QdrantDB
 
 if __name__ == "__main__":
     dotenv.load_dotenv()
@@ -35,7 +36,7 @@ if __name__ == "__main__":
     embedding_batch_size = embedding_config["batch_size"]
 
     # Specify the vector database provider
-    db = PGVectorDB()
+    db = QdrantDB()
     collection_name = database_config["collection_name"]
     db.initialize_collection(collection_name, embedding_dimension)
 
@@ -73,11 +74,11 @@ if __name__ == "__main__":
         if text is None:
             break
         document_batch.append(
-            BasicDocument(id=str(entry_id), text=text, metadata={})
+            BasicDocument(id=str(uuid.uuid4()), text=text, metadata={})
         )
         entry_id += 1
 
-        if len(document_batch) == 16:
+        if len(document_batch) == 1:
             logging.info(
                 f"Processing batch of {len(document_batch)} documents."
             )

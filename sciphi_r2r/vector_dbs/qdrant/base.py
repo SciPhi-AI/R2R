@@ -1,0 +1,133 @@
+import logging
+import os
+from typing import Any, Optional
+
+from sciphi_r2r.core import VectorDBProvider, VectorEntry, VectorSearchResult
+
+logger = logging.getLogger(__name__)
+
+
+class QdrantDB(VectorDBProvider):
+    def __init__(self, provider: str = "qdrant") -> None:
+        logger.info(
+            "Initializing `QdrantDB` to store and retrieve embeddings."
+        )
+
+        super().__init__(provider)
+        if provider != "qdrant":
+            raise ValueError(
+                "QdrantDB must be initialized with provider `qdrant`."
+            )
+        try:
+            from qdrant_client import QdrantClient
+            from qdrant_client.http import models
+
+            self.models = models
+        except ImportError:
+            raise ValueError(
+                f"Error, PGVectorDB requires the qdrant_client library. Please run `poetry add qdrant_client`."
+            )
+        try:
+            host = os.getenv("CHROMA_HOST")
+            port = os.getenv("CHROMA_PORT")
+            api_key = os.getenv("CHROMA_API_KEY")
+
+            self.client = QdrantClient(host, port=int(port), api_key=api_key)
+        except Exception as e:
+            raise ValueError(
+                f"Error {e} occurred while attempting to connect to the pgvector provider."
+            )
+        self.collection_name: Optional[str] = None
+
+    def initialize_collection(
+        self, collection_name: str, dimension: float
+    ) -> None:
+        self.collection_name = collection_name
+        try:
+            result = self.client.create_collection(
+                collection_name=f"{collection_name}",
+                vectors_config=self.models.VectorParams(
+                    size=dimension, distance=self.models.Distance.COSINE
+                ),
+            )
+            if result == False:
+                raise ValueError(
+                    f"Error occurred while attempting to create collection {collection_name}."
+                )
+        except Exception as e:
+            pass
+
+    def upsert(self, entry: VectorEntry, commit=True) -> None:
+        if self.collection_name is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `upsert`."
+            )
+        points = [
+            self.models.PointStruct(
+                id=str(entry.id),
+                vector=list([float(ele) for ele in entry.vector]),
+                payload=entry.metadata,
+            )
+        ]
+        self.client.upsert(
+            collection_name=f"{self.collection_name}",
+            points=points,
+        )
+
+    def upsert_entries(self, entries: list[VectorEntry]) -> None:
+        if self.collection_name is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `upsert_entries`."
+            )
+        points = [
+            self.models.PointStruct(
+                id=str(entry.id),
+                vector=list([float(ele) for ele in entry.vector]),
+                payload=entry.metadata,
+            )
+            for entry in entries
+        ]
+        self.client.upsert(
+            collection_name=f"{self.collection_name}",
+            points=points,
+        )
+
+    def search(
+        self,
+        query_vector: list[float],
+        filters: dict[str, Any] = {},
+        limit: int = 10,
+        **kwargs,
+    ) -> list[VectorSearchResult]:
+        if self.collection_name is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `search`."
+            )
+
+        results = self.client.search(
+            collection_name=f"{self.collection_name}",
+            query_filter=self.models.Filter(
+                must=[
+                    self.models.FieldCondition(
+                        key=key,
+                        match=self.models.MatchValue(
+                            value=value,
+                        ),
+                    )
+                    for key, value in filters.items()
+                ]
+            ),
+            query_vector=query_vector,
+            limit=limit,
+        )
+
+        return [
+            VectorSearchResult(result.id, result.score, result.payload)
+            for result in results
+        ]
+
+    def create_index(self, index_type, column_name, index_options):
+        pass
+
+    def close(self):
+        pass

@@ -58,7 +58,7 @@ if __name__ == "__main__":
         embeddings_provider=embeddings_provider,
     )
 
-    completion = pipeline.run(query) #, search_only=True)
+    completion = pipeline.run(query)  # , search_only=True)
 
     logger.info(f"Final Result:\n{completion}")
 

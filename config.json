@@ -10,7 +10,7 @@
         "batch_size": 32
     },
     "database": {
-        "collection_name": "demo-v1-test"
+        "collection_name": "demo-v2-test"
     },
     "language_model": {
         "model_name": "gpt-4-1106-preview",

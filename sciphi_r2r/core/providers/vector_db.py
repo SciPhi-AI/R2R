@@ -55,7 +55,7 @@ class VectorSearchResult:
 
 
 class VectorDBProvider(ABC):
-    supported_providers = ["pgvector"]
+    supported_providers = ["pgvector", "qdrant"]
 
     def __init__(self, provider: str):
         if provider not in VectorDBProvider.supported_providers:
