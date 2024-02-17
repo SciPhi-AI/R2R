@@ -10,8 +10,9 @@ from sciphi_r2r.datasets import HuggingFaceDataProvider
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.main import load_config
 from sciphi_r2r.pipelines import BasicDocument, BasicEmbeddingPipeline
-from sciphi_r2r.vector_dbs import QdrantDB
+from sciphi_r2r.vector_dbs import PGVectorDB, QdrantDB
 
+vector_db_provider = "qdrant"
 if __name__ == "__main__":
     dotenv.load_dotenv()
 
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     embedding_batch_size = embedding_config["batch_size"]
 
     # Specify the vector database provider
-    db = QdrantDB()
+    db = QdrantDB() if vector_db_provider == "qdrant" else PGVectorDB()
     collection_name = database_config["collection_name"]
     db.initialize_collection(collection_name, embedding_dimension)
 

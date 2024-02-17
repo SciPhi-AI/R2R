@@ -34,7 +34,7 @@ class TextEntryModel(BaseModel):
 
 
 class UpsertTextEntryRequest(BaseModel):
-    entry: list[TextEntryModel]
+    entry: TextEntryModel
     settings: Optional[IngestionSettingsModel] = IngestionSettingsModel()
 
 
@@ -58,14 +58,17 @@ def create_app(
     app = FastAPI()
     configure_logging()
 
-    if not upload_path:
-        upload_path = find_project_root(CURRENT_DIR) / "uploads"
+    upload_path = upload_path or find_project_root(CURRENT_DIR) / "uploads"
 
     if not upload_path.exists():
         upload_path.mkdir()
 
     @app.post("/upload_and_process_file/")
     async def upload_and_process_file(file: UploadFile = File(...)):
+        if not file.filename:
+            raise HTTPException(
+                status_code=400, detail="No file was uploaded."
+            )
         # Check if the file is a .txt file
         if not file.filename.endswith(".txt"):
             raise HTTPException(
@@ -148,7 +151,9 @@ def create_app(
                     "embedding",
                     {
                         "batch": batch,
-                        "settings": text_entries_req.settings.dict(),
+                        "settings": text_entries_req.settings.dict()
+                        if text_entries_req.settings
+                        else {},
                     },
                 )
                 return {"message": "Batch upsert initialized successfully."}
@@ -156,7 +161,11 @@ def create_app(
             else:
                 embedding_pipeline.run(
                     text_entries_req.entries,
-                    **text_entries_req.settings.dict(),
+                    **(
+                        text_entries_req.settings.dict()
+                        if text_entries_req.settings
+                        else {}
+                    ),
                 )
                 return {"message": "Entries upserted successfully."}
         except Exception as e:

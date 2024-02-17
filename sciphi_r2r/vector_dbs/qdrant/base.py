@@ -32,6 +32,11 @@ class QdrantDB(VectorDBProvider):
             port = os.getenv("CHROMA_PORT")
             api_key = os.getenv("CHROMA_API_KEY")
 
+            if not host or not port or not api_key:
+                raise ValueError(
+                    "Error, QdrantDB requires the CHROMA_HOST, CHROMA_PORT, and CHROMA_API_KEY environment variables."
+                )
+
             self.client = QdrantClient(host, port=int(port), api_key=api_key)
         except Exception as e:
             raise ValueError(
@@ -40,7 +45,7 @@ class QdrantDB(VectorDBProvider):
         self.collection_name: Optional[str] = None
 
     def initialize_collection(
-        self, collection_name: str, dimension: float
+        self, collection_name: str, dimension: int
     ) -> None:
         self.collection_name = collection_name
         try:
@@ -122,7 +127,9 @@ class QdrantDB(VectorDBProvider):
         )
 
         return [
-            VectorSearchResult(result.id, result.score, result.payload)
+            VectorSearchResult(
+                str(result.id), result.score, result.payload or {}
+            )
             for result in results
         ]
 

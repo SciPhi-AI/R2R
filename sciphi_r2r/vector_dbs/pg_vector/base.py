@@ -44,7 +44,7 @@ class PGVectorDB(VectorDBProvider):
         self.collection: Optional[Collection] = None
 
     def initialize_collection(
-        self, collection_name: str, dimension: float
+        self, collection_name: str, dimension: int
     ) -> None:
         self.collection = self.vx.get_or_create_collection(
             name=collection_name, dimension=dimension
@@ -57,7 +57,7 @@ class PGVectorDB(VectorDBProvider):
             )
 
         self.collection.upsert(
-            records=[(entry.id, entry.vector, entry.metadata)]
+            records=[(str(entry.id), entry.vector, entry.metadata)]
         )
 
     def upsert_entries(self, entries: list[VectorEntry]) -> None:
@@ -68,7 +68,8 @@ class PGVectorDB(VectorDBProvider):
 
         self.collection.upsert(
             records=[
-                (entry.id, entry.vector, entry.metadata) for entry in entries
+                (str(entry.id), entry.vector, entry.metadata)
+                for entry in entries
             ]
         )
 

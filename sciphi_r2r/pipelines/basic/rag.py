@@ -9,11 +9,11 @@ from sciphi_r2r.core import (
     LLMProvider,
     LoggingDatabaseConnection,
     RAGPipeline,
+    VectorDBProvider,
     VectorSearchResult,
     log_execution_to_db,
 )
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
-from sciphi_r2r.vector_dbs import PGVectorDB
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class BasicRAGPipeline(RAGPipeline):
         llm: LLMProvider,
         generation_config: GenerationConfig,
         logging_database: LoggingDatabaseConnection,
-        db: PGVectorDB,
+        db: VectorDBProvider,
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
         system_prompt: Optional[str] = None,
