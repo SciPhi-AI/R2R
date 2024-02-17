@@ -93,7 +93,6 @@ class SerperClient:
         context = ""
         # Iterate over each result type
         for result_type, items in organized_results.items():
-            print(result_type)
             context += f"# {result_type} Results:\n"
             for index, item in enumerate(items, start=1):
                 # Process each item under the current type

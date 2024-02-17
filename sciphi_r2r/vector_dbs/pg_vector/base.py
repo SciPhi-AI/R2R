@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 class PGVectorDB(VectorDBProvider):
     def __init__(self, provider: str = "pgvector") -> None:
-        print("Initializing `PGVectorDB` to store and retrieve embeddings.")
+        logger.info(
+            "Initializing `PGVectorDB` to store and retrieve embeddings."
+        )
 
         super().__init__(provider)
         if provider != "pgvector":
@@ -37,12 +39,12 @@ class PGVectorDB(VectorDBProvider):
             self.vx: Client = sciphi_r2r.vecs.create_client(DB_CONNECTION)
         except Exception as e:
             raise ValueError(
-                f"Error {e} occurred while attempting to connect to the pgvector provider."
+                f"Error {e} occurred while attempting to connect to the pgvector provider with {DB_CONNECTION}."
             )
         self.collection: Optional[Collection] = None
 
     def initialize_collection(
-        self, collection_name: str, dimension: float
+        self, collection_name: str, dimension: int
     ) -> None:
         self.collection = self.vx.get_or_create_collection(
             name=collection_name, dimension=dimension
@@ -55,7 +57,7 @@ class PGVectorDB(VectorDBProvider):
             )
 
         self.collection.upsert(
-            records=[(entry.id, entry.vector, entry.metadata)]
+            records=[(str(entry.id), entry.vector, entry.metadata)]
         )
 
     def upsert_entries(self, entries: list[VectorEntry]) -> None:
@@ -66,7 +68,8 @@ class PGVectorDB(VectorDBProvider):
 
         self.collection.upsert(
             records=[
-                (entry.id, entry.vector, entry.metadata) for entry in entries
+                (str(entry.id), entry.vector, entry.metadata)
+                for entry in entries
             ]
         )
 

@@ -1,11 +1,12 @@
 import json
 from abc import ABC, abstractmethod
 from typing import Any
+from uuid import UUID
 
 
 class VectorEntry:
     def __init__(
-        self, entry_id: str, vector: list[float], metadata: dict[str, Any]
+        self, entry_id: UUID, vector: list[float], metadata: dict[str, Any]
     ):
         self.vector = vector
         self.id = entry_id
@@ -55,7 +56,7 @@ class VectorSearchResult:
 
 
 class VectorDBProvider(ABC):
-    supported_providers = ["pgvector"]
+    supported_providers = ["pgvector", "qdrant"]
 
     def __init__(self, provider: str):
         if provider not in VectorDBProvider.supported_providers:
@@ -65,7 +66,7 @@ class VectorDBProvider(ABC):
 
     @abstractmethod
     def initialize_collection(
-        self, collection_name: str, dimension: float
+        self, collection_name: str, dimension: int
     ) -> None:
         pass
 

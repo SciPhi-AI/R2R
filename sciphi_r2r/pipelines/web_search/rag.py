@@ -4,9 +4,14 @@ A simple example to demonstrate the usage of `WebSearchRAGPipeline`.
 import logging
 from typing import Optional
 
-from sciphi_r2r.core import (GenerationConfig, LLMProvider,
-                             LoggingDatabaseConnection, RAGPipeline,
-                             VectorSearchResult, log_execution_to_db)
+from sciphi_r2r.core import (
+    GenerationConfig,
+    LLMProvider,
+    LoggingDatabaseConnection,
+    RAGPipeline,
+    VectorSearchResult,
+    log_execution_to_db,
+)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.integrations import SerperClient
 from sciphi_r2r.vector_dbs import PGVectorDB
@@ -52,7 +57,7 @@ class WebSearchRAGPipeline(BasicRAGPipeline):
         filters: dict,
         limit: int,
         search_type="semantic",
-    ) -> list[VectorSearchResult]:
+    ) -> list:
         results = []
         local_results = super().search(transformed_query, filters, limit)
         results.extend(

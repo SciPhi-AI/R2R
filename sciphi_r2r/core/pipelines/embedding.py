@@ -54,7 +54,7 @@ class EmbeddingPipeline(ABC):
         pass
 
     @abstractmethod
-    def embed_chunks(self, chunks: list[Any]) -> list[float]:
+    def embed_chunks(self, chunks: list[Any]) -> list[list[float]]:
         pass
 
     @abstractmethod

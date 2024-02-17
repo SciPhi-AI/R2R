@@ -8,10 +8,14 @@ from typing import Any, Tuple, Union
 from langchain.text_splitter import TextSplitter
 from pydantic import BaseModel
 
-from sciphi_r2r.core import (EmbeddingPipeline, LoggingDatabaseConnection,
-                             VectorEntry, log_execution_to_db)
+from sciphi_r2r.core import (
+    EmbeddingPipeline,
+    LoggingDatabaseConnection,
+    VectorDBProvider,
+    VectorEntry,
+    log_execution_to_db,
+)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
-from sciphi_r2r.vector_dbs import PGVectorDB
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +31,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         self,
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
-        db: PGVectorDB,
+        db: VectorDBProvider,
         logging_database: LoggingDatabaseConnection,
         text_splitter: TextSplitter,
         embedding_batch_size: int = 1,
@@ -63,7 +67,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
     def transform_chunks(self, chunks: list[str]) -> list[str]:
         return chunks
 
-    def embed_chunks(self, chunks: list[str]) -> list[float]:
+    def embed_chunks(self, chunks: list[str]) -> list[list[float]]:
         return self.embeddings_provider.get_embeddings(
             chunks, self.embedding_model
         )
@@ -71,7 +75,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
     def store_chunks(self, chunks: list[VectorEntry]) -> None:
         self.db.upsert_entries(chunks)
 
-    def process_batches(self, batch_data: list[Tuple[str, int, int]]):
+    def process_batches(self, batch_data: list[Tuple[str, int, str, dict]]):
         logger.debug(f"Parsing batch of size {len(batch_data)}.")
 
         entries = []
@@ -84,11 +88,11 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         for doc_id, i, original_chunk, embedded_chunk, metadata in zip(
             doc_ids, indices, raw_chunks, embedded_chunks, metadata
         ):
+            chunk_id = uuid.uuid4()
+            metadata["doc_id"] = str(doc_id)
             metadata["pipeline_run_id"] = str(self.pipeline_run_id)
             metadata["text"] = original_chunk
-            entries.append(
-                VectorEntry(f"{doc_id}_chunk_{i}", embedded_chunk, metadata)
-            )
+            entries.append(VectorEntry(chunk_id, embedded_chunk, metadata))
 
         self.store_chunks(entries)
 
