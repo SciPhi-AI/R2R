@@ -11,6 +11,8 @@ from sciphi_r2r.main import load_config
 from sciphi_r2r.pipelines import BasicRAGPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB, QdrantDB
 
+vector_db_provider = "qdrant"
+
 
 class DemoRAGPipeline(BasicRAGPipeline):
     # Modifies `BasicRAGPipeline` run to return search_results and completion
@@ -55,7 +57,7 @@ if __name__ == "__main__":
     embedding_dimension = embedding_config["dimension"]
     embedding_batch_size = embedding_config["batch_size"]
 
-    db = QdrantDB()
+    db = QdrantDB() if vector_db_provider == "qdrant" else PGVectorDB()
     collection_name = database_config["collection_name"]
     db.initialize_collection(collection_name, embedding_dimension)
 

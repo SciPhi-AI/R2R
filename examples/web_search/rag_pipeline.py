@@ -8,8 +8,9 @@ from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.llms import OpenAIConfig, OpenAILLM
 from sciphi_r2r.main import load_config
 from sciphi_r2r.pipelines import WebSearchRAGPipeline
-from sciphi_r2r.vector_dbs import PGVectorDB
+from sciphi_r2r.vector_dbs import PGVectorDB, QdrantDB
 
+vector_db_provider = "qdrant"
 if __name__ == "__main__":
     dotenv.load_dotenv()
 
@@ -34,7 +35,7 @@ if __name__ == "__main__":
     embedding_dimension = embedding_config["dimension"]
     embedding_batch_size = embedding_config["batch_size"]
 
-    db = PGVectorDB()
+    db = QdrantDB() if vector_db_provider == "qdrant" else PGVectorDB()
     collection_name = database_config["collection_name"]
     db.initialize_collection(collection_name, embedding_dimension)
 

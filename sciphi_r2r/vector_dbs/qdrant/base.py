@@ -55,11 +55,12 @@ class QdrantDB(VectorDBProvider):
                     size=dimension, distance=self.models.Distance.COSINE
                 ),
             )
-            if result == False:
+            if result is False:
                 raise ValueError(
                     f"Error occurred while attempting to create collection {collection_name}."
                 )
-        except Exception as e:
+        except Exception:
+            # TODO - Handle more appropriately - create collection fails when it already exists
             pass
 
     def upsert(self, entry: VectorEntry, commit=True) -> None:
