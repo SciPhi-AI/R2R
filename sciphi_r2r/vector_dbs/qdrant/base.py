@@ -28,13 +28,13 @@ class QdrantDB(VectorDBProvider):
                 f"Error, PGVectorDB requires the qdrant_client library. Please run `poetry add qdrant_client`."
             )
         try:
-            host = os.getenv("CHROMA_HOST")
-            port = os.getenv("CHROMA_PORT")
-            api_key = os.getenv("CHROMA_API_KEY")
+            host = os.getenv("QDRANT_HOST")
+            port = os.getenv("QDRANT_PORT")
+            api_key = os.getenv("QDRANT_API_KEY")
 
             if not host or not port or not api_key:
                 raise ValueError(
-                    "Error, QdrantDB requires the CHROMA_HOST, CHROMA_PORT, and CHROMA_API_KEY environment variables."
+                    "Error, QdrantDB requires the QDRANT_HOST, QDRANT_PORT, and QDRANT_API_KEY environment variables."
                 )
 
             self.client = QdrantClient(host, port=int(port), api_key=api_key)

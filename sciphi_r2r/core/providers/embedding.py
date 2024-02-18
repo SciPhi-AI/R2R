@@ -3,13 +3,17 @@ from typing import Optional
 
 
 class EmbeddingProvider(ABC):
-    supported_providers = ["openai"]
+    supported_providers = ["openai", "sentence-transformers"]
 
     def __init__(self, provider: str):
         if provider not in EmbeddingProvider.supported_providers:
             raise ValueError(
                 f"Error, `{provider}` is not in EmbeddingProvider's list of supported providers."
             )
+
+    @abstractmethod
+    def _check_inputs(self, model: str, dimensions: Optional[int]) -> None:
+        pass
 
     @abstractmethod
     def get_embedding(
