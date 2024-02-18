@@ -13,7 +13,6 @@ from sciphi_r2r.core import (
     LoggingDatabaseConnection,
     VectorDBProvider,
     VectorEntry,
-    log_execution_to_db,
 )
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 
@@ -57,7 +56,6 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
     def transform_text(self, text: str) -> str:
         return text
 
-    @log_execution_to_db
     def chunk_text(self, text: str) -> list[str]:
         return [
             ele.page_content
