@@ -12,7 +12,9 @@ from sciphi_r2r.llms import OpenAIConfig, OpenAILLM
 from sciphi_r2r.main import create_app, load_config
 from sciphi_r2r.main.worker import get_worker
 from sciphi_r2r.pipelines import BasicEmbeddingPipeline, BasicRAGPipeline
-from sciphi_r2r.vector_dbs import PGVectorDB
+from sciphi_r2r.vector_dbs import PGVectorDB, QdrantDB
+
+vector_db_provider = "qdrant"
 
 dotenv.load_dotenv()
 
@@ -31,13 +33,14 @@ logging.basicConfig(level=logging_config["level"])
 logger.debug("Starting the completion pipeline")
 
 logger.debug("Using `OpenAIEmbeddingProvider` to provide embeddings.")
+
 embeddings_provider = OpenAIEmbeddingProvider()
 embedding_model = embedding_config["model"]
 embedding_dimension = embedding_config["dimension"]
 embedding_batch_size = embedding_config["batch_size"]
 
 logger.debug("Using `PGVectorDB` to store and retrieve embeddings.")
-db = PGVectorDB()
+db = QdrantDB() if vector_db_provider == "qdrant" else PGVectorDB()
 collection_name = database_config["collection_name"]
 db.initialize_collection(collection_name, embedding_dimension)
 
@@ -90,7 +93,7 @@ worker = get_worker(
 app = create_app(
     embedding_pipeline=embd_pipeline,
     rag_pipeline=cmpl_pipeline,
-    hatchet=hatchet,
+    # hatchet=hatchet,
 )
 
 
@@ -114,3 +117,9 @@ def startup_event():
 def shutdown_event():
     # Implement any needed shutdown logic for your worker
     pass
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="localhost", port=8000)

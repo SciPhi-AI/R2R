@@ -50,6 +50,7 @@ pre-commit = "^3.3.3"
 mypy = "^1.5.1"
 types-requests = "^2.31.0.2"
 types-attrs = "^19.1.0"
+ipykernel = "^6.29.2"
 
 [tool.black]
 line-length = 79
