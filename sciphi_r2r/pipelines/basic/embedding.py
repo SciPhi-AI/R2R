@@ -8,13 +8,9 @@ from typing import Any, Tuple, Union
 from langchain.text_splitter import TextSplitter
 from pydantic import BaseModel
 
-from sciphi_r2r.core import (
-    EmbeddingPipeline,
-    LoggingDatabaseConnection,
-    VectorDBProvider,
-    VectorEntry,
-    log_execution_to_db,
-)
+from sciphi_r2r.core import (EmbeddingPipeline, LoggingDatabaseConnection,
+                             VectorDBProvider, VectorEntry,
+                             log_execution_to_db)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)
