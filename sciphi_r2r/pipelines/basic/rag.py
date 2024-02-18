@@ -4,10 +4,15 @@ A simple example to demonstrate the usage of `BasicRAGPipeline`.
 import logging
 from typing import Optional
 
-from sciphi_r2r.core import (GenerationConfig, LLMProvider,
-                             LoggingDatabaseConnection, RAGPipeline,
-                             VectorDBProvider, VectorSearchResult,
-                             log_execution_to_db)
+from sciphi_r2r.core import (
+    GenerationConfig,
+    LLMProvider,
+    LoggingDatabaseConnection,
+    RAGPipeline,
+    VectorDBProvider,
+    VectorSearchResult,
+    log_execution_to_db,
+)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)
@@ -18,10 +23,10 @@ class BasicRAGPipeline(RAGPipeline):
         self,
         llm: LLMProvider,
         generation_config: GenerationConfig,
-        logging_database: LoggingDatabaseConnection,
         db: VectorDBProvider,
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
+        logging_database: Optional[LoggingDatabaseConnection] = None,
         system_prompt: Optional[str] = None,
         task_prompt: Optional[str] = None,
     ) -> None:

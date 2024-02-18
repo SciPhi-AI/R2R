@@ -1,8 +1,6 @@
 import logging
-import threading
 
 import dotenv
-from hatchet_sdk import Hatchet
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from sciphi_r2r.core import GenerationConfig, LoggingDatabaseConnection
@@ -10,7 +8,6 @@ from sciphi_r2r.datasets import HuggingFaceDataProvider
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.llms import OpenAIConfig, OpenAILLM
 from sciphi_r2r.main import create_app, load_config
-from sciphi_r2r.main.worker import get_worker
 from sciphi_r2r.pipelines import BasicEmbeddingPipeline, BasicRAGPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB, QdrantDB
 
@@ -83,43 +80,7 @@ embd_pipeline = BasicEmbeddingPipeline(
     embedding_batch_size=embedding_batch_size,
 )
 
-hatchet = Hatchet(debug=True)
-
-worker = get_worker(
-    hatchet=hatchet,
-    embedding_pipeline=embd_pipeline,
-)
-
 app = create_app(
     embedding_pipeline=embd_pipeline,
     rag_pipeline=cmpl_pipeline,
-    # hatchet=hatchet,
 )
-
-
-def get_worker_thread(worker):
-    def start_worker_thread():
-        # This will create and start the thread only once
-        if not hasattr(start_worker_thread, "thread"):
-            start_worker_thread.thread = threading.Thread(target=worker.start)
-            start_worker_thread.thread.start()
-
-    return start_worker_thread
-
-
-@app.on_event("startup")
-def startup_event():
-    start_worker_thread = get_worker_thread(worker)
-    start_worker_thread()
-
-
-@app.on_event("shutdown")
-def shutdown_event():
-    # Implement any needed shutdown logic for your worker
-    pass
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="localhost", port=8000)

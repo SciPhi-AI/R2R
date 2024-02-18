@@ -3,14 +3,18 @@ A simple example to demonstrate the usage of `BasicEmbeddingPipeline`.
 """
 import logging
 import uuid
-from typing import Any, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 from langchain.text_splitter import TextSplitter
 from pydantic import BaseModel
 
-from sciphi_r2r.core import (EmbeddingPipeline, LoggingDatabaseConnection,
-                             VectorDBProvider, VectorEntry,
-                             log_execution_to_db)
+from sciphi_r2r.core import (
+    EmbeddingPipeline,
+    LoggingDatabaseConnection,
+    VectorDBProvider,
+    VectorEntry,
+    log_execution_to_db,
+)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)
@@ -28,8 +32,8 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
         db: VectorDBProvider,
-        logging_database: LoggingDatabaseConnection,
         text_splitter: TextSplitter,
+        logging_database: Optional[LoggingDatabaseConnection] = None,
         embedding_batch_size: int = 1,
         id_prefix: str = "demo",
     ):
