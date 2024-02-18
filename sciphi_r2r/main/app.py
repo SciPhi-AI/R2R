@@ -52,8 +52,8 @@ class RAGQueryModel(BaseModel):
 def create_app(
     embedding_pipeline: EmbeddingPipeline,
     rag_pipeline: RAGPipeline,
-    hatchet: Optional[Hatchet] = None,
     upload_path: Optional[Path] = None,
+    hatchet: Optional[Hatchet] = None,
 ):
     app = FastAPI()
     configure_logging()
@@ -102,7 +102,7 @@ def create_app(
     @app.post("/upsert_text_entry/")
     def upsert_text_entry(text_entry_req: UpsertTextEntryRequest):
         try:
-            if hatchet:
+            if hatchet is not None:
                 hatchet.client.event.push(
                     "embedding",
                     {
@@ -137,51 +137,42 @@ def create_app(
 
     @app.post("/upsert_text_entries/")
     def upsert_text_entries(text_entries_req: UpsertTextEntriesRequest):
-        embedding_pipeline.run(
-            text_entries_req.entries,
-            **(
-                text_entries_req.settings.dict()
-                if text_entries_req.settings
-                else {}
-            ),
-        )
+        try:
+            if hatchet is not None:
+                batch = [
+                    {
+                        "id": entry.id,
+                        "text": entry.text,
+                        "metadata": entry.metadata,
+                    }
+                    for entry in text_entries_req.entries
+                ]
+                hatchet.client.event.push(
+                    "embedding",
+                    {
+                        "batch": batch,
+                        "settings": text_entries_req.settings.dict()
+                        if text_entries_req.settings
+                        else {},
+                    },
+                )
+                return {"message": "Batch upsert initialized successfully."}
 
-        # try:
-        #     if hatchet:
-        #         batch = [
-        #             {
-        #                 "id": entry.id,
-        #                 "text": entry.text,
-        #                 "metadata": entry.metadata,
-        #             }
-        #             for entry in text_entries_req.entries
-        #         ]
-        #         hatchet.client.event.push(
-        #             "embedding",
-        #             {
-        #                 "batch": batch,
-        #                 "settings": text_entries_req.settings.dict()
-        #                 if text_entries_req.settings
-        #                 else {},
-        #             },
-        #         )
-        #         return {"message": "Batch upsert initialized successfully."}
-
-        #     else:
-        #         embedding_pipeline.run(
-        #             text_entries_req.entries,
-        #             **(
-        #                 text_entries_req.settings.dict()
-        #                 if text_entries_req.settings
-        #                 else {}
-        #             ),
-        #         )
-        #         return {"message": "Entries upserted successfully."}
-        # except Exception as e:
-        #     logger.error(
-        #         f":upsert_entries: [Error](entries={text_entries_req}, error={str(e)})"
-        #     )
-        #     raise HTTPException(status_code=500, detail=str(e))
+            else:
+                embedding_pipeline.run(
+                    text_entries_req.entries,
+                    **(
+                        text_entries_req.settings.dict()
+                        if text_entries_req.settings
+                        else {}
+                    ),
+                )
+                return {"message": "Entries upserted successfully."}
+        except Exception as e:
+            logger.error(
+                f":upsert_entries: [Error](entries={text_entries_req}, error={str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/search/")
     def search(query: RAGQueryModel):
