@@ -8,11 +8,11 @@ from sciphi_r2r.core import (
     GenerationConfig,
     LLMProvider,
     LoggingDatabaseConnection,
+    VectorDBProvider,
     log_execution_to_db,
 )
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.integrations import SerperClient
-from sciphi_r2r.vector_dbs import PGVectorDB
 
 from ..basic.rag import BasicRAGPipeline
 
@@ -24,14 +24,14 @@ class WebSearchRAGPipeline(BasicRAGPipeline):
         self,
         llm: LLMProvider,
         generation_config: GenerationConfig,
-        logging_database: LoggingDatabaseConnection,
-        db: PGVectorDB,
+        db: VectorDBProvider,
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
+        logging_database: Optional[LoggingDatabaseConnection] = None,
         system_prompt: Optional[str] = None,
         task_prompt: Optional[str] = None,
     ) -> None:
-        logger.debug(f"Initalizing `BasicRAGPipeline`.")
+        logger.debug(f"Initalizing `WebSearchRAGPipeline`.")
         super().__init__(
             llm,
             generation_config,
