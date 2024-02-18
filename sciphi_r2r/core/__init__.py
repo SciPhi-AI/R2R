@@ -4,8 +4,11 @@ from .pipelines.rag import RAGPipeline
 from .providers.dataset import DatasetConfig, DatasetProvider
 from .providers.embedding import EmbeddingProvider
 from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
-from .providers.vector_db import (VectorDBProvider, VectorEntry,
-                                  VectorSearchResult)
+from .providers.vector_db import (
+    VectorDBProvider,
+    VectorEntry,
+    VectorSearchResult,
+)
 
 __all__ = [
     "RAGPipeline",

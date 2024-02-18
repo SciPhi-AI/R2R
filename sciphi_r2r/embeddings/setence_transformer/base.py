@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import Optional
 
 from sciphi_r2r.core import EmbeddingProvider
