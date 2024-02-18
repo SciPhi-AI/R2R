@@ -33,14 +33,14 @@ class WebSearchRAGPipeline(BasicRAGPipeline):
     ) -> None:
         logger.debug(f"Initalizing `WebSearchRAGPipeline`.")
         super().__init__(
-            llm,
-            generation_config,
-            logging_database,
-            db,
-            embedding_model,
-            embeddings_provider,
-            system_prompt,
-            task_prompt,
+            llm=llm,
+            generation_config=generation_config,
+            logging_database=logging_database,
+            db=db,
+            embedding_model=embedding_model,
+            embeddings_provider=embeddings_provider,
+            system_prompt=system_prompt,
+            task_prompt=task_prompt,
         )
         self.serper_client = SerperClient()
 
