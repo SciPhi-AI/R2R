@@ -4,6 +4,14 @@ import os
 from logging.handlers import RotatingFileHandler
 
 
+# Function to find the project root by looking for a .git folder or setup.py file
+def find_project_root(current_dir):
+    for parent in current_dir.parents:
+        if any((parent / marker).exists() for marker in [".git", "setup.py"]):
+            return parent
+    return current_dir  # Fallback to current dir if no marker found
+
+
 def load_config(config_path=None):
     if config_path is None:
         # Get the root directory of the project

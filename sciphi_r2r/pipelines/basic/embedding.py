@@ -7,19 +7,17 @@ import uuid
 from typing import Any, Optional, Tuple, Union
 
 from langchain.text_splitter import TextSplitter
-from pydantic import BaseModel
 
-from sciphi_r2r.core import (EmbeddingPipeline, LoggingDatabaseConnection,
-                             VectorDBProvider, VectorEntry)
+from sciphi_r2r.core import (
+    BasicDocument,
+    EmbeddingPipeline,
+    LoggingDatabaseConnection,
+    VectorDBProvider,
+    VectorEntry,
+)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)
-
-
-class BasicDocument(BaseModel):
-    id: str
-    text: str
-    metadata: dict
 
 
 class BasicEmbeddingPipeline(EmbeddingPipeline):

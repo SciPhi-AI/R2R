@@ -8,10 +8,12 @@ from sciphi_r2r.datasets import HuggingFaceDataProvider
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.llms import OpenAIConfig, OpenAILLM
 from sciphi_r2r.main import create_app, load_config
-from sciphi_r2r.pipelines import BasicEmbeddingPipeline, BasicRAGPipeline
+from sciphi_r2r.pipelines import (
+    BasicEmbeddingPipeline,
+    BasicIngestionPipeline,
+    BasicRAGPipeline,
+)
 from sciphi_r2r.vector_dbs import PGVectorDB, QdrantDB
-
-vector_db_provider = "qdrant"
 
 dotenv.load_dotenv()
 
@@ -37,7 +39,7 @@ embedding_dimension = embedding_config["dimension"]
 embedding_batch_size = embedding_config["batch_size"]
 
 logger.debug("Using `PGVectorDB` to store and retrieve embeddings.")
-db = QdrantDB() if vector_db_provider == "qdrant" else PGVectorDB()
+db = QdrantDB() if database_config['vector_db_provider'] == "qdrant" else PGVectorDB()
 collection_name = database_config["collection_name"]
 db.initialize_collection(collection_name, embedding_dimension)
 
@@ -80,7 +82,14 @@ embd_pipeline = BasicEmbeddingPipeline(
     embedding_batch_size=embedding_batch_size,
 )
 
+ingst_pipeline = BasicIngestionPipeline()
+
 app = create_app(
+    ingestion_pipeline=ingst_pipeline,
     embedding_pipeline=embd_pipeline,
     rag_pipeline=cmpl_pipeline,
 )
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="localhost", port=8000)

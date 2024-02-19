@@ -10,7 +10,7 @@ from openai.types import Completion
 from openai.types.chat import ChatCompletion
 
 from ..providers.llm import GenerationConfig, LLMProvider
-from .logging import LoggingDatabaseConnection, log_execution_to_db
+from ..providers.logging import LoggingDatabaseConnection, log_execution_to_db
 
 logger = logging.getLogger(__name__)
 
