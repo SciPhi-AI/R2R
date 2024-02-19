@@ -1,6 +1,7 @@
 """
 A simple example to demonstrate the usage of `BasicEmbeddingPipeline`.
 """
+import copy
 import logging
 import uuid
 from typing import Any, Optional, Tuple, Union
@@ -62,7 +63,9 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             for ele in self.text_splitter.create_documents([text])
         ]
 
-    def transform_chunks(self, chunks: list[str]) -> list[str]:
+    def transform_chunks(
+        self, chunks: list[str], metadata: list[dict]
+    ) -> list[str]:
         return chunks
 
     def embed_chunks(self, chunks: list[str]) -> list[list[float]]:
@@ -80,18 +83,18 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
 
         # Unpack document IDs, indices, and chunks for transformation and embedding
         doc_ids, indices, raw_chunks, metadata = zip(*batch_data)
-        transformed_chunks = self.transform_chunks(raw_chunks)
+        transformed_chunks = self.transform_chunks(raw_chunks, metadata)
         embedded_chunks = self.embed_chunks(transformed_chunks)  # Batch embed
 
-        for doc_id, i, original_chunk, embedded_chunk, metadata in zip(
+        for doc_id, i, original_chunk, embedded_chunk, metadatas in zip(
             doc_ids, indices, raw_chunks, embedded_chunks, metadata
         ):
             chunk_id = uuid.uuid4()
-            metadata["doc_id"] = str(doc_id)
-            metadata["pipeline_run_id"] = str(self.pipeline_run_id)
-            metadata["text"] = original_chunk
-            entries.append(VectorEntry(chunk_id, embedded_chunk, metadata))
-
+            metadatas = copy.deepcopy(metadatas)
+            metadatas["doc_id"] = str(doc_id)
+            metadatas["pipeline_run_id"] = str(self.pipeline_run_id)
+            metadatas["text"] = original_chunk
+            entries.append(VectorEntry(chunk_id, embedded_chunk, metadatas))
         self.store_chunks(entries)
 
     def run(
@@ -122,5 +125,3 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         # Process any remaining batch
         if batch_data:
             self.process_batches(batch_data)
-
-        logger.debug("Finished processing all documents.")

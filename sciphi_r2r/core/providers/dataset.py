@@ -21,14 +21,14 @@ class DatasetConfig:
             text_field (Optional[str]): The specific field in the dataset to treat as the main text content.
         """
         self.name = name
-        self.data_files = data_files
+        self.data_files = data_files or []
         self.max_entries = max_entries
         self.text_field = text_field
         self.split = split
 
 
 class DatasetProvider(ABC):
-    supported_providers = ["huggingface"]
+    supported_providers = ["huggingface", "pdf"]
 
     def __init__(self, provider: str) -> None:
         if provider not in self.supported_providers:

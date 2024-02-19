@@ -92,7 +92,7 @@ class RAGPipeline(ABC):
         pass
 
     @abstractmethod
-    def _get_extra_args(self, query: str, context) -> dict[str, Any]:
+    def _get_extra_args(self, *args, **kwargs) -> dict[str, Any]:
         """
         Returns extra arguments for the generation request.
         """
@@ -123,9 +123,7 @@ class RAGPipeline(ABC):
     @log_execution_to_db
     def generate_completion(
         self,
-        prompt_query: str,
-        context_query: str,
-        context: str,
+        prompt: str,
         generate_with_chat=True,
     ) -> Union[ChatCompletion, Completion]:
         """
@@ -140,13 +138,11 @@ class RAGPipeline(ABC):
                     },
                     {
                         "role": "user",
-                        "content": self.task_prompt.format(
-                            query=prompt_query, context=context
-                        ),
+                        "content": prompt,
                     },
                 ],
                 self.generation_config,
-                **self._get_extra_args(context_query, context),
+                **self._get_extra_args(),
             )
         else:
             raise NotImplementedError(
@@ -168,7 +164,5 @@ class RAGPipeline(ABC):
         prompt = self.construct_prompt(
             {"query": transformed_query, "context": context}
         )
-        completion = self.generate_completion(
-            prompt, transformed_query, context
-        )
+        completion = self.generate_completion(prompt, generate_with_chat=True)
         return completion

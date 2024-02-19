@@ -77,5 +77,5 @@ class BasicRAGPipeline(RAGPipeline):
     def _format_results(self, results: list[VectorSearchResult]) -> str:
         return "\n\n".join([ele.metadata["text"] for ele in results])
 
-    def _get_extra_args(self, query, context):
+    def _get_extra_args(self, *args, **kwargs):
         return {}
