@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 
@@ -15,7 +15,7 @@ class SciPhiR2RClient:
 
     def upsert_entry(
         self,
-        id: str,
+        document_id: str,
         blob: str,
         type: str,
         metadata: Optional[Dict[str, Any]] = None,
@@ -24,7 +24,7 @@ class SciPhiR2RClient:
         url = f"{self.base_url}/upsert_entry/"
         json_data = {
             "entry": {
-                "id": id,
+                "document_id": document_id,
                 "blob": blob,
                 "type": type,
                 "metadata": metadata or {},
@@ -76,4 +76,9 @@ class SciPhiR2RClient:
             "settings": settings or {},
         }
         response = requests.post(url, json=json_data)
+        return response.json()
+
+    def filtered_deletion(self, key: str, value: Union[bool, int, str]):
+        url = f"{self.base_url}/filtered_deletion/"
+        response = requests.delete(url, params={"key": key, "value": value})
         return response.json()

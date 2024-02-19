@@ -1,4 +1,5 @@
 import uuid
+
 from sciphi_r2r.client import SciPhiR2RClient
 
 # Initialize the client with the base URL of your API
@@ -14,20 +15,23 @@ client = SciPhiR2RClient(base_url)
 
 # Upsert a single entry
 entry_response = client.upsert_entry(
-    str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 1")), "This is a test entry", "txt", {"tags": ["example", "test"]}
+    str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 1")),
+    "This is a test entry",
+    "txt",
+    {"tags": ["example", "test"]},
 )
 print("Upsert Entry Response:", entry_response)
 
 # Upsert multiple entries
 entries = [
     {
-        "id": str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 2")),
+        "document_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 2")),
         "blob": "Second test entry",
         "type": "txt",
         "metadata": {"tags": "bulk"},
     },
     {
-        "id": str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 3")),
+        "document_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 3")),
         "blob": "Third test entry",
         "type": "txt",
         "metadata": {"tags": "example"},
@@ -40,10 +44,20 @@ print("Upsert Entries Response:", bulk_upsert_response)
 search_response = client.search("test", 5)
 print("Search Response:", search_response)
 
-
-# Perform a search
+# Perform a search w/ filter
 search_response = client.search("test", 5, filters={"tags": "bulk"})
 print("Search w/ filter Response:", search_response)
+
+# Delete a document
+response = client.filtered_deletion(
+    "document_id", str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 2"))
+)
+print("Deletion Response:", response)
+
+# Perform a search w/ filter after deletion
+search_response = client.search("test", 5, filters={"tags": "bulk"})
+print("Search w/ filter + deletion Response:", search_response)
+
 
 # # Execute a RAG completion
 # rag_completion_response = client.rag_completion(

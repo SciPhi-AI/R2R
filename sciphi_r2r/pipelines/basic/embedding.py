@@ -86,7 +86,11 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             metadatas = copy.deepcopy(metadatas)
             metadatas["pipeline_run_id"] = str(self.pipeline_run_id)
             metadatas["text"] = original_chunk
-            entries.append(VectorEntry(doc_id, embedded_chunk, metadatas))
+            metadatas["document_id"] = doc_id
+            chunk_id = uuid.uuid5(
+                uuid.NAMESPACE_DNS, f"{doc_id}-{original_chunk}"
+            )
+            entries.append(VectorEntry(chunk_id, embedded_chunk, metadatas))
         self.store_chunks(entries)
 
     def run(

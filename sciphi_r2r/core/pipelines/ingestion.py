@@ -36,7 +36,7 @@ class IngestionPipeline(ABC):
 
     def run(
         self,
-        id: str,
+        document_id: str,
         data: Any,
         data_type: str,
         is_file: bool = False,
@@ -54,4 +54,6 @@ class IngestionPipeline(ABC):
         else:
             processed_data = self.parse_entry(data, data_type)
 
-        return BasicDocument(id=id, text=processed_data, metadata=metadata)
+        return BasicDocument(
+            id=document_id, text=processed_data, metadata=metadata
+        )
