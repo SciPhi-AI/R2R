@@ -40,7 +40,7 @@ class RAGPipeline(ABC):
         system_prompt: Optional[str] = None,
         task_prompt: Optional[str] = None,
         logging_database: Optional[LoggingDatabaseConnection] = None,
-        **kwargs
+        **kwargs,
     ):
         self.llm = llm
         self.generation_config = generation_config
@@ -75,12 +75,12 @@ class RAGPipeline(ABC):
         transformed_query,
         filters: dict[str, Any],
         limit: int,
-        search_type="semantic",
+        *args,
+        **kwargs,
     ) -> list:
         """
         Retrieves results based on the transformed query.
         The search_type parameter allows for specifying the type of search,
-        e.g., 'semantic' or 'keyword'. Currently, only 'semantic' search is implemented.
         """
         pass
 

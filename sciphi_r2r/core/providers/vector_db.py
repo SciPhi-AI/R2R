@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Union
 from uuid import UUID
 
 
@@ -78,8 +78,9 @@ class VectorDBProvider(ABC):
     def search(
         self,
         query_vector: list[float],
-        filters: dict[str, Any] = {},
+        filters: dict[str, Union[bool, int, str]] = {},
         limit: int = 10,
+        *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
         pass
@@ -95,3 +96,9 @@ class VectorDBProvider(ABC):
     def upsert_entries(self, entries: list[VectorEntry]) -> None:
         for entry in entries:
             self.upsert(entry, commit=False)
+
+    @abstractmethod
+    def filtered_deletion(
+        self, key: str, value: Union[bool, int, str]
+    ) -> None:
+        pass

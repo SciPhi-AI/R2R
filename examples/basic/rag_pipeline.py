@@ -11,18 +11,18 @@ from sciphi_r2r.main import load_config
 from sciphi_r2r.pipelines import BasicRAGPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB, QdrantDB
 
-vector_db_provider = "qdrant"
-
 
 class DemoRAGPipeline(BasicRAGPipeline):
     # Modifies `BasicRAGPipeline` run to return search_results and completion
-    def run(self, query, filters={}, limit=10):
+    def run(self, query, filters={}, limit=10, search_only=False):
         """
         Runs the completion pipeline.
         """
         self.pipeline_run_id = uuid.uuid4()
         transformed_query = self.transform_query(query)
         search_results = self.search(transformed_query, filters, limit)
+        if search_only:
+            return search_results, None
         context = self.construct_context(search_results)
         prompt = self.construct_prompt(
             {"query": transformed_query, "context": context}
@@ -57,7 +57,11 @@ if __name__ == "__main__":
     embedding_dimension = embedding_config["dimension"]
     embedding_batch_size = embedding_config["batch_size"]
 
-    db = QdrantDB() if vector_db_provider == "qdrant" else PGVectorDB()
+    db = (
+        QdrantDB()
+        if database_config["vector_db_provider"] == "qdrant"
+        else PGVectorDB()
+    )
     collection_name = database_config["collection_name"]
     db.initialize_collection(collection_name, embedding_dimension)
 
@@ -81,11 +85,23 @@ if __name__ == "__main__":
         embeddings_provider=embeddings_provider,
     )
 
-    search_results, completion = pipeline.run(query)
+    search_results, completion = pipeline.run(query, search_only=False)
 
     for result in search_results:
         logger.info("-" * 100)
         logger.info(f"Search Result:\n{result}")
+
+    # To delete the primary Physics document from the collection
+    db.filtered_deletion("document_id", "a9b92938-12e6-5ea4-b412-a4a1d4b48a0c")
+
+    search_results, _ = pipeline.run(query, search_only=False)
+
+    logger.info("After Deletion: ")
+    for result in search_results:
+        logger.info("-" * 100)
+        logger.info(f"Search Result:\n{result}")
+
+
     logger.info("-" * 100)
     logger.info(f"Final Result:\n{completion}")
     logger.info("-" * 100)

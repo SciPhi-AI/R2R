@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Optional
+from typing import Optional, Union
 
 from sciphi_r2r.core import VectorDBProvider, VectorEntry, VectorSearchResult
 from sciphi_r2r.vecs.client import Client
@@ -76,8 +76,9 @@ class PGVectorDB(VectorDBProvider):
     def search(
         self,
         query_vector: list[float],
-        filters: dict[str, Any] = {},
+        filters: dict[str, Union[bool, int, str]] = {},
         limit: int = 10,
+        *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
         if self.collection is None:
@@ -85,13 +86,16 @@ class PGVectorDB(VectorDBProvider):
                 "Please call `initialize_collection` before attempting to run `search`."
             )
         measure = kwargs.get("measure", "cosine_distance")
+        mapped_filters = {
+            key: {"$eq": value} for key, value in filters.items()
+        }
 
         return [
             VectorSearchResult(ele[0], 1 - ele[1], ele[2])
             for ele in self.collection.query(
                 data=query_vector,
                 limit=limit,
-                filters=filters,
+                filters=mapped_filters,
                 measure=measure,
                 include_value=True,
                 include_metadata=True,
@@ -103,3 +107,13 @@ class PGVectorDB(VectorDBProvider):
 
     def close(self):
         pass
+
+    def filtered_deletion(
+        self, key: str, value: Union[bool, int, str]
+    ) -> None:
+        if self.collection is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `filtered_deletion`."
+            )
+        self.collection.delete(filters={key: {"$eq": value}})
+

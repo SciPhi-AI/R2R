@@ -9,8 +9,12 @@ from typing import Any, Optional, Tuple, Union
 from langchain.text_splitter import TextSplitter
 from pydantic import BaseModel
 
-from sciphi_r2r.core import (EmbeddingPipeline, LoggingDatabaseConnection,
-                             VectorDBProvider, VectorEntry)
+from sciphi_r2r.core import (
+    EmbeddingPipeline,
+    LoggingDatabaseConnection,
+    VectorDBProvider,
+    VectorEntry,
+)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)
@@ -72,7 +76,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
     def store_chunks(self, chunks: list[VectorEntry]) -> None:
         self.db.upsert_entries(chunks)
 
-    def process_batches(self, batch_data: list[Tuple[str, int, str, dict]]):
+    def process_batches(self, batch_data: list[Tuple[str, str, dict]]):
         logger.debug(f"Parsing batch of size {len(batch_data)}.")
 
         entries = []
