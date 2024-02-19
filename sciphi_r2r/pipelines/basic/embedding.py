@@ -9,12 +9,8 @@ from typing import Any, Optional, Tuple, Union
 from langchain.text_splitter import TextSplitter
 from pydantic import BaseModel
 
-from sciphi_r2r.core import (
-    EmbeddingPipeline,
-    LoggingDatabaseConnection,
-    VectorDBProvider,
-    VectorEntry,
-)
+from sciphi_r2r.core import (EmbeddingPipeline, LoggingDatabaseConnection,
+                             VectorDBProvider, VectorEntry)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)
@@ -82,19 +78,17 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         entries = []
 
         # Unpack document IDs, indices, and chunks for transformation and embedding
-        doc_ids, indices, raw_chunks, metadata = zip(*batch_data)
+        doc_ids, raw_chunks, metadata = zip(*batch_data)
         transformed_chunks = self.transform_chunks(raw_chunks, metadata)
         embedded_chunks = self.embed_chunks(transformed_chunks)  # Batch embed
 
-        for doc_id, i, original_chunk, embedded_chunk, metadatas in zip(
-            doc_ids, indices, raw_chunks, embedded_chunks, metadata
+        for doc_id, original_chunk, embedded_chunk, metadatas in zip(
+            doc_ids, raw_chunks, embedded_chunks, metadata
         ):
-            chunk_id = uuid.uuid4()
             metadatas = copy.deepcopy(metadatas)
-            metadatas["doc_id"] = str(doc_id)
             metadatas["pipeline_run_id"] = str(self.pipeline_run_id)
             metadatas["text"] = original_chunk
-            entries.append(VectorEntry(chunk_id, embedded_chunk, metadatas))
+            entries.append(VectorEntry(doc_id, embedded_chunk, metadatas))
         self.store_chunks(entries)
 
     def run(
@@ -112,13 +106,11 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         batch_data = []
 
         for document in documents:
-            chunks = self.chunk_text(document.text)
-            for i, chunk in enumerate(chunks):
-                batch_data.append((document.id, i, chunk, document.metadata))
+            chunks = self.chunk_text(document.text) if chunk_text else [document.text]
+            for chunk in chunks:
+                batch_data.append((document.id, chunk, document.metadata))
 
-                if len(batch_data) == self.embedding_batch_size or (
-                    document == documents[-1] and i == len(chunks) - 1
-                ):
+                if len(batch_data) == self.embedding_batch_size=:
                     self.process_batches(batch_data)
                     batch_data = []
 
