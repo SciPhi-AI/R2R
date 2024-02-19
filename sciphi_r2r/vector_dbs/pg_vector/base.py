@@ -90,6 +90,7 @@ class PGVectorDB(VectorDBProvider):
             key: {"$eq": value} for key, value in filters.items()
         }
 
+        # type: ignore
         return [
             VectorSearchResult(ele[0], 1 - ele[1], ele[2])
             for ele in self.collection.query(
@@ -116,4 +117,3 @@ class PGVectorDB(VectorDBProvider):
                 "Please call `initialize_collection` before attempting to run `filtered_deletion`."
             )
         self.collection.delete(filters={key: {"$eq": value}})
-

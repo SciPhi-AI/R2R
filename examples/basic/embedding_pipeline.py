@@ -74,7 +74,10 @@ if __name__ == "__main__":
 
     entry_id = 0
     document_batch = []
-    for text, config in dataset_provider.stream_text():
+    for entry in dataset_provider.stream_text():
+        if entry is None:
+            break
+        text, config = entry
         document_id = str(uuid.uuid5(uuid.NAMESPACE_URL, config.name))
 
         if text is None:

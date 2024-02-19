@@ -28,7 +28,7 @@ class DemoRAGPipeline(BasicRAGPipeline):
             {"query": transformed_query, "context": context}
         )
         completion = self.generate_completion(
-            prompt, transformed_query, context
+            prompt
         )
         return search_results, completion
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         text_splitter_config,
     ) = load_config()
 
-    query = "What are the energy levels for a particle in a box?"
+    query = "Is the answer to the question `What are the energy levels for a particle in a box?` contained in the search results shown below?"
 
     logger = logging.getLogger(logging_config["name"])
     logging.basicConfig(level=logging_config["level"])
@@ -85,7 +85,7 @@ if __name__ == "__main__":
         embeddings_provider=embeddings_provider,
     )
 
-    search_results, completion = pipeline.run(query, search_only=False)
+    search_results, completion_1 = pipeline.run(query, search_only=False)
 
     for result in search_results:
         logger.info("-" * 100)
@@ -94,16 +94,16 @@ if __name__ == "__main__":
     # To delete the primary Physics document from the collection
     db.filtered_deletion("document_id", "a9b92938-12e6-5ea4-b412-a4a1d4b48a0c")
 
-    search_results, _ = pipeline.run(query, search_only=False)
+    search_results, completion_2 = pipeline.run(query, search_only=False)
 
     logger.info("After Deletion: ")
     for result in search_results:
         logger.info("-" * 100)
         logger.info(f"Search Result:\n{result}")
 
-
     logger.info("-" * 100)
-    logger.info(f"Final Result:\n{completion}")
+    logger.info(f"Completion 1 Result:\n{completion_1}")
+    logger.info(f"Completion 2 Result:\n{completion_2}")
     logger.info("-" * 100)
 
     pipeline.close()
