@@ -27,9 +27,7 @@ class DemoRAGPipeline(BasicRAGPipeline):
         prompt = self.construct_prompt(
             {"query": transformed_query, "context": context}
         )
-        completion = self.generate_completion(
-            prompt
-        )
+        completion = self.generate_completion(prompt)
         return search_results, completion
 
 

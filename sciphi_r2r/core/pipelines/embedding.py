@@ -5,13 +5,10 @@ from abc import ABC, abstractmethod
 from typing import Any, Optional
 
 from ..providers.embedding import EmbeddingProvider
+from ..providers.logging import LoggingDatabaseConnection
 from ..providers.vector_db import VectorDBProvider, VectorEntry
-from .logging import LoggingDatabaseConnection
 
 
-# TODO - Create a new class `Pipeline`
-# and move the common methods between `RAGPipeline`
-# and `EmbeddingPipeline` to it.
 class EmbeddingPipeline(ABC):
     def __init__(
         self,

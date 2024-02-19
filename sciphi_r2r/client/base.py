@@ -13,44 +13,50 @@ class SciPhiR2RClient:
         response = requests.post(url, files=files)
         return response.json()
 
-    def upsert_text_entry(
+    def upsert_entry(
         self,
         id: str,
-        text: str,
+        blob: str,
+        type: str,
         metadata: Optional[Dict[str, Any]] = None,
         settings: Optional[Dict[str, Any]] = None,
     ):
-        url = f"{self.base_url}/upsert_text_entry/"
+        url = f"{self.base_url}/upsert_entry/"
         json_data = {
-            "entry": [{"id": id, "text": text, "metadata": metadata}],
-            "settings": settings,
+            "entry": {
+                "id": id,
+                "blob": blob,
+                "type": type,
+                "metadata": metadata or {},
+            },
+            "settings": settings or {},
         }
         response = requests.post(url, json=json_data)
         return response.json()
 
-    def upsert_text_entries(
+    def upsert_entries(
         self,
         entries: List[Dict[str, Any]],
         settings: Optional[Dict[str, Any]] = None,
     ):
-        url = f"{self.base_url}/upsert_text_entries/"
-        json_data = {"entries": entries, "settings": settings}
+        url = f"{self.base_url}/upsert_entries/"
+        json_data = {"entries": entries, "settings": settings or {}}
         response = requests.post(url, json=json_data)
         return response.json()
 
     def search(
         self,
         query: str,
-        filters: Optional[Dict[str, Any]] = None,
         limit: Optional[int] = 10,
+        filters: Optional[Dict[str, Any]] = None,
         settings: Optional[Dict[str, Any]] = None,
     ):
         url = f"{self.base_url}/search/"
         json_data = {
             "query": query,
-            "filters": filters,
+            "filters": filters or {},
             "limit": limit,
-            "settings": settings,
+            "settings": settings or {},
         }
         response = requests.post(url, json=json_data)
         return response.json()
@@ -65,9 +71,9 @@ class SciPhiR2RClient:
         url = f"{self.base_url}/rag_completion/"
         json_data = {
             "query": query,
-            "filters": filters,
+            "filters": filters or {},
             "limit": limit,
-            "settings": settings,
+            "settings": settings or {},
         }
         response = requests.post(url, json=json_data)
         return response.json()

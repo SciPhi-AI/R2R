@@ -1,45 +1,45 @@
 import logging
+from enum import Enum
 from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from hatchet_sdk import Hatchet
 from pydantic import BaseModel
 
-from sciphi_r2r.core import EmbeddingPipeline, RAGPipeline
-from sciphi_r2r.main.utils import configure_logging
+from sciphi_r2r.core import EmbeddingPipeline, IngestionPipeline, RAGPipeline
+from sciphi_r2r.main.utils import configure_logging, find_project_root
 
 logger = logging.getLogger("sciphi_r2r")
 
 # Current directory where this script is located
 CURRENT_DIR = Path(__file__).resolve().parent
 
+# Define the types of entries that can be ingested
 
-# Function to find the project root by looking for a .git folder or setup.py file
-def find_project_root(current_dir):
-    for parent in current_dir.parents:
-        if any((parent / marker).exists() for marker in [".git", "setup.py"]):
-            return parent
-    return current_dir  # Fallback to current dir if no marker found
+class EntryType(str, Enum):
+    json = "json"
+    txt = "txt"
+    html = "html"
 
 
+class EntryModel(BaseModel):
+    id: str
+    blob: str
+    type: EntryType
+    metadata: Optional[dict]
+
+# TODO - Rename and restructure settings model
 class IngestionSettingsModel(BaseModel):
     do_chunking: Optional[bool] = True
 
 
-class TextEntryModel(BaseModel):
-    id: str
-    text: str
-    metadata: Optional[dict]
-
-
-class UpsertTextEntryRequest(BaseModel):
-    entry: TextEntryModel
+class UpsertEntryRequest(BaseModel):
+    entry: EntryModel
     settings: Optional[IngestionSettingsModel] = IngestionSettingsModel()
 
 
-class UpsertTextEntriesRequest(BaseModel):
-    entries: list[TextEntryModel]
+class UpsertEntriesRequest(BaseModel):
+    entries: list[EntryModel]
     settings: Optional[IngestionSettingsModel] = IngestionSettingsModel()
 
 
@@ -50,10 +50,10 @@ class RAGQueryModel(BaseModel):
 
 
 def create_app(
+    ingestion_pipeline: IngestionPipeline,
     embedding_pipeline: EmbeddingPipeline,
     rag_pipeline: RAGPipeline,
     upload_path: Optional[Path] = None,
-    hatchet: Optional[Hatchet] = None,
 ):
     app = FastAPI()
     configure_logging()
@@ -69,11 +69,13 @@ def create_app(
             raise HTTPException(
                 status_code=400, detail="No file was uploaded."
             )
-        # Check if the file is a .txt file
-        if not file.filename.endswith(".txt"):
+
+        # Extract file extension and check if it's an allowed type
+        file_extension = file.filename.split(".")[-1]
+        if file_extension not in EntryType._value2member_map_:
             raise HTTPException(
                 status_code=400,
-                detail="Invalid file type. Only .txt files are allowed.",
+                detail=f"Invalid file type. Allowed types are: {', '.join(EntryType._value2member_map_.keys())}.",
             )
 
         file_location = upload_path / file.filename
@@ -83,12 +85,16 @@ def create_app(
                 file_content = file.file.read()
                 file_object.write(file_content)
 
-            # Process the file content
-            text = file_content.decode("utf-8")
-            text_entry = TextEntryModel(
-                id="generated_id", text=text, metadata={}
-            )
-            embedding_pipeline.run(text_entry)
+            # Process the file content based on its type
+            if file_extension == EntryType.txt.value:
+                text = file_content.decode("utf-8")
+                # Process plain text
+            elif file_extension == EntryType.json.value:
+                # Process JSON
+                pass  # You would add JSON processing logic here
+            elif file_extension == EntryType.html.value:
+                # Process HTML
+                pass  # You would add HTML processing logic here
 
             return {
                 "message": f"File '{file.filename}' processed and saved at '{file_location}'"
@@ -99,78 +105,51 @@ def create_app(
             )
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.post("/upsert_text_entry/")
-    def upsert_text_entry(text_entry_req: UpsertTextEntryRequest):
+    @app.post("/upsert_entry/")
+    def upsert_entry(entry_req: UpsertEntryRequest):
         try:
-            if hatchet is not None:
-                hatchet.client.event.push(
-                    "embedding",
-                    {
-                        "id": text_entry_req.entry.id,
-                        "text": text_entry_req.entry.text,
-                        "metadata": text_entry_req.entry.metadata,
-                        "settings": (
-                            text_entry_req.settings.dict()
-                            if text_entry_req.settings
-                            else {}
-                        ),
-                    },
+            embedding_settings = (
+                    entry_req.settings.dict()
+                    if entry_req.settings
+                    else {}
                 )
-                # TODO: Add an event id to the response
-                return {"message": "Upsert initialized successfully."}
 
-            else:
-                embedding_pipeline.run(
-                    text_entry_req.entry,
-                    **(
-                        text_entry_req.settings.dict()
-                        if text_entry_req.settings
-                        else {}
-                    ),
-                )
-                return {"message": "Entry upserted successfully."}
+            document = ingestion_pipeline.run(
+                entry_req.entry.id,
+                entry_req.entry.blob,
+                entry_req.entry.type,
+                metadata=entry_req.entry.metadata,
+                is_file=False,
+            )
+            embedding_pipeline.run(document, **embedding_settings)
+            return {"message": "Entry upserted successfully."}
         except Exception as e:
             logger.error(
-                f":upsert: [Error](entry={text_entry_req}, error={str(e)})"
+                f":upsert_entry: [Error](entry={entry_req}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.post("/upsert_text_entries/")
-    def upsert_text_entries(text_entries_req: UpsertTextEntriesRequest):
+    @app.post("/upsert_entries/")
+    def upsert_entries(entries_req: UpsertEntriesRequest):
         try:
-            if hatchet is not None:
-                batch = [
-                    {
-                        "id": entry.id,
-                        "text": entry.text,
-                        "metadata": entry.metadata,
-                    }
-                    for entry in text_entries_req.entries
-                ]
-                hatchet.client.event.push(
-                    "embedding",
-                    {
-                        "batch": batch,
-                        "settings": text_entries_req.settings.dict()
-                        if text_entries_req.settings
-                        else {},
-                    },
+            embedding_settings = (
+                    entries_req.settings.dict()
+                    if entries_req.settings
+                    else {}
                 )
-                return {"message": "Batch upsert initialized successfully."}
-
-            else:
-                embedding_pipeline.run(
-                    text_entries_req.entries,
-                    **(
-                        text_entries_req.settings.dict()
-                        if text_entries_req.settings
-                        else {}
-                    ),
+            for entry in entries_req.entries:
+                document = ingestion_pipeline.run(
+                    entry.id,
+                    entry.blob,
+                    entry.type,
+                    metadata=entry.metadata,
+                    is_file=False,
                 )
-                return {"message": "Entries upserted successfully."}
+                embedding_pipeline.run(document, **embedding_settings)
+            return {"message": "Entries upserted successfully."}
         except Exception as e:
             logger.error(
-                f":upsert_entries: [Error](entries={text_entries_req}, error={str(e)})"
+                f":upsert_entries: [Error](entries={entries_req}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
 
