@@ -18,11 +18,14 @@ This will create a virtual environment and install all the necessary dependencie
 
 The framework primarily revolves around three core abstractions:
 
-- The **Embedding Pipeline**: Utilizes a `DatasetProvider` for input data, an `EmbeddingProvider` for generating embeddings, and a `VectorDBProvider` for storing these embeddings. The implementation can be found in [`embedding.py`](sciphi_r2r/core/pipelines/embedding.py).
+- The **Ingestion Pipeline**: It provides methods for processing data, parsing files, and parsing entries. The abstraction can be found in [`ingestion.py`](sciphi_r2r/core/pipelines/ingestion.py).
 
-- The **RAG Pipeline**: Combines a `EmbeddingProvider`, `VectorDBProvider`, and a `LLMProvider` to process input queries or context and generate outputs based on retrieved context. The implementation can be found in [`rag.py`](sciphi_r2r/core/pipelines/rag.py).
+- The **Embedding Pipeline**: Utilizes a `DatasetProvider` for input data, an `EmbeddingProvider` for generating embeddings, and a `VectorDBProvider` for storing these embeddings. The abstraction can be found in [`embedding.py`](sciphi_r2r/core/pipelines/embedding.py).
+
+- The **RAG Pipeline**: Combines a `EmbeddingProvider`, `VectorDBProvider`, and a `LLMProvider` to process input queries or context and generate outputs based on retrieved context. The abstraction can be found in [`rag.py`](sciphi_r2r/core/pipelines/rag.py).
 
 Each pipeline incorporates a logging database for operation tracking.
+
 ## Running the Examples
 
 The project includes three basic examples that demonstrate the usage of the embedding and RAG pipelines:
@@ -43,7 +46,7 @@ The project includes three basic examples that demonstrate the usage of the embe
     poetry run python examples/basic/rag_pipeline.py
     ```
 
-3. [`app.py`](examples/basic/app.py): This is the main application that sets up both the embedding and RAG pipelines and starts a Uvicorn server.
+3. [`app.py`](examples/basic/app.py): This is the main application that sets up an ingestion, embedding and RAG pipelines while serving via Uvicorn.
 
     To run this example, use the following command:
 
