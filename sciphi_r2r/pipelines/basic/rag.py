@@ -48,7 +48,8 @@ class BasicRAGPipeline(RAGPipeline):
         transformed_query: str,
         filters: dict,
         limit: int,
-        search_type="semantic",
+        *args,
+        **kwargs,
     ) -> list[VectorSearchResult]:
         logger.debug(f"Retrieving results for query: {transformed_query}")
 

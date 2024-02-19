@@ -50,7 +50,8 @@ class WebSearchRAGPipeline(BasicRAGPipeline):
         transformed_query: str,
         filters: dict,
         limit: int,
-        search_type="semantic",
+        *args,
+        **kwargs,
     ) -> list:
         results = []
         local_results = super().search(transformed_query, filters, limit)

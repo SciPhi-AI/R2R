@@ -10,6 +10,7 @@
         "batch_size": 32
     },
     "database": {
+        "vector_db_provider": "pg_vector",
         "collection_name": "demo-v1-test"
     },
     "language_model": {

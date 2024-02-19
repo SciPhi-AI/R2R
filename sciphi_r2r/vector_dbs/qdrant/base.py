@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Optional
+from typing import Optional, Union
 
 from sciphi_r2r.core import VectorDBProvider, VectorEntry, VectorSearchResult
 
@@ -101,8 +101,9 @@ class QdrantDB(VectorDBProvider):
     def search(
         self,
         query_vector: list[float],
-        filters: dict[str, Any] = {},
+        filters: dict[str, Union[bool, int, str]] = {},
         limit: int = 10,
+        *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
         if self.collection_name is None:
@@ -139,3 +140,26 @@ class QdrantDB(VectorDBProvider):
 
     def close(self):
         pass
+
+    def filtered_deletion(
+        self, key: str, value: Union[bool, int, str]
+    ) -> None:
+        if self.collection_name is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `filtered_deletion`."
+            )
+
+        self.client.delete(
+            collection_name=self.collection_name,
+            points_selector=self.models.FilterSelector(
+                filter=self.models.Filter(
+                    must=[
+                        self.models.FieldCondition(
+                            key=key,
+                            match=self.models.MatchValue(value=value),
+                        ),
+                    ],
+                )
+            ),
+        )
+        return

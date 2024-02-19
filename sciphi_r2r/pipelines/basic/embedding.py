@@ -72,7 +72,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
     def store_chunks(self, chunks: list[VectorEntry]) -> None:
         self.db.upsert_entries(chunks)
 
-    def process_batches(self, batch_data: list[Tuple[str, int, str, dict]]):
+    def process_batches(self, batch_data: list[Tuple[str, str, dict]]):
         logger.debug(f"Parsing batch of size {len(batch_data)}.")
 
         entries = []

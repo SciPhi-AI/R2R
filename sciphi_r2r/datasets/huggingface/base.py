@@ -1,5 +1,5 @@
 import logging
-from typing import Generator, Optional
+from typing import Generator, Optional, Tuple
 
 from sciphi_r2r.core import DatasetConfig, DatasetProvider
 
@@ -41,7 +41,7 @@ class HuggingFaceDataProvider(DatasetProvider):
 
     def stream_text(
         self,
-    ) -> Generator[Optional[str], None, None]:
+    ) -> Generator[Optional[Tuple[str, DatasetConfig]], None, None]:
         logger.info("Streaming text with with HuggingFaceDataProvider now.")
         for dataset, config in self.datasets:
             entries_streamed = 0
@@ -57,5 +57,5 @@ class HuggingFaceDataProvider(DatasetProvider):
                 text = entry[text_field] if text_field in entry else None
 
                 if text:
-                    yield text
+                    yield text, config
                     entries_streamed += 1

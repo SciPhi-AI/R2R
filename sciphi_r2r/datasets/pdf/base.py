@@ -18,7 +18,7 @@ class PdfDataReader(DatasetProvider):
             from pypdf import PdfReader
 
             self.PdfReader = PdfReader
-            self.pdfs: list[PdfReader] = []
+            self.pdfs: list[Tuple[PdfReader, DatasetConfig]] = []
         except ImportError:
             raise ValueError(
                 f"Error, the pypdf library must be installed to create a `PdfDataReader` object."

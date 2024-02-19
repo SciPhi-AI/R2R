@@ -12,7 +12,6 @@ from sciphi_r2r.main import load_config
 from sciphi_r2r.pipelines import BasicDocument, BasicEmbeddingPipeline
 from sciphi_r2r.vector_dbs import PGVectorDB, QdrantDB
 
-vector_db_provider = "qdrant"
 if __name__ == "__main__":
     dotenv.load_dotenv()
 
@@ -37,7 +36,11 @@ if __name__ == "__main__":
     embedding_batch_size = embedding_config["batch_size"]
 
     # Specify the vector database provider
-    db = QdrantDB() if vector_db_provider == "qdrant" else PGVectorDB()
+    db = (
+        QdrantDB()
+        if database_config["vector_db_provider"] == "qdrant"
+        else PGVectorDB()
+    )
     collection_name = database_config["collection_name"]
     db.initialize_collection(collection_name, embedding_dimension)
 
@@ -71,11 +74,22 @@ if __name__ == "__main__":
 
     entry_id = 0
     document_batch = []
-    for text in dataset_provider.stream_text():
+    for entry in dataset_provider.stream_text():
+        if entry is None:
+            break
+        text, config = entry
+        document_id = str(uuid.uuid5(uuid.NAMESPACE_URL, config.name))
+
         if text is None:
             break
         document_batch.append(
-            BasicDocument(id=str(uuid.uuid4()), text=text, metadata={})
+            BasicDocument(
+                id=str(
+                    uuid.uuid5(uuid.NAMESPACE_URL, f"{config.name}_{text}")
+                ),
+                text=text,
+                metadata={"document_id": document_id},
+            )
         )
         entry_id += 1
 
