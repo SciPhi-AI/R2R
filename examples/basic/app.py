@@ -39,7 +39,11 @@ embedding_dimension = embedding_config["dimension"]
 embedding_batch_size = embedding_config["batch_size"]
 
 logger.debug("Using `PGVectorDB` to store and retrieve embeddings.")
-db = QdrantDB() if database_config['vector_db_provider'] == "qdrant" else PGVectorDB()
+db = (
+    QdrantDB()
+    if database_config["vector_db_provider"] == "qdrant"
+    else PGVectorDB()
+)
 collection_name = database_config["collection_name"]
 db.initialize_collection(collection_name, embedding_dimension)
 
@@ -92,4 +96,5 @@ app = create_app(
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="localhost", port=8000)

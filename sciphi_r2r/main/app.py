@@ -1,7 +1,7 @@
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
@@ -16,6 +16,7 @@ CURRENT_DIR = Path(__file__).resolve().parent
 
 # Define the types of entries that can be ingested
 
+
 class EntryType(str, Enum):
     json = "json"
     txt = "txt"
@@ -23,10 +24,11 @@ class EntryType(str, Enum):
 
 
 class EntryModel(BaseModel):
-    id: str
+    document_id: str
     blob: str
     type: EntryType
     metadata: Optional[dict]
+
 
 # TODO - Rename and restructure settings model
 class IngestionSettingsModel(BaseModel):
@@ -109,13 +111,11 @@ def create_app(
     def upsert_entry(entry_req: UpsertEntryRequest):
         try:
             embedding_settings = (
-                    entry_req.settings.dict()
-                    if entry_req.settings
-                    else {}
-                )
+                entry_req.settings.dict() if entry_req.settings else {}
+            )
 
             document = ingestion_pipeline.run(
-                entry_req.entry.id,
+                entry_req.entry.document_id,
                 entry_req.entry.blob,
                 entry_req.entry.type,
                 metadata=entry_req.entry.metadata,
@@ -133,13 +133,11 @@ def create_app(
     def upsert_entries(entries_req: UpsertEntriesRequest):
         try:
             embedding_settings = (
-                    entries_req.settings.dict()
-                    if entries_req.settings
-                    else {}
-                )
+                entries_req.settings.dict() if entries_req.settings else {}
+            )
             for entry in entries_req.entries:
                 document = ingestion_pipeline.run(
-                    entry.id,
+                    entry.document_id,
                     entry.blob,
                     entry.type,
                     metadata=entry.metadata,
@@ -174,6 +172,18 @@ def create_app(
         except Exception as e:
             logger.error(
                 f":completion: [Error](query={query}, error={str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.delete("/filtered_deletion/")
+    def filtered_deletion(key: str, value: Union[bool, int, str]):
+        try:
+            # Assuming you have a filtered_deletion method in your ingestion pipeline
+            embedding_pipeline.db.filtered_deletion(key, value)
+            return {"message": "Entries deleted successfully."}
+        except Exception as e:
+            logger.error(
+                f":filtered_deletion: [Error](key={key}, value={value}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
 
