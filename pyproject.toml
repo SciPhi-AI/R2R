@@ -42,6 +42,7 @@ gunicorn = "^21.2.0"
 types-requests = "^2.31.0.20240125"
 sentry-sdk = "^1.40.4"
 hatchet-sdk = "^0.9.4"
+pypdf = "^4.0.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"

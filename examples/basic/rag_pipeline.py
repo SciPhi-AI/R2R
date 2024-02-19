@@ -75,8 +75,8 @@ if __name__ == "__main__":
     pipeline = DemoRAGPipeline(
         llm,
         generation_config,
-        logging_database,
         db=db,
+        logging_database=logging_database,
         embedding_model=embedding_model,
         embeddings_provider=embeddings_provider,
     )
