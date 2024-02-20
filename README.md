@@ -12,6 +12,12 @@ Once you have Poetry installed, you can install the project dependencies by runn
 poetry install
 ```
 
+## Demonstration
+
+https://github.com/SciPhi-AI/sciphi_r2r/assets/68796651/c648ab67-973a-416a-985e-2eafb0a41ef0
+
+
+
 This will create a virtual environment and install all the necessary dependencies.
 
 ## Core Abstractions
