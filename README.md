@@ -9,6 +9,8 @@ This project uses Poetry for dependency management. To install the project, you 
 Once you have Poetry installed, you can install the project dependencies by running:
 
 ```bash
+# git clone git@github.com:SciPhi-AI/sciphi_r2r.git && cd sciphi_r2r
+
 poetry install
 ```
 
