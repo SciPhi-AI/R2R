@@ -1,12 +1,18 @@
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
-from datetime import datetime
+
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from sciphi_r2r.core import EmbeddingPipeline, IngestionPipeline, RAGPipeline, LoggingDatabaseConnection
+from sciphi_r2r.core import (
+    EmbeddingPipeline,
+    IngestionPipeline,
+    LoggingDatabaseConnection,
+    RAGPipeline,
+)
 from sciphi_r2r.main.utils import configure_logging, find_project_root
 
 logger = logging.getLogger("sciphi_r2r")
@@ -215,5 +221,5 @@ def create_app(
         except Exception as e:
             logger.error(f":get_logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
-        
+
     return app

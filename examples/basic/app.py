@@ -92,5 +92,5 @@ app = create_app(
     ingestion_pipeline=ingst_pipeline,
     embedding_pipeline=embd_pipeline,
     rag_pipeline=cmpl_pipeline,
-    logging_database=all_logging
+    logging_database=all_logging,
 )
