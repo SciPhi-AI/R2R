@@ -1,6 +1,6 @@
 import functools
 import os
-
+from pydantic import BaseModel
 import psycopg2
 
 
@@ -45,6 +45,13 @@ class LoggingDatabaseConnection:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.conn.close()
+            
+    def get_logs(self) -> list:
+        with self.conn.cursor() as cur:
+            cur.execute(f"SELECT * FROM {self.log_table_name}")
+            colnames = [desc[0] for desc in cur.description]
+            logs = [dict(zip(colnames, row)) for row in cur.fetchall()]
+        return logs
 
 
 def log_execution_to_db(func):
