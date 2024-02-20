@@ -3,9 +3,10 @@ A simple example to demonstrate the usage of `BasicIngestionPipeline`.
 """
 import collections
 import copy
+import json
 import logging
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from sciphi_r2r.core import (
     BasicDocument,
@@ -20,6 +21,7 @@ class EntryType(Enum):
     TXT = "txt"
     JSON = "json"
     HTML = "html"
+    PDF = "pdf"
 
 
 class BasicIngestionPipeline(IngestionPipeline):
@@ -41,27 +43,35 @@ class BasicIngestionPipeline(IngestionPipeline):
     def process_data(
         self,
         entry_type: str,
-        data: str,
+        entry_data: Union[bytes, str],
     ) -> str:
         """
         Process data into plaintext based on the data type.
         """
         if entry_type == EntryType.TXT.value:
-            return data
+            if not isinstance(entry_data, str):
+                raise ValueError("TXT data must be a string.")
+            return entry_data
         elif entry_type == EntryType.JSON.value:
-            return self._parse_json(data)
+            try:
+                entry_json = json.loads(entry_data)
+            except json.JSONDecodeError:
+                raise ValueError("JSON data must be a valid JSON string.")
+            return self._parse_json(entry_json)
         elif entry_type == EntryType.HTML.value:
-            return self._parse_html(data)
+            if not isinstance(entry_data, str):
+                raise ValueError("HTML data must be a string.")
+            return self._parse_html(entry_data)
+        elif entry_type == EntryType.PDF.value:
+            if not isinstance(entry_data, bytes):
+                raise ValueError("PDF data must be a bytes object.")
+            return self._parse_pdf(entry_data)
         else:
             raise ValueError(f"EntryType {entry_type} not supported.")
 
-    def parse_file(self, file_type: str, file_data: Any) -> str:
-        """
-        Parse file data into plaintext based on the file type.
-        """
-        raise NotImplementedError("Parsing file data is not implemented.")
-
-    def parse_entry(self, entry_type: str, entry_data: str) -> str:
+    def parse_entry(
+        self, entry_type: str, entry_data: Union[bytes, str]
+    ) -> str:
         """
         Parse entry data into plaintext based on the entry type.
         """
@@ -70,7 +80,7 @@ class BasicIngestionPipeline(IngestionPipeline):
     def run(
         self,
         document_id: str,
-        blobs: dict[str, str],
+        blobs: dict[str, Union[bytes, str]],
         metadata: Optional[dict] = None,
         **kwargs,
     ) -> dict:
@@ -91,7 +101,7 @@ class BasicIngestionPipeline(IngestionPipeline):
             id=document_id, text=processed_text, metadata=metadata
         )
 
-    def _parse_json(self, data: str) -> str:
+    def _parse_json(self, data: dict) -> str:
         """
         Parse JSON data into plaintext.
         """
@@ -147,3 +157,24 @@ class BasicIngestionPipeline(IngestionPipeline):
 
         soup = BeautifulSoup(data, "html.parser")
         return soup.get_text()
+
+    def _parse_pdf(self, file_data: bytes) -> str:
+        import string
+        from io import BytesIO
+
+        from pypdf import PdfReader
+
+        """
+        Process PDF file data into plaintext.
+        """
+        pdf = PdfReader(BytesIO(file_data))
+        text = ""
+        for page in pdf.pages:
+            page_text = page.extract_text()
+            if page_text is not None:
+                # Remove non-printable characters
+                page_text = "".join(
+                    filter(lambda x: x in string.printable, page_text)
+                )
+                text += page_text + "\n"
+        return text

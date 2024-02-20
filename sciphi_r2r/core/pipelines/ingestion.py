@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import Any, Optional
 
 from ..abstractions.document import BasicDocument
@@ -24,13 +24,6 @@ class IngestionPipeline(ABC):
     def process_data(self, entry_type: str, entry_data: Any) -> str:
         """
         Process data into plaintext based on the data type.
-        """
-        pass
-
-    @abstractmethod
-    def parse_file(self, file_type: str, file_data: Any) -> str:
-        """
-        Parse file data into plaintext based on the file type.
         """
         pass
 
