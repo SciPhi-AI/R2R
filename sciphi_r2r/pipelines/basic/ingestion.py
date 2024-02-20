@@ -8,11 +8,8 @@ import logging
 from enum import Enum
 from typing import Any, Optional, Union
 
-from sciphi_r2r.core import (
-    BasicDocument,
-    IngestionPipeline,
-    LoggingDatabaseConnection,
-)
+from sciphi_r2r.core import (BasicDocument, IngestionPipeline,
+                             LoggingDatabaseConnection)
 
 logger = logging.getLogger(__name__)
 

@@ -62,7 +62,9 @@ upload_response = client.upload_and_process_file(
 print("Upload and Process File Response:", upload_response)
 
 # Perform a search on this file
-search_response = client.search("what is a cool physics equation?", 5, filters={"document_id": document_id})
+search_response = client.search(
+    "what is a cool physics equation?", 5, filters={"document_id": document_id}
+)
 print("Search w/ filter + deletion Response:", search_response)
 
 # Execute a RAG completion
