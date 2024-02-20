@@ -7,8 +7,12 @@ from typing import Optional, Union
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from sciphi_r2r.core import (EmbeddingPipeline, IngestionPipeline,
-                             LoggingDatabaseConnection, RAGPipeline)
+from sciphi_r2r.core import (
+    EmbeddingPipeline,
+    IngestionPipeline,
+    LoggingDatabaseConnection,
+    RAGPipeline,
+)
 from sciphi_r2r.main.utils import configure_logging, find_project_root
 
 logger = logging.getLogger("sciphi_r2r")

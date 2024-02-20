@@ -52,8 +52,12 @@ print(f"Deletion response:\n{response}\n\n")
 
 print("Searching remote db with filter after deletion...")
 # Perform a search w/ filter after deletion
-post_deletion_filtered_search_response = client.search("test", 5, filters={"tags": "bulk"})
-print(f"Search response w/ filter+deletion:\n{post_deletion_filtered_search_response}\n\n")
+post_deletion_filtered_search_response = client.search(
+    "test", 5, filters={"tags": "bulk"}
+)
+print(
+    f"Search response w/ filter+deletion:\n{post_deletion_filtered_search_response}\n\n"
+)
 
 # Example file path for upload
 file_path = "examples/client/test.pdf"  # Ensure this file exists in your script's directory
@@ -70,9 +74,13 @@ print(f"Upload test pdf response:\n{upload_pdf_response}\n\n")
 print("Searching remote db after upload...")
 # Perform a search on this file
 pdf_filtered_search_response = client.search(
-    "what is a cool physics equation?", 5, filters={"document_id": pdf_document_id}
+    "what is a cool physics equation?",
+    5,
+    filters={"document_id": pdf_document_id},
 )
-print(f"Search response w/ uploaded pdf filter:\n{pdf_filtered_search_response}\n")
+print(
+    f"Search response w/ uploaded pdf filter:\n{pdf_filtered_search_response}\n"
+)
 
 
 print("Fetching logs after all steps...")
