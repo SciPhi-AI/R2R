@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from typing import Any, Optional
 
 from ..abstractions.document import BasicDocument
@@ -14,21 +14,28 @@ class IngestionPipeline(ABC):
         self.logging_database = logging_database
 
     @abstractmethod
-    def process_data(self, data: Any, data_type: str) -> str:
+    def get_supported_types(self) -> list[str]:
+        """
+        Returns a list of supported data types.
+        """
+        pass
+
+    @abstractmethod
+    def process_data(self, entry_type: str, entry_data: Any) -> str:
         """
         Process data into plaintext based on the data type.
         """
         pass
 
     @abstractmethod
-    def parse_file(self, file_data: Any, file_type: str) -> str:
+    def parse_file(self, file_type: str, file_data: Any) -> str:
         """
         Parse file data into plaintext based on the file type.
         """
         pass
 
     @abstractmethod
-    def parse_entry(self, entry_data: Any, entry_type: str) -> str:
+    def parse_entry(self, entry_type: str, entry_data: Any) -> str:
         """
         Parse entry data into plaintext based on the entry type.
         """
@@ -37,23 +44,12 @@ class IngestionPipeline(ABC):
     def run(
         self,
         document_id: str,
-        data: Any,
-        data_type: str,
-        is_file: bool = False,
+        blobs: dict[Any, str],
+        metadata: Optional[dict] = None,
         **kwargs
-    ) -> dict:
+    ) -> BasicDocument:
         """
         Run the appropriate parsing method based on the data type and whether the data is a file or an entry.
         Returns the processed data and metadata.
         """
-        processed_data = None
-        metadata = kwargs.get("metadata", {})
-
-        if is_file:
-            processed_data = self.parse_file(data, data_type)
-        else:
-            processed_data = self.parse_entry(data, data_type)
-
-        return BasicDocument(
-            id=document_id, text=processed_data, metadata=metadata
-        )
+        pass

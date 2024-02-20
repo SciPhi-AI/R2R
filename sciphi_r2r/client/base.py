@@ -16,8 +16,7 @@ class SciPhiR2RClient:
     def upsert_entry(
         self,
         document_id: str,
-        blob: str,
-        type: str,
+        blobs: Dict[str, str],
         metadata: Optional[Dict[str, Any]] = None,
         settings: Optional[Dict[str, Any]] = None,
     ):
@@ -25,8 +24,7 @@ class SciPhiR2RClient:
         json_data = {
             "entry": {
                 "document_id": document_id,
-                "blob": blob,
-                "type": type,
+                "blobs": blobs,
                 "metadata": metadata or {},
             },
             "settings": settings or {},
@@ -64,8 +62,8 @@ class SciPhiR2RClient:
     def rag_completion(
         self,
         query: str,
-        filters: Optional[Dict[str, Any]] = None,
         limit: Optional[int] = 10,
+        filters: Optional[Dict[str, Any]] = None,
         settings: Optional[Dict[str, Any]] = None,
     ):
         url = f"{self.base_url}/rag_completion/"
