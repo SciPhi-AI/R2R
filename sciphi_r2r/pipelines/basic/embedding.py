@@ -8,9 +8,13 @@ from typing import Any, Optional, Tuple, Union
 
 from langchain.text_splitter import TextSplitter
 
-from sciphi_r2r.core import (BasicDocument, EmbeddingPipeline,
-                             LoggingDatabaseConnection, VectorDBProvider,
-                             VectorEntry)
+from sciphi_r2r.core import (
+    BasicDocument,
+    EmbeddingPipeline,
+    LoggingDatabaseConnection,
+    VectorDBProvider,
+    VectorEntry,
+)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)
@@ -54,9 +58,16 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         ]
 
     def transform_chunks(
-        self, chunks: list[str], metadata: list[dict]
+        self, chunks: list[str], metadatas: list[dict]
     ) -> list[str]:
-        return chunks
+        transformed_chunks = []
+        for chunk, metadata in zip(chunks, metadatas):
+            if "chunk_prefix" in metadata:
+                prefix = metadata.pop("chunk_prefix")
+                transformed_chunks.append(f"{prefix}\n{chunk}")
+            else:
+                transformed_chunks.append(chunk)
+        return transformed_chunks
 
     def embed_chunks(self, chunks: list[str]) -> list[list[float]]:
         return self.embeddings_provider.get_embeddings(
@@ -72,21 +83,26 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         entries = []
 
         # Unpack document IDs, indices, and chunks for transformation and embedding
-        ids, raw_chunks, metadata = zip(*batch_data)
-        transformed_chunks = self.transform_chunks(raw_chunks, metadata)
-        embedded_chunks = self.embed_chunks(transformed_chunks)  # Batch embed
+        ids, raw_chunks, metadatas = zip(*batch_data)
+        print("~~~~~~~~~~~~~~~ Transforming chunks ~~~~~~~~~~~~~~~")
+        print(ids, raw_chunks, metadatas)
+        transformed_chunks = self.transform_chunks(raw_chunks, metadatas)
+        print(transformed_chunks)
+        embedded_chunks = self.embed_chunks(transformed_chunks)
 
-        for doc_id, original_chunk, embedded_chunk, metadatas in zip(
-            ids, raw_chunks, embedded_chunks, metadata
+        chunk_count = 0
+        for doc_id, transformed_chunk, embedded_chunk, metadata in zip(
+            ids, transformed_chunks, embedded_chunks, metadatas
         ):
-            metadatas = copy.deepcopy(metadatas)
-            metadatas["pipeline_run_id"] = str(self.pipeline_run_id)
-            metadatas["text"] = original_chunk
-            metadatas["document_id"] = doc_id
+            metadata = copy.deepcopy(metadata)
+            metadata["pipeline_run_id"] = str(self.pipeline_run_id)
+            metadata["text"] = transformed_chunk
+            metadata["document_id"] = doc_id
             chunk_id = uuid.uuid5(
-                uuid.NAMESPACE_DNS, f"{doc_id}-{original_chunk}"
+                uuid.NAMESPACE_DNS, f"{doc_id}-{chunk_count}"
             )
-            entries.append(VectorEntry(chunk_id, embedded_chunk, metadatas))
+            chunk_count += 1
+            entries.append(VectorEntry(chunk_id, embedded_chunk, metadata))
         self.store_chunks(entries)
 
     def run(
@@ -110,7 +126,9 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
                 else [document.text]
             )
             for chunk in chunks:
-                batch_data.append((document.id, chunk, document.metadata))
+                batch_data.append(
+                    (document.id, chunk, copy.copy(document.metadata))
+                )
 
                 if len(batch_data) == self.embedding_batch_size:
                     self.process_batches(batch_data)

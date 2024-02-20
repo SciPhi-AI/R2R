@@ -48,7 +48,7 @@ class EmbeddingPipeline(ABC):
 
     @abstractmethod
     def transform_chunks(
-        self, chunks: list[Any], metadata: list[Any]
+        self, chunks: list[Any], metadatas: list[dict]
     ) -> list[Any]:
         pass
 

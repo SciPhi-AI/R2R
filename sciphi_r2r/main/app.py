@@ -1,8 +1,9 @@
+import json
 import logging
 from pathlib import Path
 from typing import Optional, Union
 
-from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from sciphi_r2r.core import EmbeddingPipeline, IngestionPipeline, RAGPipeline
@@ -72,10 +73,13 @@ def create_app(
     # Naive class FileUploadRequest(BaseModel) above fails
     async def upload_and_process_file(
         document_id: str = Form(...),
-        metadata: dict = Body({}),
-        settings: SettingsModel = Body(SettingsModel()),
+        metadata: str = Form("{}"),
+        settings: str = Form("{}"),
         file: UploadFile = File(...),
     ):
+        metadata_json = json.loads(metadata)
+        settings_model = SettingsModel.parse_raw(settings)
+
         if not file.filename:
             raise HTTPException(
                 status_code=400, detail="No file was uploaded."
@@ -97,14 +101,15 @@ def create_app(
             # with open(file_location, "wb+") as file_object:
             # file_object.write(file_content)
 
+            print("metadata_json = ", metadata_json)
             document = ingestion_pipeline.run(
                 document_id,
                 {file_extension: file_content},
-                metadata=metadata,
-                **settings.ingestion_settings.dict(),
+                metadata=metadata_json,
+                **settings_model.ingestion_settings.dict(),
             )
             embedding_pipeline.run(
-                document, **settings.embedding_settings.dict()
+                document, **settings_model.embedding_settings.dict()
             )
 
             return {

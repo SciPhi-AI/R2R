@@ -4,9 +4,13 @@ A simple example to demonstrate the usage of `WebSearchRAGPipeline`.
 import logging
 from typing import Optional
 
-from sciphi_r2r.core import (GenerationConfig, LLMProvider,
-                             LoggingDatabaseConnection, VectorDBProvider,
-                             log_execution_to_db)
+from sciphi_r2r.core import (
+    GenerationConfig,
+    LLMProvider,
+    LoggingDatabaseConnection,
+    VectorDBProvider,
+    log_execution_to_db,
+)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 from sciphi_r2r.integrations import SerperClient
 

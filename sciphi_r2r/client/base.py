@@ -16,17 +16,24 @@ class SciPhiR2RClient:
     ):
         url = f"{self.base_url}/upload_and_process_file/"
         with open(file_path, "rb") as file:
+            import json
+
             files = {
                 "file": (file_path.split("/")[-1], file, "application/pdf")
             }
             data = {
                 "document_id": document_id,
+                "metadata": json.dumps(metadata)
+                if metadata
+                else json.dumps({}),
+                "settings": json.dumps(settings)
+                if settings
+                else json.dumps({}),
             }
             response = requests.post(
                 url,
                 files=files,
                 data=data,
-                json={"metadata": metadata or {}, "settings": settings or {}},
             )
         return response.json()
 

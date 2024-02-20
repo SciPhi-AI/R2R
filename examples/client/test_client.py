@@ -54,10 +54,9 @@ file_path = "examples/client/test.pdf"  # Ensure this file exists in your script
 
 # # Upload and process a file
 document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 1"))  # document_id
-metadata = {"tags": ["example", "test"]}  # metadata
-settings = {}  # settings
+metadata = {"tags": ["example", "test"]}
 upload_response = client.upload_and_process_file(
-    document_id, file_path, metadata, settings
+    document_id, file_path, metadata, None
 )
 print("Upload and Process File Response:", upload_response)
 
