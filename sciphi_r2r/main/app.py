@@ -7,12 +7,8 @@ from typing import Optional, Union
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from sciphi_r2r.core import (
-    EmbeddingPipeline,
-    IngestionPipeline,
-    LoggingDatabaseConnection,
-    RAGPipeline,
-)
+from sciphi_r2r.core import (EmbeddingPipeline, IngestionPipeline,
+                             LoggingDatabaseConnection, RAGPipeline)
 from sciphi_r2r.main.utils import configure_logging, find_project_root
 
 logger = logging.getLogger("sciphi_r2r")
@@ -198,7 +194,7 @@ def create_app(
             )
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.post("/filtered_deletion/")
+    @app.delete("/filtered_deletion/")
     def filtered_deletion(key: str, value: Union[bool, int, str]):
         try:
             embedding_pipeline.db.filtered_deletion(key, value)

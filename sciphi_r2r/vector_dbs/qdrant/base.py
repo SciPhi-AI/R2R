@@ -29,7 +29,7 @@ class QdrantDB(VectorDBProvider):
             )
         try:
             host = os.getenv("QDRANT_HOST")
-            port = os.getenv("QDRANT_PORT")
+            port = int(os.getenv("QDRANT_PORT"))
             api_key = os.getenv("QDRANT_API_KEY")
 
             if not host or not port or not api_key:
@@ -40,7 +40,7 @@ class QdrantDB(VectorDBProvider):
             self.client = QdrantClient(host, port=int(port), api_key=api_key)
         except Exception as e:
             raise ValueError(
-                f"Error {e} occurred while attempting to connect to the pgvector provider."
+                f"Error {e} occurred while attempting to connect to the qdrant provider."
             )
         self.collection_name: Optional[str] = None
 
