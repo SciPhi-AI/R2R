@@ -104,3 +104,8 @@ class SciPhiR2RClient:
         url = f"{self.base_url}/filtered_deletion/"
         response = requests.delete(url, params={"key": key, "value": value})
         return response.json()
+
+    def get_logs(self):
+        url = f"{self.base_url}/logs"
+        response = requests.get(url)
+        return response.json()

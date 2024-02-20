@@ -92,9 +92,5 @@ app = create_app(
     ingestion_pipeline=ingst_pipeline,
     embedding_pipeline=embd_pipeline,
     rag_pipeline=cmpl_pipeline,
+    logging_database=all_logging,
 )
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="localhost", port=8000)

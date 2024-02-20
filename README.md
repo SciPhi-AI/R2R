@@ -51,5 +51,5 @@ The project includes three basic examples that demonstrate the usage of the embe
     To run this example, use the following command:
 
     ```bash
-    poetry run python examples/basic/app.py
+    poetry run uvicorn examples.basic.app:app
     ```

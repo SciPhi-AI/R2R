@@ -1,12 +1,18 @@
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from sciphi_r2r.core import EmbeddingPipeline, IngestionPipeline, RAGPipeline
+from sciphi_r2r.core import (
+    EmbeddingPipeline,
+    IngestionPipeline,
+    LoggingDatabaseConnection,
+    RAGPipeline,
+)
 from sciphi_r2r.main.utils import configure_logging, find_project_root
 
 logger = logging.getLogger("sciphi_r2r")
@@ -20,6 +26,7 @@ def create_app(
     embedding_pipeline: EmbeddingPipeline,
     rag_pipeline: RAGPipeline,
     upload_path: Optional[Path] = None,
+    logging_database: Optional[LoggingDatabaseConnection] = None,
 ):
     app = FastAPI()
     configure_logging()
@@ -68,6 +75,14 @@ def create_app(
         filters: dict = {}
         settings: SettingsModel = SettingsModel()
 
+    class LogModel(BaseModel):
+        timestamp: datetime
+        pipeline_run_id: str
+        method: str
+        result: str
+        log_level: str
+        message: str
+
     @app.post("/upload_and_process_file/")
     # TODO - Why can't we use a BaseModel to represent the request?
     # Naive class FileUploadRequest(BaseModel) above fails
@@ -101,7 +116,6 @@ def create_app(
             # with open(file_location, "wb+") as file_object:
             # file_object.write(file_content)
 
-            print("metadata_json = ", metadata_json)
             document = ingestion_pipeline.run(
                 document_id,
                 {file_extension: file_content},
@@ -184,7 +198,7 @@ def create_app(
             )
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.delete("/filtered_deletion/")
+    @app.post("/filtered_deletion/")
     def filtered_deletion(key: str, value: Union[bool, int, str]):
         try:
             embedding_pipeline.db.filtered_deletion(key, value)
@@ -193,6 +207,19 @@ def create_app(
             logger.error(
                 f":filtered_deletion: [Error](key={key}, value={value}, error={str(e)})"
             )
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/logs")
+    def get_logs():
+        try:
+            if logging_database is None:
+                raise HTTPException(
+                    status_code=404, detail="Logging provider not found."
+                )
+            logs = logging_database.get_logs()
+            return {"logs": [LogModel(**log) for log in logs]}
+        except Exception as e:
+            logger.error(f":get_logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     return app
