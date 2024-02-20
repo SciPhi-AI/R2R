@@ -8,13 +8,9 @@ from typing import Any, Optional, Tuple, Union
 
 from langchain.text_splitter import TextSplitter
 
-from sciphi_r2r.core import (
-    BasicDocument,
-    EmbeddingPipeline,
-    LoggingDatabaseConnection,
-    VectorDBProvider,
-    VectorEntry,
-)
+from sciphi_r2r.core import (BasicDocument, EmbeddingPipeline,
+                             LoggingDatabaseConnection, VectorDBProvider,
+                             VectorEntry)
 from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)
@@ -96,7 +92,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
     def run(
         self,
         document: Union[BasicDocument, list[BasicDocument]],
-        chunk_text=False,
+        do_chunking=False,
         **kwargs: Any,
     ):
         self.pipeline_run_id = uuid.uuid4()
@@ -110,7 +106,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         for document in documents:
             chunks = (
                 self.chunk_text(document.text)
-                if chunk_text
+                if do_chunking
                 else [document.text]
             )
             for chunk in chunks:

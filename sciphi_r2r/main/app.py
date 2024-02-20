@@ -1,9 +1,8 @@
 import logging
-from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import Optional, Union
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from sciphi_r2r.core import EmbeddingPipeline, IngestionPipeline, RAGPipeline
@@ -29,11 +28,6 @@ def create_app(
     if not upload_path.exists():
         upload_path.mkdir()
 
-    class EntryModel(BaseModel):
-        document_id: str
-        blobs: dict[str, str]
-        metadata: Optional[dict]
-
     class EmbeddingsSettingsModel(BaseModel):
         do_chunking: Optional[bool] = True
 
@@ -43,22 +37,84 @@ def create_app(
     class RAGSettingsModel(BaseModel):
         pass
 
-    class UpsertEntryRequest(BaseModel):
-        entry: EntryModel
+    class SettingsModel(BaseModel):
         embedding_settings: EmbeddingsSettingsModel = EmbeddingsSettingsModel()
         ingestion_settings: IngestionSettingsModel = IngestionSettingsModel()
         rag_settings: RAGSettingsModel = RAGSettingsModel()
 
+    class EntryModel(BaseModel):
+        document_id: str
+        blobs: dict[str, str]
+        metadata: Optional[dict]
+
+    # File upload class, to be fixed later
+    # class FileUploadRequest(BaseModel):
+    # document_id: str
+    # metadata: Optional[dict]
+    # settings: SettingsModel = SettingsModel()
+
+    class UpsertEntryRequest(BaseModel):
+        entry: EntryModel
+        settings: SettingsModel = SettingsModel()
+
     class UpsertEntriesRequest(BaseModel):
         entries: list[EntryModel]
-        embedding_settings: EmbeddingsSettingsModel = EmbeddingsSettingsModel()
-        ingestion_settings: IngestionSettingsModel = IngestionSettingsModel()
-        rag_settings: RAGSettingsModel = RAGSettingsModel()
+        settings: SettingsModel = SettingsModel()
 
     class RAGQueryModel(BaseModel):
         query: str
         limit: Optional[int] = 10
         filters: dict = {}
+        settings: SettingsModel = SettingsModel()
+
+    @app.post("/upload_and_process_file/")
+    # TODO - Why can't we use a BaseModel to represent the request?
+    # Naive class FileUploadRequest(BaseModel) above fails
+    async def upload_and_process_file(
+        document_id: str = Form(...),
+        metadata: dict = Body({}),
+        settings: SettingsModel = Body(SettingsModel()),
+        file: UploadFile = File(...),
+    ):
+        if not file.filename:
+            raise HTTPException(
+                status_code=400, detail="No file was uploaded."
+            )
+        # Extract file extension and check if it's an allowed type
+        file_extension = file.filename.split(".")[-1]
+        supported_types = ingestion_pipeline.get_supported_types()
+        if file_extension not in supported_types:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid file type. Allowed types are: {', '.join(supported_types)}.",
+            )
+
+        file_location = upload_path / file.filename
+        try:
+            file_content = file.file.read()
+
+            # TODO - Consider saving file to disk
+            # with open(file_location, "wb+") as file_object:
+            # file_object.write(file_content)
+
+            document = ingestion_pipeline.run(
+                document_id,
+                {file_extension: file_content},
+                metadata=metadata,
+                **settings.ingestion_settings.dict(),
+            )
+            embedding_pipeline.run(
+                document, **settings.embedding_settings.dict()
+            )
+
+            return {
+                "message": f"File '{file.filename}' processed and saved at '{file_location}'"
+            }
+        except Exception as e:
+            logger.error(
+                f"upload_and_process_file: [Error](file={file.filename}, error={str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/upsert_entry/")
     def upsert_entry(entry_req: UpsertEntryRequest):
@@ -67,10 +123,10 @@ def create_app(
                 entry_req.entry.document_id,
                 entry_req.entry.blobs,
                 metadata=entry_req.entry.metadata,
-                **entry_req.ingestion_settings.dict(),
+                **entry_req.settings.ingestion_settings.dict(),
             )
             embedding_pipeline.run(
-                document, **entry_req.embedding_settings.dict()
+                document, **entry_req.settings.embedding_settings.dict()
             )
             return {"message": "Entry upserted successfully."}
         except Exception as e:
@@ -87,10 +143,10 @@ def create_app(
                     entry.document_id,
                     entry.blobs,
                     metadata=entry.metadata,
-                    **entries_req.ingestion_settings.dict(),
+                    **entries_req.settings.ingestion_settings.dict(),
                 )
                 embedding_pipeline.run(
-                    documents, **entries_req.embedding_settings.dict()
+                    documents, **entries_req.settings.embedding_settings.dict()
                 )
             return {"message": "Entries upserted successfully."}
         except Exception as e:
