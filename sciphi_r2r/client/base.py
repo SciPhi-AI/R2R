@@ -30,18 +30,6 @@ class SciPhiR2RClient:
             )
         return response.json()
 
-        # url = f"{self.base_url}/upload_and_process_file/"
-        # with open(file_path, "rb") as file:
-        #     files = {"file": (file_path.split("/")[-1], file, "application/pdf")}
-        #     data = {
-        #         "document_id": document_id,
-        #         "metadata": metadata or {},
-        #         "settings": settings or {},
-        #     }
-        #     print("data = ", data)
-        #     response = requests.post(url, files=files, data=data)
-        # return response.json()
-
     def upsert_entry(
         self,
         document_id: str,
