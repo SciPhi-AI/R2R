@@ -198,7 +198,7 @@ def create_app(
             )
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.post("/filtered_deletion/")
+    @app.delete("/filtered_deletion/")
     def filtered_deletion(key: str, value: Union[bool, int, str]):
         try:
             embedding_pipeline.db.filtered_deletion(key, value)

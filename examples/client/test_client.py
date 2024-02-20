@@ -6,70 +6,83 @@ from sciphi_r2r.client import SciPhiR2RClient
 base_url = "http://localhost:8000"  # Change this to your actual API base URL
 client = SciPhiR2RClient(base_url)
 
+print("Upserting entry to remote db...")
+# Upsert a single entry
+entry_response = client.upsert_entry(
+    str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 1")),  # document_id
+    {"txt": "This is a test entry"},
+    {"tags": ["example", "test"]},
+)
+print(f"Upsert entry response:\n{entry_response}\n\n")
 
-# # Upsert a single entry
-# entry_response = client.upsert_entry(
-#     str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 1")),  # document_id
-#     {"txt": "This is a test entry"},
-#     {"tags": ["example", "test"]},
-# )
-# print("Upsert Entry Response:", entry_response)
 
-# # Upsert multiple entries
-# entries = [
-#     {
-#         "document_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 2")),
-#         "blobs": {"txt": "Second test entry"},
-#         "metadata": {"tags": "bulk"},
-#     },
-#     {
-#         "document_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 3")),
-#         "blobs": {"txt": "Third test entry"},
-#         "metadata": {"tags": "example"},
-#     },
-# ]
-# bulk_upsert_response = client.upsert_entries(entries)
-# print("Upsert Entries Response:", bulk_upsert_response)
+print("Upserting entries to remote db...")
+# Upsert multiple entries
+entries = [
+    {
+        "document_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 2")),
+        "blobs": {"txt": "Second test entry"},
+        "metadata": {"tags": "bulk"},
+    },
+    {
+        "document_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 3")),
+        "blobs": {"txt": "Third test entry"},
+        "metadata": {"tags": "example"},
+    },
+]
+bulk_upsert_response = client.upsert_entries(entries)
+print(f"Upsert entries response:\n{bulk_upsert_response}\n\n")
 
-# # Perform a search
-# search_response = client.search("test", 5)
-# print("Search Response:", search_response)
+# Perform a search
+print("Searching remote db...")
+search_response = client.search("test", 5)
+print(f"Search response:\n{search_response}\n\n")
 
-# # Perform a search w/ filter
-# search_response = client.search("test", 5, filters={"tags": "bulk"})
-# print("Search w/ filter Response:", search_response)
+print("Searching remote db with filter...")
+# Perform a search w/ filter
+filtered_search_response = client.search("test", 5, filters={"tags": "bulk"})
+print(f"Search response w/ filter:\n{filtered_search_response}\n\n")
 
-# # Delete a document
-# response = client.filtered_deletion(
-#     "document_id", str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 2"))
-# )
-# print("Deletion Response:", response)
+print("Deleting sample document in remote db...")
+# Delete a document
+response = client.filtered_deletion(
+    "document_id", str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 2"))
+)
+print(f"Deletion response:\n{response}\n\n")
 
-# # Perform a search w/ filter after deletion
-# search_response = client.search("test", 5, filters={"tags": "bulk"})
-# print("Search w/ filter + deletion Response:", search_response)
+print("Searching remote db with filter after deletion...")
+# Perform a search w/ filter after deletion
+post_deletion_filtered_search_response = client.search(
+    "test", 5, filters={"tags": "bulk"}
+)
+print(
+    f"Search response w/ filter+deletion:\n{post_deletion_filtered_search_response}\n\n"
+)
 
-# # Example file path for upload
-# file_path = "examples/client/test.pdf"  # Ensure this file exists in your script's directory
+# Example file path for upload
+file_path = "examples/client/test.pdf"  # Ensure this file exists in your script's directory
 
-# # # Upload and process a file
-# document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 1"))  # document_id
-# metadata = {"tags": ["example", "test"]}
-# upload_response = client.upload_and_process_file(
-#     document_id, file_path, metadata, None
-# )
-# print("Upload and Process File Response:", upload_response)
+print(f"Uploading and processing file: {file_path}...")
+# # Upload and process a file
+pdf_document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, "pdf 1"))  # document_id
+metadata = {"tags": ["example", "test"]}
+upload_pdf_response = client.upload_and_process_file(
+    pdf_document_id, file_path, metadata, None
+)
+print(f"Upload test pdf response:\n{upload_pdf_response}\n\n")
 
-# # Perform a search on this file
-# search_response = client.search(
-#     "what is a cool physics equation?", 5, filters={"document_id": document_id}
-# )
-# print("Search w/ filter + deletion Response:", search_response)
+print("Searching remote db after upload...")
+# Perform a search on this file
+pdf_filtered_search_response = client.search(
+    "what is a cool physics equation?",
+    5,
+    filters={"document_id": pdf_document_id},
+)
+print(
+    f"Search response w/ uploaded pdf filter:\n{pdf_filtered_search_response}\n"
+)
 
-# # Execute a RAG completion
-# rag_completion_response = client.rag_completion("What is the test?", 5)
-# print("RAG Completion Response:", rag_completion_response)
 
-# Get logs
+print("Fetching logs after all steps...")
 logs_response = client.get_logs()
-print("Logs Response:", logs_response)
+print(f"Logs response:\n{logs_response}\n")
