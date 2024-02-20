@@ -62,8 +62,8 @@ print("Deletion Response:", response)
 search_response = client.search("test", 5, filters={"tags": "bulk"})
 print("Search w/ filter + deletion Response:", search_response)
 
-# # Execute a RAG completion
-# rag_completion_response = client.rag_completion(
-#     "What is the test?", 5
-# )
-# print("RAG Completion Response:", rag_completion_response)
+# Execute a RAG completion
+rag_completion_response = client.rag_completion(
+    "What is the test?", 5
+)
+print("RAG Completion Response:", rag_completion_response)
