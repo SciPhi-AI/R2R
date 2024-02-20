@@ -34,10 +34,11 @@ class IngestionPipeline(ABC):
         """
         pass
 
+    @abstractmethod
     def run(
         self,
         document_id: str,
-        blobs: dict[Any, str],
+        blobs: dict[str, Any],
         metadata: Optional[dict] = None,
         **kwargs
     ) -> BasicDocument:
