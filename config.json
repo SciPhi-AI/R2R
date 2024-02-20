@@ -10,8 +10,8 @@
         "batch_size": 32
     },
     "database": {
-        "vector_db_provider": "qdrant",
-        "collection_name": "demo-v01zzsQ-test"
+        "vector_db_provider": "pg_vector",
+        "collection_name": "demo-v1-test"
     },
     "language_model": {
         "model_name": "gpt-4-1106-preview",
