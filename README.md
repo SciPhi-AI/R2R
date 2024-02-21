@@ -35,6 +35,9 @@ This guide should help you set up the project with minimal hassle. Ensure you fo
 
 https://github.com/SciPhi-AI/sciphi_r2r/assets/68796651/c648ab67-973a-416a-985e-2eafb0a41ef0
 
+## Community
+[Join our Discord server!](https://discord.gg/p6KqD2kjtB)
+
 ## Core Abstractions
 
 The framework primarily revolves around three core abstractions:
