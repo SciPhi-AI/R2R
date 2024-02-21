@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from r2r.core import (
@@ -30,6 +31,21 @@ def create_app(
 ):
     app = FastAPI()
     configure_logging()
+
+    # CORS setup
+    origins = [
+        "http://localhost:3000",  # Assuming your frontend runs on this port
+        "http://localhost:8000",  # The port your backend runs on
+        # You can add more origins as needed
+    ]
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,  # Allows specified origins
+        allow_credentials=True,
+        allow_methods=["*"],  # Allows all methods
+        allow_headers=["*"],  # Allows all headers
+    )
 
     upload_path = upload_path or find_project_root(CURRENT_DIR) / "uploads"
 
