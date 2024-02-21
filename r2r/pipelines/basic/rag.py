@@ -4,7 +4,7 @@ A simple example to demonstrate the usage of `BasicRAGPipeline`.
 import logging
 from typing import Optional
 
-from sciphi_r2r.core import (
+from r2r.core import (
     GenerationConfig,
     LLMProvider,
     LoggingDatabaseConnection,
@@ -13,7 +13,7 @@ from sciphi_r2r.core import (
     VectorSearchResult,
     log_execution_to_db,
 )
-from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
+from r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)
 

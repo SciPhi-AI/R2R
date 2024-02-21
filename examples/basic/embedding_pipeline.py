@@ -5,12 +5,12 @@ import uuid
 import dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-from sciphi_r2r.core import DatasetConfig, LoggingDatabaseConnection
-from sciphi_r2r.datasets import HuggingFaceDataProvider
-from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
-from sciphi_r2r.main import load_config
-from sciphi_r2r.pipelines import BasicDocument, BasicEmbeddingPipeline
-from sciphi_r2r.vector_dbs import PGVectorDB, QdrantDB
+from r2r.core import DatasetConfig, LoggingDatabaseConnection
+from r2r.datasets import HuggingFaceDataProvider
+from r2r.embeddings import OpenAIEmbeddingProvider
+from r2r.main import load_config
+from r2r.pipelines import BasicDocument, BasicEmbeddingPipeline
+from r2r.vector_dbs import PGVectorDB, QdrantDB
 
 if __name__ == "__main__":
     dotenv.load_dotenv()

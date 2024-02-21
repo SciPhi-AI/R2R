@@ -12,8 +12,8 @@ To get started with this project, you'll be using Poetry for managing dependenci
 2. **Clone and Install Dependencies:**
    - Clone the project repository and navigate to the project directory:
      ```bash
-     git clone git@github.com:SciPhi-AI/sciphi_r2r.git
-     cd sciphi_r2r
+     git clone git@github.com:SciPhi-AI/r2r.git
+     cd r2r
      ```
    - Install the project dependencies with Poetry:
      ```bash
@@ -33,7 +33,7 @@ This guide should help you set up the project with minimal hassle. Ensure you fo
 
 ## Demonstration
 
-https://github.com/SciPhi-AI/sciphi_r2r/assets/68796651/c648ab67-973a-416a-985e-2eafb0a41ef0
+https://github.com/SciPhi-AI/r2r/assets/68796651/c648ab67-973a-416a-985e-2eafb0a41ef0
 
 ## Community
 [Join our Discord server!](https://discord.gg/p6KqD2kjtB)
@@ -42,11 +42,11 @@ https://github.com/SciPhi-AI/sciphi_r2r/assets/68796651/c648ab67-973a-416a-985e-
 
 The framework primarily revolves around three core abstractions:
 
-- The **Ingestion Pipeline**: Facilitates the preparation of embeddable 'Documents' from various data formats (json, txt, pdf, html, etc.). The abstraction can be found in [`ingestion.py`](sciphi_r2r/core/pipelines/ingestion.py).
+- The **Ingestion Pipeline**: Facilitates the preparation of embeddable 'Documents' from various data formats (json, txt, pdf, html, etc.). The abstraction can be found in [`ingestion.py`](r2r/core/pipelines/ingestion.py).
 
-- The **Embedding Pipeline**: Manages the transformation of text into stored vector embeddings, interacting with embedding and vector database providers through a series of steps (e.g., extract_text, transform_text, chunk_text, embed_chunks, etc.). The abstraction can be found in [`embedding.py`](sciphi_r2r/core/pipelines/embedding.py).
+- The **Embedding Pipeline**: Manages the transformation of text into stored vector embeddings, interacting with embedding and vector database providers through a series of steps (e.g., extract_text, transform_text, chunk_text, embed_chunks, etc.). The abstraction can be found in [`embedding.py`](r2r/core/pipelines/embedding.py).
 
-- The **RAG Pipeline**: Works similarly to the embedding pipeline but incorporates an LLM provider to produce text completions. The abstraction can be found in [`rag.py`](sciphi_r2r/core/pipelines/rag.py).
+- The **RAG Pipeline**: Works similarly to the embedding pipeline but incorporates an LLM provider to produce text completions. The abstraction can be found in [`rag.py`](r2r/core/pipelines/rag.py).
 
 Each pipeline incorporates a logging database for operation tracking and observability.
 

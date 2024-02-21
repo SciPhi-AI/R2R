@@ -3,17 +3,17 @@ import logging
 import dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-from sciphi_r2r.core import GenerationConfig, LoggingDatabaseConnection
-from sciphi_r2r.datasets import HuggingFaceDataProvider
-from sciphi_r2r.embeddings import OpenAIEmbeddingProvider
-from sciphi_r2r.llms import OpenAIConfig, OpenAILLM
-from sciphi_r2r.main import create_app, load_config
-from sciphi_r2r.pipelines import (
+from r2r.core import GenerationConfig, LoggingDatabaseConnection
+from r2r.datasets import HuggingFaceDataProvider
+from r2r.embeddings import OpenAIEmbeddingProvider
+from r2r.llms import OpenAIConfig, OpenAILLM
+from r2r.main import create_app, load_config
+from r2r.pipelines import (
     BasicEmbeddingPipeline,
     BasicIngestionPipeline,
     BasicRAGPipeline,
 )
-from sciphi_r2r.vector_dbs import PGVectorDB, QdrantDB
+from r2r.vector_dbs import PGVectorDB, QdrantDB
 
 dotenv.load_dotenv()
 

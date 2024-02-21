@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from openai.types import Completion
 from openai.types.chat import ChatCompletion
 
-from sciphi_r2r.core import GenerationConfig, LLMConfig, LLMProvider
+from r2r.core import GenerationConfig, LLMConfig, LLMProvider
 
 logger = logging.getLogger(__name__)
 

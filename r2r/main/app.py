@@ -7,15 +7,15 @@ from typing import Optional, Union
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from sciphi_r2r.core import (
+from r2r.core import (
     EmbeddingPipeline,
     IngestionPipeline,
     LoggingDatabaseConnection,
     RAGPipeline,
 )
-from sciphi_r2r.main.utils import configure_logging, find_project_root
+from r2r.main.utils import configure_logging, find_project_root
 
-logger = logging.getLogger("sciphi_r2r")
+logger = logging.getLogger("r2r")
 
 # Current directory where this script is located
 CURRENT_DIR = Path(__file__).resolve().parent

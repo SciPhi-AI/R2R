@@ -54,12 +54,12 @@ def configure_logging():
         os.makedirs(logs_dir)
 
     # Create a custom logger
-    logger = logging.getLogger("sciphi_r2r")
+    logger = logging.getLogger("r2r")
     logger.setLevel(logging.DEBUG)  # Set the logging level
 
     # Create handlers (console and file handler with rotation)
     c_handler = logging.StreamHandler()
-    log_file_path = os.path.join(logs_dir, "sciphi_r2r.log")
+    log_file_path = os.path.join(logs_dir, "r2r.log")
     f_handler = RotatingFileHandler(
         log_file_path, maxBytes=1000000, backupCount=5
     )

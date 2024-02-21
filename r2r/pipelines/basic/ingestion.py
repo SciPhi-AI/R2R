@@ -8,7 +8,7 @@ import logging
 from enum import Enum
 from typing import Optional, Union
 
-from sciphi_r2r.core import (
+from r2r.core import (
     BasicDocument,
     IngestionPipeline,
     LoggingDatabaseConnection,
