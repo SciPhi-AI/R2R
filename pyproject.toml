@@ -3,7 +3,7 @@ requires = ["poetry-core", "setuptools", "wheel"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "sciphi_r2r"
+name = "r2r"
 version = "0.1.0"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
