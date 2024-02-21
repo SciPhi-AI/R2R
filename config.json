@@ -1,7 +1,7 @@
 {
     "logging": {
         "level": "INFO",
-        "name": "sciphi_r2r",
+        "name": "r2r",
         "database": "demo_logs_v1"
     },
     "embedding": {

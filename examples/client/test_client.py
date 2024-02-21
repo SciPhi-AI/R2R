@@ -1,6 +1,6 @@
 import uuid
 
-from sciphi_r2r.client import SciPhiR2RClient
+from r2r.client import SciPhiR2RClient
 
 # Initialize the client with the base URL of your API
 base_url = "http://localhost:8000"  # Change this to your actual API base URL

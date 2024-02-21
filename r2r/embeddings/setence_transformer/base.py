@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from sciphi_r2r.core import EmbeddingProvider
+from r2r.core import EmbeddingProvider
 
 logger = logging.getLogger(__name__)
 

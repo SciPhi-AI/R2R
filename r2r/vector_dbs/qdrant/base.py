@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Optional, Union
 
-from sciphi_r2r.core import VectorDBProvider, VectorEntry, VectorSearchResult
+from r2r.core import VectorDBProvider, VectorEntry, VectorSearchResult
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 import logging
 from typing import Generator, Optional, Tuple
 
-from sciphi_r2r.core import DatasetConfig, DatasetProvider
+from r2r.core import DatasetConfig, DatasetProvider
 
 logger = logging.getLogger(__name__)
 
