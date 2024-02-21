@@ -2,7 +2,7 @@
 
 R2R (RAG to Riches) is a Python framework designed for the rapid construction and deployment of production-ready Retrieval-Augmented Generation (RAG) systems. This semi-opinionated framework accelerates the transition from experimental stages to production-grade RAG systems.
 
-### Installation Guide
+### Developer Installation
 
 To get started with this project, you'll be using Poetry for managing dependencies. Follow these steps to ensure a smooth setup:
 
@@ -28,8 +28,18 @@ To get started with this project, you'll be using Poetry for managing dependenci
      cp .env.example .env
      ```
    - Qdrant is currently an alternative vector database provider, with plans to increase offerings in the near future.
-     
-This guide should help you set up the project with minimal hassle. Ensure you follow each step carefully to avoid any issues.
+
+#### Fast Install:
+
+1. **Install R2R directly using `pip`:**
+   
+   Execute the following command in your terminal:
+
+   ```bash
+   pip install r2r
+   ```
+
+   This command installs the R2R package and its dependencies without the need for manually cloning the repository or managing dependencies through Poetry. You will still need to set the environment variables as described above in order to run pipeline logic.
 
 ## Demonstration
 
