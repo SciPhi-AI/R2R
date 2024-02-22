@@ -11,10 +11,10 @@
     },
     "database": {
         "vector_db_provider": "pg_vector",
-        "collection_name": "demo-v1-test"
+        "collection_name": "demo-v_3_-test"
     },
     "language_model": {
-        "model_name": "gpt-4-1106-preview",
+        "model_name": "gpt-3.5-turbo",
         "temperature": 0.1,
         "top_p": 0.9,
         "top_k": 128,
