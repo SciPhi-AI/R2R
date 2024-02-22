@@ -7,6 +7,7 @@ from typing import Optional, Union
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import re
 
 from r2r.core import (
     EmbeddingPipeline,
@@ -34,17 +35,17 @@ def create_app(
 
     # CORS setup
     origins = [
-        "*", # TODO - Change this to the actual frontend URL
-        "http://localhost:3000",
-        "http://localhost:8000",
+        "http://localhost:3000",  # Assuming your frontend runs on this port
+        "http://localhost:8000",  # The port your backend runs on
+        # You can add more origins as needed
     ]
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,
+        allow_origins=origins,  # Allows specified origins
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["*"],  # Allows all methods
+        allow_headers=["*"],  # Allows all headers
     )
 
     upload_path = upload_path or find_project_root(CURRENT_DIR) / "uploads"
@@ -70,12 +71,6 @@ def create_app(
         document_id: str
         blobs: dict[str, str]
         metadata: Optional[dict]
-
-    # File upload class, to be fixed later
-    # class FileUploadRequest(BaseModel):
-    # document_id: str
-    # metadata: Optional[dict]
-    # settings: SettingsModel = SettingsModel()
 
     class UpsertEntryRequest(BaseModel):
         entry: EntryModel
@@ -226,6 +221,7 @@ def create_app(
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/logs")
+    # TODO: - Update name to getrawlogs and update on examples, etc
     def get_logs():
         try:
             if logging_database is None:
@@ -236,6 +232,112 @@ def create_app(
             return {"logs": [LogModel(**log) for log in logs]}
         except Exception as e:
             logger.error(f":get_logs: [Error](error={str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/get_logs_summary")
+    def get_logs_summary():
+        try:
+            if logging_database is None:
+                raise HTTPException(
+                    status_code=404, detail="Logging provider not found."
+                )
+            logs = logging_database.get_logs()
+            # Initialize the structure for grouped logs
+            events_summary = []
+
+            # Temporary storage to aggregate search results and check outcomes
+            search_aggregation = {}
+            generation_aggregation = {}
+
+            for log in logs:
+                run_id = log["pipeline_run_id"]
+                outcome = "completed" if log["log_level"] == "INFO" else "fail"
+
+                # Initialize aggregation entry if not exists
+                if run_id not in search_aggregation:
+                    search_aggregation[run_id] = {
+                        "timestamp": log["timestamp"]
+                        if log["method"] == "ingress"
+                        else None,  # Initialize timestamp for ingress
+                        "event": "search",
+                        "search_query": "",
+                        "search_result": "",
+                        "outcome": outcome,
+                        "response_time": None,
+                        "pipeline_run_id": run_id,
+                    }
+
+                if run_id not in generation_aggregation:
+                    generation_aggregation[run_id] = {
+                        "timestamp": log["timestamp"]
+                        if log["method"] == "construct_prompt"
+                        else None,  # Initialize timestamp for construct_prompt
+                        "event": "generate_completion",
+                        "search_query": "",
+                        "search_result": "",
+                        "completion_result": "",
+                        "outcome": outcome,
+                        "response_time": None,
+                        "pipeline_run_id": run_id,
+                    }
+
+                # Process ingress for search query
+                if log["method"] == "ingress":
+                    search_aggregation[run_id]["search_query"] = log["result"]
+
+                # Aggregate search results
+                if log["method"] == "search":
+                    try:
+                        text_matches = re.findall(
+                            r"'text': '([^']*)'", log["result"]
+                        )
+                        aggregated_texts = ", ".join(text_matches)
+                        search_aggregation[run_id][
+                            "search_result"
+                        ] = aggregated_texts
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to extract text from search result: {str(e)}"
+                        )
+                        search_aggregation[run_id][
+                            "search_result"
+                        ] = "parsing failure"
+                        search_aggregation[run_id]["outcome"] = "fail"
+
+                # Calculate response time for search
+                if log["method"] == "search":
+                    if search_aggregation[run_id]["timestamp"] is not None:
+                        search_aggregation[run_id]["response_time"] = (
+                            log["timestamp"]
+                            - search_aggregation[run_id]["timestamp"]
+                        ).total_seconds() * 1000  # Convert to milliseconds
+
+                # Process generate_completion for generation
+                if log["method"] == "generate_completion":
+                    generation_aggregation[run_id]["completion_result"] = log[
+                        "result"
+                    ]
+
+                # Calculate response time for generation
+                if log["method"] == "generate_completion":
+                    if generation_aggregation[run_id]["timestamp"] is not None:
+                        generation_aggregation[run_id]["response_time"] = (
+                            log["timestamp"]
+                            - generation_aggregation[run_id]["timestamp"]
+                        ).total_seconds() * 1000  # Convert to milliseconds
+
+            # Combine and prepare the final summary
+            for run_id in search_aggregation:
+                events_summary.append(search_aggregation[run_id])
+            for run_id in generation_aggregation:
+                if generation_aggregation[run_id][
+                    "completion_result"
+                ]:  # Ensure there's a completion result
+                    events_summary.append(generation_aggregation[run_id])
+
+            return {"events_summary": events_summary}
+        except Exception as e:
+            logger.error(f":get_logs_summary: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     return app
