@@ -4,7 +4,17 @@ R2R (RAG to Riches) is a Python framework designed for the rapid construction an
 
 ### Developer Installation
 
-To get started with this project, you'll be using Poetry for managing dependencies. Follow these steps to ensure a smooth setup:
+#### Fast Install:
+
+1. **Install R2R directly using `pip`:**
+   
+   ```bash
+   pip install r2r
+   ```
+
+#### Full Install:
+
+Follow these steps to ensure a smooth setup:
 
 1. **Install Poetry:**
    - Before installing the project, make sure you have Poetry on your system. If not, visit the [official Poetry website](https://python-poetry.org/docs/#installation) for installation instructions.
@@ -23,23 +33,12 @@ To get started with this project, you'll be using Poetry for managing dependenci
 3. **Configure Environment Variables:**
    - You need to set up cloud provider secrets in your `.env` file for the project to work properly. At a minimum, you will need an OpenAI key and a vector database provider.
    - For a fast setup, we recommend creating a project on Supabase, enabling the vector extension, and then updating the `.env.example` with the necessary details.
+   - Other providers are also available, such as Qdrant for vector database support.
    - Once updated, copy the `.env.example` to `.env` to apply your configurations:
      ```bash
      cp .env.example .env
      ```
-   - Qdrant is currently an alternative vector database provider, with plans to increase offerings in the near future.
 
-#### Fast Install:
-
-1. **Install R2R directly using `pip`:**
-   
-   Execute the following command in your terminal:
-
-   ```bash
-   pip install r2r
-   ```
-
-   This command installs the R2R package and its dependencies without the need for manually cloning the repository or managing dependencies through Poetry. You will still need to set the environment variables as described above in order to run pipeline logic.
 
 ## Demonstration
 
