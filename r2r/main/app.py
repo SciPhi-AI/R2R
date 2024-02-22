@@ -233,6 +233,13 @@ def create_app(
         except Exception as e:
             logger.error(f":get_logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
+        
+    def calculate_response_time(start_time, end_time):
+    # TODO: Parked for now, can come back at it when latency is relevant
+        """Calculate response time in milliseconds."""
+        if start_time is not None and end_time is not None and start_time <= end_time:
+            return (end_time - start_time).total_seconds() * 1000
+        return None
 
     @app.get("/get_logs_summary")
     def get_logs_summary():
@@ -259,12 +266,12 @@ def create_app(
                         "timestamp": log["timestamp"]
                         if log["method"] == "ingress"
                         else None,  # Initialize timestamp for ingress
+                        "pipeline_run_id": run_id,
                         "event": "search",
                         "search_query": "",
-                        "search_result": "",
+                        "full_search_result": "",
+                        "first_search_result": "",
                         "outcome": outcome,
-                        "response_time": None,
-                        "pipeline_run_id": run_id,
                     }
 
                 if run_id not in generation_aggregation:
@@ -272,13 +279,13 @@ def create_app(
                         "timestamp": log["timestamp"]
                         if log["method"] == "construct_prompt"
                         else None,  # Initialize timestamp for construct_prompt
+                        "pipeline_run_id": run_id,
                         "event": "generate_completion",
                         "search_query": "",
-                        "search_result": "",
+                        "full_search_result": "",
+                        "first_search_result": "",
                         "completion_result": "",
                         "outcome": outcome,
-                        "response_time": None,
-                        "pipeline_run_id": run_id,
                     }
 
                 # Process ingress for search query
@@ -291,40 +298,33 @@ def create_app(
                         text_matches = re.findall(
                             r"'text': '([^']*)'", log["result"]
                         )
-                        aggregated_texts = ", ".join(text_matches)
+                        # Aggregating search results into a JSON object
+                        search_results_json = json.dumps(text_matches, indent=4)
                         search_aggregation[run_id][
-                            "search_result"
-                        ] = aggregated_texts
+                            "full_search_result"
+                        ] = search_results_json
+                        if text_matches:  # Ensure there's at least one match
+                            search_aggregation[run_id]["first_search_result"] = text_matches[0]
                     except Exception as e:
                         logger.error(
                             f"Failed to extract text from search result: {str(e)}"
                         )
                         search_aggregation[run_id][
-                            "search_result"
+                            "full_search_result"
                         ] = "parsing failure"
                         search_aggregation[run_id]["outcome"] = "fail"
 
-                # Calculate response time for search
-                if log["method"] == "search":
-                    if search_aggregation[run_id]["timestamp"] is not None:
-                        search_aggregation[run_id]["response_time"] = (
-                            log["timestamp"]
-                            - search_aggregation[run_id]["timestamp"]
-                        ).total_seconds() * 1000  # Convert to milliseconds
-
                 # Process generate_completion for generation
                 if log["method"] == "generate_completion":
-                    generation_aggregation[run_id]["completion_result"] = log[
-                        "result"
-                    ]
+                    if run_id in search_aggregation:
+                        generation_aggregation[run_id]["search_query"] = search_aggregation[run_id]["search_query"]
+                        generation_aggregation[run_id]["full_search_result"] = search_aggregation[run_id]["search_result"]
+                    else:
+                        error_message = f"No associated search found for run_id: {run_id}"
+                        logger.error(error_message)
+                        generation_aggregation[run_id]["error"] = error_message
 
-                # Calculate response time for generation
-                if log["method"] == "generate_completion":
-                    if generation_aggregation[run_id]["timestamp"] is not None:
-                        generation_aggregation[run_id]["response_time"] = (
-                            log["timestamp"]
-                            - generation_aggregation[run_id]["timestamp"]
-                        ).total_seconds() * 1000  # Convert to milliseconds
+                    generation_aggregation[run_id]["completion_result"] = log["result"]
 
             # Combine and prepare the final summary
             for run_id in search_aggregation:
@@ -341,3 +341,5 @@ def create_app(
             raise HTTPException(status_code=500, detail=str(e))
 
     return app
+
+    
