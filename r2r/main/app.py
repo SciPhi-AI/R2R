@@ -34,17 +34,17 @@ def create_app(
 
     # CORS setup
     origins = [
-        "http://localhost:3000",  # Assuming your frontend runs on this port
-        "http://localhost:8000",  # The port your backend runs on
-        # You can add more origins as needed
+        "*", # TODO - Change this to the actual frontend URL
+        "http://localhost:3000",
+        "http://localhost:8000",
     ]
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,  # Allows specified origins
+        allow_origins=origins,
         allow_credentials=True,
-        allow_methods=["*"],  # Allows all methods
-        allow_headers=["*"],  # Allows all headers
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     upload_path = upload_path or find_project_root(CURRENT_DIR) / "uploads"

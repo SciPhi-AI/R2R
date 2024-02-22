@@ -73,7 +73,7 @@ if __name__ == "__main__":
         do_stream=language_model_config["do_stream"],
     )
 
-    logging_database = LoggingDatabaseConnection("completion_demo_logs_v1")
+    logging_database = LoggingDatabaseConnection(logging_config["database"])
     pipeline = DemoRAGPipeline(
         llm,
         generation_config,
