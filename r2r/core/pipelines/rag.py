@@ -181,4 +181,3 @@ class RAGPipeline(ABC):
             {"query": transformed_query, "context": context}
         )
         return self.generate_completion(prompt, generate_with_chat=True)
-

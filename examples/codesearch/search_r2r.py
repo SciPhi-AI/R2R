@@ -26,7 +26,6 @@ if __name__ == "__main__":
         text_splitter_config,
     ) = load_config()
 
-
     llm = OpenAILLM(OpenAIConfig())
     generation_config = GenerationConfig(
         model_name=language_model_config["model_name"],
@@ -37,44 +36,65 @@ if __name__ == "__main__":
         do_stream=language_model_config["do_stream"],
     )
 
-
     for i, (symbol, extraction) in enumerate(Indexer().extractor()):
         document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, symbol))
         symbol_extraction = f"Symbol: {symbol}\nExtraction:\n\n{extraction}"
         summary = llm.get_chat_completion(
             [
                 {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": DESCRIPTION_PROMPT.format(extraction=symbol_extraction)},
-             
-             ],
-            generation_config
+                {
+                    "role": "user",
+                    "content": DESCRIPTION_PROMPT.format(
+                        extraction=symbol_extraction
+                    ),
+                },
+            ],
+            generation_config,
         )
         description = summary.choices[0].message.content
 
         entry_response = client.upsert_entries(
             [
                 {
-                    "document_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, symbol+"-desc-only")),
+                    "document_id": str(
+                        uuid.uuid5(uuid.NAMESPACE_DNS, symbol + "-desc-only")
+                    ),
                     "blobs": {"txt": description},
-                    "metadata": {"symbol": symbol, 'type': 'desc-only'},
+                    "metadata": {"symbol": symbol, "type": "desc-only"},
                 },
                 {
-                    "document_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, symbol+"-ext-only")),
+                    "document_id": str(
+                        uuid.uuid5(uuid.NAMESPACE_DNS, symbol + "-ext-only")
+                    ),
                     "blobs": {"txt": extraction},
-                    "metadata": {"symbol": symbol, 'type': 'ext-only'},
+                    "metadata": {"symbol": symbol, "type": "ext-only"},
                 },
                 {
-                    "document_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, symbol+"-symbol-ext-only")),
+                    "document_id": str(
+                        uuid.uuid5(
+                            uuid.NAMESPACE_DNS, symbol + "-symbol-ext-only"
+                        )
+                    ),
                     "blobs": {"txt": symbol_extraction},
-                    "metadata": {"symbol": symbol, 'type': 'symbol-ext-only'},
+                    "metadata": {"symbol": symbol, "type": "symbol-ext-only"},
                 },
                 {
-                    "document_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, symbol+"-desc-plus-symbol-ext")),
-                    "blobs": {"txt": f"Description:\n{description}\n{symbol_extraction}"},
-                    "metadata": {"symbol": symbol, 'type': 'desc-plus-symbol-ext'},
-                }
+                    "document_id": str(
+                        uuid.uuid5(
+                            uuid.NAMESPACE_DNS,
+                            symbol + "-desc-plus-symbol-ext",
+                        )
+                    ),
+                    "blobs": {
+                        "txt": f"Description:\n{description}\n{symbol_extraction}"
+                    },
+                    "metadata": {
+                        "symbol": symbol,
+                        "type": "desc-plus-symbol-ext",
+                    },
+                },
             ],
-            {"embedding_settings": {"do_chunking": "false"}}
+            {"embedding_settings": {"do_chunking": "false"}},
         )
 
     print("Searching remote db...")
