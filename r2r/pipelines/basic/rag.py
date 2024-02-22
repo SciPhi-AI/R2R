@@ -44,7 +44,7 @@ class BasicRAGPipeline(RAGPipeline):
         self.db = db
 
     def transform_query(self, query: str) -> str:
-        # Placeholder for query transformation - A unit transformation.
+        self._check_pipeline_initialized()
         return query
 
     @log_execution_to_db
@@ -58,6 +58,7 @@ class BasicRAGPipeline(RAGPipeline):
     ) -> list[VectorSearchResult]:
         logger.debug(f"Retrieving results for query: {transformed_query}")
 
+        self._check_pipeline_initialized()
         results = self.db.search(
             query_vector=self.embeddings_provider.get_embedding(
                 transformed_query,
@@ -72,6 +73,7 @@ class BasicRAGPipeline(RAGPipeline):
     def rerank_results(
         self, results: list[VectorSearchResult]
     ) -> list[VectorSearchResult]:
+        self._check_pipeline_initialized()
         # Placeholder for reranking logic - A unit transformation.
         return results
 

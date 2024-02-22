@@ -47,6 +47,7 @@ class RAGPipeline(ABC):
         self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
         self.task_prompt = task_prompt or DEFAULT_TASK_PROMPT
         self.logging_database = logging_database
+        self.pipeline_run_id = None
 
         if logging_database is not None:
             self.conn = logging_database.__enter__()
@@ -59,8 +60,22 @@ class RAGPipeline(ABC):
         if self.logging_database:
             self.logging_database.__exit__(None, None, None)
 
-    def initialize_pipeline(self):
+    def _check_pipeline_initialized(self) -> None:
+        if self.pipeline_run_id is None:
+            raise ValueError(
+                "The pipeline has not been initialized. Please call `initialize_pipeline` before running the pipeline."
+            )
+
+    def initialize_pipeline(self, query: str) -> None:
         self.pipeline_run_id = uuid.uuid4()
+        self.ingress(query)
+
+    @log_execution_to_db
+    def ingress(self, data: Any) -> Any:
+        """
+        Ingresses data into the pipeline.
+        """
+        return data
 
     @abstractmethod
     def transform_query(self, query: str) -> Any:
@@ -129,6 +144,7 @@ class RAGPipeline(ABC):
         """
         Generates a completion based on the prompt.
         """
+        self._check_pipeline_initialized()
         if generate_with_chat:
             return self.llm.get_chat_completion(
                 [
@@ -155,7 +171,7 @@ class RAGPipeline(ABC):
         """
         Runs the completion pipeline.
         """
-        self.initialize_pipeline()
+        self.initialize_pipeline(query)
         transformed_query = self.transform_query(query)
         search_results = self.search(transformed_query, filters, limit)
         if search_only:
@@ -164,5 +180,5 @@ class RAGPipeline(ABC):
         prompt = self.construct_prompt(
             {"query": transformed_query, "context": context}
         )
-        completion = self.generate_completion(prompt, generate_with_chat=True)
-        return completion
+        return self.generate_completion(prompt, generate_with_chat=True)
+

@@ -84,10 +84,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
 
         # Unpack document IDs, indices, and chunks for transformation and embedding
         ids, raw_chunks, metadatas = zip(*batch_data)
-        print("~~~~~~~~~~~~~~~ Transforming chunks ~~~~~~~~~~~~~~~")
-        print(ids, raw_chunks, metadatas)
         transformed_chunks = self.transform_chunks(raw_chunks, metadatas)
-        print(transformed_chunks)
         embedded_chunks = self.embed_chunks(transformed_chunks)
 
         chunk_count = 0
