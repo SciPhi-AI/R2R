@@ -1,9 +1,8 @@
 import json
 import logging
-import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Optional, Union
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,7 +14,7 @@ from r2r.core import (
     LoggingDatabaseConnection,
     RAGPipeline,
 )
-from r2r.main.utils import configure_logging, find_project_root
+from r2r.main.utils import configure_logging, find_project_root, process_logs
 
 logger = logging.getLogger("r2r")
 
@@ -35,9 +34,9 @@ def create_app(
 
     # CORS setup
     origins = [
-        "http://localhost:3000",  # Assuming your frontend runs on this port
-        "http://localhost:8000",  # The port your backend runs on
-        # You can add more origins as needed
+        "*",  # TODO - Change this to the actual frontend URL
+        "http://localhost:3000",
+        "http://localhost:8000",
     ]
 
     app.add_middleware(
@@ -72,6 +71,12 @@ def create_app(
         blobs: dict[str, str]
         metadata: Optional[dict]
 
+    # File upload class, to be fixed later
+    # class FileUploadRequest(BaseModel):
+    # document_id: str
+    # metadata: Optional[dict]
+    # settings: SettingsModel = SettingsModel()
+
     class UpsertEntryRequest(BaseModel):
         entry: EntryModel
         settings: SettingsModel = SettingsModel()
@@ -94,7 +99,9 @@ def create_app(
         result: str
         log_level: str
 
-    class summaryLogModel(BaseModel):
+    # TODO - Fix name convention to be pythonic
+    # And add inheritence from `LogModel`
+    class SummaryLogModel(BaseModel):
         timestamp: datetime
         pipelineRunID: str
         pipelineRunType: str
@@ -231,7 +238,6 @@ def create_app(
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/logs")
-    # TODO: - Update name to getrawlogs and update on examples, etc
     def logs():
         try:
             if logging_database is None:
@@ -244,9 +250,6 @@ def create_app(
             logger.error(f":get_logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
-    # TODO: Add a field about what type of pipeline is it: search, rag, embedding, ingestion. (Look at logs, add a flag.)
-    # TODO: PipelineRunType
-
     @app.get("/logs_summary")
     def logs_summary():
         try:
@@ -254,111 +257,17 @@ def create_app(
                 raise HTTPException(
                     status_code=404, detail="Logging provider not found."
                 )
+            print("getting logs...")
             logs = logging_database.get_logs()
-            events_summary = process_logs(logs)
+            print("logs = ", logs)
+            logs_summary = process_logs(logs)
+            print("logs_summary = ", logs_summary)
+            events_summary = [
+                SummaryLogModel(**log).dict() for log in logs_summary
+            ]
             return {"events_summary": events_summary}
         except Exception as e:
             logger.error(f":get_logs_summary: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
-
-    def process_logs(logs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        event_aggregation = {}
-        for log in logs:
-            update_aggregation_entries(log, event_aggregation)
-        # Convert each aggregated log entry to summaryLogModel before returning
-        return [
-            summaryLogModel(**log).dict()
-            for log in combine_aggregated_logs(event_aggregation)
-        ]
-
-    def process_result(result: str, method: str) -> str:
-        if method == "search":
-            text_matches = re.findall(r"'text': '([^']*)'", result)
-            processed_result = ", ".join(text_matches)
-            return processed_result
-        elif method == "generate_completion":
-            content_matches = re.findall(r"content='([^']*)'", result)
-            processed_result = ", ".join(content_matches)
-            return processed_result
-        else:
-            return result
-
-    def update_aggregation_entries(
-        log: Dict[str, Any], event_aggregation: Dict[str, Dict[str, Any]]
-    ):
-        pipeline_run_id = log["pipeline_run_id"]
-        if pipeline_run_id is None:
-            logger.error(f"Missing 'run_id' in log: {log}")
-            return
-
-        pipeline_run_type = log["pipeline_run_type"]
-        if pipeline_run_type is None:
-            logger.error(f"Missing 'run_type' in log: {log}")
-            return
-
-        if pipeline_run_id not in event_aggregation:
-            event_aggregation[pipeline_run_id] = {
-                "timestamp": log["timestamp"],
-                "pipeline_run_id": pipeline_run_id,
-                "pipeline_run_type": pipeline_run_type,
-                "events": [],
-            }
-        event = {
-            "method": log["method"],
-            "result": log["result"],
-            "log_level": log["log_level"],
-            "outcome": "success" if log["log_level"] == "INFO" else "fail",
-        }
-        event_aggregation[pipeline_run_id]["events"].append(event)
-
-    def combine_aggregated_logs(
-        event_aggregation: Dict[str, Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        logs_summary = []
-        for run_id, aggregation in event_aggregation.items():
-            # Assuming 'pipeline_run_type' is available in the log entries to determine the type of pipeline
-            pipeline_type = (
-                aggregation["pipeline_run_type"]
-                if "pipeline_run_type" in aggregation
-                else "unknown"
-            )
-
-            summary_entry = {
-                "timestamp": aggregation["timestamp"],
-                "pipelineRunID": run_id,
-                "pipelineRunType": pipeline_type,
-                "method": "",
-                "searchQuery": "",
-                "searchResult": "",
-                "completionResult": "N/A",  # Default to "N/A" if not applicable
-                "outcome": "success"
-                if aggregation["events"][-1].get("log_level") == "INFO"
-                else "fail",
-            }
-
-            for event in aggregation["events"]:
-                if event["method"] == "ingress":
-                    summary_entry["searchQuery"] = event.get("result", "N/A")
-                elif event["method"] == "search":
-                    summary_entry["searchResult"] = process_result(
-                        event.get("result", "N/A"), event["method"]
-                    )
-                    summary_entry[
-                        "method"
-                    ] = "Search"  # Update method to reflect the action
-                elif event["method"] == "generate_completion":
-                    summary_entry["completionResult"] = process_result(
-                        event.get("result", "N/A"), event["method"]
-                    )
-                    summary_entry[
-                        "method"
-                    ] = "Generate Completion"  # Update method to reflect the action
-                else:
-                    logger.error(
-                        f"Unknown method in {pipeline_type} pipeline: {event['method']}"
-                    )
-
-            logs_summary.append(summary_entry)
-        return [summaryLogModel(**log).dict() for log in logs_summary]
 
     return app
