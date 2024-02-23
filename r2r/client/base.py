@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 import requests
 
 
-class SciPhiR2RClient:
+class R2RClient:
     def __init__(self, base_url: str):
         self.base_url = base_url
 

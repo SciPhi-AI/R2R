@@ -6,7 +6,7 @@ from typing import Optional, Union
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from r2r.core import (
     EmbeddingPipeline,
@@ -91,25 +91,37 @@ def create_app(
         filters: dict = {}
         settings: SettingsModel = SettingsModel()
 
-    class LogModel(BaseModel):
-        timestamp: datetime
-        pipeline_run_id: str
-        pipeline_run_type: str
-        method: str
-        result: str
-        log_level: str
+    def to_camel(string: str) -> str:
+        return "".join(
+            word.capitalize() if i != 0 else word
+            for i, word in enumerate(string.split("_"))
+        )
 
-    # TODO - Fix name convention to be pythonic
-    # And add inheritence from `LogModel`
+    class LogModel(BaseModel):
+        timestamp: datetime = Field(alias="timestamp")
+        pipeline_run_id: str = Field(alias="pipelineRunId")
+        pipeline_run_type: str = Field(alias="pipelineRunType")
+        method: str = Field(alias="method")
+        result: str = Field(alias="result")
+        log_level: str = Field(alias="logLevel")
+
+        class Config:
+            alias_generator = to_camel
+            allow_population_by_field_name = True
+
     class SummaryLogModel(BaseModel):
-        timestamp: datetime
-        pipelineRunID: str
-        pipelineRunType: str
-        method: str
-        searchQuery: str
-        searchResult: str
-        completionResult: str
-        outcome: str
+        timestamp: datetime = Field(alias="timestamp")
+        pipeline_run_id: str = Field(alias="pipelineRunId")
+        pipeline_run_type: str = Field(alias="pipelineRunType")
+        method: str = Field(alias="method")
+        search_query: str = Field(alias="searchQuery")
+        search_results: list[dict] = Field(alias="searchResults")
+        completion_result: str = Field(alias="completionResult")
+        outcome: str = Field(alias="outcome")
+
+        class Config:
+            alias_generator = to_camel
+            allow_population_by_field_name = True
 
     @app.post("/upload_and_process_file/")
     # TODO - Why can't we use a BaseModel to represent the request?
@@ -129,11 +141,10 @@ def create_app(
             )
         # Extract file extension and check if it's an allowed type
         file_extension = file.filename.split(".")[-1]
-        supported_types = ingestion_pipeline.get_supported_types()
-        if file_extension not in supported_types:
+        if file_extension not in ingestion_pipeline.supported_types:
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid file type. Allowed types are: {', '.join(supported_types)}.",
+                detail=f"Invalid file type. Allowed types are: {', '.join(ingestion_pipeline.supported_types)}.",
             )
 
         file_location = upload_path / file.filename
@@ -222,7 +233,7 @@ def create_app(
             return completion
         except Exception as e:
             logger.error(
-                f":completion: [Error](query={query}, error={str(e)})"
+                f":rag_completion: [Error](query={query}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -245,9 +256,11 @@ def create_app(
                     status_code=404, detail="Logging provider not found."
                 )
             logs = logging_database.get_logs()
-            return {"logs": [LogModel(**log) for log in logs]}
+            return {
+                "logs": [LogModel(**log).dict(by_alias=True) for log in logs]
+            }
         except Exception as e:
-            logger.error(f":get_logs: [Error](error={str(e)})")
+            logger.error(f":logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/logs_summary")
@@ -257,17 +270,15 @@ def create_app(
                 raise HTTPException(
                     status_code=404, detail="Logging provider not found."
                 )
-            print("getting logs...")
             logs = logging_database.get_logs()
-            print("logs = ", logs)
             logs_summary = process_logs(logs)
-            print("logs_summary = ", logs_summary)
             events_summary = [
-                SummaryLogModel(**log).dict() for log in logs_summary
+                SummaryLogModel(**log).dict(by_alias=True)
+                for log in logs_summary
             ]
             return {"events_summary": events_summary}
         except Exception as e:
-            logger.error(f":get_logs_summary: [Error](error={str(e)})")
+            logger.error(f":logs_summary: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     return app

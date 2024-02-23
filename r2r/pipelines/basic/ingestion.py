@@ -5,15 +5,10 @@ import collections
 import copy
 import json
 import logging
-import uuid
 from enum import Enum
 from typing import Optional, Union
 
-from r2r.core import (
-    BasicDocument,
-    IngestionPipeline,
-    LoggingDatabaseConnection,
-)
+from r2r.core import IngestionPipeline, LoggingDatabaseConnection
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +34,8 @@ class BasicIngestionPipeline(IngestionPipeline):
         )
         self.pipeline_run_info = None
 
-    def get_supported_types(self) -> list[str]:
+    @property
+    def supported_types(self) -> list[str]:
         return [entry_type.value for entry_type in EntryType]
 
     def process_data(

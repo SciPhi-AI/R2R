@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, List, Optional
 from deprecated import deprecated
 from sqlalchemy import MetaData, create_engine, text
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import QueuePool
 from vecs.adapter import Adapter
 from vecs.exc import CollectionNotFound
 
@@ -56,7 +57,12 @@ class Client:
         Returns:
             None
         """
-        self.engine = create_engine(connection_string, pool_size=pool_size)
+        self.engine = create_engine(
+            connection_string,
+            pool_size=pool_size,
+            poolclass=QueuePool,
+            pool_recycle=300,  # Recycle connections after 5 min
+        )
         self.meta = MetaData(schema="vecs")
         self.Session = sessionmaker(self.engine)
 

@@ -1,6 +1,5 @@
 """A simple example to demonstrate the usage of `BasicRAGPipeline`."""
 import logging
-import uuid
 
 import dotenv
 

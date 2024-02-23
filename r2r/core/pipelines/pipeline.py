@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Optional
 
 from ..providers.logging import LoggingDatabaseConnection
 
@@ -29,14 +29,16 @@ class Pipeline(ABC):
 
     def __getattribute__(self, name):
         attr = super().__getattribute__(name)
+        if isinstance(attr, property):
+            return attr
 
         if callable(attr) and name not in [
-            "run",
-            "_check_pipeline_initialized",
-            "initialize_pipeline",
             "__init__",
-            "__getattribute__",
             "close",
+            "_check_pipeline_initialized",
+            "__getattribute__",
+            "initialize_pipeline",
+            "run",
         ]:
 
             def newfunc(*args, **kwargs):

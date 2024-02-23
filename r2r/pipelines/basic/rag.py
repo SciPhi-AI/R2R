@@ -2,7 +2,6 @@
 A simple example to demonstrate the usage of `BasicRAGPipeline`.
 """
 import logging
-import uuid
 from typing import Optional
 
 from r2r.core import (
