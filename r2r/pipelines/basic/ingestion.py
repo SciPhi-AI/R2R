@@ -100,7 +100,7 @@ class BasicIngestionPipeline(IngestionPipeline):
         """
 
         self.initialize_pipeline()
-        logger.debug(f"Pipeline run type: {self.pipeline_run_type}")
+        logger.debug(f"Pipeline run type: {self.pipeline_run_info}")
 
         if len(blobs) == 0:
             raise ValueError("No blobs provided to process.")

@@ -175,11 +175,11 @@ class RAGPipeline(ABC):
         Runs the completion pipeline.
         """
         self.initialize_pipeline(query, search_only)
-        logger.debug(f"Pipeline run type: {self.pipeline_run_type}")
+        logger.debug(f"Pipeline run type: {self.pipeline_run_info}")
         transformed_query = self.transform_query(query)
         search_results = self.search(transformed_query, filters, limit)
         if search_only:
-            logger.debug(f"Pipeline run type: {self.pipeline_run_type}")
+            logger.debug(f"Pipeline run type: {self.pipeline_run_info}")
             return search_results
         context = self.construct_context(search_results)
         prompt = self.construct_prompt(
