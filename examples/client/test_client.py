@@ -86,3 +86,7 @@ print(
 print("Fetching logs after all steps...")
 logs_response = client.get_logs()
 print(f"Logs response:\n{logs_response}\n")
+
+print("Fetching logs summary after all steps...")
+logs_summary_response = client.get_logs_summary()
+print(f"Logs summary response:\n{logs_summary_response}\n")

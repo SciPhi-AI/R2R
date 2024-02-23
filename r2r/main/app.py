@@ -229,7 +229,7 @@ def create_app(
 
     @app.get("/logs")
     # TODO: - Update name to getrawlogs and update on examples, etc
-    def get_logs():
+    def logs():
         try:
             if logging_database is None:
                 raise HTTPException(
@@ -244,8 +244,8 @@ def create_app(
     # TODO: Add a field about what type of pipeline is it: search, rag, embedding, ingestion. (Look at logs, add a flag.)
     # TODO: PipelineRunType
 
-    @app.get("/get_logs_summary")
-    def get_logs_summary():
+    @app.get("/logs_summary")
+    def logs_summary():
         try:
             if logging_database is None:
                 raise HTTPException(
