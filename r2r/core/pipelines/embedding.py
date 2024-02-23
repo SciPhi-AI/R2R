@@ -1,38 +1,35 @@
 """
 Abstract base class for embedding pipelines.
 """
-from abc import ABC, abstractmethod
+import logging
+import uuid
+from abc import abstractmethod
 from typing import Any, Optional
 
 from ..providers.embedding import EmbeddingProvider
 from ..providers.logging import LoggingDatabaseConnection
 from ..providers.vector_db import VectorDBProvider, VectorEntry
+from .pipeline import Pipeline
+
+logger = logging.getLogger(__name__)
 
 
-class EmbeddingPipeline(ABC):
+class EmbeddingPipeline(Pipeline):
     def __init__(
         self,
         embedding_model: str,
         embeddings_provider: EmbeddingProvider,
         db: VectorDBProvider,
         logging_database: Optional[LoggingDatabaseConnection] = None,
-        **kwargs
+        **kwargs,
     ):
         self.embedding_model = embedding_model
         self.embeddings_provider = embeddings_provider
         self.db = db
-        self.logging_database = logging_database
+        super().__init__(logging_database=logging_database, **kwargs)
 
-        if logging_database is not None:
-            self.conn = logging_database.__enter__()
-            self.log_table_name = logging_database.log_table_name
-        else:
-            self.conn = None
-            self.log_table_name = None
-
-    def close(self):
-        if self.logging_database:
-            self.logging_database.__exit__(None, None, None)
+    def initialize_pipeline(self) -> None:
+        self.pipeline_run_info = {"run_id": uuid.uuid4(), "type": "embedding"}
 
     @abstractmethod
     def extract_text(self, document: Any) -> str:
@@ -57,13 +54,22 @@ class EmbeddingPipeline(ABC):
         pass
 
     @abstractmethod
-    def process_batches(self, batch: list[Any]) -> None:
-        pass
-
-    @abstractmethod
     def store_chunks(self, chunks: list[VectorEntry]) -> None:
         pass
 
-    @abstractmethod
     def run(self, document: Any, **kwargs):
-        pass
+        self.initialize_pipeline()
+        logger.debug(
+            f"Running the `BasicEmbeddingPipeline` with id={self.pipeline_run_info['run_id']}."
+        )
+        logger.debug(f"Pipeline run type: {self.pipeline_run_info['type']}")
+
+        documents = [document] if not isinstance(document, list) else document
+
+        for document in documents:
+            text = self.extract_text(document)
+            transformed_text = self.transform_text(text)
+            chunks = self.chunk_text(transformed_text)
+            transformed_chunks = self.transform_chunks(chunks, [])
+            embeddings = self.embed_chunks(transformed_chunks)
+            self.store_chunks(embeddings)

@@ -1,17 +1,22 @@
-from abc import ABC, abstractmethod
+import uuid
+from abc import abstractmethod
 from typing import Any, Optional
 
 from ..abstractions.document import BasicDocument
 from ..providers.logging import LoggingDatabaseConnection
+from .pipeline import Pipeline
 
 
-class IngestionPipeline(ABC):
+class IngestionPipeline(Pipeline):
     def __init__(
         self,
         logging_database: Optional[LoggingDatabaseConnection] = None,
-        **kwargs
+        **kwargs,
     ):
-        self.logging_database = logging_database
+        super().__init__(logging_database=logging_database, **kwargs)
+
+    def initialize_pipeline(self) -> None:
+        self.pipeline_run_info = {"run_id": uuid.uuid4(), "type": "ingestion"}
 
     @abstractmethod
     def get_supported_types(self) -> list[str]:
@@ -34,16 +39,29 @@ class IngestionPipeline(ABC):
         """
         pass
 
-    @abstractmethod
     def run(
         self,
         document_id: str,
         blobs: dict[str, Any],
         metadata: Optional[dict] = None,
-        **kwargs
+        **kwargs,
     ) -> BasicDocument:
         """
         Run the appropriate parsing method based on the data type and whether the data is a file or an entry.
         Returns the processed data and metadata.
         """
-        pass
+
+        self.initialize_pipeline()
+
+        if len(blobs) == 0:
+            raise ValueError("No blobs provided to process.")
+
+        processed_text = ""
+        for entry_type, blob in blobs.items():
+            if entry_type not in self.get_supported_types():
+                raise ValueError(f"EntryType {entry_type} not supported.")
+            processed_text += self.parse_entry(entry_type, blob)
+
+        return BasicDocument(
+            id=document_id, text=processed_text, metadata=metadata
+        )
