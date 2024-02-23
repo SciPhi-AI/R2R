@@ -93,9 +93,13 @@ def create_app(
 
     class summaryLogModel(BaseModel):
         timestamp: datetime
-        pipeline_run_id: str
-        pipeline_run_type: str
-        event_summary: Dict[str, str]
+        pipelineRunID: str
+        pipelineRunType: str
+        method: str
+        searchQuery: str
+        searchResult: str
+        completionResult: str
+        outcome: str
 
     @app.post("/upload_and_process_file/")
     # TODO - Why can't we use a BaseModel to represent the request?
@@ -302,48 +306,36 @@ def create_app(
         }
         event_aggregation[pipeline_run_id]["events"].append(event)
 
-    def combine_aggregated_logs(
-        event_aggregation: Dict[str, Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        events_summary = []
+    def combine_aggregated_logs(event_aggregation: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+        logs_summary = []
         for run_id, aggregation in event_aggregation.items():
             # Assuming 'pipeline_run_type' is available in the log entries to determine the type of pipeline
             pipeline_type = aggregation["pipeline_run_type"] if "pipeline_run_type" in aggregation else "unknown"
             
-            summary_entry = summaryLogModel(
-                timestamp=aggregation["timestamp"],
-                pipeline_run_id=run_id,
-                pipeline_run_type=pipeline_type,
-                event_summary={}
-            )
+            summary_entry = {
+                "timestamp": aggregation["timestamp"],
+                "pipelineRunID": run_id,
+                "pipelineRunType": pipeline_type,
+                "method": "",
+                "searchQuery": "",
+                "searchResult": "",
+                "completionResult": "N/A",  # Default to "N/A" if not applicable
+                "outcome": "success" if aggregation["events"][-1].get("log_level") == "INFO" else "fail",
+            }
 
-            if pipeline_type == "rag":
-                for event in aggregation["events"]:
-                    if event["method"] == "ingress":
-                        summary_entry.event_summary["search_query"] = event.get("result")
-                    if event["method"] == "search":
-                        summary_entry.event_summary["search_result"] = process_result(event.get("result"), event["method"])
-                    elif event["method"] == "generate_completion":
-                        summary_entry.event_summary["completion_result"] = process_result(event.get("result"), event["method"])
-                    else:
-                        logger.error(f"Unknown method in ${pipeline_type} pipeline: {event['method']}")
-            
-            elif pipeline_type == "search":
-                for event in aggregation["events"]:
-                    if event["method"] == "ingress":
-                        summary_entry.event_summary["search_query"] = event.get("result")
-                    elif event["method"] == "search":
-                        summary_entry.event_summary["search_result"] = process_result(event.get("result"), event["method"])
-                    else:
-                        logger.error(f"Unknown method in ${pipeline_type} pipeline: {event['method']}")
+            for event in aggregation["events"]:
+                if event["method"] == "ingress":
+                    summary_entry["searchQuery"] = event.get("result", "N/A")
+                elif event["method"] == "search":
+                    summary_entry["searchResult"] = process_result(event.get("result", "N/A"), event["method"])
+                    summary_entry["method"] = "Search"  # Update method to reflect the action
+                elif event["method"] == "generate_completion":
+                    summary_entry["completionResult"] = process_result(event.get("result", "N/A"), event["method"])
+                    summary_entry["method"] = "Generate Completion"  # Update method to reflect the action
+                else:
+                    logger.error(f"Unknown method in {pipeline_type} pipeline: {event['method']}")
 
-            # Common outcome and log level determination
-            if aggregation["events"]:
-                last_event = aggregation["events"][-1]
-                summary_entry.event_summary["log_level"] = last_event.get("log_level")
-                summary_entry.event_summary["outcome"] = "success" if last_event.get("log_level") == "INFO" else "fail"
-
-            events_summary.append(summary_entry.dict())
-        return events_summary
+            logs_summary.append(summary_entry)
+        return [summaryLogModel(**log).dict() for log in logs_summary]
 
     return app
