@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, List, Dict, Any
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -89,6 +89,7 @@ def create_app(
     class LogModel(BaseModel):
         timestamp: datetime
         pipeline_run_id: str
+        pipeline_run_type: str
         method: str
         result: str
         log_level: str
@@ -241,105 +242,57 @@ def create_app(
             return (end_time - start_time).total_seconds() * 1000
         return None
 
+    # TODO: Add a field about what type of pipeline is it: search, rag, embedding, ingestion. (Look at logs, add a flag.)
+    # TODO: PipelineRunType
+
+
     @app.get("/get_logs_summary")
     def get_logs_summary():
         try:
             if logging_database is None:
-                raise HTTPException(
-                    status_code=404, detail="Logging provider not found."
-                )
+                raise HTTPException(status_code=404, detail="Logging provider not found.")
             logs = logging_database.get_logs()
-            # Initialize the structure for grouped logs
-            events_summary = []
-
-            # Temporary storage to aggregate search results and check outcomes
-            search_aggregation = {}
-            generation_aggregation = {}
-
-            for log in logs:
-                run_id = log["pipeline_run_id"]
-                outcome = "completed" if log["log_level"] == "INFO" else "fail"
-
-                # Initialize aggregation entry if not exists
-                if run_id not in search_aggregation:
-                    search_aggregation[run_id] = {
-                        "timestamp": log["timestamp"]
-                        if log["method"] == "ingress"
-                        else None,  # Initialize timestamp for ingress
-                        "pipeline_run_id": run_id,
-                        "event": "search",
-                        "search_query": "",
-                        "full_search_result": "",
-                        "first_search_result": "",
-                        "outcome": outcome,
-                    }
-
-                if run_id not in generation_aggregation:
-                    generation_aggregation[run_id] = {
-                        "timestamp": log["timestamp"]
-                        if log["method"] == "construct_prompt"
-                        else None,  # Initialize timestamp for construct_prompt
-                        "pipeline_run_id": run_id,
-                        "event": "generate_completion",
-                        "search_query": "",
-                        "full_search_result": "",
-                        "first_search_result": "",
-                        "completion_result": "",
-                        "outcome": outcome,
-                    }
-
-                # Process ingress for search query
-                if log["method"] == "ingress":
-                    search_aggregation[run_id]["search_query"] = log["result"]
-
-                # Aggregate search results
-                if log["method"] == "search":
-                    try:
-                        text_matches = re.findall(
-                            r"'text': '([^']*)'", log["result"]
-                        )
-                        # Aggregating search results into a JSON object
-                        search_results_json = json.dumps(text_matches, indent=4)
-                        search_aggregation[run_id][
-                            "full_search_result"
-                        ] = search_results_json
-                        if text_matches:  # Ensure there's at least one match
-                            search_aggregation[run_id]["first_search_result"] = text_matches[0]
-                    except Exception as e:
-                        logger.error(
-                            f"Failed to extract text from search result: {str(e)}"
-                        )
-                        search_aggregation[run_id][
-                            "full_search_result"
-                        ] = "parsing failure"
-                        search_aggregation[run_id]["outcome"] = "fail"
-
-                # Process generate_completion for generation
-                if log["method"] == "generate_completion":
-                    if run_id in search_aggregation:
-                        generation_aggregation[run_id]["search_query"] = search_aggregation[run_id]["search_query"]
-                        generation_aggregation[run_id]["full_search_result"] = search_aggregation[run_id]["search_result"]
-                    else:
-                        error_message = f"No associated search found for run_id: {run_id}"
-                        logger.error(error_message)
-                        generation_aggregation[run_id]["error"] = error_message
-
-                    generation_aggregation[run_id]["completion_result"] = log["result"]
-
-            # Combine and prepare the final summary
-            for run_id in search_aggregation:
-                events_summary.append(search_aggregation[run_id])
-            for run_id in generation_aggregation:
-                if generation_aggregation[run_id][
-                    "completion_result"
-                ]:  # Ensure there's a completion result
-                    events_summary.append(generation_aggregation[run_id])
-
+            events_summary = process_logs(logs)
             return {"events_summary": events_summary}
         except Exception as e:
             logger.error(f":get_logs_summary: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
-    return app
+    def process_logs(logs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        event_aggregation = {}
+        for log in logs:
+            update_aggregation_entries(log, event_aggregation)
+        return combine_aggregated_logs(event_aggregation)
 
+    def update_aggregation_entries(log: Dict[str, Any], event_aggregation: Dict[str, Dict[str, Any]]):
+        run_id = log["pipeline_run_id"]
+        if run_id not in event_aggregation:
+            event_aggregation[run_id] = {
+                "timestamp": log["timestamp"],
+                "pipeline_run_id": run_id,
+                "events": []
+            }
+        event = {
+            "method": log["method"],
+            "result": log["result"],
+            "log_level": log["log_level"],
+            "message": log["message"],
+            "outcome": "success" if log["log_level"] == "INFO" else "fail"
+        }
+        event_aggregation[run_id]["events"].append(event)
+
+    def combine_aggregated_logs(event_aggregation: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+        events_summary = []
+        for run_id, aggregation in event_aggregation.items():
+            search_events = [event for event in aggregation["events"] if event["method"] in ["ingress", "search"]]
+            generation_events = [event for event in aggregation["events"] if event["method"] == "generate_completion"]
+            summary_entry = {
+                "pipeline_run_id": run_id,
+                "timestamp": aggregation["timestamp"],
+                "search_events": search_events,
+                "generation_events": generation_events
+            }
+            events_summary.append(summary_entry)
+        return events_summary
     
+    return app
