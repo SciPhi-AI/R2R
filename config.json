@@ -2,7 +2,7 @@
     "logging": {
         "level": "INFO",
         "name": "r2r",
-        "database": "demo_logs_v3"
+        "database": "demo_logs_v1"
     },
     "embedding": {
         "model": "text-embedding-3-small",
