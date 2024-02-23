@@ -3,7 +3,7 @@ Abstract base class for completion pipelines.
 """
 import logging
 import uuid
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Optional, Union
 
 from openai.types import Completion
@@ -11,6 +11,7 @@ from openai.types.chat import ChatCompletion
 
 from ..providers.llm import GenerationConfig, LLMProvider
 from ..providers.logging import LoggingDatabaseConnection, log_execution_to_db
+from .pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ Answer the query given immediately below given the context which follows later.
 """
 
 
-class RAGPipeline(ABC):
+class RAGPipeline(Pipeline):
     def __init__(
         self,
         llm: "LLMProvider",
@@ -47,27 +48,14 @@ class RAGPipeline(ABC):
         self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
         self.task_prompt = task_prompt or DEFAULT_TASK_PROMPT
         self.logging_database = logging_database
-        self.pipeline_run_id = None
+        self.pipeline_run_info = None
+        super().__init__(logging_database=logging_database, **kwargs)
 
-        if logging_database is not None:
-            self.conn = logging_database.__enter__()
-            self.log_table_name = logging_database.log_table_name
-        else:
-            self.conn = None
-            self.log_table_name = None
-
-    def close(self):
-        if self.logging_database:
-            self.logging_database.__exit__(None, None, None)
-
-    def _check_pipeline_initialized(self) -> None:
-        if self.pipeline_run_id is None:
-            raise ValueError(
-                "The pipeline has not been initialized. Please call `initialize_pipeline` before running the pipeline."
-            )
-
-    def initialize_pipeline(self, query: str) -> None:
-        self.pipeline_run_id = uuid.uuid4()
+    def initialize_pipeline(self, query: str, search_only: bool) -> None:
+        self.pipeline_run_info = {
+            "run_id": uuid.uuid4(),
+            "type": "rag" if not search_only else "search",
+        }
         self.ingress(query)
 
     @log_execution_to_db
@@ -75,6 +63,7 @@ class RAGPipeline(ABC):
         """
         Ingresses data into the pipeline.
         """
+        self._check_pipeline_initialized()
         return data
 
     @abstractmethod
@@ -171,14 +160,18 @@ class RAGPipeline(ABC):
         """
         Runs the completion pipeline.
         """
-        self.initialize_pipeline(query)
+        self.initialize_pipeline(query, search_only)
+
+        logger.debug(f"Pipeline run type: {self.pipeline_run_info}")
+
         transformed_query = self.transform_query(query)
         search_results = self.search(transformed_query, filters, limit)
         if search_only:
+            logger.debug(f"Pipeline run type: {self.pipeline_run_info}")
             return search_results
+
         context = self.construct_context(search_results)
         prompt = self.construct_prompt(
             {"query": transformed_query, "context": context}
         )
         return self.generate_completion(prompt, generate_with_chat=True)
-

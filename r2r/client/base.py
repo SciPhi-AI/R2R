@@ -109,3 +109,8 @@ class SciPhiR2RClient:
         url = f"{self.base_url}/logs"
         response = requests.get(url)
         return response.json()
+
+    def get_logs_summary(self):
+        url = f"{self.base_url}/logs_summary"
+        response = requests.get(url)
+        return response.json()

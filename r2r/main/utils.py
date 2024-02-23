@@ -1,7 +1,11 @@
 import json
 import logging
 import os
+import re
 from logging.handlers import RotatingFileHandler
+from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 # Function to find the project root by looking for a .git folder or setup.py file
@@ -77,3 +81,91 @@ def configure_logging():
     # Add handlers to the logger
     logger.addHandler(c_handler)
     logger.addHandler(f_handler)
+
+
+def update_aggregation_entries(
+    log: dict[str, Any], event_aggregation: dict[str, dict[str, dict]]
+):
+    pipeline_run_id = log["pipeline_run_id"]
+    if pipeline_run_id is None:
+        logger.error(f"Missing 'run_id' in log: {log}")
+        raise ValueError(f"Missing 'run_id' in log: {log}")
+
+    pipeline_run_type = log["pipeline_run_type"]
+    if pipeline_run_type is None:
+        logger.error(f"Missing 'run_type' in log: {log}")
+        raise ValueError(f"Missing 'run_type' in log: {log}")
+
+    if pipeline_run_id not in event_aggregation:
+        event_aggregation[pipeline_run_id] = {
+            "timestamp": log["timestamp"],
+            "pipeline_run_id": pipeline_run_id,
+            "pipeline_run_type": pipeline_run_type,
+            "events": [],
+        }
+    event = {
+        "method": log["method"],
+        "result": log["result"],
+        "log_level": log["log_level"],
+        "outcome": "success" if log["log_level"] == "INFO" else "fail",
+    }
+    event_aggregation[pipeline_run_id]["events"].append(event)
+
+
+def process_event(event: dict[str, Any]) -> dict[str, Any]:
+    method = event["method"]
+    result = event.get("result", "N/A")
+    processed_result = {}
+
+    if method == "ingress":
+        processed_result["searchQuery"] = result
+    elif method == "search":
+        text_matches = re.findall(r"'text': '([^']*)'", result)
+        processed_result["searchResult"] = ", ".join(text_matches)
+        processed_result["method"] = "Search"
+    elif method == "generate_completion":
+        content_matches = re.findall(r"content='([^']*)'", result)
+        processed_result["completionResult"] = ", ".join(content_matches)
+        processed_result["method"] = "Generate Completion"
+
+    return processed_result
+
+
+def combine_aggregated_logs(
+    event_aggregation: dict[str, dict[str, Any]]
+) -> list[dict[str, Any]]:
+    logs_summary = []
+    for run_id, aggregation in event_aggregation.items():
+        # Assuming 'pipeline_run_type' is available in the log entries to determine the type of pipeline
+        pipeline_type = (
+            aggregation["pipeline_run_type"]
+            if "pipeline_run_type" in aggregation
+            else "unknown"
+        )
+
+        summary_entry = {
+            "timestamp": aggregation["timestamp"],
+            "pipelineRunID": run_id,
+            "pipelineRunType": pipeline_type,
+            "method": "",
+            "searchQuery": "",
+            "searchResult": "",
+            "completionResult": "N/A",  # Default to "N/A" if not applicable
+            "outcome": "success"
+            if aggregation["events"][-1].get("log_level") == "INFO"
+            else "fail",
+        }
+
+        for event in aggregation["events"]:
+            summary_entry.update(process_event(event))
+
+        logs_summary.append(summary_entry)
+    return logs_summary
+
+
+def process_logs(logs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    event_aggregation = {}
+    for log in logs:
+        update_aggregation_entries(log, event_aggregation)
+    # Convert each aggregated log entry to SummaryLogModel before returning
+    return combine_aggregated_logs(event_aggregation)

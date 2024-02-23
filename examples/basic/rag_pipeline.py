@@ -18,7 +18,7 @@ class DemoRAGPipeline(BasicRAGPipeline):
         """
         Runs the completion pipeline.
         """
-        self.pipeline_run_id = uuid.uuid4()
+        self.initialize_pipeline(query, search_only)
         transformed_query = self.transform_query(query)
         search_results = self.search(transformed_query, filters, limit)
         if search_only:

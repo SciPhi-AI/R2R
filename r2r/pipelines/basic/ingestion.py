@@ -5,6 +5,7 @@ import collections
 import copy
 import json
 import logging
+import uuid
 from enum import Enum
 from typing import Optional, Union
 
@@ -36,6 +37,7 @@ class BasicIngestionPipeline(IngestionPipeline):
         super().__init__(
             logging_database,
         )
+        self.pipeline_run_info = None
 
     def get_supported_types(self) -> list[str]:
         return [entry_type.value for entry_type in EntryType]
@@ -76,30 +78,6 @@ class BasicIngestionPipeline(IngestionPipeline):
         Parse entry data into plaintext based on the entry type.
         """
         return self.process_data(entry_type, entry_data)
-
-    def run(
-        self,
-        document_id: str,
-        blobs: dict[str, Union[bytes, str]],
-        metadata: Optional[dict] = None,
-        **kwargs,
-    ) -> dict:
-        """
-        Run the appropriate parsing method based on the data type and whether the data is a file or an entry.
-        Returns the processed data and metadata.
-        """
-        if len(blobs) == 0:
-            raise ValueError("No blobs provided to process.")
-
-        processed_text = ""
-        for entry_type, blob in blobs.items():
-            if entry_type not in self.get_supported_types():
-                raise ValueError(f"EntryType {entry_type} not supported.")
-            processed_text += self.parse_entry(entry_type, blob)
-
-        return BasicDocument(
-            id=document_id, text=processed_text, metadata=metadata
-        )
 
     def _parse_json(self, data: dict) -> str:
         """

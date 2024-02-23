@@ -14,7 +14,7 @@ from r2r.core import (
     LoggingDatabaseConnection,
     RAGPipeline,
 )
-from r2r.main.utils import configure_logging, find_project_root
+from r2r.main.utils import configure_logging, find_project_root, process_logs
 
 logger = logging.getLogger("r2r")
 
@@ -34,17 +34,17 @@ def create_app(
 
     # CORS setup
     origins = [
-        "*", # TODO - Change this to the actual frontend URL
+        "*",  # TODO - Change this to the actual frontend URL
         "http://localhost:3000",
         "http://localhost:8000",
     ]
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,
+        allow_origins=origins,  # Allows specified origins
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["*"],  # Allows all methods
+        allow_headers=["*"],  # Allows all headers
     )
 
     upload_path = upload_path or find_project_root(CURRENT_DIR) / "uploads"
@@ -94,10 +94,22 @@ def create_app(
     class LogModel(BaseModel):
         timestamp: datetime
         pipeline_run_id: str
+        pipeline_run_type: str
         method: str
         result: str
         log_level: str
-        message: str
+
+    # TODO - Fix name convention to be pythonic
+    # And add inheritence from `LogModel`
+    class SummaryLogModel(BaseModel):
+        timestamp: datetime
+        pipelineRunID: str
+        pipelineRunType: str
+        method: str
+        searchQuery: str
+        searchResult: str
+        completionResult: str
+        outcome: str
 
     @app.post("/upload_and_process_file/")
     # TODO - Why can't we use a BaseModel to represent the request?
@@ -226,7 +238,7 @@ def create_app(
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/logs")
-    def get_logs():
+    def logs():
         try:
             if logging_database is None:
                 raise HTTPException(
@@ -236,6 +248,26 @@ def create_app(
             return {"logs": [LogModel(**log) for log in logs]}
         except Exception as e:
             logger.error(f":get_logs: [Error](error={str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/logs_summary")
+    def logs_summary():
+        try:
+            if logging_database is None:
+                raise HTTPException(
+                    status_code=404, detail="Logging provider not found."
+                )
+            print("getting logs...")
+            logs = logging_database.get_logs()
+            print("logs = ", logs)
+            logs_summary = process_logs(logs)
+            print("logs_summary = ", logs_summary)
+            events_summary = [
+                SummaryLogModel(**log).dict() for log in logs_summary
+            ]
+            return {"events_summary": events_summary}
+        except Exception as e:
+            logger.error(f":get_logs_summary: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     return app

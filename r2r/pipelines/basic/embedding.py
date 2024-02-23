@@ -44,6 +44,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         self.text_splitter = text_splitter
         self.embedding_batch_size = embedding_batch_size
         self.id_prefix = id_prefix
+        self.pipeline_run_info = None
 
     def extract_text(self, document: Any) -> str:
         return next(document)[0]
@@ -77,41 +78,17 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
     def store_chunks(self, chunks: list[VectorEntry]) -> None:
         self.db.upsert_entries(chunks)
 
-    def process_batches(self, batch_data: list[Tuple[str, str, dict]]):
-        logger.debug(f"Parsing batch of size {len(batch_data)}.")
-
-        entries = []
-
-        # Unpack document IDs, indices, and chunks for transformation and embedding
-        ids, raw_chunks, metadatas = zip(*batch_data)
-        transformed_chunks = self.transform_chunks(raw_chunks, metadatas)
-        embedded_chunks = self.embed_chunks(transformed_chunks)
-
-        chunk_count = 0
-        for doc_id, transformed_chunk, embedded_chunk, metadata in zip(
-            ids, transformed_chunks, embedded_chunks, metadatas
-        ):
-            metadata = copy.deepcopy(metadata)
-            metadata["pipeline_run_id"] = str(self.pipeline_run_id)
-            metadata["text"] = transformed_chunk
-            metadata["document_id"] = doc_id
-            chunk_id = uuid.uuid5(
-                uuid.NAMESPACE_DNS, f"{doc_id}-{chunk_count}"
-            )
-            chunk_count += 1
-            entries.append(VectorEntry(chunk_id, embedded_chunk, metadata))
-        self.store_chunks(entries)
-
     def run(
         self,
         document: Union[BasicDocument, list[BasicDocument]],
         do_chunking=False,
         **kwargs: Any,
     ):
-        self.pipeline_run_id = uuid.uuid4()
+        self.initialize_pipeline()
         logger.debug(
-            f"Running the `BasicEmbeddingPipeline` with id={self.pipeline_run_id}."
+            f"Running the `BasicEmbeddingPipeline` with id={self.pipeline_run_info['run_id']}."
         )
+        logger.debug(f"Pipeline run type: {self.pipeline_run_info['type']}")
 
         documents = [document] if not isinstance(document, list) else document
         batch_data = []
@@ -128,9 +105,34 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
                 )
 
                 if len(batch_data) == self.embedding_batch_size:
-                    self.process_batches(batch_data)
+                    self._process_batches(batch_data)
                     batch_data = []
 
         # Process any remaining batch
         if batch_data:
-            self.process_batches(batch_data)
+            self._process_batches(batch_data)
+
+    def _process_batches(self, batch_data: list[Tuple[str, str, dict]]):
+        logger.debug(f"Parsing batch of size {len(batch_data)}.")
+
+        entries = []
+
+        # Unpack document IDs, indices, and chunks for transformation and embedding
+        ids, raw_chunks, metadatas = zip(*batch_data)
+        transformed_chunks = self.transform_chunks(raw_chunks, metadatas)
+        embedded_chunks = self.embed_chunks(transformed_chunks)
+
+        chunk_count = 0
+        for doc_id, transformed_chunk, embedded_chunk, metadata in zip(
+            ids, transformed_chunks, embedded_chunks, metadatas
+        ):
+            metadata = copy.deepcopy(metadata)
+            metadata["pipeline_run_id"] = str(self.pipeline_run_info["run_id"])
+            metadata["text"] = transformed_chunk
+            metadata["document_id"] = doc_id
+            chunk_id = uuid.uuid5(
+                uuid.NAMESPACE_DNS, f"{doc_id}-{chunk_count}"
+            )
+            chunk_count += 1
+            entries.append(VectorEntry(chunk_id, embedded_chunk, metadata))
+        self.store_chunks(entries)
