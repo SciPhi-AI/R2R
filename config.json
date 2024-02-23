@@ -2,7 +2,7 @@
     "logging": {
         "level": "INFO",
         "name": "r2r",
-        "database": "demo_logs_v2"
+        "database": "demo_logs_v1zxc23112"
     },
     "embedding": {
         "model": "text-embedding-3-small",
@@ -11,7 +11,7 @@
     },
     "database": {
         "vector_db_provider": "pg_vector",
-        "collection_name": "demo-v0-test"
+        "collection_name": "demo-v1zxc23123-test"
     },
     "language_model": {
         "model_name": "gpt-3.5-turbo",

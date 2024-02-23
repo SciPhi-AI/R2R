@@ -1,10 +1,10 @@
 import uuid
 
-from r2r.client import SciPhiR2RClient
+from r2r.client import R2RClient
 
 # Initialize the client with the base URL of your API
 base_url = "http://localhost:8000"  # Change this to your actual API base URL
-client = SciPhiR2RClient(base_url)
+client = R2RClient(base_url)
 
 print("Upserting entry to remote db...")
 # Upsert a single entry

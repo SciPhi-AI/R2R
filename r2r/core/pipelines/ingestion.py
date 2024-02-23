@@ -18,8 +18,9 @@ class IngestionPipeline(Pipeline):
     def initialize_pipeline(self) -> None:
         self.pipeline_run_info = {"run_id": uuid.uuid4(), "type": "ingestion"}
 
+    @property
     @abstractmethod
-    def get_supported_types(self) -> list[str]:
+    def supported_types(self) -> list[str]:
         """
         Returns a list of supported data types.
         """
@@ -58,7 +59,7 @@ class IngestionPipeline(Pipeline):
 
         processed_text = ""
         for entry_type, blob in blobs.items():
-            if entry_type not in self.get_supported_types():
+            if entry_type not in self.supported_types:
                 raise ValueError(f"EntryType {entry_type} not supported.")
             processed_text += self.parse_entry(entry_type, blob)
 

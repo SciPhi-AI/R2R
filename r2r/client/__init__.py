@@ -1,3 +1,3 @@
-from .base import SciPhiR2RClient
+from .base import R2RClient
 
-__all__ = ["SciPhiR2RClient"]
+__all__ = ["R2RClient"]

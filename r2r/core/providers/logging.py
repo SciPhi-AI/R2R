@@ -2,7 +2,6 @@ import functools
 import os
 
 import psycopg2
-from pydantic import BaseModel
 
 
 class LoggingDatabaseConnection:

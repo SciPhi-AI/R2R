@@ -88,13 +88,13 @@ def update_aggregation_entries(
 ):
     pipeline_run_id = log["pipeline_run_id"]
     if pipeline_run_id is None:
-        logger.error(f"Missing 'run_id' in log: {log}")
-        raise ValueError(f"Missing 'run_id' in log: {log}")
+        logger.error(f"Missing 'pipeline_run_id' in log: {log}")
+        raise ValueError(f"Missing 'pipeline_run_id' in log: {log}")
 
     pipeline_run_type = log["pipeline_run_type"]
     if pipeline_run_type is None:
-        logger.error(f"Missing 'run_type' in log: {log}")
-        raise ValueError(f"Missing 'run_type' in log: {log}")
+        logger.error(f"Missing 'pipeline_run_type' in log: {log}")
+        raise ValueError(f"Missing 'pipeline_run_type' in log: {log}")
 
     if pipeline_run_id not in event_aggregation:
         event_aggregation[pipeline_run_id] = {
@@ -118,14 +118,18 @@ def process_event(event: dict[str, Any]) -> dict[str, Any]:
     processed_result = {}
 
     if method == "ingress":
-        processed_result["searchQuery"] = result
+        processed_result["search_query"] = result
     elif method == "search":
         text_matches = re.findall(r"'text': '([^']*)'", result)
-        processed_result["searchResult"] = ", ".join(text_matches)
+        scores = re.findall(r"score=(\d+\.\d+)", result)
+        processed_result["search_results"] = [
+            {"text": text, "score": score}
+            for text, score in zip(text_matches, scores)
+        ]
         processed_result["method"] = "Search"
     elif method == "generate_completion":
         content_matches = re.findall(r"content='([^']*)'", result)
-        processed_result["completionResult"] = ", ".join(content_matches)
+        processed_result["completion_result"] = ", ".join(content_matches)
         processed_result["method"] = "Generate Completion"
 
     return processed_result
@@ -145,12 +149,13 @@ def combine_aggregated_logs(
 
         summary_entry = {
             "timestamp": aggregation["timestamp"],
-            "pipelineRunID": run_id,
-            "pipelineRunType": pipeline_type,
+            "pipeline_run_id": run_id,
+            "pipeline_run_type": pipeline_type,
             "method": "",
-            "searchQuery": "",
-            "searchResult": "",
-            "completionResult": "N/A",  # Default to "N/A" if not applicable
+            "search_query": "",
+            "search_results": "",
+            # "search_score": "",
+            "completion_result": "N/A",  # Default to "N/A" if not applicable
             "outcome": "success"
             if aggregation["events"][-1].get("log_level") == "INFO"
             else "fail",
@@ -158,7 +163,6 @@ def combine_aggregated_logs(
 
         for event in aggregation["events"]:
             summary_entry.update(process_event(event))
-
         logs_summary.append(summary_entry)
     return logs_summary
 
