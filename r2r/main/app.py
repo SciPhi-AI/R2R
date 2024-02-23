@@ -89,7 +89,13 @@ def create_app(
         method: str
         result: str
         log_level: str
-        message: str
+
+
+    class summaryLogModel(BaseModel):
+        timestamp: datetime
+        pipeline_run_id: str
+        pipeline_run_type: str
+        event_summary: Dict[str, str]
 
     @app.post("/upload_and_process_file/")
     # TODO - Why can't we use a BaseModel to represent the request?
@@ -231,17 +237,6 @@ def create_app(
             logger.error(f":get_logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
-    def calculate_response_time(start_time, end_time):
-        # TODO: Parked for now, can come back at it when latency is relevant
-        """Calculate response time in milliseconds."""
-        if (
-            start_time is not None
-            and end_time is not None
-            and start_time <= end_time
-        ):
-            return (end_time - start_time).total_seconds() * 1000
-        return None
-
     # TODO: Add a field about what type of pipeline is it: search, rag, embedding, ingestion. (Look at logs, add a flag.)
     # TODO: PipelineRunType
 
@@ -263,49 +258,80 @@ def create_app(
         event_aggregation = {}
         for log in logs:
             update_aggregation_entries(log, event_aggregation)
-        return combine_aggregated_logs(event_aggregation)
+        # Convert each aggregated log entry to summaryLogModel before returning
+        return [summaryLogModel(**log).dict() for log in combine_aggregated_logs(event_aggregation)]
 
     def update_aggregation_entries(
         log: Dict[str, Any], event_aggregation: Dict[str, Dict[str, Any]]
     ):
-        run_id = log["pipeline_run_id"]
-        if run_id not in event_aggregation:
-            event_aggregation[run_id] = {
+        pipeline_run_id = log['pipeline_run_id']  
+        if pipeline_run_id is None:
+            logger.error(f"Missing 'run_id' in log: {log}")
+            return  
+
+        pipeline_run_type = log['pipeline_run_type']
+        if pipeline_run_type is None:
+            logger.error(f"Missing 'run_type' in log: {log}")
+            return  
+
+
+        if pipeline_run_id not in event_aggregation:
+            event_aggregation[pipeline_run_id] = {
                 "timestamp": log["timestamp"],
-                "pipeline_run_id": run_id,
+                "pipeline_run_id": pipeline_run_id,  
+                "pipeline_run_type": pipeline_run_type, 
                 "events": [],
             }
         event = {
             "method": log["method"],
             "result": log["result"],
             "log_level": log["log_level"],
-            "message": log["message"],
             "outcome": "success" if log["log_level"] == "INFO" else "fail",
         }
-        event_aggregation[run_id]["events"].append(event)
+        event_aggregation[pipeline_run_id]["events"].append(event)
 
     def combine_aggregated_logs(
         event_aggregation: Dict[str, Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         events_summary = []
         for run_id, aggregation in event_aggregation.items():
-            search_events = [
-                event
-                for event in aggregation["events"]
-                if event["method"] in ["ingress", "search"]
-            ]
-            generation_events = [
-                event
-                for event in aggregation["events"]
-                if event["method"] == "generate_completion"
-            ]
-            summary_entry = {
-                "pipeline_run_id": run_id,
-                "timestamp": aggregation["timestamp"],
-                "search_events": search_events,
-                "generation_events": generation_events,
-            }
-            events_summary.append(summary_entry)
+            # Assuming 'pipeline_run_type' is available in the log entries to determine the type of pipeline
+            pipeline_type = aggregation["pipeline_run_type"] if "pipeline_run_type" in aggregation else "unknown"
+            
+            summary_entry = summaryLogModel(
+                timestamp=aggregation["timestamp"],
+                pipeline_run_id=run_id,
+                pipeline_run_type=pipeline_type,
+                event_summary={}
+            )
+
+            if pipeline_type == "rag":
+                for event in aggregation["events"]:
+                    if event["method"] == "ingress":
+                        summary_entry.event_summary["search_query"] = event.get("result")
+                    if event["method"] == "search":
+                        summary_entry.event_summary["search_result"] = event.get("result")
+                    elif event["method"] == "generate_completion":
+                        summary_entry.event_summary["completion_result"] = event.get("result")
+                    else:
+                        logger.error(f"Unknown method in ${pipeline_type} pipeline: {event['method']}")
+            
+            elif pipeline_type == "search":
+                for event in aggregation["events"]:
+                    if event["method"] == "ingress":
+                        summary_entry.event_summary["search_query"] = event.get("result")
+                    elif event["method"] == "search":
+                        summary_entry.event_summary["search_result"] = event.get("result")
+                    else:
+                        logger.error(f"Unknown method in ${pipeline_type} pipeline: {event['method']}")
+
+            # Common outcome and log level determination
+            if aggregation["events"]:
+                last_event = aggregation["events"][-1]
+                summary_entry.event_summary["log_level"] = last_event.get("log_level")
+                summary_entry.event_summary["outcome"] = "success" if last_event.get("log_level") == "INFO" else "fail"
+
+            events_summary.append(summary_entry.dict())
         return events_summary
 
     return app
