@@ -47,7 +47,7 @@ class RAGPipeline(ABC):
         self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
         self.task_prompt = task_prompt or DEFAULT_TASK_PROMPT
         self.logging_database = logging_database
-        self.pipeline_run_id = None
+        self.pipeline_run_info = None
 
         if logging_database is not None:
             self.conn = logging_database.__enter__()
@@ -61,13 +61,13 @@ class RAGPipeline(ABC):
             self.logging_database.__exit__(None, None, None)
 
     def _check_pipeline_initialized(self) -> None:
-        if self.pipeline_run_id is None:
+        if self.pipeline_run_info is None:
             raise ValueError(
                 "The pipeline has not been initialized. Please call `initialize_pipeline` before running the pipeline."
             )
 
-    def initialize_pipeline(self, query: str) -> None:
-        self.pipeline_run_id = uuid.uuid4()
+    def initialize_pipeline(self, query: str, search_only: bool) -> None:
+        self.pipeline_run_info = {'run_id': uuid.uuid4(), 'type': 'rag' if not search_only else 'search'}
         self.ingress(query)
 
     @log_execution_to_db
@@ -171,10 +171,12 @@ class RAGPipeline(ABC):
         """
         Runs the completion pipeline.
         """
-        self.initialize_pipeline(query)
+        self.initialize_pipeline(query, search_only)
+        logger.debug(f"Pipeline run type: {self.pipeline_run_type}")
         transformed_query = self.transform_query(query)
         search_results = self.search(transformed_query, filters, limit)
         if search_only:
+            logger.debug(f"Pipeline run type: {self.pipeline_run_type}")
             return search_results
         context = self.construct_context(search_results)
         prompt = self.construct_prompt(

@@ -3,6 +3,7 @@ A simple example to demonstrate the usage of `BasicIngestionPipeline`.
 """
 import collections
 import copy
+import uuid
 import json
 import logging
 from enum import Enum
@@ -36,9 +37,19 @@ class BasicIngestionPipeline(IngestionPipeline):
         super().__init__(
             logging_database,
         )
+        self.pipeline_run_info = None
 
     def get_supported_types(self) -> list[str]:
         return [entry_type.value for entry_type in EntryType]
+    
+    def _check_pipeline_initialized(self) -> None:
+        if self.pipeline_run_info is None:
+            raise ValueError(
+                "The pipeline has not been initialized. Please call `initialize_pipeline` before running the pipeline."
+            )
+
+    def initialize_pipeline(self,) -> None:
+        self.pipeline_run_info = {'run_id': uuid.uuid4(), 'type': 'ingestion'}
 
     def process_data(
         self,
@@ -88,6 +99,10 @@ class BasicIngestionPipeline(IngestionPipeline):
         Run the appropriate parsing method based on the data type and whether the data is a file or an entry.
         Returns the processed data and metadata.
         """
+
+        self.initialize_pipeline()
+        logger.debug(f"Pipeline run type: {self.pipeline_run_type}")
+        
         if len(blobs) == 0:
             raise ValueError("No blobs provided to process.")
 

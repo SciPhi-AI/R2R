@@ -44,6 +44,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         self.text_splitter = text_splitter
         self.embedding_batch_size = embedding_batch_size
         self.id_prefix = id_prefix
+        self.pipeline_run_info = None
 
     def extract_text(self, document: Any) -> str:
         return next(document)[0]
@@ -77,6 +78,15 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
     def store_chunks(self, chunks: list[VectorEntry]) -> None:
         self.db.upsert_entries(chunks)
 
+    def _check_pipeline_initialized(self) -> None:
+        if self.pipeline_run_info is None:
+            raise ValueError(
+                "The pipeline has not been initialized. Please call `initialize_pipeline` before running the pipeline."
+            )
+
+    def initialize_pipeline(self) -> None:
+        self.pipeline_run_info = {'run_id': uuid.uuid4(), 'type': 'embedding'}
+
     def process_batches(self, batch_data: list[Tuple[str, str, dict]]):
         logger.debug(f"Parsing batch of size {len(batch_data)}.")
 
@@ -92,7 +102,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             ids, transformed_chunks, embedded_chunks, metadatas
         ):
             metadata = copy.deepcopy(metadata)
-            metadata["pipeline_run_id"] = str(self.pipeline_run_id)
+            metadata["pipeline_run_id"] = str(self.pipeline_run_info['run_id'])
             metadata["text"] = transformed_chunk
             metadata["document_id"] = doc_id
             chunk_id = uuid.uuid5(
@@ -108,10 +118,11 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         do_chunking=False,
         **kwargs: Any,
     ):
-        self.pipeline_run_id = uuid.uuid4()
+        self.initialize_pipeline()
         logger.debug(
-            f"Running the `BasicEmbeddingPipeline` with id={self.pipeline_run_id}."
+            f"Running the `BasicEmbeddingPipeline` with id={self.pipeline_run_info['run_id']}."
         )
+        logger.debug(f"Pipeline run type: {self.pipeline_run_info['type']}")
 
         documents = [document] if not isinstance(document, list) else document
         batch_data = []

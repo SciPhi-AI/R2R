@@ -1,6 +1,7 @@
 """
 A simple example to demonstrate the usage of `BasicRAGPipeline`.
 """
+import uuid
 import logging
 from typing import Optional
 
@@ -42,6 +43,7 @@ class BasicRAGPipeline(RAGPipeline):
         self.embedding_model = embedding_model
         self.embeddings_provider = embeddings_provider
         self.db = db
+        self.pipeline_run_info = None
 
     def transform_query(self, query: str) -> str:
         self._check_pipeline_initialized()
@@ -57,7 +59,6 @@ class BasicRAGPipeline(RAGPipeline):
         **kwargs,
     ) -> list[VectorSearchResult]:
         logger.debug(f"Retrieving results for query: {transformed_query}")
-
         self._check_pipeline_initialized()
         results = self.db.search(
             query_vector=self.embeddings_provider.get_embedding(
@@ -68,6 +69,7 @@ class BasicRAGPipeline(RAGPipeline):
             limit=limit,
         )
         logger.debug(f"Retrieved the raw results shown:\n{results}\n")
+
         return results
 
     def rerank_results(
