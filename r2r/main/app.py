@@ -260,6 +260,18 @@ def create_app(
             update_aggregation_entries(log, event_aggregation)
         # Convert each aggregated log entry to summaryLogModel before returning
         return [summaryLogModel(**log).dict() for log in combine_aggregated_logs(event_aggregation)]
+    
+    def process_result(result: str, method: str) -> str:
+        if method == "search":
+            text_matches = re.findall(r"'text': '([^']*)'", result)
+            processed_result = ", ".join(text_matches)
+            return processed_result
+        elif method == "generate_completion":
+            content_matches = re.findall(r"content='([^']*)'", result)
+            processed_result = ", ".join(content_matches)
+            return processed_result
+        else:
+            return result
 
     def update_aggregation_entries(
         log: Dict[str, Any], event_aggregation: Dict[str, Dict[str, Any]]
@@ -310,9 +322,9 @@ def create_app(
                     if event["method"] == "ingress":
                         summary_entry.event_summary["search_query"] = event.get("result")
                     if event["method"] == "search":
-                        summary_entry.event_summary["search_result"] = event.get("result")
+                        summary_entry.event_summary["search_result"] = process_result(event.get("result"), event["method"])
                     elif event["method"] == "generate_completion":
-                        summary_entry.event_summary["completion_result"] = event.get("result")
+                        summary_entry.event_summary["completion_result"] = process_result(event.get("result"), event["method"])
                     else:
                         logger.error(f"Unknown method in ${pipeline_type} pipeline: {event['method']}")
             
@@ -321,7 +333,7 @@ def create_app(
                     if event["method"] == "ingress":
                         summary_entry.event_summary["search_query"] = event.get("result")
                     elif event["method"] == "search":
-                        summary_entry.event_summary["search_result"] = event.get("result")
+                        summary_entry.event_summary["search_result"] = process_result(event.get("result"), event["method"])
                     else:
                         logger.error(f"Unknown method in ${pipeline_type} pipeline: {event['method']}")
 
