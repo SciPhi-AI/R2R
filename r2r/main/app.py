@@ -9,8 +9,12 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from r2r.core import (EmbeddingPipeline, IngestionPipeline,
-                      LoggingDatabaseConnection, RAGPipeline)
+from r2r.core import (
+    EmbeddingPipeline,
+    IngestionPipeline,
+    LoggingDatabaseConnection,
+    RAGPipeline,
+)
 from r2r.main.utils import configure_logging, find_project_root
 
 logger = logging.getLogger("r2r")
@@ -89,7 +93,6 @@ def create_app(
         method: str
         result: str
         log_level: str
-
 
     class summaryLogModel(BaseModel):
         timestamp: datetime
@@ -263,8 +266,11 @@ def create_app(
         for log in logs:
             update_aggregation_entries(log, event_aggregation)
         # Convert each aggregated log entry to summaryLogModel before returning
-        return [summaryLogModel(**log).dict() for log in combine_aggregated_logs(event_aggregation)]
-    
+        return [
+            summaryLogModel(**log).dict()
+            for log in combine_aggregated_logs(event_aggregation)
+        ]
+
     def process_result(result: str, method: str) -> str:
         if method == "search":
             text_matches = re.findall(r"'text': '([^']*)'", result)
@@ -280,22 +286,21 @@ def create_app(
     def update_aggregation_entries(
         log: Dict[str, Any], event_aggregation: Dict[str, Dict[str, Any]]
     ):
-        pipeline_run_id = log['pipeline_run_id']  
+        pipeline_run_id = log["pipeline_run_id"]
         if pipeline_run_id is None:
             logger.error(f"Missing 'run_id' in log: {log}")
-            return  
+            return
 
-        pipeline_run_type = log['pipeline_run_type']
+        pipeline_run_type = log["pipeline_run_type"]
         if pipeline_run_type is None:
             logger.error(f"Missing 'run_type' in log: {log}")
-            return  
-
+            return
 
         if pipeline_run_id not in event_aggregation:
             event_aggregation[pipeline_run_id] = {
                 "timestamp": log["timestamp"],
-                "pipeline_run_id": pipeline_run_id,  
-                "pipeline_run_type": pipeline_run_type, 
+                "pipeline_run_id": pipeline_run_id,
+                "pipeline_run_type": pipeline_run_type,
                 "events": [],
             }
         event = {
@@ -306,12 +311,18 @@ def create_app(
         }
         event_aggregation[pipeline_run_id]["events"].append(event)
 
-    def combine_aggregated_logs(event_aggregation: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def combine_aggregated_logs(
+        event_aggregation: Dict[str, Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         logs_summary = []
         for run_id, aggregation in event_aggregation.items():
             # Assuming 'pipeline_run_type' is available in the log entries to determine the type of pipeline
-            pipeline_type = aggregation["pipeline_run_type"] if "pipeline_run_type" in aggregation else "unknown"
-            
+            pipeline_type = (
+                aggregation["pipeline_run_type"]
+                if "pipeline_run_type" in aggregation
+                else "unknown"
+            )
+
             summary_entry = {
                 "timestamp": aggregation["timestamp"],
                 "pipelineRunID": run_id,
@@ -320,20 +331,32 @@ def create_app(
                 "searchQuery": "",
                 "searchResult": "",
                 "completionResult": "N/A",  # Default to "N/A" if not applicable
-                "outcome": "success" if aggregation["events"][-1].get("log_level") == "INFO" else "fail",
+                "outcome": "success"
+                if aggregation["events"][-1].get("log_level") == "INFO"
+                else "fail",
             }
 
             for event in aggregation["events"]:
                 if event["method"] == "ingress":
                     summary_entry["searchQuery"] = event.get("result", "N/A")
                 elif event["method"] == "search":
-                    summary_entry["searchResult"] = process_result(event.get("result", "N/A"), event["method"])
-                    summary_entry["method"] = "Search"  # Update method to reflect the action
+                    summary_entry["searchResult"] = process_result(
+                        event.get("result", "N/A"), event["method"]
+                    )
+                    summary_entry[
+                        "method"
+                    ] = "Search"  # Update method to reflect the action
                 elif event["method"] == "generate_completion":
-                    summary_entry["completionResult"] = process_result(event.get("result", "N/A"), event["method"])
-                    summary_entry["method"] = "Generate Completion"  # Update method to reflect the action
+                    summary_entry["completionResult"] = process_result(
+                        event.get("result", "N/A"), event["method"]
+                    )
+                    summary_entry[
+                        "method"
+                    ] = "Generate Completion"  # Update method to reflect the action
                 else:
-                    logger.error(f"Unknown method in {pipeline_type} pipeline: {event['method']}")
+                    logger.error(
+                        f"Unknown method in {pipeline_type} pipeline: {event['method']}"
+                    )
 
             logs_summary.append(summary_entry)
         return [summaryLogModel(**log).dict() for log in logs_summary]
