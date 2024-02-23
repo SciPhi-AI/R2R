@@ -8,11 +8,8 @@ from r2r.datasets import HuggingFaceDataProvider
 from r2r.embeddings import OpenAIEmbeddingProvider
 from r2r.llms import OpenAIConfig, OpenAILLM
 from r2r.main import create_app, load_config
-from r2r.pipelines import (
-    BasicEmbeddingPipeline,
-    BasicIngestionPipeline,
-    BasicRAGPipeline,
-)
+from r2r.pipelines import (BasicEmbeddingPipeline, BasicIngestionPipeline,
+                           BasicRAGPipeline)
 from r2r.vector_dbs import PGVectorDB, QdrantDB
 
 dotenv.load_dotenv()

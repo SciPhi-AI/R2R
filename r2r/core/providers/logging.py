@@ -67,8 +67,8 @@ def log_execution_to_db(func):
             return func(*args, **kwargs)
 
         # Adjusted to use 'run_id' and 'type'
-        arg_pipeline_run_id = instance.pipeline_run_info['run_id']
-        arg_pipeline_run_type = instance.pipeline_run_info['type']
+        arg_pipeline_run_id = instance.pipeline_run_info["run_id"]
+        arg_pipeline_run_type = instance.pipeline_run_info["type"]
         arg_log_table_name = instance.log_table_name
 
         try:
@@ -103,4 +103,3 @@ def log_execution_to_db(func):
         return result
 
     return wrapper
-

@@ -67,7 +67,10 @@ class RAGPipeline(ABC):
             )
 
     def initialize_pipeline(self, query: str, search_only: bool) -> None:
-        self.pipeline_run_info = {'run_id': uuid.uuid4(), 'type': 'rag' if not search_only else 'search'}
+        self.pipeline_run_info = {
+            "run_id": uuid.uuid4(),
+            "type": "rag" if not search_only else "search",
+        }
         self.ingress(query)
 
     @log_execution_to_db

@@ -1,4 +1,5 @@
 import os
+
 from r2r.codesearch.scip_pb2 import Index
 
 

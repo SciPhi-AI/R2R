@@ -3,17 +3,14 @@ A simple example to demonstrate the usage of `BasicIngestionPipeline`.
 """
 import collections
 import copy
-import uuid
 import json
 import logging
+import uuid
 from enum import Enum
 from typing import Optional, Union
 
-from r2r.core import (
-    BasicDocument,
-    IngestionPipeline,
-    LoggingDatabaseConnection,
-)
+from r2r.core import (BasicDocument, IngestionPipeline,
+                      LoggingDatabaseConnection)
 
 logger = logging.getLogger(__name__)
 
@@ -41,15 +38,17 @@ class BasicIngestionPipeline(IngestionPipeline):
 
     def get_supported_types(self) -> list[str]:
         return [entry_type.value for entry_type in EntryType]
-    
+
     def _check_pipeline_initialized(self) -> None:
         if self.pipeline_run_info is None:
             raise ValueError(
                 "The pipeline has not been initialized. Please call `initialize_pipeline` before running the pipeline."
             )
 
-    def initialize_pipeline(self,) -> None:
-        self.pipeline_run_info = {'run_id': uuid.uuid4(), 'type': 'ingestion'}
+    def initialize_pipeline(
+        self,
+    ) -> None:
+        self.pipeline_run_info = {"run_id": uuid.uuid4(), "type": "ingestion"}
 
     def process_data(
         self,
@@ -102,7 +101,7 @@ class BasicIngestionPipeline(IngestionPipeline):
 
         self.initialize_pipeline()
         logger.debug(f"Pipeline run type: {self.pipeline_run_type}")
-        
+
         if len(blobs) == 0:
             raise ValueError("No blobs provided to process.")
 

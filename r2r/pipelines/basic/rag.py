@@ -1,19 +1,13 @@
 """
 A simple example to demonstrate the usage of `BasicRAGPipeline`.
 """
-import uuid
 import logging
+import uuid
 from typing import Optional
 
-from r2r.core import (
-    GenerationConfig,
-    LLMProvider,
-    LoggingDatabaseConnection,
-    RAGPipeline,
-    VectorDBProvider,
-    VectorSearchResult,
-    log_execution_to_db,
-)
+from r2r.core import (GenerationConfig, LLMProvider, LoggingDatabaseConnection,
+                      RAGPipeline, VectorDBProvider, VectorSearchResult,
+                      log_execution_to_db)
 from r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)

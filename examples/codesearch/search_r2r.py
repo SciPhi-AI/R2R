@@ -2,12 +2,11 @@ import uuid
 
 import dotenv
 
-from r2r.codesearch import Indexer
 from r2r.client import SciPhiR2RClient
-
-from r2r.main import load_config
-from r2r.llms import OpenAIConfig, OpenAILLM
+from r2r.codesearch import Indexer
 from r2r.core import GenerationConfig
+from r2r.llms import OpenAIConfig, OpenAILLM
+from r2r.main import load_config
 
 # Initialize the client with the base URL of your API
 base_url = "http://localhost:8000"  # Change this to your actual API base URL

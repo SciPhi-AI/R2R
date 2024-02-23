@@ -8,13 +8,8 @@ from typing import Any, Optional, Tuple, Union
 
 from langchain.text_splitter import TextSplitter
 
-from r2r.core import (
-    BasicDocument,
-    EmbeddingPipeline,
-    LoggingDatabaseConnection,
-    VectorDBProvider,
-    VectorEntry,
-)
+from r2r.core import (BasicDocument, EmbeddingPipeline,
+                      LoggingDatabaseConnection, VectorDBProvider, VectorEntry)
 from r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)
@@ -85,7 +80,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             )
 
     def initialize_pipeline(self) -> None:
-        self.pipeline_run_info = {'run_id': uuid.uuid4(), 'type': 'embedding'}
+        self.pipeline_run_info = {"run_id": uuid.uuid4(), "type": "embedding"}
 
     def process_batches(self, batch_data: list[Tuple[str, str, dict]]):
         logger.debug(f"Parsing batch of size {len(batch_data)}.")
@@ -102,7 +97,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             ids, transformed_chunks, embedded_chunks, metadatas
         ):
             metadata = copy.deepcopy(metadata)
-            metadata["pipeline_run_id"] = str(self.pipeline_run_info['run_id'])
+            metadata["pipeline_run_id"] = str(self.pipeline_run_info["run_id"])
             metadata["text"] = transformed_chunk
             metadata["document_id"] = doc_id
             chunk_id = uuid.uuid5(

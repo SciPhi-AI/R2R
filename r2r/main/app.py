@@ -1,20 +1,16 @@
 import json
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union, List, Dict, Any
+from typing import Any, Dict, List, Optional, Union
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import re
 
-from r2r.core import (
-    EmbeddingPipeline,
-    IngestionPipeline,
-    LoggingDatabaseConnection,
-    RAGPipeline,
-)
+from r2r.core import (EmbeddingPipeline, IngestionPipeline,
+                      LoggingDatabaseConnection, RAGPipeline)
 from r2r.main.utils import configure_logging, find_project_root
 
 logger = logging.getLogger("r2r")
@@ -234,23 +230,28 @@ def create_app(
         except Exception as e:
             logger.error(f":get_logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
-        
+
     def calculate_response_time(start_time, end_time):
-    # TODO: Parked for now, can come back at it when latency is relevant
+        # TODO: Parked for now, can come back at it when latency is relevant
         """Calculate response time in milliseconds."""
-        if start_time is not None and end_time is not None and start_time <= end_time:
+        if (
+            start_time is not None
+            and end_time is not None
+            and start_time <= end_time
+        ):
             return (end_time - start_time).total_seconds() * 1000
         return None
 
     # TODO: Add a field about what type of pipeline is it: search, rag, embedding, ingestion. (Look at logs, add a flag.)
     # TODO: PipelineRunType
 
-
     @app.get("/get_logs_summary")
     def get_logs_summary():
         try:
             if logging_database is None:
-                raise HTTPException(status_code=404, detail="Logging provider not found.")
+                raise HTTPException(
+                    status_code=404, detail="Logging provider not found."
+                )
             logs = logging_database.get_logs()
             events_summary = process_logs(logs)
             return {"events_summary": events_summary}
@@ -264,35 +265,47 @@ def create_app(
             update_aggregation_entries(log, event_aggregation)
         return combine_aggregated_logs(event_aggregation)
 
-    def update_aggregation_entries(log: Dict[str, Any], event_aggregation: Dict[str, Dict[str, Any]]):
+    def update_aggregation_entries(
+        log: Dict[str, Any], event_aggregation: Dict[str, Dict[str, Any]]
+    ):
         run_id = log["pipeline_run_id"]
         if run_id not in event_aggregation:
             event_aggregation[run_id] = {
                 "timestamp": log["timestamp"],
                 "pipeline_run_id": run_id,
-                "events": []
+                "events": [],
             }
         event = {
             "method": log["method"],
             "result": log["result"],
             "log_level": log["log_level"],
             "message": log["message"],
-            "outcome": "success" if log["log_level"] == "INFO" else "fail"
+            "outcome": "success" if log["log_level"] == "INFO" else "fail",
         }
         event_aggregation[run_id]["events"].append(event)
 
-    def combine_aggregated_logs(event_aggregation: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def combine_aggregated_logs(
+        event_aggregation: Dict[str, Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         events_summary = []
         for run_id, aggregation in event_aggregation.items():
-            search_events = [event for event in aggregation["events"] if event["method"] in ["ingress", "search"]]
-            generation_events = [event for event in aggregation["events"] if event["method"] == "generate_completion"]
+            search_events = [
+                event
+                for event in aggregation["events"]
+                if event["method"] in ["ingress", "search"]
+            ]
+            generation_events = [
+                event
+                for event in aggregation["events"]
+                if event["method"] == "generate_completion"
+            ]
             summary_entry = {
                 "pipeline_run_id": run_id,
                 "timestamp": aggregation["timestamp"],
                 "search_events": search_events,
-                "generation_events": generation_events
+                "generation_events": generation_events,
             }
             events_summary.append(summary_entry)
         return events_summary
-    
+
     return app
