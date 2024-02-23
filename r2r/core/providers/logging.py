@@ -34,10 +34,10 @@ class LoggingDatabaseConnection:
                 CREATE TABLE IF NOT EXISTS {self.log_table_name} (
                     timestamp TIMESTAMP,
                     pipeline_run_id UUID,
+                    pipeline_run_type TEXT,
                     method TEXT,
                     result TEXT,
-                    log_level TEXT,
-                    message TEXT
+                    log_level TEXT
                 )
             """
             )
@@ -60,36 +60,37 @@ def log_execution_to_db(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        # Get the database connection and pipeline run ID from the arguments
-        arg_conn = args[0].conn
+        # Assuming args[0] is the instance of the class the method belongs to
+        instance = args[0]
+        arg_conn = instance.conn
         if not arg_conn:
             return func(*args, **kwargs)
 
-        arg_pipeline_run_id = args[0].pipeline_run_id
-        arg_log_table_name = args[0].log_table_name
+        # Adjusted to use 'run_id' and 'type'
+        arg_pipeline_run_id = instance.pipeline_run_info['run_id']
+        arg_pipeline_run_type = instance.pipeline_run_info['type']
+        arg_log_table_name = instance.log_table_name
 
         try:
             # Execute the function and get the result
             result = func(*args, **kwargs)
             log_level = "INFO"
-            message = "Method executed"
         except Exception as e:
             result = str(e)
             log_level = "ERROR"
-            message = "Method execution failed"
 
         # Log the execution to the database
         with arg_conn.cursor() as cur:
             cur.execute(
                 "INSERT INTO "
                 + arg_log_table_name
-                + " (timestamp, pipeline_run_id, method, result, log_level, message) VALUES (NOW(), %s, %s, %s, %s, %s)",
+                + " (timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level) VALUES (NOW(), %s, %s, %s, %s, %s)",
                 (
                     str(arg_pipeline_run_id),
+                    arg_pipeline_run_type,
                     func.__name__,
                     str(result),
                     log_level,
-                    message,
                 ),
             )
 
@@ -102,3 +103,4 @@ def log_execution_to_db(func):
         return result
 
     return wrapper
+
