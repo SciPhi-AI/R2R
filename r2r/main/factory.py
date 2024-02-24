@@ -101,7 +101,7 @@ class E2EPipelineFactory:
 
         logger.debug("Using `OpenAILLM` to provide language models.")
         llm = llm or E2EPipelineFactory.get_llm()
-        generation_config = llm_config or GenerationConfig(
+        generation_config = GenerationConfig(
             model_name=llm_config["model_name"],
             temperature=llm_config["temperature"],
             top_p=llm_config["top_p"],
