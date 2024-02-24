@@ -25,13 +25,13 @@ for file_path in glob.glob("examples/academy/*.pdf"):
         document_id, file_path, metadata, settings
     )
 
-prompt = """You are given a user query {query} and a use context {context}. Use the context to answer the query. Pay close attention to the title of each given source to ensure it is consistent with the query. Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context. The query is: {query}"""
-prompt.format(
+prompt = """You are given a user query {query} and a user context {context}. Use the context to answer the given query. """
+formatted_prompt = prompt.format(
     query="What are the key themes of these books?",
     context="User Uploads:\nTitle: Meditations - Marcus Aurelius\nTitle: The Republic - Plato",
 )
 # Perform a search on this file
 search_response = client.rag_completion(
-    prompt, 5, filters={"user_id": user_id_0}
+    formatted_prompt, 5, filters={"user_id": user_id_0}
 )
 print(search_response)
