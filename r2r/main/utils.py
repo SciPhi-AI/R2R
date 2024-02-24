@@ -33,7 +33,7 @@ def load_config(config_path=None):
     logging_config = config["logging"]
     embedding_config = config["embedding"]
     database_config = config["database"]
-    language_model_config = config["language_model"]
+    llm_config = config["language_model"]
     text_splitter_config = config["text_splitter"]
 
     return (
@@ -41,7 +41,7 @@ def load_config(config_path=None):
         logging_config,
         embedding_config,
         database_config,
-        language_model_config,
+        llm_config,
         text_splitter_config,
     )
 

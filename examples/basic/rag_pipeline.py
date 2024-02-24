@@ -38,7 +38,7 @@ if __name__ == "__main__":
         logging_config,
         embedding_config,
         database_config,
-        language_model_config,
+        llm_config,
         text_splitter_config,
     ) = load_config()
 
@@ -64,12 +64,12 @@ if __name__ == "__main__":
 
     llm = OpenAILLM(OpenAIConfig())
     generation_config = GenerationConfig(
-        model_name=language_model_config["model_name"],
-        temperature=language_model_config["temperature"],
-        top_p=language_model_config["top_p"],
-        top_k=language_model_config["top_k"],
-        max_tokens_to_sample=language_model_config["max_tokens_to_sample"],
-        do_stream=language_model_config["do_stream"],
+        model_name=llm_config["model_name"],
+        temperature=llm_config["temperature"],
+        top_p=llm_config["top_p"],
+        top_k=llm_config["top_k"],
+        max_tokens_to_sample=llm_config["max_tokens_to_sample"],
+        do_stream=llm_config["do_stream"],
     )
 
     logging_database = LoggingDatabaseConnection(logging_config["database"])

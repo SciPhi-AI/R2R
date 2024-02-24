@@ -5,15 +5,16 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from r2r.core import GenerationConfig, LoggingDatabaseConnection
 from r2r.datasets import HuggingFaceDataProvider
-from r2r.embeddings import OpenAIEmbeddingProvider
 from r2r.llms import OpenAIConfig, OpenAILLM
-from r2r.main import create_app, load_config
 from r2r.pipelines import (
     BasicEmbeddingPipeline,
     BasicIngestionPipeline,
     BasicRAGPipeline,
 )
 from r2r.vector_dbs import PGVectorDB, QdrantDB
+
+from .app import create_app
+from .utils import load_config
 
 dotenv.load_dotenv()
 
@@ -27,8 +28,15 @@ class PipelineFactory:
             return PGVectorDB()
 
     @staticmethod
-    def get_embeddings_provider():
-        return OpenAIEmbeddingProvider()
+    def get_embeddings_provider(embedding_config: dict):
+        if embedding_config["provider"] == "openai":
+            from r2r.embeddings import OpenAIEmbeddingProvider
+
+            return OpenAIEmbeddingProvider()
+        elif embedding_config["provider"] == "sentence_transformers":
+            from r2r.embeddings import SentenceTransformerEmbeddingProvider
+
+            return SentenceTransformerEmbeddingProvider()
 
     @staticmethod
     def get_llm():
@@ -66,7 +74,7 @@ class PipelineFactory:
             logging_config,
             embedding_config,
             database_config,
-            language_model_config,
+            llm_config,
             text_splitter_config,
         ) = load_config(config_path)
 
@@ -78,7 +86,8 @@ class PipelineFactory:
         logger.debug("Using `OpenAIEmbeddingProvider` to provide embeddings.")
 
         embeddings_provider = (
-            embeddings_provider or PipelineFactory.get_embeddings_provider()
+            embeddings_provider
+            or PipelineFactory.get_embeddings_provider(embedding_config)
         )
         # TODO - Encapsulate the embedding metadata into a container
         embedding_model = embedding_config["model"]
@@ -93,12 +102,12 @@ class PipelineFactory:
         logger.debug("Using `OpenAILLM` to provide language models.")
         llm = llm or PipelineFactory.get_llm()
         generation_config = llm_config or GenerationConfig(
-            model_name=language_model_config["model_name"],
-            temperature=language_model_config["temperature"],
-            top_p=language_model_config["top_p"],
-            top_k=language_model_config["top_k"],
-            max_tokens_to_sample=language_model_config["max_tokens_to_sample"],
-            do_stream=language_model_config["do_stream"],
+            model_name=llm_config["model_name"],
+            temperature=llm_config["temperature"],
+            top_p=llm_config["top_p"],
+            top_k=llm_config["top_k"],
+            max_tokens_to_sample=llm_config["max_tokens_to_sample"],
+            do_stream=llm_config["do_stream"],
         )
 
         all_logging = LoggingDatabaseConnection(logging_config["database"])

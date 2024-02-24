@@ -36,8 +36,6 @@ class PDFChat:
             5,
             filters={"user_id": self.user_id},
         )
-
-        print("search_response = ", search_response)
         for i, response in enumerate(search_response):
             text = response["metadata"]["text"]
             title, body = text.split("\n", 1)
