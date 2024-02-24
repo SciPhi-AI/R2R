@@ -1,6 +1,7 @@
 import logging
-import modal
 from typing import Optional
+
+import modal
 
 from r2r.core import EmbeddingProvider
 
@@ -9,28 +10,28 @@ logger = logging.getLogger(__name__)
 
 class ModalEmbeddingProvider(EmbeddingProvider):
     def __init__(
-        self, modal_app_name: str, modal_class_name: str, dimension: int, batch: int, provider: str = "modal"
+        self,
+        modal_app_name: str,
+        modal_class_name: str,
+        dimension: int,
+        batch: int,
+        provider: str = "modal",
     ):
         logger.info(
             "Initializing `SentenceTransformerEmbeddingProvider` to provide embeddings."
         )
         super().__init__(provider)
         try:
-          cls = modal.Cls.lookup(modal_app_name, modal_class_name)
-          model = cls()
+            cls = modal.Cls.lookup(modal_app_name, modal_class_name)
+            model = cls()
         except ImportError:
-            raise ValueError(
-                "Unable to get modal's model cls"
-            )
+            raise ValueError("Unable to get modal's model cls")
         self.model = model
         self.dimension = dimension
         self.batch = batch
 
     def _check_inputs(self, model: str, dimensions: Optional[int]) -> None:
-        if (
-            dimensions
-            and dimensions != self.dimension
-        ):
+        if dimensions and dimensions != self.dimension:
             raise ValueError(
                 f"Dimensions {dimensions} for {model} are not supported"
             )
