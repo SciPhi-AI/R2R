@@ -44,8 +44,8 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
         logging_database: Optional[LoggingDatabaseConnection] = None,
-        system_prompt: Optional[str] = None,
-        task_prompt: Optional[str] = None,
+        system_prompt: Optional[str] = DEFAULT_SYSTEM_PROMPT,
+        task_prompt: Optional[str] = DEFAULT_TASK_PROMPT,
     ) -> None:
         logger.debug(f"Initalizing `SyntheticRAGPipeline`")
 
