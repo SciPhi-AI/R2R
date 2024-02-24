@@ -1,33 +1,33 @@
 {
-    "logging": {
-        "level": "INFO",
-        "name": "r2r",
-        "database": "demo_logs_v3"
-    },
-    "embedding": {
-        "provider": "openai",
-        "model": "text-embedding-3-small",
-        "dimension": 1536,
-        "batch_size": 32
-    },
-    "database": {
-        "vector_db_provider": "pg_vector",
-        "collection_name": "demo-v1-test"
-    },
-    "language_model": {
-        "model_name": "gpt-4-0125-preview",
-        "temperature": 0.1,
-        "top_p": 0.9,
-        "top_k": 128,
-        "max_tokens_to_sample": 1024,
-        "do_stream": false
-    },
-    "text_splitter": {
-        "chunk_size": 512,
-        "chunk_overlap": 20
-    },
-    "api": {
-        "port": 8000,
-        "host": "0.0.0.0"
-    }
+  "logging": {
+    "level": "INFO",
+    "name": "r2r",
+    "database": "demo_logs_v3"
+  },
+  "embedding": {
+    "provider": "openai",
+    "model": "text-embedding-3-small",
+    "dimension": 1536,
+    "batch_size": 32
+  },
+  "database": {
+    "vector_db_provider": "pg_vector",
+    "collection_name": "demo-v1-test"
+  },
+  "language_model": {
+    "model_name": "gpt-4-0125-preview",
+    "temperature": 0.1,
+    "top_p": 0.9,
+    "top_k": 128,
+    "max_tokens_to_sample": 1024,
+    "do_stream": false
+  },
+  "text_splitter": {
+    "chunk_size": 512,
+    "chunk_overlap": 20
+  },
+  "api": {
+    "port": 8000,
+    "host": "0.0.0.0"
+  }
 }
