@@ -63,6 +63,11 @@ class QdrantDB(VectorDBProvider):
             # TODO - Handle more appropriately - create collection fails when it already exists
             pass
 
+    def copy(self, entry: VectorEntry, commit=True) -> None:
+        raise NotImplementedError(
+            "QdrantDB does not support the `copy` method."
+        )
+
     def upsert(self, entry: VectorEntry, commit=True) -> None:
         if self.collection_name is None:
             raise ValueError(

@@ -20,7 +20,7 @@ if __name__ == "__main__":
         logging_config,
         embedding_config,
         database_config,
-        language_model_config,
+        llm_config,
         text_splitter_config,
     ) = load_config()
 

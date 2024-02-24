@@ -37,32 +37,39 @@ class R2RClient:
             )
         return response.json()
 
-    def upsert_entry(
+    def add_entry(
         self,
         document_id: str,
         blobs: Dict[str, str],
         metadata: Optional[Dict[str, Any]] = None,
+        do_upsert: Optional[bool] = False,
         settings: Optional[Dict[str, Any]] = None,
     ):
-        url = f"{self.base_url}/upsert_entry/"
+        url = f"{self.base_url}/add_entry/"
         json_data = {
             "entry": {
                 "document_id": document_id,
                 "blobs": blobs,
                 "metadata": metadata or {},
             },
-            "settings": settings or {},
+            "settings": settings
+            or {"embedding_settings": {"do_upsert": do_upsert}},
         }
         response = requests.post(url, json=json_data)
         return response.json()
 
-    def upsert_entries(
+    def add_entries(
         self,
         entries: List[Dict[str, Any]],
+        do_upsert: Optional[bool] = False,
         settings: Optional[Dict[str, Any]] = None,
     ):
-        url = f"{self.base_url}/upsert_entries/"
-        json_data = {"entries": entries, "settings": settings or {}}
+        url = f"{self.base_url}/add_entries/"
+        json_data = {
+            "entries": entries,
+            "settings": settings
+            or {"embedding_settings": {"do_upsert": do_upsert}},
+        }
         response = requests.post(url, json=json_data)
         return response.json()
 

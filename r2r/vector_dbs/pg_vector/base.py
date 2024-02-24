@@ -50,6 +50,29 @@ class PGVectorDB(VectorDBProvider):
             name=collection_name, dimension=dimension
         )
 
+    def copy(self, entry: VectorEntry, commit=True) -> None:
+        if self.collection is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `copy`."
+            )
+
+        self.collection.copy(
+            records=[(str(entry.id), entry.vector, entry.metadata)]
+        )
+
+    def copy_entries(self, entries: list[VectorEntry]) -> None:
+        if self.collection is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `copy_entries`."
+            )
+
+        self.collection.copy(
+            records=[
+                (str(entry.id), entry.vector, entry.metadata)
+                for entry in entries
+            ]
+        )
+
     def upsert(self, entry: VectorEntry, commit=True) -> None:
         if self.collection is None:
             raise ValueError(

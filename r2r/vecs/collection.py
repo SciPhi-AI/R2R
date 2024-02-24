@@ -22,6 +22,7 @@ from typing import (
     Union,
 )
 
+import psycopg2
 from flupy import flu
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
@@ -29,6 +30,7 @@ from sqlalchemy import (
     MetaData,
     String,
     Table,
+    alias,
     and_,
     cast,
     delete,
@@ -38,8 +40,9 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects import postgresql
-from vecs.adapter import Adapter, AdapterContext, NoOp
-from vecs.exc import (
+
+from r2r.vecs.adapter import Adapter, AdapterContext, NoOp
+from r2r.vecs.exc import (
     ArgError,
     CollectionAlreadyExists,
     CollectionNotFound,
@@ -330,6 +333,66 @@ class Collection:
 
         return self
 
+    def copy(
+        self,
+        records: Iterable[Tuple[str, Any, Metadata]],
+        skip_adapter: bool = False,
+    ) -> None:
+        """
+        Copies records into the collection.
+
+        Args:
+            records (Iterable[Tuple[str, Any, Metadata]]): An iterable of content to copy.
+                Each record is a tuple where:
+                  - the first element is a unique string identifier
+                  - the second element is an iterable of numeric values or relevant input type for the
+                    adapter assigned to the collection
+                  - the third element is metadata associated with the vector
+
+            skip_adapter (bool): Should the adapter be skipped while copying. i.e. if vectors are being
+                provided, rather than a media type that needs to be transformed
+        """
+        import csv
+        import io
+        import json
+        import os
+
+        pipeline = flu(records)
+        for record in pipeline:
+            with psycopg2.connect(
+                database=os.getenv("PGVECTOR_DBNAME"),
+                user=os.getenv("PGVECTOR_USER"),
+                password=os.getenv("PGVECTOR_PASSWORD"),
+                host=os.getenv("PGVECTOR_HOST"),
+                port=os.getenv("PGVECTOR_PORT"),
+            ) as conn:
+                with conn.cursor() as cur:
+                    f = io.StringIO()
+                    id, vec, metadata = record
+
+                    writer = csv.writer(f, delimiter=",", quotechar='"')
+                    writer.writerow(
+                        [
+                            str(id),
+                            [float(ele) for ele in vec],
+                            json.dumps(metadata),
+                        ]
+                    )
+                    f.seek(0)
+                    result = f.getvalue()
+
+                    writer_name = (
+                        f'vecs."{self.table.fullname.split(".")[-1]}"'
+                    )
+                    g = io.StringIO(result)
+                    cur.copy_expert(
+                        f"COPY {writer_name}(id, vec, metadata) FROM STDIN WITH (FORMAT csv)",
+                        g,
+                    )
+                    conn.commit()
+        cur.close()
+        conn.close()
+
     def upsert(
         self,
         records: Iterable[Tuple[str, Any, Metadata]],
@@ -350,7 +413,7 @@ class Collection:
                 provided, rather than a media type that needs to be transformed
         """
 
-        chunk_size = 500
+        chunk_size = 512
 
         if skip_adapter:
             pipeline = flu(records).chunk(chunk_size)

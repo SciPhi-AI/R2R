@@ -75,13 +75,17 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             chunks, self.embedding_model
         )
 
-    def store_chunks(self, chunks: list[VectorEntry]) -> None:
-        self.db.upsert_entries(chunks)
+    def store_chunks(self, chunks: list[VectorEntry], do_upsert: bool) -> None:
+        if do_upsert:
+            self.db.upsert_entries(chunks)
+        else:
+            self.db.copy_entries(chunks)
 
     def run(
         self,
         document: Union[BasicDocument, list[BasicDocument]],
         do_chunking=False,
+        do_upsert=True,
         **kwargs: Any,
     ):
         self.initialize_pipeline()
@@ -105,14 +109,16 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
                 )
 
                 if len(batch_data) == self.embedding_batch_size:
-                    self._process_batches(batch_data)
+                    self._process_batches(batch_data, do_upsert)
                     batch_data = []
 
         # Process any remaining batch
         if batch_data:
-            self._process_batches(batch_data)
+            self._process_batches(batch_data, do_upsert)
 
-    def _process_batches(self, batch_data: list[Tuple[str, str, dict]]):
+    def _process_batches(
+        self, batch_data: list[Tuple[str, str, dict]], do_upsert: bool
+    ):
         logger.debug(f"Parsing batch of size {len(batch_data)}.")
 
         entries = []
@@ -135,4 +141,4 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             )
             chunk_count += 1
             entries.append(VectorEntry(chunk_id, embedded_chunk, metadata))
-        self.store_chunks(entries)
+        self.store_chunks(entries, do_upsert)

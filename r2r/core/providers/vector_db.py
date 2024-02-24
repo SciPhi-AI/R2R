@@ -71,6 +71,10 @@ class VectorDBProvider(ABC):
         pass
 
     @abstractmethod
+    def copy(self, entry: VectorEntry, commit=True) -> None:
+        pass
+
+    @abstractmethod
     def upsert(self, entry: VectorEntry, commit=True) -> None:
         pass
 
@@ -96,6 +100,10 @@ class VectorDBProvider(ABC):
     def upsert_entries(self, entries: list[VectorEntry]) -> None:
         for entry in entries:
             self.upsert(entry, commit=False)
+
+    def copy_entries(self, entries: list[VectorEntry]) -> None:
+        for entry in entries:
+            self.copy(entry, commit=False)
 
     @abstractmethod
     def filtered_deletion(

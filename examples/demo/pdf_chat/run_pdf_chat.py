@@ -36,8 +36,6 @@ class PDFChat:
             5,
             filters={"user_id": self.user_id},
         )
-
-        print("search_response = ", search_response)
         for i, response in enumerate(search_response):
             text = response["metadata"]["text"]
             title, body = text.split("\n", 1)
@@ -52,6 +50,11 @@ class PDFChat:
             filters={"user_id": self.user_id},
         )
         print("rag_response = ", rag_response)
+
+    def delete_document(self, document_path: str):
+        document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, document_path))
+        response = self.client.filtered_deletion("document_id", document_id)
+        print("Deletion response = ", response)
 
 
 if __name__ == "__main__":
