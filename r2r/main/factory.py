@@ -19,7 +19,7 @@ from .utils import load_config
 dotenv.load_dotenv()
 
 
-class PipelineFactory:
+class E2EPipelineFactory:
     @staticmethod
     def get_db(database_config):
         if database_config["vector_db_provider"] == "qdrant":
@@ -87,7 +87,7 @@ class PipelineFactory:
 
         embeddings_provider = (
             embeddings_provider
-            or PipelineFactory.get_embeddings_provider(embedding_config)
+            or E2EPipelineFactory.get_embeddings_provider(embedding_config)
         )
         # TODO - Encapsulate the embedding metadata into a container
         embedding_model = embedding_config["model"]
@@ -95,12 +95,12 @@ class PipelineFactory:
         embedding_batch_size = embedding_config["batch_size"]
 
         logger.debug("Using `PGVectorDB` to store and retrieve embeddings.")
-        db = db or PipelineFactory.get_db(database_config)
+        db = db or E2EPipelineFactory.get_db(database_config)
         collection_name = database_config["collection_name"]
         db.initialize_collection(collection_name, embedding_dimension)
 
         logger.debug("Using `OpenAILLM` to provide language models.")
-        llm = llm or PipelineFactory.get_llm()
+        llm = llm or E2EPipelineFactory.get_llm()
         generation_config = llm_config or GenerationConfig(
             model_name=llm_config["model_name"],
             temperature=llm_config["temperature"],
@@ -121,11 +121,11 @@ class PipelineFactory:
             logging_database=all_logging,
         )
 
-        text_splitter = text_splitter or PipelineFactory.get_text_splitter(
+        text_splitter = text_splitter or E2EPipelineFactory.get_text_splitter(
             text_splitter_config
         )
         dataset_provider = (
-            dataset_provider or PipelineFactory.get_dataset_provider()
+            dataset_provider or E2EPipelineFactory.get_dataset_provider()
         )
 
         embd_pipeline = embedding_pipeline_impl(
