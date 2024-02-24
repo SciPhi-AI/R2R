@@ -1,6 +1,8 @@
 import logging
+
 import dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+
 from r2r.core import GenerationConfig, LoggingDatabaseConnection
 from r2r.datasets import HuggingFaceDataProvider
 from r2r.embeddings import OpenAIEmbeddingProvider
@@ -14,6 +16,7 @@ from r2r.pipelines import (
 from r2r.vector_dbs import PGVectorDB, QdrantDB
 
 dotenv.load_dotenv()
+
 
 class PipelineFactory:
     @staticmethod
@@ -51,7 +54,7 @@ class PipelineFactory:
         llm=None,
         text_splitter=None,
         dataset_provider=None,
-        llm_config = None,
+        llm_config=None,
         ingestion_pipeline_impl=BasicIngestionPipeline,
         embedding_pipeline_impl=BasicEmbeddingPipeline,
         rag_pipeline_impl=BasicRAGPipeline,
@@ -74,7 +77,9 @@ class PipelineFactory:
 
         logger.debug("Using `OpenAIEmbeddingProvider` to provide embeddings.")
 
-        embeddings_provider = embeddings_provider or PipelineFactory.get_embeddings_provider()
+        embeddings_provider = (
+            embeddings_provider or PipelineFactory.get_embeddings_provider()
+        )
         # TODO - Encapsulate the embedding metadata into a container
         embedding_model = embedding_config["model"]
         embedding_dimension = embedding_config["dimension"]
@@ -107,8 +112,12 @@ class PipelineFactory:
             logging_database=all_logging,
         )
 
-        text_splitter = text_splitter or PipelineFactory.get_text_splitter(text_splitter_config)
-        dataset_provider = dataset_provider or PipelineFactory.get_dataset_provider()
+        text_splitter = text_splitter or PipelineFactory.get_text_splitter(
+            text_splitter_config
+        )
+        dataset_provider = (
+            dataset_provider or PipelineFactory.get_dataset_provider()
+        )
 
         embd_pipeline = embedding_pipeline_impl(
             embedding_model,
