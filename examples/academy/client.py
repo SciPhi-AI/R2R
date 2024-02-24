@@ -32,6 +32,6 @@ prompt.format(
 )
 # Perform a search on this file
 search_response = client.rag_completion(
-    "what are the key themes of these books?", 5, filters={"user_id": user_id_0}
+    prompt, 5, filters={"user_id": user_id_0}
 )
 print(search_response)
