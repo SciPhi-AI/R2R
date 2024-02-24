@@ -153,7 +153,7 @@ def combine_aggregated_logs(
             "pipeline_run_type": pipeline_type,
             "method": "",
             "search_query": "",
-            "search_results": "",
+            "search_results": [],
             # "search_score": "",
             "completion_result": "N/A",  # Default to "N/A" if not applicable
             "outcome": "success"

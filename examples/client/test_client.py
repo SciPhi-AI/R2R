@@ -8,12 +8,23 @@ client = R2RClient(base_url)
 
 print("Upserting entry to remote db...")
 # Upsert a single entry
-entry_response = client.upsert_entry(
+
+entry_response = client.add_entry(
     str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 1")),  # document_id
     {"txt": "This is a test entry"},
     {"tags": ["example", "test"]},
+    do_upsert=True,
 )
 print(f"Upsert entry response:\n{entry_response}\n\n")
+
+
+entry_response = client.add_entry(
+    str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 1")),  # document_id
+    {"txt": "This is a test entry"},
+    {"tags": ["example", "test"]},
+    do_upsert=False,
+)
+print(f"Copy same entry response:\n{entry_response}\n\n")
 
 
 print("Upserting entries to remote db...")
@@ -30,7 +41,7 @@ entries = [
         "metadata": {"tags": "example"},
     },
 ]
-bulk_upsert_response = client.upsert_entries(entries)
+bulk_upsert_response = client.add_entries(entries, do_upsert=True)
 print(f"Upsert entries response:\n{bulk_upsert_response}\n\n")
 
 # Perform a search

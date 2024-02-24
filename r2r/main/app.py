@@ -54,6 +54,7 @@ def create_app(
 
     class EmbeddingsSettingsModel(BaseModel):
         do_chunking: Optional[bool] = True
+        do_upsert: Optional[bool] = True
 
     class IngestionSettingsModel(BaseModel):
         pass
@@ -77,11 +78,11 @@ def create_app(
     # metadata: Optional[dict]
     # settings: SettingsModel = SettingsModel()
 
-    class UpsertEntryRequest(BaseModel):
+    class AddEntryRequest(BaseModel):
         entry: EntryModel
         settings: SettingsModel = SettingsModel()
 
-    class UpsertEntriesRequest(BaseModel):
+    class AddEntriesRequest(BaseModel):
         entries: list[EntryModel]
         settings: SettingsModel = SettingsModel()
 
@@ -174,8 +175,8 @@ def create_app(
             )
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.post("/upsert_entry/")
-    def upsert_entry(entry_req: UpsertEntryRequest):
+    @app.post("/add_entry/")
+    def add_entry(entry_req: AddEntryRequest):
         try:
             document = ingestion_pipeline.run(
                 entry_req.entry.document_id,
@@ -189,12 +190,12 @@ def create_app(
             return {"message": "Entry upserted successfully."}
         except Exception as e:
             logger.error(
-                f":upsert_entry: [Error](entry={entry_req}, error={str(e)})"
+                f":add_entry: [Error](entry={entry_req}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.post("/upsert_entries/")
-    def upsert_entries(entries_req: UpsertEntriesRequest):
+    @app.post("/add_entries/")
+    def add_entries(entries_req: AddEntriesRequest):
         try:
             for entry in entries_req.entries:
                 documents = ingestion_pipeline.run(
@@ -209,7 +210,7 @@ def create_app(
             return {"message": "Entries upserted successfully."}
         except Exception as e:
             logger.error(
-                f":upsert_entries: [Error](entries={entries_req}, error={str(e)})"
+                f":add_entries: [Error](entries={entries_req}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
 

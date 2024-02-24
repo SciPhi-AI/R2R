@@ -54,7 +54,7 @@ class EmbeddingPipeline(Pipeline):
         pass
 
     @abstractmethod
-    def store_chunks(self, chunks: list[VectorEntry]) -> None:
+    def store_chunks(self, chunks: list[VectorEntry], **kwargs) -> None:
         pass
 
     def run(self, document: Any, **kwargs):

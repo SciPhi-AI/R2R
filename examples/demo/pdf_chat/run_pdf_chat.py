@@ -53,6 +53,11 @@ class PDFChat:
         )
         print("rag_response = ", rag_response)
 
+    def delete_document(self, document_path: str):
+        document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, document_path))
+        response = self.client.filtered_deletion("document_id", document_id)
+        print("Deletion response = ", response)
+
 
 if __name__ == "__main__":
     fire.Fire(PDFChat)
