@@ -11,10 +11,11 @@
     "batch_size": 32
   },
   "database": {
-    "vector_db_provider": "pg_vector",
+    "provider": "pg_vector",
     "collection_name": "demo-v1-test"
   },
   "language_model": {
+    "provider": "openai",
     "model_name": "gpt-4-0125-preview",
     "temperature": 0.1,
     "top_p": 0.9,

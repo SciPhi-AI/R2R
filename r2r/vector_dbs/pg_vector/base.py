@@ -60,7 +60,7 @@ class PGVectorDB(VectorDBProvider):
             records=[(str(entry.id), entry.vector, entry.metadata)]
         )
 
-    def copy_entries(self, entries: list[VectorEntry]) -> None:
+    def copy_entries(self, entries: list[VectorEntry], commit: bool = True) -> None:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `copy_entries`."
@@ -83,7 +83,7 @@ class PGVectorDB(VectorDBProvider):
             records=[(str(entry.id), entry.vector, entry.metadata)]
         )
 
-    def upsert_entries(self, entries: list[VectorEntry]) -> None:
+    def upsert_entries(self, entries: list[VectorEntry], commit: bool = True) -> None:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `upsert_entries`."

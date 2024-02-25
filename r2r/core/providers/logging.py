@@ -1,11 +1,18 @@
 import functools
 import os
 
-import psycopg2
 
 
 class LoggingDatabaseConnection:
     def __init__(self, log_table_name="logs"):
+
+        try:
+            import psycopg2
+            self.psycopg2 = psycopg2
+        except ImportError:
+            raise ValueError(
+                "Error, `psycopg2` is not installed. Please install it using `pip install psycopg2`."
+            )
         self.conn = None
         self.log_table_name = log_table_name
         if (
@@ -20,7 +27,7 @@ class LoggingDatabaseConnection:
             )
 
     def __enter__(self):
-        self.conn = psycopg2.connect(
+        self.conn = self.psycopg2.connect(
             dbname=os.getenv("PGVECTOR_DBNAME"),
             user=os.getenv("PGVECTOR_USER"),
             password=os.getenv("PGVECTOR_PASSWORD"),

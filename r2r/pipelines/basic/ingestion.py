@@ -25,6 +25,23 @@ class BasicIngestionPipeline(IngestionPipeline):
         self,
         logging_database: Optional[LoggingDatabaseConnection] = None,
     ):
+        
+        try:
+            from bs4 import BeautifulSoup
+            self.BeautifulSoup = BeautifulSoup
+        except ImportError:
+            raise ValueError(
+                "Error, `bs4` is requried to run `BasicIngestionPipeline`. Please install it using `pip install bs4`."
+            )
+        
+        try:
+            from pypdf import PdfReader
+            self.PdfReader = PdfReader
+        except ImportError:
+            raise ValueError(
+                "Error, `pypdf` is requried to run `BasicIngestionPipeline`. Please install it using `pip install pypdf`."
+            )
+
         logger.info(
             f"Initalizing a `BasicIngestionPipeline` to process incoming documents."
         )
@@ -127,21 +144,17 @@ class BasicIngestionPipeline(IngestionPipeline):
         """
         Parse HTML data into plaintext.
         """
-        from bs4 import BeautifulSoup
 
-        soup = BeautifulSoup(data, "html.parser")
+        soup = self.BeautifulSoup(data, "html.parser")
         return soup.get_text()
 
     def _parse_pdf(self, file_data: bytes) -> str:
         import string
         from io import BytesIO
-
-        from pypdf import PdfReader
-
         """
         Process PDF file data into plaintext.
         """
-        pdf = PdfReader(BytesIO(file_data))
+        pdf = self.PdfReader(BytesIO(file_data))
         text = ""
         for page in pdf.pages:
             page_text = page.extract_text()

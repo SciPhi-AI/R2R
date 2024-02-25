@@ -38,7 +38,7 @@ if __name__ == "__main__":
     # Specify the vector database provider
     db = (
         QdrantDB()
-        if database_config["vector_db_provider"] == "qdrant"
+        if database_config["provider"] == "qdrant"
         else PGVectorDB()
     )
     collection_name = database_config["collection_name"]
