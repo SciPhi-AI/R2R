@@ -11,20 +11,45 @@ import uuid
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple,
-                    Union)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import psycopg2
 from flupy import flu
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import (Column, MetaData, String, Table, alias, and_, cast,
-                        delete, func, or_, select, text)
+from sqlalchemy import (
+    Column,
+    MetaData,
+    String,
+    Table,
+    alias,
+    and_,
+    cast,
+    delete,
+    func,
+    or_,
+    select,
+    text,
+)
 from sqlalchemy.dialects import postgresql
 
 from r2r.vecs.adapter import Adapter, AdapterContext, NoOp
-from r2r.vecs.exc import (ArgError, CollectionAlreadyExists,
-                          CollectionNotFound, FilterError, MismatchedDimension,
-                          Unreachable)
+from r2r.vecs.exc import (
+    ArgError,
+    CollectionAlreadyExists,
+    CollectionNotFound,
+    FilterError,
+    MismatchedDimension,
+    Unreachable,
+)
 
 if TYPE_CHECKING:
     from vecs.client import Client
