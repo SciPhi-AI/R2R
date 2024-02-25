@@ -49,7 +49,7 @@ read -p "Enter choice [1-2]: " db_choice
 case $db_choice in
     1)
         update_config '.database.vector_db_provider = "pg_vector"'
-        echo "Make sure the vectors extension plugin has been enabled in your PostgreSQL."
+        echo -e "Make sure the ${YELLOW}vector${NC} extension plugin has been enabled in ${GREEN}Supabase ${NC} > ${YELLOW}Project > Database > Extensions${NC}."
         ;;
     2)
         update_config '.database.vector_db_provider = "qdrant"'
