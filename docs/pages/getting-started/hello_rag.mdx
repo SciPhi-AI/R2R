@@ -45,7 +45,13 @@ class E2EPipelineFactory:
             ) = load_config(config_path)
 ```
 
-We can see that `config.json` is loaded and passed to the pipeline.
+We can see that `config.json` is loaded and passed to the pipeline. In addition to the options configured in `setup_config.sh{:bash}`, there `config.json` offers more detailed customization:
+
+- Database collection names
+- LLM model parameters
+- API ports
+- Logging
+- and more.
 
 ```json
 {
@@ -83,4 +89,177 @@ We can see that `config.json` is loaded and passed to the pipeline.
 }
 ```
 
-The pipeline is composed of three main components: `Ingestion`, `Embedding`, and `RAG`.
+The pipeline is composed of three main components: `Ingestion`, `Embedding`, and `RAG` together with `Logging`.
+
+```python
+#factory.py
+
+class E2EPipelineFactory:
+    ...
+    app = app_fn(
+                ingestion_pipeline=ingst_pipeline,
+                embedding_pipeline=embd_pipeline,
+                rag_pipeline=cmpl_pipeline,
+                logging_database=all_logging,
+            )
+```
+
+This is what each of the functions does in a high level view. For more up to date descriptions, take a look at the source code.
+
+```python
+#Pipelines>Basic>ingestion.py
+
+class BasicIngestionPipeline(IngestionPipeline):
+    """
+    Processes incoming documents into plaintext based on their data type.
+    Supports TXT, JSON, HTML, and PDF formats.
+    """
+
+    def __init__(self, logging_database: Optional[LoggingDatabaseConnection] = None):
+        """
+        Initializes the pipeline and logs the initialization.
+        """
+
+    @property
+    def supported_types(self) -> list[str]:
+        """
+        Lists the data types supported by the pipeline.
+        """
+
+    def process_data(self, entry_type: str, entry_data: Union[bytes, str]) -> str:
+        """
+        Process data into plaintext based on the data type.
+        """
+
+    def parse_entry(self, entry_type: str, entry_data: Union[bytes, str]) -> str:
+        """
+        Parse entry data into plaintext based on the entry type.
+        """
+
+    def _parse_json(self, data: dict) -> str:
+        """
+        Parse JSON data into plaintext.
+        """
+
+    def _parse_html(self, data: str) -> str:
+        """
+        Parse HTML data into plaintext.
+        """
+
+    def _parse_pdf(self, file_data: bytes) -> str:
+        """
+        Process PDF file data into plaintext.
+        """
+```
+
+```python
+#Pipelines>Basic>embedding.py
+class BasicEmbeddingPipeline(EmbeddingPipeline):
+    """
+    Embeds and stores documents using a specified embedding model and database.
+    """
+
+    def __init__(
+        self,
+        embedding_model: str,
+        embeddings_provider: OpenAIEmbeddingProvider,
+        db: VectorDBProvider,
+        text_splitter: TextSplitter,
+        logging_database: Optional[LoggingDatabaseConnection] = None,
+        embedding_batch_size: int = 1,
+        id_prefix: str = "demo",
+    ):
+        """
+        Initializes the embedding pipeline with necessary components and configurations.
+        """
+
+    def extract_text(self, document: Any) -> str:
+        """
+        Extracts text from a document.
+        """
+
+    def transform_text(self, text: str) -> str:
+        """
+        Transforms text before chunking, if necessary.
+        """
+
+    def chunk_text(self, text: str) -> list[str]:
+        """
+        Splits text into manageable chunks for embedding.
+        """
+
+    def transform_chunks(self, chunks: list[str], metadatas: list[dict]) -> list[str]:
+        """
+        Transforms text chunks based on their metadata, e.g., adding prefixes.
+        """
+
+    def embed_chunks(self, chunks: list[str]) -> list[list[float]]:
+        """
+        Generates embeddings for each text chunk using the embedding model.
+        """
+
+    def store_chunks(self, chunks: list[VectorEntry], do_upsert: bool) -> None:
+        """
+        Stores the embedded chunks in the database, with an option to upsert.
+        """
+
+    def run(self, document: Union[BasicDocument, list[BasicDocument]], do_chunking=False, do_upsert=True, **kwargs: Any):
+        """
+        Executes the embedding pipeline: chunking, transforming, embedding, and storing documents.
+        """
+
+    def _process_batches(self, batch_data: list[Tuple[str, str, dict]], do_upsert: bool):
+        """
+        Processes batches of documents: transforms, embeds, and stores chunks.
+        """
+```
+
+```python
+#Pipelines>Basic>rag.py
+
+class BasicRAGPipeline(RAGPipeline):
+    """
+    Implements a basic Retrieve-And-Generate (RAG) pipeline for document retrieval and generation.
+    """
+
+    def __init__(
+        self,
+        llm: LLMProvider,
+        generation_config: GenerationConfig,
+        db: VectorDBProvider,
+        embedding_model: str,
+        embeddings_provider: OpenAIEmbeddingProvider,
+        logging_database: Optional[LoggingDatabaseConnection] = None,
+        system_prompt: Optional[str] = None,
+        task_prompt: Optional[str] = None,
+    ):
+        """
+        Initializes the RAG pipeline with necessary components and configurations.
+        """
+
+    def transform_query(self, query: str) -> str:
+        """
+        Transforms the input query before retrieval, if necessary.
+        """
+
+    @log_execution_to_db
+    def search(self, transformed_query: str, filters: dict, limit: int, *args, **kwargs) -> list[VectorSearchResult]:
+        """
+        Searches the vector database with the transformed query to retrieve relevant documents.
+        """
+
+    def rerank_results(self, results: list[VectorSearchResult]) -> list[VectorSearchResult]:
+        """
+        Reranks the retrieved documents based on relevance, if necessary.
+        """
+
+    def _format_results(self, results: list[VectorSearchResult]) -> str:
+        """
+        Formats the reranked results into a human-readable string.
+        """
+
+    def _get_extra_args(self, *args, **kwargs):
+        """
+        Retrieves any extra arguments needed for the pipeline's operations.
+        """
+```
