@@ -3,7 +3,7 @@ from typing import Optional
 
 
 class EmbeddingProvider(ABC):
-    supported_providers = ["openai", "sentence-transformers"]
+    supported_providers = ["openai", "sentence-transformers", "modal"]
 
     def __init__(self, provider: str):
         if provider not in EmbeddingProvider.supported_providers:

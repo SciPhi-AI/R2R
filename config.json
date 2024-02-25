@@ -5,9 +5,9 @@
         "database": "demo_logs_v3"
     },
     "embedding": {
-        "model": "text-embedding-3-small",
-        "dimension": 1536,
-        "batch_size": 32
+        "model": "modal-embedding-model",
+        "dimension": 384,
+        "batch_size": 100
     },
     "database": {
         "vector_db_provider": "pg_vector",
