@@ -1,18 +1,13 @@
 {
-  "logging": {
-    "level": "INFO",
-    "name": "r2r",
-    "database": "demo_logs_v3"
+  "database": {
+    "vector_db_provider": "pg_vector",
+    "collection_name": "demo-v1-test"
   },
   "embedding": {
     "provider": "openai",
     "model": "text-embedding-3-small",
     "dimension": 1536,
     "batch_size": 32
-  },
-  "database": {
-    "vector_db_provider": "pg_vector",
-    "collection_name": "demo-v1-test"
   },
   "language_model": {
     "model_name": "gpt-4-0125-preview",
@@ -25,6 +20,11 @@
   "text_splitter": {
     "chunk_size": 512,
     "chunk_overlap": 20
+  },
+  "logging": {
+    "level": "INFO",
+    "name": "r2r",
+    "database": "demo_logs_v3"
   },
   "api": {
     "port": 8000,
