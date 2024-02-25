@@ -1,5 +1,4 @@
 import logging
-import uuid
 from typing import Optional
 
 from r2r.core import (

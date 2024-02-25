@@ -4,7 +4,6 @@ import dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from r2r.core import GenerationConfig, LoggingDatabaseConnection
-from r2r.datasets import HuggingFaceDataProvider
 from r2r.llms import OpenAIConfig, OpenAILLM
 from r2r.pipelines import (
     BasicEmbeddingPipeline,
