@@ -7,17 +7,20 @@ NC='\033[0m' # No Color
 
 update_env_example() {
     local db_choice=$1
-    local integrate_websearch=$2 # New parameter to indicate websearch integration choice
+    local integrate_websearch=$2
     local tmp_file=$(mktemp)
 
     # Define patterns to match based on the database choice
     local pattern_to_comment=""
+    local pattern_to_uncomment=""
     if [ "$db_choice" = "1" ]; then
-        # If pg_vector is chosen, comment out QDRANT keys
+        # If pg_vector is chosen, comment out QDRANT keys and uncomment PGVECTOR keys
         pattern_to_comment="^QDRANT_"
+        pattern_to_uncomment="^#PGVECTOR_"
     elif [ "$db_choice" = "2" ]; then
-        # If qdrant is chosen, comment out PGVECTOR keys
+        # If qdrant is chosen, comment out PGVECTOR keys and uncomment QDRANT keys
         pattern_to_comment="^PGVECTOR_"
+        pattern_to_uncomment="^#QDRANT_"
     fi
 
     # Comment out the lines matching the pattern for the database choice
@@ -25,9 +28,18 @@ update_env_example() {
         sed "/$pattern_to_comment/s/^/#/" .env.example > "$tmp_file" && mv "$tmp_file" .env.example
     fi
 
-    # Comment out the SERPER_API_KEY if websearch integration is not chosen
+    # Uncomment the lines matching the pattern for the database choice
+    if [ ! -z "$pattern_to_uncomment" ]; then
+        sed "/$pattern_to_uncomment/s/^#//" .env.example > "$tmp_file" && mv "$tmp_file" .env.example
+    fi
+
+    # Handle SERPER_API_KEY based on websearch integration choice
     if [ "$integrate_websearch" != "yes" ] && [ "$integrate_websearch" != "y" ] && [ "$integrate_websearch" != "Y" ] && [ "$integrate_websearch" != "1" ]; then
+        # Comment out SERPER_API_KEY if websearch integration is not chosen
         sed -i '/^SERPER_API_KEY/s/^/#/' .env.example
+    else
+        # Uncomment SERPER_API_KEY if websearch integration is chosen
+        sed -i '/^#SERPER_API_KEY/s/^#//' .env.example
     fi
 }
 
@@ -36,15 +48,40 @@ update_config() {
     jq "$1" config.json > config.tmp && mv config.tmp config.json
 }
 
+# Function to prompt and read user choice with retry mechanism
+prompt_with_retry() {
+    local prompt_message="$1"
+    local user_choice_var=$2 # Changed to store the variable name as a string
+    local attempt=0
+    local max_attempts=2
+
+    while [ $attempt -lt $max_attempts ]; do
+        echo -e "$prompt_message"
+        read user_input
+        eval $user_choice_var="'$user_input'" # Indirectly assign the input to the variable
+        case ${!user_choice_var} in # Use indirect reference to check the value
+            1|2|y|Y|yes|YES|n|N|no|NO)
+                return 0
+                ;;
+            *)
+                let attempt++
+                echo "Invalid choice. Please try again."
+                if [ $attempt -eq $max_attempts ]; then
+                    echo "Failed too many times. Exiting."
+                    exit 1
+                fi
+                ;;
+        esac
+    done
+}
+
 echo "Setting up your R2R configuration..." 
 echo -e "Default options are displayed in ${GREEN}Green${NC}"
 echo -e "\n"
 
 # Select vector database provider
-echo "Select your vector database provider:"
-echo -e "1) ${GREEN}pg_vector (Supabase)${NC} | 2) qdrant"
-echo -e "\n"
-read -p "Enter choice [1-2]: " db_choice
+prompt_message="Select your vector database provider:\n1) ${GREEN}pg_vector (Supabase)${NC} | 2) qdrant\n\nEnter choice [1-2]: "
+prompt_with_retry "$prompt_message" db_choice
 
 case $db_choice in
     1)
@@ -54,18 +91,12 @@ case $db_choice in
     2)
         update_config '.database.vector_db_provider = "qdrant"'
         ;;
-    *)
-        echo "Invalid choice. Exiting."
-        exit 1
-        ;;
 esac
 
 # Call update_env_example with the user's database 
 echo -e "\n"
-echo -e "Do you want to integrate with websearch?" 
-echo -e "1)  ${GREEN}no${NC} | 2) yes"
-echo -e "\n"
-read -p "Enter choice [1-2]: " integrate_websearch
+prompt_message="Do you want to integrate with websearch?\n1) ${GREEN}no${NC} | 2) yes\n\nEnter choice [1-2]: "
+prompt_with_retry "$prompt_message" integrate_websearch
 
 case "$integrate_websearch" in
     [yY] | [yY][eE][sS] | [1] )
@@ -73,12 +104,7 @@ case "$integrate_websearch" in
         ;;
     [nN] | [nN][oO] | [2] )
         echo "Websearch integration will not be enabled."
-        # Add logic to comment out the SERPER_API_KEY
         sed -i '/^SERPER_API_KEY/s/^/#/' .env.example
-        ;;
-    *)
-        echo "Invalid choice. Please enter y/yes/1 for yes or n/no/0 for no."
-        exit 1
         ;;
 esac
 
@@ -114,7 +140,8 @@ echo -e "\t- Recommended batch size: 24"
 echo -e "\t- Pricing: Approximately 12,500 pages per dollar. Balances cost and performance effectively."
 echo -e "\n"
 
-read -p "Enter choice [1-3]: " model_choice
+prompt_message="Enter choice [1-3]: "
+prompt_with_retry "$prompt_message" model_choice
 
 case $model_choice in
     1)
@@ -135,7 +162,8 @@ esac
 echo "Would you like to use the recommended default sizes for the model or specify custom values?"
 echo -e "1) Use ${GREEN}default sizes${NC}"
 echo "2) Specify custom values"
-read -p "Enter choice [1-2]: " size_choice
+prompt_message="Enter choice [1-2]: "
+prompt_with_retry "$prompt_message" size_choice
 echo -e "\n"
 
 if [ "$size_choice" = "1" ]; then
@@ -160,7 +188,8 @@ elif [ "$size_choice" = "2" ]; then
     echo -e "3) 4096 - High detail, better for complex tasks. More compute, slower, higher cost."
     echo "Other) Type custom dimension"
     echo -e "\n"
-    read -p "Enter choice [1-3] or type it: " dimension_choice
+    prompt_message="Enter choice [1-3] or type it: "
+    prompt_with_retry "$prompt_message" dimension_choice
     
     case $dimension_choice in
         1)
@@ -185,7 +214,8 @@ elif [ "$size_choice" = "2" ]; then
     echo "3) 32 - Fastest processing, most cost-effective, but may reduce embedding quality."
     echo "Other) Type custom batch size"
     echo -e "\n"
-    read -p "Enter choice [1-3] or type it: " batch_size_choice
+    prompt_message="Enter choice [1-3] or type it: "
+    prompt_with_retry "$prompt_message" batch_size_choice
     
     case $batch_size_choice in
         1)
@@ -220,5 +250,4 @@ for i in {1..100}; do
     printf "\r0 %% [%-50s] %3d%%" "$bar" "$i"
 done
 echo -e "\n"
-echo -e "\nFiles updated: ${YELLOW}config.json${NC} and ${YELLOW}.env.example${NC}"
-
+echo -e "\nFiles updated: ${YELLOW}.env.example${NC} and ${YELLOW}config.json${NC}. For a the full list of set up options modify ${YELLOW}config.json${NC} directly."
