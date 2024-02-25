@@ -2,14 +2,9 @@ import logging
 import uuid
 from typing import Optional
 
-from r2r.core import (
-    GenerationConfig,
-    LLMProvider,
-    LoggingDatabaseConnection,
-    VectorDBProvider,
-    VectorSearchResult,
-    log_execution_to_db,
-)
+from r2r.core import (GenerationConfig, LLMProvider, LoggingDatabaseConnection,
+                      VectorDBProvider, VectorSearchResult,
+                      log_execution_to_db)
 from r2r.embeddings import OpenAIEmbeddingProvider
 from r2r.main import E2EPipelineFactory
 from r2r.pipelines import BasicRAGPipeline
@@ -135,13 +130,15 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
         completion = self.generate_completion(prompt)
         return search_results, completion
 
-
-    def _format_results(self, results: list[VectorSearchResult], start=1) -> str:
+    def _format_results(
+        self, results: list[VectorSearchResult], start=1
+    ) -> str:
         context = ""
         for i, ele in enumerate(results, start=start):
             context += f"[{i+start}] {ele.metadata['text']}\n\n"
 
         return context
+
 
 # Creates a pipeline using the `E2EPipelineFactory`
 app = E2EPipelineFactory.create_pipeline(
