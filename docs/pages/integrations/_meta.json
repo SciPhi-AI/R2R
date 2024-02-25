@@ -1,0 +1,6 @@
+{
+  "vector_dbs": "Basic",
+  "datasets": "Client",
+  "bing-serper": "RAG Pipeline",
+  "llms": "Embedding Pipeline"
+}

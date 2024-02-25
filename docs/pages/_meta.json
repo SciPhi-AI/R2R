@@ -1,15 +1,21 @@
 {
-  "index": "Introduction",
-  "another": "Another Page",
-  "advanced": "Advanced (A Folder)",
-  "about": {
-    "title": "About",
-    "type": "page"
+  "getting-started": {
+    "title": "Getting Started"
   },
-  "contact": {
-    "title": "Contact ↗",
-    "type": "page",
-    "href": "https://twitter.com/shuding_",
-    "newWindow": true
+  "examples": {
+    "title": "Examples"
+  },
+  "core-features": {
+    "title": "Core Features"
+  },
+  "integrations": {
+    "title": "Integrations"
+  },
+  "startups-enterprise": {
+    "title": "Startups & Enterprise"
+  },
+  "knowledge-base": {
+    "title": "Knowledge Base",
+    "order": ["issues_and_bugs", "contributors_guide", "glossary"]
   }
 }

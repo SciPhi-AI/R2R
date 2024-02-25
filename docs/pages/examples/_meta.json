@@ -1,0 +1,7 @@
+{
+  "basic": "Basic",
+  "client": "Client",
+  "embedding_pipeline": "Embedding Pipeline",
+  "rag_pipeline": "RAG Pipeline",
+  "academy": "Academy"
+}
