@@ -21,6 +21,10 @@ class EntryType(Enum):
 
 
 class BasicIngestionPipeline(IngestionPipeline):
+    """
+    Processes incoming documents into plaintext based on their data type.
+    Supports TXT, JSON, HTML, and PDF formats.
+    """
     def __init__(
         self,
         logging_database: Optional[LoggingDatabaseConnection] = None,
@@ -36,6 +40,9 @@ class BasicIngestionPipeline(IngestionPipeline):
 
     @property
     def supported_types(self) -> list[str]:
+        """
+        Lists the data types supported by the pipeline.
+        """
         return [entry_type.value for entry_type in EntryType]
 
     def process_data(
