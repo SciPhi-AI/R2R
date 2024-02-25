@@ -6,11 +6,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from r2r.core import GenerationConfig, LoggingDatabaseConnection
 from r2r.datasets import HuggingFaceDataProvider
 from r2r.llms import OpenAIConfig, OpenAILLM
-from r2r.pipelines import (
-    BasicEmbeddingPipeline,
-    BasicIngestionPipeline,
-    BasicRAGPipeline,
-)
+from r2r.pipelines import (BasicEmbeddingPipeline, BasicIngestionPipeline,
+                           BasicRAGPipeline)
 
 from .app import create_app
 from .utils import load_config
@@ -23,12 +20,15 @@ class E2EPipelineFactory:
     def get_db(database_config):
         if database_config["provider"] == "qdrant":
             from r2r.vector_dbs import QdrantDB
+
             return QdrantDB()
         elif database_config["provider"] == "pgvector":
             from r2r.vector_dbs import PGVectorDB
+
             return PGVectorDB()
         elif database_config["provider"] == "local":
             from r2r.vector_dbs import LocalVectorDB
+
             return LocalVectorDB()
 
     @staticmethod
@@ -56,16 +56,11 @@ class E2EPipelineFactory:
         )
 
     @staticmethod
-    def get_dataset_provider():
-        return HuggingFaceDataProvider()
-
-    @staticmethod
     def create_pipeline(
         db=None,
         embeddings_provider=None,
         llm=None,
         text_splitter=None,
-        dataset_provider=None,
         generation_config=None,
         ingestion_pipeline_impl=BasicIngestionPipeline,
         embedding_pipeline_impl=BasicEmbeddingPipeline,
@@ -83,7 +78,6 @@ class E2EPipelineFactory:
         ) = load_config(config_path)
 
         logging.basicConfig(level=logging_config["level"])
-
 
         embeddings_provider = (
             embeddings_provider
@@ -108,7 +102,9 @@ class E2EPipelineFactory:
             do_stream=llm_config["do_stream"],
         )
 
-        all_logging = LoggingDatabaseConnection(logging_config["database"])
+        logging_provider = LoggingDatabaseConnection(
+            logging_config["provider"], logging_config["database"]
+        )
 
         cmpl_pipeline = rag_pipeline_impl(
             llm,
@@ -116,21 +112,18 @@ class E2EPipelineFactory:
             db=db,
             embedding_model=embedding_model,
             embeddings_provider=embeddings_provider,
-            logging_database=all_logging,
+            logging_provider=logging_provider,
         )
 
         text_splitter = text_splitter or E2EPipelineFactory.get_text_splitter(
             text_splitter_config
-        )
-        dataset_provider = (
-            dataset_provider or E2EPipelineFactory.get_dataset_provider()
         )
 
         embd_pipeline = embedding_pipeline_impl(
             embedding_model,
             embeddings_provider,
             db,
-            logging_database=all_logging,
+            logging_provider=logging_provider,
             text_splitter=text_splitter,
             embedding_batch_size=embedding_batch_size,
         )
@@ -141,7 +134,7 @@ class E2EPipelineFactory:
             ingestion_pipeline=ingst_pipeline,
             embedding_pipeline=embd_pipeline,
             rag_pipeline=cmpl_pipeline,
-            logging_database=all_logging,
+            logging_provider=logging_provider,
         )
 
         return app

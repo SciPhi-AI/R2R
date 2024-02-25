@@ -2,14 +2,9 @@ import logging
 import uuid
 from typing import Optional
 
-from r2r.core import (
-    GenerationConfig,
-    LLMProvider,
-    LoggingDatabaseConnection,
-    VectorDBProvider,
-    VectorSearchResult,
-    log_execution_to_db,
-)
+from r2r.core import (GenerationConfig, LLMProvider, LoggingDatabaseConnection,
+                      VectorDBProvider, VectorSearchResult,
+                      log_execution_to_db)
 from r2r.embeddings import OpenAIEmbeddingProvider
 from r2r.main import E2EPipelineFactory
 from r2r.pipelines import BasicRAGPipeline
@@ -43,7 +38,7 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
         db: VectorDBProvider,
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
-        logging_database: Optional[LoggingDatabaseConnection] = None,
+        logging_provider: Optional[LoggingDatabaseConnection] = None,
         system_prompt: Optional[str] = DEFAULT_SYSTEM_PROMPT,
         task_prompt: Optional[str] = DEFAULT_TASK_PROMPT,
     ) -> None:
@@ -55,7 +50,7 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
             db,
             embedding_model,
             embeddings_provider,
-            logging_database=logging_database,
+            logging_provider=logging_provider,
             system_prompt=system_prompt,
             task_prompt=task_prompt,
         )
@@ -117,7 +112,7 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
             offset += len(results)
         return context
 
-    # Modifies `BasicRAGPipeline` run to return search_results and completion
+    # Modifies `SyntheticRAGPipeline` run to return search_results and completion
     def run(self, query, filters={}, limit=5, search_only=False):
         """
         Runs the completion pipeline.
@@ -135,13 +130,15 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
         completion = self.generate_completion(prompt)
         return search_results, completion
 
-
-    def _format_results(self, results: list[VectorSearchResult], start=1) -> str:
+    def _format_results(
+        self, results: list[VectorSearchResult], start=1
+    ) -> str:
         context = ""
         for i, ele in enumerate(results, start=start):
             context += f"[{i+start}] {ele.metadata['text']}\n\n"
 
         return context
+
 
 # Creates a pipeline using the `E2EPipelineFactory`
 app = E2EPipelineFactory.create_pipeline(

@@ -17,7 +17,7 @@ update_env_example() {
         pattern_to_comment="^QDRANT_"
     elif [ "$db_choice" = "2" ]; then
         # If qdrant is chosen, comment out PGVECTOR keys
-        pattern_to_comment="^PGVECTOR_"
+        pattern_to_comment="^POSTGRES_"
     fi
 
     # Comment out the lines matching the pattern for the database choice

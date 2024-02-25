@@ -1,15 +1,18 @@
+import json
 import logging
+import os
 import sqlite3
 from typing import Optional, Union
 
 from r2r.core import VectorDBProvider, VectorEntry, VectorSearchResult
-import json
 
 logger = logging.getLogger(__name__)
 
 
 class LocalVectorDB(VectorDBProvider):
-    def __init__(self, provider: str = "local", db_path='local_vector_db.sqlite') -> None:
+    def __init__(
+        self, provider: str = "local", db_path: Optional[str] = None
+    ) -> None:
         logger.info(
             "Initializing `LocalVectorDB` to store and retrieve embeddings."
         )
@@ -24,7 +27,7 @@ class LocalVectorDB(VectorDBProvider):
         self.collection_name: Optional[str] = None
 
     def _get_conn(self):
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path or os.getenv("LOCAL_DB_PATH"))
         return conn
 
     def _get_cursor(self, conn):
@@ -35,13 +38,15 @@ class LocalVectorDB(VectorDBProvider):
     ) -> None:
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
-        cursor.execute(f'''
+        cursor.execute(
+            f"""
             CREATE TABLE IF NOT EXISTS "{collection_name}" (
                 id TEXT PRIMARY KEY,
                 vector TEXT,
                 metadata TEXT
             )
-        ''')
+        """
+        )
         self.collection_name = collection_name
         conn.commit()
         conn.close()
@@ -52,29 +57,47 @@ class LocalVectorDB(VectorDBProvider):
         )
 
     def copy(self, entry: VectorEntry, commit=True) -> None:
-            if self.collection_name is None:
-                raise ValueError("Collection name is not set. Please call `initialize_collection` first.")
-            
-            conn = self._get_conn()
-            cursor = self._get_cursor(conn)
-            cursor.execute(f'''
+        if self.collection_name is None:
+            raise ValueError(
+                "Collection name is not set. Please call `initialize_collection` first."
+            )
+
+        conn = self._get_conn()
+        cursor = self._get_cursor(conn)
+        cursor.execute(
+            f"""
                 INSERT OR IGNORE INTO "{self.collection_name}" (id, vector, metadata)
                 VALUES (?, ?, ?)
-            ''', (str(entry.id), json.dumps(entry.vector), json.dumps(entry.metadata)))
-            if commit:
-                conn.commit()
-            conn.close()
+            """,
+            (
+                str(entry.id),
+                json.dumps(entry.vector),
+                json.dumps(entry.metadata),
+            ),
+        )
+        if commit:
+            conn.commit()
+        conn.close()
 
     def upsert(self, entry: VectorEntry, commit=True) -> None:
         if self.collection_name is None:
-            raise ValueError("Collection name is not set. Please call `initialize_collection` first.")
-        
+            raise ValueError(
+                "Collection name is not set. Please call `initialize_collection` first."
+            )
+
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
-        cursor.execute(f'''
+        cursor.execute(
+            f"""
             INSERT OR REPLACE INTO "{self.collection_name}" (id, vector, metadata)
             VALUES (?, ?, ?)
-        ''', (str(entry.id), json.dumps(entry.vector), json.dumps(entry.metadata)))
+        """,
+            (
+                str(entry.id),
+                json.dumps(entry.vector),
+                json.dumps(entry.metadata),
+            ),
+        )
         if commit:
             conn.commit()
         conn.close()
@@ -87,19 +110,20 @@ class LocalVectorDB(VectorDBProvider):
         *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
-        
         if self.collection_name is None:
-            raise ValueError("Collection name is not set. Please call `initialize_collection` first.")
-        
+            raise ValueError(
+                "Collection name is not set. Please call `initialize_collection` first."
+            )
+
         try:
-            from sklearn.metrics.pairwise import cosine_similarity
             import numpy as np
+            from sklearn.metrics.pairwise import cosine_similarity
 
         except ImportError:
             raise ImportError(
                 "Please install numpy and scikit-learn to use the `search` method."
             )
-        
+
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
         cursor.execute(f'SELECT * FROM "{self.collection_name}"')
@@ -111,7 +135,7 @@ class LocalVectorDB(VectorDBProvider):
             if all(metadata.get(k) == v for k, v in filters.items()):
                 score = cosine_similarity(
                     np.array(query_vector).reshape(1, -1),
-                    np.array(vector).reshape(1, -1)
+                    np.array(vector).reshape(1, -1),
                 )[0][0]
                 results.append(VectorSearchResult(id, score, metadata))
         results.sort(key=lambda x: x.score, reverse=True)
@@ -122,17 +146,21 @@ class LocalVectorDB(VectorDBProvider):
         self, key: str, value: Union[bool, int, str]
     ) -> None:
         if self.collection_name is None:
-            raise ValueError("Collection name is not set. Please call `initialize_collection` first.")
-        
+            raise ValueError(
+                "Collection name is not set. Please call `initialize_collection` first."
+            )
+
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
         cursor.execute(f'SELECT * FROM "{self.collection_name}"')
         for id, vector, metadata in cursor.fetchall():
             metadata = json.loads(metadata)
             if metadata.get(key) == value:
-                cursor.execute(f'DELETE FROM "{self.collection_name}" WHERE id = ?', (id,))
+                cursor.execute(
+                    f'DELETE FROM "{self.collection_name}" WHERE id = ?', (id,)
+                )
         conn.commit()
         conn.close()
 
     def close(self):
-        pass        
+        pass

@@ -97,11 +97,15 @@ class VectorDBProvider(ABC):
     def close(self):
         pass
 
-    def upsert_entries(self, entries: list[VectorEntry], commit: bool = True) -> None:
+    def upsert_entries(
+        self, entries: list[VectorEntry], commit: bool = True
+    ) -> None:
         for entry in entries:
             self.upsert(entry, commit=commit)
 
-    def copy_entries(self, entries: list[VectorEntry], commit: bool = True) -> None:
+    def copy_entries(
+        self, entries: list[VectorEntry], commit: bool = True
+    ) -> None:
         for entry in entries:
             self.copy(entry, commit=commit)
 

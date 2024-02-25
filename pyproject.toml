@@ -11,61 +11,51 @@ license = "Apache-2.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-# python version
-python = ">=3.9,<3.12"
+# Python Versions
+python = ">=3.9,<3.13"
 
-
+# Required dependencies
 fastapi = "^0.109.2"
 fire = "^0.5.0"
-
-pydantic = "^1.10.13"
-requests = "^2.31.0"
-python-dotenv = "^1.0.1"
-openai = "^1.11.1"
-tiktoken = "^0.5.2"
-
-langchain = "^0.1.5"
-docx2txt = "^0.8"
-uvicorn = "^0.27.0.post1"
-tqdm = "^4.66.1"
-python-multipart = "^0.0.9"
-builtwith = "^1.3.4"
 gunicorn = "^21.2.0"
+langchain = "^0.1.5"
+openai = "^1.11.1"
+pydantic = "^1.10.13"
+python-dotenv = "^1.0.1"
+python-multipart = "^0.0.9"
+requests = "^2.31.0"
 types-requests = "^2.31.0.20240125"
-protobuf = "^4.25.3"
+uvicorn = "^0.27.0.post1"
+vecs = "^0.4.0"
 
-# For parsing
-# HTML
-# bs4 = "^0.0.2"
-# PDF
-# pypdf = "^4.0.2"
+# Optional dependencies
+bs4 = {version = "^0.0.2", optional = true}
+pypdf = {version = "^4.0.2", optional = true}
+tiktoken = {version = "^0.5.2", optional = true}
+datasets = {version = "^2.16.1", optional = true}
+qdrant_client = {version = "^1.7.0", optional = true}
+psycopg2-binary = {version = "^2.9.9", optional = true}
+numpy = {version = "^1.26.4", optional = true}
+scikit-learn = {version = "^1.4.1.post1", optional = true}
+sentry-sdk = {version = "^1.40.4", optional = true}
+protobuf = {version = "^4.25.3", optional = true}
 
-# For dataset streaming
-# datasets = "^2.16.1"
-
-# For Qdrant
-# qdrant_client = "^1.7.0"
-
-# For Postgres+PGVector
-# vecs = "^0.4.0"
-# psycopg2-binary = "^2.9.9"
-
-# For Local VectorDB
-# numpy = "^1.25.2"
-# scikit-learn = "^1.4.1.post1"
-
-# For monitoring
-# sentry-sdk = "^1.40.4"
+[tool.poetry.extras]
+parsing = ["bs4", "pypdf"]
+embedding = ["tiktoken"]
+streaming = ["datasets"]
+qdrant = ["qdrant_client"]
+postgres = ["psycopg2-binary"]
+local_vectordb = ["numpy", "scikit-learn"]
+monitoring = ["sentry-sdk"]
+codesearch = ["protobuf"]
+all = ["bs4", "pypdf", "tiktoken", "datasets", "qdrant_client", "psycopg2-binary", "numpy", "scikit-learn", "sentry-sdk", "protobuf"]
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
 flake8 = "6.1.0"
 isort = "5.12.0"
-pre-commit = "^3.3.3"
 mypy = "^1.5.1"
-types-requests = "^2.31.0.2"
-types-attrs = "^19.1.0"
-ipykernel = "^6.29.2"
 
 [tool.black]
 line-length = 79

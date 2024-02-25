@@ -85,7 +85,9 @@ class QdrantDB(VectorDBProvider):
             points=points,
         )
 
-    def upsert_entries(self, entries: list[VectorEntry], commit: bool = True) -> None:
+    def upsert_entries(
+        self, entries: list[VectorEntry], commit: bool = True
+    ) -> None:
         if self.collection_name is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `upsert_entries`."

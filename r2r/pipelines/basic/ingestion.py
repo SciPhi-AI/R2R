@@ -23,23 +23,24 @@ class EntryType(Enum):
 class BasicIngestionPipeline(IngestionPipeline):
     def __init__(
         self,
-        logging_database: Optional[LoggingDatabaseConnection] = None,
+        logging_provider: Optional[LoggingDatabaseConnection] = None,
     ):
-        
         try:
             from bs4 import BeautifulSoup
+
             self.BeautifulSoup = BeautifulSoup
         except ImportError:
             raise ValueError(
-                "Error, `bs4` is requried to run `BasicIngestionPipeline`. Please install it using `pip install bs4`."
+                "Error, `bs4` is requried to run `BasicIngestionPipeline`. Please install it using `pip install bs4`, or if using poetry in local development, `poetry install -E parsing`."
             )
-        
+
         try:
             from pypdf import PdfReader
+
             self.PdfReader = PdfReader
         except ImportError:
             raise ValueError(
-                "Error, `pypdf` is requried to run `BasicIngestionPipeline`. Please install it using `pip install pypdf`."
+                "Error, `pypdf` is requried to run `BasicIngestionPipeline`. Please install it using `pip install pypdf` or if using poetry in local development, `poetry install -E parsing`."
             )
 
         logger.info(
@@ -47,7 +48,7 @@ class BasicIngestionPipeline(IngestionPipeline):
         )
 
         super().__init__(
-            logging_database,
+            logging_provider,
         )
         self.pipeline_run_info = None
 
@@ -151,6 +152,7 @@ class BasicIngestionPipeline(IngestionPipeline):
     def _parse_pdf(self, file_data: bytes) -> str:
         import string
         from io import BytesIO
+
         """
         Process PDF file data into plaintext.
         """
