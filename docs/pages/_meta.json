@@ -15,7 +15,6 @@
     "title": "Startups & Enterprise"
   },
   "knowledge-base": {
-    "title": "Knowledge Base",
-    "order": ["issues_and_bugs", "contributors_guide", "glossary"]
+    "title": "Knowledge Base"
   }
 }
