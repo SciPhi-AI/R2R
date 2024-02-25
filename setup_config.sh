@@ -17,7 +17,7 @@ update_env_example() {
         pattern_to_comment="^QDRANT_"
     elif [ "$db_choice" = "2" ]; then
         # If qdrant is chosen, comment out PGVECTOR keys
-        pattern_to_comment="^PGVECTOR_"
+        pattern_to_comment="^POSTGRES_"
     fi
 
     # Comment out the lines matching the pattern for the database choice
@@ -48,11 +48,11 @@ read -p "Enter choice [1-2]: " db_choice
 
 case $db_choice in
     1)
-        update_config '.database.vector_db_provider = "pg_vector"'
+        update_config '.database.provider = "pg_vector"'
         echo "Make sure the vectors extension plugin has been enabled in your PostgreSQL."
         ;;
     2)
-        update_config '.database.vector_db_provider = "qdrant"'
+        update_config '.database.provider = "qdrant"'
         ;;
     *)
         echo "Invalid choice. Exiting."

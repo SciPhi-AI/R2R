@@ -47,11 +47,14 @@ Follow these steps to ensure a smooth setup:
    - Install the project dependencies with Poetry:
      ```bash
      poetry install
+
+     # install optional dependencies w/ `poetry install --extras "parsing ..."`
+     # OR, download all optionals w/ `poetry install --extras "all"`
      ```
 
 3. **Configure Environment Variables:**
-   - You need to set up cloud provider secrets in your `.env` file for the project to work properly. At a minimum, you will need an OpenAI key and a vector database provider.
-   - For a fast setup, we recommend creating a project on Supabase, enabling the vector extension, and then updating the `.env.example` with the necessary details.
+   - You need to set up cloud provider secrets in your `.env` file for the project to work properly. At a minimum, you will need an OpenAI key.
+   - For quick setup with an external provider we recommend Supabase. After starting a new project and enabling the vector extension you can update your local `.env.example` with the necessary postgres configuration.
    - Other providers are also available, such as Qdrant for vector database support.
    - Once updated, copy the `.env.example` to `.env` to apply your configurations:
      ```bash

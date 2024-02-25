@@ -25,7 +25,7 @@ class QdrantDB(VectorDBProvider):
             self.models = models
         except ImportError:
             raise ValueError(
-                f"Error, PGVectorDB requires the qdrant_client library. Please run `poetry add qdrant_client`."
+                f"Error, `qdrant_client` is not installed. Please install it using `pip install qdrant-client`."
             )
         try:
             host = os.getenv("QDRANT_HOST")
@@ -85,7 +85,9 @@ class QdrantDB(VectorDBProvider):
             points=points,
         )
 
-    def upsert_entries(self, entries: list[VectorEntry]) -> None:
+    def upsert_entries(
+        self, entries: list[VectorEntry], commit: bool = True
+    ) -> None:
         if self.collection_name is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `upsert_entries`."

@@ -27,11 +27,11 @@ class PGVectorDB(VectorDBProvider):
                 f"Error, PGVectorDB requires the vecs library. Please run `poetry add vecs`."
             )
         try:
-            user = os.getenv("PGVECTOR_USER")
-            password = os.getenv("PGVECTOR_PASSWORD")
-            host = os.getenv("PGVECTOR_HOST")
-            port = os.getenv("PGVECTOR_PORT")
-            db_name = os.getenv("PGVECTOR_DBNAME")
+            user = os.getenv("POSTGRES_USER")
+            password = os.getenv("POSTGRES_PASSWORD")
+            host = os.getenv("POSTGRES_HOST")
+            port = os.getenv("POSTGRES_PORT")
+            db_name = os.getenv("POSTGRES_DBNAME")
 
             DB_CONNECTION = (
                 f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
@@ -60,7 +60,9 @@ class PGVectorDB(VectorDBProvider):
             records=[(str(entry.id), entry.vector, entry.metadata)]
         )
 
-    def copy_entries(self, entries: list[VectorEntry]) -> None:
+    def copy_entries(
+        self, entries: list[VectorEntry], commit: bool = True
+    ) -> None:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `copy_entries`."
@@ -83,7 +85,9 @@ class PGVectorDB(VectorDBProvider):
             records=[(str(entry.id), entry.vector, entry.metadata)]
         )
 
-    def upsert_entries(self, entries: list[VectorEntry]) -> None:
+    def upsert_entries(
+        self, entries: list[VectorEntry], commit: bool = True
+    ) -> None:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `upsert_entries`."

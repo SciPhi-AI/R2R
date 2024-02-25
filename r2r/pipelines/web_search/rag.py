@@ -27,7 +27,7 @@ class WebSearchRAGPipeline(BasicRAGPipeline):
         db: VectorDBProvider,
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
-        logging_database: Optional[LoggingDatabaseConnection] = None,
+        logging_provider: Optional[LoggingDatabaseConnection] = None,
         system_prompt: Optional[str] = None,
         task_prompt: Optional[str] = None,
     ) -> None:
@@ -35,7 +35,7 @@ class WebSearchRAGPipeline(BasicRAGPipeline):
         super().__init__(
             llm=llm,
             generation_config=generation_config,
-            logging_database=logging_database,
+            logging_provider=logging_provider,
             db=db,
             embedding_model=embedding_model,
             embeddings_provider=embeddings_provider,

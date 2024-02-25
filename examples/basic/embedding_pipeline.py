@@ -37,9 +37,7 @@ if __name__ == "__main__":
 
     # Specify the vector database provider
     db = (
-        QdrantDB()
-        if database_config["vector_db_provider"] == "qdrant"
-        else PGVectorDB()
+        QdrantDB() if database_config["provider"] == "qdrant" else PGVectorDB()
     )
     collection_name = database_config["collection_name"]
     db.initialize_collection(collection_name, embedding_dimension)
@@ -61,7 +59,7 @@ if __name__ == "__main__":
         is_separator_regex=False,
     )
 
-    logging_database = LoggingDatabaseConnection(logging_config["database"])
+    logging_provider = LoggingDatabaseConnection(logging_config["database"])
 
     pipeline = BasicEmbeddingPipeline(
         embedding_model,
@@ -69,7 +67,7 @@ if __name__ == "__main__":
         db,
         text_splitter=text_splitter,
         embedding_batch_size=embedding_batch_size,
-        logging_database=logging_database,
+        logging_provider=logging_provider,
     )
 
     entry_id = 0

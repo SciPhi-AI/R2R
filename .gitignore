@@ -7,3 +7,5 @@ workspace/
 uploads/
 
 **/__pycache__
+
+**/*.sqlite3

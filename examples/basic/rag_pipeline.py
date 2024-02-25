@@ -55,9 +55,7 @@ if __name__ == "__main__":
     embedding_batch_size = embedding_config["batch_size"]
 
     db = (
-        QdrantDB()
-        if database_config["vector_db_provider"] == "qdrant"
-        else PGVectorDB()
+        QdrantDB() if database_config["provider"] == "qdrant" else PGVectorDB()
     )
     collection_name = database_config["collection_name"]
     db.initialize_collection(collection_name, embedding_dimension)
@@ -72,12 +70,12 @@ if __name__ == "__main__":
         do_stream=llm_config["do_stream"],
     )
 
-    logging_database = LoggingDatabaseConnection(logging_config["database"])
+    logging_provider = LoggingDatabaseConnection(logging_config["database"])
     pipeline = DemoRAGPipeline(
         llm,
         generation_config,
         db=db,
-        logging_database=logging_database,
+        logging_provider=logging_provider,
         embedding_model=embedding_model,
         embeddings_provider=embeddings_provider,
     )

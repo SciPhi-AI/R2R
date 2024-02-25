@@ -10,7 +10,6 @@ client = R2RClient(base_url)
 titles = {
     "examples/academy/meditations.pdf": "Title: Meditations - Marcus Aurelius",
     "examples/academy/the_republic.pdf": "Title: The Republic - Plato",
-
 }
 
 user_id_0 = str(uuid.uuid5(uuid.NAMESPACE_DNS, "user_0"))

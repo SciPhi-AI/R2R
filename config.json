@@ -1,8 +1,9 @@
 {
   "logging": {
+    "provider": "local",
     "level": "INFO",
     "name": "r2r",
-    "database": "demo_logs_v3"
+    "database": "demo_logs_v1"
   },
   "embedding": {
     "provider": "openai",
@@ -11,10 +12,11 @@
     "batch_size": 32
   },
   "database": {
-    "vector_db_provider": "pg_vector",
+    "provider": "local",
     "collection_name": "demo-v1-test"
   },
   "language_model": {
+    "provider": "openai",
     "model_name": "gpt-4-0125-preview",
     "temperature": 0.1,
     "top_p": 0.9,
