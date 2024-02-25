@@ -102,7 +102,8 @@ class LoggingDatabaseConnection:
         return self.conn
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.conn.close()
+        if self.conn:
+            self.conn.close()
 
     def get_logs(self) -> list:
         with self as conn:
