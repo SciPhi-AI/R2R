@@ -30,7 +30,7 @@ class BasicRAGPipeline(RAGPipeline):
         db: VectorDBProvider,
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
-        logging_database: Optional[LoggingDatabaseConnection] = None,
+        logging_provider: Optional[LoggingDatabaseConnection] = None,
         system_prompt: Optional[str] = None,
         task_prompt: Optional[str] = None,
     ) -> None:
@@ -42,7 +42,7 @@ class BasicRAGPipeline(RAGPipeline):
         super().__init__(
             llm,
             generation_config,
-            logging_database=logging_database,
+            logging_provider=logging_provider,
             system_prompt=system_prompt,
             task_prompt=task_prompt,
         )

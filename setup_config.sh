@@ -18,9 +18,8 @@ update_env_example() {
         pattern_to_comment="^QDRANT_"
         pattern_to_uncomment="^#PGVECTOR_"
     elif [ "$db_choice" = "2" ]; then
-        # If qdrant is chosen, comment out PGVECTOR keys and uncomment QDRANT keys
-        pattern_to_comment="^PGVECTOR_"
-        pattern_to_uncomment="^#QDRANT_"
+        # If qdrant is chosen, comment out PGVECTOR keys
+        pattern_to_comment="^POSTGRES_"
     fi
 
     # Comment out the lines matching the pattern for the database choice
@@ -85,11 +84,12 @@ prompt_with_retry "$prompt_message" db_choice
 
 case $db_choice in
     1)
-        update_config '.database.vector_db_provider = "pg_vector"'
-        echo -e "Make sure the ${YELLOW}vector${NC} extension plugin has been enabled in ${GREEN}Supabase ${NC} > ${YELLOW}Project > Database > Extensions${NC}."
+        update_config '.database.provider = "pg_vector"'
+        echo "Make sure the vectors extension plugin has been enabled in your PostgreSQL."
+        #echo -e "Make sure the ${YELLOW}vector${NC} extension plugin has been enabled in ${GREEN}Supabase ${NC} > ${YELLOW}Project > Database > Extensions${NC}."
         ;;
     2)
-        update_config '.database.vector_db_provider = "qdrant"'
+        update_config '.database.provider = "qdrant"'
         ;;
 esac
 

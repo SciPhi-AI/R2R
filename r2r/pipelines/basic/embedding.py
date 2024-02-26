@@ -31,7 +31,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         embeddings_provider: OpenAIEmbeddingProvider,
         db: VectorDBProvider,
         text_splitter: TextSplitter,
-        logging_database: Optional[LoggingDatabaseConnection] = None,
+        logging_provider: Optional[LoggingDatabaseConnection] = None,
         embedding_batch_size: int = 1,
         id_prefix: str = "demo",
     ):
@@ -46,7 +46,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             embedding_model,
             embeddings_provider,
             db,
-            logging_database,
+            logging_provider,
         )
         self.text_splitter = text_splitter
         self.embedding_batch_size = embedding_batch_size

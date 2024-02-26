@@ -360,11 +360,11 @@ class Collection:
         pipeline = flu(records)
         for record in pipeline:
             with psycopg2.connect(
-                database=os.getenv("PGVECTOR_DBNAME"),
-                user=os.getenv("PGVECTOR_USER"),
-                password=os.getenv("PGVECTOR_PASSWORD"),
-                host=os.getenv("PGVECTOR_HOST"),
-                port=os.getenv("PGVECTOR_PORT"),
+                database=os.getenv("POSTGRES_DBNAME"),
+                user=os.getenv("POSTGRES_USER"),
+                password=os.getenv("POSTGRES_PASSWORD"),
+                host=os.getenv("POSTGRES_HOST"),
+                port=os.getenv("POSTGRES_PORT"),
             ) as conn:
                 with conn.cursor() as cur:
                     f = io.StringIO()

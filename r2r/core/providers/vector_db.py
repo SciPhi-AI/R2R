@@ -56,7 +56,7 @@ class VectorSearchResult:
 
 
 class VectorDBProvider(ABC):
-    supported_providers = ["pgvector", "qdrant"]
+    supported_providers = ["local", "pgvector", "qdrant"]
 
     def __init__(self, provider: str):
         if provider not in VectorDBProvider.supported_providers:
@@ -71,11 +71,11 @@ class VectorDBProvider(ABC):
         pass
 
     @abstractmethod
-    def copy(self, entry: VectorEntry, commit=True) -> None:
+    def copy(self, entry: VectorEntry, commit: bool = True) -> None:
         pass
 
     @abstractmethod
-    def upsert(self, entry: VectorEntry, commit=True) -> None:
+    def upsert(self, entry: VectorEntry, commit: bool = True) -> None:
         pass
 
     @abstractmethod
@@ -97,13 +97,17 @@ class VectorDBProvider(ABC):
     def close(self):
         pass
 
-    def upsert_entries(self, entries: list[VectorEntry]) -> None:
+    def upsert_entries(
+        self, entries: list[VectorEntry], commit: bool = True
+    ) -> None:
         for entry in entries:
-            self.upsert(entry, commit=False)
+            self.upsert(entry, commit=commit)
 
-    def copy_entries(self, entries: list[VectorEntry]) -> None:
+    def copy_entries(
+        self, entries: list[VectorEntry], commit: bool = True
+    ) -> None:
         for entry in entries:
-            self.copy(entry, commit=False)
+            self.copy(entry, commit=commit)
 
     @abstractmethod
     def filtered_deletion(

@@ -40,16 +40,16 @@ class RAGPipeline(Pipeline):
         generation_config: "GenerationConfig",
         system_prompt: Optional[str] = None,
         task_prompt: Optional[str] = None,
-        logging_database: Optional[LoggingDatabaseConnection] = None,
+        logging_provider: Optional[LoggingDatabaseConnection] = None,
         **kwargs,
     ):
         self.llm = llm
         self.generation_config = generation_config
         self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
         self.task_prompt = task_prompt or DEFAULT_TASK_PROMPT
-        self.logging_database = logging_database
+        self.logging_provider = logging_provider
         self.pipeline_run_info = None
-        super().__init__(logging_database=logging_database, **kwargs)
+        super().__init__(logging_provider=logging_provider, **kwargs)
 
     def initialize_pipeline(self, query: str, search_only: bool) -> None:
         self.pipeline_run_info = {

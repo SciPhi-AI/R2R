@@ -17,7 +17,7 @@ class HuggingFaceDataProvider(DatasetProvider):
             import datasets  # noqa
         except ImportError:
             raise ValueError(
-                f"Error, the datasets library must be installed to create a `HuggingFaceDataProvider` object."
+                f"Error, `datasets` must be installed to create a `HuggingFaceDataProvider` object. Please install it using `pip install datasets`."
             )
 
     def load_datasets(
