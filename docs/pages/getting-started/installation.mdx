@@ -4,18 +4,20 @@ import Image from "next/image";
 
 This section outlines the installation process for the R2R framework.
 
-For a quick setup, check out [fast install](#fast-install). You should use [full install](#full-install) if you're interested in leveraging the options offered by `config.json`.
-
 ### Quick Navigation
 
-- [Fast Install](#fast-install): Quick setup using `pip`.
-- [Full Install](#full-install): Detailed setup to leverage `config.json`.
-  1. [Config Setup (Optional)](#config-setup-optional): Create `.env` and `config.json`.
-  2. [Install Poetry](#install-poetry): Ensure Poetry is installed.
-  3. [Clone and Install Dependencies](#clone-and-install-dependencies): Get the project and its dependencies.
-  4. [Configure Environment Variables](#configure-environment-variables): Set up necessary `.env` configurations.
+[Fast Install](#fast-install): Quick setup using `pip`.
 
-### Fast Install: Quick Setup with `pip`
+[Full Install](#full-install): A more detailed step-by-step setup aimed at showcasing the options of `config.json`.
+
+1. [Install Poetry](#install-poetry): Ensure Poetry is installed.
+2. [Clone and Install Dependencies](#clone-and-install-dependencies): Get the project and its dependencies.
+3. [Config Setup (Optional)](#config-setup-optional): Create `.env` and `config.json`.
+4. [Configure Environment Variables](#configure-environment-variables): Set up necessary `.env` configurations.
+
+[Demo](#demo-installation-and-launching-basic-app): A quick demo of the installation process to launching the initial app.
+
+### Fast Install with `pip`:
 
 Install R2R swiftly using `pip` to get started with minimal setup. This method will get you setup with the default configuration:
 
@@ -23,7 +25,7 @@ Install R2R swiftly using `pip` to get started with minimal setup. This method w
 pip install r2r
 ```
 
-### Full Install:
+### Full Install with `poetry`:
 
 The core idea of a Full install is to fully leverage the `config.json` file in order to setup your pipelines.
 
@@ -90,6 +92,6 @@ cp .env.example .env
 
 We have several config options to run the project locally or at the cloud. At minimum, you'll need your OpenAI key secrets in your `.env` file for the project to work properly. For a fast setup, we recommend creating a project on Supabase, enabling the vector extension, and then updating the `.env` with the necessary details.
 
-## Demo
+## Demo: Installation and launching Basic App
 
 [![demo_screenshot](./demo_screenshot.png)](https://github.com/SciPhi-AI/r2r/assets/68796651/c648ab67-973a-416a-985e-2eafb0a41ef0)

@@ -1,0 +1,113 @@
+# Simple Basic App
+
+This example runs the main application, which includes a server handling ingestion, embedding, and RAG together with a client to interact with it.
+
+```bash
+poetry run uvicorn examples.basic.app:app
+```
+
+This creates a pipeline with default `config.json` setup. It is the main entry point for the application
+
+```python
+from r2r.main import E2EPipelineFactory
+
+app = E2EPipelineFactory.create_pipeline()
+```
+
+We can unpack the processed by exploring the default arguments of `.create_pipeline(){:py}`
+
+```python
+#factory.py
+
+class E2EPipelineFactory:
+    ...
+    @staticmethod
+    def create_pipeline(
+            db=None,
+            embeddings_provider=None,
+            llm=None,
+            text_splitter=None,
+            dataset_provider=None,
+            llm_config=None,
+            ingestion_pipeline_impl=BasicIngestionPipeline,
+            embedding_pipeline_impl=BasicEmbeddingPipeline,
+            rag_pipeline_impl=BasicRAGPipeline,
+            app_fn=create_app,
+            config_path=None,
+        ):
+            (
+                api_config,
+                logging_config,
+                embedding_config,
+                database_config,
+                llm_config,
+                text_splitter_config,
+            ) = load_config(config_path)
+```
+
+We can see that `config.json` is loaded and passed to the pipeline. In addition to the options configured in `setup_config.sh{:bash}`, there `config.json` offers more detailed customization:
+
+- Database collection names
+- LLM model parameters
+- API ports
+- Logging
+- and more.
+
+```json
+{
+  "database": {
+    "vector_db_provider": "pg_vector",
+    "collection_name": "demo-v1-test"
+  },
+  "embedding": {
+    "provider": "openai",
+    "model": "text-embedding-3-small",
+    "dimension": 1536,
+    "batch_size": 32
+  },
+  "language_model": {
+    "model_name": "gpt-4-0125-preview",
+    "temperature": 0.1,
+    "top_p": 0.9,
+    "top_k": 128,
+    "max_tokens_to_sample": 1024,
+    "do_stream": false
+  },
+  "text_splitter": {
+    "chunk_size": 512,
+    "chunk_overlap": 20
+  },
+  "logging": {
+    "level": "INFO",
+    "name": "r2r",
+    "database": "demo_logs_v3"
+  },
+  "api": {
+    "port": 8000,
+    "host": "0.0.0.0"
+  }
+}
+```
+
+_Note: For a full list of options, see [Config Setup](../core_features/config.mdx)._
+
+The pipeline is composed of three main components: `Ingestion`, `Embedding`, and `RAG` together with `Logging`.
+
+```python
+#factory.py
+
+class E2EPipelineFactory:
+    ...
+    app = app_fn(
+                ingestion_pipeline=ingst_pipeline,
+                embedding_pipeline=embd_pipeline,
+                rag_pipeline=cmpl_pipeline,
+                logging_database=all_logging,
+            )
+```
+
+To see what each of the functions does in a high level view, you can explore [Ingestion Pipeline](../core-features/ingestion_pipeline.mdx), [Embedding Pipeline](../core-features/embedding_pipeline.mdx), and [RAG Pipeline](../core-features/rag_pipeline.mdx).
+
+## Demo: Installation and launching Basic App & Client
+
+[![demo_screenshot](../getting-started/demo_screenshot.png)](https://github.com/SciPhi-AI/r2r/assets/68796651/c648ab67-973a-416a-985e-2eafb0a41ef0)
