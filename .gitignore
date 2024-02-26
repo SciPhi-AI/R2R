@@ -8,4 +8,13 @@ uploads/
 
 **/__pycache__
 
+.next
+node_modules
+
+docs/.next
+docs/node_modules
+
+docs/.next/*
+docs/node_modules/*
+
 **/*.sqlite3

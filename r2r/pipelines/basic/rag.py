@@ -19,6 +19,10 @@ logger = logging.getLogger(__name__)
 
 
 class BasicRAGPipeline(RAGPipeline):
+    """
+    Implements a basic Retrieve-And-Generate (RAG) pipeline for document retrieval and generation.
+    """
+
     def __init__(
         self,
         llm: LLMProvider,
@@ -30,6 +34,9 @@ class BasicRAGPipeline(RAGPipeline):
         system_prompt: Optional[str] = None,
         task_prompt: Optional[str] = None,
     ) -> None:
+        """
+        Initializes the RAG pipeline with necessary components and configurations.
+        """
         logger.debug(f"Initalizing `BasicRAGPipeline`.")
 
         super().__init__(
@@ -45,6 +52,9 @@ class BasicRAGPipeline(RAGPipeline):
         self.pipeline_run_info = None
 
     def transform_query(self, query: str) -> str:
+        """
+        Transforms the input query before retrieval, if necessary.
+        """
         self._check_pipeline_initialized()
         return query
 
@@ -57,6 +67,9 @@ class BasicRAGPipeline(RAGPipeline):
         *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
+        """
+        Searches the vector database with the transformed query to retrieve relevant documents.
+        """
         logger.debug(f"Retrieving results for query: {transformed_query}")
         self._check_pipeline_initialized()
         results = self.db.search(
@@ -74,12 +87,21 @@ class BasicRAGPipeline(RAGPipeline):
     def rerank_results(
         self, results: list[VectorSearchResult]
     ) -> list[VectorSearchResult]:
+        """
+        Reranks the retrieved documents based on relevance, if necessary.
+        """
         self._check_pipeline_initialized()
         # Placeholder for reranking logic - A unit transformation.
         return results
 
     def _format_results(self, results: list[VectorSearchResult]) -> str:
+        """
+        Formats the reranked results into a human-readable string.
+        """
         return "\n\n".join([ele.metadata["text"] for ele in results])
 
     def _get_extra_args(self, *args, **kwargs):
+        """
+        Retrieves any extra arguments needed for the pipeline's operations.
+        """
         return {}

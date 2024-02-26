@@ -1,19 +1,17 @@
 {
-  "logging": {
+ "database": {
     "provider": "local",
-    "level": "INFO",
-    "name": "r2r",
-    "database": "demo_logs_v1"
-  },
+    "collection_name": "demo-v1-test"
+  }, 
   "embedding": {
     "provider": "openai",
     "model": "text-embedding-3-small",
     "dimension": 1536,
     "batch_size": 32
   },
-  "database": {
-    "provider": "local",
-    "collection_name": "demo-v1-test"
+    "text_splitter": {
+    "chunk_size": 512,
+    "chunk_overlap": 20
   },
   "language_model": {
     "provider": "openai",
@@ -24,9 +22,11 @@
     "max_tokens_to_sample": 1024,
     "do_stream": false
   },
-  "text_splitter": {
-    "chunk_size": 512,
-    "chunk_overlap": 20
+  "logging": {
+    "provider": "local",
+    "level": "INFO",
+    "name": "r2r",
+    "database": "demo_logs_v1"
   },
   "api": {
     "port": 8000,

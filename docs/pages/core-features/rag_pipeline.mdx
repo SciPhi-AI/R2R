@@ -1,0 +1,51 @@
+```python
+#Pipelines>Basic>rag.py
+
+class BasicRAGPipeline(RAGPipeline):
+    """
+    Implements a basic Retrieve-And-Generate (RAG) pipeline for document retrieval and generation.
+    """
+
+    def __init__(
+        self,
+        llm: LLMProvider,
+        generation_config: GenerationConfig,
+        db: VectorDBProvider,
+        embedding_model: str,
+        embeddings_provider: OpenAIEmbeddingProvider,
+        logging_database: Optional[LoggingDatabaseConnection] = None,
+        system_prompt: Optional[str] = None,
+        task_prompt: Optional[str] = None,
+    ):
+        """
+        Initializes the RAG pipeline with necessary components and configurations.
+        """
+
+    def transform_query(self, query: str) -> str:
+        """
+        Transforms the input query before retrieval, if necessary.
+        """
+
+    @log_execution_to_db
+    def search(self, transformed_query: str, filters: dict, limit: int, *args, **kwargs) -> list[VectorSearchResult]:
+        """
+        Searches the vector database with the transformed query to retrieve relevant documents.
+        """
+
+    def rerank_results(self, results: list[VectorSearchResult]) -> list[VectorSearchResult]:
+        """
+        Reranks the retrieved documents based on relevance, if necessary.
+        """
+
+    def _format_results(self, results: list[VectorSearchResult]) -> str:
+        """
+        Formats the reranked results into a human-readable string.
+        """
+
+    def _get_extra_args(self, *args, **kwargs):
+        """
+        Retrieves any extra arguments needed for the pipeline's operations.
+        """
+```
+
+For more up to date descriptions, take a look at the source code or open an PR to update the documentation.

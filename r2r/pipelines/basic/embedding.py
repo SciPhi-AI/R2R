@@ -21,6 +21,10 @@ logger = logging.getLogger(__name__)
 
 
 class BasicEmbeddingPipeline(EmbeddingPipeline):
+    """
+    Embeds and stores documents using a specified embedding model and database.
+    """
+
     def __init__(
         self,
         embedding_model: str,
@@ -31,6 +35,9 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         embedding_batch_size: int = 1,
         id_prefix: str = "demo",
     ):
+        """
+        Initializes the embedding pipeline with necessary components and configurations.
+        """
         logger.info(
             f"Initalizing a `BasicEmbeddingPipeline` to embed and store documents."
         )
@@ -47,12 +54,21 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         self.pipeline_run_info = None
 
     def extract_text(self, document: Any) -> str:
+        """
+        Extracts text from a document.
+        """
         return next(document)[0]
 
     def transform_text(self, text: str) -> str:
+        """
+        Transforms text before chunking, if necessary.
+        """
         return text
 
     def chunk_text(self, text: str) -> list[str]:
+        """
+        Splits text into manageable chunks for embedding.
+        """
         return [
             ele.page_content
             for ele in self.text_splitter.create_documents([text])
@@ -61,6 +77,9 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
     def transform_chunks(
         self, chunks: list[str], metadatas: list[dict]
     ) -> list[str]:
+        """
+        Transforms text chunks based on their metadata, e.g., adding prefixes.
+        """
         transformed_chunks = []
         for chunk, metadata in zip(chunks, metadatas):
             if "chunk_prefix" in metadata:
@@ -71,11 +90,17 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         return transformed_chunks
 
     def embed_chunks(self, chunks: list[str]) -> list[list[float]]:
+        """
+        Generates embeddings for each text chunk using the embedding model.
+        """
         return self.embeddings_provider.get_embeddings(
             chunks, self.embedding_model
         )
 
     def store_chunks(self, chunks: list[VectorEntry], do_upsert: bool) -> None:
+        """
+        Stores the embedded chunks in the database, with an option to upsert.
+        """
         if do_upsert:
             self.db.upsert_entries(chunks)
         else:
@@ -88,6 +113,9 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         do_upsert=True,
         **kwargs: Any,
     ):
+        """
+        Executes the embedding pipeline: chunking, transforming, embedding, and storing documents.
+        """
         self.initialize_pipeline()
         logger.debug(
             f"Running the `BasicEmbeddingPipeline` with id={self.pipeline_run_info['run_id']}."
@@ -119,6 +147,9 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
     def _process_batches(
         self, batch_data: list[Tuple[str, str, dict]], do_upsert: bool
     ):
+        """
+        Processes batches of documents: transforms, embeds, and stores chunks.
+        """
         logger.debug(f"Parsing batch of size {len(batch_data)}.")
 
         entries = []

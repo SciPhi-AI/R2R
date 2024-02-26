@@ -1,0 +1,20 @@
+{
+  "getting-started": {
+    "title": "Getting Started"
+  },
+  "examples": {
+    "title": "Examples"
+  },
+  "core-features": {
+    "title": "Core Features"
+  },
+  "integrations": {
+    "title": "Integrations"
+  },
+  "startups-enterprise": {
+    "title": "Startups & Enterprise"
+  },
+  "knowledge-base": {
+    "title": "Knowledge Base"
+  }
+}
