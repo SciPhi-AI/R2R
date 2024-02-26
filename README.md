@@ -1,18 +1,6 @@
-# R2R
+# R2R: Production-ready RAG systems.
 
-<p align="center" style="margin-top: 20px">
-  <p align="center">
-  R2R: A semi-opinionanted RAG framework.
-  <br>
-    <a href="https://discord.gg/p6KqD2kjtB">Discord</a>
-    ·
-    <a href="https://sciphi.ai">Website</a>
-    ·
-    <a href="https://github.com/Sciphi/sciphi/issues">Issues</a>
-  </p>
-</p>
-
-<p align="center">
+<p align="left">
   <a href="https://docs.sciphi.ai"><img src="https://img.shields.io/badge/docs.sciphi.ai-3F16E4" alt="Docs"></a>
   <a href="https://discord.gg/p6KqD2kjtB"><img src="https://img.shields.io/discord/1120774652915105934?style=social&logo=discord" alt="Discord"></a>
   <a href="https://github.com/SciPhi-AI"><img src="https://img.shields.io/github/stars/SciPhi-AI" alt="Github Stars"></a>
@@ -20,8 +8,12 @@
   <a href="https://github.com/SciPhi-AI/R2R/pulse"><img src="https://img.shields.io/github/commit-activity/w/SciPhi-AI/R2R" alt="Commits-per-week"></a>
 </p>
 
+A semi-opinionanted RAG framework.
+
 <img src="./docs/pages/r2r.jpeg" alt="Sciphi Framework">
-R2R (RAG to Riches) is a Python framework designed for the rapid construction and deployment of production-ready Retrieval-Augmented Generation (RAG) systems. This semi-opinionated framework accelerates the transition from experimental stages to production-grade RAG systems.
+R2R was conceived to bridge the gap between experimental RAG models and robust, production-ready systems.
+
+Our semi-opinionated framework cuts through the complexity, offering a straightforward path to deploy, adapt, and maintain RAG pipelines in production. We prioritize simplicity and practicality, aiming to set a new industry benchmark for ease of use and effectiveness.
 
 ## Backed by
 
