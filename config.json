@@ -1,15 +1,15 @@
 {
- "database": {
-    "provider": "local",
+  "database": {
+    "provider": "pg_vector",
     "collection_name": "demo-v1-test"
-  }, 
+  },
   "embedding": {
     "provider": "openai",
     "model": "text-embedding-3-small",
     "dimension": 1536,
     "batch_size": 32
   },
-    "text_splitter": {
+  "text_splitter": {
     "chunk_size": 512,
     "chunk_overlap": 20
   },
