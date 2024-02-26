@@ -1,0 +1,34 @@
+# ChatPDF
+
+This example runs a basic application and does more sophisticated document processing.
+
+```bash
+# Launch the basic application
+cd R2R && poetry run uvicorn examples.basic.app:app
+```
+
+```bash
+# Ingest the demo pdf data
+poetry run python -m examples.pdf_chat.run_demo ingest
+# Uploading file:  examples/pdf_chat/meditations.pdf
+# Upload response =  {'message': "File 'meditations.pdf' processed and saved at '/Users/ocolegrove/demo/R2R/uploads/meditations.pdf'"}
+```
+
+```bash
+# Perform a search
+poetry run python -m examples.pdf_chat.run_demo search "what is the meditations about?"
+
+# Result 1: Title: Meditations - Marcus Aurelius
+# Middle things, Book 7,XXV. TheStoics divided allthings into
+# virtue, vice ...
+```
+
+```bash
+# Perform a RAG completion
+poetry run python -m examples.pdf_chat.run_demo rag_completion "what is the meditations about?"
+# {
+#  ...
+#  'message': {'content': '"Meditations" by Marcus Aurelius is a series of personal writings by the Roman Emperor, reflecting his thoughts on Stoic philosophy. The text delves into the nature of the human mind, ethics, and the universe, advocating for a life of virtue, rationality, and self-restraint. Aurelius discusses the importance of understanding one\'s place in the cosmos and the need to live in harmony with nature and society. He emphasizes the significance of inner peace, the control of one\'s desires and emotions, and the pursuit of goodness as the highest goal. Through his meditations, Aurelius seeks to provide guidance on leading a meaningful life, focusing on personal improvement and the development of a moral character in accordance with Stoic principles.'
+#  ...
+# }
+```
