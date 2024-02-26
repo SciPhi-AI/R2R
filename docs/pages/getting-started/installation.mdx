@@ -2,7 +2,9 @@ import Image from "next/image";
 
 ## Developer Installation
 
-This section outlines the installation process for the R2R framework. Our recommended approach is to following the [full install](#full-install) guidelines to fully leverage the options offered by `config.json`. However, if you just want to set it up as a package to test how it works, you can do it via [fast install](#fast-install).
+This section outlines the installation process for the R2R framework.
+
+For a quick setup, check out [fast install](#fast-install). You should use [full install](#full-install) if you're interested in leveraging the options offered by `config.json`.
 
 ### Quick Navigation
 
@@ -13,17 +15,41 @@ This section outlines the installation process for the R2R framework. Our recomm
   3. [Clone and Install Dependencies](#clone-and-install-dependencies): Get the project and its dependencies.
   4. [Configure Environment Variables](#configure-environment-variables): Set up necessary `.env` configurations.
 
-### Fast Install:
+### Fast Install: Quick Setup with `pip`
 
-    **Install R2R directly using `pip`:**
+Install R2R swiftly using `pip` to get started with minimal setup. This method will get you setup with the default configuration:
 
-    ```bash
-    pip install r2r
-    ```
+```bash
+pip install r2r
+```
 
 ### Full Install:
 
 The core idea of a Full install is to fully leverage the `config.json` file in order to setup your pipelines.
+
+##### Install Poetry:
+
+Poetry manages the virtual environment and dependency resolution for your project, making it compatible with both existing `Pip` and `Conda` environments.
+To install poetry, visit the [official Poetry website](https://python-poetry.org/docs/#installation) for the latest package and installation instructions or run the following command.
+
+```bash
+pipx install poetry
+```
+
+##### Clone and Install Dependencies:
+
+Clone the project repository and navigate to the project directory:
+
+```bash
+git clone git@github.com:SciPhi-AI/r2r.git
+cd r2r
+```
+
+Install the project dependencies with Poetry:
+
+```bash
+poetry install
+```
 
 ##### Config Setup (Optional)
 
@@ -54,41 +80,16 @@ These are the available options, with the first being the `default(Option){:py}`
 
 **Follow the Prompts**: The script will guide you through several configuration options, including selecting your vector database provider (Supabase or Qdrant), setting up the embedding provider (currently OpenAI), choosing the OpenAI model, and specifying other settings such as dimension and batch size. Simply follow the prompts and enter your choices.
 
-##### Install Poetry:
-
-Poetry manages the virtual environment and dependency resolution for your project, making it compatible with both existing `Pip` and `Conda` environments.
-To install poetry, visit the [official Poetry website](https://python-poetry.org/docs/#installation) for the latest package and installation instructions or run the following command.
-
-```bash
-pipx install poetry
-```
-
-##### Clone and Install Dependencies:
-
-Clone the project repository and navigate to the project directory:
-
-```bash
-git clone git@github.com:SciPhi-AI/r2r.git
-cd r2r
-```
-
-Install the project dependencies with Poetry:
-
-```bash
-poetry install
-```
-
 ##### Configure Environment Variables:
 
-- Copy the `.env.example` to `.env` to apply your configurations, which should be updated after you've run the `setup_config.sh{:bash}` script.:
+Copy the `.env.example` to `.env` to apply your configurations, which should be updated after you've run the `setup_config.sh{:bash}` script.:
 
-  ```bash
-  cp .env.example .env
-  ```
+```bash
+cp .env.example .env
+```
 
-- We have several config options to run the project locally or at the cloud. At minimum, you'll need your OpenAI key secrets in your `.env` file for the project to work properly.
-- For a fast setup, we recommend creating a project on Supabase, enabling the vector extension, and then updating the `.env` with the necessary details.
+We have several config options to run the project locally or at the cloud. At minimum, you'll need your OpenAI key secrets in your `.env` file for the project to work properly. For a fast setup, we recommend creating a project on Supabase, enabling the vector extension, and then updating the `.env` with the necessary details.
 
 ## Demo
 
-https://github.com/SciPhi-AI/r2r/assets/68796651/c648ab67-973a-416a-985e-2eafb0a41ef0
+[![demo_screenshot](./demo_screenshot.png)](https://github.com/SciPhi-AI/r2r/assets/68796651/c648ab67-973a-416a-985e-2eafb0a41ef0)
