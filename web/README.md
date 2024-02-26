@@ -6,8 +6,6 @@
 # install
 pnpm install
 
-npx husky-init && pnpm install
-
 pnpm dev
 
 # build
