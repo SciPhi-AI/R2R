@@ -85,7 +85,7 @@ update_config() {
 }
 
 # Example usage of prompt_with_retry
-prompt_message="Select your vector database provider:\n1) ${GREEN}PostgreSQL (Local)${NC} | 2) pg_vector (Supabase) | 3) qdrant\n\nEnter choice [1-3]: "
+prompt_message="Select your vector database provider:\n1) ${GREEN}PostgreSQL (Local)${NC} | 2) pgvector (Supabase) | 3) qdrant\n\nEnter choice [1-3]: "
 db_choice=0
 prompt_with_retry "$prompt_message" "db_choice"
 
@@ -97,7 +97,7 @@ case $db_choice in
         echo "Using PostgreSQL (Local) as the default database."
         ;;
     2)
-        update_config '.database.provider' 'pg_vector' 'no'
+        update_config '.database.provider' 'pgvector' 'no'
         echo -e "Make sure the ${YELLOW}vectors${NC} extension plugin has been enabled in ${YELLOW}Supabase > Project > Database > Extensions${NC}."
         ;;
     3)
