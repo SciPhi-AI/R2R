@@ -13,14 +13,11 @@
 </p>
 
 <p align="center">
-   <a href="https://discord.gg/p6KqD2kjtB"><img src="https://img.shields.io/badge/Discord-join%20us-%235865F2" alt="Join Sciphi on Discord"></a>
-   <a href="https://github.com/SciPhi-AI"><img src="https://img.shields.io/github/stars/SciPhi-AI
-" alt="Github Stars"></a>
-   <a href="https://github.com/Sciphi/sciphi/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-purple" alt="License"></a>
-   <a href="https://github.com/SciPhi-AI/R2R/pulse"><img src="https://img.shields.io/github/commit-activity/w/SciPhi-AI/R2R
-" alt="Commits-per-week"></a>
-<a href="https://docs.sciphi.ai/"><img src="https://img.shields.io/badge/documentation-8A2BE2?label=Read&color=here&link=https%3A%2F%2Fdocs.sciphi.ai%2F" alt="Documentation"></a>
-
+  <a href="https://docs.sciphi.ai"><img src="https://img.shields.io/badge/docs.sciphi.ai-3F16E4" alt="Docs"></a>
+  <a href="https://discord.gg/p6KqD2kjtB"><img src="https://img.shields.io/discord/1120774652915105934?style=social&logo=discord" alt="Discord"></a>
+  <a href="https://github.com/SciPhi-AI"><img src="https://img.shields.io/github/stars/SciPhi-AI" alt="Github Stars"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-purple.svg" alt="License: MIT"></a>
+  <a href="https://github.com/SciPhi-AI/R2R/pulse"><img src="https://img.shields.io/github/commit-activity/w/SciPhi-AI/R2R" alt="Commits-per-week"></a>
 </p>
 
 <img src="./docs/pages/r2r.jpeg" alt="Sciphi Framework">
@@ -128,7 +125,3 @@ The framework primarily revolves around three core abstractions:
 - The **RAG Pipeline**: Works similarly to the embedding pipeline but incorporates an LLM provider to produce text completions. The abstraction can be found in [`rag.py`](r2r/core/pipelines/rag.py).
 
 Each pipeline incorporates a logging database for operation tracking and observability.
-
-## Community
-
-[Join our Discord server!](https://discord.gg/p6KqD2kjtB)
