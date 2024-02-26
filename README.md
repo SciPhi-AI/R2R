@@ -54,14 +54,6 @@ The project includes several basic examples that demonstrate application deploym
    poetry run python -m examples.pdf_chat.run_demo search "What are the key themes of Meditations?"
    ```
 
-   ```bash
-   # Ingest pdf
-   poetry run python -m examples.pdf_chat.run_demo ingest
-
-   # Ask a question
-   poetry run python -m examples.pdf_chat.run_demo search "What are the key themes of Meditations?"
-   ```
-
 4. [`web`](web/package.json): A web application which is meant to accompany the framework to provide visual intelligence.
    ```bash
    cd web && pnpm install
@@ -124,7 +116,3 @@ The framework primarily revolves around three core abstractions:
 - The **RAG Pipeline**: Works similarly to the embedding pipeline but incorporates an LLM provider to produce text completions. The abstraction can be found in [`rag.py`](r2r/core/pipelines/rag.py).
 
 Each pipeline incorporates a logging database for operation tracking and observability.
-
-#### Backed by:
-
-<a href="https://www.ycombinator.com/" target="_blank"><img src="https://i0.wp.com/www.vccafe.com/wp-content/uploads/2017/09/Y_Combinator_logo_text_wordmark.png?ssl=1" alt="YCombinator" style="width: 120px; height: 30px;" width="20" height="20" /></a>
