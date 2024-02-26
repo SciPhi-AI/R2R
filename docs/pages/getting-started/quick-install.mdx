@@ -7,12 +7,30 @@ Install R2R swiftly using `pip` to get started with minimal setup. This method w
    pip install 'r2r[parsing]'
 ```
 
-## Setup the Environment Variables:
-
-Copy the `.env.example` to `.env`
+## Setup local environment variables:
 
 ```bash
-cp .env.example .env
+# Path for your local database [`local` in config.json]
+LOCAL_DB_PATH=your_local_db_path
+
+
+# Postgres [`postgres` for logging, `pg-vector` for vectordb in config.json]
+POSTGRES_USER=your_user
+POSTGRES_PASSWORD=your_password
+POSTGRES_HOST=your_host
+POSTGRES_PORT=your_port
+POSTGRES_DBNAME=your_db
+
+# Qdrant
+QDRANT_HOST=your_qdrant_host
+QDRANT_PORT=your_qdrant_port
+QDRANT_API_KEY=your_qdrant_api_key
+
+# OpenAI
+OPENAI_API_KEY=your_openai_key
+
+# Seprper
+SERPER_API_KEY=your_serper_api_key
 ```
 
 Modify `config.json{:bash}` with your options of choice.
