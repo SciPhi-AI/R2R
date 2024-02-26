@@ -25,6 +25,7 @@ class BasicIngestionPipeline(IngestionPipeline):
     Processes incoming documents into plaintext based on their data type.
     Supports TXT, JSON, HTML, and PDF formats.
     """
+
     def __init__(
         self,
         logging_database: Optional[LoggingDatabaseConnection] = None,

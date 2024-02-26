@@ -16,6 +16,7 @@ class BasicRAGPipeline(RAGPipeline):
     """
     Implements a basic Retrieve-And-Generate (RAG) pipeline for document retrieval and generation.
     """
+
     def __init__(
         self,
         llm: LLMProvider,

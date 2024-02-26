@@ -19,6 +19,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
     """
     Embeds and stores documents using a specified embedding model and database.
     """
+
     def __init__(
         self,
         embedding_model: str,
@@ -167,4 +168,3 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             chunk_count += 1
             entries.append(VectorEntry(chunk_id, embedded_chunk, metadata))
         self.store_chunks(entries, do_upsert)
-
