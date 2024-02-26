@@ -1,5 +1,5 @@
 {
-  "databases": "databases",
+  "databases": "Databases",
   "text-parser": "Text Parser",
   "embedding-model": "Embedding Model",
   "llm-Provider": "Embedding Pipeline"
