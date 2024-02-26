@@ -1,23 +1,23 @@
-# Nextra Docs Template 
+# Sciphi Docs
 
-This is a template for creating documentation with [Nextra](https://nextra.site).
+Welcome to the Sciphi documentation, your guide to understanding and utilizing the Sciphi platform.
 
-[**Live Demo →**](https://nextra-docs-template.vercel.app)
+- [**Check Documentation→**](https://docs.sciphi.ai/)
 
-[![](.github/screenshot.png)](https://nextra-docs-template.vercel.app)
+If instead, you prefer to host the documentation locally, follow the instructions below.
 
-## Quick Start
+## Local Docs
 
-Click the button to clone this repository and deploy it on Vercel:
+- Install dependencies with `pnpm i`.
+- Start the development server with `pnpm dev` and visit `localhost:3000`.
 
-[![](https://vercel.com/button)](https://vercel.com/new/clone?s=https%3A%2F%2Fgithub.com%2Fshuding%2Fnextra-docs-template&showOptionalTeamCreation=false)
+## Documentation Structure
 
-## Local Development
+Sciphi's documentation is organized into several sections for ease of navigation:
 
-First, run `pnpm i` to install the dependencies.
-
-Then, run `pnpm dev` to start the development server and visit localhost:3000.
-
-## License
-
-This project is licensed under the MIT License.
+- **Getting Started**: Introduction and setup instructions.
+- **Examples**: Practical examples to get you started.
+- **Core Features**: Detailed overview of Sciphi's core functionalities.
+- **Integrations**: How to integrate Sciphi with other tools and services.
+- **Startups & Enterprise**: Information for startups and enterprise usage.
+- **Knowledge Base**: Additional resources and troubleshooting.

@@ -1,33 +1,11 @@
-import Image from "next/image";
+## Full Install with `poetry`:
 
-## Developer Installation
-
-This section outlines the installation process for the R2R framework.
-
-### Quick Navigation
-
-[Fast Install](#fast-install): Quick setup using `pip`.
-
-[Full Install](#full-install): A more detailed step-by-step setup aimed at showcasing the options of `config.json`.
+The core idea of a Full install is to fully leverage the `config.json` file in order to setup your pipelines.
 
 1. [Install Poetry](#install-poetry): Ensure Poetry is installed.
 2. [Clone and Install Dependencies](#clone-and-install-dependencies): Get the project and its dependencies.
 3. [Config Setup (Optional)](#config-setup-optional): Create `.env` and `config.json`.
 4. [Configure Environment Variables](#configure-environment-variables): Set up necessary `.env` configurations.
-
-[Demo](#demo-installation-and-launching-basic-app): A quick demo of the installation process to launching the initial app.
-
-### Fast Install with `pip`:
-
-Install R2R swiftly using `pip` to get started with minimal setup. This method will get you setup with the default configuration:
-
-```bash
-pip install r2r
-```
-
-### Full Install with `poetry`:
-
-The core idea of a Full install is to fully leverage the `config.json` file in order to setup your pipelines.
 
 ##### Install Poetry:
 
@@ -73,7 +51,7 @@ Run the Script and input your preferences:
 
 These are the available options, with the first being the `default(Option){:py}`:
 
-- **Vector Database Provider**: `pg_vector(Supabase){:py}` | `qdrant`
+- **Vector Database Provider**: `Postgres(local){:py}` | `pg_vector` | `qdrant`
 - **Websearch Integration**: `False{:py}` | `True`
 - **Embedding Provider**: `openAI{:py}` -> _More coming soon!_
 - **Embeddings Model**: `text-embedding-3-small{:py}` | `text-embedding-3-large` | `text-embedding-ada-002`
@@ -90,7 +68,7 @@ Copy the `.env.example` to `.env` to apply your configurations, which should be 
 cp .env.example .env
 ```
 
-We have several config options to run the project locally or at the cloud. At minimum, you'll need your OpenAI key secrets in your `.env` file for the project to work properly. For a fast setup, we recommend creating a project on Supabase, enabling the vector extension, and then updating the `.env` with the necessary details.
+We have several config options to run the project locally or at the cloud. At minimum, you'll need your OpenAI key secrets in your `.env` file for the project to work properly. For a fast setup, you can get started with a local Postgres db.
 
 ## Demo: Installation and launching Basic App
 
