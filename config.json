@@ -1,6 +1,6 @@
 {
   "database": {
-    "provider": "pg_vector",
+    "provider": "local",
     "collection_name": "demo-v1-test"
   },
   "embedding": {
