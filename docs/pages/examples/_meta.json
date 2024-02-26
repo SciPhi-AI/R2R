@@ -1,6 +1,5 @@
 {
-  "client": "Client",
-  "embedding_pipeline": "Embedding Pipeline",
-  "rag_pipeline": "RAG Pipeline",
+  "basic-example": "Basic Example",
+  "chat-pdf": "ChatPDF",
   "academy": "Academy"
 }
