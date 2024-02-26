@@ -5,7 +5,7 @@ R2R (RAG to Riches) is a Python framework designed for the rapid construction an
 
 ### Quick Install:
 
-1. **Install R2R directly using `pip`:**
+**Install R2R directly using `pip`:**
    
    ```bash
    pip install r2r
@@ -27,7 +27,8 @@ Follow these steps to ensure a smooth setup:
      ```
    - Install the project dependencies with Poetry:
      ```bash
-     # See pyproject for available extras, use "all" for every optional dep.
+     # See pyproject.toml for available extras
+     # use "all" to include every optional dependency
      poetry install --extras "parsing"
      ```
 
@@ -50,20 +51,27 @@ The project includes several basic examples that demonstrate application deploym
     poetry run uvicorn examples.basic.app:app
     ```
 
-2. [`run_client.py`](examples/basic/run_client.py): This example should be run after starting the main application. It demonstrates a test of the user client. This includes uploading text entries as well as a PDF.
+2. [`run_client.py`](examples/basic/run_client.py): This example should be run after starting the main application. It demonstrates uploading text entries as well as a PDF with the python client. Further, it shows document and user-level management with built-in features.
 
     ```bash
     poetry run python -m examples.client.test_client
     ```
 
 
-2. [`run_pdf_chat.py`](examples/pdf_chat/run_demo.py): A more comprehensive example demonstrating more realistic pdf chat. 
+3. [`run_pdf_chat.py`](examples/pdf_chat/run_demo.py): A more comprehensive example demonstrating upload and chat with a more realistic pdf.
     ```bash
     # Ingest pdf
     poetry run python -m examples.pdf_chat.run_demo ingest
 
     # Ask a question
     poetry run python -m examples.pdf_chat.run_demo search "What are the key themes of Meditations?"
+    ```
+
+4. [`web`](web/package.json): A web application which is meant to accompany the framework to provide visual intelligence.
+    ```bash
+    cd web && pnpm install
+    # Serve the web app
+    pnpm dev
     ```
 
 
