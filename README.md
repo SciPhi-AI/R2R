@@ -1,7 +1,10 @@
+[![Docs](https://img.shields.io/badge/docs.sciphi.ai-3F16E4)](https://docs.sciphi.ai) [![Discord](https://img.shields.io/discord/1120774652915105934?style=social&logo=discord)](https://discord.gg/p6KqD2kjtB) [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
+
+
+
 # R2R
 
 R2R (RAG to Riches) is a Python framework designed for the rapid construction and deployment of production-ready Retrieval-Augmented Generation (RAG) systems. This semi-opinionated framework accelerates the transition from experimental stages to production-grade RAG systems.
-
 
 ### Quick Install:
 
@@ -10,7 +13,6 @@ R2R (RAG to Riches) is a Python framework designed for the rapid construction an
    ```bash
    pip install r2r
    ```
-
 
 ### Full Install:
 
@@ -77,7 +79,10 @@ The project includes several basic examples that demonstrate application deploym
 
 ## Demonstration
 
-https://github.com/SciPhi-AI/r2r/assets/68796651/c648ab67-973a-416a-985e-2eafb0a41ef0
+
+
+https://github.com/SciPhi-AI/R2R/assets/68796651/01fee645-1beb-4096-9e7d-7d0fa01386ea
+
 
 ## Community
 [Join our Discord server!](https://discord.gg/p6KqD2kjtB)
