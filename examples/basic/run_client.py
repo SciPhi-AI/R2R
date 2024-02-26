@@ -71,7 +71,7 @@ print(
 )
 
 # Example file path for upload
-file_path = "examples/client/test.pdf"  # Ensure this file exists in your script's directory
+file_path = "examples/basic/test.pdf"  # Ensure this file exists in your script's directory
 
 print(f"Uploading and processing file: {file_path}...")
 # # Upload and process a file
