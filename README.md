@@ -15,11 +15,9 @@ R2R was conceived to bridge the gap between experimental RAG models and robust, 
 
 Our semi-opinionated framework cuts through the complexity, offering a straightforward path to deploy, adapt, and maintain RAG pipelines in production. We prioritize simplicity and practicality, aiming to set a new industry benchmark for ease of use and effectiveness.
 
-## Backed by
+#### Backed by:
 
-<p align="center">
-  <a href="https://www.ycombinator.com/" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/b/b2/Y_Combinator_logo.svg" alt="YCombinator" style="width: 250px; height: 54px;" width="250" height="54" /></a>
-</p>
+<a href="https://www.ycombinator.com/" target="_blank"><img src="https://i0.wp.com/www.vccafe.com/wp-content/uploads/2017/09/Y_Combinator_logo_text_wordmark.png?ssl=1" alt="YCombinator" style="width: 120px; height: 30px;" width="20" height="20" /></a>
 
 ## Key Features
 
