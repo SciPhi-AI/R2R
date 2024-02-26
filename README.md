@@ -11,8 +11,56 @@ R2R (RAG to Riches) is a Python framework designed for the rapid construction an
 **Install R2R directly using `pip`:**
    
    ```bash
-   pip install r2r
+   # use the `'r2r[all]'` to download all required deps
+   pip install 'r2r[parsing]'
    ```
+
+     
+## Links
+[Join the Discord server](https://discord.gg/p6KqD2kjtB)
+
+[Read our Docs](https://docs.sciphi.ai/)
+
+
+## Basic Examples
+
+The project includes several basic examples that demonstrate application deployment and interaction:
+
+1. [`app.py`](examples/basic/app.py): This example runs the main application, which includes the ingestion, embedding, and RAG pipelines served via FastAPI.
+
+    ```bash
+    poetry run uvicorn examples.basic.app:app
+    ```
+
+2. [`run_client.py`](examples/basic/run_client.py): This example should be run after starting the main application. It demonstrates uploading text entries as well as a PDF to the local server with the python client. Further, it shows document and user-level vector management with built-in features.
+
+    ```bash
+    poetry run python -m examples.basic.run_client
+    ```
+
+
+3. [`run_pdf_chat.py`](examples/pdf_chat/run_demo.py): An example demonstrating upload and chat with a more realistic pdf.
+    ```bash
+    # Ingest pdf
+    poetry run python -m examples.pdf_chat.run_demo ingest
+
+    # Ask a question
+    poetry run python -m examples.pdf_chat.run_demo search "What are the key themes of Meditations?"
+    ```
+
+4. [`web`](web/package.json): A web application which is meant to accompany the framework to provide visual intelligence.
+    ```bash
+    cd web && pnpm install
+    # Serve the web app
+    pnpm dev
+    ```
+
+
+## Demonstration
+
+https://github.com/SciPhi-AI/R2R/assets/68796651/01fee645-1beb-4096-9e7d-7d0fa01386ea
+
+
 
 ### Full Install:
 
@@ -41,51 +89,6 @@ Follow these steps to ensure a smooth setup:
      ```bash
      cp .env.example .env
      ```
-
-
-### Basic Examples
-
-The project includes several basic examples that demonstrate application deployment and standalone usage of the embedding and RAG pipelines:
-
-1. [`app.py`](examples/basic/app.py): This example runs the main application, which includes the ingestion, embedding, and RAG pipelines served via FastAPI.
-
-    ```bash
-    poetry run uvicorn examples.basic.app:app
-    ```
-
-2. [`run_client.py`](examples/basic/run_client.py): This example should be run after starting the main application. It demonstrates uploading text entries as well as a PDF with the python client. Further, it shows document and user-level management with built-in features.
-
-    ```bash
-    poetry run python -m examples.basic.run_client
-    ```
-
-
-3. [`run_pdf_chat.py`](examples/pdf_chat/run_demo.py): A more comprehensive example demonstrating upload and chat with a more realistic pdf.
-    ```bash
-    # Ingest pdf
-    poetry run python -m examples.pdf_chat.run_demo ingest
-
-    # Ask a question
-    poetry run python -m examples.pdf_chat.run_demo search "What are the key themes of Meditations?"
-    ```
-
-4. [`web`](web/package.json): A web application which is meant to accompany the framework to provide visual intelligence.
-    ```bash
-    cd web && pnpm install
-    # Serve the web app
-    pnpm dev
-    ```
-
-
-## Demonstration
-
-
-
-https://github.com/SciPhi-AI/R2R/assets/68796651/01fee645-1beb-4096-9e7d-7d0fa01386ea
-
-
-## Community
-[Join our Discord server!](https://discord.gg/p6KqD2kjtB)
 
 ## Core Abstractions
 
