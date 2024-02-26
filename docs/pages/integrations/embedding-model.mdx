@@ -1,0 +1,37 @@
+# Embedding Model Configuration Guide
+
+This guide offers a detailed overview of configuring embedding models provided by OpenAI. Embedding models are important for tasks like semantic search, text similarity, and clustering. Below, you'll find explanations for each embedding model available, along with their use cases, dimensions, recommended batch sizes, and pricing. For further details, refer to the [OpenAI Embeddings Guide](https://platform.openai.com/docs/guides/embeddings).
+
+We plan to integrate more embeddings, such as [Nomic Embbed](https://blog.nomic.ai/posts/nomic-embed-text-v1) soon. Feel free to let us know which one you'd want us to priorqitize first on [Discord](https://discord.gg/p6KqD2kjtB)
+
+## Available Models
+
+### `text-embedding-3-small`
+
+- **Use case**: Suitable for general-purpose embedding tasks with efficient processing. Ideal for applications where speed and cost are critical.
+- **Dimensions**: `1536` - Indicates the size of the embedding vector.
+- **Recommended batch size**: `32` - Optimal number of items to process in a single request for balancing performance and throughput.
+- **Pricing**: Approximately 62,500 pages per dollar. High efficiency and cost-effective for large-scale applications.
+- **More**: [Embeddings Guide](https://platform.openai.com/docs/guides/embeddings)
+
+### `text-embedding-3-large`
+
+- **Use case**: Ideal for tasks requiring high-quality embeddings, such as semantic search or complex text similarity. Best for when the quality of the embedding is paramount.
+- **Dimensions**: `4096`
+- **Recommended batch size**: `16`
+- **Pricing**: Approximately 9,615 pages per dollar. Offers superior performance at a higher cost.
+- **More**: [Embeddings Guide](https://platform.openai.com/docs/guides/embeddings)
+
+### `text-embedding-ada-002`
+
+- **Use case**: A balanced option for tasks needing a compromise between quality and efficiency. Suitable for a wide range of applications.
+- **Dimensions**: `2048`
+- **Recommended batch size**: `24`
+- **Pricing**: Approximately 12,500 pages per dollar. Balances cost and performance effectively.
+- **More**: [Embeddings Guide](https://platform.openai.com/docs/guides/embeddings)
+
+## Summary
+
+Selecting the right embedding model is crucial for achieving the desired balance between cost, efficiency, and quality in your application. By understanding the specific use cases, dimensions, and pricing of each model, developers can make informed decisions that best suit their project's needs. For more detailed information on configuring and utilizing embedding models, refer to the [OpenAI API Documentation](https://platform.openai.com/docs/guides/embeddings).
+
+Experimenting with different models and configurations can provide insights into the optimal setup for your specific use case, ensuring that you leverage the power of OpenAI's embedding models effectively.

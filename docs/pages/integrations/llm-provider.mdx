@@ -1,0 +1,54 @@
+# LLM Provider Configuration Guide
+
+This guide provides a comprehensive overview of configuring the LLM (Language Learning Model) provider with a focus on OpenAI's GPT-4 model. We also plan to integrate more LLMs really soon. Feel free to let us know which one you'd want us to prioritize first on [Discord](https://discord.gg/p6KqD2kjtB)
+
+Below, you'll find detailed explanations of each configuration option available in the `language_model` section, along with references to relevant sections of OpenAI's documentation for further reading.
+
+## Configuration Options
+
+### `provider`
+
+- **Description**: Specifies the provider of the language model.
+- **Value**: `"openai"` for using OpenAI's models.
+- **More**: [Introduction to OpenAI's API](https://platform.openai.com/docs/introduction)
+
+### `model_name`
+
+- **Description**: The specific model to use for generating text.
+- **Value**: `"gpt-4-0125-preview"` indicates a specific version of the GPT-4 model.
+- **More**: [Models Overview](https://platform.openai.com/docs/guides/models)
+
+### `temperature`
+
+- **Description**: Controls the randomness in the output. Lower values make the model more deterministic.
+- **Value**: `0.1` for less random, more predictable output.
+- **More**: [How to control the output](https://platform.openai.com/docs/guides/text-generation)
+
+### `top_p`
+
+- **Description**: Nucleus sampling parameter that controls the size of the probability mass considered for generating each token. Values closer to 1.0 make the model consider more possible tokens for each generation step.
+- **Value**: `0.9` to balance creativity and coherence.
+- **More**: [Fine-tuning the outputs](https://platform.openai.com/docs/guides/text-generation)
+
+### `top_k`
+
+- **Description**: Controls the number of highest probability vocabulary tokens to keep for top-k filtering.
+- **Value**: `128` to limit the selection pool to the top 128 tokens.
+- **More**: [Fine-tuning the outputs](https://platform.openai.com/docs/guides/text-generation)
+
+### `max_tokens_to_sample`
+
+- **Description**: The maximum number of tokens to generate in the output text.
+- **Value**: `1024` for generating longer responses.
+- **More**: [Chat Completions API](https://platform.openai.com/docs/guides/text-generation/chat-completions-api)
+
+### `do_stream`
+
+- **Description**: Determines whether the model's output should be streamed.
+- **Value**: `false` to to receive the output all at once rather than streaming.
+- **More**: [Streaming Outputs](https://platform.openai.com/docs/guides/text-generation/streaming-outputs)
+
+## Summary
+
+Configuring the LLM provider with the above options allows for a tailored approach to generating text using OpenAI's GPT-4 model. By adjusting parameters like `temperature`, `top_p`, `top_k`, and `max_tokens_to_sample`, you'll be able to better control your model's output to suit your specific needs.
+For more detailed information, refer to the [OpenAI API Documentation](https://platform.openai.com/docs).
