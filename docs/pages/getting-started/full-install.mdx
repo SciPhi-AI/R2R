@@ -12,24 +12,19 @@ The core idea of a Full install is to fully leverage the `config.json` file in o
 Poetry manages the virtual environment and dependency resolution for your project, making it compatible with both existing `Pip` and `Conda` environments.
 To install poetry, visit the [official Poetry website](https://python-poetry.org/docs/#installation) for the latest package and installation instructions or run the following command.
 
-```bash
-pipx install poetry
-```
-
 ##### Clone and Install Dependencies:
 
-Clone the project repository and navigate to the project directory:
-
-```bash
-git clone git@github.com:SciPhi-AI/r2r.git
-cd r2r
-```
-
-Install the project dependencies with Poetry:
-
-```bash
-poetry install
-```
+- Clone the project repository and navigate to the project directory:
+  ```bash
+  git clone git@github.com:SciPhi-AI/r2r.git
+  cd r2r
+  ```
+- Install the project dependencies with Poetry:
+  ```bash
+  # See pyproject.toml for available extras
+  # use "all" to include every optional dependency
+  poetry install --extras "parsing"
+  ```
 
 ##### Config Setup (Optional)
 
@@ -58,8 +53,6 @@ These are the available options, with the first being the `default(Option){:py}`
 - **Embedding Model Dimension**: `1536{:py}` | `2048` | `4096` | `Custom`
 - **Embedding Batch Size**: `16{:py}` | `24` | `32` | `Custom`
 
-**Follow the Prompts**: The script will guide you through several configuration options, including selecting your vector database provider (Supabase or Qdrant), setting up the embedding provider (currently OpenAI), choosing the OpenAI model, and specifying other settings such as dimension and batch size. Simply follow the prompts and enter your choices.
-
 ##### Configure Environment Variables:
 
 Copy the `.env.example` to `.env` to apply your configurations, which should be updated after you've run the `setup_config.sh{:bash}` script.:
@@ -72,4 +65,4 @@ We have several config options to run the project locally or at the cloud. At mi
 
 ## Demo: Installation and launching Basic App
 
-[![demo_screenshot](./demo_screenshot.png)](https://github.com/SciPhi-AI/r2r/assets/68796651/c648ab67-973a-416a-985e-2eafb0a41ef0)
+[![demo_screenshot](./demo_screenshot.png)](https://github.com/SciPhi-AI/R2R/assets/68796651/01fee645-1beb-4096-9e7d-7d0fa01386ea)

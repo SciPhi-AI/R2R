@@ -16,13 +16,14 @@ R2R was conceived to bridge the gap between experimental RAG models and robust, 
 ### Quick Install:
 
 **Install R2R directly using `pip`:**
-   
-   ```bash
-   # use the `'r2r[all]'` to download all required deps
-   pip install 'r2r[parsing]'
-   ```
+
+```bash
+# use the `'r2r[all]'` to download all required deps
+pip install 'r2r[parsing]'
+```
 
 ## Links
+
 [Join the Discord server](https://discord.gg/p6KqD2kjtB)
 
 [Read our Docs](https://docs.sciphi.ai/)
@@ -42,15 +43,8 @@ The project includes several basic examples that demonstrate application deploym
    ```bash
    poetry run python -m examples.basic.run_client
    ```
-   
-3. [`run_pdf_chat.py`](examples/pdf_chat/run_demo.py): An example demonstrating upload and chat with a more realistic pdf.
-    ```bash
-    # Ingest pdf
-    poetry run python -m examples.pdf_chat.run_demo ingest
 
-    # Ask a question
-    poetry run python -m examples.pdf_chat.run_demo search "What are the key themes of Meditations?"
-    ```
+3. [`run_pdf_chat.py`](examples/pdf_chat/run_demo.py): An example demonstrating upload and chat with a more realistic pdf.
 
    ```bash
    # Ingest pdf
@@ -67,20 +61,20 @@ The project includes several basic examples that demonstrate application deploym
    pnpm dev
    ```
 
-
 ## 60s demo of the examples
 
 [![demo_screenshot](./docs/pages/getting-started/demo_screenshot.png)](https://github.com/SciPhi-AI/R2R/assets/68796651/01fee645-1beb-4096-9e7d-7d0fa01386ea)
-
 
 ### Full Install:
 
 Follow these steps to ensure a smooth setup:
 
 1. **Install Poetry:**
+
    - Before installing the project, make sure you have Poetry on your system. If not, visit the [official Poetry website](https://python-poetry.org/docs/#installation) for installation instructions.
 
 2. **Clone and Install Dependencies:**
+
    - Clone the project repository and navigate to the project directory:
      ```bash
      git clone git@github.com:SciPhi-AI/r2r.git
@@ -95,7 +89,7 @@ Follow these steps to ensure a smooth setup:
 
 3. **Configure Environment Variables:**
    - You need to set up cloud provider secrets in your `.env`. At a minimum, you will need an OpenAI key.
-   - The framework currently supports pgvector and Qdrant with plans to extend coverage.
+   - The framework currently supports PostgreSQL (locally), pgvector and Qdrant with plans to extend coverage.
    - If starting from the example, copy `.env.example` to `.env` to apply your configurations:
      ```bash
      cp .env.example .env
@@ -122,7 +116,3 @@ The framework primarily revolves around three core abstractions:
 - The **RAG Pipeline**: Works similarly to the embedding pipeline but incorporates an LLM provider to produce text completions. The abstraction can be found in [`rag.py`](r2r/core/pipelines/rag.py).
 
 Each pipeline incorporates a logging database for operation tracking and observability.
-
-#### Backed by:
-
-<a href="https://www.ycombinator.com/" target="_blank"><img src="https://i0.wp.com/www.vccafe.com/wp-content/uploads/2017/09/Y_Combinator_logo_text_wordmark.png?ssl=1" alt="YCombinator" style="width: 120px; height: 30px;" width="20" height="20" /></a>

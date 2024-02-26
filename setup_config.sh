@@ -11,26 +11,36 @@ update_env_example() {
     local tmp_file=$(mktemp)
 
     # Define patterns to match based on the database choice
-    local pattern_to_comment=""
+    local patterns_to_comment=()
     local pattern_to_uncomment=""
-    if [ "$db_choice" = "1" ]; then
-        # If pg_vector is chosen, comment out QDRANT keys and uncomment PGVECTOR keys
-        pattern_to_comment="^QDRANT_"
-        pattern_to_uncomment="^#PGVECTOR_"
-    elif [ "$db_choice" = "2" ]; then
-        # If qdrant is chosen, comment out PGVECTOR keys
-        pattern_to_comment="^POSTGRES_"
-    fi
 
-    # Comment out the lines matching the pattern for the database choice
-    if [ ! -z "$pattern_to_comment" ]; then
-        sed "/$pattern_to_comment/s/^/#/" .env.example > "$tmp_file" && mv "$tmp_file" .env.example
-    fi
+    case "$db_choice" in
+        1)
+            # If Local is chosen, uncomment Local keys and comment out the others
+            patterns_to_comment=("POSTGRES_" "QDRANT_")
+            pattern_to_uncomment="LOCAL_DB_PATH"
+            ;;
+        2)
+            # If pg_vector is chosen, this option is treated the same as Postgres in this context
+            patterns_to_comment=("LOCAL_DB_PATH" "QDRANT_")
+            pattern_to_uncomment="POSTGRES_"
+            ;;
+        3)
+            # If qdrant is chosen, comment out Postgres keys and uncomment QDRANT keys
+            patterns_to_comment=("LOCAL_DB_PATH" "POSTGRES_")
+            pattern_to_uncomment="QDRANT_"
+            ;;
+    esac
 
-    # Uncomment the lines matching the pattern for the database choice
+    # Uncomment the lines for the chosen database
     if [ ! -z "$pattern_to_uncomment" ]; then
         sed "/$pattern_to_uncomment/s/^#//" .env.example > "$tmp_file" && mv "$tmp_file" .env.example
     fi
+
+    # Comment out the lines for the not chosen databases
+    for pattern in "${patterns_to_comment[@]}"; do
+        sed "/$pattern/s/^/#/" .env.example > "$tmp_file" && mv "$tmp_file" .env.example
+    done
 
     # Handle SERPER_API_KEY based on websearch integration choice
     if [ "$integrate_websearch" != "yes" ] && [ "$integrate_websearch" != "y" ] && [ "$integrate_websearch" != "Y" ] && [ "$integrate_websearch" != "1" ]; then
@@ -42,61 +52,64 @@ update_env_example() {
     fi
 }
 
-# Function to update config.json
-update_config() {
-    jq "$1" config.json > config.tmp && mv config.tmp config.json
-}
-
-# Function to prompt and read user choice with retry mechanism
+# Define the prompt_with_retry function without using name references
 prompt_with_retry() {
     local prompt_message="$1"
-    local user_choice_var=$2 # Changed to store the variable name as a string
-    local attempt=0
-    local max_attempts=2
-
-    while [ $attempt -lt $max_attempts ]; do
+    local user_choice_var_name=$2  # Store the variable name as a string
+    while true; do
         echo -e "$prompt_message"
         read user_input
-        eval $user_choice_var="'$user_input'" # Indirectly assign the input to the variable
-        case ${!user_choice_var} in # Use indirect reference to check the value
-            1|2|y|Y|yes|YES|n|N|no|NO)
-                return 0
+        eval $user_choice_var_name="'$user_input'"  # Assign the input to the variable indirectly
+        case $(eval echo \$$user_choice_var_name) in  # Use indirect expansion to check the value
+            1|2|3)
+                break
                 ;;
             *)
-                let attempt++
                 echo "Invalid choice. Please try again."
-                if [ $attempt -eq $max_attempts ]; then
-                    echo "Failed too many times. Exiting."
-                    exit 1
-                fi
                 ;;
         esac
     done
 }
 
-echo "Setting up your R2R configuration..." 
-echo -e "Default options are displayed in ${GREEN}Green${NC}"
-echo -e "\n"
+# Define the update_config function to use jq for updating config.json with correct types for numbers
+update_config() {
+    local update_path="$1"
+    local value="$2"
+    local is_numeric="$3" # New parameter to check if the value should be treated as a numeric value
 
-# Select vector database provider
-prompt_message="Select your vector database provider:\n1) ${GREEN}pg_vector (Supabase)${NC} | 2) qdrant\n\nEnter choice [1-2]: "
-prompt_with_retry "$prompt_message" db_choice
+    if [[ "$is_numeric" == "yes" ]]; then
+        jq "$update_path = $value" config.json > config.tmp && mv config.tmp config.json
+    else
+        jq "$update_path = \"$value\"" config.json > config.tmp && mv config.tmp config.json
+    fi
+}
 
+# Example usage of prompt_with_retry
+prompt_message="Select your vector database provider:\n1) ${GREEN}PostgreSQL (Local)${NC} | 2) pgvector (Supabase) | 3) qdrant\n\nEnter choice [1-3]: "
+db_choice=0
+prompt_with_retry "$prompt_message" "db_choice"
+
+# Example usage of update_config
+# This assumes you have jq installed and config.json is in the current directory
 case $db_choice in
     1)
-        update_config '.database.provider = "pg_vector"'
-        echo "Make sure the vectors extension plugin has been enabled in your PostgreSQL."
-        #echo -e "Make sure the ${YELLOW}vector${NC} extension plugin has been enabled in ${GREEN}Supabase ${NC} > ${YELLOW}Project > Database > Extensions${NC}."
+        update_config '.database.provider' 'local' 'no'
+        echo "Using PostgreSQL (Local) as the default database."
         ;;
     2)
-        update_config '.database.provider = "qdrant"'
+        update_config '.database.provider' 'pgvector' 'no'
+        echo -e "Make sure the ${YELLOW}vectors${NC} extension plugin has been enabled in ${YELLOW}Supabase > Project > Database > Extensions${NC}."
+        ;;
+    3)
+        update_config '.database.provider' 'qdrant' 'no'
         ;;
 esac
 
 # Call update_env_example with the user's database 
 echo -e "\n"
 prompt_message="Do you want to integrate with websearch?\n1) ${GREEN}no${NC} | 2) yes\n\nEnter choice [1-2]: "
-prompt_with_retry "$prompt_message" integrate_websearch
+integrate_websearch=0
+prompt_with_retry "$prompt_message" "integrate_websearch"
 
 case "$integrate_websearch" in
     [yY] | [yY][eE][sS] | [1] )
@@ -111,7 +124,7 @@ esac
 update_env_example $db_choice $integrate_websearch
 
 # Select embedding provider (OpenAI for now)
-update_config '.embedding.provider = "openai"'
+update_config '.embedding.provider' 'openai' 'no'
 
 # Select model
 echo -e "\n"
@@ -141,17 +154,18 @@ echo -e "\t- Pricing: Approximately 12,500 pages per dollar. Balances cost and p
 echo -e "\n"
 
 prompt_message="Enter choice [1-3]: "
-prompt_with_retry "$prompt_message" model_choice
+model_choice=0
+prompt_with_retry "$prompt_message" "model_choice"
 
 case $model_choice in
     1)
-        update_config '.embedding.model = "text-embedding-3-small"'
+        update_config '.embedding.model' 'text-embedding-3-small' 'no'
         ;;
     2)
-        update_config '.embedding.model = "text-embedding-3-large"'
+        update_config '.embedding.model' 'text-embedding-3-large' 'no'
         ;;
     3)
-        update_config '.embedding.model = "text-embedding-ada-002"'
+        update_config '.embedding.model' 'text-embedding-ada-002' 'no'
         ;;
     *)
         echo "Invalid choice. Exiting."
@@ -163,22 +177,23 @@ echo "Would you like to use the recommended default sizes for the model or speci
 echo -e "1) Use ${GREEN}default sizes${NC}"
 echo "2) Specify custom values"
 prompt_message="Enter choice [1-2]: "
-prompt_with_retry "$prompt_message" size_choice
+size_choice=0
+prompt_with_retry "$prompt_message" "size_choice"
 echo -e "\n"
 
 if [ "$size_choice" = "1" ]; then
     case $model_choice in
         1)
-            update_config '.embedding.dimension = 1536'
-            update_config '.embedding.batch_size = 32'
+            update_config '.embedding.dimension' '1536' 'yes'
+            update_config '.embedding.batch_size' '32' 'yes'
             ;;
         2)
-            update_config '.embedding.dimension = 4096'
-            update_config '.embedding.batch_size = 16'
+            update_config '.embedding.dimension' '4096' 'yes'
+            update_config '.embedding.batch_size' '16' 'yes'
             ;;
         3)
-            update_config '.embedding.dimension = 2048'
-            update_config '.embedding.batch_size = 24'
+            update_config '.embedding.dimension' '2048' 'yes'
+            update_config '.embedding.batch_size' '24' 'yes'
             ;;
     esac
 elif [ "$size_choice" = "2" ]; then
@@ -189,7 +204,8 @@ elif [ "$size_choice" = "2" ]; then
     echo "Other) Type custom dimension"
     echo -e "\n"
     prompt_message="Enter choice [1-3] or type it: "
-    prompt_with_retry "$prompt_message" dimension_choice
+    dimension_choice=0
+    prompt_with_retry "$prompt_message" "dimension_choice"
     
     case $dimension_choice in
         1)
@@ -206,7 +222,7 @@ elif [ "$size_choice" = "2" ]; then
             exit 1
             ;;
     esac
-    update_config ".embedding.dimension = $custom_dimension"
+    update_config ".embedding.dimension" "$custom_dimension" "yes"
     
     echo "Select the batch size (consider processing speed and cost):"
     echo "1) 16 - Suitable for high-quality embeddings with slower processing and higher cost."
@@ -215,7 +231,8 @@ elif [ "$size_choice" = "2" ]; then
     echo "Other) Type custom batch size"
     echo -e "\n"
     prompt_message="Enter choice [1-3] or type it: "
-    prompt_with_retry "$prompt_message" batch_size_choice
+    batch_size_choice=0
+    prompt_with_retry "$prompt_message" "batch_size_choice"
     
     case $batch_size_choice in
         1)
@@ -232,7 +249,7 @@ elif [ "$size_choice" = "2" ]; then
             exit 1
             ;;
     esac
-    update_config ".embedding.batch_size = $custom_batch_size"
+    update_config ".embedding.batch_size" "$custom_batch_size" "yes"
 fi
 
 echo "Configuration setup is complete."
@@ -250,4 +267,5 @@ for i in {1..100}; do
     printf "\r0 %% [%-50s] %3d%%" "$bar" "$i"
 done
 echo -e "\n"
-echo -e "\nFiles updated: ${YELLOW}.env.example${NC} and ${YELLOW}config.json${NC}. For a the full list of set up options modify ${YELLOW}config.json${NC} directly."
+echo -e "\nFiles updated: ${YELLOW}.env.example${NC} and ${YELLOW}config.json${NC}." 
+echo -e "For a the full list of set up options modify ${YELLOW}config.json${NC} directly."
