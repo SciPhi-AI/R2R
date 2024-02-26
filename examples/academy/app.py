@@ -2,9 +2,14 @@ import logging
 import uuid
 from typing import Optional
 
-from r2r.core import (GenerationConfig, LLMProvider, LoggingDatabaseConnection,
-                      VectorDBProvider, VectorSearchResult,
-                      log_execution_to_db)
+from r2r.core import (
+    GenerationConfig,
+    LLMProvider,
+    LoggingDatabaseConnection,
+    VectorDBProvider,
+    VectorSearchResult,
+    log_execution_to_db,
+)
 from r2r.embeddings import OpenAIEmbeddingProvider
 from r2r.main import E2EPipelineFactory
 from r2r.pipelines import BasicRAGPipeline
