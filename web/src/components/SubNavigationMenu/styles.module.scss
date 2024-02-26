@@ -1,0 +1,84 @@
+@keyframes handleScrollingNavBar {
+  from {
+    margin-top: -0.6rem;
+    blur: 4px;
+  }
+
+  to {
+    margin-top: 0.2rem;
+    blur: 0;
+  }
+}
+
+.container {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0px;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  background-color: var(--color-2);
+
+  padding: 0 14rem 4px 14rem;
+
+  z-index: 1;
+  background-color: var(--sciphi-top-bg);
+  box-shadow: var(--header-box-shadow);
+  backdrop-filter: blur(10px);
+
+  .scipiLogo {
+    display: block;
+    margin: 0 auto; // Center the logo if needed
+    height: 18px; // Adjust based on your design requirements
+  }
+
+  .subNavigationMenu {
+    width: 31.5rem;
+    padding-bottom: 0.6rem;
+    transform: translate3d(-0.6rem, 0, 0);
+    transition: transform 0.25s ease;
+    // background-color: var(--color-2);
+
+    cursor: pointer;
+
+    font-size: 0.95rem;
+    color: var(--color-5);
+    display: flex;
+
+    &.scrollingContent {
+      padding-top: 0.6rem;
+      transform: translate3d(0.4rem, 0, 0);
+      z-index: 1;
+    }
+
+    a {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      padding: 6px 11px;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: var(--color-8);
+      }
+    }
+
+    .selected {
+      color: var(--color-8);
+
+      &::before {
+        content: '';
+        display: block;
+        position: absolute;
+        height: 0;
+        left: 9px;
+        right: 9px;
+        bottom: -0.8rem;
+        border-bottom: 2px solid;
+      }
+    }
+  }
+}

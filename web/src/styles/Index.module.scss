@@ -1,0 +1,46 @@
+.container {
+  width: 100%;
+  position: relative;
+}
+
+.topBar {
+  background-color: var(--color-2);
+  padding: 1.5rem 14rem 1.2rem 14rem;
+  background-color: #262a2d;
+  //   background-color: var(--schiphi-top-bg);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 122.5px);
+  margin: 1.8rem 14rem 0 14rem;
+
+  .gridView {
+    margin-top: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: auto;
+    column-gap: 1.5rem;
+    row-gap: 1rem;
+  }
+
+  .column {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fullWidthTable {
+  width: 100%;
+}
+
+.datasetHeaderRightAlign {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+
+  display: flex;
+  justify-content: flex-end;
+  /* Align items to the right */
+  width: 100%;
+  /* Ensures the flex container takes up full width */
+}
