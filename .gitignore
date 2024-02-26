@@ -13,3 +13,6 @@ node_modules
 
 docs/.next
 docs/node_modules
+
+docs/.next/*
+docs/node_modules/*
