@@ -54,7 +54,7 @@ The project includes several basic examples that demonstrate application deploym
 2. [`run_client.py`](examples/basic/run_client.py): This example should be run after starting the main application. It demonstrates uploading text entries as well as a PDF with the python client. Further, it shows document and user-level management with built-in features.
 
     ```bash
-    poetry run python -m examples.client.test_client
+    poetry run python -m examples.basic.run_client
     ```
 
 
