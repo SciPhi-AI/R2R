@@ -1,6 +1,3 @@
 {
-  "config": "Config setup",
-  "ingestion_pipeline": "Ingestion Pipeline",
-  "embedding_pipeline": "Embedding Pipeline",
-  "rag_pipeline": "RAG Pipeline"
+  "config": "Config setup"
 }
