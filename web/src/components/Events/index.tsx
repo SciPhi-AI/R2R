@@ -207,7 +207,7 @@ export function Event() {
                     </TableCell>
                     <TableCell>
                       {log.searchResults && log.searchResults.length > 0
-                        ? truncateText(log.searchResults[0]?.text, 30)
+                        ? truncateText(log.searchResults[0]?.text, 30) + " ..."
                         : ''}
                     </TableCell>
                     <TableCell>

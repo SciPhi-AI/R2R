@@ -94,6 +94,18 @@ print(
 )
 
 
+print("Performing RAG...")
+# Perform a search on this file
+pdf_filtered_search_response = client.rag_completion(
+    "Are there any test documents?",
+    5,
+    filters={"document_id": pdf_document_id},
+)
+print(
+    f"Search response w/ uploaded pdf filter:\n{pdf_filtered_search_response}\n"
+)
+
+
 print("Fetching logs after all steps...")
 logs_response = client.get_logs()
 print(f"Logs response:\n{logs_response}\n")

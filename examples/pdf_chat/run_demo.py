@@ -12,23 +12,26 @@ class PDFChat:
         if not user_id:
             self.user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, "user_id"))
         self.titles = {
-            "examples/demo/pdf_chat/meditations.pdf": "Title: Meditations - Marcus Aurelius",
-            "examples/demo/pdf_chat/the_republic.pdf": "Title: The Republic - Plato",
+            "examples/pdf_chat/meditations.pdf": "Title: Meditations - Marcus Aurelius",
+            # uncomment the following line to add more documents
+            # "examples/pdf_chat/the_republic.pdf": "Title: The Republic - Plato",
         }
 
     def ingest(self):
-        for file_path in glob.glob("examples/demo/pdf_chat/*.pdf"):
-            print("Uploading file: ", file_path)
-            document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, file_path))
-            metadata = {
-                "user_id": self.user_id,
-                "chunk_prefix": self.titles[file_path],
-            }
-            settings = {}
-            upload_response = self.client.upload_and_process_file(
-                document_id, file_path, metadata, settings
-            )
-            print("Upload response = ", upload_response)
+        for file_path in glob.glob("examples/pdf_chat/*.pdf"):
+            if file_path in self.titles:
+                    
+                print("Uploading file: ", file_path)
+                document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, file_path))
+                metadata = {
+                    "user_id": self.user_id,
+                    "chunk_prefix": self.titles[file_path],
+                }
+                settings = {}
+                upload_response = self.client.upload_and_process_file(
+                    document_id, file_path, metadata, settings
+                )
+                print("Upload response = ", upload_response)
 
     def search(self, query):
         search_response = self.client.search(

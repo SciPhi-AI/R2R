@@ -102,6 +102,14 @@ class LocalVectorDB(VectorDBProvider):
             conn.commit()
         conn.close()
 
+    def _cosine_similarity(
+        self, vec1: list[float], vec2: list[float]
+    ) -> float:
+        dot_product = sum(a * b for a, b in zip(vec1, vec2))
+        norm_a = sum(a * a for a in vec1) ** 0.5
+        norm_b = sum(b * b for b in vec2) ** 0.5
+        return dot_product / (norm_a * norm_b)
+
     def search(
         self,
         query_vector: list[float],
@@ -114,16 +122,6 @@ class LocalVectorDB(VectorDBProvider):
             raise ValueError(
                 "Collection name is not set. Please call `initialize_collection` first."
             )
-
-        try:
-            import numpy as np
-            from sklearn.metrics.pairwise import cosine_similarity
-
-        except ImportError:
-            raise ImportError(
-                "Please install numpy and scikit-learn to use the `search` method."
-            )
-
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
         cursor.execute(f'SELECT * FROM "{self.collection_name}"')
@@ -133,10 +131,8 @@ class LocalVectorDB(VectorDBProvider):
             vector = json.loads(vector)
             metadata = json.loads(metadata)
             if all(metadata.get(k) == v for k, v in filters.items()):
-                score = cosine_similarity(
-                    np.array(query_vector).reshape(1, -1),
-                    np.array(vector).reshape(1, -1),
-                )[0][0]
+                # Local cosine similarity calculation
+                score = self._cosine_similarity(query_vector, vector)
                 results.append(VectorSearchResult(id, score, metadata))
         results.sort(key=lambda x: x.score, reverse=True)
         conn.close()

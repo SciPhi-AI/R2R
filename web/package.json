@@ -8,8 +8,7 @@
     "lint": "eslint --fix .",
     "server": "json-server ./server.json",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "prepare": "husky install"
+    "format:check": "prettier --check ."
   },
   "husky": {
     "hooks": {
