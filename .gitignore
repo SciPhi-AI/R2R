@@ -12,4 +12,4 @@ uploads/
 node_modules
 
 docs/.next
-doncs/node_modules
+docs/node_modules
