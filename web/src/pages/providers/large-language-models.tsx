@@ -4,6 +4,7 @@ import { IntegrationCard } from '@/components/IntegrationCard';
 import Layout from '@/components/Layout';
 // import { PanelHeader } from '@/components/PanelHeader';
 import { Separator } from '@/components/ui/separator';
+import LocalProvidersMenu from '@/components/LocalProvidersMenu';
 
 import styles from '@/styles/Index.module.scss';
 import { Provider } from '../../types';
@@ -20,10 +21,7 @@ export default function LLMs() {
   return (
     <Layout>
       <main className={styles.main}>
-        <h1 className="text-white text-2xl mb-4">
-          {' '}
-          Large Language Model Providers{' '}
-        </h1>
+        <LocalProvidersMenu />
         <Separator />
 
         <div className={`${styles.gridView} ${styles.column}`}>

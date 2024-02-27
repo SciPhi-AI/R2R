@@ -39,12 +39,12 @@ const data = [
 ];
 
 export default function Databases({ active, others }) {
-  const [integrations, setIntegrations] = useState<Provider[]>([]);
+  const [databaseProviders, setDatabaseProviders] = useState<Provider[]>([]);
 
   useEffect(() => {
     fetch('/api/integrations')
       .then((res) => res.json())
-      .then((json) => setIntegrations(json));
+      .then((json) => setDatabaseProviders(json));
   }, []);
 
   return (
@@ -53,8 +53,8 @@ export default function Databases({ active, others }) {
         <LocalProvidersMenu />
         <Separator />
         <div className={`${styles.gridView} ${styles.column}`}>
-          {Array.isArray(integrations)
-            ? integrations
+          {Array.isArray(databaseProviders)
+            ? databaseProviders
                 ?.filter((x) => {
                   return x?.type == 'vector-db-provider';
                 })

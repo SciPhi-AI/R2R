@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 
 import { IntegrationCard } from '@/components/IntegrationCard';
+import Layout from '@/components/Layout';
+import LocalProvidersMenu from '@/components/LocalProvidersMenu';
 import { Separator } from '@/components/ui/separator';
 import {
   Table,
@@ -75,75 +76,72 @@ const data = [
 ];
 
 export default function Datasets({ active, others }) {
-  const [vectorProviders, setVectorProvider] = useState<Provider[]>([]);
+  const [datasetProviders, setDatasetProvider] = useState<Provider[]>([]);
 
   useEffect(() => {
     fetch('/api/integrations')
       .then((res) => res.json())
-      .then((json) => setVectorProvider(json));
+      .then((json) => setDatasetProvider(json));
   }, []);
 
   return (
-    <main className={styles.main}>
-      <h1>{active}</h1>
-      <ul>
-        {others.map((item) => (
-          <li key={item.name}>
-            <Link href={`/providers${item.path}`}>{item.name}</Link>
-          </li>
-        ))}
-      </ul>
-      <Separator />
+    <Layout>
+      <main className={styles.main}>
+        <LocalProvidersMenu />
+        <Separator />
 
-      <div className={`${styles.gridView} ${styles.column}`}>
-        {Array.isArray(vectorProviders)
-          ? vectorProviders
-              ?.filter((x) => {
-                return x?.type == 'dataset-provider';
-              })
-              .map((provider) => (
-                <IntegrationCard provider={provider} key={provider.id} />
-              ))
-          : null}
-      </div>
+        <div className={`${styles.gridView} ${styles.column}`}>
+          {Array.isArray(datasetProviders)
+            ? datasetProviders
+                ?.filter((x) => {
+                  return x?.type == 'dataset-provider';
+                })
+                .map((provider) => (
+                  <IntegrationCard provider={provider} key={provider.id} />
+                ))
+            : null}
+        </div>
 
-      <div className={styles.datasetHeaderRightAlign}>
-        {/* <PanelHeader text="Add Dataset Provider" /> */}
-      </div>
+        <div className={styles.datasetHeaderRightAlign}>
+          {/* <PanelHeader text="Add Dataset Provider" /> */}
+        </div>
 
-      <div className="w-full">
-        <Table className={styles.fullWidthTable}>
-          {/* <TableCaption>A list of your recent invoices.</TableCaption> */}
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[100px]">Dataset</TableHead>
-              <TableHead>Provider</TableHead>
-              <TableHead>Size</TableHead>
-              <TableHead className="text-right">Num Docs</TableHead>
-              <TableHead className="text-right">Num Tokens</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.map((entry) => (
-              <TableRow key={entry.dataset}>
-                <TableCell className="font-medium">{entry.dataset}</TableCell>
-                <TableCell>{entry.provider}</TableCell>
-                <TableCell>{entry.size}</TableCell>
-                <TableCell className="text-right">{entry.num_docs}</TableCell>
-                <TableCell className="text-right">{entry.num_tokens}</TableCell>
+        <div className="w-full">
+          <Table className={styles.fullWidthTable}>
+            {/* <TableCaption>A list of your recent invoices.</TableCaption> */}
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">Dataset</TableHead>
+                <TableHead>Provider</TableHead>
+                <TableHead>Size</TableHead>
+                <TableHead className="text-right">Num Docs</TableHead>
+                <TableHead className="text-right">Num Tokens</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell colSpan={2}>Total</TableCell>
-              <TableCell className="text-right">X</TableCell>
-              <TableCell className="text-right">Y</TableCell>
-              <TableCell className="text-right">Z</TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
-      </div>
-    </main>
+            </TableHeader>
+            <TableBody>
+              {data.map((entry) => (
+                <TableRow key={entry.dataset}>
+                  <TableCell className="font-medium">{entry.dataset}</TableCell>
+                  <TableCell>{entry.provider}</TableCell>
+                  <TableCell>{entry.size}</TableCell>
+                  <TableCell className="text-right">{entry.num_docs}</TableCell>
+                  <TableCell className="text-right">
+                    {entry.num_tokens}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell colSpan={2}>Total</TableCell>
+                <TableCell className="text-right">X</TableCell>
+                <TableCell className="text-right">Y</TableCell>
+                <TableCell className="text-right">Z</TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
+        </div>
+      </main>
+    </Layout>
   );
 }
