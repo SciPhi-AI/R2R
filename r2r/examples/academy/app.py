@@ -59,7 +59,7 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
             task_prompt=task_prompt,
         )
 
-    def transform_query(self, query: str) -> list[str]:
+    def transform_query(self, query: str) -> list[str]:  # type: ignore
         """
         Transforms the query into a list of strings.
         """

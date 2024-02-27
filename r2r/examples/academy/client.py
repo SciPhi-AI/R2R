@@ -19,7 +19,7 @@ for file_path in glob.glob("examples/academy/*.pdf"):
     # # Upload and process a file
     document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, file_path))
     metadata = {"user_id": user_id_0, "chunk_prefix": titles[file_path]}
-    settings = {}
+    settings: dict = {}
     upload_response = client.upload_and_process_file(
         document_id, file_path, metadata, settings
     )

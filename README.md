@@ -19,7 +19,7 @@ R2R was conceived to bridge the gap between experimental RAG models and robust, 
 
 ```bash
 # use the `'r2r[all]'` to download all required deps
-pip install 'r2r[parsing]'
+pip install 'r2r[parsing,eval]'
 
 # setup env
 export OPENAI_API_KEY=sk-...

@@ -8,11 +8,12 @@ class Pipeline(ABC):
     def __init__(
         self,
         logging_provider: Optional[LoggingDatabaseConnection] = None,
+        *args,
         **kwargs
     ):
         self.logging_provider = logging_provider
 
-        self.pipeline_run_info = None
+        self.pipeline_run_info: Optional[dict] = None
 
     def _check_pipeline_initialized(self) -> None:
         if self.pipeline_run_info is None:
@@ -47,9 +48,9 @@ class Pipeline(ABC):
             self.logging_provider.__exit__(None, None, None)
 
     @abstractmethod
-    def initialize_pipeline(self, **kwargs):
+    def initialize_pipeline(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def run(self, **kwargs):
+    def run(self, *args, **kwargs):
         pass

@@ -97,7 +97,9 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             chunks, self.embedding_model
         )
 
-    def store_chunks(self, chunks: list[VectorEntry], do_upsert: bool) -> None:
+    def store_chunks(
+        self, chunks: list[VectorEntry], do_upsert: bool, *args, **kwargs
+    ) -> None:
         """
         Stores the embedded chunks in the database, with an option to upsert.
         """
@@ -118,9 +120,8 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         """
         self.initialize_pipeline()
         logger.debug(
-            f"Running the `BasicEmbeddingPipeline` with id={self.pipeline_run_info['run_id']}."
+            f"Running the `BasicEmbeddingPipeline` with pipeline_run_info={self.pipeline_run_info}."
         )
-        logger.debug(f"Pipeline run type: {self.pipeline_run_info['type']}")
 
         documents = [document] if not isinstance(document, list) else document
         batch_data = []
@@ -164,7 +165,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             ids, transformed_chunks, embedded_chunks, metadatas
         ):
             metadata = copy.deepcopy(metadata)
-            metadata["pipeline_run_id"] = str(self.pipeline_run_info["run_id"])
+            metadata["pipeline_run_id"] = str(self.pipeline_run_info["run_id"])  # type: ignore
             metadata["text"] = transformed_chunk
             metadata["document_id"] = doc_id
             chunk_id = uuid.uuid5(

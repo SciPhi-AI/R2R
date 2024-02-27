@@ -42,7 +42,9 @@ class E2EPipelineFactory:
         elif embedding_config["provider"] == "sentence_transformers":
             from r2r.embeddings import SentenceTransformerEmbeddingProvider
 
-            return SentenceTransformerEmbeddingProvider()
+            return SentenceTransformerEmbeddingProvider(
+                embedding_config["model"]
+            )
 
     @staticmethod
     def get_llm():
@@ -71,7 +73,6 @@ class E2EPipelineFactory:
         config_path=None,
     ):
         (
-            api_config,
             logging_config,
             embedding_config,
             database_config,

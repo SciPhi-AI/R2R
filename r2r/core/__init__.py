@@ -1,5 +1,6 @@
 from .abstractions.document import BasicDocument
 from .pipelines.embedding import EmbeddingPipeline
+from .pipelines.eval import EvalPipeline
 from .pipelines.ingestion import IngestionPipeline
 from .pipelines.rag import RAGPipeline
 from .providers.dataset import DatasetConfig, DatasetProvider
@@ -15,6 +16,7 @@ from .providers.vector_db import (
 __all__ = [
     "BasicDocument",
     "EmbeddingPipeline",
+    "EvalPipeline",
     "IngestionPipeline",
     "RAGPipeline",
     "LoggingDatabaseConnection",

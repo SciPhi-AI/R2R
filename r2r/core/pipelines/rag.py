@@ -41,6 +41,7 @@ class RAGPipeline(Pipeline):
         system_prompt: Optional[str] = None,
         task_prompt: Optional[str] = None,
         logging_provider: Optional[LoggingDatabaseConnection] = None,
+        *args,
         **kwargs,
     ):
         self.llm = llm
@@ -51,7 +52,9 @@ class RAGPipeline(Pipeline):
         self.pipeline_run_info = None
         super().__init__(logging_provider=logging_provider, **kwargs)
 
-    def initialize_pipeline(self, query: str, search_only: bool) -> None:
+    def initialize_pipeline(
+        self, query: str, search_only: bool, *args, **kwargs
+    ) -> None:
         self.pipeline_run_info = {
             "run_id": uuid.uuid4(),
             "type": "rag" if not search_only else "search",

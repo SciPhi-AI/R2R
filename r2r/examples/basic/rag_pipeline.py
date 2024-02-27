@@ -34,7 +34,6 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
 
     (
-        api_config,
         logging_config,
         embedding_config,
         database_config,

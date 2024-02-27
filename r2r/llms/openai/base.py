@@ -40,7 +40,7 @@ class OpenAILLM(LLMProvider):
             from openai import OpenAI  # noqa
         except ImportError:
             raise ImportError(
-                "Please install the openai package before attempting to run with an OpenAI model. This can be accomplished via `pip install openai`."
+                "Error, `openai` is required to run an OpenAILLM. Please install it using `pip install openai`."
             )
         if config.provider_name != "openai" or not os.getenv("OPENAI_API_KEY"):
             raise ValueError(
