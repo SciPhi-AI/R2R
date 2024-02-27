@@ -1,8 +1,8 @@
-# Simple Basic App
+# R2R Documentation
 
 ## Launching
 
-This example runs a basic application, which launches a server to handle ingestion, embedding, and RAG. Further, it demonstrates how to interact with the local server using the `R2RClient`.
+This example runs a basic application, which launches a server to handle ingestion, embedding, and RAG. Further, it demonstrates how to interact with the local server using the [`R2RClient`](https://github.com/SciPhi-AI/R2R/blob/main/r2r/client/base.py)`.
 
 ```bash
 # Launch the application
@@ -43,13 +43,15 @@ The `R2RClient` provides an interface to interact with the server. Here are the 
 <a name="configjson"></a>
 
 
-During the pipeline creation the `config.json` is loaded and passed to the pipeline. It provides settings for the following services:
+During the example pipeline creation a default `config.json` is loaded and passed to the pipeline. It provides settings for the following services:
 
 - Database provider
 - LLM settings
 - Embedding settings
 - Parsing logic
 - and more.
+
+The default values for the config are shown below. 
 
 ```json
 {
@@ -91,17 +93,21 @@ _Note: For a full list of options, see [Config Setup](../core_features/config.md
 
 The pipeline is composed of three main components: `Ingestion`, `Embedding`, and `RAG` together with `Logging`.
 
+To launch your own custom application pipeline, you may run with the following
 ```python
-#factory.py
 
 class E2EPipelineFactory:
     ...
-    app = app_fn(
-                ingestion_pipeline=ingst_pipeline,
-                embedding_pipeline=embd_pipeline,
-                rag_pipeline=cmpl_pipeline,
-                logging_database=all_logging,
-            )
+    app = E2EPipelineFactory.create_pipeline(
+        # override with your own custom ingestion pipeline
+        ingestion_pipeline_impl=BasicIngestionPipeline,
+        # override with your own custom embedding pipeline
+        embedding_pipeline_impl=BasicEmbeddingPipeline,
+        # override with your own custom RAG pipeline
+        rag_pipeline_impl=BasicRAGPipeline,
+        # override with your own config.json
+        config_path=my_config.json,
+    )
 ```
 
 ## Demo: Installation and launching Basic App & Client

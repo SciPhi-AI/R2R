@@ -1,10 +1,13 @@
-The `config.json` offers detailed customization:
 
-- Database collection names
-- LLM model parameters
-- API ports
-- Logging
+During the example pipeline creation a default `config.json` is loaded and passed to the pipeline. It provides settings for the following services:
+
+- Database provider
+- LLM settings
+- Embedding settings
+- Parsing logic
 - and more.
+
+The default values for the config are shown below. 
 
 ```json
 {
@@ -41,5 +44,14 @@ The `config.json` offers detailed customization:
   }
 }
 ```
+To launch the default pipeline with your own config, you may run with the following
 
-Let's unpack the most relevant features that you can modify and adapt with `config.json`.
+```python
+
+class E2EPipelineFactory:
+    ...
+    app = E2EPipelineFactory.create_pipeline(
+        # override with your own config.json
+        config_path=my_config.json,
+    )
+```

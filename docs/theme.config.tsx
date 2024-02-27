@@ -2,7 +2,7 @@ import React from "react";
 import { DocsThemeConfig } from "nextra-theme-docs";
 
 const config: DocsThemeConfig = {
-  logo: <span>SciPhi</span>,
+  logo: <span>R2R</span>,
   project: {
     link: "https://github.com/SciPhi-AI/R2R",
   },
