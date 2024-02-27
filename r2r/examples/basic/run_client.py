@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from r2r.client import R2RClient
@@ -71,7 +72,10 @@ print(
 )
 
 # Example file path for upload
-file_path = "examples/basic/test.pdf"  # Ensure this file exists in your script's directory
+# get file directory
+current_file_directory = os.path.dirname(os.path.realpath(__file__))
+
+file_path = os.path.join(current_file_directory, "test.pdf")
 
 print(f"Uploading and processing file: {file_path}...")
 # # Upload and process a file
