@@ -4,13 +4,13 @@ This example runs a basic application, which launches a server to handle ingesti
 
 ```bash
 # Launch the application
-cd R2R && poetry run uvicorn examples.basic.app:app
+cd R2R && poetry run uvicorn r2r.examples.basic.app:app
 ```
 
 This creates a default pipeline with settings defined in the `config.json`. It is the main entry point for the application. The logic is quite simple as we can see below:
 
 ```python
-# examples.basic.app
+# r2r.examples.basic.app
 from r2r.main import E2EPipelineFactory
 
 app = E2EPipelineFactory.create_pipeline()

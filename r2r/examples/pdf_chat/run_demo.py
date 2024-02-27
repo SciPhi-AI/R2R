@@ -20,7 +20,6 @@ class PDFChat:
     def ingest(self):
         for file_path in glob.glob("examples/pdf_chat/*.pdf"):
             if file_path in self.titles:
-                    
                 print("Uploading file: ", file_path)
                 document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, file_path))
                 metadata = {
