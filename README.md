@@ -20,6 +20,9 @@ R2R was conceived to bridge the gap between experimental RAG models and robust, 
 ```bash
 # use the `'r2r[all]'` to download all required deps
 pip install 'r2r[parsing]'
+
+# setup env
+export OPENAI_API_KEY=sk-...
 ```
 
 ## Links
@@ -57,6 +60,7 @@ The project includes several basic examples that demonstrate application deploym
 4. [`web`](web/package.json): A web application which is meant to accompany the framework to provide visual intelligence.
    ```bash
    cd $workdir/web && pnpm install
+   
    # Serve the web app
    pnpm dev
    ```
@@ -82,7 +86,10 @@ Follow these steps to ensure a smooth setup:
      ```
     - Copy the `.env.example` file to `.env`. This file is in the main project folder:
      ```bash
-     cp .env.example .env 
+     cp .env.example .env
+
+     # Add secrets, `OPENAI_API_KEY` at a minimum
+     vim .env
      ```
    - Install the project dependencies with Poetry:
      ```bash
