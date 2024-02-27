@@ -99,7 +99,7 @@ Follow these steps to ensure a smooth setup:
      ```
    - Execute with poetry run:
      ```bash
-     poetry run python -m r2r.examples.pdf_chat.run_demo ingest
+     python -m r2r.examples.pdf_chat.run_demo ingest
      ```
 
 

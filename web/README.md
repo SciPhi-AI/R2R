@@ -1,4 +1,4 @@
-# SciPhi Application Logic
+# R2R Application Logic
 
 ### Run the application on your machine
 

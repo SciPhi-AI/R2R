@@ -1,4 +1,4 @@
-# Sciphi Contribution Guide
+# R2R Contribution Guide
 
 ## Quick Start
 

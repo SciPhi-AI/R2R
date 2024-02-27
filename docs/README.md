@@ -1,4 +1,4 @@
-# Sciphi Docs
+# R2R Docs
 
 Welcome to the Sciphi documentation, your guide to understanding and utilizing the Sciphi platform.
 
