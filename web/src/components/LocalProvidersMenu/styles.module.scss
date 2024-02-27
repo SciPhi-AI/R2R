@@ -1,0 +1,32 @@
+.menu {
+  display: flex;
+  gap: 10px; // Adjust the gap between items as needed
+  position: relative;
+  padding: 5px;
+  border-radius: 8px; // Rounded corners for the whole menu
+  background-color: var(--scipi-bg);
+  margin-top: -20px;
+  margin-left: -20px;
+}
+
+.menuItem {
+  padding: 10px 15px;
+  border-radius: 8px; // Rounded corners for individual items
+  cursor: pointer;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease; // Smooth transition for background color and text color
+  background-color: transparent; // No background color by default
+  color: #aaa; // Greyish text color by default
+
+  &:hover {
+    background-color: #444444; // Subtle background color on hover
+    color: #fff; // More white text color on hover
+  }
+}
+
+.active {
+  font-weight: bold;
+  background-color: var(--scipi-bg); // Active item background color
+  color: white; // Active item text color remains white
+}

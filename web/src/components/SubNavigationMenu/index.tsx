@@ -15,10 +15,13 @@ export function SubNavigationMenu() {
 
   const router = useRouter();
 
+  const navItems = [
+    { path: '/events', width: 63.3, translateX: 0 },
+    { path: '/providers/databases', width: 75, translateX: 68 },
+  ];
+
   // Function to determine active nav item based on current location
   function getActiveNavItem() {
-    const navItems = [{ path: '/events', width: 63.3, translateX: 0 }];
-
     const activeItem = navItems.find((item) => location.pathname === item.path);
     if (activeItem) {
       setNavItemHighlightsPropsValues({
@@ -35,15 +38,14 @@ export function SubNavigationMenu() {
   }, [router.pathname]);
 
   function handleHoverNavItem(index: number) {
-    switch (index) {
-      case 0:
-        setNavItemHighlightsPropsValues({
-          width: 63.5,
-          translateX: 0,
-        });
-        break;
-      default:
-        setNavItemHighlightsPropsValues(null);
+    const navItem = navItems[index];
+    if (navItem) {
+      setNavItemHighlightsPropsValues({
+        width: navItem.width,
+        translateX: navItem.translateX,
+      });
+    } else {
+      setNavItemHighlightsPropsValues(null);
     }
   }
 
@@ -84,6 +86,16 @@ export function SubNavigationMenu() {
             className={router.pathname === '/events' ? styles.selected : ''}
           >
             Events
+          </a>
+        </Link>
+        <Link href="/providers/databases" passHref legacyBehavior>
+          <a
+            onMouseOver={() => handleHoverNavItem(1)}
+            className={
+              router.pathname === '/providers/databases' ? styles.selected : ''
+            }
+          >
+            Providers
           </a>
         </Link>
       </nav>
