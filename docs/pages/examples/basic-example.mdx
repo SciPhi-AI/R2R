@@ -1,20 +1,47 @@
 # Simple Basic App
 
+## Launching
+
 This example runs a basic application, which launches a server to handle ingestion, embedding, and RAG. Further, it demonstrates how to interact with the local server using the `R2RClient`.
 
 ```bash
 # Launch the application
-cd R2R && poetry run uvicorn r2r.examples.basic.app:app
+uvicorn r2r.examples.basic.app:app
 ```
 
-This creates a default pipeline with settings defined in the `config.json`. It is the main entry point for the application. The logic is quite simple as we can see below:
-
+This launches a server which exposes the default pipeline. The settings of the pipeline are defined in the `config.json`. The default values for these settings are shown in the [config.json section](#configjson) below.
 ```python
 # r2r.examples.basic.app
 from r2r.main import E2EPipelineFactory
 
 app = E2EPipelineFactory.create_pipeline()
 ```
+
+
+## R2RClient Interface
+
+The `R2RClient` provides an interface to interact with the server. Here are the main methods:
+
+- `upload_and_process_file(document_id: str, file_path: str, metadata: Optional[dict] = None, settings: Optional[dict] = None) -> dict`: Uploads a file to the server and processes it. Returns the server's response.
+
+- `add_entry(document_id: str, blobs: Dict[str, str], metadata: Optional[Dict[str, Any]] = None, do_upsert: Optional[bool] = False, settings: Optional[Dict[str, Any]] = None) -> dict`: Adds an entry to the server. Returns the server's response.
+
+- `add_entries(entries: List[Dict[str, Any]], do_upsert: Optional[bool] = False, settings: Optional[Dict[str, Any]] = None) -> dict`: Adds multiple entries to the server. Returns the server's response.
+
+- `search(query: str, limit: Optional[int] = 10, filters: Optional[Dict[str, Any]] = None, settings: Optional[Dict[str, Any]] = None) -> dict`: Searches the server for a query. Returns the server's response.
+
+- `rag_completion(query: str, limit: Optional[int] = 10, filters: Optional[Dict[str, Any]] = None, settings: Optional[Dict[str, Any]] = None) -> dict`: Requests a RAG completion from the server. Returns the server's response.
+
+- `filtered_deletion(key: str, value: Union[bool, int, str]) -> dict`: Deletes entries from the server based on a filter. Returns the server's response.
+
+- `get_logs() -> dict`: Retrieves logs from the server. Returns the server's response.
+
+- `get_logs_summary() -> dict`: Retrieves a summary of logs from the server. Returns the server's response.
+
+
+## config.json
+<a name="configjson"></a>
+
 
 During the pipeline creation the `config.json` is loaded and passed to the pipeline. It provides settings for the following services:
 
@@ -76,8 +103,6 @@ class E2EPipelineFactory:
                 logging_database=all_logging,
             )
 ```
-
-To see what each of the functions does in a high level view, you can explore [Ingestion Pipeline](../core-features/ingestion_pipeline.mdx), [Embedding Pipeline](../core-features/embedding_pipeline.mdx), and [RAG Pipeline](../core-features/rag_pipeline.mdx).
 
 ## Demo: Installation and launching Basic App & Client
 

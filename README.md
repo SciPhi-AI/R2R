@@ -65,7 +65,7 @@ The project includes several basic examples that demonstrate application deploym
    pnpm dev
    ```
 
-## 60s demo of the examples
+## Demo
 
 [![demo_screenshot](./docs/pages/getting-started/demo_screenshot.png)](https://github.com/SciPhi-AI/R2R/assets/68796651/01fee645-1beb-4096-9e7d-7d0fa01386ea)
 
