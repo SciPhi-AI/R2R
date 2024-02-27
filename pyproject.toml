@@ -9,6 +9,7 @@ description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
 readme = "README.md"
+include = ["config.json"]
 
 [tool.poetry.dependencies]
 # Python Versions
