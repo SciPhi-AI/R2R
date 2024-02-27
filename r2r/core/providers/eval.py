@@ -12,6 +12,5 @@ class EvalProvider:
     
     def evaluate(self, query: str, context: str, completion: str) -> Optional[dict]:
         if random.random() < self.sampling_fraction:
-            if self.provider == "deepeval":
-                return self._deepeval_evaluate(query, context, completion)
+            return self.evaluate(query, context, completion)
         return None
