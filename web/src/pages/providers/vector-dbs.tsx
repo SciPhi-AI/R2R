@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table';
 
 import styles from '../styles/Index.module.scss';
-import { Provider } from '../types';
+import { Provider } from '../../types';
 
 // Assuming the data array is imported or defined somewhere in this file
 const data = [
@@ -38,7 +38,7 @@ const data = [
   },
 ];
 
-export default function Databases() {
+export default function VectorDBs() {
   const [integrations, setIntegrations] = useState<Provider[]>([]);
 
   useEffect(() => {

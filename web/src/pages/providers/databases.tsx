@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import Layout from '@/components/Layout';
+import LocalProvidersMenu from '@/components/LocalProvidersMenu';
 
 import { IntegrationCard } from '@/components/IntegrationCard';
-import Layout from '@/components/Layout';
-// import { PanelHeader } from '@/components/PanelHeader';
 import { Separator } from '@/components/ui/separator';
 import {
   Table,
@@ -14,8 +14,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import styles from '../styles/Index.module.scss';
-import { Provider } from '../types';
+import styles from '@/styles/Index.module.scss';
+import { Provider } from '../../types';
 
 // Assuming the data array is imported or defined somewhere in this file
 const data = [
@@ -38,7 +38,7 @@ const data = [
   },
 ];
 
-export default function VectorDBs() {
+export default function Databases({ active, others }) {
   const [integrations, setIntegrations] = useState<Provider[]>([]);
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function VectorDBs() {
   return (
     <Layout>
       <main className={styles.main}>
-        <h1 className="text-white text-2xl mb-4"> VectorDB Providers </h1>
+        <LocalProvidersMenu />
         <Separator />
         <div className={`${styles.gridView} ${styles.column}`}>
           {Array.isArray(integrations)

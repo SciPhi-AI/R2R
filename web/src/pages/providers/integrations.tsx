@@ -5,8 +5,8 @@ import Layout from '@/components/Layout';
 // import { PanelHeader } from '@/components/PanelHeader';
 import { Separator } from '@/components/ui/separator';
 
-import styles from '../styles/Index.module.scss';
-import { Provider } from '../types';
+import styles from '@/styles/Index.module.scss';
+import { Provider } from '../../types';
 
 export default function Integrations() {
   const [vectorProviders, setVectorProvider] = useState<Provider[]>([]);
