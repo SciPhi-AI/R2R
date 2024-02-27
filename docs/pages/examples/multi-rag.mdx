@@ -4,7 +4,7 @@ This example runs a modified RAG pipeline which creates and aggregates synthetic
 
 ```bash
 # Launch the application
-cd R2R && poetry run uvicorn examples.academy.app:app
+cd R2R && poetry run uvicorn r2r.examples.academy.app:app
 ```
 
 This creates a more advanced pipeline which overrides the basic RAG pipeline logic.
@@ -57,5 +57,5 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
 
 An example client script can then be ran as shown below to run demonstrate MultiRAG.
 ```bash
-poetry run python -m examples.academy.client
+poetry run python -m r2r.examples.academy.client
 ```
