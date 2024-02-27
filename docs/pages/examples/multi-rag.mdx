@@ -1,10 +1,10 @@
 # MultiRAG
 
-This example runs a modified RAG pipeline which creates and aggregates synthetic queries and their search results to answer more difficult user questions such as `"Compare the two books"`.
+This example runs a modified RAG pipeline which creates and aggregates synthetic queries and their search results to answer more difficult user questions such as `"Compare the two books"`. For a more comprehensive example, please visit [Basic Example](/examples/basic-example).
 
 ```bash
 # Launch the application
-cd R2R && poetry run uvicorn r2r.examples.academy.app:app
+uvicorn r2r.examples.academy.app:app
 ```
 
 This creates a more advanced pipeline which overrides the basic RAG pipeline logic.
@@ -57,5 +57,5 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
 
 An example client script can then be ran as shown below to run demonstrate MultiRAG.
 ```bash
-poetry run python -m r2r.examples.academy.client
+python -m r2r.examples.academy.client
 ```

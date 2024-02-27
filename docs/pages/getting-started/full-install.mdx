@@ -26,42 +26,24 @@ To install poetry, visit the [official Poetry website](https://python-poetry.org
   poetry install --extras "parsing"
   ```
 
-##### Config Setup (Optional)
-
-This script will update a `.env.example` file and a `config.json` files according to your installation preferences. Both files will contain the necessary environment variables for the project to get initialized properly.
-
-![bashexec](./bash_executable.png)
-
-Make the Script Executable (if it's not already):
-
-```bash
-chmod +x setup_config.sh
-```
-
-Run the Script and input your preferences:
-
-```bash
-./setup_config.sh
-```
-
-These are the available options, with the first being the `default(Option){:py}`:
-
-- **Vector Database Provider**: `Postgres(local){:py}` | `pg_vector` | `qdrant`
-- **Websearch Integration**: `False{:py}` | `True`
-- **Embedding Provider**: `openAI{:py}` -> _More coming soon!_
-- **Embeddings Model**: `text-embedding-3-small{:py}` | `text-embedding-3-large` | `text-embedding-ada-002`
-- **Embedding Model Dimension**: `1536{:py}` | `2048` | `4096` | `Custom`
-- **Embedding Batch Size**: `16{:py}` | `24` | `32` | `Custom`
-
 ##### Configure Environment Variables:
 
-Copy the `.env.example` to `.env` to apply your configurations, which should be updated after you've run the `setup_config.sh{:bash}` script.:
+Copy the `.env.example` to `.env` and then apply your secrets. Afterwards, inspect the `config.json` and make any desired modifications.
 
 ```bash
 cp .env.example .env
+# Update your secrets
+vim .env
+
+# Modify the config.json
+vim config.json
 ```
 
 We have several config options to run the project locally or at the cloud. At minimum, you'll need your OpenAI key secrets in your `.env` file for the project to work properly. For a fast setup, you can get started with a local Postgres db.
+
+
+Visit this page for more information on [config setup](/core-features/config).
+
 
 ## Demo: Installation and launching Basic App
 
