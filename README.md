@@ -80,6 +80,10 @@ Follow these steps to ensure a smooth setup:
      git clone git@github.com:SciPhi-AI/r2r.git
      cd r2r
      ```
+    - Copy the `.env.example` file to `.env`. This file is in the main project folder:
+     ```bash
+     cp .env.example .env 
+     ```
    - Install the project dependencies with Poetry:
      ```bash
      # See pyproject.toml for available extras
@@ -90,10 +94,6 @@ Follow these steps to ensure a smooth setup:
 3. **Configure Environment Variables:**
    - You need to set up cloud provider secrets in your `.env`. At a minimum, you will need an OpenAI key.
    - The framework currently supports PostgreSQL (locally), pgvector and Qdrant with plans to extend coverage.
-   - If starting from the example, copy `.env.example` to `.env` to apply your configurations:
-     ```bash
-     cp .env.example .env
-     ```
 
 ## Key Features
 
