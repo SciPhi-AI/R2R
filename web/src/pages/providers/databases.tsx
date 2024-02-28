@@ -1,12 +1,14 @@
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 
 import { useModal } from '@/hooks/useModal';
+import { useProviderDataContext } from '@/context/providerContext'; // Import the context hook
+import { IntegrationCard } from '@/components/IntegrationCard';
+
 const SecretsModal = lazy(() => import('@/components/SecretsModal'));
 
 import Layout from '@/components/Layout';
 import LocalProvidersMenu from '@/components/LocalProvidersMenu';
 
-import { IntegrationCard } from '@/components/IntegrationCard';
 import { Separator } from '@/components/ui/separator';
 import {
   Table,
@@ -42,33 +44,22 @@ const data = [
   },
 ];
 
-export default function Databases({ active, others }) {
-  const [databaseProviders, setDatabaseProviders] = useState<Provider[]>([]);
-  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
-    null
-  );
-  const { isOpen, toggleModal } = useModal();
+export default function Databases() {
+  const { isOpen, toggleModal, secretProvider, handleSecretProvider } =
+    useModal();
+  const { getAllProviders, getFilteredProviders, getSelectedProvider } =
+    useProviderDataContext();
 
+  const providersArray = getAllProviders();
+  const dataBaseProvidersArray = getFilteredProviders('vector-db-provider');
+
+  // Log the database the providers
   useEffect(() => {
-    fetch('/api/integrations')
-      .then((res) => res.json())
-      .then((json) => setDatabaseProviders(json));
-  }, []);
+    console.log('Database Providers:', dataBaseProvidersArray);
+  }, [providersArray]);
 
-  const renderProviders = () => {
-    return databaseProviders
-      .filter((provider) => provider?.type === 'vector-db-provider')
-      .map((provider) => (
-        <IntegrationCard
-          provider={provider}
-          key={provider.id}
-          onClick={() => {
-            setSelectedProvider(provider); // Set the selected provider
-            toggleModal();
-          }}
-        />
-      ));
-  };
+  // Log the data array
+  // console.log('Data array:', data);
 
   return (
     <Layout>
@@ -76,17 +67,22 @@ export default function Databases({ active, others }) {
         <LocalProvidersMenu />
         <Separator />
         <div className={`${styles.gridView} ${styles.column}`}>
-          {Array.isArray(databaseProviders) ? renderProviders() : null}
+          {Array.isArray(dataBaseProvidersArray)
+            ? dataBaseProvidersArray.map((provider) => (
+                <IntegrationCard
+                  provider={provider}
+                  key={provider.id}
+                  onClick={() => handleSecretProvider(provider)}
+                />
+              ))
+            : null}
         </div>
         <Suspense fallback={<div>Loading...</div>}>
-          {isOpen && selectedProvider && (
+          {isOpen && secretProvider && (
             <SecretsModal
               isOpen={isOpen}
-              toggleModal={() => {
-                setSelectedProvider(null);
-                toggleModal();
-              }}
-              provider={selectedProvider}
+              toggleModal={toggleModal}
+              provider={secretProvider}
             />
           )}
         </Suspense>

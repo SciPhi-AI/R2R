@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
+
+import { useProviderDataContext } from '@/context/providerContext'; // Import the context hook
+
+const SecretsModal = lazy(() => import('@/components/SecretsModal'));
 
 import { IntegrationCard } from '@/components/IntegrationCard';
 import Layout from '@/components/Layout';
@@ -14,8 +18,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
+import { useModal } from '@/hooks/useModal';
+
 import styles from '@/styles/Index.module.scss';
-import { Provider } from '../../types';
 
 // Assuming the data array is imported or defined somewhere in this file
 const data = [
@@ -27,15 +32,6 @@ const data = [
     num_tokens: '110 M',
     status: 'available',
     provider: 'Provider A', // Example provider
-  },
-  {
-    id: 'f2',
-    dataset: 'math-ai/StackMathQA',
-    size: '5.47 GB',
-    num_docs: '6.19 M',
-    num_tokens: '510 M',
-    // status: "available",
-    provider: 'HuggingFace',
   },
   {
     id: 'f2',
@@ -75,14 +71,16 @@ const data = [
   },
 ];
 
-export default function Datasets({ active, others }) {
-  const [datasetProviders, setDatasetProvider] = useState<Provider[]>([]);
+export default function Datasets() {
+  const { isOpen, toggleModal, secretProvider, handleSecretProvider } =
+    useModal();
+  const { getAllProviders, getFilteredProviders } = useProviderDataContext();
+
+  const datasetProviders = getFilteredProviders('dataset-provider');
 
   useEffect(() => {
-    fetch('/api/integrations')
-      .then((res) => res.json())
-      .then((json) => setDatasetProvider(json));
-  }, []);
+    console.log('Dataset Providers:', datasetProviders);
+  }, [datasetProviders]);
 
   return (
     <Layout>
@@ -92,16 +90,24 @@ export default function Datasets({ active, others }) {
 
         <div className={`${styles.gridView} ${styles.column}`}>
           {Array.isArray(datasetProviders)
-            ? datasetProviders
-                ?.filter((x) => {
-                  return x?.type == 'dataset-provider';
-                })
-                .map((provider) => (
-                  <IntegrationCard provider={provider} key={provider.id} />
-                ))
+            ? datasetProviders.map((provider) => (
+                <IntegrationCard
+                  provider={provider}
+                  key={provider.id}
+                  onClick={() => handleSecretProvider(provider)}
+                />
+              ))
             : null}
         </div>
-
+        <Suspense fallback={<div>Loading...</div>}>
+          {isOpen && secretProvider && (
+            <SecretsModal
+              isOpen={isOpen}
+              toggleModal={toggleModal}
+              provider={secretProvider}
+            />
+          )}
+        </Suspense>
         <div className={styles.datasetHeaderRightAlign}>
           {/* <PanelHeader text="Add Dataset Provider" /> */}
         </div>
