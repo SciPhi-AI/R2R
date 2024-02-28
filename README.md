@@ -116,7 +116,7 @@ Follow these steps to ensure a smooth setup:
 ## Key Features
 
 - **🚀 Rapid Deployment**: Facilitates a smooth setup and development of production-ready RAG systems.
-- **⚖️ Flexible Standarization**: `Ingestion`, `Embedding`, and `RAG` with proper `Observability`.
+- **⚖️ Flexible Standardization**: `Ingestion`, `Embedding`, and `RAG` with proper `Observability`.
 - **🧩 Easy to modify**: Provides a structure that can be extended to deploy your own custom pipelines.
 - **📦 Versioning**: Ensures your work remains reproducible and traceable through version control.
 - **🔌 Extensibility**: Enables a quick and robust integration with various VectorDBs, LLMs and Embeddings Models.
