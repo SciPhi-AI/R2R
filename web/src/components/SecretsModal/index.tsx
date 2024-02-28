@@ -10,19 +10,39 @@ interface SecretsModalProps {
   provider: Provider;
 }
 
+type EnvVariable = {
+  [key: string]: string;
+};
+
+const envVariables: EnvVariable[] = [
+  {
+    POSTGRES_USER: 'postgres.fictionaluser',
+    POSTGRES_PASSWORD: 'secretfictionalpass',
+    POSTGRES_HOST: 'cloud-0-fake-region-1.database.fictionalcloud.com',
+    POSTGRES_PORT: '5432',
+    POSTGRES_DBNAME: 'postgres_fictional_db',
+  },
+  {
+    QDRANT_HOST: 'fictional_qdrant_host',
+    QDRANT_PORT: 'fictional_qdrant_port',
+    QDRANT_API_KEY: 'fictional_qdrant_api_key',
+  },
+];
+
 const SecretsModal: React.FC<SecretsModalProps> = ({
   isOpen,
   toggleModal,
   provider,
 }) => {
+  // TODO: Use modal instead of passing it as props
   const [secrets, setSecrets] = useState([]);
   const [selectedSecret, setSelectedSecret] = useState('');
   const [secretDetails, setSecretDetails] = useState({
-    name: '',
-    detail1: '',
-    detail2: '',
-    detail3: '',
-    detail4: '',
+    POSTGRES_USER: '',
+    POSTGRES_PASSWORD: '',
+    POSTGRES_HOST: '',
+    POSTGRES_PORT: '',
+    POSTGRES_DBNAME: '',
   });
 
   console.log('Secrets Provider:', provider);
@@ -31,18 +51,56 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
 
   const cleanProviderName = provider.name.toLowerCase().replace(' ', '_');
 
-  useEffect(() => {
-    // Fetch secrets from backend and update state
-    fetch(`/api/get_secrets/${cleanProviderName}`)
-      .then((response) => response.json())
-      .then((data) => setSecrets(data))
-      .catch((error) => console.error('Error fetching secrets:', error));
-  }, []);
+  // useEffect(() => {
+  //   // Fetch secrets from backend and update state
+  //   fetch(`/api/get_secrets/${cleanProviderName}`)
+  //     .then((response) => response.json())
+  //     .then((data) => setSecrets(data))
+  //     .catch((error) => console.error('Error fetching secrets:', error));
+  // }, []);
 
-  const handleSelectChange = (event) => {
-    const selected = secrets.find((secret) => secret.id === event.target.value);
-    setSelectedSecret(selected.id);
-    setSecretDetails({ ...selected });
+  useEffect(() => {
+    // Simulate fetching secrets from backend and update state
+    // This is a placeholder for actual fetch call
+    const fetchedSecrets = envVariables; // Replace with actual fetch call
+    setSecrets(fetchedSecrets);
+    if (fetchedSecrets.length > 0) {
+      setSelectedSecret(fetchedSecrets[0]);
+      setSecretDetails(fetchedSecrets[0]);
+    }
+  }, [provider]);
+
+  const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const { value } = event.target;
+    setSelectedSecret(value); // Persist the selected option
+
+    if (value === 'load') {
+      // Fetch secrets from backend and update state
+      fetch(`/api/get_secrets/${cleanProviderName}`)
+        .then((response) => response.json())
+        .then((data) => {
+          setSecrets(data);
+          if (data.length > 0) {
+            setSelectedSecret(data[0]);
+            setSecretDetails(data[0]);
+          }
+        })
+        .catch((error) => console.error('Error fetching secrets:', error));
+    } else if (value === 'new') {
+      // Handle new secrets option if needed
+      setSecretDetails({
+        POSTGRES_USER: '',
+        POSTGRES_PASSWORD: '',
+        POSTGRES_HOST: '',
+        POSTGRES_PORT: '',
+        POSTGRES_DBNAME: '',
+      });
+    } else {
+      const selected = secrets.find((secret) => secret === value);
+      if (selected) {
+        setSecretDetails(selected);
+      }
+    }
   };
 
   const handleInputChange = (event) => {
@@ -74,7 +132,7 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
         onClose={toggleModal}
       >
         <div className={styles.dialogBackground} />
-        <div className="fixed inset-0 z-10 overflow-y-auto">
+        <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center">
             <Transition.Child
               as={Fragment}
@@ -90,7 +148,7 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
                   <div className="flex items-center">
                     <img
                       src={`/images/${provider.logo}`}
-                      alt="Logo"
+                      alt={`${provider.name} Logo`}
                       style={{
                         width: '20px',
                         height: '20px',
@@ -106,22 +164,23 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
                     value={selectedSecret}
                     onChange={handleSelectChange}
                   >
-                    <option value="">Select a secret</option>
-                    {secrets.map((secret) => (
-                      <option key={secret.id} value={secret.id}>
-                        {secret.name}
-                      </option>
-                    ))}
+                    <option value="load">Load Secret</option>
+                    <option value="new">New Secret</option>
                   </select>
                   <form className="mt-4">
-                    <input
-                      type="text"
-                      name="name"
-                      className={styles.textInput}
-                      value={secretDetails.name}
-                      onChange={handleInputChange}
-                    />
-                    {/* Repeat for other details with similar input fields */}
+                    {Object.entries(secretDetails).map(([key, value]) => (
+                      <div key={key} className={styles.flexContainer}>
+                        <label className={styles.label}>{key}</label>
+                        <p className="text-black">{key}</p>
+                        <input
+                          type="text"
+                          name={key}
+                          className={styles.textInput}
+                          value={value}
+                          readOnly // or onChange to make it editable
+                        />
+                      </div>
+                    ))}
                   </form>
                 </div>
                 <div className="mt-4 flex justify-end">
