@@ -6,10 +6,14 @@ import Layout from '@/components/Layout';
 import { Separator } from '@/components/ui/separator';
 import LocalProvidersMenu from '@/components/LocalProvidersMenu';
 
+import { useModal } from '@/hooks/useModal';
+
 import styles from '@/styles/Index.module.scss';
 import { Provider } from '../../types';
 
 export default function Integrations() {
+  const { isOpen, toggleModal, secretProvider, handleSecretProvider } =
+    useModal();
   const [integrationProviders, setIntegrationProvider] = useState<Provider[]>(
     []
   );
@@ -33,7 +37,11 @@ export default function Integrations() {
                   return x?.type == 'integration';
                 })
                 .map((provider) => (
-                  <IntegrationCard provider={provider} key={provider.id} />
+                  <IntegrationCard
+                    provider={provider}
+                    key={provider.id}
+                    onClick={() => handleSecretProvider(provider)}
+                  />
                 ))
             : null}
         </div>
