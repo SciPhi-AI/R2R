@@ -1,6 +1,7 @@
 import type { AppProps } from 'next/app';
 import { useTheme } from 'next-themes';
 import { useEffect } from 'react';
+import { ProviderContextProvider } from '@/context/providerContext';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
 
@@ -14,14 +15,16 @@ function MyApp({ Component, pageProps }: AppProps) {
   });
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <Component {...pageProps} />
-    </ThemeProvider>
+    <ProviderContextProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <Component {...pageProps} />
+      </ThemeProvider>
+    </ProviderContextProvider>
   );
 }
 
