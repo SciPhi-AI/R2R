@@ -49,7 +49,7 @@ qdrant = ["qdrant_client"]
 postgres = ["psycopg2-binary"]
 local_vectordb = ["numpy", "scikit-learn"]
 monitoring = ["sentry-sdk"]
-evals = ["deepeval"]
+eval = ["deepeval"]
 all = ["bs4", "pypdf", "tiktoken", "datasets", "qdrant_client", "psycopg2-binary", "numpy", "scikit-learn", "sentry-sdk", "protobuf", "deepeval"]
 
 [tool.poetry.group.dev.dependencies]

@@ -35,6 +35,7 @@ class DeepEvalProvider(EvalProvider):
             context=[context],
             retrieval_context=[context],
         )
+        # TODO - Make inner metrics configurable.
 
         answer_relevancy_metric = self.AnswerRelevancyMetric()
         hallucination_metric = self.HallucinationMetric()
