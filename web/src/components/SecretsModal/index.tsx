@@ -2,6 +2,7 @@ import { Fragment, useRef, useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useModal } from '../../hooks/useModal';
 import { Provider } from '@/types';
+import styles from './styles.module.scss';
 
 interface SecretsModalProps {
   isOpen: boolean;
@@ -24,11 +25,15 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
     detail4: '',
   });
 
+  console.log('Secrets Provider:', provider);
+
   const cancelButtonRef = useRef(null);
+
+  const cleanProviderName = provider.name.toLowerCase().replace(' ', '_');
 
   useEffect(() => {
     // Fetch secrets from backend and update state
-    fetch('YOUR_BACKEND_ENDPOINT')
+    fetch(`/api/get_secrets/${cleanProviderName}`)
       .then((response) => response.json())
       .then((data) => setSecrets(data))
       .catch((error) => console.error('Error fetching secrets:', error));
@@ -66,11 +71,9 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
         as="div"
         className="relative z-10"
         initialFocus={cancelButtonRef}
-        onClose={() => {
-          toggleModal();
-        }}
+        onClose={toggleModal}
       >
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+        <div className={styles.dialogBackground} />
         <div className="fixed inset-0 z-10 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center">
             <Transition.Child
@@ -82,13 +85,9 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
-                <Dialog.Title
-                  as="h3"
-                  className="text-lg font-medium leading-6 text-gray-900"
-                >
+              <Dialog.Panel className={styles.dialogPanel}>
+                <Dialog.Title as="h3" className={styles.title}>
                   <div className="flex items-center">
-                    {' '}
                     <img
                       src={`/images/${provider.logo}`}
                       alt="Logo"
@@ -103,7 +102,7 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
                 </Dialog.Title>
                 <div className="mt-2">
                   <select
-                    className="textmt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    className={styles.selectInput}
                     value={selectedSecret}
                     onChange={handleSelectChange}
                   >
@@ -118,7 +117,7 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
                     <input
                       type="text"
                       name="name"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      className={styles.textInput}
                       value={secretDetails.name}
                       onChange={handleInputChange}
                     />
@@ -128,14 +127,14 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
                 <div className="mt-4 flex justify-end">
                   <button
                     type="button"
-                    className="inline-flex justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                    className={styles.deleteButton}
                     onClick={deleteSecret}
                   >
                     Delete
                   </button>
                   <button
                     type="button"
-                    className="ml-4 inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                    className={styles.saveButton}
                     onClick={saveSecret}
                   >
                     Save
