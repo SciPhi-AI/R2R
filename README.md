@@ -133,6 +133,6 @@ The framework primarily revolves around three core abstractions:
 
 - The **RAG Pipeline**: Works similarly to the embedding pipeline but incorporates an LLM provider to produce text completions. The abstraction can be found in [`rag.py`](r2r/core/pipelines/rag.py).
 
-- The **Eval Pipeline**: Samples some subset of rag_completion calls for evaluation. Currently DeepEval is supported. The abstraction can be found in [`eval.py`](r2r/core/pipelines/eval.py).
+- The **Eval Pipeline**: Samples some subset of rag_completion calls for evaluation. Currently [DeepEval](https://github.com/confident-ai/deepeval) is supported. The abstraction can be found in [`eval.py`](r2r/core/pipelines/eval.py).
 
 Each pipeline incorporates a logging database for operation tracking and observability.
