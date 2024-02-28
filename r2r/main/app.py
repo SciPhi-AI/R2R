@@ -1,15 +1,24 @@
 import json
 import logging
 from datetime import datetime
+from multiprocessing import Process
 from pathlib import Path
 from typing import Optional, Union
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import (
+    BackgroundTasks,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from r2r.core import (
     EmbeddingPipeline,
+    EvalPipeline,
     IngestionPipeline,
     LoggingDatabaseConnection,
     RAGPipeline,
@@ -25,6 +34,7 @@ CURRENT_DIR = Path(__file__).resolve().parent
 def create_app(
     ingestion_pipeline: IngestionPipeline,
     embedding_pipeline: EmbeddingPipeline,
+    eval_pipeline: EvalPipeline,
     rag_pipeline: RAGPipeline,
     upload_path: Optional[Path] = None,
     logging_provider: Optional[LoggingDatabaseConnection] = None,
@@ -217,20 +227,34 @@ def create_app(
     @app.post("/search/")
     def search(query: RAGQueryModel):
         try:
-            completion = rag_pipeline.run(
+            _, search_results = rag_pipeline.run(
                 query.query, query.filters, query.limit, search_only=True
             )
-            return completion
+            return search_results
         except Exception as e:
             logger.error(f":search: [Error](query={query}, error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/rag_completion/")
-    def rag_completion(query: RAGQueryModel):
+    def rag_completion(
+        background_tasks: BackgroundTasks, query: RAGQueryModel
+    ):
         try:
-            completion = rag_pipeline.run(
+            context, completion = rag_pipeline.run(
                 query.query, query.filters, query.limit
             )
+            # TODO - Clean up message extraction
+            completion_text = completion.choices[0].message.content
+            rag_run_id = rag_pipeline.pipeline_run_info["run_id"]
+            background_tasks.add_task(
+                eval_pipeline.run,
+                query.query,
+                context,
+                completion_text,
+                rag_run_id,
+                **query.settings.rag_settings.dict(),
+            )
+            print("completion = ", completion)
             return completion
         except Exception as e:
             logger.error(

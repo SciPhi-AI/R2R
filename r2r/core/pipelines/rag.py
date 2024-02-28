@@ -4,7 +4,7 @@ Abstract base class for completion pipelines.
 import logging
 import uuid
 from abc import abstractmethod
-from typing import Any, Optional, Union
+from typing import Any, Optional, Tuple, Union
 
 from openai.types import Completion
 from openai.types.chat import ChatCompletion
@@ -157,9 +157,10 @@ class RAGPipeline(Pipeline):
                 "Generation without chat is not implemented yet."
             )
 
+    # TODO - Clean up the return types
     def run(
         self, query, filters={}, limit=10, search_only=False
-    ) -> Union[ChatCompletion, Completion, list]:
+    ) -> Tuple[str, Union[ChatCompletion, Completion, list]]:
         """
         Runs the completion pipeline.
         """
@@ -170,11 +171,11 @@ class RAGPipeline(Pipeline):
         transformed_query = self.transform_query(query)
         search_results = self.search(transformed_query, filters, limit)
         if search_only:
-            logger.debug(f"Pipeline run type: {self.pipeline_run_info}")
-            return search_results
+            return None, search_results
 
         context = self.construct_context(search_results)
         prompt = self.construct_prompt(
             {"query": transformed_query, "context": context}
         )
-        return self.generate_completion(prompt, generate_with_chat=True)
+        completion = self.generate_completion(prompt, generate_with_chat=True)
+        return context, completion

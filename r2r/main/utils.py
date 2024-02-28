@@ -34,6 +34,7 @@ def load_config(config_path=None):
     database_config = config["database"]
     llm_config = config["language_model"]
     text_splitter_config = config["text_splitter"]
+    evals_config = config["evals"]
 
     return (
         logging_config,
@@ -41,6 +42,7 @@ def load_config(config_path=None):
         database_config,
         llm_config,
         text_splitter_config,
+        evals_config,
     )
 
 

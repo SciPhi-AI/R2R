@@ -1,5 +1,8 @@
 import os
+
 from r2r.core import EvalProvider
+
+
 class DeepEvalProvider(EvalProvider):
     def __init__(self):
         try:
@@ -22,9 +25,10 @@ class DeepEvalProvider(EvalProvider):
             raise ValueError(
                 "Please set the `OPENAI_API_KEY` environment variable to run with DeepEval."
             )
-    
 
-    def evaluate(self, query: str, context: str, completion: str) -> dict[str, dict[str, str]]:
+    def evaluate(
+        self, query: str, context: str, completion: str
+    ) -> dict[str, dict[str, str]]:
         test_case = self.LLMTestCase(
             input=query,
             actual_output=completion,

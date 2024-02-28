@@ -5,9 +5,9 @@ from .pipelines.ingestion import IngestionPipeline
 from .pipelines.rag import RAGPipeline
 from .providers.dataset import DatasetConfig, DatasetProvider
 from .providers.embedding import EmbeddingProvider
+from .providers.eval import EvalProvider
 from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
 from .providers.logging import LoggingDatabaseConnection, log_execution_to_db
-from .providers.eval import EvalProvider
 from .providers.vector_db import (
     VectorDBProvider,
     VectorEntry,
