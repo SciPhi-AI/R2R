@@ -79,29 +79,35 @@ Follow these steps to ensure a smooth setup:
 
 2. **Clone and Install Dependencies:**
 
-   - Clone the project repository and navigate to the project directory:
+  - Clone the project repository and navigate to the project directory:
+     
      ```bash
      git clone git@github.com:SciPhi-AI/r2r.git
      cd r2r
      ```
-    - Copy the `.env.example` file to `.env`. This file is in the main project folder:
+     
+  - Copy the `.env.example` file to `.env`. This file is in the main project folder:
+
      ```bash
      cp .env.example .env
 
      # Add secrets, `OPENAI_API_KEY` at a minimum
      vim .env
      ```
-   - Install the project dependencies with Poetry:
+     
+  - Install the project dependencies with Poetry:
+  
      ```bash
      # See pyproject.toml for available extras
      # use "all" to include every optional dependency
      poetry install --extras "parsing"
      ```
-   - Execute with poetry run:
+     
+  - Execute with poetry run:
+     
      ```bash
      python -m r2r.examples.pdf_chat.run_demo ingest
      ```
-
 
 3. **Configure Environment Variables:**
    - You need to set up cloud provider secrets in your `.env`. At a minimum, you will need an OpenAI key.
@@ -127,6 +133,6 @@ The framework primarily revolves around three core abstractions:
 
 - The **RAG Pipeline**: Works similarly to the embedding pipeline but incorporates an LLM provider to produce text completions. The abstraction can be found in [`rag.py`](r2r/core/pipelines/rag.py).
 
-- The **Eval Pipeline**: Samples some subset of rag_completion calls for evaluation. Currently DeepEval is supported.
+- The **Eval Pipeline**: Samples some subset of rag_completion calls for evaluation. Currently DeepEval is supported. The abstraction can be found in [`eval.py`](r2r/core/pipelines/eval.py).
 
 Each pipeline incorporates a logging database for operation tracking and observability.
