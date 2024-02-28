@@ -3,7 +3,7 @@ from typing import Optional
 
 
 class EvalProvider:
-    providers = ["deepeval"]
+    providers = ["deepeval", "parea"]
 
     def __init__(self, provider: str, sampling_fraction: float = 1.0):
         if provider not in self.providers:
