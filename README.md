@@ -19,7 +19,7 @@ R2R was conceived to bridge the gap between experimental RAG models and robust, 
 
 ```bash
 # use the `'r2r[all]'` to download all required deps
-pip install 'r2r[parsing]'
+pip install 'r2r[parsing,eval]'
 
 # setup env
 export OPENAI_API_KEY=sk-...
@@ -126,5 +126,7 @@ The framework primarily revolves around three core abstractions:
 - The **Embedding Pipeline**: Manages the transformation of text into stored vector embeddings, interacting with embedding and vector database providers through a series of steps (e.g., extract_text, transform_text, chunk_text, embed_chunks, etc.). The abstraction can be found in [`embedding.py`](r2r/core/pipelines/embedding.py).
 
 - The **RAG Pipeline**: Works similarly to the embedding pipeline but incorporates an LLM provider to produce text completions. The abstraction can be found in [`rag.py`](r2r/core/pipelines/rag.py).
+
+- The **Eval Pipeline**: Samples some subset of rag_completion calls for evaluation. Currently DeepEval is supported.
 
 Each pipeline incorporates a logging database for operation tracking and observability.

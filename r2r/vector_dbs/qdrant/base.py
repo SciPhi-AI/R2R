@@ -29,7 +29,7 @@ class QdrantDB(VectorDBProvider):
             )
         try:
             host = os.getenv("QDRANT_HOST")
-            port = int(os.getenv("QDRANT_PORT"))
+            port = os.getenv("QDRANT_PORT")
             api_key = os.getenv("QDRANT_API_KEY")
 
             if not host or not port or not api_key:

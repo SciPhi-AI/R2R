@@ -21,6 +21,7 @@ class EmbeddingPipeline(Pipeline):
         embeddings_provider: EmbeddingProvider,
         db: VectorDBProvider,
         logging_provider: Optional[LoggingDatabaseConnection] = None,
+        *args,
         **kwargs,
     ):
         self.embedding_model = embedding_model
@@ -28,7 +29,7 @@ class EmbeddingPipeline(Pipeline):
         self.db = db
         super().__init__(logging_provider=logging_provider, **kwargs)
 
-    def initialize_pipeline(self) -> None:
+    def initialize_pipeline(self, *args, **kwargs) -> None:
         self.pipeline_run_info = {"run_id": uuid.uuid4(), "type": "embedding"}
 
     @abstractmethod
@@ -54,15 +55,14 @@ class EmbeddingPipeline(Pipeline):
         pass
 
     @abstractmethod
-    def store_chunks(self, chunks: list[VectorEntry], **kwargs) -> None:
+    def store_chunks(self, chunks: list[VectorEntry], *args, **kwargs) -> None:
         pass
 
     def run(self, document: Any, **kwargs):
         self.initialize_pipeline()
         logger.debug(
-            f"Running the `BasicEmbeddingPipeline` with id={self.pipeline_run_info['run_id']}."
+            f"Running the `BasicEmbeddingPipeline` with pipeline_run_info={self.pipeline_run_info}."
         )
-        logger.debug(f"Pipeline run type: {self.pipeline_run_info['type']}")
 
         documents = [document] if not isinstance(document, list) else document
 
@@ -72,4 +72,10 @@ class EmbeddingPipeline(Pipeline):
             chunks = self.chunk_text(transformed_text)
             transformed_chunks = self.transform_chunks(chunks, [])
             embeddings = self.embed_chunks(transformed_chunks)
-            self.store_chunks(embeddings)
+            self.store_chunks(
+                [
+                    VectorEntry(document.id, embedding, document.metadata)
+                    for embedding in embeddings
+                ],
+                **kwargs,
+            )

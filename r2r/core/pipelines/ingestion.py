@@ -11,11 +11,12 @@ class IngestionPipeline(Pipeline):
     def __init__(
         self,
         logging_provider: Optional[LoggingDatabaseConnection] = None,
+        *args,
         **kwargs,
     ):
         super().__init__(logging_provider=logging_provider, **kwargs)
 
-    def initialize_pipeline(self) -> None:
+    def initialize_pipeline(self, *args, **kwargs) -> None:
         self.pipeline_run_info = {"run_id": uuid.uuid4(), "type": "ingestion"}
 
     @property
@@ -64,5 +65,5 @@ class IngestionPipeline(Pipeline):
             processed_text += self.parse_entry(entry_type, blob)
 
         return BasicDocument(
-            id=document_id, text=processed_text, metadata=metadata
+            id=document_id, text=processed_text, metadata=metadata or {}
         )

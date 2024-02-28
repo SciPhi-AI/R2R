@@ -21,7 +21,7 @@ class PdfDataReader(DatasetProvider):
             self.pdfs: list[Tuple[PdfReader, DatasetConfig]] = []
         except ImportError:
             raise ValueError(
-                "Error, `pypdf` is requried to run `PdfDataReader`. Please install it using `pip install pypdf` or if using poetry in local development, `poetry install -E parsing`."
+                "Error, `pypdf` is requried to run `PdfDataReader`. Please install it using `pip install pypdf`."
             )
 
     def load_datasets(

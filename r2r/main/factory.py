@@ -7,6 +7,7 @@ from r2r.core import GenerationConfig, LoggingDatabaseConnection
 from r2r.llms import OpenAIConfig, OpenAILLM
 from r2r.pipelines import (
     BasicEmbeddingPipeline,
+    BasicEvalPipeline,
     BasicIngestionPipeline,
     BasicRAGPipeline,
 )
@@ -42,7 +43,9 @@ class E2EPipelineFactory:
         elif embedding_config["provider"] == "sentence_transformers":
             from r2r.embeddings import SentenceTransformerEmbeddingProvider
 
-            return SentenceTransformerEmbeddingProvider()
+            return SentenceTransformerEmbeddingProvider(
+                embedding_config["model"]
+            )
 
     @staticmethod
     def get_llm():
@@ -67,16 +70,17 @@ class E2EPipelineFactory:
         ingestion_pipeline_impl=BasicIngestionPipeline,
         embedding_pipeline_impl=BasicEmbeddingPipeline,
         rag_pipeline_impl=BasicRAGPipeline,
+        eval_pipeline_impl=BasicEvalPipeline,
         app_fn=create_app,
         config_path=None,
     ):
         (
-            api_config,
             logging_config,
             embedding_config,
             database_config,
             llm_config,
             text_splitter_config,
+            evals_config,
         ) = load_config(config_path)
 
         logging.basicConfig(level=logging_config["level"])
@@ -131,11 +135,13 @@ class E2EPipelineFactory:
         )
         # TODO - Set ingestion class in config file
         ingst_pipeline = ingestion_pipeline_impl()
+        eval_pipeline = eval_pipeline_impl(evals_config)
 
         app = app_fn(
             ingestion_pipeline=ingst_pipeline,
             embedding_pipeline=embd_pipeline,
             rag_pipeline=cmpl_pipeline,
+            eval_pipeline=eval_pipeline,
             logging_provider=logging_provider,
         )
 

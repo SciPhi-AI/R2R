@@ -34,12 +34,12 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
 
     (
-        api_config,
         logging_config,
         embedding_config,
         database_config,
         llm_config,
         text_splitter_config,
+        evals_config,
     ) = load_config()
 
     query = "Is the answer to the question `What are the energy levels for a particle in a box?` contained in the search results shown below?"

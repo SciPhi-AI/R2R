@@ -39,7 +39,7 @@ psycopg2-binary = {version = "^2.9.9", optional = true}
 numpy = {version = "^1.26.4", optional = true}
 scikit-learn = {version = "^1.4.1.post1", optional = true}
 sentry-sdk = {version = "^1.40.4", optional = true}
-protobuf = {version = "^4.25.3", optional = true}
+deepeval = {version ="^0.20.76", optional = true}
 
 [tool.poetry.extras]
 parsing = ["bs4", "pypdf"]
@@ -49,8 +49,8 @@ qdrant = ["qdrant_client"]
 postgres = ["psycopg2-binary"]
 local_vectordb = ["numpy", "scikit-learn"]
 monitoring = ["sentry-sdk"]
-codesearch = ["protobuf"]
-all = ["bs4", "pypdf", "tiktoken", "datasets", "qdrant_client", "psycopg2-binary", "numpy", "scikit-learn", "sentry-sdk", "protobuf"]
+eval = ["deepeval"]
+all = ["bs4", "pypdf", "tiktoken", "datasets", "qdrant_client", "psycopg2-binary", "numpy", "scikit-learn", "sentry-sdk", "protobuf", "deepeval"]
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"

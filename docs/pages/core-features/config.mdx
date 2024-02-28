@@ -5,6 +5,7 @@ During the example pipeline creation a default `config.json` is loaded and passe
 - LLM settings
 - Embedding settings
 - Parsing logic
+- Evaluation provider
 - and more.
 
 The default values for the config are shown below. 
@@ -12,8 +13,12 @@ The default values for the config are shown below.
 ```json
 {
   "database": {
-    "vector_db_provider": "pg_vector",
+    "provider": "local",
     "collection_name": "demo-v1-test"
+  },
+  "evals": {
+    "provider": "deepeval",
+    "frequency": 0.25
   },
   "embedding": {
     "provider": "openai",
@@ -21,7 +26,12 @@ The default values for the config are shown below.
     "dimension": 1536,
     "batch_size": 32
   },
+  "text_splitter": {
+    "chunk_size": 512,
+    "chunk_overlap": 20
+  },
   "language_model": {
+    "provider": "openai",
     "model_name": "gpt-4-0125-preview",
     "temperature": 0.1,
     "top_p": 0.9,
@@ -29,18 +39,11 @@ The default values for the config are shown below.
     "max_tokens_to_sample": 1024,
     "do_stream": false
   },
-  "text_splitter": {
-    "chunk_size": 512,
-    "chunk_overlap": 20
-  },
   "logging": {
+    "provider": "local",
     "level": "INFO",
     "name": "r2r",
-    "database": "demo_logs_v3"
-  },
-  "api": {
-    "port": 8000,
-    "host": "0.0.0.0"
+    "database": "demo_logs_v1"
   }
 }
 ```

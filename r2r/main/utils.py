@@ -3,7 +3,7 @@ import logging
 import os
 import re
 from logging.handlers import RotatingFileHandler
-from typing import Any
+from typing import Any, Union
 
 logger = logging.getLogger(__name__)
 
@@ -29,20 +29,20 @@ def load_config(config_path=None):
         config = json.load(f)
 
     # Extract configuration parameters
-    api_config = config["api"]
     logging_config = config["logging"]
     embedding_config = config["embedding"]
     database_config = config["database"]
     llm_config = config["language_model"]
     text_splitter_config = config["text_splitter"]
+    evals_config = config["evals"]
 
     return (
-        api_config,
         logging_config,
         embedding_config,
         database_config,
         llm_config,
         text_splitter_config,
+        evals_config,
     )
 
 
@@ -84,7 +84,8 @@ def configure_logging():
 
 
 def update_aggregation_entries(
-    log: dict[str, Any], event_aggregation: dict[str, dict[str, dict]]
+    log: dict[str, Any],
+    event_aggregation: dict[str, dict[str, Union[str, list]]],
 ):
     pipeline_run_id = log["pipeline_run_id"]
     if pipeline_run_id is None:
@@ -109,7 +110,18 @@ def update_aggregation_entries(
         "log_level": log["log_level"],
         "outcome": "success" if log["log_level"] == "INFO" else "fail",
     }
-    event_aggregation[pipeline_run_id]["events"].append(event)
+    if (
+        pipeline_run_id not in event_aggregation
+        or "events" not in event_aggregation[pipeline_run_id]
+    ):
+        if isinstance(event_aggregation[pipeline_run_id]["events"], list):
+            raise ValueError(f"Incorrect 'events' datatype event_aggregation")
+
+        raise ValueError(
+            f"Missing 'pipeline_run_id' in event_aggregation: {event_aggregation}"
+        )
+
+    event_aggregation[pipeline_run_id]["events"].append(event)  # type: ignore
 
 
 def process_event(event: dict[str, Any]) -> dict[str, Any]:
@@ -168,7 +180,7 @@ def combine_aggregated_logs(
 
 
 def process_logs(logs: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    event_aggregation = {}
+    event_aggregation: dict = {}
     for log in logs:
         update_aggregation_entries(log, event_aggregation)
     # Convert each aggregated log entry to SummaryLogModel before returning

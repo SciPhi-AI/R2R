@@ -16,12 +16,12 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
 
     (
-        api_config,
         logging_config,
         embedding_config,
         database_config,
         llm_config,
         text_splitter_config,
+        evals_config,
     ) = load_config()
 
     logger = logging.getLogger(logging_config["name"])

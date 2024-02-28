@@ -18,7 +18,7 @@ class ModalEmbeddingProvider(EmbeddingProvider):
         provider: str = "modal",
     ):
         logger.info(
-            "Initializing `SentenceTransformerEmbeddingProvider` to provide embeddings."
+            "Initializing `ModalEmbeddingProvider` to provide embeddings."
         )
         super().__init__(provider)
         try:
@@ -39,8 +39,9 @@ class ModalEmbeddingProvider(EmbeddingProvider):
     def get_embedding(
         self, text: str, model: str, dimensions: Optional[int] = None
     ) -> list[float]:
-        self._check_inputs(model, dimensions)
-        return self.encoder.encode([text]).tolist()[0]
+        raise ValueError(
+            "ModalEmbeddingProvider does not support `get_embedding`."
+        )
 
     def get_embeddings(
         self, texts: list[str], model: str, dimensions: Optional[int] = None
@@ -50,5 +51,5 @@ class ModalEmbeddingProvider(EmbeddingProvider):
 
     def tokenize_string(self, text: str, model: str) -> list[int]:
         raise ValueError(
-            "SentenceTransformerEmbeddingProvider does not support `tokenize_string`."
+            "ModalEmbeddingProvider does not support `tokenize_string`."
         )

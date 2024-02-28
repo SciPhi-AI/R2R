@@ -3,6 +3,10 @@
     "provider": "local",
     "collection_name": "demo-v1-test"
   },
+  "evals": {
+    "provider": "deepeval",
+    "frequency": 0.25
+  },
   "embedding": {
     "provider": "openai",
     "model": "text-embedding-3-small",
@@ -27,9 +31,5 @@
     "level": "INFO",
     "name": "r2r",
     "database": "demo_logs_v1"
-  },
-  "api": {
-    "port": 8000,
-    "host": "0.0.0.0"
   }
 }

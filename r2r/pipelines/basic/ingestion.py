@@ -36,7 +36,7 @@ class BasicIngestionPipeline(IngestionPipeline):
             self.BeautifulSoup = BeautifulSoup
         except ImportError:
             raise ValueError(
-                "Error, `bs4` is requried to run `BasicIngestionPipeline`. Please install it using `pip install bs4`, or if using poetry in local development, `poetry install -E parsing`."
+                "Error, `bs4` is requried to run `BasicIngestionPipeline`. Please install it using `pip install bs4`."
             )
 
         try:
@@ -45,7 +45,7 @@ class BasicIngestionPipeline(IngestionPipeline):
             self.PdfReader = PdfReader
         except ImportError:
             raise ValueError(
-                "Error, `pypdf` is requried to run `BasicIngestionPipeline`. Please install it using `pip install pypdf` or if using poetry in local development, `poetry install -E parsing`."
+                "Error, `pypdf` is requried to run `BasicIngestionPipeline`. Please install it using `pip install pypdf`."
             )
 
         logger.info(
