@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
+
+import { useModal } from '@/hooks/useModal';
+const SecretsModal = lazy(() => import('@/components/SecretsModal'));
+
 import Layout from '@/components/Layout';
 import LocalProvidersMenu from '@/components/LocalProvidersMenu';
 
@@ -40,6 +44,10 @@ const data = [
 
 export default function Databases({ active, others }) {
   const [databaseProviders, setDatabaseProviders] = useState<Provider[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
+    null
+  );
+  const { isOpen, toggleModal } = useModal();
 
   useEffect(() => {
     fetch('/api/integrations')
@@ -47,23 +55,41 @@ export default function Databases({ active, others }) {
       .then((json) => setDatabaseProviders(json));
   }, []);
 
+  const renderProviders = () => {
+    return databaseProviders
+      .filter((provider) => provider?.type === 'vector-db-provider')
+      .map((provider) => (
+        <IntegrationCard
+          provider={provider}
+          key={provider.id}
+          onClick={() => {
+            setSelectedProvider(provider); // Set the selected provider
+            toggleModal();
+          }}
+        />
+      ));
+  };
+
   return (
     <Layout>
       <main className={styles.main}>
         <LocalProvidersMenu />
         <Separator />
         <div className={`${styles.gridView} ${styles.column}`}>
-          {Array.isArray(databaseProviders)
-            ? databaseProviders
-                ?.filter((x) => {
-                  return x?.type == 'vector-db-provider';
-                })
-                .map((provider) => (
-                  <IntegrationCard provider={provider} key={provider.id} />
-                ))
-            : null}
+          {Array.isArray(databaseProviders) ? renderProviders() : null}
         </div>
-
+        <Suspense fallback={<div>Loading...</div>}>
+          {isOpen && selectedProvider && (
+            <SecretsModal
+              isOpen={isOpen}
+              toggleModal={() => {
+                setSelectedProvider(null);
+                toggleModal();
+              }}
+              provider={selectedProvider}
+            />
+          )}
+        </Suspense>
         <div className={styles.datasetHeaderRightAlign}>
           {/* <PanelHeader text="Add VectorDB Provider" /> */}
         </div>
