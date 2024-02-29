@@ -127,7 +127,6 @@ class LocalVectorDB(VectorDBProvider):
         cursor.execute(f'SELECT * FROM "{self.collection_name}"')
         results = []
         for id, vector, metadata in cursor.fetchall():
-            print(f"parsing id = {id}")
             vector = json.loads(vector)
             metadata = json.loads(metadata)
             if all(metadata.get(k) == v for k, v in filters.items()):

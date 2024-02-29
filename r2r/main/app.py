@@ -128,6 +128,7 @@ def create_app(
         search_query: str = Field(alias="searchQuery")
         search_results: list[dict] = Field(alias="searchResults")
         completion_result: str = Field(alias="completionResult")
+        eval_results: Optional[dict] = Field(alias="evalResults")
         outcome: str = Field(alias="outcome")
 
         class Config:
@@ -254,7 +255,6 @@ def create_app(
                 rag_run_id,
                 **query.settings.rag_settings.dict(),
             )
-            print("completion = ", completion)
             return completion
         except Exception as e:
             logger.error(

@@ -1,15 +1,25 @@
 import os
-from typing import Any
+from typing import Any, Optional
 
-from r2r.core import EvalPipeline, log_execution_to_db
+from r2r.core import (
+    EvalPipeline,
+    LoggingDatabaseConnection,
+    log_execution_to_db,
+)
 
 
 class BasicEvalPipeline(EvalPipeline):
-    eval_providers = ["deepeval"]
+    eval_providers = ["deepeval", "parea"]
 
-    def __init__(self, eval_config: dict, *args, **kwargs):
+    def __init__(
+        self,
+        eval_config: dict,
+        logging_provider: Optional[LoggingDatabaseConnection] = None,
+        *args,
+        **kwargs,
+    ):
         frequency = eval_config["frequency"]
-        super().__init__(frequency, *args, **kwargs)
+        super().__init__(frequency, logging_provider, *args, **kwargs)
         provider = eval_config["provider"]
         if provider not in self.eval_providers:
             raise ValueError(

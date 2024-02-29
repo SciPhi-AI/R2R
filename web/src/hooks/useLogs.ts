@@ -27,6 +27,7 @@ const useLogs = () => {
             pipelineRunId: event.pipelineRunId,
             pipelineRunType: event.pipelineRunType,
             method: event.method,
+            evalResults: event.evalResults,
             searchQuery: event.searchQuery,
             searchResults: event.searchResults,
             completionResult: event.completionResult,

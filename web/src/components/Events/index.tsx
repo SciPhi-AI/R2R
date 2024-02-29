@@ -16,6 +16,9 @@ import {
   TableHeader,
   TableRow,
 } from '../ui/table';
+import {
+  Tooltip,
+} from 'react-tippy';
 
 // Define your dictionary
 const methodDictionary: { [key: string]: string } = {
@@ -36,8 +39,6 @@ export function Event() {
 
   const { logs, loading, error } = useLogs();
 
-  // console.log('logs = ', logs);
-
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -54,7 +55,6 @@ export function Event() {
   const [sortField, setSortField] = useState<string | null>('timestamp');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [filterQuery, setFilterQuery] = useState('');
-  // console.log('log.searchResults=', logs[0]?.searchResults);
 
   // Sorting function
   const sortedItems = useMemo(() => {
@@ -84,6 +84,7 @@ export function Event() {
     });
   }, [sortedItems, filterQuery]);
 
+  
   return (
     <div className="min-h-screen w-full p-2">
       <div className="flex flex-col">
@@ -183,7 +184,18 @@ export function Event() {
                       );
                     }}
                   >
-                    Score
+                    Search Score
+                  </TableHead>
+                  <TableHead
+                    className="flex-2"
+                    onClick={() => {
+                      setSortField('evalResults');
+                      setSortDirection(
+                        sortDirection === 'asc' ? 'desc' : 'asc'
+                      );
+                    }}
+                  >
+                    Eval Results
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -222,6 +234,25 @@ export function Event() {
                     </TableCell>
                     <TableCell>
                       {log.outcome === 'success' ? log.score : ''}
+                    </TableCell>
+                    <TableCell>
+                      {log.evalResults 
+                        ? Object.entries(log.evalResults).map(([key, value], i) => (
+                            <div key={key} >
+                            <Tooltip
+                              html={(
+                                <div style={{ width: 400, backgroundColor: '#333', color: '#fff', padding: 10, borderRadius: '10px'  }}>
+                                  {value.reason}
+                                </div>
+                              )}
+                              trigger="mouseenter"
+                            >
+                            <span style={{ whiteSpace: 'nowrap' }}><strong>{key}:</strong> {value.score}</span>
+                            </Tooltip>
+
+                            </div>
+                          ))
+                        : 'N/A'}
                     </TableCell>
                   </TableRow>
                 ))}

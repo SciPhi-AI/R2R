@@ -38,6 +38,17 @@ export interface searchResult {
   // metadata: Metadata;
 }
 
+// # TODO - make eval dynamically selectable based on
+// the configuration file of the pipeline
+
+export interface evalResult {
+  score: number;
+  reason: string;
+}
+
+export interface evalResults {
+  [key: string]: evalResult;
+}
 export interface EventSummary extends LogEntry {
   timestamp: string;
   pipelineRunId: string;
@@ -45,6 +56,7 @@ export interface EventSummary extends LogEntry {
   method: string;
   searchQuery: string;
   searchResults: searchResult[];
+  evalResults: evalResults | null;
   completionResult: string;
   outcome: string;
   score: string;
