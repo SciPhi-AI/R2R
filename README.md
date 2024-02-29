@@ -43,21 +43,33 @@ The project includes several basic examples that demonstrate application deploym
    uvicorn r2r.examples.basic.app:app
    ```
 
-2. [`run_client.py`](examples/basic/run_client.py): This example should be run after starting the main application. It demonstrates uploading text entries as well as a PDF to the local server with the python client. Further, it shows document and user-level vector management with built-in features.
+2. [`basic client`](examples/basic/run_client.py): This example should be run after starting the main application. It demonstrates uploading text entries as well as a PDF to the local server with the python client. Further, it shows document and user-level vector management with built-in features.
 
    ```bash
    python -m r2r.examples.basic.run_client
    ```
 
-3. [`run_pdf_chat.py`](examples/pdf_chat/run_demo.py): An example demonstrating upload and chat with a more realistic pdf.
+3. [`pdf chat`](examples/pdf_chat/run_client.py): An example demonstrating upload and chat with a more realistic pdf.
 
    ```bash
    # Ingest pdf
-   python -m r2r.examples.pdf_chat.run_demo ingest
+   python -m r2r.examples.pdf_chat.run_client ingest
 
    # Ask a question
-   python -m r2r.examples.pdf_chat.run_demo search "What are the key themes of Meditations?"
+   python -m r2r.examples.pdf_chat.run_client search "What are the key themes of Meditations?"
    ```
+
+
+4. [`academy`](examples/academy): A more sophisticated demo demonstrating how to build a more novel pipeline which involves synthetic queries
+
+   ```bash
+   # launch academy application
+   uvicorn r2r.examples.academy.app:app
+
+   # Ask a question
+   python -m r2r.examples.academy.run_client search "What are the key themes of Meditations?"
+   ```
+
 
 4. [`web`](web/package.json): A web application which is meant to accompany the framework to provide visual intelligence.
    ```bash
@@ -108,7 +120,7 @@ Follow these steps to ensure a smooth setup:
   - Execute with poetry run:
      
      ```bash
-     python -m r2r.examples.pdf_chat.run_demo ingest
+     python -m r2r.examples.pdf_chat.run_client ingest
      ```
 
 3. **Configure Environment Variables:**

@@ -9,7 +9,7 @@ uvicorn r2r.examples.basic.app:app
 
 ```bash
 # Ingest the demo pdf data
-python -m r2r.examples.pdf_chat.run_demo ingest
+python -m r2r.examples.pdf_chat.run_client ingest
 
 # Uploading file:  examples/pdf_chat/meditations.pdf
 # Upload response =  {'message': "File 'meditations.pdf' processed and saved at '/Users/ocolegrove/demo/R2R/uploads/meditations.pdf'"}
@@ -17,7 +17,7 @@ python -m r2r.examples.pdf_chat.run_demo ingest
 
 ```bash
 # Perform a search
-python -m r2r.examples.pdf_chat.run_demo search "what is the meditations about?"
+python -m r2r.examples.pdf_chat.run_client search "what is the meditations about?"
 
 # Result 1: Title: Meditations - Marcus Aurelius
 # Middle things, Book 7,XXV. TheStoics divided allthings into
@@ -26,7 +26,7 @@ python -m r2r.examples.pdf_chat.run_demo search "what is the meditations about?"
 
 ```bash
 # Perform a completion w/ RAG
-python -m r2r.examples.pdf_chat.run_demo rag_completion "what is the meditations about?"
+python -m r2r.examples.pdf_chat.run_client rag_completion "what is the meditations about?"
 
 # {
 #  ...
