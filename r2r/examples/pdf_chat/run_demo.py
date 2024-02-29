@@ -26,7 +26,7 @@ class PDFChat:
                 document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, file_path))
                 metadata = {
                     "user_id": self.user_id,
-                    "chunk_prefix": self.titles[file_path],
+                    "chunk_prefix": self.titles[file_name],
                 }
                 settings = {}
                 upload_response = self.client.upload_and_process_file(
