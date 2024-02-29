@@ -1,6 +1,7 @@
-import { Fragment, useRef, useState, useEffect } from 'react';
+import { Fragment, useRef, useState, useEffect, useCallback } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 
+// rest of your code
 import { Provider } from '@/types';
 import styles from './styles.module.scss';
 
@@ -10,13 +11,16 @@ interface SecretsModalProps {
   provider: Provider;
 }
 
-type EnvVariable = {
+type EnvironmentVariable = {
   [key: string]: string;
 };
 
 type SecretsProvider = 'Postgres' | 'Qdrant' | 'other';
 
-const envVariables: Record<SecretsProvider, EnvVariable[]> = {
+const serviceEnvironmentVariables: Record<
+  SecretsProvider,
+  EnvironmentVariable[]
+> = {
   Postgres: [
     {
       NAME: 'supabase-dev',
@@ -60,15 +64,24 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
   // TODO: Use modal instead of passing it as props
   const [secrets, setSecrets] = useState([]);
   const [selectedSecret, setSelectedSecret] = useState<string | null>(null);
-  const [secretDetails, setSecretDetails] = useState<EnvVariable>({});
-  const cleanProviderName = provider.name.toLowerCase().replace(' ', '_');
+  const [secretDetails, setSecretDetails] = useState<EnvironmentVariable>({});
   const cancelButtonRef = useRef(null);
 
-  //console.log('Secrets Provider:', provider);
+  const NEW_SECRET = 'new';
+  const LOAD_SECRET = 'load';
+  const PROVIDERS = ['Postgres', 'Qdrant'];
 
-  //console.log('Selected Secret:', selectedSecret);
+  const [tempSecrets, setTempSecrets] = useState<EnvironmentVariable>({});
 
-  const [tempSecrets, setTempSecrets] = useState<EnvVariable>({});
+  const cleanString = (input: string): string => {
+    if (input === undefined) {
+      return '';
+    }
+    return input.toLowerCase().replace(' ', '_');
+  };
+
+  const cleanProviderSource = cleanString(provider.name);
+  const cleanSecretName = cleanString(secretDetails.name);
 
   useEffect(() => {
     // Temporarily save the secret details whenever they change
@@ -77,10 +90,11 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
 
   useEffect(() => {
     // Simulate fetching secrets from backend and update state
-    const providerName = ['Postgres', 'Qdrant'].includes(provider.name)
+    const providerName = PROVIDERS.includes(provider.name)
       ? provider.name
       : 'other';
-    const fetchedSecrets = envVariables[providerName as SecretsProvider]; // Replace with actual fetch call
+    const fetchedSecrets =
+      serviceEnvironmentVariables[providerName as SecretsProvider]; // Replace with actual fetch call
     if (fetchedSecrets) {
       setSecrets(fetchedSecrets);
 
@@ -92,37 +106,57 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
     }
   }, [provider]);
 
-  const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const { value } = event.target;
-    setSelectedSecret(value);
-
-    if (value === '') {
-      // Clear the secret details when "Select Secret" is chosen
-      setSecretDetails({});
-    } else if (value === 'load') {
-      // Fetch secrets from backend and update state
-      fetch(`/api/secrets/${provider.name}`)
-        .then((response) => response.json())
-        .then((data) => {
-          setSecrets(data.secrets);
-        })
-        .catch((error) => console.error('Error fetching secrets:', error));
-    } else if (value === 'new') {
-      const defaultName = `${provider.name.toLowerCase()}-${secrets.length + 1}`;
-      const emptySecret = Object.fromEntries(
-        Object.keys(secretDetails).map((key) => [key, ''])
-      );
-      setSecretDetails({
-        ...emptySecret,
-        NAME: defaultName,
-      });
-    } else {
-      const selected = secrets.find((secret) => secret.NAME === value);
-      if (selected) {
-        setSecretDetails(selected);
+  const fetchSecrets = useCallback(
+    async ({
+      providerSource,
+      secretName,
+    }: {
+      providerSource: string;
+      secretName: string;
+    }) => {
+      try {
+        const response = await fetch(
+          `/api/secrets?provider=${cleanProviderSource}&secretName=${cleanSecretName}`
+        );
+        const data = await response.json();
+        setSecrets(data.secrets);
+      } catch (error) {
+        console.error('Error fetching secrets:', error);
       }
-    }
-  };
+    },
+    []
+  );
+
+  const handleSelectChange = useCallback(
+    async (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const { value } = event.target;
+      setSelectedSecret(value);
+
+      if (value === '') {
+        setSecretDetails({});
+      } else if (value === LOAD_SECRET) {
+        await fetchSecrets({
+          providerSource: provider.name,
+          secretName: secretDetails.name,
+        });
+      } else if (value === NEW_SECRET) {
+        const defaultName = `${provider.name.toLowerCase()}-${secrets.length + 1}`;
+        const emptySecret = Object.fromEntries(
+          Object.keys(secretDetails).map((key) => [key, ''])
+        );
+        setSecretDetails({
+          ...emptySecret,
+          NAME: defaultName,
+        });
+      } else {
+        const selected = secrets.find((secret) => secret.NAME === value);
+        if (selected) {
+          setSecretDetails(selected);
+        }
+      }
+    },
+    [fetchSecrets, provider.name, secrets.length, secretDetails]
+  );
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -132,18 +166,21 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
     }));
 
     // Assume it's a new secret when user starts typing
-    setSelectedSecret('new');
+    setSelectedSecret(NEW_SECRET);
   };
 
   const saveSecret = () => {
     // Validate form data and send update to backend
-    fetch(`/api/update_secrets/${cleanProviderName}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(secretDetails),
-    })
+    fetch(
+      `/api/secrets?provider=${cleanProviderSource}&secretName=${cleanSecretName}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(secretDetails),
+      }
+    )
       .then((response) => response.json())
       .then((data) => {
         // console.log('Secret saved:', data);
@@ -154,9 +191,12 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
 
   const deleteSecret = () => {
     // Confirm deletion, send delete request to backend, update UI accordingly
-    fetch(`/api/update_secrets/${cleanProviderName}`, {
-      method: 'DELETE',
-    })
+    fetch(
+      `/api/secrets?provider=${cleanProviderSource}&secretName=${cleanSecretName}`,
+      {
+        method: 'DELETE',
+      }
+    )
       .then((response) => response.json())
       .then((data) => {
         // Show success notification
@@ -172,7 +212,7 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
         if (updatedSecrets.length > 0) {
           newSelectedSecret = updatedSecrets[0].NAME;
         } else {
-          newSelectedSecret = 'new';
+          newSelectedSecret = NEW_SECRET;
         }
         setSelectedSecret(newSelectedSecret);
 
