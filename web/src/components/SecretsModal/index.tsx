@@ -16,6 +16,7 @@ type EnvVariable = {
 
 const envVariables: EnvVariable[] = [
   {
+    NAME: 'supabase-dev',
     POSTGRES_USER: 'postgres.fictionaluser',
     POSTGRES_PASSWORD: 'secretfictionalpass',
     POSTGRES_HOST: 'cloud-0-fake-region-1.database.fictionalcloud.com',
@@ -23,6 +24,15 @@ const envVariables: EnvVariable[] = [
     POSTGRES_DBNAME: 'postgres_fictional_db',
   },
   {
+    NAME: 'supabase-prod',
+    POSTGRES_USER: 'postgres.acme',
+    POSTGRES_PASSWORD: 'secretfictionalpass',
+    POSTGRES_HOST: 'cloud-0-fake-region-1.database.fictionalcloud.com',
+    POSTGRES_PORT: '5400',
+    POSTGRES_DBNAME: 'postgres_fictional_large_db',
+  },
+  {
+    NAME: 'qdrant',
     QDRANT_HOST: 'fictional_qdrant_host',
     QDRANT_PORT: 'fictional_qdrant_port',
     QDRANT_API_KEY: 'fictional_qdrant_api_key',
@@ -45,13 +55,12 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
 
   const cleanProviderName = provider.name.toLowerCase().replace(' ', '_');
 
-  // useEffect(() => {
-  //   // Fetch secrets from backend and update state
-  //   fetch(`/api/get_secrets/${cleanProviderName}`)
-  //     .then((response) => response.json())
-  //     .then((data) => setSecrets(data))
-  //     .catch((error) => console.error('Error fetching secrets:', error));
-  // }, []);
+  const [tempSecrets, setTempSecrets] = useState<EnvVariable>({});
+
+  useEffect(() => {
+    // Temporarily save the secret details whenever they change
+    setTempSecrets(secretDetails);
+  }, [secretDetails]);
 
   useEffect(() => {
     // Simulate fetching secrets from backend and update state
@@ -66,9 +75,12 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
 
   const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const { value } = event.target;
-    setSelectedSecret(value); // Persist the selected option
+    setSelectedSecret(value);
 
-    if (value === 'load') {
+    if (value === '') {
+      // Clear the secret details when "Select Secret" is chosen
+      setSecretDetails({});
+    } else if (value === 'load') {
       // Fetch secrets from backend and update state
       fetch(`/api/get_secrets/${cleanProviderName}`)
         .then((response) => response.json())
@@ -97,24 +109,47 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
     }
   };
 
-  const handleInputChange = (event) => {
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setSecretDetails((prevDetails) => ({
       ...prevDetails,
       [name]: value,
     }));
+
+    // Assume it's a new secret when user starts typing
+    setSelectedSecret('new');
   };
 
   const saveSecret = () => {
     // Validate form data and send update to backend
-    // Show success notification
-    console.log('Secret saved');
+    fetch(`/api/update_secrets/${cleanProviderName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(secretDetails),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log('Secret saved:', data);
+        // Show success notification
+      })
+      .catch((error) => console.error('Error saving secret:', error));
   };
 
   const deleteSecret = () => {
     // Confirm deletion, send delete request to backend, update UI accordingly
-    // Show success notification
-    console.log('Secret deleted');
+    setSecretDetails({});
+    setTempSecrets({});
+    fetch(`/api/update_secrets/${cleanProviderName}`, {
+      method: 'DELETE',
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log('Secret deleted:', data);
+        // Show success notification
+      })
+      .catch((error) => console.error('Error deleting secret:', error));
   };
 
   return (
@@ -158,6 +193,7 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
                     value={selectedSecret}
                     onChange={handleSelectChange}
                   >
+                    <option value="">Select Secret</option>
                     <option value="load">Load Secret</option>
                     <option value="new">New Secret</option>
                   </select>
@@ -171,7 +207,7 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
                           name={key}
                           className={styles.textInput}
                           value={value}
-                          readOnly // or onChange to make it editable
+                          onChange={handleInputChange} // Add this line
                         />
                       </div>
                     ))}
