@@ -8,13 +8,21 @@ class PareaEvalProvider(EvalProvider):
         super().__init__("parea", sampling_fraction)
         try:
             from parea.evals.general import answer_relevancy_factory
-            from parea.evals.rag import context_query_relevancy_factory, context_ranking_pointwise_factory, answer_context_faithfulness_statement_level_factory
+            from parea.evals.rag import (
+                answer_context_faithfulness_statement_level_factory,
+                context_query_relevancy_factory,
+                context_ranking_pointwise_factory,
+            )
             from parea.schemas.log import Log
 
             self.answer_relevancy = answer_relevancy_factory()
             self.context_query_relevancy = context_query_relevancy_factory()
-            self.context_ranking_pointwise = context_ranking_pointwise_factory()
-            self.answer_context_faithfulness_statement_level = answer_context_faithfulness_statement_level_factory()
+            self.context_ranking_pointwise = (
+                context_ranking_pointwise_factory()
+            )
+            self.answer_context_faithfulness_statement_level = (
+                answer_context_faithfulness_statement_level_factory()
+            )
 
             def create_log(query: str, context: str, completion: str) -> Log:
                 return Log(
@@ -43,7 +51,9 @@ class PareaEvalProvider(EvalProvider):
         answer_relevancy_score = self.answer_relevancy(log)
         context_query_relevancy_score = self.context_query_relevancy(log)
         context_ranking_pointwise_score = self.context_ranking_pointwise(log)
-        answer_context_faithfulness_statement_level_score = self.answer_context_faithfulness_statement_level(log)
+        answer_context_faithfulness_statement_level_score = (
+            self.answer_context_faithfulness_statement_level(log)
+        )
 
         return {
             "context_query_relevancy": {

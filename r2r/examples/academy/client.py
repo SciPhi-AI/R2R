@@ -1,4 +1,5 @@
 import glob
+import os
 import uuid
 
 from r2r.client import R2RClient
@@ -14,7 +15,11 @@ titles = {
 
 user_id_0 = str(uuid.uuid5(uuid.NAMESPACE_DNS, "user_0"))
 
-for file_path in glob.glob("examples/academy/*.pdf"):
+# Get the directory of the current file
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Use this directory in the glob pattern
+for file_path in glob.glob(os.path.join(current_dir, "*.pdf")):
     print(f"Uploading and processing file: {file_path}")
     # # Upload and process a file
     document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, file_path))

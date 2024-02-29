@@ -20,9 +20,11 @@ R2R was conceived to bridge the gap between experimental RAG models and robust, 
 ```bash
 # use the `'r2r[all]'` to download all required deps
 pip install 'r2r[parsing,eval]'
-
-# setup env
+# setup env 
 export OPENAI_API_KEY=sk-...
+export LOCAL_DB_PATH=local.sqlite
+
+# OR do `vim .env.example && cp .env.example .env`
 ```
 
 ## Links
@@ -100,7 +102,7 @@ Follow these steps to ensure a smooth setup:
      ```bash
      # See pyproject.toml for available extras
      # use "all" to include every optional dependency
-     poetry install --extras "parsing"
+     poetry install -E parsing -E eval
      ```
      
   - Execute with poetry run:

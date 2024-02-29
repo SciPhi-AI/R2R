@@ -1,4 +1,5 @@
 import glob
+import os
 import uuid
 
 import fire
@@ -18,7 +19,8 @@ class PDFChat:
         }
 
     def ingest(self):
-        for file_path in glob.glob("examples/pdf_chat/*.pdf"):
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        for file_path in glob.glob(os.path.join(current_dir, "*.pdf")):
             if file_path in self.titles:
                 print("Uploading file: ", file_path)
                 document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, file_path))
