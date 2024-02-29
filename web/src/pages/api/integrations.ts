@@ -113,7 +113,7 @@ const availableIntegrations = [
 // eslint-disable-next-line import/no-anonymous-default-export
 export default async (_: NextApiRequest, res: NextApiResponse) => {
   try {
-    console.log(availableIntegrations);
+    // console.log(availableIntegrations);
 
     res.status(200).json(availableIntegrations);
   } catch (error) {

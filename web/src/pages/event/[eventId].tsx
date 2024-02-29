@@ -92,13 +92,13 @@ export default function EventPage() {
   // Find the log with the matching run_id
   const eventId = router.query.eventId;
   const { logs, loading, error } = useLogs();
-  console.log('logs = ', logs);
+  // console.log('logs = ', logs);
   const eventLog = logs.find((log) => log.pipelineRunId === eventId);
-  console.log('eventLog = ', eventLog);
+  // console.log('eventLog = ', eventLog);
 
   // router.query.eventId will be the event ID from the path
   // For example, if the path is /event/55d05627-a4aa-426f-a4fc-10b2596e9ec5, router.query.eventId will be '55d05627-a4aa-426f-a4fc-10b2596e9ec5'
-  console.log(router.query.eventId);
+  // console.log(router.query.eventId);
 
   return (
     <Layout>

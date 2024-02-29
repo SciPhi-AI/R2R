@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
+
+const SecretsModal = lazy(() => import('@/components/SecretsModal'));
 
 import { IntegrationCard } from '@/components/IntegrationCard';
 import Layout from '@/components/Layout';
-// import { PanelHeader } from '@/components/PanelHeader';
+import LocalProvidersMenu from '@/components/LocalProvidersMenu';
 import { Separator } from '@/components/ui/separator';
 import {
   Table,
@@ -14,8 +16,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import styles from '../styles/Index.module.scss';
-import { Provider } from '../types';
+import { useFetchProviders } from '@/hooks/useFetchProviders';
+
+import { useModal } from '@/hooks/useModal';
+
+import { Provider } from '@/types';
+
+import styles from '@/styles/Index.module.scss';
 
 // Assuming the data array is imported or defined somewhere in this file
 const data = [
@@ -27,15 +34,6 @@ const data = [
     num_tokens: '110 M',
     status: 'available',
     provider: 'Provider A', // Example provider
-  },
-  {
-    id: 'f2',
-    dataset: 'math-ai/StackMathQA',
-    size: '5.47 GB',
-    num_docs: '6.19 M',
-    num_tokens: '510 M',
-    // status: "available",
-    provider: 'HuggingFace',
   },
   {
     id: 'f2',
@@ -76,32 +74,44 @@ const data = [
 ];
 
 export default function Datasets() {
-  const [vectorProviders, setVectorProvider] = useState<Provider[]>([]);
+  const { isOpen, toggleModal, secretProvider, handleSecretProvider } =
+    useModal();
+  const [integrationProviders, setIntegrationProvider] = useState<Provider[]>(
+    []
+  );
 
-  useEffect(() => {
-    fetch('/api/integrations')
-      .then((res) => res.json())
-      .then((json) => setVectorProvider(json));
-  }, []);
+  const { allProviders } = useFetchProviders();
 
   return (
     <Layout>
       <main className={styles.main}>
-        <h1 className="text-white text-2xl mb-4"> Dataset Providers </h1>
+        <LocalProvidersMenu />
         <Separator />
 
         <div className={`${styles.gridView} ${styles.column}`}>
-          {Array.isArray(vectorProviders)
-            ? vectorProviders
+          {Array.isArray(allProviders)
+            ? allProviders
                 ?.filter((x) => {
                   return x?.type == 'dataset-provider';
                 })
                 .map((provider) => (
-                  <IntegrationCard provider={provider} key={provider.id} />
+                  <IntegrationCard
+                    provider={provider}
+                    key={provider.id}
+                    onClick={() => handleSecretProvider(provider)}
+                  />
                 ))
             : null}
+          <Suspense fallback={<div>Loading...</div>}>
+            {isOpen && secretProvider && (
+              <SecretsModal
+                isOpen={isOpen}
+                toggleModal={toggleModal}
+                provider={secretProvider}
+              />
+            )}
+          </Suspense>
         </div>
-
         <div className={styles.datasetHeaderRightAlign}>
           {/* <PanelHeader text="Add Dataset Provider" /> */}
         </div>

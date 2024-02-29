@@ -7,11 +7,12 @@ import { Provider } from '../../types';
 
 interface CardProps {
   provider: Provider;
+  onClick: () => void;
 }
 
-function IntegrationCard({ provider }: CardProps) {
+function IntegrationCard({ provider, onClick }: CardProps) {
   return (
-    <a href="#" className={styles.container}>
+    <a href="#" className={styles.container} onClick={onClick}>
       <div className={styles.cardHeader}>
         <div className={styles.hoverRedirectIcon}>
           <FiExternalLink size="16" />

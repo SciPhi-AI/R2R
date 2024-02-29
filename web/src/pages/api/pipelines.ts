@@ -18,7 +18,7 @@ const pipelines = [
 // eslint-disable-next-line import/no-anonymous-default-export
 export default async (_: NextApiRequest, res: NextApiResponse) => {
   try {
-    console.log(pipelines);
+    // console.log(pipelines);
 
     res.status(200).json(pipelines);
   } catch (error) {

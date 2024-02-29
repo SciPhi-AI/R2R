@@ -13,7 +13,7 @@ import { Pipeline } from '../types';
 
 const Home: NextPage = () => {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
-  console.log('pipelines = ', pipelines);
+  // console.log('pipelines = ', pipelines);
   const router = useRouter();
 
   useEffect(() => {

@@ -1,8 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 
+import { useModal } from '@/hooks/useModal';
 import { IntegrationCard } from '@/components/IntegrationCard';
+
+const SecretsModal = lazy(() => import('@/components/SecretsModal'));
+
+import { useFetchProviders } from '@/hooks/useFetchProviders';
+
 import Layout from '@/components/Layout';
-// import { PanelHeader } from '@/components/PanelHeader';
+import LocalProvidersMenu from '@/components/LocalProvidersMenu';
+
 import { Separator } from '@/components/ui/separator';
 import {
   Table,
@@ -14,8 +21,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import styles from '../styles/Index.module.scss';
-import { Provider } from '../types';
+import styles from '@/styles/Index.module.scss';
+import { Provider } from '../../types';
 
 // Assuming the data array is imported or defined somewhere in this file
 const data = [
@@ -39,29 +46,42 @@ const data = [
 ];
 
 export default function Databases() {
-  const [integrations, setIntegrations] = useState<Provider[]>([]);
+  const { isOpen, toggleModal, secretProvider, handleSecretProvider } =
+    useModal();
+  const [integrationProviders, setIntegrationProvider] = useState<Provider[]>(
+    []
+  );
 
-  useEffect(() => {
-    fetch('/api/integrations')
-      .then((res) => res.json())
-      .then((json) => setIntegrations(json));
-  }, []);
+  const { allProviders } = useFetchProviders();
 
   return (
     <Layout>
       <main className={styles.main}>
-        <h1 className="text-white text-2xl mb-4"> VectorDB Providers </h1>
+        <LocalProvidersMenu />
         <Separator />
         <div className={`${styles.gridView} ${styles.column}`}>
-          {Array.isArray(integrations)
-            ? integrations
+          {Array.isArray(allProviders)
+            ? allProviders
                 ?.filter((x) => {
                   return x?.type == 'vector-db-provider';
                 })
                 .map((provider) => (
-                  <IntegrationCard provider={provider} key={provider.id} />
+                  <IntegrationCard
+                    provider={provider}
+                    key={provider.id}
+                    onClick={() => handleSecretProvider(provider)}
+                  />
                 ))
             : null}
+          <Suspense fallback={<div>Loading...</div>}>
+            {isOpen && secretProvider && (
+              <SecretsModal
+                isOpen={isOpen}
+                toggleModal={toggleModal}
+                provider={secretProvider}
+              />
+            )}
+          </Suspense>
         </div>
 
         <div className={styles.datasetHeaderRightAlign}>
