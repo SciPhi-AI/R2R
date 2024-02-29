@@ -9,8 +9,8 @@ export const setColor = (keyword: string): string => {
       return 'bg-red-400';
     case 'Search':
       return 'bg-sky-500';
-    case 'Augmentation':
-      return 'bg-orange-400';
+    case 'Embedding':
+      return 'bg-orange-600';
     case 'RAG':
       return 'bg-indigo-400';
     default:

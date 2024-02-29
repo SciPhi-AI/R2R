@@ -21,7 +21,7 @@ class OpenAIConfig(LLMConfig):
 
 class OpenAILLM(LLMProvider):
     """A concrete class for creating OpenAI models."""
- 
+
     def __init__(
         self,
         config: OpenAIConfig,
