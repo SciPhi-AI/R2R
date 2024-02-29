@@ -1,6 +1,6 @@
 import { Fragment, useRef, useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { useModal } from '../../hooks/useModal';
+
 import { Provider } from '@/types';
 import styles from './styles.module.scss';
 
@@ -37,13 +37,7 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
   // TODO: Use modal instead of passing it as props
   const [secrets, setSecrets] = useState([]);
   const [selectedSecret, setSelectedSecret] = useState('');
-  const [secretDetails, setSecretDetails] = useState({
-    POSTGRES_USER: '',
-    POSTGRES_PASSWORD: '',
-    POSTGRES_HOST: '',
-    POSTGRES_PORT: '',
-    POSTGRES_DBNAME: '',
-  });
+  const [secretDetails, setSecretDetails] = useState<EnvVariable>({});
 
   console.log('Secrets Provider:', provider);
 
@@ -65,7 +59,7 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
     const fetchedSecrets = envVariables; // Replace with actual fetch call
     setSecrets(fetchedSecrets);
     if (fetchedSecrets.length > 0) {
-      setSelectedSecret(fetchedSecrets[0]);
+      setSelectedSecret(JSON.stringify(fetchedSecrets[0]));
       setSecretDetails(fetchedSecrets[0]);
     }
   }, [provider]);
