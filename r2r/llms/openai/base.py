@@ -21,7 +21,7 @@ class OpenAIConfig(LLMConfig):
 
 class OpenAILLM(LLMProvider):
     """A concrete class for creating OpenAI models."""
-
+ 
     def __init__(
         self,
         config: OpenAIConfig,
@@ -30,6 +30,10 @@ class OpenAILLM(LLMProvider):
     ) -> None:
         logger.info(f"Initializing `OpenAILLM` with config: {config}")
         super().__init__()
+        if not isinstance(config, OpenAIConfig):
+            raise ValueError(
+                "The provided config must be an instance of OpenAIConfig."
+            )
         self.config: OpenAIConfig = config
 
         try:

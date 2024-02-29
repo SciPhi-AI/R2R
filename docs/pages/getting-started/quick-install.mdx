@@ -10,16 +10,18 @@ export OPENAI_API_KEY=sk-...
 export LOCAL_DB_PATH=local.sqlite
 
 # OR do `vim .env.example && cp .env.example .env`
+# INCLUDE secrets and modify config.json
+# if using cloud providers (e.g. pgvector, supabase, ...)
 ```
 
-## Setup local environment variables:
+## Optional - Setup local environment variables:
 
 ```bash
 # Path for your local database [`local` in config.json]
 LOCAL_DB_PATH=your_local_db_path
 
 
-# Postgres [`postgres` for logging, `pg_vector` for vectordb in config.json]
+# Postgres (used for `postgres` provider during logging, `pg_vector` for vectordb in config.json)
 POSTGRES_USER=your_user
 POSTGRES_PASSWORD=your_password
 POSTGRES_HOST=your_host

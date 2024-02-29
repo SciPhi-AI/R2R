@@ -27,6 +27,10 @@ class LiteLLM(LLMProvider):
     ) -> None:
         logger.info(f"Initializing `LiteLLM` with config: {config}")
         super().__init__()
+        if not isinstance(config, LiteLLMConfig):
+            raise ValueError(
+                "The provided config must be an instance of LiteLLMConfig."
+            )
         self.config: LiteLLMConfig = config
 
     def get_chat_completion(
