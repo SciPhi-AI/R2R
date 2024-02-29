@@ -290,20 +290,20 @@ def create_app(
 
     @app.get("/logs_summary")
     def logs_summary():
-        try:
-            if logging_provider is None:
-                raise HTTPException(
-                    status_code=404, detail="Logging provider not found."
-                )
-            logs = logging_provider.get_logs()
-            logs_summary = process_logs(logs)
-            events_summary = [
-                SummaryLogModel(**log).dict(by_alias=True)
-                for log in logs_summary
-            ]
-            return {"events_summary": events_summary}
-        except Exception as e:
-            logger.error(f":logs_summary: [Error](error={str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
+        # try:
+        if logging_provider is None:
+            raise HTTPException(
+                status_code=404, detail="Logging provider not found."
+            )
+        logs = logging_provider.get_logs()
+        logs_summary = process_logs(logs)
+        events_summary = [
+            SummaryLogModel(**log).dict(by_alias=True) for log in logs_summary
+        ]
+        return {"events_summary": events_summary}
+
+    # except Exception as e:
+    #     logger.error(f":logs_summary: [Error](error={str(e)})")
+    #     raise HTTPException(status_code=500, detail=str(e))
 
     return app

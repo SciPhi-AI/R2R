@@ -144,8 +144,11 @@ def process_event(event: dict[str, Any]) -> dict[str, Any]:
         processed_result["completion_result"] = ", ".join(content_matches)
         processed_result["method"] = "Generate Completion"
     elif method == "evaluate":
-        result = result.replace("'", '"')  # Convert to valid JSON string
-        processed_result["eval_results"] = json.loads(result)
+        try:
+            result = result.replace("'", '"')  # Convert to valid JSON string
+            processed_result["eval_results"] = json.loads(result)
+        except json.JSONDecodeError as e:
+            logger.error(f"Error decoding JSON: {e}")
     return processed_result
 
 

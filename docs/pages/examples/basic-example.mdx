@@ -6,6 +6,7 @@ This example runs a basic application, which launches a server to handle ingesti
 
 ```bash
 # Launch the application
+# If using a venv, replace `uvicorn` with `venv_path/bin/uvicorn`
 uvicorn r2r.examples.basic.app:app
 ```
 
@@ -22,21 +23,21 @@ app = E2EPipelineFactory.create_pipeline()
 
 The `R2RClient` provides an interface to interact with the server. Here are the main methods:
 
-- `upload_and_process_file(document_id: str, file_path: str, metadata: Optional[dict] = None, settings: Optional[dict] = None) -> dict`: Uploads a file to the server and processes it. Returns the server's response.
+- `upload_and_process_file(document_id: str, file_path: str, metadata: Optional[dict] = None, settings: Optional[dict] = None) -> dict`: Uploads a file to the server and processes it. 
 
-- `add_entry(document_id: str, blobs: Dict[str, str], metadata: Optional[Dict[str, Any]] = None, do_upsert: Optional[bool] = False, settings: Optional[Dict[str, Any]] = None) -> dict`: Adds an entry to the server. Returns the server's response.
+- `add_entry(document_id: str, blobs: Dict[str, str], metadata: Optional[Dict[str, Any]] = None, do_upsert: Optional[bool] = False, settings: Optional[Dict[str, Any]] = None) -> dict`: Adds an entry to the server. 
 
-- `add_entries(entries: List[Dict[str, Any]], do_upsert: Optional[bool] = False, settings: Optional[Dict[str, Any]] = None) -> dict`: Adds multiple entries to the server. Returns the server's response.
+- `add_entries(entries: List[Dict[str, Any]], do_upsert: Optional[bool] = False, settings: Optional[Dict[str, Any]] = None) -> dict`: Adds multiple entries to the server. 
 
-- `search(query: str, limit: Optional[int] = 10, filters: Optional[Dict[str, Any]] = None, settings: Optional[Dict[str, Any]] = None) -> dict`: Searches the server for a query. Returns the server's response.
+- `search(query: str, limit: Optional[int] = 10, filters: Optional[Dict[str, Any]] = None, settings: Optional[Dict[str, Any]] = None) -> dict`: Searches the server for a query. 
 
-- `rag_completion(query: str, limit: Optional[int] = 10, filters: Optional[Dict[str, Any]] = None, settings: Optional[Dict[str, Any]] = None) -> dict`: Requests a RAG completion from the server. Returns the server's response.
+- `rag_completion(query: str, limit: Optional[int] = 10, filters: Optional[Dict[str, Any]] = None, settings: Optional[Dict[str, Any]] = None) -> dict`: Requests a RAG completion from the server. 
 
-- `filtered_deletion(key: str, value: Union[bool, int, str]) -> dict`: Deletes entries from the server based on a filter. Returns the server's response.
+- `filtered_deletion(key: str, value: Union[bool, int, str]) -> dict`: Deletes entries from the server based on a filter. 
 
-- `get_logs() -> dict`: Retrieves logs from the server. Returns the server's response.
+- `get_logs() -> dict`: Retrieves logs from the server. 
 
-- `get_logs_summary() -> dict`: Retrieves a summary of logs from the server. Returns the server's response.
+- `get_logs_summary() -> dict`: Retrieves a summary of logs from the server. 
 
 
 ## config.json
@@ -74,8 +75,8 @@ The default values for the config are shown below.
     "chunk_overlap": 20
   },
   "language_model": {
-    "provider": "openai",
-    "model_name": "gpt-4-0125-preview",
+    "provider": "litellm",
+    "model": "gpt-4-0125-preview",
     "temperature": 0.1,
     "top_p": 0.9,
     "top_k": 128,

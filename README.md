@@ -20,11 +20,14 @@ R2R was conceived to bridge the gap between experimental RAG models and robust, 
 ```bash
 # use the `'r2r[all]'` to download all required deps
 pip install 'r2r[parsing,eval]'
+
 # setup env 
 export OPENAI_API_KEY=sk-...
 export LOCAL_DB_PATH=local.sqlite
 
 # OR do `vim .env.example && cp .env.example .env`
+# INCLUDE secrets and modify config.json
+# if using cloud providers (e.g. pgvector, supabase, ...)
 ```
 
 ## Links
@@ -37,19 +40,20 @@ export LOCAL_DB_PATH=local.sqlite
 
 The project includes several basic examples that demonstrate application deployment and interaction:
 
-1. [`app.py`](examples/basic/app.py): This example runs the main application, which includes the ingestion, embedding, and RAG pipelines served via FastAPI.
+1. [`basic app`](r2r/examples/basic/app.py): This example runs the main application, which includes the ingestion, embedding, and RAG pipelines served via FastAPI.
 
    ```bash
+   # If using a venv, replace `uvicorn` with `venv_path/bin/uvicorn`
    uvicorn r2r.examples.basic.app:app
    ```
 
-2. [`basic client`](examples/basic/run_client.py): This example should be run after starting the main application. It demonstrates uploading text entries as well as a PDF to the local server with the python client. Further, it shows document and user-level vector management with built-in features.
+2. [`basic client`](r2r/examples/basic/run_client.py): This example should be run after starting the main application. It demonstrates uploading text entries as well as a PDF to the local server with the python client. Further, it shows document and user-level vector management with built-in features.
 
    ```bash
    python -m r2r.examples.basic.run_client
    ```
 
-3. [`pdf chat`](examples/pdf_chat/run_client.py): An example demonstrating upload and chat with a more realistic pdf.
+3. [`pdf chat`](r2r/examples/pdf_chat/run_client.py): An example demonstrating upload and chat with a more realistic pdf.
 
    ```bash
    # Ingest pdf
@@ -60,10 +64,11 @@ The project includes several basic examples that demonstrate application deploym
    ```
 
 
-4. [`academy`](examples/academy): A more sophisticated demo demonstrating how to build a more novel pipeline which involves synthetic queries
+4. [`academy`](r2r/examples/academy): A more sophisticated demo demonstrating how to build a more novel pipeline which involves synthetic queries
 
    ```bash
-   # launch academy application
+   # Launch the `academy` example application
+   # If using a venv, replace `uvicorn` with `venv_path/bin/uvicorn`
    uvicorn r2r.examples.academy.app:app
 
    # Ask a question
