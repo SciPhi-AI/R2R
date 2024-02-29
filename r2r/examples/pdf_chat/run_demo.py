@@ -13,16 +13,16 @@ class PDFChat:
         if not user_id:
             self.user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, "user_id"))
         self.titles = {
-            "examples/pdf_chat/meditations.pdf": "Title: Meditations - Marcus Aurelius",
+            "meditations.pdf": "Title: Meditations - Marcus Aurelius",
             # uncomment the following line to add more documents
-            # "examples/pdf_chat/the_republic.pdf": "Title: The Republic - Plato",
+            # "the_republic.pdf": "Title: The Republic - Plato",
         }
 
     def ingest(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         for file_path in glob.glob(os.path.join(current_dir, "*.pdf")):
-            if file_path in self.titles:
-                print("Uploading file: ", file_path)
+            file_name = file_path.split(os.path.sep)[-1]
+            if file_name in self.titles:
                 document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, file_path))
                 metadata = {
                     "user_id": self.user_id,
