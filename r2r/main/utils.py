@@ -143,7 +143,9 @@ def process_event(event: dict[str, Any]) -> dict[str, Any]:
         content_matches = re.findall(r"content='([^']*)'", result)
         processed_result["completion_result"] = ", ".join(content_matches)
         processed_result["method"] = "Generate Completion"
-
+    elif method == "evaluate":
+        result = result.replace("'", '"')  # Convert to valid JSON string
+        processed_result["eval_results"] = json.loads(result)
     return processed_result
 
 
@@ -166,6 +168,7 @@ def combine_aggregated_logs(
             "method": "",
             "search_query": "",
             "search_results": [],
+            "eval_results": None,
             # "search_score": "",
             "completion_result": "N/A",  # Default to "N/A" if not applicable
             "outcome": "success"

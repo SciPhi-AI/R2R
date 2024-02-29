@@ -134,8 +134,10 @@ class E2EPipelineFactory:
             embedding_batch_size=embedding_batch_size,
         )
         # TODO - Set ingestion class in config file
+        eval_pipeline = eval_pipeline_impl(
+            evals_config, logging_provider=logging_provider
+        )
         ingst_pipeline = ingestion_pipeline_impl()
-        eval_pipeline = eval_pipeline_impl(evals_config)
 
         app = app_fn(
             ingestion_pipeline=ingst_pipeline,

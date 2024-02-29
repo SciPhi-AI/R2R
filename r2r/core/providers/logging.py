@@ -118,6 +118,7 @@ def log_execution_to_db(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        print("Logging execution to database..., for args = ", args)
         # Assuming args[0] is the instance of the class the method belongs to
         instance = args[0]
         inst_provider = instance.logging_provider
