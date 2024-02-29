@@ -13,6 +13,7 @@ import styles from '@/styles/Index.module.scss';
 export default function LLMs() {
   const { isOpen, toggleModal, secretProvider, handleSecretProvider } =
     useModal();
+
   const { allProviders } = useFetchProviders();
 
   return (

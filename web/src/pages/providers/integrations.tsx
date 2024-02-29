@@ -2,10 +2,9 @@ import React, { useEffect, useState, lazy, Suspense } from 'react';
 
 import { IntegrationCard } from '@/components/IntegrationCard';
 import Layout from '@/components/Layout';
-// import { PanelHeader } from '@/components/PanelHeader';
 import { Separator } from '@/components/ui/separator';
 import LocalProvidersMenu from '@/components/LocalProvidersMenu';
-
+import { useFetchProviders } from '@/hooks/useFetchProviders';
 import { useModal } from '@/hooks/useModal';
 
 const SecretsModal = lazy(() => import('@/components/SecretsModal'));
@@ -20,11 +19,7 @@ export default function Integrations() {
     []
   );
 
-  useEffect(() => {
-    fetch('/api/integrations')
-      .then((res) => res.json())
-      .then((json) => setIntegrationProvider(json));
-  }, []);
+  const { allProviders } = useFetchProviders();
 
   return (
     <Layout>
@@ -33,8 +28,8 @@ export default function Integrations() {
         <Separator />
 
         <div className={`${styles.gridView} ${styles.column}`}>
-          {Array.isArray(integrationProviders)
-            ? integrationProviders
+          {Array.isArray(allProviders)
+            ? allProviders
                 ?.filter((x) => {
                   return x?.type == 'integration';
                 })

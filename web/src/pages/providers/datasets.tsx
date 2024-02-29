@@ -16,6 +16,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
+import { useFetchProviders } from '@/hooks/useFetchProviders';
+
 import { useModal } from '@/hooks/useModal';
 
 import { Provider } from '@/types';
@@ -78,11 +80,7 @@ export default function Datasets() {
     []
   );
 
-  useEffect(() => {
-    fetch('/api/integrations')
-      .then((res) => res.json())
-      .then((json) => setIntegrationProvider(json));
-  }, []);
+  const { allProviders } = useFetchProviders();
 
   return (
     <Layout>
@@ -91,8 +89,8 @@ export default function Datasets() {
         <Separator />
 
         <div className={`${styles.gridView} ${styles.column}`}>
-          {Array.isArray(integrationProviders)
-            ? integrationProviders
+          {Array.isArray(allProviders)
+            ? allProviders
                 ?.filter((x) => {
                   return x?.type == 'dataset-provider';
                 })
