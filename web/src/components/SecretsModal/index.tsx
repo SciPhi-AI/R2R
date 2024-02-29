@@ -61,10 +61,11 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
   const [secrets, setSecrets] = useState([]);
   const [selectedSecret, setSelectedSecret] = useState<string | null>(null);
   const [secretDetails, setSecretDetails] = useState<EnvVariable>({});
-
+  const cleanProviderName = provider.name.toLowerCase().replace(' ', '_');
   const cancelButtonRef = useRef(null);
 
   console.log('Secrets Provider:', provider);
+
   console.log('Selected Secret:', selectedSecret);
 
   const [tempSecrets, setTempSecrets] = useState<EnvVariable>({});
