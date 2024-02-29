@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Provider } from '@/types';
 
 export const useFetchProviders = () => {
-  const [providers, setProviders] = useState<Provider[]>([]);
+  const [allProviders, setProviders] = useState<Provider[]>([]);
 
   useEffect(() => {
     fetch(`/api/integrations`)
@@ -11,5 +11,5 @@ export const useFetchProviders = () => {
       .catch((error) => console.error('Error fetching providers:', error));
   }, []);
 
-  return { providers };
+  return { allProviders };
 };

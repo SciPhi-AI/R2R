@@ -1,8 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/router';
 import styles from './styles.module.scss';
-import { Provider } from '@/types';
-import { useProviderDataContext } from '@/context/providerContext'; // Adjust the import path as necessary
 
 interface MenuItem {
   name: string;
@@ -35,10 +33,6 @@ const menuItems = [
 
 export default function LocalProvidersMenu() {
   const router = useRouter();
-  const { getAllProviders, getFilteredProviders } = useProviderDataContext();
-  const currentPath = router.pathname;
-  const currentMenuItem = menuItems.find((item) => item.path === currentPath);
-  const providers = getAllProviders();
 
   const handleOnClick = (currentMenuItem) => {
     router.push(currentMenuItem.path);

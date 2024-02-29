@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 
 import { IntegrationCard } from '@/components/IntegrationCard';
 import Layout from '@/components/Layout';
@@ -7,6 +7,8 @@ import { Separator } from '@/components/ui/separator';
 import LocalProvidersMenu from '@/components/LocalProvidersMenu';
 
 import { useModal } from '@/hooks/useModal';
+
+const SecretsModal = lazy(() => import('@/components/SecretsModal'));
 
 import styles from '@/styles/Index.module.scss';
 import { Provider } from '../../types';
@@ -44,6 +46,15 @@ export default function Integrations() {
                   />
                 ))
             : null}
+          <Suspense fallback={<div>Loading...</div>}>
+            {isOpen && secretProvider && (
+              <SecretsModal
+                isOpen={isOpen}
+                toggleModal={toggleModal}
+                provider={secretProvider}
+              />
+            )}
+          </Suspense>
         </div>
         <div className={styles.datasetHeaderRightAlign}>
           {/* <PanelHeader text="Add Integration" /> */}

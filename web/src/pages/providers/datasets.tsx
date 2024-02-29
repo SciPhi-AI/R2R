@@ -1,7 +1,5 @@
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 
-import { useProviderDataContext } from '@/context/providerContext'; // Import the context hook
-
 const SecretsModal = lazy(() => import('@/components/SecretsModal'));
 
 import { IntegrationCard } from '@/components/IntegrationCard';
@@ -19,6 +17,8 @@ import {
 } from '@/components/ui/table';
 
 import { useModal } from '@/hooks/useModal';
+
+import { Provider } from '@/types';
 
 import styles from '@/styles/Index.module.scss';
 
@@ -74,13 +74,15 @@ const data = [
 export default function Datasets() {
   const { isOpen, toggleModal, secretProvider, handleSecretProvider } =
     useModal();
-  const { getAllProviders, getFilteredProviders } = useProviderDataContext();
-
-  const datasetProviders = getFilteredProviders('dataset-provider');
+  const [integrationProviders, setIntegrationProvider] = useState<Provider[]>(
+    []
+  );
 
   useEffect(() => {
-    console.log('Dataset Providers:', datasetProviders);
-  }, [datasetProviders]);
+    fetch('/api/integrations')
+      .then((res) => res.json())
+      .then((json) => setIntegrationProvider(json));
+  }, []);
 
   return (
     <Layout>
@@ -89,25 +91,29 @@ export default function Datasets() {
         <Separator />
 
         <div className={`${styles.gridView} ${styles.column}`}>
-          {Array.isArray(datasetProviders)
-            ? datasetProviders.map((provider) => (
-                <IntegrationCard
-                  provider={provider}
-                  key={provider.id}
-                  onClick={() => handleSecretProvider(provider)}
-                />
-              ))
+          {Array.isArray(integrationProviders)
+            ? integrationProviders
+                ?.filter((x) => {
+                  return x?.type == 'dataset-provider';
+                })
+                .map((provider) => (
+                  <IntegrationCard
+                    provider={provider}
+                    key={provider.id}
+                    onClick={() => handleSecretProvider(provider)}
+                  />
+                ))
             : null}
+          <Suspense fallback={<div>Loading...</div>}>
+            {isOpen && secretProvider && (
+              <SecretsModal
+                isOpen={isOpen}
+                toggleModal={toggleModal}
+                provider={secretProvider}
+              />
+            )}
+          </Suspense>
         </div>
-        <Suspense fallback={<div>Loading...</div>}>
-          {isOpen && secretProvider && (
-            <SecretsModal
-              isOpen={isOpen}
-              toggleModal={toggleModal}
-              provider={secretProvider}
-            />
-          )}
-        </Suspense>
         <div className={styles.datasetHeaderRightAlign}>
           {/* <PanelHeader text="Add Dataset Provider" /> */}
         </div>

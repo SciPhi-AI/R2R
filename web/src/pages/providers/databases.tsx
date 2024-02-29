@@ -1,7 +1,6 @@
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 
 import { useModal } from '@/hooks/useModal';
-import { useProviderDataContext } from '@/context/providerContext'; // Import the context hook
 import { IntegrationCard } from '@/components/IntegrationCard';
 
 const SecretsModal = lazy(() => import('@/components/SecretsModal'));
@@ -47,19 +46,15 @@ const data = [
 export default function Databases() {
   const { isOpen, toggleModal, secretProvider, handleSecretProvider } =
     useModal();
-  const { getAllProviders, getFilteredProviders, getSelectedProvider } =
-    useProviderDataContext();
+  const [integrationProviders, setIntegrationProvider] = useState<Provider[]>(
+    []
+  );
 
-  const providersArray = getAllProviders();
-  const dataBaseProvidersArray = getFilteredProviders('vector-db-provider');
-
-  // Log the database the providers
   useEffect(() => {
-    console.log('Database Providers:', dataBaseProvidersArray);
-  }, [providersArray]);
-
-  // Log the data array
-  // console.log('Data array:', data);
+    fetch('/api/integrations')
+      .then((res) => res.json())
+      .then((json) => setIntegrationProvider(json));
+  }, []);
 
   return (
     <Layout>
@@ -67,25 +62,30 @@ export default function Databases() {
         <LocalProvidersMenu />
         <Separator />
         <div className={`${styles.gridView} ${styles.column}`}>
-          {Array.isArray(dataBaseProvidersArray)
-            ? dataBaseProvidersArray.map((provider) => (
-                <IntegrationCard
-                  provider={provider}
-                  key={provider.id}
-                  onClick={() => handleSecretProvider(provider)}
-                />
-              ))
+          {Array.isArray(integrationProviders)
+            ? integrationProviders
+                ?.filter((x) => {
+                  return x?.type == 'vector-db-provider';
+                })
+                .map((provider) => (
+                  <IntegrationCard
+                    provider={provider}
+                    key={provider.id}
+                    onClick={() => handleSecretProvider(provider)}
+                  />
+                ))
             : null}
+          <Suspense fallback={<div>Loading...</div>}>
+            {isOpen && secretProvider && (
+              <SecretsModal
+                isOpen={isOpen}
+                toggleModal={toggleModal}
+                provider={secretProvider}
+              />
+            )}
+          </Suspense>
         </div>
-        <Suspense fallback={<div>Loading...</div>}>
-          {isOpen && secretProvider && (
-            <SecretsModal
-              isOpen={isOpen}
-              toggleModal={toggleModal}
-              provider={secretProvider}
-            />
-          )}
-        </Suspense>
+
         <div className={styles.datasetHeaderRightAlign}>
           {/* <PanelHeader text="Add VectorDB Provider" /> */}
         </div>

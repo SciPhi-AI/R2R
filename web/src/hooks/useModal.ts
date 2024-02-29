@@ -1,12 +1,9 @@
-import { useState, useContext } from 'react';
+import { useState } from 'react';
 
 import { Provider } from '@/types';
-import { useProviderDataContext } from '@/context/providerContext';
 
 export const useModal = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { getAllProviders, getFilteredProviders, getSelectedProvider } =
-    useProviderDataContext();
 
   const [secretProvider, setSecretProvider] = useState<Provider | null>(null);
 
