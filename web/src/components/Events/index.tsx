@@ -36,7 +36,7 @@ export function Event() {
 
   const { logs, loading, error } = useLogs();
 
-  console.log('logs = ', logs);
+  // console.log('logs = ', logs);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -54,7 +54,7 @@ export function Event() {
   const [sortField, setSortField] = useState<string | null>('timestamp');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [filterQuery, setFilterQuery] = useState('');
-  console.log('log.searchResults=', logs[0]?.searchResults);
+  // console.log('log.searchResults=', logs[0]?.searchResults);
 
   // Sorting function
   const sortedItems = useMemo(() => {
@@ -207,7 +207,7 @@ export function Event() {
                     </TableCell>
                     <TableCell>
                       {log.searchResults && log.searchResults.length > 0
-                        ? truncateText(log.searchResults[0]?.text, 30) + " ..."
+                        ? truncateText(log.searchResults[0]?.text, 30) + ' ...'
                         : ''}
                     </TableCell>
                     <TableCell>

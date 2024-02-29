@@ -11,9 +11,7 @@ export const useModal = () => {
 
   const handleSecretProvider = (provider: Provider | null) => {
     setSecretProvider(provider);
-    console.log('Secret Provider:', provider);
     toggleModal();
-    console.log('Toggling SecretModal:', isOpen);
   };
 
   return {

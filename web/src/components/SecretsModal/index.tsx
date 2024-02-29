@@ -64,9 +64,9 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
   const cleanProviderName = provider.name.toLowerCase().replace(' ', '_');
   const cancelButtonRef = useRef(null);
 
-  console.log('Secrets Provider:', provider);
+  //console.log('Secrets Provider:', provider);
 
-  console.log('Selected Secret:', selectedSecret);
+  //console.log('Selected Secret:', selectedSecret);
 
   const [tempSecrets, setTempSecrets] = useState<EnvVariable>({});
 
@@ -146,7 +146,7 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
     })
       .then((response) => response.json())
       .then((data) => {
-        console.log('Secret saved:', data);
+        // console.log('Secret saved:', data);
         // Show success notification
       })
       .catch((error) => console.error('Error saving secret:', error));
@@ -160,7 +160,7 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
       .then((response) => response.json())
       .then((data) => {
         // Show success notification
-        console.log('Secret deleted:', data);
+        // console.log('Secret deleted:', data);
         // Remove the deleted secret from the secrets array
         const updatedSecrets = secrets.filter(
           (secret) => secret.NAME !== selectedSecret
