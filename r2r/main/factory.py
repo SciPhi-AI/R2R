@@ -1,10 +1,10 @@
 import logging
 
 import dotenv
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from r2r.core import GenerationConfig, LoggingDatabaseConnection
-from r2r.llms import OpenAIConfig, OpenAILLM
+from r2r.core.utils import RecursiveCharacterTextSplitter
+from r2r.llms import LiteLLMConfig, LiteLLM, OpenAIConfig, OpenAILLM
 from r2r.pipelines import (
     BasicEmbeddingPipeline,
     BasicEvalPipeline,
@@ -48,8 +48,11 @@ class E2EPipelineFactory:
             )
 
     @staticmethod
-    def get_llm():
-        return OpenAILLM(OpenAIConfig())
+    def get_llm(llm_config):
+        if llm_config["provider"] == "openai":
+            return OpenAILLM(OpenAIConfig())
+        elif llm_config["provider"] == "litellm":
+            return LiteLLM(LiteLLMConfig())
 
     @staticmethod
     def get_text_splitter(text_splitter_config):
@@ -98,9 +101,9 @@ class E2EPipelineFactory:
         collection_name = database_config["collection_name"]
         db.initialize_collection(collection_name, embedding_dimension)
 
-        llm = llm or E2EPipelineFactory.get_llm()
+        llm = llm or E2EPipelineFactory.get_llm(llm_config)
         generation_config = generation_config or GenerationConfig(
-            model_name=llm_config["model_name"],
+            model=llm_config["model"],
             temperature=llm_config["temperature"],
             top_p=llm_config["top_p"],
             top_k=llm_config["top_k"],

@@ -103,7 +103,7 @@ class OpenAILLM(LLMProvider):
         """Get the base arguments for the OpenAI API."""
 
         args = {
-            "model": generation_config.model_name,
+            "model": generation_config.model,
             "temperature": generation_config.temperature,
             "top_p": generation_config.top_p,
             "stream": generation_config.do_stream,
