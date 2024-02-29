@@ -14,30 +14,43 @@ type EnvVariable = {
   [key: string]: string;
 };
 
-const envVariables: EnvVariable[] = [
-  {
-    NAME: 'supabase-dev',
-    POSTGRES_USER: 'postgres.fictionaluser',
-    POSTGRES_PASSWORD: 'secretfictionalpass',
-    POSTGRES_HOST: 'cloud-0-fake-region-1.database.fictionalcloud.com',
-    POSTGRES_PORT: '5432',
-    POSTGRES_DBNAME: 'postgres_fictional_db',
-  },
-  {
-    NAME: 'supabase-prod',
-    POSTGRES_USER: 'postgres.acme',
-    POSTGRES_PASSWORD: 'secretfictionalpass',
-    POSTGRES_HOST: 'cloud-0-fake-region-1.database.fictionalcloud.com',
-    POSTGRES_PORT: '5400',
-    POSTGRES_DBNAME: 'postgres_fictional_large_db',
-  },
-  {
-    NAME: 'qdrant',
-    QDRANT_HOST: 'fictional_qdrant_host',
-    QDRANT_PORT: 'fictional_qdrant_port',
-    QDRANT_API_KEY: 'fictional_qdrant_api_key',
-  },
-];
+type SecretsProvider = 'Postgres' | 'Qdrant' | 'other';
+
+const envVariables: Record<SecretsProvider, EnvVariable[]> = {
+  Postgres: [
+    {
+      NAME: 'supabase-dev',
+      POSTGRES_USER: 'postgres.fictionaluser',
+      POSTGRES_PASSWORD: 'secretfictionalpass',
+      POSTGRES_HOST: 'cloud-0-fake-region-1.database.fictionalcloud.com',
+      POSTGRES_PORT: '5432',
+      POSTGRES_DBNAME: 'postgres_fictional_db',
+    },
+    {
+      NAME: 'supabase-prod',
+      POSTGRES_USER: 'postgres.acme',
+      POSTGRES_PASSWORD: 'secretfictionalpass',
+      POSTGRES_HOST: 'cloud-0-fake-region-1.database.fictionalcloud.com',
+      POSTGRES_PORT: '5400',
+      POSTGRES_DBNAME: 'postgres_fictional_large_db',
+    },
+  ],
+  Qdrant: [
+    {
+      NAME: 'qdrant-dev',
+      QDRANT_HOST: 'fictional_qdrant_host',
+      QDRANT_PORT: 'fictional_qdrant_port',
+      QDRANT_API_KEY: 'fictional_qdrant_api_key',
+    },
+  ],
+  other: [
+    {
+      NAME: 'other',
+      OTHER_ENV_VAR_1: 'default_value_1',
+      OTHER_ENV_VAR_2: 'default_value_2',
+    },
+  ],
+};
 
 const SecretsModal: React.FC<SecretsModalProps> = ({
   isOpen,
@@ -46,14 +59,13 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
 }) => {
   // TODO: Use modal instead of passing it as props
   const [secrets, setSecrets] = useState([]);
-  const [selectedSecret, setSelectedSecret] = useState('');
+  const [selectedSecret, setSelectedSecret] = useState<string | null>(null);
   const [secretDetails, setSecretDetails] = useState<EnvVariable>({});
-
-  console.log('Secrets Provider:', provider);
 
   const cancelButtonRef = useRef(null);
 
-  const cleanProviderName = provider.name.toLowerCase().replace(' ', '_');
+  console.log('Secrets Provider:', provider);
+  console.log('Selected Secret:', selectedSecret);
 
   const [tempSecrets, setTempSecrets] = useState<EnvVariable>({});
 
@@ -64,12 +76,18 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
 
   useEffect(() => {
     // Simulate fetching secrets from backend and update state
-    // This is a placeholder for actual fetch call
-    const fetchedSecrets = envVariables; // Replace with actual fetch call
-    setSecrets(fetchedSecrets);
-    if (fetchedSecrets.length > 0) {
-      setSelectedSecret(JSON.stringify(fetchedSecrets[0]));
-      setSecretDetails(fetchedSecrets[0]);
+    const providerName = ['Postgres', 'Qdrant'].includes(provider.name)
+      ? provider.name
+      : 'other';
+    const fetchedSecrets = envVariables[providerName as SecretsProvider]; // Replace with actual fetch call
+    if (fetchedSecrets) {
+      setSecrets(fetchedSecrets);
+
+      // Create a new secret template with the same keys as the first fetched secret
+      const newSecretTemplate = Object.fromEntries(
+        Object.keys(fetchedSecrets[0]).map((key) => [key, ''])
+      );
+      setSecretDetails(newSecretTemplate);
     }
   }, [provider]);
 
@@ -82,27 +100,23 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
       setSecretDetails({});
     } else if (value === 'load') {
       // Fetch secrets from backend and update state
-      fetch(`/api/get_secrets/${cleanProviderName}`)
+      fetch(`/api/secrets/${provider.name}`)
         .then((response) => response.json())
         .then((data) => {
-          setSecrets(data);
-          if (data.length > 0) {
-            setSelectedSecret(data[0]);
-            setSecretDetails(data[0]);
-          }
+          setSecrets(data.secrets);
         })
         .catch((error) => console.error('Error fetching secrets:', error));
     } else if (value === 'new') {
-      // Handle new secrets option if needed
+      const defaultName = `${provider.name.toLowerCase()}-${secrets.length + 1}`;
+      const emptySecret = Object.fromEntries(
+        Object.keys(secretDetails).map((key) => [key, ''])
+      );
       setSecretDetails({
-        POSTGRES_USER: '',
-        POSTGRES_PASSWORD: '',
-        POSTGRES_HOST: '',
-        POSTGRES_PORT: '',
-        POSTGRES_DBNAME: '',
+        ...emptySecret,
+        NAME: defaultName,
       });
     } else {
-      const selected = secrets.find((secret) => secret === value);
+      const selected = secrets.find((secret) => secret.NAME === value);
       if (selected) {
         setSecretDetails(selected);
       }
@@ -139,15 +153,38 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
 
   const deleteSecret = () => {
     // Confirm deletion, send delete request to backend, update UI accordingly
-    setSecretDetails({});
-    setTempSecrets({});
     fetch(`/api/update_secrets/${cleanProviderName}`, {
       method: 'DELETE',
     })
       .then((response) => response.json())
       .then((data) => {
-        console.log('Secret deleted:', data);
         // Show success notification
+        console.log('Secret deleted:', data);
+        // Remove the deleted secret from the secrets array
+        const updatedSecrets = secrets.filter(
+          (secret) => secret.NAME !== selectedSecret
+        );
+        setSecrets(updatedSecrets);
+
+        // Select a new secret or 'new' if no other secrets exist
+        let newSelectedSecret;
+        if (updatedSecrets.length > 0) {
+          newSelectedSecret = updatedSecrets[0].NAME;
+        } else {
+          newSelectedSecret = 'new';
+        }
+        setSelectedSecret(newSelectedSecret);
+
+        // Update secretDetails with the details of the new selected secret or a new secret template
+        const newSecretDetails =
+          updatedSecrets.find((secret) => secret.NAME === newSelectedSecret) ||
+          Object.fromEntries(
+            Object.keys(secretDetails).map((key) => [key, ''])
+          );
+        setSecretDetails(newSecretDetails);
+
+        // Clear the temp secrets
+        setTempSecrets({});
       })
       .catch((error) => console.error('Error deleting secret:', error));
   };
@@ -193,8 +230,14 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
                     value={selectedSecret}
                     onChange={handleSelectChange}
                   >
-                    <option value="">Select Secret</option>
-                    <option value="load">Load Secret</option>
+                    <option value="" disabled={selectedSecret !== null}>
+                      Select Secret
+                    </option>
+                    {secrets.map((secret) => (
+                      <option key={secret.NAME} value={secret.NAME}>
+                        {secret.NAME}
+                      </option>
+                    ))}
                     <option value="new">New Secret</option>
                   </select>
                   <form className="mt-4">
@@ -207,20 +250,22 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
                           name={key}
                           className={styles.textInput}
                           value={value}
-                          onChange={handleInputChange} // Add this line
+                          onChange={handleInputChange}
                         />
                       </div>
                     ))}
                   </form>
                 </div>
                 <div className="mt-4 flex justify-end">
-                  <button
-                    type="button"
-                    className={styles.deleteButton}
-                    onClick={deleteSecret}
-                  >
-                    Delete
-                  </button>
+                  {selectedSecret !== 'new' && (
+                    <button
+                      type="button"
+                      className={styles.deleteButton}
+                      onClick={deleteSecret}
+                    >
+                      Delete
+                    </button>
+                  )}
                   <button
                     type="button"
                     className={styles.saveButton}
