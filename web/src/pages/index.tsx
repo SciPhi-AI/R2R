@@ -25,7 +25,7 @@ const Home: NextPage = () => {
   }, []);
 
   useEffect(() => {
-    router.push('/events');
+    router.push('/retrievals');
   }, [router]);
 
   return (

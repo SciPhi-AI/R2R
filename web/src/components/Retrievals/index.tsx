@@ -30,7 +30,7 @@ const changeMethod = (method: string) => {
   return methodDictionary[method] || method;
 };
 
-export function Event() {
+export function Retrieval() {
   const router = useRouter();
 
   const handleRowClick = (runId: string) => {
@@ -44,7 +44,8 @@ export function Event() {
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = logs.slice(indexOfFirstItem, indexOfLastItem);
+  const filteredLogs = logs.filter((log) => {return log.pipelineRunType !== "embedding"})
+  const currentItems = logs.filter((log) => {return log.pipelineRunType !== "embedding"}).slice(indexOfFirstItem, indexOfLastItem);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -219,7 +220,7 @@ export function Event() {
                     </TableCell>
                     <TableCell>
                       {log.searchResults && log.searchResults.length > 0
-                        ? truncateText(log.searchResults[0]?.text, 30) + ' ...'
+                        ? truncateText(log.searchResults[0]?.text, 30)
                         : ''}
                     </TableCell>
                     <TableCell>
@@ -261,7 +262,7 @@ export function Event() {
           </div>
         </main>
         <Pagination
-          totalItems={logs.length}
+          totalItems={filteredLogs.length}
           itemsPerPage={itemsPerPage}
           currentPage={currentPage}
           onPageChange={paginate}
