@@ -17,7 +17,7 @@ export function SubNavigationMenu() {
 
   const navItems = [
     { path: '/events', width: 63.3, translateX: 0 },
-    { path: '/providers/databases', width: 75, translateX: 68 },
+    // { path: '/providers/databases', width: 75, translateX: 68 },
   ];
 
   // Function to determine active nav item based on current location
@@ -88,7 +88,7 @@ export function SubNavigationMenu() {
             Events
           </a>
         </Link>
-        <Link href="/providers/databases" passHref legacyBehavior>
+        {/* <Link href="/providers/databases" passHref legacyBehavior>
           <a
             onMouseOver={() => handleHoverNavItem(1)}
             className={
@@ -97,7 +97,7 @@ export function SubNavigationMenu() {
           >
             Providers
           </a>
-        </Link>
+        </Link> */}
       </nav>
     </div>
   );
