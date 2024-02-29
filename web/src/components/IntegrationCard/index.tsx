@@ -7,11 +7,10 @@ import { Provider } from '../../types';
 
 interface CardProps {
   provider: Provider;
-  onClick: () => void; // Add this line
+  onClick: () => void;
 }
 
 function IntegrationCard({ provider, onClick }: CardProps) {
-  // Use the onClick prop here
   return (
     <a href="#" className={styles.container} onClick={onClick}>
       <div className={styles.cardHeader}>

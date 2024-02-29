@@ -1,7 +1,6 @@
 // components/Layout.tsx
 import Head from 'next/head';
 import React, { ReactNode } from 'react';
-import { useRouter } from 'next/router';
 
 import styles from '@/styles/Index.module.scss';
 import { MainMenu } from '../MainMenu';
@@ -13,8 +12,6 @@ type Props = {
 };
 
 const Layout: React.FC<Props> = ({ children, localNav }) => {
-  const router = useRouter(); // Use the useRouter hook to access the route
-
   return (
     <div className={styles.container}>
       <Head>
