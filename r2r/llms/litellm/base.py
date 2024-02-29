@@ -8,6 +8,7 @@ from r2r.core import GenerationConfig, LLMConfig, LLMProvider
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class LiteLLMConfig(LLMConfig):
     """Configuration for LiteLLM models."""
@@ -54,9 +55,6 @@ class LiteLLM(LLMProvider):
         response = completion(**args)
         return ChatCompletion(**response.dict())
 
-
-        
-        
     def get_instruct_completion(
         self,
         prompt: str,
@@ -75,10 +73,8 @@ class LiteLLM(LLMProvider):
         args["prompt"] = prompt
 
         response = completion(**args)
-         # messages=messages, **asdict(generation_config), **kwargs)
+        # messages=messages, **asdict(generation_config), **kwargs)
         Completion(**response.dict())
-
-
 
     def _get_base_args(
         self,

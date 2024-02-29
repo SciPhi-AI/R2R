@@ -4,7 +4,7 @@ import dotenv
 
 from r2r.core import GenerationConfig, LoggingDatabaseConnection
 from r2r.core.utils import RecursiveCharacterTextSplitter
-from r2r.llms import LiteLLMConfig, LiteLLM, OpenAIConfig, OpenAILLM
+from r2r.llms import LiteLLM, LiteLLMConfig, OpenAIConfig, OpenAILLM
 from r2r.pipelines import (
     BasicEmbeddingPipeline,
     BasicEvalPipeline,

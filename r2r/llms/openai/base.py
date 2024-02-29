@@ -22,10 +22,6 @@ class OpenAIConfig(LLMConfig):
 class OpenAILLM(LLMProvider):
     """A concrete class for creating OpenAI models."""
 
-    PROMPT_MEASUREMENT_PREFIX = (
-        "<DUMMY PADDING, LOOKUP ACTUAL STRUCTUER LATER>"
-    )
-
     def __init__(
         self,
         config: OpenAIConfig,
@@ -62,13 +58,7 @@ class OpenAILLM(LLMProvider):
         """Get a completion from the OpenAI API based on the provided messages."""
 
         # Create a dictionary with the default arguments
-        args = self._get_base_args(
-            generation_config,
-            OpenAILLM.PROMPT_MEASUREMENT_PREFIX
-            + f"{OpenAILLM.PROMPT_MEASUREMENT_PREFIX}\n\n".join(
-                [m["content"] for m in messages]
-            ),
-        )
+        args = self._get_base_args(generation_config)
 
         args["messages"] = messages
 
@@ -88,7 +78,7 @@ class OpenAILLM(LLMProvider):
     ) -> Completion:
         """Get an instruction completion from the OpenAI API based on the provided prompt."""
 
-        args = self._get_base_args(generation_config, prompt)
+        args = self._get_base_args(generation_config)
 
         args["prompt"] = prompt
 
@@ -98,7 +88,6 @@ class OpenAILLM(LLMProvider):
     def _get_base_args(
         self,
         generation_config: GenerationConfig,
-        prompt=None,
     ) -> dict:
         """Get the base arguments for the OpenAI API."""
 
