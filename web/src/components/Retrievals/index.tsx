@@ -37,7 +37,18 @@ export function Retrieval() {
     router.push(`/event/${runId}`);
   };
 
-  const { logs, loading, error } = useLogs();
+  const { logs, loading, error, refetch } = useLogs();
+
+
+  useEffect(() => {
+    const N = 5;
+    const interval = setInterval(() => {
+      refetch(); // Call the refetch function every N seconds
+    }, N * 1000); // Replace N with the number of seconds
+
+    return () => clearInterval(interval); // Clear interval on component unmount
+  }, [refetch]);
+
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;

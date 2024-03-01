@@ -37,7 +37,17 @@ export function Embeddings() {
     router.push(`/event/${runId}`);
   };
 
-  const { logs, loading, error } = useLogs();
+  const { logs, loading, error, refetch } = useLogs();
+
+
+  useEffect(() => {
+    const N = 5;
+    const interval = setInterval(() => {
+      refetch(); // Call the refetch function every N seconds
+    }, N * 1000); // Replace N with the number of seconds
+
+    return () => clearInterval(interval); // Clear interval on component unmount
+  }, [refetch]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -46,7 +56,6 @@ export function Embeddings() {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const filteredLogs = logs.filter((log) => {return log.pipelineRunType === "embedding"})
   const currentItems = filteredLogs.filter((log) => {return log.pipelineRunType === "embedding"}).slice(indexOfFirstItem, indexOfLastItem);
-  console.log('filteredLogs = ', filteredLogs)
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
