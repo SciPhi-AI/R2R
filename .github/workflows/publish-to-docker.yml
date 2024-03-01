@@ -4,24 +4,46 @@ on:
   release:
     types: [created]
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag name'
+        required: true
+        default: 'latest' # Provide a default value if needed
 
 jobs:
   build-and-push-docker:
     runs-on: ubuntu-latest
     steps:
-    - name: Check out the repo
-      uses: actions/checkout@v2
+      - name: Check out the repo
+        uses: actions/checkout@v2
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v1
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
 
-    - name: Build and Push Docker Image
-      uses: docker/build-push-action@v2
-      with:
-        context: .
-        file: ./Dockerfile
-        push: true
-        tags: emrgntcmplxty/r2r:latest,emrgntcmplxty/r2r:${{ github.event.release.tag_name }}
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: emrgntcmplxty/r2r:latest,emrgntcmplxty/r2r:${{ github.event.inputs.tag_name }}
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+
+      - name: Configure Docker to use Google Cloud Artifact Registry
+        run: gcloud auth configure-docker us-east1-docker.pkg.dev
+
+      - name: Tag and Push to Google Artifact Registry
+        run: |
+          docker tag emrgntcmplxty/r2r:${{ github.event.inputs.tag_name }} us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r:${{ github.event.inputs.tag_name }}
+          docker tag emrgntcmplxty/r2r:latest us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r:latest
+          docker push us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r:${{ github.event.inputs.tag_name }}
+          docker push us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r:latest
