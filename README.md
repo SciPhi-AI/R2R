@@ -37,7 +37,7 @@ export LOCAL_DB_PATH=local.sqlite
 # if using cloud providers (e.g. pgvector, supabase, ...)
 ```
 
-### Run with Docker:
+### Run the server with Docker:
 
 ```bash
 docker pull emrgntcmplxty/r2r:latest
@@ -56,14 +56,14 @@ docker run -d --name r2r_container -p 8000:8000 --env-file .env r2r
 
 The project includes several basic examples that demonstrate application deployment and interaction:
 
-1. [`basic app`](r2r/examples/basic/app.py): This example runs the main application, which includes the ingestion, embedding, and RAG pipelines served via FastAPI.
+1. [`basic app`](r2r/examples/basic/app.py): This example runs the backend server, which includes the ingestion, embedding, and RAG pipelines served via FastAPI.
 
    ```bash
    # If using a venv, replace `uvicorn` with `venv_path/bin/uvicorn`
    uvicorn r2r.examples.basic.app:app
    ```
 
-2. [`basic client`](r2r/examples/basic/run_client.py): This example should be run after starting the main application. It demonstrates uploading text entries as well as a PDF to the local server with the python client. Further, it shows document and user-level vector management with built-in features.
+2. [`basic client`](r2r/examples/basic/run_client.py): This example should be run after starting the server. It demonstrates uploading text entries as well as a PDF to the local server with the python client. Further, it shows document and user-level vector management with built-in features.
 
    ```bash
    python -m r2r.examples.basic.run_client
@@ -92,7 +92,7 @@ The project includes several basic examples that demonstrate application deploym
    ```
 
 
-4. [`web`](web/package.json): A web application which is meant to accompany the framework to provide visual intelligence.
+4. [`web`](web/package.json): A web application which communicates with the backend server to provide visual intelligence.
    ```bash
    cd $workdir/web && pnpm install
    
