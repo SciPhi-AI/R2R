@@ -1,4 +1,4 @@
-import React, { useEffect, useState, lazy, Suspense } from 'react';
+import React, { lazy, Suspense } from 'react';
 
 import { useModal } from '@/hooks/useModal';
 import { IntegrationCard } from '@/components/IntegrationCard';
@@ -22,7 +22,6 @@ import {
 } from '@/components/ui/table';
 
 import styles from '@/styles/Index.module.scss';
-import { Provider } from '../../types';
 
 // Assuming the data array is imported or defined somewhere in this file
 const data = [
@@ -48,9 +47,6 @@ const data = [
 export default function Databases() {
   const { isOpen, toggleModal, secretProvider, handleSecretProvider } =
     useModal();
-  const [integrationProviders, setIntegrationProvider] = useState<Provider[]>(
-    []
-  );
 
   const { allProviders } = useFetchProviders();
 
