@@ -37,6 +37,15 @@ export LOCAL_DB_PATH=local.sqlite
 # if using cloud providers (e.g. pgvector, supabase, ...)
 ```
 
+### Run with Docker:
+
+```bash
+docker pull emrgntcmplxty/r2r:latest
+
+# Place your secrets in `.env` before deploying
+docker run -d --name r2r_container -p 8000:8000 --env-file .env r2r
+```
+
 ## Links
 
 [Join the Discord server](https://discord.gg/p6KqD2kjtB)
