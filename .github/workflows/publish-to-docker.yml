@@ -3,6 +3,7 @@ name: Deploy Docker on Release
 on:
   release:
     types: [created]
+  workflow_dispatch:
 
 jobs:
   build-and-push-docker:
