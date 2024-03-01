@@ -31,19 +31,23 @@ jobs:
           push: true
           tags: emrgntcmplxty/r2r:latest,emrgntcmplxty/r2r:${{ github.event.inputs.tag_name }}
 
-      - name: Authenticate with Google Cloud
-        uses: google-github-actions/setup-gcloud@main
+      - name: Google Auth
+        uses: 'google-github-actions/auth@v2'
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-          export_default_credentials: true
-
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+  
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+  
+      - name: 'Use gcloud CLI'
+        run: 'gcloud info'
+        
       - name: Configure Docker to use Google Cloud Artifact Registry
         run: gcloud auth configure-docker us-east1-docker.pkg.dev
-
+  
       - name: Tag and Push to Google Artifact Registry
         run: |
-          docker tag emrgntcmplxty/r2r:${{ github.event.inputs.tag_name }} us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r:${{ github.event.inputs.tag_name }}
+          docker tag emrgntcmplxty/r2r:${{ github.event.release.tag_name }} us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r:${{ github.event.release.tag_name }}
           docker tag emrgntcmplxty/r2r:latest us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r:latest
-          docker push us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r:${{ github.event.inputs.tag_name }}
+          docker push us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r:${{ github.event.release.tag_name }}
           docker push us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r:latest
