@@ -1,3 +1,3 @@
-from .splitter.text import RecursiveCharacterTextSplitter
+from .splitter.text import RecursiveCharacterTextSplitter, TextSplitter
 
-__all__ = ["RecursiveCharacterTextSplitter"]
+__all__ = ["RecursiveCharacterTextSplitter", "TextSplitter"]
