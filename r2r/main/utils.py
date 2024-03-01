@@ -210,7 +210,6 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
 
     return processed_result
 
-
 def combine_aggregated_logs(
     event_aggregation: dict[str, dict[str, Any]]
 ) -> list[dict[str, Any]]:
@@ -246,7 +245,6 @@ def combine_aggregated_logs(
                     "embedding_chunks"
                 ] + new_event.get("embedding_chunks", "")
 
-            # print('document = ', new_event.get("document"))
             if summary_entry["document"] is not None:
                 new_event.pop("document", None)
             summary_entry.update(new_event)

@@ -5,7 +5,7 @@
   },
   "evals": {
     "provider": "deepeval",
-    "frequency": 0.25
+    "frequency": 1.0
   },
   "embedding": {
     "provider": "openai",
