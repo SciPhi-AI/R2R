@@ -6,7 +6,6 @@ import logging
 import uuid
 from typing import Any, Optional, Tuple, Union
 
-from langchain.text_splitter import TextSplitter
 
 from r2r.core import (
     BasicDocument,
@@ -16,6 +15,7 @@ from r2r.core import (
     VectorEntry,
     log_execution_to_db,
 )
+from r2r.core.utils import TextSplitter
 from r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)
