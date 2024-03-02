@@ -9,12 +9,13 @@ import { ProjectHeader } from '@/components/ProjectHeader';
 import { Separator } from '@/components/ui/separator';
 
 import styles from '../styles/Index.module.scss';
-import 'react-tippy/dist/tippy.css';
+import 'react-tippy/dist/tippy.css'
 
 import { Pipeline } from '../types';
 
 const Home: NextPage = () => {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
+  // console.log('pipelines = ', pipelines);
   const router = useRouter();
 
   useEffect(() => {
