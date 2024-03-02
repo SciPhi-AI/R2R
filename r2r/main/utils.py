@@ -170,8 +170,8 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
                 text=text_match.group(1),
                 metadata=metadata_json,
             )
-        except:
-            logger.error(f"Error processing 'ingress' event: {event}")
+        except Exception as e:
+            logger.error(f"Error {e} processing 'ingress' event: {event}")
     elif method == "search":
         try:
             text_matches = re.findall(r"'text': '([^']*)'", result)

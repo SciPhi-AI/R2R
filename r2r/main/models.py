@@ -53,7 +53,7 @@ class GenerationConfigModel(BaseModel):
     top_p: float = 1.0
     top_k: int = 100
     max_tokens_to_sample: int = 1_024
-    model: Optional[str] = "gpt-3.5-turbo"
+    model: Optional[str] = "gpt-4-turbo"
     stream: bool = False
     functions: Optional[list[dict]] = None
     skip_special_tokens: bool = False
@@ -69,7 +69,6 @@ class RAGQueryModel(BaseModel):
     limit: Optional[int] = 10
     filters: dict = {}
     settings: SettingsModel = SettingsModel()
-    stream: Optional[bool] = False
     generation_config: GenerationConfigModel = GenerationConfigModel()
 
 

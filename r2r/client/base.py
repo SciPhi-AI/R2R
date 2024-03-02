@@ -96,6 +96,7 @@ class R2RClient:
         limit: Optional[int] = 10,
         filters: Optional[Dict[str, Any]] = None,
         settings: Optional[Dict[str, Any]] = None,
+        generation_config: Optional[Dict[str, Any]] = None,
     ):
         url = f"{self.base_url}/rag_completion/"
         json_data = {
@@ -103,6 +104,7 @@ class R2RClient:
             "filters": filters or {},
             "limit": limit,
             "settings": settings or {},
+            "generation_config": generation_config or {},
         }
         response = requests.post(url, json=json_data)
         return response.json()

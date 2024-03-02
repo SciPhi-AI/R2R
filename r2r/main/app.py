@@ -168,20 +168,15 @@ def create_app(
         background_tasks: BackgroundTasks, query: RAGQueryModel
     ):
         try:
-            generation_config = GenerationConfig(
-                model="gpt-3.5-turbo",
-                stream=query.stream,  # , **query.settings.generation_settings.dict()
-            )
-            if not query.stream:
-                # return True
+            stream = query.generation_config.stream
+            if not stream:
                 rag_completion = rag_pipeline.run(
                     query.query,
                     query.filters,
                     query.limit,
-                    generation_config=generation_config,
+                    generation_config=query.generation_config,
                 )
 
-                # TODO - Clean up message extraction
                 completion_text = rag_completion.completion.choices[
                     0
                 ].message.content
@@ -198,9 +193,7 @@ def create_app(
 
             else:
                 return StreamingResponse(
-                    _stream_rag_completion(
-                        query, rag_pipeline, generation_config
-                    ),
+                    _stream_rag_completion(query, rag_pipeline),
                     media_type="text/plain",
                 )
         except Exception as e:
@@ -212,14 +205,14 @@ def create_app(
     async def _stream_rag_completion(
         query: RAGQueryModel,
         rag_pipeline: RAGPipeline,
-        generation_config: GenerationConfig,
     ) -> Generator[str, None, None]:
         for item in rag_pipeline.run(
             query.query,
             query.filters,
             query.limit,
-            generation_config=generation_config,
+            generation_config=query.generation_config,
         ):
+            print('yielding item = ', item)
             yield item
 
     @app.delete("/filtered_deletion/")
