@@ -12,8 +12,8 @@ export default function Home() {
         <Logo></Logo>
         <Search></Search>
         <div className="flex gap-2 flex-wrap justify-center">
-          <PresetQuery query="Who said live long and prosper?"></PresetQuery>
-          <PresetQuery query="What is the Higgs Boson and why should I care?"></PresetQuery>
+          <PresetQuery query="What are the key themes of the meditations?"></PresetQuery>
+          <PresetQuery query="What does it mean to be a stoic?"></PresetQuery>
         </div>
         <Footer></Footer>
       </div>
