@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react';
 import type { AppProps } from 'next/app';
+import { AuthProvider } from '@/context/authProvider';
 import { useTheme } from 'next-themes';
-import { useEffect } from 'react';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
 
@@ -20,7 +21,9 @@ function MyApp({ Component, pageProps }: AppProps) {
       enableSystem
       disableTransitionOnChange
     >
-      <Component {...pageProps} />
+      <AuthProvider>
+        <Component {...pageProps} />
+      </AuthProvider>
     </ThemeProvider>
   );
 }
