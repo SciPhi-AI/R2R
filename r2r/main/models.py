@@ -53,7 +53,7 @@ class GenerationConfigModel(BaseModel):
     top_p: float = 1.0
     top_k: int = 100
     max_tokens_to_sample: int = 1_024
-    model: Optional[str] = "gpt-4-turbo"
+    model: Optional[str] = "gpt-4-0125-preview"
     stream: bool = False
     functions: Optional[list[dict]] = None
     skip_special_tokens: bool = False

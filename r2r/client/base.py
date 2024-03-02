@@ -1,5 +1,7 @@
+import json
 from typing import Any, Dict, List, Optional, Union
 
+import httpx
 import requests
 
 
@@ -106,8 +108,50 @@ class R2RClient:
             "settings": settings or {},
             "generation_config": generation_config or {},
         }
+        stream = generation_config.get("stream", False)
+
+        if stream:
+            raise ValueError(
+                "To stream, use the `stream_rag_completion` method."
+            )
+
         response = requests.post(url, json=json_data)
         return response.json()
+
+    async def stream_rag_completion(
+        self,
+        query: str,
+        limit: Optional[int] = 10,
+        filters: Optional[Dict[str, Any]] = None,
+        settings: Optional[Dict[str, Any]] = None,
+        generation_config: Optional[Dict[str, Any]] = None,
+    ):
+        url = f"{self.base_url}/rag_completion/"
+
+        headers = {
+            "accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        json_data = {
+            "query": query,
+            "filters": filters or {},
+            "limit": limit,
+            "settings": settings or {},
+            "generation_config": generation_config or {},
+        }
+        stream = generation_config.get("stream", False)
+
+        if not stream:
+            raise ValueError(
+                "`stream_rag_completion` method is only for streaming."
+            )
+
+        async with httpx.AsyncClient() as client:
+            async with client.stream(
+                "POST", url, headers=headers, data=json.dumps(json_data)
+            ) as response:
+                async for chunk in response.aiter_bytes():
+                    yield chunk.decode()
 
     def filtered_deletion(self, key: str, value: Union[bool, int, str]):
         url = f"{self.base_url}/filtered_deletion/"

@@ -16,7 +16,6 @@ from fastapi.responses import StreamingResponse
 from r2r.core import (
     EmbeddingPipeline,
     EvalPipeline,
-    GenerationConfig,
     IngestionPipeline,
     LoggingDatabaseConnection,
     RAGPipeline,
@@ -155,10 +154,10 @@ def create_app(
     @app.post("/search/")
     async def search(query: RAGQueryModel):
         try:
-            _, search_results = rag_pipeline.run(
+            rag_completion = rag_pipeline.run(
                 query.query, query.filters, query.limit, search_only=True
             )
-            return search_results
+            return rag_completion.search_results
         except Exception as e:
             logger.error(f":search: [Error](query={query}, error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
@@ -212,7 +211,6 @@ def create_app(
             query.limit,
             generation_config=query.generation_config,
         ):
-            print('yielding item = ', item)
             yield item
 
     @app.delete("/filtered_deletion/")

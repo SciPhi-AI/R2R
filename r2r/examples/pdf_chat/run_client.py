@@ -1,3 +1,4 @@
+import asyncio
 import glob
 import os
 import uuid
@@ -54,6 +55,18 @@ class PDFChat:
             filters={"user_id": self.user_id},
         )
         print("rag_response = ", rag_response)
+
+    def rag_completion_streaming(self, query):
+        async def stream_rag_completion():
+            async for chunk in self.client.stream_rag_completion(
+                query,
+                5,
+                filters={"user_id": self.user_id},
+                generation_config={"stream": True},
+            ):
+                print(chunk, end="", flush=True)
+
+        asyncio.run(stream_rag_completion())
 
     def delete_document(self, document_path: str):
         document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, document_path))
