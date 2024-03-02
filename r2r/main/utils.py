@@ -210,6 +210,7 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
 
     return processed_result
 
+
 def combine_aggregated_logs(
     event_aggregation: dict[str, dict[str, Any]]
 ) -> list[dict[str, Any]]:

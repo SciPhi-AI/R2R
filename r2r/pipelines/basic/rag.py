@@ -5,7 +5,6 @@ import logging
 from typing import Optional
 
 from r2r.core import (
-    GenerationConfig,
     LLMProvider,
     LoggingDatabaseConnection,
     RAGPipeline,
@@ -26,7 +25,6 @@ class BasicRAGPipeline(RAGPipeline):
     def __init__(
         self,
         llm: LLMProvider,
-        generation_config: GenerationConfig,
         db: VectorDBProvider,
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
@@ -41,7 +39,6 @@ class BasicRAGPipeline(RAGPipeline):
 
         super().__init__(
             llm,
-            generation_config,
             logging_provider=logging_provider,
             system_prompt=system_prompt,
             task_prompt=task_prompt,

@@ -35,7 +35,6 @@ class RAGPipeline(Pipeline):
     def __init__(
         self,
         llm: "LLMProvider",
-        generation_config: "GenerationConfig",
         system_prompt: Optional[str] = None,
         task_prompt: Optional[str] = None,
         logging_provider: Optional[LoggingDatabaseConnection] = None,
@@ -43,7 +42,6 @@ class RAGPipeline(Pipeline):
         **kwargs,
     ):
         self.llm = llm
-        self.generation_config = generation_config
         self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
         self.task_prompt = task_prompt or DEFAULT_TASK_PROMPT
         self.logging_provider = logging_provider
@@ -122,55 +120,38 @@ class RAGPipeline(Pipeline):
     def generate_completion(
         self,
         prompt: str,
-        generate_with_chat=True,
-        stream: bool = False,
+        generation_config: GenerationConfig,
     ) -> Completion:
         """
         Generates a completion based on the prompt.
         """
         self._check_pipeline_initialized()
-        print('passing stream = ', stream)
 
-        if generate_with_chat:
-            if stream:
-                print("trying to yield results...")
-                for result in self.llm.get_chat_completion(
-                    [
-                        {
-                            "role": "system",
-                            "content": self.system_prompt,
-                        },
-                        {
-                            "role": "user",
-                            "content": prompt,
-                        },
-                    ],
-                    self.generation_config,
-                    stream=True,
-                ):
-                    yield result
-            else:
-                return self.llm.get_chat_completion(
-                    [
-                        {
-                            "role": "system",
-                            "content": self.system_prompt,
-                        },
-                        {
-                            "role": "user",
-                            "content": prompt,
-                        },
-                    ],
-                    self.generation_config,
-                    stream=False,
-                )
-        else:
-            raise NotImplementedError(
-                "Generation without chat is not implemented yet."
-            )
+        if generation_config.stream:
+            for result in self.llm.get_chat_completion(
+                [
+                    {
+                        "role": "system",
+                        "content": self.system_prompt,
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    },
+                ],
+                generation_config,
+            ):
+                yield result
 
     def run(
-        self, query, filters={}, limit=10, search_only=False, stream=False
+        self,
+        query,
+        filters={},
+        limit=10,
+        search_only=False,
+        generation_config: Optional[GenerationConfig] = None,
+        *args,
+        **kwargs,
     ) -> Union[Generator[str, None, None], RAGCompletion]:
         """
         Runs the completion pipeline.
@@ -183,10 +164,16 @@ class RAGPipeline(Pipeline):
         transformed_query = self.transform_query(query)
         search_results = self.search(transformed_query, filters, limit)
         if search_only:
-            if stream:
-                raise ValueError("Streaming is not supported for search only.")
             return RAGCompletion(search_results, None, None)
-        
+        elif not generation_config:
+            raise ValueError(
+                "GenerationConfig is required for completion generation."
+            )
+        elif search_only and generation_config:
+            raise ValueError(
+                "GenerationConfig is not required for search only."
+            )
+
         print("search_results = ", search_results)
         context = self.construct_context(search_results)
         prompt = self.construct_prompt(
@@ -194,7 +181,7 @@ class RAGPipeline(Pipeline):
         )
         print("are we streaming...?")
 
-        if stream:
+        if generation_config.stream:
             yield "<SEARCH_RESULTS>"
             yield "[" + str(
                 ",".join([str(ele.to_dict()) for ele in search_results])
@@ -207,19 +194,15 @@ class RAGPipeline(Pipeline):
             yield "</CONTEXT>"
             print("attempting to stream response...")
             yield "<RESPONSE>"
-            for chunk in self.generate_completion(
-                prompt, stream=True
-            ):
+            for chunk in self.generate_completion(prompt, generation_config):
                 print("chunk = ", chunk)
                 yield chunk
             yield "<RESPONSE>"
         else:
-            completion = self.generate_completion(
-                prompt, stream=False
-            )
+            completion = self.generate_completion(prompt, generation_config)
             return RAGCompletion(search_results, context, completion)
 
-    def _get_extra_args(self,  *args, **kwargs):
+    def _get_extra_args(self, *args, **kwargs):
         """
         Retrieves any extra arguments needed for the pipeline's operations.
         """

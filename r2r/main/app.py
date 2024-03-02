@@ -16,6 +16,7 @@ from fastapi.responses import StreamingResponse
 from r2r.core import (
     EmbeddingPipeline,
     EvalPipeline,
+    GenerationConfig,
     IngestionPipeline,
     LoggingDatabaseConnection,
     RAGPipeline,
@@ -167,11 +168,19 @@ def create_app(
         background_tasks: BackgroundTasks, query: RAGQueryModel
     ):
         # try:
+        generation_config = GenerationConfig(
+            model="gpt-3.5-turbo",
+            stream=query.stream,  # , **query.settings.generation_settings.dict()
+        )
         print("query = ", query)
         if query.stream:
+
             async def stream_rag_completion() -> Generator[str, None, None]:
                 for item in rag_pipeline.run(
-                    query.query, query.filters, query.limit, stream=True
+                    query.query,
+                    query.filters,
+                    query.limit,
+                    generation_config=generation_config,
                 ):
                     yield item
 
@@ -179,9 +188,12 @@ def create_app(
                 stream_rag_completion(), media_type="text/plain"
             )
         else:
-            print('running stream false...')
+            print("running stream false...")
             rag_completion = rag_pipeline.run(
-                query.query, query.filters, query.limit, stream=False
+                query.query,
+                query.filters,
+                query.limit,
+                generation_config=generation_config,
             )
             print("rag_completion = ", rag_completion)
             # TODO - Clean up message extraction

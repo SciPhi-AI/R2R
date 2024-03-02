@@ -194,7 +194,7 @@ def log_execution_to_db(func):
                     "INFO",
                 )
                 return result
-            
+
         except Exception as e:
             result = str(e)
             log_level = "ERROR"

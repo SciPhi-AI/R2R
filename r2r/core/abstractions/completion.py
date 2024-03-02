@@ -7,7 +7,9 @@ Completion = Union[ChatCompletion, OpenAICompletion]
 
 
 class RAGCompletion:
-    def __init__(self, search_results:list, context: str, completion: Completion):
+    def __init__(
+        self, search_results: list, context: str, completion: Completion
+    ):
         self.search_results = search_results
         self.context = context
         self.completion = completion

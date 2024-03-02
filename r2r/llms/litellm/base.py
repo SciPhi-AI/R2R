@@ -57,7 +57,7 @@ class LiteLLM(LLMProvider):
             args["functions"] = generation_config.functions
 
         args = {**args, **kwargs}
-        print('args = ', args)
+        print("args = ", args)
         print("starting streaming....")
 
         response = completion(**args)
