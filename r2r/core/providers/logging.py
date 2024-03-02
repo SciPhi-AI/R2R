@@ -188,7 +188,7 @@ def log_execution_to_db(func):
                     arg_pipeline_run_id,
                     arg_pipeline_run_type,
                     func.__name__,
-                    result,
+                    str(result),
                     "INFO",
                 )
                 return result

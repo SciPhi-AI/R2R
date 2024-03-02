@@ -6,7 +6,7 @@ import uuid
 from abc import abstractmethod
 from typing import Any, Generator, Optional, Union
 
-from ..abstractions.completion import Completion, RAGCompletion
+from ..abstractions.completion import RAGCompletion
 from ..providers.llm import GenerationConfig, LLMProvider
 from ..providers.logging import LoggingDatabaseConnection, log_execution_to_db
 from .pipeline import Pipeline
@@ -123,7 +123,7 @@ class RAGPipeline(Pipeline):
         self,
         prompt: str,
         generation_config: GenerationConfig,
-    ) -> Completion:
+    ) -> Union[Generator[str, None, None], RAGCompletion]:
         """
         Generates a completion based on the prompt.
         """

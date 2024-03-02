@@ -167,67 +167,60 @@ def create_app(
     async def rag_completion(
         background_tasks: BackgroundTasks, query: RAGQueryModel
     ):
-        # try:
-        generation_config = GenerationConfig(
-            model="gpt-3.5-turbo",
-            stream=query.stream,  # , **query.settings.generation_settings.dict()
-        )
-        if not query.stream:
-            # return True
-            rag_completion = rag_pipeline.run(
-                query.query,
-                query.filters,
-                query.limit,
-                generation_config=generation_config,
+        try:
+            generation_config = GenerationConfig(
+                model="gpt-3.5-turbo",
+                stream=query.stream,  # , **query.settings.generation_settings.dict()
             )
-
-            # TODO - Clean up message extraction
-            completion_text = rag_completion.completion.choices[
-                0
-            ].message.content
-            rag_run_id = rag_pipeline.pipeline_run_info["run_id"]
-            background_tasks.add_task(
-                eval_pipeline.run,
-                query.query,
-                rag_completion.context,
-                completion_text,
-                rag_run_id,
-                **query.settings.rag_settings.dict(),
-            )
-            return rag_completion
-
-        else:
-
-            async def stream_rag_completion() -> Generator[str, None, None]:
-                for item in rag_pipeline.run(
+            if not query.stream:
+                # return True
+                rag_completion = rag_pipeline.run(
                     query.query,
                     query.filters,
                     query.limit,
                     generation_config=generation_config,
-                ):
-                    yield item
+                )
 
-            return StreamingResponse(
-                stream_rag_completion(), media_type="text/plain"
+                # TODO - Clean up message extraction
+                completion_text = rag_completion.completion.choices[
+                    0
+                ].message.content
+                rag_run_id = rag_pipeline.pipeline_run_info["run_id"]
+                background_tasks.add_task(
+                    eval_pipeline.run,
+                    query.query,
+                    rag_completion.context,
+                    completion_text,
+                    rag_run_id,
+                    **query.settings.rag_settings.dict(),
+                )
+                return rag_completion
+
+            else:
+                return StreamingResponse(
+                    _stream_rag_completion(
+                        query, rag_pipeline, generation_config
+                    ),
+                    media_type="text/plain",
+                )
+        except Exception as e:
+            logger.error(
+                f":rag_completion: [Error](query={query}, error={str(e)})"
             )
-            # async def stream_rag_completion() -> Generator[str, None, None]:
-            #     for item in rag_pipeline.run(
-            #         query.query,
-            #         query.filters,
-            #         query.limit,
-            #         generation_config=generation_config,
-            #     ):
-            #         yield item
+            raise HTTPException(status_code=500, detail=str(e))
 
-            # return StreamingResponse(
-            #     stream_rag_completion(), media_type="text/plain"
-            # )
-
-    # except Exception as e:
-    #     logger.error(
-    #         f":rag_completion: [Error](query={query}, error={str(e)})"
-    #     )
-    #     raise HTTPException(status_code=500, detail=str(e))
+    async def _stream_rag_completion(
+        query: RAGQueryModel,
+        rag_pipeline: RAGPipeline,
+        generation_config: GenerationConfig,
+    ) -> Generator[str, None, None]:
+        for item in rag_pipeline.run(
+            query.query,
+            query.filters,
+            query.limit,
+            generation_config=generation_config,
+        ):
+            yield item
 
     @app.delete("/filtered_deletion/")
     async def filtered_deletion(key: str, value: Union[bool, int, str]):

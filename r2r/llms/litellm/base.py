@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Generator
+from typing import Any, Generator, Union
 
 from openai.types import Completion
 from openai.types.chat import ChatCompletion
@@ -39,7 +39,7 @@ class LiteLLM(LLMProvider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> ChatCompletion:
+    ) -> Union[Generator[str, None, None], ChatCompletion]:
         """Get a completion from the LiteLLM based on the provided messages and generation config."""
         try:
             from litellm import completion
@@ -47,7 +47,6 @@ class LiteLLM(LLMProvider):
             raise ImportError(
                 "Error, `litellm` is required to run a LiteLLM. Please install it using `pip install litellm`."
             )
-        print("in get_chat_completion")
         # Create a dictionary with the default arguments
         args = self._get_base_args(generation_config)
 
@@ -66,7 +65,9 @@ class LiteLLM(LLMProvider):
             return self._get_chat_completion(response)
 
     # TODO - Find the correct return type for this
-    def _get_chat_completion(self, response) -> Generator[str, None, None]:
+    def _get_chat_completion(
+        self, response: Any
+    ) -> Generator[str, None, None]:
         for part in response:
             yield part
 
@@ -75,7 +76,7 @@ class LiteLLM(LLMProvider):
         prompt: str,
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> Completion:
+    ) -> Union[Generator[str, None, None], Completion]:
         """Get an instruction completion from the LiteLLM based on the provided prompt and generation config."""
         try:
             from litellm import completion
@@ -94,7 +95,9 @@ class LiteLLM(LLMProvider):
             return self._get_instruct_completion(response)
 
     # TODO - Find the correct return type for this
-    def _get_instruct_completion(self, response) -> Generator[str, None, None]:
+    def _get_instruct_completion(
+        self, response: Any
+    ) -> Generator[str, None, None]:
         for part in response:
             yield part
 
