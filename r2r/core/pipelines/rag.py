@@ -126,23 +126,24 @@ class RAGPipeline(Pipeline):
         Generates a completion based on the prompt.
         """
         self._check_pipeline_initialized()
-
-        if generation_config.stream:
-            for result in self.llm.get_chat_completion(
-                [
-                    {
-                        "role": "system",
-                        "content": self.system_prompt,
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    },
-                ],
-                generation_config,
-            ):
-                yield result
-
+        messages =  [
+                {
+                    "role": "system",
+                    "content": self.system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ]
+        if not generation_config.stream:
+            return self.llm.get_chat_completion(messages, generation_config)
+        
+        def stream_rag_completion() -> Generator[str, None, None]:
+            for result in self.llm.get_chat_completion(messages, generation_config):
+                yield result.choices[0].delta.content or ""
+        return stream_rag_completion()
+    
     def run(
         self,
         query,
@@ -181,7 +182,11 @@ class RAGPipeline(Pipeline):
         )
         print("are we streaming...?")
 
-        if generation_config.stream:
+        if not generation_config.stream:
+            completion = self.generate_completion(prompt, generation_config)
+            return RAGCompletion(search_results, context, completion)
+        
+        def stream_rag_completion() -> Generator[str, None, None]:
             yield "<SEARCH_RESULTS>"
             yield "[" + str(
                 ",".join([str(ele.to_dict()) for ele in search_results])
@@ -198,9 +203,7 @@ class RAGPipeline(Pipeline):
                 print("chunk = ", chunk)
                 yield chunk
             yield "<RESPONSE>"
-        else:
-            completion = self.generate_completion(prompt, generation_config)
-            return RAGCompletion(search_results, context, completion)
+        return stream_rag_completion()
 
     def _get_extra_args(self, *args, **kwargs):
         """

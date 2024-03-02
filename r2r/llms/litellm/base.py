@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from openai.types import Completion
 from openai.types.chat import ChatCompletion
-
+from typing import Generator
 from r2r.core import GenerationConfig, LLMConfig, LLMProvider
 
 logger = logging.getLogger(__name__)
@@ -57,18 +57,16 @@ class LiteLLM(LLMProvider):
             args["functions"] = generation_config.functions
 
         args = {**args, **kwargs}
-        print("args = ", args)
-        print("starting streaming....")
 
         response = completion(**args)
-        for part in response:
-            print("streaming....")
-            print(part.choices[0].delta.content or "")
-            yield part.choices[0].delta.content or ""
+        if not generation_config.stream:
+            return ChatCompletion(**response.dict())
+        else:
+            def stream_rag_completion() -> Generator[str, None, None]:
+                for part in response:
+                    yield part
+            return stream_rag_completion()
 
-        # return completion(**args) #ChatCompletion(**completion(**args).dict())
-        # response = completion(**args)
-        # return ChatCompletion(**response.dict())
 
     def get_instruct_completion(
         self,
@@ -88,7 +86,14 @@ class LiteLLM(LLMProvider):
         args["prompt"] = prompt
 
         response = completion(**args)
-        Completion(**response.dict())
+        if not generation_config.stream:
+            return Completion(**response.dict())
+        else:
+            def stream_rag_completion() -> Generator[str, None, None]:
+                for part in response:
+                    yield part
+            return stream_rag_completion()
+
 
     def _get_base_args(
         self,

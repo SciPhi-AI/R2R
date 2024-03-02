@@ -173,21 +173,8 @@ def create_app(
             stream=query.stream,  # , **query.settings.generation_settings.dict()
         )
         print("query = ", query)
-        if query.stream:
-
-            async def stream_rag_completion() -> Generator[str, None, None]:
-                for item in rag_pipeline.run(
-                    query.query,
-                    query.filters,
-                    query.limit,
-                    generation_config=generation_config,
-                ):
-                    yield item
-
-            return StreamingResponse(
-                stream_rag_completion(), media_type="text/plain"
-            )
-        else:
+        if not query.stream:
+            # return True
             print("running stream false...")
             rag_completion = rag_pipeline.run(
                 query.query,
@@ -210,6 +197,32 @@ def create_app(
                 **query.settings.rag_settings.dict(),
             )
             return rag_completion
+
+        else:
+            async def stream_rag_completion() -> Generator[str, None, None]:
+                for item in rag_pipeline.run(
+                    query.query,
+                    query.filters,
+                    query.limit,
+                    generation_config=generation_config,
+                ):
+                    yield item
+
+            return StreamingResponse(
+                stream_rag_completion(), media_type="text/plain"
+            )
+            # async def stream_rag_completion() -> Generator[str, None, None]:
+            #     for item in rag_pipeline.run(
+            #         query.query,
+            #         query.filters,
+            #         query.limit,
+            #         generation_config=generation_config,
+            #     ):
+            #         yield item
+
+            # return StreamingResponse(
+            #     stream_rag_completion(), media_type="text/plain"
+            # )
 
     # except Exception as e:
     #     logger.error(
