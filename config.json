@@ -18,12 +18,7 @@
     "chunk_overlap": 20
   },
   "language_model": {
-    "provider": "litellm",
-    "model": "gpt-4-0125-preview",
-    "temperature": 0.1,
-    "top_p": 0.9,
-    "top_k": 128,
-    "max_tokens_to_sample": 1024
+    "provider": "litellm"
   },
   "logging": {
     "provider": "local",

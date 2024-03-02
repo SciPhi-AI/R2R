@@ -135,7 +135,6 @@ class LocalVectorDB(VectorDBProvider):
                 results.append(VectorSearchResult(id, score, metadata))
         results.sort(key=lambda x: x.score, reverse=True)
         conn.close()
-        print("results = ", results)
         return results[:limit]
 
     def filtered_deletion(

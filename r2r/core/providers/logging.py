@@ -159,12 +159,10 @@ def log_execution_to_db(func):
         try:
             # Execute the function and get the result
             result = func(*args, **kwargs)
-            print("result = ", result)
             if isinstance(result, types.GeneratorType):
                 # If the result is a generator, return a new generator
                 def generator_wrapper():
                     log_level = "INFO"
-
                     results = []
                     try:
                         for res in result:

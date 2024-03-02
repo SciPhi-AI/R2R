@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Generator
+from typing import Any, Generator
 
 from openai.types import Completion
 from openai.types.chat import ChatCompletion
@@ -63,12 +63,8 @@ class LiteLLM(LLMProvider):
         if not generation_config.stream:
             return ChatCompletion(**response.dict())
         else:
-
-            def stream_rag_completion() -> Generator[str, None, None]:
-                for part in response:
-                    yield part
-
-            return stream_rag_completion()
+            for part in response:
+                yield part
 
     def get_instruct_completion(
         self,
@@ -91,12 +87,8 @@ class LiteLLM(LLMProvider):
         if not generation_config.stream:
             return Completion(**response.dict())
         else:
-
-            def stream_rag_completion() -> Generator[str, None, None]:
-                for part in response:
-                    yield part
-
-            return stream_rag_completion()
+            for part in response:
+                yield part
 
     def _get_base_args(
         self,
