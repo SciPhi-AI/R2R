@@ -29,6 +29,8 @@ export default async function handler(
 
     if (!error) {
       next = "/";
+    } else {
+      console.error("Error exchanging code for session", error);
     }
   }
   res.redirect(next);
