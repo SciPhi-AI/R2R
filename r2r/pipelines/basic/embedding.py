@@ -6,7 +6,6 @@ import logging
 import uuid
 from typing import Any, Optional, Tuple, Union
 
-
 from r2r.core import (
     BasicDocument,
     EmbeddingPipeline,

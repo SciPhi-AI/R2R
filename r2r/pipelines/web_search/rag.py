@@ -5,7 +5,6 @@ import logging
 from typing import Optional
 
 from r2r.core import (
-    GenerationConfig,
     LLMProvider,
     LoggingDatabaseConnection,
     VectorDBProvider,
@@ -23,7 +22,6 @@ class WebSearchRAGPipeline(BasicRAGPipeline):
     def __init__(
         self,
         llm: LLMProvider,
-        generation_config: GenerationConfig,
         db: VectorDBProvider,
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
@@ -34,7 +32,6 @@ class WebSearchRAGPipeline(BasicRAGPipeline):
         logger.debug(f"Initalizing `WebSearchRAGPipeline`.")
         super().__init__(
             llm=llm,
-            generation_config=generation_config,
             logging_provider=logging_provider,
             db=db,
             embedding_model=embedding_model,

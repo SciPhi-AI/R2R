@@ -1,5 +1,6 @@
 import functools
 import os
+import types
 from typing import Optional
 
 
@@ -116,6 +117,33 @@ class LoggingDatabaseConnection:
 def log_execution_to_db(func):
     """A decorator to log the execution of a method to the database."""
 
+    def log_to_db(
+        inst_provider,
+        arg_pipeline_run_id,
+        arg_pipeline_run_type,
+        func_name,
+        result,
+        log_level,
+    ):
+        """Helper function to log the execution to the database."""
+        timestamp_func = (
+            "NOW()"
+            if inst_provider.provider == "postgres"
+            else "datetime('now')"
+        )
+        with inst_provider as conn:
+            conn.execute(
+                f"INSERT INTO {inst_provider.log_table_name} (timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level) VALUES ({timestamp_func}, ?, ?, ?, ?, ?)",
+                (
+                    str(arg_pipeline_run_id),
+                    arg_pipeline_run_type,
+                    func_name,
+                    str(result),
+                    log_level,
+                ),
+            )
+            conn.commit()
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         # Assuming args[0] is the instance of the class the method belongs to
@@ -127,40 +155,55 @@ def log_execution_to_db(func):
         # Adjusted to use 'run_id' and 'type'
         arg_pipeline_run_id = instance.pipeline_run_info["run_id"]
         arg_pipeline_run_type = instance.pipeline_run_info["type"]
-        arg_log_table_name = inst_provider.log_table_name
 
         try:
             # Execute the function and get the result
             result = func(*args, **kwargs)
-            log_level = "INFO"
-        except Exception as e:
-            result = str(e)
-            log_level = "ERROR"
+            if isinstance(result, types.GeneratorType):
+                # If the result is a generator, return a new generator
+                def generator_wrapper():
+                    log_level = "INFO"
+                    results = []
+                    try:
+                        for res in result:
+                            results.append(res)
+                            yield res
+                    except Exception as e:
+                        results.append(str(e))
+                        log_level = "ERROR"
+                    finally:
+                        log_to_db(
+                            inst_provider,
+                            arg_pipeline_run_id,
+                            arg_pipeline_run_type,
+                            func.__name__,
+                            "".join(results),
+                            log_level,
+                        )
 
-        # Log the execution to the database
-        timestamp_func = (
-            "NOW()"
-            if inst_provider.provider == "postgres"
-            else "datetime('now')"
-        )
-        with inst_provider as conn:
-            conn.execute(
-                f"INSERT INTO {arg_log_table_name} (timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level) VALUES ({timestamp_func}, ?, ?, ?, ?, ?)",
-                (
-                    str(arg_pipeline_run_id),
+                return generator_wrapper()
+            else:
+                log_to_db(
+                    inst_provider,
+                    arg_pipeline_run_id,
                     arg_pipeline_run_type,
                     func.__name__,
                     str(result),
-                    log_level,
-                ),
+                    "INFO",
+                )
+                return result
+
+        except Exception as e:
+            result = str(e)
+            log_level = "ERROR"
+            log_to_db(
+                inst_provider,
+                arg_pipeline_run_id,
+                arg_pipeline_run_type,
+                func.__name__,
+                result,
+                log_level,
             )
-
-            # Commit the transaction
-            conn.commit()
-
-        if log_level == "ERROR":
             raise Exception(result)
-
-        return result
 
     return wrapper

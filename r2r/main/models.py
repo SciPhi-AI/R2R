@@ -1,5 +1,4 @@
 from datetime import datetime
-from multiprocessing import Process
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -49,11 +48,28 @@ class AddEntriesRequest(BaseModel):
     settings: SettingsModel = SettingsModel()
 
 
+class GenerationConfigModel(BaseModel):
+    temperature: float = 0.1
+    top_p: float = 1.0
+    top_k: int = 100
+    max_tokens_to_sample: int = 1_024
+    model: Optional[str] = "gpt-4-0125-preview"
+    stream: bool = False
+    functions: Optional[list[dict]] = None
+    skip_special_tokens: bool = False
+    stop_token: Optional[str] = None
+    num_beams: int = 1
+    do_sample: bool = True
+    add_generation_kwargs: dict = {}
+    generate_with_chat: bool = False
+
+
 class RAGQueryModel(BaseModel):
     query: str
     limit: Optional[int] = 10
     filters: dict = {}
     settings: SettingsModel = SettingsModel()
+    generation_config: GenerationConfigModel = GenerationConfigModel()
 
 
 def to_camel(string: str) -> str:

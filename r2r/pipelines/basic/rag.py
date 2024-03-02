@@ -5,7 +5,6 @@ import logging
 from typing import Optional
 
 from r2r.core import (
-    GenerationConfig,
     LLMProvider,
     LoggingDatabaseConnection,
     RAGPipeline,
@@ -26,7 +25,6 @@ class BasicRAGPipeline(RAGPipeline):
     def __init__(
         self,
         llm: LLMProvider,
-        generation_config: GenerationConfig,
         db: VectorDBProvider,
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
@@ -41,7 +39,6 @@ class BasicRAGPipeline(RAGPipeline):
 
         super().__init__(
             llm,
-            generation_config,
             logging_provider=logging_provider,
             system_prompt=system_prompt,
             task_prompt=task_prompt,
@@ -99,9 +96,3 @@ class BasicRAGPipeline(RAGPipeline):
         Formats the reranked results into a human-readable string.
         """
         return "\n\n".join([ele.metadata["text"] for ele in results])
-
-    def _get_extra_args(self, *args, **kwargs):
-        """
-        Retrieves any extra arguments needed for the pipeline's operations.
-        """
-        return {}

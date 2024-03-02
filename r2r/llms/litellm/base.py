@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from typing import Any, Generator, Union
 
 from openai.types import Completion
 from openai.types.chat import ChatCompletion
@@ -38,7 +39,7 @@ class LiteLLM(LLMProvider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> ChatCompletion:
+    ) -> Union[Generator[str, None, None], ChatCompletion]:
         """Get a completion from the LiteLLM based on the provided messages and generation config."""
         try:
             from litellm import completion
@@ -56,15 +57,26 @@ class LiteLLM(LLMProvider):
             args["functions"] = generation_config.functions
 
         args = {**args, **kwargs}
+
         response = completion(**args)
-        return ChatCompletion(**response.dict())
+        if not generation_config.stream:
+            return ChatCompletion(**response.dict())
+        else:
+            return self._get_chat_completion(response)
+
+    # TODO - Find the correct return type for this
+    def _get_chat_completion(
+        self, response: Any
+    ) -> Generator[str, None, None]:
+        for part in response:
+            yield part
 
     def get_instruct_completion(
         self,
         prompt: str,
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> Completion:
+    ) -> Union[Generator[str, None, None], Completion]:
         """Get an instruction completion from the LiteLLM based on the provided prompt and generation config."""
         try:
             from litellm import completion
@@ -77,8 +89,17 @@ class LiteLLM(LLMProvider):
         args["prompt"] = prompt
 
         response = completion(**args)
-        # messages=messages, **asdict(generation_config), **kwargs)
-        Completion(**response.dict())
+        if not generation_config.stream:
+            return Completion(**response.dict())
+        else:
+            return self._get_instruct_completion(response)
+
+    # TODO - Find the correct return type for this
+    def _get_instruct_completion(
+        self, response: Any
+    ) -> Generator[str, None, None]:
+        for part in response:
+            yield part
 
     def _get_base_args(
         self,
@@ -91,7 +112,7 @@ class LiteLLM(LLMProvider):
             "model": generation_config.model,
             "temperature": generation_config.temperature,
             "top_p": generation_config.top_p,
-            "stream": generation_config.do_stream,
+            "stream": generation_config.stream,
             # TODO - We need to cap this to avoid potential errors when exceed max allowable context
             "max_tokens": generation_config.max_tokens_to_sample,
         }

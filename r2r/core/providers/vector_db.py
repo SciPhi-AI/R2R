@@ -54,6 +54,14 @@ class VectorSearchResult:
         """Return an unambiguous string representation of the VectorSearchResult for debugging."""
         return f"VectorSearchResult(id={self.id}, score={self.score}, metadata={self.metadata})"
 
+    def to_dict(self) -> dict:
+        """Return a dictionary representation of the VectorSearchResult."""
+        return {
+            "id": self.id,
+            "score": self.score,
+            "metadata": self.metadata,
+        }
+
 
 class VectorDBProvider(ABC):
     supported_providers = ["local", "pgvector", "qdrant"]

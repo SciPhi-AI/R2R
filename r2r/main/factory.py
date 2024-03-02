@@ -2,7 +2,7 @@ import logging
 
 import dotenv
 
-from r2r.core import GenerationConfig, LoggingDatabaseConnection
+from r2r.core import LoggingDatabaseConnection
 from r2r.core.utils import RecursiveCharacterTextSplitter
 from r2r.llms import LiteLLM, LiteLLMConfig, OpenAIConfig, OpenAILLM
 from r2r.pipelines import (
@@ -102,14 +102,6 @@ class E2EPipelineFactory:
         db.initialize_collection(collection_name, embedding_dimension)
 
         llm = llm or E2EPipelineFactory.get_llm(llm_config)
-        generation_config = generation_config or GenerationConfig(
-            model=llm_config["model"],
-            temperature=llm_config["temperature"],
-            top_p=llm_config["top_p"],
-            top_k=llm_config["top_k"],
-            max_tokens_to_sample=llm_config["max_tokens_to_sample"],
-            do_stream=llm_config["do_stream"],
-        )
 
         logging_provider = LoggingDatabaseConnection(
             logging_config["provider"], logging_config["database"]
@@ -117,7 +109,6 @@ class E2EPipelineFactory:
 
         cmpl_pipeline = rag_pipeline_impl(
             llm,
-            generation_config,
             db=db,
             embedding_model=embedding_model,
             embeddings_provider=embeddings_provider,

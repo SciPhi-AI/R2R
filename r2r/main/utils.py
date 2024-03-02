@@ -170,8 +170,8 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
                 text=text_match.group(1),
                 metadata=metadata_json,
             )
-        except:
-            logger.error(f"Error processing 'ingress' event: {event}")
+        except Exception as e:
+            logger.error(f"Error {e} processing 'ingress' event: {event}")
     elif method == "search":
         try:
             text_matches = re.findall(r"'text': '([^']*)'", result)
@@ -186,9 +186,14 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
 
     elif method == "generate_completion":
         try:
-            content_matches = re.findall(r"content='([^']*)'", result)
-            processed_result["completion_result"] = ", ".join(content_matches)
             processed_result["method"] = "Generate Completion"
+            if "content=" in result:
+                content_matches = re.findall(r'content="([^"]*)"', result)
+                processed_result["completion_result"] = ", ".join(
+                    content_matches
+                )
+            else:
+                processed_result["completion_result"] = result
         except Exception as e:
             logger.error(
                 f"Error {e} processing 'generate_completion' event: {event}"
@@ -209,6 +214,7 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
             )
 
     return processed_result
+
 
 def combine_aggregated_logs(
     event_aggregation: dict[str, dict[str, Any]]
