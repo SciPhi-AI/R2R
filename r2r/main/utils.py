@@ -5,6 +5,10 @@ import re
 from logging.handlers import RotatingFileHandler
 from typing import Any, Union
 
+from fastapi.middleware.cors import CORSMiddleware
+
+from r2r.core import BasicDocument
+
 logger = logging.getLogger(__name__)
 
 
@@ -43,6 +47,23 @@ def load_config(config_path=None):
         llm_config,
         text_splitter_config,
         evals_config,
+    )
+
+
+def apply_cors(app):
+    # CORS setup
+    origins = [
+        "*",  # TODO - Change this to the actual frontend URL
+        "http://localhost:3000",
+        "http://localhost:8000",
+    ]
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,  # Allows specified origins
+        allow_credentials=True,
+        allow_methods=["*"],  # Allows all methods
+        allow_headers=["*"],  # Allows all headers
     )
 
 
@@ -124,30 +145,70 @@ def update_aggregation_entries(
     event_aggregation[pipeline_run_id]["events"].append(event)  # type: ignore
 
 
-def process_event(event: dict[str, Any]) -> dict[str, Any]:
+def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
     method = event["method"]
     result = event.get("result", "N/A")
     processed_result = {}
 
-    if method == "ingress":
-        processed_result["search_query"] = result
-    elif method == "search":
-        text_matches = re.findall(r"'text': '([^']*)'", result)
-        scores = re.findall(r"score=(\d+\.\d+)", result)
-        processed_result["search_results"] = [
-            {"text": text, "score": score}
-            for text, score in zip(text_matches, scores)
-        ]
-        processed_result["method"] = "Search"
-    elif method == "generate_completion":
-        content_matches = re.findall(r"content='([^']*)'", result)
-        processed_result["completion_result"] = ", ".join(content_matches)
-        processed_result["method"] = "Generate Completion"
-    elif method == "evaluate":
-        result = result.replace("'", '"')  # Convert to valid JSON string
-        processed_result["eval_results"] = json.loads(result)
-    return processed_result
+    if method == "ingress" and (
+        pipeline_type == "rag" or pipeline_type == "search"
+    ):
+        try:
+            processed_result["search_query"] = result
+        except Exception as e:
+            logger.error(f"Error {e} processing 'ingress' event: {event}")
+    elif method == "ingress" and pipeline_type == "embedding":
+        try:
+            id_match = re.search(r"'id': '([^']+)'", result)
+            text_match = re.search(r"'text': '([^']+)'", result)
+            metadata_match = re.search(r"'metadata': (\{[^}]+\})", result)
+            metadata = metadata_match.group(1).replace("'", '"')
+            metadata_json = json.loads(metadata)
 
+            processed_result["document"] = BasicDocument(
+                id=id_match.group(1),
+                text=text_match.group(1),
+                metadata=metadata_json,
+            )
+        except:
+            logger.error(f"Error processing 'ingress' event: {event}")
+    elif method == "search":
+        try:
+            text_matches = re.findall(r"'text': '([^']*)'", result)
+            scores = re.findall(r"score=(\d+\.\d+)", result)
+            processed_result["search_results"] = [
+                {"text": text, "score": score}
+                for text, score in zip(text_matches, scores)
+            ]
+            processed_result["method"] = "Search"
+        except Exception as e:
+            logger.error(f"Error {e} processing 'ingress' event: {event}")
+
+    elif method == "generate_completion":
+        try:
+            content_matches = re.findall(r"content='([^']*)'", result)
+            processed_result["completion_result"] = ", ".join(content_matches)
+            processed_result["method"] = "Generate Completion"
+        except Exception as e:
+            logger.error(
+                f"Error {e} processing 'generate_completion' event: {event}"
+            )
+    elif method == "evaluate":
+        try:
+            result = result.replace("'", '"')  # Convert to valid JSON string
+            processed_result["eval_results"] = json.loads(result)
+        except Exception as e:
+            logger.error(f"Error {e} decoding JSON: {e}")
+    elif method == "transform_chunks":
+        try:
+            processed_result["method"] = "Embedding"
+            processed_result["embedding_chunks"] = result
+        except Exception as e:
+            logger.error(
+                f"Error {e} processing 'transform_chunks' event: {event}"
+            )
+
+    return processed_result
 
 def combine_aggregated_logs(
     event_aggregation: dict[str, dict[str, Any]]
@@ -169,15 +230,24 @@ def combine_aggregated_logs(
             "search_query": "",
             "search_results": [],
             "eval_results": None,
-            # "search_score": "",
-            "completion_result": "N/A",  # Default to "N/A" if not applicable
+            "embedding_chunks": None,
+            "document": None,
+            "completion_result": "N/A",
             "outcome": "success"
             if aggregation["events"][-1].get("log_level") == "INFO"
             else "fail",
         }
 
         for event in aggregation["events"]:
-            summary_entry.update(process_event(event))
+            new_event = process_event(event, pipeline_type)
+            if summary_entry["embedding_chunks"]:
+                new_event["embedding_chunks"] = summary_entry[
+                    "embedding_chunks"
+                ] + new_event.get("embedding_chunks", "")
+
+            if summary_entry["document"] is not None:
+                new_event.pop("document", None)
+            summary_entry.update(new_event)
         logs_summary.append(summary_entry)
     return logs_summary
 

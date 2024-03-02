@@ -6,7 +6,6 @@ import logging
 import uuid
 from typing import Any, Optional, Tuple, Union
 
-from langchain.text_splitter import TextSplitter
 
 from r2r.core import (
     BasicDocument,
@@ -14,7 +13,9 @@ from r2r.core import (
     LoggingDatabaseConnection,
     VectorDBProvider,
     VectorEntry,
+    log_execution_to_db,
 )
+from r2r.core.utils import TextSplitter
 from r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)
@@ -53,10 +54,29 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         self.id_prefix = id_prefix
         self.pipeline_run_info = None
 
-    def extract_text(self, document: Any) -> str:
+    @log_execution_to_db
+    def ingress(self, document: BasicDocument) -> str:
         """
         Extracts text from a document.
         """
+        return {
+            "id": str(document.id),
+            "metadata": document.metadata,
+            "text": document.text,
+        }
+
+    def initialize_pipeline(
+        self, document: BasicDocument, *args, **kwargs
+    ) -> None:
+        super().initialize_pipeline(*args, **kwargs)
+        self.ingress(document)
+
+    @log_execution_to_db
+    def extract_text(self, document: BasicDocument) -> str:
+        """
+        Extracts text from a document.
+        """
+        # Establish logging of document data
         return next(document)[0]
 
     def transform_text(self, text: str) -> str:
@@ -74,6 +94,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             for ele in self.text_splitter.create_documents([text])
         ]
 
+    @log_execution_to_db
     def transform_chunks(
         self, chunks: list[str], metadatas: list[dict]
     ) -> list[str]:
@@ -118,7 +139,8 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         """
         Executes the embedding pipeline: chunking, transforming, embedding, and storing documents.
         """
-        self.initialize_pipeline()
+        self.initialize_pipeline(document=document)
+
         logger.debug(
             f"Running the `BasicEmbeddingPipeline` with pipeline_run_info={self.pipeline_run_info}."
         )

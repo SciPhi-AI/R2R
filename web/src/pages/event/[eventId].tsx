@@ -9,10 +9,11 @@ import styles from '../../styles/Index.module.scss';
 import { EventSummary, searchResult } from '../../types';
 
 function Component({ eventLog }: { eventLog: EventSummary }) {
+  console.log("eventLog = ", eventLog)
   return (
     <div className="grid gap-6 lg:gap-8">
       <div className="space-y-4">
-        <div>
+        {eventLog.searchQuery !== "" && <div>
           <h2 className="pt-2 pb-2 text-lg font-semibold tracking-tight">
             Query
           </h2>
@@ -20,12 +21,16 @@ function Component({ eventLog }: { eventLog: EventSummary }) {
             <span className="text-sm font-semibold text-gray-500 select-all sm:text-base/none dark:text-gray-200">
               {eventLog.searchQuery}
             </span>
-          </div>
+          </div> 
         </div>
+        }
+        {eventLog.searchResults.length > 0 && 
         <div>
+          
           <h2 className="text-lg pb-2 font-semibold tracking-tight">
             Search Results
           </h2>
+          
           <div className="grid gap-4">
             {eventLog.searchResults.map(
               (result: searchResult, index: number) => (
@@ -45,8 +50,10 @@ function Component({ eventLog }: { eventLog: EventSummary }) {
               )
             )}
           </div>
-        </div>
+        </div> 
+        }
       </div>
+      {eventLog.completionResult !== "N/A" &&
       <div>
         <h2 className="text-lg font-semibold tracking-tight">
           Completion Output
@@ -58,6 +65,52 @@ function Component({ eventLog }: { eventLog: EventSummary }) {
           </span>
         </div>
       </div>
+      }
+       {eventLog.document !== null  && 
+       <div>
+        <h2 className="text-lg font-semibold tracking-tight">
+          DocumentID
+        </h2>
+        <div className="rounded-lg border p-4 bg-gray-50 dark:bg-gray-800">
+          <span className="text-sm text-gray-500 select-all sm:text-base/none dark:text-gray-200">
+            {/* You can access the completion of your RAG pipeline event queries here. */}
+            {eventLog.document.id}
+          </span>
+        </div>
+        <h2 className="text-lg font-semibold tracking-tight pt-4">
+          Document Text
+        </h2>
+        <div className="rounded-lg border p-4 bg-gray-50 dark:bg-gray-800">
+          <span className="text-sm text-gray-500 select-all sm:text-base/none dark:text-gray-200">
+            {/* You can access the completion of your RAG pipeline event queries here. */}
+            {eventLog.document.text}
+          </span>
+        </div>
+
+        <h2 className="text-lg font-semibold tracking-tight pt-4">
+          Metadata
+        </h2>
+        <div className="rounded-lg border p-4 bg-gray-50 dark:bg-gray-800">
+          <span className="text-sm text-gray-500 select-all sm:text-base/none dark:text-gray-200">
+            {/* You can access the completion of your RAG pipeline event queries here. */}
+            {JSON.stringify(eventLog.document.metadata, null, 2)}
+          </span>
+        </div>
+        </div>
+        }
+        {eventLog.embeddingChunks && <div>
+          <h2 className="text-lg font-semibold tracking-tight pt-4">
+            Chunks
+          </h2>
+          <div className="rounded-lg border p-4 bg-gray-50 dark:bg-gray-800">
+            <span className="text-sm text-gray-500 select-all sm:text-base/none dark:text-gray-200">
+              {/* You can access the completion of your RAG pipeline event queries here. */}
+              {eventLog.embeddingChunks}
+            </span>
+          </div>
+        </div>
+        }
+
       <div>
         {/* <h2 className="text-lg font-semibold tracking-tight">
           Other Key Metrics
@@ -104,7 +157,7 @@ export default function EventPage() {
     <Layout>
       <main className={styles.main}>
         <h1 className="text-white text-2xl mb-4">
-          <Link className="pt-1" href="/events" legacyBehavior>
+          <Link className="pt-1" href={eventLog?.method !== "Embedding" ? "../retrievals" : "../embeddings"} legacyBehavior>
             <a>
               <svg
                 xmlns="http://www.w3.org/2000/svg"

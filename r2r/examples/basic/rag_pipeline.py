@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
     llm = OpenAILLM(OpenAIConfig())
     generation_config = GenerationConfig(
-        model_name=llm_config["model_name"],
+        model=llm_config["model"],
         temperature=llm_config["temperature"],
         top_p=llm_config["top_p"],
         top_k=llm_config["top_k"],

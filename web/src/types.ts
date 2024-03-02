@@ -49,6 +49,12 @@ export interface evalResult {
 export interface evalResults {
   [key: string]: evalResult;
 }
+export interface Document {
+  id: string;
+  text: string;
+  metadata: Object;
+}
+
 export interface EventSummary extends LogEntry {
   timestamp: string;
   pipelineRunId: string;
@@ -57,6 +63,8 @@ export interface EventSummary extends LogEntry {
   searchQuery: string;
   searchResults: searchResult[];
   evalResults: evalResults | null;
+  embeddingChunks: string | null;
+  document: Document | null;
   completionResult: string;
   outcome: string;
   score: string;

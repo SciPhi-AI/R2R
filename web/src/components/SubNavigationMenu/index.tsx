@@ -16,7 +16,8 @@ export function SubNavigationMenu() {
   const router = useRouter();
 
   const navItems = [
-    { path: '/events', width: 63.3, translateX: 0 },
+    { path: '/retrievals', width: 85.3, translateX: 0 },
+    { path: '/embeddings', width: 100, translateX: 87.5 },
     // { path: '/providers/databases', width: 75, translateX: 68 },
   ];
 
@@ -80,14 +81,23 @@ export function SubNavigationMenu() {
         ) : (
           ''
         )}
-        <Link href="/events" passHref legacyBehavior>
+        <Link href="/retrievals" passHref legacyBehavior>
           <a
             onMouseOver={() => handleHoverNavItem(0)}
-            className={router.pathname === '/events' ? styles.selected : ''}
+            className={router.pathname === '/retrievals' ? styles.selected : ''}
           >
-            Events
+            Retrievals
           </a>
         </Link>
+        <Link href="/embeddings" passHref legacyBehavior>
+          <a
+            onMouseOver={() => handleHoverNavItem(1)}
+            className={router.pathname === '/embeddings' ? styles.selected : ''}
+          >
+            Embeddings
+          </a>
+        </Link>
+
         {/* <Link href="/providers/databases" passHref legacyBehavior>
           <a
             onMouseOver={() => handleHoverNavItem(1)}

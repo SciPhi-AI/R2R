@@ -1,54 +1,263 @@
+import { Tabs } from 'nextra/components'
+
 # LLM Provider Configuration Guide
 
-This guide provides a comprehensive overview of configuring the LLM (Language Learning Model) provider with a focus on OpenAI's GPT-4 model. We also plan to integrate more LLMs really soon. Feel free to let us know which one you'd want us to prioritize first on [Discord](https://discord.gg/p6KqD2kjtB)
+LiteLLM is the default LLM provider for R2R due to its adherence to the OpenAI API specifications and its wide support for many AI providers. The quick start guide below, borrowed from LiteLLM's documentation, shows how to use it. To fully utilize this library, simply specify `litellm` as the `llm` provider in your application's `config.json` and define your preferred model as an argument in the configuration.
 
-Below, you'll find detailed explanations of each configuration option available in the `language_model` section, along with references to relevant sections of OpenAI's documentation for further reading.
+## Basic usage 
 
-## Configuration Options
+<Tabs items={["Openai", "Anthropic", "Vertex", "HuggingFace", "Azure", "Ollama", "Openrouter"]}>
+<Tabs.Tab value="Openai" label="Openai">
 
-### `provider`
+```python
+from litellm import completion
+import os
 
-- **Description**: Specifies the provider of the language model.
-- **Value**: `"openai"` for using OpenAI's models.
-- **More**: [Introduction to OpenAI's API](https://platform.openai.com/docs/introduction)
+## set ENV variables
+os.environ["OPENAI_API_KEY"] = "your-api-key"
 
-### `model_name`
+response = completion(
+  model="gpt-3.5-turbo", 
+  messages=[{ "content": "Hello, how are you?","role": "user"}]
+)
+```
 
-- **Description**: The specific model to use for generating text.
-- **Value**: `"gpt-4-0125-preview"` indicates a specific version of the GPT-4 model.
-- **More**: [Models Overview](https://platform.openai.com/docs/guides/models)
+</Tabs.Tab>
+<Tabs.Tab value="Anthropic" label="Anthropic">
 
-### `temperature`
+```python
+from litellm import completion
+import os
 
-- **Description**: Controls the randomness in the output. Lower values make the model more deterministic.
-- **Value**: `0.1` for less random, more predictable output.
-- **More**: [How to control the output](https://platform.openai.com/docs/guides/text-generation)
+## set ENV variables
+os.environ["ANTHROPIC_API_KEY"] = "your-api-key"
 
-### `top_p`
+response = completion(
+  model="claude-2", 
+  messages=[{ "content": "Hello, how are you?","role": "user"}]
+)
+```
 
-- **Description**: Nucleus sampling parameter that controls the size of the probability mass considered for generating each token. Values closer to 1.0 make the model consider more possible tokens for each generation step.
-- **Value**: `0.9` to balance creativity and coherence.
-- **More**: [Fine-tuning the outputs](https://platform.openai.com/docs/guides/text-generation)
+</Tabs.Tab>
 
-### `top_k`
+<Tabs.Tab value="Vertex" label="VertexAI">
 
-- **Description**: Controls the number of highest probability vocabulary tokens to keep for top-k filtering.
-- **Value**: `128` to limit the selection pool to the top 128 tokens.
-- **More**: [Fine-tuning the outputs](https://platform.openai.com/docs/guides/text-generation)
+```python
+from litellm import completion
+import os
 
-### `max_tokens_to_sample`
+# auth: run 'gcloud auth application-default'
+os.environ["VERTEX_PROJECT"] = "hardy-device-386718"
+os.environ["VERTEX_LOCATION"] = "us-central1"
 
-- **Description**: The maximum number of tokens to generate in the output text.
-- **Value**: `1024` for generating longer responses.
-- **More**: [Chat Completions API](https://platform.openai.com/docs/guides/text-generation/chat-completions-api)
+response = completion(
+  model="chat-bison", 
+  messages=[{ "content": "Hello, how are you?","role": "user"}]
+)
+```
 
-### `do_stream`
+</Tabs.Tab>
 
-- **Description**: Determines whether the model's output should be streamed.
-- **Value**: `false` to to receive the output all at once rather than streaming.
-- **More**: [Streaming Outputs](https://platform.openai.com/docs/guides/text-generation/streaming-outputs)
+<Tabs.Tab value="HuggingFace" label="HuggingFace">
 
-## Summary
+```python
+from litellm import completion 
+import os
 
-Configuring the LLM provider with the above options allows for a tailored approach to generating text using OpenAI's GPT-4 model. By adjusting parameters like `temperature`, `top_p`, `top_k`, and `max_tokens_to_sample`, you'll be able to better control your model's output to suit your specific needs.
-For more detailed information, refer to the [OpenAI API Documentation](https://platform.openai.com/docs).
+os.environ["HUGGINGFACE_API_KEY"] = "huggingface_api_key" 
+
+# e.g. Call 'WizardLM/WizardCoder-Python-34B-V1.0' hosted on HF Inference endpoints
+response = completion(
+  model="huggingface/WizardLM/WizardCoder-Python-34B-V1.0",
+  messages=[{ "content": "Hello, how are you?","role": "user"}], 
+  api_base="https://my-endpoint.huggingface.cloud"
+)
+
+print(response)
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab value="Azure" label="Azure OpenAI">
+
+```python
+from litellm import completion
+import os
+
+## set ENV variables
+os.environ["AZURE_API_KEY"] = ""
+os.environ["AZURE_API_BASE"] = ""
+os.environ["AZURE_API_VERSION"] = ""
+
+# azure call
+response = completion(
+  "azure/<your_deployment_name>", 
+  messages = [{ "content": "Hello, how are you?","role": "user"}]
+)
+```
+
+</Tabs.Tab>
+
+
+<Tabs.Tab value="Ollama" label="Ollama">
+
+```python
+from litellm import completion
+
+response = completion(
+            model="ollama/llama2", 
+            messages = [{ "content": "Hello, how are you?","role": "user"}], 
+            api_base="http://localhost:11434"
+)
+```
+</Tabs.Tab>
+<Tabs.Tab value="Openrouter">
+
+```python
+from litellm import completion
+import os
+
+## set ENV variables
+os.environ["OPENROUTER_API_KEY"] = "openrouter_api_key" 
+
+response = completion(
+  model="openrouter/google/palm-2-chat-bison", 
+  messages = [{ "content": "Hello, how are you?","role": "user"}],
+)
+```
+</Tabs.Tab>
+
+</Tabs>
+
+## Streaming
+Set `stream=True` in the `completion` args. 
+<Tabs items={["Openai", "Anthropic", "Vertex", "HuggingFace", "Azure", "Ollama", "Openrouter"]}>
+
+<Tabs.Tab value="Openai" label="Openai">
+
+```python
+from litellm import completion
+import os
+
+## set ENV variables
+os.environ["OPENAI_API_KEY"] = "your-api-key"
+
+response = completion(
+  model="gpt-3.5-turbo", 
+  messages=[{ "content": "Hello, how are you?","role": "user"}],
+  stream=True,
+)
+```
+
+</Tabs.Tab>
+<Tabs.Tab value="Anthropic" label="Anthropic">
+
+```python
+from litellm import completion
+import os
+
+## set ENV variables
+os.environ["ANTHROPIC_API_KEY"] = "your-api-key"
+
+response = completion(
+  model="claude-2", 
+  messages=[{ "content": "Hello, how are you?","role": "user"}],
+  stream=True,
+)
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab value="Vertex" label="VertexAI">
+
+```python
+from litellm import completion
+import os
+
+# auth: run 'gcloud auth application-default'
+os.environ["VERTEX_PROJECT"] = "hardy-device-386718"
+os.environ["VERTEX_LOCATION"] = "us-central1"
+
+response = completion(
+  model="chat-bison", 
+  messages=[{ "content": "Hello, how are you?","role": "user"}],
+  stream=True,
+)
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab value="HuggingFace" label="HuggingFace">
+
+```python
+from litellm import completion 
+import os
+
+os.environ["HUGGINGFACE_API_KEY"] = "huggingface_api_key" 
+
+# e.g. Call 'WizardLM/WizardCoder-Python-34B-V1.0' hosted on HF Inference endpoints
+response = completion(
+  model="huggingface/WizardLM/WizardCoder-Python-34B-V1.0",
+  messages=[{ "content": "Hello, how are you?","role": "user"}], 
+  api_base="https://my-endpoint.huggingface.cloud",
+  stream=True,
+)
+
+print(response)
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab value="Azure" label="Azure OpenAI">
+
+```python
+from litellm import completion
+import os<
+
+## set ENV variables
+os.environ["AZURE_API_KEY"] = ""
+os.environ["AZURE_API_BASE"] = ""
+os.environ["AZURE_API_VERSION"] = ""
+
+# azure call
+response = completion(
+  "azure/<your_deployment_name>", 
+  messages = [{ "content": "Hello, how are you?","role": "user"}],
+  stream=True,
+)
+```
+
+</Tabs.Tab>
+
+
+<Tabs.Tab value="Ollama" label="Ollama">
+
+```python
+from litellm import completion
+
+response = completion(
+            model="ollama/llama2", 
+            messages = [{ "content": "Hello, how are you?","role": "user"}], 
+            api_base="http://localhost:11434",
+            stream=True,
+)
+```
+</Tabs.Tab>
+<Tabs.Tab value="Openrouter">
+
+```python
+from litellm import completion
+import os
+
+## set ENV variables
+os.environ["OPENROUTER_API_KEY"] = "openrouter_api_key" 
+
+response = completion(
+  model="openrouter/google/palm-2-chat-bison", 
+  messages = [{ "content": "Hello, how are you?","role": "user"}],
+  stream=True,
+)
+```
+</Tabs.Tab>
+
+</Tabs>
