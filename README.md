@@ -95,9 +95,18 @@ The project includes several basic examples that demonstrate application deploym
    ```
 
 
-4. [`web`](web/package.json): A web application which communicates with the backend server to provide visual intelligence.
+4. [`intelligence`](web/): A web application which communicates with the backend server to provide visual intelligence.
    ```bash
    cd $workdir/web && pnpm install
+   
+   # Serve the web app
+   pnpm dev
+   ```
+
+
+4. [`chat`](chat/): A chat application which communicates with the basic pipeline to stream chat responses and sources in real time.
+   ```bash
+   cd $workdir/chat && pnpm install
    
    # Serve the web app
    pnpm dev
