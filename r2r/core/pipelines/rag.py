@@ -127,7 +127,7 @@ class RAGPipeline(Pipeline):
         """
         return self.task_prompt.format(**inputs)
 
-    # @log_execution_to_db
+    @log_execution_to_db
     def generate_completion(
         self,
         prompt: str,
