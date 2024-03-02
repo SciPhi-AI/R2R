@@ -1,7 +1,5 @@
 import json
 import logging
-from datetime import datetime
-from multiprocessing import Process
 from pathlib import Path
 from typing import Optional, Union
 
@@ -13,8 +11,6 @@ from fastapi import (
     HTTPException,
     UploadFile,
 )
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
 
 from r2r.core import (
     EmbeddingPipeline,
@@ -23,7 +19,21 @@ from r2r.core import (
     LoggingDatabaseConnection,
     RAGPipeline,
 )
-from r2r.main.utils import configure_logging, find_project_root, process_logs
+from r2r.main.utils import (
+    apply_cors,
+    configure_logging,
+    find_project_root,
+    process_logs,
+)
+
+from .models import (
+    AddEntriesRequest,
+    AddEntryRequest,
+    LogModel,
+    RAGQueryModel,
+    SettingsModel,
+    SummaryLogModel,
+)
 
 logger = logging.getLogger("r2r")
 
@@ -41,99 +51,12 @@ def create_app(
 ):
     app = FastAPI()
     configure_logging()
-
-    # CORS setup
-    origins = [
-        "*",  # TODO - Change this to the actual frontend URL
-        "http://localhost:3000",
-        "http://localhost:8000",
-    ]
-
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=origins,  # Allows specified origins
-        allow_credentials=True,
-        allow_methods=["*"],  # Allows all methods
-        allow_headers=["*"],  # Allows all headers
-    )
+    apply_cors(app)
 
     upload_path = upload_path or find_project_root(CURRENT_DIR) / "uploads"
 
     if not upload_path.exists():
         upload_path.mkdir()
-
-    class EmbeddingsSettingsModel(BaseModel):
-        do_chunking: Optional[bool] = True
-        do_upsert: Optional[bool] = True
-
-    class IngestionSettingsModel(BaseModel):
-        pass
-
-    class RAGSettingsModel(BaseModel):
-        pass
-
-    class SettingsModel(BaseModel):
-        embedding_settings: EmbeddingsSettingsModel = EmbeddingsSettingsModel()
-        ingestion_settings: IngestionSettingsModel = IngestionSettingsModel()
-        rag_settings: RAGSettingsModel = RAGSettingsModel()
-
-    class EntryModel(BaseModel):
-        document_id: str
-        blobs: dict[str, str]
-        metadata: Optional[dict]
-
-    # File upload class, to be fixed later
-    # class FileUploadRequest(BaseModel):
-    # document_id: str
-    # metadata: Optional[dict]
-    # settings: SettingsModel = SettingsModel()
-
-    class AddEntryRequest(BaseModel):
-        entry: EntryModel
-        settings: SettingsModel = SettingsModel()
-
-    class AddEntriesRequest(BaseModel):
-        entries: list[EntryModel]
-        settings: SettingsModel = SettingsModel()
-
-    class RAGQueryModel(BaseModel):
-        query: str
-        limit: Optional[int] = 10
-        filters: dict = {}
-        settings: SettingsModel = SettingsModel()
-
-    def to_camel(string: str) -> str:
-        return "".join(
-            word.capitalize() if i != 0 else word
-            for i, word in enumerate(string.split("_"))
-        )
-
-    class LogModel(BaseModel):
-        timestamp: datetime = Field(alias="timestamp")
-        pipeline_run_id: str = Field(alias="pipelineRunId")
-        pipeline_run_type: str = Field(alias="pipelineRunType")
-        method: str = Field(alias="method")
-        result: str = Field(alias="result")
-        log_level: str = Field(alias="logLevel")
-
-        class Config:
-            alias_generator = to_camel
-            allow_population_by_field_name = True
-
-    class SummaryLogModel(BaseModel):
-        timestamp: datetime = Field(alias="timestamp")
-        pipeline_run_id: str = Field(alias="pipelineRunId")
-        pipeline_run_type: str = Field(alias="pipelineRunType")
-        method: str = Field(alias="method")
-        search_query: str = Field(alias="searchQuery")
-        search_results: list[dict] = Field(alias="searchResults")
-        completion_result: str = Field(alias="completionResult")
-        eval_results: Optional[dict] = Field(alias="evalResults")
-        outcome: str = Field(alias="outcome")
-
-        class Config:
-            alias_generator = to_camel
-            allow_population_by_field_name = True
 
     @app.post("/upload_and_process_file/")
     # TODO - Why can't we use a BaseModel to represent the request?
@@ -166,6 +89,8 @@ def create_app(
             # TODO - Consider saving file to disk
             # with open(file_location, "wb+") as file_object:
             # file_object.write(file_content)
+
+            # TODO - Mark upload as failed if ingestion or embedding fail partway through
 
             document = ingestion_pipeline.run(
                 document_id,
@@ -302,6 +227,7 @@ def create_app(
                 for log in logs_summary
             ]
             return {"events_summary": events_summary}
+
         except Exception as e:
             logger.error(f":logs_summary: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))

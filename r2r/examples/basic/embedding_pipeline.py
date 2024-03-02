@@ -3,9 +3,9 @@ import logging
 import uuid
 
 import dotenv
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from r2r.core import DatasetConfig, LoggingDatabaseConnection
+from r2r.core.utils import RecursiveCharacterTextSplitter
 from r2r.datasets import HuggingFaceDataProvider
 from r2r.embeddings import OpenAIEmbeddingProvider
 from r2r.main import load_config
