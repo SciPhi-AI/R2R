@@ -200,7 +200,6 @@ class RAGPipeline(Pipeline):
         prompt: str,
         generation_config: GenerationConfig,
     ) -> Generator[str, None, None]:
-        print("streaming a reply...")
         yield f"<{RAGPipeline.SEARCH_STREAM_MARKER}>"
         yield "[" + str(
             ",".join([str(ele.to_dict()) for ele in search_results])

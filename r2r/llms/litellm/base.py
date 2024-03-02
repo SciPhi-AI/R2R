@@ -63,8 +63,12 @@ class LiteLLM(LLMProvider):
         if not generation_config.stream:
             return ChatCompletion(**response.dict())
         else:
-            for part in response:
-                yield part
+            return self._get_chat_completion(response)
+
+    # TODO - Find the correct return type for this
+    def _get_chat_completion(self, response) -> Generator[str, None, None]:
+        for part in response:
+            yield part
 
     def get_instruct_completion(
         self,
@@ -87,8 +91,12 @@ class LiteLLM(LLMProvider):
         if not generation_config.stream:
             return Completion(**response.dict())
         else:
-            for part in response:
-                yield part
+            return self._get_instruct_completion(response)
+
+    # TODO - Find the correct return type for this
+    def _get_instruct_completion(self, response) -> Generator[str, None, None]:
+        for part in response:
+            yield part
 
     def _get_base_args(
         self,
