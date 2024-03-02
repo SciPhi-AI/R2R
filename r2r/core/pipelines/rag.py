@@ -1,6 +1,7 @@
 """
 Abstract base class for completion pipelines.
 """
+import json
 import logging
 import uuid
 from abc import abstractmethod
@@ -201,9 +202,7 @@ class RAGPipeline(Pipeline):
         generation_config: GenerationConfig,
     ) -> Generator[str, None, None]:
         yield f"<{RAGPipeline.SEARCH_STREAM_MARKER}>"
-        yield "[" + str(
-            ",".join([str(ele.to_dict()) for ele in search_results])
-        ) + "]"
+        yield json.dumps([ele.to_dict() for ele in search_results])
         yield f"</{RAGPipeline.SEARCH_STREAM_MARKER}>"
 
         yield f"<{RAGPipeline.CONTEXT_STREAM_MARKER}>"
