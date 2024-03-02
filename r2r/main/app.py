@@ -199,6 +199,7 @@ def create_app(
             return rag_completion
 
         else:
+
             async def stream_rag_completion() -> Generator[str, None, None]:
                 for item in rag_pipeline.run(
                     query.query,

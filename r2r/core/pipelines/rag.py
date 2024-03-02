@@ -32,6 +32,10 @@ Answer the query given immediately below given the context which follows later.
 
 
 class RAGPipeline(Pipeline):
+    SEARCH_STREAM_MARKER = "search"
+    CONTEXT_STREAM_MARKER = "context"
+    COMPLETION_STREAM_MARKER = "completion"
+
     def __init__(
         self,
         llm: "LLMProvider",
@@ -44,8 +48,6 @@ class RAGPipeline(Pipeline):
         self.llm = llm
         self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
         self.task_prompt = task_prompt or DEFAULT_TASK_PROMPT
-        self.logging_provider = logging_provider
-        self.pipeline_run_info = None
         super().__init__(logging_provider=logging_provider, **kwargs)
 
     def initialize_pipeline(
@@ -126,24 +128,29 @@ class RAGPipeline(Pipeline):
         Generates a completion based on the prompt.
         """
         self._check_pipeline_initialized()
-        messages =  [
-                {
-                    "role": "system",
-                    "content": self.system_prompt,
-                },
-                {
-                    "role": "user",
-                    "content": prompt,
-                },
-            ]
+        messages = [
+            {
+                "role": "system",
+                "content": self.system_prompt,
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            },
+        ]
         if not generation_config.stream:
             return self.llm.get_chat_completion(messages, generation_config)
-        
-        def stream_rag_completion() -> Generator[str, None, None]:
-            for result in self.llm.get_chat_completion(messages, generation_config):
-                yield result.choices[0].delta.content or ""
-        return stream_rag_completion()
-    
+
+        return self._stream_generate_completion(messages, generation_config)
+
+    def _stream_generate_completion(
+        self, messages: dict, generation_config: GenerationConfig
+    ) -> Generator[str, None, None]:
+        for result in self.llm.get_chat_completion(
+            messages, generation_config
+        ):
+            yield result.choices[0].delta.content or ""
+
     def run(
         self,
         query,
@@ -157,10 +164,7 @@ class RAGPipeline(Pipeline):
         """
         Runs the completion pipeline.
         """
-        print("in the run....")
         self.initialize_pipeline(query, search_only)
-
-        logger.debug(f"Pipeline run type: {self.pipeline_run_info}")
 
         transformed_query = self.transform_query(query)
         search_results = self.search(transformed_query, filters, limit)
@@ -175,35 +179,40 @@ class RAGPipeline(Pipeline):
                 "GenerationConfig is not required for search only."
             )
 
-        print("search_results = ", search_results)
         context = self.construct_context(search_results)
+
         prompt = self.construct_prompt(
             {"query": transformed_query, "context": context}
         )
-        print("are we streaming...?")
 
         if not generation_config.stream:
             completion = self.generate_completion(prompt, generation_config)
             return RAGCompletion(search_results, context, completion)
-        
-        def stream_rag_completion() -> Generator[str, None, None]:
-            yield "<SEARCH_RESULTS>"
-            yield "[" + str(
-                ",".join([str(ele.to_dict()) for ele in search_results])
-            ) + "]"
-            yield "</SEARCH_RESULTS>"
 
-            print("context = ", context)
-            yield "<CONTEXT>"
-            yield context
-            yield "</CONTEXT>"
-            print("attempting to stream response...")
-            yield "<RESPONSE>"
-            for chunk in self.generate_completion(prompt, generation_config):
-                print("chunk = ", chunk)
-                yield chunk
-            yield "<RESPONSE>"
-        return stream_rag_completion()
+        return self._stream_run(
+            search_results, context, prompt, generation_config
+        )
+
+    def _stream_run(
+        self,
+        search_results: list,
+        context: str,
+        prompt: str,
+        generation_config: GenerationConfig,
+    ) -> Generator[str, None, None]:
+        yield f"<{RAGPipeline.SEARCH_STREAM_MARKER}>"
+        yield "[" + str(
+            ",".join([str(ele.to_dict()) for ele in search_results])
+        ) + "]"
+        yield f"</{RAGPipeline.SEARCH_STREAM_MARKER}>"
+
+        yield f"<{RAGPipeline.CONTEXT_STREAM_MARKER}>"
+        yield context
+        yield f"</{RAGPipeline.CONTEXT_STREAM_MARKER}>"
+        yield f"<{RAGPipeline.COMPLETION_STREAM_MARKER}>"
+        for chunk in self.generate_completion(prompt, generation_config):
+            yield chunk
+        yield f"</{RAGPipeline.COMPLETION_STREAM_MARKER}>"
 
     def _get_extra_args(self, *args, **kwargs):
         """

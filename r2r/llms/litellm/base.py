@@ -1,9 +1,10 @@
 import logging
 from dataclasses import dataclass
+from typing import Generator
 
 from openai.types import Completion
 from openai.types.chat import ChatCompletion
-from typing import Generator
+
 from r2r.core import GenerationConfig, LLMConfig, LLMProvider
 
 logger = logging.getLogger(__name__)
@@ -62,11 +63,12 @@ class LiteLLM(LLMProvider):
         if not generation_config.stream:
             return ChatCompletion(**response.dict())
         else:
+
             def stream_rag_completion() -> Generator[str, None, None]:
                 for part in response:
                     yield part
-            return stream_rag_completion()
 
+            return stream_rag_completion()
 
     def get_instruct_completion(
         self,
@@ -89,11 +91,12 @@ class LiteLLM(LLMProvider):
         if not generation_config.stream:
             return Completion(**response.dict())
         else:
+
             def stream_rag_completion() -> Generator[str, None, None]:
                 for part in response:
                     yield part
-            return stream_rag_completion()
 
+            return stream_rag_completion()
 
     def _get_base_args(
         self,

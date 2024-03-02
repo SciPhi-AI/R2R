@@ -12,7 +12,6 @@ class Pipeline(ABC):
         **kwargs
     ):
         self.logging_provider = logging_provider
-
         self.pipeline_run_info: Optional[dict] = None
 
     def _check_pipeline_initialized(self) -> None:
