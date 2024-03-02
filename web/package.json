@@ -2,7 +2,8 @@
   "name": "sciphi-application",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "NEXT_PUBLIC_CLOUD_MODE=false next dev",
+    "dev:cloud": "NEXT_PUBLIC_CLOUD_MODE=true next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint --fix .",
