@@ -34,13 +34,9 @@ const menuItems = [
 export default function LocalProvidersMenu() {
   const router = useRouter();
 
-const handleOnClick = (event, currentMenuItem) => {
-  event.preventDefault();
-  router.push(currentMenuItem.path);
-};
+  const handleOnClick = (event, currentMenuItem) => {
+    event.preventDefault();
     router.push(currentMenuItem.path);
-    // console.log('Current Menu Item:', currentMenuItem);
-    // console.log('Routing to:', currentMenuItem.path);
   };
 
   return (
@@ -49,7 +45,7 @@ const handleOnClick = (event, currentMenuItem) => {
         <span
           key={menuItem.name}
           className={styles.menuItem}
-          onClick={() => handleOnClick(menuItem)}
+          onClick={(event) => handleOnClick(event, menuItem)}
         >
           {menuItem.name}
         </span>
