@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Optional, Union, Generator
+from typing import Generator, Optional, Union
 
 from fastapi import (
     BackgroundTasks,
@@ -167,44 +167,43 @@ def create_app(
         background_tasks: BackgroundTasks, query: RAGQueryModel
     ):
         # try:
-            if query.stream:
-                async def stream_rag_completion():
-                    for item in rag_pipeline.run(
-                        query.query, query.filters, query.limit, stream=True
-                    ):
-                        yield item
+        print("query = ", query)
+        if query.stream:
+            async def stream_rag_completion() -> Generator[str, None, None]:
+                for item in rag_pipeline.run(
+                    query.query, query.filters, query.limit, stream=True
+                ):
+                    yield item
 
-                return StreamingResponse(stream_rag_completion(), media_type="text/plain")
+            return StreamingResponse(
+                stream_rag_completion(), media_type="text/plain"
+            )
+        else:
+            print('running stream false...')
+            rag_completion = rag_pipeline.run(
+                query.query, query.filters, query.limit, stream=False
+            )
+            print("rag_completion = ", rag_completion)
+            # TODO - Clean up message extraction
+            completion_text = rag_completion.completion.choices[
+                0
+            ].message.content
+            rag_run_id = rag_pipeline.pipeline_run_info["run_id"]
+            background_tasks.add_task(
+                eval_pipeline.run,
+                query.query,
+                rag_completion.context,
+                completion_text,
+                rag_run_id,
+                **query.settings.rag_settings.dict(),
+            )
+            return rag_completion
 
-                # def stream_rag_completion() -> Generator[str, None, None]:
-
-                #     return rag_pipeline.run(
-                #         query.query, query.filters, query.limit, stream=True
-                #     )
-
-                # return StreamingResponse(stream_rag_completion(), media_type="text/plain")
-            else:
-                context, completion = rag_pipeline.run(
-                    query.query, query.filters, query.limit
-                )
-                # TODO - Clean up message extraction
-                completion_text = completion.choices[0].message.content
-                rag_run_id = rag_pipeline.pipeline_run_info["run_id"]
-                background_tasks.add_task(
-                    eval_pipeline.run,
-                    query.query,
-                    context,
-                    completion_text,
-                    rag_run_id,
-                    **query.settings.rag_settings.dict(),
-                )
-                return completion
-        
-        # except Exception as e:
-        #     logger.error(
-        #         f":rag_completion: [Error](query={query}, error={str(e)})"
-        #     )
-        #     raise HTTPException(status_code=500, detail=str(e))
+    # except Exception as e:
+    #     logger.error(
+    #         f":rag_completion: [Error](query={query}, error={str(e)})"
+    #     )
+    #     raise HTTPException(status_code=500, detail=str(e))
 
     @app.delete("/filtered_deletion/")
     async def filtered_deletion(key: str, value: Union[bool, int, str]):

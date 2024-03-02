@@ -1,3 +1,4 @@
+from .abstractions.completion import Completion, RAGCompletion
 from .abstractions.document import BasicDocument
 from .pipelines.embedding import EmbeddingPipeline
 from .pipelines.eval import EvalPipeline
@@ -16,6 +17,8 @@ from .providers.vector_db import (
 
 __all__ = [
     "BasicDocument",
+    "Completion",
+    "RAGCompletion",
     "EmbeddingPipeline",
     "EvalPipeline",
     "IngestionPipeline",

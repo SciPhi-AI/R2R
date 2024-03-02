@@ -1,6 +1,6 @@
-import types
 import functools
 import os
+import types
 from typing import Optional
 
 
@@ -113,12 +113,24 @@ class LoggingDatabaseConnection:
             logs = [dict(zip(colnames, row)) for row in cur.fetchall()]
         return logs
 
+
 def log_execution_to_db(func):
     """A decorator to log the execution of a method to the database."""
 
-    def log_to_db(inst_provider, arg_pipeline_run_id, arg_pipeline_run_type, func_name, result, log_level):
+    def log_to_db(
+        inst_provider,
+        arg_pipeline_run_id,
+        arg_pipeline_run_type,
+        func_name,
+        result,
+        log_level,
+    ):
         """Helper function to log the execution to the database."""
-        timestamp_func = "NOW()" if inst_provider.provider == "postgres" else "datetime('now')"
+        timestamp_func = (
+            "NOW()"
+            if inst_provider.provider == "postgres"
+            else "datetime('now')"
+        )
         with inst_provider as conn:
             conn.execute(
                 f"INSERT INTO {inst_provider.log_table_name} (timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level) VALUES ({timestamp_func}, ?, ?, ?, ?, ?)",
@@ -147,11 +159,12 @@ def log_execution_to_db(func):
         try:
             # Execute the function and get the result
             result = func(*args, **kwargs)
-            log_level = "INFO"
-
+            print("result = ", result)
             if isinstance(result, types.GeneratorType):
                 # If the result is a generator, return a new generator
                 def generator_wrapper():
+                    log_level = "INFO"
+
                     results = []
                     try:
                         for res in result:
@@ -161,16 +174,38 @@ def log_execution_to_db(func):
                         results.append(str(e))
                         log_level = "ERROR"
                     finally:
-                        log_to_db(inst_provider, arg_pipeline_run_id, arg_pipeline_run_type, func.__name__, "".join(results), log_level)
+                        log_to_db(
+                            inst_provider,
+                            arg_pipeline_run_id,
+                            arg_pipeline_run_type,
+                            func.__name__,
+                            "".join(results),
+                            log_level,
+                        )
+
                 return generator_wrapper()
             else:
-                log_to_db(inst_provider, arg_pipeline_run_id, arg_pipeline_run_type, func.__name__, result, log_level)
+                log_to_db(
+                    inst_provider,
+                    arg_pipeline_run_id,
+                    arg_pipeline_run_type,
+                    func.__name__,
+                    result,
+                    "INFO",
+                )
+                return result
+            
         except Exception as e:
             result = str(e)
             log_level = "ERROR"
-            log_to_db(inst_provider, arg_pipeline_run_id, arg_pipeline_run_type, func.__name__, result, log_level)
+            log_to_db(
+                inst_provider,
+                arg_pipeline_run_id,
+                arg_pipeline_run_type,
+                func.__name__,
+                result,
+                log_level,
+            )
             raise Exception(result)
-
-        return result
 
     return wrapper

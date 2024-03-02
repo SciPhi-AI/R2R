@@ -4,11 +4,9 @@ Abstract base class for completion pipelines.
 import logging
 import uuid
 from abc import abstractmethod
-from typing import Any, Optional, Tuple, Union, Generator
+from typing import Any, Generator, Optional, Union
 
-from openai.types import Completion
-from openai.types.chat import ChatCompletion
-
+from ..abstractions.completion import Completion, RAGCompletion
 from ..providers.llm import GenerationConfig, LLMProvider
 from ..providers.logging import LoggingDatabaseConnection, log_execution_to_db
 from .pipeline import Pipeline
@@ -99,13 +97,6 @@ class RAGPipeline(Pipeline):
         pass
 
     @abstractmethod
-    def _get_extra_args(self, *args, **kwargs) -> dict[str, Any]:
-        """
-        Returns extra arguments for the generation request.
-        """
-        pass
-
-    @abstractmethod
     def _format_results(self, results: list) -> str:
         """
         Formats the results for generation.
@@ -132,20 +123,22 @@ class RAGPipeline(Pipeline):
         self,
         prompt: str,
         generate_with_chat=True,
-        stream:bool = False,
-    ) -> Union[ChatCompletion, Completion]:
+        stream: bool = False,
+    ) -> Completion:
         """
         Generates a completion based on the prompt.
         """
         self._check_pipeline_initialized()
+        print('passing stream = ', stream)
 
         if generate_with_chat:
             if stream:
+                print("trying to yield results...")
                 for result in self.llm.get_chat_completion(
                     [
                         {
                             "role": "system",
-                            "content": self.system_prompt, 
+                            "content": self.system_prompt,
                         },
                         {
                             "role": "user",
@@ -153,8 +146,7 @@ class RAGPipeline(Pipeline):
                         },
                     ],
                     self.generation_config,
-                    **self._get_extra_args(),
-                    stream=stream,
+                    stream=True,
                 ):
                     yield result
             else:
@@ -162,7 +154,7 @@ class RAGPipeline(Pipeline):
                     [
                         {
                             "role": "system",
-                            "content": self.system_prompt, 
+                            "content": self.system_prompt,
                         },
                         {
                             "role": "user",
@@ -170,7 +162,7 @@ class RAGPipeline(Pipeline):
                         },
                     ],
                     self.generation_config,
-                    **self._get_extra_args(),
+                    stream=False,
                 )
         else:
             raise NotImplementedError(
@@ -179,50 +171,56 @@ class RAGPipeline(Pipeline):
 
     def run(
         self, query, filters={}, limit=10, search_only=False, stream=False
-    ) -> Union[
-            Generator[str, None, None],
-            Tuple[str, Union[ChatCompletion, Completion]]
-        ]:
+    ) -> Union[Generator[str, None, None], RAGCompletion]:
         """
         Runs the completion pipeline.
         """
+        print("in the run....")
         self.initialize_pipeline(query, search_only)
 
         logger.debug(f"Pipeline run type: {self.pipeline_run_info}")
 
         transformed_query = self.transform_query(query)
         search_results = self.search(transformed_query, filters, limit)
-        # if search_only:
-        #     return None, search_results
-        print('search_results = ', search_results)
-        yield "<SEARCH_RESULTS>"
-        yield '[' + str(",".join([str(ele.to_dict()) for ele in search_results])) + ']'
-        yield "</SEARCH_RESULTS>"
+        if search_only:
+            if stream:
+                raise ValueError("Streaming is not supported for search only.")
+            return RAGCompletion(search_results, None, None)
+        
+        print("search_results = ", search_results)
         context = self.construct_context(search_results)
         prompt = self.construct_prompt(
             {"query": transformed_query, "context": context}
         )
+        print("are we streaming...?")
+
         if stream:
-            print('context = ', context)
+            yield "<SEARCH_RESULTS>"
+            yield "[" + str(
+                ",".join([str(ele.to_dict()) for ele in search_results])
+            ) + "]"
+            yield "</SEARCH_RESULTS>"
+
+            print("context = ", context)
             yield "<CONTEXT>"
             yield context
             yield "</CONTEXT>"
-            # i = 0
-            # while True:
             print("attempting to stream response...")
             yield "<RESPONSE>"
-            for chunk in self.generate_completion(prompt, generate_with_chat=True, stream=True):
+            for chunk in self.generate_completion(
+                prompt, stream=True
+            ):
                 print("chunk = ", chunk)
                 yield chunk
             yield "<RESPONSE>"
+        else:
+            completion = self.generate_completion(
+                prompt, stream=False
+            )
+            return RAGCompletion(search_results, context, completion)
 
-                # i += 1
-            # i += 1
-            # completion = self.generate_completion(prompt, generate_with_chat=True, stream=True)
-            # yield completion
-            # yield context #{"context": context}
-        # else:
-        #     completion = self.generate_completion(prompt, generate_with_chat=True)
-        #     return context, completion        
-        # # completion = self.generate_completion(prompt, generate_with_chat=True)
-        # # return context, completion
+    def _get_extra_args(self,  *args, **kwargs):
+        """
+        Retrieves any extra arguments needed for the pipeline's operations.
+        """
+        return {}

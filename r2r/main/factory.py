@@ -108,7 +108,6 @@ class E2EPipelineFactory:
             top_p=llm_config["top_p"],
             top_k=llm_config["top_k"],
             max_tokens_to_sample=llm_config["max_tokens_to_sample"],
-            stream=llm_config["stream"],
         )
 
         logging_provider = LoggingDatabaseConnection(

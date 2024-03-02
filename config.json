@@ -23,8 +23,7 @@
     "temperature": 0.1,
     "top_p": 0.9,
     "top_k": 128,
-    "max_tokens_to_sample": 1024,
-    "stream": false
+    "max_tokens_to_sample": 1024
   },
   "logging": {
     "provider": "local",

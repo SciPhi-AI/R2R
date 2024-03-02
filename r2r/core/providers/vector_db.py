@@ -61,7 +61,8 @@ class VectorSearchResult:
             "score": self.score,
             "metadata": self.metadata,
         }
-    
+
+
 class VectorDBProvider(ABC):
     supported_providers = ["local", "pgvector", "qdrant"]
 
