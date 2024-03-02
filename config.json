@@ -24,7 +24,7 @@
     "top_p": 0.9,
     "top_k": 128,
     "max_tokens_to_sample": 1024,
-    "do_stream": false
+    "stream": false
   },
   "logging": {
     "provider": "local",

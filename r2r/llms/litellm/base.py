@@ -46,6 +46,7 @@ class LiteLLM(LLMProvider):
             raise ImportError(
                 "Error, `litellm` is required to run a LiteLLM. Please install it using `pip install litellm`."
             )
+        print("in get_chat_completion")
         # Create a dictionary with the default arguments
         args = self._get_base_args(generation_config)
 
@@ -56,8 +57,18 @@ class LiteLLM(LLMProvider):
             args["functions"] = generation_config.functions
 
         args = {**args, **kwargs}
+        print('args = ', args)
+        print("starting streaming....")
+
         response = completion(**args)
-        return ChatCompletion(**response.dict())
+        for part in response:
+            print("streaming....")
+            print(part.choices[0].delta.content or "")
+            yield part.choices[0].delta.content or ""
+
+        # return completion(**args) #ChatCompletion(**completion(**args).dict())
+        # response = completion(**args)
+        # return ChatCompletion(**response.dict())
 
     def get_instruct_completion(
         self,
@@ -77,7 +88,6 @@ class LiteLLM(LLMProvider):
         args["prompt"] = prompt
 
         response = completion(**args)
-        # messages=messages, **asdict(generation_config), **kwargs)
         Completion(**response.dict())
 
     def _get_base_args(
@@ -91,7 +101,7 @@ class LiteLLM(LLMProvider):
             "model": generation_config.model,
             "temperature": generation_config.temperature,
             "top_p": generation_config.top_p,
-            "stream": generation_config.do_stream,
+            "stream": generation_config.stream,
             # TODO - We need to cap this to avoid potential errors when exceed max allowable context
             "max_tokens": generation_config.max_tokens_to_sample,
         }

@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, Generator
 
 from fastapi import (
     BackgroundTasks,
@@ -11,6 +11,7 @@ from fastapi import (
     HTTPException,
     UploadFile,
 )
+from fastapi.responses import StreamingResponse
 
 from r2r.core import (
     EmbeddingPipeline,
@@ -112,7 +113,7 @@ def create_app(
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/add_entry/")
-    def add_entry(entry_req: AddEntryRequest):
+    async def add_entry(entry_req: AddEntryRequest):
         try:
             document = ingestion_pipeline.run(
                 entry_req.entry.document_id,
@@ -131,7 +132,7 @@ def create_app(
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/add_entries/")
-    def add_entries(entries_req: AddEntriesRequest):
+    async def add_entries(entries_req: AddEntriesRequest):
         try:
             for entry in entries_req.entries:
                 documents = ingestion_pipeline.run(
@@ -151,7 +152,7 @@ def create_app(
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/search/")
-    def search(query: RAGQueryModel):
+    async def search(query: RAGQueryModel):
         try:
             _, search_results = rag_pipeline.run(
                 query.query, query.filters, query.limit, search_only=True
@@ -162,33 +163,51 @@ def create_app(
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/rag_completion/")
-    def rag_completion(
+    async def rag_completion(
         background_tasks: BackgroundTasks, query: RAGQueryModel
     ):
-        try:
-            context, completion = rag_pipeline.run(
-                query.query, query.filters, query.limit
-            )
-            # TODO - Clean up message extraction
-            completion_text = completion.choices[0].message.content
-            rag_run_id = rag_pipeline.pipeline_run_info["run_id"]
-            background_tasks.add_task(
-                eval_pipeline.run,
-                query.query,
-                context,
-                completion_text,
-                rag_run_id,
-                **query.settings.rag_settings.dict(),
-            )
-            return completion
-        except Exception as e:
-            logger.error(
-                f":rag_completion: [Error](query={query}, error={str(e)})"
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+        # try:
+            if query.stream:
+                async def stream_rag_completion():
+                    async for item in rag_pipeline.run(
+                        query.query, query.filters, query.limit, stream=True
+                    ):
+                        yield item
+
+                return StreamingResponse(stream_rag_completion(), media_type="text/plain")
+
+                # def stream_rag_completion() -> Generator[str, None, None]:
+
+                #     return rag_pipeline.run(
+                #         query.query, query.filters, query.limit, stream=True
+                #     )
+
+                # return StreamingResponse(stream_rag_completion(), media_type="text/plain")
+            else:
+                context, completion = rag_pipeline.run(
+                    query.query, query.filters, query.limit
+                )
+                # TODO - Clean up message extraction
+                completion_text = completion.choices[0].message.content
+                rag_run_id = rag_pipeline.pipeline_run_info["run_id"]
+                background_tasks.add_task(
+                    eval_pipeline.run,
+                    query.query,
+                    context,
+                    completion_text,
+                    rag_run_id,
+                    **query.settings.rag_settings.dict(),
+                )
+                return completion
+        
+        # except Exception as e:
+        #     logger.error(
+        #         f":rag_completion: [Error](query={query}, error={str(e)})"
+        #     )
+        #     raise HTTPException(status_code=500, detail=str(e))
 
     @app.delete("/filtered_deletion/")
-    def filtered_deletion(key: str, value: Union[bool, int, str]):
+    async def filtered_deletion(key: str, value: Union[bool, int, str]):
         try:
             embedding_pipeline.db.filtered_deletion(key, value)
             return {"message": "Entries deleted successfully."}
@@ -199,7 +218,7 @@ def create_app(
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/logs")
-    def logs():
+    async def logs():
         try:
             if logging_provider is None:
                 raise HTTPException(
@@ -214,7 +233,7 @@ def create_app(
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/logs_summary")
-    def logs_summary():
+    async def logs_summary():
         try:
             if logging_provider is None:
                 raise HTTPException(

@@ -26,7 +26,7 @@ class GenerationConfig(ABC):
     top_k: int = 100
     max_tokens_to_sample: int = 1_024
     model: Optional[str] = None
-    do_stream: bool = False
+    stream: bool = False
     functions: Optional[list[dict]] = None
     skip_special_tokens: bool = False
     stop_token: Optional[str] = None

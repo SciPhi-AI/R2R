@@ -99,7 +99,7 @@ class OpenAILLM(LLMProvider):
             "model": generation_config.model,
             "temperature": generation_config.temperature,
             "top_p": generation_config.top_p,
-            "stream": generation_config.do_stream,
+            "stream": generation_config.stream,
             # TODO - We need to cap this to avoid potential errors when exceed max allowable context
             "max_tokens": generation_config.max_tokens_to_sample,
         }

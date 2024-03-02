@@ -54,6 +54,7 @@ class RAGQueryModel(BaseModel):
     limit: Optional[int] = 10
     filters: dict = {}
     settings: SettingsModel = SettingsModel()
+    stream: Optional[bool] = False
 
 
 def to_camel(string: str) -> str:

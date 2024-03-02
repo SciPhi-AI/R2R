@@ -4,7 +4,7 @@ Abstract base class for completion pipelines.
 import logging
 import uuid
 from abc import abstractmethod
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union, Generator
 
 from openai.types import Completion
 from openai.types.chat import ChatCompletion
@@ -127,22 +127,26 @@ class RAGPipeline(Pipeline):
         """
         return self.task_prompt.format(**inputs)
 
-    @log_execution_to_db
+    # @log_execution_to_db
     def generate_completion(
         self,
         prompt: str,
         generate_with_chat=True,
+        stream:bool = False,
     ) -> Union[ChatCompletion, Completion]:
         """
         Generates a completion based on the prompt.
         """
         self._check_pipeline_initialized()
+        print("in generate_completion")
+
         if generate_with_chat:
-            return self.llm.get_chat_completion(
+            print("returning with stream = ", stream)
+            for result in self.llm.get_chat_completion(
                 [
                     {
                         "role": "system",
-                        "content": self.system_prompt,
+                        "content": self.system_prompt, 
                     },
                     {
                         "role": "user",
@@ -151,16 +155,21 @@ class RAGPipeline(Pipeline):
                 ],
                 self.generation_config,
                 **self._get_extra_args(),
-            )
+                stream=stream,
+            ):
+                yield result
         else:
             raise NotImplementedError(
                 "Generation without chat is not implemented yet."
             )
 
     # TODO - Clean up the return types
-    def run(
-        self, query, filters={}, limit=10, search_only=False
-    ) -> Tuple[str, Union[ChatCompletion, Completion, list]]:
+    async def run(
+        self, query, filters={}, limit=10, search_only=False, stream=False
+    ) -> Union[
+            Generator[str, None, None],
+            Tuple[str, Union[ChatCompletion, Completion]]
+        ]:
         """
         Runs the completion pipeline.
         """
@@ -170,12 +179,29 @@ class RAGPipeline(Pipeline):
 
         transformed_query = self.transform_query(query)
         search_results = self.search(transformed_query, filters, limit)
-        if search_only:
-            return None, search_results
+        # if search_only:
+        #     return None, search_results
 
         context = self.construct_context(search_results)
         prompt = self.construct_prompt(
             {"query": transformed_query, "context": context}
         )
-        completion = self.generate_completion(prompt, generate_with_chat=True)
-        return context, completion
+        if stream:
+            print('context = ', context)
+            # yield context
+            # i = 0
+            # while True:
+            print("attempting to stream response...")
+            for chunk in self.generate_completion(prompt, generate_with_chat=True, stream=True):
+                print("chunk = ", chunk)
+                yield chunk
+                # i += 1
+            # i += 1
+            # completion = self.generate_completion(prompt, generate_with_chat=True, stream=True)
+            # yield completion
+            # yield context #{"context": context}
+        # else:
+        #     completion = self.generate_completion(prompt, generate_with_chat=True)
+        #     return context, completion        
+        # # completion = self.generate_completion(prompt, generate_with_chat=True)
+        # # return context, completion
