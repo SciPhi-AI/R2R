@@ -21,6 +21,10 @@ const Home: NextPage = () => {
     fetch('/api/pipelines')
       .then((res) => res.json())
       .then((json) => setPipelines(json));
+  }, []);
+
+  useEffect(() => {
+    router.push('/retrievals');
   }, [router]);
 
   return (
