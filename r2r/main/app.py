@@ -172,17 +172,15 @@ def create_app(
             model="gpt-3.5-turbo",
             stream=query.stream,  # , **query.settings.generation_settings.dict()
         )
-        print("query = ", query)
         if not query.stream:
             # return True
-            print("running stream false...")
             rag_completion = rag_pipeline.run(
                 query.query,
                 query.filters,
                 query.limit,
                 generation_config=generation_config,
             )
-            print("rag_completion = ", rag_completion)
+
             # TODO - Clean up message extraction
             completion_text = rag_completion.completion.choices[
                 0
@@ -199,7 +197,6 @@ def create_app(
             return rag_completion
 
         else:
-
             async def stream_rag_completion() -> Generator[str, None, None]:
                 for item in rag_pipeline.run(
                     query.query,
