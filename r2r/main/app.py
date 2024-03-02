@@ -169,7 +169,7 @@ def create_app(
         # try:
             if query.stream:
                 async def stream_rag_completion():
-                    async for item in rag_pipeline.run(
+                    for item in rag_pipeline.run(
                         query.query, query.filters, query.limit, stream=True
                     ):
                         yield item

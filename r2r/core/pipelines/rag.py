@@ -138,33 +138,46 @@ class RAGPipeline(Pipeline):
         Generates a completion based on the prompt.
         """
         self._check_pipeline_initialized()
-        print("in generate_completion")
 
         if generate_with_chat:
-            print("returning with stream = ", stream)
-            for result in self.llm.get_chat_completion(
-                [
-                    {
-                        "role": "system",
-                        "content": self.system_prompt, 
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    },
-                ],
-                self.generation_config,
-                **self._get_extra_args(),
-                stream=stream,
-            ):
-                yield result
+            if stream:
+                for result in self.llm.get_chat_completion(
+                    [
+                        {
+                            "role": "system",
+                            "content": self.system_prompt, 
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt,
+                        },
+                    ],
+                    self.generation_config,
+                    **self._get_extra_args(),
+                    stream=stream,
+                ):
+                    yield result
+            else:
+                return self.llm.get_chat_completion(
+                    [
+                        {
+                            "role": "system",
+                            "content": self.system_prompt, 
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt,
+                        },
+                    ],
+                    self.generation_config,
+                    **self._get_extra_args(),
+                )
         else:
             raise NotImplementedError(
                 "Generation without chat is not implemented yet."
             )
 
-    # TODO - Clean up the return types
-    async def run(
+    def run(
         self, query, filters={}, limit=10, search_only=False, stream=False
     ) -> Union[
             Generator[str, None, None],
@@ -181,20 +194,28 @@ class RAGPipeline(Pipeline):
         search_results = self.search(transformed_query, filters, limit)
         # if search_only:
         #     return None, search_results
-
+        print('search_results = ', search_results)
+        yield "<SEARCH_RESULTS>"
+        yield '[' + str(",".join([str(ele.to_dict()) for ele in search_results])) + ']'
+        yield "</SEARCH_RESULTS>"
         context = self.construct_context(search_results)
         prompt = self.construct_prompt(
             {"query": transformed_query, "context": context}
         )
         if stream:
             print('context = ', context)
-            # yield context
+            yield "<CONTEXT>"
+            yield context
+            yield "</CONTEXT>"
             # i = 0
             # while True:
             print("attempting to stream response...")
+            yield "<RESPONSE>"
             for chunk in self.generate_completion(prompt, generate_with_chat=True, stream=True):
                 print("chunk = ", chunk)
                 yield chunk
+            yield "<RESPONSE>"
+
                 # i += 1
             # i += 1
             # completion = self.generate_completion(prompt, generate_with_chat=True, stream=True)
