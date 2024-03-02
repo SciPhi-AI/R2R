@@ -28,7 +28,7 @@ export default async function handler(
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      next = "/private";
+      next = "/";
     }
   }
   res.redirect(next);
