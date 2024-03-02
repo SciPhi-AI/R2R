@@ -7,6 +7,8 @@ import { Separator } from '@/components/ui/separator';
 export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   async function signInWithOAuth(provider: 'google' | 'github') {
     await supabase.auth.signInWithOAuth({
@@ -16,9 +18,6 @@ export default function LoginPage() {
       },
     });
   }
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
 
   async function logIn() {
     const { error } = await supabase.auth.signInWithPassword({
@@ -39,14 +38,14 @@ export default function LoginPage() {
     router.push('/');
   }
 
-  // async function resetPassword() {
-  //   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-  //     redirectTo: `${window.location.origin}/update-password`,
-  //   });
-  //   if (error) {
-  //     console.error(error);
-  //   }
-  // }
+  async function resetPassword() {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/update-password`,
+    });
+    if (error) {
+      console.error(error);
+    }
+  }
   return (
     <>
       <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
@@ -54,7 +53,7 @@ export default function LoginPage() {
           <img
             className="mx-auto h-10 w-auto"
             src="images/sciphi.png"
-            alt="Your Company"
+            alt="SciphiAI logo"
           />
           <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-white">
             Sign in to your account
@@ -92,7 +91,7 @@ export default function LoginPage() {
                 >
                   Password
                 </label>
-                {/* <div className="text-sm">
+                <div className="text-sm">
                   <a
                     href="#"
                     className="font-semibold text-indigo-400 hover:text-indigo-300"
@@ -100,7 +99,7 @@ export default function LoginPage() {
                   >
                     Forgot password?
                   </a>
-                </div> */}
+                </div>
               </div>
               <div className="mt-2">
                 <input
