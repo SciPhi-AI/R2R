@@ -75,8 +75,11 @@ The project includes several basic examples that demonstrate application deploym
    # Ingest pdf
    python -m r2r.examples.pdf_chat.run_client ingest
 
-   # Ask a question
+   # Return search results
    python -m r2r.examples.pdf_chat.run_client search "What are the key themes of Meditations?"
+
+   # Stream a rag response
+   poetry run python -m r2r.examples.pdf_chat.run_client rag_completion_streaming "According to Meditaitons, what are some principles to live by?"
    ```
 
 
