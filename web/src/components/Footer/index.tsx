@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import Link from 'next/link';
 import { FaGithub, FaTwitter, FaRegMoon } from 'react-icons/fa';
 import { FiExternalLink } from 'react-icons/fi';
@@ -6,6 +8,11 @@ import styles from './styles.module.scss';
 import { ArrowIcon } from '../ArrowIcon';
 
 function Footer() {
+  const [theme, setTheme] = useState('dark');
+
+  const handleThemeChange = (event) => {
+    setTheme(event.target.value);
+  };
   return (
     <footer className={styles.container}>
       <div className={styles.categoryMenu}>
@@ -68,12 +75,13 @@ function Footer() {
           <div className={styles.selectContainer}>
             <FaRegMoon size="12" className={styles.selectPrefix} />
 
-            <select className={styles.themeSelect}>
+            <select
+              className={styles.themeSelect}
+              value={theme}
+              onChange={handleThemeChange}
+            >
               <option value="system">System</option>
-              <option selected value="dark">
-                {' '}
-                Dark
-              </option>
+              <option value="dark">Dark</option>
               <option value="light">Light</option>
             </select>
             <ArrowIcon id={styles.arrowMenuIcon} />

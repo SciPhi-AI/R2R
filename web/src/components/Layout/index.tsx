@@ -8,25 +8,17 @@ import { SubNavigationMenu } from '../SubNavigationMenu';
 
 type Props = {
   children: ReactNode;
-  localNav?: ReactNode; // Optional prop for local navigation
+  localNav?: ReactNode;
+  pageTitle?: string; // Optional prop for setting the page title
 };
 
-const Layout: React.FC<Props> = ({ children, localNav }) => {
+const Layout: React.FC<Props> = ({ children, localNav, pageTitle }) => {
   return (
     <div className={styles.container}>
       <Head>
-        <title>SciPhi</title>
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin=""
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
+        {/* Set a dynamic title if provided */}
+        {pageTitle && <title>{pageTitle} | SciPhi</title>}
+        {/* You can also include other page-specific meta tags, links, or scripts here */}
       </Head>
       <header className={styles.topBar}>
         <MainMenu />
