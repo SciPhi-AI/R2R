@@ -1,3 +1,4 @@
+import asyncio
 import os
 import uuid
 
@@ -110,25 +111,24 @@ print(
 )
 
 print("Performing RAG with streaming...")
+
 # Perform a RAG completion with streaming
-streaming_response = client.rag_completion(
-    "Are there any test documents?",
-    5,
-    filters={"document_id": pdf_document_id},
-    generation_config={"stream": True},
-    stream=True,
-)
+async def stream_rag_completion():
+    async for chunk in client.stream_rag_completion(
+        "Are there any test documents?",
+        5,
+        filters={"document_id": pdf_document_id},
+        generation_config={"stream": True},
+    ):
+        print(chunk, end="", flush=True)
 
-print("Streaming response:")
-for line in streaming_response:
-    if line:
-        print(line.decode("utf-8"))
-print("\n")
 
-# print("Fetching logs after all steps...")
-# logs_response = client.get_logs()
-# print(f"Logs response:\n{logs_response}\n")
+asyncio.run(stream_rag_completion())
 
-# print("Fetching logs summary after all steps...")
-# logs_summary_response = client.get_logs_summary()
-# print(f"Logs summary response:\n{logs_summary_response}\n")
+print("Fetching logs after all steps...")
+logs_response = client.get_logs()
+print(f"Logs response:\n{logs_response}\n")
+
+print("Fetching logs summary after all steps...")
+logs_summary_response = client.get_logs_summary()
+print(f"Logs summary response:\n{logs_summary_response}\n")

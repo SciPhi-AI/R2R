@@ -92,6 +92,9 @@ class R2RClient:
         response = requests.post(url, json=json_data)
         return response.json()
 
+    # TODO - Cleanup redundant code in the following methods
+    # TODO - Consider how to improve `rag_completion` and
+    # `stream_rag_completion` workflows.
     def rag_completion(
         self,
         query: str,
@@ -100,6 +103,15 @@ class R2RClient:
         settings: Optional[Dict[str, Any]] = None,
         generation_config: Optional[Dict[str, Any]] = None,
     ):
+        if not generation_config:
+            generation_config = {}
+        stream = generation_config.get("stream", False)
+
+        if stream:
+            raise ValueError(
+                "To stream, use the `stream_rag_completion` method."
+            )
+
         url = f"{self.base_url}/rag_completion/"
         json_data = {
             "query": query,
@@ -108,13 +120,6 @@ class R2RClient:
             "settings": settings or {},
             "generation_config": generation_config or {},
         }
-        stream = generation_config.get("stream", False)
-
-        if stream:
-            raise ValueError(
-                "To stream, use the `stream_rag_completion` method."
-            )
-
         response = requests.post(url, json=json_data)
         return response.json()
 
@@ -126,6 +131,14 @@ class R2RClient:
         settings: Optional[Dict[str, Any]] = None,
         generation_config: Optional[Dict[str, Any]] = None,
     ):
+        if not generation_config:
+            generation_config = {}
+        stream = generation_config.get("stream", False)
+        if not stream:
+            raise ValueError(
+                "`stream_rag_completion` method is only for streaming."
+            )
+
         url = f"{self.base_url}/rag_completion/"
 
         headers = {
@@ -139,12 +152,6 @@ class R2RClient:
             "settings": settings or {},
             "generation_config": generation_config or {},
         }
-        stream = generation_config.get("stream", False)
-
-        if not stream:
-            raise ValueError(
-                "`stream_rag_completion` method is only for streaming."
-            )
 
         async with httpx.AsyncClient() as client:
             async with client.stream(
