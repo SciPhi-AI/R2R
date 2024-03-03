@@ -25,9 +25,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const { pathname } = router;
       // List of paths that don't require authentication
       const authBypassPaths = [
-        '/error', // Assuming this is the path for error.tsx
+        '/error',
         '/forgot_password',
-        '/public', // Assuming public.tsx doesn't require authentication
         '/update_password',
       ];
 
