@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react';
 import type { AppProps } from 'next/app';
+import { AuthProvider } from '@/context/authProvider';
 import { useTheme } from 'next-themes';
-import { useEffect } from 'react';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
 
@@ -13,6 +14,21 @@ function MyApp({ Component, pageProps }: AppProps) {
     setTheme('dark');
   });
 
+  const isCloudMode = process.env.NEXT_PUBLIC_CLOUD_MODE === 'true';
+
+  const renderContent = () => {
+    // If in cloud mode, wrap Component with AuthProvider
+    if (isCloudMode) {
+      return (
+        <AuthProvider>
+          <Component {...pageProps} />
+        </AuthProvider>
+      );
+    }
+    // If not in cloud mode, render Component without AuthProvider
+    return <Component {...pageProps} />;
+  };
+
   return (
     <ThemeProvider
       attribute="class"
@@ -20,7 +36,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       enableSystem
       disableTransitionOnChange
     >
-      <Component {...pageProps} />
+      {renderContent()}
     </ThemeProvider>
   );
 }
