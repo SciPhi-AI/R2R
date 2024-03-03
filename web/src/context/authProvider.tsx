@@ -22,22 +22,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const authenticate = async () => {
-      if (process.env.NEXT_PUBLIC_CLOUD_MODE === 'true') {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
-          router.push('/login');
-          return;
-        }
-        setIsLogged(true);
-      } else {
-        setIsLogged(true);
+      const { pathname } = router;
+      // List of paths that don't require authentication
+      const authBypassPaths = [
+        '/error', // Assuming this is the path for error.tsx
+        '/forgot_password',
+        '/public', // Assuming public.tsx doesn't require authentication
+        '/update_password',
+      ];
+
+      // Check if the current path is in the list of auth bypass paths
+      if (authBypassPaths.includes(pathname)) {
+        console.log('Bypassing auth check for:', pathname);
+        return; // Bypass the authentication check
       }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('User is not logged in. Redirecting to /login');
+        router.push('/login');
+        return;
+      }
+      setIsLogged(true);
+      console.log('User is logged in.'); // Log after setting state
     };
 
     authenticate();
   }, [router]);
+
+  // Use useEffect to listen for changes to isLogged
+  useEffect(() => {
+    console.log(`isLogged state changed: ${isLogged}`);
+  }, [isLogged]);
 
   return (
     <AuthContext.Provider value={{ isLogged }}>{children}</AuthContext.Provider>
