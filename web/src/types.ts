@@ -2,13 +2,14 @@ export type Pipeline = {
   id: number;
   name: string;
   deployment_url: string;
-  last_commit_name: string;
-  type: string;
-  updated_at: {
-    when: string;
-    from_other_services: boolean;
-    service?: string;
-  };
+  github_url: string;
+  status: string;
+  // type: string;
+  // updated_at: {
+  //   when: string;
+  //   from_other_services: boolean;
+  //   service?: string;
+  // };
 };
 
 export type Provider = {

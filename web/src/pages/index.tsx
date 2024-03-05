@@ -1,6 +1,7 @@
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { createClient } from '@/utils/supabase/component';
 
 import { Footer } from '@/components/Footer';
 import Layout from '@/components/Layout';
@@ -16,16 +17,27 @@ import { Pipeline } from '../types';
 const Home: NextPage = () => {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
-    fetch('/api/pipelines')
-      .then((res) => res.json())
-      .then((json) => setPipelines(json));
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const token = session?.access_token;
+      if (token) {
+        console.log("fetching....")
+        fetch('/api/pipelines', {
+          headers: new Headers({
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }),
+        })
+        .then((res) => res.json())
+        .then((json) => {
+          console.log('pipeline json = ', json)
+          setPipelines(json['pipelines'])
+        });
+      }
+    });
   }, []);
-
-  useEffect(() => {
-    router.push('/retrievals');
-  }, [router]);
 
   return (
     <Layout>

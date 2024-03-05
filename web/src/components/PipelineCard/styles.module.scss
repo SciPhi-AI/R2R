@@ -75,7 +75,27 @@
         white-space: nowrap;
         text-overflow: ellipsis;
       }
-      .cardDomainAddress {
+      .deploymentTitle {
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: var(--color-8);
+
+        width: 185px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+      .cardAddress {
+        margin-top: 0.2rem;
+        color: var(--color-7);
+
+        width: 185px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+
+      .cardTitle {
         margin-top: 0.2rem;
 
         width: 185px;
