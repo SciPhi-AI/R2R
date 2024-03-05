@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 import styles from './styles.module.scss';
 import { WorkspacesSelect } from '../WorkspacesSelect';
@@ -12,14 +13,14 @@ export function MainMenu() {
         {/* <button>Feedback</button>
         <button>Changelog</button>
         <button>Support</button> */}
-        <a
-          style={{ cursor: 'pointer' }}
+        <Link
           href="https://docs.sciphi.ai"
+          style={{ cursor: 'pointer' }}
           target="_blank"
           rel="noopener noreferrer"
         >
-          <button>Docs</button>
-        </a>
+          Docs
+        </Link>
 
         <div>
           <Image
