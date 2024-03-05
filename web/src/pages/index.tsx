@@ -6,7 +6,7 @@ import { createClient } from '@/utils/supabase/component';
 import { Footer } from '@/components/Footer';
 import Layout from '@/components/Layout';
 import { Card } from '@/components/PipelineCard';
-import { ProjectHeader } from '@/components/ProjectHeader';
+import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';
 import { Separator } from '@/components/ui/separator';
 
 import styles from '../styles/Index.module.scss';
@@ -45,7 +45,7 @@ const Home: NextPage = () => {
         <h1 className="text-white text-2xl mb-4"> Pipelines </h1>
         <Separator />
         <div className="mt-6" />
-        <ProjectHeader />
+        <CreatePipelineHeader />
 
         <div className={styles.gridView}>
           {Array.isArray(pipelines)

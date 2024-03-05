@@ -2,10 +2,10 @@ import styles from './styles.module.scss';
 import React, { useState } from 'react';
 import { createClient } from '@/utils/supabase/component';
 
-export function ProjectHeader() {
+export function CreatePipelineHeader() {
   // Initialize state with default values
-  const [pipelineName, setPipelineName] = useState('test1');
-  const [repoUrl, setRepoUrl] = useState('git@github.com:SciPhi-AI/R2R.git');
+  const [pipelineName, setPipelineName] = useState('');
+  const [repoUrl, setRepoUrl] = useState('');
 
   const supabase = createClient();
 
@@ -40,17 +40,19 @@ export function ProjectHeader() {
 
   return (
     <div className={styles.container}>
+      {/* <label htmlFor="pipelineName" style={{color: 'white'}}>Pipeline Name</label> */}
       <input
-        style={{color: 'black'}}
+        style={{color: 'black', borderRadius: '5px'}}
         value={pipelineName}
+        placeholder="Pipeline Name"
         onChange={(e) => setPipelineName(e.target.value)}
-        // placeholder="Pipeline Name"
       />
+      {/* <label htmlFor="repoUrl" style={{color: 'white'}}>Github Repo URL</label> */}
       <input
-        style={{color: 'black'}}
+        style={{color: 'black', borderRadius: '5px'}}
         value={repoUrl}
+        placeholder="Github Repo URL"
         onChange={(e) => setRepoUrl(e.target.value)}
-        // placeholder="Repository URL"
       />
       <button className={styles.newProjectButton} onClick={createPipeline}>New Pipeline</button>
     </div>
