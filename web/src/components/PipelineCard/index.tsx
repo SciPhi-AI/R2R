@@ -1,7 +1,5 @@
-import Image from 'next/image';
-import { FaGithub } from 'react-icons/fa';
+import React from 'react';
 import { FiExternalLink } from 'react-icons/fi';
-import { IoAnalyticsOutline } from 'react-icons/io5';
 
 import styles from './styles.module.scss';
 import { Pipeline } from '../../types';
@@ -12,21 +10,12 @@ interface CardProps {
 
 function Card({ pipeline }: CardProps) {
   return (
-    <a href="#" className={styles.container}>
+    <a href="#" className={styles.container}  >
       <div className={styles.cardHeader}>
         <div className={styles.hoverRedirectIcon}>
           <FiExternalLink size="16" />
         </div>
 
-        <div className={styles.imageContainer}>
-          {/* <Image
-            alt={`sciphi.png`}
-            src={`/images/sciphi.png`}
-            width={36}
-            height={36}
-            className={styles.cardProjectIcon}
-          /> */}
-        </div>
 
         <div className={styles.projectInfo}>
           <p className={styles.cardTitle}>Pipeline:</p>
@@ -47,7 +36,6 @@ function Card({ pipeline }: CardProps) {
           )}
         </div>
       </div>
-
     </a>
   );
 }
