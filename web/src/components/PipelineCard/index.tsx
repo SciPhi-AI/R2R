@@ -19,38 +19,35 @@ function Card({ pipeline }: CardProps) {
         </div>
 
         <div className={styles.imageContainer}>
-          <Image
+          {/* <Image
             alt={`sciphi.png`}
             src={`/images/sciphi.png`}
             width={36}
             height={36}
             className={styles.cardProjectIcon}
-          />
+          /> */}
         </div>
 
         <div className={styles.projectInfo}>
+          <p className={styles.cardTitle}>Pipeline:</p>
           <strong className={styles.cardProjectTitle}>{pipeline.name}</strong>
-          <p className={styles.cardDomainAddress}>{pipeline.deployment_url}</p>
+          {pipeline.status == 'finished' ? (
+            <>
+              <p className={styles.cardTitle}>Remote:</p>
+              <p className={styles.cardAddress}>{pipeline.github_url}</p>
+
+              <p className={styles.cardTitle}>Deployment:</p>
+              <p className={styles.cardAddress}>{pipeline.deployment.uri}</p>
+            </>
+          ) : (
+            <>
+              <p className={styles.cardTitle}>Status:</p>
+              <p className={styles.cardAddress}>{pipeline.status}</p>
+            </>
+          )}
         </div>
       </div>
 
-      <button className={styles.cardButtonEnableAnalytics}>
-        <IoAnalyticsOutline size="18" />
-      </button>
-
-      <div className={styles.cardProjectLastCommit}>
-        {pipeline.last_commit_name}
-      </div>
-
-      <div className={styles.cardLastModificationsAt}>
-        {pipeline.updated_at.when}
-        {pipeline.updated_at.from_other_services &&
-        pipeline.updated_at.service ? (
-          <FaGithub size="17" />
-        ) : (
-          ''
-        )}
-      </div>
     </a>
   );
 }
