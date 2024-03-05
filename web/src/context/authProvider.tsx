@@ -28,6 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         '/error',
         '/forgot_password',
         '/update_password',
+        '/login',
       ];
 
       // Check if the current path is in the list of auth bypass paths
