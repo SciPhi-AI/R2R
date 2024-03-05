@@ -35,7 +35,6 @@ export function CreatePipelineHeader() {
   
     // Handle success
     const data = await response.json();
-    console.log('Pipeline created:', data);
   };
 
   return (

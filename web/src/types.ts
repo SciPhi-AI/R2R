@@ -4,12 +4,6 @@ export type Pipeline = {
   deployment_url: string;
   github_url: string;
   status: string;
-  // type: string;
-  // updated_at: {
-  //   when: string;
-  //   from_other_services: boolean;
-  //   service?: string;
-  // };
 };
 
 export type Provider = {
@@ -18,6 +12,7 @@ export type Provider = {
   type: string;
   logo: string;
 };
+
 export interface LogEntry {
   timestamp: string;
   pipeline_run_id: string;

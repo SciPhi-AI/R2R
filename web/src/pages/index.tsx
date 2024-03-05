@@ -32,7 +32,6 @@ const Home: NextPage = () => {
         })
         .then((res) => res.json())
         .then((json) => {
-          console.log('pipeline json = ', json)
           setPipelines(json['pipelines'])
         });
       }

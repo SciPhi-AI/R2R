@@ -11,7 +11,6 @@ interface CardProps {
 }
 
 function Card({ pipeline }: CardProps) {
-  console.log('pipeline = ', pipeline)
   return (
     <a href="#" className={styles.container}>
       <div className={styles.cardHeader}>
