@@ -7,6 +7,9 @@ import styles from '../../styles/Index.module.scss';
 import { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
+import { useRouter } from 'next/router';
+import { createClient } from '@/utils/supabase/component';
+// import CryptoJS from 'crypto-js';
 
 function Component() {
   const [secretPairs, setSecretPairs] = useState([{ key: '', value: '' }]);
@@ -24,7 +27,9 @@ function Component() {
   const handleAddMore = () => {
     setSecretPairs([...secretPairs, { key: '', value: '' }]);
   };
-
+  const router = useRouter();
+  const supabase = createClient();
+  
   const handleRemove = (index) => {
     const updatedPairs = [...secretPairs];
     updatedPairs.splice(index, 1);
@@ -87,27 +92,87 @@ function Component() {
       setSelectedApiKey(value);
     }
   };
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Prepare the form data
+    // const encryptedSecretPairs = secretPairs.map(pair => ({
+    //   key: pair.key,
+    //   value: CryptoJS.AES.encrypt(pair.value, process.env.NEXT_PUBLIC_ENCRYPTION_KEY).toString(),
+    // }));
+  
     const formData = {
-      pipelineName,
-      githubUrl,
-      selectedApiKey,
-      secretPairs,
+      pipeline_name: pipelineName,
+      repo_url: githubUrl,
+      // selectedApiKey,
+      // secretPairs: encryptedSecretPairs,
     };
-
-    // Process the form data (e.g., send it to the server)
-    console.log('Form data:', formData);
-
-    // Reset the form fields
-    setPipelineName('');
-    setGithubUrl('');
-    setSelectedApiKey('');
-    setSecretPairs([{ key: '', value: '' }]);
-    setNewPublicKey('');
-    setNewPrivateKey('');
+  
+    try {
+      // Get the current session token
+      const session = await supabase.auth.getSession();
+      const token = session.data?.session?.access_token;
+  
+      if (!token) {
+        // Handle case when token is not available
+        console.error('Access token not found');
+        // Display an error message to the user or redirect to login page
+        return;
+      }
+  
+      // Make a POST request to the create_pipeline API
+      const response = await fetch('/api/create_pipeline', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+  
+      if (response.ok) {
+        // Pipeline creation successful
+        console.log('Pipeline created successfully');
+        // Reset the form fields
+        setPipelineName('');
+        setGithubUrl('');
+        setSelectedApiKey('');
+        setSecretPairs([{ key: '', value: '' }]);
+        setNewPublicKey('');
+        setNewPrivateKey('');
+        // Redirect to a success page or display a success message
+        router.push('/');
+      } else {
+        // Pipeline creation failed
+        console.error('Pipeline creation failed');
+        // Display an error message to the user
+        alert('Failed to create the pipeline. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating pipeline:', error);
+      // Display an error message to the user
+      alert('An error occurred while creating the pipeline. Please try again.');
+    }
   };
+  
+  // const handleSubmit = () => {
+  //   // Prepare the form data
+  //   const formData = {
+  //     pipelineName,
+  //     githubUrl,
+  //     selectedApiKey,
+  //     secretPairs,
+  //   };
+
+  //   // Process the form data (e.g., send it to the server)
+  //   console.log('Form data:', formData);
+
+  //   // Reset the form fields
+  //   setPipelineName('');
+  //   setGithubUrl('');
+  //   setSelectedApiKey('');
+  //   setSecretPairs([{ key: '', value: '' }]);
+  //   setNewPublicKey('');
+  //   setNewPrivateKey('');
+  // };
 
   return (
     <Card>
@@ -255,16 +320,31 @@ function Component() {
                 <div className="space-y-2 ">
                 R2R Templates
                 </div>
-                <Card className="w-100px mt-2">
-                    <CardHeader className="flex items-center justify-between">
-                        <CardTitle>Basic RAG</CardTitle>
-                        <CardDescription>
-                            Ingest documents and answer questions
-                        </CardDescription>
-                    </CardHeader>
+                <Card
+                  className="w-100px mt-2 cursor-pointer hover:shadow-lg transition-shadow duration-300"
+                  onClick={() => {
+                    // Your onClick logic here
+                    console.log('Card clicked!');
+                    setPipelineName('Basic RAG');
+                    setGithubUrl('https://github.com/SciPhi-AI/R2R-basic-rag-template');
+                  }}
+                >
+                  <CardHeader className="flex items-center justify-between">
+                    <CardTitle>Basic RAG</CardTitle>
+                    <CardDescription>
+                      Ingest documents and answer questions
+                    </CardDescription>
+                  </CardHeader>
                 </Card>
-
-                <Card className="w-100px mt-2">
+                <Card
+                  className="w-100px mt-2 cursor-pointer hover:shadow-lg transition-shadow duration-300"
+                  onClick={() => {
+                    // Your onClick logic here
+                    console.log('Card clicked!');
+                    setPipelineName('Synthetic Queries');
+                    setGithubUrl('https://github.com/SciPhi-AI/R2R-synthetic-queries-template');
+                  }}
+                >
                     <CardHeader className="flex items-center justify-between">
                         <CardTitle>Synthetic Queries</CardTitle>
                         <CardDescription>
