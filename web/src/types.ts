@@ -4,6 +4,10 @@ export type Pipeline = {
   deployment_url: string;
   github_url: string;
   status: string;
+  deployment: {
+    id: number;
+    uri: string;
+  };
 };
 
 export type Provider = {
