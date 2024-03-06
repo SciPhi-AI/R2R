@@ -1,9 +1,9 @@
-import { createContext, useContext, useState } from 'react';
-import { Pipeline } from '../types'; // Import the Pipeline type
+import React, { createContext, useContext, useState } from 'react';
 import { useRouter } from 'next/router';
+import { Pipeline } from '../types';
 
 interface PipelineContextProps {
-  pipeline: Pipeline | null; // Use the Pipeline type for the context
+  pipeline: Pipeline;
   updatePipelineProp: <T extends keyof Pipeline>(
     propName: T,
     propValue: Pipeline[T]
@@ -23,11 +23,19 @@ const defaultPipeline: Pipeline = {
   },
 };
 
-const PipelineContext = createContext<PipelineContextProps>({
+// Define a more precise type for the default context to avoid using empty functions
+const defaultContextValue: PipelineContextProps = {
   pipeline: defaultPipeline,
-  updatePipelineProp: () => {},
-  navigateToPipeline: () => {},
-});
+  updatePipelineProp: () => {
+    throw new Error('updatePipelineProp function should be implemented');
+  },
+  navigateToPipeline: () => {
+    throw new Error('navigateToPipeline function should be implemented');
+  },
+};
+
+const PipelineContext =
+  createContext<PipelineContextProps>(defaultContextValue);
 
 export const usePipelineContext = () => useContext(PipelineContext);
 

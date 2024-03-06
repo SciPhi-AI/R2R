@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { Embeddings as EmbeddingsDash } from '@/components/Embeddings';
+import { Embeddings as EmbeddingsDash } from '@/components/Layout/Embeddings';
 import Layout from '@/components/Layout';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '@/components/UI/separator';
 
 import styles from '../../styles/Index.module.scss';
 
