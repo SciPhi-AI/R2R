@@ -21,7 +21,6 @@ function Component() {
   const [newApiKeyName, setNewApiKeyName] = useState('');
   const [pipelineName, setPipelineName] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
-  console.log('pipelineName = ', pipelineName)
   const handleAddMore = () => {
     setSecretPairs([...secretPairs, { key: '', value: '' }]);
   };
