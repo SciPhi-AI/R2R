@@ -3,7 +3,7 @@ import { FiExternalLink } from 'react-icons/fi';
 import { IoAnalyticsOutline } from 'react-icons/io5';
 
 import styles from './styles.module.scss';
-import { Provider } from '../../../types';
+import { Provider } from '../../types';
 
 interface CardProps {
   provider: Provider;

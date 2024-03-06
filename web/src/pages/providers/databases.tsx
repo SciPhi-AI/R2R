@@ -1,16 +1,16 @@
 import React, { lazy, Suspense } from 'react';
 
 import { useModal } from '@/hooks/useModal';
-import { IntegrationCard } from '@/components/Feature/IntegrationCard';
+import { IntegrationCard } from '@/components/IntegrationCard';
 
-const SecretsModal = lazy(() => import('@/components/Feature/SecretsModal'));
+const SecretsModal = lazy(() => import('@/components/SecretsModal'));
 
 import { useFetchProviders } from '@/hooks/useFetchProviders';
 
 import Layout from '@/components/Layout';
-import LocalProvidersMenu from '@/components/Feature/LocalProvidersMenu';
+import LocalProvidersMenu from '@/components/LocalProvidersMenu';
 
-import { Separator } from '@/components/UI/separator';
+import { Separator } from '@/components/ui/separator';
 import {
   Table,
   TableBody,
@@ -19,7 +19,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/UI/table';
+} from '@/components/ui/table';
 
 import styles from '@/styles/Index.module.scss';
 

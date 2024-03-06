@@ -5,7 +5,7 @@ import { PipelineProvider } from '@/context/PipelineContext';
 
 import { useTheme } from 'next-themes';
 
-import { ThemeProvider } from '@/components/Containers/ThemeProvider';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 import '../styles/globals.css';
 

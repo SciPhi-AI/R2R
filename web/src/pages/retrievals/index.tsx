@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { Retrieval as RetrievalDash } from '@/components/Layout/Retrievals';
+import { Retrieval as RetrievalDash } from '@/components/Retrievals';
 import Layout from '@/components/Layout';
-import { Separator } from '@/components/UI/separator';
+import { Separator } from '@/components/ui/separator';
 
 import styles from '../../styles/Index.module.scss';
 
