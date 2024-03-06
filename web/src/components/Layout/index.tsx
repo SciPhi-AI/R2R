@@ -3,8 +3,8 @@ import Head from 'next/head';
 import React, { ReactNode } from 'react';
 
 import styles from '@/styles/Index.module.scss';
-import { MainMenu } from './MainMenu';
-import { SubNavigationMenu } from './SubNavigationMenu';
+import { MainMenu } from '../MainMenu';
+import { SubNavigationMenu } from '../SubNavigationMenu';
 
 type Props = {
   children: ReactNode;
