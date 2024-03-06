@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { AppProps } from 'next/app';
 import { AuthProvider } from '@/context/authProvider';
+import { PipelineProvider } from '@/context/PipelineContext';
+
 import { useTheme } from 'next-themes';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -36,7 +38,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       enableSystem
       disableTransitionOnChange
     >
-      {renderContent()}
+      <PipelineProvider>{renderContent()}</PipelineProvider>
     </ThemeProvider>
   );
 }
