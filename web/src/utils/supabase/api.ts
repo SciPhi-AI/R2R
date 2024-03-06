@@ -26,9 +26,5 @@ export default function createClient(
       },
     }
   );
-  console.log('Supabase Client Created');
-  console.log('Supabase:', supabase);
-  console.log('Request:', req);
-  console.log('Response:', res);
   return supabase;
 }
