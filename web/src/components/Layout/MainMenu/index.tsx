@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import styles from './styles.module.scss';
-import { WorkspacesSelect } from '../WorkspacesSelect';
+import { WorkspacesSelect } from '@/components/Layout/WorkspacesSelect';
 
 export function MainMenu() {
   return (

@@ -1,12 +1,12 @@
 import React, { lazy, Suspense } from 'react';
 
-import { IntegrationCard } from '@/components/IntegrationCard';
+import { IntegrationCard } from '@/components/Feature/IntegrationCard';
 import Layout from '@/components/Layout';
-import LocalProvidersMenu from '@/components/LocalProvidersMenu';
-import { Separator } from '@/components/ui/separator';
+import LocalProvidersMenu from '@/components/Feature/LocalProvidersMenu';
+import { Separator } from '@/components/UI/separator';
 import { useFetchProviders } from '@/hooks/useFetchProviders';
 import { useModal } from '@/hooks/useModal';
-const SecretsModal = lazy(() => import('@/components/SecretsModal'));
+const SecretsModal = lazy(() => import('@/components/Feature/SecretsModal'));
 
 import styles from '@/styles/Index.module.scss';
 

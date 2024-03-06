@@ -1,20 +1,22 @@
-import type { NextPage } from 'next';
-import { useRouter } from 'next/router';
+// External Libraries
+import { NextPage } from 'next';
 import { useEffect, useState } from 'react';
+
+// Utilities
 import { createClient } from '@/utils/supabase/component';
-import { useUpdatePipelineProp } from '@/hooks/useUpdatePipelineProp';
-
-import { Footer } from '@/components/Footer';
-import Layout from '@/components/Layout';
-import { PipelineCard } from '@/components/PipelineCard';
-import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';
-import { Separator } from '@/components/ui/separator';
-
-import styles from '../styles/Index.module.scss';
-import 'react-tippy/dist/tippy.css';
-
-import { Pipeline } from '../types';
 import { useAuth } from '@/context/authProvider';
+
+// Components
+import Layout from '@/components/Layout';
+import { Footer } from '@/components/Layout/Footer';
+import { PipelineCard } from '@/components/Feature/PipelineCard';
+import { CreatePipelineHeader } from '@/components/Feature/CreatePipelineHeader';
+import { Separator } from '@/components/UI/separator';
+
+// Types & Styles
+import { Pipeline } from '@/types';
+import styles from '@/styles/Index.module.scss';
+import 'react-tippy/dist/tippy.css';
 
 const Home: NextPage = () => {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
@@ -34,17 +36,11 @@ const Home: NextPage = () => {
             }),
           })
             .then((res) => res.json())
-            .then((json) => {
-              setPipelines(json['pipelines']);
-            });
+            .then((json) => setPipelines(json['pipelines']));
         }
       });
     }
   }, [cloudMode]);
-
-  // useEffect(() => {
-  //   router.push('/retrievals');
-  // }, [router]);
 
   const handleAddPipeline = (newPipeline) => {
     setPipelines((prevPipelines) => [...prevPipelines, newPipeline]);
@@ -53,17 +49,14 @@ const Home: NextPage = () => {
   return (
     <Layout>
       <main className={styles.main}>
-        <h1 className="text-white text-2xl mb-4"> Pipelines </h1>
+        <h1 className="text-white text-2xl mb-4">Pipelines</h1>
         <Separator />
         <div className="mt-6" />
         <CreatePipelineHeader onAddPipeline={handleAddPipeline} />
-
         <div className={styles.gridView}>
-          {Array.isArray(pipelines)
-            ? pipelines.map((pipeline) => (
-                <PipelineCard key={pipeline.name} id={pipeline.id} />
-              ))
-            : null}
+          {pipelines.map((pipeline) => (
+            <PipelineCard key={pipeline.name} id={pipeline.id} />
+          ))}
         </div>
       </main>
       <Footer />
