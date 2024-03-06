@@ -40,6 +40,7 @@
     "framer-motion": "^11.0.3",
     "next": "14.1.0",
     "next-themes": "^0.2.1",
+    "pnpm": "^8.15.4",
     "postcss": "^8.4.33",
     "react": "18.2.0",
     "react-dom": "18.2.0",
