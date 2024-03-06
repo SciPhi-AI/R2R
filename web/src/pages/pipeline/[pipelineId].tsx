@@ -83,11 +83,11 @@ const PipelinePage = () => {
           <code className="font-mono text-gray-500">{pipeline.id}</code>
         </h1>
         <Separator />
-        <Card className="my-6 w-full max-w-lg mx-auto">
+        <Card className="my-6 w-full max-w-lg">
           <CardHeader className="pb-0">
             <CardTitle className="text-xl">Deployment</CardTitle>
             <CardDescription>
-              Deployments are immutable snapshots of your platform at a specific
+              Deployments are immutable snapshots of RAG pipeline at a specific
               point in time.
             </CardDescription>
           </CardHeader>
@@ -96,7 +96,9 @@ const PipelinePage = () => {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <GlobeIcon className="w-4 h-4" />
-                  <span className="font-semibold">acme-inc.sciphi.ai</span>
+                  <span className="font-semibold">
+                    {pipeline.deployment_url}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CopyIcon className="w-4 h-4" />
@@ -132,7 +134,7 @@ const PipelinePage = () => {
               <Separator className="h-px" />
               <div className="grid gap-2">
                 <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                  17m ago by shadcn
+                  17m ago by owen
                 </div>
               </div>
             </div>
