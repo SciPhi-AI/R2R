@@ -23,9 +23,9 @@ const Home: NextPage = () => {
       .then((json) => setPipelines(json));
   }, []);
 
-  useEffect(() => {
-    router.push('/retrievals');
-  }, [router]);
+  // useEffect(() => {
+  //   router.push('/retrievals');
+  // }, [router]);
 
   return (
     <Layout>
