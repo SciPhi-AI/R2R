@@ -2,6 +2,7 @@ import { FiExternalLink } from 'react-icons/fi';
 import { usePipelineContext } from '@/context/PipelineContext';
 import { useRouter } from 'next/router';
 import { useUpdatePipelineProp } from '@/hooks/useUpdatePipelineProp';
+import React from 'react';
 
 import styles from './styles.module.scss';
 import { Pipeline } from '../../types';
@@ -33,15 +34,6 @@ function PipelineCard({ id }: PipelineCardProps) {
           <FiExternalLink size="16" />
         </div>
 
-        <div className={styles.imageContainer}>
-          {/* <Image
-            alt={`sciphi.png`}
-            src={`/images/sciphi.png`}
-            width={36}
-            height={36}
-            className={styles.cardProjectIcon}
-          /> */}
-        </div>
 
         <div className={styles.projectInfo} id={`${id}`}>
           <p className={styles.cardTitle}>Pipeline:</p>
