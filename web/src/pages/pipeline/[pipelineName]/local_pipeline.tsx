@@ -27,10 +27,11 @@ const PipelinePage = () => {
   const [deleteButtonDisabled, setDeleteButtonDisabled] = useState(true);
   const { pipelines, updatePipelines } = usePipelineContext();
 
-  const supabase = createClient();
   const router = useRouter();
-  const [pipeline, setPipeline] = useState(null);
   const { pipelineName } = router.query;
+  console.log('pipelineName = ', pipelineName);
+  const pipeline = pipelines[pipelineName as string];
+  const pipelineId = pipeline?.id?.toString();
 
   useEffect(() => {
     const update = async () => {
@@ -61,38 +62,30 @@ const PipelinePage = () => {
   }
 
   const handleDeletePipeline = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const token = session?.access_token;
-
-    if (token) {
-      if (pipeline.id) {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/delete_pipeline/${pipeline.id}`,
-          {
-            method: 'DELETE',
-            headers: new Headers({
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            }),
-          }
-        );
-
-        if (response.ok) {
-          // Remove the deleted pipeline from the local state
-          updatePipelines(pipeline.id, null);
-          setPipelineToDelete('');
-          setDeleteButtonDisabled(true);
-          router.push('/');
-          // Show a success message or perform any other necessary actions
-        } else {
-          // Handle the error case
-          console.error('Failed to delete pipeline');
+    if (pipeline.id) {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/delete_pipeline/${pipeline.id}`,
+        {
+          method: 'DELETE',
+          headers: new Headers({
+            'Content-Type': 'application/json',
+          }),
         }
+      );
+
+      if (response.ok) {
+        // Remove the deleted pipeline from the local state
+        updatePipelines(pipelineId, null);
+        setPipelineToDelete('');
+        setDeleteButtonDisabled(true);
+        router.push('/');
+        // Show a success message or perform any other necessary actions
       } else {
-        console.error('Pipeline not found');
+        // Handle the error case
+        console.error('Failed to delete pipeline');
       }
+    } else {
+      console.error('Pipeline not found');
     }
   };
 

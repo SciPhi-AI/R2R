@@ -24,8 +24,18 @@ export function SubNavigationMenu() {
       width: 80,
       translateX: 60,
     },
-    { path: '/retrievals', label: 'Retrievals', width: 90, translateX: 140 },
-    { path: '/embeddings', label: 'Embeddings', width: 100, translateX: 230 },
+    {
+      path: `/pipeline/${pipelineId}/retrievals`,
+      label: 'Retrievals',
+      width: 90,
+      translateX: 140,
+    },
+    {
+      path: `/pipeline/${pipelineId}/embeddings`,
+      label: 'Embeddings',
+      width: 100,
+      translateX: 230,
+    },
   ];
 
   // Function to determine active nav item based on current location

@@ -23,8 +23,8 @@ const LocalDeploy = () => {
     const cleanName = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
     const seededRandomString = (Math.random() * seed)
       .toString(36)
-      .substring(2, 15);
-    return [`${cleanName}-${seededRandomString}`, seed];
+      .substring(0, 8);
+    return `${cleanName}-${seededRandomString}`;
   };
 
   // Create a random seed

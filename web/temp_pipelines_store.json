@@ -70,5 +70,89 @@
       "uid": "exampleUID",
       "name": "Local Deployment"
     }
+  },
+  "abc": {
+    "id": [
+      "abc-.kd63zktg7e",
+      86
+    ],
+    "name": "abc",
+    "endpoint": "localhost:8000",
+    "github_url": "https://github.com/example",
+    "status": "active",
+    "deployment": {
+      "id": [
+        "abc-.kd63zktg7e",
+        86
+      ],
+      "uri": "local",
+      "create_time": "2024-03-07T20:34:03.595Z",
+      "update_time": "2024-03-07T20:34:03.595Z",
+      "creator": "exampleCreator",
+      "generation": "1",
+      "last_modifier": "exampleModifier",
+      "uid": "exampleUID",
+      "name": "Local Deployment"
+    }
+  },
+  "asa": {
+    "id": "asa-e3.6d4n3",
+    "name": "asa",
+    "endpoint": "localhost:8000",
+    "github_url": "https://github.com/example",
+    "status": "active",
+    "deployment": {
+      "id": "asa-e3.6d4n3",
+      "uri": "local",
+      "create_time": "2024-03-07T20:55:28.983Z",
+      "update_time": "2024-03-07T20:55:28.983Z",
+      "creator": "exampleCreator",
+      "generation": "1",
+      "last_modifier": "exampleModifier",
+      "uid": "exampleUID",
+      "name": "Local Deployment"
+    }
+  },
+  "aaaa": {
+    "id": [
+      "aaaa-.c2k6doap9",
+      582
+    ],
+    "name": "aaaa",
+    "endpoint": "localhost:8000",
+    "github_url": "https://github.com/example",
+    "status": "active",
+    "deployment": {
+      "id": [
+        "aaaa-.c2k6doap9",
+        582
+      ],
+      "uri": "local",
+      "create_time": "2024-03-07T20:40:57.995Z",
+      "update_time": "2024-03-07T20:40:57.995Z",
+      "creator": "exampleCreator",
+      "generation": "1",
+      "last_modifier": "exampleModifier",
+      "uid": "exampleUID",
+      "name": "Local Deployment"
+    }
+  },
+  "asasa": {
+    "id": "asasa-fw.0xtr0",
+    "name": "asasa",
+    "endpoint": "localhost:8000",
+    "github_url": "https://github.com/example",
+    "status": "active",
+    "deployment": {
+      "id": "asasa-fw.0xtr0",
+      "uri": "local",
+      "create_time": "2024-03-07T20:58:14.413Z",
+      "update_time": "2024-03-07T20:58:14.413Z",
+      "creator": "exampleCreator",
+      "generation": "1",
+      "last_modifier": "exampleModifier",
+      "uid": "exampleUID",
+      "name": "Local Deployment"
+    }
   }
 }

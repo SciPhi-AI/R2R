@@ -13,7 +13,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
         return handlePost(req, res);
       case 'GET':
         const pipelines = store.getAllPipelines();
-        return res.status(200).json(pipelines);
+        return res.status(200).json({pipelines});
       default:
         res.setHeader('Allow', ['GET', 'POST']);
         return res.status(405).end(`Method ${req.method} Not Allowed`);
