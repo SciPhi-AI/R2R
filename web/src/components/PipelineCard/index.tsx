@@ -8,24 +8,15 @@ import styles from './styles.module.scss';
 import { Pipeline } from '../../types';
 
 interface PipelineCardProps {
-  id: number; // Assuming id is of type number, adjust if necessary
+  pipeline: Pipeline;
 }
 
-function PipelineCard({ id }: PipelineCardProps) {
-  const updatePipelineProp = useUpdatePipelineProp();
-  const { pipeline } = usePipelineContext();
+function PipelineCard({ pipeline }: PipelineCardProps) {
   const router = useRouter();
 
   const handleClick = () => {
-    // Use the update function with the specific property name and value
-    updatePipelineProp('id', pipeline.id);
     router.push(`/pipeline/${pipeline.id}`);
   };
-
-  if (!pipeline) {
-    // Handle the case where pipeline is null or render nothing or a loader
-    return <div>Loading...</div>; // or any other fallback UI
-  }
 
   return (
     <a href="#" className={styles.container} onClick={handleClick}>
@@ -34,11 +25,10 @@ function PipelineCard({ id }: PipelineCardProps) {
           <FiExternalLink size="16" />
         </div>
 
-
-        <div className={styles.projectInfo} id={`${id}`}>
+        <div className={styles.projectInfo}>
           <p className={styles.cardTitle}>Pipeline:</p>
           <strong className={styles.cardProjectTitle}>{pipeline.name}</strong>
-          {pipeline.status == 'finished' ? (
+          {pipeline.status === 'finished' ? (
             <>
               <p className={styles.cardTitle}>Remote:</p>
               <p className={styles.cardAddress}>{pipeline.github_url}</p>
