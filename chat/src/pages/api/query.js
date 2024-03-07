@@ -31,7 +31,6 @@ export default async function handler(req, res) {
     const { done, value } = await reader.read();
     if (done) break;
     const text = new TextDecoder("utf-8").decode(value)
-    console.log(text);
     res.write(text);
     res.flush();
   }
