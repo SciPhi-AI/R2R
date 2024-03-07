@@ -11,7 +11,7 @@ interface PipelineCardProps {
   pipeline: Pipeline;
 }
 
-function PipelineCard({ pipeline }: PipelineCardProps) {
+export default function PipelineCard({ pipeline }: PipelineCardProps) {
   const router = useRouter();
 
   const handleClick = () => {
@@ -34,7 +34,7 @@ function PipelineCard({ pipeline }: PipelineCardProps) {
               <p className={styles.cardAddress}>{pipeline.github_url}</p>
 
               <p className={styles.cardTitle}>Deployment:</p>
-              <p className={styles.cardAddress}>{pipeline.deployment_url}</p>
+              <p className={styles.cardAddress}>{pipeline.deployment.uri}</p>
             </>
           ) : (
             <>

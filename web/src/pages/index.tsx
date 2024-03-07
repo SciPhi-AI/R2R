@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/component';
 
 import { Footer } from '@/components/Footer';
 import Layout from '@/components/Layout';
-import Card from '@/components/PipelineCard';
+import PipelineCard from '@/components/PipelineCard';
 import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';
 import { Separator } from '@/components/ui/separator';
 
@@ -68,7 +68,7 @@ const Home: NextPage = () => {
         <div className={styles.gridView}>
           {Array.isArray(pipelines)
             ? pipelines?.map((pipeline) => (
-                <Card pipeline={pipeline} key={pipeline.id} />
+                <PipelineCard pipeline={pipeline} key={pipeline.id} />
               ))
             : null}
         </div>
