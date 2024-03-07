@@ -1,11 +1,13 @@
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Layout from '@/components/Layout';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/context/authProvider';
 import { createClient } from '@/utils/supabase/component';
 import { usePipelineContext } from '@/context/PipelineContext';
-import { Github } from 'lucide-react';
+// import { Github } from 'lucide-react';
+import { Github, Link } from 'lucide-react';
+
 import {
   CardTitle,
   CardDescription,
@@ -14,11 +16,16 @@ import {
   CardFooter,
   Card,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 import { Separator } from '@/components/ui/separator';
 import styles from '../../styles/Index.module.scss';
 
 const PipelinePage = () => {
+  const [pipelineToDelete, setPipelineToDelete] = useState('');
+  const [deleteButtonDisabled, setDeleteButtonDisabled] = useState(true);
+
   const { cloudMode } = useAuth();
   const supabase = createClient();
   const { pipelines, updatePipelines } = usePipelineContext();
@@ -26,6 +33,48 @@ const PipelinePage = () => {
   const pipelineId: any = router.query.pipelineId;
   const pipeline = pipelines[pipelineId]
 
+  const handleDeletePipeline = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+  
+    if (token) {
+      if (pipelineId) {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/delete_pipeline/${pipelineId}`, {
+          method: 'DELETE',
+          headers: new Headers({
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          }),
+        });
+  
+        if (response.ok) {
+          // Remove the deleted pipeline from the local state
+          updatePipelines(pipelineId, null);
+          setPipelineToDelete('');
+          setDeleteButtonDisabled(true);
+          router.push('/');
+          // Show a success message or perform any other necessary actions
+        } else {
+          // Handle the error case
+          console.error('Failed to delete pipeline');
+        }
+      } else {
+        console.error('Pipeline not found');
+      }
+    }
+  };  
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text).then(
+      () => {
+        // Optional: Show a success message or perform any other actions
+      },
+      (err) => {
+        console.error('Failed to copy text: ', err);
+      }
+    );
+  };
+  
   useEffect(() => {
     const update = async () => {
       if (cloudMode === 'cloud' && pipelineId) {
@@ -69,9 +118,9 @@ const PipelinePage = () => {
         <Separator />
         <Card className="my-6 w-full max-w-lg">
           <CardHeader className="pb-0">
-            <CardTitle className="text-xl">Deployment</CardTitle>
+            <CardTitle className="text-xl">{pipeline.name}</CardTitle>
             <CardDescription>
-              Deployments are immutable snapshots of RAG pipeline at a specific
+              This is a deployment of an immutable snapshot of RAG pipeline at a specific
               point in time.
             </CardDescription>
           </CardHeader>
@@ -80,14 +129,17 @@ const PipelinePage = () => {
               <div className="flex items-center gap-4">
                 {pipeline.deployment && (
                   <>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 mt-2">
                       <GlobeIcon className="w-4 h-4" />
                       <span className="font-semibold">
                         {pipeline.deployment?.uri}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CopyIcon className="w-4 h-4" />
+                      <CopyIcon
+                        className="w-4 h-4 cursor-pointer"
+                        onClick={() => handleCopy(pipeline.deployment?.uri)}
+                      />
                     </div>
                 </>
                 )}
@@ -141,18 +193,44 @@ const PipelinePage = () => {
           </div>
           </CardContent>
           <CardFooter>
-            <div className="flex w-full justify-between items-center gap-4">
-              <div className="flex items-center gap-2">
-                {pipeline.status == 'finished' && <CheckCircleIcon className="w-4 h-4" />}
-                {pipeline.status}
-              </div>
-              {/* <Link
-                className="flex items-center underline text-sm font-medium"
-                href="#"
+          <div className="flex flex-col w-full gap-4">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            {pipeline.status == 'finished' && <CheckCircleIcon className="w-4 h-4" />}
+            {pipeline.status}
+          </div>
+    
+            </div>
+            <Separator className="h-px" />
+            <Label className="pl-1">Delete</Label> 
+            <div className="flex items-center -mt-2">
+              <Input
+                type="text"
+                value={pipelineToDelete}
+                onChange={(e) => {
+                  setPipelineToDelete(e.target.value);
+                  setDeleteButtonDisabled(e.target.value!==pipeline.name);
+                }}
+                placeholder={`Enter pipeline name '${pipeline.name}' to enable delete.`}
+                className="flex-grow"
+                style={{
+                  outline: 'none', // Removes the default outline
+                  boxShadow: '0 0 2px #719ECE', // Sets a subtle glow, adjust as needed
+                }}
+              />
+              <button
+                className={`px-4 py-2 ml-2 text-white rounded ${
+                  deleteButtonDisabled
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-red-500 hover:bg-red-600'
+                }`}
+                onClick={handleDeletePipeline}
+                disabled={deleteButtonDisabled}
               >
-                View Deployment
-                <ChevronRightIcon className="w-4 h-4 ml-2 shrink-0" />
-              </Link> */}
+                Delete
+              </button>
+            </div>
+
             </div>
           </CardFooter>
         </Card>
@@ -170,6 +248,7 @@ function GitHubIcon(props) {
 }
 
 function GlobeIcon(props) {
+  return <Link width="20" height="20" />;
   return (
     <svg
       {...props}

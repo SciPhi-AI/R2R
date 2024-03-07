@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     generation_config: { stream: true },
   };
 
-  const externalApiResponse = await fetch(`http://127.0.0.1:8000/rag_completion`, {
+  const externalApiResponse = await fetch(`https://sciphi-25b192f5-b73d-47c7-aed0-9cb9429f5cc7-qwpin2swwa-ue.a.run.app`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

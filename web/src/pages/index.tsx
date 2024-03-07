@@ -50,7 +50,7 @@ const Home: NextPage = () => {
     fetchPipelines();
     const interval = setInterval(() => {
       // Use the current value of the pipelines ref
-      if (pipelinesRef.current.some(pipeline => ['building', 'pending', 'deploying'].includes(pipeline.status))) {
+      if (pipelinesRef?.current?.some(pipeline => ['building', 'pending', 'deploying'].includes(pipeline.status))) {
         fetchPipelines();
       }
     }, 5000);
