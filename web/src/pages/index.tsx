@@ -23,22 +23,39 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     if (cloudMode === 'cloud') {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        const token = session?.access_token;
-        if (token) {
-          console.log('fetching from GitHub...');
-          fetch('/api/pipelines', {
-            headers: new Headers({
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            }),
-          })
-            .then((res) => res.json())
-            .then((json) => {
-              setPipelines(json['pipelines']);
-            });
-        }
-      });
+      supabase.auth
+        .getSession()
+        .then(({ data: { session } }) => {
+          const token = session?.access_token;
+          if (token) {
+            console.log('fetching from GitHub...');
+            fetch('/api/pipelines', {
+              headers: new Headers({
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              }),
+            })
+              .then((res) => {
+                if (!res.ok) {
+                  throw new Error(
+                    `Error fetching pipelines: ${res.statusText}`
+                  );
+                }
+                return res.json();
+              })
+              .then((json) => {
+                setPipelines(json['pipelines']);
+              })
+              .catch((error) => {
+                console.error('Failed to fetch pipelines:', error);
+                // Optionally, update the UI to reflect the error
+              });
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to get session:', error);
+          // Handle errors related to getting the session here
+        });
     }
   }, [cloudMode]);
 
@@ -46,9 +63,9 @@ const Home: NextPage = () => {
   //   router.push('/retrievals');
   // }, [router]);
 
-  const handleAddPipeline = (newPipeline) => {
-    setPipelines((prevPipelines) => [...prevPipelines, newPipeline]);
-  };
+  // const handleAddPipeline = (newPipeline) => {
+  //   setPipelines((prevPipelines) => [...prevPipelines, newPipeline]);
+  // };
 
   return (
     <Layout>
@@ -56,7 +73,7 @@ const Home: NextPage = () => {
         <h1 className="text-white text-2xl mb-4"> Pipelines </h1>
         <Separator />
         <div className="mt-6" />
-        <CreatePipelineHeader onAddPipeline={handleAddPipeline} numPipelines={pipelines?.length || 0} />
+        <CreatePipelineHeader numPipelines={pipelines?.length || 0} />
         <div className={styles.gridView}>
           {Array.isArray(pipelines)
             ? pipelines.map((pipeline) => (
