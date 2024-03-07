@@ -220,6 +220,7 @@ function Component() {
                         id={`secret-value-${index + 1}`}
                         placeholder="e.g. `sk-bDaW...`"
                         value={pair.value}
+                        type="password"
                         onChange={(e) => handleSecretValueChange(index, e.target.value)}
                         />
                     </div>
