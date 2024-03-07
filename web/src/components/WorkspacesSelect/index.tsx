@@ -18,7 +18,6 @@ function WorkspacesSelect() {
         <div className={styles.currentWorkspace}>
           <div>
             <Image
-              // src="https://github.com/datsfilipe.png"
               src="/images/dummy_logo.png"
               alt="Acme Co."
               width="30"
@@ -29,6 +28,9 @@ function WorkspacesSelect() {
           Acme Co.
         </div>
       </div>
+
+      <div className={styles.divider}></div>
+      <div className={styles.userPanel}>Pipeline #1</div>
     </div>
   );
 }

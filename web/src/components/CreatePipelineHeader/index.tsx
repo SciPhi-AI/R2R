@@ -13,7 +13,6 @@ export function CreatePipelineHeader({numPipelines}: {numPipelines: number}) {
     <div className={styles.container}>
       <button className={styles.newProjectButton} onClick={createPipeline}>New Pipeline</button>
       <span style={{fontWeight: 'bold', marginLeft: '5px', marginTop:"10px"}}>{numPipelines}/10 pipelines deployed</span>
-
     </div>
   );
-}
+};

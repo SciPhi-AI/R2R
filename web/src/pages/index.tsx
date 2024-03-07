@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/component';
 
 import { Footer } from '@/components/Footer';
 import Layout from '@/components/Layout';
-import { Card } from '@/components/PipelineCard';
+import Card from '@/components/PipelineCard';
 import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';
 import { Separator } from '@/components/ui/separator';
 
@@ -23,14 +23,16 @@ const Home: NextPage = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const token = session?.access_token;
       if (token) {
-        console.log("fetching....");
         fetch('/api/pipelines', {
           headers: new Headers({
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }),
         })
-        .then((res) => res.json())
+        .then((res) => {
+          return res.json()
+        }
+          )
         .then((json) => {
           setPipelines(json['pipelines']);
         });
@@ -62,7 +64,7 @@ const Home: NextPage = () => {
         <Separator />
         <div className="mt-6" />
         <CreatePipelineHeader numPipelines={pipelines?.length || 0} />
-
+        
         <div className={styles.gridView}>
           {Array.isArray(pipelines)
             ? pipelines?.map((pipeline) => (

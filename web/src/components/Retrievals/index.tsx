@@ -16,9 +16,8 @@ import {
   TableHeader,
   TableRow,
 } from '../ui/table';
-import {
-  Tooltip,
-} from 'react-tippy';
+
+import Tippy from '@tippyjs/react';
 
 // Define your dictionary
 const methodDictionary: { [key: string]: string } = {
@@ -39,7 +38,6 @@ export function Retrieval() {
 
   const { logs, loading, error, refetch } = useLogs();
 
-
   useEffect(() => {
     const N = 5;
     const interval = setInterval(() => {
@@ -49,14 +47,19 @@ export function Retrieval() {
     return () => clearInterval(interval); // Clear interval on component unmount
   }, [refetch]);
 
-
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const filteredLogs = logs.filter((log) => {return log.pipelineRunType !== "embedding"})
-  const currentItems = logs.filter((log) => {return log.pipelineRunType !== "embedding"}).slice(indexOfFirstItem, indexOfLastItem);
+  const filteredLogs = logs.filter((log) => {
+    return log.pipelineRunType !== 'embedding';
+  });
+  const currentItems = logs
+    .filter((log) => {
+      return log.pipelineRunType !== 'embedding';
+    })
+    .slice(indexOfFirstItem, indexOfLastItem);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -96,7 +99,6 @@ export function Retrieval() {
     });
   }, [sortedItems, filterQuery]);
 
-  
   return (
     <div className="min-h-screen w-full p-2">
       <div className="flex flex-col">
@@ -130,7 +132,14 @@ export function Retrieval() {
                       );
                     }}
                   >
-                    Timestamp
+                    <div className="flex items-center">
+                      <span>Timestamp</span>
+                      <TriangleIcon
+                        className={`transition-transform transform ${sortField === 'timestamp' && sortDirection === 'desc' ? 'rotate-0' : '-rotate-180'} m-2`}
+                        width="16"
+                        height="16"
+                      />
+                    </div>
                   </TableHead>
                   <TableHead
                     className="flex-2 w-0"
@@ -188,7 +197,7 @@ export function Retrieval() {
                     Outcome
                   </TableHead>
                   <TableHead
-                    className="flex-2"
+                    className="flex-2 min-w-[30px] flex justify-between items-center"
                     onClick={() => {
                       setSortField('score');
                       setSortDirection(
@@ -196,7 +205,12 @@ export function Retrieval() {
                       );
                     }}
                   >
-                    Search Score
+                    <span>Search Score</span>
+                    <TriangleIcon
+                      className={`transition-transform transform ${sortField === 'score' && sortDirection === 'desc' ? '-rotate-180' : 'rotate-0'} ml-2`}
+                      width="16"
+                      height="16"
+                    />
                   </TableHead>
                   <TableHead
                     className="flex-2"
@@ -248,22 +262,32 @@ export function Retrieval() {
                       {log.outcome === 'success' ? log.score : ''}
                     </TableCell>
                     <TableCell>
-                      {log.evalResults 
-                        ? Object.entries(log.evalResults).map(([key, value], i) => (
-                            <div key={key} >
-                            <Tooltip
-                              html={(
-                                <div style={{ width: 400, backgroundColor: '#333', color: '#fff', padding: 10, borderRadius: '10px'  }}>
-                                  {value.reason}
-                                </div>
-                              )}
-                              trigger="mouseenter"
-                            >
-                            <span style={{ whiteSpace: 'nowrap' }}><strong>{key}:</strong> {value.score}</span>
-                            </Tooltip>
-
-                            </div>
-                          ))
+                      {log.evalResults
+                        ? Object.entries(log.evalResults).map(
+                            ([key, value], i) => (
+                              <div key={key}>
+                                <Tippy
+                                  content={
+                                    <div
+                                      style={{
+                                        width: 400,
+                                        backgroundColor: '#333',
+                                        color: '#fff',
+                                        padding: 10,
+                                        borderRadius: '10px',
+                                      }}
+                                    >
+                                      {value.reason}
+                                    </div>
+                                  }
+                                >
+                                  <span style={{ whiteSpace: 'nowrap' }}>
+                                    <strong>{key}:</strong> {value.score}
+                                  </span>
+                                </Tippy>
+                              </div>
+                            )
+                          )
                         : 'N/A'}
                     </TableCell>
                   </TableRow>
@@ -300,6 +324,23 @@ function SearchIcon(props: React.SVGProps<SVGSVGElement>) {
     >
       <circle cx="11" cy="11" r="8" />
       <path d="m21 21-4.3-4.3" />
+    </svg>
+  );
+}
+
+export function TriangleIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 9l6 6 6-6" />
     </svg>
   );
 }

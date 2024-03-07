@@ -14,16 +14,23 @@ export function SubNavigationMenu() {
     } | null>(null);
 
   const router = useRouter();
+  const { pipelineId } = router.query;
 
   const navItems = [
-    { path: '/retrievals', width: 85.3, translateX: 0 },
-    { path: '/embeddings', width: 100, translateX: 87.5 },
-    // { path: '/providers/databases', width: 75, translateX: 68 },
+    { path: '/', label: 'Home', width: 60, translateX: 0 },
+    {
+      path: `/pipeline/${pipelineId}`,
+      label: 'Pipeline',
+      width: 80,
+      translateX: 60,
+    },
+    { path: '/retrievals', label: 'Retrievals', width: 90, translateX: 140 },
+    { path: '/embeddings', label: 'Embeddings', width: 100, translateX: 230 },
   ];
 
   // Function to determine active nav item based on current location
   function getActiveNavItem() {
-    const activeItem = navItems.find((item) => location.pathname === item.path);
+    const activeItem = navItems.find((item) => router.pathname === item.path);
     if (activeItem) {
       setNavItemHighlightsPropsValues({
         width: activeItem.width,
@@ -38,20 +45,20 @@ export function SubNavigationMenu() {
     getActiveNavItem();
   }, [router.pathname]);
 
-  function handleHoverNavItem(index: number) {
-    const navItem = navItems[index];
-    if (navItem) {
+  function handleHoverNavItem(event: React.MouseEvent<HTMLAnchorElement>) {
+    const navItemElement = event.currentTarget;
+    const itemPath = navItemElement.getAttribute('href');
+    const hoveredItem = navItems.find((item) => item.path === itemPath);
+    if (hoveredItem) {
       setNavItemHighlightsPropsValues({
-        width: navItem.width,
-        translateX: navItem.translateX,
+        width: hoveredItem.width,
+        translateX: hoveredItem.translateX,
       });
-    } else {
-      setNavItemHighlightsPropsValues(null);
     }
   }
 
   function handleLeaveNavItem() {
-    setNavItemHighlightsPropsValues(null);
+    getActiveNavItem();
   }
 
   // handle scroll
@@ -81,33 +88,16 @@ export function SubNavigationMenu() {
         ) : (
           ''
         )}
-        <Link href="/retrievals" passHref legacyBehavior>
-          <a
-            onMouseOver={() => handleHoverNavItem(0)}
-            className={router.pathname === '/retrievals' ? styles.selected : ''}
+        {navItems.map((item) => (
+          <Link
+            key={item.path}
+            href={item.path}
+            onMouseOver={(event) => handleHoverNavItem(event)}
+            className={router.pathname === item.path ? styles.selected : ''}
           >
-            Retrievals
-          </a>
-        </Link>
-        <Link href="/embeddings" passHref legacyBehavior>
-          <a
-            onMouseOver={() => handleHoverNavItem(1)}
-            className={router.pathname === '/embeddings' ? styles.selected : ''}
-          >
-            Embeddings
-          </a>
-        </Link>
-
-        {/* <Link href="/providers/databases" passHref legacyBehavior>
-          <a
-            onMouseOver={() => handleHoverNavItem(1)}
-            className={
-              router.pathname === '/providers/databases' ? styles.selected : ''
-            }
-          >
-            Providers
-          </a>
-        </Link> */}
+            {item.label}
+          </Link>
+        ))}
       </nav>
     </div>
   );
