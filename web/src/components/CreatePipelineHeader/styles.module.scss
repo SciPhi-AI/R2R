@@ -20,7 +20,8 @@
     text-align: center;
 
     &:hover {
-      background-color: var(--sciphi-5);
+      // background-color: var(--sciphi-5);
+      opacity: 0.9;
       border: 1px solid var(--color-3);
 
       color: var(--color-8);
