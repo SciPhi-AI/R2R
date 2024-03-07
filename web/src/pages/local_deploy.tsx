@@ -21,10 +21,10 @@ const LocalDeploy = () => {
   const generateUniqueId = (name: string, seed = 42) => {
     // Remove invalid characters and spaces, then add a random string
     const cleanName = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    const seededRandomString = (Math.random() * seed)
-      .toString(36)
+    const seededRandomString = Math.floor(Math.random() * seed * 100000000)
+      .toString()
       .substring(0, 8);
-    return `${cleanName}-${seededRandomString}`;
+    return `${seededRandomString}`;
   };
 
   // Create a random seed
