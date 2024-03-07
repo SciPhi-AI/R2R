@@ -77,7 +77,7 @@ const Home: NextPage = () => {
         <div className={styles.gridView}>
           {Array.isArray(pipelines)
             ? pipelines.map((pipeline) => (
-                <PipelineCard key={pipeline.name} id={pipeline.id} />
+                <PipelineCard key={pipeline.id} pipeline={pipeline} />
               ))
             : null}
         </div>
