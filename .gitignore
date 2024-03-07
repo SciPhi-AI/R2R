@@ -10,6 +10,7 @@ uploads/
 .next
 node_modules
 
+your_local_db_path
 
 **/*.sqlite
 **/*.sqlite3
