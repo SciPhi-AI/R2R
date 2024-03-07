@@ -17,6 +17,10 @@ const defaultPipeline: Pipeline = {
   deployment_url: 'https://example.com',
   github_url: 'https://github.com',
   status: 'active',
+  deployment: {
+    id: 4242,
+    uri: 'https://example.uri.com',
+  },
 };
 
 const PipelineContext = createContext<PipelineContextProps>({
