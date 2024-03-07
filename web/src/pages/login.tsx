@@ -62,7 +62,7 @@ export default function LoginPage() {
 
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
           <form className="space-y-6" action="#" method="POST">
-            <div>
+            {/* <div>
               <label
                 htmlFor="email"
                 className="block text-sm font-medium leading-6 text-white"
@@ -133,7 +133,7 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-            <Separator className="my-6" />
+            <Separator className="my-6" /> */}
             <div>
               <button
                 type="button"

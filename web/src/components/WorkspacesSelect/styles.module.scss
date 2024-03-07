@@ -10,14 +10,11 @@
   .divider {
     margin-left: 15px;
     margin-top: 5px;
-    position: absolute;
+    position: relative;
     height: 28px;
     width: 1px;
-    top: 6px;
-    bottom: -1px;
-    left: 50px;
     background-color: var(--color-5);
-    rotate: 30deg;
+    transform: rotate(30deg);
   }
 
   .userPanel {
@@ -40,7 +37,7 @@
 
         color: var(--color-1);
         padding: 1px;
-        background-color: var(--color-7);
+        background-color: white;
         border-radius: 100%;
       }
 

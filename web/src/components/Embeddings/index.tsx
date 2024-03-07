@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import Pagination from '@/components/ui/pagination';
 import useLogs from '@/hooks/useLogs';
 import { setColor } from '@/lib/utils';
+import { TriangleIcon } from '../Retrievals';
 
 import {
   Table,
@@ -16,9 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '../ui/table';
-import {
-  Tooltip,
-} from 'react-tippy';
+import { Tooltip } from 'react-tippy';
 
 // Define your dictionary
 const methodDictionary: { [key: string]: string } = {
@@ -39,7 +38,6 @@ export function Embeddings() {
 
   const { logs, loading, error, refetch } = useLogs();
 
-
   useEffect(() => {
     const N = 5;
     const interval = setInterval(() => {
@@ -54,8 +52,14 @@ export function Embeddings() {
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const filteredLogs = logs.filter((log) => {return log.pipelineRunType === "embedding"})
-  const currentItems = filteredLogs.filter((log) => {return log.pipelineRunType === "embedding"}).slice(indexOfFirstItem, indexOfLastItem);
+  const filteredLogs = logs.filter((log) => {
+    return log.pipelineRunType === 'embedding';
+  });
+  const currentItems = filteredLogs
+    .filter((log) => {
+      return log.pipelineRunType === 'embedding';
+    })
+    .slice(indexOfFirstItem, indexOfLastItem);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -95,7 +99,6 @@ export function Embeddings() {
     });
   }, [sortedItems, filterQuery]);
 
-  
   return (
     <div className="min-h-screen w-full p-2">
       <div className="flex flex-col">
@@ -129,7 +132,14 @@ export function Embeddings() {
                       );
                     }}
                   >
-                    Timestamp
+                    <div className="flex items-center">
+                      <span>Timestamp</span>
+                      <TriangleIcon
+                        className={`transition-transform transform ${sortField === 'timestamp' && sortDirection === 'desc' ? 'rotate-0' : '-rotate-180'} m-2`}
+                        width="16"
+                        height="16"
+                      />
+                    </div>
                   </TableHead>
                   <TableHead
                     className="flex-2 w-0"
@@ -206,7 +216,9 @@ export function Embeddings() {
                       </Highlight>
                     </TableCell>
                     <TableCell>
-                      {(log.document !== null && log.document.id !== undefined) ? truncateText(log.document.id,8) : ''}
+                      {log.document !== null && log.document.id !== undefined
+                        ? truncateText(log.document.id, 8)
+                        : ''}
                     </TableCell>
                     <TableCell>
                       {log.embeddingChunks && log.embeddingChunks.length > 0
