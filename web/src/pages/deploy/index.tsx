@@ -9,8 +9,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Info } from "lucide-react";
 import { useRouter } from 'next/router';
 import { createClient } from '@/utils/supabase/component';
-// import CryptoJS from 'crypto-js';
 
+const REMOTE_URL = `http://127.0.0.1:8000`
 function Component() {
   const [secretPairs, setSecretPairs] = useState([{ key: '', value: '' }]);
   const [selectedApiKey, setSelectedApiKey] = useState('');
@@ -24,6 +24,8 @@ function Component() {
   const [newApiKeyName, setNewApiKeyName] = useState('');
   const [pipelineName, setPipelineName] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // Add this line to track loading state
+
   const handleAddMore = () => {
     setSecretPairs([...secretPairs, { key: '', value: '' }]);
   };
@@ -92,87 +94,91 @@ function Component() {
       setSelectedApiKey(value);
     }
   };
+
   const handleSubmit = async () => {
-    // Prepare the form data
-    // const encryptedSecretPairs = secretPairs.map(pair => ({
-    //   key: pair.key,
-    //   value: CryptoJS.AES.encrypt(pair.value, process.env.NEXT_PUBLIC_ENCRYPTION_KEY).toString(),
-    // }));
+    setIsLoading(true); // Set loading to true when the submission starts
   
-    const formData = {
-      pipeline_name: pipelineName,
-      repo_url: githubUrl,
-      // selectedApiKey,
-      // secretPairs: encryptedSecretPairs,
-    };
+    // Simulate a loading delay of 1-2 seconds
+    setTimeout(async () => {
   
-    try {
-      // Get the current session token
-      const session = await supabase.auth.getSession();
-      const token = session.data?.session?.access_token;
+      try {
+        // Get the current session token
+        const session = await supabase.auth.getSession();
+        const token = session.data?.session?.access_token;
   
-      if (!token) {
-        // Handle case when token is not available
-        console.error('Access token not found');
-        // Display an error message to the user or redirect to login page
-        return;
-      }
+        if (!token) {
+          // Handle case when token is not available
+          console.error('Access token not found');
+          setIsLoading(false); // Set loading to false if there is no token
+          // Display an error message to the user or redirect to login page
+          return;
+        }
   
-      // Make a POST request to the create_pipeline API
-      const response = await fetch('/api/create_pipeline', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
+        const formData = {
+          pipeline_name: pipelineName,
+          repo_url: githubUrl,
+          secret_pairs: secretPairs,
+        };
+
+        console.log('fetching from  ', `${REMOTE_URL}/deploy`)
   
-      if (response.ok) {
-        // Pipeline creation successful
-        console.log('Pipeline created successfully');
-        // Reset the form fields
-        setPipelineName('');
-        setGithubUrl('');
-        setSelectedApiKey('');
-        setSecretPairs([{ key: '', value: '' }]);
-        setNewPublicKey('');
-        setNewPrivateKey('');
-        // Redirect to a success page or display a success message
-        router.push('/');
-      } else {
-        // Pipeline creation failed
-        console.error('Pipeline creation failed');
+        if (pipelineName === '') {
+          alert('Please enter a Pipeline Name.');
+          setIsLoading(false);
+          return;
+        }
+        if (githubUrl === '') {
+          alert('Please enter a GitHub URL.');
+          setIsLoading(false);
+          return;
+        }
+        // check if any keys or values are empty
+        for (let i = 0; i < secretPairs.length; i++) {
+          if (secretPairs[i].key === '' || secretPairs[i].value === '') {
+            alert('Please fill in all secret keys and values.');
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        const response = await fetch(`${REMOTE_URL}/deploy`, {
+          method: 'POST',
+          headers: new Headers({
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }),
+          body: JSON.stringify(formData),
+        });
+
+
+        console.log('response:', response);
+        if (response.ok) {
+          // Pipeline creation successful
+          console.log('Pipeline created successfully');
+          // Reset the form fields
+          setPipelineName('');
+          setGithubUrl('');
+          setSelectedApiKey('');
+          setSecretPairs([{ key: '', value: '' }]);
+          setNewPublicKey('');
+          setNewPrivateKey('');
+          // Redirect to a success page or display a success message
+          router.push('/');
+        } else {
+          // Pipeline creation failed
+          console.error('Pipeline creation failed');
+          // Display an error message to the user
+          alert('Failed to create the pipeline. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error creating pipeline:', error);
         // Display an error message to the user
-        alert('Failed to create the pipeline. Please try again.');
+        alert('An error occurred while creating the pipeline. Please try again.');
+      } finally {
+        setIsLoading(false); // Set loading to false when the submission is complete
       }
-    } catch (error) {
-      console.error('Error creating pipeline:', error);
-      // Display an error message to the user
-      alert('An error occurred while creating the pipeline. Please try again.');
-    }
+    }, 1000 + Math.random() * 1000); // Delay between 1 and 2 seconds
   };
-  
-  // const handleSubmit = () => {
-  //   // Prepare the form data
-  //   const formData = {
-  //     pipelineName,
-  //     githubUrl,
-  //     selectedApiKey,
-  //     secretPairs,
-  //   };
-
-  //   // Process the form data (e.g., send it to the server)
-  //   console.log('Form data:', formData);
-
-  //   // Reset the form fields
-  //   setPipelineName('');
-  //   setGithubUrl('');
-  //   setSelectedApiKey('');
-  //   setSecretPairs([{ key: '', value: '' }]);
-  //   setNewPublicKey('');
-  //   setNewPrivateKey('');
-  // };
 
   return (
     <Card>
@@ -308,8 +314,11 @@ function Component() {
                 </div>
                 <div className="flex justify-end mt-4">
                     <button
-                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-1/3"
+                        className={`bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-1/3 ${
+                          isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'
+                        }`}
                         onClick={handleSubmit}
+                        disabled={isLoading}
                     >
                         Deploy
                     </button>
