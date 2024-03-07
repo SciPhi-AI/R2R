@@ -9,14 +9,27 @@ import {
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { usePipelineContext } from '@/context/PipelineContext';
 import styles from '@/styles/Index.module.scss';
 
 const LocalDeploy = () => {
   const [pipelineName, setPipelineName] = useState('');
   const [localEndpoint, setLocalEndpoint] = useState('localhost:8000');
   const [isLoading, setIsLoading] = useState(false);
-
   const router = useRouter();
+
+  const generateUniqueId = (name: string, seed = 42) => {
+    // Remove invalid characters and spaces, then add a random string
+    const cleanName = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const seededRandomString = (Math.random() * seed)
+      .toString(36)
+      .substring(2, 15);
+    return [`${cleanName}-${seededRandomString}`, seed];
+  };
+
+  // Create a random seed
+  const seed = Math.floor(Math.random() * 1000);
+  const uniqueId = generateUniqueId(pipelineName, seed);
 
   const handleSubmit = async () => {
     setIsLoading(true);
@@ -24,7 +37,6 @@ const LocalDeploy = () => {
     // Ensure the URL includes the HTTP scheme
     const fullEndpointUrl = `http://${localEndpoint}/logs`;
 
-    // Attempt to fetch logs from the local endpoint to verify it's working
     try {
       const logsResponse = await fetch(fullEndpointUrl, {
         method: 'GET',
@@ -39,18 +51,45 @@ const LocalDeploy = () => {
         );
       }
 
-      const logsData = await logsResponse.json();
-      if (logsData.length === 0) {
-        alert(
-          'The local endpoint is working, but there are no logs. Ensure the system is correctly initialized.'
-        );
-      } else {
-        // If there are logs, it means the endpoint is definitely working
-        alert('The local endpoint is working and logs are present.');
-      }
+      // fetch pipelines array
+      const response = await fetch('api/local_pipelines');
+      const data = await response.json();
+      const pipelines = data.pipelines || [];
+      console.log('pipelines = ', pipelines);
+      // Assuming verification is successful, create a new pipeline object
+      const newPipeline = {
+        id: uniqueId,
+        name: pipelineName,
+        endpoint: localEndpoint,
+        github_url: 'https://github.com/example',
+        status: 'active',
+        deployment: {
+          id: uniqueId, // Ensuring both IDs are the same
+          uri: 'local',
+          create_time: new Date().toISOString(),
+          update_time: new Date().toISOString(),
+          creator: 'exampleCreator',
+          generation: '1',
+          last_modifier: 'exampleModifier',
+          uid: 'exampleUID',
+          name: 'Local Deployment',
+        },
+      };
 
-      // Since the goal is to verify the endpoint, navigate to /success if the endpoint is responsive
-      router.push('/success');
+      // POST request to update the pipeline in the store
+      await fetch('/api/local_pipelines', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: pipelineName, // Use pipelineName as the unique identifier
+          pipeline: newPipeline,
+        }),
+      });
+
+      alert('The local endpoint is working and the pipeline has been created.');
+      router.push(`/pipeline/${pipelineName}/local_pipeline`);
     } catch (error) {
       console.error('Error:', error);
       alert(error.message);

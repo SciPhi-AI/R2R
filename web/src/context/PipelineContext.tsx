@@ -1,13 +1,10 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { Pipeline } from '../types'; // Import the Pipeline type
-import { useRouter } from 'next/router';
+import { useAuth } from './authProvider';
 
 interface PipelineContextProps {
   pipelines: Record<string, Pipeline>;
-  updatePipelines(
-    pipelineId: string,
-    pipeline: Pipeline
-  ): void;
+  updatePipelines(pipelineId: string, pipeline: Pipeline): void;
 }
 
 const PipelineContext = createContext<PipelineContextProps>({
@@ -21,19 +18,54 @@ export const PipelineProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [pipelines, setPipeline] = useState<Record<number, Pipeline>>({});
-  const router = useRouter();
+  const { cloudMode } = useAuth();
 
-  const updatePipelines = (pipelineId: string, pipeline: Pipeline) => {
-    setPipeline((prevPipelines) => ({
-      ...prevPipelines,
-      [pipelineId]: pipeline,
-    }));
+  useEffect(() => {
+    const fetchPipelines = async () => {
+      if (!cloudMode) {
+        const res = await fetch('/api/pipelines?localmode=true');
+        if (res.ok) {
+          const data = await res.json();
+          setPipeline(data);
+        } else {
+          console.error('Failed to fetch pipelines');
+        }
+      }
+    };
+    fetchPipelines();
+  }, [cloudMode]);
+
+  const updatePipelines = async (pipelineId: string, pipeline: Pipeline) => {
+    if (cloudMode === 'cloud') {
+      setPipeline((prevPipelines) => ({
+        ...prevPipelines,
+        [pipelineId]: pipeline,
+      }));
+    }
+    if (cloudMode === 'local') {
+      const response = await fetch('/api/pipelines', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: pipelineId, pipeline }),
+      });
+
+      if (response.ok) {
+        // Update local state if necessary
+        setPipeline((prevPipelines) => ({
+          ...prevPipelines,
+          [pipelineId]: pipeline,
+        }));
+      } else {
+        // Handle error
+        console.error('Failed to update pipeline');
+      }
+    }
   };
 
   return (
-    <PipelineContext.Provider
-      value={{ pipelines, updatePipelines }}
-    >
+    <PipelineContext.Provider value={{ pipelines, updatePipelines }}>
       {children}
     </PipelineContext.Provider>
   );

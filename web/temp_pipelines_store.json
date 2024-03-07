@@ -1,0 +1,74 @@
+{
+  "asdasd": {
+    "id": [
+      "asdasd-.3v7be1sct",
+      844
+    ],
+    "name": "asdasd",
+    "endpoint": "localhost:8000",
+    "github_url": "https://github.com/example",
+    "status": "active",
+    "deployment": {
+      "id": [
+        "asdasd-.3v7be1sct",
+        844
+      ],
+      "uri": "local",
+      "create_time": "2024-03-07T16:00:37.373Z",
+      "update_time": "2024-03-07T16:00:37.373Z",
+      "creator": "exampleCreator",
+      "generation": "1",
+      "last_modifier": "exampleModifier",
+      "uid": "exampleUID",
+      "name": "Local Deployment"
+    }
+  },
+  "asdada": {
+    "id": [
+      "asdada-.2c6uo0uss",
+      623
+    ],
+    "name": "asdada",
+    "endpoint": "localhost:8000",
+    "github_url": "https://github.com/example",
+    "status": "active",
+    "deployment": {
+      "id": [
+        "asdada-.2c6uo0uss",
+        623
+      ],
+      "uri": "local",
+      "create_time": "2024-03-07T20:21:43.770Z",
+      "update_time": "2024-03-07T20:21:43.770Z",
+      "creator": "exampleCreator",
+      "generation": "1",
+      "last_modifier": "exampleModifier",
+      "uid": "exampleUID",
+      "name": "Local Deployment"
+    }
+  },
+  "asdas": {
+    "id": [
+      "asdas-3oo1t9t2dn",
+      78
+    ],
+    "name": "asdas",
+    "endpoint": "localhost:8000",
+    "github_url": "https://github.com/example",
+    "status": "active",
+    "deployment": {
+      "id": [
+        "asdas-3oo1t9t2dn",
+        78
+      ],
+      "uri": "local",
+      "create_time": "2024-03-07T20:22:49.589Z",
+      "update_time": "2024-03-07T20:22:49.589Z",
+      "creator": "exampleCreator",
+      "generation": "1",
+      "last_modifier": "exampleModifier",
+      "uid": "exampleUID",
+      "name": "Local Deployment"
+    }
+  }
+}
