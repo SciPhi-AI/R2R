@@ -25,6 +25,7 @@ function Component() {
   const [newApiKeyName, setNewApiKeyName] = useState('');
   const [pipelineName, setPipelineName] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const handleAddMore = () => {
     setSecretPairs([...secretPairs, { key: '', value: '' }]);
   };
@@ -132,7 +133,8 @@ function Component() {
           return;
         }
       }
-
+      setIsLoading(true);
+      
       const response = await fetch(`${REMOTE_SERVER_URL}/deploy`, {
         method: 'POST',
         headers: new Headers({
@@ -147,16 +149,17 @@ function Component() {
         // Pipeline creation successful
         console.log('Pipeline created successfully');
         // Reset the form fields
-        setPipelineName('');
-        setGithubUrl('');
-        setSelectedApiKey('');
-        setSecretPairs([{ key: '', value: '' }]);
-        setNewPublicKey('');
-        setNewPrivateKey('');
         // Redirect to a success page or display a success message
         // Wait for a random duration between 1 to 2 seconds before navigating to the home page
         const delay = Math.floor(Math.random() * 1000) + 1000; // Random duration between 1000 to 2000 milliseconds
         setTimeout(() => {
+          setPipelineName('');
+          setGithubUrl('');
+          setSelectedApiKey('');
+          setSecretPairs([{ key: '', value: '' }]);
+          setNewPublicKey('');
+          setNewPrivateKey('');
+          setIsLoading(false);
           router.push('/');
         }, delay);
 
@@ -165,11 +168,13 @@ function Component() {
         console.error('Pipeline creation failed');
         // Display an error message to the user
         alert('Failed to create the pipeline. Please try again.');
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Error creating pipeline:', error);
       // Display an error message to the user
       alert('An error occurred while creating the pipeline. Please try again.');
+      setIsLoading(false);
     }
   };
   
@@ -308,8 +313,9 @@ function Component() {
                 </div>
                 <div className="flex justify-end mt-4">
                     <button
-                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-1/3"
+                        className={`bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-1/3 ${isLoading ? 'opacity-50' : 'hover:opacity-100'}`}
                         onClick={handleSubmit}
+                        disabled={isLoading}
                     >
                         Deploy
                     </button>
