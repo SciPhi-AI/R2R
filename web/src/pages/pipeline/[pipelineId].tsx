@@ -1,12 +1,10 @@
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/context/authProvider';
 import { createClient } from '@/utils/supabase/component';
 import { usePipelineContext } from '@/context/PipelineContext';
-// import { useUpdatePipelineProp } from '@/hooks/useUpdatePipelineProp'; // Import the hook
-import { Pipeline } from '@/types';
 import { Github } from 'lucide-react';
 import {
   CardTitle,
@@ -17,9 +15,7 @@ import {
   Card,
 } from '@/components/ui/card';
 
-import Button from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import Link from 'next/link';
 import styles from '../../styles/Index.module.scss';
 
 const PipelinePage = () => {
@@ -30,7 +26,6 @@ const PipelinePage = () => {
   const pipelineId: any = router.query.pipelineId;
   const pipeline = pipelines[pipelineId]
 
-  console.log('pipeline = ', pipeline)
   useEffect(() => {
     const update = async () => {
       if (cloudMode === 'cloud' && pipelineId) {
@@ -56,7 +51,7 @@ const PipelinePage = () => {
     };
 
     update();
-  }, []);
+  }, [cloudMode, pipelineId]);
 
   if (!pipeline) {
     // Handle the case where pipeline is null or render nothing or a loader

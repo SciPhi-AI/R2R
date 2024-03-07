@@ -5,8 +5,6 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // console.log('Received request at /api/auth/confirm');
-  // console.log('Request query:', req.query);
 
   const { token_hash, next, email } = req.query;
 
@@ -16,11 +14,6 @@ export default async function handler(
     return;
   }
 
-  // console.log('Token hash is present');
-  // console.log(
-  //   'Redirecting to:',
-  //   `/update_password?token_hash=${token_hash}&email=${email}&next=${next || '/'}`
-  // );
 
   res.redirect(
     307,

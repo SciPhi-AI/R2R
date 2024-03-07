@@ -44,7 +44,6 @@ export function MainMenu() {
 
   useEffect(() => {
       supabase.auth.getSession().then(({ data: { session } }) => {
-        console.log('session = ', session)
         setUser(session?.user);
       });
   

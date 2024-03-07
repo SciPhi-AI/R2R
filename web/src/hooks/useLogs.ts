@@ -16,7 +16,6 @@ const useLogs = () => {
       }
       const data = await response.json();
       const logs = data.events_summary.map((event: EventSummary) => {
-        console.log('event', event);
         // TODO: Update with actual score and consume from API
         // Generate a score for each log entry with a successful outcome
         const score =
