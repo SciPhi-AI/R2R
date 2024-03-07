@@ -56,8 +56,7 @@ const Home: NextPage = () => {
         <h1 className="text-white text-2xl mb-4"> Pipelines </h1>
         <Separator />
         <div className="mt-6" />
-        <CreatePipelineHeader onAddPipeline={handleAddPipeline} />
-
+        <CreatePipelineHeader onAddPipeline={handleAddPipeline} numPipelines={pipelines?.length || 0} />
         <div className={styles.gridView}>
           {Array.isArray(pipelines)
             ? pipelines.map((pipeline) => (
