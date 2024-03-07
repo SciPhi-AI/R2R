@@ -8,7 +8,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       return res.status(401).json({ message: 'Authentication token is missing' });
     }
 
-    const response = await fetch(`${process.env.REMOTE_SERVER_URL}/user_pipelines`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/user_pipelines`, {
       method: 'GET',
       headers: new Headers({
         'Authorization': `Bearer ${token}`,
