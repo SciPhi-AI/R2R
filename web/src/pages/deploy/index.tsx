@@ -9,8 +9,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Info } from "lucide-react";
 import { useRouter } from 'next/router';
 import { createClient } from '@/utils/supabase/component';
-// import CryptoJS from 'crypto-js';
-const REMOTE_SERVER_URL = 'http://127.0.0.1:8000';
 
 function Component() {
   const [secretPairs, setSecretPairs] = useState([{ key: '', value: '' }]);
@@ -135,7 +133,7 @@ function Component() {
       }
       setIsLoading(true);
       
-      const response = await fetch(`${REMOTE_SERVER_URL}/deploy`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/deploy`, {
         method: 'POST',
         headers: new Headers({
           'Authorization': `Bearer ${token}`,
