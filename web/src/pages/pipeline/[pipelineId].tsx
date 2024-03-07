@@ -5,9 +5,9 @@ import { Footer } from '@/components/Footer';
 import { useAuth } from '@/context/authProvider';
 import { createClient } from '@/utils/supabase/component';
 import { usePipelineContext } from '@/context/PipelineContext';
-import { useUpdatePipelineProp } from '@/hooks/useUpdatePipelineProp'; // Import the hook
+// import { useUpdatePipelineProp } from '@/hooks/useUpdatePipelineProp'; // Import the hook
 import { Pipeline } from '@/types';
-
+import { Github } from 'lucide-react';
 import {
   CardTitle,
   CardDescription,
@@ -25,41 +25,38 @@ import styles from '../../styles/Index.module.scss';
 const PipelinePage = () => {
   const { cloudMode } = useAuth();
   const supabase = createClient();
-  const updatePipelineProp = useUpdatePipelineProp(); // Use the custom hook
-  const { pipeline } = usePipelineContext();
+  const { pipelines, updatePipelines } = usePipelineContext();
+  const router = useRouter();
+  const pipelineId: any = router.query.pipelineId;
+  const pipeline = pipelines[pipelineId]
 
+  console.log('pipeline = ', pipeline)
   useEffect(() => {
-    console.log('Pipeline object:', pipeline);
-  }, [pipeline]);
-
-  useEffect(() => {
-    const fetchPipeline = async () => {
-      if (cloudMode === 'cloud' && pipeline?.id) {
+    const update = async () => {
+      if (cloudMode === 'cloud' && pipelineId) {
         // Use optional chaining
         const {
           data: { session },
         } = await supabase.auth.getSession();
         const token = session?.access_token;
         if (token) {
-          const response = await fetch(`/api/pipelines/${pipeline.id}`, {
+          // TODO - fetch the pipeline directly from the API
+          const response = await fetch(`/api/pipelines`, {
             headers: new Headers({
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             }),
           });
           const data = await response.json();
-          if (data.pipeline) {
-            // Use the update function from the hook to update the entire pipeline object
-            Object.keys(data.pipeline).forEach((key) => {
-              updatePipelineProp(key as keyof Pipeline, data.pipeline[key]);
-            });
+          for (const pipeline of data.pipelines) {
+            updatePipelines(pipeline.id, pipeline);
           }
         }
       }
     };
 
-    fetchPipeline();
-  }, [cloudMode, pipeline?.id, updatePipelineProp]);
+    update();
+  }, []);
 
   if (!pipeline) {
     // Handle the case where pipeline is null or render nothing or a loader
@@ -86,32 +83,44 @@ const PipelinePage = () => {
           <CardContent className="pt-0">
             <div className="grid gap-4">
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <GlobeIcon className="w-4 h-4" />
-                  <span className="font-semibold">
-                    {pipeline.deployment_url}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CopyIcon className="w-4 h-4" />
-                </div>
+                {pipeline.deployment && (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <GlobeIcon className="w-4 h-4" />
+                      <span className="font-semibold">
+                        {pipeline.deployment?.uri}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CopyIcon className="w-4 h-4" />
+                    </div>
+                </>
+                )}
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center gap-2">
-                  <CalendarClockIcon className="w-4 h-4" />
+                  <GitHubIcon className="w-4 h-4" />
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Created 1m ago
+                    {pipeline.github_url}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                {pipeline.deployment && (
+                  <div className="flex items-center gap-2">
+                    <CalendarClockIcon className="w-4 h-4" />
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {pipeline.deployment?.create_time}
+                    </span>
+                  </div>
+                )}
+                {/* <div className="flex items-center gap-2">
                   <UserIcon className="w-4 h-4" />
                   <span className="text-sm text-gray-500 dark:text-gray-400">
                     By shadcn
                   </span>
-                </div>
+                </div> */}
               </div>
-              <Separator className="h-px" />
-              <div className="grid gap-2">
+              {/* <Separator className="h-px" /> */}
+              {/* <div className="grid gap-2">
                 <div className="flex items-center gap-2">
                   <GitBranchIcon className="w-4 h-4" />
                   <span className="line-clamp-1">main</span>
@@ -122,28 +131,33 @@ const PipelinePage = () => {
                     fix: auth issues for third-party integration
                   </span>
                 </div>
-              </div>
-              <Separator className="h-px" />
-              <div className="grid gap-2">
-                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                  17m ago by owen
+              </div> */}
+            {
+              pipeline.deployment && 
+              <>
+                <Separator className="h-px" />
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    {'Last updated: ' + pipeline.deployment?.update_time}
+                  </div>
                 </div>
-              </div>
-            </div>
+              </>
+          }
+          </div>
           </CardContent>
           <CardFooter>
             <div className="flex w-full justify-between items-center gap-4">
               <div className="flex items-center gap-2">
-                <CheckCircleIcon className="w-4 h-4" />
-                Ready
+                {pipeline.status == 'finished' && <CheckCircleIcon className="w-4 h-4" />}
+                {pipeline.status}
               </div>
-              <Link
+              {/* <Link
                 className="flex items-center underline text-sm font-medium"
                 href="#"
               >
                 View Deployment
                 <ChevronRightIcon className="w-4 h-4 ml-2 shrink-0" />
-              </Link>
+              </Link> */}
             </div>
           </CardFooter>
         </Card>
@@ -153,6 +167,12 @@ const PipelinePage = () => {
     </Layout>
   );
 };
+
+function GitHubIcon(props) {
+  return (
+    <Github width="16" height="16" />
+  );
+}
 
 function GlobeIcon(props) {
   return (

@@ -1,7 +1,6 @@
 import { FiExternalLink } from 'react-icons/fi';
 import { usePipelineContext } from '@/context/PipelineContext';
 import { useRouter } from 'next/router';
-import { useUpdatePipelineProp } from '@/hooks/useUpdatePipelineProp';
 import React from 'react';
 
 import styles from './styles.module.scss';

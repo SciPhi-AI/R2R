@@ -6,6 +6,13 @@ export type Pipeline = {
   deployment: {
     id: number;
     uri: string;
+    create_time: string;
+    update_time: string;
+    creator: string;
+    generation: string;
+    last_modifier: string;
+    uid: string;
+    name: string;
   };
 };
 
