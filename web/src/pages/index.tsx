@@ -1,6 +1,6 @@
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/component';
 import { useUpdatePipelineProp } from '@/hooks/useUpdatePipelineProp';
 
@@ -67,6 +67,7 @@ const Home: NextPage = () => {
   //   setPipelines((prevPipelines) => [...prevPipelines, newPipeline]);
   // };
 
+
   return (
     <Layout>
       <main className={styles.main}>
@@ -81,6 +82,7 @@ const Home: NextPage = () => {
               ))
             : null}
         </div>
+        <br/>
       </main>
       <Footer />
     </Layout>
