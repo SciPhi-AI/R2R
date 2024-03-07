@@ -1,12 +1,11 @@
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/component';
-import { useUpdatePipelineProp } from '@/hooks/useUpdatePipelineProp';
 
 import { Footer } from '@/components/Footer';
 import Layout from '@/components/Layout';
-import { PipelineCard } from '@/components/PipelineCard';
+import PipelineCard from '@/components/PipelineCard';
 import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';
 import { Separator } from '@/components/ui/separator';
 
@@ -14,58 +13,49 @@ import styles from '../styles/Index.module.scss';
 import 'react-tippy/dist/tippy.css';
 
 import { Pipeline } from '../types';
-import { useAuth } from '@/context/authProvider';
 
 const Home: NextPage = () => {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const supabase = createClient();
-  const { cloudMode } = useAuth();
+  const pipelinesRef = useRef(pipelines);
+
+  const fetchPipelines = () => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const token = session?.access_token;
+      if (token) {
+        fetch('/api/pipelines', {
+          headers: new Headers({
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }),
+        })
+        .then((res) => {
+          return res.json()
+        }
+          )
+        .then((json) => {
+          setPipelines(json['pipelines']);
+        });
+      }
+    });
+  };
+
 
   useEffect(() => {
-    if (cloudMode === 'cloud') {
-      supabase.auth
-        .getSession()
-        .then(({ data: { session } }) => {
-          const token = session?.access_token;
-          if (token) {
-            console.log('fetching from GitHub...');
-            fetch('/api/pipelines', {
-              headers: new Headers({
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              }),
-            })
-              .then((res) => {
-                if (!res.ok) {
-                  throw new Error(
-                    `Error fetching pipelines: ${res.statusText}`
-                  );
-                }
-                return res.json();
-              })
-              .then((json) => {
-                setPipelines(json['pipelines']);
-              })
-              .catch((error) => {
-                console.error('Failed to fetch pipelines:', error);
-                // Optionally, update the UI to reflect the error
-              });
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to get session:', error);
-          // Handle errors related to getting the session here
-        });
-    }
-  }, [cloudMode]);
+    pipelinesRef.current = pipelines;
+  }, [pipelines]);
+  
+  useEffect(() => {
+    fetchPipelines();
+    const interval = setInterval(() => {
+      // Use the current value of the pipelines ref
+      if (pipelinesRef.current.some(pipeline => ['building', 'pending', 'deploying'].includes(pipeline.status))) {
+        fetchPipelines();
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
-  // useEffect(() => {
-  //   router.push('/retrievals');
-  // }, [router]);
-
-  // const handleAddPipeline = (newPipeline) => {
-  //   setPipelines((prevPipelines) => [...prevPipelines, newPipeline]);
-  // };
 
   return (
     <Layout>
@@ -74,13 +64,15 @@ const Home: NextPage = () => {
         <Separator />
         <div className="mt-6" />
         <CreatePipelineHeader numPipelines={pipelines?.length || 0} />
+        
         <div className={styles.gridView}>
           {Array.isArray(pipelines)
-            ? pipelines.map((pipeline) => (
-                <PipelineCard key={pipeline.id} pipeline={pipeline} />
+            ? pipelines?.map((pipeline) => (
+                <PipelineCard pipeline={pipeline} key={pipeline.id} />
               ))
             : null}
         </div>
+        <br/>
       </main>
       <Footer />
     </Layout>

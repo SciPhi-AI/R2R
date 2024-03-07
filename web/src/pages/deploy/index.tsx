@@ -29,8 +29,8 @@ import {
 import { Info } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { createClient } from '@/utils/supabase/component';
-// import CryptoJS from 'crypto-js';
 
+const REMOTE_URL = `http://127.0.0.1:8000`
 function Component() {
   const [secretPairs, setSecretPairs] = useState([{ key: '', value: '' }]);
   const [selectedApiKey, setSelectedApiKey] = useState('');
@@ -44,6 +44,8 @@ function Component() {
   const [newApiKeyName, setNewApiKeyName] = useState('');
   const [pipelineName, setPipelineName] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // Add this line to track loading state
+
   const handleAddMore = () => {
     setSecretPairs([...secretPairs, { key: '', value: '' }]);
   };
@@ -110,6 +112,7 @@ function Component() {
       setSelectedApiKey(value);
     }
   };
+
   const handleSubmit = async () => {
     const formData = {
       pipeline_name: pipelineName,
@@ -156,13 +159,11 @@ function Component() {
         // Pipeline creation failed
         console.error('Pipeline creation failed');
         // Display an error message to the user
-        alert('Failed to create the pipeline. Please try again.');
+        alert('An error occurred while creating the pipeline. Please try again.');
+      } finally {
+        setIsLoading(false); // Set loading to false when the submission is complete
       }
-    } catch (error) {
-      console.error('Error creating pipeline:', error);
-      // Display an error message to the user
-      alert('An error occurred while creating the pipeline. Please try again.');
-    }
+    }, 1000 + Math.random() * 1000); // Delay between 1 and 2 seconds
   };
 
   return (
