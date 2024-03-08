@@ -5,9 +5,9 @@ import styles from './styles.module.scss';
 
 function WorkspacesSelect() {
   const router = useRouter();
-  // const pipelineId = router.asPath.split('/').pop();
+  const pipelineId = router.asPath.split('/').pop();
 
-  // console.log('pipelineId = ', pipelineId);
+  console.log('pipelineId = ', pipelineId);
 
   return (
     <div className={styles.container}>
@@ -34,9 +34,14 @@ function WorkspacesSelect() {
           Acme Co.
         </div>
       </div>
-
-      <div className={styles.divider}></div>
-      <div className={styles.userPanel}>Pipeline</div>
+      {router.pathname !== '/' && pipelineId && (
+        <>
+          <div className={styles.divider}></div>
+          <div className={styles.userPanel}>
+            Pipeline: <code>{pipelineId.slice(0, 8)}...</code>
+          </div>
+        </>
+      )}
     </div>
   );
 }
