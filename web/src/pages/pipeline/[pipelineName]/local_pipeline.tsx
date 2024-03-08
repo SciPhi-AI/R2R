@@ -43,7 +43,7 @@ const PipelinePage = () => {
         });
         const data = await response.json();
         for (const pipeline of data.pipelines) {
-          updatePipelines(pipeline.name, pipeline);
+          updatePipelines(pipeline.id, pipeline);
         }
       } catch (error) {
         console.error('Error updating local pipeline:', error);

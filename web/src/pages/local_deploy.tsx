@@ -17,19 +17,15 @@ const LocalDeploy = () => {
   const [localEndpoint, setLocalEndpoint] = useState('localhost:8000');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { updatePipelines } = usePipelineContext();
 
-  const generateUniqueId = (name: string, seed = 42) => {
-    // Remove invalid characters and spaces, then add a random string
-    const cleanName = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    const seededRandomString = Math.floor(Math.random() * seed * 100000000)
-      .toString()
-      .substring(0, 8);
-    return `${seededRandomString}`;
+  const generateUniqueId = (seed = 42) => {
+    return Math.floor(Math.random() * seed * 10000000);
   };
 
   // Create a random seed
   const seed = Math.floor(Math.random() * 1000);
-  const uniqueId = generateUniqueId(pipelineName, seed);
+  const pipelineId = generateUniqueId(seed);
 
   const handleSubmit = async () => {
     setIsLoading(true);
@@ -58,13 +54,13 @@ const LocalDeploy = () => {
       console.log('pipelines = ', pipelines);
       // Assuming verification is successful, create a new pipeline object
       const newPipeline = {
-        id: uniqueId,
+        id: pipelineId,
         name: pipelineName,
         endpoint: localEndpoint,
         github_url: 'https://github.com/example',
         status: 'active',
         deployment: {
-          id: uniqueId, // Ensuring both IDs are the same
+          id: pipelineId, // Ensuring both IDs are the same
           uri: 'local',
           create_time: new Date().toISOString(),
           update_time: new Date().toISOString(),
@@ -76,6 +72,9 @@ const LocalDeploy = () => {
         },
       };
 
+      // Update the pipeline in the context
+      updatePipelines(pipelineId.toString(), newPipeline);
+
       // POST request to update the pipeline in the store
       await fetch('/api/local_pipelines', {
         method: 'POST',
@@ -83,13 +82,13 @@ const LocalDeploy = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: pipelineName, // Use pipelineName as the unique identifier
+          id: pipelineId, // Use pipelineName as the unique identifier
           pipeline: newPipeline,
         }),
       });
 
       alert('The local endpoint is working and the pipeline has been created.');
-      router.push(`/pipeline/${pipelineName}/local_pipeline`);
+      router.push(`/pipeline/${pipelineId}/local_pipeline`);
     } catch (error) {
       console.error('Error:', error);
       alert(error.message);

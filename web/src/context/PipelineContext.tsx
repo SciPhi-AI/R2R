@@ -21,33 +21,10 @@ export const PipelineProvider: React.FC<{ children: React.ReactNode }> = ({
   const { cloudMode } = useAuth();
 
   const updatePipelines = async (pipelineId: string, pipeline: Pipeline) => {
-    // if (cloudMode === 'cloud') {
     setPipeline((prevPipelines) => ({
       ...prevPipelines,
       [pipelineId]: pipeline,
     }));
-    // }
-
-    // if (cloudMode === 'local') {
-    //   const response = await fetch('/api/local_pipelines', {
-    //     method: 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify({ id: pipelineId, pipeline }),
-    //   });
-
-    //   if (response.ok) {
-    //     // Update local state if necessary
-    //     setPipeline((prevPipelines) => ({
-    //       ...prevPipelines,
-    //       [pipelineId]: pipeline,
-    //     }));
-    //   } else {
-    //     // Handle error
-    //     console.error('Failed to update pipeline');
-    //   }
-    // }
   };
 
   return (
