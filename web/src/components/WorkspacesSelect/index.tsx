@@ -15,12 +15,17 @@ function WorkspacesSelect() {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const pipelinesRef = useRef(pipelines);
   const router = useRouter();
+  const supabase = createClient();
   const { cloudMode } = useAuth();
   const { pipelineName } = router.query;
-  const pipeline =
-    pipelines && pipelines.length > 0
-      ? pipelines.find((p) => p.id?.toString() === pipelineName)
-      : null;
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  let pipeline;
+  if (!isLoading) {
+    pipeline = pipelines.find((p) => p.id?.toString() === pipelineName);
+    console.log(pipeline);
+  }
 
   useEffect(() => {
     pipelinesRef.current = pipelines;
@@ -41,30 +46,53 @@ function WorkspacesSelect() {
   }, []);
 
   const fetchPipelines = async () => {
-    const supabase = createClient();
+    setError(null);
     if (cloudMode === 'cloud') {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (token) {
-        const response = await fetch('/api/pipelines', {
-          headers: new Headers({
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          }),
-        });
-        const json = await response.json();
-        setPipelines(json['pipelines']);
-      }
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        const token = session?.access_token;
+        if (token) {
+          fetch('/api/pipelines', {
+            headers: new Headers({
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            }),
+          })
+            .then((res) => {
+              if (!res.ok) {
+                throw new Error('Network response was not ok');
+              }
+              return res.json();
+            })
+            .then((json) => {
+              console.log('setting pipelines = ', json['pipelines']);
+              setPipelines(json['pipelines']);
+            })
+            .catch((error) => {
+              setError('Failed to load pipelines');
+              console.error('Error fetching pipelines:', error);
+            })
+            .finally(() => {
+              setIsLoading(false);
+            });
+        } else {
+          setError('Authentication token is missing');
+          setIsLoading(false);
+        }
+      });
     } else {
-      const response = await fetch('/api/local_pipelines', {
+      fetch('/api/local_pipelines', {
         headers: new Headers({
           'Content-Type': 'application/json',
         }),
-      });
-      const json = await response.json();
-      setPipelines(json['pipelines']);
+      })
+        .then((res) => {
+          return res.json();
+        })
+        .then((json) => {
+          console.log('json[pipelines] = ', json['pipelines']);
+          setPipelines(json['pipelines']);
+          setIsLoading(false);
+        });
     }
   };
 
