@@ -4,7 +4,7 @@ import { Retrieval as RetrievalDash } from '@/components/Retrievals';
 import Layout from '@/components/Layout';
 import { Separator } from '@/components/ui/separator';
 
-import styles from '../../styles/Index.module.scss';
+import styles from '@/styles/Index.module.scss';
 
 export default function Retrievals() {
   return (

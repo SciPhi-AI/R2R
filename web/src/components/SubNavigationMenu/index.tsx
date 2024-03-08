@@ -1,104 +1,178 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { createClient } from '@/utils/supabase/component';
+import { useAuth } from '@/context/authProvider';
 
 import styles from './styles.module.scss';
 import { NavItemHighlight } from '../NavItemHighlight';
+import { Pipeline } from '@/types';
 
 export function SubNavigationMenu() {
-  const [isScrolling, setIsScrolling] = useState<boolean>(false);
-  const [navItemHighlightPropsValues, setNavItemHighlightsPropsValues] =
-    useState<{
-      width: number;
-      translateX: number;
-    } | null>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const [navItemHighlightProps, setNavItemHighlightProps] = useState<{
+    width: number;
+    translateX: number;
+    translateY?: number;
+  } | null>(null);
+  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
+  const pipelinesRef = useRef(pipelines);
+  //const pipeline = pipelines.find((p) => p.id?.toString() === pipelineName);
+  //const pipelineId = pipeline?.id?.toString();
+  //const currentPipelineName = pipeline?.name;
 
   const router = useRouter();
-  const { pipelineId } = router.query;
+  const { pipelineName } = router.query;
+  const pipelineId = pipelineName as string;
+  const isHomePage = router.pathname === '/';
 
-  const navItems = [
-    { path: '/', label: 'Home', width: 60, translateX: 0 },
-    {
-      path: `/pipeline/${pipelineId}`,
-      label: 'Pipeline',
-      width: 80,
-      translateX: 60,
-    },
-    { path: '/retrievals', label: 'Retrievals', width: 90, translateX: 140 },
-    { path: '/embeddings', label: 'Embeddings', width: 100, translateX: 230 },
-  ];
+  useEffect(() => {
+    pipelinesRef.current = pipelines;
+  }, [pipelines]);
 
-  // Function to determine active nav item based on current location
-  function getActiveNavItem() {
-    const activeItem = navItems.find((item) => router.pathname === item.path);
-    if (activeItem) {
-      setNavItemHighlightsPropsValues({
-        width: activeItem.width,
-        translateX: activeItem.translateX,
-      });
-    } else {
-      setNavItemHighlightsPropsValues(null); // Reset if no active item is found
-    }
-  }
+  // useEffect(() => {
+  //   fetchPipelines();
+  //   const interval = setInterval(() => {
+  //     if (
+  //       pipelinesRef.current.some((pipeline) =>
+  //         ['building', 'pending', 'deploying'].includes(pipeline.status)
+  //       )
+  //     ) {
+  //       fetchPipelines();
+  //     }
+  //   }, 5000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   useEffect(() => {
     getActiveNavItem();
   }, [router.pathname]);
 
-  function handleHoverNavItem(event: React.MouseEvent<HTMLAnchorElement>) {
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // const fetchPipelines = async () => {
+  //   const supabase = createClient();
+  //   const {
+  //     data: { session },
+  //   } = await supabase.auth.getSession();
+  //   const token = session?.access_token;
+  //   if (token) {
+  //     const response = await fetch('/api/pipelines', {
+  //       headers: new Headers({
+  //         Authorization: `Bearer ${token}`,
+  //         'Content-Type': 'application/json',
+  //       }),
+  //     });
+  //     const json = await response.json();
+  //     setPipelines(json['pipelines']);
+  //   }
+  // };
+
+  const navItems = [
+    {
+      path: '/',
+      label: '←',
+      width: 45,
+      translateX: 0,
+      translateY: 5,
+    },
+    ...(pipelineId
+      ? [
+          {
+            path: `/pipeline/${pipelineId}`,
+            label: 'Pipeline',
+            width: 72,
+            translateX: 45,
+            translateY: 5,
+          },
+          {
+            path: `/pipeline/${pipelineId}/retrievals`,
+            label: 'Retrievals',
+            width: 90,
+            translateX: 117,
+            translateY: 5,
+          },
+          {
+            path: `/pipeline/${pipelineId}/embeddings`,
+            label: 'Embeddings',
+            width: 100,
+            translateX: 207,
+            translateY: 5,
+          },
+        ]
+      : []),
+  ];
+
+  const getActiveNavItem = () => {
+    const activeItem = navItems.find((item) => router.pathname === item.path);
+    if (activeItem) {
+      setNavItemHighlightProps({
+        width: activeItem.width,
+        translateX: activeItem.translateX,
+      });
+    } else {
+      setNavItemHighlightProps(null);
+    }
+  };
+
+  const handleHoverNavItem = (event: React.MouseEvent<HTMLAnchorElement>) => {
     const navItemElement = event.currentTarget;
     const itemPath = navItemElement.getAttribute('href');
     const hoveredItem = navItems.find((item) => item.path === itemPath);
     if (hoveredItem) {
-      setNavItemHighlightsPropsValues({
+      setNavItemHighlightProps({
         width: hoveredItem.width,
         translateX: hoveredItem.translateX,
+        translateY: hoveredItem.translateY,
       });
     }
-  }
+  };
 
-  function handleLeaveNavItem() {
+  const handleLeaveNavItem = () => {
     getActiveNavItem();
-  }
+  };
 
-  // handle scroll
-  function handleScroll() {
-    if (window.scrollY > 80) {
-      setIsScrolling(true);
-    } else {
-      setIsScrolling(false);
-    }
-  }
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll, false);
-  }, [isScrolling]);
+  const handleScroll = () => {
+    setIsScrolling(window.scrollY > 80);
+  };
 
   return (
-    <div className={styles.container}>
-      <nav
-        onMouseLeave={handleLeaveNavItem}
-        className={`${styles.subNavigationMenu} ${isScrolling ? styles.scrollingContent : ''}`}
-      >
-        {navItemHighlightPropsValues != null ? (
-          <NavItemHighlight
-            width={navItemHighlightPropsValues.width}
-            translateX={navItemHighlightPropsValues.translateX}
-          />
-        ) : (
-          ''
-        )}
-        {navItems.map((item) => (
-          <Link
-            key={item.path}
-            href={item.path}
-            onMouseOver={(event) => handleHoverNavItem(event)}
-            className={router.pathname === item.path ? styles.selected : ''}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
+    <div
+      className={styles.container}
+      style={{ minHeight: isHomePage ? '60px' : 'auto' }}
+    >
+      {!isHomePage && (
+        <nav
+          onMouseLeave={handleLeaveNavItem}
+          className={`${styles.subNavigationMenu} ${
+            isScrolling ? styles.scrollingContent : ''
+          }`}
+        >
+          {navItemHighlightProps && (
+            <NavItemHighlight
+              width={navItemHighlightProps.width}
+              translateX={navItemHighlightProps.translateX}
+              translateY={navItemHighlightProps.translateY}
+            />
+          )}
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              href={item.path}
+              onMouseOver={handleHoverNavItem}
+              className={router.pathname === item.path ? styles.selected : ''}
+              style={{
+                fontSize: item.label === '←' ? '1.5rem' : 'inherit',
+              }}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      )}
     </div>
   );
 }

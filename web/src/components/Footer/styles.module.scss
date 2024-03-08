@@ -18,11 +18,11 @@
 
       .categoryTitle {
         color: var(--color-7);
-        margin-bottom: 1.4rem;
+        margin-bottom: 0rem;
       }
 
       .categoryItem {
-        margin-bottom: 1.1rem;
+        margin-bottom: 0 rem;
         color: var(--color-5);
 
         &:hover {
@@ -34,7 +34,7 @@
   }
 
   .bottomPanel {
-    margin-top: 3rem;
+    margin-top: 0rem;
 
     .bottomInfoPanel {
       margin-top: 1.8rem;

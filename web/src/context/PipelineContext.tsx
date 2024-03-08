@@ -1,13 +1,10 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { Pipeline } from '../types'; // Import the Pipeline type
-import { useRouter } from 'next/router';
+import { useAuth } from './authProvider';
 
 interface PipelineContextProps {
   pipelines: Record<string, Pipeline>;
-  updatePipelines(
-    pipelineId: string,
-    pipeline: Pipeline
-  ): void;
+  updatePipelines(pipelineId: string, pipeline: Pipeline): void;
 }
 
 const PipelineContext = createContext<PipelineContextProps>({
@@ -21,9 +18,8 @@ export const PipelineProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [pipelines, setPipeline] = useState<Record<number, Pipeline>>({});
-  const router = useRouter();
 
-  const updatePipelines = (pipelineId: string, pipeline: Pipeline) => {
+  const updatePipelines = async (pipelineId: string, pipeline: Pipeline) => {
     setPipeline((prevPipelines) => ({
       ...prevPipelines,
       [pipelineId]: pipeline,
@@ -31,9 +27,7 @@ export const PipelineProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   return (
-    <PipelineContext.Provider
-      value={{ pipelines, updatePipelines }}
-    >
+    <PipelineContext.Provider value={{ pipelines, updatePipelines }}>
       {children}
     </PipelineContext.Provider>
   );

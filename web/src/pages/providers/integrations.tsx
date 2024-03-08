@@ -3,7 +3,7 @@ import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { IntegrationCard } from '@/components/IntegrationCard';
 import Layout from '@/components/Layout';
 import { Separator } from '@/components/ui/separator';
-import LocalProvidersMenu from '@/components/LocalProvidersMenu';
+import ProvidersNavMenu from '@/components/ProvidersNavMenu';
 import { useFetchProviders } from '@/hooks/useFetchProviders';
 import { useModal } from '@/hooks/useModal';
 
@@ -24,7 +24,7 @@ export default function Integrations() {
   return (
     <Layout>
       <main className={styles.main}>
-        <LocalProvidersMenu />
+        <ProvidersNavMenu />
         <Separator />
 
         <div className={`${styles.gridView} ${styles.column}`}>

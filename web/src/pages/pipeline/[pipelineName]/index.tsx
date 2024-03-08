@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 import { Separator } from '@/components/ui/separator';
-import styles from '../../styles/Index.module.scss';
+import styles from '@/styles/Index.module.scss';
 
 const PipelinePage = () => {
   const [pipelineToDelete, setPipelineToDelete] = useState('');
@@ -30,25 +30,30 @@ const PipelinePage = () => {
   const supabase = createClient();
   const { pipelines, updatePipelines } = usePipelineContext();
   const router = useRouter();
-  const pipelineId: any = router.query.pipelineId;
-  const pipeline = pipelines[pipelineId]
+  const pipelineId: any = router.query.pipelineName;
+  const pipeline = pipelines[pipelineId];
 
-  console.log('pipeline = ', pipeline)
+  console.log('pipeline = ', pipeline);
 
   const handleDeletePipeline = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const token = session?.access_token;
-  
+
     if (token) {
       if (pipelineId) {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/delete_pipeline/${pipelineId}`, {
-          method: 'DELETE',
-          headers: new Headers({
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          }),
-        });
-  
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/delete_pipeline/${pipelineId}`,
+          {
+            method: 'DELETE',
+            headers: new Headers({
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            }),
+          }
+        );
+
         if (response.ok) {
           // Remove the deleted pipeline from the local state
           updatePipelines(pipelineId, null);
@@ -64,7 +69,7 @@ const PipelinePage = () => {
         console.error('Pipeline not found');
       }
     }
-  };  
+  };
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text).then(
@@ -76,15 +81,17 @@ const PipelinePage = () => {
       }
     );
   };
-  
+
   useEffect(() => {
     const update = async () => {
+      console.log('pipelineId = ', pipelineId);
       if (cloudMode === 'cloud' && pipelineId) {
         // Use optional chaining
         const {
           data: { session },
         } = await supabase.auth.getSession();
         const token = session?.access_token;
+        console.log('in update, token = ', token);
         if (token) {
           // TODO - fetch the pipeline directly from the API
           const response = await fetch(`/api/pipelines`, {
@@ -108,7 +115,7 @@ const PipelinePage = () => {
     return (
       <Layout>
         <main className={styles.main}>
-        <div>Loading pipeline...</div>
+          <div>Loading pipeline...</div>
         </main>
       </Layout>
     );
@@ -118,8 +125,8 @@ const PipelinePage = () => {
       <main className={styles.main}>
         {pipeline && (
           <h1 className="text-white text-2xl mb-4">
-            {pipeline.name} Pipeline:{' '}
-            <code className="font-mono text-gray-500">{pipeline.id}</code>
+            Pipeline{' '}
+            <code className="font-mono text-gray-500"> id:{pipeline.id}</code>
           </h1>
         )}
         <Separator />
@@ -127,8 +134,8 @@ const PipelinePage = () => {
           <CardHeader className="pb-0">
             <CardTitle className="text-xl">{pipeline.name}</CardTitle>
             <CardDescription>
-              This is a deployment of an immutable snapshot of RAG pipeline at a specific
-              point in time.
+              This is a deployment of an immutable snapshot of RAG pipeline at a
+              specific point in time.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
@@ -148,7 +155,7 @@ const PipelinePage = () => {
                         onClick={() => handleCopy(pipeline.deployment?.uri)}
                       />
                     </div>
-                </>
+                  </>
                 )}
               </div>
               <div className="grid gap-2">
@@ -186,80 +193,84 @@ const PipelinePage = () => {
                   </span>
                 </div>
               </div> */}
-            {
-              pipeline.deployment && pipeline.deployment?.update_time && 
-              <>
-                <Separator className="h-px" />
-                <div className="grid gap-2">
-                  <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                    {'Last updated: ' + pipeline.deployment?.update_time}
-                  </div>
-                </div>
-              </>
-          }
-            {
-              pipeline.deployment && pipeline.deployment?.error && 
-              <>
-                <Separator className="h-px" />
-                <div className="grid gap-2">
-                  <div className="flex items-center gap-2 text-red-500 dark:text-red-400 "
-                    style={{
-                      display: 'inline-block', // Ensures the element respects the maxWidth
-                      maxWidth: '100%', // Ensures the span does not exceed the width of its container
-                      overflowWrap: 'break-word', // Allows words to break and wrap to the next line
-                      wordBreak: 'break-all', // To ensure even continuous strings without spaces will break
-                    }}
-                  >
-                    {'Error: ' + pipeline.deployment?.error}
-                  </div>
-                </div>
-              </>
-          }
 
-          </div>
+              {pipeline.deployment && pipeline.deployment?.update_time && (
+                <>
+                  <Separator className="h-px" />
+                  <div className="grid gap-2">
+                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                      {'Last updated: ' + pipeline.deployment?.update_time}
+                    </div>
+                  </div>
+                </>
+              )}
+              {pipeline.deployment && pipeline.deployment?.error && (
+                <>
+                  <Separator className="h-px" />
+                  <div className="grid gap-2">
+                    <div
+                      className="flex items-center gap-2 text-red-500 dark:text-red-400 "
+                      style={{
+                        display: 'inline-block', // Ensures the element respects the maxWidth
+                        maxWidth: '100%', // Ensures the span does not exceed the width of its container
+                        overflowWrap: 'break-word', // Allows words to break and wrap to the next line
+                        wordBreak: 'break-all', // To ensure even continuous strings without spaces will break
+                      }}
+                    >
+                      {'Error: ' + pipeline.deployment?.error}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </CardContent>
           <CardFooter>
-          <div className="flex flex-col w-full gap-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            {pipeline.status == 'finished' && <CheckCircleIcon className={"w-4 h-4"}/>}
-              
-              <span className={"text-sm" + (pipeline.status == 'failed' ? ' text-red-500' : '')}>
-              {'Status: ' + pipeline.status.toUpperCase()}
-              </span>
-          </div>
-    
-            </div>
-            <Separator className="h-px" />
-            <Label className="pl-1">Delete</Label> 
-            <div className="flex items-center -mt-2">
-              <Input
-                type="text"
-                value={pipelineToDelete}
-                onChange={(e) => {
-                  setPipelineToDelete(e.target.value);
-                  setDeleteButtonDisabled(e.target.value!==pipeline.name);
-                }}
-                placeholder={`Enter pipeline name '${pipeline.name}' to enable delete.`}
-                className="flex-grow"
-                style={{
-                  outline: 'none', // Removes the default outline
-                  boxShadow: '0 0 2px #719ECE', // Sets a subtle glow, adjust as needed
-                }}
-              />
-              <button
-                className={`px-4 py-2 ml-2 text-white rounded ${
-                  deleteButtonDisabled
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-red-500 hover:bg-red-600'
-                }`}
-                onClick={handleDeletePipeline}
-                disabled={deleteButtonDisabled}
-              >
-                Delete
-              </button>
-            </div>
+            <div className="flex flex-col w-full gap-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  {pipeline.status == 'finished' && (
+                    <CheckCircleIcon className={'w-4 h-4'} />
+                  )}
 
+                  <span
+                    className={
+                      'text-sm' +
+                      (pipeline.status == 'failed' ? ' text-red-500' : '')
+                    }
+                  >
+                    {'Status: ' + pipeline.status.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+              <Separator className="h-px" />
+              <Label className="pl-1">Delete</Label>
+              <div className="flex items-center -mt-2">
+                <Input
+                  type="text"
+                  value={pipelineToDelete}
+                  onChange={(e) => {
+                    setPipelineToDelete(e.target.value);
+                    setDeleteButtonDisabled(e.target.value !== pipeline.name);
+                  }}
+                  placeholder={`Enter pipeline name '${pipeline.name}' to enable delete.`}
+                  className="flex-grow"
+                  style={{
+                    outline: 'none', // Removes the default outline
+                    boxShadow: '0 0 2px #719ECE', // Sets a subtle glow, adjust as needed
+                  }}
+                />
+                <button
+                  className={`px-4 py-2 ml-2 text-white rounded ${
+                    deleteButtonDisabled
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-red-500 hover:bg-red-600'
+                  }`}
+                  onClick={handleDeletePipeline}
+                  disabled={deleteButtonDisabled}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </CardFooter>
         </Card>
@@ -271,9 +282,7 @@ const PipelinePage = () => {
 };
 
 function GitHubIcon(props) {
-  return (
-    <Github width="16" height="16" />
-  );
+  return <Github width="16" height="16" />;
 }
 
 function GlobeIcon(props) {

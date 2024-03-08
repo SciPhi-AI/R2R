@@ -3,7 +3,8 @@ import { FiExternalLink } from 'react-icons/fi';
 import { IoAnalyticsOutline } from 'react-icons/io5';
 
 import styles from './styles.module.scss';
-import { Provider } from '../../types';
+import { Provider } from '@/types';
+import Next from 'next/link';
 
 interface CardProps {
   provider: Provider;
@@ -12,7 +13,7 @@ interface CardProps {
 
 function IntegrationCard({ provider, onClick }: CardProps) {
   return (
-    <a href="#" className={styles.container} onClick={onClick}>
+    <Next href="#" className={styles.container} onClick={onClick}>
       <div className={styles.cardHeader}>
         <div className={styles.hoverRedirectIcon}>
           <FiExternalLink size="16" />
@@ -34,7 +35,7 @@ function IntegrationCard({ provider, onClick }: CardProps) {
       <button className={styles.cardButtonEnableAnalytics}>
         <IoAnalyticsOutline size="18" />
       </button>
-    </a>
+    </Next>
   );
 }
 

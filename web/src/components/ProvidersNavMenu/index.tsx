@@ -31,7 +31,7 @@ const menuItems = [
   },
 ];
 
-export default function LocalProvidersMenu() {
+export default function ProvidersNavMenu() {
   const router = useRouter();
 
   const handleOnClick = (event, currentMenuItem) => {

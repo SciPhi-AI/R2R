@@ -4,7 +4,7 @@ const SecretsModal = lazy(() => import('@/components/SecretsModal'));
 
 import { IntegrationCard } from '@/components/IntegrationCard';
 import Layout from '@/components/Layout';
-import LocalProvidersMenu from '@/components/LocalProvidersMenu';
+import ProvidersNavMenu from '@/components/ProvidersNavMenu';
 import { Separator } from '@/components/ui/separator';
 import {
   Table,
@@ -85,7 +85,7 @@ export default function Datasets() {
   return (
     <Layout>
       <main className={styles.main}>
-        <LocalProvidersMenu />
+        <ProvidersNavMenu />
         <Separator />
 
         <div className={`${styles.gridView} ${styles.column}`}>

@@ -1,10 +1,10 @@
 import { FiExternalLink } from 'react-icons/fi';
-import { usePipelineContext } from '@/context/PipelineContext';
 import { useRouter } from 'next/router';
 import React from 'react';
 
 import styles from './styles.module.scss';
 import { Pipeline } from '../../types';
+import { useAuth } from '@/context/authProvider';
 
 interface PipelineCardProps {
   pipeline: Pipeline;
@@ -12,9 +12,14 @@ interface PipelineCardProps {
 
 export default function PipelineCard({ pipeline }: PipelineCardProps) {
   const router = useRouter();
+  const { cloudMode } = useAuth();
 
   const handleClick = () => {
-    router.push(`/pipeline/${pipeline.id}`);
+    if (cloudMode === 'cloud') {
+      router.push(`/pipeline/${pipeline.id}`);
+    } else {
+      router.push(`/pipeline/${pipeline.id}/local_pipeline`);
+    }
   };
 
   return (
@@ -38,7 +43,9 @@ export default function PipelineCard({ pipeline }: PipelineCardProps) {
           ) : (
             <>
               <p className={styles.cardTitle}>Status:</p>
-              <p className={styles.cardAddress}>{pipeline.status.toUpperCase()}</p>
+              <p className={styles.cardAddress}>
+                {pipeline.status.toUpperCase()}
+              </p>
             </>
           )}
         </div>
@@ -46,5 +53,3 @@ export default function PipelineCard({ pipeline }: PipelineCardProps) {
     </a>
   );
 }
-
-export { PipelineCard };
