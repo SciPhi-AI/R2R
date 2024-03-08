@@ -22,7 +22,6 @@ const Home: NextPage = () => {
     const pipelinesRef = useRef(pipelines);
   
     const fetchPipelines = () => {
-      setIsLoading(true);
       setError(null);
       supabase.auth.getSession().then(({ data: { session } }) => {
         const token = session?.access_token;
@@ -40,6 +39,7 @@ const Home: NextPage = () => {
             return res.json();
           })
           .then((json) => {
+            console.log('setting pipelines = ', json['pipelines'])
             setPipelines(json['pipelines']);
           })
           .catch((error) => {
@@ -65,6 +65,13 @@ const Home: NextPage = () => {
     const interval = setInterval(() => {
       // Use the current value of the pipelines ref
       if (pipelinesRef?.current?.some(pipeline => ['building', 'pending', 'deploying'].includes(pipeline.status))) {
+  
+        if (pipelinesRef?.current.length===0){
+          console.log("No pipelines found");
+          setIsLoading(true);
+        };
+  
+  
         fetchPipelines();
       }
     }, 5000);
@@ -100,7 +107,7 @@ const Home: NextPage = () => {
             <li> Deploy a pipeline using the `New Pipeline` button above.</li>
             <li>Monitor the deployment process and check for any logs or errors.</li>
             <li>Upon completion, your RAG application will be actively hosted at `https://sciphi-...-ue.a.run.app`.</li>
-            <li>Customize - Use the R2R framework to create your own pipeline from scratch and deploy that too.</li>
+            <li>Customize - Use the R2R framework to create your own pipeline and deploy it directly from GitHub.</li>
           </ol>
           <p className="mt-2">For a detailed starting example, refer to the <a href="https://github.com/SciPhi-AI/R2R-basic-rag-template" className="text-blue-500 hover:underline">R2R-basic-rag-template documentation</a>.</p>
         </div>
