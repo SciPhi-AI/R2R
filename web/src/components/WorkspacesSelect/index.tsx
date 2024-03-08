@@ -1,31 +1,23 @@
+import { Fragment, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useEffect, useState, useRef } from 'react';
-import { createClient } from '@/utils/supabase/component';
-import { useAuth } from '@/context/authProvider';
-import { Fragment } from 'react';
 import { Menu, Transition } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 
-import styles from './styles.module.scss';
-import { NavItemHighlight } from '../NavItemHighlight';
+import { createClient } from '@/utils/supabase/component';
+import { useAuth } from '@/context/authProvider';
 import { Pipeline } from '@/types';
 
+import styles from './styles.module.scss';
+
 function WorkspacesSelect() {
-  const [isScrolling, setIsScrolling] = useState(false);
-  const [navItemHighlightProps, setNavItemHighlightProps] = useState<{
-    width: number;
-    translateX: number;
-    translateY?: number;
-  } | null>(null);
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const pipelinesRef = useRef(pipelines);
   const router = useRouter();
   const { cloudMode } = useAuth();
   const { pipelineName } = router.query;
   const pipeline = pipelines.find((p) => p.id?.toString() === pipelineName);
-  const pipelineId = pipeline?.id?.toString();
 
   useEffect(() => {
     pipelinesRef.current = pipelines;

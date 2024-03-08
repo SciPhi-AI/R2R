@@ -1,5 +1,4 @@
 import { FiExternalLink } from 'react-icons/fi';
-import { usePipelineContext } from '@/context/PipelineContext';
 import { useRouter } from 'next/router';
 import React from 'react';
 
