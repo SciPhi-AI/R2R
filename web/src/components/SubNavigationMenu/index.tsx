@@ -17,32 +17,32 @@ export function SubNavigationMenu() {
   } | null>(null);
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const pipelinesRef = useRef(pipelines);
-  const router = useRouter();
-  const { cloudMode } = useAuth();
-  const { pipelineName } = router.query;
-  const pipeline = pipelines.find((p) => p.id?.toString() === pipelineName);
-  const pipelineId = pipeline?.id?.toString();
-  const currentPipelineName = pipeline?.name;
+  //const pipeline = pipelines.find((p) => p.id?.toString() === pipelineName);
+  //const pipelineId = pipeline?.id?.toString();
+  //const currentPipelineName = pipeline?.name;
 
+  const router = useRouter();
+  const { pipelineName } = router.query;
+  const pipelineId = pipelineName as string;
   const isHomePage = router.pathname === '/';
 
   useEffect(() => {
     pipelinesRef.current = pipelines;
   }, [pipelines]);
 
-  useEffect(() => {
-    fetchPipelines();
-    const interval = setInterval(() => {
-      if (
-        pipelinesRef.current.some((pipeline) =>
-          ['building', 'pending', 'deploying'].includes(pipeline.status)
-        )
-      ) {
-        fetchPipelines();
-      }
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  // useEffect(() => {
+  //   fetchPipelines();
+  //   const interval = setInterval(() => {
+  //     if (
+  //       pipelinesRef.current.some((pipeline) =>
+  //         ['building', 'pending', 'deploying'].includes(pipeline.status)
+  //       )
+  //     ) {
+  //       fetchPipelines();
+  //     }
+  //   }, 5000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   useEffect(() => {
     getActiveNavItem();
@@ -53,33 +53,23 @@ export function SubNavigationMenu() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const fetchPipelines = async () => {
-    const supabase = createClient();
-    if (cloudMode === 'cloud') {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (token) {
-        const response = await fetch('/api/pipelines', {
-          headers: new Headers({
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          }),
-        });
-        const json = await response.json();
-        setPipelines(json['pipelines']);
-      }
-    } else {
-      const response = await fetch('/api/local_pipelines', {
-        headers: new Headers({
-          'Content-Type': 'application/json',
-        }),
-      });
-      const json = await response.json();
-      setPipelines(json['pipelines']);
-    }
-  };
+  // const fetchPipelines = async () => {
+  //   const supabase = createClient();
+  //   const {
+  //     data: { session },
+  //   } = await supabase.auth.getSession();
+  //   const token = session?.access_token;
+  //   if (token) {
+  //     const response = await fetch('/api/pipelines', {
+  //       headers: new Headers({
+  //         Authorization: `Bearer ${token}`,
+  //         'Content-Type': 'application/json',
+  //       }),
+  //     });
+  //     const json = await response.json();
+  //     setPipelines(json['pipelines']);
+  //   }
+  // };
 
   const navItems = [
     {
@@ -92,10 +82,7 @@ export function SubNavigationMenu() {
     ...(pipelineId
       ? [
           {
-            path:
-              cloudMode === 'cloud'
-                ? `/pipeline/${pipelineId}`
-                : `/pipeline/${pipelineId}/local_pipeline`,
+            path: `/pipeline/${pipelineId}`,
             label: 'Pipeline',
             width: 72,
             translateX: 45,
