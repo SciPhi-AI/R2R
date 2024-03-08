@@ -5,6 +5,7 @@ import React from 'react';
 
 import styles from './styles.module.scss';
 import { Pipeline } from '../../types';
+import { useAuth } from '@/context/authProvider';
 
 interface PipelineCardProps {
   pipeline: Pipeline;
@@ -12,9 +13,14 @@ interface PipelineCardProps {
 
 export default function PipelineCard({ pipeline }: PipelineCardProps) {
   const router = useRouter();
+  const { cloudMode } = useAuth();
 
   const handleClick = () => {
-    router.push(`/pipeline/${pipeline.id}`);
+    if (cloudMode === 'cloud') {
+      router.push(`/pipeline/${pipeline.id}`);
+    } else {
+      router.push(`/pipeline/${pipeline.id}/local_pipeline`);
+    }
   };
 
   return (
@@ -46,5 +52,3 @@ export default function PipelineCard({ pipeline }: PipelineCardProps) {
     </a>
   );
 }
-
-export { PipelineCard };

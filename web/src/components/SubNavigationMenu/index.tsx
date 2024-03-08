@@ -22,6 +22,7 @@ export function SubNavigationMenu() {
   const { pipelineName } = router.query;
   const pipeline = pipelines.find((p) => p.id?.toString() === pipelineName);
   const pipelineId = pipeline?.id?.toString();
+  const currentPipelineName = pipeline?.name;
 
   useEffect(() => {
     pipelinesRef.current = pipelines;
