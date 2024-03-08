@@ -1,7 +1,6 @@
 import styles from './styles.module.scss';
 import React from 'react';
 import { useRouter } from 'next/router';
-import { useAuth } from '@/context/authProvider';
 
 export function CreatePipelineHeader({
   numPipelines,
@@ -9,14 +8,9 @@ export function CreatePipelineHeader({
   numPipelines: number;
 }) {
   const router = useRouter();
-  const { cloudMode } = useAuth();
 
   const createPipeline = async () => {
-    if (cloudMode === 'cloud') {
-      router.push('/deploy');
-    } else {
-      router.push('/local_deploy');
-    }
+    router.push('/deploy');
   };
 
   return (
