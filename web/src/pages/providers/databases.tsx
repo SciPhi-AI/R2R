@@ -8,7 +8,7 @@ const SecretsModal = lazy(() => import('@/components/SecretsModal'));
 import { useFetchProviders } from '@/hooks/useFetchProviders';
 
 import Layout from '@/components/Layout';
-import PipelineNavMenu from '@/components/PipelineNavMenu';
+import ProvidersNavMenu from '@/components/ProvidersNavMenu';
 
 import { Separator } from '@/components/ui/separator';
 import {
@@ -53,7 +53,7 @@ export default function Databases() {
   return (
     <Layout>
       <main className={styles.main}>
-        <PipelineNavMenu />
+        <ProvidersNavMenu />
         <Separator />
         <div className={`${styles.gridView} ${styles.column}`}>
           {Array.isArray(allProviders)

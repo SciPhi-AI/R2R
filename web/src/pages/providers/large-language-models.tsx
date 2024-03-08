@@ -2,7 +2,7 @@ import React, { lazy, Suspense } from 'react';
 
 import { IntegrationCard } from '@/components/IntegrationCard';
 import Layout from '@/components/Layout';
-import PipelineNavMenu from '@/components/PipelineNavMenu';
+import ProvidersNavMenu from '@/components/ProvidersNavMenu';
 import { Separator } from '@/components/ui/separator';
 import { useFetchProviders } from '@/hooks/useFetchProviders';
 import { useModal } from '@/hooks/useModal';
@@ -19,7 +19,7 @@ export default function LLMs() {
   return (
     <Layout>
       <main className={styles.main}>
-        <PipelineNavMenu />
+        <ProvidersNavMenu />
 
         <Separator />
 
