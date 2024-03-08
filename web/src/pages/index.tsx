@@ -8,55 +8,73 @@ import Layout from '@/components/Layout';
 import PipelineCard from '@/components/PipelineCard';
 import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/context/authProvider';
 
 import styles from '../styles/Index.module.scss';
 import 'react-tippy/dist/tippy.css';
 
-import { Pipeline } from '../types';
+import { Pipeline } from '@/types';
 
 const Home: NextPage = () => {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const supabase = createClient();
   const pipelinesRef = useRef(pipelines);
+  const { cloudMode } = useAuth();
 
   const fetchPipelines = () => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const token = session?.access_token;
-      if (token) {
-        fetch('/api/pipelines', {
-          headers: new Headers({
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }),
-        })
-        .then((res) => {
-          return res.json()
+    if (cloudMode === 'cloud') {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        const token = session?.access_token;
+        if (token) {
+          fetch('/api/pipelines', {
+            headers: new Headers({
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            }),
+          })
+            .then((res) => {
+              return res.json();
+            })
+            .then((json) => {
+              console.log('json[pipelines] = ', json['pipelines']);
+              setPipelines(json['pipelines']);
+            });
         }
-          )
+      });
+    } else {
+      fetch('/api/local_pipelines', {
+        headers: new Headers({
+          'Content-Type': 'application/json',
+        }),
+      })
+        .then((res) => {
+          return res.json();
+        })
         .then((json) => {
-          console.log('json[pipelines] = ', json['pipelines'])
+          console.log('json[pipelines] = ', json['pipelines']);
           setPipelines(json['pipelines']);
         });
-      }
-    });
+    }
   };
-
 
   useEffect(() => {
     pipelinesRef.current = pipelines;
   }, [pipelines]);
-  
+
   useEffect(() => {
     fetchPipelines();
     const interval = setInterval(() => {
       // Use the current value of the pipelines ref
-      if (pipelinesRef?.current?.some(pipeline => ['building', 'pending', 'deploying'].includes(pipeline.status))) {
+      if (
+        pipelinesRef?.current?.some((pipeline) =>
+          ['building', 'pending', 'deploying'].includes(pipeline.status)
+        )
+      ) {
         fetchPipelines();
       }
     }, 5000);
     return () => clearInterval(interval);
   }, []);
-
 
   return (
     <Layout>
@@ -65,7 +83,7 @@ const Home: NextPage = () => {
         <Separator />
         <div className="mt-6" />
         <CreatePipelineHeader numPipelines={pipelines?.length || 0} />
-        
+
         <div className={styles.gridView}>
           {Array.isArray(pipelines)
             ? pipelines?.map((pipeline) => (
@@ -73,7 +91,7 @@ const Home: NextPage = () => {
               ))
             : null}
         </div>
-        <br/>
+        <br />
       </main>
       <Footer />
     </Layout>
