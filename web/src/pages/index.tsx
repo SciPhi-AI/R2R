@@ -15,10 +15,10 @@ import { Pipeline } from '@/types';
 
 const Home: NextPage = () => {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
-  const supabase = createClient();
-  const pipelinesRef = useRef(pipelines);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const supabase = createClient();
+  const pipelinesRef = useRef(pipelines);
   const [currentUser, setCurrentUser] = useState(null);
 
   const fetchPipelines = () => {
@@ -59,7 +59,6 @@ const Home: NextPage = () => {
   useEffect(() => {
     pipelinesRef.current = pipelines;
   }, [pipelines]);
-
   useEffect(() => {
     const fetchSession = async () => {
       const {
