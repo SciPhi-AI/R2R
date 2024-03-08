@@ -5,6 +5,7 @@ from r2r.core import (
     GenerationConfig,
     LLMProvider,
     LoggingDatabaseConnection,
+    RAGCompletion,
     VectorDBProvider,
     VectorSearchResult,
     log_execution_to_db,
@@ -38,7 +39,6 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
     def __init__(
         self,
         llm: LLMProvider,
-        generation_config: GenerationConfig,
         db: VectorDBProvider,
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
@@ -50,7 +50,6 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
 
         super().__init__(
             llm,
-            generation_config,
             db,
             embedding_model,
             embeddings_provider,
@@ -59,7 +58,7 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
             task_prompt=task_prompt,
         )
 
-    def transform_query(self, query: str) -> list[str]:  # type: ignore
+    def transform_query(self, query: str, generation_config: GenerationConfig) -> list[str]:  # type: ignore
         """
         Transforms the query into a list of strings.
         """
@@ -71,10 +70,9 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
             "with information about X` or `readings that cover topic Y`.\n\n## Query:\n"
             "{query}\n\n## Response:".format(query=query)
         )
-        completion = self.generate_completion(prompt)
-        transformed_queries = (
-            completion.choices[0].message.content.strip().split("\n")
-        )
+        generation_config.stream = False
+        completion = self.generate_completion(prompt, generation_config)
+        transformed_queries = completion.choices[0].message.content.strip().split("\n")
         print(f"Transformed Queries: {transformed_queries}")
         return transformed_queries
 
@@ -106,8 +104,7 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
         queries = [ele[0] for ele in results]
         search_results = [ele[1] for ele in results]
         reranked_results = [
-            self.rerank_results(search_result)
-            for search_result in search_results
+            self.rerank_results(search_result) for search_result in search_results
         ]
         context = ""
         offset = 1
@@ -117,26 +114,39 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
         return context
 
     # Modifies `SyntheticRAGPipeline` run to return search_results and completion
-    def run(self, query, filters={}, limit=5, search_only=False):
+    def run(
+        self,
+        query,
+        filters={},
+        limit=5,
+        search_only=False,
+        generation_config: Optional[GenerationConfig] = None,
+    ):
         """
         Runs the completion pipeline.
         """
+        if not generation_config:
+            generation_config = GenerationConfig(model="gpt-3.5-turbo")
+            
         self.initialize_pipeline(query, search_only)
-        transformed_queries = self.transform_query(query)
+        transformed_queries = self.transform_query(query, generation_config)
         search_results = [
             (transformed_query, self.search(transformed_query, filters, limit))
             for transformed_query in transformed_queries
         ]
         if search_only:
-            return search_results, None
+            return RAGCompletion(search_results, None, None)
+        
         context = self.construct_context(search_results)
         prompt = self.construct_prompt({"query": query, "context": context})
-        completion = self.generate_completion(prompt)
-        return search_results, completion
 
-    def _format_results(
-        self, results: list[VectorSearchResult], start=1
-    ) -> str:
+        if not generation_config.stream:
+            completion = self.generate_completion(prompt, generation_config)
+            return RAGCompletion(search_results, context, completion)
+
+        return self._stream_run(search_results, context, prompt, generation_config)
+
+    def _format_results(self, results: list[VectorSearchResult], start=1) -> str:
         context = ""
         for i, ele in enumerate(results, start=start):
             context += f"[{i+start}] {ele.metadata['text']}\n\n"
@@ -145,6 +155,4 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
 
 
 # Creates a pipeline using the `E2EPipelineFactory`
-app = E2EPipelineFactory.create_pipeline(
-    rag_pipeline_impl=SyntheticRAGPipeline
-)
+app = E2EPipelineFactory.create_pipeline(rag_pipeline_impl=SyntheticRAGPipeline)
