@@ -69,6 +69,7 @@ const LocalDeploy = () => {
           last_modifier: 'exampleModifier',
           uid: 'exampleUID',
           name: 'Local Deployment',
+          error: '',
         },
       };
 
@@ -93,7 +94,7 @@ const LocalDeploy = () => {
       console.error('Error:', error);
       alert(error.message);
     } finally {
-      setIsLoading(false);
+      // setIsLoading(false);
     }
   };
 
