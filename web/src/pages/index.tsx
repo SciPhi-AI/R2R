@@ -21,6 +21,7 @@ const Home: NextPage = () => {
   const { cloudMode } = useAuth();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const fetchPipelines = () => {
     setError(null);
@@ -68,6 +69,7 @@ const Home: NextPage = () => {
         .then((json) => {
           console.log('json[pipelines] = ', json['pipelines']);
           setPipelines(json['pipelines']);
+          setIsLoading(false);
         });
     }
   };
@@ -76,6 +78,15 @@ const Home: NextPage = () => {
     pipelinesRef.current = pipelines;
   }, [pipelines]);
 
+  useEffect(() => {
+    const fetchSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setCurrentUser(session?.user || null);
+    };
+  
+    fetchSession();
+  }, [supabase]);
+    
   useEffect(() => {
     fetchPipelines();
     const interval = setInterval(() => {
@@ -94,7 +105,7 @@ const Home: NextPage = () => {
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [currentUser]);
 
   return (
     <Layout>

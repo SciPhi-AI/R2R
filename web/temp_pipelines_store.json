@@ -1,21 +1,15 @@
 {
-  "asdasd": {
-    "id": [
-      "asdasd-.3v7be1sct",
-      844
-    ],
-    "name": "asdasd",
+  "1071629873": {
+    "id": 1071629873,
+    "name": "",
     "endpoint": "localhost:8000",
     "github_url": "https://github.com/example",
     "status": "active",
     "deployment": {
-      "id": [
-        "asdasd-.3v7be1sct",
-        844
-      ],
+      "id": 1071629873,
       "uri": "local",
-      "create_time": "2024-03-07T16:00:37.373Z",
-      "update_time": "2024-03-07T16:00:37.373Z",
+      "create_time": "2024-03-08T06:38:19.577Z",
+      "update_time": "2024-03-08T06:38:19.578Z",
       "creator": "exampleCreator",
       "generation": "1",
       "last_modifier": "exampleModifier",
@@ -23,23 +17,17 @@
       "name": "Local Deployment"
     }
   },
-  "asdada": {
-    "id": [
-      "asdada-.2c6uo0uss",
-      623
-    ],
-    "name": "asdada",
+  "8732448430": {
+    "id": 8732448430,
+    "name": "test",
     "endpoint": "localhost:8000",
     "github_url": "https://github.com/example",
     "status": "active",
     "deployment": {
-      "id": [
-        "asdada-.2c6uo0uss",
-        623
-      ],
+      "id": 8732448430,
       "uri": "local",
-      "create_time": "2024-03-07T20:21:43.770Z",
-      "update_time": "2024-03-07T20:21:43.770Z",
+      "create_time": "2024-03-08T06:38:35.540Z",
+      "update_time": "2024-03-08T06:38:35.540Z",
       "creator": "exampleCreator",
       "generation": "1",
       "last_modifier": "exampleModifier",
@@ -47,107 +35,17 @@
       "name": "Local Deployment"
     }
   },
-  "asdas": {
-    "id": [
-      "asdas-3oo1t9t2dn",
-      78
-    ],
-    "name": "asdas",
+  "7634617410": {
+    "id": 7634617410,
+    "name": "xx",
     "endpoint": "localhost:8000",
     "github_url": "https://github.com/example",
     "status": "active",
     "deployment": {
-      "id": [
-        "asdas-3oo1t9t2dn",
-        78
-      ],
+      "id": 7634617410,
       "uri": "local",
-      "create_time": "2024-03-07T20:22:49.589Z",
-      "update_time": "2024-03-07T20:22:49.589Z",
-      "creator": "exampleCreator",
-      "generation": "1",
-      "last_modifier": "exampleModifier",
-      "uid": "exampleUID",
-      "name": "Local Deployment"
-    }
-  },
-  "abc": {
-    "id": [
-      "abc-.kd63zktg7e",
-      86
-    ],
-    "name": "abc",
-    "endpoint": "localhost:8000",
-    "github_url": "https://github.com/example",
-    "status": "active",
-    "deployment": {
-      "id": [
-        "abc-.kd63zktg7e",
-        86
-      ],
-      "uri": "local",
-      "create_time": "2024-03-07T20:34:03.595Z",
-      "update_time": "2024-03-07T20:34:03.595Z",
-      "creator": "exampleCreator",
-      "generation": "1",
-      "last_modifier": "exampleModifier",
-      "uid": "exampleUID",
-      "name": "Local Deployment"
-    }
-  },
-  "asa": {
-    "id": "asa-e3.6d4n3",
-    "name": "asa",
-    "endpoint": "localhost:8000",
-    "github_url": "https://github.com/example",
-    "status": "active",
-    "deployment": {
-      "id": "asa-e3.6d4n3",
-      "uri": "local",
-      "create_time": "2024-03-07T20:55:28.983Z",
-      "update_time": "2024-03-07T20:55:28.983Z",
-      "creator": "exampleCreator",
-      "generation": "1",
-      "last_modifier": "exampleModifier",
-      "uid": "exampleUID",
-      "name": "Local Deployment"
-    }
-  },
-  "aaaa": {
-    "id": [
-      "aaaa-.c2k6doap9",
-      582
-    ],
-    "name": "aaaa",
-    "endpoint": "localhost:8000",
-    "github_url": "https://github.com/example",
-    "status": "active",
-    "deployment": {
-      "id": [
-        "aaaa-.c2k6doap9",
-        582
-      ],
-      "uri": "local",
-      "create_time": "2024-03-07T20:40:57.995Z",
-      "update_time": "2024-03-07T20:40:57.995Z",
-      "creator": "exampleCreator",
-      "generation": "1",
-      "last_modifier": "exampleModifier",
-      "uid": "exampleUID",
-      "name": "Local Deployment"
-    }
-  },
-  "asasa": {
-    "id": "asasa-fw.0xtr0",
-    "name": "asasa",
-    "endpoint": "localhost:8000",
-    "github_url": "https://github.com/example",
-    "status": "active",
-    "deployment": {
-      "id": "asasa-fw.0xtr0",
-      "uri": "local",
-      "create_time": "2024-03-07T20:58:14.413Z",
-      "update_time": "2024-03-07T20:58:14.413Z",
+      "create_time": "2024-03-08T06:42:22.048Z",
+      "update_time": "2024-03-08T06:42:22.048Z",
       "creator": "exampleCreator",
       "generation": "1",
       "last_modifier": "exampleModifier",

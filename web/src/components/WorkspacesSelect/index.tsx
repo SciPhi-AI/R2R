@@ -18,6 +18,7 @@ function WorkspacesSelect() {
   const { cloudMode } = useAuth();
   const { pipelineName } = router.query;
   const pipeline = pipelines.find((p) => p.id?.toString() === pipelineName);
+  const supabase = createClient();
 
   useEffect(() => {
     pipelinesRef.current = pipelines;
@@ -35,10 +36,9 @@ function WorkspacesSelect() {
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [supabase]);
 
   const fetchPipelines = async () => {
-    const supabase = createClient();
     if (cloudMode === 'cloud') {
       const {
         data: { session },

@@ -30,7 +30,7 @@ const PipelinePage = () => {
   const supabase = createClient();
   const { pipelines, updatePipelines } = usePipelineContext();
   const router = useRouter();
-  const pipelineId: any = router.query.pipelineId;
+  const pipelineId: any = router.query.pipelineName;
   const pipeline = pipelines[pipelineId];
 
   console.log('pipeline = ', pipeline);
@@ -84,12 +84,14 @@ const PipelinePage = () => {
 
   useEffect(() => {
     const update = async () => {
+      console.log('pipelineId = ', pipelineId)
       if (cloudMode === 'cloud' && pipelineId) {
         // Use optional chaining
         const {
           data: { session },
         } = await supabase.auth.getSession();
         const token = session?.access_token;
+        console.log('in update, token = ', token);
         if (token) {
           // TODO - fetch the pipeline directly from the API
           const response = await fetch(`/api/pipelines`, {

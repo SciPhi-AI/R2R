@@ -51,7 +51,7 @@ export function MainMenu() {
 
   return (
     <div className={styles.container}>
-      <WorkspacesSelect />
+      {/* <WorkspacesSelect /> */}
 
       <div className={styles.leftMainMenuNavigation}>
         <a
