@@ -11,30 +11,40 @@ export function SubNavigationMenu() {
     useState<{
       width: number;
       translateX: number;
+      translateY?: number;
     } | null>(null);
 
   const router = useRouter();
   const { pipelineId } = router.query;
 
   const navItems = [
-    { path: '/', label: 'Home', width: 60, translateX: 0 },
+    {
+      path: '/',
+      label: '←',
+      width: 45,
+      translateX: 0,
+      translateY: 5,
+    },
     {
       path: `/pipeline/${pipelineId}`,
       label: 'Pipeline',
-      width: 80,
-      translateX: 60,
+      width: 72,
+      translateX: 45,
+      translateY: 5,
     },
     {
       path: `/pipeline/${pipelineId}/retrievals`,
       label: 'Retrievals',
       width: 90,
-      translateX: 140,
+      translateX: 117,
+      translateY: 5,
     },
     {
       path: `/pipeline/${pipelineId}/embeddings`,
       label: 'Embeddings',
       width: 100,
-      translateX: 230,
+      translateX: 207,
+      translateY: 5,
     },
   ];
 
@@ -63,6 +73,7 @@ export function SubNavigationMenu() {
       setNavItemHighlightsPropsValues({
         width: hoveredItem.width,
         translateX: hoveredItem.translateX,
+        translateY: hoveredItem.translateY,
       });
     }
   }
@@ -94,6 +105,7 @@ export function SubNavigationMenu() {
           <NavItemHighlight
             width={navItemHighlightPropsValues.width}
             translateX={navItemHighlightPropsValues.translateX}
+            translateY={navItemHighlightPropsValues.translateY}
           />
         ) : (
           ''
@@ -104,6 +116,9 @@ export function SubNavigationMenu() {
             href={item.path}
             onMouseOver={(event) => handleHoverNavItem(event)}
             className={router.pathname === item.path ? styles.selected : ''}
+            style={{
+              fontSize: item.label === '←' ? '1.5rem' : 'inherit',
+            }}
           >
             {item.label}
           </Link>
