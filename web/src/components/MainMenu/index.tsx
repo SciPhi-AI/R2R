@@ -1,41 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import styles from './styles.module.scss';
 import { WorkspacesSelect } from '../WorkspacesSelect';
 import { createClient } from '@/utils/supabase/component';
 import {
   Bug,
   Cloud,
   CreditCard,
-  Github,
-  Keyboard,
   LifeBuoy,
   LogOut,
-  Mail,
-  MessageSquare,
-  Plus,
-  PlusCircle,
   Settings,
   User,
-  UserPlus,
-  Users,
 } from 'lucide-react';
-
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuPortal,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import styles from './styles.module.scss';
 
 export function MainMenu() {
   const supabase = createClient();
@@ -43,18 +30,21 @@ export function MainMenu() {
   const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const fetchUser = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setUser(session?.user);
-    });
+    };
+
+    fetchUser();
   }, []);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (!error) {
-      // Redirect to the login page or home page after logout
       router.push('/login');
     } else {
-      // Handle error case
       console.error('Logout failed: ', error);
     }
   };
