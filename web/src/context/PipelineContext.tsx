@@ -18,7 +18,6 @@ export const PipelineProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [pipelines, setPipeline] = useState<Record<number, Pipeline>>({});
-  const { cloudMode } = useAuth();
 
   const updatePipelines = async (pipelineId: string, pipeline: Pipeline) => {
     setPipeline((prevPipelines) => ({

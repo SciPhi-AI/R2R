@@ -78,7 +78,7 @@ export function MainMenu() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
               <DropdownMenuLabel>
-                {user === null ? 'My Account' : user.email}
+                {user ? user.email : 'My Account'}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
