@@ -1,0 +1,56 @@
+{
+  "1071629873": {
+    "id": 1071629873,
+    "name": "",
+    "endpoint": "localhost:8000",
+    "github_url": "https://github.com/example",
+    "status": "active",
+    "deployment": {
+      "id": 1071629873,
+      "uri": "local",
+      "create_time": "2024-03-08T06:38:19.577Z",
+      "update_time": "2024-03-08T06:38:19.578Z",
+      "creator": "exampleCreator",
+      "generation": "1",
+      "last_modifier": "exampleModifier",
+      "uid": "exampleUID",
+      "name": "Local Deployment"
+    }
+  },
+  "8732448430": {
+    "id": 8732448430,
+    "name": "test",
+    "endpoint": "localhost:8000",
+    "github_url": "https://github.com/example",
+    "status": "active",
+    "deployment": {
+      "id": 8732448430,
+      "uri": "local",
+      "create_time": "2024-03-08T06:38:35.540Z",
+      "update_time": "2024-03-08T06:38:35.540Z",
+      "creator": "exampleCreator",
+      "generation": "1",
+      "last_modifier": "exampleModifier",
+      "uid": "exampleUID",
+      "name": "Local Deployment"
+    }
+  },
+  "7634617410": {
+    "id": 7634617410,
+    "name": "xx",
+    "endpoint": "localhost:8000",
+    "github_url": "https://github.com/example",
+    "status": "active",
+    "deployment": {
+      "id": 7634617410,
+      "uri": "local",
+      "create_time": "2024-03-08T06:42:22.048Z",
+      "update_time": "2024-03-08T06:42:22.048Z",
+      "creator": "exampleCreator",
+      "generation": "1",
+      "last_modifier": "exampleModifier",
+      "uid": "exampleUID",
+      "name": "Local Deployment"
+    }
+  }
+}
