@@ -14,7 +14,7 @@ import styles from '@/styles/Index.module.scss';
 
 const LocalDeploy = () => {
   const [pipelineName, setPipelineName] = useState('');
-  const [localEndpoint, setLocalEndpoint] = useState('localhost:8000');
+  const [localEndpoint, setLocalEndpoint] = useState('http://localhost:8000');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { updatePipelines } = usePipelineContext();
@@ -31,7 +31,7 @@ const LocalDeploy = () => {
     setIsLoading(true);
 
     // Ensure the URL includes the HTTP scheme
-    const fullEndpointUrl = `http://${localEndpoint}/logs`;
+    const fullEndpointUrl = `${localEndpoint}/logs`;
 
     try {
       const logsResponse = await fetch(fullEndpointUrl, {
