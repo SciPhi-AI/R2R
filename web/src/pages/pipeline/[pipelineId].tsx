@@ -105,8 +105,13 @@ const PipelinePage = () => {
   }, [cloudMode, pipelineId]);
 
   if (!pipeline) {
-    // Handle the case where pipeline is null or render nothing or a loader
-    return <div>Loading...</div>; // or any other fallback UI
+    return (
+      <Layout>
+        <main className={styles.main}>
+        <div>Loading pipeline...</div>
+        </main>
+      </Layout>
+    );
   }
   return (
     <Layout>
