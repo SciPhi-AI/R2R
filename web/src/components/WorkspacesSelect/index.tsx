@@ -5,7 +5,9 @@ import styles from './styles.module.scss';
 
 function WorkspacesSelect() {
   const router = useRouter();
-  const { pipelineId } = router.query;
+  // const pipelineId = router.asPath.split('/').pop();
+
+  // console.log('pipelineId = ', pipelineId);
 
   return (
     <div className={styles.container}>
@@ -34,7 +36,7 @@ function WorkspacesSelect() {
       </div>
 
       <div className={styles.divider}></div>
-      <div className={styles.userPanel}>{`Pipeline: ${pipelineId}`}</div>
+      <div className={styles.userPanel}>Pipeline</div>
     </div>
   );
 }

@@ -84,7 +84,7 @@ const PipelinePage = () => {
 
   useEffect(() => {
     const update = async () => {
-      console.log('pipelineId = ', pipelineId)
+      console.log('pipelineId = ', pipelineId);
       if (cloudMode === 'cloud' && pipelineId) {
         // Use optional chaining
         const {

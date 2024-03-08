@@ -24,6 +24,8 @@ export function SubNavigationMenu() {
   const pipelineId = pipeline?.id?.toString();
   const currentPipelineName = pipeline?.name;
 
+  const isHomePage = router.pathname === '/';
+
   useEffect(() => {
     pipelinesRef.current = pipelines;
   }, [pipelines]);
@@ -82,8 +84,8 @@ export function SubNavigationMenu() {
   const navItems = [
     {
       path: '/',
-      label: pipelineId ? '←' : 'Home',
-      width: pipelineId ? 45 : 60,
+      label: '←',
+      width: 45,
       translateX: 0,
       translateY: 5,
     },
@@ -151,34 +153,39 @@ export function SubNavigationMenu() {
   };
 
   return (
-    <div className={styles.container}>
-      <nav
-        onMouseLeave={handleLeaveNavItem}
-        className={`${styles.subNavigationMenu} ${
-          isScrolling ? styles.scrollingContent : ''
-        }`}
-      >
-        {navItemHighlightProps && (
-          <NavItemHighlight
-            width={navItemHighlightProps.width}
-            translateX={navItemHighlightProps.translateX}
-            translateY={navItemHighlightProps.translateY}
-          />
-        )}
-        {navItems.map((item) => (
-          <Link
-            key={item.path}
-            href={item.path}
-            onMouseOver={handleHoverNavItem}
-            className={router.pathname === item.path ? styles.selected : ''}
-            style={{
-              fontSize: item.label === '←' ? '1.5rem' : 'inherit',
-            }}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
+    <div
+      className={styles.container}
+      style={{ minHeight: isHomePage ? '60px' : 'auto' }}
+    >
+      {!isHomePage && (
+        <nav
+          onMouseLeave={handleLeaveNavItem}
+          className={`${styles.subNavigationMenu} ${
+            isScrolling ? styles.scrollingContent : ''
+          }`}
+        >
+          {navItemHighlightProps && (
+            <NavItemHighlight
+              width={navItemHighlightProps.width}
+              translateX={navItemHighlightProps.translateX}
+              translateY={navItemHighlightProps.translateY}
+            />
+          )}
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              href={item.path}
+              onMouseOver={handleHoverNavItem}
+              className={router.pathname === item.path ? styles.selected : ''}
+              style={{
+                fontSize: item.label === '←' ? '1.5rem' : 'inherit',
+              }}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      )}
     </div>
   );
 }
