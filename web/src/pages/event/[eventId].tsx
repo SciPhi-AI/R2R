@@ -1,9 +1,10 @@
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 
 import Layout from '@/components/Layout';
 import { Separator } from '@/components/ui/separator';
 import useLogs from '@/hooks/useLogs';
-import Link from 'next/link';
+
 import styles from '@/styles/Index.module.scss';
 import { EventSummary, searchResult } from '@/types';
 
@@ -154,11 +155,13 @@ export default function EventPage() {
       <main className={styles.main}>
         <h1 className="text-white text-2xl mb-4">
           <Link
+            className="pt-1"
             href={
               eventLog?.method !== 'Embedding'
                 ? '../retrievals'
                 : '../embeddings'
             }
+            legacyBehavior
           >
             <a>
               <svg
