@@ -17,7 +17,10 @@ function WorkspacesSelect() {
   const router = useRouter();
   const { cloudMode } = useAuth();
   const { pipelineName } = router.query;
-  const pipeline = pipelines.find((p) => p.id?.toString() === pipelineName);
+  const pipeline =
+    pipelines && pipelines.length > 0
+      ? pipelines.find((p) => p.id?.toString() === pipelineName)
+      : null;
 
   useEffect(() => {
     pipelinesRef.current = pipelines;
