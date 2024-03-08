@@ -43,7 +43,7 @@ export default function PipelineCard({ pipeline }: PipelineCardProps) {
           ) : (
             <>
               <p className={styles.cardTitle}>Status:</p>
-              <p className={styles.cardAddress}>{pipeline.status}</p>
+              <p className={styles.cardAddress}>{pipeline.status.toUpperCase()}</p>
             </>
           )}
         </div>

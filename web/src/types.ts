@@ -13,6 +13,7 @@ export type Pipeline = {
     last_modifier: string;
     uid: string;
     name: string;
+    error: string | null;
   };
 };
 

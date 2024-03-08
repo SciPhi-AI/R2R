@@ -33,6 +33,8 @@ const PipelinePage = () => {
   const pipelineId: any = router.query.pipelineId;
   const pipeline = pipelines[pipelineId];
 
+  console.log('pipeline = ', pipeline);
+
   const handleDeletePipeline = async () => {
     const {
       data: { session },
@@ -108,8 +110,13 @@ const PipelinePage = () => {
   }, [cloudMode, pipelineId]);
 
   if (!pipeline) {
-    // Handle the case where pipeline is null or render nothing or a loader
-    return <div>Loading...</div>; // or any other fallback UI
+    return (
+      <Layout>
+        <main className={styles.main}>
+          <div>Loading pipeline...</div>
+        </main>
+      </Layout>
+    );
   }
   return (
     <Layout>
@@ -132,7 +139,7 @@ const PipelinePage = () => {
           <CardContent className="pt-0">
             <div className="grid gap-4">
               <div className="flex items-center gap-4">
-                {pipeline.deployment && (
+                {pipeline.deployment && pipeline.deployment?.uri && (
                   <>
                     <div className="flex items-center gap-2 mt-2">
                       <GlobeIcon className="w-4 h-4" />
@@ -156,7 +163,7 @@ const PipelinePage = () => {
                     {pipeline.github_url}
                   </span>
                 </div>
-                {pipeline.deployment && (
+                {pipeline.deployment && pipeline.deployment?.create_time && (
                   <div className="flex items-center gap-2">
                     <CalendarClockIcon className="w-4 h-4" />
                     <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -184,12 +191,31 @@ const PipelinePage = () => {
                   </span>
                 </div>
               </div> */}
-              {pipeline.deployment && (
+
+              {pipeline.deployment && pipeline.deployment?.update_time && (
                 <>
                   <Separator className="h-px" />
                   <div className="grid gap-2">
                     <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                       {'Last updated: ' + pipeline.deployment?.update_time}
+                    </div>
+                  </div>
+                </>
+              )}
+              {pipeline.deployment && pipeline.deployment?.error && (
+                <>
+                  <Separator className="h-px" />
+                  <div className="grid gap-2">
+                    <div
+                      className="flex items-center gap-2 text-red-500 dark:text-red-400 "
+                      style={{
+                        display: 'inline-block', // Ensures the element respects the maxWidth
+                        maxWidth: '100%', // Ensures the span does not exceed the width of its container
+                        overflowWrap: 'break-word', // Allows words to break and wrap to the next line
+                        wordBreak: 'break-all', // To ensure even continuous strings without spaces will break
+                      }}
+                    >
+                      {'Error: ' + pipeline.deployment?.error}
                     </div>
                   </div>
                 </>
@@ -201,9 +227,17 @@ const PipelinePage = () => {
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   {pipeline.status == 'finished' && (
-                    <CheckCircleIcon className="w-4 h-4" />
+                    <CheckCircleIcon className={'w-4 h-4'} />
                   )}
-                  {pipeline.status}
+
+                  <span
+                    className={
+                      'text-sm' +
+                      (pipeline.status == 'failed' ? ' text-red-500' : '')
+                    }
+                  >
+                    {'Status: ' + pipeline.status.toUpperCase()}
+                  </span>
                 </div>
               </div>
               <Separator className="h-px" />

@@ -69,7 +69,6 @@ class E2EPipelineFactory:
         embeddings_provider=None,
         llm=None,
         text_splitter=None,
-        generation_config=None,
         ingestion_pipeline_impl=BasicIngestionPipeline,
         embedding_pipeline_impl=BasicEmbeddingPipeline,
         rag_pipeline_impl=BasicRAGPipeline,
