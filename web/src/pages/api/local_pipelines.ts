@@ -14,10 +14,12 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       case 'GET':
         const pipelines = store.getAllPipelines();
         return res.status(200).json({pipelines});
-      default:
-        res.setHeader('Allow', ['GET', 'POST']);
-        return res.status(405).end(`Method ${req.method} Not Allowed`);
-    }
+        case 'DELETE':
+          return handleDelete(req, res);
+        default:
+          res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
+          return res.status(405).end(`Method ${req.method} Not Allowed`);
+      }
   } catch (error) {
     res.status(400).json({ message: 'Something went wrong' });
   }
@@ -30,4 +32,13 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   }
   store.updatePipeline(id, pipeline);
   return res.status(200).json({ message: 'Pipeline updated successfully' });
+}
+
+async function handleDelete(req: NextApiRequest, res: NextApiResponse) {
+  const { id } = req.query;
+  if (!id) {
+    return res.status(400).json({ message: 'Missing id' });
+  }
+  store.deletePipeline(id as string);
+  return res.status(200).json({ message: 'Pipeline deleted successfully' });
 }

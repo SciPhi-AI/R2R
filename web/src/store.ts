@@ -31,6 +31,11 @@ class Store {
     }
   }
 
+  deletePipeline(id: string): void {
+    delete this.data[id];
+    this.saveData().catch(console.error);
+  }
+
   getPipeline(id: string): Pipeline | undefined {
     return this.data[id];
   }

@@ -2,8 +2,6 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Layout from '@/components/Layout';
 import { Footer } from '@/components/Footer';
-import { useAuth } from '@/context/authProvider';
-import { createClient } from '@/utils/supabase/component';
 import { usePipelineContext } from '@/context/PipelineContext';
 
 import { Link } from 'lucide-react';
@@ -63,25 +61,19 @@ const PipelinePage = () => {
 
   const handleDeletePipeline = async () => {
     if (pipeline.id) {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/delete_pipeline/${pipeline.id}`,
-        {
-          method: 'DELETE',
-          headers: new Headers({
-            'Content-Type': 'application/json',
-          }),
-        }
-      );
+      const response = await fetch(`/api/local_pipelines?id=${pipeline.id}`, {
+        method: 'DELETE',
+        headers: new Headers({
+          'Content-Type': 'application/json',
+        }),
+      });
 
       if (response.ok) {
-        // Remove the deleted pipeline from the local state
         updatePipelines(pipelineId, null);
         setPipelineToDelete('');
         setDeleteButtonDisabled(true);
         router.push('/');
-        // Show a success message or perform any other necessary actions
       } else {
-        // Handle the error case
         console.error('Failed to delete pipeline');
       }
     } else {
@@ -89,20 +81,9 @@ const PipelinePage = () => {
     }
   };
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text).then(
-      () => {
-        // Optional: Show a success message or perform any other actions
-      },
-      (err) => {
-        console.error('Failed to copy text: ', err);
-      }
-    );
-  };
-
   if (!pipeline) {
     // Handle the case where pipeline is null or render nothing or a loader
-    return <div>Loading...</div>; // or any other fallback UI
+    return <div>Loading...</div>;
   }
   return (
     <Layout>
