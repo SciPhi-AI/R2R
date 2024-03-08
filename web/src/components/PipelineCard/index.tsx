@@ -5,6 +5,7 @@ import React from 'react';
 import styles from './styles.module.scss';
 import { Pipeline } from '../../types';
 import { useAuth } from '@/context/authProvider';
+import Next from 'next/link';
 
 interface PipelineCardProps {
   pipeline: Pipeline;
@@ -23,7 +24,7 @@ export default function PipelineCard({ pipeline }: PipelineCardProps) {
   };
 
   return (
-    <a href="#" className={styles.container} onClick={handleClick}>
+    <Next href="#" className={styles.container} onClick={handleClick}>
       <div className={styles.cardHeader}>
         <div className={styles.hoverRedirectIcon}>
           <FiExternalLink size="16" />
@@ -43,11 +44,13 @@ export default function PipelineCard({ pipeline }: PipelineCardProps) {
           ) : (
             <>
               <p className={styles.cardTitle}>Status:</p>
-              <p className={styles.cardAddress}>{pipeline.status.toUpperCase()}</p>
+              <p className={styles.cardAddress}>
+                {pipeline.status.toUpperCase()}
+              </p>
             </>
           )}
         </div>
       </div>
-    </a>
+    </Next>
   );
 }

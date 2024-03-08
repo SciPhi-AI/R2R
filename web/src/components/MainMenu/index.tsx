@@ -22,6 +22,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import Next from 'next/link';
 import styles from './styles.module.scss';
 
 export function MainMenu() {
@@ -54,14 +55,14 @@ export function MainMenu() {
       <WorkspacesSelect />
 
       <div className={styles.leftMainMenuNavigation}>
-        <a
+        <Next
           style={{ cursor: 'pointer' }}
           href="https://docs.sciphi.ai"
           target="_blank"
           rel="noopener noreferrer"
         >
           <button>Docs</button>
-        </a>
+        </Next>
 
         <div>
           <DropdownMenu>

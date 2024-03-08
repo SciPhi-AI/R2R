@@ -7,6 +7,7 @@ import Layout from '@/components/Layout';
 import PipelineCard from '@/components/PipelineCard';
 import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';
 import { Separator } from '@/components/ui/separator';
+import Next from 'next/link';
 
 import styles from '../styles/Index.module.scss';
 import 'react-tippy/dist/tippy.css';
@@ -130,12 +131,12 @@ const Home: NextPage = () => {
           </ol>
           <p className="mt-2">
             For a detailed starting example, refer to the{' '}
-            <a
+            <Next
               href="https://github.com/SciPhi-AI/R2R-basic-rag-template"
               className="text-blue-500 hover:underline"
             >
               R2R-basic-rag-template documentation
-            </a>
+            </Next>
             .
           </p>
         </div>
