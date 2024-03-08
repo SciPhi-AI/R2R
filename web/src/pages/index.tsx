@@ -7,7 +7,6 @@ import Layout from '@/components/Layout';
 import PipelineCard from '@/components/PipelineCard';
 import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';
 import { Separator } from '@/components/ui/separator';
-import { useAuth } from '@/context/authProvider';
 
 import styles from '../styles/Index.module.scss';
 import 'react-tippy/dist/tippy.css';
@@ -18,60 +17,43 @@ const Home: NextPage = () => {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const supabase = createClient();
   const pipelinesRef = useRef(pipelines);
-  const { cloudMode } = useAuth();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState(null);
 
   const fetchPipelines = () => {
     setError(null);
-    if (cloudMode === 'cloud') {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        const token = session?.access_token;
-        if (token) {
-          fetch('/api/pipelines', {
-            headers: new Headers({
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            }),
-          })
-            .then((res) => {
-              if (!res.ok) {
-                throw new Error('Network response was not ok');
-              }
-              return res.json();
-            })
-            .then((json) => {
-              console.log('setting pipelines = ', json['pipelines']);
-              setPipelines(json['pipelines']);
-            })
-            .catch((error) => {
-              setError('Failed to load pipelines');
-              console.error('Error fetching pipelines:', error);
-            })
-            .finally(() => {
-              setIsLoading(false);
-            });
-        } else {
-          setError('Authentication token is missing');
-          setIsLoading(false);
-        }
-      });
-    } else {
-      fetch('/api/local_pipelines', {
-        headers: new Headers({
-          'Content-Type': 'application/json',
-        }),
-      })
-        .then((res) => {
-          return res.json();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const token = session?.access_token;
+      if (token) {
+        fetch('/api/pipelines', {
+          headers: new Headers({
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          }),
         })
-        .then((json) => {
-          console.log('json[pipelines] = ', json['pipelines']);
-          setPipelines(json['pipelines']);
-          setIsLoading(false);
-        });
-    }
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return res.json();
+          })
+          .then((json) => {
+            console.log('setting pipelines = ', json['pipelines']);
+            setPipelines(json['pipelines']);
+          })
+          .catch((error) => {
+            setError('Failed to load pipelines');
+            console.error('Error fetching pipelines:', error);
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
+      } else {
+        setError('Authentication token is missing');
+        setIsLoading(false);
+      }
+    });
   };
 
   useEffect(() => {
@@ -80,13 +62,15 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     const fetchSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setCurrentUser(session?.user || null);
     };
-  
+
     fetchSession();
   }, [supabase]);
-    
+
   useEffect(() => {
     fetchPipelines();
     const interval = setInterval(() => {
