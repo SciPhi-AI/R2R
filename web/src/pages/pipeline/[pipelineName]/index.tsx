@@ -116,8 +116,8 @@ const PipelinePage = () => {
       <main className={styles.main}>
         {pipeline && (
           <h1 className="text-white text-2xl mb-4">
-            {pipeline.name} Pipeline:{' '}
-            <code className="font-mono text-gray-500">{pipeline.id}</code>
+            Pipeline{' '}
+            <code className="font-mono text-gray-500"> id:{pipeline.id}</code>
           </h1>
         )}
         <Separator />
