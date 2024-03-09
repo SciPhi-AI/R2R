@@ -2,7 +2,7 @@ import type { NextPage } from 'next';
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/component';
 
-import { Footer } from '@/components/Footer';
+import { Footer } from '@/components/shared/Footer';
 import Layout from '@/components/Layout';
 import PipelineCard from '@/components/PipelineCard';
 import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';

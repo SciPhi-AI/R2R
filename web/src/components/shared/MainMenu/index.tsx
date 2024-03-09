@@ -74,8 +74,6 @@ export function MainMenu() {
                 height="28"
                 className={styles.userIcon}
               />
-
-              {/* <Button variant="outline">Open</Button> */}
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
               <DropdownMenuLabel>

@@ -1,11 +1,10 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Layout from '@/components/Layout';
-import { Footer } from '@/components/Footer';
+import { Footer } from '@/components/shared/Footer';
 import { useAuth } from '@/context/authProvider';
 import { createClient } from '@/utils/supabase/component';
 import { usePipelineContext } from '@/context/PipelineContext';
-// import { Github } from 'lucide-react';
 import { Github, Link } from 'lucide-react';
 
 import {

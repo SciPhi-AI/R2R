@@ -2,10 +2,8 @@ import { useState } from 'react';
 
 import Link from 'next/link';
 import { FaGithub, FaTwitter, FaRegMoon } from 'react-icons/fa';
-import { FiExternalLink } from 'react-icons/fi';
 
 import styles from './styles.module.scss';
-import { ArrowIcon } from '../ArrowIcon';
 
 function Footer() {
   const [theme, setTheme] = useState('dark');

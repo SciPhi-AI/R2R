@@ -1,56 +1,56 @@
-import React, { lazy, Suspense } from 'react';
+// import React, { lazy, Suspense } from 'react';
 
-import { IntegrationCard } from '@/components/IntegrationCard';
-import Layout from '@/components/Layout';
-import ProvidersNavMenu from '@/components/ProvidersNavMenu';
-import { Separator } from '@/components/ui/separator';
-import { useFetchProviders } from '@/hooks/useFetchProviders';
-import { useModal } from '@/hooks/useModal';
-const SecretsModal = lazy(() => import('@/components/SecretsModal'));
+// import { IntegrationCard } from '@/components/Paused/IntegrationCard';
+// import Layout from '@/components/Layout';
+// import ProvidersNavMenu from '@/components/shared/ProvidersNavMenu';
+// import { Separator } from '@/components/ui/separator';
+// import { useFetchProviders } from '@/hooks/useFetchProviders';
+// import { useModal } from '@/hooks/useModal';
+// const SecretsModal = lazy(() => import('@/components/SecretsModal'));
 
-import styles from '@/styles/Index.module.scss';
+// import styles from '@/styles/Index.module.scss';
 
-export default function LLMs() {
-  const { isOpen, toggleModal, secretProvider, handleSecretProvider } =
-    useModal();
+// export default function LLMs() {
+//   const { isOpen, toggleModal, secretProvider, handleSecretProvider } =
+//     useModal();
 
-  const { allProviders } = useFetchProviders();
+//   const { allProviders } = useFetchProviders();
 
-  return (
-    <Layout>
-      <main className={styles.main}>
-        <ProvidersNavMenu />
+//   return (
+//     <Layout>
+//       <main className={styles.main}>
+//         <ProvidersNavMenu />
 
-        <Separator />
+//         <Separator />
 
-        <div className={`${styles.gridView} ${styles.column}`}>
-          {Array.isArray(allProviders)
-            ? allProviders
-                ?.filter((x) => {
-                  return x?.type == 'llm_provider';
-                })
-                .map((provider) => (
-                  <IntegrationCard
-                    provider={provider}
-                    key={provider.id}
-                    onClick={() => handleSecretProvider(provider)}
-                  />
-                ))
-            : null}
-          <Suspense fallback={<div>Loading...</div>}>
-            {isOpen && secretProvider && (
-              <SecretsModal
-                isOpen={isOpen}
-                toggleModal={toggleModal}
-                provider={secretProvider}
-              />
-            )}
-          </Suspense>
-        </div>
-        <div className={styles.datasetHeaderRightAlign}>
-          {/* <PanelHeader text="Add LLM Provider" /> */}
-        </div>
-      </main>
-    </Layout>
-  );
-}
+//         <div className={`${styles.gridView} ${styles.column}`}>
+//           {Array.isArray(allProviders)
+//             ? allProviders
+//                 ?.filter((x) => {
+//                   return x?.type == 'llm_provider';
+//                 })
+//                 .map((provider) => (
+//                   <IntegrationCard
+//                     provider={provider}
+//                     key={provider.id}
+//                     onClick={() => handleSecretProvider(provider)}
+//                   />
+//                 ))
+//             : null}
+//           <Suspense fallback={<div>Loading...</div>}>
+//             {isOpen && secretProvider && (
+//               <SecretsModal
+//                 isOpen={isOpen}
+//                 toggleModal={toggleModal}
+//                 provider={secretProvider}
+//               />
+//             )}
+//           </Suspense>
+//         </div>
+//         <div className={styles.datasetHeaderRightAlign}>
+//           {/* <PanelHeader text="Add LLM Provider" /> */}
+//         </div>
+//       </main>
+//     </Layout>
+//   );
+// }
