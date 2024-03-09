@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "*"
+  workflow_dispatch: # This line adds manual trigger support
 
 jobs:
   publish:
