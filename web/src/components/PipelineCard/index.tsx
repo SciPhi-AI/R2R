@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import React from 'react';
 
 import styles from './styles.module.scss';
-import { Pipeline } from '../../types';
+import { Pipeline } from '@/types';
 import { useAuth } from '@/context/authProvider';
 
 interface PipelineCardProps {

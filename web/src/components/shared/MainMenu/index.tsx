@@ -22,6 +22,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/Button';
 import Next from 'next/link';
 import styles from './styles.module.scss';
 
@@ -61,7 +62,9 @@ export function MainMenu() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <button>Docs</button>
+          <Button className="rounded-md h-8 w-30 py-1" variant="primary">
+            Docs
+          </Button>
         </Next>
 
         <div>
