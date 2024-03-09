@@ -132,18 +132,32 @@ def log_execution_to_db(func):
             else "datetime('now')"
         )
         with inst_provider as conn:
-            conn.execute(
-                f"INSERT INTO {inst_provider.log_table_name} (timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level) VALUES ({timestamp_func}, ?, ?, ?, ?, ?)",
-                (
-                    str(arg_pipeline_run_id),
-                    arg_pipeline_run_type,
-                    func_name,
-                    str(result),
-                    log_level,
-                ),
-            )
+            if inst_provider.provider == "postgres":
+                cur = conn.cursor()
+                cur.execute(
+                    f"INSERT INTO {inst_provider.log_table_name} (timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level) VALUES ({timestamp_func}, %s, %s, %s, %s, %s)",
+                    (
+                        str(arg_pipeline_run_id),
+                        arg_pipeline_run_type,
+                        func_name,
+                        str(result),
+                        log_level,
+                    ),
+                )
+                cur.close()
+            elif inst_provider.provider == "local":
+                conn.execute(
+                    f"INSERT INTO {inst_provider.log_table_name} (timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level) VALUES ({timestamp_func}, ?, ?, ?, ?, ?)",
+                    (
+                        str(arg_pipeline_run_id),
+                        arg_pipeline_run_type,
+                        func_name,
+                        str(result),
+                        log_level,
+                    ),
+                )
             conn.commit()
-
+            
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         # Assuming args[0] is the instance of the class the method belongs to
