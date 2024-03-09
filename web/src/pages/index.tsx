@@ -9,7 +9,7 @@ import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';
 import { Separator } from '@/components/ui/separator';
 import Next from 'next/link';
 
-import styles from '../styles/Index.module.scss';
+import styles from '@/styles/Index.module.scss';
 import 'react-tippy/dist/tippy.css';
 
 import { Pipeline } from '@/types';
