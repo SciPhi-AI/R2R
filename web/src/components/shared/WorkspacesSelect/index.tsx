@@ -7,7 +7,7 @@ function WorkspacesSelect() {
   const router = useRouter();
   const pipelineId = router.asPath.split('/').pop();
 
-  console.log('pipelineId = ', pipelineId);
+  console.log('Navbar pipelineId = ', pipelineId);
 
   return (
     <div className={styles.container}>
