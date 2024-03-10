@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import Link from 'next/link';
 
 const variantStyles = {
   primary:
@@ -14,12 +15,15 @@ const variantStyles = {
 
 type ButtonProps = {
   variant?: keyof typeof variantStyles;
+  className?: string;
+  href?: string;
 } & React.ComponentPropsWithoutRef<'button'>;
 
 export function Button({
   variant = 'primary',
   className,
   children,
+  href,
   ...props
 }: ButtonProps) {
   className = clsx(
@@ -28,6 +32,18 @@ export function Button({
     className
   );
 
+  // Render a link with a button inside if href is provided
+  if (href) {
+    return (
+      <Link href={href}>
+        <button className={className} {...props}>
+          {children}
+        </button>
+      </Link>
+    );
+  }
+
+  // Render a button if no href is provided
   return (
     <button className={className} {...props}>
       {children}
