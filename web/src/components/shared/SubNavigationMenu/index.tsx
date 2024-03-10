@@ -1,12 +1,55 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState, useRef } from 'react';
-import { createClient } from '@/utils/supabase/component';
-import { useAuth } from '@/context/authProvider';
-
-import styles from './styles.module.scss';
 import { NavItemHighlight } from '../NavItemHighlight';
 import { Pipeline } from '@/types';
+
+function HomePageNav() {
+  return (
+    <div className="sticky top-0 flex flex-row items-center bg-[var(--sciphi-top-bg)] px-[14rem] py-1 z-10 backdrop-blur-lg min-h-[60px]">
+      {/* Content specific to the homepage navigation can go here */}
+    </div>
+  );
+}
+
+function OtherPageNav({
+  navItems,
+  navItemHighlightProps,
+  handleHoverNavItem,
+  handleLeaveNavItem,
+  router,
+  isScrolling,
+}) {
+  return (
+    <div className="sticky top-0 flex flex-row items-center bg-[var(--sciphi-top-bg)] px-[14rem] py-1 z-10 backdrop-blur-lg">
+      <nav
+        onMouseLeave={handleLeaveNavItem}
+        className={`cursor-pointer text-[0.95rem] text-[var(--color-5)] flex ${isScrolling ? 'pt-[0.6rem] translate-x-[0.4rem] z-10' : ''}`}
+      >
+        {navItemHighlightProps && (
+          <NavItemHighlight
+            width={navItemHighlightProps.width}
+            translateX={navItemHighlightProps.translateX}
+            translateY={navItemHighlightProps.translateY}
+          />
+        )}
+        {navItems.map((item) => (
+          <Link
+            key={item.path}
+            href={item.path}
+            onMouseOver={handleHoverNavItem}
+            className={`${router.pathname === item.path ? 'text-[var(--color-8)] relative flex items-center justify-center rounded-[4px] px-[11px] py-[6px] transition-colors duration-200 ease-in-out' : ''}`}
+            style={{
+              fontSize: item.label === '←' ? '1.5rem' : 'inherit',
+            }}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+    </div>
+  );
+}
 
 export function SubNavigationMenu() {
   const [isScrolling, setIsScrolling] = useState(false);
@@ -17,9 +60,6 @@ export function SubNavigationMenu() {
   } | null>(null);
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const pipelinesRef = useRef(pipelines);
-  //const pipeline = pipelines.find((p) => p.id?.toString() === pipelineName);
-  //const pipelineId = pipeline?.id?.toString();
-  //const currentPipelineName = pipeline?.name;
 
   const router = useRouter();
   const { pipelineName } = router.query;
@@ -30,20 +70,6 @@ export function SubNavigationMenu() {
     pipelinesRef.current = pipelines;
   }, [pipelines]);
 
-  // useEffect(() => {
-  //   fetchPipelines();
-  //   const interval = setInterval(() => {
-  //     if (
-  //       pipelinesRef.current.some((pipeline) =>
-  //         ['building', 'pending', 'deploying'].includes(pipeline.status)
-  //       )
-  //     ) {
-  //       fetchPipelines();
-  //     }
-  //   }, 5000);
-  //   return () => clearInterval(interval);
-  // }, []);
-
   useEffect(() => {
     getActiveNavItem();
   }, [router.pathname]);
@@ -52,24 +78,6 @@ export function SubNavigationMenu() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // const fetchPipelines = async () => {
-  //   const supabase = createClient();
-  //   const {
-  //     data: { session },
-  //   } = await supabase.auth.getSession();
-  //   const token = session?.access_token;
-  //   if (token) {
-  //     const response = await fetch('/api/pipelines', {
-  //       headers: new Headers({
-  //         Authorization: `Bearer ${token}`,
-  //         'Content-Type': 'application/json',
-  //       }),
-  //     });
-  //     const json = await response.json();
-  //     setPipelines(json['pipelines']);
-  //   }
-  // };
 
   const navItems = [
     {
@@ -140,39 +148,19 @@ export function SubNavigationMenu() {
   };
 
   return (
-    <div
-      className={styles.container}
-      style={{ minHeight: isHomePage ? '60px' : 'auto' }}
-    >
-      {!isHomePage && (
-        <nav
-          onMouseLeave={handleLeaveNavItem}
-          className={`${styles.subNavigationMenu} ${
-            isScrolling ? styles.scrollingContent : ''
-          }`}
-        >
-          {navItemHighlightProps && (
-            <NavItemHighlight
-              width={navItemHighlightProps.width}
-              translateX={navItemHighlightProps.translateX}
-              translateY={navItemHighlightProps.translateY}
-            />
-          )}
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              href={item.path}
-              onMouseOver={handleHoverNavItem}
-              className={router.pathname === item.path ? styles.selected : ''}
-              style={{
-                fontSize: item.label === '←' ? '1.5rem' : 'inherit',
-              }}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+    <>
+      {isHomePage ? (
+        <HomePageNav />
+      ) : (
+        <OtherPageNav
+          navItems={navItems}
+          navItemHighlightProps={navItemHighlightProps}
+          handleHoverNavItem={handleHoverNavItem}
+          handleLeaveNavItem={handleLeaveNavItem}
+          router={router}
+          isScrolling={isScrolling}
+        />
       )}
-    </div>
+    </>
   );
 }
