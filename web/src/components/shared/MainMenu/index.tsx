@@ -62,7 +62,7 @@ export function MainMenu() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <Button className="rounded-md h-8 w-30 py-1" variant="primary">
+          <Button className="rounded-md h-8 py-1.5 w-30" variant="primary">
             Docs
           </Button>
         </Next>
