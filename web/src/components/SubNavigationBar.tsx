@@ -28,7 +28,7 @@ function TopLevelNavItem({
   );
 }
 
-export const Header = forwardRef<
+export const SubNavigationBar = forwardRef<
   React.ElementRef<'div'>,
   { className?: string }
 >(function Header({ className }, ref) {
@@ -41,7 +41,7 @@ export const Header = forwardRef<
       ref={ref}
       className={clsx(
         className,
-        'fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between gap-12 px-4 transition sm:px-6 lg:z-30 lg:px-8 backdrop-blur-sm dark:backdrop-blur'
+        'fixed inset-x-0 top-10 z-40 flex h-10 items-center justify-between gap-12 px-4 transition sm:px-6 lg:z-30 lg:px-8 backdrop-blur-sm dark:backdrop-blur bg-zinc-800'
       )}
       style={
         {

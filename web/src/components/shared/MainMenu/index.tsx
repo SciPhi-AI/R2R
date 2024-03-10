@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import { Header } from '@/components/Header';
 import { WorkspacesSelect } from '../WorkspacesSelect';
 import { createClient } from '@/utils/supabase/component';
 import {

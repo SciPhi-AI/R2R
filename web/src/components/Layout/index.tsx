@@ -2,8 +2,8 @@
 import Head from 'next/head';
 import React, { ReactNode } from 'react';
 
-import { Header } from '@/components/Header';
-import { MainMenu } from '@/components/shared/MainMenu';
+import { Navbar } from '@/components/NavBar';
+import { SubNavigationBar } from '@/components/SubNavigationBar';
 import { SubNavigationMenu } from '@/components/shared/SubNavigationMenu';
 import { Footer } from '@/components/Footer';
 import styles from '@/styles/Index.module.scss';
@@ -22,8 +22,8 @@ const Layout: React.FC<Props> = ({ children, localNav, pageTitle }) => {
         {pageTitle && <title>{pageTitle} | SciPhi</title>}
         {/* You can also include other page-specific meta tags, links, or scripts here */}
       </Head>
-      <Header />
-      {/* <MainMenu /> */}
+      <Navbar />
+      {/* <SubNavigationBar /> */}
       {/* <SubNavigationMenu /> */}
       <main className={styles.main}>{children}</main>
       <Footer />
