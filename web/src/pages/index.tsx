@@ -2,7 +2,7 @@ import type { NextPage } from 'next';
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/component';
 
-import { Footer } from '@/components/shared/Footer';
+import { Footer } from '@/components/Footer';
 import Layout from '@/components/Layout';
 import PipelineCard from '@/components/PipelineCard';
 import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';
@@ -13,6 +13,7 @@ import styles from '@/styles/Index.module.scss';
 import 'react-tippy/dist/tippy.css';
 
 import { Pipeline } from '@/types';
+import { ContactResource } from '@/components/PipeCard';
 
 const Home: NextPage = () => {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
@@ -93,7 +94,7 @@ const Home: NextPage = () => {
 
   return (
     <Layout>
-      <main className={styles.main}>
+      <main className={`${styles.main}`}>
         <h1 className="text-white text-2xl mb-4"> Pipelines </h1>
         <Separator />
         <div className="mt-6" />
@@ -103,9 +104,10 @@ const Home: NextPage = () => {
         ) : (
           <>
             <CreatePipelineHeader numPipelines={pipelines?.length || 0} />
-            <div className={styles.gridView}>
+            <div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 sm:grid-cols-2 xl:grid-cols-4 dark:border-white/5">
+              {/* <div className={styles.gridView}> */}
               {pipelines.map((pipeline) => (
-                <PipelineCard pipeline={pipeline} key={pipeline.id} />
+                <ContactResource key={pipeline.id} pipeline={pipeline} />
               ))}
             </div>
           </>
@@ -142,7 +144,6 @@ const Home: NextPage = () => {
         </div>
         <br />
       </main>
-      <Footer />
     </Layout>
   );
 };
