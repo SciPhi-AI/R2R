@@ -1,73 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-
-import { Button } from '@/components/Button';
-import { navigation } from '@/components/Navigation';
-
-function PageLink({
-  label,
-  page,
-  previous = false,
-}: {
-  label: string;
-  page: { href: string; title: string };
-  previous?: boolean;
-}) {
-  return (
-    <>
-      <Button
-        href={page.href}
-        aria-label={`${label}: ${page.title}`}
-        variant="secondary"
-        arrow={previous ? 'left' : 'right'}
-      >
-        {label}
-      </Button>
-      <Link
-        href={page.href}
-        tabIndex={-1}
-        aria-hidden="true"
-        className="text-base font-semibold text-zinc-900 transition hover:text-zinc-600 dark:text-white dark:hover:text-zinc-300"
-      >
-        {page.title}
-      </Link>
-    </>
-  );
-}
-
-function PageNavigation() {
-  let pathname = usePathname();
-  let allPages = navigation.flatMap((group) => group.links);
-  let currentPageIndex = allPages.findIndex((page) => page.href === pathname);
-
-  if (currentPageIndex === -1) {
-    return null;
-  }
-
-  let previousPage = allPages[currentPageIndex - 1];
-  let nextPage = allPages[currentPageIndex + 1];
-
-  if (!previousPage && !nextPage) {
-    return null;
-  }
-
-  return (
-    <div className="flex">
-      {previousPage && (
-        <div className="flex flex-col items-start gap-3">
-          <PageLink label="Previous" page={previousPage} previous />
-        </div>
-      )}
-      {nextPage && (
-        <div className="ml-auto flex flex-col items-end gap-3">
-          <PageLink label="Next" page={nextPage} />
-        </div>
-      )}
-    </div>
-  );
-}
 
 function XIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -109,22 +42,62 @@ function SocialLink({
   return (
     <Link href={href} className="group">
       <span className="sr-only">{children}</span>
-      <Icon className="h-5 w-5 fill-zinc-700 transition group-hover:fill-zinc-900 dark:group-hover:fill-zinc-500" />
+      <Icon className="h-5 w-5 fill-zinc-700 transition group-hover:fill-zinc-900 dark:group-hover:fill-indigo-600" />
     </Link>
+  );
+}
+
+function OtherLinks() {
+  return (
+    <div className="grid grid-cols-2 gap-5 border-t border-zinc-900/5 pt-4 dark:border-white/5">
+      <div>
+        <ul className="p-0 list-none group">
+          <Link href="https://github.com/SciPhi-AI/R2R" passHref>
+            <li className="mb-0 dark:text-zinc-400 group-hover:text-indigo-600">
+              R2R Framework
+            </li>
+          </Link>
+        </ul>
+        <ul className="p-0 list-none group">
+          <Link href="https://github.com/SciPhi-AI/agent-search" passHref>
+            <li className="mb-0 dark:text-zinc-400 group-hover:text-indigo-600">
+              Documentation
+            </li>
+          </Link>
+        </ul>
+      </div>
+      <div className="ml-auto text-right">
+        <ul className="p-0 list-none group">
+          <Link href="https://github.com/SciPhi-AI/R2R/commits/main/" passHref>
+            <li className="mb-0 dark:text-zinc-400 group-hover:text-indigo-600">
+              ChangeLog
+            </li>
+          </Link>
+        </ul>
+        <ul className="p-0 list-none group">
+          <Link href="https://docs.sciphi.ai/" passHref>
+            <li className="mb-0 dark:text-zinc-400 group-hover:text-indigo-600">
+              Agent Search
+            </li>
+          </Link>
+        </ul>
+      </div>
+    </div>
   );
 }
 
 function SmallPrint() {
   return (
-    <div className="flex flex-col items-center justify-between gap-5 border-t border-zinc-900/5 pt-8 sm:flex-row dark:border-white/5">
+    <div className="flex flex-col items-center justify-between sm:flex-row dark:border-white/5 ">
       <p className="text-xs text-zinc-600 dark:text-zinc-400">
-        &copy; Copyright {new Date().getFullYear()}. All rights reserved.
+        &copy; Copyright {new Date().getFullYear()}. SciPhi.AI. All rights
+        reserved.
       </p>
       <div className="flex gap-4">
-        <SocialLink href="#" icon={XIcon}>
+        <SocialLink href="https://twitter.com/ocolegro?lang=en" icon={XIcon}>
           Follow us on X
         </SocialLink>
-        <SocialLink href="#" icon={GitHubIcon}>
+        <SocialLink href="https://github.com/SciPhi-AI/R2R" icon={GitHubIcon}>
           Follow us on GitHub
         </SocialLink>
         <SocialLink href="#" icon={DiscordIcon}>
@@ -137,8 +110,8 @@ function SmallPrint() {
 
 export function Footer() {
   return (
-    <footer className="mx-auto w-full max-w-2xl space-y-10 pb-16 lg:max-w-5xl">
-      <PageNavigation />
+    <footer className="mx-auto w-8/12 max-w-2xl space-y-4 pb-6 lg:max-w-5xl ">
+      <OtherLinks />
       <SmallPrint />
     </footer>
   );
