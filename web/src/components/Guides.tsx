@@ -1,5 +1,5 @@
-import { Button } from '@/components/Button'
-import { Heading } from '@/components/Heading'
+import { Button } from '@/components/Button';
+import { Heading } from '@/components/Heading';
 
 const guides = [
   {
@@ -24,7 +24,7 @@ const guides = [
     description:
       'Learn how to programmatically configure webhooks for your app.',
   },
-]
+];
 
 export function Guides() {
   return (
@@ -50,5 +50,5 @@ export function Guides() {
         ))}
       </div>
     </div>
-  )
+  );
 }
