@@ -15,17 +15,15 @@ export function Logo({
   ...rest
 }: LogoProps) {
   return (
-    <Link href="/" passHref legacyBehavior>
-      <a>
-        <Image
-          alt="sciphi.png"
-          src="/images/sciphi.png"
-          width={width}
-          height={height}
-          className={className}
-          {...rest} // Now rest only contains props that are compatible with the Image component
-        />
-      </a>
+    <Link href="/" passHref>
+      <Image
+        alt="sciphi.png"
+        src="/images/sciphi.png"
+        width={width}
+        height={height}
+        className={className}
+        {...rest} // Now rest only contains props that are compatible with the Image component
+      />
     </Link>
   );
 }

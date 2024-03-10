@@ -7,7 +7,6 @@ import { Button } from '@/components/Button';
 import { Logo } from '@/components/Logo';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Code } from '@/components/Code';
-import { a } from './mdx';
 
 function TopLevelNavItem({
   href,
@@ -18,10 +17,12 @@ function TopLevelNavItem({
 }) {
   return (
     <li>
-      <Link href={href} legacyBehavior>
-        <a className="text-sm leading-5 text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">
-          {children}
-        </a>
+      <Link
+        href={href}
+        className="text-sm leading-5 text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+        legacyBehavior
+      >
+        {children}
       </Link>
     </li>
   );
@@ -49,18 +50,12 @@ export const Header = forwardRef<
         } as React.CSSProperties
       }
     >
-      {/* This div is always rendered but its style changes based on mobile navigation state */}
-      <div className={clsx('absolute inset-x-0 top-full h-px transition')} />
       <div className="flex items-center justify-between w-full">
-        {/* Left side of the navbar */}
-        <div>
+        <div className="flex">
+          {/* Left side of the navbar */}
           <nav>
             <ul role="list" className="flex items-center gap-3">
-              <Link href="/" aria-label="Home" legacyBehavior>
-                <a>
-                  <Logo width={27} height={27} />
-                </a>
-              </Link>
+              <Logo width={27} height={27} />
               <Code>
                 <span className="text-zinc-400">r2r_rag </span>/{' '}
               </Code>
@@ -88,7 +83,6 @@ export const Header = forwardRef<
             </ul>
           </nav>
         </div>
-
         {/* Right side of the navbar */}
         <div className="flex items-center gap-5">
           {/* This nav is hidden on mobile and visible from md screen size and up */}
