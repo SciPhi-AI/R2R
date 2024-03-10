@@ -3,8 +3,9 @@ import Head from 'next/head';
 import React, { ReactNode } from 'react';
 
 import styles from '@/styles/Index.module.scss';
-import { MainMenu } from '../shared/MainMenu';
-import { SubNavigationMenu } from '../shared/SubNavigationMenu';
+import { MainMenu } from '@/components/shared/MainMenu';
+import { SubNavigationMenu } from '@/components/shared/SubNavigationMenu';
+import { Footer } from '@/components/Footer';
 
 type Props = {
   children: ReactNode;
@@ -25,6 +26,7 @@ const Layout: React.FC<Props> = ({ children, localNav, pageTitle }) => {
       </header>
       <SubNavigationMenu />
       {children}
+      <Footer />
     </div>
   );
 };

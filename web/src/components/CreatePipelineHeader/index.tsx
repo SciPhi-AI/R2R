@@ -14,38 +14,14 @@ export function CreatePipelineHeader({
   };
 
   return (
-    <div className="flex gap-4">
-      <Button className="rounded-md h-10 w-40 py-2" onClick={createPipeline}>
-        New Pipeline
-      </Button>
-
+    <div className="flex justify-between w-full">
       <Button
-        className="rounded-md h-10 w-40 py-2"
+        className="h-10 w-40 py-2.5"
         variant="filled"
         onClick={createPipeline}
       >
-        New Pipeline
+        Create Pipeline
       </Button>
-      <Button
-        className="rounded-md h-10 w-40 py-2"
-        variant="outline"
-        onClick={createPipeline}
-      >
-        New Pipeline
-      </Button>
-      <Button
-        className="rounded-md h-10 w-40 py-2"
-        variant="text"
-        onClick={createPipeline}
-      >
-        Text Button
-      </Button>
-      <button
-        className="bg-primary-custom text-color8 border border-color3 rounded-md h-10 w-40 px-2 py-1 text-md outline-none cursor-pointer transition-all duration-200 text-center hover:opacity-90 hover:border-solid hover:border-6 hover:border-color3 hover:text-color8"
-        onClick={createPipeline}
-      >
-        New Pipeline
-      </button>
       <span className="font-bold ml-1 mt-2.5">
         {numPipelines}/10 pipelines deployed
       </span>
