@@ -20,11 +20,16 @@ const DynamicHeaderPath = ({ user }) => {
   const userNameOrWorkspace =
     user && user.email ? user.email.split('@')[0] : 'workspace';
 
-  const isHomePage = router.pathname === '/';
-  const { pipelineName } = !isHomePage
+  const isPipelineRoute = router.pathname.includes('/pipeline/');
+  console.log('isPipelineRoute: ', isPipelineRoute);
+  console.log('router: ', router.query);
+  const { pipelineName } = isPipelineRoute
     ? router.query
-    : { pipelineName: '1234' };
-  const pipelineShortId = (pipelineName as string).substring(0, 4);
+    : { pipelineName: '4242' };
+
+  const pipelineShortId = pipelineName
+    ? (pipelineName as string).substring(0, 4)
+    : '1234';
 
   const determineTextBasedOnUrl = () => {
     const path = router.asPath;
@@ -54,7 +59,7 @@ const DynamicHeaderPath = ({ user }) => {
         <Code>
           <span className="text-indigo-500">{userNameOrWorkspace}</span>
         </Code>
-        {isHomePage && (
+        {isPipelineRoute && (
           <>
             <Code>|</Code>
             <Code>
