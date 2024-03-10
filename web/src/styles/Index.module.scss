@@ -5,7 +5,7 @@
 
 .topBar {
   background-color: bg-color2;
-  padding: 1.5rem 14rem 1.2rem 14rem;
+  padding: 1.5rem 12rem 1.2rem 12rem;
   background-color: #262a2d;
   //   background-color: var(--schiphi-top-bg);
 }
@@ -14,7 +14,7 @@
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - 122.5px);
-  margin: 1.8rem 12rem 0 12rem;
+  margin: 4rem 14rem 0 14rem;
 
   .gridView {
     margin-top: 1.5rem;
@@ -34,6 +34,11 @@
   width: 100%;
 }
 
+.footer {
+  display: flex;
+  flex-direction: column;
+  margin: 4rem 14rem 0 14rem;
+}
 .datasetHeaderRightAlign {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;

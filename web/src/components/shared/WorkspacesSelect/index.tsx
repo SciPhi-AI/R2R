@@ -7,16 +7,16 @@ function WorkspacesSelect() {
   const router = useRouter();
   const pipelineId = router.asPath.split('/').pop();
 
-  console.log('Navbar pipelineId = ', pipelineId);
+  console.log('NavbarpipelineId = ', pipelineId);
 
   return (
-    <div className={styles.container}>
+    <>
       <Image
         alt={`sciphi.png`}
         src={`/images/sciphi.png`}
-        width={48}
-        height={48}
-        className={styles.logo}
+        width={30}
+        height={30}
+        className="cursor-pointer"
       />
       <div className={styles.divider}></div>
 
@@ -42,7 +42,7 @@ function WorkspacesSelect() {
           </div>
         </>
       )}
-    </div>
+    </>
   );
 }
 

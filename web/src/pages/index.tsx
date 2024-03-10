@@ -94,7 +94,7 @@ const Home: NextPage = () => {
 
   return (
     <Layout>
-      <main className={`${styles.main}`}>
+      <>
         <h1 className="text-white text-2xl mb-4"> Pipelines </h1>
         <Separator />
         <div className="mt-6" />
@@ -143,7 +143,7 @@ const Home: NextPage = () => {
           </p>
         </div>
         <br />
-      </main>
+      </>
     </Layout>
   );
 };
