@@ -54,7 +54,8 @@
     "react-tippy": "^1.4.0",
     "sass": "^1.43.5",
     "tailwind-merge": "^2.2.1",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@types/node": "18.17.0",
