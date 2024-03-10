@@ -100,7 +100,7 @@ function SmallPrint() {
         <SocialLink href="https://github.com/SciPhi-AI/R2R" icon={GitHubIcon}>
           Follow us on GitHub
         </SocialLink>
-        <SocialLink href="#" icon={DiscordIcon}>
+        <SocialLink href="https://discord.gg/p6KqD2kjtB" icon={DiscordIcon}>
           Join our Discord server
         </SocialLink>
       </div>
@@ -110,7 +110,7 @@ function SmallPrint() {
 
 export function Footer() {
   return (
-    <footer className="mx-auto w-8/12 max-w-2xl space-y-4 pb-6 lg:max-w-5xl ">
+    <footer className="flex flex-col mx-56 mt-16 space-y-4 pb-6">
       <OtherLinks />
       <SmallPrint />
     </footer>
