@@ -1,7 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link'; // Import Link from next/link
-import { a } from './mdx';
 
 interface LogoProps {
   width?: number;

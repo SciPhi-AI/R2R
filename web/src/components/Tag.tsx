@@ -1,15 +1,15 @@
-import clsx from 'clsx'
+import clsx from 'clsx';
 
 const variantStyles = {
   small: '',
   medium: 'rounded-lg px-1.5 ring-1 ring-inset',
-}
+};
 
 const colorStyles = {
-  emerald: {
-    small: 'text-emerald-500 dark:text-emerald-400',
+  indigo: {
+    small: 'text-indigo-500 dark:text-indigo-400',
     medium:
-      'ring-emerald-300 dark:ring-emerald-400/30 bg-emerald-400/10 text-emerald-500 dark:text-emerald-400',
+      'ring-indigo-300 dark:ring-indigo-400/30 bg-indigo-400/10 text-indigo-500 dark:text-indigo-400',
   },
   sky: {
     small: 'text-sky-500',
@@ -31,33 +31,33 @@ const colorStyles = {
     medium:
       'ring-zinc-200 bg-zinc-50 text-zinc-500 dark:ring-zinc-500/20 dark:bg-zinc-400/10 dark:text-zinc-400',
   },
-}
+};
 
 const valueColorMap = {
-  GET: 'emerald',
+  GET: 'indigo',
   POST: 'sky',
   PUT: 'amber',
   DELETE: 'rose',
-} as Record<string, keyof typeof colorStyles>
+} as Record<string, keyof typeof colorStyles>;
 
 export function Tag({
   children,
   variant = 'medium',
-  color = valueColorMap[children] ?? 'emerald',
+  color = valueColorMap[children] ?? 'indigo',
 }: {
-  children: keyof typeof valueColorMap & (string | {})
-  variant?: keyof typeof variantStyles
-  color?: keyof typeof colorStyles
+  children: keyof typeof valueColorMap & (string | {});
+  variant?: keyof typeof variantStyles;
+  color?: keyof typeof colorStyles;
 }) {
   return (
     <span
       className={clsx(
         'font-mono text-[0.625rem] font-semibold leading-6',
         variantStyles[variant],
-        colorStyles[color][variant],
+        colorStyles[color][variant]
       )}
     >
       {children}
     </span>
-  )
+  );
 }

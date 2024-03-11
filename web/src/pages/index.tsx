@@ -2,12 +2,12 @@ import type { NextPage } from 'next';
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/component';
 
-import { Footer } from '@/components/Footer';
 import Layout from '@/components/Layout';
-import PipelineCard from '@/components/PipelineCard';
 import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';
 import { Separator } from '@/components/ui/separator';
 import Next from 'next/link';
+import { Heading } from '@/components/Heading';
+import { Guides } from '@/components/Guides';
 
 import styles from '@/styles/Index.module.scss';
 import 'react-tippy/dist/tippy.css';
@@ -94,8 +94,10 @@ const Home: NextPage = () => {
 
   return (
     <Layout>
-      <>
-        <h1 className="text-white text-2xl mb-4"> Pipelines </h1>
+      <main className={styles.main}>
+        <Heading id="pipelines" level={2} className="text-2xl mb-4">
+          Pipelines{' '}
+        </Heading>
         <Separator />
         <div className="mt-6" />
         {error && <div className="text-red-500">{error}</div>}
@@ -115,6 +117,7 @@ const Home: NextPage = () => {
         <br />
         <h1 className="text-white text-2xl mb-4"> Quickstart </h1>
         <Separator />
+        <Guides />
         <div className="mt-6 text-lg text-gray-200">
           <p>Follow these steps to deploy your R2R rag pipeline:</p>
           <ol className="list-decimal ml-4 pl-4 text-gray-300">
@@ -143,7 +146,7 @@ const Home: NextPage = () => {
           </p>
         </div>
         <br />
-      </>
+      </main>
     </Layout>
   );
 };

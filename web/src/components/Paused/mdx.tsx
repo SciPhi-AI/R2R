@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import clsx from 'clsx';
 
-import { Feedback } from '@/components/Feedback';
+import { Feedback } from '@/components/Paused/Feedback';
 import { Heading } from '@/components/Heading';
 import { Prose } from '@/components/Prose';
 

@@ -111,7 +111,7 @@ function SmallPrint() {
 export function Footer() {
   return (
     <footer className="flex flex-col mx-56 mt-16 space-y-4 pb-6">
-      <OtherLinks />
+      {/* <OtherLinks /> */}
       <SmallPrint />
     </footer>
   );

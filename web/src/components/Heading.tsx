@@ -83,18 +83,11 @@ export function Heading<Level extends 2 | 3>({
   level = level ?? (2 as Level);
   let Component = `h${level}` as 'h2' | 'h3';
   let ref = useRef<HTMLHeadingElement>(null);
-  //let registerHeading = useSectionStore((s) => s.registerHeading);
 
   let inView = useInView(ref, {
     margin: `${remToPx(-3.5)}px 0px 0px 0px`,
     amount: 'all',
   });
-
-  // useEffect(() => {
-  //   if (level === 2) {
-  //     registerHeading({ id: props.id, ref, offsetRem: tag || label ? 8 : 6 });
-  //   }
-  // });
 
   return (
     <>

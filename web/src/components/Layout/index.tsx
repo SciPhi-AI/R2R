@@ -25,7 +25,7 @@ const Layout: React.FC<Props> = ({ children, localNav, pageTitle }) => {
       <Navbar />
       {/* <SubNavigationBar /> */}
       {/* <SubNavigationMenu /> */}
-      <main className={styles.main}>{children}</main>
+      {children}
       <Footer />
     </div>
   );

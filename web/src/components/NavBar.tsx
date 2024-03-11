@@ -79,7 +79,7 @@ export const Navbar = forwardRef<
             <ul role="list" className="flex items-center gap-8">
               <TopLevelNavItem href="https://docs.sciphi.ai/">
                 <Button
-                  className="rounded-md h-6 py-0.5 w-30"
+                  className="rounded-md h-6 py-0.5 px-3 w-30"
                   variant="primary"
                 >
                   Docs
@@ -90,7 +90,7 @@ export const Navbar = forwardRef<
           {/* This divider is hidden on mobile and visible from md screen size and up */}
           <div className="hidden md:block md:h-5 md:w-px md:bg-zinc-900/10 md:dark:bg-white/15"></div>
           <div className="flex gap-4">
-            <ThemeToggle />
+            {/* <ThemeToggle /> */}
             {/* This div is hidden until the screen width reaches 416px */}
             <div className="hidden min-[416px]:contents">
               <ProfileMenu user={user} />

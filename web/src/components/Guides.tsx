@@ -1,36 +1,52 @@
 import { Button } from '@/components/Button';
 import { Heading } from '@/components/Heading';
+import Link from 'next/link';
 
 const guides = [
   {
-    href: '/authentication',
-    name: 'Authentication',
-    description: 'Learn how to authenticate your API requests.',
+    href: '#',
+    name: '1. Deploy',
+    description: () => (
+      <span>
+        Deploy a pipeline using the{' '}
+        <Button href="#pipelines" disabled={true}>
+          {' '}
+          Create Pipeline
+        </Button>{' '}
+        button above.
+      </span>
+    ),
+    readMoreText: 'Learn More',
+    readMoreHref: '#deployDetails',
   },
   {
-    href: '/pagination',
-    name: 'Pagination',
-    description: 'Understand how to work with paginated responses.',
+    href: '#',
+    name: 'Monitor',
+    description: 'Check for any logs or errors in the deployment process',
+    readMoreText: 'Monitoring Tips',
   },
   {
-    href: '/errors',
-    name: 'Errors',
+    href: 'https://sciphi-example-id-ue.a.run.app',
+    name: 'Host',
     description:
-      'Read about the different types of errors returned by the API.',
+      'Upon completion, your RAG application will be actively hosted at',
+    readMoreText: 'Monitoring Tips',
+    // Assuming this guide doesn't need a "Read more" button
   },
   {
-    href: '/webhooks',
-    name: 'Webhooks',
+    href: '$',
+    name: 'Customize',
     description:
-      'Learn how to programmatically configure webhooks for your app.',
+      'Use the R2R framework to create your own pipeline and deploy it directly from GitHub.',
+    readMoreText: 'Customization Guide',
   },
 ];
 
 export function Guides() {
   return (
     <div className="my-16 xl:max-w-none">
-      <Heading level={2} id="guides">
-        Guides
+      <Heading level={2} id="guides" className="text-xl mb-4">
+        Deploy your own rag pipeline
       </Heading>
       <div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 sm:grid-cols-2 xl:grid-cols-4 dark:border-white/5">
         {guides.map((guide) => (
@@ -39,10 +55,12 @@ export function Guides() {
               {guide.name}
             </h3>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              {guide.description}
+              {typeof guide.description === 'function'
+                ? guide.description()
+                : guide.description}
             </p>
             <p className="mt-4">
-              <Button href={guide.href} variant="text" arrow="right">
+              <Button href={guide.href} variant="text">
                 Read more
               </Button>
             </p>
