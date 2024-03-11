@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Layout from '@/components/Layout';
-import { Footer } from '@/components/shared/Footer';
+import { Footer } from '@/components/Footer';
 import { useAuth } from '@/context/authProvider';
 import { createClient } from '@/utils/supabase/component';
 import { usePipelineContext } from '@/context/PipelineContext';

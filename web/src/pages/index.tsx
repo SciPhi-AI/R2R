@@ -13,7 +13,7 @@ import styles from '@/styles/Index.module.scss';
 import 'react-tippy/dist/tippy.css';
 
 import { Pipeline } from '@/types';
-import { ContactResource } from '@/components/PipeCard';
+import { PipeCard } from '@/components/PipeCard';
 
 const Home: NextPage = () => {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
@@ -109,7 +109,7 @@ const Home: NextPage = () => {
             <div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 sm:grid-cols-2 xl:grid-cols-4 dark:border-white/5">
               {/* <div className={styles.gridView}> */}
               {pipelines.map((pipeline) => (
-                <ContactResource key={pipeline.id} pipeline={pipeline} />
+                <PipeCard key={pipeline.id} pipeline={pipeline} />
               ))}
             </div>
           </>

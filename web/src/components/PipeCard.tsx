@@ -12,7 +12,6 @@ import { useRouter } from 'next/router';
 
 import { GridPattern } from '@/components/GridPattern';
 import { UserIcon } from '@/components/icons/UserIcon';
-import styles from './PipelineCard/styles.module.scss';
 
 function ResourceIcon({
   icon: Icon,
@@ -20,17 +19,10 @@ function ResourceIcon({
   icon: React.ComponentType<{ className?: string }>;
 }) {
   return (
-    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900/5 ring-1 ring-zinc-900/25 backdrop-blur-[2px] transition duration-300 group-hover:bg-white/50 group-hover:ring-zinc-900/25 dark:bg-white/7.5 dark:ring-white/15 dark:group-hover:bg-emerald-300/10 dark:group-hover:ring-emerald-400">
+    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900/5 ring-1 ring-zinc-900/25 backdrop-blur-sm transition duration-300 group-hover:bg-white/50 group-hover:ring-zinc-900/25 dark:bg-white/7.5 dark:ring-white/15 dark:group-hover:bg-emerald-300/10 dark:group-hover:ring-emerald-400">
       <Icon className="h-5 w-5 fill-zinc-700/10 stroke-zinc-700 transition-colors duration-300 group-hover:stroke-zinc-900 dark:fill-white/10 dark:stroke-zinc-400 dark:group-hover:fill-emerald-300/10 dark:group-hover:stroke-emerald-400" />
     </div>
   );
-}
-{
-  /* Initially hidden GridPattern */
-}
-// className="absolute inset-x-0 inset-y-[-30%] h-[160%] w-full skew-y-[-18deg] fill-indigo-100 stroke-indigo-100 dark:fill-indigo-600 dark:stroke-indigo-600 opacity-10 group-hover:opacity-90"
-{
-  /* Adjusted opacity for hover effect */
 }
 
 function ResourcePattern({
@@ -75,7 +67,7 @@ function ResourcePattern({
   );
 }
 
-export function ContactResource({ pipeline }) {
+export function PipeCard({ pipeline }) {
   const router = useRouter();
   let mouseX = useMotionValue(0);
   let mouseY = useMotionValue(0);
@@ -96,8 +88,9 @@ export function ContactResource({ pipeline }) {
 
   return (
     <div
+      onClick={handleClick}
       onMouseMove={onMouseMove}
-      className="group relative flex rounded-2xl bg-transparent transition-shadow hover:shadow-md hover:shadow-zinc-900/5 dark:bg-white/2.5 dark:hover:shadow-black/5"
+      className="group relative flex cursor-pointer rounded-2xl bg-transparent transition-shadow hover:shadow-md hover:shadow-zinc-900/5 dark:bg-white/2.5 dark:hover:shadow-black/5"
     >
       <ResourcePattern
         mouseX={mouseX}
@@ -109,31 +102,44 @@ export function ContactResource({ pipeline }) {
         ]}
       />
       <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-zinc-900/7.5 group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
-      <div className="relative rounded-2xl p-8 ">
-        <div className={styles.cardHeader}>
-          <div className={styles.hoverRedirectIcon}>
-            <FiExternalLink size="16" />
-          </div>
+      <div className="flex justify-between items-center relative rounded-2xl p-8 w-full">
+        <div className="flex-1">
+          <p className="mt-1 overflow-hidden text-ellipsis whitespace-nowrap w-46">
+            Pipeline:
+          </p>
+          <strong className="font-medium text-[var(--color-8)] overflow-hidden text-ellipsis whitespace-nowrap w-46">
+            {pipeline.name}
+          </strong>
+          {pipeline.status === 'finished' ? (
+            <>
+              <p className="mt-1 overflow-hidden text-ellipsis whitespace-nowrap w-46">
+                Remote:
+              </p>
+              <p className="overflow-hidden text-ellipsis whitespace-nowrap w-46">
+                {pipeline.github_url}
+              </p>
 
-          <div className={styles.projectInfo}>
-            <p className={styles.cardTitle}>Pipeline:</p>
-            <strong className={styles.cardProjectTitle}>{pipeline.name}</strong>
-            {pipeline.status === 'finished' ? (
-              <>
-                <p className={styles.cardTitle}>Remote:</p>
-                <p className={styles.cardAddress}>{pipeline.github_url}</p>
-
-                <p className={styles.cardTitle}>Deployment:</p>
-                <p className={styles.cardAddress}>{pipeline.deployment.uri}</p>
-              </>
-            ) : (
-              <>
-                <p className={styles.cardTitle}>Status:</p>
-                <p className={styles.cardAddress}>
-                  {pipeline.status.toUpperCase()}
-                </p>
-              </>
-            )}
+              <p className="mt-1 overflow-hidden text-ellipsis whitespace-nowrap w-46">
+                Deployment:
+              </p>
+              <p className="overflow-hidden text-ellipsis whitespace-nowrap w-46">
+                {pipeline.deployment.uri}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-1 overflow-hidden text-ellipsis whitespace-nowrap w-46">
+                Status:
+              </p>
+              <p className="overflow-hidden text-ellipsis whitespace-nowrap w-46">
+                {pipeline.status.toUpperCase()}
+              </p>
+            </>
+          )}
+        </div>
+        <div className="absolute top-0 right-0 mt-2 mr-2">
+          <div className="bg-color7 p-2 rounded-full invisible group-hover:visible group-hover:animate-handleHoverLinkIconAnimation">
+            <FiExternalLink size="16" className="text-color1" />
           </div>
         </div>
       </div>
