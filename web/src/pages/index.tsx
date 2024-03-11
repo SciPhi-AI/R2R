@@ -121,34 +121,6 @@ const Home: NextPage = () => {
         <h1 className="text-white text-2xl mb-4"> Quickstart </h1>
         <Separator />
         <Guides />
-        <div className="mt-6 text-lg text-gray-200">
-          <p>Follow these steps to deploy your R2R rag pipeline:</p>
-          <ol className="list-decimal ml-4 pl-4 text-gray-300">
-            <li> Deploy a pipeline using the `New Pipeline` button above.</li>
-            <li>
-              Monitor the deployment process and check for any logs or errors.
-            </li>
-            <li>
-              Upon completion, your RAG application will be actively hosted at
-              `https://sciphi-...-ue.a.run.app`.
-            </li>
-            <li>
-              Customize - Use the R2R framework to create your own pipeline and
-              deploy it directly from GitHub.
-            </li>
-          </ol>
-          <p className="mt-2">
-            For a detailed starting example, refer to the{' '}
-            <Next
-              href="https://github.com/SciPhi-AI/R2R-basic-rag-template"
-              className="text-blue-500 hover:underline"
-            >
-              R2R-basic-rag-template documentation
-            </Next>
-            .
-          </p>
-        </div>
-        <br />
       </main>
     </Layout>
   );

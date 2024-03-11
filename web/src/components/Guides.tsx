@@ -16,7 +16,7 @@ const guides = [
         button above.
       </span>
     ),
-    readMoreText: 'Learn More',
+    readMoreText: 'Read More',
     readMoreHref: '#deployDetails',
   },
   {
@@ -26,19 +26,17 @@ const guides = [
     readMoreText: 'Monitoring Tips',
   },
   {
-    href: 'https://sciphi-example-id-ue.a.run.app',
+    href: '#',
     name: 'Host',
     description:
       'Upon completion, your RAG application will be actively hosted at',
-    readMoreText: 'Monitoring Tips',
-    // Assuming this guide doesn't need a "Read more" button
+    readMoreText: 'sciphi-{...}-ue.a.run.app',
   },
   {
-    href: '$',
+    href: 'https://github.com/SciPhi-AI/R2R',
     name: 'Customize',
-    description:
-      'Use the R2R framework to create your own pipeline and deploy it directly from GitHub.',
-    readMoreText: 'Customization Guide',
+    description: 'Create your own pipeline and deploy it from GitHub.',
+    readMoreText: 'Use R2R framework',
   },
 ];
 
@@ -61,7 +59,7 @@ export function Guides() {
             </p>
             <p className="mt-4">
               <Button href={guide.href} variant="text">
-                Read more
+                {guide.readMoreText}
               </Button>
             </p>
           </div>
