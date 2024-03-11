@@ -67,7 +67,13 @@ function ResourcePattern({
   );
 }
 
-export function PipeCard({ pipeline }) {
+export function PipeCard({
+  pipeline,
+  className,
+}: {
+  pipeline: any;
+  className?: string;
+}) {
   const router = useRouter();
   let mouseX = useMotionValue(0);
   let mouseY = useMotionValue(0);
@@ -86,11 +92,24 @@ export function PipeCard({ pipeline }) {
     mouseY.set(clientY - top);
   }
 
+  function getStatusColor(status: string) {
+    switch (status.toUpperCase()) {
+      case 'FAILED':
+        return 'text-red-400';
+      case 'DEPLOYING':
+        return 'text-orange-400';
+      case 'SUCCESS':
+        return 'text-green-400';
+      default:
+        return 'text-gray-400';
+    }
+  }
+
   return (
     <div
       onClick={handleClick}
       onMouseMove={onMouseMove}
-      className="group relative flex cursor-pointer rounded-2xl bg-transparent transition-shadow hover:shadow-md hover:shadow-zinc-900/5 dark:bg-white/2.5 dark:hover:shadow-black/5"
+      className={`group relative flex cursor-pointer rounded-2xl bg-transparent transition-shadow hover:shadow-md hover:shadow-zinc-900/5 dark:bg-white/2.5 dark:hover:shadow-black/5 ${className}`}
     >
       <ResourcePattern
         mouseX={mouseX}
@@ -131,7 +150,9 @@ export function PipeCard({ pipeline }) {
               <p className="mt-1 overflow-hidden text-ellipsis whitespace-nowrap w-46">
                 Status:
               </p>
-              <p className="overflow-hidden text-ellipsis whitespace-nowrap w-46">
+              <p
+                className={`${getStatusColor(pipeline.status)} overflow-hidden text-ellipsis whitespace-nowrap w-46`}
+              >
                 {pipeline.status.toUpperCase()}
               </p>
             </>
