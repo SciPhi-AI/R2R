@@ -107,12 +107,25 @@ class LoggingDatabaseConnection:
             self.conn.close()
 
     def get_logs(self) -> list:
-        with self as conn:
-            cur = conn.execute(f"SELECT * FROM {self.log_table_name}")
-            colnames = [desc[0] for desc in cur.description]
-            logs = [dict(zip(colnames, row)) for row in cur.fetchall()]
+        logs = []
+        if self.provider == "postgres":
+            with self.db_module.connect(
+                dbname=os.getenv("POSTGRES_DBNAME"),
+                user=os.getenv("POSTGRES_USER"),
+                password=os.getenv("POSTGRES_PASSWORD"),
+                host=os.getenv("POSTGRES_HOST"),
+                port=os.getenv("POSTGRES_PORT"),
+            ) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(f"SELECT * FROM {self.log_table_name}")
+                    colnames = [desc[0] for desc in cur.description]
+                    logs = [dict(zip(colnames, row)) for row in cur.fetchall()]
+        elif self.provider == "local":
+            with self.db_module.connect(self.local_db_path or os.getenv("LOCAL_DB_PATH")) as conn:
+                cur = conn.execute(f"SELECT * FROM {self.log_table_name}")
+                colnames = [desc[0] for desc in cur.description]
+                logs = [dict(zip(colnames, row)) for row in cur.fetchall()]
         return logs
-
 
 def log_execution_to_db(func):
     """A decorator to log the execution of a method to the database."""
@@ -157,7 +170,7 @@ def log_execution_to_db(func):
                     ),
                 )
             conn.commit()
-            
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         # Assuming args[0] is the instance of the class the method belongs to
