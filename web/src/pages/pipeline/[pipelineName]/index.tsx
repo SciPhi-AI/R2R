@@ -42,6 +42,8 @@ const PipelinePage = () => {
 
     if (token) {
       if (pipelineId) {
+        setDeleteButtonDisabled(true);
+
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/delete_pipeline/${pipelineId}`,
           {
@@ -57,7 +59,6 @@ const PipelinePage = () => {
           // Remove the deleted pipeline from the local state
           updatePipelines(pipelineId, null);
           setPipelineToDelete('');
-          setDeleteButtonDisabled(true);
           router.push('/');
           // Show a success message or perform any other necessary actions
         } else {
@@ -90,7 +91,6 @@ const PipelinePage = () => {
           data: { session },
         } = await supabase.auth.getSession();
         const token = session?.access_token;
-        console.log('in update, token = ', token);
         if (token) {
           // TODO - fetch the pipeline directly from the API
           const response = await fetch(`/api/pipelines`, {

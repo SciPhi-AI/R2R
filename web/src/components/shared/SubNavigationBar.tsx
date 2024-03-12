@@ -3,8 +3,7 @@ import Link from 'next/link';
 import clsx from 'clsx';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRouter } from 'next/router';
-
-import { Code } from '@/components/ui/Code'; // Ensure this import is correct
+import { Code } from '@/components/ui/Code';
 
 function TopLevelNavItem({
   href,
@@ -46,49 +45,44 @@ export const SubNavigationBar = forwardRef<
   const { scrollY } = useScroll();
   const bgOpacityLight = useTransform(scrollY, [0, 72], [0.5, 0.9]);
   const bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8]);
-  // State to manage active path
+
   const [activePath, setActivePath] = useState(router.asPath);
 
-  // Effect to update active path on route change
   useEffect(() => {
     const handleRouteChange = (url: string) => {
       setActivePath(url);
     };
-
     router.events.on('routeChangeComplete', handleRouteChange);
-
-    // Cleanup listener on component unmount
     return () => {
       router.events.off('routeChangeComplete', handleRouteChange);
     };
   }, [router.events]);
 
-  const navItems =
-    isPipelineRoute && pipelineId
-      ? [
-          {
-            path: `/`,
-            label: <span className="text-3xl">←</span>, // Use a larger text size and bolder font
-          },
-          {
-            path: `/pipeline/${pipelineId}`,
-            label: 'Pipeline',
-          },
-          {
-            path: `/pipeline/${pipelineId}/retrievals`,
-            label: 'Retrievals',
-          },
-          {
-            path: `/pipeline/${pipelineId}/embeddings`,
-            label: 'Embeddings',
-          },
-        ]
-      : [
-          {
-            path: '/',
-            label: 'Home',
-          },
-        ];
+  const navItems = isPipelineRoute && pipelineId
+    ? [
+        {
+          path: `/`,
+          label: <span className="text-3xl">←</span>,
+        },
+        {
+          path: `/pipeline/${pipelineId}`,
+          label: 'Pipeline',
+        },
+        {
+          path: `/pipeline/${pipelineId}/retrievals`,
+          label: 'Retrievals',
+        },
+        {
+          path: `/pipeline/${pipelineId}/embeddings`,
+          label: 'Embeddings',
+        },
+      ]
+    : [
+        {
+          path: '/',
+          label: 'Home',
+        },
+      ];
 
   return (
     <motion.div
@@ -97,12 +91,10 @@ export const SubNavigationBar = forwardRef<
         className,
         'fixed inset-x-0 top-10 z-40 flex h-10 items-center justify-between gap-12 px-4 transition sm:px-6 lg:z-30 lg:px-8 backdrop-blur-sm dark:backdrop-blur bg-zinc-800'
       )}
-      style={
-        {
-          '--bg-opacity-light': bgOpacityLight,
-          '--bg-opacity-dark': bgOpacityDark,
-        } as React.CSSProperties
-      }
+      style={{
+        '--bg-opacity-light': bgOpacityLight,
+        '--bg-opacity-dark': bgOpacityDark,
+      } as React.CSSProperties}
     >
       <div className="flex items-center justify-between w-full">
         <nav className="flex">
@@ -111,9 +103,7 @@ export const SubNavigationBar = forwardRef<
               <TopLevelNavItem
                 key={item.path}
                 href={item.path}
-                isActive={(pathSegments || []).includes(
-                  item.path.split('/').pop() ?? ''
-                )}
+                isActive={activePath === item.path}
               >
                 {item.label}
               </TopLevelNavItem>

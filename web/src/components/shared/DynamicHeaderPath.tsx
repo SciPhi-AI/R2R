@@ -4,6 +4,10 @@ import { Code } from '@/components/ui/Code';
 import { useRouter } from 'next/router';
 import { Pipeline } from '@/types';
 
+const capitalizeFirstLetter = (string) => {
+  if (!string) return string;
+  return string.charAt(0).toUpperCase() + string.slice(1);
+};
 const DynamicHeaderPath = ({
   user,
   pipelines,
@@ -32,7 +36,7 @@ const DynamicHeaderPath = ({
       <ul role="list" className="flex items-center gap-3">
         <Logo width={27} height={27} />
         <Code onClick={redirectToHome} style={{ cursor: 'pointer' }}>
-          <span className="text-zinc-800 dark:text-zinc-400">r2r_rag </span>|{' '}
+          <span className="text-zinc-800 dark:text-zinc-400">SciPhi </span>|{' '}
         </Code>
         <div
           aria-label="Home"
@@ -51,8 +55,8 @@ const DynamicHeaderPath = ({
             <Code>
               <span className="text-indigo-500">
                 {afterPipelineSegment
-                  ? `${afterPipelineSegment}:`
-                  : 'pipeline:'}
+                  ? `${capitalizeFirstLetter(afterPipelineSegment)}:`
+                  : 'Pipeline:'}
               </span>
             </Code>
             <Code>
