@@ -1,4 +1,6 @@
 import Layout from '@/components/Layout';
+import { CopyIcon } from '@/components/icons/CopyIcon';
+import { Button } from '@/components/Button';
 import {
   CardTitle,
   CardDescription,
@@ -196,7 +198,7 @@ function Component() {
   };
 
   return (
-    <Card>
+    <Card className="w-full mt-2 cursor-pointe bg-zinc-800 ">
       <CardHeader>
         <CardTitle>Deploy a RAG pipeline</CardTitle>
         <CardDescription>
@@ -209,7 +211,7 @@ function Component() {
           <div className="grid grid-cols-12 gap-8">
             <div className="col-span-8 left-content">
               <div className="mb-8">
-                <div className="space-y-2">
+                <div className="space-y-2 mb-4">
                   <Label htmlFor="project-name">Pipeline Name</Label>
                   <Input
                     placeholder="Name Your Pipeline"
@@ -218,7 +220,7 @@ function Component() {
                     value={pipelineName}
                   />
                 </div>
-                <div className="space-y-2 mt-1">
+                <div className="space-y-2">
                   <Label htmlFor="github-url">GitHub URL</Label>
                   <Input
                     key="github-url"
@@ -234,7 +236,7 @@ function Component() {
               {secretPairs.map((pair, index) => (
                 <div
                   key={index}
-                  className="grid grid-cols-12 gap-4 items-center"
+                  className="grid grid-cols-12 gap-4 items-center mb-2"
                 >
                   <div className="col-span-5 space-y-2">
                     {index === 0 && (
@@ -293,13 +295,14 @@ function Component() {
                   </div>
                 </div>
               ))}
-              <div className="flex justify-end mt-2">
-                <button
+              <div className="flex justify-start mt-2 mb-3">
+                <Button
+                  variant="primary"
                   className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs"
                   onClick={handleAddMore}
                 >
                   {secretPairs.length === 0 ? 'Add secret' : 'Add more secrets'}
-                </button>
+                </Button>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="api-key">Select API Key</Label>
@@ -379,21 +382,23 @@ function Component() {
                 )}
               </div>
               <div className="flex justify-end mt-4">
-                <button
-                  className={`bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-1/3 ${isLoading ? 'opacity-50' : 'hover:opacity-100'}`}
+                <Button
+                  variant="filled" // Choose from 'primary', 'secondary', 'filled', 'outline', or 'text'
+                  className="w-1/3 h-8 text-lg" // Adjust width as necessary
                   onClick={handleSubmit}
                   disabled={isLoading}
                 >
                   Deploy
-                </button>
+                </Button>
               </div>
             </div>
-            <div className="col-span-4 right-content ">
-              <div className="space-y-2 ">R2R Templates</div>
+            <div className="col-span-4 right-content">
+              <div className="text-lg font-bold text-primary-custom mb-4">
+                R2R Templates
+              </div>
               <Card
-                className="w-100px mt-2 cursor-pointer hover:shadow-lg transition-shadow duration-300"
+                className="w-full mt-2 cursor-pointer hover:bg-blue-200 transition-colors duration-300 bg-blue-100 border-l-4 border-blue-500 relative"
                 onClick={() => {
-                  // Your onClick logic here
                   console.log('Card clicked!');
                   setPipelineName('Basic RAG');
                   setGithubUrl(
@@ -401,17 +406,21 @@ function Component() {
                   );
                 }}
               >
-                <CardHeader className="flex items-center justify-between">
-                  <CardTitle>Basic RAG</CardTitle>
-                  <CardDescription>
+                <div className="absolute top-2 right-2">
+                  {' '}
+                  {/* Adjusted to right-2 */}
+                  <CopyIcon className="h-5 w-5 text-blue-800" />
+                </div>
+                <CardHeader className="flex items-start justify-start">
+                  <CardTitle className="text-blue-800">Basic RAG</CardTitle>
+                  <CardDescription className="text-blue-600">
                     Ingest documents and answer questions
                   </CardDescription>
                 </CardHeader>
               </Card>
               <Card
-                className="w-100px mt-2 cursor-pointer hover:shadow-lg transition-shadow duration-300"
+                className="w-full mt-2 cursor-pointer hover:bg-green-200 transition-colors duration-300 bg-green-100 border-l-4 border-green-500 relative"
                 onClick={() => {
-                  // Your onClick logic here
                   console.log('Card clicked!');
                   setPipelineName('Synthetic Queries');
                   setGithubUrl(
@@ -419,9 +428,16 @@ function Component() {
                   );
                 }}
               >
-                <CardHeader className="flex items-center justify-between">
-                  <CardTitle>Synthetic Queries</CardTitle>
-                  <CardDescription>
+                <div className="absolute top-2 right-2">
+                  {' '}
+                  {/* Adjusted to right-2 */}
+                  <CopyIcon className="h-5 w-5 text-green-800" />
+                </div>
+                <CardHeader className="flex items-start justify-start">
+                  <CardTitle className="text-green-800">
+                    Synthetic Queries
+                  </CardTitle>
+                  <CardDescription className="text-green-600">
                     RAG w/ LLM generated synthetic queries
                   </CardDescription>
                 </CardHeader>
