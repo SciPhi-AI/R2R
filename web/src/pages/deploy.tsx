@@ -412,8 +412,10 @@ function Component() {
               </div>
             </div>
             <div className="col-span-4 right-content">
-              <div className="text-lg font-bold text-primary-custom mb-4">
+              <div className="text-lg font-bold text-indigo-500 mb-4">
+              <a href="/docs/getting-started/rag-templates" className="hover:underline">
                 R2R Templates
+              </a>
               </div>
               <Card
                 className="w-full mt-2 cursor-pointer hover:bg-blue-100 transition-colors duration-300 bg-blue-200 border-l-4 border-blue-400 relative"

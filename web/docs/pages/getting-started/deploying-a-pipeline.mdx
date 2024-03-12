@@ -1,0 +1,35 @@
+## Deploying Your First Pipeline
+
+In this guide, we'll walk through the process of deploying your first Retrieval Augmented Generation (RAG) pipeline using SciPhi and the R2R framework. We'll cover linking your GitHub repository, understanding the key files in the repository, and configuring your pipeline settings.
+
+### Linking Your GitHub Repository
+
+To deploy a RAG pipeline with SciPhi, start by naming your pipeline and linking your GitHub repository containing your pipeline code. The form in the example shown below was auto-populated by clicking on the card with the `Basic RAG` header.
+
+![Pipeline Deploy](./basic_rag.png)
+
+
+You may deploy a different open source pipeline by specifying a valid GitHub URL. 
+
+
+### Providing Secrets
+
+During the deployment process, you'll need to provide any necessary secret variables, such as API keys, through the form. These secrets are encrypted at all times during transmission and storage. Our infrastructure is hosted on Google Cloud and our secrets are provisioned through Google Cloud's Secret Manager.
+
+For the basic rag example shown above a valid `OPENAI_API_KEY` must be provided or else the pipeline will fail at bulid or runtime.
+
+### Deployment
+
+Once you've linked your GitHub repository, and provided the required secrets, click the "Deploy" button to create your RAG pipeline. SciPhi will handle the deployment process, setting up the necessary infrastructure and services based on your configuration.
+
+In the case of the basic RAG example shown previously this includes a managed Postgres database with pgvector, peformant logging with a Redis cache, and serverless deployement through Cloud Build & Run.
+
+Upon successful deployment, you will be provided with a unique URL (e.g., https://sciphi-b30ed103-25eb-4428-a2b2-ff71c2e1ae85-qwpin2swwa-ue.a.run.app) that serves as the endpoint for accessing and interacting with your deployed RAG pipeline using the R2R client.
+
+## Understanding the Key Files
+
+The linked GitHub repository should contain the necessary files to define and configure your RAG pipeline. The two most important files are:
+
+1. `src/app.py`: This is the main entry point for your application. It creates the pipeline using the `E2EPipelineFactory.create_pipeline()` method from the [`R2R` library](https://docs.sciphi.ai/). The pipeline components are set up based on the configuration settings read from `config.json`.
+
+2. `config.json`: This file contains the configuration options for your pipeline deployment. It allows you to specify settings such as the vector database provider, LLM settings, embedding settings, parsing logic, evaluation provider, and more. [Refer here](/getting-started/customize-your-config) for a complete explanation of configuration options.

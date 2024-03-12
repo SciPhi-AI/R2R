@@ -34,10 +34,10 @@ const DynamicHeaderPath = ({
 
   return (
     <div>
-      <ul role="list" className="flex items-center gap-3">
-        <Logo width={27} height={27} />
+      <ul role="list" className="flex items-center gap-3 pt-2">
+        <Logo width={38} height={38} />
         <Code onClick={redirectToHome} style={{ cursor: 'pointer' }}>
-          <span className="text-zinc-800 dark:text-zinc-400">SciPhi </span>|{' '}
+          <span className="text-zinc-800 dark:text-zinc-400 ">SciPhi </span>|{' '}
         </Code>
         <div
           aria-label="Home"
@@ -48,7 +48,7 @@ const DynamicHeaderPath = ({
           }}
         ></div>
         <Code onClick={redirectToHome} style={{ cursor: 'pointer' }}>
-          <span className="text-indigo-500">{userNameOrWorkspace}</span>
+          <span className="text-indigo-500 ">{userNameOrWorkspace}</span>
         </Code>
         {isPipelineRoute && (
           <>
