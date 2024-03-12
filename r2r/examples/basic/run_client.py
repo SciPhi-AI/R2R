@@ -5,7 +5,7 @@ import uuid
 from r2r.client import R2RClient
 
 # Initialize the client with the base URL of your API
-base_url = "http://localhost:8000"
+base_url = "http://localhost:8010"
 client = R2RClient(base_url)
 
 print("Upserting entry to remote db...")
@@ -111,6 +111,7 @@ print(
 )
 
 print("Performing RAG with streaming...")
+
 
 # Perform a RAG completion with streaming
 async def stream_rag_completion():

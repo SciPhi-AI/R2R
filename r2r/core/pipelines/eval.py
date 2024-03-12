@@ -14,12 +14,12 @@ class EvalPipeline(Pipeline):
     def __init__(
         self,
         frequency: int,
-        logging_provider: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs,
     ):
         self.frequency = frequency
-        super().__init__(logging_provider=logging_provider, **kwargs)
+        super().__init__(logging_connection=logging_connection, **kwargs)
 
     def initialize_pipeline(
         self, run_id: Optional[str], *args, **kwargs

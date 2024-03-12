@@ -42,14 +42,14 @@ class RAGPipeline(Pipeline):
         llm: "LLMProvider",
         system_prompt: Optional[str] = None,
         task_prompt: Optional[str] = None,
-        logging_provider: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs,
     ):
         self.llm = llm
         self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
         self.task_prompt = task_prompt or DEFAULT_TASK_PROMPT
-        super().__init__(logging_provider=logging_provider, **kwargs)
+        super().__init__(logging_connection=logging_connection, **kwargs)
 
     def initialize_pipeline(
         self, query: str, search_only: bool, *args, **kwargs

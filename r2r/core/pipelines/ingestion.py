@@ -10,11 +10,11 @@ from .pipeline import Pipeline
 class IngestionPipeline(Pipeline):
     def __init__(
         self,
-        logging_provider: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs,
     ):
-        super().__init__(logging_provider=logging_provider, **kwargs)
+        super().__init__(logging_connection=logging_connection, **kwargs)
 
     def initialize_pipeline(self, *args, **kwargs) -> None:
         self.pipeline_run_info = {"run_id": uuid.uuid4(), "type": "ingestion"}

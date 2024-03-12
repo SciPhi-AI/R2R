@@ -1,22 +1,28 @@
+from datetime import datetime
 import functools
+import json
+import logging
 import os
 import types
 from abc import ABC, abstractmethod
-from typing import Optional
-import json
 
+logger = logging.getLogger(__name__)
 
 class LoggingProvider(ABC):
-    @abstractmethod
-    def connect(self):
-        pass
-
     @abstractmethod
     def close(self):
         pass
 
     @abstractmethod
-    def log(self, timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level):
+    def log(
+        self,
+        timestamp,
+        pipeline_run_id,
+        pipeline_run_type,
+        method,
+        result,
+        log_level,
+    ):
         pass
 
     @abstractmethod
@@ -25,21 +31,23 @@ class LoggingProvider(ABC):
 
 
 class PostgresLoggingProvider(LoggingProvider):
-    def __init__(self, log_table_name="logs"):
+    def __init__(self, collection_name="logs"):
         self.conn = None
-        self.log_table_name = log_table_name
+        self.collection_name = collection_name
         self.db_module = self._import_db_module()
+        self._init()
 
     def _import_db_module(self):
         try:
             import psycopg2
+
             return psycopg2
         except ImportError:
             raise ValueError(
                 "Error, `psycopg2` is not installed. Please install it using `pip install psycopg2`."
             )
 
-    def connect(self):
+    def _init(self):
         if not all(
             [
                 os.getenv("POSTGRES_DBNAME"),
@@ -62,7 +70,7 @@ class PostgresLoggingProvider(LoggingProvider):
         with self.conn.cursor() as cur:
             cur.execute(
                 f"""
-                CREATE TABLE IF NOT EXISTS {self.log_table_name} (
+                CREATE TABLE IF NOT EXISTS {self.collection_name} (
                     timestamp TIMESTAMP,
                     pipeline_run_id UUID,
                     pipeline_run_type TEXT,
@@ -78,19 +86,32 @@ class PostgresLoggingProvider(LoggingProvider):
         if self.conn:
             self.conn.close()
 
-    def log(self, timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level):
-        with self.conn.cursor() as cur:
-            cur.execute(
-                f"INSERT INTO {self.log_table_name} (timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level) VALUES (NOW(), %s, %s, %s, %s, %s)",
-                (
-                    str(pipeline_run_id),
-                    pipeline_run_type,
-                    method,
-                    str(result),
-                    log_level,
-                ),
+    def log(
+        self,
+        pipeline_run_id,
+        pipeline_run_type,
+        method,
+        result,
+        log_level,
+    ):
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(
+                    f"INSERT INTO {self.collection_name} (timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level) VALUES (NOW(), %s, %s, %s, %s, %s)",
+                    (
+                        str(pipeline_run_id),
+                        pipeline_run_type,
+                        method,
+                        str(result),
+                        log_level,
+                    ),
+                )
+            self.conn.commit()
+        except Exception as e:
+            # Handle any exceptions that occur during the logging process
+            logger.error(
+                f"Error occurred while logging to the PostgreSQL database: {str(e)}"
             )
-        self.conn.commit()
 
     def get_logs(self) -> list:
         logs = []
@@ -102,28 +123,40 @@ class PostgresLoggingProvider(LoggingProvider):
             port=os.getenv("POSTGRES_PORT"),
         ) as conn:
             with conn.cursor() as cur:
-                cur.execute(f"SELECT * FROM {self.log_table_name}")
+                cur.execute(f"SELECT * FROM {self.collection_name}")
                 colnames = [desc[0] for desc in cur.description]
                 logs = [dict(zip(colnames, row)) for row in cur.fetchall()]
         return logs
 
 
 class LocalLoggingProvider(LoggingProvider):
-    def __init__(self, log_table_name="logs", local_db_path: Optional[str] = None):
+    def __init__(self, collection_name="logs"):
         self.conn = None
-        self.log_table_name = log_table_name
-        self.local_db_path = local_db_path
+        self.collection_name = collection_name
+        logging_path = os.getenv("LOCAL_DB_PATH")
+        if not logging_path:
+            raise ValueError(
+                "Please set the environment variable LOCAL_DB_PATH to run `LoggingDatabaseConnection` with `local`."
+            )
+        self.logging_path = logging_path
         self.db_module = self._import_db_module()
+        self._init()
 
     def _import_db_module(self):
-        import sqlite3
-        return sqlite3
+        try:
+            import sqlite3
 
-    def connect(self):
-        self.conn = self.db_module.connect(self.local_db_path or os.getenv("LOCAL_DB_PATH"))
+            return sqlite3
+        except ImportError:
+            raise ValueError(
+                "Error, `sqlite3` is not installed. Please install it using `pip install sqlite3`."
+            )
+
+    def _init(self):
+        self.conn = self.db_module.connect(self.logging_path)
         self.conn.execute(
             f"""
-            CREATE TABLE IF NOT EXISTS {self.log_table_name} (
+            CREATE TABLE IF NOT EXISTS {self.collection_name} (
                 timestamp DATETIME,
                 pipeline_run_id TEXT,
                 pipeline_run_type TEXT,
@@ -139,35 +172,49 @@ class LocalLoggingProvider(LoggingProvider):
         if self.conn:
             self.conn.close()
 
-    def log(self, timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level):
-        self.conn.execute(
-            f"INSERT INTO {self.log_table_name} (timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level) VALUES (datetime('now'), ?, ?, ?, ?, ?)",
-            (
-                str(pipeline_run_id),
-                pipeline_run_type,
-                method,
-                str(result),
-                log_level,
-            ),
-        )
-        self.conn.commit()
+    def log(
+        self,
+        pipeline_run_id,
+        pipeline_run_type,
+        method,
+        result,
+        log_level,
+    ):
+        try:
+            with self.db_module.connect(self.logging_path) as conn:
+                conn.execute(
+                    f"INSERT INTO {self.collection_name} (timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level) VALUES (datetime('now'), ?, ?, ?, ?, ?)",
+                    (
+                        str(pipeline_run_id),
+                        pipeline_run_type,
+                        method,
+                        str(result),
+                        log_level,
+                    ),
+                )
+                conn.commit()
+        except Exception as e:
+            # Handle any exceptions that occur during the logging process
+            logger.error(
+                f"Error occurred while logging to the local database: {str(e)}"
+            )
 
     def get_logs(self) -> list:
         logs = []
-        with self.db_module.connect(self.local_db_path or os.getenv("LOCAL_DB_PATH")) as conn:
-            cur = conn.execute(f"SELECT * FROM {self.log_table_name}")
+        with self.db_module.connect(self.logging_path) as conn:
+            cur = conn.execute(f"SELECT * FROM {self.collection_name}")
             colnames = [desc[0] for desc in cur.description]
-            logs = [dict(zip(colnames, row)) for row in cur.fetchall()]
+            results = cur.fetchall()
+            logs = [dict(zip(colnames, row)) for row in results]
         return logs
 
 
 class RedisLoggingProvider(LoggingProvider):
-    def __init__(self, decode_responses: bool = True):
+    def __init__(self, collection_name="logs"):
         if not all(
             [
                 os.getenv("REDIS_CLUSTER_IP"),
                 os.getenv("REDIS_CLUSTER_PORT"),
-                os.getenv("REDIS_LOG_KEY"),
             ]
         ):
             raise ValueError(
@@ -182,9 +229,8 @@ class RedisLoggingProvider(LoggingProvider):
 
         cluster_ip = os.getenv("REDIS_CLUSTER_IP")
         port = os.getenv("REDIS_CLUSTER_PORT")
-        log_key = os.getenv("REDIS_LOG_KEY")
-        self.redis = Redis(cluster_ip, port, decode_responses=decode_responses)
-        self.log_key = log_key
+        self.redis = Redis(cluster_ip, port, decode_responses=True)
+        self.log_key = collection_name
 
     def connect(self):
         pass
@@ -192,7 +238,16 @@ class RedisLoggingProvider(LoggingProvider):
     def close(self):
         pass
 
-    def log(self, timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level):
+    def log(
+        self,
+        pipeline_run_id,
+        pipeline_run_type,
+        method,
+        result,
+        log_level,
+    ):
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         log_entry = {
             "timestamp": timestamp,
             "pipeline_run_id": str(pipeline_run_id),
@@ -201,7 +256,11 @@ class RedisLoggingProvider(LoggingProvider):
             "result": str(result),
             "log_level": log_level,
         }
-        self.redis.lpush(self.log_key, json.dumps(log_entry))
+        try:
+            self.redis.lpush(self.log_key, json.dumps(log_entry))
+        except Exception as e:
+            # Handle any exceptions that occur during the logging process
+            logger.error(f"Error occurred while logging to Redis: {str(e)}")
 
     def get_logs(self) -> list:
         logs = self.redis.lrange(self.log_key, 0, -1)
@@ -222,10 +281,7 @@ class LoggingDatabaseConnection:
     def __init__(
         self,
         provider="postgres",
-        log_table_name="logs",
-        local_db_path: Optional[str] = None,
-        cluster_ip: Optional[str] = None,
-        port: Optional[int] = None,
+        collection_name="logs",
     ):
         if provider not in self.supported_providers:
             raise ValueError(
@@ -234,9 +290,13 @@ class LoggingDatabaseConnection:
 
         self.provider = provider
         if provider == "redis":
-            self.logging_provider = self.supported_providers[provider](cluster_ip, port, log_table_name)
+            self.logging_provider = self.supported_providers[provider](
+                collection_name
+            )
         else:
-            self.logging_provider = self.supported_providers[provider](log_table_name, local_db_path)
+            self.logging_provider = self.supported_providers[provider](
+                collection_name
+            )
 
     def __enter__(self):
         self.logging_provider.connect()
@@ -255,8 +315,8 @@ def log_execution_to_db(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         instance = args[0]
-        inst_provider = instance.logging_provider
-        if not inst_provider:
+        logging_connection = instance.logging_connection
+        if not logging_connection:
             return func(*args, **kwargs)
 
         arg_pipeline_run_id = instance.pipeline_run_info["run_id"]
@@ -265,6 +325,7 @@ def log_execution_to_db(func):
         try:
             result = func(*args, **kwargs)
             if isinstance(result, types.GeneratorType):
+
                 def generator_wrapper():
                     log_level = "INFO"
                     results = []
@@ -276,8 +337,7 @@ def log_execution_to_db(func):
                         results.append(str(e))
                         log_level = "ERROR"
                     finally:
-                        inst_provider.log(
-                            None,
+                        logging_connection.logging_provider.log(
                             arg_pipeline_run_id,
                             arg_pipeline_run_type,
                             func.__name__,
@@ -287,8 +347,7 @@ def log_execution_to_db(func):
 
                 return generator_wrapper()
             else:
-                inst_provider.log(
-                    None,
+                logging_connection.logging_provider.log(
                     arg_pipeline_run_id,
                     arg_pipeline_run_type,
                     func.__name__,
@@ -300,8 +359,7 @@ def log_execution_to_db(func):
         except Exception as e:
             result = str(e)
             log_level = "ERROR"
-            inst_provider.log(
-                None,
+            logging_connection.logging_provider.log(
                 arg_pipeline_run_id,
                 arg_pipeline_run_type,
                 func.__name__,

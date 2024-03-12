@@ -48,7 +48,7 @@ def create_app(
     eval_pipeline: EvalPipeline,
     rag_pipeline: RAGPipeline,
     upload_path: Optional[Path] = None,
-    logging_provider: Optional[LoggingDatabaseConnection] = None,
+    logging_connection: Optional[LoggingDatabaseConnection] = None,
 ):
     app = FastAPI()
     configure_logging()
@@ -227,11 +227,11 @@ def create_app(
     @app.get("/logs")
     async def logs():
         try:
-            if logging_provider is None:
+            if logging_connection is None:
                 raise HTTPException(
                     status_code=404, detail="Logging provider not found."
                 )
-            logs = logging_provider.get_logs()
+            logs = logging_connection.get_logs()
             return {
                 "logs": [LogModel(**log).dict(by_alias=True) for log in logs]
             }
@@ -242,11 +242,11 @@ def create_app(
     @app.get("/logs_summary")
     async def logs_summary():
         try:
-            if logging_provider is None:
+            if logging_connection is None:
                 raise HTTPException(
                     status_code=404, detail="Logging provider not found."
                 )
-            logs = logging_provider.get_logs()
+            logs = logging_connection.get_logs()
             logs_summary = process_logs(logs)
             events_summary = [
                 SummaryLogModel(**log).dict(by_alias=True)

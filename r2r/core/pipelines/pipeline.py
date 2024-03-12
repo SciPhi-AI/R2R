@@ -7,11 +7,11 @@ from ..providers.logging import LoggingDatabaseConnection
 class Pipeline(ABC):
     def __init__(
         self,
-        logging_provider: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs
     ):
-        self.logging_provider = logging_provider
+        self.logging_connection = logging_connection
         self.pipeline_run_info: Optional[dict] = None
 
     def _check_pipeline_initialized(self) -> None:
@@ -43,8 +43,8 @@ class Pipeline(ABC):
             return attr
 
     def close(self):
-        if self.logging_provider:
-            self.logging_provider.__exit__(None, None, None)
+        if self.logging_connection:
+            self.logging_connection.__exit__(None, None, None)
 
     @abstractmethod
     def initialize_pipeline(self, *args, **kwargs):
