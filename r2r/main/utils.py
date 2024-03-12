@@ -37,7 +37,7 @@ def load_config(config_path=None):
     evals_config = config["evals"]
     llm_config = config["language_model"]
     logging_config = config["logging_database"]
-    text_splitter_config = config["text_splitter"]
+    ingestion_config = config["ingestion"]
     vector_database_config = config["vector_database"]
 
     return (
@@ -45,7 +45,7 @@ def load_config(config_path=None):
         evals_config,
         llm_config,
         logging_config,
-        text_splitter_config,
+        ingestion_config,
         vector_database_config,
     )
 

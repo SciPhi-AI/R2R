@@ -56,6 +56,10 @@ class E2EPipelineFactory:
 
     @staticmethod
     def get_text_splitter(text_splitter_config):
+        if text_splitter_config["type"] != "recursive_character":
+            raise ValueError(
+                "Only recursive character text splitter is supported"
+            )
         return RecursiveCharacterTextSplitter(
             chunk_size=text_splitter_config["chunk_size"],
             chunk_overlap=text_splitter_config["chunk_overlap"],
@@ -69,7 +73,6 @@ class E2EPipelineFactory:
         embeddings_provider=None,
         llm=None,
         text_splitter=None,
-        generation_config=None,
         ingestion_pipeline_impl=BasicIngestionPipeline,
         embedding_pipeline_impl=BasicEmbeddingPipeline,
         rag_pipeline_impl=BasicRAGPipeline,
@@ -82,7 +85,7 @@ class E2EPipelineFactory:
             evals_config,
             llm_config,
             logging_config,
-            text_splitter_config,
+            ingestion_config,
             vector_database_config,
         ) = load_config(config_path)
 
@@ -116,7 +119,7 @@ class E2EPipelineFactory:
         )
 
         text_splitter = text_splitter or E2EPipelineFactory.get_text_splitter(
-            text_splitter_config
+            ingestion_config["text_splitter"]
         )
 
         embd_pipeline = embedding_pipeline_impl(

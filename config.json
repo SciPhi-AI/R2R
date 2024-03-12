@@ -14,15 +14,19 @@
   },
   "logging_database": {
     "provider": "local",
-    "collection_name": "demo_logs_v1",
+    "collection_name": "demo_logs",
     "level": "INFO"
   },
-  "text_splitter": {
-    "chunk_size": 512,
-    "chunk_overlap": 20
+  "ingestion":{
+    "provider": "local",
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 512,
+      "chunk_overlap": 20
+    }
   },
   "vector_database": {
     "provider": "local",
-    "collection_name": "demo-v1-test"
+    "collection_name": "demo_vecs"
   }
 }
