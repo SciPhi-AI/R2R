@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { NavItemHighlight } from '../NavItemHighlight';
-import { Pipeline } from '@/types';
 
 function HomePageNav() {
   return (
@@ -20,6 +19,7 @@ function OtherPageNav({
   router,
   isScrolling,
 }) {
+  console.log('router.pathname = ', router.pathname)
   return (
     <div className="sticky top-0 flex flex-row items-center bg-[var(--sciphi-top-bg)] px-[14rem] py-1 z-10 backdrop-blur-lg">
       <nav
@@ -56,10 +56,8 @@ export function SubNavigationMenu() {
   const [navItemHighlightProps, setNavItemHighlightProps] = useState<{
     width: number;
     translateX: number;
-    translateY?: number;
+    translateY: number;
   } | null>(null);
-  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
-  const pipelinesRef = useRef(pipelines);
 
   const router = useRouter();
   const { pipelineName } = router.query;
@@ -67,12 +65,8 @@ export function SubNavigationMenu() {
   const isHomePage = router.pathname === '/';
 
   useEffect(() => {
-    pipelinesRef.current = pipelines;
-  }, [pipelines]);
-
-  useEffect(() => {
     getActiveNavItem();
-  }, [router.pathname]);
+  }, [router.pathname, router.asPath]);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
@@ -115,11 +109,13 @@ export function SubNavigationMenu() {
   ];
 
   const getActiveNavItem = () => {
-    const activeItem = navItems.find((item) => router.pathname === item.path);
+    const sortedNavItems = [...navItems].sort((a, b) => b.path.length - a.path.length);
+    const activeItem = sortedNavItems.find((item) => router.pathname.startsWith(item.path));
     if (activeItem) {
       setNavItemHighlightProps({
         width: activeItem.width,
         translateX: activeItem.translateX,
+        translateY: activeItem.translateY,
       });
     } else {
       setNavItemHighlightProps(null);

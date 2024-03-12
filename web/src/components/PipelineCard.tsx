@@ -179,8 +179,8 @@ export function PipeCard({
             <p className="mt-1 overflow-hidden text-ellipsis dark:text-zinc-500 whitespace-nowrap w-46">
               Deployment:
             </p>
-            {pipeline.deployment.uri
-              ? renderDeploymentUri('finished', pipeline.deployment.uri)
+            {pipeline?.deployment?.uri
+              ? renderDeploymentUri('finished', pipeline?.deployment?.uri)
               : renderDeploymentUri(pipeline.status)}
           </>
         </div>

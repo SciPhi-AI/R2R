@@ -322,6 +322,9 @@ function Component() {
                         <br />
                         Select `No API Key` to allow unauthenticated access to
                         your application.
+                        <br />
+                        <br />
+                        ** Currently disabled **
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -329,6 +332,7 @@ function Component() {
                 <Select
                   value={selectedApiKey}
                   onValueChange={handleApiKeyChange}
+                  disabled={true}
                 >
                   <SelectTrigger>
                     {/* className="w-[300px]"> */}
@@ -382,20 +386,25 @@ function Component() {
                 )}
               </div>
               <div className="flex justify-end mt-4">
-                <Button
-                  variant={
-                    pipelineName &&
-                    githubUrl &&
-                    secretPairs.every((pair) => pair.key && pair.value)
-                      ? 'filled'
-                      : 'disabled'
-                  } // Dynamically change the variant based on the conditions
-                  className={`w-1/3 h-8 py-1 ${!pipelineName || !githubUrl || secretPairs.some((pair) => !pair.key || !pair.value) ? 'bg-gray-500 hover:bg-gray-500 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-700'}`} // Dynamically change the className based on the conditions
-                  onClick={handleSubmit}
-                  disabled={isLoading}
-                >
-                  Deploy
-                </Button>
+              <Button
+                variant={
+                  pipelineName &&
+                  githubUrl &&
+                  secretPairs.every((pair) => pair.key && pair.value) &&
+                  !isLoading // Ensure the button is not in the loading state
+                    ? 'filled'
+                    : 'disabled'
+                }
+                className={`w-1/3 h-8 py-1 ${
+                  !pipelineName || !githubUrl || secretPairs.some((pair) => !pair.key || !pair.value) || isLoading
+                    ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed text-white' // Darken the button when loading
+                    : 'bg-blue-500 hover:bg-blue-700 text-white'
+                }`}
+                onClick={handleSubmit}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Deploying...' : 'Deploy'}
+              </Button>
               </div>
             </div>
             <div className="col-span-4 right-content">
@@ -403,7 +412,7 @@ function Component() {
                 R2R Templates
               </div>
               <Card
-                className="w-full mt-2 cursor-pointer hover:bg-indigo-100 transition-colors duration-300 bg-indigo-200 border-l-4 border-indigo-200 relative"
+                className="w-full mt-2 cursor-pointer hover:bg-blue-100 transition-colors duration-300 bg-blue-200 border-l-4 border-blue-400 relative"
                 onClick={() => {
                   console.log('Card clicked!');
                   setPipelineName('Basic RAG');
@@ -416,14 +425,14 @@ function Component() {
                   <CopyIcon className="h-8 w-8" />
                 </div> */}
                 <CardHeader className="flex items-start justify-start">
-                  <CardTitle className="text-indigo-800">Basic RAG</CardTitle>
+                  <CardTitle className="text-blue-800">Basic RAG</CardTitle>
                   <CardDescription className="text-zinc-800">
                     Ingest documents and answer questions
                   </CardDescription>
                 </CardHeader>
               </Card>
               <Card
-                className="w-full mt-2 cursor-pointer hover:bg-orange-100 transition-colors duration-300 bg-orange-200 border-l-4 border-orange-200 relative"
+                className="w-full mt-2 cursor-pointer hover:bg-green-100 transition-colors duration-300 bg-green-200 border-l-4 border-green-400 relative"
                 onClick={() => {
                   console.log('Card clicked!');
                   setPipelineName('Synthetic Queries');
@@ -436,11 +445,30 @@ function Component() {
                   <CopyIcon className="h-8 w-8" />
                 </div> */}
                 <CardHeader className="flex items-start justify-start">
-                  <CardTitle className="text-orange-800">
-                    Synthetic Queries
+                  <CardTitle className="text-green-800">
+                    Synthetic Query RAG
                   </CardTitle>
                   <CardDescription className="text-zinc-800">
                     RAG w/ LLM generated synthetic queries
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+              <Card
+                className="w-full mt-2 cursor-pointer hover:bg-red-100 transition-colors duration-300 bg-red-200 border-l-4 border-red-400 relative"
+                onClick={() => {
+                  console.log('Card clicked!');
+                  setPipelineName('Web RAG');
+                  setGithubUrl(
+                    'https://github.com/SciPhi-AI/R2R-web-rag-template'
+                  );
+                }}
+              >
+                <CardHeader className="flex items-start justify-start">
+                  <CardTitle className="text-red-800">
+                    Web RAG
+                  </CardTitle>
+                  <CardDescription className="text-zinc-800">
+                    RAG performed over web search results
                   </CardDescription>
                 </CardHeader>
               </Card>
