@@ -102,7 +102,7 @@ export const SubNavigationBar = forwardRef<
     >
       <div className="flex items-center justify-between w-full">
         <nav className="flex">
-          <ul role="list" className="flex items-center gap-3 pl-3">
+          <ul role="list" className="flex items-center gap-3 pl-10 ml-3">
             {navItems.map((item) => (
               <TopLevelNavItem
                 key={item.path}

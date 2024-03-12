@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/Button';
 
 const guides = [
   {
-    href: '#',
+    href: 'docs/getting-started/deploying-a-pipeline',
     name: '1. Deploy',
     description: () => (
       <span>
@@ -15,27 +15,34 @@ const guides = [
         button above.
       </span>
     ),
-    readMoreText: 'Read More',
-    readMoreHref: '#deployDetails',
+    readMoreText: 'Learn More',
   },
   {
-    href: '#',
-    name: '2. Monitor',
-    description: 'Check for any logs or errors in the deployment process',
-    readMoreText: 'Monitoring Tips',
+    href: 'docs/getting-started/interacting-with-a-pipeline',
+    name: '2. Interact',
+    description: () => (
+      <span>
+        Interact with your deployment at {' '}
+        <Button href="#pipelines" disabled={true}>
+          {' sciphi-{...}-ue.a.run.app'}
+          
+        </Button>{'.'}
+      </span>
+    ),
+    readMoreText: 'Learn More',
+  },
+
+  {
+    href: 'docs/features/monitoring',
+    name: '3. Monitor & Evaluate',
+    description: 'Check for any logs & evaluate the quality of your RAG.',
+    readMoreText: 'Learn More',
   },
   {
-    href: '#',
-    name: '3. Host',
-    description:
-      'Upon completion, your RAG application will be actively hosted at',
-    readMoreText: 'sciphi-{...}-ue.a.run.app',
-  },
-  {
-    href: 'https://github.com/SciPhi-AI/R2R',
+    href: 'docs/getting-started/rag-templates',
     name: '4. Customize',
     description: 'Create your own pipeline and deploy it from GitHub.',
-    readMoreText: 'Use R2R framework',
+    readMoreText: 'Learn More',
   },
 ];
 

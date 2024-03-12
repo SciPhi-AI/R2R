@@ -5,7 +5,14 @@ export default async function handler(
   res: NextApiResponse
 ) {
   try {
-    const response = await fetch('http://127.0.0.1:8000/logs_summary');
+    // Extract the pipelineId from the query parameters
+    const { pipelineId } = req.query;
+
+    // Construct the URL with the pipelineId
+    const externalServiceUrl = `https://external-service.com/logs_summary?pipelineId=${pipelineId}`;
+
+    // Fetch the logs summary from the constructed URL
+    const response = await fetch(externalServiceUrl);
     if (!response.ok) {
       throw new Error('Failed to fetch logs summary from the external source');
     }

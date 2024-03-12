@@ -90,7 +90,7 @@ function SmallPrint() {
   return (
     <div className="flex flex-col items-center justify-between sm:flex-row dark:border-white/5 ">
       <p className="text-xs text-zinc-600 dark:text-zinc-400">
-        &copy; Copyright {new Date().getFullYear()}. SciPhi.AI. All rights
+        &copy; Copyright {new Date().getFullYear()}. EmergentAGI Inc. All rights
         reserved.
       </p>
       <div className="flex gap-4">

@@ -1,0 +1,43 @@
+## R2R Pipeline Templates
+
+This repository contains a collection of templates for deploying Retrieval Augmented Generation (RAG) pipelines using the R2R framework with the SciPhi cloud platform. Each template provides a starting point for building RAG pipelines with different capabilities and configurations.
+
+## Available Templates
+
+1. **Basic RAG** ([GitHub Repository](https://github.com/SciPhi-AI/R2R-basic-rag-template))
+   - A basic RAG pipeline template that serves as a foundation for building more complex pipelines.
+   - Utilizes the R2R framework and integrates with the SciPhi cloud platform for deployment.
+   - Provides configuration options for vector database provider, evaluation settings, embedding settings, text splitter settings, and language model provider.
+   - Includes a `config.json` file for easy customization of deployment settings.
+
+2. **Synthetic Queries** ([GitHub Repository](https://github.com/SciPhi-AI/R2R-synthetic-queries-template))
+   - An extension of the basic RAG pipeline that incorporates synthetic query generation capabilities.
+   - Modifies the `SyntheticRAGPipeline` to return search results and completion.
+   - Allows for generating synthetic queries based on the initial user query to retrieve relevant information.
+   - Provides additional configuration options specific to synthetic query generation.
+
+3. **Web RAG** ([GitHub Repository](https://github.com/SciPhi-AI/R2R-web-rag-template))
+   - An intermediate RAG pipeline template that extends the functionality of the basic RAG pipeline by incorporating web search capabilities.
+   - Integrates with the SerperClient to perform web searches and retrieve relevant information.
+   - Includes additional methods for query transformation, web search, and context construction.
+   - Supports streaming of search results, context, and completion for real-time updates.
+
+## Getting Started
+
+To get started with any of the templates, follow these steps:
+
+1. Clone the desired template repository to your local machine.
+2. Install the required dependencies specified in the `requirements.txt` file.
+3. Customize the `config.json` file to configure the pipeline settings according to your requirements.
+4. Implement any additional functionality or modifications specific to your use case.
+5. Deploy the pipeline using the SciPhi cloud platform.
+
+For detailed instructions and configuration options, refer to the README file within each template repository.
+
+## Contribution
+
+We welcome contributions to improve and expand the template collection. If you have any ideas, bug fixes, or new templates to add, please submit a pull request or open an issue in the respective template repository.
+
+## Support
+
+If you encounter any issues or have questions related to the templates, please open an issue in the corresponding template repository.
