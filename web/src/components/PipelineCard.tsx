@@ -135,14 +135,14 @@ export function PipeCard({
                 Remote:
               </p>
               <p className="overflow-hidden text-ellipsis whitespace-nowrap w-46">
-                {pipeline.github_url}
+                {pipeline.github_url.slice(0, 15)}
               </p>
 
               <p className="mt-1 overflow-hidden text-ellipsis whitespace-nowrap w-46">
                 Deployment:
               </p>
               <p className="overflow-hidden text-ellipsis whitespace-nowrap w-46">
-                {pipeline.deployment.uri}
+                {pipeline.deployment.uri.slice(0, 15)}
               </p>
             </>
           ) : (
