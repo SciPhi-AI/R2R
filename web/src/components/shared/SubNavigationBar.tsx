@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import clsx from 'clsx';
 import { motion, useScroll, useTransform } from 'framer-motion';
@@ -42,9 +42,26 @@ export const SubNavigationBar = forwardRef<
     pathSegments: string[];
   }
 >(({ className, isPipelineRoute, pipelineId, pathSegments = [] }, ref) => {
+  const router = useRouter();
   const { scrollY } = useScroll();
   const bgOpacityLight = useTransform(scrollY, [0, 72], [0.5, 0.9]);
   const bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8]);
+  // State to manage active path
+  const [activePath, setActivePath] = useState(router.asPath);
+
+  // Effect to update active path on route change
+  useEffect(() => {
+    const handleRouteChange = (url: string) => {
+      setActivePath(url);
+    };
+
+    router.events.on('routeChangeComplete', handleRouteChange);
+
+    // Cleanup listener on component unmount
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [router.events]);
 
   const navItems =
     isPipelineRoute && pipelineId
