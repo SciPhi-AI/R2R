@@ -40,9 +40,9 @@ export function ProfileMenu({ user }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {user &&
-        user.user_metadata.avatar_url.includes('googleusercontent.com') ? (
+        user?.user_metadata?.avatar_url?.includes('googleusercontent.com') ? (
           <Image
-            src={user.user_metadata.avatar_url}
+            src={user?.user_metadata?.avatar_url}
             alt={`${user.username ? user.username : 'user'} Profile`}
             width="25"
             height="25"
