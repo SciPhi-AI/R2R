@@ -1,29 +1,28 @@
 {
-  "database": {
-    "provider": "local",
-    "collection_name": "demo-v1-test"
-  },
-  "evals": {
-    "provider": "deepeval",
-    "frequency": 1.0
-  },
   "embedding": {
     "provider": "openai",
     "model": "text-embedding-3-small",
     "dimension": 1536,
     "batch_size": 32
   },
-  "text_splitter": {
-    "chunk_size": 512,
-    "chunk_overlap": 20
+  "evals": {
+    "provider": "deepeval",
+    "frequency": 1.0
   },
   "language_model": {
     "provider": "litellm"
   },
-  "logging": {
+  "logging_database": {
     "provider": "local",
-    "level": "INFO",
-    "name": "r2r",
-    "database": "demo_logs_v1"
+    "collection_name": "demo_logs_v1",
+    "level": "INFO"
+  },
+  "text_splitter": {
+    "chunk_size": 512,
+    "chunk_overlap": 20
+  },
+  "vector_database": {
+    "provider": "local",
+    "collection_name": "demo-v1-test"
   }
 }

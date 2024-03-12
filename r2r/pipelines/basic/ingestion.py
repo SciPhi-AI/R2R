@@ -28,7 +28,7 @@ class BasicIngestionPipeline(IngestionPipeline):
 
     def __init__(
         self,
-        logging_provider: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[LoggingDatabaseConnection] = None,
     ):
         try:
             from bs4 import BeautifulSoup
@@ -53,7 +53,7 @@ class BasicIngestionPipeline(IngestionPipeline):
         )
 
         super().__init__(
-            logging_provider,
+            logging_connection,
         )
         self.pipeline_run_info = None
 

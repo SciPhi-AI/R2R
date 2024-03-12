@@ -20,14 +20,14 @@ class EmbeddingPipeline(Pipeline):
         embedding_model: str,
         embeddings_provider: EmbeddingProvider,
         db: VectorDBProvider,
-        logging_provider: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs,
     ):
         self.embedding_model = embedding_model
         self.embeddings_provider = embeddings_provider
         self.db = db
-        super().__init__(logging_provider=logging_provider, **kwargs)
+        super().__init__(logging_connection=logging_connection, **kwargs)
 
     def initialize_pipeline(self, *args, **kwargs) -> None:
         self.pipeline_run_info = {"run_id": uuid.uuid4(), "type": "embedding"}

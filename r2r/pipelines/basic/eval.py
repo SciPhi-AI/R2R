@@ -13,12 +13,12 @@ class BasicEvalPipeline(EvalPipeline):
     def __init__(
         self,
         eval_config: dict,
-        logging_provider: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs,
     ):
         frequency = eval_config["frequency"]
-        super().__init__(frequency, logging_provider, *args, **kwargs)
+        super().__init__(frequency, logging_connection, *args, **kwargs)
         provider = eval_config["provider"]
         if provider not in self.eval_providers:
             raise ValueError(

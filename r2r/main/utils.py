@@ -33,20 +33,20 @@ def load_config(config_path=None):
         config = json.load(f)
 
     # Extract configuration parameters
-    logging_config = config["logging"]
     embedding_config = config["embedding"]
-    database_config = config["database"]
-    llm_config = config["language_model"]
-    text_splitter_config = config["text_splitter"]
     evals_config = config["evals"]
+    llm_config = config["language_model"]
+    logging_config = config["logging_database"]
+    text_splitter_config = config["text_splitter"]
+    vector_database_config = config["vector_database"]
 
     return (
-        logging_config,
         embedding_config,
-        database_config,
-        llm_config,
-        text_splitter_config,
         evals_config,
+        llm_config,
+        logging_config,
+        text_splitter_config,
+        vector_database_config,
     )
 
 
