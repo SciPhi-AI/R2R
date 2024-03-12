@@ -67,8 +67,8 @@ export const SubNavigationBar = forwardRef<
     isPipelineRoute && pipelineId
       ? [
           {
-            path: `/`, // Assuming this is the path you want for the back arrow to home
-            label: '←',
+            path: `/`,
+            label: <span className="text-3xl">←</span>, // Use a larger text size and bolder font
           },
           {
             path: `/pipeline/${pipelineId}`,
