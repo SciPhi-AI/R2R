@@ -4,7 +4,6 @@ import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { Separator } from '@/components/ui/separator';
 import useLogs from '@/hooks/useLogs';
-
 import styles from '@/styles/Index.module.scss';
 import { EventSummary, searchResult } from '@/types';
 

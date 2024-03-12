@@ -3,7 +3,6 @@ import React from 'react';
 import { Embeddings as EmbeddingsDash } from '@/components/embeddings';
 import Layout from '@/components/Layout';
 import { Separator } from '@/components/ui/separator';
-
 import styles from '@/styles/Index.module.scss';
 
 export default function Embeddings() {

@@ -24,5 +24,5 @@ export function UsersIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
         d="M13 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Z"
       />
     </svg>
-  )
+  );
 }

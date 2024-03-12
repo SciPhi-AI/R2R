@@ -1,5 +1,9 @@
-import Layout from '@/components/Layout';
+import { Info } from 'lucide-react';
+import { useRouter } from 'next/router';
+import { useState } from 'react';
+
 import { CopyIcon } from '@/components/icons/CopyIcon';
+import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/Button';
 import {
   CardTitle,
@@ -9,8 +13,8 @@ import {
   CardFooter,
   Card,
 } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -20,16 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import styles from '@/styles/Index.module.scss';
-import { useState } from 'react';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Info } from 'lucide-react';
-import { useRouter } from 'next/router';
+import styles from '@/styles/Index.module.scss';
 import { createClient } from '@/utils/supabase/component';
 
 function Component() {
@@ -386,25 +387,28 @@ function Component() {
                 )}
               </div>
               <div className="flex justify-end mt-4">
-              <Button
-                variant={
-                  pipelineName &&
-                  githubUrl &&
-                  secretPairs.every((pair) => pair.key && pair.value) &&
-                  !isLoading // Ensure the button is not in the loading state
-                    ? 'filled'
-                    : 'disabled'
-                }
-                className={`w-1/3 h-8 py-1 ${
-                  !pipelineName || !githubUrl || secretPairs.some((pair) => !pair.key || !pair.value) || isLoading
-                    ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed text-white' // Darken the button when loading
-                    : 'bg-blue-500 hover:bg-blue-700 text-white'
-                }`}
-                onClick={handleSubmit}
-                disabled={isLoading}
-              >
-                {isLoading ? 'Deploying...' : 'Deploy'}
-              </Button>
+                <Button
+                  variant={
+                    pipelineName &&
+                    githubUrl &&
+                    secretPairs.every((pair) => pair.key && pair.value) &&
+                    !isLoading // Ensure the button is not in the loading state
+                      ? 'filled'
+                      : 'disabled'
+                  }
+                  className={`w-1/3 h-8 py-1 ${
+                    !pipelineName ||
+                    !githubUrl ||
+                    secretPairs.some((pair) => !pair.key || !pair.value) ||
+                    isLoading
+                      ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed text-white' // Darken the button when loading
+                      : 'bg-blue-500 hover:bg-blue-700 text-white'
+                  }`}
+                  onClick={handleSubmit}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Deploying...' : 'Deploy'}
+                </Button>
               </div>
             </div>
             <div className="col-span-4 right-content">
@@ -464,9 +468,7 @@ function Component() {
                 }}
               >
                 <CardHeader className="flex items-start justify-start">
-                  <CardTitle className="text-red-800">
-                    Web RAG
-                  </CardTitle>
+                  <CardTitle className="text-red-800">Web RAG</CardTitle>
                   <CardDescription className="text-zinc-800">
                     RAG performed over web search results
                   </CardDescription>

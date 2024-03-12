@@ -13,5 +13,5 @@ export function DocumentIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
         d="m11.5 2.5 5 5"
       />
     </svg>
-  )
+  );
 }

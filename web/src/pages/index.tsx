@@ -1,19 +1,16 @@
 import type { NextPage } from 'next';
 import { useEffect, useState, useRef } from 'react';
-import { createClient } from '@/utils/supabase/component';
 
-import Layout from '@/components/Layout';
 import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';
-import { Separator } from '@/components/ui/separator';
-import Next from 'next/link';
-import { Heading } from '@/components/shared/Heading';
+import Layout from '@/components/Layout';
+import { PipeCard } from '@/components/PipelineCard';
 import { Guides } from '@/components/shared/Guides';
-
+import { Heading } from '@/components/shared/Heading';
+import { Separator } from '@/components/ui/separator';
 import styles from '@/styles/Index.module.scss';
 import 'react-tippy/dist/tippy.css';
-
 import { Pipeline } from '@/types';
-import { PipeCard } from '@/components/PipelineCard';
+import { createClient } from '@/utils/supabase/component';
 
 const Home: NextPage = () => {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);

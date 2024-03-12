@@ -5,16 +5,21 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     // Extract the token from the Authorization header
     const token = req.headers.authorization?.split(' ')[1]; // Assumes "Bearer <token>"
     if (!token) {
-      return res.status(401).json({ message: 'Authentication token is missing' });
+      return res
+        .status(401)
+        .json({ message: 'Authentication token is missing' });
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/user_pipelines`, {
-      method: 'GET',
-      headers: new Headers({
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }),
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/user_pipelines`,
+      {
+        method: 'GET',
+        headers: new Headers({
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }),
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`Error: ${response.status}`);

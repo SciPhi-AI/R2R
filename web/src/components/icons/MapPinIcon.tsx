@@ -15,5 +15,5 @@ export function MapPinIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
       />
       <circle cx="10" cy="8" r="1.5" fill="none" />
     </svg>
-  )
+  );
 }

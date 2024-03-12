@@ -6,7 +6,7 @@ const useLogs = () => {
   const [logs, setLogs] = useState<EventSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  
+
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
@@ -52,8 +52,6 @@ const useLogs = () => {
   useEffect(() => {
     fetchLogs();
   }, [fetchLogs]);
-
-
 
   return { logs, loading, error, refetch: fetchLogs };
 };

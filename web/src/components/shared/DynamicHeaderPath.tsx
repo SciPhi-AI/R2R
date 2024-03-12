@@ -1,7 +1,8 @@
+import { useRouter } from 'next/router';
 import React from 'react';
+
 import { Logo } from '@/components/shared/Logo';
 import { Code } from '@/components/ui/Code';
-import { useRouter } from 'next/router';
 import { Pipeline } from '@/types';
 
 const capitalizeFirstLetter = (string) => {

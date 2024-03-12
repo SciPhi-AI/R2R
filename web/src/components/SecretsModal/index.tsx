@@ -1,5 +1,5 @@
-import { Fragment, useRef, useState, useEffect, useCallback } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
+import { Fragment, useRef, useState, useEffect, useCallback } from 'react';
 
 // rest of your code
 import { Provider } from '@/types';

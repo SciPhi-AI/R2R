@@ -13,5 +13,5 @@ export function FaceSmileIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
         d="M7.5 6.5v2M12.5 6.5v2M5.5 11.5s1 3 4.5 3 4.5-3 4.5-3"
       />
     </svg>
-  )
+  );
 }
