@@ -1,9 +1,12 @@
+from datetime import datetime
 import functools
 import json
+import logging
 import os
 import types
 from abc import ABC, abstractmethod
 
+logger = logging.getLogger(__name__)
 
 class LoggingProvider(ABC):
     @abstractmethod
@@ -85,25 +88,30 @@ class PostgresLoggingProvider(LoggingProvider):
 
     def log(
         self,
-        timestamp,
         pipeline_run_id,
         pipeline_run_type,
         method,
         result,
         log_level,
     ):
-        with self.conn.cursor() as cur:
-            cur.execute(
-                f"INSERT INTO {self.collection_name} (timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level) VALUES (NOW(), %s, %s, %s, %s, %s)",
-                (
-                    str(pipeline_run_id),
-                    pipeline_run_type,
-                    method,
-                    str(result),
-                    log_level,
-                ),
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(
+                    f"INSERT INTO {self.collection_name} (timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level) VALUES (NOW(), %s, %s, %s, %s, %s)",
+                    (
+                        str(pipeline_run_id),
+                        pipeline_run_type,
+                        method,
+                        str(result),
+                        log_level,
+                    ),
+                )
+            self.conn.commit()
+        except Exception as e:
+            # Handle any exceptions that occur during the logging process
+            logger.error(
+                f"Error occurred while logging to the PostgreSQL database: {str(e)}"
             )
-        self.conn.commit()
 
     def get_logs(self) -> list:
         logs = []
@@ -166,7 +174,6 @@ class LocalLoggingProvider(LoggingProvider):
 
     def log(
         self,
-        _,
         pipeline_run_id,
         pipeline_run_type,
         method,
@@ -188,7 +195,7 @@ class LocalLoggingProvider(LoggingProvider):
                 conn.commit()
         except Exception as e:
             # Handle any exceptions that occur during the logging process
-            print(
+            logger.error(
                 f"Error occurred while logging to the local database: {str(e)}"
             )
 
@@ -198,9 +205,7 @@ class LocalLoggingProvider(LoggingProvider):
             cur = conn.execute(f"SELECT * FROM {self.collection_name}")
             colnames = [desc[0] for desc in cur.description]
             results = cur.fetchall()
-            print("results  =", results)
             logs = [dict(zip(colnames, row)) for row in results]
-            print("logs  =", logs)
         return logs
 
 
@@ -235,13 +240,14 @@ class RedisLoggingProvider(LoggingProvider):
 
     def log(
         self,
-        timestamp,
         pipeline_run_id,
         pipeline_run_type,
         method,
         result,
         log_level,
     ):
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         log_entry = {
             "timestamp": timestamp,
             "pipeline_run_id": str(pipeline_run_id),
@@ -250,7 +256,11 @@ class RedisLoggingProvider(LoggingProvider):
             "result": str(result),
             "log_level": log_level,
         }
-        self.redis.lpush(self.log_key, json.dumps(log_entry))
+        try:
+            self.redis.lpush(self.log_key, json.dumps(log_entry))
+        except Exception as e:
+            # Handle any exceptions that occur during the logging process
+            logger.error(f"Error occurred while logging to Redis: {str(e)}")
 
     def get_logs(self) -> list:
         logs = self.redis.lrange(self.log_key, 0, -1)
@@ -328,7 +338,6 @@ def log_execution_to_db(func):
                         log_level = "ERROR"
                     finally:
                         logging_connection.logging_provider.log(
-                            None,
                             arg_pipeline_run_id,
                             arg_pipeline_run_type,
                             func.__name__,
@@ -339,7 +348,6 @@ def log_execution_to_db(func):
                 return generator_wrapper()
             else:
                 logging_connection.logging_provider.log(
-                    None,
                     arg_pipeline_run_id,
                     arg_pipeline_run_type,
                     func.__name__,
@@ -352,7 +360,6 @@ def log_execution_to_db(func):
             result = str(e)
             log_level = "ERROR"
             logging_connection.logging_provider.log(
-                None,
                 arg_pipeline_run_id,
                 arg_pipeline_run_type,
                 func.__name__,
