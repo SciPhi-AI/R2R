@@ -150,7 +150,7 @@ export default function LoginPage() {
                 Sign in with Google
               </button>
             </div>
-            <div>
+            {/* <div>
               <button
                 type="button"
                 onClick={() => signInWithOAuth('github')}
@@ -165,7 +165,7 @@ export default function LoginPage() {
                 </span>
                 Sign in with Github
               </button>
-            </div>
+            </div> */}
           </form>
         </div>
       </div>
