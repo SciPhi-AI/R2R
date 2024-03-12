@@ -1,8 +1,8 @@
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 
-import { createClient } from '@/utils/supabase/component';
 import { Separator } from '@/components/ui/separator';
+import { createClient } from '@/utils/supabase/component';
 
 export default function LoginPage() {
   const router = useRouter();

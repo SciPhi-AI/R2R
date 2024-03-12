@@ -13,5 +13,5 @@ export function CheckIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
         d="m7.5 10.5 2 2c1-3.5 3-5 3-5"
       />
     </svg>
-  )
+  );
 }

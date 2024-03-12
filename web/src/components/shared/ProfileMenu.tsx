@@ -1,7 +1,3 @@
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
-import Image from 'next/image';
-import { createClient } from '@/utils/supabase/component';
 import {
   Bug,
   Cloud,
@@ -11,6 +7,11 @@ import {
   Settings,
   User,
 } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter } from 'next/router';
+import React, { useEffect, useState } from 'react';
+
+import { Button } from '@/components/ui/Button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +22,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/Button';
+import { createClient } from '@/utils/supabase/component';
 
 export function ProfileMenu({ user }) {
   const supabase = createClient();

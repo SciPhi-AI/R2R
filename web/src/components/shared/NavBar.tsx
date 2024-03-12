@@ -1,16 +1,16 @@
-import { forwardRef, useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
 import clsx from 'clsx';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { createClient } from '@/utils/supabase/component';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { forwardRef, useEffect, useState, useRef } from 'react';
 
 import { Button } from '@/components/ui/Button';
-import { SubNavigationBar } from './SubNavigationBar';
+import { Pipeline } from '@/types';
+import { createClient } from '@/utils/supabase/component';
 
 import DynamicHeaderPath from './DynamicHeaderPath';
 import { ProfileMenu } from './ProfileMenu';
-import { Pipeline } from '@/types';
+import { SubNavigationBar } from './SubNavigationBar';
 
 function TopLevelNavItem({
   href,
@@ -57,9 +57,9 @@ export const Navbar = forwardRef<
     pipelinesRef.current = pipelines;
   }, [pipelines]);
 
-  let { scrollY } = useScroll();
-  let bgOpacityLight = useTransform(scrollY, [0, 72], [0.5, 0.9]);
-  let bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8]);
+  const { scrollY } = useScroll();
+  const bgOpacityLight = useTransform(scrollY, [0, 72], [0.5, 0.9]);
+  const bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8]);
 
   // Determine the active segment for highlighting in SubNavigationBar
   const isPipelineRoute = router.pathname.includes('/pipeline/');

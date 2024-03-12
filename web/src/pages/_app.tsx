@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react';
 import type { AppProps } from 'next/app';
-import { AuthProvider } from '@/context/authProvider';
-import { PipelineProvider } from '@/context/PipelineContext';
-
 import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { AuthProvider } from '@/context/authProvider';
+import { PipelineProvider } from '@/context/PipelineContext';
 
 import '../styles/globals.css';
 

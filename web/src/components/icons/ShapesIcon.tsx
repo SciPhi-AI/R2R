@@ -13,5 +13,5 @@ export function ShapesIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
         d="m2.5 17.5 3-6 3 6h-6ZM14.5 2.5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z"
       />
     </svg>
-  )
+  );
 }

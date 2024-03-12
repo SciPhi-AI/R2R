@@ -13,5 +13,5 @@ export function BookIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
         d="m17.5 2.5-7.5 3v12l7.5-3v-12Z"
       />
     </svg>
-  )
+  );
 }

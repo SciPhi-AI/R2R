@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import Pagination from '@/components/ui/pagination';
 import useLogs from '@/hooks/useLogs';
 import { setColor } from '@/lib/utils';
-import { TriangleIcon } from './retrievals';
 
+import { TriangleIcon } from './retrievals';
 import {
   Table,
   TableBody,
@@ -17,7 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
-import { Tooltip } from 'react-tippy';
 
 // Define your dictionary
 const methodDictionary: { [key: string]: string } = {

@@ -2,10 +2,10 @@
 import Head from 'next/head';
 import React, { ReactNode } from 'react';
 
+import { Footer } from '@/components/shared/Footer';
 import { Navbar } from '@/components/shared/NavBar';
 import { SubNavigationBar } from '@/components/shared/SubNavigationBar';
 import { SubNavigationMenu } from '@/components/shared/SubNavigationMenu';
-import { Footer } from '@/components/shared/Footer';
 import styles from '@/styles/Index.module.scss';
 
 type Props = {

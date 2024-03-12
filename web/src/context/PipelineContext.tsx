@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { Pipeline } from '../types'; // Import the Pipeline type
+
 import { useAuth } from './authProvider';
+import { Pipeline } from '../types'; // Import the Pipeline type
 
 interface PipelineContextProps {
   pipelines: Record<string, Pipeline>;

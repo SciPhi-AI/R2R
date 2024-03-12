@@ -15,5 +15,5 @@ export function TagIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
       />
       <circle cx="7" cy="7" r="1.5" fill="none" />
     </svg>
-  )
+  );
 }

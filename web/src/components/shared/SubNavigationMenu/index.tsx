@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+
 import { NavItemHighlight } from '../NavItemHighlight';
 
 function HomePageNav() {
@@ -19,7 +20,7 @@ function OtherPageNav({
   router,
   isScrolling,
 }) {
-  console.log('router.pathname = ', router.pathname)
+  console.log('router.pathname = ', router.pathname);
   return (
     <div className="sticky top-0 flex flex-row items-center bg-[var(--sciphi-top-bg)] px-[14rem] py-1 z-10 backdrop-blur-lg">
       <nav
@@ -109,8 +110,12 @@ export function SubNavigationMenu() {
   ];
 
   const getActiveNavItem = () => {
-    const sortedNavItems = [...navItems].sort((a, b) => b.path.length - a.path.length);
-    const activeItem = sortedNavItems.find((item) => router.pathname.startsWith(item.path));
+    const sortedNavItems = [...navItems].sort(
+      (a, b) => b.path.length - a.path.length
+    );
+    const activeItem = sortedNavItems.find((item) =>
+      router.pathname.startsWith(item.path)
+    );
     if (activeItem) {
       setNavItemHighlightProps({
         width: activeItem.width,

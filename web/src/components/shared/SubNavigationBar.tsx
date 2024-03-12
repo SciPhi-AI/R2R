@@ -1,8 +1,9 @@
-import { forwardRef, useState, useEffect } from 'react';
-import Link from 'next/link';
 import clsx from 'clsx';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { forwardRef, useState, useEffect } from 'react';
+
 import { Code } from '@/components/ui/Code';
 
 function TopLevelNavItem({
@@ -58,31 +59,32 @@ export const SubNavigationBar = forwardRef<
     };
   }, [router.events]);
 
-  const navItems = isPipelineRoute && pipelineId
-    ? [
-        {
-          path: `/`,
-          label: <span className="text-3xl">←</span>,
-        },
-        {
-          path: `/pipeline/${pipelineId}`,
-          label: 'Pipeline',
-        },
-        {
-          path: `/pipeline/${pipelineId}/retrievals`,
-          label: 'Retrievals',
-        },
-        {
-          path: `/pipeline/${pipelineId}/embeddings`,
-          label: 'Embeddings',
-        },
-      ]
-    : [
-        {
-          path: '/',
-          label: 'Home',
-        },
-      ];
+  const navItems =
+    isPipelineRoute && pipelineId
+      ? [
+          {
+            path: `/`,
+            label: <span className="text-3xl">←</span>,
+          },
+          {
+            path: `/pipeline/${pipelineId}`,
+            label: 'Pipeline',
+          },
+          {
+            path: `/pipeline/${pipelineId}/retrievals`,
+            label: 'Retrievals',
+          },
+          {
+            path: `/pipeline/${pipelineId}/embeddings`,
+            label: 'Embeddings',
+          },
+        ]
+      : [
+          {
+            path: '/',
+            label: 'Home',
+          },
+        ];
 
   return (
     <motion.div
@@ -91,10 +93,12 @@ export const SubNavigationBar = forwardRef<
         className,
         'fixed inset-x-0 top-10 z-40 flex h-10 items-center justify-between gap-12 px-4 transition sm:px-6 lg:z-30 lg:px-8 backdrop-blur-sm dark:backdrop-blur bg-zinc-800'
       )}
-      style={{
-        '--bg-opacity-light': bgOpacityLight,
-        '--bg-opacity-dark': bgOpacityDark,
-      } as React.CSSProperties}
+      style={
+        {
+          '--bg-opacity-light': bgOpacityLight,
+          '--bg-opacity-dark': bgOpacityDark,
+        } as React.CSSProperties
+      }
     >
       <div className="flex items-center justify-between w-full">
         <nav className="flex">
@@ -114,3 +118,5 @@ export const SubNavigationBar = forwardRef<
     </motion.div>
   );
 });
+
+SubNavigationBar.displayName = 'SubNavigationBar';

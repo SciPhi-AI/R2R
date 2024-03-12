@@ -1,6 +1,5 @@
 'use client';
 
-import { FiExternalLink } from 'react-icons/fi';
 import {
   motion,
   useMotionTemplate,
@@ -8,6 +7,7 @@ import {
   useMotionValue,
 } from 'framer-motion';
 import { useRouter } from 'next/router';
+import { FiExternalLink } from 'react-icons/fi';
 
 import { GridPattern } from '@/components/shared/GridPattern';
 import { Heading } from '@/components/shared/Heading';
@@ -20,8 +20,8 @@ function ResourcePattern({
   React.ComponentPropsWithoutRef<typeof GridPattern>,
   'width' | 'height' | 'x'
 >) {
-  let maskImage = useMotionTemplate`radial-gradient(100px at ${mouseX}px ${mouseY}px, white, transparent)`;
-  let style = { maskImage, WebkitMaskImage: maskImage };
+  const maskImage = useMotionTemplate`radial-gradient(100px at ${mouseX}px ${mouseY}px, white, transparent)`;
+  const style = { maskImage, WebkitMaskImage: maskImage };
 
   return (
     <div className="pointer-events-none">
@@ -62,8 +62,8 @@ export function PipeCard({
   className?: string;
 }) {
   const router = useRouter();
-  let mouseX = useMotionValue(0);
-  let mouseY = useMotionValue(0);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
 
   const handleClick = () => {
     router.push(`/pipeline/${pipeline.id}`);
@@ -74,7 +74,7 @@ export function PipeCard({
     clientX,
     clientY,
   }: React.MouseEvent<HTMLDivElement>) {
-    let { left, top } = currentTarget.getBoundingClientRect();
+    const { left, top } = currentTarget.getBoundingClientRect();
     mouseX.set(clientX - left);
     mouseY.set(clientY - top);
   }
@@ -87,6 +87,9 @@ export function PipeCard({
         return 'rose';
       case 'DEPLOYING':
         return 'amber';
+      case 'BUILDING':
+        return 'indigo';
+
       default:
         return null;
     }

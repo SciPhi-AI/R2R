@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+
 import { createClient } from '@/utils/supabase/component';
 
 // Define the shape of the context

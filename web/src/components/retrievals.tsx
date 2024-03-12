@@ -1,3 +1,4 @@
+import Tippy from '@tippyjs/react';
 import { useRouter } from 'next/router';
 import React, { useState, useMemo, useEffect } from 'react';
 
@@ -16,8 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
-
-import Tippy from '@tippyjs/react';
 
 // Define your dictionary
 const methodDictionary: { [key: string]: string } = {

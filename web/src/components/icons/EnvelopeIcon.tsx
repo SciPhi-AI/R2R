@@ -13,5 +13,5 @@ export function EnvelopeIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
         d="M10 10 4.526 5.256c-.7-.607-.271-1.756.655-1.756h9.638c.926 0 1.355 1.15.655 1.756L10 10Z"
       />
     </svg>
-  )
+  );
 }

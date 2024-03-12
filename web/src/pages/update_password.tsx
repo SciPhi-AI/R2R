@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
 import { User } from '@supabase/supabase-js';
+import { useRouter } from 'next/router';
+import { useState, useEffect } from 'react';
+
 import { createClient } from '@/utils/supabase/component';
 
 export default function UpdatePasswordPage({ user }: { user: User }) {

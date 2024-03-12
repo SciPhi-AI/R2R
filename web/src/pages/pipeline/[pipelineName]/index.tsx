@@ -1,12 +1,9 @@
+import { Github, Link } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import Layout from '@/components/Layout';
-import { useAuth } from '@/context/authProvider';
-import { createClient } from '@/utils/supabase/component';
-import { usePipelineContext } from '@/context/PipelineContext';
-import { Github, Link } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
 
+import Layout from '@/components/Layout';
+import { Button } from '@/components/ui/Button';
 import {
   CardTitle,
   CardDescription,
@@ -17,9 +14,11 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/context/authProvider';
+import { usePipelineContext } from '@/context/PipelineContext';
 import styles from '@/styles/Index.module.scss';
+import { createClient } from '@/utils/supabase/component';
 
 const PipelinePage = () => {
   const [pipelineToDelete, setPipelineToDelete] = useState('');
