@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useInView } from 'framer-motion';
 
 //import { useSectionStore } from '@/context/SectionProvider';
-import { Tag } from '@/components/Tag';
+import { Tag } from '@/components/shared/Tag';
 import { remToPx } from '@/lib/remToPx';
 
 function AnchorIcon(props: React.ComponentPropsWithoutRef<'svg'>) {

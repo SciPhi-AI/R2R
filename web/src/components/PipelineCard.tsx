@@ -10,7 +10,7 @@ import {
 } from 'framer-motion';
 import { useRouter } from 'next/router';
 
-import { GridPattern } from '@/components/GridPattern';
+import { GridPattern } from '@/components/shared/GridPattern';
 import { UserIcon } from '@/components/icons/UserIcon';
 
 function ResourceIcon({

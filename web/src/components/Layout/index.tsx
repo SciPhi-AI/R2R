@@ -2,10 +2,10 @@
 import Head from 'next/head';
 import React, { ReactNode } from 'react';
 
-import { Navbar } from '@/components/NavBar';
-import { SubNavigationBar } from '@/components/SubNavigationBar';
+import { Navbar } from '@/components/shared/NavBar';
+import { SubNavigationBar } from '@/components/shared/SubNavigationBar';
 import { SubNavigationMenu } from '@/components/shared/SubNavigationMenu';
-import { Footer } from '@/components/Footer';
+import { Footer } from '@/components/shared/Footer';
 import styles from '@/styles/Index.module.scss';
 
 type Props = {
@@ -23,7 +23,7 @@ const Layout: React.FC<Props> = ({ children, localNav, pageTitle }) => {
         {/* You can also include other page-specific meta tags, links, or scripts here */}
       </Head>
       <Navbar />
-      {/* <SubNavigationBar /> */}
+      <SubNavigationBar />
       {/* <SubNavigationMenu /> */}
       {children}
       <Footer />

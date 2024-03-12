@@ -1,6 +1,6 @@
 import Layout from '@/components/Layout';
 import { CopyIcon } from '@/components/icons/CopyIcon';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import {
   CardTitle,
   CardDescription,

@@ -21,7 +21,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 
 export function ProfileMenu({ user }) {
   const supabase = createClient();

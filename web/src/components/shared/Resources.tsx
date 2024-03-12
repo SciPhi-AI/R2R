@@ -8,8 +8,8 @@ import {
   useMotionValue,
 } from 'framer-motion';
 
-import { GridPattern } from '@/components/GridPattern';
-import { Heading } from '@/components//Heading';
+import { GridPattern } from '@/components/shared/GridPattern';
+import { Heading } from '@/components/shared/Heading';
 import { ChatBubbleIcon } from '@/components/icons/ChatBubbleIcon';
 import { EnvelopeIcon } from '@/components/icons/EnvelopeIcon';
 import { UserIcon } from '@/components/icons/UserIcon';

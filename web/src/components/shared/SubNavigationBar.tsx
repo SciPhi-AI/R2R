@@ -1,14 +1,12 @@
-import { forwardRef, useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
+import { forwardRef } from 'react';
 import Link from 'next/link';
 import clsx from 'clsx';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { createClient } from '@/utils/supabase/component';
 
-import { Button } from '@/components/Button';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import DynamicHeaderPath from './DynamicHeaderPath';
-import { ProfileMenu } from './shared/ProfileMenu';
+import { Button } from '@/components/ui/Button';
+import { Logo } from '@/components/shared/Logo';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { Code } from '@/components/ui/Code';
 
 function TopLevelNavItem({
   href,
@@ -30,25 +28,10 @@ function TopLevelNavItem({
   );
 }
 
-export const Navbar = forwardRef<
+export const SubNavigationBar = forwardRef<
   React.ElementRef<'div'>,
   { className?: string }
 >(function Header({ className }, ref) {
-  const supabase = createClient();
-  const [user, setUser] = useState(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      setUser(session?.user);
-    };
-
-    fetchUser();
-  }, []);
-
   let { scrollY } = useScroll();
   let bgOpacityLight = useTransform(scrollY, [0, 72], [0.5, 0.9]);
   let bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8]);
@@ -58,7 +41,7 @@ export const Navbar = forwardRef<
       ref={ref}
       className={clsx(
         className,
-        'fixed inset-x-0 top-0 z-50 flex h-10 items-center justify-between gap-12 px-4 transition sm:px-6 lg:z-30 lg:px-8 backdrop-blur-sm dark:backdrop-blur bg-zinc-100 dark:bg-zinc-800'
+        'fixed inset-x-0 top-10 z-40 flex h-10 items-center justify-between gap-12 px-4 transition sm:px-6 lg:z-30 lg:px-8 backdrop-blur-sm dark:backdrop-blur bg-zinc-800'
       )}
       style={
         {
@@ -67,10 +50,38 @@ export const Navbar = forwardRef<
         } as React.CSSProperties
       }
     >
-      <nav className="flex items-center justify-between w-full">
+      <div className="flex items-center justify-between w-full">
         <div className="flex">
           {/* Left side of the navbar */}
-          <DynamicHeaderPath user={user} />
+          <nav>
+            <ul role="list" className="flex items-center gap-3">
+              <Logo width={27} height={27} />
+              <Code>
+                <span className="text-zinc-400">r2r_rag </span>/{' '}
+              </Code>
+              <div
+                aria-label="Home"
+                className="h-5 w-5 rounded-full"
+                style={{
+                  background:
+                    'linear-gradient(90deg, #1f005c, #5b0060, #870160, #ac255e, #ca485c, #e16b5c, #f39060, #ffb56b)',
+                }}
+              ></div>
+              <Code>
+                <span className="text-indigo-500">jcllobet</span>
+              </Code>
+              <Code>|</Code>
+              <Code>
+                <span className="text-zinc-400">grep</span>
+              </Code>
+              <Code>
+                <span className="text-indigo-500">pipeline-1234...</span>
+              </Code>
+              <Code>
+                <span className="text-zinc-400">{`>> idx.txt`}</span>
+              </Code>
+            </ul>
+          </nav>
         </div>
         {/* Right side of the navbar */}
         <div className="flex items-center gap-5">
@@ -78,12 +89,10 @@ export const Navbar = forwardRef<
           <nav className="hidden md:flex">
             <ul role="list" className="flex items-center gap-8">
               <TopLevelNavItem href="https://docs.sciphi.ai/">
-                <Button
-                  className="rounded-md h-6 py-0.5 px-3 w-30"
-                  variant="primary"
-                >
-                  Docs
-                </Button>
+                Documentation
+              </TopLevelNavItem>
+              <TopLevelNavItem href="https://discord.gg/p6KqD2kjtB">
+                Support
               </TopLevelNavItem>
             </ul>
           </nav>
@@ -93,11 +102,11 @@ export const Navbar = forwardRef<
             {/* <ThemeToggle /> */}
             {/* This div is hidden until the screen width reaches 416px */}
             <div className="hidden min-[416px]:contents">
-              <ProfileMenu user={user} />
+              <Button>Sign in</Button>
             </div>
           </div>
         </div>
-      </nav>
+      </div>
     </motion.div>
   );
 });

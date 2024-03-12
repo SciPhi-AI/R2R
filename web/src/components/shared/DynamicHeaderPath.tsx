@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 
-import { Logo } from '@/components/Logo';
-import { Code } from '@/components/Code';
+import { Logo } from '@/components/shared/Logo';
+import { Code } from '@/components/ui/Code';
 
 import { useRouter } from 'next/router';
 import { Pipeline } from '@/types';

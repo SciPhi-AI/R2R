@@ -1,6 +1,5 @@
-import { Button } from '@/components/Button';
-import { Heading } from '@/components/Heading';
-import Link from 'next/link';
+import { Button } from '@/components/ui/Button';
+import { Heading } from '@/components/shared/Heading';
 
 const guides = [
   {

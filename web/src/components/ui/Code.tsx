@@ -13,7 +13,7 @@ import { Tab } from '@headlessui/react';
 import clsx from 'clsx';
 import { create } from 'zustand';
 
-import { Tag } from '@/components/Tag';
+import { Tag } from '@/components/shared/Tag';
 
 const languageNames: Record<string, string> = {
   js: 'JavaScript',

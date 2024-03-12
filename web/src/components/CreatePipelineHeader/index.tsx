@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRouter } from 'next/router';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 
 export function CreatePipelineHeader({
   numPipelines,

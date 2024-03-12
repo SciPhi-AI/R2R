@@ -6,8 +6,8 @@ import Layout from '@/components/Layout';
 import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';
 import { Separator } from '@/components/ui/separator';
 import Next from 'next/link';
-import { Heading } from '@/components/Heading';
-import { Guides } from '@/components/Guides';
+import { Heading } from '@/components/shared/Heading';
+import { Guides } from '@/components/shared/Guides';
 
 import styles from '@/styles/Index.module.scss';
 import 'react-tippy/dist/tippy.css';
