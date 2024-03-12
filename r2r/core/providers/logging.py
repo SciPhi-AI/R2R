@@ -198,9 +198,9 @@ class LocalLoggingProvider(LoggingProvider):
             cur = conn.execute(f"SELECT * FROM {self.collection_name}")
             colnames = [desc[0] for desc in cur.description]
             results = cur.fetchall()
-            print('results  =', results)
+            print("results  =", results)
             logs = [dict(zip(colnames, row)) for row in results]
-            print('logs  =', logs)
+            print("logs  =", logs)
         return logs
 
 
