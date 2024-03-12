@@ -397,7 +397,7 @@ function Component() {
                 R2R Templates
               </div>
               <Card
-                className="w-full mt-2 cursor-pointer hover:bg-blue-200 transition-colors duration-300 bg-blue-100 border-l-4 border-blue-500 relative"
+                className="w-full mt-2 cursor-pointer hover:bg-indigo-200 transition-colors duration-300 bg-indigo-100 border-l-4 border-indigo-200 relative"
                 onClick={() => {
                   console.log('Card clicked!');
                   setPipelineName('Basic RAG');
@@ -407,19 +407,17 @@ function Component() {
                 }}
               >
                 <div className="absolute top-2 right-2">
-                  {' '}
-                  {/* Adjusted to right-2 */}
-                  <CopyIcon className="h-5 w-5 text-blue-800" />
+                  <CopyIcon className="h-8 w-8" />
                 </div>
                 <CardHeader className="flex items-start justify-start">
-                  <CardTitle className="text-blue-800">Basic RAG</CardTitle>
-                  <CardDescription className="text-blue-600">
+                  <CardTitle className="text-indigo-800">Basic RAG</CardTitle>
+                  <CardDescription className="text-zinc-800">
                     Ingest documents and answer questions
                   </CardDescription>
                 </CardHeader>
               </Card>
               <Card
-                className="w-full mt-2 cursor-pointer hover:bg-green-200 transition-colors duration-300 bg-green-100 border-l-4 border-green-500 relative"
+                className="w-full mt-2 cursor-pointer hover:bg-orange-200 transition-colors duration-300 bg-orange-100 border-l-4 border-orange-200 relative"
                 onClick={() => {
                   console.log('Card clicked!');
                   setPipelineName('Synthetic Queries');
@@ -429,15 +427,13 @@ function Component() {
                 }}
               >
                 <div className="absolute top-2 right-2">
-                  {' '}
-                  {/* Adjusted to right-2 */}
-                  <CopyIcon className="h-5 w-5 text-green-800" />
+                  <CopyIcon className="h-8 w-8" />
                 </div>
                 <CardHeader className="flex items-start justify-start">
-                  <CardTitle className="text-green-800">
+                  <CardTitle className="text-orange-800">
                     Synthetic Queries
                   </CardTitle>
-                  <CardDescription className="text-green-600">
+                  <CardDescription className="text-zinc-800">
                     RAG w/ LLM generated synthetic queries
                   </CardDescription>
                 </CardHeader>
