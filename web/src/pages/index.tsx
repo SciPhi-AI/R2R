@@ -106,20 +106,20 @@ const Home: NextPage = () => {
         ) : (
           <>
             <CreatePipelineHeader numPipelines={pipelines?.length || 0} />
-            <div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 dark:border-white/5">
+            <div className="not-prose grid grid-cols-1 gap-10 pt-10 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 dark:border-white/5">
               {pipelines.map((pipeline) => (
                 <PipeCard
                   key={pipeline.id}
                   pipeline={pipeline}
-                  className="min-w-[200px] max-w-[300px]"
+                  className="min-w-[250px] max-w-[300px]"
                 />
               ))}
             </div>
           </>
         )}
         <br />
-        <h1 className="text-white text-2xl mb-4"> Quickstart </h1>
         <Separator />
+        <h1 className="text-white text-2xl mt-4"> Quickstart: </h1>
         <Guides />
       </main>
     </Layout>
