@@ -7,6 +7,7 @@ import { useInView } from 'framer-motion';
 //import { useSectionStore } from '@/context/SectionProvider';
 import { Tag } from '@/components/shared/Tag';
 import { remToPx } from '@/lib/remToPx';
+import { TagColor } from '@/types';
 
 function AnchorIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -22,14 +23,24 @@ function AnchorIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   );
 }
 
-function Eyebrow({ tag, label }: { tag?: string; label?: string }) {
+function Eyebrow({
+  tag,
+  label,
+  color,
+}: {
+  tag?: string;
+  label?: string;
+  color?: TagColor;
+}) {
+  // Use the passed `color` prop directly if it's provided, otherwise, determine the color based on `tag`
+  const tagColor: TagColor = color || 'zinc';
   if (!tag && !label) {
     return null;
   }
 
   return (
     <div className="flex items-center gap-x-3">
-      {tag && <Tag>{tag}</Tag>}
+      {tag && <Tag color={tagColor}>{tag}</Tag>}
       {tag && label && (
         <span className="h-0.5 w-0.5 rounded-full bg-zinc-300 dark:bg-zinc-600" />
       )}
@@ -72,6 +83,8 @@ export function Heading<Level extends 2 | 3>({
   label,
   level,
   anchor = true,
+  tag_color,
+  textColor,
   ...props
 }: React.ComponentPropsWithoutRef<`h${Level}`> & {
   id: string;
@@ -79,6 +92,8 @@ export function Heading<Level extends 2 | 3>({
   label?: string;
   level?: Level;
   anchor?: boolean;
+  tag_color?: TagColor;
+  textColor?: string;
 }) {
   level = level ?? (2 as Level);
   let Component = `h${level}` as 'h2' | 'h3';
@@ -91,10 +106,10 @@ export function Heading<Level extends 2 | 3>({
 
   return (
     <>
-      <Eyebrow tag={tag} label={label} />
+      <Eyebrow tag={tag} label={label} color={tag_color} />
       <Component
         ref={ref}
-        className={tag || label ? 'mt-2 scroll-mt-32' : 'scroll-mt-24'}
+        className={`${tag || label ? 'mt-2 scroll-mt-32' : 'scroll-mt-24'} ${textColor || ''}`}
         {...props}
       >
         {anchor ? (
