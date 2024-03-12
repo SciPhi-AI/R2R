@@ -10,15 +10,22 @@ export function CreatePipelineHeader({
   const router = useRouter();
 
   const createPipeline = async () => {
-    router.push('/deploy');
+    if (numPipelines >= 10) {
+      alert(
+        'You have reached the maximum number of pipelines. Please delete some pipelines before creating a new one.'
+      );
+    } else {
+      router.push('/deploy');
+    }
   };
 
   return (
     <div className="flex justify-between w-full">
       <Button
         className="h-10 w-40 py-2.5"
-        variant="filled"
+        variant={numPipelines >= 10 ? 'disabled' : 'filled'}
         onClick={createPipeline}
+        disabled={numPipelines >= 10}
       >
         Create Pipeline
       </Button>

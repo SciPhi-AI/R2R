@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { FiExternalLink } from 'react-icons/fi';
 import {
   motion,
@@ -11,19 +10,7 @@ import {
 import { useRouter } from 'next/router';
 
 import { GridPattern } from '@/components/shared/GridPattern';
-import { UserIcon } from '@/components/icons/UserIcon';
-
-function ResourceIcon({
-  icon: Icon,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-}) {
-  return (
-    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900/5 ring-1 ring-zinc-900/25 backdrop-blur-sm transition duration-300 group-hover:bg-white/50 group-hover:ring-zinc-900/25 dark:bg-white/7.5 dark:ring-white/15 dark:group-hover:bg-emerald-300/10 dark:group-hover:ring-emerald-400">
-      <Icon className="h-5 w-5 fill-zinc-700/10 stroke-zinc-700 transition-colors duration-300 group-hover:stroke-zinc-900 dark:fill-white/10 dark:stroke-zinc-400 dark:group-hover:fill-emerald-300/10 dark:group-hover:stroke-emerald-400" />
-    </div>
-  );
-}
+import { Heading } from '@/components/shared/Heading';
 
 function ResourcePattern({
   mouseX,
@@ -92,17 +79,53 @@ export function PipeCard({
     mouseY.set(clientY - top);
   }
 
-  function getStatusColor(status: string) {
+  function getStatusTagColor(
+    status: string
+  ): 'rose' | 'amber' | 'emerald' | 'zinc' | 'indigo' | 'sky' | null {
     switch (status.toUpperCase()) {
       case 'FAILED':
-        return 'text-red-400';
+        return 'rose';
       case 'DEPLOYING':
-        return 'text-orange-400';
-      case 'SUCCESS':
-        return 'text-green-400';
+        return 'amber';
       default:
-        return 'text-gray-400';
+        return null;
     }
+  }
+
+  const tagColor = getStatusTagColor(pipeline.status);
+
+  function renderGithubUrl(status: string, url?: string): JSX.Element {
+    let message;
+    if (status === 'finished' && url) {
+      message = url.slice(8, 37);
+    } else if (status === 'deploying') {
+      message = 'URL incoming upon completion';
+    } else {
+      message = 'Pipeline not finished';
+    }
+
+    return (
+      <p className="overflow-hidden text-ellipsis whitespace-nowrap w-46">
+        {message}
+      </p>
+    );
+  }
+
+  function renderDeploymentUri(status: string, uri?: string): JSX.Element {
+    let message;
+    if (status === 'finished' && uri) {
+      message = uri.slice(8, 37);
+    } else if (status === 'deploying') {
+      message = 'Deployment incoming upon completion';
+    } else {
+      message = 'Deployment not available';
+    }
+
+    return (
+      <p className="overflow-hidden text-ellipsis whitespace-nowrap w-46">
+        {message}
+      </p>
+    );
   }
 
   return (
@@ -123,40 +146,43 @@ export function PipeCard({
       <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-zinc-900/7.5 group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
       <div className="flex justify-between items-center relative rounded-2xl p-8 w-full">
         <div className="flex-1">
-          <p className="mt-1 overflow-hidden text-ellipsis whitespace-nowrap w-46">
-            Pipeline:
-          </p>
-          <strong className="font-medium text-[var(--color-8)] overflow-hidden text-ellipsis whitespace-nowrap w-46">
+          <Heading
+            level={3}
+            id={`pipeline-${pipeline.id}`}
+            {...(tagColor
+              ? {
+                  tag: pipeline.status.toUpperCase(),
+                  tag_color: tagColor,
+                }
+              : {})}
+            textColor="dark:text-zinc-500"
+            anchor={false}
+          >
+            Pipeline
+          </Heading>
+          <Heading
+            level={2}
+            id={`pipeline-name-${pipeline.id}`}
+            className="text-2xl font-medium"
+            anchor={false}
+          >
             {pipeline.name}
-          </strong>
-          {pipeline.status === 'finished' ? (
-            <>
-              <p className="mt-1 overflow-hidden text-ellipsis whitespace-nowrap w-46">
-                Remote:
-              </p>
-              <p className="overflow-hidden text-ellipsis whitespace-nowrap w-46">
-                {pipeline.github_url}
-              </p>
+          </Heading>
+          <>
+            <p className="mt-1 overflow-hidden text-ellipsis dark:text-zinc-500 whitespace-nowrap w-46">
+              Remote:
+            </p>
+            {pipeline.github_url
+              ? renderGithubUrl('finished', pipeline.github_url)
+              : renderGithubUrl(pipeline.status)}
 
-              <p className="mt-1 overflow-hidden text-ellipsis whitespace-nowrap w-46">
-                Deployment:
-              </p>
-              <p className="overflow-hidden text-ellipsis whitespace-nowrap w-46">
-                {pipeline.deployment.uri}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="mt-1 overflow-hidden text-ellipsis whitespace-nowrap w-46">
-                Status:
-              </p>
-              <p
-                className={`${getStatusColor(pipeline.status)} overflow-hidden text-ellipsis whitespace-nowrap w-46`}
-              >
-                {pipeline.status.toUpperCase()}
-              </p>
-            </>
-          )}
+            <p className="mt-1 overflow-hidden text-ellipsis dark:text-zinc-500 whitespace-nowrap w-46">
+              Deployment:
+            </p>
+            {pipeline.deployment.uri
+              ? renderDeploymentUri('finished', pipeline.deployment.uri)
+              : renderDeploymentUri(pipeline.status)}
+          </>
         </div>
         <div className="absolute top-0 right-0 mt-2 mr-2">
           <div className="bg-color7 p-2 rounded-full invisible group-hover:visible group-hover:animate-handleHoverLinkIconAnimation">

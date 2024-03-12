@@ -383,8 +383,14 @@ function Component() {
               </div>
               <div className="flex justify-end mt-4">
                 <Button
-                  variant="filled" // Choose from 'primary', 'secondary', 'filled', 'outline', or 'text'
-                  className="w-1/3 h-8 text-lg" // Adjust width as necessary
+                  variant={
+                    pipelineName &&
+                    githubUrl &&
+                    secretPairs.every((pair) => pair.key && pair.value)
+                      ? 'filled'
+                      : 'disabled'
+                  } // Dynamically change the variant based on the conditions
+                  className={`w-1/3 h-8 py-1 ${!pipelineName || !githubUrl || secretPairs.some((pair) => !pair.key || !pair.value) ? 'bg-gray-500 hover:bg-gray-500 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-700'}`} // Dynamically change the className based on the conditions
                   onClick={handleSubmit}
                   disabled={isLoading}
                 >
@@ -397,7 +403,7 @@ function Component() {
                 R2R Templates
               </div>
               <Card
-                className="w-full mt-2 cursor-pointer hover:bg-indigo-200 transition-colors duration-300 bg-indigo-100 border-l-4 border-indigo-200 relative"
+                className="w-full mt-2 cursor-pointer hover:bg-indigo-100 transition-colors duration-300 bg-indigo-200 border-l-4 border-indigo-200 relative"
                 onClick={() => {
                   console.log('Card clicked!');
                   setPipelineName('Basic RAG');
@@ -406,9 +412,9 @@ function Component() {
                   );
                 }}
               >
-                <div className="absolute top-2 right-2">
+                {/* <div className="absolute top-2 right-2">
                   <CopyIcon className="h-8 w-8" />
-                </div>
+                </div> */}
                 <CardHeader className="flex items-start justify-start">
                   <CardTitle className="text-indigo-800">Basic RAG</CardTitle>
                   <CardDescription className="text-zinc-800">
@@ -417,7 +423,7 @@ function Component() {
                 </CardHeader>
               </Card>
               <Card
-                className="w-full mt-2 cursor-pointer hover:bg-orange-200 transition-colors duration-300 bg-orange-100 border-l-4 border-orange-200 relative"
+                className="w-full mt-2 cursor-pointer hover:bg-orange-100 transition-colors duration-300 bg-orange-200 border-l-4 border-orange-200 relative"
                 onClick={() => {
                   console.log('Card clicked!');
                   setPipelineName('Synthetic Queries');
@@ -426,9 +432,9 @@ function Component() {
                   );
                 }}
               >
-                <div className="absolute top-2 right-2">
+                {/* <div className="absolute top-2 right-2">
                   <CopyIcon className="h-8 w-8" />
-                </div>
+                </div> */}
                 <CardHeader className="flex items-start justify-start">
                   <CardTitle className="text-orange-800">
                     Synthetic Queries

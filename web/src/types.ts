@@ -62,6 +62,8 @@ export interface Document {
   metadata: Object;
 }
 
+export type TagColor = 'rose' | 'amber' | 'emerald' | 'zinc' | 'indigo' | 'sky';
+
 export interface EventSummary extends LogEntry {
   timestamp: string;
   pipelineRunId: string;

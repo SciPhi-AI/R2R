@@ -31,13 +31,20 @@ const colorStyles = {
     medium:
       'ring-zinc-200 bg-zinc-50 text-zinc-500 dark:ring-zinc-500/20 dark:bg-zinc-400/10 dark:text-zinc-400',
   },
+  emerald: {
+    small: 'text-emerald-500',
+    medium:
+      'ring-emerald-300 bg-emerald-400/10 text-emerald-500 dark:ring-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-400',
+  },
 };
 
 const valueColorMap = {
-  GET: 'indigo',
+  GET: 'emerald',
   POST: 'sky',
   PUT: 'amber',
   DELETE: 'rose',
+  PATCH: 'zinc',
+  OPTIONS: 'indigo',
 } as Record<string, keyof typeof colorStyles>;
 
 export function Tag({

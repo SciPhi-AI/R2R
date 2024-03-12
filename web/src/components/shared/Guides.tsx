@@ -20,20 +20,20 @@ const guides = [
   },
   {
     href: '#',
-    name: 'Monitor',
+    name: '2. Monitor',
     description: 'Check for any logs or errors in the deployment process',
     readMoreText: 'Monitoring Tips',
   },
   {
     href: '#',
-    name: 'Host',
+    name: '3. Host',
     description:
       'Upon completion, your RAG application will be actively hosted at',
     readMoreText: 'sciphi-{...}-ue.a.run.app',
   },
   {
     href: 'https://github.com/SciPhi-AI/R2R',
-    name: 'Customize',
+    name: '4. Customize',
     description: 'Create your own pipeline and deploy it from GitHub.',
     readMoreText: 'Use R2R framework',
   },
@@ -41,7 +41,7 @@ const guides = [
 
 export function Guides() {
   return (
-    <div className="my-16 xl:max-w-none">
+    <div className="my-4 xl:max-w-none">
       <Heading level={2} id="guides" className="text-xl mb-4">
         Deploy your own rag pipeline
       </Heading>

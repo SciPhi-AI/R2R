@@ -13,7 +13,7 @@ const variantStyles = {
   danger:
     'bg-red-600 text-white hover:bg-red-500 dark:bg-red-600 dark:text-white dark:hover:bg-red-500',
   text: 'text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-500',
-  disabled: 'bg-zinc-500 text-white cursor-not-allowed hover:bg-zinc-300',
+  disabled: 'bg-zinc-600 text-white cursor-not-allowed hover:bg-zinc-500',
 };
 
 type ButtonProps = {
