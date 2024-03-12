@@ -1,11 +1,11 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Layout from '@/components/Layout';
-import { Footer } from '@/components/Footer';
 import { useAuth } from '@/context/authProvider';
 import { createClient } from '@/utils/supabase/component';
 import { usePipelineContext } from '@/context/PipelineContext';
 import { Github, Link } from 'lucide-react';
+import { Button } from '@/components/Button';
 
 import {
   CardTitle,
@@ -84,7 +84,7 @@ const PipelinePage = () => {
   useEffect(() => {
     const update = async () => {
       console.log('pipelineId = ', pipelineId);
-      if (cloudMode === 'cloud' && pipelineId) {
+      if (pipelineId) {
         // Use optional chaining
         const {
           data: { session },
@@ -108,7 +108,7 @@ const PipelinePage = () => {
     };
 
     update();
-  }, [cloudMode, pipelineId]);
+  }, [pipelineId]);
 
   if (!pipeline) {
     return (
@@ -143,7 +143,7 @@ const PipelinePage = () => {
                 {pipeline.deployment && pipeline.deployment?.uri && (
                   <>
                     <div className="flex items-center gap-2 mt-2">
-                      <GlobeIcon className="w-4 h-4" />
+                      <Link width="20" height="20" />
                       <span className="font-semibold">
                         {pipeline.deployment?.uri}
                       </span>
@@ -258,52 +258,25 @@ const PipelinePage = () => {
                     boxShadow: '0 0 2px #719ECE', // Sets a subtle glow, adjust as needed
                   }}
                 />
-                <button
-                  className={`px-4 py-2 ml-2 text-white rounded ${
-                    deleteButtonDisabled
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-red-500 hover:bg-red-600'
-                  }`}
+                <Button
+                  variant={deleteButtonDisabled ? 'disabled' : 'danger'}
+                  className="px-4 py-2 ml-2"
                   onClick={handleDeletePipeline}
                   disabled={deleteButtonDisabled}
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             </div>
           </CardFooter>
         </Card>
       </main>
-
-      <Footer />
     </Layout>
   );
 };
 
 function GitHubIcon(props) {
   return <Github width="16" height="16" />;
-}
-
-function GlobeIcon(props) {
-  return <Link width="20" height="20" />;
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <line x1="2" x2="22" y1="12" y2="12" />
-      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-    </svg>
-  );
 }
 
 function CopyIcon(props) {
