@@ -23,8 +23,6 @@ const Layout: React.FC<Props> = ({ children, localNav, pageTitle }) => {
         {/* You can also include other page-specific meta tags, links, or scripts here */}
       </Head>
       <Navbar />
-      <SubNavigationBar />
-      {/* <SubNavigationMenu /> */}
       {children}
       <Footer />
     </div>

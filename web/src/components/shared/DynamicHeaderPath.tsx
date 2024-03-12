@@ -1,14 +1,16 @@
-import React, { useEffect, useState, useRef } from 'react';
-
+import React from 'react';
 import { Logo } from '@/components/shared/Logo';
 import { Code } from '@/components/ui/Code';
-
 import { useRouter } from 'next/router';
 import { Pipeline } from '@/types';
 
-const DynamicHeaderPath = ({ user }) => {
-  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
-  const pipelinesRef = useRef(pipelines);
+const DynamicHeaderPath = ({
+  user,
+  pipelines,
+}: {
+  user: any;
+  pipelines: Pipeline[];
+}) => {
   const router = useRouter();
 
   const userNameOrWorkspace =
@@ -20,10 +22,6 @@ const DynamicHeaderPath = ({ user }) => {
     : [];
   const pipelineId = pathSegments.length > 1 ? pathSegments[1] : null;
   const afterPipelineSegment = pathSegments.length > 2 ? pathSegments[2] : null;
-
-  useEffect(() => {
-    pipelinesRef.current = pipelines;
-  }, [pipelines]);
 
   const redirectToHome = () => {
     router.push('/');

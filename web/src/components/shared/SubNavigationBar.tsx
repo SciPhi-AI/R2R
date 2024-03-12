@@ -2,27 +2,32 @@ import { forwardRef } from 'react';
 import Link from 'next/link';
 import clsx from 'clsx';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { useRouter } from 'next/router';
 
-import { Button } from '@/components/ui/Button';
-import { Logo } from '@/components/shared/Logo';
-import { ThemeToggle } from '@/components/shared/ThemeToggle';
-import { Code } from '@/components/ui/Code';
+import { Code } from '@/components/ui/Code'; // Ensure this import is correct
 
 function TopLevelNavItem({
   href,
   children,
+  isActive,
 }: {
   href: string;
   children: React.ReactNode;
+  isActive: boolean;
 }) {
   return (
     <li>
-      <Link
-        href={href}
-        className="text-sm leading-5 text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
-        legacyBehavior
-      >
-        {children}
+      <Link href={href} legacyBehavior>
+        <a
+          className={clsx(
+            'text-sm leading-5 transition',
+            isActive
+              ? 'text-indigo-500'
+              : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+          )}
+        >
+          <Code>{children}</Code>
+        </a>
       </Link>
     </li>
   );
@@ -30,11 +35,43 @@ function TopLevelNavItem({
 
 export const SubNavigationBar = forwardRef<
   React.ElementRef<'div'>,
-  { className?: string }
->(function Header({ className }, ref) {
-  let { scrollY } = useScroll();
-  let bgOpacityLight = useTransform(scrollY, [0, 72], [0.5, 0.9]);
-  let bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8]);
+  {
+    className?: string;
+    isPipelineRoute: boolean;
+    pipelineId: string | null;
+    pathSegments: string[];
+  }
+>(({ className, isPipelineRoute, pipelineId, pathSegments = [] }, ref) => {
+  const { scrollY } = useScroll();
+  const bgOpacityLight = useTransform(scrollY, [0, 72], [0.5, 0.9]);
+  const bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8]);
+
+  const navItems =
+    isPipelineRoute && pipelineId
+      ? [
+          {
+            path: `/`, // Assuming this is the path you want for the back arrow to home
+            label: '←',
+          },
+          {
+            path: `/pipeline/${pipelineId}`,
+            label: 'Pipeline',
+          },
+          {
+            path: `/pipeline/${pipelineId}/retrievals`,
+            label: 'Retrievals',
+          },
+          {
+            path: `/pipeline/${pipelineId}/embeddings`,
+            label: 'Embeddings',
+          },
+        ]
+      : [
+          {
+            path: '/',
+            label: 'Home',
+          },
+        ];
 
   return (
     <motion.div
@@ -51,61 +88,21 @@ export const SubNavigationBar = forwardRef<
       }
     >
       <div className="flex items-center justify-between w-full">
-        <div className="flex">
-          {/* Left side of the navbar */}
-          <nav>
-            <ul role="list" className="flex items-center gap-3">
-              <Logo width={27} height={27} />
-              <Code>
-                <span className="text-zinc-400">r2r_rag </span>/{' '}
-              </Code>
-              <div
-                aria-label="Home"
-                className="h-5 w-5 rounded-full"
-                style={{
-                  background:
-                    'linear-gradient(90deg, #1f005c, #5b0060, #870160, #ac255e, #ca485c, #e16b5c, #f39060, #ffb56b)',
-                }}
-              ></div>
-              <Code>
-                <span className="text-indigo-500">jcllobet</span>
-              </Code>
-              <Code>|</Code>
-              <Code>
-                <span className="text-zinc-400">grep</span>
-              </Code>
-              <Code>
-                <span className="text-indigo-500">pipeline-1234...</span>
-              </Code>
-              <Code>
-                <span className="text-zinc-400">{`>> idx.txt`}</span>
-              </Code>
-            </ul>
-          </nav>
-        </div>
-        {/* Right side of the navbar */}
-        <div className="flex items-center gap-5">
-          {/* This nav is hidden on mobile and visible from md screen size and up */}
-          <nav className="hidden md:flex">
-            <ul role="list" className="flex items-center gap-8">
-              <TopLevelNavItem href="https://docs.sciphi.ai/">
-                Documentation
+        <nav className="flex">
+          <ul role="list" className="flex items-center gap-3 pl-3">
+            {navItems.map((item) => (
+              <TopLevelNavItem
+                key={item.path}
+                href={item.path}
+                isActive={(pathSegments || []).includes(
+                  item.path.split('/').pop() ?? ''
+                )}
+              >
+                {item.label}
               </TopLevelNavItem>
-              <TopLevelNavItem href="https://discord.gg/p6KqD2kjtB">
-                Support
-              </TopLevelNavItem>
-            </ul>
-          </nav>
-          {/* This divider is hidden on mobile and visible from md screen size and up */}
-          <div className="hidden md:block md:h-5 md:w-px md:bg-zinc-900/10 md:dark:bg-white/15"></div>
-          <div className="flex gap-4">
-            {/* <ThemeToggle /> */}
-            {/* This div is hidden until the screen width reaches 416px */}
-            <div className="hidden min-[416px]:contents">
-              <Button>Sign in</Button>
-            </div>
-          </div>
-        </div>
+            ))}
+          </ul>
+        </nav>
       </div>
     </motion.div>
   );
