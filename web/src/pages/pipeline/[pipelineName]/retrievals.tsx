@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Retrieval as RetrievalDash } from '@/components/Retrievals';
+import { Retrieval as RetrievalDash } from '@/components/retrievals';
 import Layout from '@/components/Layout';
 import { Separator } from '@/components/ui/separator';
 

@@ -2,17 +2,18 @@ import type { NextPage } from 'next';
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/component';
 
-import { Footer } from '@/components/Footer';
 import Layout from '@/components/Layout';
-import PipelineCard from '@/components/PipelineCard';
 import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';
 import { Separator } from '@/components/ui/separator';
 import Next from 'next/link';
+import { Heading } from '@/components/shared/Heading';
+import { Guides } from '@/components/shared/Guides';
 
-import styles from '../styles/Index.module.scss';
+import styles from '@/styles/Index.module.scss';
 import 'react-tippy/dist/tippy.css';
 
 import { Pipeline } from '@/types';
+import { PipeCard } from '@/components/PipelineCard';
 
 const Home: NextPage = () => {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
@@ -94,7 +95,9 @@ const Home: NextPage = () => {
   return (
     <Layout>
       <main className={styles.main}>
-        <h1 className="text-white text-2xl mb-4"> Pipelines </h1>
+        <Heading id="pipelines" level={2} className="text-2xl mb-4">
+          Pipelines{' '}
+        </Heading>
         <Separator />
         <div className="mt-6" />
         {error && <div className="text-red-500">{error}</div>}
@@ -103,9 +106,13 @@ const Home: NextPage = () => {
         ) : (
           <>
             <CreatePipelineHeader numPipelines={pipelines?.length || 0} />
-            <div className={styles.gridView}>
+            <div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 dark:border-white/5">
               {pipelines.map((pipeline) => (
-                <PipelineCard pipeline={pipeline} key={pipeline.id} />
+                <PipeCard
+                  key={pipeline.id}
+                  pipeline={pipeline}
+                  className="min-w-[200px] max-w-[300px]"
+                />
               ))}
             </div>
           </>
@@ -113,36 +120,8 @@ const Home: NextPage = () => {
         <br />
         <h1 className="text-white text-2xl mb-4"> Quickstart </h1>
         <Separator />
-        <div className="mt-6 text-lg text-gray-200">
-          <p>Follow these steps to deploy your R2R rag pipeline:</p>
-          <ol className="list-decimal ml-4 pl-4 text-gray-300">
-            <li> Deploy a pipeline using the `New Pipeline` button above.</li>
-            <li>
-              Monitor the deployment process and check for any logs or errors.
-            </li>
-            <li>
-              Upon completion, your RAG application will be actively hosted at
-              `https://sciphi-...-ue.a.run.app`.
-            </li>
-            <li>
-              Customize - Use the R2R framework to create your own pipeline and
-              deploy it directly from GitHub.
-            </li>
-          </ol>
-          <p className="mt-2">
-            For a detailed starting example, refer to the{' '}
-            <Next
-              href="https://github.com/SciPhi-AI/R2R-basic-rag-template"
-              className="text-blue-500 hover:underline"
-            >
-              R2R-basic-rag-template documentation
-            </Next>
-            .
-          </p>
-        </div>
-        <br />
+        <Guides />
       </main>
-      <Footer />
     </Layout>
   );
 };

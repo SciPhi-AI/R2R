@@ -1,6 +1,6 @@
-import styles from './styles.module.scss';
 import React from 'react';
 import { useRouter } from 'next/router';
+import { Button } from '@/components/ui/Button';
 
 export function CreatePipelineHeader({
   numPipelines,
@@ -14,13 +14,15 @@ export function CreatePipelineHeader({
   };
 
   return (
-    <div className={styles.container}>
-      <button className={styles.newProjectButton} onClick={createPipeline}>
-        New Pipeline
-      </button>
-      <span
-        style={{ fontWeight: 'bold', marginLeft: '5px', marginTop: '10px' }}
+    <div className="flex justify-between w-full">
+      <Button
+        className="h-10 w-40 py-2.5"
+        variant="filled"
+        onClick={createPipeline}
       >
+        Create Pipeline
+      </Button>
+      <span className="font-bold ml-1 mt-2.5">
         {numPipelines}/10 pipelines deployed
       </span>
     </div>
