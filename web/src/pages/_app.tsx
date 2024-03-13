@@ -33,7 +33,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   };
 
   const options = {
-    api_host: process.env.REACT_APP_PUBLIC_POSTHOG_HOST,
+    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   };
 
   return (
@@ -55,7 +55,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         {/* Add other global stylesheets or links here */}
       </Head>
       <PostHogProvider
-        apiKey={process.env.REACT_APP_PUBLIC_POSTHOG_KEY}
+        apiKey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
         options={options}
       >
         <ThemeProvider
