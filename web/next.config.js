@@ -1,6 +1,3 @@
-const { DOCS_URL } = process.env;
-
-/** @type {import('next').NextConfig} */
 module.exports = {
   reactStrictMode: false,
   images: {
@@ -9,12 +6,12 @@ module.exports = {
   async rewrites() {
     return [
       {
-        source: "/docs",
-        destination: `${DOCS_URL}/docs`,
+        source: '/docs',
+        destination: '/docs/index.html',
       },
       {
-        source: "/docs/:path*",
-        destination: `${DOCS_URL}/docs/:path*`,
+        source: '/docs/:path*',
+        destination: '/docs/:path*.html',
       },
     ];
   },

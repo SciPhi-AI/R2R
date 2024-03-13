@@ -9,7 +9,11 @@
     "lint": "eslint --fix .",
     "server": "json-server ./server.json",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "docs:build": "cd docs && next build",
+    "docs:start": "cd docs && next start",
+    "docs:export": "cd docs && next export",
+    "vercel-build": "next build && pnpm docs:build && pnpm docs:export"
   },
   "husky": {
     "hooks": {
