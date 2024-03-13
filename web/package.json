@@ -10,10 +10,10 @@
     "server": "json-server ./server.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "docs:dev": "cd docs && next dev",
-    "docs:build": "cd docs && next build",
-    "docs:start": "cd docs && next start",
-    "docs:export": "cd docs && next export",
+    "docs:dev": "cd docs && pnpm dev",
+    "docs:build": "cd docs && pnpm build",
+    "docs:start": "cd docs && pnpm start",
+    "docs:export": "cd docs && pnpm export",
     "vercel-build": "pnpm docs:build && pnpm build"
   },
   "husky": {
