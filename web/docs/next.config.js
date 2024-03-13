@@ -3,4 +3,10 @@ const withNextra = require('nextra')({
   themeConfig: './theme.config.tsx',
 })
 
-module.exports = withNextra({basePath: '/docs'})
+module.exports = withNextra({
+  basePath: '/docs',
+  reactStrictMode: false,
+  images: {
+    domains: ['github.com', 'lh3.googleusercontent.com'],
+  },
+})

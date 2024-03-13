@@ -1,0 +1,22 @@
+{
+    "projects": [
+      {
+        "path": ".",
+        "buildCommand": "turbo run build"
+      },
+      {
+        "path": "docs",
+        "buildCommand": "turbo run docs#build"
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/docs",
+        "destination": "/docs"
+      },
+      {
+        "source": "/docs/:path*",
+        "destination": "/docs/:path*"
+      }
+    ]
+  }
