@@ -39,7 +39,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <title>SciPhi Cloud</title>
+      <title>SciPhi Cloud</title>
 
         <link rel="icon" href="public/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
