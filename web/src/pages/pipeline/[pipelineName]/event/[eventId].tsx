@@ -4,11 +4,11 @@ import { useEffect } from 'react';
 
 import Layout from '@/components/Layout';
 import { Separator } from '@/components/ui/separator';
+import { usePipelineContext } from '@/context/PipelineContext';
 import useLogs from '@/hooks/useLogs';
 import styles from '@/styles/Index.module.scss';
 import { EventSummary, searchResult } from '@/types';
 import { createClient } from '@/utils/supabase/component';
-import { usePipelineContext } from '@/context/PipelineContext';
 
 function Component({ eventLog }: { eventLog: EventSummary }) {
   console.log('eventLog = ', eventLog);
@@ -178,7 +178,7 @@ export default function EventPage() {
     } catch (error) {
       console.error('Error fetching pipeline:', error);
     }
-  }, [pipelineId]);  
+  }, [pipelineId]);
   // const { logs, loading, error } = useLogs();
   const pipeline = pipelines[pipelineId];
   const { logs, loading, error, refetch } = useLogs(pipeline);

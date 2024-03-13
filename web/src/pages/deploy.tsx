@@ -250,14 +250,23 @@ function Component() {
                             </TooltipTrigger>
                             <TooltipContent>
                               <p>
-                              Secrets are encrypted at all times during transmission and storage. 
-                              <br />
-                              <br />
-                              SciPhi's infrastructure is hosted on Google Cloud.
-                              <br />
-                              All secrets are provisioned through Google Cloud's Secret Manager.
-                              <br />
-                              <a href="https://docs.sciphi.ai/getting-started/deploying-a-pipeline#providing-secrets" className="text-blue-400 font-bold">Read more here.</a>                              </p>
+                                Secrets are encrypted at all times during
+                                transmission and storage.
+                                <br />
+                                <br />
+                                SciPhi&apos;s infrastructure is hosted on Google
+                                Cloud.
+                                <br />
+                                All secrets are provisioned through Google
+                                Cloud&apos;s Secret Manager.
+                                <br />
+                                <a
+                                  href="https://docs.sciphi.ai/getting-started/deploying-a-pipeline#providing-secrets"
+                                  className="text-blue-400 font-bold"
+                                >
+                                  Read more here.
+                                </a>{' '}
+                              </p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
