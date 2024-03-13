@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/Button';
 
 const guides = [
   {
-    href: 'docs/getting-started/deploying-a-pipeline',
+    href: 'docs.sciphi.ai/getting-started/deploying-a-pipeline',
     name: '1. Deploy',
     description: () => (
       <span>
@@ -18,7 +18,7 @@ const guides = [
     readMoreText: 'Learn More',
   },
   {
-    href: 'docs/getting-started/interacting-with-a-pipeline',
+    href: 'docs.sciphi.ai/getting-started/interacting-with-a-pipeline',
     name: '2. Interact',
     description: () => (
       <span>
@@ -33,13 +33,13 @@ const guides = [
   },
 
   {
-    href: 'docs/features/monitoring',
+    href: 'docs.sciphi.ai/features/monitoring',
     name: '3. Monitor & Evaluate',
     description: 'Check for any logs & evaluate the quality of your RAG.',
     readMoreText: 'Learn More',
   },
   {
-    href: 'docs/getting-started/rag-templates',
+    href: 'docs.sciphi.ai/getting-started/rag-templates',
     name: '4. Customize',
     description: 'Create your own pipeline and deploy it from GitHub.',
     readMoreText: 'Learn More',
