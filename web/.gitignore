@@ -38,6 +38,3 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-
-# Turborepo
-.turbo
