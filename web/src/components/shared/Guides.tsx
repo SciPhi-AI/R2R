@@ -22,11 +22,11 @@ const guides = [
     name: '2. Interact',
     description: () => (
       <span>
-        Interact with your deployment at {' '}
+        Interact with your deployment at{' '}
         <Button href="#pipelines" disabled={true}>
           {' sciphi-{...}-ue.a.run.app'}
-          
-        </Button>{'.'}
+        </Button>
+        {'.'}
       </span>
     ),
     readMoreText: 'Learn More',

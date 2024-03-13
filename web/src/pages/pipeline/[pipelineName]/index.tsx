@@ -82,7 +82,7 @@ const PipelinePage = () => {
   };
 
   useEffect(() => {
-    try{
+    try {
       const update = async () => {
         console.log('pipelineId = ', pipelineId);
         if (pipelineId) {
@@ -106,7 +106,7 @@ const PipelinePage = () => {
           }
         }
       };
-  
+
       update();
     } catch (error) {
       console.error('Error fetching pipeline:', error);

@@ -1,26 +1,33 @@
-import { Pipeline } from '../types';
 import { useState, useEffect, useCallback } from 'react';
 
+import { Pipeline } from '../types';
 import { EventSummary } from '../types'; // Adjust the import path as needed
 
-const useLogs = (pipeline?: Pipeline) => { // Make pipeline optional
+const useLogs = (pipeline?: Pipeline) => {
+  // Make pipeline optional
   const [logs, setLogs] = useState<EventSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchLogs = useCallback(async () => {
-    if (!(pipeline === undefined || pipeline.deployment == undefined || pipeline.deployment.uri == undefined)) {
+    if (
+      !(
+        pipeline === undefined ||
+        pipeline.deployment == undefined ||
+        pipeline.deployment.uri == undefined
+      )
+    ) {
       setLoading(true);
       try {
-        console.log('fetching....')
-        console.log('pipeline = ', pipeline)
+        console.log('fetching....');
+        console.log('pipeline = ', pipeline);
         const response = await fetch(`${pipeline.deployment.uri}/logs_summary`);
-        console.log('response = ', response)
+        console.log('response = ', response);
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        console.log('data = ', data)
+        console.log('data = ', data);
 
         const logs = data.events_summary.map((event: EventSummary) => {
           // TODO: Update with actual score and consume from API

@@ -1,4 +1,3 @@
-import { Pipeline } from '../types';
 import Tippy from '@tippyjs/react';
 import { useRouter } from 'next/router';
 import React, { useState, useMemo, useEffect } from 'react';
@@ -18,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
+import { Pipeline } from '../types';
 
 // Define your dictionary
 const methodDictionary: { [key: string]: string } = {
@@ -29,7 +29,7 @@ const changeMethod = (method: string) => {
   return methodDictionary[method] || method;
 };
 
-export function Retrieval({pipeline}: {pipeline?: Pipeline} = {}) {
+export function Retrieval({ pipeline }: { pipeline?: Pipeline } = {}) {
   const router = useRouter();
 
   const handleRowClick = (runId: string) => {

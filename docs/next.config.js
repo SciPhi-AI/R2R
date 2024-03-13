@@ -3,4 +3,7 @@ const withNextra = require('nextra')({
   themeConfig: './theme.config.tsx',
 })
 
-module.exports = withNextra()
+module.exports = withNextra({
+  basePath: '/docs',
+  assetPrefix: '/docs',
+}); // eslint-disable-line @typescript-eslint/no-var-requires

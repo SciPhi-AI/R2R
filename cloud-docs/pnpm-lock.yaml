@@ -12,7 +12,7 @@ dependencies:
     specifier: latest
     version: 2.13.4(next@14.1.0)(react-dom@18.2.0)(react@18.2.0)
   nextra-theme-docs:
-    specifier: latest
+    specifier: ^2.13.4
     version: 2.13.4(next@14.1.0)(nextra@2.13.4)(react-dom@18.2.0)(react@18.2.0)
   react:
     specifier: ^18.2.0
@@ -718,8 +718,8 @@ packages:
     engines: {node: '>=12'}
     dev: false
 
-  /d3-geo@3.1.0:
-    resolution: {integrity: sha512-JEo5HxXDdDYXCaWdwLRt79y7giK8SbhZJbFWXqbRTolCHFI5jRqteLzCsq51NKbUoX0PjBVSohxrx+NoOUujYA==}
+  /d3-geo@3.1.1:
+    resolution: {integrity: sha512-637ln3gXKXOwhalDzinUgY83KzNWZRKbYubaG+fGVuc/dxO64RRljtCTnf5ecMyE1RIdtqpkVcq0IbtU2S8j2Q==}
     engines: {node: '>=12'}
     dependencies:
       d3-array: 3.2.4
@@ -768,8 +768,8 @@ packages:
       d3-shape: 1.3.7
     dev: false
 
-  /d3-scale-chromatic@3.0.0:
-    resolution: {integrity: sha512-Lx9thtxAKrO2Pq6OO2Ua474opeziKr279P/TKZsMAhYyNDD3EnCffdbgeSYN5O7m2ByQsxtuP2CSDczNUIZ22g==}
+  /d3-scale-chromatic@3.1.0:
+    resolution: {integrity: sha512-A3s5PWiZ9YCXFye1o246KoscMWqf8BsD9eRiJ3He7C9OBaxKhAd5TFCdEx/7VbKtxxTsu//1mMJFrEt572cEyQ==}
     engines: {node: '>=12'}
     dependencies:
       d3-color: 3.1.0
@@ -849,8 +849,8 @@ packages:
       d3-transition: 3.0.1(d3-selection@3.0.0)
     dev: false
 
-  /d3@7.8.5:
-    resolution: {integrity: sha512-JgoahDG51ncUfJu6wX/1vWQEqOflgXyl4MaHqlcSruTez7yhaRKR9i8VjjcQGeS2en/jnFivXuaIMnseMMt0XA==}
+  /d3@7.9.0:
+    resolution: {integrity: sha512-e1U46jVP+w7Iut8Jt8ri1YsPOvFpg46k+K8TpCb0P+zjCkjkPnV7WzfDJzMHy1LnA+wj5pLT1wjO901gLXeEhA==}
     engines: {node: '>=12'}
     dependencies:
       d3-array: 3.2.4
@@ -867,7 +867,7 @@ packages:
       d3-fetch: 3.0.1
       d3-force: 3.0.0
       d3-format: 3.1.0
-      d3-geo: 3.1.0
+      d3-geo: 3.1.1
       d3-hierarchy: 3.1.2
       d3-interpolate: 3.0.1
       d3-path: 3.1.0
@@ -875,7 +875,7 @@ packages:
       d3-quadtree: 3.0.1
       d3-random: 3.0.1
       d3-scale: 4.0.2
-      d3-scale-chromatic: 3.0.0
+      d3-scale-chromatic: 3.1.0
       d3-selection: 3.0.0
       d3-shape: 3.2.0
       d3-time: 3.1.0
@@ -888,7 +888,7 @@ packages:
   /dagre-d3-es@7.0.10:
     resolution: {integrity: sha512-qTCQmEhcynucuaZgY5/+ti3X/rnszKZhEQH/ZdWdtP1tA/y3VoHJzcVrO9pjjJCNpigfscAtoUB5ONcd2wNn0A==}
     dependencies:
-      d3: 7.8.5
+      d3: 7.9.0
       lodash-es: 4.17.21
     dev: false
 
@@ -1628,7 +1628,7 @@ packages:
       '@types/d3-scale-chromatic': 3.0.3
       cytoscape: 3.28.1
       cytoscape-cose-bilkent: 4.1.0(cytoscape@3.28.1)
-      d3: 7.8.5
+      d3: 7.9.0
       d3-sankey: 0.12.3
       dagre-d3-es: 7.0.10
       dayjs: 1.11.10

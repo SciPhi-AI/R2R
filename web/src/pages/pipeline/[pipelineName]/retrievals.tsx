@@ -1,24 +1,24 @@
 import { useRouter } from 'next/router';
-import { useEffect }  from 'react';
+import { useEffect } from 'react';
 import React from 'react';
+
 import Layout from '@/components/Layout';
 import { Retrieval as RetrievalDash } from '@/components/retrievals';
 import { Separator } from '@/components/ui/separator';
-import styles from '@/styles/Index.module.scss';
 import { usePipelineContext } from '@/context/PipelineContext';
+import styles from '@/styles/Index.module.scss';
 import { createClient } from '@/utils/supabase/component';
 
 export default function Retrievals() {
-
   const router = useRouter();
   const supabase = createClient();
 
   const { pipelines, updatePipelines } = usePipelineContext();
   const pipelineId: any = router.query.pipelineName;
-  const pipeline = pipelines[pipelineId]
+  const pipeline = pipelines[pipelineId];
 
   useEffect(() => {
-    try{
+    try {
       const update = async () => {
         console.log('pipelineId = ', pipelineId);
         if (pipelineId) {
@@ -42,15 +42,14 @@ export default function Retrievals() {
           }
         }
       };
-  
+
       update();
     } catch (error) {
       console.error('Error fetching pipeline:', error);
     }
   }, [pipelineId]);
 
-
-  console.log('passing pipeline = ', pipeline)
+  console.log('passing pipeline = ', pipeline);
   return (
     <Layout>
       <main className={styles.main}>

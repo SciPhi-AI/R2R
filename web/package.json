@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --fix .",
-    "server": "json-server ./server.json",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
