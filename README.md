@@ -1,7 +1,7 @@
 # R2R: Production-ready RAG systems.
 
 <p align="left">
-  <a href="https://docs.sciphi.ai"><img src="https://img.shields.io/badge/docs.sciphi.ai-3F16E4" alt="Docs"></a>
+  <a href="https://r2r-docs.sciphi.ai"><img src="https://img.shields.io/badge/docs.sciphi.ai-3F16E4" alt="Docs"></a>
   <a href="https://discord.gg/p6KqD2kjtB"><img src="https://img.shields.io/discord/1120774652915105934?style=social&logo=discord" alt="Discord"></a>
   <a href="https://github.com/SciPhi-AI"><img src="https://img.shields.io/github/stars/SciPhi-AI/R2R" alt="Github Stars"></a>
   <a href="https://github.com/SciPhi-AI/R2R/pulse"><img src="https://img.shields.io/github/commit-activity/w/SciPhi-AI/R2R" alt="Commits-per-week"></a>
@@ -57,7 +57,7 @@ docker run -d --name r2r_container -p 8000:8000 --env-file .env r2r
 
 [Join the Discord server](https://discord.gg/p6KqD2kjtB)
 
-[Read our Docs](https://docs.sciphi.ai/)
+[Read the R2R Docs](https://r2r-docs.sciphi.ai/)
 
 ## Basic Examples
 
