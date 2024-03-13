@@ -1,0 +1,136 @@
+## Interacting with a Deployed Pipeline
+
+Once you have deployed your RAG pipeline using SciPhi and the R2R framework, you can interact with it using the [R2R client](https://github.com/SciPhi-AI/R2R/blob/main/r2r/client/base.py). The R2R client provides a convenient way to communicate with your deployed pipeline, allowing you to perform various operations such as upserting entries, searching, and performing RAG completions.
+
+### Getting Started
+
+To get started, make sure you have the necessary dependencies installed and your pipeline deployed and running. Then, initialize the R2R client with the base URL of your deployed API:
+
+```python
+from r2r.client import R2RClient
+
+base_url = "https://your-deployed-api-url.com"  # Replace with your actual deployed API URL
+client = R2RClient(base_url)
+```
+
+### Upserting Entries
+
+You can directly upsert text entries to your remote database using the `add_entry` and `add_entries` methods:
+
+```python
+# Upsert a single entry
+client.add_entry(
+    str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 1")),  # document_id
+    {"txt": "This is a test entry"},
+    {"tags": ["example", "test"]},
+    do_upsert=True,
+)
+
+# Upsert multiple entries
+entries = [
+    {
+        "document_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 2")),
+        "blobs": {"txt": "Second test entry"},
+        "metadata": {"tags": ["bulk"]},
+    },
+    {
+        "document_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 3")),
+        "blobs": {"txt": "Third test entry"},
+        "metadata": {"tags": ["example"]},
+    },
+]
+client.add_entries(entries, do_upsert=True)
+```
+
+Note that chunking is handled by the default ingestion pipeline and is configurable.
+
+### Searching
+
+You can perform searches on your remote database using the `search` method:
+
+```python
+# Perform a search
+search_response = client.search("test", limit=5)
+
+# Perform a search with filters
+filtered_search_response = client.search("test", limit=5, filters={"tags": ["bulk"]})
+```
+
+### Deleting Documents
+
+To delete a document from your remote database, use the `filtered_deletion` method:
+
+```python
+# Delete a document
+client.filtered_deletion(
+    "document_id", str(uuid.uuid5(uuid.NAMESPACE_DNS, "doc 2"))
+)
+```
+
+You may also include other metadata such as a unique `user_id` during the document generation process and perform filtered deletions on these keys as well.
+
+### Uploading and Processing Files
+
+You can upload and process files, such as PDFs, using the `upload_and_process_file` method:
+
+```python
+# Upload a PDF
+pdf_document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, "pdf 1"))
+metadata = {"tags": ["example", "test"]}
+upload_pdf_response = client.upload_and_process_file(
+    pdf_document_id, file_path, metadata, None
+)
+```
+
+Note: Make sure to replace `file_path` with the actual path to the PDF file you want to upload and process.
+
+### Performing RAG Completions
+
+You can perform RAG completions on your uploaded files using the `rag_completion` method:
+
+```python
+# Perform a RAG completion on the uploaded file
+rag_response = client.rag_completion(
+    "Are there any test documents?",
+    limit=5,
+    filters={"document_id": pdf_document_id},
+)
+```
+
+### Streaming RAG Completions
+
+To perform a RAG completion with streaming, use the `stream_rag_completion` method:
+
+```python
+# Perform a RAG completion with streaming
+async def stream_rag_completion():
+    async for chunk in client.stream_rag_completion(
+        "Are there any test documents?",
+        limit=5,
+        filters={"document_id": pdf_document_id},
+        generation_config={"stream": True},
+    ):
+        print(chunk, end="", flush=True)
+
+asyncio.run(stream_rag_completion())
+```
+
+### Fetching Logs
+
+You can fetch logs and a summary of logs using the `get_logs` and `get_logs_summary` methods:
+
+```python
+# Fetch logs
+logs_response = client.get_logs()
+
+# Fetch logs summary
+logs_summary_response = client.get_logs_summary()
+```
+
+### Example Usage
+
+For a complete example of how to interact with a deployed pipeline using the R2R client, refer to the [R2R basic example](https://github.com/SciPhi-AI/R2R/tree/main/r2r/examples/basic/run_client.py). This example can be run as soon as you specify the deployment URL and demonstrates various operations you can perform with the R2R client, including upserting entries, searching, deleting documents, uploading and processing files, performing RAG completions, and fetching logs.
+
+Make sure to replace the placeholders (`base_url`, `file_path`, etc.) with your actual values when using the code.
+
+By leveraging the R2R client, you can easily interact with your deployed RAG pipeline and integrate its capabilities into your applications.

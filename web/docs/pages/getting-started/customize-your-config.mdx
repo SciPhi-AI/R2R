@@ -1,0 +1,45 @@
+## Customize Your Config
+
+Configuring your RAG pipeline is a crucial step in tailoring it to your specific needs. The `config.json` file in your GitHub repository serves as the central point for specifying various settings and providers.
+
+SciPhi currently supports Qdrant and PGVector for vector database providers, OpenAI for embeddings, and LiteLLM for language models. LiteLLM supports most popular providers like OpenAI and Anthropic. Ensure that you provide the appropriate providers and settings according to the R2R documentation.
+
+We explore the different configuration options available below.
+
+### Vector Database Provider
+
+R2R supports multiple vector database providers, including:
+
+- `local`: A local vector database for development and testing purposes.
+- `qdrant`: Integration with Qdrant, a high-performance vector similarity search engine.
+- `pgvector`: Integration with PGVector, a vector similarity search extension for PostgreSQL.
+- `sciphi`: Managed PGVector database from SciPhi.
+
+To specify the vector database provider, set the `provider` field under `vector_database` in the `config.json` file. Make sure to provide the necessary connection details and credentials for your chosen provider.
+
+### Embedding Provider
+
+R2R supports OpenAI as the embedding provider. To configure the embedding settings, update the `embedding` section in the `config.json` file. Specify the desired embedding model, dimension, and batch size according to your requirements. Currently, only OpenAI is supported, but this can easily be extended by request.
+
+### Language Model Provider
+
+R2R integrates with LiteLLM for language model providers. LiteLLM supports most popular providers like OpenAI, Anthropic, and more. To configure the language model settings, modify the `language_model` section in the `config.json` file.
+
+At runtime the user may specify the desired language model provider, model name, and associated parameters like temperature, top_p, top_k, max_tokens_to_sample, and do_stream.
+
+For more information on configuring LiteLLM providers, refer to the [LiteLLM documentation](https://docs.LiteLLM.ai/docs/providers). Note that the selected LLM model is specified at runtime and is highly flexible, provided that the appropriate secret variables were included with the deployment.
+
+### Evaluation Provider
+
+R2R supports DeepEval and PareaAI as evaluation providers. To configure the evaluation settings, update the `evals` section in the `config.json` file. Specify the evaluation frequency to determine how often the pipeline should be evaluated. These evaluations can viewed readily in the deployment tab.
+
+### Logging Provider
+
+R2R allows you to configure the logging provider and settings. Update the `logging` section in the `config.json` file to specify the logging provider, log level, logger name, and database name for storing logs. Currently, SQLite, PostgreSQL, and Redis are supported.
+
+
+### Summary
+
+By customizing the `config.json` file, you can tailor your RAG pipeline to your specific requirements, integrating with different providers and adjusting various settings.
+
+Remember to provide any necessary secrets, such as API keys, during the deployment process. SciPhi ensures that these secrets are encrypted and securely stored.

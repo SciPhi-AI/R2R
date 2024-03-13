@@ -93,7 +93,7 @@ export const Navbar = forwardRef<
             {/* This nav is hidden on mobile and visible from md screen size and up */}
             <nav className="hidden md:flex">
               <ul role="list" className="flex items-center gap-8">
-                <TopLevelNavItem href="https://docs.sciphi.ai/">
+                <TopLevelNavItem href="/docs">
                   <Button
                     className="rounded-md h-6 py-0.5 px-3 w-30"
                     variant="primary"
