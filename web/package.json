@@ -9,14 +9,7 @@
     "lint": "eslint --fix .",
     "server": "json-server ./server.json",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "docs:install": "cd docs && pnpm install",
-    "docs:dev": "cd docs && pnpm dev",
-    "docs:build": "cd docs && pnpm build",
-    "docs:start": "cd docs && pnpm start",
-    "docs:export": "cd docs && pnpm export",
-    "vercel-install": "pnpm docs:install && pnpm install",
-    "vercel-build": "pnpm docs:build && pnpm build"
+    "format:check": "prettier --check ."
   },
   "husky": {
     "hooks": {
@@ -27,7 +20,7 @@
     "*.{js,jsx,ts,tsx}": [
       "eslint --fix",
       "prettier --write"
-  ],
+    ],
     "*.{json,css,scss,md}": [
       "prettier --write"
     ]
@@ -53,7 +46,6 @@
     "lucide-react": "^0.344.0",
     "next": "14.1.0",
     "next-themes": "^0.2.1",
-    "nextra-theme-docs": "^2.13.4",
     "pnpm": "^8.15.4",
     "postcss": "^8.4.33",
     "react": "18.2.0",
