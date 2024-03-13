@@ -12,6 +12,7 @@ import 'react-tippy/dist/tippy.css';
 import { Pipeline } from '@/types';
 import { createClient } from '@/utils/supabase/component';
 
+
 const Home: NextPage = () => {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -64,6 +65,11 @@ const Home: NextPage = () => {
         data: { session },
       } = await supabase.auth.getSession();
       setCurrentUser(session?.user || null);
+      // Redirect if there is no user in the session
+      if (!session?.user) {
+        window.location.href = '/login';
+      }
+
     };
 
     fetchSession();
@@ -88,7 +94,7 @@ const Home: NextPage = () => {
     }, 5000);
     return () => clearInterval(interval);
   }, [currentUser]);
-
+  
   return (
     <Layout>
       <main className={styles.main}>
