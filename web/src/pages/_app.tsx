@@ -60,8 +60,8 @@ function MyApp({ Component, pageProps }: AppProps) {
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <PipelineProvider>{renderContent()}</PipelineProvider>
