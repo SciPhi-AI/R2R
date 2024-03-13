@@ -11,8 +11,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
 
   async function signInWithOAuth(provider: 'google' | 'github') {
-    console.log('signing in with oauth')
-    console.log('redirect to = ', `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback`)
+    console.log('signing in with oauth');
+    console.log(`redirecting to ${process.env.NEXT_PUBLIC_APP_URL}`);
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
