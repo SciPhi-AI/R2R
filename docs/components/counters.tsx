@@ -1,7 +1,6 @@
-// Example from https://beta.reactjs.org/learn
+import { useState } from 'react';
+import styles from './counters.module.css';
 
-import { useState } from 'react'
-import styles from './counters.module.css'
 
 function MyButton() {
   const [count, setCount] = useState(0)

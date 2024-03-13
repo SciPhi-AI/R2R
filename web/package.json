@@ -2,12 +2,10 @@
   "name": "sciphi-application",
   "private": true,
   "scripts": {
-    "dev": "NEXT_PUBLIC_CLOUD_MODE=false next dev",
-    "dev:cloud": "NEXT_PUBLIC_CLOUD_MODE=true next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "turbo run build",
+    "dev:docs": "cd docs && pnpm run dev",
+    "dev:app": "next dev",
     "lint": "eslint --fix .",
-    "server": "json-server ./server.json",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
@@ -73,5 +71,6 @@
     "prettier": "^3.2.4",
     "tailwindcss": "^3.4.1",
     "typescript": "4.5.2"
-  }
+  },
+  "packageManager": "pnpm@8.15.4"
 }
