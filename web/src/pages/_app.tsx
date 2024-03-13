@@ -1,8 +1,8 @@
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { useTheme } from 'next-themes';
+import { PostHogProvider } from 'posthog-js/react';
 import { useEffect } from 'react';
-import { PostHogProvider} from 'posthog-js/react'
 
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { AuthProvider } from '@/context/authProvider';
@@ -34,7 +34,7 @@ function MyApp({ Component, pageProps }: AppProps) {
 
   const options = {
     api_host: process.env.REACT_APP_PUBLIC_POSTHOG_HOST,
-  }
+  };
 
   return (
     <>
@@ -54,7 +54,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         />
         {/* Add other global stylesheets or links here */}
       </Head>
-        <PostHogProvider 
+      <PostHogProvider
         apiKey={process.env.REACT_APP_PUBLIC_POSTHOG_KEY}
         options={options}
       >
@@ -67,7 +67,6 @@ function MyApp({ Component, pageProps }: AppProps) {
           <PipelineProvider>{renderContent()}</PipelineProvider>
         </ThemeProvider>
       </PostHogProvider>
-
     </>
   );
 }
