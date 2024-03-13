@@ -1,11 +1,14 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useEffect } from 'react';
 
 import Layout from '@/components/Layout';
 import { Separator } from '@/components/ui/separator';
+import { usePipelineContext } from '@/context/PipelineContext';
 import useLogs from '@/hooks/useLogs';
 import styles from '@/styles/Index.module.scss';
 import { EventSummary, searchResult } from '@/types';
+import { createClient } from '@/utils/supabase/component';
 
 function Component({ eventLog }: { eventLog: EventSummary }) {
   console.log('eventLog = ', eventLog);
@@ -140,7 +143,46 @@ export default function EventPage() {
   const router = useRouter();
   // Find the log with the matching run_id
   const eventId = router.query.eventId;
-  const { logs, loading, error } = useLogs();
+  const pipelineId: any = router.query.pipelineName;
+
+  const supabase = createClient();
+  const { pipelines, updatePipelines } = usePipelineContext();
+
+  useEffect(() => {
+    try {
+      const update = async () => {
+        console.log('pipelineId = ', pipelineId);
+        if (pipelineId) {
+          // Use optional chaining
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          const token = session?.access_token;
+          if (token) {
+            // TODO - fetch the pipeline directly from the API
+            const response = await fetch(`/api/pipelines`, {
+              headers: new Headers({
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              }),
+            });
+            const data = await response.json();
+            for (const pipeline of data.pipelines) {
+              updatePipelines(pipeline.id, pipeline);
+            }
+          }
+        }
+      };
+
+      update();
+    } catch (error) {
+      console.error('Error fetching pipeline:', error);
+    }
+  }, [pipelineId]);
+  // const { logs, loading, error } = useLogs();
+  const pipeline = pipelines[pipelineId];
+  const { logs, loading, error, refetch } = useLogs(pipeline);
+
   // console.log('logs = ', logs);
   const eventLog = logs.find((log) => log.pipelineRunId === eventId);
   // console.log('eventLog = ', eventLog);

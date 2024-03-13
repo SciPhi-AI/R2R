@@ -1,6 +1,7 @@
 import type { AppProps } from 'next/app';
+import Head from 'next/head';
 import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { AuthProvider } from '@/context/authProvider';
@@ -31,14 +32,31 @@ function MyApp({ Component, pageProps }: AppProps) {
   };
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <PipelineProvider>{renderContent()}</PipelineProvider>
-    </ThemeProvider>
+    <>
+      <Head>
+        <title>SciPhi Cloud</title>
+
+        <link rel="icon" href="public/favicon.ico" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </Head>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <PipelineProvider>{renderContent()}</PipelineProvider>
+      </ThemeProvider>
+    </>
   );
 }
 
