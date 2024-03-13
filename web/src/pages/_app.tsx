@@ -2,6 +2,7 @@ import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { useTheme } from 'next-themes';
 import { useEffect } from 'react';
+import { PostHogProvider} from 'posthog-js/react'
 
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { AuthProvider } from '@/context/authProvider';
@@ -31,6 +32,10 @@ function MyApp({ Component, pageProps }: AppProps) {
     return <Component {...pageProps} />;
   };
 
+  const options = {
+    api_host: process.env.REACT_APP_PUBLIC_POSTHOG_HOST,
+  }
+
   return (
     <>
       <Head>
@@ -48,14 +53,20 @@ function MyApp({ Component, pageProps }: AppProps) {
           rel="stylesheet"
         />
       </Head>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
+        <PostHogProvider 
+        apiKey={process.env.REACT_APP_PUBLIC_POSTHOG_KEY}
+        options={options}
       >
-        <PipelineProvider>{renderContent()}</PipelineProvider>
-      </ThemeProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <PipelineProvider>{renderContent()}</PipelineProvider>
+        </ThemeProvider>
+      </PostHogProvider>
+
     </>
   );
 }
