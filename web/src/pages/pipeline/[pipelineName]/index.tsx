@@ -82,31 +82,35 @@ const PipelinePage = () => {
   };
 
   useEffect(() => {
-    const update = async () => {
-      console.log('pipelineId = ', pipelineId);
-      if (pipelineId) {
-        // Use optional chaining
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        if (token) {
-          // TODO - fetch the pipeline directly from the API
-          const response = await fetch(`/api/pipelines`, {
-            headers: new Headers({
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            }),
-          });
-          const data = await response.json();
-          for (const pipeline of data.pipelines) {
-            updatePipelines(pipeline.id, pipeline);
+    try{
+      const update = async () => {
+        console.log('pipelineId = ', pipelineId);
+        if (pipelineId) {
+          // Use optional chaining
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          const token = session?.access_token;
+          if (token) {
+            // TODO - fetch the pipeline directly from the API
+            const response = await fetch(`/api/pipelines`, {
+              headers: new Headers({
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              }),
+            });
+            const data = await response.json();
+            for (const pipeline of data.pipelines) {
+              updatePipelines(pipeline.id, pipeline);
+            }
           }
         }
-      }
-    };
-
-    update();
+      };
+  
+      update();
+    } catch (error) {
+      console.error('Error fetching pipeline:', error);
+    }
   }, [pipelineId]);
 
   if (!pipeline) {
