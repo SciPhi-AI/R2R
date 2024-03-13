@@ -1,13 +1,19 @@
 export type Pipeline = {
   id: number;
   name: string;
-  deployment_url: string;
-  last_commit_name: string;
-  type: string;
-  updated_at: {
-    when: string;
-    from_other_services: boolean;
-    service?: string;
+  github_url: string;
+  status: string;
+  deployment: {
+    id: number;
+    uri: string;
+    create_time: string;
+    update_time: string;
+    creator: string;
+    generation: string;
+    last_modifier: string;
+    uid: string;
+    name: string;
+    error: string | null;
   };
 };
 
@@ -17,6 +23,7 @@ export type Provider = {
   type: string;
   logo: string;
 };
+
 export interface LogEntry {
   timestamp: string;
   pipeline_run_id: string;
@@ -52,8 +59,10 @@ export interface evalResults {
 export interface Document {
   id: string;
   text: string;
-  metadata: Object;
+  metadata: any;
 }
+
+export type TagColor = 'rose' | 'amber' | 'emerald' | 'zinc' | 'indigo' | 'sky';
 
 export interface EventSummary extends LogEntry {
   timestamp: string;

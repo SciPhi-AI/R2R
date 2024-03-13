@@ -1,9 +1,8 @@
-import { Fragment, useRef, useState, useEffect, useCallback } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
+import { Fragment, useRef, useState, useEffect, useCallback } from 'react';
 
 // rest of your code
 import { Provider } from '@/types';
-import styles from './styles.module.scss';
 
 interface SecretsModalProps {
   isOpen: boolean;
@@ -238,7 +237,7 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
         initialFocus={cancelButtonRef}
         onClose={toggleModal}
       >
-        <div className={styles.dialogBackground} />
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center">
             <Transition.Child
@@ -250,8 +249,12 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className={styles.dialogPanel}>
-                <Dialog.Title as="h3" className={styles.title}>
+              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Title
+                  as="h3"
+                  className="text-lg font-medium leading-6 text-gray-900"
+                >
+                  {' '}
                   <div className="flex items-center">
                     <img
                       src={`/images/${provider.logo}`}
@@ -267,7 +270,7 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
                 </Dialog.Title>
                 <div className="mt-2">
                   <select
-                    className={styles.selectInput}
+                    className="block w-full rounded-md border-gray-300 shadow-sm text-black bg-gray-200 px-3 py-2"
                     value={selectedSecret}
                     onChange={handleSelectChange}
                   >
@@ -283,13 +286,14 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
                   </select>
                   <form className="mt-4">
                     {Object.entries(secretDetails).map(([key, value]) => (
-                      <div key={key} className={styles.flexContainer}>
-                        <label className={styles.label}>{key}</label>
-                        <p className="text-black">{key}</p>
+                      <div key={key} className="flex items-center mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mr-4">
+                          {key}
+                        </label>
                         <input
                           type="text"
                           name={key}
-                          className={styles.textInput}
+                          className="block w-full rounded-md border-gray-300 shadow-sm text-black bg-gray-200 px-3 py-2"
                           value={value}
                           onChange={handleInputChange}
                         />
@@ -298,18 +302,16 @@ const SecretsModal: React.FC<SecretsModalProps> = ({
                   </form>
                 </div>
                 <div className="mt-4 flex justify-end">
-                  {selectedSecret !== 'new' && (
-                    <button
-                      type="button"
-                      className={styles.deleteButton}
-                      onClick={deleteSecret}
-                    >
-                      Delete
-                    </button>
-                  )}
                   <button
                     type="button"
-                    className={styles.saveButton}
+                    className="inline-flex justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                    onClick={deleteSecret}
+                  >
+                    Delete
+                  </button>
+                  <button
+                    type="button"
+                    className="ml-4 inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                     onClick={saveSecret}
                   >
                     Save

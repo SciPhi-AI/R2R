@@ -4,9 +4,8 @@ import React, { useEffect, useState } from 'react';
 import Layout from '@/components/Layout';
 //import { PanelHeader } from '@/components/PanelHeader';
 import { Separator } from '@/components/ui/separator';
-
-import styles from '../styles/Index.module.scss';
-import { Pipeline } from '../types';
+import styles from '@/styles/Index.module.scss';
+import { Pipeline } from '@/types';
 
 export default function Settings() {
   const [vectorProviders, setVectorProvider] = useState<Pipeline[]>([]);

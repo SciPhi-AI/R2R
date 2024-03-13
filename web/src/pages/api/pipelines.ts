@@ -1,26 +1,34 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
-const pipelines = [
-  {
-    id: 1,
-    name: 'sciphi-r2r',
-    deployment_url: 'https://github.com/SciPhi-AI/agent-search',
-    last_commit_name: 'update home',
-    logo: 'sciphi.png',
-    updated_at: {
-      when: '12/26/21',
-      from_other_services: true,
-      service: 'github',
-    },
-  },
-];
-
-// eslint-disable-next-line import/no-anonymous-default-export
-export default async (_: NextApiRequest, res: NextApiResponse) => {
+export default async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    // console.log(pipelines);
+    // Extract the token from the Authorization header
+    const token = req.headers.authorization?.split(' ')[1]; // Assumes "Bearer <token>"
+    if (!token) {
+      return res
+        .status(401)
+        .json({ message: 'Authentication token is missing' });
+    }
 
-    res.status(200).json(pipelines);
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/user_pipelines`,
+      {
+        method: 'GET',
+        headers: new Headers({
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+
+    const responseJson = await response.json();
+
+    // If the token is valid, proceed to send the response
+    res.status(200).json(responseJson); // responseJson);
   } catch (error) {
     res.status(400).json({ message: 'Something went wrong' });
   }

@@ -12,7 +12,9 @@ export default async function handler(req, res) {
     generation_config: { stream: true },
   };
 
-  const externalApiResponse = await fetch(`http://127.0.0.1:8000/rag_completion`, {
+  console.log(`Streaming response from: ${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}`)
+
+  const externalApiResponse = await fetch(`${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/rag_completion`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -29,9 +31,11 @@ export default async function handler(req, res) {
   const reader = externalApiResponse.body.getReader();
   while (true) {
     const { done, value } = await reader.read();
+    console.log('streaming value = ', value);
+
     if (done) break;
     const text = new TextDecoder("utf-8").decode(value)
-    console.log(text);
+    console.log('text = ', text)
     res.write(text);
     res.flush();
   }

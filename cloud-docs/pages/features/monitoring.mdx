@@ -1,0 +1,43 @@
+## Quick Install with `pip`:
+
+Install R2R swiftly using `pip` to get started with minimal setup. This method will get you setup with the default configuration:
+
+```bash
+# use the `'r2r[all]'` to download all required deps
+pip install 'r2r[parsing,eval]'
+# setup env
+export OPENAI_API_KEY=sk-...
+export LOCAL_DB_PATH=local.sqlite
+
+# OR do `vim .env.example && cp .env.example .env`
+# INCLUDE secrets and modify config.json
+# if using cloud providers (e.g. pgvector, supabase, ...)
+```
+
+## Optional - Setup local environment variables:
+
+```bash
+# Path for your local database [`local` in config.json]
+LOCAL_DB_PATH=your_local_db_path
+
+
+# Postgres (used for `postgres` provider during logging, `pg_vector` for vectordb in config.json)
+POSTGRES_USER=your_user
+POSTGRES_PASSWORD=your_password
+POSTGRES_HOST=your_host
+POSTGRES_PORT=your_port
+POSTGRES_DBNAME=your_db
+
+# Qdrant
+QDRANT_HOST=your_qdrant_host
+QDRANT_PORT=your_qdrant_port
+QDRANT_API_KEY=your_qdrant_api_key
+
+# OpenAI
+OPENAI_API_KEY=your_openai_key
+
+# Seprper
+SERPER_API_KEY=your_serper_api_key
+```
+
+## Demo: Installation and launching Basic App

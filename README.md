@@ -13,7 +13,7 @@ A semi-opinionated RAG framework.
 <img src="./docs/pages/r2r.png" alt="Sciphi Framework">
 R2R was conceived to bridge the gap between experimental RAG models and robust, production-ready systems. Our semi-opinionated framework cuts through the complexity, offering a straightforward path to deploy, adapt, and maintain RAG pipelines in production. We prioritize simplicity and practicality, aiming to set a new industry benchmark for ease of use and effectiveness.
 
-## Demo(s)
+## Demo(s) 
 
 Launching the server locally, running the client, and pipeline observabiilty application:
 [![demo_screenshot](./docs/pages/getting-started/demo_screenshot.png)](https://github.com/SciPhi-AI/R2R/assets/68796651/7ac102e0-f6ad-4926-8a7a-5db25db4612d)

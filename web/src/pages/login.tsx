@@ -1,8 +1,8 @@
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 
-import { createClient } from '@/utils/supabase/component';
 import { Separator } from '@/components/ui/separator';
+import { createClient } from '@/utils/supabase/component';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,10 +11,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
 
   async function signInWithOAuth(provider: 'google' | 'github') {
+    console.log('signing in with oauth');
+    console.log(`redirecting to ${process.env.NEXT_PUBLIC_APP_URL}`);
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
+        // redirectTo: `${window.location.origin}/api/auth/callback`,
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback`,
       },
     });
   }
@@ -62,7 +65,7 @@ export default function LoginPage() {
 
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
           <form className="space-y-6" action="#" method="POST">
-            <div>
+            {/* <div>
               <label
                 htmlFor="email"
                 className="block text-sm font-medium leading-6 text-white"
@@ -133,7 +136,7 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-            <Separator className="my-6" />
+            <Separator className="my-6" /> */}
             <div>
               <button
                 type="button"
@@ -150,7 +153,7 @@ export default function LoginPage() {
                 Sign in with Google
               </button>
             </div>
-            <div>
+            {/* <div>
               <button
                 type="button"
                 onClick={() => signInWithOAuth('github')}
@@ -165,7 +168,7 @@ export default function LoginPage() {
                 </span>
                 Sign in with Github
               </button>
-            </div>
+            </div> */}
           </form>
         </div>
       </div>

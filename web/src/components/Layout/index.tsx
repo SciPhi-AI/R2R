@@ -2,9 +2,11 @@
 import Head from 'next/head';
 import React, { ReactNode } from 'react';
 
+import { Footer } from '@/components/shared/Footer';
+import { Navbar } from '@/components/shared/NavBar';
+import { SubNavigationBar } from '@/components/shared/SubNavigationBar';
+import { SubNavigationMenu } from '@/components/shared/SubNavigationMenu';
 import styles from '@/styles/Index.module.scss';
-import { MainMenu } from '../MainMenu';
-import { SubNavigationMenu } from '../SubNavigationMenu';
 
 type Props = {
   children: ReactNode;
@@ -20,11 +22,9 @@ const Layout: React.FC<Props> = ({ children, localNav, pageTitle }) => {
         {pageTitle && <title>{pageTitle} | SciPhi</title>}
         {/* You can also include other page-specific meta tags, links, or scripts here */}
       </Head>
-      <header className={styles.topBar}>
-        <MainMenu />
-      </header>
-      <SubNavigationMenu />
+      <Navbar />
       {children}
+      <Footer />
     </div>
   );
 };
