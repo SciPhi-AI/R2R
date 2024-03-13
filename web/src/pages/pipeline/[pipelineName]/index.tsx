@@ -120,6 +120,10 @@ const PipelinePage = () => {
       </Layout>
     );
   }
+
+  const terminal_message = pipeline?.deployment?.terminal_message;
+  const failed = terminal_message !== undefined && terminal_message.includes('failed');
+
   return (
     <Layout>
       <main className={styles.main}>
@@ -204,7 +208,7 @@ const PipelinePage = () => {
                   </div>
                 </>
               )}
-              {pipeline.deployment && pipeline.deployment?.error && (
+              {pipeline.deployment && (pipeline.deployment?.error || failed) && (
                 <>
                   <Separator className="h-px" />
                   <div className="grid gap-2">
@@ -217,7 +221,7 @@ const PipelinePage = () => {
                         wordBreak: 'break-all', // To ensure even continuous strings without spaces will break
                       }}
                     >
-                      {'Error: ' + pipeline.deployment?.error}
+                      {'Error: ' + (failed? pipeline.deployment.terminal_message  : pipeline.deployment?.error)}
                     </div>
                   </div>
                 </>
@@ -228,17 +232,17 @@ const PipelinePage = () => {
             <div className="flex flex-col w-full gap-4">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                  {pipeline.status == 'finished' && (
+                  {pipeline.status == 'finished' && !failed && (
                     <CheckCircleIcon className={'w-4 h-4'} />
                   )}
 
                   <span
                     className={
                       'text-sm' +
-                      (pipeline.status == 'failed' ? ' text-red-500' : '')
+                      (pipeline.status == 'failed' || failed ? ' text-red-500' : '')
                     }
                   >
-                    {'Status: ' + pipeline.status.toUpperCase()}
+                    {failed? "Status: FAILED" : 'Status: ' +  pipeline.status.toUpperCase()}
                   </span>
                 </div>
               </div>

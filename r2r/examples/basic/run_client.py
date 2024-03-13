@@ -5,8 +5,8 @@ import uuid
 from r2r.client import R2RClient
 
 # Initialize the client with the base URL of your API
-base_url = "http://localhost:8000"
-
+base_url = "https://sciphi-8be0cc56-a62e-4746-a820-3a39272d51f7-qwpin2swwa-ue.a.run.app" #https://sciphi-f3b8ed5e-03e8-4db9-b04b-cb15167b8e83-qwpin2swwa-ue.a.run.app"
+base_url = "https://sciphi-ca2f2543-38fa-44ce-9bc1-e47203fd90e1-qwpin2swwa-ue.a.run.app"
 client = R2RClient(base_url)
 
 print("Upserting entry to remote db...")

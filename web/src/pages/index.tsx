@@ -90,7 +90,6 @@ const Home: NextPage = () => {
     }, 5000);
     return () => clearInterval(interval);
   }, [currentUser]);
-
   return (
     <Layout>
       <main className={styles.main}>

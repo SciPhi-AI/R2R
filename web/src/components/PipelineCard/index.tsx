@@ -22,6 +22,8 @@ export default function PipelineCard({ pipeline }: PipelineCardProps) {
     }
   };
 
+  const terminal_message = pipeline?.deployment?.terminal_message;
+
   return (
     <a href="#" className={styles.container} onClick={handleClick}>
       <div className={styles.cardHeader}>
@@ -32,7 +34,7 @@ export default function PipelineCard({ pipeline }: PipelineCardProps) {
         <div className={styles.projectInfo}>
           <p className={styles.cardTitle}>Pipeline:</p>
           <strong className={styles.cardProjectTitle}>{pipeline.name}</strong>
-          {pipeline.status === 'finished' ? (
+          {pipeline.status === 'finished' && (terminal_message===undefined || terminal_message==="") ? (
             <>
               <p className={styles.cardTitle}>Remote:</p>
               <p className={styles.cardAddress}>{pipeline.github_url}</p>
@@ -44,7 +46,7 @@ export default function PipelineCard({ pipeline }: PipelineCardProps) {
             <>
               <p className={styles.cardTitle}>Status:</p>
               <p className={styles.cardAddress}>
-                {pipeline.status.toUpperCase()}
+                {(terminal_message !== undefined && terminal_message.includes("failed"))? "FAILED": pipeline.status.toUpperCase()}
               </p>
             </>
           )}

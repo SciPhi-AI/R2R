@@ -37,6 +37,7 @@ class R2RClient:
                 files=files,
                 data=data,
             )
+	print('response = ', response)
         return response.json()
 
     def add_entry(
@@ -58,6 +59,7 @@ class R2RClient:
             or {"embedding_settings": {"do_upsert": do_upsert}},
         }
         response = requests.post(url, json=json_data)
+	print('response = ', response)
         return response.json()
 
     def add_entries(

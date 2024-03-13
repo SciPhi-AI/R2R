@@ -14,6 +14,7 @@ export type Pipeline = {
     uid: string;
     name: string;
     error: string | null;
+    terminal_message: string | null;
   };
 };
 
