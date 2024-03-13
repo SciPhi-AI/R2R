@@ -39,7 +39,7 @@ const guides = [
     readMoreText: 'Learn More',
   },
   {
-    href: 'https://docs.sciphi.ai/getting-started/rag-templates',
+    href: 'https://docs.sciphi.ai/getting-started/customize-your-config',
     name: '4. Customize',
     description: 'Create your own pipeline and deploy it from GitHub.',
     readMoreText: 'Learn More',

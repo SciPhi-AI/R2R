@@ -33,7 +33,7 @@ export function Embeddings({ pipeline }: { pipeline?: Pipeline } = {}) {
   const router = useRouter();
 
   const handleRowClick = (runId: string) => {
-    router.push(`/event/${runId}`);
+    router.push(`/pipeline/${pipeline.id}/event/${runId}`);
   };
 
   const { logs, loading, error, refetch } = useLogs(pipeline);
