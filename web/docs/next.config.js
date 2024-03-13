@@ -3,4 +3,7 @@ const withNextra = require('nextra')({
   themeConfig: './theme.config.tsx',
 });
 
-module.exports = withNextra({ basePath: '/docs' });
+module.exports = withNextra({
+  basePath: '/docs',
+  assetPrefix: '/docs/',
+});
