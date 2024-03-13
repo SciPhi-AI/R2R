@@ -1,3 +1,4 @@
+import { Pipeline } from '../types';
 import { useRouter } from 'next/router';
 import React, { useState, useMemo, useEffect } from 'react';
 
@@ -28,14 +29,14 @@ const changeMethod = (method: string) => {
   return methodDictionary[method] || method;
 };
 
-export function Embeddings() {
+export function Embeddings({pipeline}: {pipeline?: Pipeline} = {}) {
   const router = useRouter();
 
   const handleRowClick = (runId: string) => {
     router.push(`/event/${runId}`);
   };
 
-  const { logs, loading, error, refetch } = useLogs();
+  const { logs, loading, error, refetch } = useLogs(pipeline);
 
   useEffect(() => {
     const N = 5;
