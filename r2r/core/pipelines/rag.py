@@ -7,29 +7,15 @@ import uuid
 from abc import abstractmethod
 from typing import Any, Generator, Optional, Union
 
-from ..abstractions.completion import RAGCompletion
+from openai.types.chat import ChatCompletion
+
+from ..abstractions.output import RAGPipelineOutput
 from ..providers.llm import GenerationConfig, LLMProvider
 from ..providers.logging import LoggingDatabaseConnection, log_execution_to_db
+from ..providers.prompt import PromptProvider
 from .pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
-
-DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant."
-DEFAULT_TASK_PROMPT = """
-## Task:
-Answer the query given immediately below given the context which follows later.
-
-### Query:
-{query}
-
-### Context:
-{context}
-
-### Query:
-{query}
-
-## Response:
-"""
 
 
 class RAGPipeline(Pipeline):
@@ -40,15 +26,13 @@ class RAGPipeline(Pipeline):
     def __init__(
         self,
         llm: "LLMProvider",
-        system_prompt: Optional[str] = None,
-        task_prompt: Optional[str] = None,
+        prompt_provider: PromptProvider,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs,
     ):
         self.llm = llm
-        self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
-        self.task_prompt = task_prompt or DEFAULT_TASK_PROMPT
+        self.prompt_provider = prompt_provider
         super().__init__(logging_connection=logging_connection, **kwargs)
 
     def initialize_pipeline(
@@ -117,14 +101,16 @@ class RAGPipeline(Pipeline):
         """
         Constructs a prompt for generation based on the reranked chunks.
         """
-        return self.task_prompt.format(**inputs)
+        return self.prompt_provider.get_prompt("task_prompt", inputs).format(
+            **inputs
+        )
 
     @log_execution_to_db
     def generate_completion(
         self,
         prompt: str,
         generation_config: GenerationConfig,
-    ) -> Union[Generator[str, None, None], RAGCompletion]:
+    ) -> Union[Generator[str, None, None], ChatCompletion]:
         """
         Generates a completion based on the prompt.
         """
@@ -132,7 +118,7 @@ class RAGPipeline(Pipeline):
         messages = [
             {
                 "role": "system",
-                "content": self.system_prompt,
+                "content": self.prompt_provider.get_prompt("system_prompt"),
             },
             {
                 "role": "user",
@@ -140,17 +126,17 @@ class RAGPipeline(Pipeline):
             },
         ]
         if not generation_config.stream:
-            return self.llm.get_chat_completion(messages, generation_config)
+            return self.llm.get_completion(messages, generation_config)
 
         return self._stream_generate_completion(messages, generation_config)
 
     def _stream_generate_completion(
-        self, messages: dict, generation_config: GenerationConfig
+        self, messages: list[dict], generation_config: GenerationConfig
     ) -> Generator[str, None, None]:
-        for result in self.llm.get_chat_completion(
+        for result in self.llm.get_completion_stream(
             messages, generation_config
         ):
-            yield result.choices[0].delta.content or ""
+            yield result.choices[0].delta.content or ""  # type: ignore
 
     def run(
         self,
@@ -161,7 +147,7 @@ class RAGPipeline(Pipeline):
         generation_config: Optional[GenerationConfig] = None,
         *args,
         **kwargs,
-    ) -> Union[Generator[str, None, None], RAGCompletion]:
+    ) -> Union[Generator[str, None, None], RAGPipelineOutput]:
         """
         Runs the completion pipeline.
         """
@@ -170,7 +156,7 @@ class RAGPipeline(Pipeline):
         transformed_query = self.transform_query(query)
         search_results = self.search(transformed_query, filters, limit)
         if search_only:
-            return RAGCompletion(search_results, None, None)
+            return RAGPipelineOutput(search_results, None, None)
         elif not generation_config:
             raise ValueError(
                 "GenerationConfig is required for completion generation."
@@ -188,7 +174,7 @@ class RAGPipeline(Pipeline):
 
         if not generation_config.stream:
             completion = self.generate_completion(prompt, generation_config)
-            return RAGCompletion(search_results, context, completion)
+            return RAGPipelineOutput(search_results, context, completion)
 
         return self._stream_run(
             search_results, context, prompt, generation_config

@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Generator, Optional, Union
+from typing import cast, AsyncGenerator, Generator, Optional, Union
 
 from fastapi import (
     BackgroundTasks,
@@ -17,9 +17,12 @@ from r2r.core import (
     EmbeddingPipeline,
     EvalPipeline,
     IngestionPipeline,
+    GenerationConfig,
     LoggingDatabaseConnection,
     RAGPipeline,
 )
+from dataclasses import asdict
+
 from r2r.main.utils import (
     apply_cors,
     configure_logging,
@@ -180,6 +183,7 @@ def create_app(
                     0
                 ].message.content
                 rag_run_id = rag_pipeline.pipeline_run_info["run_id"]
+                # TODO - Run with task manager for Cloud deployments
                 background_tasks.add_task(
                     eval_pipeline.run,
                     query.query,
@@ -204,13 +208,20 @@ def create_app(
     async def _stream_rag_completion(
         query: RAGQueryModel,
         rag_pipeline: RAGPipeline,
-    ) -> Generator[str, None, None]:
-        for item in rag_pipeline.run(
+    ) -> AsyncGenerator[str, None]:
+        gen_config = GenerationConfig(**asdict(query.generation_config))
+        if not gen_config.stream:
+            raise ValueError(
+                "Must pass `stream` as True to stream completions."
+            )
+        completion_generator = cast(Generator[str, None, None], rag_pipeline.run(
             query.query,
             query.filters,
             query.limit,
-            generation_config=query.generation_config,
-        ):
+            generation_config=gen_config,
+        ))
+
+        for item in completion_generator:
             yield item
 
     @app.delete("/filtered_deletion/")

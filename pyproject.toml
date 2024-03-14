@@ -64,7 +64,7 @@ line-length = 79
 
 [tool.mypy]
 ignore_missing_imports = true
-exclude = 'playground/.*|deprecated/.*|dump/.*|docs/source'
+exclude = 'playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*'
 
 [[tool.mypy.overrides]]
 module = "yaml"

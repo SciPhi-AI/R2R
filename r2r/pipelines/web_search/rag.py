@@ -7,11 +7,13 @@ from typing import Optional
 from r2r.core import (
     LLMProvider,
     LoggingDatabaseConnection,
+    PromptProvider,
     VectorDBProvider,
     log_execution_to_db,
 )
 from r2r.embeddings import OpenAIEmbeddingProvider
 from r2r.integrations import SerperClient
+from r2r.pipelines import BasicPromptProvider
 
 from ..basic.rag import BasicRAGPipeline
 
@@ -26,8 +28,7 @@ class WebSearchRAGPipeline(BasicRAGPipeline):
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
-        system_prompt: Optional[str] = None,
-        task_prompt: Optional[str] = None,
+        prompt_provider: Optional[PromptProvider] = BasicPromptProvider(),
     ) -> None:
         logger.debug(f"Initalizing `WebSearchRAGPipeline`.")
         super().__init__(
@@ -36,8 +37,7 @@ class WebSearchRAGPipeline(BasicRAGPipeline):
             db=db,
             embedding_model=embedding_model,
             embeddings_provider=embeddings_provider,
-            system_prompt=system_prompt,
-            task_prompt=task_prompt,
+            prompt_provider=prompt_provider,
         )
         self.serper_client = SerperClient()
 

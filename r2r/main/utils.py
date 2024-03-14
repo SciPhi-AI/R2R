@@ -20,17 +20,14 @@ def find_project_root(current_dir):
     return current_dir  # Fallback to current dir if no marker found
 
 
-from typing import Any, Dict
-
-
 class Config:
-    def __init__(self, config_data: Dict[str, Any]):
-        self.embedding: Dict[str, Any] = config_data["embedding"]
-        self.evals: Dict[str, Any] = config_data["evals"]
-        self.language_model: Dict[str, Any] = config_data["language_model"]
-        self.logging_database: Dict[str, Any] = config_data["logging_database"]
-        self.ingestion: Dict[str, Any] = config_data["ingestion"]
-        self.vector_database: Dict[str, Any] = config_data["vector_database"]
+    def __init__(self, config_data: dict[str, Any]):
+        self.embedding: dict[str, Any] = config_data["embedding"]
+        self.evals: dict[str, Any] = config_data["evals"]
+        self.language_model: dict[str, Any] = config_data["language_model"]
+        self.logging_database: dict[str, Any] = config_data["logging_database"]
+        self.ingestion: dict[str, Any] = config_data["ingestion"]
+        self.vector_database: dict[str, Any] = config_data["vector_database"]
 
 
 def load_config(config_path=None) -> Config:
