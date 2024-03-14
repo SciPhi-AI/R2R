@@ -4,7 +4,7 @@ A simple example to demonstrate the usage of `BasicEmbeddingPipeline`.
 import copy
 import logging
 import uuid
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Tuple
 
 from r2r.core import (
     BasicDocument,

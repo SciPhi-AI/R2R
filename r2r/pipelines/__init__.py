@@ -7,6 +7,7 @@ from .web_search.rag import WebSearchRAGPipeline
 
 __all__ = [
     "BasicDocument",
+    "BasicEmbeddingPipeline",
     "BasicEvalPipeline",
     "BasicIngestionPipeline",
     "BasicPromptProvider",

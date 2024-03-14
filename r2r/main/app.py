@@ -18,11 +18,14 @@ from r2r.core import (
     EvalPipeline,
     GenerationConfig,
     IngestionPipeline,
+    GenerationConfig,
+    IngestionPipeline,
     LoggingDatabaseConnection,
     RAGPipeline,
     RAGPipelineOutput,
 )
 from r2r.main.utils import (
+    R2RConfig,
     apply_cors,
     configure_logging,
     find_project_root,
@@ -49,6 +52,7 @@ def create_app(
     embedding_pipeline: EmbeddingPipeline,
     eval_pipeline: EvalPipeline,
     rag_pipeline: RAGPipeline,
+    config: R2RConfig,
     upload_path: Optional[Path] = None,
     logging_connection: Optional[LoggingDatabaseConnection] = None,
 ):
@@ -213,7 +217,7 @@ def create_app(
     async def _stream_rag_completion(
         query: RAGQueryModel,
         rag_pipeline: RAGPipeline,
-    ) -> Generator[str, None, None]:
+    ) -> AsyncGenerator[str, None]:
         gen_config = GenerationConfig(**(query.generation_config.dict()))
         if not gen_config.stream:
             raise ValueError(
@@ -250,7 +254,9 @@ def create_app(
                 raise HTTPException(
                     status_code=404, detail="Logging provider not found."
                 )
-            logs = logging_connection.get_logs()
+            logs = logging_connection.get_logs(config.app["max_logs"])
+            for log in logs:
+                LogModel(**log).dict(by_alias=True)
             return {
                 "logs": [LogModel(**log).dict(by_alias=True) for log in logs]
             }
@@ -265,7 +271,7 @@ def create_app(
                 raise HTTPException(
                     status_code=404, detail="Logging provider not found."
                 )
-            logs = logging_connection.get_logs()
+            logs = logging_connection.get_logs(config.app["max_logs"])
             logs_summary = process_logs(logs)
             events_summary = [
                 SummaryLogModel(**log).dict(by_alias=True)

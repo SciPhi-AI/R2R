@@ -1,10 +1,10 @@
 from .app import create_app
 from .factory import E2EPipelineFactory
-from .utils import configure_logging, load_config
+from .utils import R2RConfig, configure_logging
 
 __all__ = [
     "create_app",
     "configure_logging",
-    "load_config",
+    "R2RConfig",
     "E2EPipelineFactory",
 ]
