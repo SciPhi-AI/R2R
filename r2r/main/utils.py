@@ -20,7 +20,20 @@ def find_project_root(current_dir):
     return current_dir  # Fallback to current dir if no marker found
 
 
-def load_config(config_path=None):
+from typing import Any, Dict
+
+
+class Config:
+    def __init__(self, config_data: Dict[str, Any]):
+        self.embedding: Dict[str, Any] = config_data["embedding"]
+        self.evals: Dict[str, Any] = config_data["evals"]
+        self.language_model: Dict[str, Any] = config_data["language_model"]
+        self.logging_database: Dict[str, Any] = config_data["logging_database"]
+        self.ingestion: Dict[str, Any] = config_data["ingestion"]
+        self.vector_database: Dict[str, Any] = config_data["vector_database"]
+
+
+def load_config(config_path=None) -> Config:
     if config_path is None:
         # Get the root directory of the project
         root_dir = os.path.dirname(
@@ -30,24 +43,9 @@ def load_config(config_path=None):
 
     # Load configuration from JSON file
     with open(config_path) as f:
-        config = json.load(f)
+        config_data = json.load(f)
 
-    # Extract configuration parameters
-    embedding_config = config["embedding"]
-    evals_config = config["evals"]
-    llm_config = config["language_model"]
-    logging_config = config["logging_database"]
-    ingestion_config = config["ingestion"]
-    vector_database_config = config["vector_database"]
-
-    return (
-        embedding_config,
-        evals_config,
-        llm_config,
-        logging_config,
-        ingestion_config,
-        vector_database_config,
-    )
+    return Config(config_data)
 
 
 def apply_cors(app):

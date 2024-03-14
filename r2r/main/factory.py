@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 import dotenv
 
@@ -13,14 +14,14 @@ from r2r.pipelines import (
 )
 
 from .app import create_app
-from .utils import load_config
+from .utils import Config
 
 dotenv.load_dotenv()
 
 
 class E2EPipelineFactory:
     @staticmethod
-    def get_vector_db(database_config):
+    def get_vector_db(database_config: dict[str, Any]):
         if database_config["provider"] == "qdrant":
             from r2r.vector_dbs import QdrantDB
 
@@ -35,7 +36,7 @@ class E2EPipelineFactory:
             return LocalVectorDB()
 
     @staticmethod
-    def get_embeddings_provider(embedding_config: dict):
+    def get_embeddings_provider(embedding_config: dict[str, Any]):
         if embedding_config["provider"] == "openai":
             from r2r.embeddings import OpenAIEmbeddingProvider
 
@@ -48,14 +49,14 @@ class E2EPipelineFactory:
             )
 
     @staticmethod
-    def get_llm(llm_config):
+    def get_llm(llm_config: dict[str, Any]):
         if llm_config["provider"] == "openai":
             return OpenAILLM(OpenAIConfig())
         elif llm_config["provider"] == "litellm":
             return LiteLLM(LiteLLMConfig())
 
     @staticmethod
-    def get_text_splitter(text_splitter_config):
+    def get_text_splitter(text_splitter_config: dict[str, Any]):
         if text_splitter_config["type"] != "recursive_character":
             raise ValueError(
                 "Only recursive character text splitter is supported"
@@ -69,6 +70,7 @@ class E2EPipelineFactory:
 
     @staticmethod
     def create_pipeline(
+        config: Config,
         db=None,
         embeddings_provider=None,
         llm=None,
@@ -78,36 +80,26 @@ class E2EPipelineFactory:
         rag_pipeline_impl=BasicRAGPipeline,
         eval_pipeline_impl=BasicEvalPipeline,
         app_fn=create_app,
-        config_path=None,
     ):
-        (
-            embedding_config,
-            evals_config,
-            llm_config,
-            logging_config,
-            ingestion_config,
-            vector_database_config,
-        ) = load_config(config_path)
-
-        logging.basicConfig(level=logging_config["level"])
+        logging.basicConfig(level=config.logging_database["level"])
 
         embeddings_provider = (
             embeddings_provider
-            or E2EPipelineFactory.get_embeddings_provider(embedding_config)
+            or E2EPipelineFactory.get_embeddings_provider(config.embedding)
         )
-        # TODO - Encapsulate the embedding metadata into a container
-        embedding_model = embedding_config["model"]
-        embedding_dimension = embedding_config["dimension"]
-        embedding_batch_size = embedding_config["batch_size"]
+        embedding_model = config.embedding["model"]
+        embedding_dimension = config.embedding["dimension"]
+        embedding_batch_size = config.embedding["batch_size"]
 
-        db = db or E2EPipelineFactory.get_vector_db(vector_database_config)
-        collection_name = vector_database_config["collection_name"]
+        db = db or E2EPipelineFactory.get_vector_db(config.vector_database)
+        collection_name = config.vector_database["collection_name"]
         db.initialize_collection(collection_name, embedding_dimension)
 
-        llm = llm or E2EPipelineFactory.get_llm(llm_config)
+        llm = llm or E2EPipelineFactory.get_llm(config.language_model)
 
         logging_connection = LoggingDatabaseConnection(
-            logging_config["provider"], logging_config["collection_name"]
+            config.logging_database["provider"],
+            config.logging_database["collection_name"],
         )
 
         cmpl_pipeline = rag_pipeline_impl(
@@ -119,7 +111,7 @@ class E2EPipelineFactory:
         )
 
         text_splitter = text_splitter or E2EPipelineFactory.get_text_splitter(
-            ingestion_config["text_splitter"]
+            config.ingestion["text_splitter"]
         )
 
         embd_pipeline = embedding_pipeline_impl(
@@ -130,9 +122,9 @@ class E2EPipelineFactory:
             text_splitter=text_splitter,
             embedding_batch_size=embedding_batch_size,
         )
-        # TODO - Set ingestion class in config file
+
         eval_pipeline = eval_pipeline_impl(
-            evals_config, logging_connection=logging_connection
+            config.evals, logging_connection=logging_connection
         )
         ingst_pipeline = ingestion_pipeline_impl()
 

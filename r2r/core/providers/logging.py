@@ -1,12 +1,13 @@
-from datetime import datetime
 import functools
 import json
 import logging
 import os
 import types
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
 
 class LoggingProvider(ABC):
     @abstractmethod

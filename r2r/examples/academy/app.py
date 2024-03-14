@@ -11,7 +11,7 @@ from r2r.core import (
     log_execution_to_db,
 )
 from r2r.embeddings import OpenAIEmbeddingProvider
-from r2r.main import E2EPipelineFactory
+from r2r.main import E2EPipelineFactory, load_config
 from r2r.pipelines import BasicRAGPipeline
 
 logger = logging.getLogger(__name__)
@@ -163,5 +163,5 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
 
 # Creates a pipeline using the `E2EPipelineFactory`
 app = E2EPipelineFactory.create_pipeline(
-    rag_pipeline_impl=SyntheticRAGPipeline
+    config=load_config(), rag_pipeline_impl=SyntheticRAGPipeline
 )
