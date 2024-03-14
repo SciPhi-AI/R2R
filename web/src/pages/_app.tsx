@@ -1,6 +1,7 @@
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { useTheme } from 'next-themes';
+import posthog from 'posthog-js'
 import { PostHogProvider } from 'posthog-js/react';
 import { useEffect } from 'react';
 
@@ -18,6 +19,18 @@ function MyApp({ Component, pageProps }: AppProps) {
   });
 
   const isCloudMode = process.env.NEXT_PUBLIC_CLOUD_MODE === 'true';
+
+
+  // Check that PostHog is client-side (used to handle Next.js SSR)
+  if (typeof window !== 'undefined') {
+    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
+      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
+      // Enable debug mode in development
+      loaded: (posthog) => {
+        if (process.env.NODE_ENV === 'development') posthog.debug()
+      }
+    })
+  }
 
   const renderContent = () => {
     // If in cloud mode, wrap Component with AuthProvider
@@ -54,19 +67,22 @@ function MyApp({ Component, pageProps }: AppProps) {
         />
         {/* Add other global stylesheets or links here */}
       </Head>
-      <PostHogProvider
-        apiKey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
-        options={options}
-      >
+ 
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
           enableSystem={false}
           disableTransitionOnChange
         >
-          <PipelineProvider>{renderContent()}</PipelineProvider>
+          <PipelineProvider>
+          <PostHogProvider
+        apiKey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
+        options={options}
+      >{renderContent()}
+          </PostHogProvider>
+          </PipelineProvider>
         </ThemeProvider>
-      </PostHogProvider>
+      
     </>
   );
 }
