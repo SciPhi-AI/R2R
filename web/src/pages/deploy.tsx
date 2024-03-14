@@ -154,6 +154,7 @@ function Component() {
       }
       setIsLoading(true);
 
+      console.log('deploying to ', `${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/deploy`)
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/deploy`,
         {
@@ -291,7 +292,7 @@ function Component() {
                       id={`secret-value-${index + 1}`}
                       placeholder="e.g. `sk-bDaW...`"
                       value={pair.value}
-                      type="password"
+                      // type="password"
                       onChange={(e) =>
                         handleSecretValueChange(index, e.target.value)
                       }
