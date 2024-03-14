@@ -1,6 +1,4 @@
 import type { NextPage } from 'next';
-import { getServerSession } from 'next-auth/next';
-import { PostHog } from 'posthog-node';
 import { useEffect, useState, useRef } from 'react';
 
 import { CreatePipelineHeader } from '@/components/CreatePipelineHeader';
@@ -128,29 +126,5 @@ const Home: NextPage = () => {
     </Layout>
   );
 };
-
-export async function getServerSideProps(ctx) {
-  const session = await getServerSession(ctx.req, ctx.res, {});
-  let flags = null;
-
-  if (session) {
-    console.log('pinging posthog...');
-    const client = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
-      host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-    });
-
-    flags = await client.getAllFlags(session.user.email);
-    client.capture({
-      distinctId: session.user.email,
-      event: 'loaded blog article',
-      properties: {
-        $current_url: ctx.req.url,
-      },
-    });
-
-    await client.shutdownAsync();
-  }
-  return { props: { session, flags } };
-}
 
 export default Home;
