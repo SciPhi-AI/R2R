@@ -72,7 +72,6 @@ function Component() {
   };
 
   const handleGenerateApiKey = () => {
-    console.log('generating new api key...');
     // Generate a new public key and private key
     const newPublicKey = generatePublicKey();
     const newPrivateKey = generatePrivateKey();
@@ -154,10 +153,6 @@ function Component() {
       }
       setIsLoading(true);
 
-      console.log(
-        'deploying to ',
-        `${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/deploy`
-      );
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/deploy`,
         {
@@ -172,7 +167,6 @@ function Component() {
 
       if (response.ok) {
         // Pipeline creation successful
-        console.log('Pipeline created successfully');
         // Reset the form fields
         // Redirect to a success page or display a success message
         // Wait for a random duration between 1 to 2 seconds before navigating to the home page
@@ -454,7 +448,6 @@ function Component() {
               <Card
                 className="w-full mt-2 cursor-pointer hover:bg-blue-100 transition-colors duration-300 bg-blue-200 border-l-4 border-blue-400 relative"
                 onClick={() => {
-                  console.log('Card clicked!');
                   setPipelineName('Basic RAG');
                   setGithubUrl(
                     'https://github.com/SciPhi-AI/R2R-basic-rag-template'
@@ -474,7 +467,6 @@ function Component() {
               <Card
                 className="w-full mt-2 cursor-pointer hover:bg-green-100 transition-colors duration-300 bg-green-200 border-l-4 border-green-400 relative"
                 onClick={() => {
-                  console.log('Card clicked!');
                   setPipelineName('Synthetic Queries');
                   setGithubUrl(
                     'https://github.com/SciPhi-AI/R2R-synthetic-queries-template'
@@ -496,7 +488,6 @@ function Component() {
               <Card
                 className="w-full mt-2 cursor-pointer hover:bg-red-100 transition-colors duration-300 bg-red-200 border-l-4 border-red-400 relative"
                 onClick={() => {
-                  console.log('Card clicked!');
                   setPipelineName('Web RAG');
                   setGithubUrl(
                     'https://github.com/SciPhi-AI/R2R-web-rag-template'
