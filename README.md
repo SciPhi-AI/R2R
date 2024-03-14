@@ -19,13 +19,6 @@ Launching the server locally, running the client, and pipeline observabiilty app
 [![demo_screenshot](./docs/pages/getting-started/demo_screenshot.png)](https://github.com/SciPhi-AI/R2R/assets/68796651/7ac102e0-f6ad-4926-8a7a-5db25db4612d)
 
 
-Launching the basic chat client and running a test query:
-
-https://github.com/SciPhi-AI/R2R/assets/68796651/dc44309f-a52c-4c2a-b0ab-80140e6a2fff
-
-
-
-
 
 ### Quick Install:
 
@@ -102,22 +95,8 @@ The project includes several basic examples that demonstrate application deploym
    ```
 
 
-4. [`intelligence`](web/): A web application which communicates with the backend server to provide visual intelligence.
-   ```bash
-   cd $workdir/web && pnpm install
-   
-   # Serve the web app
-   pnpm dev
-   ```
+4. [`intelligence`](app.sciphi.ai): A cloud platform which can be used to deploy R2R pipelines powered by SciPhi
 
-
-4. [`chat`](chat/): A chat application which communicates with the basic pipeline to stream chat responses and sources in real time.
-   ```bash
-   cd $workdir/chat && pnpm install
-   
-   # Serve the web app
-   pnpm dev
-   ```
 
 
 ### Full Install:
