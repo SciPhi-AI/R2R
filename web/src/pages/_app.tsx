@@ -1,8 +1,6 @@
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { useTheme } from 'next-themes';
-import posthog from 'posthog-js';
-import { PostHogProvider } from 'posthog-js/react';
 import { useEffect } from 'react';
 
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -17,33 +15,6 @@ function MyApp({ Component, pageProps }: AppProps) {
   useEffect(() => {
     setTheme('dark');
   });
-
-  const isCloudMode = process.env.NEXT_PUBLIC_CLOUD_MODE === 'true';
-
-  // Check that PostHog is client-side (used to handle Next.js SSR)
-  if (typeof window !== 'undefined') {
-    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
-      api_host:
-        process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
-      // Enable debug mode in development
-      loaded: (posthog) => {
-        if (process.env.NODE_ENV === 'development') posthog.debug();
-      },
-    });
-  }
-
-  const renderContent = () => {
-    // If in cloud mode, wrap Component with AuthProvider
-    if (isCloudMode) {
-      return (
-        <AuthProvider>
-          <Component {...pageProps} />
-        </AuthProvider>
-      );
-    }
-    // If not in cloud mode, render Component without AuthProvider
-    return <Component {...pageProps} />;
-  };
 
   const options = {
     api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
@@ -75,12 +46,9 @@ function MyApp({ Component, pageProps }: AppProps) {
         disableTransitionOnChange
       >
         <PipelineProvider>
-          <PostHogProvider
-            apiKey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
-            options={options}
-          >
-            {renderContent()}
-          </PostHogProvider>
+          <AuthProvider>
+            <Component {...pageProps} />
+          </AuthProvider>
         </PipelineProvider>
       </ThemeProvider>
     </>
