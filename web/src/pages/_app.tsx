@@ -1,5 +1,6 @@
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import { useTheme } from 'next-themes';
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
@@ -11,43 +12,38 @@ import { PipelineProvider } from '@/context/PipelineContext';
 
 import '../styles/globals.css';
 
+// Check that PostHog is client-side (used to handle Next.js SSR)
+if (typeof window !== 'undefined') {
+  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
+    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
+    // Enable debug mode in development
+    loaded: (posthog) => {
+      if (process.env.NODE_ENV === 'development') posthog.debug();
+    },
+  });
+}
+
 function MyApp({ Component, pageProps }: AppProps) {
   const { setTheme } = useTheme();
+  const router = useRouter();
 
   useEffect(() => {
     setTheme('dark');
   });
 
-  const isCloudMode = process.env.NEXT_PUBLIC_CLOUD_MODE === 'true';
-
-  // Check that PostHog is client-side (used to handle Next.js SSR)
-  if (typeof window !== 'undefined') {
-    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
-      api_host:
-        process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
-      // Enable debug mode in development
-      loaded: (posthog) => {
-        if (process.env.NODE_ENV === 'development') posthog.debug();
-      },
-    });
-  }
-
-  const renderContent = () => {
-    // If in cloud mode, wrap Component with AuthProvider
-    if (isCloudMode) {
-      return (
-        <AuthProvider>
-          <Component {...pageProps} />
-        </AuthProvider>
-      );
-    }
-    // If not in cloud mode, render Component without AuthProvider
-    return <Component {...pageProps} />;
-  };
-
   const options = {
     api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   };
+
+  useEffect(() => {
+    // Track page views
+    const handleRouteChange = () => posthog?.capture('$pageview');
+    router.events.on('routeChangeComplete', handleRouteChange);
+
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, []);
 
   return (
     <>
@@ -74,14 +70,13 @@ function MyApp({ Component, pageProps }: AppProps) {
         enableSystem
         disableTransitionOnChange
       >
-        <PipelineProvider>
-          <PostHogProvider
-            apiKey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
-            options={options}
-          >
-            {renderContent()}
-          </PostHogProvider>
-        </PipelineProvider>
+        <PostHogProvider client={posthog}>
+          <PipelineProvider>
+            <AuthProvider>
+              <Component {...pageProps} />
+            </AuthProvider>
+          </PipelineProvider>
+        </PostHogProvider>
       </ThemeProvider>
     </>
   );
