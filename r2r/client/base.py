@@ -18,8 +18,6 @@ class R2RClient:
     ):
         url = f"{self.base_url}/upload_and_process_file/"
         with open(file_path, "rb") as file:
-            import json
-
             files = {
                 "file": (file_path.split("/")[-1], file, "application/pdf")
             }
@@ -155,7 +153,7 @@ class R2RClient:
 
         async with httpx.AsyncClient() as client:
             async with client.stream(
-                "POST", url, headers=headers, data=json.dumps(json_data)
+                "POST", url, headers=headers, json=json_data
             ) as response:
                 async for chunk in response.aiter_bytes():
                     yield chunk.decode()

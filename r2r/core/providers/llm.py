@@ -3,8 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, fields
 from typing import Optional
 
-from openai.types import Completion
-from openai.types.chat import ChatCompletion
+from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
 
 @dataclass
@@ -46,7 +45,7 @@ class LLMProvider(ABC):
         pass
 
     @abstractmethod
-    def get_chat_completion(
+    def get_completion(
         self,
         messages: list[dict],
         generation_config: GenerationConfig,
@@ -56,11 +55,11 @@ class LLMProvider(ABC):
         pass
 
     @abstractmethod
-    def get_instruct_completion(
+    def get_completion_stream(
         self,
-        prompt: str,
+        messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> Completion:
-        """Abstract method to get an instruction completion from the provider."""
+    ) -> ChatCompletionChunk:
+        """Abstract method to get a completion stream from the provider."""
         pass

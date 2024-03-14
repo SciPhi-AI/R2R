@@ -2,9 +2,9 @@
 import logging
 import os
 from dataclasses import dataclass
+from typing import Union
 
-from openai.types import Completion
-from openai.types.chat import ChatCompletion
+from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
 from r2r.core import GenerationConfig, LLMConfig, LLMProvider
 
@@ -53,12 +53,36 @@ class OpenAILLM(LLMProvider):
             )
         self.client = OpenAI()
 
-    def get_chat_completion(
+    def get_completion(
         self,
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
     ) -> ChatCompletion:
+        if not generation_config.stream:
+            raise ValueError(
+                "Stream must be set to False to use the `get_completion` method."
+            )
+        return self._get_completion(messages, generation_config, **kwargs)
+
+    def get_completion_stream(
+        self,
+        messages: list[dict],
+        generation_config: GenerationConfig,
+        **kwargs,
+    ) -> ChatCompletionChunk:
+        if not generation_config.stream:
+            raise ValueError(
+                "Stream must be set to True to use the `get_completion_stream` method."
+            )
+        return self._get_completion(messages, generation_config, **kwargs)
+
+    def _get_completion(
+        self,
+        messages: list[dict],
+        generation_config: GenerationConfig,
+        **kwargs,
+    ) -> Union[ChatCompletion, ChatCompletionChunk]:
         """Get a completion from the OpenAI API based on the provided messages."""
 
         # Create a dictionary with the default arguments
@@ -73,21 +97,6 @@ class OpenAILLM(LLMProvider):
         args = {**args, **kwargs}
         # Create the chat completion
         return self.client.chat.completions.create(**args)
-
-    def get_instruct_completion(
-        self,
-        prompt: str,
-        generation_config: GenerationConfig,
-        **kwargs,
-    ) -> Completion:
-        """Get an instruction completion from the OpenAI API based on the provided prompt."""
-
-        args = self._get_base_args(generation_config)
-
-        args["prompt"] = prompt
-
-        # Create the instruction completion
-        return self.client.completions.create(**args)
 
     def _get_base_args(
         self,
