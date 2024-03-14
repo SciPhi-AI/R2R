@@ -1,5 +1,6 @@
 import json
 import logging
+from dataclasses import asdict
 from pathlib import Path
 from typing import AsyncGenerator, Generator, Optional, Union, cast
 
@@ -19,12 +20,11 @@ from r2r.core import (
     GenerationConfig,
     IngestionPipeline,
     GenerationConfig,
+    IngestionPipeline,
     LoggingDatabaseConnection,
     RAGPipeline,
     RAGPipelineOutput,
 )
-from dataclasses import asdict
-
 from r2r.main.utils import (
     apply_cors,
     configure_logging,
