@@ -20,29 +20,45 @@ def find_project_root(current_dir):
     return current_dir  # Fallback to current dir if no marker found
 
 
-class Config:
+REQUIRED_KEYS: dict[str, list] = {
+    "embedding": ["provider", "model"],
+    "evals": ["provider", "frequency"],
+    "language_model": ["provider"],
+    "logging_database": ["provider", "collection_name", "level"],
+    "ingestion": ["provider"],
+    "vector_database": ["provider", "collection_name"],
+    "app": ["max_logs"],
+}
+
+
+class R2RConfig:
     def __init__(self, config_data: dict[str, Any]):
-        self.embedding: dict[str, Any] = config_data["embedding"]
-        self.evals: dict[str, Any] = config_data["evals"]
-        self.language_model: dict[str, Any] = config_data["language_model"]
-        self.logging_database: dict[str, Any] = config_data["logging_database"]
-        self.ingestion: dict[str, Any] = config_data["ingestion"]
-        self.vector_database: dict[str, Any] = config_data["vector_database"]
+        for section, keys in REQUIRED_KEYS.items():
+            self._validate_config_section(config_data, section, keys)
+            setattr(self, section, config_data[section])
 
+    def _validate_config_section(
+        self, config_data: dict[str, Any], section: str, keys: list
+    ):
+        if section not in config_data:
+            raise ValueError(f"Missing '{section}' section in config")
+        if not all(key in config_data[section] for key in keys):
+            raise ValueError(f"Missing required keys in '{section}' config")
 
-def load_config(config_path=None) -> Config:
-    if config_path is None:
-        # Get the root directory of the project
-        root_dir = os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        )
-        config_path = os.path.join(root_dir, "config.json")
+    @classmethod
+    def load_config(cls, config_path: str = None) -> "R2RConfig":
+        if config_path is None:
+            # Get the root directory of the project
+            root_dir = os.path.dirname(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            )
+            config_path = os.path.join(root_dir, "config.json")
 
-    # Load configuration from JSON file
-    with open(config_path) as f:
-        config_data = json.load(f)
+        # Load configuration from JSON file
+        with open(config_path) as f:
+            config_data = json.load(f)
 
-    return Config(config_data)
+        return cls(config_data)
 
 
 def apply_cors(app):

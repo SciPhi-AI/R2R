@@ -27,7 +27,7 @@ class LoggingProvider(ABC):
         pass
 
     @abstractmethod
-    def get_logs(self) -> list:
+    def get_logs(self, max_logs: int) -> list:
         pass
 
 
@@ -114,7 +114,7 @@ class PostgresLoggingProvider(LoggingProvider):
                 f"Error occurred while logging to the PostgreSQL database: {str(e)}"
             )
 
-    def get_logs(self) -> list:
+    def get_logs(self, max_logs: int) -> list:
         logs = []
         with self.db_module.connect(
             dbname=os.getenv("POSTGRES_DBNAME"),
@@ -124,7 +124,10 @@ class PostgresLoggingProvider(LoggingProvider):
             port=os.getenv("POSTGRES_PORT"),
         ) as conn:
             with conn.cursor() as cur:
-                cur.execute(f"SELECT * FROM {self.collection_name}")
+                cur.execute(
+                    f"SELECT * FROM {self.collection_name} ORDER BY timestamp DESC LIMIT %s",
+                    (max_logs,),
+                )
                 colnames = [desc[0] for desc in cur.description]
                 logs = [dict(zip(colnames, row)) for row in cur.fetchall()]
         return logs
@@ -200,13 +203,20 @@ class LocalLoggingProvider(LoggingProvider):
                 f"Error occurred while logging to the local database: {str(e)}"
             )
 
-    def get_logs(self) -> list:
+    def get_logs(self, max_logs: int) -> list:
         logs = []
         with self.db_module.connect(self.logging_path) as conn:
-            cur = conn.execute(f"SELECT * FROM {self.collection_name}")
+            cur = conn.execute(
+                f"SELECT * FROM {self.collection_name} ORDER BY timestamp DESC LIMIT ?",
+                (max_logs,),
+            )
+            print("cur = ", cur)
             colnames = [desc[0] for desc in cur.description]
+            print("colnames = ", colnames)
             results = cur.fetchall()
+            print("results = ", results)
             logs = [dict(zip(colnames, row)) for row in results]
+            print("logs = ", logs)
         return logs
 
 
@@ -263,8 +273,8 @@ class RedisLoggingProvider(LoggingProvider):
             # Handle any exceptions that occur during the logging process
             logger.error(f"Error occurred while logging to Redis: {str(e)}")
 
-    def get_logs(self) -> list:
-        logs = self.redis.lrange(self.log_key, 0, -1)
+    def get_logs(self, max_logs: int) -> list:
+        logs = self.redis.lrange(self.log_key, 0, max_logs - 1)
         return [json.loads(log) for log in logs]
 
 
@@ -306,8 +316,8 @@ class LoggingDatabaseConnection:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.logging_provider.close()
 
-    def get_logs(self) -> list:
-        return self.logging_provider.get_logs()
+    def get_logs(self, max_logs: int) -> list:
+        return self.logging_provider.get_logs(max_logs)
 
 
 def log_execution_to_db(func):

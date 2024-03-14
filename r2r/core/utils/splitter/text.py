@@ -149,7 +149,7 @@ class Serializable(BaseModel, ABC):
         """
         return [*cls.get_lc_namespace(), cls.__name__]
 
-    class Config:
+    class R2RConfig:
         extra = "ignore"
 
     def __repr_args__(self) -> Any:
@@ -330,7 +330,7 @@ class BaseDocumentTransformer(ABC):
                 similarity_fn: Callable = cosine_similarity
                 similarity_threshold: float = 0.95
 
-                class Config:
+                class R2RConfig:
                     arbitrary_types_allowed = True
 
                 def transform_documents(

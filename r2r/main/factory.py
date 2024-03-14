@@ -14,7 +14,7 @@ from r2r.pipelines import (
 )
 
 from .app import create_app
-from .utils import Config
+from .utils import R2RConfig
 
 dotenv.load_dotenv()
 
@@ -70,7 +70,7 @@ class E2EPipelineFactory:
 
     @staticmethod
     def create_pipeline(
-        config: Config,
+        config: R2RConfig,
         db=None,
         embeddings_provider=None,
         llm=None,
@@ -133,6 +133,7 @@ class E2EPipelineFactory:
             embedding_pipeline=embd_pipeline,
             rag_pipeline=cmpl_pipeline,
             eval_pipeline=eval_pipeline,
+            config=config,
             logging_connection=logging_connection,
         )
 
