@@ -1,5 +1,6 @@
 import json
 import logging
+from dataclasses import asdict
 from pathlib import Path
 from typing import AsyncGenerator, Generator, Optional, Union, cast
 
@@ -16,6 +17,8 @@ from fastapi.responses import StreamingResponse
 from r2r.core import (
     EmbeddingPipeline,
     EvalPipeline,
+    GenerationConfig,
+    IngestionPipeline,
     GenerationConfig,
     IngestionPipeline,
     LoggingDatabaseConnection,
