@@ -18,10 +18,13 @@ from r2r.core import (
     EvalPipeline,
     GenerationConfig,
     IngestionPipeline,
+    GenerationConfig,
     LoggingDatabaseConnection,
     RAGPipeline,
     RAGPipelineOutput,
 )
+from dataclasses import asdict
+
 from r2r.main.utils import (
     apply_cors,
     configure_logging,
