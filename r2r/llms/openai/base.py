@@ -2,6 +2,7 @@
 import logging
 import os
 from dataclasses import dataclass
+from typing import Union
 
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
@@ -81,7 +82,7 @@ class OpenAILLM(LLMProvider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> ChatCompletion:
+    ) -> Union[ChatCompletion, ChatCompletionChunk]:
         """Get a completion from the OpenAI API based on the provided messages."""
 
         # Create a dictionary with the default arguments

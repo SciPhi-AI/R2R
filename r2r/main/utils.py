@@ -157,6 +157,10 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
             id_match = re.search(r"'id': '([^']+)'", result)
             text_match = re.search(r"'text': '([^']+)'", result)
             metadata_match = re.search(r"'metadata': (\{[^}]+\})", result)
+            if not id_match or not text_match or not metadata_match:
+                raise ValueError(
+                    f"Missing 'id', 'text', or 'metadata' in result: {result}"
+                )
             metadata = metadata_match.group(1).replace("'", '"')
             metadata_json = json.loads(metadata)
 

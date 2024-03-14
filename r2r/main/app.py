@@ -1,7 +1,8 @@
 import json
 import logging
+from dataclasses import asdict
 from pathlib import Path
-from typing import cast, AsyncGenerator, Generator, Optional, Union
+from typing import AsyncGenerator, Generator, Optional, Union, cast
 
 from fastapi import (
     BackgroundTasks,
@@ -16,13 +17,12 @@ from fastapi.responses import StreamingResponse
 from r2r.core import (
     EmbeddingPipeline,
     EvalPipeline,
-    IngestionPipeline,
     GenerationConfig,
+    IngestionPipeline,
     LoggingDatabaseConnection,
     RAGPipeline,
+    RAGPipelineOutput,
 )
-from dataclasses import asdict
-
 from r2r.main.utils import (
     apply_cors,
     configure_logging,
@@ -172,24 +172,28 @@ def create_app(
         try:
             stream = query.generation_config.stream
             if not stream:
-                rag_completion = rag_pipeline.run(
+                untyped_completion = rag_pipeline.run(
                     query.query,
                     query.filters,
                     query.limit,
                     generation_config=query.generation_config,
                 )
-
+                # Tell the type checker that rag_completion is a RAGPipelineOutput
+                rag_completion = cast(RAGPipelineOutput, untyped_completion)
+                if not rag_completion.completion:
+                    raise ValueError("No completion found in RAGPipelineOutput.")
+                
                 completion_text = rag_completion.completion.choices[
                     0
                 ].message.content
-                rag_run_id = rag_pipeline.pipeline_run_info["run_id"]
+
                 # TODO - Run with task manager for Cloud deployments
                 background_tasks.add_task(
                     eval_pipeline.run,
                     query.query,
-                    rag_completion.context,
-                    completion_text,
-                    rag_run_id,
+                    rag_completion.context or "",
+                    completion_text or "",
+                    rag_pipeline.pipeline_run_info["run_id"],  # type: ignore
                     **query.settings.rag_settings.dict(),
                 )
                 return rag_completion
@@ -214,12 +218,15 @@ def create_app(
             raise ValueError(
                 "Must pass `stream` as True to stream completions."
             )
-        completion_generator = cast(Generator[str, None, None], rag_pipeline.run(
-            query.query,
-            query.filters,
-            query.limit,
-            generation_config=gen_config,
-        ))
+        completion_generator = cast(
+            Generator[str, None, None],
+            rag_pipeline.run(
+                query.query,
+                query.filters,
+                query.limit,
+                generation_config=gen_config,
+            ),
+        )
 
         for item in completion_generator:
             yield item

@@ -22,7 +22,9 @@ class BasicPromptProvider(DefaultPromptProvider):
     """
 
     def __init__(
-        self, system_prompt: Optional[str] = None, task_prompt: Optional[str] = None
+        self,
+        system_prompt: Optional[str] = None,
+        task_prompt: Optional[str] = None,
     ):
         super().__init__()
         self.add_prompt(
