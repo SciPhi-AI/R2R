@@ -1,6 +1,5 @@
 import json
 import logging
-from dataclasses import asdict
 from pathlib import Path
 from typing import AsyncGenerator, Generator, Optional, Union, cast
 
@@ -181,8 +180,10 @@ def create_app(
                 # Tell the type checker that rag_completion is a RAGPipelineOutput
                 rag_completion = cast(RAGPipelineOutput, untyped_completion)
                 if not rag_completion.completion:
-                    raise ValueError("No completion found in RAGPipelineOutput.")
-                
+                    raise ValueError(
+                        "No completion found in RAGPipelineOutput."
+                    )
+
                 completion_text = rag_completion.completion.choices[
                     0
                 ].message.content
@@ -212,8 +213,8 @@ def create_app(
     async def _stream_rag_completion(
         query: RAGQueryModel,
         rag_pipeline: RAGPipeline,
-    ) -> AsyncGenerator[str, None]:
-        gen_config = GenerationConfig(**asdict(query.generation_config))
+    ) -> Generator[str, None, None]:
+        gen_config = GenerationConfig(**(query.generation_config.dict()))
         if not gen_config.stream:
             raise ValueError(
                 "Must pass `stream` as True to stream completions."
