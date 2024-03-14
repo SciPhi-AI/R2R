@@ -154,7 +154,10 @@ function Component() {
       }
       setIsLoading(true);
 
-      console.log('deploying to ', `${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/deploy`)
+      console.log(
+        'deploying to ',
+        `${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/deploy`
+      );
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_CLOUD_REMOTE_SERVER_URL}/deploy`,
         {

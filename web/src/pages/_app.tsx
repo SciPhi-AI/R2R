@@ -63,23 +63,20 @@ function MyApp({ Component, pageProps }: AppProps) {
         />
         {/* Add other global stylesheets or links here */}
       </Head>
- 
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
+
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="dark"
+        enableSystem={false}
+        disableTransitionOnChange
+      >
+        <PostHogProvider client={posthog}>
           <PipelineProvider>
-          <PostHogProvider
-            apiKey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
-            options={options}
-          >
             <AuthProvider>
               <Component {...pageProps} />
             </AuthProvider>
-          </PostHogProvider>
-        </PipelineProvider>
+          </PipelineProvider>
+        </PostHogProvider>
       </ThemeProvider>
     </>
   );
