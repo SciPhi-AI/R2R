@@ -36,7 +36,7 @@ class E2EPipelineFactory:
             return LocalVectorDB()
 
     @staticmethod
-    def get_embeddings_provider(embedding_config: Dict[str, Any]):
+    def get_embeddings_provider(embedding_config: dict[str, Any]):
         if embedding_config["provider"] == "openai":
             from r2r.embeddings import OpenAIEmbeddingProvider
 

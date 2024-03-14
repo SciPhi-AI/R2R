@@ -39,7 +39,7 @@ psycopg2-binary = {version = "^2.9.9", optional = true}
 numpy = {version = "^1.26.4", optional = true}
 scikit-learn = {version = "^1.4.1.post1", optional = true}
 sentry-sdk = {version = "^1.40.4", optional = true}
-deepeval = {version ="^0.20.76", optional = true}
+deepeval = {version ="^0.20.88", optional = true}
 parea-ai = {version = "^0.2.86", optional = true}
 
 [tool.poetry.extras]
