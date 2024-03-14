@@ -217,7 +217,7 @@ def create_app(
     async def _stream_rag_completion(
         query: RAGQueryModel,
         rag_pipeline: RAGPipeline,
-    ) -> Generator[str, None, None]:
+    ) -> AsyncGenerator[str, None]:
         gen_config = GenerationConfig(**(query.generation_config.dict()))
         if not gen_config.stream:
             raise ValueError(
