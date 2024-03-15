@@ -89,7 +89,7 @@ class LogModel(BaseModel):
 
     class Config:
         alias_generator = to_camel
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 
 # TODO - Split apart `retrieval` and `embedding` event logs
@@ -108,4 +108,4 @@ class SummaryLogModel(BaseModel):
 
     class Config:
         alias_generator = to_camel
-        allow_population_by_field_name = True
+        populate_by_name = True
