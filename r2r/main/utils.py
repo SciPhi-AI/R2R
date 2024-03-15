@@ -60,6 +60,22 @@ class R2RConfig:
 
         return cls(config_data)
 
+    # TODO - How to type 'redis.Redis' without introducing dependency on 'redis' package?
+    def save_to_redis(self, redis_client: Any, key: str):
+        config_data = {
+            section: getattr(self, section) for section in REQUIRED_KEYS.keys()
+        }
+        redis_client.set(f"R2RConfig:{key}", json.dumps(config_data))
+
+    @classmethod
+    def load_from_redis(cls, redis_client: Any, key: str) -> "R2RConfig":
+        config_data = redis_client.get(f"R2RConfig:{key}")
+        if config_data is None:
+            raise ValueError(
+                f"Configuration not found in Redis with key '{key}'"
+            )
+        return cls(json.loads(config_data))
+
 
 def apply_cors(app):
     # CORS setup
