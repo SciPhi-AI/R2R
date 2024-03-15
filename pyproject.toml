@@ -21,7 +21,7 @@ fire = "^0.5.0"
 gunicorn = "^21.2.0"
 litellm = "^1.28.0"
 openai = "^1.11.1"
-pydantic = "^1.10.13"
+pydantic = "^2.6.3"
 python-dotenv = "^1.0.1"
 python-multipart = "^0.0.9"
 requests = "^2.31.0"
@@ -39,7 +39,7 @@ psycopg2-binary = {version = "^2.9.9", optional = true}
 numpy = {version = "^1.26.4", optional = true}
 scikit-learn = {version = "^1.4.1.post1", optional = true}
 sentry-sdk = {version = "^1.40.4", optional = true}
-deepeval = {version ="^0.20.76", optional = true}
+deepeval = {version ="^0.20.88", optional = true}
 parea-ai = {version = "^0.2.86", optional = true}
 
 [tool.poetry.extras]
@@ -64,7 +64,7 @@ line-length = 79
 
 [tool.mypy]
 ignore_missing_imports = true
-exclude = 'playground/.*|deprecated/.*|dump/.*|docs/source'
+exclude = 'playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*'
 
 [[tool.mypy.overrides]]
 module = "yaml"

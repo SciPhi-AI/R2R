@@ -4,7 +4,7 @@ A simple example to demonstrate the usage of `BasicEmbeddingPipeline`.
 import copy
 import logging
 import uuid
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Tuple
 
 from r2r.core import (
     BasicDocument,
@@ -54,7 +54,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         self.pipeline_run_info = None
 
     @log_execution_to_db
-    def ingress(self, document: BasicDocument) -> str:
+    def ingress(self, document: BasicDocument) -> dict:
         """
         Extracts text from a document.
         """
@@ -76,7 +76,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         Extracts text from a document.
         """
         # Establish logging of document data
-        return next(document)[0]
+        return document.text
 
     def transform_text(self, text: str) -> str:
         """
@@ -130,7 +130,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
 
     def run(
         self,
-        document: Union[BasicDocument, list[BasicDocument]],
+        document: BasicDocument,
         do_chunking=False,
         do_upsert=True,
         **kwargs: Any,

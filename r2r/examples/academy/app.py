@@ -5,14 +5,15 @@ from r2r.core import (
     GenerationConfig,
     LLMProvider,
     LoggingDatabaseConnection,
-    RAGCompletion,
+    PromptProvider,
+    RAGPipelineOutput,
     VectorDBProvider,
     VectorSearchResult,
     log_execution_to_db,
 )
 from r2r.embeddings import OpenAIEmbeddingProvider
-from r2r.main import E2EPipelineFactory
-from r2r.pipelines import BasicRAGPipeline
+from r2r.main import E2EPipelineFactory, R2RConfig
+from r2r.pipelines import BasicPromptProvider, BasicRAGPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +44,9 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
-        system_prompt: Optional[str] = DEFAULT_SYSTEM_PROMPT,
-        task_prompt: Optional[str] = DEFAULT_TASK_PROMPT,
+        prompt_provider: Optional[PromptProvider] = BasicPromptProvider(
+            DEFAULT_SYSTEM_PROMPT, DEFAULT_TASK_PROMPT
+        ),
     ) -> None:
         logger.debug(f"Initalizing `SyntheticRAGPipeline`")
 
@@ -54,8 +56,7 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
             embedding_model,
             embeddings_provider,
             logging_connection=logging_connection,
-            system_prompt=system_prompt,
-            task_prompt=task_prompt,
+            prompt_provider=prompt_provider,
         )
 
     def transform_query(self, query: str, generation_config: GenerationConfig) -> list[str]:  # type: ignore
@@ -138,14 +139,14 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
             for transformed_query in transformed_queries
         ]
         if search_only:
-            return RAGCompletion(search_results, None, None)
+            return RAGPipelineOutput(search_results, None, None)
 
         context = self.construct_context(search_results)
         prompt = self.construct_prompt({"query": query, "context": context})
 
         if not generation_config.stream:
             completion = self.generate_completion(prompt, generation_config)
-            return RAGCompletion(search_results, context, completion)
+            return RAGPipelineOutput(search_results, context, completion)
 
         return self._stream_run(
             search_results, context, prompt, generation_config
@@ -163,5 +164,5 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
 
 # Creates a pipeline using the `E2EPipelineFactory`
 app = E2EPipelineFactory.create_pipeline(
-    rag_pipeline_impl=SyntheticRAGPipeline
+    config=R2RConfig.load_config(), rag_pipeline_impl=SyntheticRAGPipeline
 )

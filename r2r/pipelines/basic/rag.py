@@ -7,12 +7,15 @@ from typing import Optional
 from r2r.core import (
     LLMProvider,
     LoggingDatabaseConnection,
+    PromptProvider,
     RAGPipeline,
     VectorDBProvider,
     VectorSearchResult,
     log_execution_to_db,
 )
 from r2r.embeddings import OpenAIEmbeddingProvider
+
+from .prompt_provider import BasicPromptProvider
 
 logger = logging.getLogger(__name__)
 
@@ -28,20 +31,21 @@ class BasicRAGPipeline(RAGPipeline):
         db: VectorDBProvider,
         embedding_model: str,
         embeddings_provider: OpenAIEmbeddingProvider,
+        prompt_provider: Optional[PromptProvider] = None,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
-        system_prompt: Optional[str] = None,
-        task_prompt: Optional[str] = None,
     ) -> None:
         """
         Initializes the RAG pipeline with necessary components and configurations.
         """
         logger.debug(f"Initalizing `BasicRAGPipeline`.")
+        if not prompt_provider:
+            prompt_provider = BasicPromptProvider()
+        self.prompt_provider = prompt_provider
 
         super().__init__(
             llm,
+            prompt_provider=prompt_provider,
             logging_connection=logging_connection,
-            system_prompt=system_prompt,
-            task_prompt=task_prompt,
         )
         self.embedding_model = embedding_model
         self.embeddings_provider = embeddings_provider

@@ -20,34 +20,61 @@ def find_project_root(current_dir):
     return current_dir  # Fallback to current dir if no marker found
 
 
-def load_config(config_path=None):
-    if config_path is None:
-        # Get the root directory of the project
-        root_dir = os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        )
-        config_path = os.path.join(root_dir, "config.json")
+REQUIRED_KEYS: dict[str, list] = {
+    "embedding": ["provider", "model"],
+    "evals": ["provider", "frequency"],
+    "language_model": ["provider"],
+    "logging_database": ["provider", "collection_name", "level"],
+    "ingestion": ["provider"],
+    "vector_database": ["provider", "collection_name"],
+    "app": ["max_logs"],
+}
 
-    # Load configuration from JSON file
-    with open(config_path) as f:
-        config = json.load(f)
 
-    # Extract configuration parameters
-    embedding_config = config["embedding"]
-    evals_config = config["evals"]
-    llm_config = config["language_model"]
-    logging_config = config["logging_database"]
-    ingestion_config = config["ingestion"]
-    vector_database_config = config["vector_database"]
+class R2RConfig:
+    def __init__(self, config_data: dict[str, Any]):
+        for section, keys in REQUIRED_KEYS.items():
+            self._validate_config_section(config_data, section, keys)
+            setattr(self, section, config_data[section])
 
-    return (
-        embedding_config,
-        evals_config,
-        llm_config,
-        logging_config,
-        ingestion_config,
-        vector_database_config,
-    )
+    def _validate_config_section(
+        self, config_data: dict[str, Any], section: str, keys: list
+    ):
+        if section not in config_data:
+            raise ValueError(f"Missing '{section}' section in config")
+        if not all(key in config_data[section] for key in keys):
+            raise ValueError(f"Missing required keys in '{section}' config")
+
+    @classmethod
+    def load_config(cls, config_path: str = None) -> "R2RConfig":
+        if config_path is None:
+            # Get the root directory of the project
+            root_dir = os.path.dirname(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            )
+            config_path = os.path.join(root_dir, "config.json")
+
+        # Load configuration from JSON file
+        with open(config_path) as f:
+            config_data = json.load(f)
+
+        return cls(config_data)
+
+    # TODO - How to type 'redis.Redis' without introducing dependency on 'redis' package?
+    def save_to_redis(self, redis_client: Any, key: str):
+        config_data = {
+            section: getattr(self, section) for section in REQUIRED_KEYS.keys()
+        }
+        redis_client.set(f"R2RConfig:{key}", json.dumps(config_data))
+
+    @classmethod
+    def load_from_redis(cls, redis_client: Any, key: str) -> "R2RConfig":
+        config_data = redis_client.get(f"R2RConfig:{key}")
+        if config_data is None:
+            raise ValueError(
+                f"Configuration not found in Redis with key '{key}'"
+            )
+        return cls(json.loads(config_data))
 
 
 def apply_cors(app):
@@ -162,6 +189,10 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
             id_match = re.search(r"'id': '([^']+)'", result)
             text_match = re.search(r"'text': '([^']+)'", result)
             metadata_match = re.search(r"'metadata': (\{[^}]+\})", result)
+            if not id_match or not text_match or not metadata_match:
+                raise ValueError(
+                    f"Missing 'id', 'text', or 'metadata' in result: {result}"
+                )
             metadata = metadata_match.group(1).replace("'", '"')
             metadata_json = json.loads(metadata)
 
