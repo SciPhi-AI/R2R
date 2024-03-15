@@ -210,13 +210,9 @@ class LocalLoggingProvider(LoggingProvider):
                 f"SELECT * FROM {self.collection_name} ORDER BY timestamp DESC LIMIT ?",
                 (max_logs,),
             )
-            print("cur = ", cur)
             colnames = [desc[0] for desc in cur.description]
-            print("colnames = ", colnames)
             results = cur.fetchall()
-            print("results = ", results)
             logs = [dict(zip(colnames, row)) for row in results]
-            print("logs = ", logs)
         return logs
 
 

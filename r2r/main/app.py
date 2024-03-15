@@ -18,8 +18,6 @@ from r2r.core import (
     EvalPipeline,
     GenerationConfig,
     IngestionPipeline,
-    GenerationConfig,
-    IngestionPipeline,
     LoggingDatabaseConnection,
     RAGPipeline,
     RAGPipelineOutput,
