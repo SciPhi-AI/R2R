@@ -1,3 +1,4 @@
+import requests
 import json
 import logging
 from pathlib import Path
@@ -9,6 +10,7 @@ from fastapi import (
     File,
     Form,
     HTTPException,
+    Request,
     UploadFile,
 )
 from fastapi.responses import StreamingResponse
@@ -33,6 +35,7 @@ from r2r.main.utils import (
 from .models import (
     AddEntriesRequest,
     AddEntryRequest,
+    EvalPayloadModel,
     LogModel,
     RAGQueryModel,
     SettingsModel,
@@ -79,7 +82,7 @@ def create_app(
         if (
             file is not None
             and file.size
-            > config.app("max_file_size_in_mb", 5) * MB_CONVERSION_FACTOR
+            > config.app.get("max_file_size_in_mb", 100) * MB_CONVERSION_FACTOR
         ):
             raise HTTPException(
                 status_code=413,
@@ -179,7 +182,9 @@ def create_app(
 
     @app.post("/rag_completion/")
     async def rag_completion(
-        background_tasks: BackgroundTasks, query: RAGQueryModel
+        background_tasks: BackgroundTasks,
+        query: RAGQueryModel,
+        request: Request
     ):
         try:
             stream = query.generation_config.stream
@@ -201,15 +206,25 @@ def create_app(
                     0
                 ].message.content
 
-                # TODO - Run with task manager for Cloud deployments
+                # Retrieve the URL dynamically from the request header
+                url = request.url
+                if not url:
+                    url = "http://localhost:8000"
+                else:
+                    url = str(url).split("/rag_completion")[0]
+
+                # Pass the payload to the /eval endpoint
+                payload = {
+                    "query": query.query,
+                    "context": rag_completion.context or "",
+                    "completion_text": completion_text or "",
+                    "run_id": str(rag_pipeline.pipeline_run_info["run_id"]),
+                    "settings": query.settings.rag_settings.dict(),
+                }
                 background_tasks.add_task(
-                    eval_pipeline.run,
-                    query.query,
-                    rag_completion.context or "",
-                    completion_text or "",
-                    rag_pipeline.pipeline_run_info["run_id"],  # type: ignore
-                    **query.settings.rag_settings.dict(),
+                    requests.post, f"{url}/eval", json=payload
                 )
+
                 return rag_completion
 
             else:
@@ -244,6 +259,22 @@ def create_app(
 
         for item in completion_generator:
             yield item
+                
+    @app.post("/eval")
+    async def eval(payload: EvalPayloadModel):
+        try:
+            query = payload.query
+            context = payload.context
+            completion_text = payload.completion_text
+            run_id = payload.run_id
+            settings = payload.settings
+
+            eval_pipeline.run(query, context, completion_text, run_id, **(settings.dict()))
+
+            return {"message": "Evaluation completed successfully."}
+        except Exception as e:
+            logger.error(f":eval_endpoint: [Error](payload={payload}, error={str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
 
     @app.delete("/filtered_deletion/")
     async def filtered_deletion(key: str, value: Union[bool, int, str]):

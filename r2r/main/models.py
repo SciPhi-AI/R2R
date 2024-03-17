@@ -31,6 +31,14 @@ class EntryModel(BaseModel):
     metadata: Optional[dict]
 
 
+class EvalPayloadModel(BaseModel):
+    query: str
+    context: str
+    completion_text: str
+    run_id: str
+    settings: RAGSettingsModel
+
+
 # File upload class, to be fixed later
 # class FileUploadRequest(BaseModel):
 # document_id: str
