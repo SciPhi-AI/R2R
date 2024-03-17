@@ -30,6 +30,7 @@
     "collection_name": "demo_vecs"
   },
   "app": {
-    "max_logs": 100
+    "max_logs": 100,
+    "max_file_size_in_mb": 5
   }
 }
