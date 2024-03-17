@@ -222,7 +222,7 @@ def create_app(
                     "settings": query.settings.rag_settings.dict(),
                 }
                 background_tasks.add_task(
-                    requests.post, f"{url}/eval", json=payload
+                    requests.get, f"{url}/eval", json=payload
                 )
 
                 return rag_completion
@@ -260,7 +260,7 @@ def create_app(
         for item in completion_generator:
             yield item
                 
-    @app.post("/eval")
+    @app.get("/eval")
     async def eval(payload: EvalPayloadModel):
         try:
             query = payload.query
