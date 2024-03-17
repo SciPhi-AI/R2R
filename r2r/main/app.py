@@ -43,6 +43,7 @@ logger = logging.getLogger("r2r")
 
 # Current directory where this script is located
 CURRENT_DIR = Path(__file__).resolve().parent
+MB_CONVERSION_FACTOR = 1024 * 1024
 
 
 def create_app(
@@ -74,6 +75,16 @@ def create_app(
     ):
         metadata_json = json.loads(metadata)
         settings_model = SettingsModel.parse_raw(settings)
+
+        if (
+            file is not None
+            and file.size
+            > config.app("max_file_size_in_mb", 5) * MB_CONVERSION_FACTOR
+        ):
+            raise HTTPException(
+                status_code=413,
+                detail="File size exceeds maximum allowed size.",
+            )
 
         if not file.filename:
             raise HTTPException(
