@@ -10,8 +10,7 @@ RUN pip install poetry keyring
 COPY pyproject.toml poetry.lock* /app/
 
 # Disable virtualenv creation by Poetry, install dependencies
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-dev -E parsing -E eval --no-interaction --no-ansi
+RUN poetry install -E parsing -E eval --no-interaction --no-ansi -vvv
 
 # Copy the rest of the application code
 COPY . /app
