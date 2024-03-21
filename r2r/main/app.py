@@ -1,9 +1,9 @@
-import requests
 import json
 import logging
 from pathlib import Path
 from typing import AsyncGenerator, Generator, Optional, Union, cast
 
+import requests
 from fastapi import (
     BackgroundTasks,
     FastAPI,
@@ -184,8 +184,9 @@ def create_app(
     async def rag_completion(
         background_tasks: BackgroundTasks,
         query: RAGQueryModel,
-        request: Request
+        request: Request,
     ):
+        print("rag_completion")
         try:
             stream = query.generation_config.stream
             if not stream:
@@ -259,7 +260,7 @@ def create_app(
 
         for item in completion_generator:
             yield item
-                
+
     @app.get("/eval")
     async def eval(payload: EvalPayloadModel):
         try:
@@ -269,11 +270,15 @@ def create_app(
             run_id = payload.run_id
             settings = payload.settings
 
-            eval_pipeline.run(query, context, completion_text, run_id, **(settings.dict()))
+            eval_pipeline.run(
+                query, context, completion_text, run_id, **(settings.dict())
+            )
 
             return {"message": "Evaluation completed successfully."}
         except Exception as e:
-            logger.error(f":eval_endpoint: [Error](payload={payload}, error={str(e)})")
+            logger.error(
+                f":eval_endpoint: [Error](payload={payload}, error={str(e)})"
+            )
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.delete("/filtered_deletion/")
@@ -285,6 +290,28 @@ def create_app(
             logger.error(
                 f":filtered_deletion: [Error](key={key}, value={value}, error={str(e)})"
             )
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/get_user_ids/")
+    async def get_user_ids():
+        try:
+            user_ids = embedding_pipeline.db.get_all_unique_values(
+                metadata_field="user_id"
+            )
+            return {"user_ids": user_ids}
+        except Exception as e:
+            logger.error(f":get_user_ids: [Error](error={str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/get_user_documents/")
+    async def get_user_documents(user_id: str):
+        try:
+            document_ids = embedding_pipeline.db.get_all_unique_values(
+                metadata_field="document_id", filters={"user_id": user_id}
+            )
+            return {"document_ids": document_ids}
+        except Exception as e:
+            logger.error(f":get_user_documents: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/logs")

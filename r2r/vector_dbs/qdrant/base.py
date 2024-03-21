@@ -170,3 +170,44 @@ class QdrantDB(VectorDBProvider):
             ),
         )
         return
+
+    def get_all_unique_values(
+        self, collection_name: str, metadata_field: str, filters: dict = {}
+    ) -> list:
+        if self.collection_name is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `get_all_unique_values`."
+            )
+
+        # Create a scroll filter based on the provided filters
+        scroll_filter = None
+        if filters:
+            filter_conditions = [
+                self.models.FieldCondition(
+                    key=key, match=self.models.MatchValue(value=value)
+                )
+                for key, value in filters.items()
+            ]
+            scroll_filter = self.models.Filter(must=filter_conditions)
+
+        unique_values = set()
+
+        # Scroll through the collection and retrieve points in batches
+        next_page_offset = None
+        while True:
+            records, next_page_offset = self.scroll(
+                collection_name=collection_name,
+                scroll_filter=scroll_filter,
+                offset=next_page_offset,
+                limit=100,  # Adjust the batch size as needed
+                with_payload=True,
+            )
+
+            for record in records:
+                if metadata_field in record.payload:
+                    unique_values.add(record.payload[metadata_field])
+
+            if next_page_offset is None:
+                break
+
+        return list(unique_values)

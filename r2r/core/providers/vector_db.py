@@ -122,3 +122,9 @@ class VectorDBProvider(ABC):
         self, key: str, value: Union[bool, int, str]
     ) -> None:
         pass
+
+    @abstractmethod
+    def get_all_unique_values(
+        self, metadata_field: str, filters: dict = {}
+    ) -> list:
+        pass
