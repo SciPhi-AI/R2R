@@ -152,13 +152,15 @@ class PGVectorDB(VectorDBProvider):
 
         mapped_filters = {key: {"$eq": value} for key, value in filters.items()}
 
+        # Pass an empty vector as the `data` argument
         records = self.collection.query(
+            data=[0] * self.collection.dimension,  # Empty vector
             filters=mapped_filters,
             include_metadata=True,
             include_value=False,
-            limit=None,
+            # Remove the `limit` argument to retrieve all records
         )
 
-        unique_values = set(record[2].get(metadata_field) for record in records)
+        unique_values = set(record[1].get(metadata_field) for record in records)
 
         return list(unique_values)
