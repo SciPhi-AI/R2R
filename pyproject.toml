@@ -42,10 +42,6 @@ sentry-sdk = {version = "^1.40.4", optional = true}
 deepeval = {version ="^0.20.88", optional = true}
 parea-ai = {version = "^0.2.86", optional = true}
 ionic-api-sdk = {version = "0.9.3", optional = true}
-boto3 = {version = "^1.34.71", optional = true}
-exa-py = {version = "^1.0.9", optional = true}
-llama-cpp-python = {version = "^0.2.57", optional = true}
-sentence-transformers = {version = "^2.6.1", optional = true}
 
 [tool.poetry.extras]
 embedding = ["tiktoken"]
@@ -53,14 +49,13 @@ streaming = ["datasets"]
 qdrant = ["qdrant_client"]
 postgres = ["psycopg2-binary"]
 monitoring = ["sentry-sdk"]
-deepeval = ["deepeval"]
-eval = ["parea-ai"]
+eval = ["deepeval", "parea-ai"]
 ionic = ["ionic-api-sdk"]
 reducto = ["boto3"]
 exa = ["exa-py"]
 sentence_transformers = ["sentence-transformers"]
 local_llm = ["llama-cpp-python", "sentence-transformers"]
-all = ["tiktoken", "datasets", "qdrant_client", "psycopg2-binary", "sentry-sdk", "parea-ai", "boto3", "exa-py", "llama-cpp-python"]
+all = ["tiktoken", "datasets", "qdrant_client", "psycopg2-binary", "sentry-sdk", "parea-ai", "boto3", "exa-py", "llama-cpp-python", "ionic-api-sdk"]
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.3.0"
