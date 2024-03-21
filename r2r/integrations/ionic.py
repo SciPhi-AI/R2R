@@ -1,11 +1,10 @@
 
-from itertools import product
 import os
 from typing import Optional
 
 
 class IonicClient:
-    def __init__(self, api_base: str = "api.ioniccommerce.com", api_key: str = os.getenv("IONIC_API_KEY")) -> None:
+    def __init__(self, api_key: str = os.getenv("IONIC_API_KEY")) -> None:
         if not api_key:
             raise ValueError(
                 "Please set the `IONIC_API_KEY` env var or pass a parameter to use `IonicCLient`."
@@ -21,11 +20,9 @@ class IonicClient:
         self,
         query: str,
         num_results: Optional[int] = 5,
-        min_price: Optional[int] = None,
-        max_price: Optional[int] = None,
-    ) -> list[product]:
+    ):
         # temp local import for dependency mgmt
-        from ionic.models.components import Product, QueryAPIRequest
+        from ionic.models.components import QueryAPIRequest
         from ionic.models.components import Query as SDKQuery
         from ionic.models.operations import QueryResponse, QuerySecurity
 
