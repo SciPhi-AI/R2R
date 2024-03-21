@@ -26,7 +26,7 @@
     }
   },
   "vector_database": {
-    "provider": "pgvector",
+    "provider": "local",
     "collection_name": "demo_vecs"
   },
   "app": {
