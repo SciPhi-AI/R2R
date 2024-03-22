@@ -186,7 +186,6 @@ def create_app(
         query: RAGQueryModel,
         request: Request,
     ):
-        print("rag_completion")
         try:
             stream = query.generation_config.stream
             if not stream:
