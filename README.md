@@ -79,8 +79,7 @@ The project includes several basic examples that demonstrate application deploym
    # Ask a question
    python -m r2r.examples.academy.run_client search "What are the key themes of Meditations?"
    ```
-4. [`end-to-end`](r2r/examples/end-to-end): An example showing how to combine a complete web application with the basic RAG pipeline above.
-
+4. [`end-to-end`](docs/pages/examples/end-to-end.mdx): An example showing how to combine a complete web application with the basic RAG pipeline above.
 
 5. [`intelligence`](app.sciphi.ai): A cloud platform which can be used to deploy R2R pipelines powered by SciPhi
 
