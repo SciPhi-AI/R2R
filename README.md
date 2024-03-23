@@ -69,21 +69,7 @@ The project includes several basic examples that demonstrate application deploym
    python -m r2r.examples.basic.run_client
    ```
 
-3. [`pdf chat`](r2r/examples/pdf_chat/run_client.py): An example demonstrating upload and chat with a more realistic pdf.
-
-   ```bash
-   # Ingest pdf
-   python -m r2r.examples.pdf_chat.run_client ingest
-
-   # Return search results
-   python -m r2r.examples.pdf_chat.run_client search "What are the key themes of Meditations?"
-
-   # Stream a rag response
-   poetry run python -m r2r.examples.pdf_chat.run_client rag_completion_streaming "According to Meditaitons, what are some principles to live by?"
-   ```
-
-
-4. [`academy`](r2r/examples/academy): A more sophisticated demo demonstrating how to build a more novel pipeline which involves synthetic queries
+3. [`academy`](r2r/examples/academy): A more sophisticated demo demonstrating how to build a more novel pipeline which involves synthetic queries
 
    ```bash
    # Launch the `academy` example application
@@ -93,9 +79,9 @@ The project includes several basic examples that demonstrate application deploym
    # Ask a question
    python -m r2r.examples.academy.run_client search "What are the key themes of Meditations?"
    ```
+4. [`end-to-end`](docs/pages/examples/end-to-end.mdx): An example showing how to combine a complete web application with the basic RAG pipeline above.
 
-
-4. [`intelligence`](app.sciphi.ai): A cloud platform which can be used to deploy R2R pipelines powered by SciPhi
+5. [`intelligence`](app.sciphi.ai): A cloud platform which can be used to deploy R2R pipelines powered by SciPhi
 
 
 
