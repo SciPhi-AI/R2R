@@ -1,0 +1,79 @@
+To create a customized end-to-end pipeline using the `E2EPipelineFactory` and our previously defined custom pipelines, you can follow these steps:
+
+1. Create an instance of the `R2RConfig` class with the desired configuration settings.
+
+2. Call the `create_pipeline` method of the `E2EPipelineFactory`, passing in the configuration and the custom pipeline implementations. For example, to use the `CustomIngestionPipeline`, `CustomEmbeddingPipeline`, and `CustomRAGPipeline`, you can do the following:
+
+```python
+from r2r.main import E2EPipelineFactory, R2RConfig
+from custom_pipelines import CustomIngestionPipeline, CustomEmbeddingPipeline, CustomRAGPipeline
+
+config = R2RConfig.load_config()
+
+app = E2EPipelineFactory.create_pipeline(
+    config=config,
+    ingestion_pipeline_impl=CustomIngestionPipeline,
+    embedding_pipeline_impl=CustomEmbeddingPipeline,
+    rag_pipeline_impl=CustomRAGPipeline,
+)
+```
+
+3. The factory will create and initialize the necessary components based on the configuration and return the configured application.
+
+4. You can then run the application to start processing documents, embedding them, retrieving relevant documents, generating completions, and evaluating the results.
+
+Now, let's dive into a more precise explanation of how the `E2EPipelineFactory` works and how you can effectively use it to create a customized end-to-end pipeline:
+
+1. Configuration:
+   - The `R2RConfig` class holds the configuration settings for the entire pipeline.
+   - Specify the necessary configuration options for each component, such as the vector database provider, embedding model, language model, text splitter, and evaluation settings.
+
+2. Vector Database:
+   - The `get_vector_db` method of the factory allows you to specify the vector database provider based on the configuration.
+   - Supported providers include Qdrant, PGVector, and LocalVectorDB.
+   - The selected vector database will be used to store and retrieve embedded documents.
+
+3. Embeddings Provider:
+   - The `get_embeddings_provider` method of the factory allows you to specify the embeddings provider based on the configuration.
+   - Supported providers include OpenAI and SentenceTransformers.
+   - The selected embeddings provider will be used to generate embeddings for documents and queries.
+
+4. Language Model:
+   - The `get_llm` method of the factory allows you to specify the language model provider based on the configuration.
+   - Supported providers include OpenAI and LiteLLM.
+   - The selected language model will be used for generating completions in the RAG pipeline.
+
+5. Text Splitter:
+   - The `get_text_splitter` method of the factory allows you to specify the text splitter based on the configuration.
+   - Currently, only the RecursiveCharacterTextSplitter is supported.
+   - The text splitter is used to split documents into chunks for embedding and retrieval.
+
+6. Ingestion Pipeline:
+   - The `ingestion_pipeline_impl` parameter of the `create_pipeline` method allows you to specify the implementation of the ingestion pipeline.
+   - You can use the default `BasicIngestionPipeline` or provide a custom implementation, such as `CustomIngestionPipeline`.
+   - The ingestion pipeline is responsible for processing incoming documents and converting them into plaintext format.
+
+7. Embedding Pipeline:
+   - The `embedding_pipeline_impl` parameter of the `create_pipeline` method allows you to specify the implementation of the embedding pipeline.
+   - You can use the default `BasicEmbeddingPipeline` or provide a custom implementation, such as `CustomEmbeddingPipeline`.
+   - The embedding pipeline is responsible for chunking documents, transforming them based on metadata, generating embeddings, and storing the embedded chunks in the vector database.
+
+8. RAG Pipeline:
+   - The `rag_pipeline_impl` parameter of the `create_pipeline` method allows you to specify the implementation of the RAG pipeline.
+   - You can use the default `BasicRAGPipeline` or provide a custom implementation, such as `CustomRAGPipeline`.
+   - The RAG pipeline is responsible for retrieving relevant documents based on a query, constructing a context, and generating a completion using the retrieved documents.
+
+9. Evaluation Pipeline:
+   - The `eval_pipeline_impl` parameter of the `create_pipeline` method allows you to specify the implementation of the evaluation pipeline.
+   - You can use the default `BasicEvalPipeline` or provide a custom implementation.
+   - The evaluation pipeline is responsible for evaluating the quality of generated completions by comparing them against the original query and context.
+
+10. Logging:
+    - The factory initializes a `LoggingDatabaseConnection` based on the logging configuration.
+    - The logging connection is passed to the individual pipelines for logging execution information.
+
+11. Application Creation:
+    - The `app_fn` parameter of the `create_pipeline` method allows you to specify the function for creating the application.
+    - By default, the `create_app` function is used, which sets up the FastAPI application with the necessary routes and dependencies.
+
+By leveraging the `E2EPipelineFactory`, you can easily create and configure an end-to-end pipeline that suits your specific requirements. The factory abstracts away the complexities of initializing and connecting the various components, allowing you to focus on customizing the individual pipelines and configuration settings to achieve the desired functionality.
