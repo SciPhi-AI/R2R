@@ -83,9 +83,9 @@ class BasicIngestionPipeline(IngestionPipeline):
                 raise ValueError("JSON data must be a valid JSON string.")
             return self._parse_json(entry_json)
         elif entry_type == EntryType.HTML.value:
-            if not isinstance(entry_data, str):
-                raise ValueError("HTML data must be a string.")
-            return self._parse_html(entry_data)
+            if not isinstance(entry_data, bytes):
+                raise ValueError("HTML data must be a bytes object.")
+            return self._parse_html(entry_data.encode("utf-8"))
         elif entry_type == EntryType.PDF.value:
             if not isinstance(entry_data, bytes):
                 raise ValueError("PDF data must be a bytes object.")
