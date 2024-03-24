@@ -3,11 +3,11 @@
   "getting-started": {
     "title": "Getting Started"
   },
-  "examples": {
-    "title": "Examples"
-  },
   "core-features": {
     "title": "Core Features"
+  },
+  "examples": {
+    "title": "Examples"
   },
   "integrations": {
     "title": "Integrations"
