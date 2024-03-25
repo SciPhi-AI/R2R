@@ -13,7 +13,7 @@ include = ["config.json"]
 
 [tool.poetry.dependencies]
 # Python Versions
-python = ">=3.9,<3.12"
+python = ">=3.9,<3.13"
 
 # Required dependencies
 fastapi = "^0.109.2"
@@ -41,8 +41,6 @@ scikit-learn = {version = "^1.4.1.post1", optional = true}
 sentry-sdk = {version = "^1.40.4", optional = true}
 deepeval = {version ="^0.20.88", optional = true}
 parea-ai = {version = "^0.2.86", optional = true}
-llama-index = "^0.10.23"
-llama-hub = "^0.0.79.post1"
 
 [tool.poetry.extras]
 parsing = ["bs4", "pypdf"]
