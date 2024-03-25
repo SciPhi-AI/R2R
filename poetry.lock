@@ -811,6 +811,21 @@ marshmallow = ">=3.18.0,<4.0.0"
 typing-inspect = ">=0.4.0,<1"
 
 [[package]]
+name = "dataclasses-json-speakeasy"
+version = "0.5.11"
+description = "Easily serialize dataclasses to and from JSON."
+optional = true
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "dataclasses_json_speakeasy-0.5.11-py3-none-any.whl", hash = "sha256:ac52a069a01e8521015d682f37849bfdf056c36fa3f81497055e201fec684104"},
+    {file = "dataclasses_json_speakeasy-0.5.11.tar.gz", hash = "sha256:418a987cea2ccf4e4be662f39faa5cc79b47b147c9d1a69d6928d6a27e0c17e8"},
+]
+
+[package.dependencies]
+marshmallow = ">=3.18.0,<4.0.0"
+typing-inspect = ">=0.4.0,<1"
+
+[[package]]
 name = "datasets"
 version = "2.18.0"
 description = "HuggingFace community-driven open-source library of datasets"
@@ -1810,6 +1825,36 @@ files = [
 ]
 
 [[package]]
+name = "ionic-api-sdk"
+version = "0.9.3"
+description = "Python Client SDK"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "Ionic-API-SDK-0.9.3.tar.gz", hash = "sha256:94128704fe0cd848092eac4038bd0f306a421946a5adcdb366b2dbd94e6ecb1c"},
+    {file = "Ionic_API_SDK-0.9.3-py3-none-any.whl", hash = "sha256:64a68de7db5f5ce8bad91f589749603149c7dad3e4ce5ee98e7b07a7c9f81d48"},
+]
+
+[package.dependencies]
+certifi = ">=2023.7.22"
+charset-normalizer = ">=3.2.0"
+dataclasses-json-speakeasy = ">=0.5.11"
+idna = ">=3.4"
+jsonpath-python = ">=1.0.6"
+marshmallow = ">=3.19.0"
+mypy-extensions = ">=1.0.0"
+packaging = ">=23.1"
+python-dateutil = ">=2.8.2"
+requests = ">=2.31.0"
+six = ">=1.16.0"
+typing-extensions = ">=4.7.1"
+typing-inspect = ">=0.9.0"
+urllib3 = ">=1.26.18"
+
+[package.extras]
+dev = ["pylint (==2.16.2)"]
+
+[[package]]
 name = "ipykernel"
 version = "6.29.3"
 description = "IPython Kernel for Jupyter"
@@ -2035,6 +2080,17 @@ files = [
 
 [package.dependencies]
 jsonpointer = ">=1.9"
+
+[[package]]
+name = "jsonpath-python"
+version = "1.0.6"
+description = "A more powerful JSONPath implementation in modern python"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "jsonpath-python-1.0.6.tar.gz", hash = "sha256:dd5be4a72d8a2995c3f583cf82bf3cd1a9544cfdabf2d22595b67aff07349666"},
+    {file = "jsonpath_python-1.0.6-py3-none-any.whl", hash = "sha256:1e3b78df579f5efc23565293612decee04214609208a2335884b3ee3f786b575"},
+]
 
 [[package]]
 name = "jsonpointer"
@@ -6300,6 +6356,7 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 all = ["bs4", "datasets", "deepeval", "numpy", "parea-ai", "psycopg2-binary", "pypdf", "qdrant_client", "scikit-learn", "sentry-sdk", "tiktoken"]
 embedding = ["tiktoken"]
 eval = ["deepeval", "parea-ai"]
+ionic = ["ionic-api-sdk"]
 local-vectordb = ["numpy", "scikit-learn"]
 monitoring = ["sentry-sdk"]
 parsing = ["bs4", "pypdf"]
@@ -6310,4 +6367,4 @@ streaming = ["datasets"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "465166de29d2fec9a19b02d2c2602467d999164e07335690b43a3b2be9a190b9"
+content-hash = "02489537c65bd9d91b3a4487f03949ecc1adae66a650dd671089a31f29dfe841"
