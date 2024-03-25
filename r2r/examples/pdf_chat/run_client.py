@@ -6,13 +6,14 @@ import uuid
 import fire
 
 from r2r.client import R2RClient
+from r2r.core.utils import generate_id_from_label
 
 
 class PDFChat:
     def __init__(self, base_url="http://localhost:8000", user_id=None):
         self.client = R2RClient(base_url)
         if not user_id:
-            self.user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, "user_id"))
+            self.user_id = generate_id_from_label("user_id")
         self.titles = {
             "meditations.pdf": "Title: Meditations - Marcus Aurelius",
             # uncomment the following line to add more documents
@@ -24,7 +25,7 @@ class PDFChat:
         for file_path in glob.glob(os.path.join(current_dir, "*.pdf")):
             file_name = file_path.split(os.path.sep)[-1]
             if file_name in self.titles:
-                document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, file_path))
+                document_id = generate_id_from_label(file_path)
                 metadata = {
                     "user_id": self.user_id,
                     "chunk_prefix": self.titles[file_name],
@@ -69,7 +70,7 @@ class PDFChat:
         asyncio.run(stream_rag_completion())
 
     def delete_document(self, document_path: str):
-        document_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, document_path))
+        document_id = generate_id_from_label(document_path)
         response = self.client.filtered_deletion("document_id", document_id)
         print("Deletion response = ", response)
 

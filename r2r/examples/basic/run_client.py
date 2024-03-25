@@ -2,7 +2,7 @@ import asyncio
 import os
 
 from r2r.client import R2RClient
-from r2r.core.utils import generate_doc_id
+from r2r.core.utils import generate_id_from_label
 
 # Initialize the client with the base URL of your API
 base_url = "http://localhost:8010"
@@ -12,7 +12,7 @@ print("Upserting entry to remote db...")
 # Upsert a single entry
 
 entry_response = client.add_entry(
-    generate_doc_id("doc 1"),
+    generate_id_from_label("doc 1"),
     {"txt": "This is a test entry"},
     {"tags": ["example", "test"]},
     do_upsert=True,
@@ -21,7 +21,7 @@ print(f"Upsert entry response:\n{entry_response}\n\n")
 
 
 entry_response = client.add_entry(
-    generate_doc_id("doc 1"),
+    generate_id_from_label("doc 1"),
     {"txt": "This is a test entry"},
     {"tags": ["example", "test"]},
     do_upsert=False,
@@ -33,12 +33,12 @@ print("Upserting entries to remote db...")
 # Upsert multiple entries
 entries = [
     {
-        "document_id": generate_doc_id("doc 2"),
+        "document_id": generate_id_from_label("doc 2"),
         "blobs": {"txt": "Second test entry"},
         "metadata": {"tags": "bulk"},
     },
     {
-        "document_id": generate_doc_id("doc 3"),
+        "document_id": generate_id_from_label("doc 3"),
         "blobs": {"txt": "Third test entry"},
         "metadata": {"tags": "example"},
     },
@@ -58,7 +58,9 @@ print(f"Search response w/ filter:\n{filtered_search_response}\n\n")
 
 print("Deleting sample document in remote db...")
 # Delete a document
-response = client.filtered_deletion("document_id", generate_doc_id("doc 2"))
+response = client.filtered_deletion(
+    "document_id", generate_id_from_label("doc 2")
+)
 print(f"Deletion response:\n{response}\n\n")
 
 print("Searching remote db with filter after deletion...")
@@ -80,7 +82,7 @@ print(f"Uploading and processing file: {file_path}...")
 # # Upload and process a file
 metadata = {"tags": ["example", "test"]}
 upload_pdf_response = client.upload_and_process_file(
-    generate_doc_id("pdf 1"), file_path, metadata, None
+    generate_id_from_label("pdf 1"), file_path, metadata, None
 )
 print(f"Upload test pdf response:\n{upload_pdf_response}\n\n")
 
@@ -89,7 +91,7 @@ print("Searching remote db after upload...")
 pdf_filtered_search_response = client.search(
     "what is a cool physics equation?",
     5,
-    filters={"document_id": generate_doc_id("pdf 1")},
+    filters={"document_id": generate_id_from_label("pdf 1")},
 )
 print(
     f"Search response w/ uploaded pdf filter:\n{pdf_filtered_search_response}\n"
@@ -101,7 +103,7 @@ print("Performing RAG...")
 pdf_filtered_search_response = client.rag_completion(
     "Are there any test documents?",
     5,
-    filters={"document_id": generate_doc_id("pdf 1")},
+    filters={"document_id": generate_id_from_label("pdf 1")},
 )
 print(
     f"Search response w/ uploaded pdf filter:\n{pdf_filtered_search_response}\n"
@@ -115,7 +117,7 @@ async def stream_rag_completion():
     async for chunk in client.stream_rag_completion(
         "Are there any test documents?",
         5,
-        filters={"document_id": generate_doc_id("pdf 1")},
+        filters={"document_id": generate_id_from_label("pdf 1")},
         generation_config={"stream": True},
     ):
         print(chunk, end="", flush=True)
