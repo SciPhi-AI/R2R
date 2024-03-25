@@ -4,7 +4,6 @@ from .pipelines.embedding import EmbeddingPipeline
 from .pipelines.eval import EvalPipeline
 from .pipelines.ingestion import IngestionPipeline
 from .pipelines.rag import RAGPipeline
-from .providers.dataset import DatasetConfig, DatasetProvider
 from .providers.embedding import EmbeddingProvider
 from .providers.eval import EvalProvider
 from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
@@ -28,8 +27,6 @@ __all__ = [
     "log_execution_to_db",
     "PromptProvider",
     "EvalProvider",
-    "DatasetConfig",
-    "DatasetProvider",
     "EmbeddingProvider",
     "GenerationConfig",
     "LLMConfig",
