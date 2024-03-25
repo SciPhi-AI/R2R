@@ -111,15 +111,16 @@ def create_app(
 
             # TODO - Mark upload as failed if ingestion or embedding fail partway through
 
-            document = ingestion_pipeline.run(
+            documents = ingestion_pipeline.run(
                 document_id,
                 {file_extension: file_content},
                 metadata=metadata_json,
                 **settings_model.ingestion_settings.dict(),
             )
-            embedding_pipeline.run(
-                document, **settings_model.embedding_settings.dict()
-            )
+            for document in documents:
+                embedding_pipeline.run(
+                    document, **settings_model.embedding_settings.dict()
+                )
 
             return {
                 "message": f"File '{file.filename}' processed and saved at '{file_location}'"
@@ -133,15 +134,16 @@ def create_app(
     @app.post("/add_entry/")
     async def add_entry(entry_req: AddEntryRequest):
         try:
-            document = ingestion_pipeline.run(
+            documents = ingestion_pipeline.run(
                 entry_req.entry.document_id,
                 entry_req.entry.blobs,
                 metadata=entry_req.entry.metadata,
                 **entry_req.settings.ingestion_settings.dict(),
             )
-            embedding_pipeline.run(
-                document, **entry_req.settings.embedding_settings.dict()
-            )
+            for document in documents:
+                embedding_pipeline.run(
+                    document, **entry_req.settings.embedding_settings.dict()
+                )
             return {"message": "Entry upserted successfully."}
         except Exception as e:
             logger.error(
@@ -159,9 +161,11 @@ def create_app(
                     metadata=entry.metadata,
                     **entries_req.settings.ingestion_settings.dict(),
                 )
-                embedding_pipeline.run(
-                    documents, **entries_req.settings.embedding_settings.dict()
-                )
+                for document in documents:
+                    embedding_pipeline.run(
+                        document,
+                        **entries_req.settings.embedding_settings.dict(),
+                    )
             return {"message": "Entries upserted successfully."}
         except Exception as e:
             logger.error(
