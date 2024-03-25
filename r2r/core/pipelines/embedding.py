@@ -2,13 +2,13 @@
 Abstract base class for embedding pipelines.
 """
 import logging
-import uuid
 from abc import abstractmethod
 from typing import Any, Optional
 
 from ..providers.embedding import EmbeddingProvider
 from ..providers.logging import LoggingDatabaseConnection
 from ..providers.vector_db import VectorDBProvider, VectorEntry
+from ..utils import generate_run_id
 from .pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,10 @@ class EmbeddingPipeline(Pipeline):
         super().__init__(logging_connection=logging_connection, **kwargs)
 
     def initialize_pipeline(self, *args, **kwargs) -> None:
-        self.pipeline_run_info = {"run_id": uuid.uuid4(), "type": "embedding"}
+        self.pipeline_run_info = {
+            "run_id": generate_run_id(),
+            "type": "embedding",
+        }
 
     @abstractmethod
     def extract_text(self, document: Any) -> str:

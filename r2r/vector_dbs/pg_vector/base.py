@@ -144,13 +144,17 @@ class PGVectorDB(VectorDBProvider):
             )
         self.collection.delete(filters={key: {"$eq": value}})  # type: ignore
 
-    def get_all_unique_values(self, metadata_field: str, filters: dict = {}) -> list:
+    def get_all_unique_values(
+        self, metadata_field: str, filters: dict = {}
+    ) -> list:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `get_all_unique_values`."
             )
 
-        mapped_filters = {key: {"$eq": value} for key, value in filters.items()}
+        mapped_filters = {
+            key: {"$eq": value} for key, value in filters.items()
+        }
 
         # Pass an empty vector as the `data` argument
         records = self.collection.query(
@@ -161,6 +165,8 @@ class PGVectorDB(VectorDBProvider):
             # Remove the `limit` argument to retrieve all records
         )
 
-        unique_values = set(record[1].get(metadata_field) for record in records)
+        unique_values = set(
+            record[1].get(metadata_field) for record in records
+        )
 
         return list(unique_values)

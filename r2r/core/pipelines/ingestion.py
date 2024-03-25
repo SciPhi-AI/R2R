@@ -1,9 +1,9 @@
-import uuid
 from abc import abstractmethod
-from typing import Any, Optional
+from typing import Any, Iterator, Optional
 
 from ..abstractions.document import BasicDocument
 from ..providers.logging import LoggingDatabaseConnection
+from ..utils import generate_run_id
 from .pipeline import Pipeline
 
 
@@ -17,7 +17,10 @@ class IngestionPipeline(Pipeline):
         super().__init__(logging_connection=logging_connection, **kwargs)
 
     def initialize_pipeline(self, *args, **kwargs) -> None:
-        self.pipeline_run_info = {"run_id": uuid.uuid4(), "type": "ingestion"}
+        self.pipeline_run_info = {
+            "run_id": generate_run_id(),
+            "type": "ingestion",
+        }
 
     @property
     @abstractmethod
@@ -28,16 +31,20 @@ class IngestionPipeline(Pipeline):
         pass
 
     @abstractmethod
-    def process_data(self, entry_type: str, entry_data: Any) -> str:
+    def process_data(
+        self, entry_type: str, entry_data: Any
+    ) -> Iterator[BasicDocument]:
         """
-        Process data into plaintext based on the data type.
+        Process data into plaintext based on the data type and yield BasicDocument objects.
         """
         pass
 
     @abstractmethod
-    def parse_entry(self, entry_type: str, entry_data: Any) -> str:
+    def parse_entry(
+        self, entry_type: str, entry_data: Any
+    ) -> Iterator[BasicDocument]:
         """
-        Parse entry data into plaintext based on the entry type.
+        Parse entry data into plaintext based on the entry type and yield BasicDocument objects.
         """
         pass
 
@@ -47,23 +54,17 @@ class IngestionPipeline(Pipeline):
         blobs: dict[str, Any],
         metadata: Optional[dict] = None,
         **kwargs,
-    ) -> BasicDocument:
+    ) -> Iterator[BasicDocument]:
         """
         Run the appropriate parsing method based on the data type and whether the data is a file or an entry.
-        Returns the processed data and metadata.
+        Yields the processed BasicDocument objects.
         """
-
         self.initialize_pipeline()
 
         if len(blobs) == 0:
             raise ValueError("No blobs provided to process.")
 
-        processed_text = ""
         for entry_type, blob in blobs.items():
             if entry_type not in self.supported_types:
                 raise ValueError(f"EntryType {entry_type} not supported.")
-            processed_text += self.parse_entry(entry_type, blob)
-
-        return BasicDocument(
-            id=document_id, text=processed_text, metadata=metadata or {}
-        )
+            yield from self.parse_entry(entry_type, blob)

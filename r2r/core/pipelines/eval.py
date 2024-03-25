@@ -1,10 +1,10 @@
 import logging
 import random
-import uuid
 from abc import abstractmethod
 from typing import Any, Optional
 
 from ..providers.logging import LoggingDatabaseConnection
+from ..utils import generate_run_id
 from .pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class EvalPipeline(Pipeline):
         self, run_id: Optional[str], *args, **kwargs
     ) -> None:
         self.pipeline_run_info = {
-            "run_id": run_id or uuid.uuid4(),
+            "run_id": run_id or generate_run_id(),
             "type": "evaluation",
         }
 

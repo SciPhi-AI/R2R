@@ -14,7 +14,7 @@ from r2r.core import (
     VectorEntry,
     log_execution_to_db,
 )
-from r2r.core.utils import TextSplitter
+from r2r.core.utils import TextSplitter, generate_id_from_label
 from r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)
@@ -189,9 +189,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             metadata["pipeline_run_id"] = str(self.pipeline_run_info["run_id"])  # type: ignore
             metadata["text"] = transformed_chunk
             metadata["document_id"] = doc_id
-            chunk_id = uuid.uuid5(
-                uuid.NAMESPACE_DNS, f"{doc_id}-{chunk_count}"
-            )
+            chunk_id = generate_id_from_label(f"{doc_id}-{chunk_count}")
             chunk_count += 1
             entries.append(VectorEntry(chunk_id, embedded_chunk, metadata))
         self.store_chunks(entries, do_upsert)

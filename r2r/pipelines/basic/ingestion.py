@@ -6,9 +6,13 @@ import copy
 import json
 import logging
 from enum import Enum
-from typing import Optional, Union
+from typing import Any, Iterator, Optional, Union
 
-from r2r.core import IngestionPipeline, LoggingDatabaseConnection
+from r2r.core import (
+    BasicDocument,
+    IngestionPipeline,
+    LoggingDatabaseConnection,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -68,38 +72,61 @@ class BasicIngestionPipeline(IngestionPipeline):
         self,
         entry_type: str,
         entry_data: Union[bytes, str],
-    ) -> str:
-        """
-        Process data into plaintext based on the data type.
-        """
+    ) -> Iterator[BasicDocument]:
         if entry_type == EntryType.TXT.value:
             if not isinstance(entry_data, str):
                 raise ValueError("TXT data must be a string.")
-            return entry_data
+            yield BasicDocument(
+                id=self.document_id, text=entry_data, metadata=self.metadata
+            )
         elif entry_type == EntryType.JSON.value:
             try:
                 entry_json = json.loads(entry_data)
             except json.JSONDecodeError:
                 raise ValueError("JSON data must be a valid JSON string.")
-            return self._parse_json(entry_json)
+            yield BasicDocument(
+                id=self.document_id,
+                text=self._parse_json(entry_json),
+                metadata=self.metadata,
+            )
         elif entry_type == EntryType.HTML.value:
-            if not isinstance(entry_data, bytes):
-                raise ValueError("HTML data must be a bytes object.")
-            return self._parse_html(entry_data.encode("utf-8"))
+            if not isinstance(entry_data, str):
+                raise ValueError("HTML data must be a string.")
+            yield BasicDocument(
+                id=self.document_id,
+                text=self._parse_html(entry_data),
+                metadata=self.metadata,
+            )
         elif entry_type == EntryType.PDF.value:
             if not isinstance(entry_data, bytes):
                 raise ValueError("PDF data must be a bytes object.")
-            return self._parse_pdf(entry_data)
+            yield from self._parse_pdf(entry_data)
         else:
             raise ValueError(f"EntryType {entry_type} not supported.")
 
     def parse_entry(
         self, entry_type: str, entry_data: Union[bytes, str]
-    ) -> str:
-        """
-        Parse entry data into plaintext based on the entry type.
-        """
-        return self.process_data(entry_type, entry_data)
+    ) -> Iterator[BasicDocument]:
+        yield from self.process_data(entry_type, entry_data)
+
+    def run(
+        self,
+        document_id: str,
+        blobs: dict[str, Any],
+        metadata: Optional[dict] = None,
+        **kwargs,
+    ) -> Iterator[BasicDocument]:
+        self.initialize_pipeline()
+        self.document_id = document_id
+        self.metadata = metadata or {}
+
+        if len(blobs) == 0:
+            raise ValueError("No blobs provided to process.")
+
+        for entry_type, blob in blobs.items():
+            if entry_type not in self.supported_types:
+                raise ValueError(f"EntryType {entry_type} not supported.")
+            yield from self.parse_entry(entry_type, blob)
 
     def _parse_json(self, data: dict) -> str:
         """
@@ -157,21 +184,20 @@ class BasicIngestionPipeline(IngestionPipeline):
         soup = self.BeautifulSoup(data, "html.parser")
         return soup.get_text()
 
-    def _parse_pdf(self, file_data: bytes) -> str:
+    def _parse_pdf(self, file_data: bytes) -> Iterator[BasicDocument]:
         import string
         from io import BytesIO
 
-        """
-        Process PDF file data into plaintext.
-        """
         pdf = self.PdfReader(BytesIO(file_data))
-        text = ""
-        for page in pdf.pages:
+        for page_num, page in enumerate(pdf.pages, start=1):
             page_text = page.extract_text()
             if page_text is not None:
                 # Remove non-printable characters
                 page_text = "".join(
                     filter(lambda x: x in string.printable, page_text)
                 )
-                text += page_text + "\n"
-        return text
+                yield BasicDocument(
+                    id=f"{self.document_id}",
+                    text=page_text,
+                    metadata={"page_num": page_num, **self.metadata},
+                )
