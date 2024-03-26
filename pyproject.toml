@@ -56,7 +56,7 @@ ionic = ["ionic-api-sdk"]
 all = ["bs4", "pypdf", "tiktoken", "datasets", "qdrant_client", "psycopg2-binary", "numpy", "scikit-learn", "sentry-sdk", "protobuf", "deepeval", "parea-ai", "ionic"]
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.3.0"
+black = "^24.3.0"
 flake8 = "6.1.0"
 isort = "5.12.0"
 mypy = "^1.5.1"
