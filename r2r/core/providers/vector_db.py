@@ -64,7 +64,7 @@ class VectorSearchResult:
 
 
 class VectorDBProvider(ABC):
-    supported_providers = ["local", "pgvector", "qdrant"]
+    supported_providers = ["local", "pgvector", "qdrant", "lancedb"]
 
     def __init__(self, provider: str):
         if provider not in VectorDBProvider.supported_providers:
