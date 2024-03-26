@@ -2,27 +2,35 @@ import React from "react";
 import { DocsThemeConfig } from "nextra-theme-docs";
 
 const config: DocsThemeConfig = {
-  logo: <span>R2R</span>,
+  logo: (
+    <img width={120} src="./public/r2r_mini.png" style={{ borderRadius: 5 }} />
+  ),
+  head: (
+    <>
+      <link rel="icon" type="image/png" href="./favicon.png" />
+      <meta property="og:title" content="R2R Documentation" />
+      <meta
+        property="og:description"
+        content="From Rag2Riches: A semi-opinionated framework for Production-ready RAG systems"
+      />
+      <meta property="og:image" content="./public/r2r_mini.png" />
+    </>
+  ),
   project: {
     link: "https://github.com/SciPhi-AI/R2R",
   },
   chat: {
     link: "https://discord.gg/p6KqD2kjtB",
   },
-  docsRepositoryBase: "https://github.com/SciPhi-AI/R2R",
+  docsRepositoryBase: "https://github.com/SciPhi-AI/R2R/tree/main/docs",
   footer: {
-    text: "EmergentAGI, Inc. © 2024",
+    text: `EmergentAGI, Inc. © ${new Date().getFullYear()}`,
   },
-  head: (
-    <>
-      <meta property="og:title" content="R2R Documentation" />
-      <meta
-        property="og:description"
-        content="Documentation for the R2R Framework"
-      />
-      <meta property="og:image" content="./public/r2r_mini.png" />
-    </>
-  ),
+  useNextSeoProps() {
+    return {
+      titleTemplate: "%s",
+    };
+  },
 };
 
 export default config;
