@@ -1,9 +1,7 @@
 import logging
-import os
-from typing import Optional, Any, Union
+from typing import Optional
 
-from r2r.core import VectorDBProvider, VectorEntry, VectorSearchResult
-from lancedb.pydantic import LanceModel, Vector
+from r2r.core import VectorDBProvider, VectorEntry
 
 logger = logging.getLogger(__name__)
 
@@ -16,19 +14,23 @@ class LanceDB(VectorDBProvider):
         logger.info("Initializing `LanceDB` to store and retrieve embeddings.")
 
         super().__init__(provider)
+
         if provider != "lancedb":
             raise ValueError(
                 "LanceDB must be initialized with provider `lancedb`."
             )
+
         try:
             import lancedb
         except ImportError:
             raise ValueError(
                 f"Error, `lancedb` is not installed. Please install it using `pip install lancedb`."
             )
+
         self.db_path = db_path
+
         try:
-            self.client = lancedb.connect(db_path=self.db_path)
+            self.client = lancedb.connect(uri=self.db_path)
         except Exception as e:
             raise ValueError(
                 f"Error {e} occurred while attempting to connect to the lancedb provider."
@@ -39,18 +41,49 @@ class LanceDB(VectorDBProvider):
             self, collection_name: str, dimension: int
     ) -> None:
         self.collection_name = collection_name
+
         try:
-            import pyarrow  # TODO ADD Dependency
+            import pyarrow
         except ImportError:
             raise ValueError(
                 f"Error, `pyarrow` is not installed. Please install it using `pip install pyarrow`."
             )
+
+        table_schema = pyarrow.schema(
+            [
+                pyarrow.field("id", pyarrow.string()),
+                pyarrow.field(
+                    "vector", pyarrow.list_(pyarrow.float32(), dimension)
+                ),
+                # TODO Handle storing metadata
+            ]
+        )
+
         try:
-            result = self.client.create_table(
-                name=f"{collection_name}", on_bad_vectors="error", schema=[]
+            self.client.create_table(
+                name=f"{collection_name}",
+                on_bad_vectors="error",
+                schema=table_schema,
             )
-        except Exception:
+        except Exception as e:
             # TODO - Handle more appropriately - create collection fails when it already exists
-            # https://lancedb.github.io/lancedb/python/python/#lancedb.db.DBConnection.create_table
-            print(Exception)
             pass
+
+    def copy(self, entry: VectorEntry, commit=True) -> None:
+        raise NotImplementedError(
+            "LanceDB does not support the `copy` method."
+        )
+
+    def upsert(self, entry: VectorEntry, commit=True) -> None:
+        if self.collection_name is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `upsert`."
+            )
+        self.client.open_table(self.collection_name).add(
+            {
+                "vector": entry.vector,
+                "id": entry.id,
+                # TODO ADD metadata storage
+            },
+            mode="overwrite",
+        )
