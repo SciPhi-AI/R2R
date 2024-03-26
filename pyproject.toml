@@ -42,6 +42,7 @@ sentry-sdk = {version = "^1.40.4", optional = true}
 deepeval = {version ="^0.20.88", optional = true}
 parea-ai = {version = "^0.2.86", optional = true}
 ionic-api-sdk = {version = "0.9.3", optional = true}
+lancedb = {version = "^0.6.5", optional = true}
 
 [tool.poetry.extras]
 parsing = ["bs4", "pypdf"]
