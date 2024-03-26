@@ -1,13 +1,15 @@
 import logging
 import os
-from typing import Optional, Union
+from typing import Optional, Any, Union
 
 from r2r.core import VectorDBProvider, VectorEntry, VectorSearchResult
+from lancedb.pydantic import LanceModel, Vector
 
 logger = logging.getLogger(__name__)
 
 
 class LanceDB(VectorDBProvider):
+    # TODO enable LanceDB provider to support lanceDB Cloud
     def __init__(
             self, provider: str = "lancedb", db_path: Optional[str] = None
     ) -> None:
