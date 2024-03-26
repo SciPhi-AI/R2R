@@ -13,6 +13,16 @@ const config: DocsThemeConfig = {
   footer: {
     text: "EmergentAGI, Inc. © 2024",
   },
+  head: (
+    <>
+      <meta property="og:title" content="R2R Documentation" />
+      <meta
+        property="og:description"
+        content="Documentation for the R2R Framework"
+      />
+      <meta property="og:image" content="./public/r2r_mini.png" />
+    </>
+  ),
 };
 
 export default config;
