@@ -11,7 +11,7 @@ const config: DocsThemeConfig = {
       <meta property="og:title" content="R2R Documentation" />
       <meta
         property="og:description"
-        content="From Rag2Riches: A semi-opinionated framework for Production-ready RAG systems"
+        content="The official documentation for the Rag2Riches (R2R) framework."
       />
       <meta property="og:image" content="./public/r2r_mini.png" />
     </>
