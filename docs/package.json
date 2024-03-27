@@ -18,6 +18,8 @@
   },
   "homepage": "https://github.com/shuding/nextra-docs-template#readme",
   "dependencies": {
+    "@inkeep/widgets": "^0.2.268",
+    "dotenv": "^16.4.5",
     "next": "^13.0.6",
     "nextra": "latest",
     "nextra-theme-docs": "latest",
