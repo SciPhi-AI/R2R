@@ -1,7 +1,7 @@
 import os
+import tempfile
 
 import requests
-import tempfile
 
 from ..base import Adapter
 
@@ -25,7 +25,7 @@ class ReductoAdapter(Adapter[dict]):
                 "AWS S3 bucket name not found. Please set the AWS_S3_BUCKET_NAME environment variable."
             )
 
-        print('initializing reducto...')
+        print("initializing reducto...")
         self.api_key = api_key
         self.s3_bucket = s3_bucket
         self.s3 = boto3.client("s3")
