@@ -1,15 +1,14 @@
 # RAG Pipeline
 
-The RAG (Retrieve-And-Generate) Pipeline is responsible for retrieving relevant documents based on a query and generating a response using the retrieved documents as context. It transforms the query, searches for relevant documents, reranks the results, constructs a context, and generates a completion.
+The RAG (Retrieve-Augmented-Generation) Pipeline is responsible for retrieving relevant documents based on a query and generating a response using the retrieved documents as context. It transforms the query, searches for relevant documents, reranks the results, constructs a context, and generates a completion.
 
 ## Basic RAG Pipeline
 
-The `BasicRAGPipeline` is an implementation of the `RAGPipeline` abstract base class. It provides a straightforward way to perform document retrieval and generation using a specified language model, vector database, and embedding model.
+The `BasicRAGPipeline` is a simple implementation of the `RAGPipeline` abstract base class. It provides a straightforward way to perform document retrieval and generation using a specified language model, vector database, and embedding model.
 
 ### Initialization
 
 The `BasicRAGPipeline` is initialized with the following parameters:
-
 - `llm`: An instance of `LLMProvider` for generating completions.
 - `db`: An instance of `VectorDBProvider` for searching and retrieving documents.
 - `embedding_model`: The name of the embedding model to use.
@@ -17,77 +16,27 @@ The `BasicRAGPipeline` is initialized with the following parameters:
 - `prompt_provider` (optional): An instance of `PromptProvider` for providing prompts (default is `BasicPromptProvider`).
 - `logging_connection` (optional): An instance of `LoggingDatabaseConnection` for logging.
 
-### Pipeline Execution
-
-The `run` method executes the RAG pipeline. It takes the following parameters:
-
-- `query`: The input query for retrieving relevant documents.
-- `filters` (optional): Filters to apply during document retrieval (default is an empty dictionary).
-- `limit` (optional): The maximum number of documents to retrieve (default is 10).
-- `search_only` (optional): A flag indicating whether to perform only document retrieval without generating a completion (default is `False`).
-- `generation_config` (optional): An instance of `GenerationConfig` specifying the parameters for generating completions (default is `None`).
-
-The pipeline performs the following steps:
-
-1. Initializes the pipeline by calling the `initialize_pipeline` method.
-2. Transforms the query using the `transform_query` method.
-3. Searches for relevant documents using the `search` method.
-4. If `search_only` is `True`, returns the retrieved documents as `RAGPipelineOutput`.
-5. Constructs a context from the retrieved documents using the `construct_context` method.
-6. Constructs a prompt using the `construct_prompt` method.
-7. If `generation_config.stream` is `False`, generates a completion using the `generate_completion` method and returns the `RAGPipelineOutput`.
-8. If `generation_config.stream` is `True`, streams the completion using the `_stream_run` method.
-
 ### Query Transformation
 
-The `transform_query` method transforms the input query before retrieval. It can be overridden to implement custom query transformation logic.
+The `transform_query` method transforms the input query before retrieval, if necessary. In the basic implementation, it returns the query as is.
 
 ### Document Retrieval
 
-The `search` method retrieves relevant documents from the vector database using the transformed query. It uses the specified embedding model and embeddings provider to generate embeddings for the query and performs a similarity search in the database.
+The `search` method searches the vector database with the transformed query to retrieve relevant documents. It uses the specified embedding model and embeddings provider to generate embeddings for the query and performs a similarity search in the database.
 
 ### Result Reranking
 
-The `rerank_results` method reranks the retrieved documents based on relevance or other criteria. It can be overridden to implement custom reranking logic.
+The `rerank_results` method reranks the retrieved documents based on relevance, if necessary. In the basic implementation, it returns the results as is (a unit transformation).
 
-### Context Construction
+### Result Formatting
 
-The `construct_context` method constructs a context from the reranked documents. It formats the results into a human-readable string using the `_format_results` method.
+The `_format_results` method formats the reranked results into a human-readable string. In the basic implementation, it joins the text metadata of each result with newline separators.
 
-### Prompt Construction
+## Using a Custom RAG Pipeline
 
-The `construct_prompt` method constructs a prompt for generating completions based on the query and context. It uses the specified prompt provider to retrieve the appropriate prompt template.
-
-### Completion Generation
-
-The `generate_completion` method generates a completion based on the constructed prompt using the specified language model. It returns the generated completion as a `ChatCompletion` object.
-
-## Custom RAG Pipeline
-
-The `CustomRAGPipeline` is a custom implementation of the `RAGPipeline` that inherits from the `RAGPipeline` base class. It demonstrates how to modify various aspects of the pipeline, such as query transformation, result reranking, and result formatting.
+To create a custom RAG pipeline, you can subclass the `RAGPipeline` abstract base class and override the necessary methods. Here's an example:
 
 ```python
-"""
-A simple example to demonstrate a custom RAG pipeline.
-"""
-import logging
-from typing import Optional
-
-from r2r.core import (
-    LLMProvider,
-    LoggingDatabaseConnection,
-    PromptProvider,
-    RAGPipeline,
-    VectorDBProvider,
-    VectorSearchResult,
-    log_execution_to_db,
-)
-from r2r.embeddings import OpenAIEmbeddingProvider
-from r2r.pipelines import BasicPromptProvider
-
-logger = logging.getLogger(__name__)
-
-
 class CustomRAGPipeline(RAGPipeline):
     def __init__(
         self,
@@ -113,10 +62,7 @@ class CustomRAGPipeline(RAGPipeline):
         self.pipeline_run_info = None
 
     def transform_query(self, query: str) -> str:
-        """
-        Transforms the input query by adding a prefix.
-        """
-        self._check_pipeline_initialized()
+        # Custom query transformation logic
         return f"Custom query: {query}"
 
     @log_execution_to_db
@@ -128,11 +74,7 @@ class CustomRAGPipeline(RAGPipeline):
         *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
-        """
-        Searches the vector database with the transformed query.
-        """
-        logger.debug(f"Retrieving results for query: {transformed_query}")
-        self._check_pipeline_initialized()
+        # Custom document retrieval logic
         results = self.db.search(
             query_vector=self.embeddings_provider.get_embedding(
                 transformed_query,
@@ -141,23 +83,16 @@ class CustomRAGPipeline(RAGPipeline):
             filters=filters,
             limit=limit,
         )
-        logger.debug(f"Retrieved the raw results shown:\n{results}\n")
         return results
 
     def rerank_results(
         self, results: list[VectorSearchResult]
     ) -> list[VectorSearchResult]:
-        """
-        Reranks the retrieved documents based on custom logic.
-        """
-        self._check_pipeline_initialized()
-        # Custom reranking logic - Reverse the order of results
+        # Custom result reranking logic
         return list(reversed(results))
 
     def _format_results(self, results: list[VectorSearchResult]) -> str:
-        """
-        Formats the reranked results into a numbered list.
-        """
+        # Custom result formatting logic
         formatted_results = [
             f"{i+1}. {result.metadata['text']}"
             for i, result in enumerate(results)
@@ -166,16 +101,14 @@ class CustomRAGPipeline(RAGPipeline):
 ```
 
 In this example, the `CustomRAGPipeline` overrides the following methods:
-
-- `transform_query`: Adds a custom prefix to the input query.
-- `rerank_results`: Implements custom reranking logic by reversing the order of the retrieved results.
-- `_format_results`: Formats the reranked results into a numbered list.
-
-The rest of the pipeline execution remains the same as the base implementation.
+- `transform_query`: Applies custom query transformation logic.
+- `search`: Implements custom document retrieval logic.
+- `rerank_results`: Implements custom result reranking logic.
+- `_format_results`: Formats the results in a custom way.
 
 ## Passing the Custom RAG Pipeline to the Factory
 
-To use the `CustomRAGPipeline` with the `E2EPipelineFactory`, you can pass it when creating the pipeline:
+To use the custom RAG pipeline with the `E2EPipelineFactory`, you can pass it when creating the pipeline:
 
 ```python
 from r2r.main import E2EPipelineFactory

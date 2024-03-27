@@ -1,88 +1,75 @@
-# Evaluation Pipeline
+# Eval Pipeline
 
-The Evaluation Pipeline is responsible for evaluating the quality of generated completions by comparing them against the original query and context. It supports different evaluation providers and allows for sampling-based evaluation.
+The Eval Pipeline is responsible for evaluating the quality of generated completions by comparing them against the query and context. It supports different evaluation providers and allows for flexible configuration of evaluation frequency.
 
-## Basic Evaluation Pipeline
+## Eval Provider
 
-The `BasicEvalPipeline` is an implementation of the `EvalPipeline` abstract base class. It provides a straightforward way to evaluate completions using a specified evaluation provider.
-
-### Initialization
-
-The `BasicEvalPipeline` is initialized with the following parameters:
-
-- `eval_config`: A dictionary containing the configuration for the evaluation pipeline.
-  - `frequency`: The frequency at which evaluations should be performed (e.g., 0.25 for 25% of the time).
-  - `provider`: The name of the evaluation provider to use (e.g., "deepeval" or "parea").
-- `logging_connection` (optional): An instance of `LoggingDatabaseConnection` for logging.
-
-### Supported Evaluation Providers
-
-The `BasicEvalPipeline` supports the following evaluation providers:
-
-- `deepeval`: Uses the DeepEval library for evaluation.
-- `parea`: Uses the PAREA (Prompt And Response Evaluation API) for evaluation.
-
-### Pipeline Execution
-
-The `run` method executes the evaluation pipeline. It takes the following parameters:
-
-- `query`: The original query used for generating the completion.
-- `context`: The context used for generating the completion.
-- `completion`: The generated completion to be evaluated.
-- `run_id` (optional): A unique identifier for the evaluation run.
-
-The pipeline performs the following steps:
-
-1. Initializes the pipeline by calling the `initialize_pipeline` method.
-2. Checks if the specified evaluation provider is supported.
-3. Imports the necessary evaluation provider module based on the configuration.
-4. Calls the `evaluate` method of the evaluation provider to evaluate the completion.
-5. Returns the evaluation result if the evaluation is performed based on the specified frequency.
-
-### Evaluation
-
-The `evaluate` method is decorated with `@log_execution_to_db` to log the evaluation execution to the database. It takes the `query`, `context`, and `completion` as parameters and returns the evaluation result.
-
-## Evaluation Provider
-
-The `EvalProvider` class provides a generic interface for evaluation providers. It supports sampling-based evaluation, where the evaluation is performed based on a specified sampling fraction.
+The `EvalProvider` class represents a provider for evaluating completions. It supports different evaluation providers and allows for sampling evaluations based on a specified fraction.
 
 ### Initialization
 
 The `EvalProvider` is initialized with the following parameters:
-
-- `provider`: The name of the evaluation provider.
+- `provider`: The name of the evaluation provider (e.g., "deepeval", "parea").
 - `sampling_fraction` (optional): The fraction of evaluations to perform (default is 1.0, meaning all evaluations are performed).
 
 ### Evaluation
 
-The `evaluate` method of the `EvalProvider` class takes the `query`, `context`, and `completion` as parameters and returns the evaluation result if the evaluation is performed based on the specified sampling fraction.
+The `evaluate` method performs the evaluation of the query, context, and completion using the specified evaluation provider. It takes the following parameters:
+- `query`: The input query.
+- `context`: The context used for generating the completion.
+- `completion`: The generated completion to be evaluated.
 
-## Custom Evaluation Pipeline
+The method checks if a random value is less than the specified sampling fraction. If the condition is met, it calls the actual evaluation method of the provider and returns the result. If the condition is not met, it returns `None` (no evaluation performed).
 
-To create a custom evaluation pipeline, you can subclass the `EvalPipeline` abstract base class and implement the `evaluate` method. Here's an example of a custom evaluation pipeline that uses a different evaluation provider:
+## Basic Eval Pipeline
+
+The `BasicEvalPipeline` is a simple implementation of the `EvalPipeline` abstract base class. It provides a straightforward way to perform evaluations using a specified evaluation provider and configuration.
+
+### Initialization
+
+The `BasicEvalPipeline` is initialized with the following parameters:
+- `eval_config`: A dictionary containing the evaluation configuration, including the evaluation frequency and provider.
+- `logging_connection` (optional): An instance of `LoggingDatabaseConnection` for logging.
+
+The pipeline checks if the specified evaluation provider is supported (currently supports "deepeval" and "parea"). If the provider is "deepeval", it attempts to import the `DeepEvalProvider` and raises an import error if the package is not installed.
+
+### Evaluation
+
+The `evaluate` method performs the evaluation of the query, context, and completion using the specified evaluation provider. It is decorated with `@log_execution_to_db` to log the execution to the database.
+
+## Using a Custom Eval Pipeline
+
+To create a custom eval pipeline, you can subclass the `EvalPipeline` abstract base class and implement the necessary methods. Here's an example:
 
 ```python
-from typing import Any
-from r2r.core import EvalPipeline, log_execution_to_db
-from my_custom_eval_provider import MyCustomEvalProvider
+from typing import Any, Optional
+from r2r.core import EvalPipeline, LoggingDatabaseConnection, log_execution_to_db
 
 class CustomEvalPipeline(EvalPipeline):
-    def __init__(self, eval_config: dict, *args, **kwargs):
+    def __init__(
+        self,
+        eval_config: dict,
+        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        *args,
+        **kwargs,
+    ):
         frequency = eval_config["frequency"]
-        super().__init__(frequency, *args, **kwargs)
-        self.eval_provider = MyCustomEvalProvider()
+        super().__init__(frequency, logging_connection, *args, **kwargs)
+        # Custom initialization logic
 
     @log_execution_to_db
     def evaluate(self, query: str, context: str, completion: str) -> Any:
-        return self.eval_provider.evaluate(query, context, completion)
+        # Custom evaluation logic
+        return {"score": 0.8, "metric": "custom_metric"}
 ```
 
-In this example, the `CustomEvalPipeline` uses a custom evaluation provider called `MyCustomEvalProvider`. The `evaluate` method is implemented to call the `evaluate` method of the custom evaluation provider.
+In this example, the `CustomEvalPipeline` subclasses the `EvalPipeline` and implements the following:
+- `__init__`: Performs custom initialization based on the `eval_config`.
+- `evaluate`: Implements custom evaluation logic and returns the evaluation result.
 
-## Passing the Custom Evaluation Pipeline to the Factory
+## Passing the Custom Eval Pipeline to the Factory
 
-To use the custom evaluation pipeline with the `E2EPipelineFactory`, you can pass it when creating the pipeline:
+To use the custom eval pipeline with the `E2EPipelineFactory`, you can pass it when creating the pipeline:
 
 ```python
 from r2r.main import E2EPipelineFactory
@@ -94,6 +81,6 @@ app = E2EPipelineFactory.create_pipeline(
 )
 ```
 
-By passing the `CustomEvalPipeline` to the `create_pipeline` method using the `eval_pipeline_impl` parameter, the factory will use the custom evaluation pipeline instead of the default `BasicEvalPipeline`.
+By passing the `CustomEvalPipeline` to the `create_pipeline` method using the `eval_pipeline_impl` parameter, the factory will use the custom pipeline instead of the default `BasicEvalPipeline`.
 
-That's it! You now have a basic understanding of the Evaluation Pipeline, how to create a custom evaluation pipeline, and how to pass it to the `E2EPipelineFactory` for use in the end-to-end pipeline.
+That's it! You now have a custom eval pipeline that demonstrates how to modify the evaluation logic and can be passed to the `E2EPipelineFactory` for use in the end-to-end pipeline.
