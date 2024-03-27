@@ -16,7 +16,7 @@ R2R was conceived to bridge the gap between experimental RAG models and robust, 
 ## Demo(s)
 
 Launching the server locally, running the client, and pipeline observabiilty application:
-[![demo_screenshot](./docs/pages/getting-started/demo_screenshot.png)](https://github.com/SciPhi-AI/R2R/assets/68796651/7ac102e0-f6ad-4926-8a7a-5db25db4612d)
+[![demo_shot](./docs/pages/getting-started/demo_shot.png)](https://github.com/SciPhi-AI/R2R/assets/68796651/7ac102e0-f6ad-4926-8a7a-5db25db4612d)
 
 !! Note - The server has been removed from this repo - instead we now recommend using [SciPhi Cloud](https://app.sciphi.ai) to pair with the R2R framework for observability and optimization.
 
