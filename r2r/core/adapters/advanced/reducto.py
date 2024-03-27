@@ -1,6 +1,7 @@
 import os
 import tempfile
 from typing import Optional
+
 import requests
 
 from ..base import Adapter
@@ -8,10 +9,14 @@ from ..base import Adapter
 
 class ReductoAPIError(Exception):
     """Custom exception class for Reducto API errors."""
+
     pass
 
+
 class ReductoAdapter(Adapter[dict]):
-    def __init__(self, s3_bucket: Optional[str] = None, api_key: Optional[str] = None):
+    def __init__(
+        self, s3_bucket: Optional[str] = None, api_key: Optional[str] = None
+    ):
         try:
             import boto3
         except ImportError:

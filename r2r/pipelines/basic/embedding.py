@@ -70,14 +70,6 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         super().initialize_pipeline(*args, **kwargs)
         self.ingress(document)
 
-    @log_execution_to_db
-    def extract_text(self, document: BasicDocument) -> str:
-        """
-        Extracts text from a document.
-        """
-        # Establish logging of document data
-        return document.text
-
     def transform_text(self, text: str) -> str:
         """
         Transforms text before chunking, if necessary.
