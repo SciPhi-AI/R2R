@@ -3,9 +3,6 @@ import { useTheme } from "nextra-theme-docs";
 const useInkeepSettings = () => {
   const { resolvedTheme } = useTheme();
 
-  console.log('process.env.INKEEP_API_KEY = ', process.env.INKEEP_API_KEY);
-  console.log('process.env.INKEEP_INT_ID = ', process.env.INKEEP_INT_ID);
-  console.log('process.env.INKEEP_ORG_ID = ', process.env.INKEEP_ORG_ID);
   const baseSettings = {
     apiKey: process.env.INKEEP_API_KEY,
     integrationId:  process.env.INKEEP_INT_ID,
