@@ -1,20 +1,20 @@
 import os
 import tempfile
-
+from typing import Optional
 import requests
 
 from ..base import Adapter
 
 
 class ReductoAdapter(Adapter[dict]):
-    def __init__(self):
+    def __init__(self, s3_bucket: Optional[str] = None, api_key: Optional[str] = None):
         try:
             import boto3
         except ImportError:
             raise ImportError("Please install boto3 to use the ReductoAdapter")
 
-        api_key = os.getenv("REDUCTO_API_KEY")
-        s3_bucket = os.getenv("AWS_S3_BUCKET")
+        api_key = api_key or os.getenv("REDUCTO_API_KEY")
+        s3_bucket = s3_bucket or os.getenv("AWS_S3_BUCKET")
 
         if not api_key:
             raise ValueError(
@@ -25,7 +25,6 @@ class ReductoAdapter(Adapter[dict]):
                 "AWS S3 bucket name not found. Please set the AWS_S3_BUCKET_NAME environment variable."
             )
 
-        print("initializing reducto...")
         self.api_key = api_key
         self.s3_bucket = s3_bucket
         self.s3 = boto3.client("s3")
