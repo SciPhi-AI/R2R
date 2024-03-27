@@ -1,5 +1,6 @@
 import React from "react";
 import { DocsThemeConfig } from "nextra-theme-docs";
+import InkeepChatButton from "./components/InkeepChatButton";
 
 const config: DocsThemeConfig = {
   logo: <span>SciPhi</span>,
@@ -15,7 +16,7 @@ const config: DocsThemeConfig = {
         property="og:description"
         content="The official documentation for the Rag2Riches (R2R) framework."
       />
-      <meta property="og:image" content="./public/r2r_mini.png" />
+      <meta property="og:image" content="./public/sciphi_logo.png" />
     </>
   ),
   project: {
@@ -27,6 +28,7 @@ const config: DocsThemeConfig = {
   docsRepositoryBase: "https://github.com/SciPhi-AI/R2R/tree/main/docs",
   footer: {
     text: `EmergentAGI, Inc. © ${new Date().getFullYear()}`,
+    component: () => <InkeepChatButton />
   },
   useNextSeoProps() {
     return {
