@@ -6,6 +6,10 @@ import requests
 from ..base import Adapter
 
 
+class ReductoAPIError(Exception):
+    """Custom exception class for Reducto API errors."""
+    pass
+
 class ReductoAdapter(Adapter[dict]):
     def __init__(self, s3_bucket: Optional[str] = None, api_key: Optional[str] = None):
         try:
@@ -80,6 +84,6 @@ class ReductoAdapter(Adapter[dict]):
             for chunk in result["chunks"]:
                 yield chunk["content"]
         else:
-            raise Exception(
+            raise ReductoAPIError(
                 f"Error processing document. Status code: {response.status_code}. Error message: {response.text}"
             )
