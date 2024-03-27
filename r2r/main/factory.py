@@ -75,6 +75,7 @@ class E2EPipelineFactory:
         embeddings_provider=None,
         llm=None,
         text_splitter=None,
+        adapters=None,
         ingestion_pipeline_impl=BasicIngestionPipeline,
         embedding_pipeline_impl=BasicEmbeddingPipeline,
         rag_pipeline_impl=BasicRAGPipeline,
@@ -126,7 +127,7 @@ class E2EPipelineFactory:
         eval_pipeline = eval_pipeline_impl(
             config.evals, logging_connection=logging_connection
         )
-        ingst_pipeline = ingestion_pipeline_impl()
+        ingst_pipeline = ingestion_pipeline_impl(adapters=adapters)
 
         app = app_fn(
             ingestion_pipeline=ingst_pipeline,
