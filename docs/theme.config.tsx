@@ -2,9 +2,11 @@ import React from "react";
 import { DocsThemeConfig } from "nextra-theme-docs";
 
 const config: DocsThemeConfig = {
-  logo: (
-    <img width={120} src="./public/r2r_mini.png" style={{ borderRadius: 5 }} />
-  ),
+  logo: <span>SciPhi</span>,
+  logoLink: "https://github.com/SciPhi-AI/R2R",
+  // logo: (
+  //   <img width={120} src="./public/r2r_mini.png" style={{ borderRadius: 5 }} />
+  // ),
   head: (
     <>
       <link rel="icon" type="image/png" href="./favicon.png" />
