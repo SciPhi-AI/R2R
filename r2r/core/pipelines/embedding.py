@@ -36,10 +36,6 @@ class EmbeddingPipeline(Pipeline):
         }
 
     @abstractmethod
-    def extract_text(self, document: Any) -> str:
-        pass
-
-    @abstractmethod
     def transform_text(self, text: str) -> str:
         pass
 
@@ -70,8 +66,7 @@ class EmbeddingPipeline(Pipeline):
         documents = [document] if not isinstance(document, list) else document
 
         for document in documents:
-            text = self.extract_text(document)
-            transformed_text = self.transform_text(text)
+            transformed_text = self.transform_text(document.text)
             chunks = self.chunk_text(transformed_text)
             transformed_chunks = self.transform_chunks(chunks, [])
             embeddings = self.embed_chunks(transformed_chunks)

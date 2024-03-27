@@ -232,6 +232,95 @@ def create_app(
                 return rag_completion
 
             else:
+
+                async def _stream_rag_completion(
+                    query: RAGQueryModel,
+                    rag_pipeline: RAGPipeline,
+                ) -> AsyncGenerator[str, None]:
+                    gen_config = GenerationConfig(
+                        **(query.generation_config.dict())
+                    )
+                    if not gen_config.stream:
+                        raise ValueError(
+                            "Must pass `stream` as True to stream completions."
+                        )
+                    completion_generator = cast(
+                        Generator[str, None, None],
+                        rag_pipeline.run(
+                            query.query,
+                            query.filters,
+                            query.limit,
+                            generation_config=gen_config,
+                        ),
+                    )
+
+                    search_results = ""
+                    context = ""
+                    completion_text = ""
+                    current_marker = None
+
+                    for item in completion_generator:
+                        if item.startswith("<"):
+                            if item.startswith(
+                                f"<{RAGPipeline.SEARCH_STREAM_MARKER}>"
+                            ):
+                                current_marker = (
+                                    RAGPipeline.SEARCH_STREAM_MARKER
+                                )
+                            elif item.startswith(
+                                f"<{RAGPipeline.CONTEXT_STREAM_MARKER}>"
+                            ):
+                                current_marker = (
+                                    RAGPipeline.CONTEXT_STREAM_MARKER
+                                )
+                            elif item.startswith(
+                                f"<{RAGPipeline.COMPLETION_STREAM_MARKER}>"
+                            ):
+                                current_marker = (
+                                    RAGPipeline.COMPLETION_STREAM_MARKER
+                                )
+                            else:
+                                current_marker = None
+                        else:
+                            if (
+                                current_marker
+                                == RAGPipeline.SEARCH_STREAM_MARKER
+                            ):
+                                search_results += item
+                            elif (
+                                current_marker
+                                == RAGPipeline.CONTEXT_STREAM_MARKER
+                            ):
+                                context += item
+                            elif (
+                                current_marker
+                                == RAGPipeline.COMPLETION_STREAM_MARKER
+                            ):
+                                completion_text += item
+                                yield item
+
+                    # Retrieve the URL dynamically from the request header
+                    url = request.url
+                    if not url:
+                        url = "http://localhost:8000"
+                    else:
+                        url = str(url).split("/rag_completion")[0]
+
+                    # Pass the payload to the /eval endpoint
+                    payload = {
+                        "query": query.query,
+                        "context": context,
+                        "completion_text": completion_text,
+                        "run_id": str(
+                            rag_pipeline.pipeline_run_info["run_id"]
+                        ),
+                        "settings": query.settings.rag_settings.dict(),
+                    }
+
+                    background_tasks.add_task(
+                        requests.get, f"{url}/eval", json=payload
+                    )
+
                 return StreamingResponse(
                     _stream_rag_completion(query, rag_pipeline),
                     media_type="text/plain",
@@ -241,28 +330,6 @@ def create_app(
                 f":rag_completion: [Error](query={query}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
-
-    async def _stream_rag_completion(
-        query: RAGQueryModel,
-        rag_pipeline: RAGPipeline,
-    ) -> AsyncGenerator[str, None]:
-        gen_config = GenerationConfig(**(query.generation_config.dict()))
-        if not gen_config.stream:
-            raise ValueError(
-                "Must pass `stream` as True to stream completions."
-            )
-        completion_generator = cast(
-            Generator[str, None, None],
-            rag_pipeline.run(
-                query.query,
-                query.filters,
-                query.limit,
-                generation_config=gen_config,
-            ),
-        )
-
-        for item in completion_generator:
-            yield item
 
     @app.get("/eval")
     async def eval(payload: EvalPayloadModel):
