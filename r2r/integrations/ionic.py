@@ -1,4 +1,3 @@
-
 import os
 from typing import Optional
 
@@ -9,11 +8,10 @@ class IonicClient:
             raise ValueError(
                 "Please set the `IONIC_API_KEY` env var or pass a parameter to use `IonicCLient`."
             )
-        
+
         # temp local import for dependency mgmt
         from ionic import Ionic as IonicSDK
-        
-        
+
         self.client = IonicSDK(api_key_header=api_key)
 
     def query(
@@ -22,15 +20,12 @@ class IonicClient:
         num_results: Optional[int] = 5,
     ):
         # temp local import for dependency mgmt
-        from ionic.models.components import QueryAPIRequest
         from ionic.models.components import Query as SDKQuery
+        from ionic.models.components import QueryAPIRequest
         from ionic.models.operations import QueryResponse, QuerySecurity
 
         request = QueryAPIRequest(
-            query=SDKQuery(
-                query=query,
-                num_results=num_results
-            )
+            query=SDKQuery(query=query, num_results=num_results)
         )
         response: QueryResponse = self.client.query(
             request=request,
