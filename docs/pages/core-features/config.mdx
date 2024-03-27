@@ -12,38 +12,39 @@ The default values for the config are shown below.
 
 ```json
 {
-  "vector_database": {
-    "provider": "local",
-    "collection_name": "demo-v1-test"
-  },
-  "evals": {
-    "provider": "deepeval",
-    "frequency": 0.25
-  },
   "embedding": {
     "provider": "openai",
     "model": "text-embedding-3-small",
     "dimension": 1536,
     "batch_size": 32
   },
-  "text_splitter": {
-    "chunk_size": 512,
-    "chunk_overlap": 20
+  "evals": {
+    "provider": "deepeval",
+    "frequency": 1.0
   },
   "language_model": {
-    "provider": "litellm",
-    "model": "gpt-4-0125-preview",
-    "temperature": 0.1,
-    "top_p": 0.9,
-    "top_k": 128,
-    "max_tokens_to_sample": 1024,
-    "do_stream": false
+    "provider": "litellm"
   },
-  "logging": {
+  "logging_database": {
     "provider": "local",
-    "level": "INFO",
-    "name": "r2r",
-    "database": "demo_logs_v1"
+    "collection_name": "demo_logs",
+    "level": "INFO"
+  },
+  "ingestion":{
+    "provider": "local",
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 512,
+      "chunk_overlap": 20
+    }
+  },
+  "vector_database": {
+    "provider": "local",
+    "collection_name": "demo_vecs"
+  },
+  "app": {
+    "max_logs": 100,
+    "max_file_size_in_mb": 100
   }
 }
 ```
@@ -55,6 +56,6 @@ class E2EPipelineFactory:
     ...
     app = E2EPipelineFactory.create_pipeline(
         # override with your own config.json
-        config_path=my_config.json,
+        config_path="my_config.json",
     )
 ```
