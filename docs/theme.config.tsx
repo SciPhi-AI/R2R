@@ -3,20 +3,26 @@ import { DocsThemeConfig } from "nextra-theme-docs";
 import InkeepChatButton from "./components/InkeepChatButton";
 
 const config: DocsThemeConfig = {
-  logo: <span>SciPhi</span>,
+  logo: (
+    <>
+      <img
+        src="/favicon.ico"
+        alt="SciPhi Favicon"
+        style={{ marginRight: "8px" }}
+      />
+      <span>SciPhi</span>
+    </>
+  ),
   logoLink: "https://github.com/SciPhi-AI/R2R",
-  // logo: (
-  //   <img width={120} src="./public/r2r_mini.png" style={{ borderRadius: 5 }} />
-  // ),
   head: (
     <>
-      <link rel="icon" type="image/png" href="./favicon.png" />
+      <link rel="icon" type="image/png" href="/favicon.ico" />
       <meta property="og:title" content="R2R Documentation" />
       <meta
         property="og:description"
         content="The official documentation for the Rag2Riches (R2R) framework."
       />
-      <meta property="og:image" content="./public/sciphi_logo.png" />
+      <meta property="og:image" content="/r2r_mini.jpg" />
     </>
   ),
   project: {
@@ -28,7 +34,7 @@ const config: DocsThemeConfig = {
   docsRepositoryBase: "https://github.com/SciPhi-AI/R2R/tree/main/docs",
   footer: {
     text: `EmergentAGI, Inc. © ${new Date().getFullYear()}`,
-    component: () => <InkeepChatButton />
+    component: () => <InkeepChatButton />,
   },
   useNextSeoProps() {
     return {
