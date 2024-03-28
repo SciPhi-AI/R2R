@@ -6,12 +6,12 @@
   "core-features": {
     "title": "Core Features"
   },
-  "examples": {
-    "title": "Examples"
-  },
   "integrations": {
     "title": "Integrations"
   },
+  "examples": {
+    "title": "Examples"
+  },  
   "startups-enterprise": {
     "title": "Startups & Enterprise"
   },
