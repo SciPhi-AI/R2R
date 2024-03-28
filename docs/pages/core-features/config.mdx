@@ -55,7 +55,7 @@ To launch the default pipeline with your own config, you may run with the follow
 class E2EPipelineFactory:
     ...
     app = E2EPipelineFactory.create_pipeline(
-        # override with your own config.json
-        config_path="my_config.json",
+      # override with your own config.json
+      config=R2RConfig.load_config("your_config_path.json"),
     )
 ```
