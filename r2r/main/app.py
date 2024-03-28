@@ -42,8 +42,8 @@ from .models import (
     SummaryLogModel,
 )
 
-logger = logging.getLogger("r2r")
-logger.setLevel(logging.INFO)
+# logger = logging.getLogger("r2r")
+# logging.setLevel(logging.INFO)
 
 # Current directory where this script is located
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -127,7 +127,7 @@ def create_app(
                 "message": f"File '{file.filename}' processed and saved at '{file_location}'"
             }
         except Exception as e:
-            logger.error(
+            logging.error(
                 f"upload_and_process_file: [Error](file={file.filename}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
@@ -147,7 +147,7 @@ def create_app(
                 )
             return {"message": "Entry upserted successfully."}
         except Exception as e:
-            logger.error(
+            logging.error(
                 f":add_entry: [Error](entry={entry_req}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
@@ -169,7 +169,7 @@ def create_app(
                     )
             return {"message": "Entries upserted successfully."}
         except Exception as e:
-            logger.error(
+            logging.error(
                 f":add_entries: [Error](entries={entries_req}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
@@ -182,7 +182,7 @@ def create_app(
             )
             return rag_completion.search_results
         except Exception as e:
-            logger.error(f":search: [Error](query={query}, error={str(e)})")
+            logging.error(f":search: [Error](query={query}, error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/rag_completion/")
@@ -260,7 +260,7 @@ def create_app(
                     completion_text = ""
                     current_marker = None
 
-                    logger.info(
+                    logging.info(
                         f"Streaming RAG completion results to client for query ={query.query}."
                     )
 
@@ -321,14 +321,14 @@ def create_app(
                         ),
                         "settings": query.settings.rag_settings.dict(),
                     }
-                    logger.info(
+                    logging.info(
                         f"Performing evaluation with payload: {payload}"
                     )
-                    # background_tasks.add_task(
-                    #     requests.get, f"{url}/eval", json=payload
-                    # )
+                    background_tasks.add_task(
+                        requests.get, f"{url}/eval", json=payload
+                    )
                     requests.get(f"{url}/eval", json=payload)
-                    logger.info(
+                    logging.info(
                         f"Completed evaluation with payload: {payload}"
                     )
 
@@ -337,7 +337,7 @@ def create_app(
                     media_type="text/plain",
                 )
         except Exception as e:
-            logger.error(
+            logging.error(
                 f":rag_completion: [Error](query={query}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
@@ -357,7 +357,7 @@ def create_app(
 
             return {"message": "Evaluation completed successfully."}
         except Exception as e:
-            logger.error(
+            logging.error(
                 f":eval_endpoint: [Error](payload={payload}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
@@ -368,7 +368,7 @@ def create_app(
             embedding_pipeline.db.filtered_deletion(key, value)
             return {"message": "Entries deleted successfully."}
         except Exception as e:
-            logger.error(
+            logging.error(
                 f":filtered_deletion: [Error](key={key}, value={value}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
@@ -381,7 +381,7 @@ def create_app(
             )
             return {"user_ids": user_ids}
         except Exception as e:
-            logger.error(f":get_user_ids: [Error](error={str(e)})")
+            logging.error(f":get_user_ids: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/get_user_documents/")
@@ -392,7 +392,7 @@ def create_app(
             )
             return {"document_ids": document_ids}
         except Exception as e:
-            logger.error(f":get_user_documents: [Error](error={str(e)})")
+            logging.error(f":get_user_documents: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/logs")
@@ -409,7 +409,7 @@ def create_app(
                 "logs": [LogModel(**log).dict(by_alias=True) for log in logs]
             }
         except Exception as e:
-            logger.error(f":logs: [Error](error={str(e)})")
+            logging.error(f":logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/logs_summary")
@@ -428,7 +428,7 @@ def create_app(
             return {"events_summary": events_summary}
 
         except Exception as e:
-            logger.error(f":logs_summary: [Error](error={str(e)})")
+            logging.error(f":logs_summary: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     return app
