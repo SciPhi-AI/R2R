@@ -227,7 +227,7 @@ def create_app(
                     "settings": query.settings.rag_settings.dict(),
                 }
                 background_tasks.add_task(
-                    requests.get, f"{url}/eval", json=payload
+                    requests.post, f"{url}/eval", json=payload
                 )
 
                 return rag_completion
