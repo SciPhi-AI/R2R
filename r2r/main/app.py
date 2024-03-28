@@ -322,7 +322,7 @@ def create_app(
                         "settings": query.settings.rag_settings.dict(),
                     }
                     logging.info(
-                        f"Performing evaluation with payload: {payload}"
+                        f"Performing evaluation with payload: {payload} to url: {url}/eval"
                     )
                     background_tasks.add_task(
                         requests.get, f"{url}/eval", json=payload
