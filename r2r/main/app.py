@@ -324,9 +324,10 @@ def create_app(
                     logger.info(
                         f"Performing evaluation with payload: {payload}"
                     )
-                    background_tasks.add_task(
-                        requests.get, f"{url}/eval", json=payload
-                    )
+                    # background_tasks.add_task(
+                    #     requests.get, f"{url}/eval", json=payload
+                    # )
+                    requests.get(f"{url}/eval", json=payload)
                     logger.info(
                         f"Completed evaluation with payload: {payload}"
                     )
