@@ -43,7 +43,7 @@ from .models import (
 )
 
 logger = logging.getLogger("r2r")
-logger.basicConfig(level=logging.INFO)
+logger.setLevel(logging.INFO)
 
 # Current directory where this script is located
 CURRENT_DIR = Path(__file__).resolve().parent
