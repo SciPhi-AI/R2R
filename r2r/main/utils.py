@@ -215,9 +215,9 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
         except Exception as e:
             logger.error(f"Error {e} processing 'ingress' event: {event}")
 
-    elif method == "generate_completion":
+    elif method == "rag_completion":
         try:
-            processed_result["method"] = "Generate Completion"
+            processed_result["method"] = "RAG"
             if "content=" in result:
                 content_matches = re.findall(r'content="([^"]*)"', result)
                 processed_result["completion_result"] = ", ".join(
