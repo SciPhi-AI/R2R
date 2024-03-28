@@ -259,6 +259,10 @@ def create_app(
                     completion_text = ""
                     current_marker = None
 
+                    logger.info(
+                        f"Streaming RAG completion results to client for query ={query.query}."
+                    )
+
                     for item in completion_generator:
                         if item.startswith("<"):
                             if item.startswith(
