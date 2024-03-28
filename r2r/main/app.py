@@ -302,7 +302,7 @@ def create_app(
                                 == RAGPipeline.COMPLETION_STREAM_MARKER
                             ):
                                 completion_text += item
-                                yield item
+                        yield item
 
                     # Retrieve the URL dynamically from the request header
                     url = request.url
@@ -322,14 +322,10 @@ def create_app(
                         "settings": query.settings.rag_settings.dict(),
                     }
                     logging.info(
-                        f"Performing evaluation with payload: {payload}"
+                        f"Performing evaluation with payload: {payload} to url: {url}/eval"
                     )
                     background_tasks.add_task(
                         requests.get, f"{url}/eval", json=payload
-                    )
-                    requests.get(f"{url}/eval", json=payload)
-                    logging.info(
-                        f"Completed evaluation with payload: {payload}"
                     )
 
                 return StreamingResponse(
