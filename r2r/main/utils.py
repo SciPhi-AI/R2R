@@ -215,7 +215,7 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
         except Exception as e:
             logger.error(f"Error {e} processing 'ingress' event: {event}")
 
-    elif method == "rag_completion":
+    elif method == "generate_completion":
         try:
             processed_result["method"] = "RAG"
             if "content=" in result:
