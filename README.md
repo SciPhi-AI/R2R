@@ -16,7 +16,7 @@ R2R was conceived to bridge the gap between experimental RAG models and robust, 
 ## Demo(s)
 
 Using cloud application to deploy the pre-built basic pipeline:
-[![demo_shot](./docs/pages/getting-started/demo_shot.png)](https://www.loom.com/share/10ebc38ac3344a008c9b0b7c52a19769?sid=782a1e1a-a39d-495e-8a5e-128ab5a136f6)
+[![demo_shot](./docs/pages/getting-started/demo_shot.png)]([https://www.loom.com/share/10ebc38ac3344a008c9b0b7c52a19769?sid=782a1e1a-a39d-495e-8a5e-128ab5a136f6](https://www.loom.com/share/e3b934b554484787b005702ced650ac9)
 
 !! Note - The server has been removed from this repo - instead we now recommend using [SciPhi Cloud](https://app.sciphi.ai) to pair with the R2R framework for observability and optimization.
 
