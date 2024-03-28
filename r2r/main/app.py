@@ -60,7 +60,7 @@ def create_app(
     logging_connection: Optional[LoggingDatabaseConnection] = None,
 ):
     app = FastAPI()
-    configure_logging()
+    # configure_logging()
     apply_cors(app)
 
     upload_path = upload_path or find_project_root(CURRENT_DIR) / "uploads"
