@@ -43,7 +43,7 @@ from .models import (
 )
 
 logger = logging.getLogger("r2r")
-logger.setLevel(logging.INFO)
+logger.basicConfig(level=logging.INFO)
 
 # Current directory where this script is located
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -60,7 +60,7 @@ def create_app(
     logging_connection: Optional[LoggingDatabaseConnection] = None,
 ):
     app = FastAPI()
-    configure_logging()
+    # configure_logging()
     apply_cors(app)
 
     upload_path = upload_path or find_project_root(CURRENT_DIR) / "uploads"
