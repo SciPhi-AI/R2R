@@ -310,8 +310,8 @@ def create_app(
                         url = "http://localhost:8000"
                     else:
                         url = str(url).split("/rag_completion")[0]
-                        if 'localhost' not in url and '127.0.0.1' not in url:
-                            url = url.replace('http://', 'https://')
+                        if "localhost" not in url and "127.0.0.1" not in url:
+                            url = url.replace("http://", "https://")
 
                     # Pass the payload to the /eval endpoint
                     payload = {

@@ -109,7 +109,7 @@ class E2EPipelineFactory:
         # override with your own custom RAG pipeline
         rag_pipeline_impl=BasicRAGPipeline,
         # override with your own config.json
-        config_path="my_config.json",
+        config=R2RConfig.load_config("your_config_path.json")
     )
 ```
 

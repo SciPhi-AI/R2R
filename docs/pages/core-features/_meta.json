@@ -4,5 +4,6 @@
   "rag": "Rag Pipeline",
   "eval": "Evaluation Pipeline",
   "config": "Config setup",
+  "app": "Application",
   "factory": "Factory"
 }
