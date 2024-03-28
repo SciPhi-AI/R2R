@@ -227,7 +227,7 @@ def create_app(
                     "settings": query.settings.rag_settings.dict(),
                 }
                 background_tasks.add_task(
-                    requests.get, f"{url}/eval", json=payload
+                    requests.post, f"{url}/eval", json=payload
                 )
 
                 return rag_completion
@@ -325,7 +325,7 @@ def create_app(
                         f"Performing evaluation with payload: {payload} to url: {url}/eval"
                     )
                     background_tasks.add_task(
-                        requests.get, f"{url}/eval", json=payload
+                        requests.post, f"{url}/eval", json=payload
                     )
 
                 return StreamingResponse(
@@ -338,7 +338,7 @@ def create_app(
             )
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.get("/eval")
+    @app.post("/eval")
     async def eval(payload: EvalPayloadModel):
         try:
             query = payload.query
