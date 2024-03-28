@@ -1,0 +1,123 @@
+# Vector Databases
+
+R2R provides a flexible and provider-agnostic approach to integrate with various vector databases for storing and retrieving vector embeddings. The framework includes built-in support for the following vector database providers:
+
+- Local (SQLite)
+- PGVector
+- Qdrant
+
+## Toggling Between Vector DB Providers
+
+R2R uses a factory pattern to create instances of vector database providers based on the provided configuration. The `E2EPipelineFactory` class is responsible for creating the appropriate vector database provider instance using the `get_vector_db` method.
+
+Here's an example of how the vector database provider is determined based on the configuration:
+
+```python
+@staticmethod
+def get_vector_db(database_config: dict[str, Any]):
+    if database_config["provider"] == "qdrant":
+        from r2r.vector_dbs import QdrantDB
+        return QdrantDB()
+    elif database_config["provider"] == "pgvector":
+        from r2r.vector_dbs import PGVectorDB
+        return PGVectorDB()
+    elif database_config["provider"] == "local":
+        from r2r.vector_dbs import LocalVectorDB
+        return LocalVectorDB()
+```
+
+To toggle between different vector database providers, you need to update the `vector_database` section of the configuration file (`config.json`). For example:
+
+```json
+"vector_database": {
+    "provider": "local",
+    "collection_name": "demo_vecs"
+}
+```
+
+By changing the `provider` value to `"local"`, `"pgvector"`, or `"qdrant"`, you can switch between the supported vector database providers.
+
+## Vector DB Abstraction
+
+R2R provides an abstract base class `VectorDBProvider` that defines the interface for interacting with vector databases. This abstraction allows for a consistent and unified way to perform operations such as initializing collections, upserting entries, searching for similar vectors, and more.
+
+The `VectorDBProvider` class defines the following abstract methods:
+
+- `initialize_collection(collection_name: str, dimension: int) -> None`: Initializes a collection with the specified name and dimension.
+- `copy(entry: VectorEntry, commit: bool = True) -> None`: Copies a vector entry to the database.
+- `upsert(entry: VectorEntry, commit: bool = True) -> None`: Upserts a vector entry to the database.
+- `search(query_vector: list[float], filters: dict[str, Union[bool, int, str]] = {}, limit: int = 10, *args, **kwargs) -> list[VectorSearchResult]`: Searches for similar vectors based on a query vector, filters, and limit.
+- `create_index(index_type, column_name, index_options)`: Creates an index on the specified column.
+- `close()`: Closes the database connection.
+- `filtered_deletion(key: str, value: Union[bool, int, str]) -> None`: Deletes entries based on a filter key and value.
+- `get_all_unique_values(metadata_field: str, filters: dict = {}) -> list`: Retrieves all unique values for a specific metadata field, optionally filtered.
+
+## Local Implementation (SQLite)
+
+The `LocalVectorDB` class is an implementation of the `VectorDBProvider` that uses SQLite as the underlying storage. It stores vector entries along with their metadata in a SQLite database.
+
+Key features of the `LocalVectorDB` implementation:
+
+- Initializes a SQLite database and creates a table for storing vector entries.
+- Supports upserting vector entries with their associated metadata.
+- Performs similarity search using cosine similarity calculation.
+- Allows filtered deletion of entries based on metadata key-value pairs.
+- Retrieves unique values for a specific metadata field.
+
+## PGVector Implementation
+
+The `PGVectorDB` class is an implementation of the `VectorDBProvider` that integrates with the PGVector library for storing and retrieving vector embeddings in a PostgreSQL database.
+
+Key features of the `PGVectorDB` implementation:
+
+- Connects to a PostgreSQL database using the provided connection details.
+- Initializes a collection with the specified name and dimension.
+- Supports upserting vector entries with their associated metadata.
+- Performs similarity search using the PGVector library's query functionality.
+- Allows filtered deletion of entries based on metadata key-value pairs.
+- Retrieves unique values for a specific metadata field.
+
+## Qdrant Implementation
+
+The `QdrantDB` class is an implementation of the `VectorDBProvider` that integrates with the Qdrant vector database for storing and retrieving vector embeddings.
+
+Key features of the `QdrantDB` implementation:
+
+- Connects to a Qdrant server using the provided host, port, and API key.
+- Initializes a collection with the specified name and dimension.
+- Supports upserting vector entries with their associated metadata.
+- Performs similarity search using Qdrant's search functionality.
+- Allows filtered deletion of entries based on metadata key-value pairs.
+- Retrieves unique values for a specific metadata field.
+
+## Configuring Vector DB Providers
+
+To configure a specific vector database provider, you need to set the appropriate environment variables and update the `vector_database` section of the configuration file (`config.json`).
+
+### Local (SQLite)
+
+- Set the `LOCAL_DB_PATH` environment variable to the desired path for the SQLite database file.
+
+### PGVector
+
+- Set the following environment variables with the appropriate values:
+  - `POSTGRES_USER`: PostgreSQL database username
+  - `POSTGRES_PASSWORD`: PostgreSQL database password
+  - `POSTGRES_HOST`: PostgreSQL database host
+  - `POSTGRES_PORT`: PostgreSQL database port
+  - `POSTGRES_DBNAME`: PostgreSQL database name
+
+### Qdrant
+
+- Set the following environment variables with the appropriate values:
+  - `QDRANT_HOST`: Qdrant server host
+  - `QDRANT_PORT`: Qdrant server port
+  - `QDRANT_API_KEY`: Qdrant API key
+
+Make sure to update the `vector_database` section of the configuration file (`config.json`) with the desired provider and any additional provider-specific settings.
+
+## Conclusion
+
+R2R's vector database abstraction and provider-agnostic approach allow for seamless integration with various vector databases. By configuring the appropriate provider and setting the necessary environment variables, you can easily switch between different vector databases without modifying the core application code.
+
+The `VectorDBProvider` abstraction ensures a consistent interface for interacting with vector databases, making it easier to extend support for new providers in the future.
