@@ -310,6 +310,8 @@ def create_app(
                         url = "http://localhost:8000"
                     else:
                         url = str(url).split("/rag_completion")[0]
+                        if 'localhost' not in url and '127.0.0.1' not in url:
+                            url = url.replace('http://', 'https://')
 
                     # Pass the payload to the /eval endpoint
                     payload = {
@@ -341,6 +343,9 @@ def create_app(
     @app.post("/eval")
     async def eval(payload: EvalPayloadModel):
         try:
+            logging.info(
+                f"Received evaluation payload: {payload.dict(exclude_none=True)}"
+            )
             query = payload.query
             context = payload.context
             completion_text = payload.completion_text
