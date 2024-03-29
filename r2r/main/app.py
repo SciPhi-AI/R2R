@@ -83,11 +83,11 @@ def create_app(
         if (
             file is not None
             and file.size
-            > config.app.get("max_file_size_in_mb", 10) * MB_CONVERSION_FACTOR
+            > config.app.get("max_file_size_in_mb", 100) * MB_CONVERSION_FACTOR
         ):
             raise HTTPException(
                 status_code=413,
-                detail="File size exceeds maximum allowed size of 10 MB.",
+                detail="File size exceeds maximum allowed size.",
             )
 
         if not file.filename:
