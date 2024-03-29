@@ -69,8 +69,16 @@ class Client:
 
         with self.Session() as sess:
             with sess.begin():
-                sess.execute(text("create schema if not exists vecs;"))
-                sess.execute(text("create extension if not exists vector;"))
+                try:
+                    sess.execute(text("create schema if not exists vecs;"))
+                    sess.execute(text("create extension if not exists vector;"))
+                except Exception as e:
+                    if "duplicate key value violates unique constraint" in str(e):
+                        # Schema already exists, continue without raising an error
+                        pass
+                    else:
+                        raise
+
                 self.vector_version: str = sess.execute(
                     text(
                         "select installed_version from pg_available_extensions where name = 'vector' limit 1;"
