@@ -1,58 +1,56 @@
-# R2R Documentation
+# Basic Example
 
-## Launching
+This example demonstrates how to run a basic R2R application that includes ingestion, embedding, and RAG pipelines. It also shows how to interact with the local server using the [`R2RClient`](https://github.com/SciPhi-AI/R2R/blob/main/r2r/client/base.py).
 
-This example runs a basic application, which launches a server to handle ingestion, embedding, and RAG. Further, it demonstrates how to interact with the local server using the [`R2RClient`](https://github.com/SciPhi-AI/R2R/blob/main/r2r/client/base.py)`.
+## Step 1: Launch the Basic Application Server
+
+To launch the basic application server, run the following command:
 
 ```bash
-# Launch the application
-# If using a venv, replace `uvicorn` with `venv_path/bin/uvicorn`
-uvicorn r2r.examples.basic.app:app
+python -m r2r.examples.servers.basic_pipeline
 ```
 
-This launches a server which exposes the default pipeline. The settings of the pipeline are defined in the `config.json`. The default values for these settings are shown in the [config.json section](#configjson) below.
-```python
-# r2r.examples.basic.app
-from r2r.main import E2EPipelineFactory
+This command starts the backend server with the basic RAG pipeline, which includes the ingestion, embedding, and RAG pipelines served via FastAPI.
 
-app = E2EPipelineFactory.create_pipeline()
+The server exposes the default pipeline, and the pipeline settings are defined in the `config.json` file. The default values for these settings are shown in the [config.json section](#configjson) below.
+
+## Step 2: Interact with the R2RClient
+
+After starting the basic pipeline server, you can interact with it using the `R2RClient`. The `R2RClient` provides an interface to communicate with the server and perform various operations.
+
+To run the basic client example, use the following command:
+
+```bash
+python -m r2r.examples.clients.run_basic_client
 ```
 
+This example demonstrates uploading text entries and a PDF to the local server using the Python client. It also showcases document and user-level vector management with built-in features.
 
-## R2RClient Interface
+The `R2RClient` provides the following main methods:
 
-The `R2RClient` provides an interface to interact with the server. Here are the main methods:
+- `upload_and_process_file(document_id: str, file_path: str, metadata: Optional[dict] = None, settings: Optional[dict] = None) -> dict`: Uploads a file to the server and processes it.
 
-- `upload_and_process_file(document_id: str, file_path: str, metadata: Optional[dict] = None, settings: Optional[dict] = None) -> dict`: Uploads a file to the server and processes it. 
+- `add_entry(document_id: str, blobs: Dict[str, str], metadata: Optional[Dict[str, Any]] = None, do_upsert: Optional[bool] = False, settings: Optional[Dict[str, Any]] = None) -> dict`: Adds an entry to the server.
 
-- `add_entry(document_id: str, blobs: Dict[str, str], metadata: Optional[Dict[str, Any]] = None, do_upsert: Optional[bool] = False, settings: Optional[Dict[str, Any]] = None) -> dict`: Adds an entry to the server. 
+- `add_entries(entries: List[Dict[str, Any]], do_upsert: Optional[bool] = False, settings: Optional[Dict[str, Any]] = None) -> dict`: Adds multiple entries to the server.
 
-- `add_entries(entries: List[Dict[str, Any]], do_upsert: Optional[bool] = False, settings: Optional[Dict[str, Any]] = None) -> dict`: Adds multiple entries to the server. 
+- `search(query: str, limit: Optional[int] = 10, filters: Optional[Dict[str, Any]] = None, settings: Optional[Dict[str, Any]] = None) -> dict`: Searches the server for a query.
 
-- `search(query: str, limit: Optional[int] = 10, filters: Optional[Dict[str, Any]] = None, settings: Optional[Dict[str, Any]] = None) -> dict`: Searches the server for a query. 
+- `rag_completion(query: str, limit: Optional[int] = 10, filters: Optional[Dict[str, Any]] = None, settings: Optional[Dict[str, Any]] = None) -> dict`: Requests a RAG completion from the server.
 
-- `rag_completion(query: str, limit: Optional[int] = 10, filters: Optional[Dict[str, Any]] = None, settings: Optional[Dict[str, Any]] = None) -> dict`: Requests a RAG completion from the server. 
+- `filtered_deletion(key: str, value: Union[bool, int, str]) -> dict`: Deletes entries from the server based on a filter.
 
-- `filtered_deletion(key: str, value: Union[bool, int, str]) -> dict`: Deletes entries from the server based on a filter. 
+- `get_logs() -> dict`: Retrieves logs from the server.
 
-- `get_logs() -> dict`: Retrieves logs from the server. 
+- `get_logs_summary() -> dict`: Retrieves a summary of logs from the server.
 
-- `get_logs_summary() -> dict`: Retrieves a summary of logs from the server. 
+## Step 3: Configure the Application
 
-
-## config.json
 <a name="configjson"></a>
 
+During the example pipeline creation, a default `config.json` is loaded and passed to the pipeline. It provides settings for various components, including the database provider, LLM settings, embedding settings, parsing logic, and more.
 
-During the example pipeline creation a default `config.json` is loaded and passed to the pipeline. It provides settings for the following services:
-
-- Database provider
-- LLM settings
-- Embedding settings
-- Parsing logic
-- and more.
-
-The default values for the config are shown below. 
+The default values for the configuration are shown below:
 
 ```json
 {
@@ -94,11 +92,11 @@ The default values for the config are shown below.
 
 _Note: For a full list of options, see [Config Setup](../core_features/config.mdx)._
 
-The pipeline is composed of three main components: `Ingestion`, `Embedding`, and `RAG` together with `Logging`.
+The pipeline consists of three main components: `Ingestion`, `Embedding`, and `RAG`, along with `Logging`.
 
-To launch your own custom application pipeline, you may run with the following
+To launch your own custom application pipeline, you can use the following code:
+
 ```python
-
 class E2EPipelineFactory:
     ...
     app = E2EPipelineFactory.create_pipeline(
@@ -113,6 +111,12 @@ class E2EPipelineFactory:
     )
 ```
 
-## Demo: Installation and launching Basic App & Client
+This code allows you to customize the pipeline components and provide your own configuration file.
+
+## Demo: Installation and Launching Basic App & Client
 
 [![demo_shot](../getting-started/demo_shot.png)](https://github.com/SciPhi-AI/r2r/assets/68796651/c648ab67-973a-416a-985e-2eafb0a41ef0)
+
+The demo video above showcases the installation process and demonstrates how to launch the basic application server and interact with it using the R2RClient.
+
+By following the steps outlined in this example, you can quickly set up and run a basic R2R application, customize the pipeline components, and interact with the server using the provided client methods.
