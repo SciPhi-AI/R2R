@@ -83,7 +83,7 @@ def create_app(
         if (
             file is not None
             and file.size
-            > config.app.get("max_file_size_in_mb", 100) * MB_CONVERSION_FACTOR
+            > config.app.get("max_file_size_in_mb", 5) * MB_CONVERSION_FACTOR
         ):
             raise HTTPException(
                 status_code=413,
