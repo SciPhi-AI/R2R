@@ -21,8 +21,10 @@ class PDFChat:
         }
 
     def ingest(self):
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        for file_path in glob.glob(os.path.join(current_dir, "*.pdf")):
+        current_file_directory = os.path.dirname(os.path.abspath(__file__))
+        data_path = os.path.join(current_file_directory, "..", "data")
+
+        for file_path in glob.glob(os.path.join(data_path, "*.pdf")):
             file_name = file_path.split(os.path.sep)[-1]
             if file_name in self.titles:
                 document_id = generate_id_from_label(file_path)
