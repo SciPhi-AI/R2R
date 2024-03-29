@@ -1,5 +1,7 @@
 """A simple example to demonstrate the usage of `WebSearchRAGPipeline`."""
+
 import uvicorn
+
 from r2r.main import E2EPipelineFactory, R2RConfig
 from r2r.pipelines import WebSearchRAGPipeline
 
@@ -7,7 +9,6 @@ from r2r.pipelines import WebSearchRAGPipeline
 app = E2EPipelineFactory.create_pipeline(
     config=R2RConfig.load_config(), rag_pipeline_impl=WebSearchRAGPipeline
 )
-
 
 
 if __name__ == "__main__":

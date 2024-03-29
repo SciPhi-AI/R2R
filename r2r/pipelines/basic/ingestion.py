@@ -1,6 +1,7 @@
 """
 A simple example to demonstrate the usage of `BasicIngestionPipeline`.
 """
+
 import logging
 from enum import Enum
 from typing import Any, Iterator, Optional, Union

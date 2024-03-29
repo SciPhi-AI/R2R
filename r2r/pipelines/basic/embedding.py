@@ -1,6 +1,7 @@
 """
 A simple example to demonstrate the usage of `BasicEmbeddingPipeline`.
 """
+
 import copy
 import logging
 import uuid

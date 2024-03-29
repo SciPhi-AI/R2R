@@ -1,4 +1,5 @@
 """A module for creating OpenAI model abstractions."""
+
 import logging
 import os
 from dataclasses import dataclass

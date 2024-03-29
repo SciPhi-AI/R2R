@@ -18,9 +18,9 @@ class RAGPipelineOutput:
         return {
             "search_results": self.search_results,
             "context": self.context,
-            "completion": self.completion.to_dict()
-            if self.completion
-            else None,
+            "completion": (
+                self.completion.to_dict() if self.completion else None
+            ),
         }
 
     def __repr__(self):

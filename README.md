@@ -47,7 +47,13 @@ For a full installation, which is recommended for development, please refer to t
 
 [Read the R2R Docs](https://r2r-docs.sciphi.ai/)
 
-Here's the updated README with the revised examples section based on the refactored file structure:
+## Key Features
+
+- **🚀 Deploy**: production-ready RAG pipelines with streaming in seconds
+- **🧩 Customize**: your pipeline using intuitive configuration files
+- **🔌 Extend**: your pipeline logic with code
+- **⚖️ Autoscale**: your pipeline in the cloud with [SciPhi](https://app.sciphi.ai/) 
+- **🤖 OSS **: framework built for and by the OSS community to make RAG easier.
 
 ## Examples
 
@@ -58,25 +64,25 @@ The project includes several examples that demonstrate application deployment an
 1. [`basic_pipeline.py`](r2r/examples/servers/basic_pipeline.py): This example runs the backend server with the basic RAG pipeline, which includes the ingestion, embedding, and RAG pipelines served via FastAPI.
 
    ```bash
-   python -m r2r.examples.servers.basic_pipeline:app
+   python -m r2r.examples.servers.basic_pipeline
    ```
 
 2. [`synthetic_query_pipeline.py`](r2r/examples/servers/synthetic_query_pipeline.py): This example demonstrates a more advanced pipeline that generates synthetic queries to improve the RAG pipeline's performance.
 
    ```bash
-   python -m r2r.examples.servers.synthetic_query_pipeline:app
+   python -m r2r.examples.servers.synthetic_query_pipeline
    ```
 
 3. [`reducto_pipeline.py`](r2r/examples/servers/reducto_pipeline.py): This example showcases the integration of the Reducto adapter for PDF ingestion.
 
    ```bash
-   python -m r2r.examples.servers.reducto_pipeline:app
+   python -m r2r.examples.servers.reducto_pipeline
    ```
 
 4. [`web_search_pipeline.py`](r2r/examples/servers/web_search_pipeline.py): This example demonstrates the usage of the `WebSearchRAGPipeline` for web search capabilities.
 
    ```bash
-   python -m r2r.examples.servers.web_search_pipeline:app
+   python -m r2r.examples.servers.web_search_pipeline
    ```
 
 ### Clients
@@ -98,15 +104,6 @@ The project includes several examples that demonstrate application deployment an
    ```bash
    python -m r2r.examples.clients.run_synthetic_query_client
    ```
-
-
-## Key Features
-
-- **🚀 Deploy**: production-ready RAG pipelines in seconds
-- **🧩 Customize**: your pipeline using intuitive configuration files
-- **🔌 Extend**: your pipeline logic with code
-- **⚖️ Autoscale**: your pipeline in the cloud with [SciPhi](https://app.sciphi.ai/) 
-- **🤖 OSS **: framework built for and by the OSS community to make RAG easier.
 
 ## Core Abstractions
 

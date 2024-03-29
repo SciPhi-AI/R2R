@@ -268,9 +268,11 @@ def combine_aggregated_logs(
             "embedding_chunks": None,
             "document": None,
             "completion_result": "N/A",
-            "outcome": "success"
-            if aggregation["events"][-1].get("log_level") == "INFO"
-            else "fail",
+            "outcome": (
+                "success"
+                if aggregation["events"][-1].get("log_level") == "INFO"
+                else "fail"
+            ),
         }
 
         for event in aggregation["events"]:
