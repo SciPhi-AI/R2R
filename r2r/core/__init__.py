@@ -1,6 +1,7 @@
 from .abstractions.document import BasicDocument
 from .abstractions.output import RAGPipelineOutput
 from .pipelines.embedding import EmbeddingPipeline
+from .pipelines.extraction import EntityExtractionPipeline
 from .pipelines.eval import EvalPipeline
 from .pipelines.ingestion import IngestionPipeline
 from .pipelines.rag import RAGPipeline
@@ -20,6 +21,7 @@ __all__ = [
     "DefaultPromptProvider",
     "RAGPipelineOutput",
     "EmbeddingPipeline",
+    "EntityExtractionPipeline",
     "EvalPipeline",
     "IngestionPipeline",
     "RAGPipeline",

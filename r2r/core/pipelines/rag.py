@@ -26,7 +26,7 @@ class RAGPipeline(Pipeline):
 
     def __init__(
         self,
-        llm: "LLMProvider",
+        llm: LLMProvider,
         prompt_provider: PromptProvider,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
