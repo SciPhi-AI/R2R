@@ -34,8 +34,7 @@ To customize the application, you can provide your own implementation classes fo
 Once the application is created, it can be launched using a web server such as Uvicorn. Here's an example of how to launch the application:
 
 ```bash
-# If using a venv, replace `uvicorn` with `venv_path/bin/uvicorn`
-uvicorn r2r.examples.basic.app:app
+python -m r2r.examples.basic.app
 ```
 
 In this example, Uvicorn is used to run the FastAPI application. The `r2r.examples.basic.app:app` argument specifies the module path and the variable name of the FastAPI application instance.

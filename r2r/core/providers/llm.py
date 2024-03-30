@@ -1,4 +1,5 @@
 """Base classes for language model providers."""
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, fields
 from typing import Optional

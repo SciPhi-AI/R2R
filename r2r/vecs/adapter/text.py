@@ -4,6 +4,7 @@ handling text data. It provides two main classes, `TextEmbedding` and `Paragraph
 
 All public classes, enums, and functions are re-exported by `vecs.adapters` module.
 """
+
 from typing import Any, Dict, Generator, Iterable, Literal, Optional, Tuple
 
 from flupy import flu

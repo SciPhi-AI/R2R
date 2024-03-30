@@ -76,7 +76,7 @@ print(
 # get file directory
 current_file_directory = os.path.dirname(os.path.realpath(__file__))
 
-file_path = os.path.join(current_file_directory, "test.pdf")
+file_path = os.path.join(current_file_directory, "..", "data", "test.pdf")
 
 print(f"Uploading and processing file: {file_path}...")
 # # Upload and process a file

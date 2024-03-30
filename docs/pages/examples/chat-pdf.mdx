@@ -1,37 +1,66 @@
-# ChatPDF
+# ChatPDF Example
 
-This example runs a basic application and does more sophisticated document processing. For a more comprehensive example, please visit [Basic Example](/examples/basic-example).
+This example demonstrates how to run a basic application that performs more sophisticated document processing using the R2R framework. For a more comprehensive example, please refer to the [Basic Example](/examples/basic-example).
+
+## Step 1: Launch the Basic Application Server
+
+To launch the basic application server, run the following command:
 
 ```bash
-# Launch the basic application
-# If using a venv, replace `uvicorn` with `venv_path/bin/uvicorn`
-uvicorn r2r.examples.basic.app:app
+python -m r2r.examples.servers.basic_pipeline
 ```
 
+This command starts the backend server with the basic RAG pipeline, which includes the ingestion, embedding, and RAG pipelines served via FastAPI.
+
+## Step 2: Ingest the Demo PDF Data
+
+To ingest the demo PDF data, use the following command:
+
 ```bash
-# Ingest the demo pdf data
 python -m r2r.examples.pdf_chat.run_client ingest
-
-# Uploading file:  examples/pdf_chat/meditations.pdf
-# Upload response =  {'message': "File 'meditations.pdf' processed and saved at '/Users/ocolegrove/demo/R2R/uploads/meditations.pdf'"}
 ```
 
+This command uploads the `meditations.pdf` file located in the `examples/pdf_chat` directory and processes it using the ingestion pipeline. The output should be similar to:
+
+```
+Uploading file: examples/pdf_chat/meditations.pdf
+Upload response = {'message': "File 'meditations.pdf' processed and saved at '/path/to/uploads/meditations.pdf'"}
+```
+
+## Step 3: Perform a Search
+
+To perform a search on the ingested PDF data, run the following command:
+
 ```bash
-# Perform a search
 python -m r2r.examples.pdf_chat.run_client search "what is the meditations about?"
-
-# Result 1: Title: Meditations - Marcus Aurelius
-# Middle things, Book 7,XXV. TheStoics divided allthings into
-# virtue, vice ...
 ```
+
+This command searches the ingested PDF data for information related to the query "what is the meditations about?". The output should include relevant text snippets from the PDF, such as:
+
+```
+Result 1: Title: Meditations - Marcus Aurelius
+Middle things, Book 7,XXV. TheStoics divided allthings into
+virtue, vice ...
+```
+
+## Step 4: Perform a Completion with RAG
+
+To generate a completion using the RAG (Retrieval-Augmented Generation) pipeline, run the following command:
 
 ```bash
-# Perform a completion w/ RAG
 python -m r2r.examples.pdf_chat.run_client rag_completion "what is the meditations about?"
-
-# {
-#  ...
-#  'message': {'content': '"Meditations" by Marcus Aurelius is a series of personal writings by the Roman Emperor, reflecting his thoughts on Stoic philosophy. The text delves into the nature of the human mind, ethics, and the universe, advocating for a life of virtue, rationality, and self-restraint. Aurelius discusses the importance of understanding one\'s place in the cosmos and the need to live in harmony with nature and society. He emphasizes the significance of inner peace, the control of one\'s desires and emotions, and the pursuit of goodness as the highest goal. Through his meditations, Aurelius seeks to provide guidance on leading a meaningful life, focusing on personal improvement and the development of a moral character in accordance with Stoic principles.'
-#  ...
-# }
 ```
+
+This command utilizes the RAG pipeline to generate a comprehensive answer to the query "what is the meditations about?". The output should include a detailed response based on the ingested PDF data, similar to:
+
+```
+{
+  ...
+  'message': {'content': '"Meditations" by Marcus Aurelius is a series of personal writings by the Roman Emperor, reflecting his thoughts on Stoic philosophy. The text delves into the nature of the human mind, ethics, and the universe, advocating for a life of virtue, rationality, and self-restraint. Aurelius discusses the importance of understanding one\'s place in the cosmos and the need to live in harmony with nature and society. He emphasizes the significance of inner peace, the control of one\'s desires and emotions, and the pursuit of goodness as the highest goal. Through his meditations, Aurelius seeks to provide guidance on leading a meaningful life, focusing on personal improvement and the development of a moral character in accordance with Stoic principles.'}
+  ...
+}
+```
+
+The RAG pipeline retrieves relevant information from the ingested PDF data and generates a coherent and informative response to the given query.
+
+By following these steps, you can run the ChatPDF example, which demonstrates how to ingest PDF data, perform searches, and generate completions using the R2R framework. This example showcases the framework's capabilities for more sophisticated document processing and retrieval-augmented generation.

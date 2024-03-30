@@ -23,12 +23,12 @@ class R2RClient:
             }
             data = {
                 "document_id": document_id,
-                "metadata": json.dumps(metadata)
-                if metadata
-                else json.dumps({}),
-                "settings": json.dumps(settings)
-                if settings
-                else json.dumps({}),
+                "metadata": (
+                    json.dumps(metadata) if metadata else json.dumps({})
+                ),
+                "settings": (
+                    json.dumps(settings) if settings else json.dumps({})
+                ),
             }
             response = requests.post(
                 url,

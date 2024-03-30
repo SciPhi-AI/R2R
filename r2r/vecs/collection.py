@@ -4,6 +4,7 @@ Defines the 'Collection' class
 Importing from the `vecs.collection` directly is not supported.
 All public classes, enums, and functions are re-exported by the top level `vecs` module.
 """
+
 from __future__ import annotations
 
 import math
