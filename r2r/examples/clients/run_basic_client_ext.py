@@ -76,6 +76,17 @@ class PDFChat:
         response = self.client.filtered_deletion("document_id", document_id)
         print("Deletion response = ", response)
 
+    def get_logs(self):
+        print("Fetching logs after all steps...")
+        logs_response = self.client.get_logs()
+        print(f"Logs response:\n{logs_response}\n")
+
+    def get_logs_summary(self):
+        print("Fetching logs summary after all steps...")
+        logs_summary_response = self.client.get_logs_summary()
+        print(f"Logs summary response:\n{logs_summary_response}\n")
+
+
 
 if __name__ == "__main__":
     fire.Fire(PDFChat)
