@@ -51,7 +51,7 @@ For a full installation, which is recommended for development, please refer to t
 - **🧩 Customize**: your pipeline using intuitive configuration files
 - **🔌 Extend**: your pipeline logic with code
 - **⚖️ Autoscale**: your pipeline in the cloud with [SciPhi](https://app.sciphi.ai/) 
-- **🤖 OSS **: framework built for and by the OSS community to make RAG easier.
+- **🤖 OSS**: framework built for and by the OSS community to make RAG easier.
 
 ## Examples
 
