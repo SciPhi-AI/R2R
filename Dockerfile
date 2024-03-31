@@ -17,4 +17,4 @@ COPY . /app
 
 EXPOSE 8000
 
-CMD ["uvicorn", "r2r.examples.basic.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "8"]
+CMD ["uvicorn", "r2r.examples.basic.app:app", "--host", "0.0.0.0", "--port", "8000"]
