@@ -1,6 +1,19 @@
-# ChatPDF Example
+# Basic Example
+This example illustrates how to use the R2R framework to ingest PDF data, conduct searches, and generate responses through a basic local server and client setup. This demonstrates the framework's advanced document processing and retrieval-augmented generation capabilities.
 
-This example demonstrates how to run a basic application that performs more sophisticated document processing using the R2R framework. For a more comprehensive example, please refer to the [Basic Example](/examples/basic-example).
+
+## Step 0: Dependencies
+Install the repo locally
+```
+git clone git@github.com:SciPhi-AI/r2r.git
+cd r2r
+```
+And make sure you have the necessary dependencies installed and the environment variables set.
+```bash
+pip install 'r2r[all]'
+export OPENAI_API_KEY="replace with your openai key"
+export LOCAL_DB_PATH=local.sqlite
+```
 
 ## Step 1: Launch the Basic Application Server
 
@@ -12,27 +25,26 @@ python -m r2r.examples.servers.basic_pipeline
 
 This command starts the backend server with the basic RAG pipeline, which includes the ingestion, embedding, and RAG pipelines served via FastAPI.
 
-## Step 2: Ingest the Demo PDF Data
+## Step 2: Ingest the Demo PDF Data Using a Client
 
 To ingest the demo PDF data, use the following command:
 
 ```bash
-python -m r2r.examples.pdf_chat.run_client ingest
+python -m r2r.examples.clients.run_basic_client ingest
 ```
 
-This command uploads the `meditations.pdf` file located in the `examples/pdf_chat` directory and processes it using the ingestion pipeline. The output should be similar to:
+This command uploads the `meditations.pdf` file located in the `examples/data` directory and processes it using the ingestion pipeline. The output should be similar to:
 
 ```
-Uploading file: examples/pdf_chat/meditations.pdf
 Upload response = {'message': "File 'meditations.pdf' processed and saved at '/path/to/uploads/meditations.pdf'"}
 ```
 
-## Step 3: Perform a Search
+## Step 3: Perform a Search Using a Client
 
 To perform a search on the ingested PDF data, run the following command:
 
 ```bash
-python -m r2r.examples.pdf_chat.run_client search "what is the meditations about?"
+python -m r2r.examples.clients.run_basic_client search "what is the meditations about?"
 ```
 
 This command searches the ingested PDF data for information related to the query "what is the meditations about?". The output should include relevant text snippets from the PDF, such as:
@@ -48,7 +60,7 @@ virtue, vice ...
 To generate a completion using the RAG (Retrieval-Augmented Generation) pipeline, run the following command:
 
 ```bash
-python -m r2r.examples.pdf_chat.run_client rag_completion "what is the meditations about?"
+python -m r2r.examples.clients.run_basic_client rag_completion "what is the meditations about?"
 ```
 
 This command utilizes the RAG pipeline to generate a comprehensive answer to the query "what is the meditations about?". The output should include a detailed response based on the ingested PDF data, similar to:
@@ -63,4 +75,25 @@ This command utilizes the RAG pipeline to generate a comprehensive answer to the
 
 The RAG pipeline retrieves relevant information from the ingested PDF data and generates a coherent and informative response to the given query.
 
-By following these steps, you can run the ChatPDF example, which demonstrates how to ingest PDF data, perform searches, and generate completions using the R2R framework. This example showcases the framework's capabilities for more sophisticated document processing and retrieval-augmented generation.
+## Step 5: Perform Streaming Completion with RAG
+To generate a streaming completion, run the following command:
+```bash
+python -m r2r.examples.clients.run_basic_client rag_completion_streaming "what is the meditations about?"
+```
+You should be able to see the response getting streamed to your console as it's getting generated.
+
+
+## Step 6: Get Server logs
+To get server logs using the client, run the following command:
+```
+python -m r2r.examples.clients.run_basic_client get_logs
+```
+
+Or, if you just want the summary of the logs, run:
+```
+python -m r2r.examples.clients.run_basic_client get_logs_summary
+```
+
+
+## Optional Step 7: Configure the Application
+You can refer to [customize a pipeline](customize-a-pipeline.mdx) to learn more.
