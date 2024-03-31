@@ -69,22 +69,14 @@ class Client:
 
         with self.Session() as sess:
             with sess.begin():
-                try:
-                    sess.execute(text("create schema if not exists vecs;"))
-                except Exception as e:
-                    if "already exists" not in str(e):
-                        raise ValueError(
-                            f"Error {e} occurred while creating the 'vecs' schema."
-                        )
-    
-                try:
-                    sess.execute(text("create extension if not exists vector;"))
-                except Exception as e:
-                    if "already exists" not in str(e):
-                        raise ValueError(
-                            f"Error {e} occurred while creating the 'vector' extension."
-                        )
-    
+                sess.execute(text("create schema if not exists vecs;"))
+                sess.execute(text("create extension if not exists vector;"))
+                self.vector_version: str = sess.execute(
+                    text(
+                        "select installed_version from pg_available_extensions where name = 'vector' limit 1;"
+                    )
+                ).scalar_one()
+
     def _supports_hnsw(self):
         return (
             not self.vector_version.startswith("0.4")
