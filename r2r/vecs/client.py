@@ -7,6 +7,8 @@ All public classes, enums, and functions are re-exported by the top level `vecs`
 
 from __future__ import annotations
 
+import logging
+import time
 from typing import TYPE_CHECKING, List, Optional
 
 from deprecated import deprecated
@@ -19,6 +21,8 @@ from r2r.vecs.exc import CollectionNotFound
 
 if TYPE_CHECKING:
     from r2r.vecs.collection import Collection
+
+logger = logging.getLogger(__name__)
 
 
 class Client:
@@ -61,7 +65,7 @@ class Client:
             poolclass=QueuePool,
             pool_recycle=300,  # Recycle connections after 5 min
         )
-        self.meta = sqlalchemy.MetaData(schema="vecs")
+        self.meta = MetaData(schema="vecs")
         self.Session = sessionmaker(self.engine)
         self.max_retries = max_retries
         self.retry_delay = retry_delay
@@ -78,7 +82,7 @@ class Client:
                         self._create_extension(sess)
                         self._get_vector_version(sess)
                 return
-            except sqlalchemy.exc.OperationalError as e:
+            except Exception as e:
                 logger.warning(
                     f"Database connection error: {str(e)}. Retrying in {self.retry_delay} seconds..."
                 )
