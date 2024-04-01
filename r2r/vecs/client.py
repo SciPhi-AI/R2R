@@ -72,18 +72,11 @@ class Client:
                 try:
                     sess.execute(text("create schema if not exists vecs;"))
                 except Exception as e:
-                    if "already exists" not in str(e):
-                        raise ValueError(
-                            f"Error {e} occurred while creating the 'vecs' schema."
-                        )
-    
+                    pass
                 try:
                     sess.execute(text("create extension if not exists vector;"))
                 except Exception as e:
-                    if "already exists" not in str(e):
-                        raise ValueError(
-                            f"Error {e} occurred while creating the 'vector' extension."
-                        )
+                    pass
                 self.vector_version: str = sess.execute(
                     text(
                         "select installed_version from pg_available_extensions where name = 'vector' limit 1;"
