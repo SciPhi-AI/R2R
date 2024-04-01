@@ -91,13 +91,7 @@ The project includes several examples that demonstrate application deployment an
    python -m r2r.examples.clients.run_basic_client
    ```
 
-2. [`run_basic_client_ext.py`](r2r/examples/clients/run_basic_client_ext.py): This example extends the basic client functionality and provides a more interactive experience for uploading and querying documents.
-
-   ```bash
-   python -m r2r.examples.clients.run_basic_client_ext
-   ```
-
-3. [`run_synthetic_query_client.py`](r2r/examples/clients/run_synthetic_query_client.py): This example is optimized for interaction with the synthetic query pipeline server, showcasing the enhanced RAG pipeline's capabilities.
+2. [`run_synthetic_query_client.py`](r2r/examples/clients/run_synthetic_query_client.py): This example is optimized for interaction with the synthetic query pipeline server, showcasing the enhanced RAG pipeline's capabilities.
 
    ```bash
    python -m r2r.examples.clients.run_synthetic_query_client
