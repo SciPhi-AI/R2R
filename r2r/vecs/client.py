@@ -48,40 +48,67 @@ class Client:
         vx.disconnect()
     """
 
-    def __init__(self, connection_string: str, pool_size=1, *args, **kwargs):
-        """
-        Initialize a Client instance.
 
-        Args:
-            connection_string (str): A string representing the database connection information.
-
-        Returns:
-            None
-        """
+        def __init__(self, connection_string: str, pool_size: int = 1, max_retries: int = 3, retry_delay: int = 1):
         self.engine = create_engine(
             connection_string,
             pool_size=pool_size,
             poolclass=QueuePool,
             pool_recycle=300,  # Recycle connections after 5 min
         )
-        self.meta = MetaData(schema="vecs")
+        self.meta = sqlalchemy.MetaData(schema="vecs")
         self.Session = sessionmaker(self.engine)
+        self.max_retries = max_retries
+        self.retry_delay = retry_delay
+        self.vector_version: Optional[str] = None
+        self._initialize_database()
 
-        with self.Session() as sess:
-            with sess.begin():
-                try:
-                    sess.execute(text("create schema if not exists vecs;"))
-                except Exception as e:
-                    pass
-                try:
-                    sess.execute(text("create extension if not exists vector;"))
-                except Exception as e:
-                    pass
-                self.vector_version: str = sess.execute(
-                    text(
-                        "select installed_version from pg_available_extensions where name = 'vector' limit 1;"
-                    )
+    def _initialize_database(self):
+        retries = 0
+        while retries < self.max_retries:
+            try:
+                with self.Session() as sess:
+                    with sess.begin():
+                        self._create_schema(sess)
+                        self._create_extension(sess)
+                        self._get_vector_version(sess)
+                return
+            except sqlalchemy.exc.OperationalError as e:
+                logger.warning(f"Database connection error: {str(e)}. Retrying in {self.retry_delay} seconds...")
+                retries += 1
+                time.sleep(self.retry_delay)
+        
+        logger.error(f"Failed to initialize database after {self.max_retries} retries.")
+        raise RuntimeError("Failed to initialize database.")
+
+    def _create_schema(self, sess):
+        try:
+            sess.execute(text("CREATE SCHEMA IF NOT EXISTS vecs;"))
+        except Exception as e:
+            logger.warning(f"Failed to create schema: {str(e)}")
+    
+    def _create_extension(self, sess):
+        try:
+            sess.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+        except Exception as e:
+            logger.warning(f"Failed to create extension: {str(e)}")
+
+    def _get_vector_version(self, sess):
+        try:
+            self.vector_version = sess.execute(
+                text("SELECT installed_version FROM pg_available_extensions WHERE name = 'vector' LIMIT 1;")
+            ).scalar_one()
+        except sqlalchemy.exc.InternalError as e:
+            if isinstance(e.orig, psycopg2.errors.InFailedSqlTransaction):
+                sess.rollback()
+                self.vector_version = sess.execute(
+                    text("SELECT installed_version FROM pg_available_extensions WHERE name = 'vector' LIMIT 1;")
                 ).scalar_one()
+            else:
+                raise e
+        except Exception as e:
+            logger.error(f"Failed to retrieve vector version: {str(e)}")
+            raise e
 
     def _supports_hnsw(self):
         return (
