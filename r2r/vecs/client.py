@@ -48,8 +48,13 @@ class Client:
         vx.disconnect()
     """
 
-
-        def __init__(self, connection_string: str, pool_size: int = 1, max_retries: int = 3, retry_delay: int = 1):
+    def __init__(
+        self,
+        connection_string: str,
+        pool_size: int = 1,
+        max_retries: int = 3,
+        retry_delay: int = 1,
+    ):
         self.engine = create_engine(
             connection_string,
             pool_size=pool_size,
@@ -74,11 +79,15 @@ class Client:
                         self._get_vector_version(sess)
                 return
             except sqlalchemy.exc.OperationalError as e:
-                logger.warning(f"Database connection error: {str(e)}. Retrying in {self.retry_delay} seconds...")
+                logger.warning(
+                    f"Database connection error: {str(e)}. Retrying in {self.retry_delay} seconds..."
+                )
                 retries += 1
                 time.sleep(self.retry_delay)
-        
-        logger.error(f"Failed to initialize database after {self.max_retries} retries.")
+
+        logger.error(
+            f"Failed to initialize database after {self.max_retries} retries."
+        )
         raise RuntimeError("Failed to initialize database.")
 
     def _create_schema(self, sess):
@@ -86,7 +95,7 @@ class Client:
             sess.execute(text("CREATE SCHEMA IF NOT EXISTS vecs;"))
         except Exception as e:
             logger.warning(f"Failed to create schema: {str(e)}")
-    
+
     def _create_extension(self, sess):
         try:
             sess.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
@@ -96,13 +105,17 @@ class Client:
     def _get_vector_version(self, sess):
         try:
             self.vector_version = sess.execute(
-                text("SELECT installed_version FROM pg_available_extensions WHERE name = 'vector' LIMIT 1;")
+                text(
+                    "SELECT installed_version FROM pg_available_extensions WHERE name = 'vector' LIMIT 1;"
+                )
             ).scalar_one()
         except sqlalchemy.exc.InternalError as e:
             if isinstance(e.orig, psycopg2.errors.InFailedSqlTransaction):
                 sess.rollback()
                 self.vector_version = sess.execute(
-                    text("SELECT installed_version FROM pg_available_extensions WHERE name = 'vector' LIMIT 1;")
+                    text(
+                        "SELECT installed_version FROM pg_available_extensions WHERE name = 'vector' LIMIT 1;"
+                    )
                 ).scalar_one()
             else:
                 raise e
@@ -259,7 +272,7 @@ class Client:
             None
         """
         self.engine.dispose()
-        logger.info("Disconnected from the database.")        
+        logger.info("Disconnected from the database.")
         return
 
     def __enter__(self) -> "Client":

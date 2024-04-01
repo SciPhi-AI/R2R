@@ -87,6 +87,5 @@ class PDFChat:
         print(f"Logs summary response:\n{logs_summary_response}\n")
 
 
-
 if __name__ == "__main__":
     fire.Fire(PDFChat)
