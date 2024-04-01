@@ -259,6 +259,7 @@ class Client:
             None
         """
         self.engine.dispose()
+        logger.info("Disconnected from the database.")        
         return
 
     def __enter__(self) -> "Client":
