@@ -25,7 +25,7 @@ R2R, short for RAG to Riches, provides the fastest and most efficient way to pro
 
 ## Why did we build this framework?
 
-R2R was conceived to bridge the gap between local LLM experimentation and scalable production solutions. **R2R is to NextJS what LangChain/LlamaIndex is to React**.
+R2R was conceived to bridge the gap between local LLM experimentation and scalable production solutions. **R2R is to LangChain/LlamaIndex what NextJS is to React**.
 
 ## Demo(s)
 
