@@ -31,7 +31,7 @@ R2R was conceived to bridge the gap between local LLM experimentation and scalab
 
 Using the cloud application to deploy the pre-built basic pipeline:
 
-<iframe src="https://www.loom.com/embed/e3b934b554484787b005702ced650ac9" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style={{ width: '100%', height: '400px', border: 'none' }}></iframe>
+https://www.loom.com/share/e3b934b554484787b005702ced650ac9
 
 Note - the example above uses [SciPhi Cloud](https://app.sciphi.ai) to pair with the R2R framework for deployment and observability. SciPhi is working to launch a self-hosted version of their cloud platform as R2R matures.
 
