@@ -1,6 +1,7 @@
 import React from "react";
 import { DocsThemeConfig } from "nextra-theme-docs";
 import InkeepChatButton from "./components/InkeepChatButton";
+// import "./styles/swaggerDark.css"; // Import the custom CSS file
 
 const config: DocsThemeConfig = {
   logo: (

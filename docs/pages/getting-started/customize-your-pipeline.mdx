@@ -20,19 +20,35 @@ R2R supports multiple vector database providers, including:
 
 To specify the vector database provider, set the `provider` field under `vector_database` in the `config.json` file. Make sure to provide the necessary connection details and credentials for your chosen provider.
 
+For more information, refer to [vector database](integrations/vector-databases) integrations.
+
 ### Embedding Provider
 
 R2R supports OpenAI as the embedding provider. To configure the embedding settings, update the `embedding` section in the `config.json` file. Specify the desired embedding model, dimension, and batch size according to your requirements. Currently, only OpenAI is supported, but this can easily be extended by request.
 
+- `openai`: Integration with OpenAI, supporting models like `text-embedding-3-small` and `text-embedding-3-large`.
+- `sentence-transformers`: Integration with the sentence transformers library, providing support for models available on HuggingFace, like `all-MiniLM-L6-v2`.
+
+For more information, refer to [embedding](integrations/embedding-model) integrations.
+
+
 ### Language Model Provider
 
-R2R integrates with LiteLLM for language model providers. LiteLLM supports most popular providers like OpenAI, Anthropic, and more. Refer to the [R2R LLM Provider docs](https://r2r-docs.sciphi.ai/integrations/llm-provider) for a detailed explanation on how this support is provided.
+- `openai`: Integration with OpenAI, supporting models like `gpt-3.5-turbo`
+- `litellm` (default): Integrates with many LLM providers, such as those listed below
+  - OpenAI
+  - Anthropic
+  - Vertex AI
+  - HuggingFace
+  - ...
 
-At runtime, the user may specify the desired language model provider, model name, and associated parameters like temperature, top_p, top_k, max_tokens_to_sample, and do_stream.
+For more information, refer to [llm](integrations/llm-provider) integrations.
 
 ### Evaluation Provider
 
 R2R supports DeepEval and PareaAI as evaluation providers. To configure the evaluation settings, update the `evals` section in the `config.json` file. Specify the evaluation frequency to determine how often the pipeline should be evaluated. These evaluations can be viewed readily in the deployment tab.
+
+For more information, refer to [eval](integrations/evals) integrations.
 
 ### Logging Provider
 
