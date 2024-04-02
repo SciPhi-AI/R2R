@@ -1137,6 +1137,21 @@ paramiko = ["paramiko"]
 pgp = ["gpg"]
 
 [[package]]
+name = "exa-py"
+version = "1.0.9"
+description = "Python SDK for Exa API."
+optional = true
+python-versions = "*"
+files = [
+    {file = "exa_py-1.0.9-py3-none-any.whl", hash = "sha256:830e783e2cde4d42582e3bdbad3eb6d9e8bf5add1f68960dc0281fd14b30a16c"},
+    {file = "exa_py-1.0.9.tar.gz", hash = "sha256:4e844fafc9eb84ff5244eb20fd68df5783a12fbde8eabff3163c79bfd5ee1a27"},
+]
+
+[package.dependencies]
+requests = "*"
+typing-extensions = "*"
+
+[[package]]
 name = "exceptiongroup"
 version = "1.2.0"
 description = "Backport of PEP 654 (exception groups)"
@@ -6464,6 +6479,7 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 all = ["bs4", "datasets", "deepeval", "numpy", "parea-ai", "psycopg2-binary", "pypdf", "qdrant_client", "scikit-learn", "sentry-sdk", "tiktoken"]
 embedding = ["tiktoken"]
 eval = ["deepeval", "parea-ai"]
+exa = ["exa-py"]
 ionic = ["ionic-api-sdk"]
 local-vectordb = ["numpy", "scikit-learn"]
 monitoring = ["sentry-sdk"]
@@ -6476,4 +6492,4 @@ streaming = ["datasets"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "6557260631d1168bfd39fbd6c92df7aec12d869b15f6239c6036a5a8ef690f6f"
+content-hash = "bb5d7a715f5a7be749602abb323173348a24a51e5d11d477e279956bd6090ffa"
