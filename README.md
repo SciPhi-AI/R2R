@@ -41,6 +41,8 @@ Note - the example above uses [SciPhi Cloud](https://app.sciphi.ai) to pair with
 
 [R2R Docs Quickstart](https://r2r-docs.sciphi.ai/getting-started/quick-install)
 
+[SciPhi Cloud](https://docs.sciphi.ai/)
+
 ## Quick Install:
 
 ```bash
