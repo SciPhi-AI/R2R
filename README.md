@@ -11,9 +11,10 @@
 <img src="./docs/pages/r2r.png" alt="Sciphi Framework">
 R2R, short for RAG to Riches, is a Python framework designed for the rapid development of production-ready Retrieval-Augmented Generation (RAG) systems. It offers the fastest and most efficient way to serve a RAG pipeline to end users. The framework is built around customizeable pipelines and a featureful FastAPI implementation.
 
-<p><br/>
-R2R is to NextJS what LangChain/LlamaIndex are to React.
-</p>
+
+## Why did we build this framework?
+
+R2R was conceived bring local LLM experimentation into production-ready and scaleable solutions. R2R is to NextJS what LangChain/LlamaIndex are to React.
 
 ## Demo(s)
 
