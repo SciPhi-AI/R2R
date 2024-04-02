@@ -1,0 +1,52 @@
+# Configuring Your RAG Pipeline
+
+The R2R library provides flexibility in customizing various aspects of the RAG pipeline to suit your specific needs. You can create custom implementations of the ingestion pipeline, embedding pipeline, RAG pipeline, and evaluation pipeline by subclassing the respective abstract base classes.
+
+## Customize Your Config
+
+Your RAG pipeline can be configured through the `config.json` file. Below are some of the various options that are supported.
+
+### Vector Database Provider
+
+R2R supports multiple vector database providers, including:
+
+- `local`: A local vector database implementation written in sqlite.
+- `qdrant`: Integration with Qdrant, a high-performance vector similarity search engine.
+- `pgvector`: Integration with PGVector, a vector similarity search extension for PostgreSQL.
+- `sciphi`: Managed PGVector database from SciPhi.
+
+To specify the vector database provider, set the `provider` field under `vector_database` in the `config.json` file. Make sure to provide the necessary connection details and credentials for your chosen provider.
+
+For more information, refer to [vector database](integrations/vector-databases) integrations.
+
+### Embedding Provider
+
+R2R supports OpenAI as the embedding provider. To configure the embedding settings, update the `embedding` section in the `config.json` file. Specify the desired embedding model, dimension, and batch size according to your requirements. Currently, only OpenAI is supported, but this can easily be extended by request.
+
+- `openai`: Integration with OpenAI, supporting models like `text-embedding-3-small` and `text-embedding-3-large`.
+- `sentence-transformers`: Integration with the sentence transformers library, providing support for models available on HuggingFace, like `all-MiniLM-L6-v2`.
+
+For more information, refer to [embedding integrations](integrations/embedding-model).
+
+
+### Language Model Provider
+
+- `openai`: Integration with OpenAI, supporting models like `gpt-3.5-turbo`
+- `litellm` (default): Integrates with many LLM providers, such as those listed below
+  - OpenAI
+  - Anthropic
+  - Vertex AI
+  - HuggingFace
+  - ...
+
+For more information, refer to [llm integrations](integrations/llm-provider).
+
+### Evaluation Provider
+
+R2R supports DeepEval and PareaAI as evaluation providers. To configure the evaluation settings, update the `evals` section in the `config.json` file. Specify the evaluation frequency to determine how often the pipeline should be evaluated. These evaluations can be viewed readily in the deployment tab.
+
+For more information, refer to [eval integrations](integrations/evals).
+
+### Logging Provider
+
+The page describes how to tailor the RAG pipeline in R2R via `config.json`, covering vector databases, embedding, language models, evaluations, and logging, with support for services like OpenAI and SQLite, and links to detailed integration guides.

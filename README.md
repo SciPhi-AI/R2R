@@ -1,5 +1,3 @@
-# R2R: Production-ready RAG systems.
-
 <p align="left">
   <a href="https://r2r-docs.sciphi.ai"><img src="https://img.shields.io/badge/docs.sciphi.ai-3F16E4" alt="Docs"></a>
   <a href="https://discord.gg/p6KqD2kjtB"><img src="https://img.shields.io/discord/1120774652915105934?style=social&logo=discord" alt="Discord"></a>
@@ -9,23 +7,41 @@
 </p>
 
 <img src="./docs/pages/r2r.png" alt="Sciphi Framework">
-R2R, short for RAG to Riches, is a Python framework designed for the rapid development of production-ready Retrieval-Augmented Generation (RAG) systems. It offers the fastest and most efficient way to serve a RAG pipeline to end users. The framework is built around customizeable pipelines and a featureful FastAPI implementation.
+<h3 align="center">
+Build, deploy, and optimize your RAG system.
+</h3>
 
+## About
+
+R2R, short for RAG to Riches, provides the fastest and most efficient way to provide high quality RAG to end users. The framework is built around customizable pipelines and a feature-rich FastAPI implementation.
+
+### Key Features
+
+- **🚀 Deploy**: Instantly launch production-ready RAG pipelines with streaming capabilities.
+- **🧩 Customize**: Tailor your pipeline with intuitive configuration files.
+- **🔌 Extend**: Enhance your pipeline with custom code integrations.
+- **⚖️ Autoscale**: Scale your pipeline effortlessly in the cloud using [SciPhi](https://app.sciphi.ai/).
+- **🤖 OSS**: Benefit from a framework developed by the open-source community, designed to simplify RAG deployment.
 
 ## Why did we build this framework?
 
-R2R was conceived bring local LLM experimentation into production-ready and scaleable solutions. R2R is to NextJS what LangChain/LlamaIndex are to React.
+R2R was conceived to bridge the gap between local LLM experimentation and scalable production solutions. **R2R is to NextJS what LangChain/LlamaIndex is to React**.
 
 ## Demo(s)
 
-Using cloud application to deploy the pre-built basic pipeline:
-https://www.loom.com/share/e3b934b554484787b005702ced650ac9
+Using the cloud application to deploy the pre-built basic pipeline:
 
-Note - the example above uses [SciPhi Cloud](https://app.sciphi.ai) to pair with the R2R framework for observability and optimization. We intend on launching a self-hosted version of the cloud framework as our codebase matures.
+<iframe src="https://www.loom.com/embed/e3b934b554484787b005702ced650ac9" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style={{ width: '100%', height: '400px', border: 'none' }}></iframe>
 
-### Quick Install:
+Note - the example above uses [SciPhi Cloud](https://app.sciphi.ai) to pair with the R2R framework for deployment and observability. SciPhi is working to launch a self-hosted version of their cloud platform as R2R matures.
 
-**Install R2R directly using `pip`:**
+## Links
+
+[Join the Discord server](https://discord.gg/p6KqD2kjtB)
+
+[R2R Docs Quickstart](https://r2r-docs.sciphi.ai/getting-started/quick-install)
+
+## Quick Install:
 
 ```bash
 # use the `'r2r[all]'` to download all required deps
@@ -41,22 +57,16 @@ export LOCAL_DB_PATH=local.sqlite
 # if using cloud providers (e.g. pgvector, qdrant, ...)
 ```
 
-## Links
-
-[Join the Discord server](https://discord.gg/p6KqD2kjtB)
-
-[R2R Docs Quickstart](https://r2r-docs.sciphi.ai/getting-started/quick-install)
-
 ## Basic Example
 
-[`basic_pipeline.py`](r2r/examples/servers/basic_pipeline.py): Running this script launches the default backend server with a basic RAG pipeline, which includes the ingestion, embedding, and RAG pipelines served via FastAPI.
+[`basic_pipeline.py`](r2r/examples/servers/basic_pipeline.py): Execute this script to initiate the default **backend server**. It establishes a basic RAG pipeline that encompasses ingestion, embedding, and RAG processes, all accessible via FastAPI.
 
    ```bash
    # launch the server
    python -m r2r.examples.servers.basic_pipeline
    ```
 
-[`run_basic_client.py`](r2r/examples/clients/run_basic_client.py): The client should be ran after starting the basic pipeline server. It demonstrates uploading text entries and a PDF to the local server using the Python client. It also showcases document and user-level vector management with built-in features.
+[`run_basic_client.py`](r2r/examples/clients/run_basic_client.py): This **client script** should be executed subsequent to the server startup above. It facilitates the upload of text entries and PDFs to the server using the Python client and demonstrates the management of document and user-level vectors through its built-in features.
 
    ```bash
    # run the client
@@ -65,14 +75,14 @@ export LOCAL_DB_PATH=local.sqlite
 
 ## Synthetic Queries Example
 
-[`synthetic_query_pipeline.py`](r2r/examples/servers/synthetic_query_pipeline.py): Running this script launches the default backend server with a more advanced pipeline that generates synthetic queries to improve the RAG pipeline's performance.
+[`synthetic_query_pipeline.py`](r2r/examples/servers/synthetic_query_pipeline.py): Execute this script to start a backend server equipped with an advanced pipeline. This pipeline is designed to create synthetic queries, enhancing the RAG system's learning and performance.
 
    ```bash
    # launch the server
    python -m r2r.examples.servers.synthetic_query_pipeline
    ```
 
-[`run_synthetic_query_client.py`](r2r/examples/clients/run_synthetic_query_client.py): This client example is optimized for interaction with the synthetic query pipeline server, showcasing the enhanced RAG pipeline's capabilities.
+[`run_synthetic_query_client.py`](r2r/examples/clients/run_synthetic_query_client.py): Use this client script after the synthetic query pipeline is running. It's tailored for use with the synthetic query pipeline, demonstrating the improved features of the RAG system.
 
    ```bash
    # run the client
@@ -81,14 +91,14 @@ export LOCAL_DB_PATH=local.sqlite
 
 ## Extras Examples
 
-[`reducto_pipeline.py`](r2r/examples/servers/reducto_pipeline.py): Running this script launches the default backend server with a Reducto adapter for PDF ingestion.
+[`reducto_pipeline.py`](r2r/examples/servers/reducto_pipeline.py): Launch this script to activate a backend server that integrates a Reducto adapter for enhanced PDF ingestion.
 
    ```bash
    # launch the server
    python -m r2r.examples.servers.reducto_pipeline
    ```
 
-[`web_search_pipeline.py`](r2r/examples/servers/web_search_pipeline.py): Running this script launches the default backend server with a `WebSearchRAGPipeline` for web search capabilities.
+[`web_search_pipeline.py`](r2r/examples/servers/web_search_pipeline.py): This script sets up a backend server that includes a `WebSearchRAGPipeline`, adding web search functionality to your RAG setup.
 
    ```bash
    # launch the server
@@ -108,13 +118,3 @@ The framework primarily revolves around three core abstractions:
 - The **Eval Pipeline**: Samples some subset of rag_completion calls for evaluation. Currently [DeepEval](https://github.com/confident-ai/deepeval) is supported. The abstraction can be found in [`eval.py`](r2r/core/pipelines/eval.py) and relevant documentation is available [here](https://r2r-docs.sciphi.ai/core-features/eval).
 
 Each pipeline incorporates a logging database for operation tracking and observability.
-
-
-## Key Features
-
-- **🚀 Deploy**: production-ready RAG pipelines with streaming in seconds
-- **🧩 Customize**: your pipeline using intuitive configuration files
-- **🔌 Extend**: your pipeline logic with code
-- **⚖️ Autoscale**: your pipeline in the cloud with [SciPhi](https://app.sciphi.ai/) 
-- **🤖 OSS**: framework built for and by the OSS community to make RAG easier.
-

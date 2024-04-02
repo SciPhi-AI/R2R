@@ -5,6 +5,5 @@
   "eval": "Evaluation Pipeline",
   "config": "Config setup",
   "app": "Application",
-  "app-api": "Application API",
   "factory": "Factory"
 }
