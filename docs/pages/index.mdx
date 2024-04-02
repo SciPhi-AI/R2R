@@ -1,32 +1,46 @@
-# Build, deploy and optimize RAG systems
+import GithubButtons from '../components/GithubButtons';
+
+# Welcome to R2R
 
 ![r2r](./r2r.png)
-R2R, short for from `RAG to Riches`, is a Python framework designed for the rapid development production-ready Retrieval-Augmented Generation (RAG) systems.
 
-## Why did we build this framework?
+<GithubButtons />
 
-R2R was conceived to bridge the gap between ad-hoc RAG implementations and robust, production-ready and scaleable solutions.
+R2R, short for RAG to Riches, provides the fastest and most efficient way to provide high quality RAG to end users. The framework is built around customizable pipelines and a feature-rich FastAPI implementation.
 
 ## Key Features
 
-- **🚀 Rapid Deployment**: Facilitates a smooth setup and development of production-ready RAG systems.
-- **⚖️ Flexible Standarization**: `Ingestion`, `Embedding`, `RAG`, and `Evaluation` with proper `Observability`.
-- **🧩 Easy to modify**: Provides a structure that can be extended to deploy your own custom pipelines.
-- **📦 Versioning**: Ensures your work remains reproducible and traceable through version control.
-- **🔌 Extensibility**: Enables a quick and robust integration with various VectorDBs, LLMs and Embeddings Models.
-- **🤖 OSS Driven**: Built for and by the OSS community, to help startups and enterprises to quickly build with RAG.
-- **📝 Cloud Solution**: Serverless cloud deployment available through [SciPhi](https://app.sciphi.ai).
+- **🚀 Deploy**: Instantly launch production-ready RAG pipelines with streaming capabilities.
+- **🧩 Customize**: Tailor your pipeline with intuitive configuration files.
+- **🔌 Extend**: Enhance your pipeline with custom code integrations.
+- **🤖 OSS**: Benefit from a framework developed by the open-source community, designed to simplify RAG deployment.
+- **⚖️ Autoscale**: Scale your pipeline effortlessly in the cloud using [SciPhi](https://app.sciphi.ai/).
+
+
+## Why did we build this framework?
+
+R2R was conceived to bridge the gap between local LLM experimentation and scalable production solutions. **R2R is to NextJS what LangChain/LlamaIndex is to React**.
+
+## Demo(s)
+
+Using the cloud application to deploy the pre-built basic pipeline:
+
+<iframe src="https://www.loom.com/embed/e3b934b554484787b005702ced650ac9" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style={{ width: '100%', height: '400px', border: 'none' }}></iframe>
+
+Note - the example above uses [SciPhi Cloud](https://app.sciphi.ai) to pair with the R2R framework for deployment and observability. SciPhi is working to launch a self-hosted version of their cloud platform as R2R matures.
+
 
 ## Getting Started
 
 To get started with R2R, we recommend setting up the framework and following an initial example.
 
 - [Quick Install](/getting-started/quick-install): Quick setup using `pip`.
-- [Full Install](/getting-started/full-install): A more detailed step-by-step setup aimed at complete environment configuration.
-- [Basic example](/examples/basic-example): A basic example to get you started with R2R with a RAG pipeline in a server and a client to interact with it.
+- [Basic example](/getting-started/basic-example): A basic example to get you started with R2R with a RAG pipeline in a server and a client to interact with it.
+- [End-to-End Walkthrough](/getting-started/end-to-end): A comprehensive guide from running a RAG pipeline locally to interacting with it using a basic web application.
+- [Configure Your Pipeline](/getting-started/configure-your-pipeline): A quick overview of how to configure your pipeline with `config.json`.
+- [Customize Your Pipeline](/getting-started/customize-your-pipeline): A brief introduction of ways to customize your RAG pipeline in code.
 
 ## Community
 
 [Joining our Discord server](https://discord.gg/p6KqD2kjtB) is the fastest way to get support and connect with both the R2R team and other developers in the community.
 Whether you're encountering issues, looking for advice on best practices, or just want to share your experiences, we're here to help.
-Don't hesitate to ask questions and engage with us; we're keen to support each other in building amazing RAG systems.

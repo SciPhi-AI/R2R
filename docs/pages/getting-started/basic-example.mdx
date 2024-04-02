@@ -1,14 +1,8 @@
 # Basic Example
-This example illustrates how to use the R2R framework to ingest PDF data, conduct searches, and generate responses through a basic local server and client setup. This demonstrates the framework's advanced document processing and retrieval-augmented generation capabilities.
-
+This example demonstrates setting up a local server using the R2R framework to host a RAG pipeline, which includes ingestion, embedding, and generation processes. Following the server setup, you'll interact with it using a client to ingest PDF data, perform searches, and generate responses, showcasing the framework's capabilities for advanced document processing and retrieval-augmented generation.
 
 ## Step 0: Dependencies
-Install the repo locally
-```
-git clone git@github.com:SciPhi-AI/r2r.git
-cd r2r
-```
-And make sure you have the necessary dependencies installed and the environment variables set.
+
 ```bash
 pip install 'r2r[all]'
 export OPENAI_API_KEY="replace with your openai key"
@@ -94,6 +88,8 @@ Or, if you just want the summary of the logs, run:
 python -m r2r.examples.clients.run_basic_client get_logs_summary
 ```
 
-
 ## Optional Step 7: Configure the Application
-You can refer to [customize a pipeline](customize-a-pipeline.mdx) to learn more.
+You can refer to [configure your pipeline](configure-your-pipeline.mdx) to learn more.
+
+## Optional Step 8: Customize the Application
+You can refer to [customize your pipeline](customize-your-pipeline.mdx) to learn more.
