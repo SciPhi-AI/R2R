@@ -9,7 +9,7 @@
 </p>
 
 <img src="./docs/pages/r2r.png" alt="Sciphi Framework">
-R2R was conceived to bridge the gap between experimental RAG models and robust, production-ready systems. Our semi-opinionated framework cuts through the complexity, offering a straightforward path to deploy, adapt, and maintain RAG pipelines in production. We prioritize simplicity and practicality, aiming to set a new industry benchmark for ease of use and effectiveness.
+R2R, short for RAG to Riches, is a Python framework designed for the rapid development of production-ready Retrieval-Augmented Generation (RAG) systems. It offers the fastest and most efficient way to serve a RAG pipeline to end users. The framework is built around customizeable pipelines and a featureful FastAPI implementation.
 
 ## Demo(s)
 
@@ -28,73 +28,66 @@ pip install 'r2r[parsing,eval]'
 
 # setup env 
 export OPENAI_API_KEY=sk-...
+# Set `LOCAL_DB_PATH` for local testing
 export LOCAL_DB_PATH=local.sqlite
 
 # OR do `vim .env.example && cp .env.example .env`
 # INCLUDE secrets and modify config.json
-# if using cloud providers (e.g. pgvector, supabase, ...)
+# if using cloud providers (e.g. pgvector, qdrant, ...)
 ```
-
-### Full Install:
-
-For a full installation, which is recommended for development, please refer to the [relevant documentation](https://r2r-docs.sciphi.ai/getting-started/full-install).
 
 ## Links
 
 [Join the Discord server](https://discord.gg/p6KqD2kjtB)
 
-[Read the R2R Docs](https://r2r-docs.sciphi.ai/)
+[R2R Docs Quickstart](https://r2r-docs.sciphi.ai/getting-started/quick-install)
 
-## Key Features
+## Basic Example
 
-- **🚀 Deploy**: production-ready RAG pipelines with streaming in seconds
-- **🧩 Customize**: your pipeline using intuitive configuration files
-- **🔌 Extend**: your pipeline logic with code
-- **⚖️ Autoscale**: your pipeline in the cloud with [SciPhi](https://app.sciphi.ai/) 
-- **🤖 OSS**: framework built for and by the OSS community to make RAG easier.
-
-## Examples
-
-The project includes several examples that demonstrate application deployment and interaction:
-
-### Servers
-
-1. [`basic_pipeline.py`](r2r/examples/servers/basic_pipeline.py): This example runs the backend server with the basic RAG pipeline, which includes the ingestion, embedding, and RAG pipelines served via FastAPI.
+[`basic_pipeline.py`](r2r/examples/servers/basic_pipeline.py): Running this script launches the default backend server with a basic RAG pipeline, which includes the ingestion, embedding, and RAG pipelines served via FastAPI.
 
    ```bash
+   # launch the server
    python -m r2r.examples.servers.basic_pipeline
    ```
 
-2. [`synthetic_query_pipeline.py`](r2r/examples/servers/synthetic_query_pipeline.py): This example demonstrates a more advanced pipeline that generates synthetic queries to improve the RAG pipeline's performance.
+[`run_basic_client.py`](r2r/examples/clients/run_basic_client.py): The client should be ran after starting the basic pipeline server. It demonstrates uploading text entries and a PDF to the local server using the Python client. It also showcases document and user-level vector management with built-in features.
 
    ```bash
-   python -m r2r.examples.servers.synthetic_query_pipeline
-   ```
-
-3. [`reducto_pipeline.py`](r2r/examples/servers/reducto_pipeline.py): This example showcases the integration of the Reducto adapter for PDF ingestion.
-
-   ```bash
-   python -m r2r.examples.servers.reducto_pipeline
-   ```
-
-4. [`web_search_pipeline.py`](r2r/examples/servers/web_search_pipeline.py): This example demonstrates the usage of the `WebSearchRAGPipeline` for web search capabilities.
-
-   ```bash
-   python -m r2r.examples.servers.web_search_pipeline
-   ```
-
-### Clients
-
-1. [`run_basic_client.py`](r2r/examples/clients/run_basic_client.py): This example should be run after starting the basic pipeline server. It demonstrates uploading text entries and a PDF to the local server using the Python client. It also showcases document and user-level vector management with built-in features.
-
-   ```bash
+   # run the client
    python -m r2r.examples.clients.run_basic_client
    ```
 
-2. [`run_synthetic_query_client.py`](r2r/examples/clients/run_synthetic_query_client.py): This example is optimized for interaction with the synthetic query pipeline server, showcasing the enhanced RAG pipeline's capabilities.
+## Synthetic Queries Example
+
+[`synthetic_query_pipeline.py`](r2r/examples/servers/synthetic_query_pipeline.py): Running this script launches the default backend server with a more advanced pipeline that generates synthetic queries to improve the RAG pipeline's performance.
 
    ```bash
+   # launch the server
+   python -m r2r.examples.servers.synthetic_query_pipeline
+   ```
+
+[`run_synthetic_query_client.py`](r2r/examples/clients/run_synthetic_query_client.py): This client example is optimized for interaction with the synthetic query pipeline server, showcasing the enhanced RAG pipeline's capabilities.
+
+   ```bash
+   # run the client
    python -m r2r.examples.clients.run_synthetic_query_client
+   ```
+
+## Extras Examples
+
+[`reducto_pipeline.py`](r2r/examples/servers/reducto_pipeline.py): Running this script launches the default backend server with a Reducto adapter for PDF ingestion.
+
+   ```bash
+   # launch the server
+   python -m r2r.examples.servers.reducto_pipeline
+   ```
+
+[`web_search_pipeline.py`](r2r/examples/servers/web_search_pipeline.py): Running this script launches the default backend server with a `WebSearchRAGPipeline` for web search capabilities.
+
+   ```bash
+   # launch the server
+   python -m r2r.examples.servers.web_search_pipeline
    ```
 
 ## Core Abstractions
@@ -110,3 +103,13 @@ The framework primarily revolves around three core abstractions:
 - The **Eval Pipeline**: Samples some subset of rag_completion calls for evaluation. Currently [DeepEval](https://github.com/confident-ai/deepeval) is supported. The abstraction can be found in [`eval.py`](r2r/core/pipelines/eval.py) and relevant documentation is available [here](https://r2r-docs.sciphi.ai/core-features/eval).
 
 Each pipeline incorporates a logging database for operation tracking and observability.
+
+
+## Key Features
+
+- **🚀 Deploy**: production-ready RAG pipelines with streaming in seconds
+- **🧩 Customize**: your pipeline using intuitive configuration files
+- **🔌 Extend**: your pipeline logic with code
+- **⚖️ Autoscale**: your pipeline in the cloud with [SciPhi](https://app.sciphi.ai/) 
+- **🤖 OSS**: framework built for and by the OSS community to make RAG easier.
+
