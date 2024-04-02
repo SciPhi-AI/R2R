@@ -28,6 +28,9 @@ requests = "^2.31.0"
 types-requests = "^2.31.0"
 uvicorn = "^0.27.0.post1"
 vecs = "^0.4.0"
+llama-cpp-python = "^0.2.57"
+sentence-transformers = "^2.6.1"
+
 
 # Optional dependencies
 bs4 = {version = "^0.0.2", optional = true}
