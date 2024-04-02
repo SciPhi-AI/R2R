@@ -21,7 +21,7 @@ For more information, refer to [vector database](integrations/vector-databases) 
 
 ### Embedding Provider
 
-R2R supports OpenAI as the embedding provider. To configure the embedding settings, update the `embedding` section in the `config.json` file. Specify the desired embedding model, dimension, and batch size according to your requirements. Currently, only OpenAI is supported, but this can easily be extended by request.
+R2R supports OpenAI and local inference as embedding providers. To configure the embedding settings, update the `embedding` section in the `config.json` file. Specify the desired embedding model, dimension, and batch size according to your requirements. This can easily be extended by request.
 
 - `openai`: Integration with OpenAI, supporting models like `text-embedding-3-small` and `text-embedding-3-large`.
 - `sentence-transformers`: Integration with the sentence transformers library, providing support for models available on HuggingFace, like `all-MiniLM-L6-v2`.
@@ -47,6 +47,20 @@ R2R supports DeepEval and PareaAI as evaluation providers. To configure the eval
 
 For more information, refer to [eval integrations](integrations/evals).
 
+Here's the updated "Evaluation Provider" section:
+
+### Evaluation Provider
+
+R2R supports DeepEval and PareaAI as evaluation providers. These providers allow you to evaluate the performance and quality of your RAG pipeline at regular intervals.
+- `provider`: Specifies the evaluation provider to use (`deepeval` or `pareaai`).
+- `frequency`: Determines how often the pipeline should be evaluated. It represents the fraction of queries that should trigger an evaluation. For example, a frequency of `0.1` means that approximately 10% of the queries will be evaluated.
+
 ### Logging Provider
 
-The page describes how to tailor the RAG pipeline in R2R via `config.json`, covering vector databases, embedding, language models, evaluations, and logging, with support for services like OpenAI and SQLite, and links to detailed integration guides.
+The R2R library supports various logging providers to store execution logs of the RAG pipeline. 
+
+R2R supports the following logging providers:
+
+- `postgres`: Logs pipeline execution information to a PostgreSQL database.
+- `local`: Logs pipeline execution information to a local SQLite database.
+- `redis`: Logs pipeline execution information to a Redis database.
