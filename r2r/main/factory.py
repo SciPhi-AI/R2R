@@ -62,7 +62,12 @@ class E2EPipelineFactory:
         elif llm_config["provider"] == "litellm":
             return LiteLLM(LiteLLMConfig())
         elif llm_config["provider"] == "llamacpp":
-            return LlamaCPP(LlamaCppConfig())
+            return LlamaCPP(
+                LlamaCppConfig(
+                    llm_config.get("model_path", ""),
+                    llm_config.get("model_name", ""),
+                )
+            )
 
     @staticmethod
     def get_text_splitter(text_splitter_config: dict[str, Any]):

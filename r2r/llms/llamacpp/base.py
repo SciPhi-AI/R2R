@@ -3,8 +3,8 @@
 import datetime
 import logging
 import os
-from dataclasses import dataclass
-from typing import Union
+from dataclasses import dataclass, field
+from typing import Optional, Union
 
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
@@ -19,14 +19,16 @@ class LlamaCppConfig(LLMConfig):
 
     # Base
     provider_name: str = "llamacpp"
-    model_path: str = os.path.join(
-        os.getcwd(),
-        "r2r",
-        "llms",
-        "llamacpp",
-        "model",
-        "tinyllama-1.1b-chat-v1.0.Q2_K.gguf",
-    )
+    model_path: str = ""
+    model_name: str = ""
+
+    def __post_init__(self):
+        if not self.model_path or self.model_path == "":
+            self.model_path = os.path.join(
+                os.path.expanduser("~"), ".cache", "models"
+            )
+        if not self.model_name or self.model_name == "":
+            self.model_name = "tinyllama-1.1b-chat-v1.0.Q2_K.gguf"
 
 
 class LlamaCPP(LLMProvider):
@@ -55,7 +57,8 @@ class LlamaCPP(LLMProvider):
                 "Error, `llama-cpp-python` is required to run a LlamaCPP. Please install it using `pip install llama-cpp-python`."
             )
 
-        self.client = Llama(self.config.model_path, n_ctx=2048)
+        path = os.path.join(self.config.model_path, self.config.model_name)
+        self.client = Llama(path, n_ctx=2048)
 
     def get_completion(
         self,
