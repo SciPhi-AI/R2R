@@ -1,6 +1,0 @@
-{
-  "llm-provider": "LLM Provider",
-  "vector-databases": "Vector Databases",
-  "embedding-model": "Embedding Model",
-  "evals": "Evals"
-}

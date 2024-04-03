@@ -6,8 +6,8 @@
   "deep-dive": {
     "title": "Deep Dive"
   },
-  "integrations": {
-    "title": "Integrations"
+  "providers": {
+    "title": "Providers"
   },
   "examples": {
     "title": "Examples"
