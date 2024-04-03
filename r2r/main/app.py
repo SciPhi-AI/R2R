@@ -27,7 +27,7 @@ from r2r.core import (
 from r2r.main.utils import (
     R2RConfig,
     apply_cors,
-    configure_logging,
+    # configure_logging,
     find_project_root,
     process_logs,
 )
@@ -60,6 +60,8 @@ def create_app(
     logging_connection: Optional[LoggingDatabaseConnection] = None,
 ):
     app = FastAPI()
+    # TODO - Consider impact of logging in remote environments
+    # e.g. such as Google Cloud Run
     # configure_logging()
     apply_cors(app)
 

@@ -1,7 +1,7 @@
 {
   "embedding": {
-    "provider": "openai",
-    "model": "text-embedding-3-small",
+    "provider": "sentence_transformers",
+    "model": "all-MiniLM-L6-v2",
     "dimension": 1536,
     "batch_size": 32
   },
@@ -10,7 +10,7 @@
     "frequency": 1.0
   },
   "language_model": {
-    "provider": "litellm"
+    "provider": "llamacpp"
   },
   "logging_database": {
     "provider": "local",

@@ -3,8 +3,8 @@
 import datetime
 import logging
 import os
-from dataclasses import dataclass, field
-from typing import Optional, Union
+from dataclasses import dataclass
+from typing import Union
 
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
