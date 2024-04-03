@@ -16,7 +16,7 @@ R2R currently supports the following LLM providers:
   - Ollama
   - Together AI
   - Openrouter
-
+- LLamaCpp
 
 ## LiteLLM Provider (Default)
 
@@ -55,7 +55,44 @@ Key features of the `OpenAILLM` implementation:
 To use the OpenAI provider, you need to set the `OPENAI_API_KEY` environment variable with your OpenAI API key.
 
 
-## Configuring LLM Providers
+Here's the LlamaCpp section added to the LLM Provider Configuration Guide:
+
+## LlamaCpp Provider
+
+The `LlamaCPP` class is an implementation of the `LLMProvider` that integrates with the LlamaCpp library for generating completions using local models.
+
+Key features of the `LlamaCPP` implementation:
+
+- Initializes the LlamaCpp client using the provided model path and model name.
+- Supports both non-streaming and streaming completions.
+- Allows passing additional arguments to the LlamaCpp client.
+
+To use the LlamaCpp provider, you need to install the `llama-cpp-python` package:
+
+```
+pip install llama-cpp-python
+```
+
+### Configuring LlamaCpp
+
+To configure the LlamaCpp provider, you need to set the following options in the `language_model` section of the configuration file (`config.json`):
+
+- `provider_name`: Set it to `"llamacpp"` to use the LlamaCpp provider.
+- `model_path`: Specify the path where the LlamaCpp models are located. If not provided, it defaults to `~/.cache/models`.
+- `model_name`: Specify the name of the LlamaCpp model to use. If not provided, it defaults to `"tinyllama-1.1b-chat-v1.0.Q2_K.gguf"`.
+
+Example configuration:
+
+```json
+"language_model": {
+    "provider": "llamacpp",
+    "model_path": "/path/to/models",
+    "model_name": "custom_model.gguf"
+}
+```
+
+
+## Configuring Remote LLM Providers
 
 To configure a specific LLM provider, you need to set the appropriate environment variables and update the `language_model` section of the configuration file (`config.json`).
 
