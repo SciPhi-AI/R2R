@@ -5,7 +5,14 @@ import dotenv
 
 from r2r.core import LoggingDatabaseConnection
 from r2r.core.utils import RecursiveCharacterTextSplitter
-from r2r.llms import LiteLLM, LiteLLMConfig, OpenAIConfig, OpenAILLM
+from r2r.llms import (
+    LiteLLM,
+    LiteLLMConfig,
+    LlamaCPP,
+    LlamaCppConfig,
+    OpenAIConfig,
+    OpenAILLM,
+)
 from r2r.pipelines import (
     BasicEmbeddingPipeline,
     BasicEvalPipeline,
@@ -54,6 +61,8 @@ class E2EPipelineFactory:
             return OpenAILLM(OpenAIConfig())
         elif llm_config["provider"] == "litellm":
             return LiteLLM(LiteLLMConfig())
+        elif llm_config["provider"] == "llamacpp":
+            return LlamaCPP(LlamaCppConfig())
 
     @staticmethod
     def get_text_splitter(text_splitter_config: dict[str, Any]):
