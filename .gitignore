@@ -1,10 +1,10 @@
 .env*
 .DS_Store
-
+*.gguf
 logs/
 workspace/
 uploads/
-
+env/
 **/__pycache__
 
 .next
