@@ -1,10 +1,8 @@
-# Configuring Your RAG Pipeline
+## Configuring Your RAG Pipeline
 
-The R2R library provides flexibility in customizing various aspects of the RAG pipeline to suit your specific needs. You can create custom implementations of the ingestion pipeline, embedding pipeline, RAG pipeline, and evaluation pipeline by subclassing the respective abstract base classes.
+The R2R library provides flexibility in customizing various aspects of the RAG pipeline to suit your specific needs. 
 
-## Customize Your Config
-
-Your RAG pipeline can be configured through the `config.json` file. Below are some of the various options that are supported.
+Your RAG pipeline providers can be configured through the `config.json` file. Below are some of the various options that are supported.
 
 ### Vector Database Provider
 
@@ -17,7 +15,7 @@ R2R supports multiple vector database providers, including:
 
 To specify the vector database provider, set the `provider` field under `vector_database` in the `config.json` file. Make sure to provide the necessary connection details and credentials for your chosen provider.
 
-For more information, refer to [vector database](/integrations/vector-databases) integrations.
+For more information, refer to [vector database](/providers/vector-databases) integrations.
 
 ### Embedding Provider
 
@@ -26,7 +24,7 @@ R2R supports OpenAI and local inference as embedding providers. To configure the
 - `openai`: Integration with OpenAI, supporting models like `text-embedding-3-small` and `text-embedding-3-large`.
 - `sentence-transformers`: Integration with the sentence transformers library, providing support for models available on HuggingFace, like `all-MiniLM-L6-v2`.
 
-For more information, refer to [embedding integrations](/integrations/embeddings).
+For more information, refer to [embedding integrations](/providers/embeddings).
 
 
 ### Language Model Provider
@@ -39,13 +37,21 @@ For more information, refer to [embedding integrations](/integrations/embeddings
   - HuggingFace
   - ...
 
-For more information, refer to [llm integrations](/integrations/llms).
+For more information, refer to [llm integrations](/providers/llms).
 
 ### Evaluation Provider
 
 R2R supports DeepEval and PareaAI as evaluation providers. To configure the evaluation settings, update the `evals` section in the `config.json` file. Specify the evaluation frequency to determine how often the pipeline should be evaluated. These evaluations can be viewed readily in the deployment tab.
 
-For more information, refer to [eval integrations](/integrations/evals).
+For more information, refer to [eval integrations](/providers/evals).
+
+Here's the updated "Evaluation Provider" section:
+
+### Evaluation Provider
+
+R2R supports DeepEval and PareaAI as evaluation providers. These providers allow you to evaluate the performance and quality of your RAG pipeline at regular intervals.
+- `provider`: Specifies the evaluation provider to use (`deepeval` or `pareaai`).
+- `frequency`: Determines how often the pipeline should be evaluated. It represents the fraction of queries that should trigger an evaluation. For example, a frequency of `0.1` means that approximately 10% of the queries will be evaluated.
 
 Here's the updated "Evaluation Provider" section:
 
