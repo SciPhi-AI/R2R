@@ -1,4 +1,5 @@
 import os
+from typing import Union
 
 from r2r.core.providers.eval import EvalProvider
 
