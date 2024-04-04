@@ -103,14 +103,14 @@ class E2EPipelineFactory:
         logging.basicConfig(level=config.logging_database["level"])
 
         embeddings_provider = (
-                embeddings_provider
-                or E2EPipelineFactory.get_embeddings_provider(config.embedding)
+            embeddings_provider
+            or E2EPipelineFactory.get_embeddings_provider(config.embedding)
         )
         embedding_model = config.embedding["model"]
         embedding_dimension = config.embedding["dimension"]
         embedding_batch_size = config.embedding["batch_size"]
 
-        db = E2EPipelineFactory.get_vector_db(config.vector_database)
+        db = db or E2EPipelineFactory.get_vector_db(config.vector_database)
         collection_name = config.vector_database["collection_name"]
         db.initialize_collection(collection_name, embedding_dimension)
 
