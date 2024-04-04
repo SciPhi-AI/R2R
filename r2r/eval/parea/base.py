@@ -45,7 +45,7 @@ class PareaEvalProvider(EvalProvider):
 
     def _evaluate(
         self, query: str, context: str, completion: str
-    ) -> dict[str, dict[str, str | float]]:
+    ) -> dict[str, dict[str, Union[str, float]]]:
         log = self._create_log(query, context, completion)
 
         answer_relevancy_score = self.answer_relevancy(log)
