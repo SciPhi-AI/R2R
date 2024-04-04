@@ -59,6 +59,15 @@ export LOCAL_DB_PATH=local.sqlite
 # if using cloud providers (e.g. pgvector, qdrant, ...)
 ```
 
+## Docker:
+
+```bash
+docker pull emrgntcmplxty/r2r:latest
+
+# Place your secrets in `.env` before deploying
+docker run -d --name r2r_container -p 8000:8000 --env-file .env r2r
+```
+
 ## Basic Example
 
 [`basic_pipeline.py`](r2r/examples/servers/basic_pipeline.py): Execute this script to initiate the default **backend server**. It establishes a basic RAG pipeline that encompasses ingestion, embedding, and RAG processes, all accessible via FastAPI.
