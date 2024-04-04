@@ -5,9 +5,12 @@ from r2r.client import R2RClient
 from r2r.core.utils import generate_id_from_label
 
 # Initialize the client with the base URL of your API
-base_url = "http://localhost:8011"
+base_url = "http://localhost:8000"
 client = R2RClient(base_url)
 
+from r2r.client import R2RClient
+
+# print('eval_result:', eval_result)
 print("Upserting entry to remote db...")
 # Upsert a single entry
 

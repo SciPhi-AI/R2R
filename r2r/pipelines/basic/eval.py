@@ -32,7 +32,22 @@ class BasicEvalPipeline(EvalPipeline):
                 raise ImportError(
                     "DeepEval is not installed. Please install it using `pip install deepeval`."
                 )
-            self.eval_provider = DeepEvalProvider()
+            self.eval_provider = DeepEvalProvider(
+                provider,
+                eval_config.get("sampling_fraction", 1.0),
+            )
+
+        elif provider == "parea":
+            try:
+                from r2r.eval import PareaEvalProvider
+            except ImportError:
+                raise ImportError(
+                    "Parea is not installed. Please install it using `pip install parea`."
+                )
+            self.eval_provider = PareaEvalProvider(
+                provider,
+                eval_config.get("sampling_fraction", 1.0),
+            )
 
     @log_execution_to_db
     def evaluate(self, query: str, context: str, completion: str) -> Any:

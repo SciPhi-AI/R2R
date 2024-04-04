@@ -1,8 +1,9 @@
 import random
+from abc import ABC, abstractmethod
 from typing import Optional
 
 
-class EvalProvider:
+class EvalProvider(ABC):
     providers = ["deepeval", "parea"]
 
     def __init__(self, provider: str, sampling_fraction: float = 1.0):
@@ -17,3 +18,9 @@ class EvalProvider:
         if random.random() < self.sampling_fraction:
             return self.evaluate(query, context, completion)
         return None
+
+    @abstractmethod
+    def _evaluate(
+        self, query: str, context: str, completion: str
+    ) -> dict[str, dict[str, str]]:
+        pass

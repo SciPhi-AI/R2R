@@ -24,10 +24,9 @@ from r2r.core import (
     RAGPipeline,
     RAGPipelineOutput,
 )
-from r2r.main.utils import (
+from r2r.main.utils import (  # configure_logging,
     R2RConfig,
     apply_cors,
-    # configure_logging,
     find_project_root,
     process_logs,
 )

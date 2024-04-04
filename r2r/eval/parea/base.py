@@ -4,8 +4,8 @@ from r2r.core.providers.eval import EvalProvider
 
 
 class PareaEvalProvider(EvalProvider):
-    def __init__(self, sampling_fraction: float = 1.0):
-        super().__init__("parea", sampling_fraction)
+    def __init__(self, provider: str, sampling_fraction: float = 1.0):
+        super().__init__(provider, sampling_fraction)
         try:
             from parea.evals.general import answer_relevancy_factory
             from parea.evals.rag import (
@@ -43,7 +43,7 @@ class PareaEvalProvider(EvalProvider):
                 "Please set the `OPENAI_API_KEY` environment variable to run with Parea."
             )
 
-    def evaluate(
+    def _evaluate(
         self, query: str, context: str, completion: str
     ) -> dict[str, dict[str, str | float]]:
         log = self._create_log(query, context, completion)
