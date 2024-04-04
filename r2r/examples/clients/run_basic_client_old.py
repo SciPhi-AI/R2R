@@ -126,7 +126,7 @@ async def stream_rag_completion():
         print(chunk, end="", flush=True)
 
 
-asyncio.run(stream_rag_completion())
+# asyncio.run(stream_rag_completion())
 
 print("Fetching logs after all steps...")
 logs_response = client.get_logs()
