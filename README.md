@@ -15,6 +15,10 @@ Build, deploy, and optimize your RAG system.
 
 R2R, short for RAG to Riches, provides the fastest and most efficient way to provide high quality RAG to end users. The framework is built around customizable pipelines and a feature-rich FastAPI implementation.
 
+## Why?
+
+R2R was conceived to bridge the gap between local LLM experimentation and scalable production solutions. **R2R is to LangChain/LlamaIndex what NextJS is to React**. A JavaScript client for R2R deployments can be [found here](https://github.com/SciPhi-AI/r2r-js).
+
 ### Key Features
 
 - **🚀 Deploy**: Instantly launch production-ready RAG pipelines with streaming capabilities.
@@ -22,10 +26,6 @@ R2R, short for RAG to Riches, provides the fastest and most efficient way to pro
 - **🔌 Extend**: Enhance your pipeline with custom code integrations.
 - **⚖️ Autoscale**: Scale your pipeline effortlessly in the cloud using [SciPhi](https://app.sciphi.ai/).
 - **🤖 OSS**: Benefit from a framework developed by the open-source community, designed to simplify RAG deployment.
-
-## Why did we build this framework?
-
-R2R was conceived to bridge the gap between local LLM experimentation and scalable production solutions. **R2R is to LangChain/LlamaIndex what NextJS is to React**.
 
 ## Demo(s)
 
