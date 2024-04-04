@@ -1,7 +1,7 @@
 import logging
-from typing import Optional
+from typing import Optional, Union
 
-from r2r.core import VectorDBProvider, VectorEntry
+from r2r.core import VectorDBProvider, VectorEntry, VectorSearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 class LanceDB(VectorDBProvider):
     # TODO enable LanceDB provider to support lanceDB Cloud
     def __init__(
-            self, provider: str = "lancedb", db_path: Optional[str] = None
+        self, provider: str = "lancedb", db_path: Optional[str] = None
     ) -> None:
         logger.info("Initializing `LanceDB` to store and retrieve embeddings.")
 
@@ -28,7 +28,6 @@ class LanceDB(VectorDBProvider):
             )
 
         self.db_path = db_path
-
         try:
             self.client = lancedb.connect(uri=self.db_path)
         except Exception as e:
@@ -38,7 +37,7 @@ class LanceDB(VectorDBProvider):
         self.collection_name: Optional[str] = None
 
     def initialize_collection(
-            self, collection_name: str, dimension: int
+        self, collection_name: str, dimension: int
     ) -> None:
         self.collection_name = collection_name
 
@@ -87,3 +86,34 @@ class LanceDB(VectorDBProvider):
             },
             mode="overwrite",
         )
+
+    def upsert_entries(
+        self, entries: list[VectorEntry], commit: bool = True
+    ) -> None:
+        pass
+
+    def search(
+        self,
+        query_vector: list[float],
+        filters: dict[str, Union[bool, int, str]] = {},
+        limit: int = 10,
+        *args,
+        **kwargs,
+    ) -> list[VectorSearchResult]:
+        pass
+
+    def create_index(self, index_type, column_name, index_options):
+        pass
+
+    def close(self):
+        pass
+
+    def filtered_deletion(
+        self, key: str, value: Union[bool, int, str]
+    ) -> None:
+        pass
+
+    def get_all_unique_values(
+        self, collection_name: str, metadata_field: str, filters: dict = {}
+    ) -> list:
+        pass
