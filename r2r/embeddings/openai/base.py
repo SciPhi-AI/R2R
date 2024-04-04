@@ -33,7 +33,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             )
         if not os.getenv("OPENAI_API_KEY"):
             raise ValueError(
-                "Must set OPEN_API_KEY in order to initialize OpenAIEmbeddingProvider."
+                "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
             )
         self.client = OpenAI()
 
