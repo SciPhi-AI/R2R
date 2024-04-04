@@ -34,6 +34,10 @@ class E2EPipelineFactory:
             from r2r.vector_dbs import LocalVectorDB
 
             return LocalVectorDB()
+        elif database_config["provider"] == "lancedb":
+            from r2r.vector_dbs import LanceDB
+
+            return LanceDB()
 
     @staticmethod
     def get_embeddings_provider(embedding_config: dict[str, Any]):
@@ -70,28 +74,28 @@ class E2EPipelineFactory:
 
     @staticmethod
     def create_pipeline(
-        config: R2RConfig,
-        db=None,
-        embeddings_provider=None,
-        llm=None,
-        text_splitter=None,
-        ingestion_pipeline_impl=BasicIngestionPipeline,
-        embedding_pipeline_impl=BasicEmbeddingPipeline,
-        rag_pipeline_impl=BasicRAGPipeline,
-        eval_pipeline_impl=BasicEvalPipeline,
-        app_fn=create_app,
+            config: R2RConfig,
+            db=None,
+            embeddings_provider=None,
+            llm=None,
+            text_splitter=None,
+            ingestion_pipeline_impl=BasicIngestionPipeline,
+            embedding_pipeline_impl=BasicEmbeddingPipeline,
+            rag_pipeline_impl=BasicRAGPipeline,
+            eval_pipeline_impl=BasicEvalPipeline,
+            app_fn=create_app,
     ):
         logging.basicConfig(level=config.logging_database["level"])
 
         embeddings_provider = (
-            embeddings_provider
-            or E2EPipelineFactory.get_embeddings_provider(config.embedding)
+                embeddings_provider
+                or E2EPipelineFactory.get_embeddings_provider(config.embedding)
         )
         embedding_model = config.embedding["model"]
         embedding_dimension = config.embedding["dimension"]
         embedding_batch_size = config.embedding["batch_size"]
 
-        db = db or E2EPipelineFactory.get_vector_db(config.vector_database)
+        db = E2EPipelineFactory.get_vector_db(config.vector_database)
         collection_name = config.vector_database["collection_name"]
         db.initialize_collection(collection_name, embedding_dimension)
 
