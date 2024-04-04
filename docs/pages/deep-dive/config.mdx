@@ -1,20 +1,21 @@
+## Default Configuration
 
-During the example pipeline creation a default `config.json` is loaded and passed to the pipeline. It provides settings for the following services:
+During the example pipeline creation, a default `config.json` is loaded and passed to the pipeline. It provides settings for the following services:
 
+- Embedding settings
 - Vector Database provider
 - LLM settings
-- Embedding settings
 - Parsing logic
 - Evaluation provider
-- and more.
+- and more
 
-The default values for the config are shown below. 
+The default values for the config are shown below:
 
 ```json
 {
   "embedding": {
     "provider": "openai",
-    "model": "text-embedding-3-small",
+    "model": "text-embedding-ada-002",
     "dimension": 1536,
     "batch_size": 32
   },
@@ -30,7 +31,7 @@ The default values for the config are shown below.
     "collection_name": "demo_logs",
     "level": "INFO"
   },
-  "ingestion":{
+  "ingestion": {
     "provider": "local",
     "text_splitter": {
       "type": "recursive_character",
@@ -40,7 +41,7 @@ The default values for the config are shown below.
   },
   "vector_database": {
     "provider": "local",
-    "collection_name": "demo_vecs"
+    "collection_name": "demo_vecs" 
   },
   "app": {
     "max_logs": 100,
@@ -48,14 +49,58 @@ The default values for the config are shown below.
   }
 }
 ```
-To launch the default pipeline with your own config, you may run with the following
+
+The available options for each section are:
+
+- **embedding**:
+  - `provider`: `"openai"`, `"sentence-transformers"` (see [Embedding Providers](providers/embeddings.md) for more info)
+  - `model`: embedding model to use (e.g., `"text-embedding-ada-002"` for OpenAI)
+  - `dimension`: embedding dimension
+  - `batch_size`: number of texts to embed in each batch
+
+- **evals**:
+  - `provider`: `"deepeval"`, `"parea"` (see [Evaluation Providers](providers/evals.md) for more info)
+  - `frequency`: sampling frequency for evaluation (e.g., `1.0` for 100% of requests)
+
+- **language_model**:
+  - `provider`: `"litellm"`, `"openai"`, `"llamacpp"` (see [LLM Providers](providers/llms.md) for more info)
+
+- **logging_database**:
+  - `provider`: `"local"`, `"postgres"`, `"redis"`
+  - `collection_name`: name of the collection to store logs
+  - `level`: logging level (e.g., `"INFO"`, `"DEBUG"`)
+
+- **ingestion**:
+  - `provider`: `"local"`
+  - `text_splitter`: configuration for text splitting
+    - `type`: `"recursive_character"`
+    - `chunk_size`: target chunk size in characters
+    - `chunk_overlap`: number of overlapping characters between chunks
+
+- **vector_database**:
+  - `provider`: `"local"`, `"pgvector"`, `"qdrant"` (see [Vector Database Providers](providers/vector-databases.md) for more info)
+  - `collection_name`: name of the collection to store vector embeddings
+
+- **app**:
+  - `max_logs`: maximum number of logs to retrieve
+  - `max_file_size_in_mb`: maximum file size allowed for ingestion (in MB)
+
+For more detailed information on configuring specific providers, please refer to the relevant documentation:
+
+- [LLM Providers](providers/llms.md)
+- [Vector Database Providers](providers/vector-databases.md)
+- [Embedding Providers](providers/embeddings.md)
+- [Evaluation Providers](providers/evals.md)
+
+These documentation files provide in-depth guides on setting up and using each provider, including any required environment variables and additional configuration options.
+
+To launch the default pipeline with your own config, you may run the following code:
 
 ```python
-
 class E2EPipelineFactory:
     ...
     app = E2EPipelineFactory.create_pipeline(
-      # override with your own config.json
-      config=R2RConfig.load_config("your_config_path.json"),
+        # override with your own config.json
+        config=R2RConfig.load_config("your_config_path.json"),
     )
 ```
