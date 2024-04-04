@@ -1,6 +1,6 @@
 import random
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Union
 
 
 class EvalProvider(ABC):
@@ -22,5 +22,5 @@ class EvalProvider(ABC):
     @abstractmethod
     def _evaluate(
         self, query: str, context: str, completion: str
-    ) -> dict[str, dict[str, str]]:
+    ) -> dict[str, dict[str, Union[str, float]]]:
         pass
