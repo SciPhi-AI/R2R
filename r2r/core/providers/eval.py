@@ -16,7 +16,7 @@ class EvalProvider(ABC):
         self, query: str, context: str, completion: str
     ) -> Optional[dict]:
         if random.random() < self.sampling_fraction:
-            return self.evaluate(query, context, completion)
+            return self._evaluate(query, context, completion)
         return None
 
     @abstractmethod
