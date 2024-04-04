@@ -1,5 +1,3 @@
-# R2R: Production-ready RAG systems.
-
 <p align="left">
   <a href="https://r2r-docs.sciphi.ai"><img src="https://img.shields.io/badge/docs.sciphi.ai-3F16E4" alt="Docs"></a>
   <a href="https://discord.gg/p6KqD2kjtB"><img src="https://img.shields.io/discord/1120774652915105934?style=social&logo=discord" alt="Discord"></a>
@@ -8,21 +6,44 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-purple.svg" alt="License: MIT"></a>
 </p>
 
-A semi-opinionated RAG framework.
-
 <img src="./docs/pages/r2r.png" alt="Sciphi Framework">
-R2R was conceived to bridge the gap between experimental RAG models and robust, production-ready systems. Our semi-opinionated framework cuts through the complexity, offering a straightforward path to deploy, adapt, and maintain RAG pipelines in production. We prioritize simplicity and practicality, aiming to set a new industry benchmark for ease of use and effectiveness.
+<h3 align="center">
+Build, deploy, and optimize your RAG system.
+</h3>
+
+## About
+
+R2R, short for RAG to Riches, provides the fastest and most efficient way to provide high quality RAG to end users. The framework is built around customizable pipelines and a feature-rich FastAPI implementation.
+
+## Why?
+
+R2R was conceived to bridge the gap between local LLM experimentation and scalable production solutions. **R2R is to LangChain/LlamaIndex what NextJS is to React**. A JavaScript client for R2R deployments can be [found here](https://github.com/SciPhi-AI/r2r-js).
+
+### Key Features
+
+- **🚀 Deploy**: Instantly launch production-ready RAG pipelines with streaming capabilities.
+- **🧩 Customize**: Tailor your pipeline with intuitive configuration files.
+- **🔌 Extend**: Enhance your pipeline with custom code integrations.
+- **⚖️ Autoscale**: Scale your pipeline effortlessly in the cloud using [SciPhi](https://app.sciphi.ai/).
+- **🤖 OSS**: Benefit from a framework developed by the open-source community, designed to simplify RAG deployment.
 
 ## Demo(s)
 
-Launching the server locally, running the client, and pipeline observabiilty application:
-[![demo_screenshot](./docs/pages/getting-started/demo_screenshot.png)](https://github.com/SciPhi-AI/R2R/assets/68796651/7ac102e0-f6ad-4926-8a7a-5db25db4612d)
+Using the cloud application to deploy the pre-built basic pipeline:
 
-!! Note - The server has been removed from this repo - instead we now recommend using [SciPhi Cloud](https://app.sciphi.ai) to pair with the R2R framework for observability and optimization.
+https://www.loom.com/share/e3b934b554484787b005702ced650ac9
 
-### Quick Install:
+Note - the example above uses [SciPhi Cloud](https://app.sciphi.ai) to pair with the R2R framework for deployment and observability. SciPhi is working to launch a self-hosted version of their cloud platform as R2R matures.
 
-**Install R2R directly using `pip`:**
+## Links
+
+[Join the Discord server](https://discord.gg/p6KqD2kjtB)
+
+[R2R Docs Quickstart](https://r2r-docs.sciphi.ai/getting-started/quick-install)
+
+[SciPhi Cloud](https://docs.sciphi.ai/)
+
+## Quick Install:
 
 ```bash
 # use the `'r2r[all]'` to download all required deps
@@ -30,125 +51,81 @@ pip install 'r2r[parsing,eval]'
 
 # setup env 
 export OPENAI_API_KEY=sk-...
+# Set `LOCAL_DB_PATH` for local testing
 export LOCAL_DB_PATH=local.sqlite
 
 # OR do `vim .env.example && cp .env.example .env`
 # INCLUDE secrets and modify config.json
-# if using cloud providers (e.g. pgvector, supabase, ...)
+# if using cloud providers (e.g. pgvector, qdrant, ...)
 ```
 
-### Run the server with Docker:
+## Docker:
 
 ```bash
 docker pull emrgntcmplxty/r2r:latest
 
-# Place your secrets in `.env` before deploying
+# Place your secrets in `.env`
 docker run -d --name r2r_container -p 8000:8000 --env-file .env r2r
 ```
 
-## Links
+## Basic Example
 
-[Join the Discord server](https://discord.gg/p6KqD2kjtB)
-
-[Read the R2R Docs](https://r2r-docs.sciphi.ai/)
-
-## Basic Examples
-
-The project includes several basic examples that demonstrate application deployment and interaction:
-
-1. [`basic app`](r2r/examples/basic/app.py): This example runs the backend server, which includes the ingestion, embedding, and RAG pipelines served via FastAPI.
+[`basic_pipeline.py`](r2r/examples/servers/basic_pipeline.py): Execute this script to initiate the default **backend server**. It establishes a basic RAG pipeline that encompasses ingestion, embedding, and RAG processes, all accessible via FastAPI.
 
    ```bash
-   # If using a venv, replace `uvicorn` with `venv_path/bin/uvicorn`
-   uvicorn r2r.examples.basic.app:app
+   # launch the server
+   python -m r2r.examples.servers.basic_pipeline
    ```
 
-2. [`basic client`](r2r/examples/basic/run_client.py): This example should be run after starting the server. It demonstrates uploading text entries as well as a PDF to the local server with the python client. Further, it shows document and user-level vector management with built-in features.
+[`run_basic_client.py`](r2r/examples/clients/run_basic_client.py): This **client script** should be executed subsequent to the server startup above. It facilitates the upload of text entries and PDFs to the server using the Python client and demonstrates the management of document and user-level vectors through its built-in features.
 
    ```bash
-   python -m r2r.examples.basic.run_client
+   # run the client
+   python -m r2r.examples.clients.run_basic_client
    ```
 
-3. [`academy`](r2r/examples/academy): A more sophisticated demo demonstrating how to build a more novel pipeline which involves synthetic queries
+## Synthetic Queries Example
+
+[`synthetic_query_pipeline.py`](r2r/examples/servers/synthetic_query_pipeline.py): Execute this script to start a backend server equipped with an advanced pipeline. This pipeline is designed to create synthetic queries, enhancing the RAG system's learning and performance.
 
    ```bash
-   # Launch the `academy` example application
-   # If using a venv, replace `uvicorn` with `venv_path/bin/uvicorn`
-   uvicorn r2r.examples.academy.app:app
-
-   # Ask a question
-   python -m r2r.examples.academy.run_client search "What are the key themes of Meditations?"
+   # launch the server
+   python -m r2r.examples.servers.synthetic_query_pipeline
    ```
-4. [`end-to-end`](docs/pages/examples/end-to-end.mdx): An example showing how to combine a complete web application with the basic RAG pipeline above.
 
-5. [`intelligence`](app.sciphi.ai): A cloud platform which can be used to deploy R2R pipelines powered by SciPhi
+[`run_synthetic_query_client.py`](r2r/examples/clients/run_synthetic_query_client.py): Use this client script after the synthetic query pipeline is running. It's tailored for use with the synthetic query pipeline, demonstrating the improved features of the RAG system.
 
+   ```bash
+   # run the client
+   python -m r2r.examples.clients.run_synthetic_query_client
+   ```
 
+## Extras Examples
 
-### Full Install:
+[`reducto_pipeline.py`](r2r/examples/servers/reducto_pipeline.py): Launch this script to activate a backend server that integrates a Reducto adapter for enhanced PDF ingestion.
 
-Follow these steps to ensure a smooth setup:
+   ```bash
+   # launch the server
+   python -m r2r.examples.servers.reducto_pipeline
+   ```
 
-1. **Install Poetry:**
+[`web_search_pipeline.py`](r2r/examples/servers/web_search_pipeline.py): This script sets up a backend server that includes a `WebSearchRAGPipeline`, adding web search functionality to your RAG setup.
 
-   - Before installing the project, make sure you have Poetry on your system. If not, visit the [official Poetry website](https://python-poetry.org/docs/#installation) for installation instructions.
-
-2. **Clone and Install Dependencies:**
-
-  - Clone the project repository and navigate to the project directory:
-     
-     ```bash
-     git clone git@github.com:SciPhi-AI/r2r.git
-     cd r2r
-     ```
-     
-  - Copy the `.env.example` file to `.env`. This file is in the main project folder:
-
-     ```bash
-     cp .env.example .env
-
-     # Add secrets, `OPENAI_API_KEY` at a minimum
-     vim .env
-     ```
-     
-  - Install the project dependencies with Poetry:
-  
-     ```bash
-     # See pyproject.toml for available extras
-     # use "all" to include every optional dependency
-     poetry install -E parsing -E eval
-     ```
-     
-  - Execute with poetry run:
-     
-     ```bash
-     python -m r2r.examples.pdf_chat.run_client ingest
-     ```
-
-3. **Configure Environment Variables:**
-   - You need to set up cloud provider secrets in your `.env`. At a minimum, you will need an OpenAI key.
-   - The framework currently supports PostgreSQL (locally), pgvector and Qdrant with plans to extend coverage.
-
-## Key Features
-
-- **🚀 Rapid Deployment**: Facilitates a smooth setup and development of production-ready RAG systems.
-- **⚖️ Flexible Standardization**: `Ingestion`, `Embedding`, and `RAG` with proper `Observability`.
-- **🧩 Easy to modify**: Provides a structure that can be extended to deploy your own custom pipelines.
-- **📦 Versioning**: Ensures your work remains reproducible and traceable through version control.
-- **🔌 Extensibility**: Enables a quick and robust integration with various VectorDBs, LLMs and Embeddings Models.
-- **🤖 OSS Driven**: Built for and by the OSS community, to help startups and enterprises to quickly build with RAG.
-- **📝 Deployment Support**: Available to help you build and deploy your RAG systems end-to-end.
+   ```bash
+   # launch the server
+   python -m r2r.examples.servers.web_search_pipeline
+   ```
 
 ## Core Abstractions
 
 The framework primarily revolves around three core abstractions:
 
-- The **Ingestion Pipeline**: Facilitates the preparation of embeddable 'Documents' from various data formats (json, txt, pdf, html, etc.). The abstraction can be found in [`ingestion.py`](r2r/core/pipelines/ingestion.py).
+- The **Ingestion Pipeline**: Facilitates the preparation of embeddable 'Documents' from various data formats (json, txt, pdf, html, etc.). The abstraction can be found in [`ingestion.py`](r2r/core/pipelines/ingestion.py) and relevant documentation is available [here](https://r2r-docs.sciphi.ai/core-features/ingestion).
 
-- The **Embedding Pipeline**: Manages the transformation of text into stored vector embeddings, interacting with embedding and vector database providers through a series of steps (e.g., extract_text, transform_text, chunk_text, embed_chunks, etc.). The abstraction can be found in [`embedding.py`](r2r/core/pipelines/embedding.py).
+- The **Embedding Pipeline**: Manages the transformation of text into stored vector embeddings, interacting with embedding and vector database providers through a series of steps (e.g., extract_text, transform_text, chunk_text, embed_chunks, etc.). The abstraction can be found in [`embedding.py`](r2r/core/pipelines/embedding.py) and relevant documentation is available [here](https://r2r-docs.sciphi.ai/core-features/embedding).
 
-- The **RAG Pipeline**: Works similarly to the embedding pipeline but incorporates an LLM provider to produce text completions. The abstraction can be found in [`rag.py`](r2r/core/pipelines/rag.py).
+- The **RAG Pipeline**: Works similarly to the embedding pipeline but incorporates an LLM provider to produce text completions. The abstraction can be found in [`rag.py`](r2r/core/pipelines/rag.py) and relevant documentation is available [here](https://r2r-docs.sciphi.ai/core-features/rag).
 
-- The **Eval Pipeline**: Samples some subset of rag_completion calls for evaluation. Currently [DeepEval](https://github.com/confident-ai/deepeval) is supported. The abstraction can be found in [`eval.py`](r2r/core/pipelines/eval.py).
+- The **Eval Pipeline**: Samples some subset of rag_completion calls for evaluation. Currently [DeepEval](https://github.com/confident-ai/deepeval) is supported. The abstraction can be found in [`eval.py`](r2r/core/pipelines/eval.py) and relevant documentation is available [here](https://r2r-docs.sciphi.ai/core-features/eval).
 
 Each pipeline incorporates a logging database for operation tracking and observability.

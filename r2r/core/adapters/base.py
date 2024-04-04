@@ -16,15 +16,15 @@ class Adapter(ABC, Generic[T]):
 
 
 class TextAdapter(Adapter[str]):
-    def adapt(self, data: str) -> str:
-        return data
+    def adapt(self, data: str) -> list[str]:
+        return [data]
 
 
 class JSONAdapter(Adapter[str]):
-    def adapt(self, data: Union[str, bytes]) -> str:
+    def adapt(self, data: Union[str, bytes]) -> list[str]:
         if isinstance(data, bytes):
             data = data.decode("utf-8")
-        return self._parse_json(json.loads(data))
+        return [self._parse_json(json.loads(data))]
 
     def _parse_json(self, data: dict) -> str:
         def remove_objects_with_null(obj):
@@ -62,9 +62,9 @@ class JSONAdapter(Adapter[str]):
 
 
 class HTMLAdapter(Adapter[str]):
-    def adapt(self, data: str) -> str:
+    def adapt(self, data: str) -> list[str]:
         soup = BeautifulSoup(data, "html.parser")
-        return soup.get_text()
+        return [soup.get_text()]
 
 
 class PDFAdapter(Adapter[str]):
@@ -78,7 +78,7 @@ class PDFAdapter(Adapter[str]):
                 "Error, `pypdf` is required to run `PyPDFAdapter`. Please install it using `pip install pypdf`."
             )
 
-    def adapt(self, data: bytes) -> str:
+    def adapt(self, data: bytes) -> list[str]:
         pdf = self.PdfReader(BytesIO(data))
         text = ""
         for page in pdf.pages:
@@ -88,4 +88,4 @@ class PDFAdapter(Adapter[str]):
                     filter(lambda x: x in string.printable, page_text)
                 )
                 text += page_text
-        return text
+        return [text]

@@ -1,6 +1,7 @@
 """
 A simple example to demonstrate the usage of `BasicIngestionPipeline`.
 """
+
 import logging
 from enum import Enum
 from typing import Any, Iterator, Optional, Union
@@ -21,7 +22,7 @@ from r2r.core.adapters import (
 logger = logging.getLogger(__name__)
 
 
-class EntryType(Enum):
+class IngestionType(Enum):
     TXT = "txt"
     JSON = "json"
     HTML = "html"
@@ -36,7 +37,7 @@ class BasicIngestionPipeline(IngestionPipeline):
 
     def __init__(
         self,
-        adapters: Optional[dict[EntryType, Adapter]] = None,
+        adapters: Optional[dict[IngestionType, Adapter]] = None,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
     ):
         logger.info(
@@ -48,10 +49,10 @@ class BasicIngestionPipeline(IngestionPipeline):
         )
         self.pipeline_run_info = None
         self.default_adapters = {
-            EntryType.TXT: TextAdapter(),
-            EntryType.JSON: JSONAdapter(),
-            EntryType.HTML: HTMLAdapter(),
-            EntryType.PDF: PDFAdapter(),
+            IngestionType.TXT: TextAdapter(),
+            IngestionType.JSON: JSONAdapter(),
+            IngestionType.HTML: HTMLAdapter(),
+            IngestionType.PDF: PDFAdapter(),
         }
         self.adapters = self.default_adapters
         if adapters is not None:
@@ -63,25 +64,26 @@ class BasicIngestionPipeline(IngestionPipeline):
         """
         Lists the data types supported by the pipeline.
         """
-        return [entry_type.value for entry_type in EntryType]
+        return [entry_type.value for entry_type in IngestionType]
 
     def process_data(
         self,
-        entry_type: EntryType,
+        entry_type: IngestionType,
         entry_data: Union[bytes, str],
     ) -> Iterator[BasicDocument]:
         adapter = self.adapters.get(
             entry_type, self.default_adapters[entry_type]
         )
-        text = adapter.adapt(entry_data)
-        yield BasicDocument(
-            id=self.document_id, text=text, metadata=self.metadata
-        )
+        texts = adapter.adapt(entry_data)
+        for text in texts:
+            yield BasicDocument(
+                id=self.document_id, text=text, metadata=self.metadata
+            )
 
     def parse_entry(
         self, entry_type: str, entry_data: Union[bytes, str]
     ) -> Iterator[BasicDocument]:
-        yield from self.process_data(EntryType(entry_type), entry_data)
+        yield from self.process_data(IngestionType(entry_type), entry_data)
 
     def run(
         self,
@@ -99,5 +101,5 @@ class BasicIngestionPipeline(IngestionPipeline):
 
         for entry_type, blob in blobs.items():
             if entry_type not in self.supported_types:
-                raise ValueError(f"EntryType {entry_type} not supported.")
+                raise ValueError(f"IngestionType {entry_type} not supported.")
             yield from self.parse_entry(entry_type, blob)

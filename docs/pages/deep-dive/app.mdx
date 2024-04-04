@@ -1,0 +1,126 @@
+# R2R Application Documentation
+
+## Introduction
+
+R2R comes complete with a FastAPI-based web service that provides endpoints for various operations related to the Retrieval-Augmented Generation (RAG) pipeline. It allows users to upload and process files, add entries, perform searches, generate RAG completions, evaluate completions, delete entries based on filters, retrieve user IDs and documents, and access logs.
+
+## Application Creation and Launching
+
+The R2R application is created using the `E2EPipelineFactory.create_pipeline()` method, which assembles various components based on the provided configuration. The factory method takes the following parameters:
+
+- `config`: An instance of `R2RConfig` containing the configuration settings for the application.
+- `ingestion_pipeline_impl`: The implementation class for the ingestion pipeline (default: `BasicIngestionPipeline`).
+- `embedding_pipeline_impl`: The implementation class for the embedding pipeline (default: `BasicEmbeddingPipeline`).
+- `rag_pipeline_impl`: The implementation class for the RAG pipeline (default: `BasicRAGPipeline`).
+- `eval_pipeline_impl`: The implementation class for the evaluation pipeline (default: `BasicEvalPipeline`).
+- `app_fn`: A function that creates the FastAPI application (default: `create_app`).
+
+Here's an example of how the application is typically created in the R2R workflow:
+
+```python
+from r2r.main import E2EPipelineFactory, R2RConfig
+
+app = E2EPipelineFactory.create_pipeline(
+    config=R2RConfig.load_config(),
+)
+```
+
+In this example, the `E2EPipelineFactory.create_pipeline()` method is called with the default configuration loaded from the `config.json` file. The factory method creates instances of the ingestion pipeline, embedding pipeline, RAG pipeline, and evaluation pipeline using the default implementation classes. It also sets up logging based on the configuration settings.
+
+The `create_app` function, which is the default `app_fn` used by the factory, takes the created pipeline instances and the configuration as parameters and sets up the FastAPI application with the necessary endpoints and middleware.
+
+To customize the application, you can provide your own implementation classes for the pipelines or create a custom `app_fn` that sets up the FastAPI application differently.
+
+Once the application is created, it can be launched using a web server such as Uvicorn. Here's an example of how to launch the application:
+
+```bash
+python -m r2r.examples.basic.app
+```
+
+In this example, Uvicorn is used to run the FastAPI application. The `r2r.examples.basic.app:app` argument specifies the module path and the variable name of the FastAPI application instance.
+
+By default, Uvicorn runs the application on `http://localhost:8000`. You can access the API endpoints using this base URL.
+
+For more details on how the individual pipelines are created and customized within the `E2EPipelineFactory`, please refer to the pipeline factory documentation.
+
+## Adding Custom Endpoints
+
+You can add custom endpoints to the R2R application by modifying the `create_app` function or providing a custom `app_fn` to the `E2EPipelineFactory.create_pipeline()` method.
+
+Here's an example of how to add a custom endpoint:
+
+```python
+from r2r.main import E2EPipelineFactory, R2RConfig
+
+app = E2EPipelineFactory.create_pipeline(
+    # override with your own config.json
+    config=R2RConfig.load_config("your_config_path.json")
+)
+
+@app.get("/custom_endpoint")
+async def custom_endpoint():
+    # Custom endpoint logic
+    return {"message": "This is a custom endpoint"}
+```
+
+In this example, after creating the application using the `E2EPipelineFactory.create_pipeline()` method, a custom endpoint is added using the `@app.get("/custom_endpoint")` decorator. The `custom_endpoint` function defines the logic for handling requests to the `/custom_endpoint` route.
+
+You can add multiple custom endpoints by defining additional functions and decorating them with the appropriate HTTP method and route.
+
+## API Endpoints
+
+Refer to the [documentation here](/getting-started/app-api).
+
+## Configuration
+
+The application uses a configuration file (`config.json`) to set various settings for the RAG pipeline, including the vector database provider, LLM settings, embedding settings, parsing logic, evaluation provider, and more. The default values for the configuration are shown below:
+
+```json
+{
+  "embedding": {
+    "provider": "openai",
+    "model": "text-embedding-3-small",
+    "dimension": 1536,
+    "batch_size": 32
+  },
+  "evals": {
+    "provider": "deepeval",
+    "frequency": 1.0
+  },
+  "language_model": {
+    "provider": "litellm"
+  },
+  "logging_database": {
+    "provider": "local",
+    "collection_name": "demo_logs",
+    "level": "INFO"
+  },
+  "ingestion": {
+    "provider": "local",
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 512,
+      "chunk_overlap": 20
+    }
+  },
+  "vector_database": {
+    "provider": "local",
+    "collection_name": "demo_vecs"
+  },
+  "app": {
+    "max_logs": 100,
+    "max_file_size_in_mb": 100
+  }
+}
+```
+
+To launch the application with your own configuration, you can create a `config.json` file with your desired settings and pass it to the `E2EPipelineFactory.create_pipeline()` method:
+
+```python
+app = E2EPipelineFactory.create_pipeline(
+    # override with your own config.json
+    config=R2RConfig.load_config("your_config_path.json")
+)
+```
+
+This will create the application with your custom configuration.

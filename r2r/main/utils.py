@@ -177,9 +177,7 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
     result = event.get("result", "N/A")
     processed_result = {}
 
-    if method == "ingress" and (
-        pipeline_type == "rag" or pipeline_type == "search"
-    ):
+    if method == "ingress":
         try:
             processed_result["search_query"] = result
         except Exception as e:
@@ -217,7 +215,6 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
 
     elif method == "generate_completion":
         try:
-            processed_result["method"] = "Generate Completion"
             if "content=" in result:
                 content_matches = re.findall(r'content="([^"]*)"', result)
                 processed_result["completion_result"] = ", ".join(
@@ -225,6 +222,7 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
                 )
             else:
                 processed_result["completion_result"] = result
+            processed_result["method"] = "RAG"
         except Exception as e:
             logger.error(
                 f"Error {e} processing 'generate_completion' event: {event}"
@@ -270,9 +268,11 @@ def combine_aggregated_logs(
             "embedding_chunks": None,
             "document": None,
             "completion_result": "N/A",
-            "outcome": "success"
-            if aggregation["events"][-1].get("log_level") == "INFO"
-            else "fail",
+            "outcome": (
+                "success"
+                if aggregation["events"][-1].get("log_level") == "INFO"
+                else "fail"
+            ),
         }
 
         for event in aggregation["events"]:

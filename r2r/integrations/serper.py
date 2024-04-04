@@ -78,7 +78,8 @@ class SerperClient:
         json_data = json.loads(data.decode("utf-8"))
         return SerperClient._extract_results(json_data)
 
-    def construct_context(self, results: list) -> str:
+    @staticmethod
+    def construct_context(results: list) -> str:
         # Organize results by type
         organized_results = {}
         for result in results:

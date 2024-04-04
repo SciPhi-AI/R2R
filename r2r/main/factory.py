@@ -5,7 +5,14 @@ import dotenv
 
 from r2r.core import LoggingDatabaseConnection
 from r2r.core.utils import RecursiveCharacterTextSplitter
-from r2r.llms import LiteLLM, LiteLLMConfig, OpenAIConfig, OpenAILLM
+from r2r.llms import (
+    LiteLLM,
+    LiteLLMConfig,
+    LlamaCPP,
+    LlamaCppConfig,
+    OpenAIConfig,
+    OpenAILLM,
+)
 from r2r.pipelines import (
     BasicEmbeddingPipeline,
     BasicEvalPipeline,
@@ -58,6 +65,13 @@ class E2EPipelineFactory:
             return OpenAILLM(OpenAIConfig())
         elif llm_config["provider"] == "litellm":
             return LiteLLM(LiteLLMConfig())
+        elif llm_config["provider"] == "llamacpp":
+            return LlamaCPP(
+                LlamaCppConfig(
+                    llm_config.get("model_path", ""),
+                    llm_config.get("model_name", ""),
+                )
+            )
 
     @staticmethod
     def get_text_splitter(text_splitter_config: dict[str, Any]):
@@ -74,28 +88,29 @@ class E2EPipelineFactory:
 
     @staticmethod
     def create_pipeline(
-            config: R2RConfig,
-            db=None,
-            embeddings_provider=None,
-            llm=None,
-            text_splitter=None,
-            ingestion_pipeline_impl=BasicIngestionPipeline,
-            embedding_pipeline_impl=BasicEmbeddingPipeline,
-            rag_pipeline_impl=BasicRAGPipeline,
-            eval_pipeline_impl=BasicEvalPipeline,
-            app_fn=create_app,
+        config: R2RConfig,
+        db=None,
+        embeddings_provider=None,
+        llm=None,
+        text_splitter=None,
+        adapters=None,
+        ingestion_pipeline_impl=BasicIngestionPipeline,
+        embedding_pipeline_impl=BasicEmbeddingPipeline,
+        rag_pipeline_impl=BasicRAGPipeline,
+        eval_pipeline_impl=BasicEvalPipeline,
+        app_fn=create_app,
     ):
         logging.basicConfig(level=config.logging_database["level"])
 
         embeddings_provider = (
-                embeddings_provider
-                or E2EPipelineFactory.get_embeddings_provider(config.embedding)
+            embeddings_provider
+            or E2EPipelineFactory.get_embeddings_provider(config.embedding)
         )
         embedding_model = config.embedding["model"]
         embedding_dimension = config.embedding["dimension"]
         embedding_batch_size = config.embedding["batch_size"]
 
-        db = E2EPipelineFactory.get_vector_db(config.vector_database)
+        db = db or E2EPipelineFactory.get_vector_db(config.vector_database)
         collection_name = config.vector_database["collection_name"]
         db.initialize_collection(collection_name, embedding_dimension)
 
@@ -130,7 +145,7 @@ class E2EPipelineFactory:
         eval_pipeline = eval_pipeline_impl(
             config.evals, logging_connection=logging_connection
         )
-        ingst_pipeline = ingestion_pipeline_impl()
+        ingst_pipeline = ingestion_pipeline_impl(adapters=adapters)
 
         app = app_fn(
             ingestion_pipeline=ingst_pipeline,

@@ -4,7 +4,8 @@ from r2r.core import EvalProvider
 
 
 class DeepEvalProvider(EvalProvider):
-    def __init__(self):
+    def __init__(self, provider: str, sampling_fraction: float = 1.0):
+        super().__init__(provider, sampling_fraction)
         try:
             from deepeval import evaluate
             from deepeval.metrics import (
@@ -26,7 +27,7 @@ class DeepEvalProvider(EvalProvider):
                 "Please set the `OPENAI_API_KEY` environment variable to run with DeepEval."
             )
 
-    def evaluate(
+    def _evaluate(
         self, query: str, context: str, completion: str
     ) -> dict[str, dict[str, str]]:
         test_case = self.LLMTestCase(

@@ -1,14 +1,20 @@
-# MultiRAG
+# MultiRAG Example
 
-This example runs a modified RAG pipeline which creates and aggregates synthetic queries and their search results to answer more difficult user questions such as `"Compare the two books"`. For a more comprehensive example, please visit [Basic Example](/examples/basic-example).
+This example demonstrates how to run a modified RAG pipeline that creates and aggregates synthetic queries and their search results to answer more complex user questions, such as "Compare the two books". For a more comprehensive example, please refer to the [Basic Example](/getting-started/basic-example).
+
+## Step 1: Launch the MultiRAG Application Server
+
+To launch the MultiRAG application server, run the following command:
 
 ```bash
-# Launch the application
-# If using a venv, replace `uvicorn` with `venv_path/bin/uvicorn`
-uvicorn r2r.examples.academy.app:app
+python -m r2r.examples.servers.synthetic_query_pipeline
 ```
 
-This creates a more advanced pipeline which overrides the basic RAG pipeline logic.
+This command starts the backend server with the modified RAG pipeline, which includes the synthetic query generation and aggregation logic.
+
+## Step 2: Understand the SyntheticRAGPipeline
+
+The `SyntheticRAGPipeline` is a subclass of `BasicRAGPipeline` that overrides the basic RAG pipeline logic to include synthetic query generation and aggregation. Here's an example implementation:
 
 ```python
 class SyntheticRAGPipeline(BasicRAGPipeline):
@@ -23,8 +29,7 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
         system_prompt: Optional[str] = DEFAULT_SYSTEM_PROMPT,
         task_prompt: Optional[str] = DEFAULT_TASK_PROMPT,
     ) -> None:
-        logger.debug(f"Initalizing `SyntheticRAGPipeline`")
-
+        logger.debug(f"Initializing `SyntheticRAGPipeline`")
         super().__init__(
             llm,
             generation_config,
@@ -56,7 +61,18 @@ class SyntheticRAGPipeline(BasicRAGPipeline):
         return transformed_queries
 ```
 
-An example client script can then be ran as shown below to run demonstrate MultiRAG.
+The `SyntheticRAGPipeline` overrides the `transform_query` method to generate synthetic queries based on the user's original query. It uses a prompt to guide the LLM in generating relevant queries that can be used to retrieve the necessary materials.
+
+## Step 3: Run the MultiRAG Client
+
+To demonstrate the MultiRAG functionality, you can run the example client script using the following command:
+
 ```bash
-python -m r2r.examples.academy.run_client
+python -m r2r.examples.clients.run_synthetic_query_client
 ```
+
+This command runs the client script that interacts with the MultiRAG application server. It sends a user query to the server, which then generates synthetic queries, retrieves relevant search results, and aggregates them to provide a comprehensive answer to the original query.
+
+The client script demonstrates how to communicate with the MultiRAG application server and retrieve the generated answers.
+
+By following these steps, you can run the MultiRAG example, which showcases a modified RAG pipeline that generates and aggregates synthetic queries to answer more complex user questions. This example highlights the flexibility and extensibility of the R2R framework in implementing advanced retrieval and generation techniques.

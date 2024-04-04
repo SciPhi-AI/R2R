@@ -1,4 +1,8 @@
 {
   "quick-install": "Quick Install",
-  "full-install": "Full Install"
+  "basic-example": "Basic Example",
+  "app-api": "Application API",
+  "end-to-end": "End to End Walkthrough",
+  "configure-your-pipeline": "Configure Your Pipeline",
+  "customize-your-pipeline": "Customize Your Pipeline"
 }
