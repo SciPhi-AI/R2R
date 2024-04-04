@@ -1,6 +1,7 @@
 """
 Abstract base class for completion pipelines.
 """
+
 import json
 import logging
 import uuid

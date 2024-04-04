@@ -1,9 +1,9 @@
 """
 A simple example to demonstrate the usage of `BasicEmbeddingPipeline`.
 """
+
 import copy
 import logging
-import uuid
 from typing import Any, Optional, Tuple
 
 from r2r.core import (
@@ -69,14 +69,6 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
     ) -> None:
         super().initialize_pipeline(*args, **kwargs)
         self.ingress(document)
-
-    @log_execution_to_db
-    def extract_text(self, document: BasicDocument) -> str:
-        """
-        Extracts text from a document.
-        """
-        # Establish logging of document data
-        return document.text
 
     def transform_text(self, text: str) -> str:
         """

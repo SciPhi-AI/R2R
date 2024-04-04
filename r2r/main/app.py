@@ -24,10 +24,9 @@ from r2r.core import (
     RAGPipeline,
     RAGPipelineOutput,
 )
-from r2r.main.utils import (
+from r2r.main.utils import (  # configure_logging,
     R2RConfig,
     apply_cors,
-    configure_logging,
     find_project_root,
     process_logs,
 )
@@ -42,7 +41,8 @@ from .models import (
     SummaryLogModel,
 )
 
-logger = logging.getLogger("r2r")
+# logger = logging.getLogger("r2r")
+# logging.setLevel(logging.INFO)
 
 # Current directory where this script is located
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -59,7 +59,9 @@ def create_app(
     logging_connection: Optional[LoggingDatabaseConnection] = None,
 ):
     app = FastAPI()
-    configure_logging()
+    # TODO - Consider impact of logging in remote environments
+    # e.g. such as Google Cloud Run
+    # configure_logging()
     apply_cors(app)
 
     upload_path = upload_path or find_project_root(CURRENT_DIR) / "uploads"
@@ -126,7 +128,7 @@ def create_app(
                 "message": f"File '{file.filename}' processed and saved at '{file_location}'"
             }
         except Exception as e:
-            logger.error(
+            logging.error(
                 f"upload_and_process_file: [Error](file={file.filename}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
@@ -146,7 +148,7 @@ def create_app(
                 )
             return {"message": "Entry upserted successfully."}
         except Exception as e:
-            logger.error(
+            logging.error(
                 f":add_entry: [Error](entry={entry_req}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
@@ -168,7 +170,7 @@ def create_app(
                     )
             return {"message": "Entries upserted successfully."}
         except Exception as e:
-            logger.error(
+            logging.error(
                 f":add_entries: [Error](entries={entries_req}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
@@ -181,7 +183,7 @@ def create_app(
             )
             return rag_completion.search_results
         except Exception as e:
-            logger.error(f":search: [Error](query={query}, error={str(e)})")
+            logging.error(f":search: [Error](query={query}, error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/rag_completion/")
@@ -226,47 +228,125 @@ def create_app(
                     "settings": query.settings.rag_settings.dict(),
                 }
                 background_tasks.add_task(
-                    requests.get, f"{url}/eval", json=payload
+                    requests.post, f"{url}/eval", json=payload
                 )
 
                 return rag_completion
 
             else:
+
+                async def _stream_rag_completion(
+                    query: RAGQueryModel,
+                    rag_pipeline: RAGPipeline,
+                ) -> AsyncGenerator[str, None]:
+                    gen_config = GenerationConfig(
+                        **(query.generation_config.dict())
+                    )
+                    if not gen_config.stream:
+                        raise ValueError(
+                            "Must pass `stream` as True to stream completions."
+                        )
+                    completion_generator = cast(
+                        Generator[str, None, None],
+                        rag_pipeline.run(
+                            query.query,
+                            query.filters,
+                            query.limit,
+                            generation_config=gen_config,
+                        ),
+                    )
+
+                    search_results = ""
+                    context = ""
+                    completion_text = ""
+                    current_marker = None
+
+                    logging.info(
+                        f"Streaming RAG completion results to client for query ={query.query}."
+                    )
+
+                    for item in completion_generator:
+                        if item.startswith("<"):
+                            if item.startswith(
+                                f"<{RAGPipeline.SEARCH_STREAM_MARKER}>"
+                            ):
+                                current_marker = (
+                                    RAGPipeline.SEARCH_STREAM_MARKER
+                                )
+                            elif item.startswith(
+                                f"<{RAGPipeline.CONTEXT_STREAM_MARKER}>"
+                            ):
+                                current_marker = (
+                                    RAGPipeline.CONTEXT_STREAM_MARKER
+                                )
+                            elif item.startswith(
+                                f"<{RAGPipeline.COMPLETION_STREAM_MARKER}>"
+                            ):
+                                current_marker = (
+                                    RAGPipeline.COMPLETION_STREAM_MARKER
+                                )
+                            else:
+                                current_marker = None
+                        else:
+                            if (
+                                current_marker
+                                == RAGPipeline.SEARCH_STREAM_MARKER
+                            ):
+                                search_results += item
+                            elif (
+                                current_marker
+                                == RAGPipeline.CONTEXT_STREAM_MARKER
+                            ):
+                                context += item
+                            elif (
+                                current_marker
+                                == RAGPipeline.COMPLETION_STREAM_MARKER
+                            ):
+                                completion_text += item
+                        yield item
+
+                    # Retrieve the URL dynamically from the request header
+                    url = request.url
+                    if not url:
+                        url = "http://localhost:8000"
+                    else:
+                        url = str(url).split("/rag_completion")[0]
+                        if "localhost" not in url and "127.0.0.1" not in url:
+                            url = url.replace("http://", "https://")
+
+                    # Pass the payload to the /eval endpoint
+                    payload = {
+                        "query": query.query,
+                        "context": context,
+                        "completion_text": completion_text,
+                        "run_id": str(
+                            rag_pipeline.pipeline_run_info["run_id"]
+                        ),
+                        "settings": query.settings.rag_settings.dict(),
+                    }
+                    logging.info(
+                        f"Performing evaluation with payload: {payload} to url: {url}/eval"
+                    )
+                    background_tasks.add_task(
+                        requests.post, f"{url}/eval", json=payload
+                    )
+
                 return StreamingResponse(
                     _stream_rag_completion(query, rag_pipeline),
                     media_type="text/plain",
                 )
         except Exception as e:
-            logger.error(
+            logging.error(
                 f":rag_completion: [Error](query={query}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
 
-    async def _stream_rag_completion(
-        query: RAGQueryModel,
-        rag_pipeline: RAGPipeline,
-    ) -> AsyncGenerator[str, None]:
-        gen_config = GenerationConfig(**(query.generation_config.dict()))
-        if not gen_config.stream:
-            raise ValueError(
-                "Must pass `stream` as True to stream completions."
-            )
-        completion_generator = cast(
-            Generator[str, None, None],
-            rag_pipeline.run(
-                query.query,
-                query.filters,
-                query.limit,
-                generation_config=gen_config,
-            ),
-        )
-
-        for item in completion_generator:
-            yield item
-
-    @app.get("/eval")
+    @app.post("/eval")
     async def eval(payload: EvalPayloadModel):
         try:
+            logging.info(
+                f"Received evaluation payload: {payload.dict(exclude_none=True)}"
+            )
             query = payload.query
             context = payload.context
             completion_text = payload.completion_text
@@ -279,7 +359,7 @@ def create_app(
 
             return {"message": "Evaluation completed successfully."}
         except Exception as e:
-            logger.error(
+            logging.error(
                 f":eval_endpoint: [Error](payload={payload}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
@@ -290,7 +370,7 @@ def create_app(
             embedding_pipeline.db.filtered_deletion(key, value)
             return {"message": "Entries deleted successfully."}
         except Exception as e:
-            logger.error(
+            logging.error(
                 f":filtered_deletion: [Error](key={key}, value={value}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
@@ -303,7 +383,7 @@ def create_app(
             )
             return {"user_ids": user_ids}
         except Exception as e:
-            logger.error(f":get_user_ids: [Error](error={str(e)})")
+            logging.error(f":get_user_ids: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/get_user_documents/")
@@ -314,7 +394,7 @@ def create_app(
             )
             return {"document_ids": document_ids}
         except Exception as e:
-            logger.error(f":get_user_documents: [Error](error={str(e)})")
+            logging.error(f":get_user_documents: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/logs")
@@ -331,7 +411,7 @@ def create_app(
                 "logs": [LogModel(**log).dict(by_alias=True) for log in logs]
             }
         except Exception as e:
-            logger.error(f":logs: [Error](error={str(e)})")
+            logging.error(f":logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/logs_summary")
@@ -350,7 +430,7 @@ def create_app(
             return {"events_summary": events_summary}
 
         except Exception as e:
-            logger.error(f":logs_summary: [Error](error={str(e)})")
+            logging.error(f":logs_summary: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     return app

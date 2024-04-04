@@ -6,7 +6,7 @@
     "batch_size": 32
   },
   "evals": {
-    "provider": "deepeval",
+    "provider": "parea",
     "frequency": 1.0
   },
   "language_model": {

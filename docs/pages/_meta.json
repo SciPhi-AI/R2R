@@ -3,14 +3,17 @@
   "getting-started": {
     "title": "Getting Started"
   },
-  "core-features": {
-    "title": "Core Features"
+  "deep-dive": {
+    "title": "Deep Dive"
+  },
+  "providers": {
+    "title": "Providers"
   },
   "examples": {
     "title": "Examples"
-  },
-  "integrations": {
-    "title": "Integrations"
+  },  
+  "development": {
+    "title": "Development"
   },
   "startups-enterprise": {
     "title": "Startups & Enterprise"

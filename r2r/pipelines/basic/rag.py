@@ -1,6 +1,7 @@
 """
 A simple example to demonstrate the usage of `BasicRAGPipeline`.
 """
+
 import logging
 from typing import Optional
 

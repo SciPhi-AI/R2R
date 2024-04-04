@@ -23,12 +23,12 @@ class R2RClient:
             }
             data = {
                 "document_id": document_id,
-                "metadata": json.dumps(metadata)
-                if metadata
-                else json.dumps({}),
-                "settings": json.dumps(settings)
-                if settings
-                else json.dumps({}),
+                "metadata": (
+                    json.dumps(metadata) if metadata else json.dumps({})
+                ),
+                "settings": (
+                    json.dumps(settings) if settings else json.dumps({})
+                ),
             }
             response = requests.post(
                 url,
@@ -119,6 +119,25 @@ class R2RClient:
             "generation_config": generation_config or {},
         }
         response = requests.post(url, json=json_data)
+        return response.json()
+
+    def eval(
+        self,
+        query: str,
+        context: str,
+        completion_text: str,
+        run_id: str,
+        settings: Optional[Dict[str, Any]] = None,
+    ):
+        url = f"{self.base_url}/eval/"
+        payload = {
+            "query": query,
+            "context": context,
+            "completion_text": completion_text,
+            "run_id": run_id,
+            "settings": settings or {},
+        }
+        response = requests.post(url, json=payload)
         return response.json()
 
     async def stream_rag_completion(

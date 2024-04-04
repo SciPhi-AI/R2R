@@ -2,6 +2,7 @@ from abc import abstractmethod
 from typing import Any, Iterator, Optional
 
 from ..abstractions.document import BasicDocument
+from ..adapters import Adapter
 from ..providers.logging import LoggingDatabaseConnection
 from ..utils import generate_run_id
 from .pipeline import Pipeline
@@ -10,6 +11,7 @@ from .pipeline import Pipeline
 class IngestionPipeline(Pipeline):
     def __init__(
         self,
+        adapters: Optional[dict[Any, Adapter]] = None,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs,
@@ -66,5 +68,5 @@ class IngestionPipeline(Pipeline):
 
         for entry_type, blob in blobs.items():
             if entry_type not in self.supported_types:
-                raise ValueError(f"EntryType {entry_type} not supported.")
+                raise ValueError(f"IngestionType {entry_type} not supported.")
             yield from self.parse_entry(entry_type, blob)

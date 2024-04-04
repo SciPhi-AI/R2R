@@ -1,7 +1,0 @@
-{
-  "llm-provider": "LLM Provider",
-  "databases": "Databases",
-  "embedding-model": "Embedding Model",
-  "evals": "Evals",
-  "text-parser": "Text Parser"
-}
