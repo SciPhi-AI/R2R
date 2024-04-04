@@ -10,13 +10,6 @@ client = R2RClient(base_url)
 
 from r2r.client import R2RClient
 
-# eval_result = client.eval(
-#     "What is the capital of France?",
-#     "France is a country in Europe.",
-#     "Paris",
-#     "421b9eca-b6bf-4137-96ea-6d3883c2d28f",
-# )
-
 # print('eval_result:', eval_result)
 print("Upserting entry to remote db...")
 # Upsert a single entry
@@ -133,7 +126,7 @@ async def stream_rag_completion():
         print(chunk, end="", flush=True)
 
 
-# asyncio.run(stream_rag_completion())
+asyncio.run(stream_rag_completion())
 
 print("Fetching logs after all steps...")
 logs_response = client.get_logs()
