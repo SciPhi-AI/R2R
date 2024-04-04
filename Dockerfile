@@ -1,10 +1,11 @@
-# Use a slimmer base image if possible
 FROM python:3.9
+
+RUN apt-get update && apt-get install -y gcc python3-dev
 
 WORKDIR /app
 
 # Install Poetry and keyring together to reduce layers
-RUN pip install poetry keyring
+RUN pip install poetry keyring gunicorn
 
 # Copy only files necessary for installing dependencies to leverage Docker cache
 COPY pyproject.toml poetry.lock* /app/
@@ -17,4 +18,4 @@ COPY . /app
 
 EXPOSE 8000
 
-CMD ["uvicorn", "r2r.examples.basic.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "8"]
+CMD ["gunicorn", "src.app:app", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "8", "--timeout", "0", "--worker-class", "uvicorn.workers.UvicornWorker"]
