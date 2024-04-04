@@ -2754,13 +2754,13 @@ rapidfuzz = ">=3.1.0,<4.0.0"
 
 [[package]]
 name = "litellm"
-version = "1.34.22"
+version = "1.34.25"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.34.22-py3-none-any.whl", hash = "sha256:0e573d56d762f4060c53493da4a08c48034b5bb5ba22e34517065739adfd9154"},
-    {file = "litellm-1.34.22.tar.gz", hash = "sha256:ca50ede3ca8d3f9dc2765ca13cf2ff5c4e4b9afb4db222f9d7cb9ee838b6180f"},
+    {file = "litellm-1.34.25-py3-none-any.whl", hash = "sha256:1eb74ef378d7035617f35d69eed9de5d29383770011f3f85b72a90d6ba595c20"},
+    {file = "litellm-1.34.25.tar.gz", hash = "sha256:857ff011c271fe62a9fa5fcee2ab706dc6bb1c5ed1f576aba79a997227b80e57"},
 ]
 
 [package.dependencies]
@@ -7118,4 +7118,4 @@ streaming = ["datasets"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "b2a4b3904c0a674563cef90d1a011dfec0a116f5c2547f48d7ecfaf7f3941c10"
+content-hash = "dc23e4767dce49addb3542aa7f4b2cd690d332a9230a95fc7ed8a8e952034c45"
