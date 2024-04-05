@@ -1,3 +1,4 @@
+from .basic.scraping import BasicScraperPipeline
 from .basic.embedding import BasicDocument, BasicEmbeddingPipeline
 from .basic.eval import BasicEvalPipeline
 from .basic.ingestion import BasicIngestionPipeline, IngestionType
@@ -10,6 +11,7 @@ __all__ = [
     "BasicEmbeddingPipeline",
     "BasicEvalPipeline",
     "IngestionType",
+    "BasicScraperPipeline",
     "BasicIngestionPipeline",
     "BasicPromptProvider",
     "BasicRAGPipeline",

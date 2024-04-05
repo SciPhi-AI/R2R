@@ -7,7 +7,7 @@ from ..utils import generate_run_id
 from .pipeline import Pipeline
 
 
-class ScrapingPipeline(Pipeline):
+class ScraperPipeline(Pipeline):
     def __init__(
         self,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
@@ -19,7 +19,7 @@ class ScrapingPipeline(Pipeline):
     def initialize_pipeline(self, *args, **kwargs) -> None:
         self.pipeline_run_info = {
             "run_id": generate_run_id(),
-            "type": "scraping",
+            "type": "scraper",
         }
 
     def scrape_url(self, url: str) -> Iterator[BasicDocument]:
@@ -29,9 +29,14 @@ class ScrapingPipeline(Pipeline):
         pass
 
 
-    def run(self, url: str, **kwargs) -> Iterator[BasicDocument]:
+    def run(self, document_id: str, url: str, **kwargs) -> Iterator[BasicDocument]:
         """
         Run the scraping method for the given URL.
         Yields the processed BasicDocument objects.
         """
-        pass
+        self.initialize_pipeline()
+
+        if not url:
+            raise ValueError("No URL provided to scrape.")
+
+        yield from self.scrape_url(url)
