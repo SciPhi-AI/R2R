@@ -35,6 +35,7 @@ class GenerationConfig(ABC):
     # Additional args to pass to the generation config
     add_generation_kwargs: dict = field(default_factory=dict)
     generate_with_chat: bool = False
+    api_base: Optional[str] = None
 
 
 class LLMProvider(ABC):

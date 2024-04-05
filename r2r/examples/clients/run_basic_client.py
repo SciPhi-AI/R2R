@@ -1,7 +1,6 @@
 import asyncio
 import glob
 import os
-import uuid
 
 import fire
 
@@ -23,7 +22,6 @@ class PDFChat:
     def ingest(self):
         current_file_directory = os.path.dirname(os.path.abspath(__file__))
         data_path = os.path.join(current_file_directory, "..", "data")
-
         for file_path in glob.glob(os.path.join(data_path, "*.pdf")):
             file_name = file_path.split(os.path.sep)[-1]
             if file_name in self.titles:
@@ -51,21 +49,22 @@ class PDFChat:
             print(body[:500])
             print("\n")
 
-    def rag_completion(self, query):
+    def rag_completion(self, query, model="gpt-4-turbo-preview"):
         rag_response = self.client.rag_completion(
             query,
             5,
             filters={"user_id": self.user_id},
+            generation_config={"model": model},
         )
         print("rag_response = ", rag_response)
 
-    def rag_completion_streaming(self, query):
+    def rag_completion_streaming(self, query, model="gpt-4-turbo-preview"):
         async def stream_rag_completion():
             async for chunk in self.client.stream_rag_completion(
                 query,
                 5,
                 filters={"user_id": self.user_id},
-                generation_config={"stream": True},
+                generation_config={"stream": True, "model": model},
             ):
                 print(chunk, end="", flush=True)
 
