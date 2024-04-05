@@ -65,7 +65,7 @@ class E2EPipelineFactory:
             return OpenAILLM(OpenAIConfig())
         elif llm_config["provider"] == "litellm":
             return LiteLLM(LiteLLMConfig())
-        elif llm_config["provider"] == "llamacpp":
+        elif llm_config["provider"] == "llama-cpp":
             return LlamaCPP(
                 LlamaCppConfig(
                     llm_config.get("model_path", ""),

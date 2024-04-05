@@ -1,0 +1,139 @@
+## Running Local RAG with R2R: A Step-by-Step Tutorial
+
+Are you or your organization excited about the potential of large language models (LLMs) but hesitant or unable to send all your data to the cloud? R2R makes it easy to deploy a customizeable user facing RAG backend on-premise.
+
+R2R (short for "RAG to Riches") is a framework that makes it easy to build applications with LLMs. And with R2R, you can get started quickly by running everything locally. No need to set up complex cloud infrastructure or pay for expensive hosted services.
+
+In this step-by-step tutorial, we'll walk you through installing R2R, ingesting documents, and querying those docs using a local LLM. By the end, you'll have a working locally-hosted LLM application! Let's dive in.
+
+### Setting Up Your Environment
+
+R2R supports two popular approaches to Local LLM inference, `ollama` and `Llama.cpp`.
+If you wish to use ollama then it must be installed independently, you can install ollama by following the instructions on their [official website](https://ollama.com/), or by following their [GitHub README](https://github.com/ollama/ollama).
+
+Next, let's install R2R itself. We'll use Poetry to manage our Python dependencies. Run the following commands:
+
+```bash
+pip install r2r[eval,parsing,local_llm]
+```
+
+This will install R2R along with the dependencies needed to run local LLMs.
+
+Now let's configure our R2R pipeline. R2R uses a `config.json` file to specify settings for things like embedding models, chunk sizes, and more. For this example, we'll need to modify the embedding provider and potentially the llm provider. Preloaded default configurations have been included in [`examples/configs`](https://github.com/SciPhi-AI/R2R/tree/main/r2r/examples/configs) with the names `local_ollama` and `local_llama_cpp`.
+
+Here is a sketch of the key differences
+```json
+{
+  "embedding": {
+    "provider": "sentence-transformers",
+    "model": "all-MiniLM-L6-v2",
+    "dimension": 384,
+    "batch_size": 32
+  },
+  ...
+  "language_model": {
+    "provider": "ollama", # or "llama-cpp"
+  },
+  ...
+}
+```
+
+You may also modify the configuration defaults for ingestion, logging, and your vector database provider in a similar manner.
+
+This config modification instructs R2R to use the `sentence-transformers` library for embeddings with the `all-MiniLM-L6-v2` model. During ingestion, the default is to split documents into chunks of 512 characters with 20 characters of overlap between chunks. A local vector database to store the embeddings.
+
+### Server Standup
+
+To stand up the server we must run with either 
+
+`python -m r2r.examples.servers.basic_pipeline --config local_ollama` or `python -m r2r.examples.servers.basic_pipeline --config local_llama_cpp`, depending on our preferred provider.
+
+... include more information about the server here, point to api docs at `getting-started/app-api` and `deep-dive/app`.
+### Ingesting and Embedding Documents
+
+With our environment set up, we're ready to ingest a document! As an example, let's use the famous Stoic text "Meditations" by Marcus Aurelius. Download a PDF or text file of the book and save it to your machine.
+
+Then run this command to ingest the document:
+
+```bash
+python r2r/examples/clients/run_basic_client.py ingest
+```
+
+Here's what's happening under the hood:
+1. R2R loads the PDF which is included in the package by default and converts to text using PyPDF2
+2. It splits the text into chunks of 512 characters each, with 20 characters overlapping between chunks
+3. Each chunk is embedded using the `all-MiniLM-L6-v2` model from `sentence-transformers`
+4. The chunks and embeddings are stored in the local vector database
+
+With just one command we've gone from a raw document to an embedded knowledge base we can query. In addition to the raw chunks, metadata such as user id or document id can be attached to make for easy deletion and modification or filtering at a later date.
+
+### Running Queries on the Local LLM  
+
+Time for the fun part - asking questions! To query our knowledge base using a local LLM, run:
+
+```bash
+python r2r/examples/clients/run_basic_client.py rag_completion \
+  --query="What does Marcus Aurelius say about the shortness of life?" \ 
+  --model=tinyllama-1.1b-chat-v1.0.Q2_K.gguf
+```
+
+somehow denote that the above is for llama cpp, and that for ollmaa we would do the following 
+
+
+This command tells R2R to use the `tinyllama-1.1b-chat-v1.0.Q2_K.gguf` model to generate a completion for the given query. R2R will:
+1. Embed the query using `all-MiniLM-L6-v2` 
+2. Find the chunks most similar to the query embedding
+3. Pass the query and relevant chunks to the `tinyllama` model to generate a response
+
+After a brief wait, you should see the LLM's response, perhaps something like:
+
+￼
+
+> Marcus Aurelius reflects on the brevity and fleeting nature of life in Meditations. He writes that life is short and that one must not waste time on trivialities. He encourages focusing on what matters most and living each day as if it could be our last.  
+
+How cool is that? With R2R we've built a simple QA system backed by a local LLM that we can converse with. The best part is, all the data and compute stayed on our own machine.
+
+### Customizing Your Local LLM App
+
+Now that you have a working local R2R app, you can experiment with customizing it for your needs. Here are a few key settings you might want to tweak in your `config.json` file:
+
+| Config | Description |
+| --- | --- | 
+| `embedding.model` | The embedding model to use (see sentence-transformers docs for options) |
+| `ingestion.text_splitter.type` | The type of the chunking text splitter to use  |
+| `ingestion.text_splitter.chunk_size` | Size of chunks to split text into |
+| `ingestion.text_splitter.chunk_overlap` | Number of overlapping characters between chunks |
+| `vector_database.provider` | Vector database to use (R2R supports Qdrant, sqlite relational, and postgres + pgvector) |
+
+Check out the [R2R configuration docs](http://localhost:3000/deep-dive/config) for full details on available options.  
+
+### Scaling Beyond Local
+
+While running locally is great for initial development and testing, you may quickly run into limitations as you scale up. Ingesting larger datasets, searching over more chunks, or supporting more concurrent users will require beefier hardware than your laptop provides.
+
+Luckily, R2R makes it easy to transition from local development to a scalable cloud deployment. The same `config.json` you've been using can be easily modified to swap out local components for hosted services:
+
+```json
+{
+  "vector_database": {
+    "provider": "qdrant",
+    "url": "https://my-qdrant-cluster.com"
+  }  
+}
+```
+
+Now R2R will store vectors in a remote [Qdrant](https://qdrant.tech/) vector database while still using your local LLM for querying. You can incrementally adopt cloud services as needed while keeping a consistent development experience. 
+
+### Next Steps
+
+In this tutorial, we've walked through the steps to get a local LLM application up and running with R2R:
+1. Installing dependencies 
+2. Configuring the R2R pipeline
+3. Ingesting and embedding documents
+4. Running queries on a local LLM  
+
+But we've only scratched the surface of what you can build with R2R! I encourage you to to keep experimenting - try ingesting your own documents, tweaking model parameters, and exploring R2R's other features like evaluation and model switching.
+
+If you have any questions or want to learn more, I invite you to check out [R2R's GitHub repo](https://github.com/SciPhi-ai/R2R), [join the R2R Discord](https://discord.gg/r2r), and browse the [R2R docs](https://r2r.dev/docs). 
+
+Happy building! I can't wait to see what you create with R2R and local LLMs.

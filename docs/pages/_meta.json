@@ -11,7 +11,10 @@
   },
   "examples": {
     "title": "Examples"
-  },  
+  },
+  "tutorials": {
+    "title": "Tutorials"
+  },
   "development": {
     "title": "Development"
   },

@@ -10,7 +10,8 @@ configs_path = os.path.join(current_file_path, "..", "configs")
 
 OPTIONS = {
     "default": None,
-    "local_litellm": os.path.join(configs_path, "local_litellm.json"),
+    "local_ollama": os.path.join(configs_path, "local_ollama.json"),
+    "local_llama_cpp": os.path.join(configs_path, "local_llama_cpp.json"),
 }
 
 if __name__ == "__main__":

@@ -18,7 +18,7 @@ class LlamaCppConfig(LLMConfig):
     """Configuration for LlamaCpp models."""
 
     # Base
-    provider_name: str = "llamacpp"
+    provider_name: str = "llama-cpp"
     model_path: str = ""
     model_name: str = ""
 
@@ -100,6 +100,7 @@ class LlamaCPP(LLMProvider):
 
         if not generation_config.stream:
             return ChatCompletion(
+                # TODO - Set an intelligent id
                 id="777",
                 object="chat.completion",
                 created=int(datetime.datetime.now().timestamp()),

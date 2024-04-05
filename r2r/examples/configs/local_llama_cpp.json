@@ -1,0 +1,36 @@
+{
+  "embedding": {
+    "provider": "sentence-transformers",
+    "model": "all-MiniLM-L6-v2",
+    "dimension": 384,
+    "batch_size": 32
+  },
+  "evals": {
+    "provider": "none",
+    "frequency": 0.0
+  },
+  "language_model": {
+    "provider": "llama-cpp"
+  },
+  "logging_database": {
+    "provider": "local",
+    "collection_name": "demo_logs",
+    "level": "INFO"
+  },
+  "ingestion":{
+    "provider": "local",
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 512,
+      "chunk_overlap": 20
+    }
+  },
+  "vector_database": {
+    "provider": "local",
+    "collection_name": "demo_vecs"
+  },
+  "app": {
+    "max_logs": 100,
+    "max_file_size_in_mb": 100
+  }
+}
