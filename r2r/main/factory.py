@@ -48,11 +48,15 @@ class E2EPipelineFactory:
             from r2r.embeddings import OpenAIEmbeddingProvider
 
             return OpenAIEmbeddingProvider()
-        elif embedding_config["provider"] == "sentence_transformers":
+        elif embedding_config["provider"] == "sentence-transformers":
             from r2r.embeddings import SentenceTransformerEmbeddingProvider
 
             return SentenceTransformerEmbeddingProvider(
                 embedding_config["model"]
+            )
+        else:
+            raise ValueError(
+                f"Embedding provider {embedding_config['provider']} not supported"
             )
 
     @staticmethod
