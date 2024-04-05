@@ -103,7 +103,7 @@ docker run -d --name r2r_container -p 8000:8000 --env-file .env r2r
    python -m r2r.examples.clients.run_synthetic_query_client
    ```
 
-## Extras Examples
+## Extra Examples
 
 [`reducto_pipeline.py`](r2r/examples/servers/reducto_pipeline.py): Launch this script to activate a backend server that integrates a Reducto adapter for enhanced PDF ingestion.
 
