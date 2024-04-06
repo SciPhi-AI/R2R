@@ -45,6 +45,8 @@ To streamline this process, we've provided pre-configured local settings in the 
   },
   "language_model": {
     "provider": "ollama"  // or "llama-cpp"
+    // "model-name": "your-target-model.gguf" necessary for "llama-cpp"
+    // defaults model-name is `tinyllama-1.1b-chat-v1.0.Q2_K.gguf`
   },
   ...
 }
@@ -66,7 +68,7 @@ python -m r2r.examples.servers.basic_pipeline --config local_ollama
 python -m r2r.examples.servers.basic_pipeline --config local_llama_cpp
 ```
 
-The choice depends on our preferred LLM provider.
+Note, to run with Llama.cpp you must download `tinyllama-1.1b-chat-v1.0.Q2_K.gguf` [here](https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q2_K.gguf?download=true) and place the output into `~/cache/model/`. The choice between ollama and Llama.cpp depends on our preferred LLM provider.
 
 The server exposes an API for interacting with the RAG pipeline. See the [API docs](/getting-started/app-api) for details on the available endpoints.
 
@@ -121,8 +123,6 @@ python -m r2r.examples.clients.run_basic_client rag_completion \
   --query="What does Marcus Aurelius say about the rules of life?" \
   --model=tinyllama-1.1b-chat-v1.0.Q2_K.gguf
 ```
-
-Note, this requires you to have downloaded `tinyllama-1.1b-chat-v1.0.Q2_K.gguf` from [here](https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q2_K.gguf?download=true) and placed the output into `~/cache/model/`.
 
 This command tells R2R to use the specified model to generate a completion for the given query. R2R will:
 1. Embed the query using `all-MiniLM-L6-v2`.
@@ -221,6 +221,6 @@ In this tutorial, we've walked through the steps to get a local LLM application 
 
 But we've only scratched the surface of what you can build with R2R! I encourage you to keep experimenting - try ingesting your own documents, tweaking model parameters, and exploring R2R's evaluation capabilities.
 
-If you have any questions or want to learn more, [R2R's GitHub repo](https://github.com/SciPhi-ai/R2R), [R2R Discord](https://discord.gg/p6KqD2kjtB), and [docs](https://r2r.dev) are great resources.
+If you have any questions or want to learn more, [R2R's GitHub repo](https://github.com/SciPhi-ai/R2R), [R2R Discord](https://discord.gg/p6KqD2kjtB), and [docs](https://r2r-docs.sciphi.ai/) are great resources.
 
 Happy building! I can't wait to see what you create with R2R and local LLMs.
