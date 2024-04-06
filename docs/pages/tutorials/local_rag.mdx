@@ -46,7 +46,7 @@ To streamline this process, we've provided pre-configured local settings in the 
   "language_model": {
     "provider": "ollama"  // or "llama-cpp"
     // "model-name": "your-target-model.gguf" necessary for "llama-cpp"
-    // defaults to tinyllama-1.1b-chat-v1.0.Q2_K.gguf
+    // defaults model-name is `tinyllama-1.1b-chat-v1.0.Q2_K.gguf`
   },
   ...
 }
@@ -68,9 +68,7 @@ python -m r2r.examples.servers.basic_pipeline --config local_ollama
 python -m r2r.examples.servers.basic_pipeline --config local_llama_cpp
 ```
 
-Note, to run with Llama.cpp you must download `tinyllama-1.1b-chat-v1.0.Q2_K.gguf` [here](https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q2_K.gguf?download=true) and place the output into `~/cache/model/`.
-
-The choice depends on our preferred LLM provider.
+Note, to run with Llama.cpp you must download `tinyllama-1.1b-chat-v1.0.Q2_K.gguf` [here](https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q2_K.gguf?download=true) and place the output into `~/cache/model/`. The choice between ollama and Llama.cpp depends on our preferred LLM provider.
 
 The server exposes an API for interacting with the RAG pipeline. See the [API docs](/getting-started/app-api) for details on the available endpoints.
 
