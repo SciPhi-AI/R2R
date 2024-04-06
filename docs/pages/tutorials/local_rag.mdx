@@ -1,6 +1,6 @@
 ## Easy Local RAG with R2R: A Step-by-Step Guide
 
-Are you or your organization excited about the potential of large language models (LLMs) and Retrieval-Augmented Generation (RAG) but hesitant or unable to send all your data to the cloud? If so, you have come to the right place - R2R makes it easy to deploy a fully customizable, user-facing RAG backend right on your own premises.
+### Introduction 
 
 R2R, short for "RAG to Riches," is a game-changing framework that simplifies the process of building applications with LLMs. With R2R, you can hit the ground running and have a system running locally in minutes, eliminating the need for complex cloud infrastructure or costly hosted services.
 
@@ -22,9 +22,13 @@ pip install r2r[eval,parsing,local_llm]
 
 This will install R2R along with the dependencies needed to run local LLMs.
 
-Now, let's configure our R2R pipeline. R2R uses a `config.json` file to specify settings for things like embedding models, chunk sizes, and more. For this example, we'll need to modify the embedding provider, the LLM provider, and turn off evaluations.
+### Pipeline Configuration
 
-Preloaded default configurations have been included in [`examples/configs`](https://github.com/SciPhi-AI/R2R/tree/main/r2r/examples/configs) with the names `local_ollama` and `local_llama_cpp`. Here is a sketch of the key differences:
+Let's move on to setting up the R2R pipeline. R2R relies on a `config.json` file for defining various settings, such as embedding models and chunk sizes. By default, the `config.json` found in the R2R GitHub repository's root directory is set up for cloud-based services.
+
+For setting up an on-premises RAG system, we need to adjust the configuration to use local resources. This involves changing the embedding provider, selecting the appropriate LLM provider, and disabling evaluations.
+
+To streamline this process, we've provided pre-configured local settings in the [`examples/configs`](https://github.com/SciPhi-AI/R2R/tree/main/r2r/examples/configs) directory, named `local_ollama` and `local_llama_cpp`. Here's an overview of the primary changes from the default configuration:
 
 ```json
 {
