@@ -54,7 +54,9 @@ To streamline this process, we've provided pre-configured local settings in the 
 
 You may also modify the configuration defaults for ingestion, logging, and your vector database provider in a similar manner. More information on this follows below.
 
-This chosen config modification instructs R2R to use the `sentence-transformers` library for embeddings with the `all-MiniLM-L6-v2` model, turns off evals, and sets the LLM provider to `ollama`. During ingestion, the default is to split documents into chunks of 512 characters with 20 characters of overlap between chunks. A local vector database will be used to store the embeddings.
+This chosen config modification above instructs R2R to use the `sentence-transformers` library for embeddings with the `all-MiniLM-L6-v2` model, turns off evals, and sets the LLM provider to `ollama`. During ingestion, the default is to split documents into chunks of 512 characters with 20 characters of overlap between chunks. 
+
+A local vector database will be used to store the embeddings. The current default is a minimal sqlite implementation, with plans to migrate the tutorial to LanceDB shortly.
 
 ### Server Standup
 
