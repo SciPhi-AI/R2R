@@ -37,7 +37,7 @@ class PareaEvalProvider(EvalProvider):
             self._create_log = create_log
         except ImportError:
             raise ImportError(
-                "Parea is not installed. Please install it using `pip install parea`."
+                "Parea is not installed. Please install it using `pip install parea-ai`."
             )
         if not os.getenv("OPENAI_API_KEY"):
             raise ValueError(

@@ -47,7 +47,7 @@ Note - the example above uses [SciPhi Cloud](https://app.sciphi.ai) to pair with
 
 ```bash
 # use the `'r2r[all]'` to download all required deps
-pip install 'r2r[parsing,eval]'
+pip install 'r2r[eval]'
 
 # setup env 
 export OPENAI_API_KEY=sk-...
@@ -64,8 +64,11 @@ export LOCAL_DB_PATH=local.sqlite
 ```bash
 docker pull emrgntcmplxty/r2r:latest
 
-# Place your secrets in `.env`
-docker run -d --name r2r_container -p 8000:8000 --env-file .env r2r
+# Choose from CONFIG_OPTION in {`default`, `local_ollama`}
+# For cloud deployment, select `default` and place your secrets in `.env`
+# For local deployment, select `local_ollama`
+docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama --env-file .env emrgntcmplxty/r2r:latest
+
 ```
 
 ## Basic Example

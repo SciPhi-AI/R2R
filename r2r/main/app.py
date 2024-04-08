@@ -227,9 +227,10 @@ def create_app(
                     "run_id": str(rag_pipeline.pipeline_run_info["run_id"]),
                     "settings": query.settings.rag_settings.dict(),
                 }
-                background_tasks.add_task(
-                    requests.post, f"{url}/eval", json=payload
-                )
+                if config.evals.get("frequency", 0.0) > 0.0:
+                    background_tasks.add_task(
+                        requests.post, f"{url}/eval", json=payload
+                    )
 
                 return rag_completion
 
