@@ -15,7 +15,7 @@ R2R supports multiple vector database providers, including:
 
 To specify the vector database provider, set the `provider` field under `vector_database` in the `config.json` file. Make sure to provide the necessary connection details and credentials for your chosen provider.
 
-For more information, refer to [vector database](/providers/vector-databases) integrations.
+For more information, refer to [vector database providers](/providers/vector-databases).
 
 ### Embedding Provider
 
@@ -24,7 +24,7 @@ R2R supports OpenAI and local inference as embedding providers. To configure the
 - `openai`: Integration with OpenAI, supporting models like `text-embedding-3-small` and `text-embedding-3-large`.
 - `sentence-transformers`: Integration with the sentence transformers library, providing support for models available on HuggingFace, like `all-MiniLM-L6-v2`.
 
-For more information, refer to [embedding integrations](/providers/embeddings).
+For more information, refer to [embedding providers](/providers/embeddings).
 
 
 ### Language Model Provider
@@ -32,18 +32,20 @@ For more information, refer to [embedding integrations](/providers/embeddings).
 - `openai`: Integration with OpenAI, supporting models like `gpt-3.5-turbo`
 - `litellm` (default): Integrates with many LLM providers, such as those listed below
   - OpenAI
+  - ollama
   - Anthropic
   - Vertex AI
   - HuggingFace
   - ...
+- `llama-cpp`: Integrates with the llama-cpp library for local inference.
 
-For more information, refer to [llm integrations](/providers/llms).
+For more information, refer to [llm providers](/providers/llms).
 
 ### Evaluation Provider
 
 R2R supports DeepEval and PareaAI as evaluation providers. To configure the evaluation settings, update the `evals` section in the `config.json` file. Specify the evaluation frequency to determine how often the pipeline should be evaluated. These evaluations can be viewed readily in the deployment tab.
 
-For more information, refer to [eval integrations](/providers/evals).
+For more information, refer to [eval providers](/providers/evals).
 
 Here's the updated "Evaluation Provider" section:
 
