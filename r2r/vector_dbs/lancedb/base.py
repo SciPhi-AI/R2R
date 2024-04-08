@@ -91,7 +91,20 @@ class LanceDB(VectorDBProvider):
     def upsert_entries(
         self, entries: list[VectorEntry], commit: bool = True
     ) -> None:
-        pass
+        if self.collection_name is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `upsert_entries`."
+            )
+
+        self.client.open_table(self.collection_name).add(
+            [{"vector": entry.vector,
+              "id": entry.id
+             # TODO ADD metadata storage
+             }
+             for entry in entries],
+            mode="overwrite",
+        )
+
 
     def search(
         self,
@@ -101,7 +114,22 @@ class LanceDB(VectorDBProvider):
         *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
-        pass
+        if self.collection_name is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `search`."
+            )
+
+        results = self.client.open_table(self.collection_name).search(
+            query=query_vector,
+            # TODO implement metadata filter
+        ).limit(limit).to_list()
+
+        return [
+            VectorSearchResult(
+                str(idx), result.get("_distance"), {} # TODO Handle metadata
+            )
+            for idx, result in enumerate(results)
+        ]
 
     def create_index(self, index_type, column_name, index_options):
         pass
