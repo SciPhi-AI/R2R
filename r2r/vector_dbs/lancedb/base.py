@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Optional, Union
 
 from r2r.core import VectorDBProvider, VectorEntry, VectorSearchResult
@@ -29,7 +30,7 @@ class LanceDB(VectorDBProvider):
 
         self.db_path = db_path
         try:
-            self.client = lancedb.connect(uri=self.db_path)
+            self.client = lancedb.connect(uri=self.db_path or os.environ.get("LANCEDB_URI"))
         except Exception as e:
             raise ValueError(
                 f"Error {e} occurred while attempting to connect to the lancedb provider."
