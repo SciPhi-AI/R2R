@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 
 
 class LanceDB(VectorDBProvider):
-    # TODO enable LanceDB provider to support lanceDB Cloud
     def __init__(
         self, provider: str = "lancedb", db_path: Optional[str] = None
     ) -> None:
@@ -30,7 +29,7 @@ class LanceDB(VectorDBProvider):
 
         self.db_path = db_path
         try:
-            self.client = lancedb.connect(uri=self.db_path or os.environ.get("LANCEDB_URI"))
+            self.client = lancedb.connect(uri=self.db_path or os.environ.get("LANCEDB_URI"), api_key=os.environ.get("LANCEDB_API_KEY") or None, region=os.environ.get("LANCEDB_REGION") or None)
         except Exception as e:
             raise ValueError(
                 f"Error {e} occurred while attempting to connect to the lancedb provider."
