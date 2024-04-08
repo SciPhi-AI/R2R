@@ -83,6 +83,9 @@ docker run -d --name r2r_container -p 8000:8000 --env-file .env r2r
    # run the client
    python -m r2r.examples.clients.run_basic_client
    ```
+### Running Basic Local RAG
+
+[Refer here](https://r2r-docs.sciphi.ai/tutorials/local_rag) for a tutorial on how to modify the commands above to use local providers.
 
 ## Synthetic Queries Example
 
@@ -100,7 +103,7 @@ docker run -d --name r2r_container -p 8000:8000 --env-file .env r2r
    python -m r2r.examples.clients.run_synthetic_query_client
    ```
 
-## Extras Examples
+## Extra Examples
 
 [`reducto_pipeline.py`](r2r/examples/servers/reducto_pipeline.py): Launch this script to activate a backend server that integrates a Reducto adapter for enhanced PDF ingestion.
 
@@ -126,6 +129,6 @@ The framework primarily revolves around three core abstractions:
 
 - The **RAG Pipeline**: Works similarly to the embedding pipeline but incorporates an LLM provider to produce text completions. The abstraction can be found in [`rag.py`](r2r/core/pipelines/rag.py) and relevant documentation is available [here](https://r2r-docs.sciphi.ai/deep-dive/rag).
 
-- The **Eval Pipeline**: Samples some subset of rag_completion calls for evaluation. Currently [DeepEval](https://github.com/confident-ai/deepeval) is supported. The abstraction can be found in [`eval.py`](r2r/core/pipelines/eval.py) and relevant documentation is available [here](https://r2r-docs.sciphi.ai/deep-dive/eval).
+- The **Eval Pipeline**: Samples some subset of rag_completion calls for evaluation. Currently [DeepEval](https://github.com/confident-ai/deepeval) and [Parea](https://github.com/parea-ai/parea-sdk-py) are supported. The abstraction can be found in [`eval.py`](r2r/core/pipelines/eval.py) and relevant documentation is available [here](https://r2r-docs.sciphi.ai/deep-dive/eval).
 
 Each pipeline incorporates a logging database for operation tracking and observability.
