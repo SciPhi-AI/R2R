@@ -85,7 +85,8 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama
 
    ```bash
    # run the client
-   python -m r2r.examples.clients.run_basic_client
+   python -m r2r.examples.clients.run_basic_client ingest
+   python -m r2r.examples.clients.run_basic_client search --query="What is the meaning of life?"
    ```
 ### Running Basic Local RAG
 
