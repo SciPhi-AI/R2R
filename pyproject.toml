@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "r2r"
-version = "0.1.32"
+version = "0.1.33"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
@@ -16,7 +16,7 @@ include = ["config.json"]
 python = ">=3.9,<3.13"
 
 # Required dependencies
-bs4= "^0.0.2"
+bs4 = "^0.0.2"
 fastapi = "^0.109.2"
 fire = "^0.5.0"
 gunicorn = "^21.2.0"
