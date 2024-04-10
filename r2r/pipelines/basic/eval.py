@@ -42,7 +42,7 @@ class BasicEvalPipeline(EvalPipeline):
                 from r2r.eval import PareaEvalProvider
             except ImportError:
                 raise ImportError(
-                    "Parea is not installed. Please install it using `pip install parea`."
+                    "Parea is not installed. Please install it using `pip install parea-ai`."
                 )
             self.eval_provider = PareaEvalProvider(
                 provider,

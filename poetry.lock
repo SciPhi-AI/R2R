@@ -321,7 +321,7 @@ dev = ["freezegun (>=1.0,<2.0)", "pytest (>=6.0)", "pytest-cov"]
 name = "beautifulsoup4"
 version = "4.12.3"
 description = "Screen-scraping library"
-optional = true
+optional = false
 python-versions = ">=3.6.0"
 files = [
     {file = "beautifulsoup4-4.12.3-py3-none-any.whl", hash = "sha256:b80878c9f40111313e55da8ba20bdba06d8fa3969fc68304167741bbf9e082ed"},
@@ -447,7 +447,7 @@ crt = ["awscrt (==0.19.19)"]
 name = "bs4"
 version = "0.0.2"
 description = "Dummy package for Beautiful Soup (beautifulsoup4)"
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "bs4-0.0.2-py2.py3-none-any.whl", hash = "sha256:abf8742c0805ef7f662dce4b51cca104cffe52b835238afc169142ab9b3fbccc"},
@@ -4464,17 +4464,17 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pypdf"
-version = "4.1.0"
+version = "4.2.0"
 description = "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files"
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "pypdf-4.1.0-py3-none-any.whl", hash = "sha256:16cac912a05200099cef3f347c4c7e0aaf0a6d027603b8f9a973c0ea500dff89"},
-    {file = "pypdf-4.1.0.tar.gz", hash = "sha256:01c3257ec908676efd60a4537e525b89d48e0852bc92b4e0aa4cc646feda17cc"},
+    {file = "pypdf-4.2.0-py3-none-any.whl", hash = "sha256:dc035581664e0ad717e3492acebc1a5fc23dba759e788e3d4a9fc9b1a32e72c1"},
+    {file = "pypdf-4.2.0.tar.gz", hash = "sha256:fe63f3f7d1dcda1c9374421a94c1bba6c6f8c4a62173a59b64ffd52058f846b1"},
 ]
 
 [package.dependencies]
-typing_extensions = {version = ">=3.7.4.3", markers = "python_version < \"3.10\""}
+typing_extensions = {version = ">=4.0", markers = "python_version < \"3.11\""}
 
 [package.extras]
 crypto = ["PyCryptodome", "cryptography"]
@@ -5740,7 +5740,7 @@ files = [
 name = "soupsieve"
 version = "2.5"
 description = "A modern CSS selector implementation for Beautiful Soup."
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "soupsieve-2.5-py3-none-any.whl", hash = "sha256:eaa337ff55a1579b6549dc679565eac1e3d000563bcb1c8ab0d0fefbc0c2cdc7"},
@@ -7109,7 +7109,6 @@ exa = ["exa-py"]
 ionic = ["ionic-api-sdk"]
 local-llm = ["llama-cpp-python", "sentence-transformers"]
 monitoring = ["sentry-sdk"]
-parsing = ["bs4", "pypdf"]
 postgres = ["psycopg2-binary"]
 qdrant = ["qdrant_client"]
 reducto = ["boto3"]
@@ -7118,4 +7117,4 @@ streaming = ["datasets"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "b7c9c5be81f85c374165d3f4a05a5bd3007c556f21536a90bda379a4d2c76a3f"
+content-hash = "1d3987c692e06ccb98e69876cf857c3b66ea000bbc31f12060d2ecfe57c065ee"
