@@ -22,9 +22,6 @@ RUN pip install gunicorn uvicorn
 # Copy the rest of the application code
 COPY . /app
 
-# Set the default configuration option
-ENV CONFIG_OPTION=default
-
 # Expose the port
 EXPOSE 8000
 
