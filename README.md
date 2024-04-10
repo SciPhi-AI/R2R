@@ -68,7 +68,7 @@ docker pull emrgntcmplxty/r2r:latest
 # Choose from CONFIG_OPTION in {`default`, `local_ollama`}
 # For cloud deployment, select `default` and place your secrets in `.env`
 # For local deployment, select `local_ollama`
-docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama --env-file .env emrgntcmplxty/r2r:latest
+docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama
 
 ```
 
