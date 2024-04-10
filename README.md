@@ -66,9 +66,9 @@ export LOCAL_DB_PATH=local.sqlite
 docker pull emrgntcmplxty/r2r:latest
 
 # Choose from CONFIG_OPTION in {`default`, `local_ollama`}
-# For cloud deployment, select `default` and place your secrets in `.env`
+# For cloud deployment, select `default` and pass `--env-file .env`
 # For local deployment, select `local_ollama`
-docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama
+docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  emrgntcmplxty/r2r:latest
 
 ```
 
