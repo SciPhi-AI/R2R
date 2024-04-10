@@ -44,6 +44,8 @@ Note - the example above uses [SciPhi Cloud](https://app.sciphi.ai) to pair with
 
 [SciPhi Cloud](https://docs.sciphi.ai/)
 
+[Local RAG Tutorial](https://r2r-docs.sciphi.ai/tutorials/local_rag)
+
 ## Quick Install:
 
 ```bash
@@ -53,7 +55,7 @@ pip install 'r2r[eval]'
 # setup env 
 export OPENAI_API_KEY=sk-...
 # Set `LOCAL_DB_PATH` for local testing
-export LOCAL_DB_PATH=local.sqlite
+export LOCAL_DB_PATH=local.sqlite # robust providers available (e.g. qdrant, pgvector, ..)
 
 # OR do `vim .env.example && cp .env.example .env`
 # INCLUDE secrets and modify config.json
@@ -69,7 +71,6 @@ docker pull emrgntcmplxty/r2r:latest
 # For cloud deployment, select `default` and pass `--env-file .env`
 # For local deployment, select `local_ollama`
 docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  emrgntcmplxty/r2r:latest
-
 ```
 
 ## Basic Example
