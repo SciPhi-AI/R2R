@@ -4,7 +4,7 @@ from r2r.core.adapters import ReductoAdapter
 from r2r.main import E2EPipelineFactory, R2RConfig
 from r2r.pipelines import IngestionType
 
-# Read more about the configuration in the documentation [https://r2r-docs.sciphi.ai/core-features/factory]
+# Read more about the configuration in the documentation [https://r2r-docs.sciphi.ai/deep-dive/factory]
 app = E2EPipelineFactory.create_pipeline(
     config=R2RConfig.load_config(),
     adapters={
