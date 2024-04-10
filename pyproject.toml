@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "r2r"
-version = "0.1.33"
+version = "0.1.34"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
@@ -60,7 +60,7 @@ reducto = ["boto3"]
 exa = ["exa-py"]
 sentence_transformers = ["sentence-transformers"]
 local_llm = ["llama-cpp-python", "sentence-transformers"]
-all = ["bs4", "pypdf", "tiktoken", "datasets", "qdrant_client", "psycopg2-binary", "sentry-sdk", "parea-ai", "boto3", "exa-py", "llama-cpp-python"]
+all = ["tiktoken", "datasets", "qdrant_client", "psycopg2-binary", "sentry-sdk", "parea-ai", "boto3", "exa-py", "llama-cpp-python"]
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.3.0"
