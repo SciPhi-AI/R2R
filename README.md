@@ -79,6 +79,7 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
 
    ```bash
    # launch the server
+   # Do `export CONFIG_OPTION=local_ollama` to run the pipeline with local ollama instead of OpenAI
    python -m r2r.examples.servers.basic_pipeline
    ```
 

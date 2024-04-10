@@ -2,7 +2,6 @@ import argparse
 import os
 
 import uvicorn
-from typing import Optional
 
 from r2r.main import E2EPipelineFactory, R2RConfig
 
@@ -16,8 +15,8 @@ OPTIONS = {
 }
 
 
-def create_app(config_name: Optional[str] = None):
-    config_name = os.getenv('CONFIG_OPTION', 'default') or config_name
+def create_app(config_name: str = "default"):
+    config_name = os.getenv('CONFIG_OPTION') or config_name
     config_path = OPTIONS[config_name]
 
     app = E2EPipelineFactory.create_pipeline(
