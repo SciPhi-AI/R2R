@@ -1,6 +1,8 @@
 import argparse
 import os
+
 import uvicorn
+
 from r2r.main import E2EPipelineFactory, R2RConfig
 
 current_file_path = os.path.dirname(__file__)
@@ -12,6 +14,7 @@ OPTIONS = {
     "local_llama_cpp": os.path.join(configs_path, "local_llama_cpp.json"),
 }
 
+
 def create_app(config_name: str = "default"):
     config_path = OPTIONS[config_name]
 
@@ -19,6 +22,7 @@ def create_app(config_name: str = "default"):
         config=R2RConfig.load_config(config_path)
     )
     return app
+
 
 app = create_app()
 
