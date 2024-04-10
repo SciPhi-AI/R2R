@@ -8,49 +8,6 @@ In this comprehensive, step-by-step tutorial, we'll guide you through the proces
 
 ![Llama Coding](./llama_3.png)
 
-### Setting Up Your Environment
-
-R2R supports two popular approaches to Local LLM inference: `ollama` and `Llama.cpp`. Llama.cpp is supported through a dedicated implementation in R2R, whereas ollama is provided through a connection managed by the `litellm` library.
-
-If you wish to use ollama, it must be installed independently. You can install ollama by following the instructions on their [official website](https://ollama.com/) or by referring to their [GitHub README](https://github.com/ollama/ollama).
-
-Next, let's install R2R itself. We'll use pip to manage our Python dependencies. Run the following command:
-
-
-I would recommend adding the Docker section towards the top of the tutorial, right after the "Setting Up Your Environment" section. This way, users who prefer using Docker can quickly get started without having to read through the entire tutorial. Here's how you can integrate it into the existing tutorial:
-
-<document_quality_reflection>
-The tutorial provides a comprehensive step-by-step guide on setting up and using R2R for local RAG with detailed instructions and code examples. Adding a section on running R2R with Docker at the beginning, right after the environment setup, would be a good fit. This allows users who prefer Docker to get started quickly without having to read through the entire tutorial first. The Docker section can be concise, focusing on the key steps to pull the image, choose the configuration, and run the container. Overall, the addition of the Docker section enhances the tutorial by providing an alternative setup option and improves the user experience for Docker users.
-</document_quality_reflection>
-
-<document_quality_score>4</document_quality_score>
-
-<result>
-## Easy Local RAG with R2R: A Step-by-Step Guide
-
-### Introduction 
-
-R2R, short for "RAG to Riches," is a game-changing framework that simplifies the process of building applications with LLMs. With R2R, you can hit the ground running and have a system running locally in minutes, eliminating the need for complex cloud infrastructure or costly hosted services.
-
-In this comprehensive, step-by-step tutorial, we'll guide you through the process of installing R2R, ingesting your documents, querying those docs using a local LLM, and tailoring the RAG pipeline to perfectly fit your unique requirements. By the end of this guide, you'll have a fully functional, locally-hosted, and readily deployable LLM application at your fingertips!
-
-![Llama Coding](./llama_3.png)
-
-### Setting Up Your Environment
-
-R2R supports two popular approaches to Local LLM inference: `ollama` and `Llama.cpp`. Llama.cpp is supported through a dedicated implementation in R2R, whereas ollama is provided through a connection managed by the `litellm` library.
-
-If you wish to use ollama, it must be installed independently. You can install ollama by following the instructions on their [official website](https://ollama.com/) or by referring to their [GitHub README](https://github.com/ollama/ollama).
-
-Next, let's install R2R itself. We'll use pip to manage our Python dependencies. Run the following command:
-
-```bash
-pip install --upgrade pip
-pip install 'r2r[eval,local_llm]'
-```
-
-This will install R2R along with the dependencies needed to run local LLMs.
-
 ### Running R2R with Docker
 
 If you prefer using Docker, you can easily run R2R in a containerized environment. Here's how:
@@ -75,14 +32,14 @@ If you prefer using Docker, you can easily run R2R in a containerized environmen
 
 Once the container is running, you can interact with the R2R API in the same way as described in the tutorial.
 
-Remember to replace `local_ollama` with `default` and provide the necessary environment variables using `--env-file .env` if you're running R2R in a cloud deployment.
+### Setting Up Your Environment
 
-### Pipeline Configuration
+R2R supports two popular approaches to Local LLM inference: `ollama` and `Llama.cpp`. Llama.cpp is supported through a dedicated implementation in R2R, whereas ollama is provided through a connection managed by the `litellm` library.
 
-Let's move on to setting up the R2R pipeline...
+If you wish to use ollama, it must be installed independently. You can install ollama by following the instructions on their [official website](https://ollama.com/) or by referring to their [GitHub README](https://github.com/ollama/ollama).
 
-[Rest of the tutorial remains the same]
-</result>
+Next, let's install R2R itself. We'll use pip to manage our Python dependencies. Run the following command:
+
 ```bash
 pip install --upgrade pip
 pip install 'r2r[eval,local_llm]'
