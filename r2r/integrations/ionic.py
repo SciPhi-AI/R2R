@@ -45,7 +45,7 @@ class IonicClient:
                 "upc": product.upc,
                 "merchant_name": product.merchant_name,
                 "thumbnail": product.thumbnail,
-                "link": product.links[0].url,
+'link': product.links[0].url if product.links else None,
             }
             for result in response.query_api_response.results
             for product in result.products
