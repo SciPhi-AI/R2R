@@ -4,7 +4,7 @@
 
 In [Easy Local RAG with R2R: A Step-by-Step Guide](https://r2r-docs.sciphi.ai/tutorials/local_rag), you take a look of how our framework `R2R` work and how to use the RAG pipeline. But now, let's talk more in details about  the `config.json` file.
 
-### `config.json`
+### config.json
 
 The `config.json` file is used to set up and configure all services of R2R. It includes settings for embedding, evaluation, language models, logging, ingestion, vector databases, and the application itself. 
 
@@ -51,7 +51,7 @@ The `config.json` file is configured by default for cloud-based services, as you
 }
 ```
 
-To use the configuration you want, it is as easy as just changing the values of the json file. For example, if you want to use the Hugging Face `sentence-transformers` as embedding model, just change the embedding provider:
+To use the configuration you want, it is as easy as just changing the values of the json file. For example, if you want to use an embedding model of Hugging Face `sentence-transformers`, just have to change the embedding provider:
 
 ```json
   "embedding": {
@@ -60,7 +60,7 @@ To use the configuration you want, it is as easy as just changing the values of 
   },
 ```
 
-To know what values each section can take, consult Config setup documentation page [here](https://r2r-docs.sciphi.ai/deep-dive/config)
+To know what values each section can take, consult `Config setup` documentation page [here](https://r2r-docs.sciphi.ai/deep-dive/config)
 
 
 ### Try a different set up of the [Easy Local RAG](https://r2r-docs.sciphi.ai/tutorials/local_rag)
