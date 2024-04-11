@@ -9,10 +9,10 @@ class IonicClient:
             raise ValueError(
                 "Please set the `IONIC_API_KEY` env var or pass a parameter to use `IonicClient`."
             )
-        
+
         # temp local import for dependency mgmt
         from ionic import Ionic as IonicSDK
-        
+
         self.client = IonicSDK(api_key_header=api_key)
 
     def query(
