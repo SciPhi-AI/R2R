@@ -10,8 +10,7 @@
       "frequency": 0.0
     },
     "language_model": {
-      "provider": "ollama",
-      "model-name": "ollama/phi"
+      "provider": "litellm"
     },
     "logging_database": {
       "provider": "local",
