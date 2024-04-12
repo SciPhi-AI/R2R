@@ -12,6 +12,7 @@ OPTIONS = {
     "default": None,
     "local_ollama": os.path.join(configs_path, "local_ollama.json"),
     "local_llama_cpp": os.path.join(configs_path, "local_llama_cpp.json"),
+    "testConfi": os.path.join(configs_path, "testConfi.json"),
 }
 
 
