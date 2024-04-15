@@ -61,12 +61,4 @@ class IngestionPipeline(Pipeline):
         Run the appropriate parsing method based on the data type and whether the data is a file or an entry.
         Yields the processed DocumentPage objects.
         """
-        self.initialize_pipeline()
-
-        if len(blobs) == 0:
-            raise ValueError("No blobs provided to process.")
-
-        for entry_type, blob in blobs.items():
-            if entry_type not in self.supported_types:
-                raise ValueError(f"IngestionType {entry_type} not supported.")
-            yield from self.parse_entry(entry_type, blob)
+        pass
