@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any, Iterator, Optional, Union
 
 from r2r.core import (
-    BasicDocument,
+    DocumentPage,
     IngestionPipeline,
     LoggingDatabaseConnection,
 )
@@ -70,19 +70,19 @@ class BasicIngestionPipeline(IngestionPipeline):
         self,
         entry_type: IngestionType,
         entry_data: Union[bytes, str],
-    ) -> Iterator[BasicDocument]:
+    ) -> Iterator[DocumentPage]:
         adapter = self.adapters.get(
             entry_type, self.default_adapters[entry_type]
         )
         texts = adapter.adapt(entry_data)
-        for text in texts:
-            yield BasicDocument(
-                id=self.document_id, text=text, metadata=self.metadata
+        for iteration, text in enumerate(texts):
+            yield DocumentPage(
+                doc_id=self.document_id, page_num=iteration, text=text, metadata=self.metadata
             )
 
     def parse_entry(
         self, entry_type: str, entry_data: Union[bytes, str]
-    ) -> Iterator[BasicDocument]:
+    ) -> Iterator[DocumentPage]:
         yield from self.process_data(IngestionType(entry_type), entry_data)
 
     def run(
@@ -91,7 +91,7 @@ class BasicIngestionPipeline(IngestionPipeline):
         blobs: dict[str, Any],
         metadata: Optional[dict] = None,
         **kwargs,
-    ) -> Iterator[BasicDocument]:
+    ) -> Iterator[DocumentPage]:
         self.initialize_pipeline()
         self.document_id = document_id
         self.metadata = metadata or {}

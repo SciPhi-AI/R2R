@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from r2r.core import BasicDocument
+from r2r.core import DocumentPage
 
 
 class EmbeddingsSettingsModel(BaseModel):
@@ -111,7 +111,7 @@ class SummaryLogModel(BaseModel):
     search_results: list[dict] = Field(alias="searchResults")
     completion_result: str = Field(alias="completionResult")
     eval_results: Optional[dict] = Field(alias="evalResults")
-    document: Optional[BasicDocument] = Field(alias="document")
+    document: Optional[DocumentPage] = Field(alias="document")
     outcome: str = Field(alias="outcome")
 
     class Config:

@@ -59,22 +59,4 @@ class EmbeddingPipeline(Pipeline):
         pass
 
     def run(self, document: Any, **kwargs):
-        self.initialize_pipeline()
-        logger.debug(
-            f"Running the `BasicEmbeddingPipeline` with pipeline_run_info={self.pipeline_run_info}."
-        )
-
-        documents = [document] if not isinstance(document, list) else document
-
-        for document in documents:
-            transformed_text = self.transform_text(document.text)
-            chunks = self.chunk_text(transformed_text)
-            transformed_chunks = self.transform_chunks(chunks, [])
-            embeddings = self.embed_chunks(transformed_chunks)
-            self.store_chunks(
-                [
-                    VectorEntry(document.id, embedding, document.metadata)
-                    for embedding in embeddings
-                ],
-                **kwargs,
-            )
+        pass

@@ -74,6 +74,7 @@ class BasicRAGPipeline(RAGPipeline):
         """
         logger.debug(f"Retrieving results for query: {transformed_query}")
         self._check_pipeline_initialized()
+        print("transformed_query: ", transformed_query)
         results = self.db.search(
             query_vector=self.embeddings_provider.get_embedding(
                 transformed_query,
@@ -82,6 +83,8 @@ class BasicRAGPipeline(RAGPipeline):
             filters=filters,
             limit=limit,
         )
+        print("len(results): ", len(results))
+
         logger.debug(f"Retrieved the raw results shown:\n{results}\n")
 
         return results

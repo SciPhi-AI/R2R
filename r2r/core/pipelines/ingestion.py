@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Any, Iterator, Optional
 
-from ..abstractions.document import BasicDocument
+from ..abstractions.document import DocumentPage
 from ..adapters import Adapter
 from ..providers.logging import LoggingDatabaseConnection
 from ..utils import generate_run_id
@@ -35,18 +35,18 @@ class IngestionPipeline(Pipeline):
     @abstractmethod
     def process_data(
         self, entry_type: str, entry_data: Any
-    ) -> Iterator[BasicDocument]:
+    ) -> Iterator[DocumentPage]:
         """
-        Process data into plaintext based on the data type and yield BasicDocument objects.
+        Process data into plaintext based on the data type and yield DocumentPage objects.
         """
         pass
 
     @abstractmethod
     def parse_entry(
         self, entry_type: str, entry_data: Any
-    ) -> Iterator[BasicDocument]:
+    ) -> Iterator[DocumentPage]:
         """
-        Parse entry data into plaintext based on the entry type and yield BasicDocument objects.
+        Parse entry data into plaintext based on the entry type and yield DocumentPage objects.
         """
         pass
 
@@ -56,10 +56,10 @@ class IngestionPipeline(Pipeline):
         blobs: dict[str, Any],
         metadata: Optional[dict] = None,
         **kwargs,
-    ) -> Iterator[BasicDocument]:
+    ) -> Iterator[DocumentPage]:
         """
         Run the appropriate parsing method based on the data type and whether the data is a file or an entry.
-        Yields the processed BasicDocument objects.
+        Yields the processed DocumentPage objects.
         """
         self.initialize_pipeline()
 
