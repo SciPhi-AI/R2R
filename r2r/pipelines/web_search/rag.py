@@ -75,12 +75,29 @@ class WebRAGPipeline(BasicRAGPipeline):
         *args,
         **kwargs,
     ) -> list:
-        return self.serper_client.get_raw(transformed_query, limit)
+        results = []
+        local_results = super().search(transformed_query, filters, limit)
+        results.extend(
+            [{"type": "local", "result": ele} for ele in local_results]
+        )
 
+        external_results = self.serper_client.get_raw(transformed_query, limit)
+        results.extend(
+            [{"type": "external", "result": ele} for ele in external_results]
+        )
+
+        return results
+    
     @log_execution_to_db
     def construct_context(self, results: list) -> str:
-        return self.serper_client.construct_context(results)
-
+        local_context = super().construct_context(
+            [ele["result"] for ele in results if ele["type"] == "local"]
+        )
+        web_context = self.serper_client.construct_context(
+            [ele["result"] for ele in results if ele["type"] == "external"]
+        )
+        return local_context + "\n\n" + web_context
+    
     def _stream_run(
         self,
         search_results: list,
