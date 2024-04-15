@@ -184,8 +184,8 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
             logger.error(f"Error {e} processing 'ingress' event: {event}")
     elif method == "ingress" and pipeline_type == "embedding":
         try:
-            id_match = re.search(r"'doc_id': '([^']+)'", result)
-            page_num = re.search(r"'page_num': '([^']+)'", result)
+            id_match = re.search(r"'document_id': '([^']+)'", result)
+            page_number = re.search(r"'page_number': '([^']+)'", result)
             text_match = re.search(r"'text': '([^']+)'", result)
             metadata_match = re.search(r"'metadata': (\{[^}]+\})", result)
             if not id_match or not text_match or not metadata_match:
@@ -196,8 +196,8 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
             metadata_json = json.loads(metadata)
 
             processed_result["document"] = DocumentPage(
-                doc_id=id_match.group(1),
-                page_num=int(page_num.group(1)),
+                document_id=id_match.group(1),
+                page_number=int(page_number.group(1)),
                 text=text_match.group(1),
                 metadata=metadata_json,
             )

@@ -87,8 +87,8 @@ class CustomIngestionPipeline(IngestionPipeline):
             texts = adapter.adapt(entry_data)
             for it, text in enumerate(texts):
                 yield DocumentPage(
-                    doc_id=self.document_id,
-                    page_num=it,
+                    document_id=self.document_id,
+                    page_number=it,
                     text=text,
                     metadata={
                         "source": "Reducto",
@@ -101,8 +101,8 @@ class CustomIngestionPipeline(IngestionPipeline):
             texts = adapter.adapt(entry_data)
             for it, text in enumerate(texts):
                 yield DocumentPage(
-                    doc_id=self.document_id,
-                    page_num=it,
+                    document_id=self.document_id,
+                    page_number=it,
                     text=text.upper(),  # Custom modification: convert text to uppercase
                     metadata=self.metadata,
                 )

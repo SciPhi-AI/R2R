@@ -73,8 +73,8 @@ class BasicIngestionPipeline(IngestionPipeline):
         texts = adapter.adapt(entry_data)
         for iteration, text in enumerate(texts):
             yield DocumentPage(
-                doc_id=self.document_id,
-                page_num=iteration,
+                document_id=self.document_id,
+                page_number=iteration,
                 text=text,
                 metadata=self.metadata,
             )

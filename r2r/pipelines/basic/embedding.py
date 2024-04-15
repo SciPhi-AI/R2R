@@ -59,8 +59,8 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         Extracts text from a document.
         """
         return {
-            "doc_id": str(document.doc_id),
-            "page_num": str(document.page_num),
+            "document_id": str(document.document_id),
+            "page_number": str(document.page_number),
             "metadata": document.metadata,
             "text": document.text,
         }
@@ -145,8 +145,8 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         for chunk_iter, chunk in enumerate(chunks):
             batch_data.append(
                 (
-                    document.doc_id,
-                    document.page_num,
+                    document.document_id,
+                    document.page_number,
                     chunk_iter,
                     chunk,
                     copy.copy(document.metadata),
@@ -172,22 +172,22 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         entries = []
 
         # Unpack document IDs, indices, and chunks for transformation and embedding
-        doc_ids, page_nums, chunk_nums, raw_chunks, metadatas = zip(
+        document_ids, page_numbers, chunk_nums, raw_chunks, metadatas = zip(
             *batch_data
         )
         transformed_chunks = self.transform_chunks(raw_chunks, metadatas)
         embedded_chunks = self.embed_chunks(transformed_chunks)
 
         for (
-            doc_id,
-            page_num,
+            document_id,
+            page_number,
             chunk_num,
             transformed_chunk,
             embedded_chunk,
             metadata,
         ) in zip(
-            doc_ids,
-            page_nums,
+            document_ids,
+            page_numbers,
             chunk_nums,
             transformed_chunks,
             embedded_chunks,
@@ -196,10 +196,10 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             metadata = copy.deepcopy(metadata)
             metadata["pipeline_run_id"] = str(self.pipeline_run_info["run_id"])  # type: ignore
             metadata["text"] = transformed_chunk
-            metadata["document_id"] = doc_id
-            metadata["page_num"] = page_num
+            metadata["document_id"] = document_id
+            metadata["page_number"] = page_number
             chunk_id = generate_id_from_label(
-                f"{doc_id}-{page_num}-{chunk_num}"
+                f"{document_id}-{page_number}-{chunk_num}"
             )
             entries.append(VectorEntry(chunk_id, embedded_chunk, metadata))
         self.store_chunks(entries, do_upsert)
