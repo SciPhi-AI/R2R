@@ -1,7 +1,7 @@
 {
   "embedding": {
     "provider": "openai",
-    "model": "text-embedding-3-small",
+    "model": "text-embedding-3-large",
     "dimension": 1536,
     "batch_size": 32
   },

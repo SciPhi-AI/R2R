@@ -7,7 +7,7 @@ from typing import Any, Union
 
 from fastapi.middleware.cors import CORSMiddleware
 
-from r2r.core import BasicDocument
+from r2r.core import DocumentPage
 
 logger = logging.getLogger(__name__)
 
@@ -184,7 +184,8 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
             logger.error(f"Error {e} processing 'ingress' event: {event}")
     elif method == "ingress" and pipeline_type == "embedding":
         try:
-            id_match = re.search(r"'id': '([^']+)'", result)
+            id_match = re.search(r"'document_id': '([^']+)'", result)
+            page_number = re.search(r"'page_number': '([^']+)'", result)
             text_match = re.search(r"'text': '([^']+)'", result)
             metadata_match = re.search(r"'metadata': (\{[^}]+\})", result)
             if not id_match or not text_match or not metadata_match:
@@ -194,8 +195,9 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
             metadata = metadata_match.group(1).replace("'", '"')
             metadata_json = json.loads(metadata)
 
-            processed_result["document"] = BasicDocument(
-                id=id_match.group(1),
+            processed_result["document"] = DocumentPage(
+                document_id=id_match.group(1),
+                page_number=int(page_number.group(1)),
                 text=text_match.group(1),
                 metadata=metadata_json,
             )

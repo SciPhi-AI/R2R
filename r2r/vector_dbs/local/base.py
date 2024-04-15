@@ -27,7 +27,9 @@ class LocalVectorDB(VectorDBProvider):
         self.collection_name: Optional[str] = None
 
     def _get_conn(self):
-        conn = sqlite3.connect(self.db_path or os.getenv("LOCAL_DB_PATH", "local.sqlite"))
+        conn = sqlite3.connect(
+            self.db_path or os.getenv("LOCAL_DB_PATH", "local.sqlite")
+        )
         return conn
 
     def _get_cursor(self, conn):

@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 
 
-class BasicDocument(BaseModel):
-    id: str
+class DocumentPage(BaseModel):
+    document_id: str
+    page_number: int
     text: str
     metadata: dict
