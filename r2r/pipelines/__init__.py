@@ -3,7 +3,7 @@ from .basic.eval import BasicEvalPipeline
 from .basic.ingestion import BasicIngestionPipeline, IngestionType
 from .basic.prompt_provider import BasicPromptProvider
 from .basic.rag import BasicRAGPipeline
-from .web_search.rag import WebSearchRAGPipeline
+from .web_search.rag import WebRAGPipeline
 
 __all__ = [
     "DocumentPage",
@@ -13,5 +13,5 @@ __all__ = [
     "BasicIngestionPipeline",
     "BasicPromptProvider",
     "BasicRAGPipeline",
-    "WebSearchRAGPipeline",
+    "WebRAGPipeline",
 ]
