@@ -202,5 +202,4 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
                 f"{doc_id}-{page_num}-{chunk_num}"
             )
             entries.append(VectorEntry(chunk_id, embedded_chunk, metadata))
-        print("storing len(entries) = ", len(entries))
         self.store_chunks(entries, do_upsert)
