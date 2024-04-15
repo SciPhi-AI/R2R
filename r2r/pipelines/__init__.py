@@ -1,4 +1,4 @@
-from .basic.embedding import DocumentPage, BasicEmbeddingPipeline
+from .basic.embedding import BasicEmbeddingPipeline, DocumentPage
 from .basic.eval import BasicEvalPipeline
 from .basic.ingestion import BasicIngestionPipeline, IngestionType
 from .basic.prompt_provider import BasicPromptProvider

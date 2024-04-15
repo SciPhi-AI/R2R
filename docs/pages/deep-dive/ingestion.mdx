@@ -85,9 +85,10 @@ class CustomIngestionPipeline(IngestionPipeline):
         if isinstance(adapter, ReductoAdapter):
             # Custom processing for ReductoAdapter
             texts = adapter.adapt(entry_data)
-            for text in texts:
+            for it, text in enumerate(texts):
                 yield DocumentPage(
-                    id=self.document_id,
+                    doc_id=self.document_id,
+                    page_num=it,
                     text=text,
                     metadata={
                         "source": "Reducto",
@@ -98,9 +99,10 @@ class CustomIngestionPipeline(IngestionPipeline):
         else:
             # Custom processing for other adapters
             texts = adapter.adapt(entry_data)
-            for text in texts:
+            for it, text in enumerate(texts):
                 yield DocumentPage(
-                    id=self.document_id,
+                    doc_id=self.document_id,
+                    page_num=it,
                     text=text.upper(),  # Custom modification: convert text to uppercase
                     metadata=self.metadata,
                 )

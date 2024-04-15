@@ -6,11 +6,7 @@ import logging
 from enum import Enum
 from typing import Any, Iterator, Optional, Union
 
-from r2r.core import (
-    DocumentPage,
-    IngestionPipeline,
-    LoggingDatabaseConnection,
-)
+from r2r.core import DocumentPage, IngestionPipeline, LoggingDatabaseConnection
 from r2r.core.adapters import (
     Adapter,
     HTMLAdapter,
@@ -77,7 +73,10 @@ class BasicIngestionPipeline(IngestionPipeline):
         texts = adapter.adapt(entry_data)
         for iteration, text in enumerate(texts):
             yield DocumentPage(
-                doc_id=self.document_id, page_num=iteration, text=text, metadata=self.metadata
+                doc_id=self.document_id,
+                page_num=iteration,
+                text=text,
+                metadata=self.metadata,
             )
 
     def parse_entry(

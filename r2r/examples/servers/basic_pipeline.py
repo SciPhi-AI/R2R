@@ -16,7 +16,7 @@ OPTIONS = {
 
 
 def create_app(config_name: str = "default"):
-    config_name = os.getenv('CONFIG_OPTION') or config_name
+    config_name = os.getenv("CONFIG_OPTION") or config_name
     config_path = OPTIONS[config_name]
 
     app = E2EPipelineFactory.create_pipeline(
