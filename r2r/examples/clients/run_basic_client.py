@@ -1,5 +1,6 @@
 import asyncio
 import glob
+import json
 import os
 
 import fire
@@ -18,6 +19,7 @@ class PDFChat:
             # uncomment the following line to add more documents
             # "the_republic.pdf": "Title: The Republic - Plato",
         }
+        self.history = []
 
     def ingest(self):
         current_file_directory = os.path.dirname(os.path.abspath(__file__))
@@ -48,6 +50,14 @@ class PDFChat:
             print(f"Result {i + 1}: {title}")
             print(body[:500])
             print("\n")
+
+    def rag_chatbot(self, query, model="gpt4-turbo-preview"):
+        while query:
+            self.history.append({'role': 'user', 'content': query})
+            response = self.client.rag_chatbot(json.dumps(self.history))
+            self.history.append({'role': 'assistant', 'content': response})
+            print("rag_chatbot_response = ", response)
+            query = input("> ")
 
     def rag_completion(self, query, model="gpt-4-turbo-preview"):
         rag_response = self.client.rag_completion(

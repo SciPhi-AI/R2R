@@ -186,6 +186,21 @@ def create_app(
             logging.error(f":search: [Error](query={query}, error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
+    @app.post("/rag_chatbot/")
+    async def rag_chatbot(
+        background_tasks: BackgroundTasks,
+        query: RAGQueryModel,
+        request: Request,
+    ):
+        if query.generation_config.stream:
+            raise ValueError("Stream not supported for RAGChatbot.")
+
+        response = rag_pipeline.run(query.query, generation_config=query.generation_config)
+        if response.completion:
+            return response.completion.choices[0].message.content
+        if response.search_results:
+            return response.search_results
+
     @app.post("/rag_completion/")
     async def rag_completion(
         background_tasks: BackgroundTasks,

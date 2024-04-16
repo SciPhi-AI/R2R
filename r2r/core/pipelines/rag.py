@@ -111,21 +111,33 @@ class RAGPipeline(Pipeline):
         self,
         prompt: str,
         generation_config: GenerationConfig,
+        conversation: list[dict] = None,
     ) -> Union[Generator[str, None, None], ChatCompletion]:
         """
         Generates a completion based on the prompt.
         """
         self._check_pipeline_initialized()
-        messages = [
-            {
-                "role": "system",
-                "content": self.prompt_provider.get_prompt("system_prompt"),
-            },
-            {
-                "role": "user",
-                "content": prompt,
-            },
-        ]
+
+        if not conversation:
+            messages = [
+                {
+                    "role": "system",
+                    "content": self.prompt_provider.get_prompt("system_prompt"),
+                },
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ]
+        else:
+            messages = [
+                *conversation,
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ]
+
         if not generation_config.stream:
             return self.llm.get_completion(messages, generation_config)
 
