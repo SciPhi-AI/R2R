@@ -1,6 +1,6 @@
 import logging
 from r2r.core import ScraperPipeline
-from r2r.core import BasicDocument
+from r2r.core import DocumentPage
 
 from typing import Iterator, Optional
 from bs4 import BeautifulSoup
@@ -28,15 +28,16 @@ class BasicScraperPipeline(ScraperPipeline):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def scrape_url(self, url: str) -> Iterator[BasicDocument]:
+    def scrape_url(self, url: str) -> Iterator[DocumentPage]:
         """
         Scrape the given URL and return the raw data.
         """
         response = requests.get(url)
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, "html.parser")
-            yield BasicDocument(
-                id=self.document_id,
+            yield DocumentPage(
+                document_id=self.document_id,
+                page_number=0,
                 text=soup.get_text(),
                 metadata={"url": url},
             )
@@ -51,10 +52,10 @@ class BasicScraperPipeline(ScraperPipeline):
         url: str,
         metadata: Optional[dict] = {},
         **kwargs,
-    ) -> Iterator[BasicDocument]:
+    ) -> Iterator[DocumentPage]:
         """
         Run the scraping method for the given URL.
-        Yields the processed BasicDocument objects.
+        Yields the processed DocumentPage objects.
         """
         self.initialize_pipeline()
         self.document_id = document_id
