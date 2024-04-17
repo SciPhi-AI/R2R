@@ -1,16 +1,16 @@
-## How to use and set up `config.json` for your use case.
+## How to configure your pipeline
 
 ### Introduction
 
-In [Easy Local RAG with R2R: A Step-by-Step Guide](https://r2r-docs.sciphi.ai/tutorials/local_rag), you take a look of how our framework `R2R` work and how to use the RAG pipeline. But now, let's talk more in details about  the `config.json` file.
+In [Easy Local RAG with R2R: A Step-by-Step Guide](https://r2r-docs.sciphi.ai/tutorials/local_rag), you learned how our framework `R2R` works and how to use the RAG pipeline. Now, let's discuss the `config.json` file in more detail.
 
 ### config.json
 
-The `config.json` file is used to set up and configure all services of R2R. It includes settings for embedding, evaluation, language models, logging, ingestion, vector databases, and the application itself. 
+The `config.json` file is used to set up and configure all services of R2R. It includes settings for embedding, evaluation, language models, logging, ingestion, vector databases, and the application itself.
 
-Each section in the `config.json` file corresponds to a different service or aspect of R2R, and you can customize these settings to fit your needs. For example, you can specify which embedding model to use, how to split text for ingestion, or where to store logs. The `config.json` file helps you to easily configure our framework to work the way you want it to.
+Each section in the `config.json` file corresponds to a different service or aspect of R2R, and you can customize these settings to fit your needs. For example, you can specify which embedding model to use, how to split text for ingestion, or where to store logs. The `config.json` file helps you easily configure our framework to work the way you want it to.
 
-The `config.json` file is configured by default for cloud-based services, as you can see in the root directory of the R2R GitHub repository ([see here](https://github.com/SciPhi-AI/R2R/blob/main/config.json)). 
+The `config.json` file is configured by default for cloud-based services, as you can see in the root directory of the R2R GitHub repository ([see here](https://github.com/SciPhi-AI/R2R/blob/main/config.json)).
 
 ```json
 {
@@ -51,7 +51,7 @@ The `config.json` file is configured by default for cloud-based services, as you
 }
 ```
 
-To use the configuration you want, it is as easy as just changing the values of the json file. For example, if you want to use an embedding model of Hugging Face `sentence-transformers`, just have to change the embedding provider:
+To use the configuration you want, simply change the values in the JSON file. For example, if you want to use a Hugging Face `sentence-transformers` embedding model, just change the embedding provider:
 
 ```json
   "embedding": {
@@ -60,31 +60,30 @@ To use the configuration you want, it is as easy as just changing the values of 
   },
 ```
 
-To know what values each section can take, consult `Config setup` documentation page [here](https://r2r-docs.sciphi.ai/deep-dive/config)
+To learn what values each section can take, consult the `Config setup` documentation page [here](https://r2r-docs.sciphi.ai/deep-dive/config)
 
+### Try a Different Set Up of the [Easy Local RAG](https://r2r-docs.sciphi.ai/tutorials/local_rag)
 
-### Try a different set up of the [Easy Local RAG](https://r2r-docs.sciphi.ai/tutorials/local_rag)
+You can see the `config.json` set up of our previous tutorial [here](https://github.com/SciPhi-AI/R2R/blob/main/r2r/examples/configs/local_ollama.json).
 
-You can se the `config.json` set up of our preview tutorial [here](https://github.com/SciPhi-AI/R2R/blob/main/r2r/examples/configs/local_ollama.json).
-
-In that example, a local vector database configuration was used. Now let's see how to use `Qdrant` as vector database and also try a different language model with `ollama`.
+In that example, a local vector database configuration was used. Now let's see how to use `Qdrant` as the vector database and also try a different language model with `ollama`.
 
 #### Use `Qdrant`
 
-For using `Qdrant` as vector database, you need to have the following values configured in your environment variables:
+To use `Qdrant` as the vector database, you need to have the following values configured in your environment variables:
 
 * `QDRANT_HOST`: Qdrant server host
 * `QDRANT_PORT`: Qdrant server port
 * `QDRANT_API_KEY`: Qdrant API key
 
-To do so, if you used linux just need to type the next command on your terminal:
+To do this on Linux, type the following commands in your terminal:
 ```bash
 export QDRANT_HOST=http://localhost
 export QDRANT_PORT=6333
-export QDRANT_API_KEY=your_api_key
+export QDRANT_API_KEY=DUMMY # use a dummy key for local
 ```
 
-And them change the vector_database provider in the `config.json` file:
+Then change the vector_database provider in the `config.json` file:
 ```json
 "vector_database": {
       "provider": "qdrant",
@@ -92,19 +91,19 @@ And them change the vector_database provider in the `config.json` file:
     },
 ```
 
-#### Use a different language model
+#### Use a Different Language Model
 
-In this case you need to have `ollama` installed on your machine, after that you will need to run `ollama serve` before start your RAG process. 
+In this case, you need to have `ollama` installed on your machine. After that, you will need to run `ollama serve` before starting your RAG process.
 
 ```bash
 ollama serve
 ```
 
-#### Run the Easy Local RAG with a different set up
+#### Run the Easy Local RAG with a Different Set Up
 
-##### Start qdrant
+##### Start Qdrant
 
-Since we will now use `qdrant` as a vector database, we need to start it. Read the `qdrant` documentation [here](https://qdrant.tech/documentation/quick-start/) to more details.
+Since we will now use `Qdrant` as the vector database, we need to start it. Read the `Qdrant` documentation [here](https://qdrant.tech/documentation/quick-start/) for more details.
 
 ```bash
 docker pull qdrant/qdrant
@@ -118,10 +117,10 @@ docker run -p 6333:6333 -p 6334:6334 \
 
 ##### Server Standup
 
-Similar to our previous tutorial, only that now we will use a new `congig.sjon` through `--config`
+Similar to our previous tutorial, the only difference is that we will use a new `config.json` through the `--config` flag.
 
 ```python
-python -m r2r.examples.servers.basic_pipeline --config testConfi
+python -m r2r.examples.servers.basic_pipeline --config testConfig
 ```
 
 ##### Ingesting and Embedding Documents
@@ -140,7 +139,7 @@ The output should look something like this:
 
 ##### Running Queries on the Local LLM
 
-As we mentioned previously, To query our knowledge base using ollama, first ensure that you have started the ollama server with this command in the terminal:
+As we mentioned previously, to query our knowledge base using ollama, first ensure that you have started the ollama server with this command in the terminal:
 
 ```bash
 ollama serve
