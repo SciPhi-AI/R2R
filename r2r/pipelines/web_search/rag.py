@@ -86,7 +86,7 @@ class WebRAGPipeline(BasicRAGPipeline):
             [{"type": "external", "result": ele} for ele in external_results]
         )
 
-        return results
+        return external_results
     
     @log_execution_to_db
     def construct_context(self, results: list) -> str:

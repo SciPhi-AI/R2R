@@ -1,5 +1,6 @@
 import asyncio
 import glob
+import json
 import os
 
 import fire
@@ -18,6 +19,7 @@ class PDFChat:
             # uncomment the following line to add more documents
             # "the_republic.pdf": "Title: The Republic - Plato",
         }
+        self.history = []
 
     def ingest(self):
         current_file_directory = os.path.dirname(os.path.abspath(__file__))

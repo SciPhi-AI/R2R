@@ -3,6 +3,7 @@ from .basic.eval import BasicEvalPipeline
 from .basic.ingestion import BasicIngestionPipeline, IngestionType
 from .basic.prompt_provider import BasicPromptProvider
 from .basic.rag import BasicRAGPipeline
+from .chatbot.rag import ChatbotRAGPipeline
 from .web_search.rag import WebRAGPipeline
 
 __all__ = [
@@ -13,4 +14,5 @@ __all__ = [
     "BasicPromptProvider",
     "BasicRAGPipeline",
     "WebRAGPipeline",
+    "ChatbotRAGPipeline",
 ]
