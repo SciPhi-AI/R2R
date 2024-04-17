@@ -87,5 +87,5 @@ class PDFAdapter(Adapter[str]):
                 page_text = "".join(
                     filter(lambda x: x in string.printable, page_text)
                 )
-                text += page_text
+                text += page_text + " "
         return [text]

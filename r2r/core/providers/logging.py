@@ -137,7 +137,7 @@ class LocalLoggingProvider(LoggingProvider):
     def __init__(self, collection_name="logs"):
         self.conn = None
         self.collection_name = collection_name
-        logging_path = os.getenv("LOCAL_DB_PATH")
+        logging_path = os.getenv("LOCAL_DB_PATH", "local.sqlite")
         if not logging_path:
             raise ValueError(
                 "Please set the environment variable LOCAL_DB_PATH to run `LoggingDatabaseConnection` with `local`."

@@ -233,7 +233,10 @@ def create_app(
                 )
                 # Tell the type checker that rag_completion is a RAGPipelineOutput
                 rag_completion = cast(RAGPipelineOutput, untyped_completion)
+
                 if not rag_completion.completion:
+                    if rag_completion.search_results:
+                        return rag_completion
                     raise ValueError(
                         "No completion found in RAGPipelineOutput."
                     )
@@ -257,9 +260,10 @@ def create_app(
                     "run_id": str(rag_pipeline.pipeline_run_info["run_id"]),
                     "settings": query.settings.rag_settings.dict(),
                 }
-                background_tasks.add_task(
-                    requests.post, f"{url}/eval", json=payload
-                )
+                if config.evals.get("frequency", 0.0) > 0.0:
+                    background_tasks.add_task(
+                        requests.post, f"{url}/eval", json=payload
+                    )
 
                 return rag_completion
 

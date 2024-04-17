@@ -82,6 +82,7 @@ class BasicRAGPipeline(RAGPipeline):
             filters=filters,
             limit=limit,
         )
+
         logger.debug(f"Retrieved the raw results shown:\n{results}\n")
 
         return results

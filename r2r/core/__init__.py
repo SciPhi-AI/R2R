@@ -1,4 +1,4 @@
-from .abstractions.document import BasicDocument
+from .abstractions.document import DocumentPage
 from .abstractions.output import RAGPipelineOutput
 from .pipelines.embedding import EmbeddingPipeline
 from .pipelines.eval import EvalPipeline
@@ -17,7 +17,7 @@ from .providers.vector_db import (
 )
 
 __all__ = [
-    "BasicDocument",
+    "DocumentPage",
     "DefaultPromptProvider",
     "RAGPipelineOutput",
     "EmbeddingPipeline",

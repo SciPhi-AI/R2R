@@ -8,7 +8,7 @@ from r2r.core import (
 
 
 class BasicEvalPipeline(EvalPipeline):
-    eval_providers = ["deepeval", "parea"]
+    eval_providers = ["deepeval", "parea", "none"]
 
     def __init__(
         self,
@@ -42,12 +42,14 @@ class BasicEvalPipeline(EvalPipeline):
                 from r2r.eval import PareaEvalProvider
             except ImportError:
                 raise ImportError(
-                    "Parea is not installed. Please install it using `pip install parea`."
+                    "Parea is not installed. Please install it using `pip install parea-ai`."
                 )
             self.eval_provider = PareaEvalProvider(
                 provider,
                 eval_config.get("sampling_fraction", 1.0),
             )
+        else:
+            self.eval_provider = None
 
     @log_execution_to_db
     def evaluate(self, query: str, context: str, completion: str) -> Any:

@@ -13,7 +13,8 @@ Build, deploy, and optimize your RAG system.
 
 ## About
 
-R2R, short for RAG to Riches, provides the fastest and most efficient way to provide high quality RAG to end users. The framework is built around customizable pipelines and a feature-rich FastAPI implementation.
+R2R (RAG to Riches) offers a fast and efficient framework for serving high-quality Retrieval-Augmented Generation (RAG) to end users. The framework is designed with customizable pipelines and a feature-rich FastAPI implementation, enabling developers to quickly deploy and scale RAG-based applications.
+
 
 ## Why?
 
@@ -43,16 +44,18 @@ Note - the example above uses [SciPhi Cloud](https://app.sciphi.ai) to pair with
 
 [SciPhi Cloud](https://docs.sciphi.ai/)
 
+[Local RAG Tutorial](https://r2r-docs.sciphi.ai/tutorials/local_rag)
+
 ## Quick Install:
 
 ```bash
 # use the `'r2r[all]'` to download all required deps
-pip install 'r2r[parsing,eval]'
+pip install 'r2r[eval]'
 
 # setup env 
 export OPENAI_API_KEY=sk-...
 # Set `LOCAL_DB_PATH` for local testing
-export LOCAL_DB_PATH=local.sqlite
+export LOCAL_DB_PATH=local.sqlite # robust providers available (e.g. qdrant, pgvector, ..)
 
 # OR do `vim .env.example && cp .env.example .env`
 # INCLUDE secrets and modify config.json
@@ -64,8 +67,10 @@ export LOCAL_DB_PATH=local.sqlite
 ```bash
 docker pull emrgntcmplxty/r2r:latest
 
-# Place your secrets in `.env`
-docker run -d --name r2r_container -p 8000:8000 --env-file .env r2r
+# Choose from CONFIG_OPTION in {`default`, `local_ollama`}
+# For cloud deployment, select `default` and pass `--env-file .env`
+# For local deployment, select `local_ollama`
+docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  emrgntcmplxty/r2r:latest
 ```
 
 ## Basic Example
@@ -74,6 +79,7 @@ docker run -d --name r2r_container -p 8000:8000 --env-file .env r2r
 
    ```bash
    # launch the server
+   # Do `export CONFIG_OPTION=local_ollama` to run the pipeline with local ollama instead of OpenAI
    python -m r2r.examples.servers.basic_pipeline
    ```
 
@@ -81,8 +87,12 @@ docker run -d --name r2r_container -p 8000:8000 --env-file .env r2r
 
    ```bash
    # run the client
-   python -m r2r.examples.clients.run_basic_client
+   python -m r2r.examples.clients.run_basic_client ingest
+   python -m r2r.examples.clients.run_basic_client search --query="What is the meaning of life?"
    ```
+### Running Basic Local RAG
+
+[Refer here](https://r2r-docs.sciphi.ai/tutorials/local_rag) for a tutorial on how to modify the commands above to use local providers.
 
 ## Synthetic Queries Example
 
@@ -100,7 +110,7 @@ docker run -d --name r2r_container -p 8000:8000 --env-file .env r2r
    python -m r2r.examples.clients.run_synthetic_query_client
    ```
 
-## Extras Examples
+## Extra Examples
 
 [`reducto_pipeline.py`](r2r/examples/servers/reducto_pipeline.py): Launch this script to activate a backend server that integrates a Reducto adapter for enhanced PDF ingestion.
 

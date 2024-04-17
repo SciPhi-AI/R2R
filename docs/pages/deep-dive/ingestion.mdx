@@ -4,7 +4,7 @@ The Ingestion Pipeline is responsible for processing incoming documents and conv
 
 ## Basic Ingestion Pipeline
 
-The `BasicIngestionPipeline` is a simple implementation of the `IngestionPipeline` abstract base class. It provides a straightforward way to process documents based on their data type and yields `BasicDocument` objects.
+The `BasicIngestionPipeline` is a simple implementation of the `IngestionPipeline` abstract base class. It provides a straightforward way to process documents based on their data type and yields `DocumentPage` objects.
 
 ### Supported Data Types
 
@@ -20,11 +20,11 @@ The `BasicIngestionPipeline` is initialized with an optional `adapters` dictiona
 
 ### Processing Data
 
-The `process_data` method processes data into plaintext based on the data type using the appropriate adapter and yields `BasicDocument` objects.
+The `process_data` method processes data into plaintext based on the data type using the appropriate adapter and yields `DocumentPage` objects.
 
 ### Parsing Entry
 
-The `parse_entry` method is a wrapper around the `process_data` method. It takes the `entry_type` and `entry_data` as input, processes the data, and yields the resulting `BasicDocument` objects.
+The `parse_entry` method is a wrapper around the `process_data` method. It takes the `entry_type` and `entry_data` as input, processes the data, and yields the resulting `DocumentPage` objects.
 
 ## Adapters
 
@@ -38,7 +38,7 @@ Adapters are passed to the `IngestionPipeline` during initialization and are use
 
 ## Pipeline Execution
 
-The `run` method from the base class (`IngestionPipeline`) is used to execute the ingestion pipeline. It processes the incoming documents, yields the resulting `BasicDocument` objects, and uses the appropriate adapters for parsing based on the data type.
+The `run` method from the base class (`IngestionPipeline`) is used to execute the ingestion pipeline. It processes the incoming documents, yields the resulting `DocumentPage` objects, and uses the appropriate adapters for parsing based on the data type.
 
 ## Using a Custom Adapter (Reducto)
 
@@ -67,7 +67,7 @@ For more advanced customization, you can create a custom ingestion pipeline by s
 
 ```python
 from typing import Iterator, Union
-from r2r.core import BasicDocument, IngestionPipeline
+from r2r.core import DocumentPage, IngestionPipeline
 from r2r.core.adapters import ReductoAdapter
 from r2r.pipelines import IngestionType
 
@@ -76,7 +76,7 @@ class CustomIngestionPipeline(IngestionPipeline):
         self,
         entry_type: IngestionType,
         entry_data: Union[bytes, str],
-    ) -> Iterator[BasicDocument]:
+    ) -> Iterator[DocumentPage]:
         adapter = self.adapters.get(
             entry_type,
             self.default_adapters[entry_type]
@@ -85,9 +85,10 @@ class CustomIngestionPipeline(IngestionPipeline):
         if isinstance(adapter, ReductoAdapter):
             # Custom processing for ReductoAdapter
             texts = adapter.adapt(entry_data)
-            for text in texts:
-                yield BasicDocument(
-                    id=self.document_id,
+            for it, text in enumerate(texts):
+                yield DocumentPage(
+                    document_id=self.document_id,
+                    page_number=it,
                     text=text,
                     metadata={
                         "source": "Reducto",
@@ -98,9 +99,10 @@ class CustomIngestionPipeline(IngestionPipeline):
         else:
             # Custom processing for other adapters
             texts = adapter.adapt(entry_data)
-            for text in texts:
-                yield BasicDocument(
-                    id=self.document_id,
+            for it, text in enumerate(texts):
+                yield DocumentPage(
+                    document_id=self.document_id,
+                    page_number=it,
                     text=text.upper(),  # Custom modification: convert text to uppercase
                     metadata=self.metadata,
                 )
@@ -118,7 +120,7 @@ In this example, we create a custom `CustomIngestionPipeline` class that inherit
 
 Inside the `process_data` method, we retrieve the appropriate adapter based on the `entry_type`. If the adapter is an instance of `ReductoAdapter`, we apply custom processing similar to the previous example.
 
-For other adapters, we apply custom processing by converting the extracted text to uppercase using `text.upper()` before yielding the `BasicDocument` objects.
+For other adapters, we apply custom processing by converting the extracted text to uppercase using `text.upper()` before yielding the `DocumentPage` objects.
 
 To use the fully customized ingestion pipeline, we create an instance of the `E2EPipelineFactory` and pass the `CustomIngestionPipeline` as the `ingestion_pipeline_impl` parameter.
 

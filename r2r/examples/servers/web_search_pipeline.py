@@ -1,13 +1,13 @@
-"""A simple example to demonstrate the usage of `WebSearchRAGPipeline`."""
+"""A simple example to demonstrate the usage of `WebRAGPipeline`."""
 
 import uvicorn
 
 from r2r.main import E2EPipelineFactory, R2RConfig
-from r2r.pipelines import WebSearchRAGPipeline
+from r2r.pipelines import WebRAGPipeline
 
-# Creates a pipeline using the `WebSearchRAGPipeline` implementation
+# Creates a pipeline using the `WebRAGPipeline` implementation
 app = E2EPipelineFactory.create_pipeline(
-    config=R2RConfig.load_config(), rag_pipeline_impl=WebSearchRAGPipeline
+    config=R2RConfig.load_config(), rag_pipeline_impl=WebRAGPipeline
 )
 
 

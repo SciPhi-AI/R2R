@@ -53,17 +53,17 @@ The default values for the config are shown below:
 The available options for each section are:
 
 - **embedding**:
-  - `provider`: `"openai"`, `"sentence-transformers"` (see [Embedding Providers](providers/embeddings.md) for more info)
+  - `provider`: `"openai"`, `"sentence-transformers"` (see [Embedding Providers](/providers/embeddings.md) for more info)
   - `model`: embedding model to use (e.g., `"text-embedding-ada-002"` for OpenAI)
   - `dimension`: embedding dimension
   - `batch_size`: number of texts to embed in each batch
 
 - **evals**:
-  - `provider`: `"deepeval"`, `"parea"` (see [Evaluation Providers](providers/evals.md) for more info)
+  - `provider`: `"deepeval"`, `"parea"` (see [Evaluation Providers](/providers/evals.md) for more info)
   - `frequency`: sampling frequency for evaluation (e.g., `1.0` for 100% of requests)
 
 - **language_model**:
-  - `provider`: `"litellm"`, `"openai"`, `"llamacpp"` (see [LLM Providers](providers/llms.md) for more info)
+  - `provider`: `"litellm"`, `"openai"`, `"llama-cpp"` (see [LLM Providers](/providers/llms.md) for more info)
 
 - **logging_database**:
   - `provider`: `"local"`, `"postgres"`, `"redis"`
@@ -78,7 +78,7 @@ The available options for each section are:
     - `chunk_overlap`: number of overlapping characters between chunks
 
 - **vector_database**:
-  - `provider`: `"local"`, `"pgvector"`, `"qdrant"` (see [Vector Database Providers](providers/vector-databases.md) for more info)
+  - `provider`: `"local"`, `"pgvector"`, `"qdrant"` (see [Vector Database Providers](/providers/vector-databases.md) for more info)
   - `collection_name`: name of the collection to store vector embeddings
 
 - **app**:
@@ -87,10 +87,10 @@ The available options for each section are:
 
 For more detailed information on configuring specific providers, please refer to the relevant documentation:
 
-- [LLM Providers](providers/llms.md)
-- [Vector Database Providers](providers/vector-databases.md)
-- [Embedding Providers](providers/embeddings.md)
-- [Evaluation Providers](providers/evals.md)
+- [LLM Providers](/providers/llms.md)
+- [Vector Database Providers](/providers/vector-databases.md)
+- [Embedding Providers](/providers/embeddings.md)
+- [Evaluation Providers](/providers/evals.md)
 
 These documentation files provide in-depth guides on setting up and using each provider, including any required environment variables and additional configuration options.
 
