@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Any, Iterator, Optional
 
-from ..abstractions.document import BasicDocument
+from ..abstractions.document import DocumentPage
 from ..providers.logging import LoggingDatabaseConnection
 from ..utils import generate_run_id
 from .pipeline import Pipeline
@@ -22,14 +22,14 @@ class ScraperPipeline(Pipeline):
             "type": "scraper",
         }
 
-    def scrape_url(self, url: str) -> Iterator[BasicDocument]:
+    def scrape_url(self, url: str) -> Iterator[DocumentPage]:
         """
         Scrape the given URL and return the raw data.
         """
         pass
 
 
-    def run(self, document_id: str, url: str, **kwargs) -> Iterator[BasicDocument]:
+    def run(self, document_id: str, url: str, **kwargs) -> Iterator[DocumentPage]:
         """
         Run the scraping method for the given URL.
         Yields the processed BasicDocument objects.
