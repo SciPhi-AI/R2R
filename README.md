@@ -83,12 +83,12 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
    python -m r2r.examples.servers.basic_pipeline
    ```
 
-[`run_basic_client.py`](r2r/examples/clients/run_basic_client.py): This **client script** should be executed subsequent to the server startup above. It facilitates the upload of text entries and PDFs to the server using the Python client and demonstrates the management of document and user-level vectors through its built-in features.
+[`run_qna_client.py`](r2r/examples/clients/run_qna_client.py): This **client script** should be executed subsequent to the server startup above. It facilitates the upload of text entries and PDFs to the server using the Python client and demonstrates the management of document and user-level vectors through its built-in features.
 
    ```bash
    # run the client
-   python -m r2r.examples.clients.run_basic_client ingest
-   python -m r2r.examples.clients.run_basic_client search --query="What is the meaning of life?"
+   python -m r2r.examples.clients.run_qna_client ingest
+   python -m r2r.examples.clients.run_qna_client search --query="What is the meaning of life?"
    ```
 ### Running Basic Local RAG
 
