@@ -1,0 +1,170 @@
+## How to use and set up `config.json` for your use case.
+
+### Introduction
+
+In [Easy Local RAG with R2R: A Step-by-Step Guide](https://r2r-docs.sciphi.ai/tutorials/local_rag), you take a look of how our framework `R2R` work and how to use the RAG pipeline. But now, let's talk more in details about  the `config.json` file.
+
+### config.json
+
+The `config.json` file is used to set up and configure all services of R2R. It includes settings for embedding, evaluation, language models, logging, ingestion, vector databases, and the application itself. 
+
+Each section in the `config.json` file corresponds to a different service or aspect of R2R, and you can customize these settings to fit your needs. For example, you can specify which embedding model to use, how to split text for ingestion, or where to store logs. The `config.json` file helps you to easily configure our framework to work the way you want it to.
+
+The `config.json` file is configured by default for cloud-based services, as you can see in the root directory of the R2R GitHub repository ([see here](https://github.com/SciPhi-AI/R2R/blob/main/config.json)). 
+
+```json
+{
+  "embedding": {
+    "provider": "openai",
+    "model": "text-embedding-3-small",
+    "dimension": 1536,
+    "batch_size": 32
+  },
+  "evals": {
+    "provider": "parea",
+    "frequency": 1.0
+  },
+  "language_model": {
+    "provider": "litellm"
+  },
+  "logging_database": {
+    "provider": "local",
+    "collection_name": "demo_logs",
+    "level": "INFO"
+  },
+  "ingestion":{
+    "provider": "local",
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 512,
+      "chunk_overlap": 20
+    }
+  },
+  "vector_database": {
+    "provider": "local",
+    "collection_name": "demo_vecs"
+  },
+  "app": {
+    "max_logs": 100,
+    "max_file_size_in_mb": 100
+  }
+}
+```
+
+To use the configuration you want, it is as easy as just changing the values of the json file. For example, if you want to use an embedding model of Hugging Face `sentence-transformers`, just have to change the embedding provider:
+
+```json
+  "embedding": {
+    "provider": "sentence-transformers",
+    "model": "all-MiniLM-L6-v2",
+  },
+```
+
+To know what values each section can take, consult `Config setup` documentation page [here](https://r2r-docs.sciphi.ai/deep-dive/config)
+
+
+### Try a different set up of the [Easy Local RAG](https://r2r-docs.sciphi.ai/tutorials/local_rag)
+
+You can se the `config.json` set up of our preview tutorial [here](https://github.com/SciPhi-AI/R2R/blob/main/r2r/examples/configs/local_ollama.json).
+
+In that example, a local vector database configuration was used. Now let's see how to use `Qdrant` as vector database and also try a different language model with `ollama`.
+
+#### Use `Qdrant`
+
+For using `Qdrant` as vector database, you need to have the following values configured in your environment variables:
+
+* `QDRANT_HOST`: Qdrant server host
+* `QDRANT_PORT`: Qdrant server port
+* `QDRANT_API_KEY`: Qdrant API key
+
+To do so, if you used linux just need to type the next command on your terminal:
+```bash
+export QDRANT_HOST=http://localhost
+export QDRANT_PORT=6333
+export QDRANT_API_KEY=your_api_key
+```
+
+And them change the vector_database provider in the `config.json` file:
+```json
+"vector_database": {
+      "provider": "qdrant",
+      "collection_name": "demo_vecs"
+    },
+```
+
+#### Use a different language model
+
+In this case you need to have `ollama` installed on your machine, after that you will need to run `ollama serve` before start your RAG process. 
+
+```bash
+ollama serve
+```
+
+#### Run the Easy Local RAG with a different set up
+
+##### Start qdrant
+
+Since we will now use `qdrant` as a vector database, we need to start it. Read the `qdrant` documentation [here](https://qdrant.tech/documentation/quick-start/) to more details.
+
+```bash
+docker pull qdrant/qdrant
+```
+
+```bash
+docker run -p 6333:6333 -p 6334:6334 \
+    -v $(pwd)/qdrant_storage:/qdrant/storage:z \
+    qdrant/qdrant
+```
+
+##### Server Standup
+
+Similar to our previous tutorial, only that now we will use a new `congig.sjon` through `--config`
+
+```python
+python -m r2r.examples.servers.basic_pipeline --config testConfi
+```
+
+##### Ingesting and Embedding Documents
+
+This step is exactly the same:
+
+```python
+python -m r2r.examples.clients.run_basic_client ingest
+```
+
+The output should look something like this:
+
+```
+> Upload response =  {'message': "File 'meditations.pdf' processed and saved at '/Users/user/R2R/uploads/meditations.pdf'"}
+```
+
+##### Running Queries on the Local LLM
+
+As we mentioned previously, To query our knowledge base using ollama, first ensure that you have started the ollama server with this command in the terminal:
+
+```bash
+ollama serve
+```
+
+Then, to ask a question, run:
+
+```python
+python -m r2r.examples.clients.run_basic_client rag_completion \
+  --query="What does Marcus Aurelius say about the rules of life?" \
+  --model="ollama/phi" # or any other LLM that you have
+```
+
+After a brief wait, you should see the LLM's response, perhaps something like:
+
+```bash
+'message': {'content': ' Marcus Aurelius says that one should follow the rules of life by being honest, just, and virtuous. He also emphasizes the importance of maintaining a calm and peaceful state of mind in all circumstances. Additionally, he suggests that one should not be swayed by external factors such as pleasure or good fortune, but rather focus on cultivating inner virtues.\n', 'role': 'assistant', 'function_call': None, 'tool_calls': None}}], 'created': 1712946429, 'model': 'ollama/phi', 'object': 'chat.completion', 'system_fingerprint': None, 'usage': {'completion_tokens': 70, 'prompt_tokens': 1021, 'total_tokens': 1091}}}
+```
+
+> Marcus Aurelius says that one should follow the rules of life by being honest, just, and virtuous. He also emphasizes the importance of maintaining a calm and peaceful state of mind in all circumstances. Additionally, he suggests that one should not be swayed by external factors such as pleasure or good fortune, but rather focus on cultivating inner virtues.\n
+
+
+I hope you learned how easy it is to configure the `config.json` file for your use cases.
+
+If you have any questions or want to learn more, [R2R's GitHub repo](https://github.com/SciPhi-ai/R2R), [R2R Discord](https://discord.gg/p6KqD2kjtB), and [docs](https://r2r-docs.sciphi.ai/) are great resources.
+
+Happy building!
