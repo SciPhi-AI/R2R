@@ -204,9 +204,9 @@ def create_app(
                 # Tell the type checker that rag_completion is a RAGPipelineOutput
                 rag_completion = cast(RAGPipelineOutput, untyped_completion)
 
-                if rag_completion.search_results:
-                    return rag_completion
                 if not rag_completion.completion:
+                    if rag_completion.search_results:
+                        return rag_completion
                     raise ValueError(
                         "No completion found in RAGPipelineOutput."
                     )
