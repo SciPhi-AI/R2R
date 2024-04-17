@@ -6,6 +6,8 @@ import logging
 import json
 import re
 
+from typing import Optional
+
 from r2r.core import GenerationConfig
 from r2r.core.abstractions.output import RAGPipelineOutput
 
@@ -54,7 +56,16 @@ class ChatbotRAGPipeline(WebRAGPipeline):
         match = re.match(r"<search>(.*)</search>", response)
         return match.group(1) if match else None
 
-    def run(self, query: str, generation_config: GenerationConfig) -> str:
+    def run(
+        self,
+        query,
+        filters={},
+        limit=10,
+        search_only=False,
+        generation_config: Optional[GenerationConfig] = None,
+        *args,
+        **kwargs,
+    ) -> str:
         self.initialize_pipeline(query, False)
 
         # Extracts the full conversation history from the query.

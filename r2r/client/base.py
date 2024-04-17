@@ -90,14 +90,6 @@ class R2RClient:
         response = requests.post(url, json=json_data)
         return response.json()
 
-    def rag_chatbot(self, query: str):
-        url = f"{self.base_url}/rag_chatbot/"
-        json_data = {
-            "query": query,
-            "generation_config": {},
-        }
-        return requests.post(url, json=json_data).json()
-
     # TODO - Cleanup redundant code in the following methods
     # TODO - Consider how to improve `rag_completion` and
     # `stream_rag_completion` workflows.
