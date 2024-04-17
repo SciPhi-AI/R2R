@@ -12,7 +12,7 @@ OPTIONS = {
     "default": None,
     "local_ollama": os.path.join(configs_path, "local_ollama.json"),
     "local_llama_cpp": os.path.join(configs_path, "local_llama_cpp.json"),
-    "local_embedding_qdrant": os.path.join(configs_path, "local_embedding_qdrant.json"),
+    "local_ollama_qdrant": os.path.join(configs_path, "local_ollama_qdrant.json"),
 }
 
 
