@@ -14,6 +14,7 @@ from r2r.llms import (
     OpenAILLM,
 )
 from r2r.pipelines import (
+    BasicScraperPipeline,
     BasicEmbeddingPipeline,
     BasicEvalPipeline,
     BasicIngestionPipeline,
@@ -94,6 +95,7 @@ class E2EPipelineFactory:
         llm=None,
         text_splitter=None,
         adapters=None,
+        scraper_pipeline_impl=BasicScraperPipeline,
         ingestion_pipeline_impl=BasicIngestionPipeline,
         embedding_pipeline_impl=BasicEmbeddingPipeline,
         rag_pipeline_impl=BasicRAGPipeline,
@@ -146,8 +148,10 @@ class E2EPipelineFactory:
             config.evals, logging_connection=logging_connection
         )
         ingst_pipeline = ingestion_pipeline_impl(adapters=adapters)
+        scrpr_pipeline = scraper_pipeline_impl()
 
         app = app_fn(
+            scraper_pipeline=scrpr_pipeline,
             ingestion_pipeline=ingst_pipeline,
             embedding_pipeline=embd_pipeline,
             rag_pipeline=cmpl_pipeline,

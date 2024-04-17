@@ -1,7 +1,9 @@
+import re
 import json
 import logging
 from pathlib import Path
 from typing import AsyncGenerator, Generator, Optional, Union, cast
+from pydantic import HttpUrl
 
 import requests
 from fastapi import (
@@ -16,6 +18,7 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 
 from r2r.core import (
+    ScraperPipeline,
     EmbeddingPipeline,
     EvalPipeline,
     GenerationConfig,
@@ -52,6 +55,7 @@ MB_CONVERSION_FACTOR = 1024 * 1024
 def create_app(
     ingestion_pipeline: IngestionPipeline,
     embedding_pipeline: EmbeddingPipeline,
+    scraper_pipeline: ScraperPipeline,
     eval_pipeline: EvalPipeline,
     rag_pipeline: RAGPipeline,
     config: R2RConfig,
@@ -68,6 +72,32 @@ def create_app(
 
     if not upload_path.exists():
         upload_path.mkdir()
+
+    @app.post("/process_url")
+    async def process_url(
+        document_id: str = Form(...),
+        url: HttpUrl = Form(...),
+        metadata: str = Form("{}"),
+        settings: str = Form("{}"),
+    ):
+        metadata_json = json.loads(metadata)
+        settings_model = SettingsModel.parse_raw(settings)
+
+        
+        try:
+            docs = scraper_pipeline.run(
+                document_id=document_id, url=str(url), metadata=metadata_json
+            )
+            for doc in docs:
+                embedding_pipeline.run(
+                    doc, **settings_model.embedding_settings.dict()
+                )
+            return {"message": f"URL {url} processed successfully."}
+        except Exception as e:
+            logging.error(
+                f"scrape_url_and_process: [Error](url={url}, error={str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/upload_and_process_file/")
     # TODO - Why can't we use a BaseModel to represent the request?

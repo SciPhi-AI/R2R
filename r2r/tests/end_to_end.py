@@ -10,6 +10,14 @@ import pytest
 from r2r.client import R2RClient
 from r2r.core.utils import generate_id_from_label
 
+import requests
+
+"""
+To run the test locally, run
+export LOCAL_DB_PATH=local.sqlite
+export OPENAI_API_KEY=[your open ai key]
+"""
+
 
 @pytest.fixture(scope="session", autouse=True)
 def r2r_server():
@@ -19,7 +27,7 @@ def r2r_server():
             "poetry",
             "run",
             "uvicorn",
-            "r2r.examples.basic.app:app",
+            "r2r.examples.servers.basic_pipeline:app",
             "--port=8010",
             "--workers=1",
         ]
@@ -46,6 +54,37 @@ def r2r_server():
 def client():
     base_url = "http://localhost:8010"
     return R2RClient(base_url)
+
+def test_test_function(client):
+    test_function_response = client.test_function()
+    assert test_function_response == "Test function called."
+
+
+def test_process_url(client):
+    url = "https://www.google.com"
+    document_id = generate_id_from_label("example")
+    metadata = {"tags": ["example", "test"]}
+
+    server_url = "http://localhost:8010/process_url/"
+    json_data = {
+        "document_id": document_id,
+        "url": url,
+        "metadata": (json.dumps(metadata) if metadata else json.dumps({}))
+    }
+    process_url_response = requests.post(server_url, data=json_data).json()
+    assert "processed successfully." in process_url_response["message"]
+
+    search_response = client.search(
+        "example",
+        5,
+        filters={"document_id": document_id},
+    )
+    print("url search response: ", search_response)
+    assert len(search_response) > 0
+    assert url in search_response[0]["metadata"]["url"]
+    assert "Google" in search_response[0]["metadata"]["text"]
+
+    client.filtered_deletion("document_id", document_id)
 
 
 def test_upload_and_process_json(client):

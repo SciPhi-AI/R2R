@@ -4,6 +4,7 @@ from .pipelines.embedding import EmbeddingPipeline
 from .pipelines.eval import EvalPipeline
 from .pipelines.ingestion import IngestionPipeline
 from .pipelines.rag import RAGPipeline
+from .pipelines.scraping import ScraperPipeline
 from .providers.embedding import EmbeddingProvider
 from .providers.eval import EvalProvider
 from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
@@ -22,6 +23,7 @@ __all__ = [
     "EmbeddingPipeline",
     "EvalPipeline",
     "IngestionPipeline",
+    "ScraperPipeline",
     "RAGPipeline",
     "LoggingDatabaseConnection",
     "log_execution_to_db",
