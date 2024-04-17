@@ -6,7 +6,7 @@ from r2r.client import R2RClient
 from r2r.core.utils import generate_id_from_label
 
 
-class ChatbotChat:
+class ChatbotClient:
     def __init__(self, base_url="http://localhost:8000", user_id=None):
         self.client = R2RClient(base_url)
         if not user_id:
@@ -39,4 +39,4 @@ class ChatbotChat:
 
 
 if __name__ == "__main__":
-    fire.Fire(ChatbotChat)
+    fire.Fire(ChatbotClient)

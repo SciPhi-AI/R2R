@@ -25,7 +25,7 @@ const config: DocsThemeConfig = {
       <meta property="og:image" content="/r2r_mini.jpg" />
     </>
   ),
-  defaultTheme: 'dark',
+  darkMode: true,
   project: {
     link: "https://github.com/SciPhi-AI/R2R",
   },
