@@ -105,7 +105,7 @@ With our environment set up and our server running in a separate process, we're 
 Run this command to ingest the document:
 
 ```bash
-python -m r2r.examples.clients.run_basic_client ingest
+python -m r2r.examples.clients.run_qna_client ingest
 ```
 
 The output should look something like this:
@@ -137,7 +137,7 @@ ollama serve llama2
 Then, to ask a question, run:
 
 ```bash
-python -m r2r.examples.clients.run_basic_client rag_completion \
+python -m r2r.examples.clients.run_qna_client rag_completion \
   --query="What does Marcus Aurelius say about the rules of life?" \
   --model="ollama/llama2"
 ```
@@ -145,7 +145,7 @@ python -m r2r.examples.clients.run_basic_client rag_completion \
 For Llama.cpp, run:
 
 ```bash
-python -m r2r.examples.clients.run_basic_client rag_completion \
+python -m r2r.examples.clients.run_qna_client rag_completion \
   --query="What does Marcus Aurelius say about the rules of life?" \
   --model=tinyllama-1.1b-chat-v1.0.Q2_K.gguf
 ```

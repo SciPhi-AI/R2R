@@ -2,7 +2,7 @@
 
 ### Introduction
 
-In [Easy Local RAG with R2R: A Step-by-Step Guide](https://r2r-docs.sciphi.ai/tutorials/local_rag), you take a look of how our framework `R2R` work and how to use the RAG pipeline. But now, let's talk more in details about  the `config.json` file.
+In [Easy Local RAG with R2R: A Step-by-Step Guide](https://r2r-docs.sciphi.ai/tutorials/local_rag), you take a look of how our framework `R2R` work and how to use the RAG pipeline. But now, let's talk more in details about the `config.json` file.
 
 ### config.json
 
@@ -51,7 +51,7 @@ The `config.json` file is configured by default for cloud-based services, as you
 }
 ```
 
-To use the configuration you want, it is as easy as just changing the values of the json file. For example, if you want to use an embedding model of Hugging Face `sentence-transformers`, just have to change the embedding provider:
+To use the configuration you want, it is as easy as just changing the values of the Json file. For example, if you want to use an embedding model of Hugging Face `sentence-transformers`, just have to change the embedding provider:
 
 ```json
   "embedding": {
@@ -65,7 +65,7 @@ To know what values each section can take, consult `Config setup` documentation 
 
 ### Try a different set up of the [Easy Local RAG](https://r2r-docs.sciphi.ai/tutorials/local_rag)
 
-You can se the `config.json` set up of our preview tutorial [here](https://github.com/SciPhi-AI/R2R/blob/main/r2r/examples/configs/local_ollama.json).
+You can see the `config.json` set up of our preview tutorial [here](https://github.com/SciPhi-AI/R2R/blob/main/r2r/examples/configs/local_ollama.json).
 
 In that example, a local vector database configuration was used. Now let's see how to use `Qdrant` as vector database and also try a different language model with `ollama`.
 
@@ -77,7 +77,7 @@ For using `Qdrant` as vector database, you need to have the following values con
 * `QDRANT_PORT`: Qdrant server port
 * `QDRANT_API_KEY`: Qdrant API key
 
-To do so, if you used linux just need to type the next command on your terminal:
+To do so, if you use Linux just need to type the next commands on your terminal:
 ```bash
 export QDRANT_HOST=http://localhost
 export QDRANT_PORT=6333
@@ -118,10 +118,10 @@ docker run -p 6333:6333 -p 6334:6334 \
 
 ##### Server Standup
 
-Similar to our previous tutorial, only that now we will use a new `congig.sjon` through `--config`
+Similar to our previous tutorial, only that now we will use a new `config.json` through `--config` called `local_embedding_qdrant.json` (take a look of the full file [here](https://github.com/SciPhi-AI/R2R/blob/main/r2r/examples/configs/local_embedding_qdrant.json))
 
 ```python
-python -m r2r.examples.servers.basic_pipeline --config testConfi
+python -m r2r.examples.servers.basic_pipeline --config local_embedding_qdrant
 ```
 
 ##### Ingesting and Embedding Documents
@@ -129,7 +129,7 @@ python -m r2r.examples.servers.basic_pipeline --config testConfi
 This step is exactly the same:
 
 ```python
-python -m r2r.examples.clients.run_basic_client ingest
+python -m r2r.examples.clients.run_qna_client ingest
 ```
 
 The output should look something like this:
@@ -140,7 +140,7 @@ The output should look something like this:
 
 ##### Running Queries on the Local LLM
 
-As we mentioned previously, To query our knowledge base using ollama, first ensure that you have started the ollama server with this command in the terminal:
+As we mentioned previously, to query our knowledge base using `ollama`, first ensure that you have started the ollama server with this command in the terminal:
 
 ```bash
 ollama serve
@@ -149,7 +149,7 @@ ollama serve
 Then, to ask a question, run:
 
 ```python
-python -m r2r.examples.clients.run_basic_client rag_completion \
+python -m r2r.examples.clients.run_qna_client rag_completion \
   --query="What does Marcus Aurelius say about the rules of life?" \
   --model="ollama/phi" # or any other LLM that you have
 ```
