@@ -1,6 +1,7 @@
 import re
 import json
 import logging
+import os
 from pathlib import Path
 from typing import AsyncGenerator, Generator, Optional, Union, cast
 from pydantic import HttpUrl
@@ -71,7 +72,7 @@ def create_app(
     upload_path = upload_path or find_project_root(CURRENT_DIR) / "uploads"
 
     if not upload_path.exists():
-        upload_path.mkdir()
+        os.makedirs(upload_path, exist_ok=True)
 
     @app.post("/process_url")
     async def process_url(
