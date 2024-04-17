@@ -60,7 +60,7 @@ reducto = ["boto3"]
 exa = ["exa-py"]
 sentence_transformers = ["sentence-transformers"]
 local_llm = ["llama-cpp-python", "sentence-transformers"]
-all = ["tiktoken", "datasets", "qdrant_client", "psycopg2-binary", "sentry-sdk", "parea-ai", "boto3", "exa-py", "llama-cpp-python"]
+all = ["tiktoken", "datasets", "qdrant_client", "psycopg2-binary", "sentry-sdk", "parea-ai", "boto3", "exa-py", "llama-cpp-python", "ionic-api-sdk"]
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.3.0"
