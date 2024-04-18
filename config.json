@@ -1,0 +1,36 @@
+{
+  "embedding": {
+    "provider": "openai",
+    "model": "text-embedding-3-small",
+    "dimension": 1536,
+    "batch_size": 32
+  },
+  "evals": {
+    "provider": "parea",
+    "frequency": 1.0
+  },
+  "language_model": {
+    "provider": "litellm"
+  },
+  "logging_database": {
+    "provider": "local",
+    "collection_name": "demo_logs",
+    "level": "INFO"
+  },
+  "ingestion":{
+    "provider": "local",
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 512,
+      "chunk_overlap": 20
+    }
+  },
+  "vector_database": {
+    "provider": "local",
+    "collection_name": "demo_vecs"
+  },
+  "app": {
+    "max_logs": 100,
+    "max_file_size_in_mb": 100
+  }
+}
