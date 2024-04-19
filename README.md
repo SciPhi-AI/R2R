@@ -87,8 +87,36 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
 
    ```bash
    # run the client
-   python -m r2r.examples.clients.run_qna_client ingest
-   python -m r2r.examples.clients.run_qna_client search --query="What is the meaning of life?"
+   
+   # ingest the default documents
+   python -m r2r.examples.clients.run_qna_client ingest # ingests Lyft 10K
+
+   python -m r2r.examples.clients.run_qna_client search --query="What was lyfts profit in 2020?"
+
+   # Result 1: Title: Lyft 10k 2021
+   # Net loss was $1.0 billion, a decreas e of 42% and 61% compared to 2020 and 2019, respectively.
+   # Adjusted EBITDA was $92.9 million, marking the Company s first annual Adjusted EBITDA profit.
+   # Cash used in operating activi ties was $101.7 million.
+   # Unrestricted cash and cash equivalents and short-term investments totaled $2.3 billion as of December 31, 2021.Impact of COVID-19 to our Business
+   # The
+
+
+   # Result 2: Title: Lyft 10k 2021
+   # Total revenue was $3.2 billion, an increase of 36% year-over-year.
+   # Total costs and expenses were $4.3 billion, including stock-based compensation expense of $724.6 million and insurance costs related to changes to 
+   # le to historical periods of $250.3 million.
+   # Loss from operations was $1.1 billion. 
+   # Other income was $135.9 million, in cluding a pre-tax gain of $119.3 million as a result of the gain on the transaction with Woven Planet.
+
+   # ... 
+
+   python -m r2r.examples.clients.run_qna_client rag_completion_streaming --query="What was lyfts profit in 2020?"
+
+   # <search>[{"id": "a0f6b427-9083-5ef2-aaa1-024b6cebbaee", "score": 0.6862949051074227, "metadata": {"user_id": "df7021ed-6e66-5581-bd69-d4e9ac1e5ada", "pipeline_run_id": "0c2c9a81-0720-4e34-8736-b66189956013", "text": "Title: Lyft 10k 2021\nNet loss was $ ... </search>
+   
+   # <context> Title: Lyft 10k 2021 ... </context>
+   
+   # <completion>Lyft's net loss in 2020 was $1.8 billion.</completion>
    ```
 ### Running Local RAG
 
