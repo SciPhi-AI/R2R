@@ -75,12 +75,13 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
 
 ## Basic Example
 
-[`basic_pipeline.py`](r2r/examples/servers/basic_pipeline.py): Execute this script to initiate the default **backend server**. It establishes a basic RAG pipeline that encompasses ingestion, embedding, and RAG processes, all accessible via FastAPI.
+[`qna_pipeline.py`](r2r/examples/servers/qna_pipeline.py): Execute this script to initiate the default **backend server**. It establishes a basic RAG pipeline that encompasses ingestion, embedding, and RAG processes, all accessible via FastAPI.
 
    ```bash
    # launch the server
-   # Do `export CONFIG_OPTION=local_ollama` to run the pipeline with local ollama instead of OpenAI
-   python -m r2r.examples.servers.basic_pipeline
+   # For ex., do `export CONFIG_OPTION=local_ollama` or ``--config=local_ollama` to run fully locally
+   # For ex., do `export PIPELINE_OPTION=web` or ``--pipeline=web` to run WebRAG pipeline
+   python -m r2r.examples.servers.config_pipeline --config=default --pipeline=qna
    ```
 
 [`run_qna_client.py`](r2r/examples/clients/run_qna_client.py): This **client script** should be executed subsequent to the server startup above. It facilitates the upload of text entries and PDFs to the server using the Python client and demonstrates the management of document and user-level vectors through its built-in features.
@@ -90,7 +91,7 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
    python -m r2r.examples.clients.run_qna_client ingest
    python -m r2r.examples.clients.run_qna_client search --query="What is the meaning of life?"
    ```
-### Running Basic Local RAG
+### Running Local RAG
 
 [Refer here](https://r2r-docs.sciphi.ai/tutorials/local_rag) for a tutorial on how to modify the commands above to use local providers.
 
@@ -117,13 +118,6 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
    ```bash
    # launch the server
    python -m r2r.examples.servers.reducto_pipeline
-   ```
-
-[`web_search_pipeline.py`](r2r/examples/servers/web_search_pipeline.py): This script sets up a backend server that includes a `WebSearchRAGPipeline`, adding web search functionality to your RAG setup.
-
-   ```bash
-   # launch the server
-   python -m r2r.examples.servers.web_search_pipeline
    ```
 
 ## Core Abstractions

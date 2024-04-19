@@ -18,7 +18,7 @@ from r2r.pipelines import (
     BasicEmbeddingPipeline,
     BasicEvalPipeline,
     BasicIngestionPipeline,
-    BasicRAGPipeline,
+    QnARAGPipeline,
 )
 
 from .app import create_app
@@ -98,7 +98,7 @@ class E2EPipelineFactory:
         scraper_pipeline_impl=BasicScraperPipeline,
         ingestion_pipeline_impl=BasicIngestionPipeline,
         embedding_pipeline_impl=BasicEmbeddingPipeline,
-        rag_pipeline_impl=BasicRAGPipeline,
+        rag_pipeline_impl=QnARAGPipeline,
         eval_pipeline_impl=BasicEvalPipeline,
         app_fn=create_app,
     ):

@@ -27,7 +27,7 @@ def r2r_server():
             "poetry",
             "run",
             "uvicorn",
-            "r2r.examples.servers.basic_pipeline:app",
+            "r2r.examples.servers.config_pipeline:app",
             "--port=8010",
             "--workers=1",
         ]

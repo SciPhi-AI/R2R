@@ -1,5 +1,5 @@
 """
-A simple example to demonstrate the usage of `BasicRAGPipeline`.
+A simple example to demonstrate the usage of `QnARAGPipeline`.
 """
 
 import logging
@@ -16,14 +16,14 @@ from r2r.core import (
 )
 from r2r.embeddings import OpenAIEmbeddingProvider
 
-from .prompt_provider import BasicPromptProvider
+from ..core.prompt_provider import BasicPromptProvider
 
 logger = logging.getLogger(__name__)
 
 
-class BasicRAGPipeline(RAGPipeline):
+class QnARAGPipeline(RAGPipeline):
     """
-    Implements a basic Retrieve-And-Generate (RAG) pipeline for document retrieval and generation.
+    Implements a basic question and answer Retrieval-Augmented-Generation (RAG) pipeline.
     """
 
     def __init__(
@@ -38,7 +38,7 @@ class BasicRAGPipeline(RAGPipeline):
         """
         Initializes the RAG pipeline with necessary components and configurations.
         """
-        logger.debug(f"Initalizing `BasicRAGPipeline`.")
+        logger.debug(f"Initalizing `QnARAGPipeline`.")
         if not prompt_provider:
             prompt_provider = BasicPromptProvider()
         self.prompt_provider = prompt_provider
