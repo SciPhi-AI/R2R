@@ -2,9 +2,9 @@
 
 The RAG (Retrieve-Augmented-Generation) Pipeline is responsible for retrieving relevant documents based on a query and generating a response using the retrieved documents as context. It transforms the query, searches for relevant documents, reranks the results, constructs a context, and generates a completion.
 
-## Basic RAG Pipeline
+## Question and Answer RAG Pipeline
 
-The `QnARAGPipeline` is a simple implementation of the `RAGPipeline` abstract base class. It provides a straightforward way to perform document retrieval and generation using a specified language model, vector database, and embedding model.
+The `QnARAGPipeline` is a simple implementation of the `RAGPipeline` abstract base class. It provides a straightforward way to perform document retrieval and generation using a specified language model, vector database, and embedding model. It is designed to support single-turn question and answer style RAG.
 
 ### Initialization
 

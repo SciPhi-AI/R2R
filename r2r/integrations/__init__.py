@@ -1,5 +1,5 @@
 from .exa import ExaClient
-from .serper import SerperClient
 from .ionic import IonicClient
+from .serper import SerperClient
 
 __all__ = ["ExaClient", "IonicClient", "SerperClient"]

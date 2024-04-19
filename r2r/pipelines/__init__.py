@@ -1,11 +1,11 @@
-from .core.scraping import BasicScraperPipeline
+from .agent.rag import AgentRAGPipeline
 from .core.embedding import BasicEmbeddingPipeline
 from .core.eval import BasicEvalPipeline
 from .core.ingestion import BasicIngestionPipeline, IngestionType
 from .core.prompt_provider import BasicPromptProvider
+from .core.scraping import BasicScraperPipeline
 from .qna.rag import QnARAGPipeline
 from .web.rag import WebRAGPipeline
-from .agent.rag import AgentRAGPipeline
 
 __all__ = [
     "BasicEmbeddingPipeline",

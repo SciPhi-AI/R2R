@@ -2,10 +2,9 @@
 A simple example to demonstrate the usage of `AgentRAGPipeline`.
 """
 
-import logging
 import json
+import logging
 import re
-
 from typing import Optional
 
 from r2r.core import GenerationConfig
@@ -77,11 +76,17 @@ class AgentRAGPipeline(WebRAGPipeline):
         #   }, ...
         # ]
         conversation = json.loads(query)
-        conversation[0]["content"] = self.transform_query(conversation[0]["content"])
+        conversation[0]["content"] = self.transform_query(
+            conversation[0]["content"]
+        )
         prompt, conversation = conversation[-1]["content"], conversation[:-1]
 
-        completion = self.generate_completion(prompt, generation_config, conversation=conversation)
-        search_query = self.generate_search_query(completion.choices[0].message.content)
+        completion = self.generate_completion(
+            prompt, generation_config, conversation=conversation
+        )
+        search_query = self.generate_search_query(
+            completion.choices[0].message.content
+        )
 
         if not search_query:
             return RAGPipelineOutput(search_results=[], completion=completion)

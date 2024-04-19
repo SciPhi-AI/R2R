@@ -14,10 +14,10 @@ from r2r.llms import (
     OpenAILLM,
 )
 from r2r.pipelines import (
-    BasicScraperPipeline,
     BasicEmbeddingPipeline,
     BasicEvalPipeline,
     BasicIngestionPipeline,
+    BasicScraperPipeline,
     QnARAGPipeline,
 )
 

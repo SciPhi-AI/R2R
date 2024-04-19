@@ -28,8 +28,9 @@ class ScraperPipeline(Pipeline):
         """
         pass
 
-
-    def run(self, document_id: str, url: str, **kwargs) -> Iterator[DocumentPage]:
+    def run(
+        self, document_id: str, url: str, **kwargs
+    ) -> Iterator[DocumentPage]:
         """
         Run the scraping method for the given URL.
         Yields the processed BasicDocument objects.

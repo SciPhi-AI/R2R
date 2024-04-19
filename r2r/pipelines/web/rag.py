@@ -1,6 +1,7 @@
 """
 A simple example to demonstrate the usage of `WebSearchRAGPipeline`.
 """
+
 import json
 import logging
 from typing import Generator, Optional
@@ -87,7 +88,7 @@ class WebRAGPipeline(QnARAGPipeline):
         )
 
         return external_results
-    
+
     @log_execution_to_db
     def construct_context(self, results: list) -> str:
         local_context = super().construct_context(
@@ -97,7 +98,7 @@ class WebRAGPipeline(QnARAGPipeline):
             [ele["result"] for ele in results if ele["type"] == "external"]
         )
         return local_context + "\n\n" + web_context
-    
+
     def _stream_run(
         self,
         search_results: list,

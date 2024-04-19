@@ -1,11 +1,10 @@
 import logging
-from r2r.core import ScraperPipeline
-from r2r.core import DocumentPage
-
 from typing import Iterator, Optional
-from bs4 import BeautifulSoup
-import requests
 
+import requests
+from bs4 import BeautifulSoup
+
+from r2r.core import DocumentPage, ScraperPipeline
 
 logger = logging.getLogger(__name__)
 

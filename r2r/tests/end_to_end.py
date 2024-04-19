@@ -6,11 +6,10 @@ import tempfile
 import time
 
 import pytest
+import requests
 
 from r2r.client import R2RClient
 from r2r.core.utils import generate_id_from_label
-
-import requests
 
 """
 To run the test locally, run
@@ -55,6 +54,7 @@ def client():
     base_url = "http://localhost:8010"
     return R2RClient(base_url)
 
+
 def test_test_function(client):
     test_function_response = client.test_function()
     assert test_function_response == "Test function called."
@@ -69,7 +69,7 @@ def test_process_url(client):
     json_data = {
         "document_id": document_id,
         "url": url,
-        "metadata": (json.dumps(metadata) if metadata else json.dumps({}))
+        "metadata": (json.dumps(metadata) if metadata else json.dumps({})),
     }
     process_url_response = requests.post(server_url, data=json_data).json()
     assert "processed successfully." in process_url_response["message"]
