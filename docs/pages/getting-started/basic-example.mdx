@@ -26,7 +26,7 @@ This command starts the backend server with the Q&A RAG pipeline, which includes
 To ingest the demo PDF data, use the following command:
 
 ```bash
-python -m r2r.examples.clients.run_qna_client ingest
+python -m r2r.examples.clients.run_qna_client ingest meditations
 ```
 
 This command uploads the `meditations.pdf` file located in the `examples/data` directory and processes it using the ingestion pipeline. The output should be similar to:
@@ -90,8 +90,12 @@ Or, if you just want the summary of the logs, run:
 python -m r2r.examples.clients.run_qna_client get_logs_summary
 ```
 
-## Optional Step 7: Configure the Application
+## Optional Step 7: Connect to web application
+Navigate to the [demo application](https://github.com/SciPhi-AI/R2R-App-Demo) and follow the listed instructions.
+
+
+## Optional Step 8: Configure the Application
 You can refer to [configure your pipeline](configure-your-pipeline.mdx) to learn more.
 
-## Optional Step 8: Customize the Application
+## Optional Step 9: Customize the Application
 You can refer to [customize your pipeline](customize-your-pipeline.mdx) to learn more.
