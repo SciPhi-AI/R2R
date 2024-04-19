@@ -157,7 +157,14 @@ This command tells R2R to use the specified model to generate a completion for t
 
 After a brief wait, you should see the LLM's response, perhaps something like:
 
-> 'message': {search_results: [{...}], ... 'content': 'Lyft did not make a profit in 2020; instead, it reported a net loss of $1.8 billion.'}
+```json
+{
+  "message": {
+    "search_results": [...],
+    "content": "Lyft did not make a profit in 2020; instead, it reported a net loss of $1.8 billion."
+  }
+}
+```
 
 How cool is that? With R2R, we've built a simple QA system backed by a local LLM that we can converse with. The best part is, all the data and compute stayed on our own machine.
 
