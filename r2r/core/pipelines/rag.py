@@ -122,7 +122,9 @@ class RAGPipeline(Pipeline):
             messages = [
                 {
                     "role": "system",
-                    "content": self.prompt_provider.get_prompt("system_prompt"),
+                    "content": self.prompt_provider.get_prompt(
+                        "system_prompt"
+                    ),
                 },
                 {
                     "role": "user",

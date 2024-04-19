@@ -1,23 +1,22 @@
 """
-A simple example to demonstrate the usage of `ChatbotRAGPipeline`.
+A simple example to demonstrate the usage of `AgentRAGPipeline`.
 """
 
-import logging
 import json
+import logging
 import re
-
 from typing import Optional
 
 from r2r.core import GenerationConfig
 from r2r.core.abstractions.output import RAGPipelineOutput
 
-from ..web_search.rag import WebRAGPipeline
+from ..web.rag import WebRAGPipeline
 
 logger = logging.getLogger(__name__)
 
 
 # TODO: This can be moved somewhere.
-web_search_chatbot_prompt = """
+agent_rag_prompt = """
 You are a helpful assistant with access to web search whose job it is to answer users questions.
 The following is a conversation with a user - after each new user message your task is to generate
 a search query or ask a follow up question.
@@ -43,13 +42,13 @@ Begin.
 """
 
 
-class ChatbotRAGPipeline(WebRAGPipeline):
+class AgentRAGPipeline(WebRAGPipeline):
     def __init__(self, *args, **kwargs):
-        logger.info(f"Initalizing `ChatbotRAGPipeline`.")
+        logger.info(f"Initalizing `AgentRAGPipeline`.")
         super().__init__(*args, **kwargs)
 
     def transform_query(self, query: str) -> str:
-        return web_search_chatbot_prompt.format(query=query)
+        return agent_rag_prompt.format(query=query)
 
     # Returns a web search query to execute or None if it needed additional context.
     def generate_search_query(self, response: str):
@@ -77,11 +76,17 @@ class ChatbotRAGPipeline(WebRAGPipeline):
         #   }, ...
         # ]
         conversation = json.loads(query)
-        conversation[0]["content"] = self.transform_query(conversation[0]["content"])
+        conversation[0]["content"] = self.transform_query(
+            conversation[0]["content"]
+        )
         prompt, conversation = conversation[-1]["content"], conversation[:-1]
 
-        completion = self.generate_completion(prompt, generation_config, conversation=conversation)
-        search_query = self.generate_search_query(completion.choices[0].message.content)
+        completion = self.generate_completion(
+            prompt, generation_config, conversation=conversation
+        )
+        search_query = self.generate_search_query(
+            completion.choices[0].message.content
+        )
 
         if not search_query:
             return RAGPipelineOutput(search_results=[], completion=completion)

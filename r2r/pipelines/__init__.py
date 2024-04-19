@@ -1,11 +1,11 @@
-from .basic.scraping import BasicScraperPipeline
-from .basic.embedding import BasicEmbeddingPipeline
-from .basic.eval import BasicEvalPipeline
-from .basic.ingestion import BasicIngestionPipeline, IngestionType
-from .basic.prompt_provider import BasicPromptProvider
-from .basic.rag import BasicRAGPipeline
-from .chatbot.rag import ChatbotRAGPipeline
-from .web_search.rag import WebRAGPipeline
+from .agent.rag import AgentRAGPipeline
+from .core.embedding import BasicEmbeddingPipeline
+from .core.eval import BasicEvalPipeline
+from .core.ingestion import BasicIngestionPipeline, IngestionType
+from .core.prompt_provider import BasicPromptProvider
+from .core.scraping import BasicScraperPipeline
+from .qna.rag import QnARAGPipeline
+from .web.rag import WebRAGPipeline
 
 __all__ = [
     "BasicEmbeddingPipeline",
@@ -14,7 +14,7 @@ __all__ = [
     "BasicScraperPipeline",
     "BasicIngestionPipeline",
     "BasicPromptProvider",
-    "BasicRAGPipeline",
+    "QnARAGPipeline",
     "WebRAGPipeline",
-    "ChatbotRAGPipeline",
+    "AgentRAGPipeline",
 ]

@@ -1,9 +1,9 @@
 ## End-to-End Walkthrough
 This guide provides an end-to-end walkthrough to create a RAG application locally with R2R. Each step from forking the necessary repositories to configuring and serving the local application are shown below.
 
-### Step 1: Fork and Clone the R2R Basic RAG Template Repository
+### Step 1: Fork and Clone the R2R Q&A RAG Template Repository
 
-1. Navigate to the [R2R Basic Local RAG Template repository](https://github.com/SciPhi-AI/R2R-basic-rag-template-local) on GitHub.
+1. Navigate to the [R2R Basic Local RAG Template repository](https://github.com/SciPhi-AI/R2R-local-qna-rag-prebuilt) on GitHub.
 2. Click on the "Fork" button in the upper right corner of the page to create a copy of the repository in your own GitHub account.
 3. Clone your forked repository to your local machine:
    ```
@@ -44,16 +44,16 @@ Here's the modified version of the second part based on the provided README:
 
 ### Step 5: Building Your Own Application
 
-If you want to build your own application that interacts with the RAG pipeline, you can use the [APP Basic RAG Template repository](https://github.com/SciPhi-AI/APP-basic-rag-template) as a starting point. This repository provides a web application template that communicates with the deployed RAG pipeline.
+If you want to build your own application that interacts with the RAG pipeline, you can use the [Demo RAG repository](https://github.com/SciPhi-AI/SciPhi-Demo) as a starting point. This repository provides a web application template that communicates with the deployed RAG pipeline.
 
 To use the template:
 
-1. Fork the [APP Basic RAG Template repository](https://github.com/SciPhi-AI/APP-basic-rag-template) on GitHub.
+1. Fork the [APP Basic RAG Template repository](https://github.com/SciPhi-AI/SciPhi-Demo) on GitHub.
 
 2. Clone your forked repository to your local machine:
 
    ```
-   git clone git@github.com:your-username/APP-basic-rag-template.git
+   git clone git@github.com:your-username/SciPhi-AI/SciPhi-Demo.git
    ```
 
 3. Navigate to the project directory:
@@ -76,7 +76,7 @@ To use the template:
 
    This will start the application in development mode and open it in your default browser.
 
-6. Open the application in your browser at `http://localhost:3000`.
+6. Open the application in your browser at `http://localhost:3000` and navigate to `http://localhost:3000/rag-qna`.
 
 7. Enter the URL of your deployed RAG pipeline in the "API URL" input box at the top of the page.
 

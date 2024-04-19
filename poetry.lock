@@ -7069,7 +7069,7 @@ docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.link
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy", "pytest-ruff (>=0.2.1)"]
 
 [extras]
-all = ["boto3", "datasets", "exa-py", "llama-cpp-python", "parea-ai", "psycopg2-binary", "qdrant_client", "sentry-sdk", "tiktoken"]
+all = ["boto3", "datasets", "exa-py", "ionic-api-sdk", "llama-cpp-python", "parea-ai", "psycopg2-binary", "qdrant_client", "sentry-sdk", "tiktoken"]
 deepeval = ["deepeval"]
 embedding = ["tiktoken"]
 eval = ["parea-ai"]
@@ -7086,4 +7086,4 @@ streaming = ["datasets"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "cf749c7de9655a3bc35fe86d93ac484e17f6dc2fe477376c5ac079383bc010dc"
+content-hash = "80577f56bfd4bbc7b7d3e2758949c939cffc4bade811b95f412280a956d6a18d"

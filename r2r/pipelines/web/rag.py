@@ -1,6 +1,7 @@
 """
 A simple example to demonstrate the usage of `WebSearchRAGPipeline`.
 """
+
 import json
 import logging
 from typing import Generator, Optional
@@ -17,7 +18,7 @@ from r2r.embeddings import OpenAIEmbeddingProvider
 from r2r.integrations import SerperClient
 from r2r.pipelines import BasicPromptProvider
 
-from ..basic.rag import BasicRAGPipeline
+from ..qna.rag import QnARAGPipeline
 
 WEB_RAG_SYSTEM_PROMPT = "You are a helpful assistant."
 WEB_RAG_TASK_PROMPT = """
@@ -39,7 +40,7 @@ REMINDER - Use line item references to like [1], [2], ... refer to specifically 
 logger = logging.getLogger(__name__)
 
 
-class WebRAGPipeline(BasicRAGPipeline):
+class WebRAGPipeline(QnARAGPipeline):
     def __init__(
         self,
         llm: LLMProvider,
@@ -87,7 +88,7 @@ class WebRAGPipeline(BasicRAGPipeline):
         )
 
         return external_results
-    
+
     @log_execution_to_db
     def construct_context(self, results: list) -> str:
         local_context = super().construct_context(
@@ -97,7 +98,7 @@ class WebRAGPipeline(BasicRAGPipeline):
             [ele["result"] for ele in results if ele["type"] == "external"]
         )
         return local_context + "\n\n" + web_context
-    
+
     def _stream_run(
         self,
         search_results: list,

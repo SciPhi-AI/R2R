@@ -87,11 +87,11 @@ A local vector database will be used to store the embeddings. The current defaul
 To stand up the server, we can readily choose from one of the two options below:
 
 ```bash
-python -m r2r.examples.servers.basic_pipeline --config local_ollama
+python -m r2r.examples.servers.config_pipeline --config local_ollama
 ```
 
 ```bash
-python -m r2r.examples.servers.basic_pipeline --config local_llama_cpp
+python -m r2r.examples.servers.config_pipeline --config local_llama_cpp
 ```
 
 Note, to run with Llama.cpp you must download `tinyllama-1.1b-chat-v1.0.Q2_K.gguf` [here](https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q2_K.gguf?download=true) and place the output into `~/cache/model/`. The choice between ollama and Llama.cpp depends on our preferred LLM provider.

@@ -1,4 +1,3 @@
-
 import os
 from typing import Optional
 
@@ -21,15 +20,12 @@ class IonicClient:
         num_results: Optional[int] = 10,
     ):
         # temp local import for dependency mgmt
-        from ionic.models.components import QueryAPIRequest
         from ionic.models.components import Query as SDKQuery
+        from ionic.models.components import QueryAPIRequest
         from ionic.models.operations import QueryResponse, QuerySecurity
 
         request = QueryAPIRequest(
-            query=SDKQuery(
-                query=query,
-                num_results=num_results
-            )
+            query=SDKQuery(query=query, num_results=num_results)
         )
 
         response: QueryResponse = self.client.query(
@@ -45,9 +41,8 @@ class IonicClient:
                 "upc": product.upc,
                 "merchant_name": product.merchant_name,
                 "thumbnail": product.thumbnail,
-'link': product.links[0].url if product.links else None,
+                "link": product.links[0].url if product.links else None,
             }
             for result in response.query_api_response.results
             for product in result.products
         ]
-    

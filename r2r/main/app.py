@@ -1,10 +1,9 @@
-import re
 import json
 import logging
 import os
+import re
 from pathlib import Path
 from typing import AsyncGenerator, Generator, Optional, Union, cast
-from pydantic import HttpUrl
 
 import requests
 from fastapi import (
@@ -17,9 +16,9 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import StreamingResponse
+from pydantic import HttpUrl
 
 from r2r.core import (
-    ScraperPipeline,
     EmbeddingPipeline,
     EvalPipeline,
     GenerationConfig,
@@ -27,6 +26,7 @@ from r2r.core import (
     LoggingDatabaseConnection,
     RAGPipeline,
     RAGPipelineOutput,
+    ScraperPipeline,
 )
 from r2r.main.utils import (  # configure_logging,
     R2RConfig,
@@ -84,7 +84,6 @@ def create_app(
         metadata_json = json.loads(metadata)
         settings_model = SettingsModel.parse_raw(settings)
 
-        
         try:
             docs = scraper_pipeline.run(
                 document_id=document_id, url=str(url), metadata=metadata_json

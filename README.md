@@ -25,7 +25,7 @@ R2R was conceived to bridge the gap between local LLM experimentation and scalab
 - **🚀 Deploy**: Instantly launch production-ready RAG pipelines with streaming capabilities.
 - **🧩 Customize**: Tailor your pipeline with intuitive configuration files.
 - **🔌 Extend**: Enhance your pipeline with custom code integrations.
-- **⚖️ Autoscale**: Scale your pipeline effortlessly in the cloud using [SciPhi](https://app.sciphi.ai/).
+- **⚖️ Autoscale**: Scale your pipeline effortlessly in the cloud using [SciPhi](https://sciphi.ai/).
 - **🤖 OSS**: Benefit from a framework developed by the open-source community, designed to simplify RAG deployment.
 
 ## Demo(s)
@@ -34,7 +34,7 @@ Using the cloud application to deploy the pre-built basic pipeline:
 
 https://www.loom.com/share/e3b934b554484787b005702ced650ac9
 
-Note - the example above uses [SciPhi Cloud](https://app.sciphi.ai) to pair with the R2R framework for deployment and observability. SciPhi is working to launch a self-hosted version of their cloud platform as R2R matures.
+Note - the example above uses [SciPhi Cloud](https://sciphi.ai) to pair with the R2R framework for deployment and observability. SciPhi is working to launch a self-hosted version of their cloud platform as R2R matures.
 
 ## Links
 
@@ -42,7 +42,7 @@ Note - the example above uses [SciPhi Cloud](https://app.sciphi.ai) to pair with
 
 [R2R Docs Quickstart](https://r2r-docs.sciphi.ai/getting-started/quick-install)
 
-[SciPhi Cloud](https://docs.sciphi.ai/)
+[SciPhi Cloud Docs](https://docs.sciphi.ai/)
 
 [Local RAG Tutorial](https://r2r-docs.sciphi.ai/tutorials/local_rag)
 
@@ -75,35 +75,35 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
 
 ## Basic Example
 
-[`basic_pipeline.py`](r2r/examples/servers/basic_pipeline.py): Execute this script to initiate the default **backend server**. It establishes a basic RAG pipeline that encompasses ingestion, embedding, and RAG processes, all accessible via FastAPI.
-
+[`Configurable Pipeline`](r2r/examples/servers/config_pipeline.py): Execute this script to select and serve a **Q&A RAG**, **Web RAG**, or **Agent RAG** pipeline. This starter pipeline supports ingestion, embedding, and question and the specified RAG, all accessible via a REST API.
    ```bash
    # launch the server
-   # Do `export CONFIG_OPTION=local_ollama` to run the pipeline with local ollama instead of OpenAI
-   python -m r2r.examples.servers.basic_pipeline
+   # For ex., do `export CONFIG_OPTION=local_ollama` or ``--config=local_ollama` to run fully locally
+   # For ex., do `export PIPELINE_OPTION=web` or ``--pipeline=web` to run WebRAG pipeline
+   python -m r2r.examples.servers.config_pipeline --config=default --pipeline=qna
    ```
 
-[`run_qna_client.py`](r2r/examples/clients/run_qna_client.py): This **client script** should be executed subsequent to the server startup above. It facilitates the upload of text entries and PDFs to the server using the Python client and demonstrates the management of document and user-level vectors through its built-in features.
+[`Question & Answer Client`](r2r/examples/clients/run_qna_client.py): This **client script** should be executed subsequent to the server startup above with `pipeline=qna` specified. It facilitates the upload of text entries and PDFs to the server using the Python client and demonstrates the management of document and user-level vectors through its built-in features.
 
    ```bash
    # run the client
    python -m r2r.examples.clients.run_qna_client ingest
    python -m r2r.examples.clients.run_qna_client search --query="What is the meaning of life?"
    ```
-### Running Basic Local RAG
+### Running Local RAG
 
 [Refer here](https://r2r-docs.sciphi.ai/tutorials/local_rag) for a tutorial on how to modify the commands above to use local providers.
 
 ## Synthetic Queries Example
 
-[`synthetic_query_pipeline.py`](r2r/examples/servers/synthetic_query_pipeline.py): Execute this script to start a backend server equipped with an advanced pipeline. This pipeline is designed to create synthetic queries, enhancing the RAG system's learning and performance.
+[`Synthetic Query Pipeline`](r2r/examples/servers/synthetic_query_pipeline.py): Execute this script to start a backend server equipped with more advanced synthetic query pipeline. This pipeline is designed to create synthetic queries, enhancing the RAG system's learning and performance.
 
    ```bash
    # launch the server
    python -m r2r.examples.servers.synthetic_query_pipeline
    ```
 
-[`run_synthetic_query_client.py`](r2r/examples/clients/run_synthetic_query_client.py): Use this client script after the synthetic query pipeline is running. It's tailored for use with the synthetic query pipeline, demonstrating the improved features of the RAG system.
+[`Synthetic Query Client`](r2r/examples/clients/run_synthetic_query_client.py): Use this client script after the synthetic query pipeline is running. It's tailored for use with the synthetic query pipeline, demonstrating the improved features of the RAG system.
 
    ```bash
    # run the client
@@ -112,18 +112,11 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
 
 ## Extra Examples
 
-[`reducto_pipeline.py`](r2r/examples/servers/reducto_pipeline.py): Launch this script to activate a backend server that integrates a Reducto adapter for enhanced PDF ingestion.
+[`Reducto Pipeline`](r2r/examples/servers/reducto_pipeline.py): Launch this script to activate a backend server that integrates a Reducto adapter for enhanced PDF ingestion.
 
    ```bash
    # launch the server
    python -m r2r.examples.servers.reducto_pipeline
-   ```
-
-[`web_search_pipeline.py`](r2r/examples/servers/web_search_pipeline.py): This script sets up a backend server that includes a `WebSearchRAGPipeline`, adding web search functionality to your RAG setup.
-
-   ```bash
-   # launch the server
-   python -m r2r.examples.servers.web_search_pipeline
    ```
 
 ## Core Abstractions

@@ -13,7 +13,7 @@ The R2R application is created using the `E2EPipelineFactory.create_pipeline()` 
 - `config`: An instance of `R2RConfig` containing the configuration settings for the application.
 - `ingestion_pipeline_impl`: The implementation class for the ingestion pipeline (default: `BasicIngestionPipeline`).
 - `embedding_pipeline_impl`: The implementation class for the embedding pipeline (default: `BasicEmbeddingPipeline`).
-- `rag_pipeline_impl`: The implementation class for the RAG pipeline (default: `BasicRAGPipeline`).
+- `rag_pipeline_impl`: The implementation class for the RAG pipeline (default: `QnARAGPipeline`).
 - `eval_pipeline_impl`: The implementation class for the evaluation pipeline (default: `BasicEvalPipeline`).
 - `app_fn`: A function that creates the FastAPI application (default: `create_app`).
 

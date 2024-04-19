@@ -15,13 +15,19 @@ class ChatbotClient:
 
     def rag_chatbot(self, query, model="gpt4-turbo-preview"):
         while query:
-            self.history.append({'role': 'user', 'content': query})
-            response = self.client.rag_completion(query=json.dumps(self.history))
+            self.history.append({"role": "user", "content": query})
+            response = self.client.rag_completion(
+                query=json.dumps(self.history)
+            )
 
             if response["completion"]:
-                completion_text = response["completion"]["choices"][0]["message"]["content"]
+                completion_text = response["completion"]["choices"][0][
+                    "message"
+                ]["content"]
                 print("rag_chatbot_response = ", completion_text)
-                self.history.append({'role': 'assistant', 'content': completion_text})
+                self.history.append(
+                    {"role": "assistant", "content": completion_text}
+                )
             else:
                 print("rag_chatbot_response = ", response)
 

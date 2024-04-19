@@ -14,7 +14,7 @@ from r2r.core import (
 )
 from r2r.embeddings import OpenAIEmbeddingProvider
 from r2r.main import E2EPipelineFactory, R2RConfig
-from r2r.pipelines import BasicPromptProvider, BasicRAGPipeline
+from r2r.pipelines import BasicPromptProvider, QnARAGPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ REMINDER - Use line item references to like [1], [2], ... refer to specifically 
 """
 
 
-class SyntheticRAGPipeline(BasicRAGPipeline):
+class SyntheticRAGPipeline(QnARAGPipeline):
     def __init__(
         self,
         llm: LLMProvider,
