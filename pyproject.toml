@@ -46,6 +46,7 @@ boto3 = {version = "^1.34.71", optional = true}
 exa-py = {version = "^1.0.9", optional = true}
 llama-cpp-python = {version = "^0.2.57", optional = true}
 sentence-transformers = {version = "^2.7.0", optional = true}
+tokenizers = {version = "^0.15.2", optional = true}
 
 [tool.poetry.extras]
 embedding = ["tiktoken"]
@@ -58,8 +59,13 @@ eval = ["parea-ai"]
 ionic = ["ionic-api-sdk"]
 reducto = ["boto3"]
 exa = ["exa-py"]
+<<<<<<< HEAD
 sentence-transformers-only = ["sentence-transformers"]
 local-llm = ["llama-cpp-python", "sentence-transformers"]
+=======
+sentence_transformers = ["sentence-transformers", "tokenizers"]
+local_llm = ["llama-cpp-python", "sentence-transformers", "tokenizers"]
+>>>>>>> 49e4a0c (update the default embd. (#310))
 all = ["tiktoken", "datasets", "qdrant_client", "psycopg2-binary", "sentry-sdk", "parea-ai", "boto3", "exa-py", "llama-cpp-python", "ionic-api-sdk"]
 
 [tool.poetry.group.dev.dependencies]

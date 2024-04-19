@@ -8,13 +8,18 @@ logger = logging.getLogger(__name__)
 
 class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
     def __init__(
-        self, embedding_model: str, provider: str = "sentence-transformers"
+        self, config: dict,
     ):
+        super().__init__(config)
         logger.info(
             "Initializing `SentenceTransformerEmbeddingProvider` to provide embeddings."
         )
-
-        super().__init__(provider)
+        print("config = ", config)
+        provider = config.get("provider", None)
+        if not provider:
+            raise ValueError(
+                "Must set provider in order to initialize SentenceTransformerEmbeddingProvider."
+            )
         if provider != "sentence-transformers":
             raise ValueError(
                 "SentenceTransformerEmbeddingProvider must be initialized with provider `sentence-transformers`."
@@ -25,7 +30,18 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             raise ValueError(
                 "Must download sentence-transformers library to run `SentenceTransformerEmbeddingProvider`."
             )
-        self.encoder = SentenceTransformer(embedding_model)
+        
+        model = config.get("model", None)
+        if not model:
+            raise ValueError(
+                "Must set model in order to initialize SentenceTransformerEmbeddingProvider."
+            )
+        dimension = config.get("dimension", None)
+        if not dimension:
+            raise ValueError(
+                "Must set dimensions in order to initialize SentenceTransformerEmbeddingProvider."
+            )
+        self.encoder = SentenceTransformer(model, truncate_dim=dimension, trust_remote_code=True)
 
     def _check_inputs(self, model: str, dimensions: Optional[int]) -> None:
         if (
