@@ -21,12 +21,17 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         "text-embedding-3-large": [256, 1024, 3072],
     }
 
-    def __init__(self, provider: str = "openai"):
+    def __init__(self, config: dict):
         logger.info(
             "Initializing `OpenAIEmbeddingProvider` to provide embeddings."
         )
+        super().__init__(config)
+        provider = config.get("provider", None)
+        if not provider:
+            raise ValueError(
+                "Must set provider in order to initialize SentenceTransformerEmbeddingProvider."
+            )
 
-        super().__init__(provider)
         if provider != "openai":
             raise ValueError(
                 "OpenAIEmbeddingProvider must be initialized with provider `openai`."

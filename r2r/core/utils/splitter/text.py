@@ -1132,7 +1132,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             )
 
         self.model = model
-        self._model = SentenceTransformer(self.model)
+        self._model = SentenceTransformer(self.model, trust_remote_code=True)
         self.tokenizer = self._model.tokenizer
         self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
 
