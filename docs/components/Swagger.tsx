@@ -1,16 +1,11 @@
-// @ts-nocheck
-
-// import SwaggerUI from "swagger-ui-react";
 import dynamic from 'next/dynamic';
+import { theme } from 'redark-theme';
 
-const SwaggerUI = dynamic<{
-  spec: any;
-}>(import('swagger-ui-react'), { ssr: false });
-
-const App = () => (
-  <SwaggerUI
-    url="/swagger.json"
-  />
+const Redoc = dynamic(
+  () => import('redoc').then((module) => module.RedocStandalone),
+  { ssr: false }
 );
+
+const App = () => <Redoc specUrl="/swagger.json" options={{ theme: theme }} />;
 
 export default App;

@@ -1,7 +1,12 @@
 {
   "quick-install": "Quick Install",
   "basic-example": "Basic Example",
-  "app-api": "Application API",
+  "app-api": {
+    "title": "Application API",
+    "theme": {
+      "layout": "raw"
+    }
+  },
   "end-to-end": "End to End Walkthrough",
   "configure-your-pipeline": "Configure Your Pipeline",
   "customize-your-pipeline": "Customize Your Pipeline"
