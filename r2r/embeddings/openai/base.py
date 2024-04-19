@@ -3,7 +3,7 @@ import os
 
 from openai import OpenAI
 
-from r2r.core import EmbeddingProvider, PipelineStage
+from r2r.core import EmbeddingProvider, PipelineStage, VectorSearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 "OpenAIEmbeddingProvider does not support separate reranking."
             )
 
-    def get_embedding(self, text: str, stage: PipelineStage) -> list[float]:
+    def get_embedding(self, text: str, stage: PipelineStage = PipelineStage.SEARCH) -> list[float]:
         if stage != PipelineStage.SEARCH:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
@@ -93,7 +93,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         )
 
     def get_embeddings(
-        self, texts: list[str], stage: PipelineStage
+        self, texts: list[str], stage: PipelineStage = PipelineStage.SEARCH
     ) -> list[list[float]]:
         if stage != PipelineStage.SEARCH:
             raise ValueError(
@@ -114,7 +114,8 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
 
     def rerank(
         self,
-        texts: list[str],
+        transformed_query: str,
+        texts: list[VectorSearchResult],
         stage: PipelineStage = PipelineStage.RERANK,
         limit: int = 10,
     ):
