@@ -6,6 +6,7 @@ from r2r.core import (
     GenerationConfig,
     LLMProvider,
     LoggingDatabaseConnection,
+    PipelineStage,
     RAGPipeline,
     RAGPipelineOutput,
     VectorDBProvider,
@@ -43,7 +44,7 @@ class SyntheticRAGPipeline(QnARAGPipeline):
         llm: LLMProvider,
         db: VectorDBProvider,
         embedding_model: str,
-        embeddings_provider: OpenAIEmbeddingProvider,
+        embedding_provider: OpenAIEmbeddingProvider,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         system_prompt: Optional[str] = DEFAULT_SYSTEM_PROMPT,
         task_prompt: Optional[str] = DEFAULT_TASK_PROMPT,
@@ -54,7 +55,7 @@ class SyntheticRAGPipeline(QnARAGPipeline):
             llm,
             db,
             embedding_model,
-            embeddings_provider,
+            embedding_provider,
             logging_connection=logging_connection,
             prompt_provider=BasicPromptProvider(system_prompt, task_prompt),
         )
@@ -91,9 +92,8 @@ class SyntheticRAGPipeline(QnARAGPipeline):
         logger.debug(f"Retrieving results for query: {transformed_query}")
 
         results = self.db.search(
-            query_vector=self.embeddings_provider.get_embedding(
+            query_vector=self.embedding_provider.get_embedding(
                 transformed_query,
-                self.embedding_model,
             ),
             filters=filters,
             limit=limit,
@@ -108,13 +108,9 @@ class SyntheticRAGPipeline(QnARAGPipeline):
     ) -> str:
         queries = [ele[0] for ele in results]
         search_results = [ele[1] for ele in results]
-        reranked_results = [
-            self.rerank_results(search_result)
-            for search_result in search_results
-        ]
         context = ""
         offset = 1
-        for query, results in zip(queries, reranked_results):
+        for query, results in zip(queries, search_results):
             context += f"## Query:\n{query}\n\n## Context:\n{self._format_results(results, offset)}\n\n"
             offset += len(results)
         return context
@@ -124,7 +120,8 @@ class SyntheticRAGPipeline(QnARAGPipeline):
         self,
         query,
         filters={},
-        limit=5,
+        search_limit=25,
+        rerank_limit=15,
         search_only=False,
         generation_config: Optional[GenerationConfig] = None,
         *args,
@@ -136,17 +133,21 @@ class SyntheticRAGPipeline(QnARAGPipeline):
         if not generation_config:
             generation_config = GenerationConfig(model="gpt-3.5-turbo")
 
-        print("generation_config = ", generation_config)
         self.initialize_pipeline(query, search_only)
         transformed_queries = self.transform_query(query, generation_config)
         search_results = [
-            (transformed_query, self.search(transformed_query, filters, limit))
+            (
+                transformed_query,
+                self.rerank_results(
+                    transformed_query,
+                    self.search(transformed_query, filters, search_limit),
+                    rerank_limit,
+                ),
+            )
             for transformed_query in transformed_queries
         ]
         if search_only:
-            print("returning here...")
             return RAGPipelineOutput(search_results, None, None)
-
         context = self.construct_context(search_results)
         prompt = self.construct_prompt({"query": query, "context": context})
 

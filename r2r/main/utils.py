@@ -21,7 +21,12 @@ def find_project_root(current_dir):
 
 
 REQUIRED_KEYS: dict[str, list] = {
-    "embedding": ["provider", "model"],
+    "embedding": [
+        "provider",
+        "search_model",
+        "search_dimension",
+        "batch_size",
+    ],
     "evals": ["provider", "frequency"],
     "language_model": ["provider"],
     "logging_database": ["provider", "collection_name", "level"],
