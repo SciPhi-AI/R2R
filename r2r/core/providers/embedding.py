@@ -5,7 +5,12 @@ from typing import Optional
 class EmbeddingProvider(ABC):
     supported_providers = ["openai", "sentence-transformers"]
 
-    def __init__(self, provider: str):
+    def __init__(self, config: dict):
+        provider = config.get("provider", None)
+        if not provider:
+            raise ValueError(
+                "Must set provider in order to initialize EmbeddingProvider."
+            )
         if provider not in EmbeddingProvider.supported_providers:
             raise ValueError(
                 f"Error, `{provider}` is not in EmbeddingProvider's list of supported providers."

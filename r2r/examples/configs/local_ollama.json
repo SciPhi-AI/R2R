@@ -1,8 +1,8 @@
 {
   "embedding": {
     "provider": "sentence-transformers",
-    "model": "all-MiniLM-L6-v2",
-    "dimension": 384,
+    "model": "mixedbread-ai/mxbai-embed-large-v1",
+    "dimension": 512,
     "batch_size": 32
   },
   "evals": {
