@@ -1,6 +1,6 @@
 import logging
 
-from r2r.core import EmbeddingProvider, VectorSearchResult
+from r2r.core import EmbeddingProvider, EmbeddingConfig, VectorSearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
     def __init__(
         self,
-        config: dict,
+        config: EmbeddingConfig,
     ):
         super().__init__(config)
         logger.info(
@@ -45,7 +45,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             config, EmbeddingProvider.PipelineStage.RERANK
         )
 
-    def _init_model(self, config: dict, stage: str):
+    def _init_model(self, config: EmbeddingConfig, stage: str):
         stage_name = stage.name.lower()
         model = config.get(f"{stage_name}_model", None)
         dimension = config.get(f"{stage_name}_dimension", None)
