@@ -75,8 +75,7 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
 
 ## Basic Example
 
-[`qna_pipeline.py`](r2r/examples/servers/qna_pipeline.py): Execute this script to initiate the basic **Q&A RAG** pipeline. This starter pipeline supports ingestion, embedding, and question and answer style RAG, all accessible via FastAPI.
-
+[`Configurable Pipeline`](r2r/examples/servers/config_pipeline.py): Execute this script to select and serve a **Q&A RAG**, **Web RAG**, or **Agent RAG** pipeline. This starter pipeline supports ingestion, embedding, and question and the specified RAG, all accessible via a REST API.
    ```bash
    # launch the server
    # For ex., do `export CONFIG_OPTION=local_ollama` or ``--config=local_ollama` to run fully locally
