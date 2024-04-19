@@ -1,0 +1,10 @@
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #000000;
+}
+
+.react-tabs__tab--selected {
+  border: none !important;
+  background-color: #3f3f46 !important;
+}

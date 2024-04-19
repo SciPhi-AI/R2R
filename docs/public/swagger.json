@@ -1,1 +1,700 @@
-{"openapi": "3.1.0", "info": {"title": "R2R Default App API", "description": "The default application API which ships with R2R.", "version": "1.0.0"}, "paths": {"/upload_and_process_file/": {"post": {"summary": "Upload And Process File", "operationId": "upload_and_process_file_upload_and_process_file__post", "requestBody": {"content": {"multipart/form-data": {"schema": {"$ref": "#/components/schemas/Body_upload_and_process_file_upload_and_process_file__post"}}}, "required": true}, "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}}, "/add_entry/": {"post": {"summary": "Add Entry", "operationId": "add_entry_add_entry__post", "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/AddEntryRequest"}}}, "required": true}, "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}}, "/add_entries/": {"post": {"summary": "Add Entries", "operationId": "add_entries_add_entries__post", "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/AddEntriesRequest"}}}, "required": true}, "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}}, "/search/": {"post": {"summary": "Search", "operationId": "search_search__post", "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/RAGQueryModel"}}}, "required": true}, "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}}, "/rag_completion/": {"post": {"summary": "Rag Completion", "operationId": "rag_completion_rag_completion__post", "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/RAGQueryModel"}}}, "required": true}, "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}}, "/eval": {"post": {"summary": "Eval", "operationId": "eval_eval_post", "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/EvalPayloadModel"}}}, "required": true}, "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}}, "/filtered_deletion/": {"delete": {"summary": "Filtered Deletion", "operationId": "filtered_deletion_filtered_deletion__delete", "parameters": [{"name": "key", "in": "query", "required": true, "schema": {"type": "string", "title": "Key"}}, {"name": "value", "in": "query", "required": true, "schema": {"anyOf": [{"type": "boolean"}, {"type": "integer"}, {"type": "string"}], "title": "Value"}}], "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}}, "/get_user_ids/": {"get": {"summary": "Get User Ids", "operationId": "get_user_ids_get_user_ids__get", "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}}}}, "/get_user_documents/": {"get": {"summary": "Get User Documents", "operationId": "get_user_documents_get_user_documents__get", "parameters": [{"name": "user_id", "in": "query", "required": true, "schema": {"type": "string", "title": "User Id"}}], "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}}, "/logs": {"get": {"summary": "Logs", "operationId": "logs_logs_get", "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}}}}, "/logs_summary": {"get": {"summary": "Logs Summary", "operationId": "logs_summary_logs_summary_get", "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}}}}}, "components": {"schemas": {"AddEntriesRequest": {"properties": {"entries": {"items": {"$ref": "#/components/schemas/EntryModel"}, "type": "array", "title": "Entries"}, "settings": {"allOf": [{"$ref": "#/components/schemas/SettingsModel"}], "default": {"embedding_settings": {"do_chunking": true, "do_upsert": true}, "ingestion_settings": {}, "rag_settings": {}}}}, "type": "object", "required": ["entries"], "title": "AddEntriesRequest"}, "AddEntryRequest": {"properties": {"entry": {"$ref": "#/components/schemas/EntryModel"}, "settings": {"allOf": [{"$ref": "#/components/schemas/SettingsModel"}], "default": {"embedding_settings": {"do_chunking": true, "do_upsert": true}, "ingestion_settings": {}, "rag_settings": {}}}}, "type": "object", "required": ["entry"], "title": "AddEntryRequest"}, "Body_upload_and_process_file_upload_and_process_file__post": {"properties": {"document_id": {"type": "string", "title": "Document Id"}, "metadata": {"type": "string", "title": "Metadata", "default": "{}"}, "settings": {"type": "string", "title": "Settings", "default": "{}"}, "file": {"type": "string", "format": "binary", "title": "File"}}, "type": "object", "required": ["document_id", "file"], "title": "Body_upload_and_process_file_upload_and_process_file__post"}, "EmbeddingsSettingsModel": {"properties": {"do_chunking": {"anyOf": [{"type": "boolean"}, {"type": "null"}], "title": "Do Chunking", "default": true}, "do_upsert": {"anyOf": [{"type": "boolean"}, {"type": "null"}], "title": "Do Upsert", "default": true}}, "type": "object", "title": "EmbeddingsSettingsModel"}, "EntryModel": {"properties": {"document_id": {"type": "string", "title": "Document Id"}, "blobs": {"additionalProperties": {"type": "string"}, "type": "object", "title": "Blobs"}, "metadata": {"anyOf": [{"type": "object"}, {"type": "null"}], "title": "Metadata"}}, "type": "object", "required": ["document_id", "blobs", "metadata"], "title": "EntryModel"}, "EvalPayloadModel": {"properties": {"query": {"type": "string", "title": "Query"}, "context": {"type": "string", "title": "Context"}, "completion_text": {"type": "string", "title": "Completion Text"}, "run_id": {"type": "string", "title": "Run Id"}, "settings": {"$ref": "#/components/schemas/RAGSettingsModel"}}, "type": "object", "required": ["query", "context", "completion_text", "run_id", "settings"], "title": "EvalPayloadModel"}, "GenerationConfigModel": {"properties": {"temperature": {"type": "number", "title": "Temperature", "default": 0.1}, "top_p": {"type": "number", "title": "Top P", "default": 1.0}, "top_k": {"type": "integer", "title": "Top K", "default": 100}, "max_tokens_to_sample": {"type": "integer", "title": "Max Tokens To Sample", "default": 1024}, "model": {"anyOf": [{"type": "string"}, {"type": "null"}], "title": "Model", "default": "gpt-4-0125-preview"}, "stream": {"type": "boolean", "title": "Stream", "default": false}, "functions": {"anyOf": [{"items": {"type": "object"}, "type": "array"}, {"type": "null"}], "title": "Functions"}, "skip_special_tokens": {"type": "boolean", "title": "Skip Special Tokens", "default": false}, "stop_token": {"anyOf": [{"type": "string"}, {"type": "null"}], "title": "Stop Token"}, "num_beams": {"type": "integer", "title": "Num Beams", "default": 1}, "do_sample": {"type": "boolean", "title": "Do Sample", "default": true}, "add_generation_kwargs": {"type": "object", "title": "Add Generation Kwargs", "default": {}}, "generate_with_chat": {"type": "boolean", "title": "Generate With Chat", "default": false}}, "type": "object", "title": "GenerationConfigModel"}, "HTTPValidationError": {"properties": {"detail": {"items": {"$ref": "#/components/schemas/ValidationError"}, "type": "array", "title": "Detail"}}, "type": "object", "title": "HTTPValidationError"}, "IngestionSettingsModel": {"properties": {}, "type": "object", "title": "IngestionSettingsModel"}, "RAGQueryModel": {"properties": {"query": {"type": "string", "title": "Query"}, "limit": {"anyOf": [{"type": "integer"}, {"type": "null"}], "title": "Limit", "default": 10}, "filters": {"type": "object", "title": "Filters", "default": {}}, "settings": {"allOf": [{"$ref": "#/components/schemas/SettingsModel"}], "default": {"embedding_settings": {"do_chunking": true, "do_upsert": true}, "ingestion_settings": {}, "rag_settings": {}}}, "generation_config": {"allOf": [{"$ref": "#/components/schemas/GenerationConfigModel"}], "default": {"temperature": 0.1, "top_p": 1.0, "top_k": 100, "max_tokens_to_sample": 1024, "model": "gpt-4-0125-preview", "stream": false, "skip_special_tokens": false, "num_beams": 1, "do_sample": true, "add_generation_kwargs": {}, "generate_with_chat": false}}}, "type": "object", "required": ["query"], "title": "RAGQueryModel"}, "RAGSettingsModel": {"properties": {}, "type": "object", "title": "RAGSettingsModel"}, "SettingsModel": {"properties": {"embedding_settings": {"allOf": [{"$ref": "#/components/schemas/EmbeddingsSettingsModel"}], "default": {"do_chunking": true, "do_upsert": true}}, "ingestion_settings": {"allOf": [{"$ref": "#/components/schemas/IngestionSettingsModel"}], "default": {}}, "rag_settings": {"allOf": [{"$ref": "#/components/schemas/RAGSettingsModel"}], "default": {}}}, "type": "object", "title": "SettingsModel"}, "ValidationError": {"properties": {"loc": {"items": {"anyOf": [{"type": "string"}, {"type": "integer"}]}, "type": "array", "title": "Location"}, "msg": {"type": "string", "title": "Message"}, "type": {"type": "string", "title": "Error Type"}}, "type": "object", "required": ["loc", "msg", "type"], "title": "ValidationError"}}}}
+{
+    "openapi": "3.1.0",
+    "info": {
+      "title": "R2R Default App API",
+      "description": "The API documentation provided below outlines the default REST API specification for the deployed pipeline. This serves as a reference for the standard operations and endpoints that define interactions with the deployed pipeline API.",
+      "version": "1.0.0"
+    },
+    "servers": [
+      {
+        "url": "https://sciphi-YOUR-APP.a.run.app"
+      }
+    ],
+    "paths": {
+      "/upload_and_process_file/": {
+        "post": {
+          "summary": "Upload And Process File",
+          "operationId": "upload_and_process_file_upload_and_process_file__post",
+          "requestBody": {
+            "content": {
+              "multipart/form-data": {
+                "schema": {
+                  "$ref": "#/components/schemas/Body_upload_and_process_file_upload_and_process_file__post"
+                }
+              }
+            },
+            "required": true
+          },
+          "x-codeSamples": [
+            {
+                "lang": "curl",
+                "source": "curl -X POST \"https://sciphi-YOUR-APP.a.run.app/upload_and_process_file/\" -H \"Content-Type: multipart/form-data\" -F \"document_id=pdf_1\" -F \"file=@/path/to/file.pdf\""
+            },
+            {
+                "lang": "python",
+                "source": "pdf_document_id = generate_id_from_label(\"pdf 1\")\nmetadata = {\"tags\": [\"example\", \"test\"]}\nclient.upload_and_process_file(pdf_document_id, \"/path/to/file.pdf\", metadata, None)"
+            },
+            {
+                "lang": "js",
+                "source": "const pdfDocumentId = generateIdFromLabel('pdf 1');\nconst metadata = { tags: ['example', 'test'] };\nawait client.uploadAndProcessFile(pdfDocumentId, '/path/to/file.pdf', metadata, null);"
+            }
+        ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {},
+                  "example": { "message": "File processed successfully" }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/add_entry/": {
+        "post": {
+          "summary": "Add Entry",
+          "operationId": "add_entry_add_entry__post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AddEntryRequest" }
+              }
+            },
+            "required": true
+          },
+          "x-codeSamples": [
+            {
+              "lang": "curl",
+              "source": "curl -X POST \"https://sciphi-YOUR-APP.a.run.app/add_entry/\" -H \"Content-Type: application/json\" -d '{\"entry\": {\"document_id\": \"doc_1\", \"blobs\": {\"txt\": \"This is a test entry\"}, \"metadata\": {\"tags\": [\"example\", \"test\"]}}, \"settings\": {\"embedding_settings\": {\"do_upsert\": true}}}'"
+            },
+            {
+              "lang": "python",
+              "source": "client.add_entry(\n    generate_id_from_label(\"doc 1\"),\n    {\"txt\": \"This is a test entry\"},\n    {\"tags\": [\"example\", \"test\"]},\n    do_upsert=True,\n)"
+            },
+            {
+              "lang": "js",
+              "source": "await client.addEntry(\n  generateIdFromLabel('doc 1'),\n  { txt: 'This is a test entry' },\n  { tags: ['example', 'test'] },\n  true\n);"
+            }  
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": { "application/json": { "schema": {} } }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/add_entries/": {
+        "post": {
+          "summary": "Add Entries",
+          "operationId": "add_entries_add_entries__post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AddEntriesRequest" }
+              }
+            },
+            "required": true,
+            "x-codeSamples": [
+                {
+                  "lang": "curl",  
+                  "source": "curl -X POST \"https://sciphi-YOUR-APP.a.run.app/add_entries/\" -H \"Content-Type: application/json\" -d '{\"entries\": [{\"document_id\": \"doc_2\", \"blobs\": {\"txt\": \"Second test entry\"}, \"metadata\": {\"tags\": \"bulk\"}}, {\"document_id\": \"doc_3\", \"blobs\": {\"txt\": \"Third test entry\"}, \"metadata\": {\"tags\": \"example\"}}], \"settings\": {\"embedding_settings\": {\"do_upsert\": true}}}'"
+                },  
+                {
+                  "lang": "python",
+                  "source": "entries = [\n    {\n        \"document_id\": generate_id_from_label(\"doc 2\"),\n        \"blobs\": {\"txt\": \"Second test entry\"},\n        \"metadata\": {\"tags\": \"bulk\"},\n    },\n    {\n        \"document_id\": generate_id_from_label(\"doc 3\"),\n        \"blobs\": {\"txt\": \"Third test entry\"},\n        \"metadata\": {\"tags\": \"example\"},\n    },\n]\nclient.add_entries(entries, do_upsert=True)"
+                },
+                {
+                  "lang": "js",
+                  "source": "const entries = [\n  {\n    documentId: generateIdFromLabel('doc 2'),\n    blobs: { txt: 'Second test entry' },\n    metadata: { tags: 'bulk' },\n  },\n  {\n    documentId: generateIdFromLabel('doc 3'),\n    blobs: { txt: 'Third test entry' },\n    metadata: { tags: 'example' },\n  },  \n];\nawait client.addEntries(entries, true);"
+                }
+              ]
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": { "application/json": { "schema": {} } }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/search/": {
+        "post": {
+          "summary": "Search",
+          "operationId": "search_search__post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RAGQueryModel" }
+              }
+            },
+            "required": true,
+            "x-codeSamples": [
+                {  
+                  "lang": "curl",
+                  "source": "curl -X POST \"https://sciphi-YOUR-APP.a.run.app/search/\" -H \"Content-Type: application/json\" -d '{\"query\": \"test\", \"limit\": 5}'\n\ncurl -X POST \"https://sciphi-YOUR-APP.a.run.app/search/\" -H \"Content-Type: application/json\" -d '{\"query\": \"test\", \"limit\": 5, \"filters\": {\"tags\": [\"bulk\"]}}'"
+                },
+                {
+                  "lang": "python", 
+                  "source": "search_response = client.search(\"test\", limit=5)\n\nfiltered_search_response = client.search(\"test\", limit=5, filters={\"tags\": [\"bulk\"]})"
+                },
+                {  
+                  "lang": "js",
+                  "source": "const searchResponse = await client.search('test', 5);\n\nconst filteredSearchResponse = await client.search('test', 5, {\n  tags: ['bulk'],\n});"
+                }
+              ]      
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": { "application/json": { "schema": {} } }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/rag_completion/": {
+        "post": {
+          "summary": "Rag Completion",
+          "operationId": "rag_completion_rag_completion__post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RAGQueryModel" }
+              }
+            },
+            "required": true,
+            "x-codeSamples": [
+                {
+                  "lang": "curl",
+                  "source": "curl -X POST \"https://sciphi-YOUR-APP.a.run.app/rag_completion/\" -H \"Content-Type: application/json\" -d '{\"query\": \"Are there any test documents?\", \"limit\": 5, \"filters\": {\"document_id\": \"pdf_1\"}}'"  
+                },
+                {
+                  "lang": "python",
+                  "source": "rag_response = client.rag_completion(\n    \"Are there any test documents?\",\n    limit=5,\n    filters={\"document_id\": pdf_document_id},\n)"  
+                },
+                {  
+                  "lang": "js", 
+                  "source": "const ragResponse = await client.ragCompletion(\n  'Are there any test documents?',\n  5,\n  { document_id: pdfDocumentId }\n);"
+                }
+              ]
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": { "application/json": { "schema": {} } }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/eval": {
+        "post": {
+          "summary": "Eval",
+          "operationId": "eval_eval_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EvalPayloadModel" }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": { "application/json": { "schema": {} } }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/filtered_deletion/": {
+        "delete": {
+          "summary": "Filtered Deletion",
+          "operationId": "filtered_deletion_filtered_deletion__delete",
+          "x-codeSamples": [
+            {
+              "lang": "curl",
+              "source": "curl -X DELETE \"https://sciphi-YOUR-APP.a.run.app/filtered_deletion/?key=document_id&value=doc_2\""
+            },
+            {
+              "lang": "python",
+              "source": "client.filtered_deletion(\n    \"document_id\", generate_id_from_label(\"doc 2\")\n)"
+            },
+            {
+              "lang": "js",
+              "source": "await client.filteredDeletion('document_id', generateIdFromLabel('doc 2'));"
+            }  
+          ],  
+          "parameters": [
+            {
+              "name": "key",
+              "in": "query",
+              "required": true,
+              "schema": { "type": "string", "title": "Key" }
+            },
+            {
+              "name": "value",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "anyOf": [
+                  { "type": "boolean" },
+                  { "type": "integer" },
+                  { "type": "string" }
+                ],
+                "title": "Value"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": { "application/json": { "schema": {} } }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/get_user_ids/": {
+        "get": {
+          "summary": "Get User Ids",
+          "operationId": "get_user_ids_get_user_ids__get",
+          "x-codeSamples": [
+            {
+              "lang": "curl",
+              "source": "curl -X GET \"https://sciphi-YOUR-APP.a.run.app/get_user_ids/\""
+            },
+            {
+              "lang": "python",
+              "source": "client.get_user_ids()"
+            },
+            {
+              "lang": "js",
+              "source": "await client.getUserIds();"
+            }
+          ],  
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": { "application/json": { "schema": {} } }
+            }
+          }
+        }
+      },
+      "/get_user_documents/": {
+        "get": {
+          "summary": "Get User Documents",
+          "operationId": "get_user_documents_get_user_documents__get",
+          "x-codeSamples": [
+            {
+              "lang": "curl",
+              "source": "curl -X GET \"https://sciphi-YOUR-APP.a.run.app/get_user_documents/?user_id=example_user\""
+            },
+            {
+              "lang": "python",
+              "source": "client.get_user_documents(\"example_user\")"
+            },
+            {
+              "lang": "js",
+              "source": "await client.getUserDocuments('example_user');"
+            }
+          ],
+          "parameters": [
+            {
+              "name": "user_id",
+              "in": "query",
+              "required": true,
+              "schema": { "type": "string", "title": "User Id" }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": { "application/json": { "schema": {} } }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/logs": {
+        "get": {
+          "summary": "Logs",
+          "operationId": "logs_logs_get",
+          "x-codeSamples": [
+            {  
+              "lang": "curl",
+              "source": "curl -X GET \"https://sciphi-YOUR-APP.a.run.app/logs_summary\""
+            },
+            {  
+              "lang": "python",
+              "source": "logs_summary_response = client.get_logs_summary()"
+            },
+            {
+              "lang": "js",
+              "source": "const logsSummaryResponse = await client.getLogsSummary();"
+            }
+          ],
+            "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": { "application/json": { "schema": {} } }
+            }
+          }
+        }
+      },
+      "/logs_summary": {
+        "get": {
+          "summary": "Logs Summary",
+          "operationId": "logs_summary_logs_summary_get",
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": { "application/json": { "schema": {} } }
+            }
+          },
+          "x-codeSamples": [
+            {
+                "lang": "curl",
+                "source": "curl -X POST \"https://sciphi-YOUR-APP.a.run.app/add_entry/\" -H \"Content-Type: application/json\" -d '{\"entry\": {\"document_id\": \"doc_1\", \"blobs\": {\"txt\": \"This is a test entry\"}, \"metadata\": {\"tags\": [\"example\", \"test\"]}}, \"settings\": {\"embedding_settings\": {\"do_upsert\": true}}}'"
+            },
+            {
+                "lang": "python",
+                "source": "client.add_entry(\n    generate_id_from_label(\"doc 1\"),\n    {\"txt\": \"This is a test entry\"},\n    {\"tags\": [\"example\", \"test\"]},\n    do_upsert=True,\n)"
+            },
+            {
+                "lang": "js",
+                "source": "await client.addEntry(\n  generateIdFromLabel('doc 1'),\n  { txt: 'This is a test entry' },\n  { tags: ['example', 'test'] },\n  true\n);"
+            }  
+        ]
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "AddEntriesRequest": {
+          "properties": {
+            "entries": {
+              "items": { "$ref": "#/components/schemas/EntryModel" },
+              "type": "array",
+              "title": "Entries"
+            },
+            "settings": {
+              "allOf": [{ "$ref": "#/components/schemas/SettingsModel" }],
+              "default": {
+                "embedding_settings": { "do_chunking": true, "do_upsert": true },
+                "ingestion_settings": {},
+                "rag_settings": {}
+              }
+            }
+          },
+          "type": "object",
+          "required": ["entries"],
+          "title": "AddEntriesRequest"
+        },
+        "AddEntryRequest": {
+          "properties": {
+            "entry": { "$ref": "#/components/schemas/EntryModel" },
+            "settings": {
+              "allOf": [{ "$ref": "#/components/schemas/SettingsModel" }],
+              "default": {
+                "embedding_settings": { "do_chunking": true, "do_upsert": true },
+                "ingestion_settings": {},
+                "rag_settings": {}
+              }
+            }
+          },
+          "type": "object",
+          "required": ["entry"],
+          "title": "AddEntryRequest"
+        },
+        "Body_upload_and_process_file_upload_and_process_file__post": {
+          "properties": {
+            "document_id": { "type": "string", "title": "Document Id" },
+            "metadata": {
+              "type": "string",
+              "title": "Metadata",
+              "default": "{}"
+            },
+            "settings": {
+              "type": "string",
+              "title": "Settings",
+              "default": "{}"
+            },
+            "file": { "type": "string", "format": "binary", "title": "File" }
+          },
+          "type": "object",
+          "required": ["document_id", "file"],
+          "title": "Body_upload_and_process_file_upload_and_process_file__post"
+        },
+        "EmbeddingsSettingsModel": {
+          "properties": {
+            "do_chunking": {
+              "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+              "title": "Do Chunking",
+              "default": true
+            },
+            "do_upsert": {
+              "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+              "title": "Do Upsert",
+              "default": true
+            }
+          },
+          "type": "object",
+          "title": "EmbeddingsSettingsModel"
+        },
+        "EntryModel": {
+          "properties": {
+            "document_id": { "type": "string", "title": "Document Id" },
+            "blobs": {
+              "additionalProperties": { "type": "string" },
+              "type": "object",
+              "title": "Blobs"
+            },
+            "metadata": {
+              "anyOf": [{ "type": "object" }, { "type": "null" }],
+              "title": "Metadata"
+            }
+          },
+          "type": "object",
+          "required": ["document_id", "blobs", "metadata"],
+          "title": "EntryModel"
+        },
+        "EvalPayloadModel": {
+          "properties": {
+            "query": { "type": "string", "title": "Query" },
+            "context": { "type": "string", "title": "Context" },
+            "completion_text": { "type": "string", "title": "Completion Text" },
+            "run_id": { "type": "string", "title": "Run Id" },
+            "settings": { "$ref": "#/components/schemas/RAGSettingsModel" }
+          },
+          "type": "object",
+          "required": [
+            "query",
+            "context",
+            "completion_text",
+            "run_id",
+            "settings"
+          ],
+          "title": "EvalPayloadModel"
+        },
+        "GenerationConfigModel": {
+          "properties": {
+            "temperature": {
+              "type": "number",
+              "title": "Temperature",
+              "default": 0.1
+            },
+            "top_p": { "type": "number", "title": "Top P", "default": 1.0 },
+            "top_k": { "type": "integer", "title": "Top K", "default": 100 },
+            "max_tokens_to_sample": {
+              "type": "integer",
+              "title": "Max Tokens To Sample",
+              "default": 1024
+            },
+            "model": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "title": "Model",
+              "default": "gpt-4-0125-preview"
+            },
+            "stream": { "type": "boolean", "title": "Stream", "default": false },
+            "functions": {
+              "anyOf": [
+                { "items": { "type": "object" }, "type": "array" },
+                { "type": "null" }
+              ],
+              "title": "Functions"
+            },
+            "skip_special_tokens": {
+              "type": "boolean",
+              "title": "Skip Special Tokens",
+              "default": false
+            },
+            "stop_token": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "title": "Stop Token"
+            },
+            "num_beams": {
+              "type": "integer",
+              "title": "Num Beams",
+              "default": 1
+            },
+            "do_sample": {
+              "type": "boolean",
+              "title": "Do Sample",
+              "default": true
+            },
+            "add_generation_kwargs": {
+              "type": "object",
+              "title": "Add Generation Kwargs",
+              "default": {}
+            },
+            "generate_with_chat": {
+              "type": "boolean",
+              "title": "Generate With Chat",
+              "default": false
+            }
+          },
+          "type": "object",
+          "title": "GenerationConfigModel"
+        },
+        "HTTPValidationError": {
+          "properties": {
+            "detail": {
+              "items": { "$ref": "#/components/schemas/ValidationError" },
+              "type": "array",
+              "title": "Detail"
+            }
+          },
+          "type": "object",
+          "title": "HTTPValidationError"
+        },
+        "IngestionSettingsModel": {
+          "properties": {},
+          "type": "object",
+          "title": "IngestionSettingsModel"
+        },
+        "RAGQueryModel": {
+          "properties": {
+            "query": { "type": "string", "title": "Query" },
+            "limit": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Limit",
+              "default": 10
+            },
+            "filters": { "type": "object", "title": "Filters", "default": {} },
+            "settings": {
+              "allOf": [{ "$ref": "#/components/schemas/SettingsModel" }],
+              "default": {
+                "embedding_settings": { "do_chunking": true, "do_upsert": true },
+                "ingestion_settings": {},
+                "rag_settings": {}
+              }
+            },
+            "generation_config": {
+              "allOf": [{ "$ref": "#/components/schemas/GenerationConfigModel" }],
+              "default": {
+                "temperature": 0.1,
+                "top_p": 1.0,
+                "top_k": 100,
+                "max_tokens_to_sample": 1024,
+                "model": "gpt-4-0125-preview",
+                "stream": false,
+                "skip_special_tokens": false,
+                "num_beams": 1,
+                "do_sample": true,
+                "add_generation_kwargs": {},
+                "generate_with_chat": false
+              }
+            }
+          },
+          "type": "object",
+          "required": ["query"],
+          "title": "RAGQueryModel"
+        },
+        "RAGSettingsModel": {
+          "properties": {},
+          "type": "object",
+          "title": "RAGSettingsModel"
+        },
+        "SettingsModel": {
+          "properties": {
+            "embedding_settings": {
+              "allOf": [
+                { "$ref": "#/components/schemas/EmbeddingsSettingsModel" }
+              ],
+              "default": { "do_chunking": true, "do_upsert": true }
+            },
+            "ingestion_settings": {
+              "allOf": [
+                { "$ref": "#/components/schemas/IngestionSettingsModel" }
+              ],
+              "default": {}
+            },
+            "rag_settings": {
+              "allOf": [{ "$ref": "#/components/schemas/RAGSettingsModel" }],
+              "default": {}
+            }
+          },
+          "type": "object",
+          "title": "SettingsModel"
+        },
+        "ValidationError": {
+          "properties": {
+            "loc": {
+              "items": { "anyOf": [{ "type": "string" }, { "type": "integer" }] },
+              "type": "array",
+              "title": "Location"
+            },
+            "msg": { "type": "string", "title": "Message" },
+            "type": { "type": "string", "title": "Error Type" }
+          },
+          "type": "object",
+          "required": ["loc", "msg", "type"],
+          "title": "ValidationError"
+        }
+      }
+    }
+  }
