@@ -83,7 +83,7 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
    python -m r2r.examples.servers.config_pipeline --config=default --pipeline=qna
    ```
 
-[`Question & Answer Example Client`](r2r/examples/clients/run_qna_client.py): This **client script** should be executed subsequent to the server startup above with `pipeline=qna` specified. It facilitates the upload of text entries and PDFs to the server using the Python client and demonstrates the management of document and user-level vectors through its built-in features.
+[`Question & Answer Client`](r2r/examples/clients/run_qna_client.py): This **client script** should be executed subsequent to the server startup above with `pipeline=qna` specified. It facilitates the upload of text entries and PDFs to the server using the Python client and demonstrates the management of document and user-level vectors through its built-in features.
 
    ```bash
    # run the client
@@ -96,14 +96,14 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
 
 ## Synthetic Queries Example
 
-[`synthetic_query_pipeline.py`](r2r/examples/servers/synthetic_query_pipeline.py): Execute this script to start a backend server equipped with an advanced pipeline. This pipeline is designed to create synthetic queries, enhancing the RAG system's learning and performance.
+[`Synthetic Query Pipeline`](r2r/examples/servers/synthetic_query_pipeline.py): Execute this script to start a backend server equipped with more advanced synthetic query pipeline. This pipeline is designed to create synthetic queries, enhancing the RAG system's learning and performance.
 
    ```bash
    # launch the server
    python -m r2r.examples.servers.synthetic_query_pipeline
    ```
 
-[`run_synthetic_query_client.py`](r2r/examples/clients/run_synthetic_query_client.py): Use this client script after the synthetic query pipeline is running. It's tailored for use with the synthetic query pipeline, demonstrating the improved features of the RAG system.
+[`Synthetic Query Client`](r2r/examples/clients/run_synthetic_query_client.py): Use this client script after the synthetic query pipeline is running. It's tailored for use with the synthetic query pipeline, demonstrating the improved features of the RAG system.
 
    ```bash
    # run the client
@@ -112,7 +112,7 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
 
 ## Extra Examples
 
-[`reducto_pipeline.py`](r2r/examples/servers/reducto_pipeline.py): Launch this script to activate a backend server that integrates a Reducto adapter for enhanced PDF ingestion.
+[`Reducto Pipeline`](r2r/examples/servers/reducto_pipeline.py): Launch this script to activate a backend server that integrates a Reducto adapter for enhanced PDF ingestion.
 
    ```bash
    # launch the server
