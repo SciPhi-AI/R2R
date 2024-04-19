@@ -18,7 +18,7 @@ TextEmbeddingModel = Literal[
     "all-distilroberta-v1",
     "all-MiniLM-L12-v2",
     "multi-qa-distilbert-cos-v1",
-    "all-MiniLM-L6-v2",
+    "mixedbread-ai/mxbai-embed-large-v1",
     "multi-qa-MiniLM-L6-cos-v1",
     "paraphrase-multilingual-mpnet-base-v2",
     "paraphrase-albert-small-v2",

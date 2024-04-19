@@ -48,12 +48,12 @@ class E2EPipelineFactory:
         if embedding_config["provider"] == "openai":
             from r2r.embeddings import OpenAIEmbeddingProvider
 
-            return OpenAIEmbeddingProvider()
+            return OpenAIEmbeddingProvider(embedding_config)
         elif embedding_config["provider"] == "sentence-transformers":
             from r2r.embeddings import SentenceTransformerEmbeddingProvider
 
             return SentenceTransformerEmbeddingProvider(
-                embedding_config["model"]
+                embedding_config
             )
         else:
             raise ValueError(
