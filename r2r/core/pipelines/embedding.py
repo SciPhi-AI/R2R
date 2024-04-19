@@ -18,16 +18,14 @@ logger = logging.getLogger(__name__)
 class EmbeddingPipeline(Pipeline):
     def __init__(
         self,
-        embedding_model: str,
-        embeddings_provider: EmbeddingProvider,
-        db: VectorDBProvider,
+        embedding_provider: EmbeddingProvider,
+        vector_db_provider: VectorDBProvider,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs,
     ):
-        self.embedding_model = embedding_model
-        self.embeddings_provider = embeddings_provider
-        self.db = db
+        self.embedding_provider = embedding_provider
+        self.vector_db_provider = vector_db_provider
         super().__init__(logging_connection=logging_connection, **kwargs)
 
     def initialize_pipeline(self, *args, **kwargs) -> None:

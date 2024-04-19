@@ -59,7 +59,8 @@ class AgentRAGPipeline(WebRAGPipeline):
         self,
         query,
         filters={},
-        limit=10,
+        search_limit=25,
+        rerank_limit=15,
         search_only=False,
         generation_config: Optional[GenerationConfig] = None,
         *args,
@@ -91,5 +92,11 @@ class AgentRAGPipeline(WebRAGPipeline):
         if not search_query:
             return RAGPipelineOutput(search_results=[], completion=completion)
 
-        search_results = self.search(search_query, filters={}, limit=5)
+        search_results = self.search(
+            search_query, filters={}, limit=search_limit
+        )
+        search_results = self.rerank_results(
+            search_query, search_results, rerank_limit
+        )
+
         return RAGPipelineOutput(search_results, None, None)
