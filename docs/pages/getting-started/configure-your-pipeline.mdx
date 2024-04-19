@@ -22,7 +22,7 @@ For more information, refer to [vector database providers](/providers/vector-dat
 R2R supports OpenAI and local inference as embedding providers. To configure the embedding settings, update the `embedding` section in the `config.json` file. Specify the desired embedding model, dimension, and batch size according to your requirements. This can easily be extended by request.
 
 - `openai`: Integration with OpenAI, supporting models like `text-embedding-3-small` and `text-embedding-3-large`.
-- `sentence-transformers`: Integration with the sentence transformers library, providing support for models available on HuggingFace, like `all-MiniLM-L6-v2`.
+- `sentence-transformers`: Integration with the sentence transformers library, providing support for models available on HuggingFace, like `mixedbread-ai/mxbai-embed-large-v1`.
 
 For more information, refer to [embedding providers](/providers/embeddings).
 
@@ -40,22 +40,6 @@ For more information, refer to [embedding providers](/providers/embeddings).
 - `llama-cpp`: Integrates with the llama-cpp library for local inference.
 
 For more information, refer to [llm providers](/providers/llms).
-
-### Evaluation Provider
-
-R2R supports DeepEval and PareaAI as evaluation providers. To configure the evaluation settings, update the `evals` section in the `config.json` file. Specify the evaluation frequency to determine how often the pipeline should be evaluated. These evaluations can be viewed readily in the deployment tab.
-
-For more information, refer to [eval providers](/providers/evals).
-
-Here's the updated "Evaluation Provider" section:
-
-### Evaluation Provider
-
-R2R supports DeepEval and PareaAI as evaluation providers. These providers allow you to evaluate the performance and quality of your RAG pipeline at regular intervals.
-- `provider`: Specifies the evaluation provider to use (`deepeval` or `pareaai`).
-- `frequency`: Determines how often the pipeline should be evaluated. It represents the fraction of queries that should trigger an evaluation. For example, a frequency of `0.1` means that approximately 10% of the queries will be evaluated.
-
-Here's the updated "Evaluation Provider" section:
 
 ### Evaluation Provider
 
