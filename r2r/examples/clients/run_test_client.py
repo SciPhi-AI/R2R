@@ -10,8 +10,7 @@ client = R2RClient(base_url)
 
 from r2r.client import R2RClient
 
-# print('eval_result:', eval_result)
-print("Upserting entry to remote db...")
+print("Upserting entry to remote vector db...")
 # Upsert a single entry
 
 entry_response = client.add_entry(
@@ -32,7 +31,7 @@ entry_response = client.add_entry(
 print(f"Copy same entry response:\n{entry_response}\n\n")
 
 
-print("Upserting entries to remote db...")
+print("Upserting entries to remote vector db...")
 # Upsert multiple entries
 entries = [
     {
@@ -50,23 +49,23 @@ bulk_upsert_response = client.add_entries(entries, do_upsert=True)
 print(f"Upsert entries response:\n{bulk_upsert_response}\n\n")
 
 # Perform a search
-print("Searching remote db...")
+print("Searching remote vector db...")
 search_response = client.search("test", 5)
 print(f"Search response:\n{search_response}\n\n")
 
-print("Searching remote db with filter...")
+print("Searching remote vector db with filter...")
 # Perform a search w/ filter
 filtered_search_response = client.search("test", 5, filters={"tags": "bulk"})
 print(f"Search response w/ filter:\n{filtered_search_response}\n\n")
 
-print("Deleting sample document in remote db...")
+print("Deleting sample document in remote vector db...")
 # Delete a document
 response = client.filtered_deletion(
     "document_id", generate_id_from_label("doc 2")
 )
 print(f"Deletion response:\n{response}\n\n")
 
-print("Searching remote db with filter after deletion...")
+print("Searching remote vector db with filter after deletion...")
 # Perform a search w/ filter after deletion
 post_deletion_filtered_search_response = client.search(
     "test", 5, filters={"tags": "bulk"}
@@ -89,7 +88,7 @@ upload_pdf_response = client.upload_and_process_file(
 )
 print(f"Upload test pdf response:\n{upload_pdf_response}\n\n")
 
-print("Searching remote db after upload...")
+print("Searching remote vector db after upload...")
 # Perform a search on this file
 pdf_filtered_search_response = client.search(
     "what is a cool physics equation?",
