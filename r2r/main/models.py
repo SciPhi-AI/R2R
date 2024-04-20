@@ -74,7 +74,8 @@ class GenerationConfigModel(BaseModel):
 
 class RAGQueryModel(BaseModel):
     query: str
-    limit: Optional[int] = 10
+    search_limit: Optional[int] = 25
+    rerank_limit: Optional[int] = 15
     filters: dict = {}
     settings: SettingsModel = SettingsModel()
     generation_config: GenerationConfigModel = GenerationConfigModel()

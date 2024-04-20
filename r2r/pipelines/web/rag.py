@@ -16,6 +16,7 @@ from r2r.core import (
 )
 from r2r.embeddings import OpenAIEmbeddingProvider
 from r2r.integrations import SerperClient
+
 from ..core.prompt_provider import BasicPromptProvider
 from ..qna.rag import QnARAGPipeline
 
@@ -42,10 +43,9 @@ logger = logging.getLogger(__name__)
 class WebRAGPipeline(QnARAGPipeline):
     def __init__(
         self,
-        llm: LLMProvider,
-        db: VectorDBProvider,
-        embedding_model: str,
-        embeddings_provider: OpenAIEmbeddingProvider,
+        llm_provider: LLMProvider,
+        embedding_provider: OpenAIEmbeddingProvider,
+        vector_db_provider: VectorDBProvider,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         prompt_provider: Optional[BasicPromptProvider] = BasicPromptProvider(
             WEB_RAG_SYSTEM_PROMPT, WEB_RAG_TASK_PROMPT
@@ -53,12 +53,11 @@ class WebRAGPipeline(QnARAGPipeline):
     ) -> None:
         logger.debug(f"Initalizing `WebRAGPipeline`.")
         super().__init__(
-            llm=llm,
-            logging_connection=logging_connection,
-            db=db,
-            embedding_model=embedding_model,
-            embeddings_provider=embeddings_provider,
+            llm_provider=llm_provider,
+            vector_db_provider=vector_db_provider,
+            embedding_provider=embedding_provider,
             prompt_provider=prompt_provider,
+            logging_connection=logging_connection,
         )
         self.serper_client = SerperClient()
 
