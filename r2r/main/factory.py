@@ -29,7 +29,7 @@ dotenv.load_dotenv()
 
 class E2EPipelineFactory:
     @staticmethod
-    def get_vector_db(database_config: dict[str, Any]):
+    def get_vector_db_provider(database_config: dict[str, Any]):
         if database_config["provider"] == "qdrant":
             from r2r.vector_dbs import QdrantDB
 
@@ -44,7 +44,7 @@ class E2EPipelineFactory:
             return LocalVectorDB()
 
     @staticmethod
-    def get_embeddings_provider(embedding_config: dict[str, Any]):
+    def get_embedding_provider(embedding_config: dict[str, Any]):
         if embedding_config["provider"] == "openai":
             from r2r.embeddings import OpenAIEmbeddingProvider
 
@@ -52,16 +52,14 @@ class E2EPipelineFactory:
         elif embedding_config["provider"] == "sentence-transformers":
             from r2r.embeddings import SentenceTransformerEmbeddingProvider
 
-            return SentenceTransformerEmbeddingProvider(
-                embedding_config
-            )
+            return SentenceTransformerEmbeddingProvider(embedding_config)
         else:
             raise ValueError(
                 f"Embedding provider {embedding_config['provider']} not supported"
             )
 
     @staticmethod
-    def get_llm(llm_config: dict[str, Any]):
+    def get_llm_provider(llm_config: dict[str, Any]):
         if llm_config["provider"] == "openai":
             return OpenAILLM(OpenAIConfig())
         elif llm_config["provider"] == "litellm":
@@ -90,9 +88,9 @@ class E2EPipelineFactory:
     @staticmethod
     def create_pipeline(
         config: R2RConfig,
-        db=None,
-        embeddings_provider=None,
-        llm=None,
+        vector_db_provider=None,
+        embedding_provider=None,
+        llm_provider=None,
         text_splitter=None,
         adapters=None,
         scraper_pipeline_impl=BasicScraperPipeline,
@@ -104,19 +102,25 @@ class E2EPipelineFactory:
     ):
         logging.basicConfig(level=config.logging_database["level"])
 
-        embeddings_provider = (
-            embeddings_provider
-            or E2EPipelineFactory.get_embeddings_provider(config.embedding)
+        embedding_provider = (
+            embedding_provider
+            or E2EPipelineFactory.get_embedding_provider(config.embedding)
         )
-        embedding_model = config.embedding["model"]
-        embedding_dimension = config.embedding["dimension"]
-        embedding_batch_size = config.embedding["batch_size"]
 
-        db = db or E2EPipelineFactory.get_vector_db(config.vector_database)
+        vector_db_provider = (
+            vector_db_provider
+            or E2EPipelineFactory.get_vector_db_provider(
+                config.vector_database
+            )
+        )
         collection_name = config.vector_database["collection_name"]
-        db.initialize_collection(collection_name, embedding_dimension)
+        vector_db_provider.initialize_collection(
+            collection_name, embedding_provider.search_dimension
+        )
 
-        llm = llm or E2EPipelineFactory.get_llm(config.language_model)
+        llm_provider = llm_provider or E2EPipelineFactory.get_llm_provider(
+            config.language_model
+        )
 
         logging_connection = LoggingDatabaseConnection(
             config.logging_database["provider"],
@@ -124,10 +128,9 @@ class E2EPipelineFactory:
         )
 
         cmpl_pipeline = rag_pipeline_impl(
-            llm,
-            db=db,
-            embedding_model=embedding_model,
-            embeddings_provider=embeddings_provider,
+            embedding_provider=embedding_provider,
+            llm_provider=llm_provider,
+            vector_db_provider=vector_db_provider,
             logging_connection=logging_connection,
         )
 
@@ -136,12 +139,11 @@ class E2EPipelineFactory:
         )
 
         embd_pipeline = embedding_pipeline_impl(
-            embedding_model,
-            embeddings_provider,
-            db,
+            embedding_provider=embedding_provider,
+            vector_db_provider=vector_db_provider,
             logging_connection=logging_connection,
             text_splitter=text_splitter,
-            embedding_batch_size=embedding_batch_size,
+            embedding_batch_size=config.embedding.get("batch_size", 1),
         )
 
         eval_pipeline = eval_pipeline_impl(
