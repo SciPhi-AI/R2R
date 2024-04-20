@@ -9,10 +9,9 @@ The `QnARAGPipeline` is a simple implementation of the `RAGPipeline` abstract ba
 ### Initialization
 
 The `QnARAGPipeline` is initialized with the following parameters:
-- `llm`: An instance of `LLMProvider` for generating completions.
-- `db`: An instance of `VectorDBProvider` for searching and retrieving documents.
-- `embedding_model`: The name of the embedding model to use.
-- `embeddings_provider`: An instance of `OpenAIEmbeddingProvider` for generating embeddings.
+- `llm_provider`: An instance of `LLMProvider` for generating completions.
+- `vector_db_provider`: An instance of `VectorDBProvider` for searching and retrieving documents.
+- `embedding_provider`: An instance of `OpenAIEmbeddingProvider` for generating embeddings.
 - `prompt_provider` (optional): An instance of `PromptProvider` for providing prompts (default is `BasicPromptProvider`).
 - `logging_connection` (optional): An instance of `LoggingDatabaseConnection` for logging.
 
@@ -40,10 +39,9 @@ To create a custom RAG pipeline, you can subclass the `RAGPipeline` abstract bas
 class CustomRAGPipeline(RAGPipeline):
     def __init__(
         self,
-        llm: LLMProvider,
-        db: VectorDBProvider,
-        embedding_model: str,
-        embeddings_provider: OpenAIEmbeddingProvider,
+        llm_provider: LLMProvider,
+        vector_db_provider: VectorDBProvider,
+        embedding_provider: OpenAIEmbeddingProvider,
         prompt_provider: Optional[PromptProvider] = None,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
     ) -> None:
@@ -52,13 +50,12 @@ class CustomRAGPipeline(RAGPipeline):
         self.prompt_provider = prompt_provider
 
         super().__init__(
-            llm,
+            llm_provider=llm_provider,
             prompt_provider=prompt_provider,
+            embedding_provider=embedding_provider,
+            vector_db_provider=vector_db_provider,
             logging_connection=logging_connection,
         )
-        self.embedding_model = embedding_model
-        self.embeddings_provider = embeddings_provider
-        self.db = db
         self.pipeline_run_info = None
 
     def transform_query(self, query: str) -> str:
@@ -75,10 +72,9 @@ class CustomRAGPipeline(RAGPipeline):
         **kwargs,
     ) -> list[VectorSearchResult]:
         # Custom document retrieval logic
-        results = self.db.search(
-            query_vector=self.embeddings_provider.get_embedding(
+        results = self.vector_db_provider.search(
+            query_vector=self.embedding_provider.get_embedding(
                 transformed_query,
-                self.embedding_model,
             ),
             filters=filters,
             limit=limit,
@@ -86,10 +82,10 @@ class CustomRAGPipeline(RAGPipeline):
         return results
 
     def rerank_results(
-        self, results: list[VectorSearchResult]
+        self, transformed_query: str, results: list[VectorSearchResult], limit
     ) -> list[VectorSearchResult]:
         # Custom result reranking logic
-        return list(reversed(results))
+        return list(reversed(results))[0:limit]
 
     def _format_results(self, results: list[VectorSearchResult]) -> str:
         # Custom result formatting logic

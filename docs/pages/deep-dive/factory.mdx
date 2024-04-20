@@ -11,9 +11,9 @@ from r2r.main import E2EPipelineFactory, R2RConfig
 
 app = E2EPipelineFactory.create_pipeline(
     config=R2RConfig.load_config(),
-    db=None,
-    embeddings_provider=None,
-    llm=None,
+    vector_db_provider=None,
+    embedding_provider=None,
+    llm_provider=None,
     text_splitter=None,
     adapters=None,
     ingestion_pipeline_impl=BasicIngestionPipeline,
@@ -37,7 +37,7 @@ This method retrieves the appropriate vector database based on the `database_con
 - `pgvector`: Returns an instance of `PGVectorDB`.
 - `local`: Returns an instance of `LocalVectorDB`.
 
-### `get_embeddings_provider(embedding_config: dict[str, Any])`
+### `get_embedding_provider(embedding_config: dict[str, Any])`
 
 This method retrieves the appropriate embeddings provider based on the `embedding_config`. It supports the following embeddings providers:
 - `openai`: Returns an instance of `OpenAIEmbeddingProvider`.
@@ -58,10 +58,10 @@ This method retrieves the appropriate text splitter based on the `text_splitter_
 This method creates the end-to-end pipeline by assembling various components based on the provided `config` and optional parameters. It performs the following steps:
 
 1. Sets up logging based on the `logging_database` configuration.
-2. Retrieves the embeddings provider using `get_embeddings_provider` or uses the provided `embeddings_provider`.
-3. Retrieves the vector database using `get_vector_db` or uses the provided `db`.
+2. Retrieves the embeddings provider using `get_embedding_provider` or uses the provided `embedding_provider`.
+3. Retrieves the vector database using `get_vector_db_provider` or uses the provided `vector_db_provider`.
 4. Initializes the vector database collection with the specified `collection_name` and `embedding_dimension`.
-5. Retrieves the language model using `get_llm` or uses the provided `llm`.
+5. Retrieves the language model using `get_llm_provider` or uses the provided `llm`.
 6. Creates a `LoggingDatabaseConnection` instance for logging purposes.
 7. Creates an instance of the `rag_pipeline_impl` (default: `QnARAGPipeline`) with the language model, vector database, embedding model, embeddings provider, and logging connection.
 8. Retrieves the text splitter using `get_text_splitter` or uses the provided `text_splitter`.

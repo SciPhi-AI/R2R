@@ -27,7 +27,10 @@ class QnAClient:
         data_path = os.path.join(current_file_directory, "..", "data")
         for file_path in glob.glob(os.path.join(data_path, "*.pdf")):
             file_name = file_path.split(os.path.sep)[-1]
-            if document_filter.lower() == "all" or file_name.lower().startswith(document_filter.lower()):
+            if (
+                document_filter.lower() == "all"
+                or file_name.lower().startswith(document_filter.lower())
+            ):
                 if file_name in self.titles:
                     document_id = generate_id_from_label(file_path)
                     metadata = {
@@ -39,11 +42,12 @@ class QnAClient:
                         document_id, file_path, metadata, settings
                     )
                     print("Upload response = ", upload_response)
-                    
+
     def search(self, query):
         search_response = self.client.search(
             query,
-            5,
+            search_limit=25,
+            rerank_limit=15,
             filters={"user_id": self.user_id},
         )
         for i, response in enumerate(search_response):
@@ -56,7 +60,8 @@ class QnAClient:
     def rag_completion(self, query, model="gpt-4-turbo-preview"):
         rag_response = self.client.rag_completion(
             query,
-            5,
+            search_limit=25,
+            rerank_limit=15,
             filters={"user_id": self.user_id},
             generation_config={"model": model},
         )
