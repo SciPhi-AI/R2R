@@ -8,7 +8,7 @@ The `BasicEmbeddingPipeline` is a simple implementation of the `EmbeddingPipelin
 
 ### Initialization
 
-The `BasicEmbeddingPipeline` is initialized with the `embedding_model`, `embeddings_provider`, `db`, `text_splitter`, an optional `logging_connection`, `embedding_batch_size`, and `id_prefix`.
+The `BasicEmbeddingPipeline` is initialized with an `embedding_provider`, `vector_db_provider`, `text_splitter`, an optional `logging_connection`, `embedding_batch_size`, and `id_prefix`.
 
 ### Text Extraction
 
@@ -70,18 +70,16 @@ import textstat
 class CustomEmbeddingPipeline(BasicEmbeddingPipeline):
     def __init__(
         self,
-        embedding_model: str,
-        embeddings_provider: OpenAIEmbeddingProvider,
-        db: VectorDBProvider,
+        embedding_provider: OpenAIEmbeddingProvider,
+        vector_db_provider: VectorDBProvider,
         text_splitter: TextSplitter,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         embedding_batch_size: int = 1,
         id_prefix: str = "demo",
     ):
         super().__init__(
-            embedding_model,
-            embeddings_provider,
-            db,
+            embedding_provider,
+            vector_db_provider,
             text_splitter,
             logging_connection,
             embedding_batch_size,

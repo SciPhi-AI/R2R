@@ -209,7 +209,11 @@ def create_app(
     async def search(query: RAGQueryModel):
         try:
             rag_completion = rag_pipeline.run(
-                query.query, query.filters, query.limit, search_only=True
+                query.query,
+                query.filters,
+                query.search_limit,
+                query.rerank_limit,
+                search_only=True,
             )
             return rag_completion.search_results
         except Exception as e:
@@ -228,7 +232,8 @@ def create_app(
                 untyped_completion = rag_pipeline.run(
                     query.query,
                     query.filters,
-                    query.limit,
+                    query.search_limit,
+                    query.rerank_limit,
                     generation_config=query.generation_config,
                 )
                 # Tell the type checker that rag_completion is a RAGPipelineOutput
@@ -285,7 +290,8 @@ def create_app(
                         rag_pipeline.run(
                             query.query,
                             query.filters,
-                            query.limit,
+                            query.search_limit,
+                            query.renark_limit,
                             generation_config=gen_config,
                         ),
                     )
@@ -401,7 +407,7 @@ def create_app(
     @app.delete("/filtered_deletion/")
     async def filtered_deletion(key: str, value: Union[bool, int, str]):
         try:
-            embedding_pipeline.db.filtered_deletion(key, value)
+            embedding_pipeline.vector_db_provider.filtered_deletion(key, value)
             return {"message": "Entries deleted successfully."}
         except Exception as e:
             logging.error(
@@ -412,8 +418,10 @@ def create_app(
     @app.get("/get_user_ids/")
     async def get_user_ids():
         try:
-            user_ids = embedding_pipeline.db.get_all_unique_values(
-                metadata_field="user_id"
+            user_ids = (
+                embedding_pipeline.vector_db_provider.get_all_unique_values(
+                    metadata_field="user_id"
+                )
             )
             return {"user_ids": user_ids}
         except Exception as e:
@@ -423,8 +431,10 @@ def create_app(
     @app.get("/get_user_documents/")
     async def get_user_documents(user_id: str):
         try:
-            document_ids = embedding_pipeline.db.get_all_unique_values(
-                metadata_field="document_id", filters={"user_id": user_id}
+            document_ids = (
+                embedding_pipeline.vector_db_provider.get_all_unique_values(
+                    metadata_field="document_id", filters={"user_id": user_id}
+                )
             )
             return {"document_ids": document_ids}
         except Exception as e:
