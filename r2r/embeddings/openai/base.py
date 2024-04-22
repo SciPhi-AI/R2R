@@ -73,7 +73,9 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 "OpenAIEmbeddingProvider does not support separate reranking."
             )
 
-    def get_embedding(self, text: str, stage: PipelineStage = PipelineStage.SEARCH) -> list[float]:
+    def get_embedding(
+        self, text: str, stage: PipelineStage = PipelineStage.SEARCH
+    ) -> list[float]:
         if stage != PipelineStage.SEARCH:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."

@@ -22,7 +22,7 @@
   },
   "evals": {
     "provider": "parea",
-    "frequency": 1.0
+    "frequency": 0.0
   },
   "app": {
     "max_logs": 100,
