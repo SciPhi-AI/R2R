@@ -6,8 +6,8 @@ import logging
 from abc import abstractmethod
 from typing import Any, Optional
 
+from ..logging import LoggingDatabaseConnection
 from ..providers.embedding import EmbeddingProvider
-from ..providers.logging import LoggingDatabaseConnection
 from ..providers.vector_db import VectorDBProvider, VectorEntry
 from ..utils import generate_run_id
 from .pipeline import Pipeline

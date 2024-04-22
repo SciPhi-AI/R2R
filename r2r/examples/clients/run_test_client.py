@@ -8,7 +8,6 @@ from r2r.core.utils import generate_id_from_label
 base_url = "http://localhost:8000"
 client = R2RClient(base_url)
 
-from r2r.client import R2RClient
 
 print("Upserting entry to remote vector db...")
 # Upsert a single entry
