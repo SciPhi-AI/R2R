@@ -35,6 +35,9 @@ class LLMConfig(ProviderConfig):
     provider: Optional[str] = None
 
     def validate(self) -> None:
+        if not self.provider:
+            raise ValueError("Provider must be set.")
+
         if self.provider and self.provider not in self.supported_providers:
             raise ValueError(f"Provider '{self.provider}' is not supported.")
 

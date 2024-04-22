@@ -1,8 +1,7 @@
-from abc import abstractmethod
-from typing import Any, Iterator, Optional
+from typing import Iterator, Optional
 
 from ..abstractions.document import DocumentPage
-from ..providers.logging import LoggingDatabaseConnection
+from ..logging import LoggingDatabaseConnection
 from ..utils import generate_run_id
 from .pipeline import Pipeline
 

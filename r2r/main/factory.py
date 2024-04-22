@@ -3,7 +3,12 @@ from typing import Any
 
 import dotenv
 
-from r2r.core import EmbeddingConfig, EvalConfig, LLMConfig, LoggingDatabaseConnection
+from r2r.core import (
+    EmbeddingConfig,
+    EvalConfig,
+    LLMConfig,
+    LoggingDatabaseConnection,
+)
 from r2r.core.utils import RecursiveCharacterTextSplitter
 from r2r.llms import (
     LiteLLM,
@@ -60,7 +65,7 @@ class E2EPipelineFactory:
             raise ValueError(
                 f"Embedding provider {embedding_config['provider']} not supported"
             )
-        
+
     @staticmethod
     def get_eval_provider(eval_config: dict[str, Any]):
         eval_config = EvalConfig.create(**eval_config)
@@ -84,7 +89,7 @@ class E2EPipelineFactory:
         elif eval_config.provider == "none":
             eval_provider = None
         return eval_provider
-    
+
     @staticmethod
     def get_llm_provider(llm_config: dict[str, Any]):
         if llm_config["provider"] == "openai":
