@@ -1,29 +1,43 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+from dataclasses import dataclass
 from enum import Enum
+from typing import List, Optional
 
-from ..providers.vector_db import VectorSearchResult
+from .base import Provider, ProviderConfig
+from .vector_db import VectorSearchResult
 
 
-class EmbeddingProvider(ABC):
+@dataclass
+class EmbeddingConfig(ProviderConfig):
+    """A base embedding configuration class"""
+
+    provider: Optional[str] = None
+    search_model: Optional[str] = None
+    search_dimension: Optional[int] = None
+    rerank_model: Optional[str] = None
+
+    def validate(self) -> None:
+        if not self.provider:
+            raise ValueError(
+                "The 'provider' field must be set for EmbeddingConfig."
+            )
+        if self.provider not in self.supported_providers:
+            raise ValueError(f"Provider '{self.provider}' is not supported.")
+
+    @property
+    def supported_providers(self) -> List[str]:
+        return ["openai", "sentence-transformers"]
+
+
+class EmbeddingProvider(Provider):
     """An abstract class to provide a common interface for embedding providers."""
 
     class PipelineStage(Enum):
         SEARCH = 1
         RERANK = 2
 
-    supported_providers = ["openai", "sentence-transformers"]
-
-    def __init__(self, config: dict):
-        self.config = config
-        provider = config.get("provider", None)
-        if not provider:
-            raise ValueError(
-                "Must set provider in order to initialize EmbeddingProvider."
-            )
-        if provider not in EmbeddingProvider.supported_providers:
-            raise ValueError(
-                f"Error, `{provider}` is not in EmbeddingProvider's list of supported providers."
-            )
+    def __init__(self, config: EmbeddingConfig):
+        super().__init__(config)
 
     @abstractmethod
     def get_embedding(
