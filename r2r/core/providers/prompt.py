@@ -1,9 +1,11 @@
 from abc import abstractmethod
+from dataclasses import dataclass
 from typing import Any, List, Optional
 
 from .base import Provider, ProviderConfig
 
 
+@dataclass
 class PromptConfig(ProviderConfig):
     def validate(self) -> None:
         pass
@@ -16,6 +18,12 @@ class PromptConfig(ProviderConfig):
 
 class PromptProvider(Provider):
     def __init__(self, config: Optional[PromptConfig] = None):
+        if config is None:
+            config = PromptConfig()
+        elif not isinstance(config, PromptConfig):
+            raise ValueError(
+                "PromptProvider must be initialized with a `PromptConfig`."
+            )
         super().__init__(config)
 
     @abstractmethod

@@ -37,6 +37,11 @@ class EmbeddingProvider(Provider):
         RERANK = 2
 
     def __init__(self, config: EmbeddingConfig):
+        if not isinstance(config, EmbeddingConfig):
+            raise ValueError(
+                "EmbeddingProvider must be initialized with a `EmbeddingConfig`."
+            )
+
         super().__init__(config)
 
     @abstractmethod

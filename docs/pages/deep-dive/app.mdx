@@ -83,7 +83,12 @@ The application uses a configuration file (`config.json`) to set various setting
     "provider": "openai",
     "model": "text-embedding-3-small",
     "dimension": 1536,
-    "batch_size": 32
+    "batch_size": 32,
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 512,
+      "chunk_overlap": 20
+    }
   },
   "evals": {
     "provider": "deepeval",
@@ -99,11 +104,6 @@ The application uses a configuration file (`config.json`) to set various setting
   },
   "ingestion": {
     "provider": "local",
-    "text_splitter": {
-      "type": "recursive_character",
-      "chunk_size": 512,
-      "chunk_overlap": 20
-    }
   },
   "vector_database": {
     "provider": "local",
