@@ -3,7 +3,7 @@ import os
 
 from openai import OpenAI
 
-from r2r.core import EmbeddingProvider, PipelineStage, VectorSearchResult
+from r2r.core import EmbeddingProvider, VectorSearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -74,9 +74,11 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             )
 
     def get_embedding(
-        self, text: str, stage: PipelineStage = PipelineStage.SEARCH
+        self,
+        text: str,
+        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
     ) -> list[float]:
-        if stage != PipelineStage.SEARCH:
+        if stage != EmbeddingProvider.PipelineStage.SEARCH:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
             )
@@ -95,9 +97,11 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         )
 
     def get_embeddings(
-        self, texts: list[str], stage: PipelineStage = PipelineStage.SEARCH
+        self,
+        texts: list[str],
+        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
     ) -> list[list[float]]:
-        if stage != PipelineStage.SEARCH:
+        if stage != EmbeddingProvider.PipelineStage.SEARCH:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
             )
@@ -118,7 +122,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self,
         transformed_query: str,
         texts: list[VectorSearchResult],
-        stage: PipelineStage = PipelineStage.RERANK,
+        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.RERANK,
         limit: int = 10,
     ):
         return texts[:limit]

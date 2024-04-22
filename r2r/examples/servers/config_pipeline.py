@@ -61,7 +61,16 @@ if __name__ == "__main__":
         choices=PIPELINE_OPTIONS.keys(),
         help="Pipeline implementation to be deployed",
     )
+    parser.add_argument(
+        "--port",
+        type=str,
+        default="8000",
+        help="Port to serve deployed pipeline on.",
+    )
+
     args, _ = parser.parse_known_args()
 
+    port = os.getenv("PORT") or args.port
+
     app = create_app(args.config, args.pipeline)
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=int(port))

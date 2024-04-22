@@ -5,7 +5,8 @@ from .pipelines.eval import EvalPipeline
 from .pipelines.ingestion import IngestionPipeline
 from .pipelines.rag import RAGPipeline
 from .pipelines.scraping import ScraperPipeline
-from .providers.embedding import EmbeddingProvider, PipelineStage
+from .providers.agent import AgentProvider
+from .providers.embedding import EmbeddingProvider
 from .providers.eval import EvalProvider
 from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
 from .providers.logging import LoggingDatabaseConnection, log_execution_to_db
@@ -18,19 +19,19 @@ from .providers.vector_db import (
 
 __all__ = [
     "DocumentPage",
-    "DefaultPromptProvider",
     "RAGPipelineOutput",
     "EmbeddingPipeline",
     "EvalPipeline",
     "IngestionPipeline",
-    "ScraperPipeline",
     "RAGPipeline",
+    "ScraperPipeline",
+    "AgentProvider",
+    "EmbeddingProvider",
+    "DefaultPromptProvider",
     "LoggingDatabaseConnection",
     "log_execution_to_db",
     "PromptProvider",
     "EvalProvider",
-    "EmbeddingProvider",
-    "PipelineStage",
     "GenerationConfig",
     "LLMConfig",
     "LLMProvider",

@@ -28,6 +28,17 @@ R2R was conceived to bridge the gap between local LLM experimentation and scalab
 - **⚖️ Autoscale**: Scale your pipeline effortlessly in the cloud using [SciPhi](https://sciphi.ai/).
 - **🤖 OSS**: Benefit from a framework developed by the open-source community, designed to simplify RAG deployment.
 
+# Table of Contents
+1. [Demo(s)](#demos)
+2. [Links](#links)
+3. [Quick Install](#quick-install)
+4. [Docker](#docker)
+5. [Q&A Example](#q&a-example)
+6. [HyDE Example](#hyde-example)
+7. [Running Local RAG](#running-local-rag)
+8. [Core Abstractions](#core-abstractions)
+
+
 ## Demo(s)
 
 Using the cloud application to deploy the pre-built basic pipeline:
@@ -73,13 +84,13 @@ docker pull emrgntcmplxty/r2r:latest
 docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  emrgntcmplxty/r2r:latest
 ```
 
-## Basic Example
+## Q&A Example
 
 [`Configurable Pipeline`](r2r/examples/servers/config_pipeline.py): Execute this script to select and serve a **Q&A RAG**, **Web RAG**, or **Agent RAG** pipeline. This starter pipeline supports ingestion, embedding, and question and the specified RAG, all accessible via a REST API.
    ```bash
    # launch the server
-   # For ex., do `export CONFIG_OPTION=local_ollama` or ``--config=local_ollama` to run fully locally
-   # For ex., do `export PIPELINE_OPTION=web` or ``--pipeline=web` to run WebRAG pipeline
+   # For ex., do `export CONFIG_OPTION=local_ollama` or `--config=local_ollama` to run fully locally
+   # For ex., do `export PIPELINE_OPTION=web` or `--pipeline=web` to run WebRAG pipeline
    python -m r2r.examples.servers.config_pipeline --config=default --pipeline=qna
    ```
 
@@ -118,9 +129,6 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
    
    # <completion>Lyft's net loss in 2020 was $1.8 billion.</completion>
    ```
-### Running Local RAG
-
-[Refer here](https://r2r-docs.sciphi.ai/tutorials/local_rag) for a tutorial on how to modify the commands above to use local providers.
 
 ## HyDE Example
 
@@ -128,24 +136,19 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
 
    ```bash
    # launch the server
-   python -m r2r.examples.servers.hyde_pipeline
+   python -m r2r.examples.servers.config_pipeline --config=default --pipeline=hyde
    ```
 
    ```bash
-   poetry run python -m r2r.examples.clients.run_qna_client ingest --document_filter=all # ingests Lyft 10K, Uber 10K, and others
+   python -m r2r.examples.clients.run_qna_client ingest --document_filter=all # ingests Lyft 10K, Uber 10K, and others
 
    # run the client
-   python -m r2r.examples.clients.run_synthetic_query_client
+   python -m r2r.examples.clients.run_qna_client search --query="What was lyft and ubers profit in 2020?"
    ```
 
-## Extra Examples
+## Running Local RAG
 
-[`Reducto Pipeline`](r2r/examples/servers/reducto_pipeline.py): Launch this script to activate a backend server that integrates a Reducto adapter for enhanced PDF ingestion.
-
-   ```bash
-   # launch the server
-   python -m r2r.examples.servers.reducto_pipeline
-   ```
+[Refer here](https://r2r-docs.sciphi.ai/tutorials/local_rag) for a tutorial on how to modify the commands above to use local providers.
 
 ## Core Abstractions
 
