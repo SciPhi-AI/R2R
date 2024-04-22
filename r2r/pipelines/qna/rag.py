@@ -60,7 +60,6 @@ class QnARAGPipeline(RAGPipeline):
         """
         Transforms the input query before retrieval, if necessary.
         """
-        print("qna....")
         self._check_pipeline_initialized()
         return query
 
