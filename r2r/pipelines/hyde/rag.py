@@ -3,19 +3,20 @@ import logging
 from typing import Generator, Optional
 
 from r2r.core import (
+    EmbeddingProvider,
     GenerationConfig,
     LLMProvider,
     LoggingDatabaseConnection,
-    PipelineStage,
+    PromptProvider,
     RAGPipeline,
     RAGPipelineOutput,
     VectorDBProvider,
     VectorSearchResult,
     log_execution_to_db,
 )
-from r2r.embeddings import OpenAIEmbeddingProvider
-from r2r.main import E2EPipelineFactory, R2RConfig
-from r2r.pipelines import BasicPromptProvider, QnARAGPipeline
+
+from ..core.prompt_provider import BasicPromptProvider
+from ..qna.rag import QnARAGPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -38,48 +39,74 @@ REMINDER - Use line item references to like [1], [2], ... refer to specifically 
 """
 
 
-class SyntheticRAGPipeline(QnARAGPipeline):
+class HyDEPipeline(QnARAGPipeline):
     def __init__(
         self,
-        llm: LLMProvider,
-        db: VectorDBProvider,
-        embedding_model: str,
-        embedding_provider: OpenAIEmbeddingProvider,
+        embedding_provider: EmbeddingProvider,
+        llm_provider: LLMProvider,
+        vector_db_provider: VectorDBProvider,
+        prompt_provider: Optional[PromptProvider] = None,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         system_prompt: Optional[str] = DEFAULT_SYSTEM_PROMPT,
         task_prompt: Optional[str] = DEFAULT_TASK_PROMPT,
     ) -> None:
-        logger.debug(f"Initalizing `SyntheticRAGPipeline`")
+        logger.debug(f"Initalizing `HydePipeline`")
+
+        if not prompt_provider:
+            prompt_provider = BasicPromptProvider
+        self.prompt_provider = prompt_provider
 
         super().__init__(
-            llm,
-            db,
-            embedding_model,
-            embedding_provider,
+            llm_provider=llm_provider,
+            vector_db_provider=vector_db_provider,
+            embedding_provider=embedding_provider,
             logging_connection=logging_connection,
-            prompt_provider=BasicPromptProvider(system_prompt, task_prompt),
+            prompt_provider=prompt_provider(system_prompt, task_prompt),
         )
 
     def transform_query(self, query: str, generation_config: GenerationConfig) -> list[str]:  # type: ignore
         """
-        Transforms the query into a list of strings.
+        Transforms the query into a list of hypothetical queries.
         """
-        print(f"Transforming query: {query}")
-        prompt = (
-            "Use the query that follows to write a comma separated three queries "
-            "that will be used to retrieve the relevant materials. DO NOT generate "
-            "queries which require multiple document types. E.g. ask for `lecture notes "
-            "with information about X` or `readings that cover topic Y`.\n\n## Query:\n"
-            "{query}\n\n## Response:".format(query=query)
+        self._check_pipeline_initialized()
+
+        num_answers = generation_config.add_generation_kwargs.get(
+            "num_answers", "three"
         )
+        # prompt = "".join(
+        #     (
+        #         "### Instruction:\n\n",
+        #         f"Use the query that follows to write a double newline separated list of {num_queries} attempted answers. ",
+        #         "DO NOT generate any single answer which is likely to require information from multiple distinct documents, ",
+        #         "EACH single answer will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents. ",
+        #         "FOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, two relevant queries would be ",
+        #         "`The key themes of Great Gatsby are ... ANSWER_CONTINUED` and `The key themes themes of 1984 are ... ANSWER_CONTINUED`, with `ANSWER_CONTINUED` completed by you in your response. ",
+        #         "Here is the original user query to be transformed:\n\n",
+        #         f"{query}\n\n### Response:\n\n".format(query=query),
+        #     )
+        # )
+        prompt = "".join(
+            (
+                "### Instruction:\n\n",
+                f"Given the following query that follows to write a double newline separated list of up to {num_answers} single paragraph attempted answers. ",
+                "DO NOT generate any single answer which is likely to require information from multiple distinct documents, ",
+                "EACH single answer will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents. ",
+                "FOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, the two attempted answers would be ",
+                "`The key themes of Great Gatsby are ... ANSWER_CONTINUED` and `The key themes themes of 1984 are ... ANSWER_CONTINUED`, where `ANSWER_CONTINUED` IS TO BE COMPLETED BY YOU in your response. ",
+                "Here is the original user query to be transformed into answers:\n\n",
+                f"{query}\n\n### Response:\n\n".format(query=query),
+            )
+        )
+
         orig_stream = generation_config.stream
         generation_config.stream = False
+
         completion = self.generate_completion(prompt, generation_config)
         transformed_queries = (
-            completion.choices[0].message.content.strip().split("\n")
+            completion.choices[0].message.content.strip().split("\n\n")
         )
+        print('transformed_queries = ', transformed_queries)
         generation_config.stream = orig_stream
-        print(f"Transformed Queries: {transformed_queries}")
         return transformed_queries
 
     @log_execution_to_db
@@ -88,10 +115,12 @@ class SyntheticRAGPipeline(QnARAGPipeline):
         transformed_query: str,
         filters: dict,
         limit: int,
+        *args,
+        **kwargs,
     ) -> list[VectorSearchResult]:
         logger.debug(f"Retrieving results for query: {transformed_query}")
 
-        results = self.db.search(
+        results = self.vector_db_provider.search(
             query_vector=self.embedding_provider.get_embedding(
                 transformed_query,
             ),
@@ -115,7 +144,7 @@ class SyntheticRAGPipeline(QnARAGPipeline):
             offset += len(results)
         return context
 
-    # Modifies `SyntheticRAGPipeline` run to return search_results and completion
+    # Modifies `HydePipeline` run to return search_results and completion
     def run(
         self,
         query,
@@ -188,10 +217,3 @@ class SyntheticRAGPipeline(QnARAGPipeline):
         for chunk in self.generate_completion(prompt, generation_config):
             yield chunk
         yield f"</{RAGPipeline.COMPLETION_STREAM_MARKER}>"
-
-
-# Creates a pipeline using the `E2EPipelineFactory`
-app = E2EPipelineFactory.create_pipeline(
-    rag_pipeline_impl=SyntheticRAGPipeline,
-    config=R2RConfig.load_config("config.json"),
-)

@@ -4,7 +4,12 @@ import os
 import uvicorn
 
 from r2r.main import E2EPipelineFactory, R2RConfig
-from r2r.pipelines import AgentRAGPipeline, QnARAGPipeline, WebRAGPipeline
+from r2r.pipelines import (
+    AgentRAGPipeline,
+    HyDEPipeline,
+    QnARAGPipeline,
+    WebRAGPipeline,
+)
 
 current_file_path = os.path.dirname(__file__)
 configs_path = os.path.join(current_file_path, "..", "configs")
@@ -22,6 +27,7 @@ PIPELINE_OPTIONS = {
     "qna": QnARAGPipeline,
     "web": WebRAGPipeline,
     "agent": AgentRAGPipeline,
+    "hyde": HyDEPipeline,
 }
 
 
