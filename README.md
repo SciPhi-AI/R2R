@@ -124,9 +124,9 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
    python -m r2r.examples.clients.run_qna_client rag_completion_streaming --query="What was lyfts profit in 2020?"
 
    # <search>[{"id": "a0f6b427-9083-5ef2-aaa1-024b6cebbaee", "score": 0.6862949051074227, "metadata": {"user_id": "df7021ed-6e66-5581-bd69-d4e9ac1e5ada", "pipeline_run_id": "0c2c9a81-0720-4e34-8736-b66189956013", "text": "Title: Lyft 10k 2021\nNet loss was $ ... </search>
-   
+   #
    # <context> Title: Lyft 10k 2021 ... </context>
-   
+   #
    # <completion>Lyft's net loss in 2020 was $1.8 billion.</completion>
    ```
 
@@ -144,6 +144,8 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
 
    # run the client
    python -m r2r.examples.clients.run_qna_client search --query="What was lyft and ubers profit in 2020?"
+
+   # {... 'message': {'content': 'In 2020, Lyft reported a net loss of $1.7529 billion [8]. Uber also reported a significant loss for the year 2020, with its net loss improving by $1.8 billion from 2020, indicating a substantial loss for the year as well [38]. Neither company achieved a profit in 2020; instead, they both experienced considerable losses.' ...}
    ```
 
 ## Running Local RAG

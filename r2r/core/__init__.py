@@ -10,7 +10,7 @@ from .providers.embedding import EmbeddingProvider
 from .providers.eval import EvalProvider
 from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
 from .providers.logging import LoggingDatabaseConnection, log_execution_to_db
-from .providers.prompt import DefaultPromptProvider, PromptProvider
+from .providers.prompt import PromptProvider
 from .providers.vector_db import (
     VectorDBProvider,
     VectorEntry,
@@ -27,7 +27,6 @@ __all__ = [
     "ScraperPipeline",
     "AgentProvider",
     "EmbeddingProvider",
-    "DefaultPromptProvider",
     "LoggingDatabaseConnection",
     "log_execution_to_db",
     "PromptProvider",
