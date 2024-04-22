@@ -122,18 +122,18 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
 
 [Refer here](https://r2r-docs.sciphi.ai/tutorials/local_rag) for a tutorial on how to modify the commands above to use local providers.
 
-## Synthetic Queries Example
+## HyDE Example
 
-[`Synthetic Query Pipeline`](r2r/examples/servers/synthetic_query_pipeline.py): Execute this script to start a backend server equipped with more advanced synthetic query pipeline. This pipeline is designed to create synthetic queries, enhancing the RAG system's learning and performance.
+[`HyDE Pipeline`](r2r/examples/servers/hyde_pipeline.py): Execute this script to start a backend server equipped with more advanced synthetic query pipeline. This pipeline is designed to create synthetic queries, enhancing the RAG system's learning and performance.
 
    ```bash
    # launch the server
-   python -m r2r.examples.servers.synthetic_query_pipeline
+   python -m r2r.examples.servers.hyde_pipeline
    ```
 
-[`Synthetic Query Client`](r2r/examples/clients/run_synthetic_query_client.py): Use this client script after the synthetic query pipeline is running. It's tailored for use with the synthetic query pipeline, demonstrating the improved features of the RAG system.
-
    ```bash
+   poetry run python -m r2r.examples.clients.run_qna_client ingest --document_filter=all # ingests Lyft 10K, Uber 10K, and others
+
    # run the client
    python -m r2r.examples.clients.run_synthetic_query_client
    ```

@@ -134,6 +134,8 @@ class E2EPipelineFactory:
             logging_connection=logging_connection,
         )
 
+        print("cmpl_pipeline = ", cmpl_pipeline)
+
         text_splitter = text_splitter or E2EPipelineFactory.get_text_splitter(
             config.ingestion["text_splitter"]
         )

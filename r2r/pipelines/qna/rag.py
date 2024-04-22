@@ -16,7 +16,9 @@ from r2r.core import (
     log_execution_to_db,
 )
 
-from ..core.prompt_provider import BasicPromptProvider
+from ..core.prompt_provider import (
+    BasicPromptProvider,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,21 +35,26 @@ class QnARAGPipeline(RAGPipeline):
         vector_db_provider: VectorDBProvider,
         prompt_provider: Optional[PromptProvider] = None,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
+        system_prompt: Optional[str] = BasicPromptProvider.BASIC_SYSTEM_PROMPT,
+        task_prompt: Optional[str] = BasicPromptProvider.BASIC_TASK_PROMPT,
     ) -> None:
         """
         Initializes the RAG pipeline with necessary components and configurations.
         """
         logger.debug(f"Initalizing `QnARAGPipeline`.")
         if not prompt_provider:
-            prompt_provider = BasicPromptProvider()
+            prompt_provider = BasicPromptProvider(
+                system_prompt,
+                task_prompt,
+            )
         self.prompt_provider = prompt_provider
 
         super().__init__(
-            prompt_provider=prompt_provider,
             embedding_provider=embedding_provider,
             llm_provider=llm_provider,
             vector_db_provider=vector_db_provider,
             logging_connection=logging_connection,
+            prompt_provider=prompt_provider,
         )
         self.pipeline_run_info = None
 
@@ -55,6 +62,7 @@ class QnARAGPipeline(RAGPipeline):
         """
         Transforms the input query before retrieval, if necessary.
         """
+        print("qna....")
         self._check_pipeline_initialized()
         return query
 

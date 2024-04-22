@@ -4,7 +4,12 @@ import os
 import uvicorn
 
 from r2r.main import E2EPipelineFactory, R2RConfig
-from r2r.pipelines import AgentRAGPipeline, QnARAGPipeline, WebRAGPipeline
+from r2r.pipelines import (
+    AgentRAGPipeline,
+    HyDEPipeline,
+    QnARAGPipeline,
+    WebRAGPipeline,
+)
 
 current_file_path = os.path.dirname(__file__)
 configs_path = os.path.join(current_file_path, "..", "configs")
@@ -22,6 +27,7 @@ PIPELINE_OPTIONS = {
     "qna": QnARAGPipeline,
     "web": WebRAGPipeline,
     "agent": AgentRAGPipeline,
+    "hyde": HyDEPipeline,
 }
 
 
@@ -30,7 +36,9 @@ def create_app(config_name: str = "default", pipeline_name: str = "qna"):
     pipeline_name = os.getenv("PIPELINE_OPTION") or pipeline_name
 
     config_path = CONFIG_OPTIONS[config_name]
+    print("pipeline_name = ", pipeline_name)
     pipeline_impl = PIPELINE_OPTIONS[pipeline_name]
+    print("pipeline_impl = ", pipeline_impl)
 
     app = E2EPipelineFactory.create_pipeline(
         config=R2RConfig.load_config(config_path),
