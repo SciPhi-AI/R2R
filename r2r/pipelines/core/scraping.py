@@ -9,29 +9,27 @@ from r2r.core import DocumentPage, ScraperPipeline
 logger = logging.getLogger(__name__)
 
 
-def get_raw_html_from_url(url: str) -> str:
-    try:
-        response = requests.get(url)
-
-        if response.status_code == 200:
-            return response.text
-        else:
-            return (
-                f"Failed to retrieve HTML. Status code: {response.status_code}"
-            )
-    except requests.exceptions.RequestException as e:
-        return f"An error occurred: {e}"
-
-
 class BasicScraperPipeline(ScraperPipeline):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def _get_raw_html_from_url(url: str) -> str:
+        try:
+            response = requests.get(url)
+
+            if response.status_code == 200:
+                return response.text
+            else:
+                return f"Failed to retrieve HTML. Status code: {response.status_code}"
+        except requests.exceptions.RequestException as e:
+            return f"An error occurred: {e}"
 
     def scrape_url(self, url: str) -> Iterator[DocumentPage]:
         """
         Scrape the given URL and return the raw data.
         """
-        response = requests.get(url)
+        response = BasicScraperPipeline._get_raw_html_from_url(url)
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, "html.parser")
             yield DocumentPage(
