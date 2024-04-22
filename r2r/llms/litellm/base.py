@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 class LiteLLMConfig(LLMConfig):
     """Configuration for LiteLLM models."""
 
-    provider_name: str = "litellm"
+    # Base
+    provider: str = "litellm"
 
 
 class LiteLLM(LLMProvider):
@@ -26,12 +27,13 @@ class LiteLLM(LLMProvider):
         **kwargs,
     ) -> None:
         logger.info(f"Initializing `LiteLLM` with config: {config}")
-        super().__init__()
 
         if not isinstance(config, LiteLLMConfig):
             raise ValueError(
                 "The provided config must be an instance of LiteLLMConfig."
             )
+        super().__init__(config)
+
         self.config: LiteLLMConfig = config
 
         try:

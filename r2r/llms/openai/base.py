@@ -12,30 +12,22 @@ from r2r.core import GenerationConfig, LLMConfig, LLMProvider
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class OpenAIConfig(LLMConfig):
-    """Configuration for OpenAI models."""
-
-    # Base
-    provider_name: str = "openai"
-
-
 class OpenAILLM(LLMProvider):
     """A concrete class for creating OpenAI models."""
 
     def __init__(
         self,
-        config: OpenAIConfig,
+        config: LLMConfig,
         *args,
         **kwargs,
     ) -> None:
         logger.info(f"Initializing `OpenAILLM` with config: {config}")
-        super().__init__()
-        if not isinstance(config, OpenAIConfig):
+        if not isinstance(config, LLMConfig):
             raise ValueError(
                 "The provided config must be an instance of OpenAIConfig."
             )
-        self.config: OpenAIConfig = config
+        super().__init__(config)
+        self.config: LLMConfig = config
 
         try:
             from openai import OpenAI  # noqa

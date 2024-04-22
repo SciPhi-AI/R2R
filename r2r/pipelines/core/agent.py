@@ -30,6 +30,10 @@ class BasicAgentProvider(AgentProvider):
     def get_all_agents(self) -> Dict[str, Any]:
         return self.agents.copy()
 
+    def act(self, agent_name: str, message: str) -> str:
+        agent = self.get_agent(agent_name)
+        return agent.act(message)
+
     def _create_agent_instance(self, agent_config: dict) -> Any:
         # Implement the logic to create an agent instance based on the agent_config
         # This could involve using the llm_provider and prompt_provider to instantiate the agent
