@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from ..providers.logging import LoggingDatabaseConnection
+from ..logging import LoggingDatabaseConnection
 
 
 class Pipeline(ABC):

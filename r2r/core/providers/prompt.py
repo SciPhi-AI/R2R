@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 from .base import Provider, ProviderConfig
 
 
-class PromptProviderConfig(ProviderConfig):
+class PromptConfig(ProviderConfig):
     def validate(self) -> None:
         pass
 
@@ -15,7 +15,7 @@ class PromptProviderConfig(ProviderConfig):
 
 
 class PromptProvider(Provider):
-    def __init__(self, config: Optional[PromptProviderConfig] = None):
+    def __init__(self, config: Optional[PromptConfig] = None):
         super().__init__(config)
 
     @abstractmethod
