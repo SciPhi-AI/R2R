@@ -8,15 +8,10 @@ from r2r.core import (
     EvalConfig,
     LLMConfig,
     LoggingDatabaseConnection,
+    VectorDBConfig,
 )
 from r2r.core.utils import RecursiveCharacterTextSplitter
-from r2r.llms import (
-    LiteLLM,
-    LiteLLMConfig,
-    LlamaCPP,
-    LlamaCppConfig,
-    OpenAILLM,
-)
+from r2r.llms import LiteLLM, LlamaCPP, LlamaCppConfig, OpenAILLM
 from r2r.pipelines import (
     BasicEmbeddingPipeline,
     BasicEvalPipeline,
@@ -32,43 +27,47 @@ dotenv.load_dotenv()
 
 
 class E2EPipelineFactory:
+    """Factory class to create the end-to-end pipeline."""
+
     @staticmethod
     def get_vector_db_provider(database_config: dict[str, Any]):
+        """Get the vector database provider based on the provided database_config."""
         if database_config["provider"] == "qdrant":
             from r2r.vector_dbs import QdrantDB
 
-            return QdrantDB()
+            return QdrantDB(VectorDBConfig.create(**database_config))
         elif database_config["provider"] == "pgvector":
             from r2r.vector_dbs import PGVectorDB
 
-            return PGVectorDB()
+            return PGVectorDB(VectorDBConfig.create(**database_config))
         elif database_config["provider"] == "local":
-            from r2r.vector_dbs import LocalVectorDB
+            from r2r.vector_dbs import LocalDBConfig, LocalVectorDB
 
-            return LocalVectorDB()
+            return LocalVectorDB(LocalDBConfig.create(**database_config))
 
     @staticmethod
     def get_embedding_provider(embedding_config: dict[str, Any]):
-        if embedding_config["provider"] == "openai":
+        """Get the embedding provider based on the provided embedding_config."""
+        embedding_config = EmbeddingConfig.create(**embedding_config)
+
+        if embedding_config.provider == "openai":
             from r2r.embeddings import OpenAIEmbeddingProvider
 
-            return OpenAIEmbeddingProvider(
-                EmbeddingConfig.create(**embedding_config)
-            )
-        elif embedding_config["provider"] == "sentence-transformers":
+            return OpenAIEmbeddingProvider(embedding_config)
+        elif embedding_config.provider == "sentence-transformers":
             from r2r.embeddings import SentenceTransformerEmbeddingProvider
 
-            return SentenceTransformerEmbeddingProvider(
-                EmbeddingConfig.create(**embedding_config)
-            )
+            return SentenceTransformerEmbeddingProvider(embedding_config)
         else:
             raise ValueError(
-                f"Embedding provider {embedding_config['provider']} not supported"
+                f"Embedding provider {embedding_config.provider} not supported"
             )
 
     @staticmethod
     def get_eval_provider(eval_config: dict[str, Any]):
+        """Get the evaluation provider based on the provided eval_config."""
         eval_config = EvalConfig.create(**eval_config)
+
         if eval_config.provider == "deepeval":
             try:
                 from r2r.eval import DeepEvalProvider
@@ -92,20 +91,19 @@ class E2EPipelineFactory:
 
     @staticmethod
     def get_llm_provider(llm_config: dict[str, Any]):
+        """Get the language model provider based on the provided llm_config."""
+
         if llm_config["provider"] == "openai":
-            return OpenAILLM(LLMConfig(provider="openai"))
+            return OpenAILLM(LLMConfig.create(**llm_config))
         elif llm_config["provider"] == "litellm":
-            return LiteLLM(LiteLLMConfig())
+            return LiteLLM(LLMConfig.create(**llm_config))
         elif llm_config["provider"] == "llama-cpp":
-            return LlamaCPP(
-                LlamaCppConfig(
-                    llm_config.get("model_path", ""),
-                    llm_config.get("model_name", ""),
-                )
-            )
+            return LlamaCPP(LlamaCppConfig.create(**llm_config))
 
     @staticmethod
     def get_text_splitter(text_splitter_config: dict[str, Any]):
+        """Get the text splitter based on the provided text_splitter_config."""
+
         if text_splitter_config["type"] != "recursive_character":
             raise ValueError(
                 "Only recursive character text splitter is supported"
@@ -123,7 +121,6 @@ class E2EPipelineFactory:
         vector_db_provider=None,
         embedding_provider=None,
         llm_provider=None,
-        text_splitter=None,
         adapters=None,
         scraper_pipeline_impl=BasicScraperPipeline,
         ingestion_pipeline_impl=BasicIngestionPipeline,
@@ -147,9 +144,8 @@ class E2EPipelineFactory:
                 config.vector_database
             )
         )
-        collection_name = config.vector_database["collection_name"]
         vector_db_provider.initialize_collection(
-            collection_name, embedding_provider.search_dimension
+            embedding_provider.search_dimension
         )
 
         eval_provider = E2EPipelineFactory.get_eval_provider(config.evals)
@@ -159,17 +155,15 @@ class E2EPipelineFactory:
             config.logging_database["collection_name"],
         )
 
-        text_splitter = text_splitter or E2EPipelineFactory.get_text_splitter(
-            config.ingestion["text_splitter"]
-        )
-
         scrpr_pipeline = scraper_pipeline_impl()
         ingst_pipeline = ingestion_pipeline_impl(adapters=adapters)
         embd_pipeline = embedding_pipeline_impl(
             embedding_provider=embedding_provider,
             vector_db_provider=vector_db_provider,
             logging_connection=logging_connection,
-            text_splitter=text_splitter,
+            text_splitter=E2EPipelineFactory.get_text_splitter(
+                config.embedding["text_splitter"]
+            ),
             embedding_batch_size=config.embedding.get("batch_size", 1),
         )
         cmpl_pipeline = rag_pipeline_impl(

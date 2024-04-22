@@ -30,6 +30,11 @@ class EvalProvider(Provider):
     """An abstract class to provide a common interface for evaluation providers."""
 
     def __init__(self, config: EvalConfig):
+        if not isinstance(config, EvalConfig):
+            raise ValueError(
+                "EvalProvider must be initialized with a `EvalConfig`."
+            )
+
         super().__init__(config)
 
     @abstractmethod
