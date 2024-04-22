@@ -53,6 +53,11 @@ class LLMProvider(Provider):
         self,
         config: LLMConfig,
     ) -> None:
+        if not isinstance(config, LLMConfig):
+            raise ValueError(
+                "LLMProvider must be initialized with a `LLMConfig`."
+            )
+
         super().__init__(config)
 
     @abstractmethod

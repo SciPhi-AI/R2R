@@ -34,6 +34,8 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         embedding_batch_size: int = 1,
         id_prefix: str = "demo",
+        *args,
+        **kwargs,
     ):
         """
         Initializes the embedding pipeline with necessary components and configurations.

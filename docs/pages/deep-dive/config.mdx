@@ -17,7 +17,12 @@ The default values for the config are shown below:
     "provider": "openai",
     "model": "text-embedding-ada-002",
     "dimension": 1536,
-    "batch_size": 32
+    "batch_size": 32,
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 512,
+      "chunk_overlap": 20
+    }
   },
   "evals": {
     "provider": "deepeval",
@@ -32,12 +37,7 @@ The default values for the config are shown below:
     "level": "INFO"
   },
   "ingestion": {
-    "provider": "local",
-    "text_splitter": {
-      "type": "recursive_character",
-      "chunk_size": 512,
-      "chunk_overlap": 20
-    }
+    "provider": "local"
   },
   "vector_database": {
     "provider": "local",
