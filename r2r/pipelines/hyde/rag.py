@@ -50,7 +50,6 @@ class HyDEPipeline(QnARAGPipeline):
         system_prompt: Optional[str] = DEFAULT_SYSTEM_PROMPT,
         task_prompt: Optional[str] = DEFAULT_TASK_PROMPT,
     ) -> None:
-        print("initializing a hyde pipeline....")
         logger.debug(f"Initalizing `HydePipeline`")
 
         if not prompt_provider:
@@ -71,21 +70,34 @@ class HyDEPipeline(QnARAGPipeline):
         """
         self._check_pipeline_initialized()
 
-        num_queries = generation_config.add_generation_kwargs.get(
-            "num_queries", "three"
+        num_answers = generation_config.add_generation_kwargs.get(
+            "num_answers", "three"
         )
+        # prompt = "".join(
+        #     (
+        #         "### Instruction:\n\n",
+        #         f"Use the query that follows to write a double newline separated list of {num_queries} attempted answers. ",
+        #         "DO NOT generate any single answer which is likely to require information from multiple distinct documents, ",
+        #         "EACH single answer will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents. ",
+        #         "FOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, two relevant queries would be ",
+        #         "`The key themes of Great Gatsby are ... ANSWER_CONTINUED` and `The key themes themes of 1984 are ... ANSWER_CONTINUED`, with `ANSWER_CONTINUED` completed by you in your response. ",
+        #         "Here is the original user query to be transformed:\n\n",
+        #         f"{query}\n\n### Response:\n\n".format(query=query),
+        #     )
+        # )
         prompt = "".join(
             (
                 "### Instruction:\n\n",
-                f"Use the query that follows to write a double newline separated list of {num_queries} attempted answers. ",
+                f"Given the following query that follows to write a double newline separated list of up to {num_answers} single paragraph attempted answers. ",
                 "DO NOT generate any single answer which is likely to require information from multiple distinct documents, ",
                 "EACH single answer will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents. ",
-                "FOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, two relevant queries would be ",
-                "`what are the key themes of Great Gatsby` and `what are key themes of 1984`. ",
-                "Here is the original user query to be transformed:\n\n",
+                "FOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, the two attempted answers would be ",
+                "`The key themes of Great Gatsby are ... ANSWER_CONTINUED` and `The key themes themes of 1984 are ... ANSWER_CONTINUED`, where `ANSWER_CONTINUED` IS TO BE COMPLETED BY YOU in your response. ",
+                "Here is the original user query to be transformed into answers:\n\n",
                 f"{query}\n\n### Response:\n\n".format(query=query),
             )
         )
+
         orig_stream = generation_config.stream
         generation_config.stream = False
 
@@ -93,6 +105,7 @@ class HyDEPipeline(QnARAGPipeline):
         transformed_queries = (
             completion.choices[0].message.content.strip().split("\n\n")
         )
+        print('transformed_queries = ', transformed_queries)
         generation_config.stream = orig_stream
         return transformed_queries
 
