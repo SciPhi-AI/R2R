@@ -1,12 +1,12 @@
 import os
 from typing import Union
 
-from r2r.core.providers.eval import EvalProvider
+from r2r.core.providers.eval import EvalConfig, EvalProvider
 
 
 class PareaEvalProvider(EvalProvider):
-    def __init__(self, provider: str, sampling_fraction: float = 1.0):
-        super().__init__(provider, sampling_fraction)
+    def __init__(self, config: EvalConfig):
+        super().__init__(config)
         try:
             from parea.evals.general import answer_relevancy_factory
             from parea.evals.rag import (

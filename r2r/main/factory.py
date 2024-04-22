@@ -3,14 +3,13 @@ from typing import Any
 
 import dotenv
 
-from r2r.core import LoggingDatabaseConnection
+from r2r.core import EmbeddingConfig, EvalConfig, LLMConfig, LoggingDatabaseConnection
 from r2r.core.utils import RecursiveCharacterTextSplitter
 from r2r.llms import (
     LiteLLM,
     LiteLLMConfig,
     LlamaCPP,
     LlamaCppConfig,
-    OpenAIConfig,
     OpenAILLM,
 )
 from r2r.pipelines import (
@@ -48,20 +47,48 @@ class E2EPipelineFactory:
         if embedding_config["provider"] == "openai":
             from r2r.embeddings import OpenAIEmbeddingProvider
 
-            return OpenAIEmbeddingProvider(embedding_config)
+            return OpenAIEmbeddingProvider(
+                EmbeddingConfig.create(**embedding_config)
+            )
         elif embedding_config["provider"] == "sentence-transformers":
             from r2r.embeddings import SentenceTransformerEmbeddingProvider
 
-            return SentenceTransformerEmbeddingProvider(embedding_config)
+            return SentenceTransformerEmbeddingProvider(
+                EmbeddingConfig.create(**embedding_config)
+            )
         else:
             raise ValueError(
                 f"Embedding provider {embedding_config['provider']} not supported"
             )
+        
+    @staticmethod
+    def get_eval_provider(eval_config: dict[str, Any]):
+        eval_config = EvalConfig.create(**eval_config)
+        if eval_config.provider == "deepeval":
+            try:
+                from r2r.eval import DeepEvalProvider
+            except ImportError:
+                raise ImportError(
+                    "DeepEval is not installed. Please install it using `pip install deepeval`."
+                )
+            eval_provider = DeepEvalProvider(eval_config)
 
+        elif eval_config.provider == "parea":
+            try:
+                from r2r.eval import PareaEvalProvider
+            except ImportError:
+                raise ImportError(
+                    "Parea is not installed. Please install it using `pip install parea-ai`."
+                )
+            eval_provider = PareaEvalProvider(eval_config)
+        elif eval_config.provider == "none":
+            eval_provider = None
+        return eval_provider
+    
     @staticmethod
     def get_llm_provider(llm_config: dict[str, Any]):
         if llm_config["provider"] == "openai":
-            return OpenAILLM(OpenAIConfig())
+            return OpenAILLM(LLMConfig(provider="openai"))
         elif llm_config["provider"] == "litellm":
             return LiteLLM(LiteLLMConfig())
         elif llm_config["provider"] == "llama-cpp":
@@ -106,7 +133,9 @@ class E2EPipelineFactory:
             embedding_provider
             or E2EPipelineFactory.get_embedding_provider(config.embedding)
         )
-
+        llm_provider = llm_provider or E2EPipelineFactory.get_llm_provider(
+            config.language_model
+        )
         vector_db_provider = (
             vector_db_provider
             or E2EPipelineFactory.get_vector_db_provider(
@@ -118,26 +147,19 @@ class E2EPipelineFactory:
             collection_name, embedding_provider.search_dimension
         )
 
-        llm_provider = llm_provider or E2EPipelineFactory.get_llm_provider(
-            config.language_model
-        )
+        eval_provider = E2EPipelineFactory.get_eval_provider(config.evals)
 
         logging_connection = LoggingDatabaseConnection(
             config.logging_database["provider"],
             config.logging_database["collection_name"],
         )
 
-        cmpl_pipeline = rag_pipeline_impl(
-            embedding_provider=embedding_provider,
-            llm_provider=llm_provider,
-            vector_db_provider=vector_db_provider,
-            logging_connection=logging_connection,
-        )
-
         text_splitter = text_splitter or E2EPipelineFactory.get_text_splitter(
             config.ingestion["text_splitter"]
         )
 
+        scrpr_pipeline = scraper_pipeline_impl()
+        ingst_pipeline = ingestion_pipeline_impl(adapters=adapters)
         embd_pipeline = embedding_pipeline_impl(
             embedding_provider=embedding_provider,
             vector_db_provider=vector_db_provider,
@@ -145,12 +167,15 @@ class E2EPipelineFactory:
             text_splitter=text_splitter,
             embedding_batch_size=config.embedding.get("batch_size", 1),
         )
-
-        eval_pipeline = eval_pipeline_impl(
-            config.evals, logging_connection=logging_connection
+        cmpl_pipeline = rag_pipeline_impl(
+            embedding_provider=embedding_provider,
+            llm_provider=llm_provider,
+            vector_db_provider=vector_db_provider,
+            logging_connection=logging_connection,
         )
-        ingst_pipeline = ingestion_pipeline_impl(adapters=adapters)
-        scrpr_pipeline = scraper_pipeline_impl()
+        eval_pipeline = eval_pipeline_impl(
+            eval_provider, logging_connection=logging_connection
+        )
 
         app = app_fn(
             scraper_pipeline=scrpr_pipeline,

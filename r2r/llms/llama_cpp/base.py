@@ -18,7 +18,7 @@ class LlamaCppConfig(LLMConfig):
     """Configuration for LlamaCpp models."""
 
     # Base
-    provider_name: str = "llama-cpp"
+    provider: str = "llama-cpp"
     model_path: str = ""
     model_name: str = ""
 
@@ -41,13 +41,11 @@ class LlamaCPP(LLMProvider):
         **kwargs,
     ) -> None:
         logger.info(f"Initializing `LlamaCPP` with config: {config}")
-        super().__init__()
-
         if not isinstance(config, LlamaCppConfig):
             raise ValueError(
                 "The provided config must be an instance of LlamaCppConfig."
             )
-
+        super().__init__(config)
         self.config: LlamaCppConfig = config
 
         try:

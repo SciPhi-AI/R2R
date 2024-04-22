@@ -6,8 +6,8 @@ from .pipelines.ingestion import IngestionPipeline
 from .pipelines.rag import RAGPipeline
 from .pipelines.scraping import ScraperPipeline
 from .providers.agent import AgentProvider
-from .providers.embedding import EmbeddingProvider
-from .providers.eval import EvalProvider
+from .providers.embedding import EmbeddingConfig, EmbeddingProvider
+from .providers.eval import EvalConfig, EvalProvider
 from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
 from .providers.logging import LoggingDatabaseConnection, log_execution_to_db
 from .providers.prompt import PromptProvider
@@ -26,10 +26,12 @@ __all__ = [
     "RAGPipeline",
     "ScraperPipeline",
     "AgentProvider",
+    "EmbeddingConfig",
     "EmbeddingProvider",
     "LoggingDatabaseConnection",
     "log_execution_to_db",
     "PromptProvider",
+    "EvalConfig",
     "EvalProvider",
     "GenerationConfig",
     "LLMConfig",
