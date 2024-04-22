@@ -1,6 +1,6 @@
 import logging
 
-from r2r.core import EmbeddingProvider, PipelineStage, VectorSearchResult
+from r2r.core import EmbeddingProvider, VectorSearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +38,12 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         self.do_search = False
         self.do_rerank = False
 
-        self.search_encoder = self._init_model(config, PipelineStage.SEARCH)
-        self.rerank_encoder = self._init_model(config, PipelineStage.RERANK)
+        self.search_encoder = self._init_model(
+            config, EmbeddingProvider.PipelineStage.SEARCH
+        )
+        self.rerank_encoder = self._init_model(
+            config, EmbeddingProvider.PipelineStage.RERANK
+        )
 
     def _init_model(self, config: dict, stage: str):
         stage_name = stage.name.lower()
@@ -49,7 +53,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             f"{stage_name}_transformer_type", "SentenceTransformer"
         )
 
-        if stage == PipelineStage.SEARCH:
+        if stage == EmbeddingProvider.PipelineStage.SEARCH:
             self.do_search = True
             # Check if a model is set for the stage
             if not (model and dimension and transformer_type):
@@ -57,7 +61,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
                     f"Must set {stage}_model and {stage}_dimension for {stage} stage in order to initialize SentenceTransformerEmbeddingProvider."
                 )
 
-        if stage == PipelineStage.RERANK:
+        if stage == EmbeddingProvider.PipelineStage.RERANK:
             # Check if a model is set for the stage
             if not (model and dimension and transformer_type):
                 return None
@@ -84,9 +88,11 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         return encoder
 
     def get_embedding(
-        self, text: str, stage: PipelineStage = PipelineStage.SEARCH
+        self,
+        text: str,
+        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
     ) -> list[float]:
-        if stage != PipelineStage.SEARCH:
+        if stage != EmbeddingProvider.PipelineStage.SEARCH:
             raise ValueError("`get_embedding` only supports `SEARCH` stage.")
         if not self.do_search:
             raise ValueError(
@@ -96,9 +102,11 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         return encoder.encode([text]).tolist()[0]
 
     def get_embeddings(
-        self, texts: list[str], stage: PipelineStage = PipelineStage.SEARCH
+        self,
+        texts: list[str],
+        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
     ) -> list[list[float]]:
-        if stage != PipelineStage.SEARCH:
+        if stage != EmbeddingProvider.PipelineStage.SEARCH:
             raise ValueError("`get_embeddings` only supports `SEARCH` stage.")
         if not self.do_search:
             raise ValueError(
@@ -106,7 +114,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             )
         encoder = (
             self.search_encoder
-            if stage == PipelineStage.SEARCH
+            if stage == EmbeddingProvider.PipelineStage.SEARCH
             else self.rerank_encoder
         )
         return encoder.encode(texts).tolist()
@@ -115,10 +123,10 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         self,
         query: str,
         documents: list[VectorSearchResult],
-        stage: PipelineStage = PipelineStage.RERANK,
+        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.RERANK,
         limit: int = 10,
     ) -> list[list[float]]:
-        if stage != PipelineStage.RERANK:
+        if stage != EmbeddingProvider.PipelineStage.RERANK:
             raise ValueError("`rerank` only supports `RERANK` stage.")
         if not self.do_rerank:
             return documents[:limit]
@@ -146,7 +154,8 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         return reranked_results
 
     def tokenize_string(
-        self, stage: PipelineStage = PipelineStage.SEARCH
+        self,
+        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
     ) -> list[int]:
         raise ValueError(
             "SentenceTransformerEmbeddingProvider does not support tokenize_string."
