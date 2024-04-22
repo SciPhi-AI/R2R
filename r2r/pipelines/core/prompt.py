@@ -1,5 +1,7 @@
 from typing import Any, Optional
+
 from r2r.core.providers.prompt import PromptProvider
+
 
 class BasicPromptProvider(PromptProvider):
     BASIC_SYSTEM_PROMPT = "You are a helpful assistant."

@@ -3,7 +3,7 @@ from typing import Any, Dict
 from r2r.core import AgentProvider, LLMProvider, PromptProvider
 
 
-class DefaultAgentProvider(AgentProvider):
+class BasicAgentProvider(AgentProvider):
     def __init__(
         self, llm_provider: LLMProvider, prompt_provider: PromptProvider
     ):

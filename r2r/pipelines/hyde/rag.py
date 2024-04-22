@@ -37,7 +37,7 @@ Answer the query given immediately below given the context which follows later. 
 REMINDER - Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context.
 ## Response:
 """
-DEFAULT_HYDE_PROMPT ="""
+DEFAULT_HYDE_PROMPT = """
 ### Instruction:
 
 Given the following query that follows to write a double newline separated list of up to {num_answers} single paragraph attempted answers. 
@@ -51,6 +51,7 @@ Here is the original user query to be transformed into answers:
 
 ### Response:
 """
+
 
 class HyDEPipeline(QnARAGPipeline):
     def __init__(
@@ -90,10 +91,14 @@ class HyDEPipeline(QnARAGPipeline):
         num_answers = generation_config.add_generation_kwargs.get(
             "num_answers", "three"
         )
-        
-        formatted_prompt = self.prompt_provider.get_prompt("hyde_prompt", {"query": query, "num_answers": num_answers})
 
-        completion = self.generate_completion(formatted_prompt, generation_config)
+        formatted_prompt = self.prompt_provider.get_prompt(
+            "hyde_prompt", {"query": query, "num_answers": num_answers}
+        )
+
+        completion = self.generate_completion(
+            formatted_prompt, generation_config
+        )
         transformed_queries = (
             completion.choices[0].message.content.strip().split("\n\n")
         )
