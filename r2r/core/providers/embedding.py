@@ -4,12 +4,13 @@ from enum import Enum
 from ..providers.vector_db import VectorSearchResult
 
 
-class PipelineStage(Enum):
-    SEARCH = 1
-    RERANK = 2
-
-
 class EmbeddingProvider(ABC):
+    """An abstract class to provide a common interface for embedding providers."""
+
+    class PipelineStage(Enum):
+        SEARCH = 1
+        RERANK = 2
+
     supported_providers = ["openai", "sentence-transformers"]
 
     def __init__(self, config: dict):

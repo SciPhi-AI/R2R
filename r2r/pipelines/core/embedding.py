@@ -9,8 +9,8 @@ from typing import Any, Optional, Tuple
 from r2r.core import (
     DocumentPage,
     EmbeddingPipeline,
+    EmbeddingProvider,
     LoggingDatabaseConnection,
-    PipelineStage,
     VectorDBProvider,
     VectorEntry,
     log_execution_to_db,
@@ -106,7 +106,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         Generates embeddings for each text chunk using the embedding model.
         """
         return self.embedding_provider.get_embeddings(
-            chunks, PipelineStage.SEARCH
+            chunks, EmbeddingProvider.PipelineStage.SEARCH
         )
 
     def store_chunks(

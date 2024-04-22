@@ -15,7 +15,7 @@ from r2r.core import (
     log_execution_to_db,
 )
 
-from ..core.prompt_provider import BasicPromptProvider
+from ..core.prompt import BasicPromptProvider
 from ..qna.rag import QnARAGPipeline
 
 logger = logging.getLogger(__name__)
@@ -105,7 +105,7 @@ class HyDEPipeline(QnARAGPipeline):
         transformed_queries = (
             completion.choices[0].message.content.strip().split("\n\n")
         )
-        print('transformed_queries = ', transformed_queries)
+        print("transformed_queries = ", transformed_queries)
         generation_config.stream = orig_stream
         return transformed_queries
 
