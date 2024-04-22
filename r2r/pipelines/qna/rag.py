@@ -16,7 +16,7 @@ from r2r.core import (
     log_execution_to_db,
 )
 
-from ..core.prompt_provider import BasicPromptProvider
+from ..core.prompt import BasicPromptProvider
 
 logger = logging.getLogger(__name__)
 
