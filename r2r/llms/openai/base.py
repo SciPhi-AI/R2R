@@ -4,9 +4,13 @@ import logging
 import os
 from typing import Union
 
-from openai.types.chat import ChatCompletion, ChatCompletionChunk
-
-from r2r.core import GenerationConfig, LLMConfig, LLMProvider
+from r2r.core import (
+    GenerationConfig,
+    LLMChatCompletion,
+    LLMChatCompletionChunk,
+    LLMConfig,
+    LLMProvider,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +52,7 @@ class OpenAILLM(LLMProvider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> ChatCompletion:
+    ) -> LLMChatCompletion:
         if not generation_config.stream:
             raise ValueError(
                 "Stream must be set to False to use the `get_completion` method."
@@ -60,7 +64,7 @@ class OpenAILLM(LLMProvider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> ChatCompletionChunk:
+    ) -> LLMChatCompletionChunk:
         if not generation_config.stream:
             raise ValueError(
                 "Stream must be set to True to use the `get_completion_stream` method."
@@ -72,7 +76,7 @@ class OpenAILLM(LLMProvider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> Union[ChatCompletion, ChatCompletionChunk]:
+    ) -> Union[LLMChatCompletion, LLMChatCompletionChunk]:
         """Get a completion from the OpenAI API based on the provided messages."""
 
         # Create a dictionary with the default arguments

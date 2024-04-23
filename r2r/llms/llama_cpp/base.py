@@ -6,9 +6,7 @@ import os
 from dataclasses import dataclass
 from typing import Union
 
-from openai.types.chat import ChatCompletion, ChatCompletionChunk
-
-from r2r.core import GenerationConfig, LLMConfig, LLMProvider
+from r2r.core import GenerationConfig, LLMConfig, LLMProvider, LLMChatCompletion, LLMChatCompletionChunk
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +61,7 @@ class LlamaCPP(LLMProvider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> ChatCompletion:
+    ) -> LLMChatCompletion:
         if generation_config.stream:
             raise ValueError(
                 "Stream must be set to False to use the `get_completion` method."
@@ -75,7 +73,7 @@ class LlamaCPP(LLMProvider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> ChatCompletionChunk:
+    ) -> LLMChatCompletionChunk:
         if not generation_config.stream:
             raise ValueError(
                 "Stream must be set to True to use the `get_completion_stream` method."
@@ -87,7 +85,7 @@ class LlamaCPP(LLMProvider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> Union[ChatCompletion, ChatCompletionChunk]:
+    ) -> Union[LLMChatCompletion, LLMChatCompletionChunk]:
         """Get a completion from the LlamaCpp model based on the provided messages."""
 
         args = self._get_base_args(generation_config)
@@ -97,7 +95,7 @@ class LlamaCPP(LLMProvider):
         response = self.client(prompt, **args)
 
         if not generation_config.stream:
-            return ChatCompletion(
+            return LLMChatCompletion(
                 # TODO - Set an intelligent id
                 id="777",
                 object="chat.completion",
@@ -115,7 +113,7 @@ class LlamaCPP(LLMProvider):
                 ],
             )
         else:
-            return ChatCompletionChunk(
+            return LLMChatCompletionChunk(
                 choices=[
                     {
                         "message": {

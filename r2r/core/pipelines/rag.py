@@ -8,13 +8,15 @@ import uuid
 from abc import abstractmethod
 from typing import Any, Generator, Optional, Union
 
-
-from ..abstractions.output import RAGPipelineOutput, LLMCompletion
-from ..utils.logging import LoggingDatabaseConnection, log_execution_to_db
+from ..abstractions.output import (
+    LLMChatCompletion,
+    RAGPipelineOutput,
+)
 from ..providers.embedding import EmbeddingProvider
 from ..providers.llm import GenerationConfig, LLMProvider
 from ..providers.prompt import PromptProvider
 from ..providers.vector_db import VectorDBProvider
+from ..utils.logging import LoggingDatabaseConnection, log_execution_to_db
 from .pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
@@ -119,7 +121,7 @@ class RAGPipeline(Pipeline):
         prompt: str,
         generation_config: GenerationConfig,
         conversation: list[dict] = None,
-    ) -> Union[Generator[str, None, None], ChatCompletion]:
+    ) -> Union[Generator[str, None, None], LLMChatCompletion]:
         """
         Generates a completion based on the prompt.
         """
@@ -161,6 +163,7 @@ class RAGPipeline(Pipeline):
             messages, generation_config
         ):
             yield result.choices[0].delta.content or ""  # type: ignore
+
     def run(
         self,
         query,
@@ -171,7 +174,7 @@ class RAGPipeline(Pipeline):
         generation_config: Optional[GenerationConfig] = None,
         *args,
         **kwargs,
-    ) -> Union[RAGPipelineOutput, ChatCompletion]:
+    ) -> Union[RAGPipelineOutput, LLMChatCompletion]:
         """
         Runs the completion pipeline for non-streaming execution.
         """
@@ -236,7 +239,6 @@ class RAGPipeline(Pipeline):
         return self._stream_run(
             search_results, context, prompt, generation_config
         )
-
 
     def _stream_run(
         self,

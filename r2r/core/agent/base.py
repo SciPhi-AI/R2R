@@ -4,8 +4,9 @@ import logging.config
 from abc import ABC, abstractmethod
 from typing import Sequence
 
+from ..abstractions.output import LLMChatCompletion
 from ..abstractions.tool import Tool
-from ..providers.llm import LLMChatCompletion, LLMProvider
+from ..providers.llm import LLMProvider
 from ..providers.prompt import PromptProvider
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ class Agent(ABC):
     def __init__(
         self, prompt_provider: PromptProvider, llm_provider: LLMProvider
     ) -> None:
+        self.llm_provider = llm_provider
         self.prompt_provider = prompt_provider
 
         self._initialized = False

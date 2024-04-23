@@ -1,6 +1,9 @@
 from typing import Optional
 
-from openai.types.chat import ChatCompletion
+from openai.types.chat import ChatCompletion, ChatCompletionChunk
+
+LLMChatCompletion = ChatCompletion
+LLMChatCompletionChunk = ChatCompletionChunk
 
 
 class RAGPipelineOutput:
@@ -8,7 +11,7 @@ class RAGPipelineOutput:
         self,
         search_results: list,
         context: Optional[str] = None,
-        completion: Optional[ChatCompletion] = None,
+        completion: Optional[LLMChatCompletion] = None,
     ):
         self.search_results = search_results
         self.context = context

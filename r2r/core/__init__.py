@@ -1,5 +1,9 @@
 from .abstractions.document import DocumentPage
-from .abstractions.output import RAGPipelineOutput
+from .abstractions.output import (
+    LLMChatCompletion,
+    LLMChatCompletionChunk,
+    RAGPipelineOutput,
+)
 from .abstractions.vector import VectorEntry, VectorSearchResult
 from .agent.base import Agent
 from .pipelines.embedding import EmbeddingPipeline
