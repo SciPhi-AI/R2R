@@ -8,9 +8,8 @@ import uuid
 from abc import abstractmethod
 from typing import Any, Generator, Optional, Union
 
-from openai.types.chat import ChatCompletion
 
-from ..abstractions.output import RAGPipelineOutput
+from ..abstractions.output import RAGPipelineOutput, LLMChatCompletion
 from ..providers.embedding import EmbeddingProvider
 from ..providers.llm import GenerationConfig, LLMProvider
 from ..providers.prompt import PromptProvider
@@ -120,7 +119,7 @@ class RAGPipeline(Pipeline):
         prompt: str,
         generation_config: GenerationConfig,
         conversation: list[dict] = None,
-    ) -> Union[Generator[str, None, None], ChatCompletion]:
+    ) -> Union[Generator[str, None, None], LLMChatCompletion]:
         """
         Generates a completion based on the prompt.
         """
@@ -162,7 +161,6 @@ class RAGPipeline(Pipeline):
             messages, generation_config
         ):
             yield result.choices[0].delta.content or ""  # type: ignore
-
     def run(
         self,
         query,
@@ -238,6 +236,7 @@ class RAGPipeline(Pipeline):
         return self._stream_run(
             search_results, context, prompt, generation_config
         )
+
 
     def _stream_run(
         self,
