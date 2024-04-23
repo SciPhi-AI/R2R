@@ -1,11 +1,11 @@
 import os
 
-from r2r.core import EvalProvider
+from r2r.core import EvalConfig, EvalProvider
 
 
 class DeepEvalProvider(EvalProvider):
-    def __init__(self, provider: str, sampling_fraction: float = 1.0):
-        super().__init__(provider, sampling_fraction)
+    def __init__(self, config: EvalConfig):
+        super().__init__(config)
         try:
             from deepeval import evaluate
             from deepeval.metrics import (

@@ -14,7 +14,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         logger.info(
             "Initializing `SentenceTransformerEmbeddingProvider` with separate models for search and rerank."
         )
-        provider = config.get("provider", None)
+        provider = config.provider
         if not provider:
             raise ValueError(
                 "Must set provider in order to initialize SentenceTransformerEmbeddingProvider."

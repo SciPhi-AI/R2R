@@ -25,7 +25,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             "Initializing `OpenAIEmbeddingProvider` to provide embeddings."
         )
         super().__init__(config)
-        provider = config.get("provider", None)
+        provider = config.provider
         if not provider:
             raise ValueError(
                 "Must set provider in order to initialize SentenceTransformerEmbeddingProvider."
@@ -40,12 +40,12 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
             )
         self.client = OpenAI()
-        if config.get("rerank_model", None):
+        if config.rerank_model:
             raise ValueError(
                 "OpenAIEmbeddingProvider does not support separate reranking."
             )
-        self.search_model = config.get("search_model", None)
-        self.search_dimension = config.get("search_dimension", None)
+        self.search_model = config.search_model
+        self.search_dimension = config.search_dimension
 
         if self.search_model not in OpenAIEmbeddingProvider.MODEL_TO_TOKENIZER:
             raise ValueError(
@@ -67,8 +67,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 "Must set search_model and search_dimension in order to initialize OpenAIEmbeddingProvider."
             )
 
-        self.rerank_model = config.get("rerank_model", None)
-        if self.rerank_model:
+        if config.rerank_model:
             raise ValueError(
                 "OpenAIEmbeddingProvider does not support separate reranking."
             )
