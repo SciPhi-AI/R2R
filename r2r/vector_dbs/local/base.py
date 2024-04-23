@@ -173,13 +173,13 @@ class LocalVectorDB(VectorDBProvider):
         filter_field: Optional[str] = None,
         filter_value: Optional[str] = None,
     ) -> list[str]:
-        if self.collection_name is None:
+        if self.config.collection_name is None:
             raise ValueError(
                 "Collection name is not set. Please call `initialize_collection` first."
             )
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
-        cursor.execute(f'SELECT metadata FROM "{self.collection_name}"')
+        cursor.execute(f'SELECT metadata FROM "{self.config.collection_name}"')
         unique_values = set()
         for (metadata,) in cursor.fetchall():
             metadata = json.loads(metadata)
