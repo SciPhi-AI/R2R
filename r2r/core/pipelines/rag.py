@@ -161,6 +161,7 @@ class RAGPipeline(Pipeline):
             messages, generation_config
         ):
             yield result.choices[0].delta.content or ""  # type: ignore
+
     def run(
         self,
         query,
@@ -236,7 +237,6 @@ class RAGPipeline(Pipeline):
         return self._stream_run(
             search_results, context, prompt, generation_config
         )
-
 
     def _stream_run(
         self,
