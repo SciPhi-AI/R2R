@@ -168,8 +168,11 @@ class LocalVectorDB(VectorDBProvider):
         conn.close()
 
     def get_all_unique_values(
-        self, metadata_field: str, filters: dict = {}
-    ) -> list:
+        self,
+        metadata_field: str,
+        filter_field: Optional[str] = None,
+        filter_value: Optional[str] = None,
+    ) -> list[str]:
         if self.config.collection_name is None:
             raise ValueError(
                 "Collection name is not set. Please call `initialize_collection` first."
@@ -180,11 +183,17 @@ class LocalVectorDB(VectorDBProvider):
         unique_values = set()
         for (metadata,) in cursor.fetchall():
             metadata = json.loads(metadata)
-            if all(metadata.get(k) == v for k, v in filters.items()):
+            if (
+                filter_field is None
+                or metadata.get(filter_field) == filter_value
+            ):
                 if metadata_field in metadata:
                     unique_values.add(metadata[metadata_field])
         conn.close()
         return list(unique_values)
+
+    def close(self):
+        pass
 
     def close(self):
         pass

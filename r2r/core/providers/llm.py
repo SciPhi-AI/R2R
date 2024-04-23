@@ -8,6 +8,9 @@ from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
 from .base import Provider, ProviderConfig
 
+LLMChatCompletion = ChatCompletion
+LLMChatCompletionChunk = ChatCompletionChunk
+
 
 @dataclass
 class GenerationConfig(ABC):

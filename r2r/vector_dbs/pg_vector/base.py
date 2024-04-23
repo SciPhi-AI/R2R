@@ -2,24 +2,20 @@ import logging
 import os
 from typing import Optional, Union
 
-from r2r.core import VectorDBProvider, VectorEntry, VectorSearchResult
+from r2r.core import VectorDBConfig, VectorDBProvider, VectorEntry, VectorSearchResult
 from r2r.vecs.client import Client
-from r2r.vecs.collection import Collection
+from r2r.vecs.collection import Collection, MetadataValues
 
 logger = logging.getLogger(__name__)
 
 
 class PGVectorDB(VectorDBProvider):
-    def __init__(self, provider: str = "pgvector") -> None:
+    def __init__(self, config: VectorDBConfig) -> None:
         logger.info(
             "Initializing `PGVectorDB` to store and retrieve embeddings."
         )
 
-        super().__init__(provider)
-        if provider != "pgvector":
-            raise ValueError(
-                "PGVectorDB must be initialized with provider `pgvector`."
-            )
+        super().__init__(config)
         try:
             import r2r.vecs
         except ImportError:
@@ -44,10 +40,10 @@ class PGVectorDB(VectorDBProvider):
         self.collection: Optional[Collection] = None
 
     def initialize_collection(
-        self, collection_name: str, dimension: int
+        self, dimension: int
     ) -> None:
         self.collection = self.vx.get_or_create_collection(
-            name=collection_name, dimension=dimension
+            name=self.config.collection_name, dimension=dimension
         )
 
     def copy(self, entry: VectorEntry, commit=True) -> None:
@@ -145,28 +141,19 @@ class PGVectorDB(VectorDBProvider):
         self.collection.delete(filters={key: {"$eq": value}})  # type: ignore
 
     def get_all_unique_values(
-        self, metadata_field: str, filters: dict = {}
-    ) -> list:
+        self,
+        metadata_field: str,
+        filter_field: Optional[str] = None,
+        filter_value: Optional[str] = None,
+    ) -> list[str]:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `get_all_unique_values`."
             )
 
-        mapped_filters = {
-            key: {"$eq": value} for key, value in filters.items()
-        }
-
-        # Pass an empty vector as the `data` argument
-        records = self.collection.query(
-            data=[0] * self.collection.dimension,  # Empty vector
-            filters=mapped_filters,
-            include_metadata=True,
-            include_value=False,
-            # Remove the `limit` argument to retrieve all records
+        unique_values = self.collection.get_unique_metadata_values(
+            field=metadata_field,
+            filter_field=filter_field,
+            filter_value=filter_value,
         )
-
-        unique_values = set(
-            record[1].get(metadata_field) for record in records
-        )
-
-        return list(unique_values)
+        return unique_values
