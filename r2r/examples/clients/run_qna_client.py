@@ -93,6 +93,17 @@ class QnAClient:
         logs_summary_response = self.client.get_logs_summary()
         print(f"Logs summary response:\n{logs_summary_response}\n")
 
+    def list_user_ids(self):
+        user_ids_response = self.client.get_user_ids()
+        print("User IDs response = ", user_ids_response)
+
+    def list_user_documents(self):
+        if not self.user_id:
+            print("User ID is not set. Cannot fetch documents.")
+            return
+        user_documents_response = self.client.get_user_documents(self.user_id)
+        print(f"Documents for user {self.user_id} = ", user_documents_response)
+
 
 if __name__ == "__main__":
     fire.Fire(QnAClient)

@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Union
+from typing import Optional, Union
 
 from r2r.core import (
     VectorDBConfig,
@@ -174,23 +174,27 @@ class QdrantDB(VectorDBProvider):
         return
 
     def get_all_unique_values(
-        self, metadata_field: str, filters: dict = {}
+        self,
+        metadata_field: str,
+        filter_field: Optional[str] = None,
+        filter_value: Optional[str] = None,
     ) -> list:
         if self.config.collection_name is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `get_all_unique_values`."
             )
 
-        # Create a scroll filter based on the provided filters
+        # Create a scroll filter based on the provided filter field and value
         scroll_filter = None
-        if filters:
-            filter_conditions = [
-                self.models.FieldCondition(
-                    key=key, match=self.models.MatchValue(value=value)
-                )
-                for key, value in filters.items()
-            ]
-            scroll_filter = self.models.Filter(must=filter_conditions)
+        if filter_field and filter_value:
+            scroll_filter = self.models.Filter(
+                must=[
+                    self.models.FieldCondition(
+                        key=filter_field,
+                        match=self.models.MatchValue(value=filter_value),
+                    )
+                ]
+            )
 
         unique_values = set()
 

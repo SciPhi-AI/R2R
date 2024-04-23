@@ -99,7 +99,7 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
    ```bash
    # run the client
    
-   # ingest the default documents (Lyft 10k)
+   # ingest the default documents
    python -m r2r.examples.clients.run_qna_client ingest
 
    python -m r2r.examples.clients.run_qna_client search --query="What was lyfts profit in 2020?"
@@ -140,7 +140,8 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
    ```
 
    ```bash
-   python -m r2r.examples.clients.run_qna_client ingest --document_filter=all # ingests Lyft 10K, Uber 10K, and others
+   # ingests Lyft 10K, Uber 10K, and others
+   python -m r2r.examples.clients.run_qna_client ingest --document_filter=all
 
    # run the client
    python -m r2r.examples.clients.run_qna_client search --query="What was lyft and ubers profit in 2020?"
