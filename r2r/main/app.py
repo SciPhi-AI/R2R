@@ -352,7 +352,7 @@ def create_app(
                         url = str(url).split("/rag_completion")[0]
                         if "localhost" not in url and "127.0.0.1" not in url:
                             url = url.replace("http://", "https://")
-
+    
                     # Pass the payload to the /eval endpoint
                     payload = {
                         "query": query.query,
@@ -366,9 +366,10 @@ def create_app(
                     logging.info(
                         f"Performing evaluation with payload: {payload} to url: {url}/eval"
                     )
-                    background_tasks.add_task(
-                        requests.post, f"{url}/eval", json=payload
-                    )
+                    if config.evals.get("frequency", 0.0) > 0.0:
+                        background_tasks.add_task(
+                            requests.post, f"{url}/eval", json=payload
+                        )
 
                 return StreamingResponse(
                     _stream_rag_completion(query, rag_pipeline),

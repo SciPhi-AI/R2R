@@ -3,8 +3,8 @@
     "provider": "litellm"
   },
   "vector_database": {
-    "provider": "local",
-    "collection_name": "demo_vecs"
+    "provider": "pgvector",
+    "collection_name": "demo_vecs_22"
   },
   "ingestion":{
     "provider": "local"

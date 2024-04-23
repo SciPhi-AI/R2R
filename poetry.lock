@@ -7068,10 +7068,10 @@ monitoring = ["sentry-sdk"]
 postgres = ["psycopg2-binary"]
 qdrant = ["qdrant_client"]
 reducto = ["boto3"]
-sentence-transformers = ["sentence-transformers", "tokenizers"]
+sentence-transformers-only = ["sentence-transformers", "tokenizers"]
 streaming = ["datasets"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "b8ec4d5eaab204afd3ad3a800965158a0f54478bca56e16ffaefd81d70b572d9"
+content-hash = "0c3c70dc0e3d3a2b4af77ee1d4564ab136357d26de85baa8afd9f150118e86aa"
