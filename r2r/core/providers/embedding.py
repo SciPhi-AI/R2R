@@ -64,7 +64,7 @@ class EmbeddingProvider(Provider):
         stage: PipelineStage = PipelineStage.RERANK,
         limit: int = 10,
     ):
-        return documents
+        pass
 
     @abstractmethod
     def tokenize_string(
