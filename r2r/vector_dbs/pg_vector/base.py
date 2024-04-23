@@ -2,7 +2,12 @@ import logging
 import os
 from typing import Optional, Union
 
-from r2r.core import VectorDBConfig, VectorDBProvider, VectorEntry, VectorSearchResult
+from r2r.core import (
+    VectorDBConfig,
+    VectorDBProvider,
+    VectorEntry,
+    VectorSearchResult,
+)
 from r2r.vecs.client import Client
 from r2r.vecs.collection import Collection, MetadataValues
 
@@ -39,9 +44,7 @@ class PGVectorDB(VectorDBProvider):
             )
         self.collection: Optional[Collection] = None
 
-    def initialize_collection(
-        self, dimension: int
-    ) -> None:
+    def initialize_collection(self, dimension: int) -> None:
         self.collection = self.vx.get_or_create_collection(
             name=self.config.collection_name, dimension=dimension
         )
