@@ -9,30 +9,18 @@ from r2r.core import GenerationConfig, LLMConfig, LLMProvider
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class LiteLLMConfig(LLMConfig):
-    """Configuration for LiteLLM models."""
-
-    provider_name: str = "litellm"
-
-
 class LiteLLM(LLMProvider):
     """A concrete class for creating LiteLLM models."""
 
     def __init__(
         self,
-        config: LiteLLMConfig,
+        config: LLMConfig,
         *args,
         **kwargs,
     ) -> None:
         logger.info(f"Initializing `LiteLLM` with config: {config}")
-        super().__init__()
 
-        if not isinstance(config, LiteLLMConfig):
-            raise ValueError(
-                "The provided config must be an instance of LiteLLMConfig."
-            )
-        self.config: LiteLLMConfig = config
+        super().__init__(config)
 
         try:
             from litellm import completion

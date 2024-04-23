@@ -3,7 +3,7 @@ from typing import Any, Dict
 from r2r.core import AgentProvider, LLMProvider, PromptProvider
 
 
-class DefaultAgentProvider(AgentProvider):
+class BasicAgentProvider(AgentProvider):
     def __init__(
         self, llm_provider: LLMProvider, prompt_provider: PromptProvider
     ):
@@ -29,6 +29,10 @@ class DefaultAgentProvider(AgentProvider):
 
     def get_all_agents(self) -> Dict[str, Any]:
         return self.agents.copy()
+
+    def act(self, agent_name: str, message: str) -> str:
+        agent = self.get_agent(agent_name)
+        return agent.act(message)
 
     def _create_agent_instance(self, agent_config: dict) -> Any:
         # Implement the logic to create an agent instance based on the agent_config

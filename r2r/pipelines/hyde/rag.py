@@ -37,6 +37,20 @@ Answer the query given immediately below given the context which follows later. 
 REMINDER - Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context.
 ## Response:
 """
+DEFAULT_HYDE_PROMPT = """
+### Instruction:
+
+Given the following query that follows to write a double newline separated list of up to {num_answers} single paragraph attempted answers. 
+DO NOT generate any single answer which is likely to require information from multiple distinct documents, 
+EACH single answer will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents. 
+FOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, the two attempted answers would be 
+`The key themes of Great Gatsby are ... ANSWER_CONTINUED` and `The key themes themes of 1984 are ... ANSWER_CONTINUED`, where `ANSWER_CONTINUED` IS TO BE COMPLETED BY YOU in your response. 
+Here is the original user query to be transformed into answers:
+
+{query}
+
+### Response:
+"""
 
 
 class HyDEPipeline(QnARAGPipeline):
@@ -49,19 +63,21 @@ class HyDEPipeline(QnARAGPipeline):
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         system_prompt: Optional[str] = DEFAULT_SYSTEM_PROMPT,
         task_prompt: Optional[str] = DEFAULT_TASK_PROMPT,
+        hyde_prompt: Optional[str] = DEFAULT_HYDE_PROMPT,
     ) -> None:
         logger.debug(f"Initalizing `HydePipeline`")
 
         if not prompt_provider:
             prompt_provider = BasicPromptProvider
-        self.prompt_provider = prompt_provider
+        self.prompt_provider = prompt_provider(system_prompt, task_prompt)
+        self.prompt_provider.add_prompt("hyde_prompt", hyde_prompt)
 
         super().__init__(
             llm_provider=llm_provider,
             vector_db_provider=vector_db_provider,
             embedding_provider=embedding_provider,
             logging_connection=logging_connection,
-            prompt_provider=prompt_provider(system_prompt, task_prompt),
+            prompt_provider=self.prompt_provider,
         )
 
     def transform_query(self, query: str, generation_config: GenerationConfig) -> list[str]:  # type: ignore
@@ -69,43 +85,23 @@ class HyDEPipeline(QnARAGPipeline):
         Transforms the query into a list of hypothetical queries.
         """
         self._check_pipeline_initialized()
+        orig_stream = generation_config.stream
+        generation_config.stream = False
 
         num_answers = generation_config.add_generation_kwargs.get(
             "num_answers", "three"
         )
-        # prompt = "".join(
-        #     (
-        #         "### Instruction:\n\n",
-        #         f"Use the query that follows to write a double newline separated list of {num_queries} attempted answers. ",
-        #         "DO NOT generate any single answer which is likely to require information from multiple distinct documents, ",
-        #         "EACH single answer will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents. ",
-        #         "FOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, two relevant queries would be ",
-        #         "`The key themes of Great Gatsby are ... ANSWER_CONTINUED` and `The key themes themes of 1984 are ... ANSWER_CONTINUED`, with `ANSWER_CONTINUED` completed by you in your response. ",
-        #         "Here is the original user query to be transformed:\n\n",
-        #         f"{query}\n\n### Response:\n\n".format(query=query),
-        #     )
-        # )
-        prompt = "".join(
-            (
-                "### Instruction:\n\n",
-                f"Given the following query that follows to write a double newline separated list of up to {num_answers} single paragraph attempted answers. ",
-                "DO NOT generate any single answer which is likely to require information from multiple distinct documents, ",
-                "EACH single answer will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents. ",
-                "FOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, the two attempted answers would be ",
-                "`The key themes of Great Gatsby are ... ANSWER_CONTINUED` and `The key themes themes of 1984 are ... ANSWER_CONTINUED`, where `ANSWER_CONTINUED` IS TO BE COMPLETED BY YOU in your response. ",
-                "Here is the original user query to be transformed into answers:\n\n",
-                f"{query}\n\n### Response:\n\n".format(query=query),
-            )
+
+        formatted_prompt = self.prompt_provider.get_prompt(
+            "hyde_prompt", {"query": query, "num_answers": num_answers}
         )
 
-        orig_stream = generation_config.stream
-        generation_config.stream = False
-
-        completion = self.generate_completion(prompt, generation_config)
+        completion = self.generate_completion(
+            formatted_prompt, generation_config
+        )
         transformed_queries = (
             completion.choices[0].message.content.strip().split("\n\n")
         )
-        print("transformed_queries = ", transformed_queries)
         generation_config.stream = orig_stream
         return transformed_queries
 
@@ -180,10 +176,8 @@ class HyDEPipeline(QnARAGPipeline):
         context = self.construct_context(search_results)
         prompt = self.construct_prompt({"query": query, "context": context})
 
-        print("generation_config.stream = ", generation_config.stream)
         if not generation_config.stream:
             completion = self.generate_completion(prompt, generation_config)
-            print("returning there...")
             return RAGPipelineOutput(search_results, context, completion)
 
         return self._stream_run(

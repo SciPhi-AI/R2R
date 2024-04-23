@@ -3,7 +3,7 @@ import random
 from abc import abstractmethod
 from typing import Any, Optional
 
-from ..providers.logging import LoggingDatabaseConnection
+from ..logging import LoggingDatabaseConnection
 from ..utils import generate_run_id
 from .pipeline import Pipeline
 
