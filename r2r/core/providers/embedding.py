@@ -56,6 +56,7 @@ class EmbeddingProvider(Provider):
     ):
         pass
 
+    @abstractmethod
     def rerank(
         self,
         query: str,
