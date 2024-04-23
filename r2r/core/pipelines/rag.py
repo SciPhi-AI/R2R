@@ -11,11 +11,11 @@ from typing import Any, Generator, Optional, Union
 from openai.types.chat import ChatCompletion
 
 from ..abstractions.output import RAGPipelineOutput
-from ..utils.logging import LoggingDatabaseConnection, log_execution_to_db
 from ..providers.embedding import EmbeddingProvider
 from ..providers.llm import GenerationConfig, LLMProvider
 from ..providers.prompt import PromptProvider
 from ..providers.vector_db import VectorDBProvider
+from ..utils.logging import LoggingDatabaseConnection, log_execution_to_db
 from .pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
@@ -162,6 +162,7 @@ class RAGPipeline(Pipeline):
             messages, generation_config
         ):
             yield result.choices[0].delta.content or ""  # type: ignore
+
     def run(
         self,
         query,
@@ -237,7 +238,6 @@ class RAGPipeline(Pipeline):
         return self._stream_run(
             search_results, context, prompt, generation_config
         )
-
 
     def _stream_run(
         self,

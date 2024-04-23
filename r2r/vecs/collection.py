@@ -34,8 +34,8 @@ from sqlalchemy import (
     alias,
     and_,
     cast,
-    distinct,
     delete,
+    distinct,
     func,
     or_,
     select,
@@ -366,7 +366,7 @@ class Collection:
                 unique_values = result.scalars().all()
 
         return unique_values
-    
+
     def copy(
         self,
         records: Iterable[Tuple[str, Any, Metadata]],

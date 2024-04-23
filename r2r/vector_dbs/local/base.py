@@ -183,7 +183,10 @@ class LocalVectorDB(VectorDBProvider):
         unique_values = set()
         for (metadata,) in cursor.fetchall():
             metadata = json.loads(metadata)
-            if filter_field is None or metadata.get(filter_field) == filter_value:
+            if (
+                filter_field is None
+                or metadata.get(filter_field) == filter_value
+            ):
                 if metadata_field in metadata:
                     unique_values.add(metadata[metadata_field])
         conn.close()

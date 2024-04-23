@@ -1,8 +1,8 @@
 from typing import Iterator, Optional
 
 from ..abstractions.document import DocumentPage
-from ..utils.logging import LoggingDatabaseConnection
 from ..utils import generate_run_id
+from ..utils.logging import LoggingDatabaseConnection
 from .pipeline import Pipeline
 
 
@@ -49,4 +49,6 @@ class ScraperPipeline(Pipeline):
         run_id: Optional[str],
         **kwargs,
     ):
-        raise NotImplementedError("Streaming mode not supported for `ScraperPipeline`.")
+        raise NotImplementedError(
+            "Streaming mode not supported for `ScraperPipeline`."
+        )

@@ -11,6 +11,7 @@ from .base import Provider, ProviderConfig
 LLMChatCompletion = ChatCompletion
 LLMChatCompletionChunk = ChatCompletionChunk
 
+
 @dataclass
 class GenerationConfig(ABC):
     temperature: float = 0.1

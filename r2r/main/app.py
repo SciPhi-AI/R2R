@@ -422,7 +422,7 @@ def create_app(
                     metadata_field="user_id"
                 )
             )
-            
+
             return {"user_ids": user_ids}
         except Exception as e:
             logging.error(f":get_user_ids: [Error](error={str(e)})")
@@ -433,7 +433,9 @@ def create_app(
         try:
             document_ids = (
                 embedding_pipeline.vector_db_provider.get_all_unique_values(
-                    metadata_field="document_id", filter_field="user_id", filter_value=user_id
+                    metadata_field="document_id",
+                    filter_field="user_id",
+                    filter_value=user_id,
                 )
             )
             return {"document_ids": document_ids}

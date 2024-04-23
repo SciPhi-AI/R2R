@@ -3,8 +3,8 @@ import random
 from abc import abstractmethod
 from typing import Any, Optional
 
-from ..utils.logging import LoggingDatabaseConnection
 from ..utils import generate_run_id
+from ..utils.logging import LoggingDatabaseConnection
 from .pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
@@ -57,4 +57,6 @@ class EvalPipeline(Pipeline):
         run_id: Optional[str],
         **kwargs,
     ):
-        raise NotImplementedError("Streaming mode not supported for `EvalPipeline`.")
+        raise NotImplementedError(
+            "Streaming mode not supported for `EvalPipeline`."
+        )

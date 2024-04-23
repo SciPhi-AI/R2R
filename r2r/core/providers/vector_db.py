@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Optional, Union
 
 from r2r.vecs.collection import MetadataValues
+
 from ..abstractions.vector import VectorEntry, VectorSearchResult
 from .base import Provider, ProviderConfig
 

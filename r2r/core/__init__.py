@@ -2,7 +2,6 @@ from .abstractions.document import DocumentPage
 from .abstractions.output import RAGPipelineOutput
 from .abstractions.vector import VectorEntry, VectorSearchResult
 from .agent.base import Agent
-from .utils.logging import LoggingDatabaseConnection, log_execution_to_db
 from .pipelines.embedding import EmbeddingPipeline
 from .pipelines.eval import EvalPipeline
 from .pipelines.ingestion import IngestionPipeline
@@ -14,6 +13,7 @@ from .providers.eval import EvalConfig, EvalProvider
 from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
 from .providers.prompt import PromptConfig, PromptProvider
 from .providers.vector_db import VectorDBConfig, VectorDBProvider
+from .utils.logging import LoggingDatabaseConnection, log_execution_to_db
 
 __all__ = [
     "LoggingDatabaseConnection",

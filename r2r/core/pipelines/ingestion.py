@@ -3,8 +3,8 @@ from typing import Any, Iterator, Optional
 
 from ..abstractions.document import DocumentPage
 from ..adapters import Adapter
-from ..utils.logging import LoggingDatabaseConnection
 from ..utils import generate_run_id
+from ..utils.logging import LoggingDatabaseConnection
 from .pipeline import Pipeline
 
 
@@ -70,4 +70,6 @@ class IngestionPipeline(Pipeline):
         metadata: Optional[dict] = None,
         **kwargs,
     ):
-        raise NotImplementedError("Streaming mode not supported for `IngestionPipeline`.")
+        raise NotImplementedError(
+            "Streaming mode not supported for `IngestionPipeline`."
+        )

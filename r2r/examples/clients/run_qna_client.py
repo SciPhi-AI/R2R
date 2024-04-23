@@ -103,6 +103,7 @@ class QnAClient:
             return
         user_documents_response = self.client.get_user_documents(self.user_id)
         print(f"Documents for user {self.user_id} = ", user_documents_response)
-        
+
+
 if __name__ == "__main__":
     fire.Fire(QnAClient)
