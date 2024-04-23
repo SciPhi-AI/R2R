@@ -4,12 +4,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from openai.types.chat import ChatCompletion, ChatCompletionChunk
-
+from ..abstractions.output import LLMChatCompletion, LLMChatCompletionChunk
 from .base import Provider, ProviderConfig
-
-LLMChatCompletion = ChatCompletion
-LLMChatCompletionChunk = ChatCompletionChunk
 
 
 @dataclass
@@ -69,7 +65,7 @@ class LLMProvider(Provider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> ChatCompletion:
+    ) -> LLMChatCompletion:
         """Abstract method to get a chat completion from the provider."""
         pass
 
@@ -79,6 +75,6 @@ class LLMProvider(Provider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> ChatCompletionChunk:
+    ) -> LLMChatCompletionChunk:
         """Abstract method to get a completion stream from the provider."""
         pass
