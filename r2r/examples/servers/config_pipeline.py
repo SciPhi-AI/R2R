@@ -20,7 +20,9 @@ CONFIG_OPTIONS = {
     "local_ollama_qdrant": os.path.join(
         configs_path, "local_ollama_qdrant.json"
     ),
-    "local_ollama_with_rerank": os.path.join(configs_path, "local_ollama_with_rerank.json"),
+    "local_ollama_with_rerank": os.path.join(
+        configs_path, "local_ollama_with_rerank.json"
+    ),
     "local_llama_cpp": os.path.join(configs_path, "local_llama_cpp.json"),
 }
 

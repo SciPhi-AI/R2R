@@ -1,5 +1,5 @@
-from dataclasses import asdict
 import logging
+from dataclasses import asdict
 
 from r2r.core import EmbeddingConfig, EmbeddingProvider, VectorSearchResult
 

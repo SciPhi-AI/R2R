@@ -42,11 +42,11 @@ class QnAClient:
                     )
                     print("Upload response = ", upload_response)
 
-    def search(self, query):
+    def search(self, query, search_limit=25, rerank_limit=15):
         search_response = self.client.search(
             query,
-            search_limit=25,
-            rerank_limit=15,
+            search_limit=search_limit,
+            rerank_limit=rerank_limit,
             filters={"user_id": self.user_id},
         )
         for i, response in enumerate(search_response):
@@ -56,11 +56,17 @@ class QnAClient:
             print(body[:500])
             print("\n")
 
-    def rag_completion(self, query, model="gpt-4-turbo-preview"):
+    def rag_completion(
+        self,
+        query,
+        model="gpt-4-turbo-preview",
+        search_limit=25,
+        rerank_limit=15,
+    ):
         rag_response = self.client.rag_completion(
             query,
-            search_limit=25,
-            rerank_limit=15,
+            search_limit=search_limit,
+            rerank_limit=rerank_limit,
             filters={"user_id": self.user_id},
             generation_config={"model": model},
         )
