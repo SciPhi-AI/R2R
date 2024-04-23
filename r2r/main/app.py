@@ -366,9 +366,10 @@ def create_app(
                     logging.info(
                         f"Performing evaluation with payload: {payload} to url: {url}/eval"
                     )
-                    background_tasks.add_task(
-                        requests.post, f"{url}/eval", json=payload
-                    )
+                    if config.evals.get("frequency", 0.0) > 0.0:
+                        background_tasks.add_task(
+                            requests.post, f"{url}/eval", json=payload
+                        )
 
                 return StreamingResponse(
                     _stream_rag_completion(query, rag_pipeline),

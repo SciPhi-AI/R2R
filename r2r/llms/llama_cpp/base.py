@@ -23,16 +23,16 @@ class LlamaCppConfig(LLMConfig):
 
     # Base
     provider: str = "llama-cpp"
+    model: str = ""
     model_path: str = ""
-    model_name: str = ""
 
     def __post_init__(self):
         if not self.model_path or self.model_path == "":
             self.model_path = os.path.join(
                 os.path.expanduser("~"), ".cache", "models"
             )
-        if not self.model_name or self.model_name == "":
-            self.model_name = "tinyllama-1.1b-chat-v1.0.Q2_K.gguf"
+        if not self.model or self.model == "":
+            self.model = "tinyllama-1.1b-chat-v1.0.Q2_K.gguf"
 
 
 class LlamaCPP(LLMProvider):
@@ -59,7 +59,7 @@ class LlamaCPP(LLMProvider):
                 "Error, `llama-cpp-python` is required to run a LlamaCPP. Please install it using `pip install llama-cpp-python`."
             )
 
-        path = os.path.join(self.config.model_path, self.config.model_name)
+        path = os.path.join(self.config.model_path, self.config.model)
         self.client = Llama(path, n_ctx=2048)
 
     def get_completion(

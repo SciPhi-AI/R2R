@@ -1,13 +1,13 @@
 {
   "language_model": {
-    "provider": "litellm"
+    "provider": "llama-cpp"
   },
   "vector_database": {
     "provider": "local",
     "collection_name": "demo_vecs"
   },
   "ingestion":{
-    "provider": "llama-cpp"
+    "provider": "local"
   },
   "embedding": {
     "provider": "sentence-transformers",

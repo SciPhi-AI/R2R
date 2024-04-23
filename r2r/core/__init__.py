@@ -11,7 +11,6 @@ from .pipelines.eval import EvalPipeline
 from .pipelines.ingestion import IngestionPipeline
 from .pipelines.rag import RAGPipeline
 from .pipelines.scraping import ScraperPipeline
-from .providers.agent import AgentProvider
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
 from .providers.eval import EvalConfig, EvalProvider
 from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
@@ -32,7 +31,6 @@ __all__ = [
     "IngestionPipeline",
     "RAGPipeline",
     "ScraperPipeline",
-    "AgentProvider",
     "EmbeddingConfig",
     "EmbeddingProvider",
     "EvalConfig",

@@ -1,4 +1,5 @@
 """Defines the abstract base classes and enums for agent objects"""
+
 import logging
 import logging.config
 from abc import ABC, abstractmethod
