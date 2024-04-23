@@ -62,7 +62,7 @@ class Agent(ABC):
         pass
 
     @abstractmethod
-    def run_stream(self, message: str) -> str:
+    def run_stream(self, message: str):
         """
         Runs the agent until it completes its task. Stream the result when it is ready.
         """
