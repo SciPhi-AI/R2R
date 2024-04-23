@@ -152,21 +152,29 @@ class PGVectorDB(VectorDBProvider):
                 "Please call `initialize_collection` before attempting to run `get_all_unique_values`."
             )
 
-        mapped_filters = {
-            key: {"$eq": value} for key, value in filters.items()
-        }
+        unique_values = set()
+        last_id = None
+        batch_size = 1_000
 
-        # Pass an empty vector as the `data` argument
-        records = self.collection.query(
-            data=[0] * self.collection.dimension,  # Empty vector
-            filters=mapped_filters,
-            include_metadata=True,
-            include_value=False,
-            # Remove the `limit` argument to retrieve all records
-        )
+        while True:
+            # Fetch records in batches
+            records = self.collection.query(
+                data=[0] * self.collection.dimension,  # Empty vector
+                filters={"id": {"$gt": last_id}} if last_id else {},
+                include_metadata=True,
+                include_value=False,
+                limit=batch_size
+            )
 
-        unique_values = set(
-            record[1].get(metadata_field) for record in records
-        )
+            if not records:
+                break  # No more records to fetch
+
+            # Filter records in Python and update unique values
+            for record in records:
+                metadata = record[-1]  # Assuming metadata is the third element in the record tuple
+                if all(metadata.get(key) == value for key, value in filters.items()):
+                    unique_values.add(metadata.get(metadata_field))
+
+            last_id = records[-1][0]  # Update the last_id to the last record's ID
 
         return list(unique_values)
