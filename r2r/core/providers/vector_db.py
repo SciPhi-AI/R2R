@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Union
+from typing import Any, Optional, Union
+
+from r2r.vecs.collection import MetadataValues
 
 from ..abstractions.vector import VectorEntry, VectorSearchResult
 from .base import Provider, ProviderConfig
@@ -16,7 +18,7 @@ class VectorDBConfig(ProviderConfig):
             raise ValueError(f"Provider '{self.provider}' is not supported.")
 
     @property
-    def supported_providers(self) -> List[str]:
+    def supported_providers(self) -> list[str]:
         return ["local", "pgvector", "qdrant"]
 
 
@@ -82,6 +84,9 @@ class VectorDBProvider(Provider, ABC):
 
     @abstractmethod
     def get_all_unique_values(
-        self, metadata_field: str, filters: dict = {}
-    ) -> list:
+        self,
+        metadata_field: str,
+        filter_field: Optional[str] = None,
+        filter_value: Optional[str] = None,
+    ) -> list[str]:
         pass
