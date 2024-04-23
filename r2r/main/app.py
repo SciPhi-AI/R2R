@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import re
 from pathlib import Path
 from typing import AsyncGenerator, Generator, Optional, Union, cast
 
@@ -28,7 +27,7 @@ from r2r.core import (
     RAGPipelineOutput,
     ScraperPipeline,
 )
-from r2r.main.utils import (  # configure_logging,
+from r2r.main.utils import (
     R2RConfig,
     apply_cors,
     find_project_root,

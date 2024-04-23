@@ -14,7 +14,6 @@ app = E2EPipelineFactory.create_pipeline(
     vector_db_provider=None,
     embedding_provider=None,
     llm_provider=None,
-    text_splitter=None,
     adapters=None,
     ingestion_pipeline_impl=BasicIngestionPipeline,
     embedding_pipeline_impl=BasicEmbeddingPipeline,
@@ -46,8 +45,8 @@ This method retrieves the appropriate embeddings provider based on the `embeddin
 ### `get_llm(llm_config: dict[str, Any])`
 
 This method retrieves the appropriate language model based on the `llm_config`. It supports the following language models:
-- `openai`: Returns an instance of `OpenAILLM` with the `OpenAIConfig`.
-- `litellm`: Returns an instance of `LiteLLM` with the `LiteLLMConfig`.
+- `openai`: Returns an instance of `OpenAILLM`.
+- `litellm`: Returns an instance of `LiteLLM`.
 
 ### `get_text_splitter(text_splitter_config: dict[str, Any])`
 
@@ -64,7 +63,6 @@ This method creates the end-to-end pipeline by assembling various components bas
 5. Retrieves the language model using `get_llm_provider` or uses the provided `llm`.
 6. Creates a `LoggingDatabaseConnection` instance for logging purposes.
 7. Creates an instance of the `rag_pipeline_impl` (default: `QnARAGPipeline`) with the language model, vector database, embedding model, embeddings provider, and logging connection.
-8. Retrieves the text splitter using `get_text_splitter` or uses the provided `text_splitter`.
 9. Creates an instance of the `embedding_pipeline_impl` (default: `BasicEmbeddingPipeline`) with the embedding model, embeddings provider, vector database, logging connection, text splitter, and embedding batch size.
 10. Creates an instance of the `eval_pipeline_impl` (default: `BasicEvalPipeline`) with the evaluation configuration and logging connection.
 11. Creates an instance of the `ingestion_pipeline_impl` (default: `BasicIngestionPipeline`) with the specified adapters.

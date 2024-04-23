@@ -79,7 +79,6 @@ def test_process_url(client):
         5,
         filters={"document_id": document_id},
     )
-    print("url search response: ", search_response)
     assert len(search_response) > 0
     assert url in search_response[0]["metadata"]["url"]
     assert "Google" in search_response[0]["metadata"]["text"]
