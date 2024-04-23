@@ -18,10 +18,10 @@
     "frequency": 0.0
   },
   "language_model": {
-    "provider": "llama-cpp"
+    "provider": "litellm"
   },
   "vector_database": {
-    "provider": "qdrant",
+    "provider": "local",
     "collection_name": "demo_vecs"
   },
   "ingestion":{

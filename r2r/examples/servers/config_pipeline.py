@@ -17,10 +17,11 @@ configs_path = os.path.join(current_file_path, "..", "configs")
 CONFIG_OPTIONS = {
     "default": None,
     "local_ollama": os.path.join(configs_path, "local_ollama.json"),
-    "local_llama_cpp": os.path.join(configs_path, "local_llama_cpp.json"),
     "local_ollama_qdrant": os.path.join(
         configs_path, "local_ollama_qdrant.json"
     ),
+    "local_ollama_with_rerank": os.path.join(configs_path, "local_ollama_with_rerank.json"),
+    "local_llama_cpp": os.path.join(configs_path, "local_llama_cpp.json"),
 }
 
 PIPELINE_OPTIONS = {
