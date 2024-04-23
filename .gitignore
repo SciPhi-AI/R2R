@@ -11,7 +11,8 @@ env/
 node_modules
 
 
-**/*.sqlite
-**/*.sqlite3
+**/*.sqlite*
+**/*.sqlite3*
 
 qdrant_storage/
+r2r/examples/data/*
