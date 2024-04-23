@@ -2,7 +2,6 @@
 
 import logging
 import os
-from dataclasses import dataclass
 from typing import Union
 
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
@@ -12,46 +11,36 @@ from r2r.core import GenerationConfig, LLMConfig, LLMProvider
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class OpenAIConfig(LLMConfig):
-    """Configuration for OpenAI models."""
-
-    # Base
-    provider_name: str = "openai"
-
-
 class OpenAILLM(LLMProvider):
     """A concrete class for creating OpenAI models."""
 
     def __init__(
         self,
-        config: OpenAIConfig,
+        config: LLMConfig,
         *args,
         **kwargs,
     ) -> None:
         logger.info(f"Initializing `OpenAILLM` with config: {config}")
-        super().__init__()
-        if not isinstance(config, OpenAIConfig):
+        if not isinstance(config, LLMConfig):
             raise ValueError(
                 "The provided config must be an instance of OpenAIConfig."
             )
-        self.config: OpenAIConfig = config
-
+        super().__init__(config)
         try:
             from openai import OpenAI  # noqa
         except ImportError:
             raise ImportError(
                 "Error, `openai` is required to run an OpenAILLM. Please install it using `pip install openai`."
             )
-        if config.provider_name != "openai" or not os.getenv("OPENAI_API_KEY"):
+        if config.provider_name != "openai":
+            raise ValueError(
+                "OpenAILLM must be initialized with config with `openai` provider."
+            )
+        if not os.getenv("OPENAI_API_KEY"):
             raise ValueError(
                 "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable."
             )
-        # set the config here, again, for typing purposes
-        if not isinstance(self.config, OpenAIConfig):
-            raise ValueError(
-                "The provided config must be an instance of OpenAIConfig."
-            )
+        self.config: LLMConfig = config
         self.client = OpenAI()
 
     def get_completion(

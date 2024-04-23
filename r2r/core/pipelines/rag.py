@@ -11,9 +11,9 @@ from typing import Any, Generator, Optional, Union
 from openai.types.chat import ChatCompletion
 
 from ..abstractions.output import RAGPipelineOutput
+from ..logging import LoggingDatabaseConnection, log_execution_to_db
 from ..providers.embedding import EmbeddingProvider
 from ..providers.llm import GenerationConfig, LLMProvider
-from ..providers.logging import LoggingDatabaseConnection, log_execution_to_db
 from ..providers.prompt import PromptProvider
 from ..providers.vector_db import VectorDBProvider
 from .pipeline import Pipeline

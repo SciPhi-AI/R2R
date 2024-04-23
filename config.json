@@ -7,18 +7,18 @@
     "collection_name": "demo_vecs"
   },
   "ingestion":{
-    "provider": "local",
-    "text_splitter": {
-      "type": "recursive_character",
-      "chunk_size": 512,
-      "chunk_overlap": 20
-    }
+    "provider": "local"
   },
   "embedding": {
     "provider": "openai",
     "search_model": "text-embedding-3-small",
     "search_dimension": 512,
-    "batch_size": 32
+    "batch_size": 32,
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 512,
+      "chunk_overlap": 20
+    }
   },
   "evals": {
     "provider": "parea",

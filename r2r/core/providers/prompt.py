@@ -1,8 +1,31 @@
-from abc import ABC, abstractmethod
-from typing import Any, Optional
+from abc import abstractmethod
+from dataclasses import dataclass
+from typing import Any, List, Optional
+
+from .base import Provider, ProviderConfig
 
 
-class PromptProvider(ABC):
+@dataclass
+class PromptConfig(ProviderConfig):
+    def validate(self) -> None:
+        pass
+
+    @property
+    def supported_providers(self) -> List[str]:
+        # Return a list of supported prompt providers
+        return ["default_prompt_provider"]
+
+
+class PromptProvider(Provider):
+    def __init__(self, config: Optional[PromptConfig] = None):
+        if config is None:
+            config = PromptConfig()
+        elif not isinstance(config, PromptConfig):
+            raise ValueError(
+                "PromptProvider must be initialized with a `PromptConfig`."
+            )
+        super().__init__(config)
+
     @abstractmethod
     def add_prompt(self, prompt_name: str, prompt: str) -> None:
         pass
@@ -16,27 +39,3 @@ class PromptProvider(ABC):
     @abstractmethod
     def get_all_prompts(self) -> dict[str, str]:
         pass
-
-
-class DefaultPromptProvider(PromptProvider):
-    def __init__(self) -> None:
-        self.prompts: dict[str, str] = {}
-
-    def add_prompt(self, prompt_name: str, prompt: str) -> None:
-        self.prompts[prompt_name] = prompt
-
-    def get_prompt(
-        self, prompt_name: str, inputs: Optional[dict[str, Any]] = None
-    ) -> str:
-        prompt = self.prompts.get(prompt_name)
-        if prompt is None:
-            raise ValueError(f"Prompt '{prompt_name}' not found.")
-        return prompt.format(**(inputs or {}))
-
-    def set_prompt(self, prompt_name: str, prompt: str) -> None:
-        if prompt_name not in self.prompts:
-            raise ValueError(f"Prompt '{prompt_name}' not found.")
-        self.prompts[prompt_name] = prompt
-
-    def get_all_prompts(self) -> dict[str, str]:
-        return self.prompts.copy()
