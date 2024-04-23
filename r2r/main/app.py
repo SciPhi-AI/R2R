@@ -107,6 +107,7 @@ def create_app(
         settings: str = Form("{}"),
         file: UploadFile = File(...),
     ):
+        print("ingesting...")
         metadata_json = json.loads(metadata)
         settings_model = SettingsModel.parse_raw(settings)
 
@@ -432,7 +433,9 @@ def create_app(
         try:
             document_ids = (
                 embedding_pipeline.vector_db_provider.get_all_unique_values(
-                    metadata_field="document_id", filters={"user_id": user_id}
+                    metadata_field="document_id",
+                    filter_field="user_id",
+                    filter_value=user_id,
                 )
             )
             return {"document_ids": document_ids}

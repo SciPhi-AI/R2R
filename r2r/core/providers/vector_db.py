@@ -5,6 +5,8 @@ from typing import List, Union
 from ..abstractions.vector import VectorEntry, VectorSearchResult
 from .base import Provider, ProviderConfig
 
+from r2r.vecs.collection import MetadataValues
+
 
 @dataclass
 class VectorDBConfig(ProviderConfig):
@@ -82,6 +84,9 @@ class VectorDBProvider(Provider, ABC):
 
     @abstractmethod
     def get_all_unique_values(
-        self, metadata_field: str, filters: dict = {}
+        self,
+        metadata_field: str,
+        filter_field: Optional[str] = None,
+        filter_value: Optional[MetadataValues] = None,
     ) -> list:
         pass

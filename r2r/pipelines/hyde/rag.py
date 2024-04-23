@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant."
 DEFAULT_TASK_PROMPT = """
 ## Task:
-Answer the query given immediately below given the context which follows later. Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context. Pay close attention to the title of each given source to ensure it is consistent with the query.
+Answer the query given immediately below given the context which follows later. Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context. Pay close attention to the title of each given source to ensure it is consistent with the query. Be sure to include a full response which contains the answer provided by the underlying source and not just a reference to the source.
 
 ### Query:
 {query}
@@ -34,7 +34,7 @@ Answer the query given immediately below given the context which follows later. 
 ### Query:
 {query}
 
-REMINDER - Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context.
+REMINDER - Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context. Lastly, be sure to include a full response which contains the answer provided by the underlying source and not just a reference to the source.
 ## Response:
 """
 DEFAULT_HYDE_PROMPT = """
@@ -102,7 +102,7 @@ class HyDEPipeline(QnARAGPipeline):
         transformed_queries = (
             completion.choices[0].message.content.strip().split("\n\n")
         )
-        print('transformed_queries = ', transformed_queries)
+        print("transformed_queries = ", transformed_queries)
         generation_config.stream = orig_stream
         return transformed_queries
 

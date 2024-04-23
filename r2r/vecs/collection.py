@@ -35,6 +35,7 @@ from sqlalchemy import (
     and_,
     cast,
     delete,
+    distinct,
     func,
     or_,
     select,
@@ -333,6 +334,40 @@ class Collection:
             sess.commit()
 
         return self
+
+    def get_unique_metadata_values(
+        self,
+        field: str,
+        filter_field: Optional[str] = None,
+        filter_value: Optional[MetadataValues] = None,
+    ) -> List[MetadataValues]:
+        """
+        Fetches all unique metadata values of a specific field, optionally filtered by another metadata field.
+
+        Args:
+            field (str): The metadata field for which to fetch unique values.
+            filter_field (Optional[str], optional): The metadata field to filter on. Defaults to None.
+            filter_value (Optional[MetadataValues], optional): The value to filter the metadata field with. Defaults to None.
+
+        Returns:
+            List[MetadataValues]: A list of unique metadata values for the specified field.
+        """
+        with self.client.Session() as sess:
+            with sess.begin():
+                stmt = select(
+                    distinct(self.table.c.metadata[field].astext)
+                ).where(self.table.c.metadata[field] != None)
+
+                if filter_field is not None and filter_value is not None:
+                    stmt = stmt.where(
+                        self.table.c.metadata[filter_field].astext
+                        == str(filter_value)
+                    )
+
+                result = sess.execute(stmt)
+                unique_values = result.scalars().all()
+
+        return unique_values
 
     def copy(
         self,

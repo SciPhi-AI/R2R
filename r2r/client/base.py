@@ -197,3 +197,13 @@ class R2RClient:
         url = f"{self.base_url}/logs_summary"
         response = requests.get(url)
         return response.json()
+
+    def get_user_ids(self):
+        url = f"{self.base_url}/get_user_ids/"
+        response = requests.get(url)
+        return response.json()
+
+    def get_user_documents(self, user_id: str):
+        url = f"{self.base_url}/get_user_documents/"
+        response = requests.get(url, params={"user_id": user_id})
+        return response.json()
