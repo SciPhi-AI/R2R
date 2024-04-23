@@ -3,7 +3,7 @@ from typing import Any, Iterator, Optional
 
 from ..abstractions.document import DocumentPage
 from ..adapters import Adapter
-from ..logging import LoggingDatabaseConnection
+from ..utils.logging import LoggingDatabaseConnection
 from ..utils import generate_run_id
 from .pipeline import Pipeline
 
@@ -62,3 +62,12 @@ class IngestionPipeline(Pipeline):
         Yields the processed DocumentPage objects.
         """
         pass
+
+    def run_stream(
+        self,
+        document_id: str,
+        blobs: dict[str, Any],
+        metadata: Optional[dict] = None,
+        **kwargs,
+    ):
+        raise NotImplementedError("Streaming mode not supported for `IngestionPipeline`.")

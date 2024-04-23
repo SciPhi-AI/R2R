@@ -6,7 +6,7 @@ import logging
 from abc import abstractmethod
 from typing import Any, Optional
 
-from ..logging import LoggingDatabaseConnection
+from ..utils.logging import LoggingDatabaseConnection
 from ..providers.embedding import EmbeddingProvider
 from ..providers.vector_db import VectorDBProvider, VectorEntry
 from ..utils import generate_run_id
@@ -58,3 +58,6 @@ class EmbeddingPipeline(Pipeline):
 
     def run(self, document: Any, **kwargs):
         pass
+
+    def run_stream(self, document: Any, **kwargs):
+        raise NotImplementedError("Streaming mode not supported for `EmbeddingPipeline`.")

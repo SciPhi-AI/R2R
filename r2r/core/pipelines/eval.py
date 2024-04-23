@@ -3,7 +3,7 @@ import random
 from abc import abstractmethod
 from typing import Any, Optional
 
-from ..logging import LoggingDatabaseConnection
+from ..utils.logging import LoggingDatabaseConnection
 from ..utils import generate_run_id
 from .pipeline import Pipeline
 
@@ -48,3 +48,13 @@ class EvalPipeline(Pipeline):
         if random.random() < self.frequency:
             return self.evaluate(query, context, completion)
         return None
+
+    def run_stream(
+        self,
+        query: str,
+        context: str,
+        completion: str,
+        run_id: Optional[str],
+        **kwargs,
+    ):
+        raise NotImplementedError("Streaming mode not supported for `EvalPipeline`.")
