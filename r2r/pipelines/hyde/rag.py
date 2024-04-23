@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant."
 DEFAULT_TASK_PROMPT = """
 ## Task:
-Answer the query given immediately below given the context which follows later. Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context. Pay close attention to the title of each given source to ensure it is consistent with the query.
+Answer the query given immediately below given the context which follows later. Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context. Pay close attention to the title of each given source to ensure it is consistent with the query. Be sure to include a full response which contains the answer provided by the underlying source and not just a reference to the source.
 
 ### Query:
 {query}
@@ -34,7 +34,7 @@ Answer the query given immediately below given the context which follows later. 
 ### Query:
 {query}
 
-REMINDER - Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context.
+REMINDER - Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context. Lastly, be sure to include a full response which contains the answer provided by the underlying source and not just a reference to the source.
 ## Response:
 """
 
@@ -73,18 +73,7 @@ class HyDEPipeline(QnARAGPipeline):
         num_answers = generation_config.add_generation_kwargs.get(
             "num_answers", "three"
         )
-        # prompt = "".join(
-        #     (
-        #         "### Instruction:\n\n",
-        #         f"Use the query that follows to write a double newline separated list of {num_queries} attempted answers. ",
-        #         "DO NOT generate any single answer which is likely to require information from multiple distinct documents, ",
-        #         "EACH single answer will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents. ",
-        #         "FOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, two relevant queries would be ",
-        #         "`The key themes of Great Gatsby are ... ANSWER_CONTINUED` and `The key themes themes of 1984 are ... ANSWER_CONTINUED`, with `ANSWER_CONTINUED` completed by you in your response. ",
-        #         "Here is the original user query to be transformed:\n\n",
-        #         f"{query}\n\n### Response:\n\n".format(query=query),
-        #     )
-        # )
+
         prompt = "".join(
             (
                 "### Instruction:\n\n",
@@ -105,7 +94,7 @@ class HyDEPipeline(QnARAGPipeline):
         transformed_queries = (
             completion.choices[0].message.content.strip().split("\n\n")
         )
-        print('transformed_queries = ', transformed_queries)
+        print("transformed_queries = ", transformed_queries)
         generation_config.stream = orig_stream
         return transformed_queries
 

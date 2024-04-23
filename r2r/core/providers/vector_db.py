@@ -1,7 +1,9 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Union
+from typing import Any, Optional, Union
 from uuid import UUID
+
+from r2r.vecs.collection import MetadataValues
 
 
 class VectorEntry:
@@ -125,6 +127,9 @@ class VectorDBProvider(ABC):
 
     @abstractmethod
     def get_all_unique_values(
-        self, metadata_field: str, filters: dict = {}
+        self,
+        metadata_field: str,
+        filter_field: Optional[str] = None,
+        filter_value: Optional[MetadataValues] = None,
     ) -> list:
         pass
