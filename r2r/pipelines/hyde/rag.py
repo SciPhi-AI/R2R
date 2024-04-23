@@ -102,10 +102,6 @@ class HyDEPipeline(QnARAGPipeline):
         transformed_queries = (
             completion.choices[0].message.content.strip().split("\n\n")
         )
-<<<<<<< HEAD
-=======
-        print("transformed_queries = ", transformed_queries)
->>>>>>> 0e7160e (Feature/add agent provider (#317))
         generation_config.stream = orig_stream
         return transformed_queries
 
