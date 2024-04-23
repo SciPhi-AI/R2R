@@ -1,3 +1,4 @@
+from dataclasses import asdict
 import logging
 
 from r2r.core import EmbeddingConfig, EmbeddingProvider, VectorSearchResult
@@ -47,9 +48,9 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
 
     def _init_model(self, config: EmbeddingConfig, stage: str):
         stage_name = stage.name.lower()
-        model = config.get(f"{stage_name}_model", None)
-        dimension = config.get(f"{stage_name}_dimension", None)
-        transformer_type = config.get(
+        model = asdict(config).get(f"{stage_name}_model", None)
+        dimension = asdict(config).get(f"{stage_name}_dimension", None)
+        transformer_type = asdict(config).get(
             f"{stage_name}_transformer_type", "SentenceTransformer"
         )
 
