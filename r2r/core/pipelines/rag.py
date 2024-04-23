@@ -11,7 +11,7 @@ from typing import Any, Generator, Optional, Union
 from openai.types.chat import ChatCompletion
 
 from ..abstractions.output import RAGPipelineOutput
-from ..logging import LoggingDatabaseConnection, log_execution_to_db
+from ..utils.logging import LoggingDatabaseConnection, log_execution_to_db
 from ..providers.embedding import EmbeddingProvider
 from ..providers.llm import GenerationConfig, LLMProvider
 from ..providers.prompt import PromptProvider
@@ -162,7 +162,6 @@ class RAGPipeline(Pipeline):
             messages, generation_config
         ):
             yield result.choices[0].delta.content or ""  # type: ignore
-
     def run(
         self,
         query,
@@ -173,10 +172,14 @@ class RAGPipeline(Pipeline):
         generation_config: Optional[GenerationConfig] = None,
         *args,
         **kwargs,
-    ) -> Union[Generator[str, None, None], RAGPipelineOutput]:
+    ) -> Union[RAGPipelineOutput, ChatCompletion]:
         """
-        Runs the completion pipeline.
+        Runs the completion pipeline for non-streaming execution.
         """
+        if generation_config and generation_config.stream:
+            raise ValueError(
+                "Streaming mode must be enabled when running `run_stream`."
+            )
         self.initialize_pipeline(query, search_only)
 
         transformed_query = self.transform_query(query)
@@ -187,28 +190,54 @@ class RAGPipeline(Pipeline):
 
         if search_only:
             return RAGPipelineOutput(search_results, None, None)
-        elif not generation_config:
+        if not generation_config:
             raise ValueError(
                 "GenerationConfig is required for completion generation."
             )
-        elif search_only and generation_config:
-            raise ValueError(
-                "GenerationConfig is not required for search only."
-            )
 
         context = self.construct_context(search_results)
-
         prompt = self.construct_prompt(
             {"query": transformed_query, "context": context}
         )
 
+        completion = self.generate_completion(prompt, generation_config)
+        return RAGPipelineOutput(search_results, context, completion)
+
+    def run_stream(
+        self,
+        query,
+        generation_config: GenerationConfig,
+        filters={},
+        search_limit=25,
+        rerank_limit=15,
+        *args,
+        **kwargs,
+    ) -> Generator[str, None, None]:
+        """
+        Runs the completion pipeline for streaming execution.
+        """
         if not generation_config.stream:
-            completion = self.generate_completion(prompt, generation_config)
-            return RAGPipelineOutput(search_results, context, completion)
+            raise ValueError(
+                "Streaming mode must be enabled when running `run_stream."
+            )
+
+        self.initialize_pipeline(query, search_only=False)
+
+        transformed_query = self.transform_query(query)
+        search_results = self.search(transformed_query, filters, search_limit)
+        search_results = self.rerank_results(
+            transformed_query, search_results, rerank_limit
+        )
+
+        context = self.construct_context(search_results)
+        prompt = self.construct_prompt(
+            {"query": transformed_query, "context": context}
+        )
 
         return self._stream_run(
             search_results, context, prompt, generation_config
         )
+
 
     def _stream_run(
         self,

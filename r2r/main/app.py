@@ -229,10 +229,10 @@ def create_app(
             stream = query.generation_config.stream
             if not stream:
                 untyped_completion = rag_pipeline.run(
-                    query.query,
-                    query.filters,
-                    query.search_limit,
-                    query.rerank_limit,
+                    query=query.query,
+                    filters=query.filters,
+                    search_limit=query.search_limit,
+                    rerank_limit=query.rerank_limit,
                     generation_config=query.generation_config,
                 )
                 # Tell the type checker that rag_completion is a RAGPipelineOutput
@@ -286,11 +286,11 @@ def create_app(
                         )
                     completion_generator = cast(
                         Generator[str, None, None],
-                        rag_pipeline.run(
-                            query.query,
-                            query.filters,
-                            query.search_limit,
-                            query.renark_limit,
+                        rag_pipeline.run_stream(
+                            query=query.query,
+                            filters=query.filters,
+                            search_limit=query.search_limit,
+                            rerank_limit=query.rerank_limit,
                             generation_config=gen_config,
                         ),
                     )
@@ -301,7 +301,7 @@ def create_app(
                     current_marker = None
 
                     logging.info(
-                        f"Streaming RAG completion results to client for query ={query.query}."
+                        f"Streaming RAG completion results to client for query = {query.query}."
                     )
 
                     for item in completion_generator:
