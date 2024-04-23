@@ -8,8 +8,7 @@ import uuid
 from abc import abstractmethod
 from typing import Any, Generator, Optional, Union
 
-
-from ..abstractions.output import RAGPipelineOutput, LLMChatCompletion
+from ..abstractions.output import LLMChatCompletion, RAGPipelineOutput
 from ..providers.embedding import EmbeddingProvider
 from ..providers.llm import GenerationConfig, LLMProvider
 from ..providers.prompt import PromptProvider

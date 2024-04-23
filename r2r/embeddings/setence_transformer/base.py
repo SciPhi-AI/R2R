@@ -1,6 +1,6 @@
 import logging
 
-from r2r.core import EmbeddingProvider, EmbeddingConfig, VectorSearchResult
+from r2r.core import EmbeddingConfig, EmbeddingProvider, VectorSearchResult
 
 logger = logging.getLogger(__name__)
 

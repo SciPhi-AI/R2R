@@ -6,7 +6,13 @@ import os
 from dataclasses import dataclass
 from typing import Union
 
-from r2r.core import GenerationConfig, LLMConfig, LLMProvider, LLMChatCompletion, LLMChatCompletionChunk
+from r2r.core import (
+    GenerationConfig,
+    LLMChatCompletion,
+    LLMChatCompletionChunk,
+    LLMConfig,
+    LLMProvider,
+)
 
 logger = logging.getLogger(__name__)
 
