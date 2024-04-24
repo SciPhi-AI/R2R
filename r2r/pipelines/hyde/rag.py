@@ -136,9 +136,6 @@ class HyDEPipeline(RAGPipeline):
         """
         Runs the completion pipeline.
         """
-        if not generation_config:
-            generation_config = GenerationConfig(model="gpt-3.5-turbo")
-
         self.initialize_pipeline(message, search_only)
 
         queries = self.transform_message(message, generation_config)
