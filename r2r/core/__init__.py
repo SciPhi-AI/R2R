@@ -6,6 +6,7 @@ from .abstractions.output import (
 )
 from .abstractions.vector import VectorEntry, VectorSearchResult
 from .agent.base import Agent
+from .pipelines.async_embedding import AsyncEmbeddingPipeline
 from .pipelines.embedding import EmbeddingPipeline
 from .pipelines.eval import EvalPipeline
 from .pipelines.ingestion import IngestionPipeline, IngestionType
@@ -26,6 +27,7 @@ __all__ = [
     "VectorSearchResult",
     "VectorEntry",
     "Agent",
+    "AsyncEmbeddingPipeline",
     "EmbeddingPipeline",
     "EvalPipeline",
     "IngestionPipeline",
