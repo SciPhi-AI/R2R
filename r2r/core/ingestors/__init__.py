@@ -1,8 +1,9 @@
 from .advanced.reducto import ReductoAdapter
 from .base import (
-    Adapter,
     CSVAdapter,
+    DOCXAdapter,
     HTMLAdapter,
+    Ingestor,
     JSONAdapter,
     MarkdownAdapter,
     PDFAdapter,
@@ -12,13 +13,14 @@ from .base import (
 )
 
 __all__ = [
-    "Adapter",
+    "Ingestor",
     "CSVAdapter",
-    "PDFAdapter",
-    "PPTAdapter",
+    "DOCXAdapter",
+    "HTMLAdapter",
     "JSONAdapter",
     "MarkdownAdapter",
-    "HTMLAdapter",
+    "PDFAdapter",
+    "PPTAdapter",
     "ReductoAdapter",
     "TextAdapter",
     "XLSXAdapter",

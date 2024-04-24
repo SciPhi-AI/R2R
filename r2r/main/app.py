@@ -264,7 +264,7 @@ def create_app(
                     "run_id": str(rag_pipeline.pipeline_run_info["run_id"]),
                     "settings": query.settings.rag_settings.dict(),
                 }
-                if config.evals.get("frequency", 0.0) > 0.0:
+                if config.eval.get("frequency", 0.0) > 0.0:
                     background_tasks.add_task(
                         requests.post, f"{url}/eval", json=payload
                     )
@@ -366,7 +366,7 @@ def create_app(
                     logging.info(
                         f"Performing evaluation with payload: {payload} to url: {url}/eval"
                     )
-                    if config.evals.get("frequency", 0.0) > 0.0:
+                    if config.eval.get("frequency", 0.0) > 0.0:
                         background_tasks.add_task(
                             requests.post, f"{url}/eval", json=payload
                         )
@@ -451,7 +451,7 @@ def create_app(
                 raise HTTPException(
                     status_code=404, detail="Logging provider not found."
                 )
-            logs = logging_connection.get_logs(config.app["max_logs"])
+            logs = logging_connection.get_logs(config.app.get("max_logs", 100))
             for log in logs:
                 LogModel(**log).dict(by_alias=True)
             return {
@@ -468,7 +468,7 @@ def create_app(
                 raise HTTPException(
                     status_code=404, detail="Logging provider not found."
                 )
-            logs = logging_connection.get_logs(config.app["max_logs"])
+            logs = logging_connection.get_logs(config.app.get("max_logs", 100))
             logs_summary = process_logs(logs)
             events_summary = [
                 SummaryLogModel(**log).dict(by_alias=True)

@@ -9,19 +9,19 @@ from bs4 import BeautifulSoup
 T = TypeVar("T")
 
 
-class Adapter(ABC, Generic[T]):
+class Ingestor(ABC, Generic[T]):
     @abstractmethod
-    def adapt(self, data: Any) -> Generator[str, None, None]:
+    def ingest(self, data: Any) -> Generator[str, None, None]:
         pass
 
 
-class TextAdapter(Adapter[str]):
-    def adapt(self, data: str) -> Generator[str, None, None]:
+class TextAdapter(Ingestor[str]):
+    def ingest(self, data: str) -> Generator[str, None, None]:
         yield data
 
 
-class JSONAdapter(Adapter[str]):
-    def adapt(self, data: Union[str, bytes]) -> Generator[str, None, None]:
+class JSONAdapter(Ingestor[str]):
+    def ingest(self, data: Union[str, bytes]) -> Generator[str, None, None]:
         if isinstance(data, bytes):
             data = data.decode("utf-8")
         yield self._parse_json(json.loads(data))
@@ -61,13 +61,13 @@ class JSONAdapter(Adapter[str]):
         return format_json_as_text(remove_objects_with_null(data))
 
 
-class HTMLAdapter(Adapter[str]):
-    def adapt(self, data: str) -> list[str]:
+class HTMLAdapter(Ingestor[str]):
+    def ingest(self, data: str) -> list[str]:
         soup = BeautifulSoup(data, "html.parser")
         yield soup.get_text()
 
 
-class PDFAdapter(Adapter[str]):
+class PDFAdapter(Ingestor[str]):
     def __init__(self):
         try:
             from pypdf import PdfReader
@@ -78,7 +78,7 @@ class PDFAdapter(Adapter[str]):
                 "Error, `pypdf` is required to run `PyPDFAdapter`. Please install it using `pip install pypdf`."
             )
 
-    def adapt(self, data: bytes) -> Generator[str, None, None]:
+    def ingest(self, data: bytes) -> Generator[str, None, None]:
         pdf = self.PdfReader(BytesIO(data))
         for page in pdf.pages:
             page_text = page.extract_text()
@@ -89,7 +89,7 @@ class PDFAdapter(Adapter[str]):
                 yield page_text
 
 
-class PPTAdapter(Adapter[str]):
+class PPTAdapter(Ingestor[str]):
     def __init__(self):
         try:
             from pptx import Presentation
@@ -100,7 +100,7 @@ class PPTAdapter(Adapter[str]):
                 "Error, `python-pptx` is required to run `PPTAdapter`. Please install it using `pip install python-pptx`."
             )
 
-    def adapt(self, data: bytes) -> list[str]:
+    def ingest(self, data: bytes) -> list[str]:
         prs = self.Presentation(BytesIO(data))
         for slide in prs.slides:
             for shape in slide.shapes:
@@ -108,7 +108,7 @@ class PPTAdapter(Adapter[str]):
                     yield shape.text
 
 
-class DOCXAdapter(Adapter[str]):
+class DOCXAdapter(Ingestor[str]):
     def __init__(self):
         try:
             from docx import Document
@@ -119,13 +119,13 @@ class DOCXAdapter(Adapter[str]):
                 "Error, `python-docx` is required to run `DOCXAdapter`. Please install it using `pip install python-docx`."
             )
 
-    def adapt(self, data: bytes) -> Generator[str, None, None]:
+    def ingest(self, data: bytes) -> Generator[str, None, None]:
         doc = self.Document(BytesIO(data))
         for paragraph in doc.paragraphs:
             yield paragraph.text
 
 
-class CSVAdapter(Adapter[str]):
+class CSVAdapter(Ingestor[str]):
     def __init__(self):
         import csv
         from io import StringIO
@@ -133,7 +133,7 @@ class CSVAdapter(Adapter[str]):
         self.csv = csv
         self.StringIO = StringIO
 
-    def adapt(self, data: Union[str, bytes]) -> Generator[str, None, None]:
+    def ingest(self, data: Union[str, bytes]) -> Generator[str, None, None]:
         if isinstance(data, bytes):
             data = data.decode("utf-8")
         csv_reader = self.csv.reader(self.StringIO(data))
@@ -141,7 +141,7 @@ class CSVAdapter(Adapter[str]):
             yield ", ".join(row)
 
 
-class XLSXAdapter(Adapter[str]):
+class XLSXAdapter(Ingestor[str]):
     def __init__(self):
         try:
             from openpyxl import load_workbook
@@ -152,20 +152,20 @@ class XLSXAdapter(Adapter[str]):
                 "Error, `openpyxl` is required to run `XLSXAdapter`. Please install it using `pip install openpyxl`."
             )
 
-    def adapt(self, data: bytes) -> Generator[str, None, None]:
+    def ingest(self, data: bytes) -> Generator[str, None, None]:
         wb = self.load_workbook(filename=BytesIO(data))
         for sheet in wb.worksheets:
             for row in sheet.iter_rows(values_only=True):
                 yield ", ".join(map(str, row))
 
 
-class MarkdownAdapter(Adapter[str]):
+class MarkdownAdapter(Ingestor[str]):
     def __init__(self):
         import markdown
 
         self.markdown = markdown
 
-    def adapt(self, data: str) -> Generator[str, None, None]:
+    def ingest(self, data: str) -> Generator[str, None, None]:
         html = self.markdown.markdown(data)
         soup = BeautifulSoup(html, "html.parser")
         yield soup.get_text()

@@ -20,27 +20,42 @@ def find_project_root(current_dir):
     return current_dir  # Fallback to current dir if no marker found
 
 
-REQUIRED_KEYS: dict[str, list] = {
-    "embedding": [
-        "provider",
-        "search_model",
-        "search_dimension",
-        "batch_size",
-    ],
-    "evals": ["provider", "frequency"],
-    "language_model": ["provider"],
-    "logging_database": ["provider", "collection_name", "level"],
-    "ingestion": ["provider"],
-    "vector_database": ["provider", "collection_name"],
-    "app": ["max_logs"],
-}
-
-
 class R2RConfig:
+    REQUIRED_KEYS: dict[str, list] = {
+        "app": [],
+        "embedding": [
+            "provider",
+            "search_model",
+            "search_dimension",
+            "batch_size",
+            "text_splitter",
+        ],
+        "eval": [
+            "provider",
+            "frequency",
+        ],
+        "ingestion": [],
+        "language_model": ["provider"],
+        "logging_database": ["provider", "collection_name"],
+        "prompt": ["provider"],
+        "vector_database": ["provider", "collection_name"],
+    }
+
     def __init__(self, config_data: dict[str, Any]):
-        for section, keys in REQUIRED_KEYS.items():
-            self._validate_config_section(config_data, section, keys)
-            setattr(self, section, config_data[section])
+        # Load the default configuration
+        default_config = self.load_default_config()
+
+        # Override the default configuration with the passed configuration
+        for key in config_data:
+            if key in default_config:
+                default_config[key].update(config_data[key])
+            else:
+                default_config[key] = config_data[key]
+
+        # Validate and set the configuration
+        for section, keys in R2RConfig.REQUIRED_KEYS.items():
+            self._validate_config_section(default_config, section, keys)
+            setattr(self, section, default_config[section])
 
     def _validate_config_section(
         self, config_data: dict[str, Any], section: str, keys: list
@@ -68,7 +83,8 @@ class R2RConfig:
     # TODO - How to type 'redis.Redis' without introducing dependency on 'redis' package?
     def save_to_redis(self, redis_client: Any, key: str):
         config_data = {
-            section: getattr(self, section) for section in REQUIRED_KEYS.keys()
+            section: getattr(self, section)
+            for section in R2RConfig.REQUIRED_KEYS.keys()
         }
         redis_client.set(f"R2RConfig:{key}", json.dumps(config_data))
 
@@ -80,6 +96,18 @@ class R2RConfig:
                 f"Configuration not found in Redis with key '{key}'"
             )
         return cls(json.loads(config_data))
+
+    @classmethod
+    def load_default_config(cls) -> dict:
+        # Get the root directory of the project
+        root_dir = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        )
+        default_config_path = os.path.join(root_dir, "config.json")
+
+        # Load default configuration from JSON file
+        with open(default_config_path) as f:
+            return json.load(f)
 
 
 def apply_cors(app):

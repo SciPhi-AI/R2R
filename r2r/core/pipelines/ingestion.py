@@ -1,17 +1,31 @@
 from abc import abstractmethod
+from enum import Enum
 from typing import Any, Iterator, Optional
 
 from ..abstractions.document import DocumentPage
-from ..adapters import Adapter
+from ..ingestors import Ingestor
 from ..utils import generate_run_id
 from ..utils.logging import LoggingDatabaseConnection
 from .pipeline import Pipeline
 
 
+class IngestionType(Enum):
+    CSV = "csv"
+    DOCX = "docx"
+    HTML = "html"
+    JSON = "json"
+    MD = "md"
+    PDF = "pdf"
+    PPTX = "pptx"
+    TXT = "txt"
+    XLSX = "xlsx"
+
+
 class IngestionPipeline(Pipeline):
     def __init__(
         self,
-        adapters: Optional[dict[Any, Adapter]] = None,
+        selected_ingestors: Optional[dict[IngestionType, str]] = None,
+        override_ingestors: Optional[dict[IngestionType, Ingestor]] = None,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs,
