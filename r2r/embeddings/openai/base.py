@@ -119,7 +119,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
 
     def rerank(
         self,
-        transformed_query: str,
+        transformed_message: str,
         texts: list[VectorSearchResult],
         stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.RERANK,
         limit: int = 10,

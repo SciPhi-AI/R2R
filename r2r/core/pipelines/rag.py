@@ -9,6 +9,7 @@ from abc import abstractmethod
 from typing import Any, Generator, Optional, Union
 
 from ..abstractions.output import LLMChatCompletion, RAGPipelineOutput
+from ..abstractions.vector import VectorSearchResult
 from ..providers.embedding import EmbeddingProvider
 from ..providers.llm import GenerationConfig, LLMProvider
 from ..providers.prompt import PromptProvider
@@ -55,51 +56,63 @@ class RAGPipeline(Pipeline):
         """
         Ingresses data into the pipeline.
         """
-        self._check_pipeline_initialized()
-        return str
+        return message
 
-    @abstractmethod
+    @log_execution_to_db
     def transform_message(self, message: str) -> Any:
         """
-        Transforms the input message for retrieval.
+        Transforms the input query before retrieval, if necessary.
         """
-        pass
+        return message
 
-    @abstractmethod
+    @log_execution_to_db
     def search(
         self,
-        transformed_query: Any,
-        filters: dict[str, Any],
+        query: str,
+        filters: dict,
         limit: int,
         *args,
         **kwargs,
-    ) -> list:
+    ) -> list[VectorSearchResult]:
         """
-        Retrieves results based on the transformed query.
-        The search_type parameter allows for specifying the type of search,
+        Searches the vector database with the transformed query to retrieve relevant documents.
         """
-        pass
+        logger.debug(f"Retrieving results for query: {query}")
+        results = self.vector_db_provider.search(
+            query_vector=self.embedding_provider.get_embedding(
+                query,
+            ),
+            filters=filters,
+            limit=limit,
+        )
 
-    @abstractmethod
+        logger.debug(f"Retrieved the raw results shown:\n{results}\n")
+
+        return results
+
     def rerank_results(
-        self, transformed_query: Any, results: list, limit: int
-    ) -> list:
+        self,
+        query: str,
+        results: list[VectorSearchResult],
+        limit: int,
+    ) -> list[VectorSearchResult]:
         """
-        Reranks the retrieved results based on relevance or other criteria.
+        Reranks the retrieved documents based on relevance, if necessary.
         """
-        pass
+        return self.embedding_provider.rerank(query, results, limit=limit)
 
-    @abstractmethod
-    def _format_results(self, results: list) -> str:
+    def _format_results(self, results: list[VectorSearchResult]) -> str:
         """
-        Formats the results for generation.
+        Formats the reranked results into a human-readable string.
         """
-        pass
+        return "\n\n".join([ele.metadata["text"] for ele in results])
 
     @log_execution_to_db
     def construct_context(
         self,
-        results: list,
+        results: list[VectorSearchResult],
+        *args,
+        **kwargs,
     ) -> str:
         return self._format_results(results)
 
@@ -108,7 +121,7 @@ class RAGPipeline(Pipeline):
         """
         Constructs a prompt for generation based on the reranked chunks.
         """
-        return self.prompt_provider.get_prompt("task_prompt", inputs).format(
+        return self.prompt_provider.get_prompt("return_pompt", inputs).format(
             **inputs
         )
 
@@ -122,8 +135,6 @@ class RAGPipeline(Pipeline):
         """
         Generates a completion based on the prompt.
         """
-        self._check_pipeline_initialized()
-
         if not conversation:
             messages = [
                 {
@@ -163,11 +174,11 @@ class RAGPipeline(Pipeline):
 
     def run(
         self,
-        query,
-        filters={},
-        search_limit=25,
-        rerank_limit=15,
-        search_only=False,
+        message: str,
+        filters: dict[str, str] = {},
+        search_limit: int = 25,
+        rerank_limit: int = 15,
+        search_only: bool = False,
         generation_config: Optional[GenerationConfig] = None,
         *args,
         **kwargs,
@@ -179,12 +190,12 @@ class RAGPipeline(Pipeline):
             raise ValueError(
                 "Streaming mode must be enabled when running `run_stream`."
             )
-        self.initialize_pipeline(query, search_only)
+        self.initialize_pipeline(message, search_only)
 
-        transformed_query = self.transform_message(query)
-        search_results = self.search(transformed_query, filters, search_limit)
+        query = self.transform_message(message)
+        search_results = self.search(query, filters, search_limit)
         search_results = self.rerank_results(
-            transformed_query, search_results, rerank_limit
+            query, search_results, rerank_limit
         )
 
         if search_only:
@@ -195,16 +206,14 @@ class RAGPipeline(Pipeline):
             )
 
         context = self.construct_context(search_results)
-        prompt = self.construct_prompt(
-            {"query": transformed_query, "context": context}
-        )
+        prompt = self.construct_prompt({"query": query, "context": context})
 
         completion = self.generate_completion(prompt, generation_config)
         return RAGPipelineOutput(search_results, context, completion)
 
     def run_stream(
         self,
-        query,
+        message,
         generation_config: GenerationConfig,
         filters={},
         search_limit=25,
@@ -220,26 +229,24 @@ class RAGPipeline(Pipeline):
                 "Streaming mode must be enabled when running `run_stream."
             )
 
-        self.initialize_pipeline(query, search_only=False)
+        self.initialize_pipeline(message, search_only=False)
 
-        transformed_query = self.transform_message(query)
-        search_results = self.search(transformed_query, filters, search_limit)
+        query = self.transform_message(message)
+        search_results = self.search(query, filters, search_limit)
         search_results = self.rerank_results(
-            transformed_query, search_results, rerank_limit
+            query, search_results, rerank_limit
         )
 
         context = self.construct_context(search_results)
-        prompt = self.construct_prompt(
-            {"query": transformed_query, "context": context}
-        )
+        prompt = self.construct_prompt({"query": query, "context": context})
 
-        return self._stream_run(
+        return self._return_stream(
             search_results, context, prompt, generation_config
         )
 
-    def _stream_run(
+    def _return_stream(
         self,
-        search_results: list,
+        search_results: list[VectorSearchResult],
         context: str,
         prompt: str,
         generation_config: GenerationConfig,

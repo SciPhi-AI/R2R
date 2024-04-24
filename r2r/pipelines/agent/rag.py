@@ -44,7 +44,9 @@ Begin.
 
 class AgentRAGPipeline(WebRAGPipeline):
     def __init__(self, *args, **kwargs):
-        logger.info(f"Initalizing `AgentRAGPipeline` to process user requests.")
+        logger.info(
+            f"Initalizing `AgentRAGPipeline` to process user requests."
+        )
 
         super().__init__(*args, **kwargs)
 
