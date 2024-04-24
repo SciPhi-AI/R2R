@@ -4,7 +4,7 @@
     "max_file_size_in_mb": 100
   },
   "embedding": {
-    "provider": "openai",
+    "provider": "dummy",
     "search_model": "text-embedding-3-small",
     "search_dimension": 512,
     "batch_size": 32,
