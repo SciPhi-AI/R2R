@@ -1,14 +1,4 @@
 {
-  "language_model": {
-    "provider": "litellm"
-  },
-  "vector_database": {
-    "provider": "local",
-    "collection_name": "demo_vecs"
-  },
-  "ingestion":{
-    "provider": "local"
-  },
   "embedding": {
     "provider": "sentence-transformers",
     "search_model": "mixedbread-ai/mxbai-embed-large-v1",
@@ -20,17 +10,8 @@
       "chunk_overlap": 20
     }
   },
-  "evals": {
-    "provider": "parea",
+  "eval": {
+    "provider": "none",
     "frequency": 0.0
-  },
-  "app": {
-    "max_logs": 100,
-    "max_file_size_in_mb": 100
-  },
-  "logging_database": {
-    "provider": "local",
-    "collection_name": "demo_logs",
-    "level": "INFO"
   }
 }
