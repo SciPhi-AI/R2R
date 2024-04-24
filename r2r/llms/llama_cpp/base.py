@@ -6,9 +6,13 @@ import os
 from dataclasses import dataclass
 from typing import Union
 
-from openai.types.chat import ChatCompletion, ChatCompletionChunk
-
-from r2r.core import GenerationConfig, LLMConfig, LLMProvider
+from r2r.core import (
+    GenerationConfig,
+    LLMChatCompletion,
+    LLMChatCompletionChunk,
+    LLMConfig,
+    LLMProvider,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -18,17 +22,17 @@ class LlamaCppConfig(LLMConfig):
     """Configuration for LlamaCpp models."""
 
     # Base
-    provider_name: str = "llama-cpp"
+    provider: str = "llama-cpp"
+    model: str = ""
     model_path: str = ""
-    model_name: str = ""
 
     def __post_init__(self):
         if not self.model_path or self.model_path == "":
             self.model_path = os.path.join(
                 os.path.expanduser("~"), ".cache", "models"
             )
-        if not self.model_name or self.model_name == "":
-            self.model_name = "tinyllama-1.1b-chat-v1.0.Q2_K.gguf"
+        if not self.model or self.model == "":
+            self.model = "tinyllama-1.1b-chat-v1.0.Q2_K.gguf"
 
 
 class LlamaCPP(LLMProvider):
@@ -41,13 +45,11 @@ class LlamaCPP(LLMProvider):
         **kwargs,
     ) -> None:
         logger.info(f"Initializing `LlamaCPP` with config: {config}")
-        super().__init__()
-
         if not isinstance(config, LlamaCppConfig):
             raise ValueError(
                 "The provided config must be an instance of LlamaCppConfig."
             )
-
+        super().__init__(config)
         self.config: LlamaCppConfig = config
 
         try:
@@ -57,7 +59,7 @@ class LlamaCPP(LLMProvider):
                 "Error, `llama-cpp-python` is required to run a LlamaCPP. Please install it using `pip install llama-cpp-python`."
             )
 
-        path = os.path.join(self.config.model_path, self.config.model_name)
+        path = os.path.join(self.config.model_path, self.config.model)
         self.client = Llama(path, n_ctx=2048)
 
     def get_completion(
@@ -65,7 +67,7 @@ class LlamaCPP(LLMProvider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> ChatCompletion:
+    ) -> LLMChatCompletion:
         if generation_config.stream:
             raise ValueError(
                 "Stream must be set to False to use the `get_completion` method."
@@ -77,7 +79,7 @@ class LlamaCPP(LLMProvider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> ChatCompletionChunk:
+    ) -> LLMChatCompletionChunk:
         if not generation_config.stream:
             raise ValueError(
                 "Stream must be set to True to use the `get_completion_stream` method."
@@ -89,7 +91,7 @@ class LlamaCPP(LLMProvider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> Union[ChatCompletion, ChatCompletionChunk]:
+    ) -> Union[LLMChatCompletion, LLMChatCompletionChunk]:
         """Get a completion from the LlamaCpp model based on the provided messages."""
 
         args = self._get_base_args(generation_config)
@@ -99,7 +101,7 @@ class LlamaCPP(LLMProvider):
         response = self.client(prompt, **args)
 
         if not generation_config.stream:
-            return ChatCompletion(
+            return LLMChatCompletion(
                 # TODO - Set an intelligent id
                 id="777",
                 object="chat.completion",
@@ -117,7 +119,7 @@ class LlamaCPP(LLMProvider):
                 ],
             )
         else:
-            return ChatCompletionChunk(
+            return LLMChatCompletionChunk(
                 choices=[
                     {
                         "message": {

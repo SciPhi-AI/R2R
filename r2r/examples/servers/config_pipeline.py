@@ -4,7 +4,12 @@ import os
 import uvicorn
 
 from r2r.main import E2EPipelineFactory, R2RConfig
-from r2r.pipelines import AgentRAGPipeline, QnARAGPipeline, WebRAGPipeline
+from r2r.pipelines import (
+    AgentRAGPipeline,
+    HyDEPipeline,
+    QnARAGPipeline,
+    WebRAGPipeline,
+)
 
 current_file_path = os.path.dirname(__file__)
 configs_path = os.path.join(current_file_path, "..", "configs")
@@ -12,16 +17,20 @@ configs_path = os.path.join(current_file_path, "..", "configs")
 CONFIG_OPTIONS = {
     "default": None,
     "local_ollama": os.path.join(configs_path, "local_ollama.json"),
-    "local_llama_cpp": os.path.join(configs_path, "local_llama_cpp.json"),
     "local_ollama_qdrant": os.path.join(
         configs_path, "local_ollama_qdrant.json"
     ),
+    "local_ollama_with_rerank": os.path.join(
+        configs_path, "local_ollama_with_rerank.json"
+    ),
+    "local_llama_cpp": os.path.join(configs_path, "local_llama_cpp.json"),
 }
 
 PIPELINE_OPTIONS = {
     "qna": QnARAGPipeline,
     "web": WebRAGPipeline,
     "agent": AgentRAGPipeline,
+    "hyde": HyDEPipeline,
 }
 
 
@@ -55,7 +64,16 @@ if __name__ == "__main__":
         choices=PIPELINE_OPTIONS.keys(),
         help="Pipeline implementation to be deployed",
     )
+    parser.add_argument(
+        "--port",
+        type=str,
+        default="8000",
+        help="Port to serve deployed pipeline on.",
+    )
+
     args, _ = parser.parse_known_args()
 
+    port = os.getenv("PORT") or args.port
+
     app = create_app(args.config, args.pipeline)
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=int(port))

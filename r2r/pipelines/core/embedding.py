@@ -9,6 +9,7 @@ from typing import Any, Optional, Tuple
 from r2r.core import (
     DocumentPage,
     EmbeddingPipeline,
+    EmbeddingProvider,
     LoggingDatabaseConnection,
     VectorDBProvider,
     VectorEntry,
@@ -27,13 +28,14 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
 
     def __init__(
         self,
-        embedding_model: str,
-        embeddings_provider: OpenAIEmbeddingProvider,
-        db: VectorDBProvider,
+        embedding_provider: OpenAIEmbeddingProvider,
+        vector_db_provider: VectorDBProvider,
         text_splitter: TextSplitter,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         embedding_batch_size: int = 1,
         id_prefix: str = "demo",
+        *args,
+        **kwargs,
     ):
         """
         Initializes the embedding pipeline with necessary components and configurations.
@@ -43,9 +45,8 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         )
 
         super().__init__(
-            embedding_model,
-            embeddings_provider,
-            db,
+            embedding_provider,
+            vector_db_provider,
             logging_connection,
         )
         self.text_splitter = text_splitter
@@ -106,8 +107,8 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         """
         Generates embeddings for each text chunk using the embedding model.
         """
-        return self.embeddings_provider.get_embeddings(
-            chunks, self.embedding_model
+        return self.embedding_provider.get_embeddings(
+            chunks, EmbeddingProvider.PipelineStage.SEARCH
         )
 
     def store_chunks(
@@ -117,9 +118,9 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         Stores the embedded chunks in the database, with an option to upsert.
         """
         if do_upsert:
-            self.db.upsert_entries(chunks)
+            self.vector_db_provider.upsert_entries(chunks)
         else:
-            self.db.copy_entries(chunks)
+            self.vector_db_provider.copy_entries(chunks)
 
     def run(
         self,

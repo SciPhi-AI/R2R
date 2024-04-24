@@ -1,22 +1,11 @@
 """Base classes for language model providers."""
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field, fields
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import List, Optional
 
-from openai.types.chat import ChatCompletion, ChatCompletionChunk
-
-
-@dataclass
-class LLMConfig(ABC):
-    provider: Optional[str] = None
-    version: str = "0.1.0"
-
-    @classmethod
-    def create(cls, **kwargs):
-        valid_keys = {f.name for f in fields(cls)}
-        filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_keys}
-        return cls(**filtered_kwargs)
+from ..abstractions.output import LLMChatCompletion, LLMChatCompletionChunk
+from .base import Provider, ProviderConfig
 
 
 @dataclass
@@ -38,13 +27,37 @@ class GenerationConfig(ABC):
     api_base: Optional[str] = None
 
 
-class LLMProvider(ABC):
+@dataclass
+class LLMConfig(ProviderConfig):
+    """A base LLM config class"""
+
+    provider: Optional[str] = None
+
+    def validate(self) -> None:
+        if not self.provider:
+            raise ValueError("Provider must be set.")
+
+        if self.provider and self.provider not in self.supported_providers:
+            raise ValueError(f"Provider '{self.provider}' is not supported.")
+
+    @property
+    def supported_providers(self) -> List[str]:
+        return ["litellm", "llama-cpp", "openai"]
+
+
+class LLMProvider(Provider):
     """An abstract class to provide a common interface for LLMs."""
 
     def __init__(
         self,
+        config: LLMConfig,
     ) -> None:
-        pass
+        if not isinstance(config, LLMConfig):
+            raise ValueError(
+                "LLMProvider must be initialized with a `LLMConfig`."
+            )
+
+        super().__init__(config)
 
     @abstractmethod
     def get_completion(
@@ -52,7 +65,7 @@ class LLMProvider(ABC):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> ChatCompletion:
+    ) -> LLMChatCompletion:
         """Abstract method to get a chat completion from the provider."""
         pass
 
@@ -62,6 +75,6 @@ class LLMProvider(ABC):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> ChatCompletionChunk:
+    ) -> LLMChatCompletionChunk:
         """Abstract method to get a completion stream from the provider."""
         pass

@@ -1,33 +1,74 @@
-from abc import ABC, abstractmethod
-from typing import Optional
+from abc import abstractmethod
+from dataclasses import dataclass
+from enum import Enum
+from typing import List, Optional
+
+from .base import Provider, ProviderConfig
+from .vector_db import VectorSearchResult
 
 
-class EmbeddingProvider(ABC):
-    supported_providers = ["openai", "sentence-transformers"]
+@dataclass
+class EmbeddingConfig(ProviderConfig):
+    """A base embedding configuration class"""
 
-    def __init__(self, provider: str):
-        if provider not in EmbeddingProvider.supported_providers:
+    provider: Optional[str] = None
+    search_model: Optional[str] = None
+    search_dimension: Optional[int] = None
+    rerank_model: Optional[str] = None
+
+    def validate(self) -> None:
+        if not self.provider:
             raise ValueError(
-                f"Error, `{provider}` is not in EmbeddingProvider's list of supported providers."
+                "The 'provider' field must be set for EmbeddingConfig."
+            )
+        if self.provider not in self.supported_providers:
+            raise ValueError(f"Provider '{self.provider}' is not supported.")
+
+    @property
+    def supported_providers(self) -> List[str]:
+        return ["openai", "sentence-transformers"]
+
+
+class EmbeddingProvider(Provider):
+    """An abstract class to provide a common interface for embedding providers."""
+
+    class PipelineStage(Enum):
+        SEARCH = 1
+        RERANK = 2
+
+    def __init__(self, config: EmbeddingConfig):
+        if not isinstance(config, EmbeddingConfig):
+            raise ValueError(
+                "EmbeddingProvider must be initialized with a `EmbeddingConfig`."
             )
 
-    @abstractmethod
-    def _check_inputs(self, model: str, dimensions: Optional[int]) -> None:
-        pass
+        super().__init__(config)
 
     @abstractmethod
     def get_embedding(
-        self, text: str, model: str, dimensions: Optional[int] = None
+        self, text: str, stage: PipelineStage = PipelineStage.SEARCH
     ):
         pass
 
     @abstractmethod
     def get_embeddings(
-        self, texts: list[str], model: str, dimensions: Optional[int] = None
+        self, texts: list[str], stage: PipelineStage = PipelineStage.SEARCH
     ):
         pass
 
     @abstractmethod
-    def tokenize_string(self, text: str, model: str) -> list[int]:
+    def rerank(
+        self,
+        query: str,
+        documents: list[VectorSearchResult],
+        stage: PipelineStage = PipelineStage.RERANK,
+        limit: int = 10,
+    ):
+        pass
+
+    @abstractmethod
+    def tokenize_string(
+        self, text: str, model: str, stage: PipelineStage
+    ) -> list[int]:
         """Tokenizes the input string."""
         pass

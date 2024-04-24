@@ -7,9 +7,9 @@ from abc import abstractmethod
 from typing import Any, Optional
 
 from ..providers.embedding import EmbeddingProvider
-from ..providers.logging import LoggingDatabaseConnection
 from ..providers.vector_db import VectorDBProvider, VectorEntry
 from ..utils import generate_run_id
+from ..utils.logging import LoggingDatabaseConnection
 from .pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
@@ -18,16 +18,14 @@ logger = logging.getLogger(__name__)
 class EmbeddingPipeline(Pipeline):
     def __init__(
         self,
-        embedding_model: str,
-        embeddings_provider: EmbeddingProvider,
-        db: VectorDBProvider,
+        embedding_provider: EmbeddingProvider,
+        vector_db_provider: VectorDBProvider,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs,
     ):
-        self.embedding_model = embedding_model
-        self.embeddings_provider = embeddings_provider
-        self.db = db
+        self.embedding_provider = embedding_provider
+        self.vector_db_provider = vector_db_provider
         super().__init__(logging_connection=logging_connection, **kwargs)
 
     def initialize_pipeline(self, *args, **kwargs) -> None:
@@ -60,3 +58,8 @@ class EmbeddingPipeline(Pipeline):
 
     def run(self, document: Any, **kwargs):
         pass
+
+    def run_stream(self, document: Any, **kwargs):
+        raise NotImplementedError(
+            "Streaming mode not supported for `EmbeddingPipeline`."
+        )

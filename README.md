@@ -28,6 +28,17 @@ R2R was conceived to bridge the gap between local LLM experimentation and scalab
 - **⚖️ Autoscale**: Scale your pipeline effortlessly in the cloud using [SciPhi](https://sciphi.ai/).
 - **🤖 OSS**: Benefit from a framework developed by the open-source community, designed to simplify RAG deployment.
 
+# Table of Contents
+1. [Demo(s)](#demos)
+2. [Links](#links)
+3. [Quick Install](#quick-install)
+4. [Docker](#docker)
+5. [Q&A Example](#q&a-example)
+6. [HyDE Example](#hyde-example)
+7. [Running Local RAG](#running-local-rag)
+8. [Core Abstractions](#core-abstractions)
+
+
 ## Demo(s)
 
 Using the cloud application to deploy the pre-built basic pipeline:
@@ -73,13 +84,13 @@ docker pull emrgntcmplxty/r2r:latest
 docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  emrgntcmplxty/r2r:latest
 ```
 
-## Basic Example
+## Q&A Example
 
 [`Configurable Pipeline`](r2r/examples/servers/config_pipeline.py): Execute this script to select and serve a **Q&A RAG**, **Web RAG**, or **Agent RAG** pipeline. This starter pipeline supports ingestion, embedding, and question and the specified RAG, all accessible via a REST API.
    ```bash
    # launch the server
-   # For ex., do `export CONFIG_OPTION=local_ollama` or ``--config=local_ollama` to run fully locally
-   # For ex., do `export PIPELINE_OPTION=web` or ``--pipeline=web` to run WebRAG pipeline
+   # For ex., do `export CONFIG_OPTION=local_ollama` or `--config=local_ollama` to run fully locally
+   # For ex., do `export PIPELINE_OPTION=web` or `--pipeline=web` to run WebRAG pipeline
    python -m r2r.examples.servers.config_pipeline --config=default --pipeline=qna
    ```
 
@@ -113,39 +124,34 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
    python -m r2r.examples.clients.run_qna_client rag_completion_streaming --query="What was lyfts profit in 2020?"
 
    # <search>[{"id": "a0f6b427-9083-5ef2-aaa1-024b6cebbaee", "score": 0.6862949051074227, "metadata": {"user_id": "df7021ed-6e66-5581-bd69-d4e9ac1e5ada", "pipeline_run_id": "0c2c9a81-0720-4e34-8736-b66189956013", "text": "Title: Lyft 10k 2021\nNet loss was $ ... </search>
-   
+   #
    # <context> Title: Lyft 10k 2021 ... </context>
-   
+   #
    # <completion>Lyft's net loss in 2020 was $1.8 billion.</completion>
    ```
-### Running Local RAG
+
+## HyDE Example
+
+[`HyDE Pipeline`](r2r/examples/servers/hyde_pipeline.py): Execute this script to start a backend server equipped with more advanced synthetic query pipeline. This pipeline is designed to create synthetic queries, enhancing the RAG system's learning and performance.
+
+   ```bash
+   # launch the server
+   python -m r2r.examples.servers.config_pipeline --config=default --pipeline=hyde
+   ```
+
+   ```bash
+   # ingests Lyft 10K, Uber 10K, and others
+   python -m r2r.examples.clients.run_qna_client ingest --document_filter=all
+
+   # run the client
+   python -m r2r.examples.clients.run_qna_client search --query="What was lyft and ubers profit in 2020?"
+
+   # {... 'message': {'content': 'In 2020, Lyft reported a net loss of $1.7529 billion [8]. Uber also reported a significant loss for the year 2020, with its net loss improving by $1.8 billion from 2020, indicating a substantial loss for the year as well [38]. Neither company achieved a profit in 2020; instead, they both experienced considerable losses.' ...}
+   ```
+
+## Running Local RAG
 
 [Refer here](https://r2r-docs.sciphi.ai/tutorials/local_rag) for a tutorial on how to modify the commands above to use local providers.
-
-## Synthetic Queries Example
-
-[`Synthetic Query Pipeline`](r2r/examples/servers/synthetic_query_pipeline.py): Execute this script to start a backend server equipped with more advanced synthetic query pipeline. This pipeline is designed to create synthetic queries, enhancing the RAG system's learning and performance.
-
-   ```bash
-   # launch the server
-   python -m r2r.examples.servers.synthetic_query_pipeline
-   ```
-
-[`Synthetic Query Client`](r2r/examples/clients/run_synthetic_query_client.py): Use this client script after the synthetic query pipeline is running. It's tailored for use with the synthetic query pipeline, demonstrating the improved features of the RAG system.
-
-   ```bash
-   # run the client
-   python -m r2r.examples.clients.run_synthetic_query_client
-   ```
-
-## Extra Examples
-
-[`Reducto Pipeline`](r2r/examples/servers/reducto_pipeline.py): Launch this script to activate a backend server that integrates a Reducto adapter for enhanced PDF ingestion.
-
-   ```bash
-   # launch the server
-   python -m r2r.examples.servers.reducto_pipeline
-   ```
 
 ## Core Abstractions
 

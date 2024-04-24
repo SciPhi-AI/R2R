@@ -2,18 +2,15 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Generator, Union
 
-from openai.types.chat import ChatCompletion, ChatCompletionChunk
-
-from r2r.core import GenerationConfig, LLMConfig, LLMProvider
+from r2r.core import (
+    GenerationConfig,
+    LLMChatCompletion,
+    LLMChatCompletionChunk,
+    LLMConfig,
+    LLMProvider,
+)
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class LiteLLMConfig(LLMConfig):
-    """Configuration for LiteLLM models."""
-
-    provider_name: str = "litellm"
 
 
 class LiteLLM(LLMProvider):
@@ -21,18 +18,13 @@ class LiteLLM(LLMProvider):
 
     def __init__(
         self,
-        config: LiteLLMConfig,
+        config: LLMConfig,
         *args,
         **kwargs,
     ) -> None:
         logger.info(f"Initializing `LiteLLM` with config: {config}")
-        super().__init__()
 
-        if not isinstance(config, LiteLLMConfig):
-            raise ValueError(
-                "The provided config must be an instance of LiteLLMConfig."
-            )
-        self.config: LiteLLMConfig = config
+        super().__init__(config)
 
         try:
             from litellm import completion
@@ -48,7 +40,7 @@ class LiteLLM(LLMProvider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> ChatCompletion:
+    ) -> LLMChatCompletion:
         if generation_config.stream:
             raise ValueError(
                 "Stream must be set to False to use the `get_completion` method."
@@ -60,7 +52,7 @@ class LiteLLM(LLMProvider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> Generator[ChatCompletionChunk, None, None]:
+    ) -> Generator[LLMChatCompletionChunk, None, None]:
         if not generation_config.stream:
             raise ValueError(
                 "Stream must be set to True to use the `get_completion_stream` method."
@@ -72,7 +64,9 @@ class LiteLLM(LLMProvider):
         messages: list[dict],
         generation_config: GenerationConfig,
         **kwargs,
-    ) -> Union[ChatCompletion, Generator[ChatCompletionChunk, None, None]]:
+    ) -> Union[
+        LLMChatCompletion, Generator[LLMChatCompletionChunk, None, None]
+    ]:
         # Create a dictionary with the default arguments
         args = self._get_base_args(generation_config)
         args["messages"] = messages
@@ -85,16 +79,16 @@ class LiteLLM(LLMProvider):
         response = self.litellm_completion(**args)
 
         if not generation_config.stream:
-            return ChatCompletion(**response.dict())
+            return LLMChatCompletion(**response.dict())
         else:
             return self._get_chat_completion(response)
 
     def _get_chat_completion(
         self,
         response: Any,
-    ) -> Generator[ChatCompletionChunk, None, None]:
+    ) -> Generator[LLMChatCompletionChunk, None, None]:
         for part in response:
-            yield ChatCompletionChunk(**part.dict())
+            yield LLMChatCompletionChunk(**part.dict())
 
     def _get_base_args(
         self,

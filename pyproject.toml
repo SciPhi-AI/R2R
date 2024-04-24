@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "r2r"
-version = "0.1.35"
+version = "0.1.36"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
@@ -16,47 +16,59 @@ include = ["config.json"]
 python = ">=3.9,<3.13"
 
 # Required dependencies
-bs4 = "^0.0.2"
+
+# python
+pydantic = "^2.6.3"
+python-dotenv = "^1.0.1"
+python-multipart = "^0.0.9"
+
+# infrastructure
 fastapi = "^0.109.2"
 fire = "^0.5.0"
 gunicorn = "^21.2.0"
-litellm = "^1.34.0"
-openai = "^1.11.1"
-pydantic = "^2.6.3"
-pypdf = "^4.2.0"
-python-dotenv = "^1.0.1"
-python-multipart = "^0.0.9"
+psycopg2-binary = {version = "^2.9.9", optional = true}
 requests = "^2.31.0"
 types-requests = "^2.31.0"
 uvicorn = "^0.27.0.post1"
-vecs = "^0.4.0"
 
-
-# Optional dependencies
-tiktoken = {version = "^0.5.2", optional = true}
-datasets = {version = "^2.16.1", optional = true}
-qdrant_client = {version = "^1.7.0", optional = true}
-psycopg2-binary = {version = "^2.9.9", optional = true}
-numpy = {version = "^1.26.4", optional = true}
-sentry-sdk = {version = "^1.40.4", optional = true}
-deepeval = {version ="^0.20.88", optional = true}
-parea-ai = {version = "^0.2.86", optional = true}
-ionic-api-sdk = {version = "0.9.3", optional = true}
+# ingestion
 boto3 = {version = "^1.34.71", optional = true}
-exa-py = {version = "^1.0.9", optional = true}
-llama-cpp-python = {version = "^0.2.57", optional = true}
+bs4 = "^0.0.2"
+openpyxl = "^3.1.2"
+markdown = "^3.6"
+pypdf = "^4.2.0"
+python-pptx = "^0.6.23"
+python-docx = "^1.1.0"
+
+# embedding providers
+tiktoken = {version = "^0.5.2", optional = true}
 sentence-transformers = {version = "^2.7.0", optional = true}
 
+# vector db providers
+vecs = "^0.4.0"
+qdrant_client = {version = "^1.7.0", optional = true}
+
+# llm providers
+litellm = "^1.35.18"
+openai = "^1.11.1"
+llama-cpp-python = {version = "^0.2.57", optional = true}
+
+# eval providers
+deepeval = {version ="^0.20.88", optional = true}
+parea-ai = {version = "^0.2.86", optional = true}
+
+# integrations
+ionic-api-sdk = {version = "0.9.3", optional = true}
+exa-py = {version = "^1.0.9", optional = true}
+
 [tool.poetry.extras]
-embedding = ["tiktoken"]
-streaming = ["datasets"]
+reducto = ["boto3"]
 qdrant = ["qdrant_client"]
 postgres = ["psycopg2-binary"]
-monitoring = ["sentry-sdk"]
 deepeval = ["deepeval"]
 eval = ["parea-ai"]
+pptx = ["python-pptx"]
 ionic = ["ionic-api-sdk"]
-reducto = ["boto3"]
 exa = ["exa-py"]
 sentence-transformers-only = ["sentence-transformers"]
 local-llm = ["llama-cpp-python", "sentence-transformers"]

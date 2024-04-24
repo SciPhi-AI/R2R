@@ -2,54 +2,61 @@ import json
 import logging
 import os
 import sqlite3
-from typing import Optional, Union
+from dataclasses import dataclass
+from typing import List, Optional, Union
 
-from r2r.core import VectorDBProvider, VectorEntry, VectorSearchResult
+from r2r.core import (
+    VectorDBConfig,
+    VectorDBProvider,
+    VectorEntry,
+    VectorSearchResult,
+)
 
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class LocalDBConfig(VectorDBConfig):
+    db_path: Optional[str] = None
+
+    @property
+    def supported_providers(self) -> List[str]:
+        return ["local"]
+
+
 class LocalVectorDB(VectorDBProvider):
-    def __init__(
-        self, provider: str = "local", db_path: Optional[str] = None
-    ) -> None:
+    def __init__(self, config: LocalDBConfig) -> None:
         logger.info(
             "Initializing `LocalVectorDB` to store and retrieve embeddings."
         )
 
-        super().__init__(provider)
-        if provider != "local":
+        super().__init__(config)
+        if config.provider != "local":
             raise ValueError(
                 "LocalVectorDB must be initialized with provider `local`."
             )
 
-        self.db_path = db_path
-        self.collection_name: Optional[str] = None
-
     def _get_conn(self):
         conn = sqlite3.connect(
-            self.db_path or os.getenv("LOCAL_DB_PATH", "local.sqlite")
+            self.config.db_path or os.getenv("LOCAL_DB_PATH", "local.sqlite")
         )
         return conn
 
     def _get_cursor(self, conn):
         return conn.cursor()
 
-    def initialize_collection(
-        self, collection_name: str, dimension: int
-    ) -> None:
+    def initialize_collection(self, dimension: int) -> None:
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
         cursor.execute(
             f"""
-            CREATE TABLE IF NOT EXISTS "{collection_name}" (
+            CREATE TABLE IF NOT EXISTS "{self.config.collection_name}" (
                 id TEXT PRIMARY KEY,
                 vector TEXT,
                 metadata TEXT
             )
         """
         )
-        self.collection_name = collection_name
         conn.commit()
         conn.close()
 
@@ -59,7 +66,7 @@ class LocalVectorDB(VectorDBProvider):
         )
 
     def copy(self, entry: VectorEntry, commit=True) -> None:
-        if self.collection_name is None:
+        if self.config.collection_name is None:
             raise ValueError(
                 "Collection name is not set. Please call `initialize_collection` first."
             )
@@ -68,7 +75,7 @@ class LocalVectorDB(VectorDBProvider):
         cursor = self._get_cursor(conn)
         cursor.execute(
             f"""
-                INSERT OR IGNORE INTO "{self.collection_name}" (id, vector, metadata)
+                INSERT OR IGNORE INTO "{self.config.collection_name}" (id, vector, metadata)
                 VALUES (?, ?, ?)
             """,
             (
@@ -82,7 +89,7 @@ class LocalVectorDB(VectorDBProvider):
         conn.close()
 
     def upsert(self, entry: VectorEntry, commit=True) -> None:
-        if self.collection_name is None:
+        if self.config.collection_name is None:
             raise ValueError(
                 "Collection name is not set. Please call `initialize_collection` first."
             )
@@ -91,7 +98,7 @@ class LocalVectorDB(VectorDBProvider):
         cursor = self._get_cursor(conn)
         cursor.execute(
             f"""
-            INSERT OR REPLACE INTO "{self.collection_name}" (id, vector, metadata)
+            INSERT OR REPLACE INTO "{self.config.collection_name}" (id, vector, metadata)
             VALUES (?, ?, ?)
         """,
             (
@@ -120,13 +127,13 @@ class LocalVectorDB(VectorDBProvider):
         *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
-        if self.collection_name is None:
+        if self.config.collection_name is None:
             raise ValueError(
                 "Collection name is not set. Please call `initialize_collection` first."
             )
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
-        cursor.execute(f'SELECT * FROM "{self.collection_name}"')
+        cursor.execute(f'SELECT * FROM "{self.config.collection_name}"')
         results = []
         for id, vector, metadata in cursor.fetchall():
             vector = json.loads(vector)
@@ -142,41 +149,51 @@ class LocalVectorDB(VectorDBProvider):
     def filtered_deletion(
         self, key: str, value: Union[bool, int, str]
     ) -> None:
-        if self.collection_name is None:
+        if self.config.collection_name is None:
             raise ValueError(
                 "Collection name is not set. Please call `initialize_collection` first."
             )
 
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
-        cursor.execute(f'SELECT * FROM "{self.collection_name}"')
+        cursor.execute(f'SELECT * FROM "{self.config.collection_name}"')
         for id, vector, metadata in cursor.fetchall():
             metadata = json.loads(metadata)
             if metadata.get(key) == value:
                 cursor.execute(
-                    f'DELETE FROM "{self.collection_name}" WHERE id = ?', (id,)
+                    f'DELETE FROM "{self.config.collection_name}" WHERE id = ?',
+                    (id,),
                 )
         conn.commit()
         conn.close()
 
     def get_all_unique_values(
-        self, metadata_field: str, filters: dict = {}
-    ) -> list:
-        if self.collection_name is None:
+        self,
+        metadata_field: str,
+        filter_field: Optional[str] = None,
+        filter_value: Optional[str] = None,
+    ) -> list[str]:
+        if self.config.collection_name is None:
             raise ValueError(
                 "Collection name is not set. Please call `initialize_collection` first."
             )
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
-        cursor.execute(f'SELECT metadata FROM "{self.collection_name}"')
+        cursor.execute(f'SELECT metadata FROM "{self.config.collection_name}"')
         unique_values = set()
         for (metadata,) in cursor.fetchall():
             metadata = json.loads(metadata)
-            if all(metadata.get(k) == v for k, v in filters.items()):
+            if (
+                filter_field is None
+                or metadata.get(filter_field) == filter_value
+            ):
                 if metadata_field in metadata:
                     unique_values.add(metadata[metadata_field])
         conn.close()
         return list(unique_values)
+
+    def close(self):
+        pass
 
     def close(self):
         pass

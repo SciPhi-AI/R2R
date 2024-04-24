@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from ..providers.logging import LoggingDatabaseConnection
+from ..utils.logging import LoggingDatabaseConnection
 
 
 class Pipeline(ABC):
@@ -32,6 +32,7 @@ class Pipeline(ABC):
             "__getattribute__",
             "initialize_pipeline",
             "run",
+            "run_stream",
         ]:
 
             def newfunc(*args, **kwargs):
@@ -52,4 +53,11 @@ class Pipeline(ABC):
 
     @abstractmethod
     def run(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def run_stream(self, *args, **kwargs):
+        """
+        Runs the pipeline in streaming mode.
+        """
         pass

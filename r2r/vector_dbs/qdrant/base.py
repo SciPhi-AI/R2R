@@ -2,22 +2,28 @@ import logging
 import os
 from typing import Optional, Union
 
-from r2r.core import VectorDBProvider, VectorEntry, VectorSearchResult
+from r2r.core import (
+    VectorDBConfig,
+    VectorDBProvider,
+    VectorEntry,
+    VectorSearchResult,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class QdrantDB(VectorDBProvider):
-    def __init__(self, provider: str = "qdrant") -> None:
+    def __init__(self, config: VectorDBConfig) -> None:
         logger.info(
             "Initializing `QdrantDB` to store and retrieve embeddings."
         )
 
-        super().__init__(provider)
-        if provider != "qdrant":
+        super().__init__(config)
+        if config.provider != "qdrant":
             raise ValueError(
                 "QdrantDB must be initialized with provider `qdrant`."
             )
+
         try:
             from qdrant_client import QdrantClient
             from qdrant_client.http import models
@@ -42,22 +48,18 @@ class QdrantDB(VectorDBProvider):
             raise ValueError(
                 f"Error {e} occurred while attempting to connect to the qdrant provider."
             )
-        self.collection_name: Optional[str] = None
 
-    def initialize_collection(
-        self, collection_name: str, dimension: int
-    ) -> None:
-        self.collection_name = collection_name
+    def initialize_collection(self, dimension: int) -> None:
         try:
             result = self.client.create_collection(
-                collection_name=f"{collection_name}",
+                collection_name=f"{self.config.collection_name}",
                 vectors_config=self.models.VectorParams(
                     size=dimension, distance=self.models.Distance.COSINE
                 ),
             )
             if result is False:
                 raise ValueError(
-                    f"Error occurred while attempting to create collection {collection_name}."
+                    f"Error occurred while attempting to create collection {self.config.collection_name}."
                 )
         except Exception:
             # TODO - Handle more appropriately - create collection fails when it already exists
@@ -69,7 +71,7 @@ class QdrantDB(VectorDBProvider):
         )
 
     def upsert(self, entry: VectorEntry, commit=True) -> None:
-        if self.collection_name is None:
+        if self.config.collection_name is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `upsert`."
             )
@@ -81,14 +83,14 @@ class QdrantDB(VectorDBProvider):
             )
         ]
         self.client.upsert(
-            collection_name=f"{self.collection_name}",
+            collection_name=f"{self.config.collection_name}",
             points=points,
         )
 
     def upsert_entries(
         self, entries: list[VectorEntry], commit: bool = True
     ) -> None:
-        if self.collection_name is None:
+        if self.config.collection_name is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `upsert_entries`."
             )
@@ -101,7 +103,7 @@ class QdrantDB(VectorDBProvider):
             for entry in entries
         ]
         self.client.upsert(
-            collection_name=f"{self.collection_name}",
+            collection_name=f"{self.config.collection_name}",
             points=points,
         )
 
@@ -113,13 +115,13 @@ class QdrantDB(VectorDBProvider):
         *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
-        if self.collection_name is None:
+        if self.config.collection_name is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `search`."
             )
 
         results = self.client.search(
-            collection_name=f"{self.collection_name}",
+            collection_name=f"{self.config.collection_name}",
             query_filter=self.models.Filter(
                 must=[
                     self.models.FieldCondition(
@@ -151,13 +153,13 @@ class QdrantDB(VectorDBProvider):
     def filtered_deletion(
         self, key: str, value: Union[bool, int, str]
     ) -> None:
-        if self.collection_name is None:
+        if self.config.collection_name is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `filtered_deletion`."
             )
 
         self.client.delete(
-            collection_name=self.collection_name,
+            collection_name=self.config.collection_name,
             points_selector=self.models.FilterSelector(
                 filter=self.models.Filter(
                     must=[
@@ -172,23 +174,27 @@ class QdrantDB(VectorDBProvider):
         return
 
     def get_all_unique_values(
-        self, collection_name: str, metadata_field: str, filters: dict = {}
+        self,
+        metadata_field: str,
+        filter_field: Optional[str] = None,
+        filter_value: Optional[str] = None,
     ) -> list:
-        if self.collection_name is None:
+        if self.config.collection_name is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `get_all_unique_values`."
             )
 
-        # Create a scroll filter based on the provided filters
+        # Create a scroll filter based on the provided filter field and value
         scroll_filter = None
-        if filters:
-            filter_conditions = [
-                self.models.FieldCondition(
-                    key=key, match=self.models.MatchValue(value=value)
-                )
-                for key, value in filters.items()
-            ]
-            scroll_filter = self.models.Filter(must=filter_conditions)
+        if filter_field and filter_value:
+            scroll_filter = self.models.Filter(
+                must=[
+                    self.models.FieldCondition(
+                        key=filter_field,
+                        match=self.models.MatchValue(value=filter_value),
+                    )
+                ]
+            )
 
         unique_values = set()
 
@@ -196,7 +202,7 @@ class QdrantDB(VectorDBProvider):
         next_page_offset = None
         while True:
             records, next_page_offset = self.scroll(
-                collection_name=collection_name,
+                collection_name=self.config.collection_name,
                 scroll_filter=scroll_filter,
                 offset=next_page_offset,
                 limit=100,  # Adjust the batch size as needed

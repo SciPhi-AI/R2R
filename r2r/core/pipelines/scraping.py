@@ -1,9 +1,8 @@
-from abc import abstractmethod
-from typing import Any, Iterator, Optional
+from typing import Iterator, Optional
 
 from ..abstractions.document import DocumentPage
-from ..providers.logging import LoggingDatabaseConnection
 from ..utils import generate_run_id
+from ..utils.logging import LoggingDatabaseConnection
 from .pipeline import Pipeline
 
 
@@ -41,3 +40,15 @@ class ScraperPipeline(Pipeline):
             raise ValueError("No URL provided to scrape.")
 
         yield from self.scrape_url(url)
+
+    def run_stream(
+        self,
+        query: str,
+        context: str,
+        completion: str,
+        run_id: Optional[str],
+        **kwargs,
+    ):
+        raise NotImplementedError(
+            "Streaming mode not supported for `ScraperPipeline`."
+        )

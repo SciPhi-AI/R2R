@@ -9,10 +9,14 @@ from typing import Any, Iterator, Optional, Union
 from r2r.core import DocumentPage, IngestionPipeline, LoggingDatabaseConnection
 from r2r.core.adapters import (
     Adapter,
+    CSVAdapter,
     HTMLAdapter,
     JSONAdapter,
+    MarkdownAdapter,
     PDFAdapter,
+    PPTAdapter,
     TextAdapter,
+    XLSXAdapter,
 )
 
 logger = logging.getLogger(__name__)
@@ -23,6 +27,10 @@ class IngestionType(Enum):
     JSON = "json"
     HTML = "html"
     PDF = "pdf"
+    PPTX = "pptx"
+    CSV = "csv"
+    XLSX = "xlsx"
+    MD = "md"
 
 
 class BasicIngestionPipeline(IngestionPipeline):
@@ -49,6 +57,10 @@ class BasicIngestionPipeline(IngestionPipeline):
             IngestionType.JSON: JSONAdapter(),
             IngestionType.HTML: HTMLAdapter(),
             IngestionType.PDF: PDFAdapter(),
+            IngestionType.PPTX: PPTAdapter(),
+            IngestionType.CSV: CSVAdapter(),
+            IngestionType.XLSX: XLSXAdapter(),
+            IngestionType.MD: MarkdownAdapter(),
         }
         self.adapters = self.default_adapters
         if adapters is not None:

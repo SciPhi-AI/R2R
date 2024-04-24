@@ -1,6 +1,5 @@
 import asyncio
 import glob
-import json
 import os
 
 import fire
@@ -27,7 +26,10 @@ class QnAClient:
         data_path = os.path.join(current_file_directory, "..", "data")
         for file_path in glob.glob(os.path.join(data_path, "*.pdf")):
             file_name = file_path.split(os.path.sep)[-1]
-            if document_filter.lower() == "all" or file_name.lower().startswith(document_filter.lower()):
+            if (
+                document_filter.lower() == "all"
+                or file_name.lower().startswith(document_filter.lower())
+            ):
                 if file_name in self.titles:
                     document_id = generate_id_from_label(file_path)
                     metadata = {
@@ -39,11 +41,12 @@ class QnAClient:
                         document_id, file_path, metadata, settings
                     )
                     print("Upload response = ", upload_response)
-                    
-    def search(self, query):
+
+    def search(self, query, search_limit=25, rerank_limit=15):
         search_response = self.client.search(
             query,
-            5,
+            search_limit=search_limit,
+            rerank_limit=rerank_limit,
             filters={"user_id": self.user_id},
         )
         for i, response in enumerate(search_response):
@@ -53,10 +56,17 @@ class QnAClient:
             print(body[:500])
             print("\n")
 
-    def rag_completion(self, query, model="gpt-4-turbo-preview"):
+    def rag_completion(
+        self,
+        query,
+        model="gpt-4-turbo-preview",
+        search_limit=25,
+        rerank_limit=15,
+    ):
         rag_response = self.client.rag_completion(
             query,
-            5,
+            search_limit=search_limit,
+            rerank_limit=rerank_limit,
             filters={"user_id": self.user_id},
             generation_config={"model": model},
         )
@@ -88,6 +98,17 @@ class QnAClient:
         print("Fetching logs summary after all steps...")
         logs_summary_response = self.client.get_logs_summary()
         print(f"Logs summary response:\n{logs_summary_response}\n")
+
+    def list_user_ids(self):
+        user_ids_response = self.client.get_user_ids()
+        print("User IDs response = ", user_ids_response)
+
+    def list_user_documents(self):
+        if not self.user_id:
+            print("User ID is not set. Cannot fetch documents.")
+            return
+        user_documents_response = self.client.get_user_documents(self.user_id)
+        print(f"Documents for user {self.user_id} = ", user_documents_response)
 
 
 if __name__ == "__main__":

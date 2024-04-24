@@ -1,31 +1,51 @@
 import random
-from abc import ABC, abstractmethod
-from typing import Optional, Union
+from abc import abstractmethod
+from dataclasses import dataclass
+from typing import List, Optional, Union
+
+from .base import Provider, ProviderConfig
 
 
-class EvalProvider(ABC):
-    providers = ["deepeval", "parea", "none"]
+@dataclass
+class EvalConfig(ProviderConfig):
+    """A base eval config class"""
 
-    def __init__(self, provider: str, sampling_fraction: float = 1.0):
-        if provider not in self.providers:
-            raise ValueError(f"Provider {provider} not supported.")
-        if provider == "none" and sampling_fraction != 0.0:
+    provider: Optional[str] = None
+    sampling_fraction: float = 1.0
+
+    def validate(self) -> None:
+        if self.provider not in self.supported_providers:
+            raise ValueError(f"Provider {self.provider} not supported.")
+        if self.provider == "none" and self.sampling_fraction != 0.0:
             raise ValueError(
                 f"Sampling fraction must be 0.0 when setting evaluation provider to None."
             )
 
-        self.provider = provider
-        self.sampling_fraction = sampling_fraction
+    @property
+    def supported_providers(self) -> List[str]:
+        return ["deepeval", "parea", "none"]
 
-    def evaluate(
-        self, query: str, context: str, completion: str
-    ) -> Optional[dict]:
-        if random.random() < self.sampling_fraction:
-            return self._evaluate(query, context, completion)
-        return None
+
+class EvalProvider(Provider):
+    """An abstract class to provide a common interface for evaluation providers."""
+
+    def __init__(self, config: EvalConfig):
+        if not isinstance(config, EvalConfig):
+            raise ValueError(
+                "EvalProvider must be initialized with a `EvalConfig`."
+            )
+
+        super().__init__(config)
 
     @abstractmethod
     def _evaluate(
         self, query: str, context: str, completion: str
     ) -> dict[str, dict[str, Union[str, float]]]:
         pass
+
+    def evaluate(
+        self, query: str, context: str, completion: str
+    ) -> Optional[dict]:
+        if random.random() < self.config.sampling_fraction:
+            return self._evaluate(query, context, completion)
+        return None

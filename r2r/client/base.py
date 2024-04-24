@@ -76,7 +76,8 @@ class R2RClient:
     def search(
         self,
         query: str,
-        limit: Optional[int] = 10,
+        search_limit: Optional[int] = 25,
+        rerank_limit: Optional[int] = 15,
         filters: Optional[Dict[str, Any]] = None,
         settings: Optional[Dict[str, Any]] = None,
     ):
@@ -84,7 +85,8 @@ class R2RClient:
         json_data = {
             "query": query,
             "filters": filters or {},
-            "limit": limit,
+            "search_limit": search_limit,
+            "rerank_limit": rerank_limit,
             "settings": settings or {},
         }
         response = requests.post(url, json=json_data)
@@ -96,7 +98,8 @@ class R2RClient:
     def rag_completion(
         self,
         query: str,
-        limit: Optional[int] = 10,
+        search_limit: Optional[int] = 25,
+        rerank_limit: Optional[int] = 15,
         filters: Optional[Dict[str, Any]] = None,
         settings: Optional[Dict[str, Any]] = None,
         generation_config: Optional[Dict[str, Any]] = None,
@@ -114,7 +117,8 @@ class R2RClient:
         json_data = {
             "query": query,
             "filters": filters or {},
-            "limit": limit,
+            "search_limit": search_limit,
+            "rerank_limit": rerank_limit,
             "settings": settings or {},
             "generation_config": generation_config or {},
         }
@@ -143,7 +147,8 @@ class R2RClient:
     async def stream_rag_completion(
         self,
         query: str,
-        limit: Optional[int] = 10,
+        search_limit: Optional[int] = 25,
+        rerank_limit: Optional[int] = 15,
         filters: Optional[Dict[str, Any]] = None,
         settings: Optional[Dict[str, Any]] = None,
         generation_config: Optional[Dict[str, Any]] = None,
@@ -165,7 +170,8 @@ class R2RClient:
         json_data = {
             "query": query,
             "filters": filters or {},
-            "limit": limit,
+            "search_limit": search_limit,
+            "rerank_limit": rerank_limit,
             "settings": settings or {},
             "generation_config": generation_config or {},
         }
@@ -190,4 +196,14 @@ class R2RClient:
     def get_logs_summary(self):
         url = f"{self.base_url}/logs_summary"
         response = requests.get(url)
+        return response.json()
+
+    def get_user_ids(self):
+        url = f"{self.base_url}/get_user_ids/"
+        response = requests.get(url)
+        return response.json()
+
+    def get_user_documents(self, user_id: str):
+        url = f"{self.base_url}/get_user_documents/"
+        response = requests.get(url, params={"user_id": user_id})
         return response.json()

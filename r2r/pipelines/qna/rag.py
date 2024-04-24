@@ -6,6 +6,7 @@ import logging
 from typing import Optional
 
 from r2r.core import (
+    EmbeddingProvider,
     LLMProvider,
     LoggingDatabaseConnection,
     PromptProvider,
@@ -14,9 +15,8 @@ from r2r.core import (
     VectorSearchResult,
     log_execution_to_db,
 )
-from r2r.embeddings import OpenAIEmbeddingProvider
 
-from ..core.prompt_provider import BasicPromptProvider
+from ..core.prompt import BasicPromptProvider
 
 logger = logging.getLogger(__name__)
 
@@ -28,29 +28,32 @@ class QnARAGPipeline(RAGPipeline):
 
     def __init__(
         self,
-        llm: LLMProvider,
-        db: VectorDBProvider,
-        embedding_model: str,
-        embeddings_provider: OpenAIEmbeddingProvider,
+        embedding_provider: EmbeddingProvider,
+        llm_provider: LLMProvider,
+        vector_db_provider: VectorDBProvider,
         prompt_provider: Optional[PromptProvider] = None,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
+        system_prompt: Optional[str] = BasicPromptProvider.BASIC_SYSTEM_PROMPT,
+        task_prompt: Optional[str] = BasicPromptProvider.BASIC_TASK_PROMPT,
     ) -> None:
         """
         Initializes the RAG pipeline with necessary components and configurations.
         """
         logger.debug(f"Initalizing `QnARAGPipeline`.")
         if not prompt_provider:
-            prompt_provider = BasicPromptProvider()
+            prompt_provider = BasicPromptProvider(
+                system_prompt,
+                task_prompt,
+            )
         self.prompt_provider = prompt_provider
 
         super().__init__(
-            llm,
-            prompt_provider=prompt_provider,
+            embedding_provider=embedding_provider,
+            llm_provider=llm_provider,
+            vector_db_provider=vector_db_provider,
             logging_connection=logging_connection,
+            prompt_provider=prompt_provider,
         )
-        self.embedding_model = embedding_model
-        self.embeddings_provider = embeddings_provider
-        self.db = db
         self.pipeline_run_info = None
 
     def transform_query(self, query: str) -> str:
@@ -74,10 +77,9 @@ class QnARAGPipeline(RAGPipeline):
         """
         logger.debug(f"Retrieving results for query: {transformed_query}")
         self._check_pipeline_initialized()
-        results = self.db.search(
-            query_vector=self.embeddings_provider.get_embedding(
+        results = self.vector_db_provider.search(
+            query_vector=self.embedding_provider.get_embedding(
                 transformed_query,
-                self.embedding_model,
             ),
             filters=filters,
             limit=limit,
@@ -88,14 +90,18 @@ class QnARAGPipeline(RAGPipeline):
         return results
 
     def rerank_results(
-        self, results: list[VectorSearchResult]
+        self,
+        transformed_query: str,
+        results: list[VectorSearchResult],
+        limit: int,
     ) -> list[VectorSearchResult]:
         """
         Reranks the retrieved documents based on relevance, if necessary.
         """
         self._check_pipeline_initialized()
-        # Placeholder for reranking logic - A unit transformation.
-        return results
+        return self.embedding_provider.rerank(
+            transformed_query, results, limit=limit
+        )
 
     def _format_results(self, results: list[VectorSearchResult]) -> str:
         """

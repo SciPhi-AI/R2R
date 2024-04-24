@@ -93,7 +93,7 @@ pip install llama-cpp-python # or poetry install ... -E local-llm
 
 To configure the LlamaCpp provider, you need to set the following options in the `language_model` section of the configuration file (`config.json`):
 
-- `provider_name`: Set it to `"llama-cpp"` to use the LlamaCpp provider.
+- `provider`: Set it to `"llama-cpp"` to use the LlamaCpp provider.
 - `model_path`: Specify the path where the LlamaCpp models are located. If not provided, it defaults to `~/.cache/models`.
 - `model_name`: Specify the name of the LlamaCpp model to use. If not provided, it defaults to `"tinyllama-1.1b-chat-v1.0.Q2_K.gguf"`.
 
