@@ -8,8 +8,8 @@ class PareaEvalProvider(EvalProvider):
     def __init__(self, config: EvalConfig):
         super().__init__(config)
         try:
-            from parea.eval.general import answer_relevancy_factory
-            from parea.eval.rag import (
+            from parea.evals.general import answer_relevancy_factory
+            from parea.evals.rag import (
                 answer_context_faithfulness_statement_level_factory,
                 context_query_relevancy_factory,
                 context_ranking_pointwise_factory,

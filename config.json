@@ -19,7 +19,7 @@
     "frequency": 1.0
   },
   "ingestion":{
-    "selected_ingesters": {
+    "selected_ingestors": {
       "csv": "default",
       "docx": "default",
       "html": "default",
