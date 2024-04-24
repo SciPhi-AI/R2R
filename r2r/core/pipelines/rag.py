@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 class RAGPipeline(Pipeline):
     SEARCH_STREAM_MARKER = "search"
     CONTEXT_STREAM_MARKER = "context"
+    METADATA_STREAM_MARKER = "metadata"
     COMPLETION_STREAM_MARKER = "completion"
 
     def __init__(
@@ -250,6 +251,7 @@ class RAGPipeline(Pipeline):
         context: str,
         prompt: str,
         generation_config: GenerationConfig,
+        metadata: Optional[dict] = None,
     ) -> Generator[str, None, None]:
         yield f"<{RAGPipeline.SEARCH_STREAM_MARKER}>"
         yield json.dumps([ele.to_dict() for ele in search_results])
@@ -258,6 +260,11 @@ class RAGPipeline(Pipeline):
         yield f"<{RAGPipeline.CONTEXT_STREAM_MARKER}>"
         yield context
         yield f"</{RAGPipeline.CONTEXT_STREAM_MARKER}>"
+
+        yield f"<{RAGPipeline.METADATA_STREAM_MARKER}>"
+        yield json.dumps(metadata or {})
+        yield f"</{RAGPipeline.METADATA_STREAM_MARKER}>"
+        
         yield f"<{RAGPipeline.COMPLETION_STREAM_MARKER}>"
         for chunk in self.generate_completion(prompt, generation_config):
             yield chunk

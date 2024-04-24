@@ -78,7 +78,6 @@ class WebRAGPipeline(RAGPipeline):
         vector_search_results = []
 
         for result in serper_results:
-            print('result = ', result)
             score = result.pop(
                 "score", 1.0
             )  # Defaulting score to 1.0 if not present

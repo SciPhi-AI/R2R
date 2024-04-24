@@ -140,6 +140,7 @@ class HyDEPipeline(RAGPipeline):
             generation_config = GenerationConfig(model="gpt-3.5-turbo")
 
         self.initialize_pipeline(message, search_only)
+
         queries = self.transform_message(message, generation_config)
         search_results_tuple = [
             (
@@ -152,28 +153,29 @@ class HyDEPipeline(RAGPipeline):
             )
             for query in queries
         ]
+
         if search_only:
+            flattened_results = [
+                result for _, search_results in search_results_tuple for result in search_results
+            ]
+
             return RAGPipelineOutput(
-                [ele[1] for ele in search_results_tuple],
+                flattened_results,
                 None,
                 None,
                 {"queries": queries},
             )
 
+        context = ""
         for offset, (query, search_results) in enumerate(search_results_tuple):
-            context += (
-                self.construct_context(
-                    search_results, offset=offset, query=query
-                )
-                + "\n\n"
-            )
+            context += self.construct_context(search_results, offset=offset, query=query) + "\n\n"
 
         prompt = self.construct_prompt({"query": query, "context": context})
 
         if not generation_config.stream:
             completion = self.generate_completion(prompt, generation_config)
-            return RAGPipelineOutput(search_results, context, completion)
+            return RAGPipelineOutput(search_results, context, completion, {"queries": queries})
 
         return self._return_stream(
-            search_results, context, prompt, generation_config
+            search_results, context, prompt, generation_config, metadata={"queries": queries},
         )
