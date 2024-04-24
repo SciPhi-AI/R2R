@@ -60,7 +60,7 @@ class AgentRAGPipeline(WebRAGPipeline):
 
     def run(
         self,
-        query,
+        message,
         filters={},
         search_limit=25,
         rerank_limit=15,
@@ -69,7 +69,7 @@ class AgentRAGPipeline(WebRAGPipeline):
         *args,
         **kwargs,
     ) -> str:
-        self.initialize_pipeline(query, False)
+        self.initialize_pipeline(message, False)
 
         # Extracts the full conversation history from the query.
         # Query is the json encoded message history given as a list of objects as following:
@@ -79,7 +79,7 @@ class AgentRAGPipeline(WebRAGPipeline):
         #     "content": "my previous message",
         #   }, ...
         # ]
-        conversation = json.loads(query)
+        conversation = json.loads(message)
         conversation[0]["content"] = self.transform_message(
             conversation[0]["content"]
         )

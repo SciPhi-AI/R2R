@@ -83,7 +83,7 @@ class R2RClient:
     ):
         url = f"{self.base_url}/search/"
         json_data = {
-            "query": query,
+            "message": query,
             "filters": filters or {},
             "search_limit": search_limit,
             "rerank_limit": rerank_limit,
@@ -97,7 +97,7 @@ class R2RClient:
     # `stream_rag_completion` workflows.
     def rag_completion(
         self,
-        query: str,
+        message: str,
         search_limit: Optional[int] = 25,
         rerank_limit: Optional[int] = 15,
         filters: Optional[Dict[str, Any]] = None,
@@ -115,7 +115,7 @@ class R2RClient:
 
         url = f"{self.base_url}/rag_completion/"
         json_data = {
-            "query": query,
+            "message": message,
             "filters": filters or {},
             "search_limit": search_limit,
             "rerank_limit": rerank_limit,
@@ -127,7 +127,7 @@ class R2RClient:
 
     def eval(
         self,
-        query: str,
+        message: str,
         context: str,
         completion_text: str,
         run_id: str,
@@ -135,7 +135,7 @@ class R2RClient:
     ):
         url = f"{self.base_url}/eval/"
         payload = {
-            "query": query,
+            "message": message,
             "context": context,
             "completion_text": completion_text,
             "run_id": run_id,
@@ -146,7 +146,7 @@ class R2RClient:
 
     async def stream_rag_completion(
         self,
-        query: str,
+        message: str,
         search_limit: Optional[int] = 25,
         rerank_limit: Optional[int] = 15,
         filters: Optional[Dict[str, Any]] = None,
@@ -168,7 +168,7 @@ class R2RClient:
             "Content-Type": "application/json",
         }
         json_data = {
-            "query": query,
+            "message": message,
             "filters": filters or {},
             "search_limit": search_limit,
             "rerank_limit": rerank_limit,

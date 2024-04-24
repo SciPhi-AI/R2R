@@ -124,7 +124,7 @@ class HyDEPipeline(RAGPipeline):
     # Modifies `HydePipeline` run to return search_results and completion
     def run(
         self,
-        query,
+        message,
         filters={},
         search_limit=25,
         rerank_limit=15,
@@ -139,8 +139,8 @@ class HyDEPipeline(RAGPipeline):
         if not generation_config:
             generation_config = GenerationConfig(model="gpt-3.5-turbo")
 
-        self.initialize_pipeline(query, search_only)
-        queries = self.transform_message(query, generation_config)
+        self.initialize_pipeline(message, search_only)
+        queries = self.transform_message(message, generation_config)
         search_results_tuple = [
             (
                 query,
