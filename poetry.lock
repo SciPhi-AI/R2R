@@ -7320,7 +7320,6 @@ exa = ["exa-py"]
 ionic = ["ionic-api-sdk"]
 local-llm = ["llama-cpp-python", "sentence-transformers"]
 postgres = ["psycopg2-binary"]
-pptx = ["python-pptx"]
 qdrant = ["qdrant_client"]
 reducto = ["boto3"]
 sentence-transformers-only = ["sentence-transformers"]
@@ -7328,4 +7327,4 @@ sentence-transformers-only = ["sentence-transformers"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "55c4e2e8cb59a4de4deefebf58afe97fcc55643aa352bd736b42bc8937d0e8d5"
+content-hash = "a4f9f1fd636219624313323abc2f80a8eb5eb39d64d615e1de8b98ae762bed6f"
