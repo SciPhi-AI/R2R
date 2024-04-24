@@ -65,7 +65,7 @@ class HyDEPipeline(QnARAGPipeline):
         task_prompt: Optional[str] = DEFAULT_TASK_PROMPT,
         hyde_prompt: Optional[str] = DEFAULT_HYDE_PROMPT,
     ) -> None:
-        logger.debug(f"Initalizing `HydePipeline`")
+        logger.info(f"Initalizing `HydePipeline` to process user requests.")
 
         if not prompt_provider:
             prompt_provider = BasicPromptProvider
@@ -80,7 +80,7 @@ class HyDEPipeline(QnARAGPipeline):
             prompt_provider=self.prompt_provider,
         )
 
-    def transform_query(self, query: str, generation_config: GenerationConfig) -> list[str]:  # type: ignore
+    def transform_message(self, query: str, generation_config: GenerationConfig) -> list[str]:  # type: ignore
         """
         Transforms the query into a list of hypothetical queries.
         """
@@ -159,7 +159,7 @@ class HyDEPipeline(QnARAGPipeline):
             generation_config = GenerationConfig(model="gpt-3.5-turbo")
 
         self.initialize_pipeline(query, search_only)
-        transformed_queries = self.transform_query(query, generation_config)
+        transformed_queries = self.transform_message(query, generation_config)
         search_results = [
             (
                 transformed_query,

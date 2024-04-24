@@ -42,26 +42,26 @@ class RAGPipeline(Pipeline):
         super().__init__(logging_connection=logging_connection, **kwargs)
 
     def initialize_pipeline(
-        self, query: str, search_only: bool, *args, **kwargs
+        self, message: str, search_only: bool, *args, **kwargs
     ) -> None:
         self.pipeline_run_info = {
             "run_id": uuid.uuid4(),
             "type": "rag" if not search_only else "search",
         }
-        self.ingress(query)
+        self.ingress(message)
 
     @log_execution_to_db
-    def ingress(self, data: Any) -> Any:
+    def ingress(self, message: str) -> Any:
         """
         Ingresses data into the pipeline.
         """
         self._check_pipeline_initialized()
-        return data
+        return str
 
     @abstractmethod
-    def transform_query(self, query: str) -> Any:
+    def transform_message(self, message: str) -> Any:
         """
-        Transforms the input query for retrieval.
+        Transforms the input message for retrieval.
         """
         pass
 
@@ -181,7 +181,7 @@ class RAGPipeline(Pipeline):
             )
         self.initialize_pipeline(query, search_only)
 
-        transformed_query = self.transform_query(query)
+        transformed_query = self.transform_message(query)
         search_results = self.search(transformed_query, filters, search_limit)
         search_results = self.rerank_results(
             transformed_query, search_results, rerank_limit
@@ -222,7 +222,7 @@ class RAGPipeline(Pipeline):
 
         self.initialize_pipeline(query, search_only=False)
 
-        transformed_query = self.transform_query(query)
+        transformed_query = self.transform_message(query)
         search_results = self.search(transformed_query, filters, search_limit)
         search_results = self.rerank_results(
             transformed_query, search_results, rerank_limit

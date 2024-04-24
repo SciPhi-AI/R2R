@@ -44,10 +44,11 @@ Begin.
 
 class AgentRAGPipeline(WebRAGPipeline):
     def __init__(self, *args, **kwargs):
-        logger.info(f"Initalizing `AgentRAGPipeline`.")
+        logger.info(f"Initalizing `AgentRAGPipeline` to process user requests.")
+
         super().__init__(*args, **kwargs)
 
-    def transform_query(self, query: str) -> str:
+    def transform_message(self, query: str) -> str:
         return agent_rag_prompt.format(query=query)
 
     # Returns a web search query to execute or None if it needed additional context.
@@ -77,7 +78,7 @@ class AgentRAGPipeline(WebRAGPipeline):
         #   }, ...
         # ]
         conversation = json.loads(query)
-        conversation[0]["content"] = self.transform_query(
+        conversation[0]["content"] = self.transform_message(
             conversation[0]["content"]
         )
         prompt, conversation = conversation[-1]["content"], conversation[:-1]

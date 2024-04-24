@@ -51,7 +51,7 @@ class WebRAGPipeline(QnARAGPipeline):
             WEB_RAG_SYSTEM_PROMPT, WEB_RAG_TASK_PROMPT
         ),
     ) -> None:
-        logger.debug(f"Initalizing `WebRAGPipeline`.")
+        logger.info(f"Initalizing `WebRAGPipeline` to process user requests.")
         super().__init__(
             llm_provider=llm_provider,
             vector_db_provider=vector_db_provider,
@@ -61,7 +61,7 @@ class WebRAGPipeline(QnARAGPipeline):
         )
         self.serper_client = SerperClient()
 
-    def transform_query(self, query: str) -> str:
+    def transform_message(self, query: str) -> str:
         # Placeholder for query transformation - A unit transformation.
         return query
 

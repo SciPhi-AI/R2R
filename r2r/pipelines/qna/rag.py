@@ -39,7 +39,7 @@ class QnARAGPipeline(RAGPipeline):
         """
         Initializes the RAG pipeline with necessary components and configurations.
         """
-        logger.debug(f"Initalizing `QnARAGPipeline`.")
+        logger.info(f"Initalizing `QnARAGPipeline` to process user requests.")
         if not prompt_provider:
             prompt_provider = BasicPromptProvider(
                 system_prompt,
@@ -56,7 +56,7 @@ class QnARAGPipeline(RAGPipeline):
         )
         self.pipeline_run_info = None
 
-    def transform_query(self, query: str) -> str:
+    def transform_message(self, query: str) -> str:
         """
         Transforms the input query before retrieval, if necessary.
         """
