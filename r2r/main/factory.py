@@ -17,6 +17,7 @@ from r2r.pipelines import (
     BasicEvalPipeline,
     BasicIngestionPipeline,
     BasicScraperPipeline,
+    IngestionType,
     QnARAGPipeline,
 )
 
@@ -121,7 +122,7 @@ class E2EPipelineFactory:
         vector_db_provider=None,
         embedding_provider=None,
         llm_provider=None,
-        adapters=None,
+        override_ingestors=None,
         scraper_pipeline_impl=BasicScraperPipeline,
         ingestion_pipeline_impl=BasicIngestionPipeline,
         embedding_pipeline_impl=BasicEmbeddingPipeline,
@@ -129,7 +130,7 @@ class E2EPipelineFactory:
         eval_pipeline_impl=BasicEvalPipeline,
         app_fn=create_app,
     ):
-        logging.basicConfig(level=config.logging_database["level"])
+        logging.basicConfig(level=config.logging_database.get("level", "INFO"))
 
         embedding_provider = (
             embedding_provider
@@ -148,7 +149,7 @@ class E2EPipelineFactory:
             embedding_provider.search_dimension
         )
 
-        eval_provider = E2EPipelineFactory.get_eval_provider(config.evals)
+        eval_provider = E2EPipelineFactory.get_eval_provider(config.eval)
 
         logging_connection = LoggingDatabaseConnection(
             config.logging_database["provider"],
@@ -156,7 +157,13 @@ class E2EPipelineFactory:
         )
 
         scrpr_pipeline = scraper_pipeline_impl()
-        ingst_pipeline = ingestion_pipeline_impl(adapters=adapters)
+        ingst_pipeline = ingestion_pipeline_impl(
+            override_ingestors=override_ingestors,
+            selected_ingestors={
+                IngestionType(k): v
+                for k, v in config.ingestion.get("selected_ingestors").items()
+            },
+        )
         embd_pipeline = embedding_pipeline_impl(
             embedding_provider=embedding_provider,
             vector_db_provider=vector_db_provider,
@@ -166,7 +173,7 @@ class E2EPipelineFactory:
             ),
             embedding_batch_size=config.embedding.get("batch_size", 1),
         )
-        cmpl_pipeline = rag_pipeline_impl(
+        rag_pipeline = rag_pipeline_impl(
             embedding_provider=embedding_provider,
             llm_provider=llm_provider,
             vector_db_provider=vector_db_provider,
@@ -180,7 +187,7 @@ class E2EPipelineFactory:
             scraper_pipeline=scrpr_pipeline,
             ingestion_pipeline=ingst_pipeline,
             embedding_pipeline=embd_pipeline,
-            rag_pipeline=cmpl_pipeline,
+            rag_pipeline=rag_pipeline,
             eval_pipeline=eval_pipeline,
             config=config,
             logging_connection=logging_connection,

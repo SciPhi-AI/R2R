@@ -3,13 +3,18 @@ A simple example to demonstrate the usage of `BasicIngestionPipeline`.
 """
 
 import logging
-from enum import Enum
 from typing import Any, Iterator, Optional, Union
 
-from r2r.core import DocumentPage, IngestionPipeline, LoggingDatabaseConnection
-from r2r.core.adapters import (
-    Adapter,
+from r2r.core import (
+    DocumentPage,
+    IngestionPipeline,
+    IngestionType,
+    LoggingDatabaseConnection,
+)
+from r2r.core.ingestors import (
+    Ingestor,
     CSVAdapter,
+    DOCXAdapter,
     HTMLAdapter,
     JSONAdapter,
     MarkdownAdapter,
@@ -22,26 +27,28 @@ from r2r.core.adapters import (
 logger = logging.getLogger(__name__)
 
 
-class IngestionType(Enum):
-    TXT = "txt"
-    JSON = "json"
-    HTML = "html"
-    PDF = "pdf"
-    PPTX = "pptx"
-    CSV = "csv"
-    XLSX = "xlsx"
-    MD = "md"
-
-
 class BasicIngestionPipeline(IngestionPipeline):
     """
     Processes incoming documents into plaintext based on their data type.
     Supports TXT, JSON, HTML, and PDF formats.
     """
 
+    AVAILABLE_ADAPTERS = {
+        IngestionType.CSV: {"default": CSVAdapter},
+        IngestionType.DOCX: {"default": DOCXAdapter},
+        IngestionType.HTML: {"default": HTMLAdapter},
+        IngestionType.JSON: {"default": JSONAdapter},
+        IngestionType.MD: {"default": MarkdownAdapter},
+        IngestionType.PDF: {"default": PDFAdapter},
+        IngestionType.PPTX: {"default": PPTAdapter},
+        IngestionType.TXT: {"default": TextAdapter},
+        IngestionType.XLSX: {"default": XLSXAdapter},
+    }
+
     def __init__(
         self,
-        adapters: Optional[dict[IngestionType, Adapter]] = None,
+        selected_ingestors: Optional[dict[IngestionType, str]] = None,
+        override_ingestors: Optional[dict[IngestionType, Ingestor]] = None,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
     ):
         logger.info(
@@ -52,20 +59,24 @@ class BasicIngestionPipeline(IngestionPipeline):
             logging_connection,
         )
         self.pipeline_run_info = None
-        self.default_adapters = {
-            IngestionType.TXT: TextAdapter(),
-            IngestionType.JSON: JSONAdapter(),
-            IngestionType.HTML: HTMLAdapter(),
-            IngestionType.PDF: PDFAdapter(),
-            IngestionType.PPTX: PPTAdapter(),
-            IngestionType.CSV: CSVAdapter(),
-            IngestionType.XLSX: XLSXAdapter(),
-            IngestionType.MD: MarkdownAdapter(),
-        }
-        self.adapters = self.default_adapters
-        if adapters is not None:
-            for entry_type, adapter in adapters.items():
-                self.adapters[entry_type] = adapter
+        self.ingestors = {}
+        if selected_ingestors is not None:
+            for ingestion_type, Ingestor in selected_ingestors.items():
+                if ingestion_type not in self.AVAILABLE_ADAPTERS:
+                    raise ValueError(
+                        f"Ingestor for {ingestion_type} not supported by `BasicIngestionPipeline`."
+                    )
+                if Ingestor not in self.AVAILABLE_ADAPTERS[ingestion_type]:
+                    raise ValueError(
+                        f"Ingestor `{Ingestor}` not available for `{ingestion_type}` in `BasicIngestionPipeline`."
+                    )
+                self.ingestors[ingestion_type] = self.AVAILABLE_ADAPTERS[
+                    ingestion_type
+                ][Ingestor]()
+
+        if override_ingestors is not None:
+            for entry_type, Ingestor in override_ingestors.items():
+                self.ingestors[entry_type] = Ingestor
 
     @property
     def supported_types(self) -> list[str]:
@@ -79,10 +90,10 @@ class BasicIngestionPipeline(IngestionPipeline):
         entry_type: IngestionType,
         entry_data: Union[bytes, str],
     ) -> Iterator[DocumentPage]:
-        adapter = self.adapters.get(
-            entry_type, self.default_adapters[entry_type]
-        )
-        texts = adapter.adapt(entry_data)
+        if entry_type not in self.ingestors:
+            raise ValueError(f"Ingestor for {entry_type} not found in `BasicIngestionPipeline`.")
+        Ingestor = self.ingestors[entry_type]
+        texts = Ingestor.ingest(entry_data)
         for iteration, text in enumerate(texts):
             yield DocumentPage(
                 document_id=self.document_id,

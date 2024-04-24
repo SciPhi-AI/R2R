@@ -4,7 +4,7 @@ from typing import Optional
 
 import requests
 
-from ..base import Adapter
+from ..base import Ingestor
 
 
 class ReductoAPIError(Exception):
@@ -13,7 +13,7 @@ class ReductoAPIError(Exception):
     pass
 
 
-class ReductoAdapter(Adapter[dict]):
+class ReductoAdapter(Ingestor[dict]):
     def __init__(
         self, s3_bucket: Optional[str] = None, api_key: Optional[str] = None
     ):
@@ -38,7 +38,7 @@ class ReductoAdapter(Adapter[dict]):
         self.s3_bucket = s3_bucket
         self.s3 = boto3.client("s3")
 
-    def adapt(self, data: bytes) -> list[str]:
+    def ingest(self, data: bytes) -> list[str]:
         # Upload the file to S3
 
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
