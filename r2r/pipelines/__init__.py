@@ -1,5 +1,6 @@
 from ..prompts.local.prompt import BasicPromptProvider
 from .agent.rag import AgentRAGPipeline
+from .core.async_embedding import AsyncBasicEmbeddingPipeline
 from .core.embedding import BasicEmbeddingPipeline
 from .core.eval import BasicEvalPipeline
 from .core.ingestion import BasicIngestionPipeline, IngestionType
@@ -10,6 +11,7 @@ from .web.rag import WebRAGPipeline
 
 __all__ = [
     "AgentRAGPipeline",
+    "AsyncBasicEmbeddingPipeline",
     "BasicEmbeddingPipeline",
     "BasicEvalPipeline",
     "BasicScraperPipeline",

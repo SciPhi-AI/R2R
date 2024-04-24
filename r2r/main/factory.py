@@ -13,6 +13,7 @@ from r2r.core import (
 from r2r.core.utils import RecursiveCharacterTextSplitter
 from r2r.llms import LiteLLM, LlamaCPP, LlamaCppConfig, OpenAILLM
 from r2r.pipelines import (
+    AsyncBasicEmbeddingPipeline,
     BasicEmbeddingPipeline,
     BasicEvalPipeline,
     BasicIngestionPipeline,
@@ -125,7 +126,7 @@ class E2EPipelineFactory:
         override_ingestors=None,
         scraper_pipeline_impl=BasicScraperPipeline,
         ingestion_pipeline_impl=BasicIngestionPipeline,
-        embedding_pipeline_impl=BasicEmbeddingPipeline,
+        embedding_pipeline_impl=AsyncBasicEmbeddingPipeline,
         rag_pipeline_impl=QnARAGPipeline,
         eval_pipeline_impl=BasicEvalPipeline,
         app_fn=create_app,
