@@ -8,7 +8,7 @@ from .abstractions.vector import VectorEntry, VectorSearchResult
 from .agent.base import Agent
 from .pipelines.embedding import EmbeddingPipeline
 from .pipelines.eval import EvalPipeline
-from .pipelines.ingestion import IngestionPipeline
+from .pipelines.ingestion import IngestionPipeline, IngestionType
 from .pipelines.rag import RAGPipeline
 from .pipelines.scraping import ScraperPipeline
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
@@ -29,6 +29,7 @@ __all__ = [
     "EmbeddingPipeline",
     "EvalPipeline",
     "IngestionPipeline",
+    "IngestionType",
     "RAGPipeline",
     "ScraperPipeline",
     "EmbeddingConfig",

@@ -1,13 +1,7 @@
 {
-  "language_model": {
-    "provider": "litellm"
-  },
-  "vector_database": {
-    "provider": "local",
-    "collection_name": "demo_vecs"
-  },
-  "ingestion":{
-    "provider": "local"
+  "app": {
+    "max_logs": 100,
+    "max_file_size_in_mb": 100
   },
   "embedding": {
     "provider": "openai",
@@ -19,18 +13,36 @@
       "chunk_size": 512,
       "chunk_overlap": 20
     }
-  },
-  "evals": {
+  },  
+  "eval": {
     "provider": "parea",
-    "frequency": 0.0
+    "frequency": 1.0
   },
-  "app": {
-    "max_logs": 100,
-    "max_file_size_in_mb": 100
+  "ingestion":{
+    "selected_ingestors": {
+      "csv": "default",
+      "docx": "default",
+      "html": "default",
+      "json": "default",
+      "md": "default",
+      "pdf": "default",
+      "pptx": "default",
+      "txt": "default"
+    }
+  },
+  "language_model": {
+    "provider": "litellm"
   },
   "logging_database": {
     "provider": "local",
     "collection_name": "demo_logs",
     "level": "INFO"
+  },
+  "prompt": {
+    "provider": "local"
+  },
+  "vector_database": {
+    "provider": "local",
+    "collection_name": "demo_vecs"
   }
 }

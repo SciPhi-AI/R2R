@@ -48,7 +48,7 @@ class DeepEvalProvider(EvalProvider):
             [test_case], [hallucination_metric]
         )
 
-        # TODO - Fix return type across evals, or at least locally.
+        # TODO - Fix return type across eval, or at least locally.
         return {
             "answer_relevancy": {
                 "score": answer_relevancy_result[0].metrics[0].score,

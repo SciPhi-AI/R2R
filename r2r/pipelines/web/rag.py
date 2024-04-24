@@ -17,7 +17,7 @@ from r2r.core import (
 from r2r.embeddings import OpenAIEmbeddingProvider
 from r2r.integrations import SerperClient
 
-from ..core.prompt import BasicPromptProvider
+from ...prompts import BasicPromptProvider
 from ..qna.rag import QnARAGPipeline
 
 WEB_RAG_SYSTEM_PROMPT = "You are a helpful assistant."
