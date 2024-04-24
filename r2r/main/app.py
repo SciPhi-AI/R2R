@@ -225,7 +225,7 @@ def create_app(
         msg: RAGMessageModel,
         request: Request,
     ):
-        # try:
+        try:
             stream = msg.generation_config.stream
             if not stream:
                 untyped_completion = rag_pipeline.run(
@@ -375,11 +375,11 @@ def create_app(
                     _stream_rag_completion(msg, rag_pipeline),
                     media_type="text/plain",
                 )
-        # except Exception as e:
-        #     logging.error(
-        #         f":rag_completion: [Error](message={msg.message}, error={str(e)})"
-        #     )
-        #     raise HTTPException(status_code=500, detail=str(e))
+        except Exception as e:
+            logging.error(
+                f":rag_completion: [Error](message={msg.message}, error={str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/eval")
     async def eval(payload: EvalPayloadModel):
