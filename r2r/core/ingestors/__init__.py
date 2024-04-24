@@ -1,9 +1,9 @@
 from .advanced.reducto import ReductoAdapter
 from .base import (
-    Ingestor,
     CSVAdapter,
     DOCXAdapter,
     HTMLAdapter,
+    Ingestor,
     JSONAdapter,
     MarkdownAdapter,
     PDFAdapter,

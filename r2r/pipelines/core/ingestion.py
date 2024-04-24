@@ -12,10 +12,10 @@ from r2r.core import (
     LoggingDatabaseConnection,
 )
 from r2r.core.ingestors import (
-    Ingestor,
     CSVAdapter,
     DOCXAdapter,
     HTMLAdapter,
+    Ingestor,
     JSONAdapter,
     MarkdownAdapter,
     PDFAdapter,
@@ -91,7 +91,9 @@ class BasicIngestionPipeline(IngestionPipeline):
         entry_data: Union[bytes, str],
     ) -> Iterator[DocumentPage]:
         if entry_type not in self.ingestors:
-            raise ValueError(f"Ingestor for {entry_type} not found in `BasicIngestionPipeline`.")
+            raise ValueError(
+                f"Ingestor for {entry_type} not found in `BasicIngestionPipeline`."
+            )
         Ingestor = self.ingestors[entry_type]
         texts = Ingestor.ingest(entry_data)
         for iteration, text in enumerate(texts):
