@@ -1,7 +1,7 @@
 import logging
 import os
 
-from openai import OpenAI
+from openai import AsyncOpenAI, OpenAI
 
 from r2r.core import EmbeddingProvider, VectorSearchResult
 
@@ -40,6 +40,8 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
             )
         self.client = OpenAI()
+        self.async_client = AsyncOpenAI()
+
         if config.rerank_model:
             raise ValueError(
                 "OpenAIEmbeddingProvider does not support separate reranking."
@@ -95,6 +97,24 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             .embedding
         )
 
+    async def async_get_embedding(
+        self,
+        text: str,
+        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH
+    ) -> list[float]:
+        if stage != EmbeddingProvider.PipelineStage.SEARCH:
+            raise ValueError(
+                "OpenAIEmbeddingProvider only supports search stage."
+            )
+
+        response = await self.async_client.embeddings.create(
+            input=[text],
+            model=self.search_model,
+            dimensions=self.search_dimension
+            or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.search_model][-1],
+        )
+        return response.data[0].embedding
+
     def get_embeddings(
         self,
         texts: list[str],
@@ -116,6 +136,24 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 ][-1],
             ).data
         ]
+
+    async def async_get_embeddings(
+        self,
+        texts: list[str],
+        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
+    ) -> list[list[float]]:
+        if stage != EmbeddingProvider.PipelineStage.SEARCH:
+            raise ValueError(
+                "OpenAIEmbeddingProvider only supports search stage."
+            )
+
+        response = await self.async_client.embeddings.create(
+            input=texts,
+            model=self.search_model,
+            dimensions=self.search_dimension
+            or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.search_model][-1],
+        )
+        return [ele.embedding for ele in response.data]
 
     def rerank(
         self,
