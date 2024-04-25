@@ -16,7 +16,7 @@
   },  
   "eval": {
     "provider": "parea",
-    "frequency": 1.0
+    "sampling_fraction": 1.0
   },
   "ingestion":{
     "selected_ingestors": {

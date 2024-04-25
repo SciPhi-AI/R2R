@@ -217,7 +217,9 @@ def create_app(
             )
             return rag_completion.search_results
         except Exception as e:
-            logging.error(f":search: [Error](message={msg.message}, error={str(e)})")
+            logging.error(
+                f":search: [Error](message={msg.message}, error={str(e)})"
+            )
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/rag_completion/")
@@ -265,7 +267,7 @@ def create_app(
                     "run_id": str(rag_pipeline.pipeline_run_info["run_id"]),
                     "settings": msg.settings.rag_settings.dict(),
                 }
-                if config.eval.get("frequency", 0.0) > 0.0:
+                if config.eval.get("sampling_fraction", 0.0) > 0.0:
                     background_tasks.add_task(
                         requests.post, f"{url}/eval", json=payload
                     )
@@ -367,7 +369,7 @@ def create_app(
                     logging.info(
                         f"Performing evaluation with payload: {payload} to url: {url}/eval"
                     )
-                    if config.eval.get("frequency", 0.0) > 0.0:
+                    if config.eval.get("sampling_fraction", 0.0) > 0.0:
                         background_tasks.add_task(
                             requests.post, f"{url}/eval", json=payload
                         )
@@ -384,7 +386,7 @@ def create_app(
 
     @app.post("/eval")
     async def eval(payload: EvalPayloadModel):
-        try:
+        # try:
             logging.info(
                 f"Received evaluation payload: {payload.dict(exclude_none=True)}"
             )
@@ -399,11 +401,11 @@ def create_app(
             )
 
             return {"message": "Evaluation completed successfully."}
-        except Exception as e:
-            logging.error(
-                f":eval_endpoint: [Error](payload={payload}, error={str(e)})"
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+        # except Exception as e:
+        #     logging.error(
+        #         f":eval_endpoint: [Error](payload={payload}, error={str(e)})"
+        #     )
+        #     raise HTTPException(status_code=500, detail=str(e))
 
     @app.delete("/filtered_deletion/")
     async def filtered_deletion(key: str, value: Union[bool, int, str]):

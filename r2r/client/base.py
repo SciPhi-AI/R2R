@@ -152,7 +152,7 @@ class R2RClient:
         filters: Optional[Dict[str, Any]] = None,
         settings: Optional[Dict[str, Any]] = None,
         generation_config: Optional[Dict[str, Any]] = None,
-        timeout: int = 300
+        timeout: int = 300,
     ):
         if not generation_config:
             generation_config = {}

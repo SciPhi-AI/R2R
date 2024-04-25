@@ -32,7 +32,7 @@ class EntryModel(BaseModel):
 
 
 class EvalPayloadModel(BaseModel):
-    query: str
+    message: str
     context: str
     completion_text: str
     run_id: str
