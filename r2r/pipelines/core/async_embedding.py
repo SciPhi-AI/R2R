@@ -201,4 +201,4 @@ class AsyncBasicEmbeddingPipeline(AsyncEmbeddingPipeline):
                 f"{document_id}-{page_number}-{chunk_num}"
             )
             entries.append(VectorEntry(chunk_id, embedded_chunk, metadata))
-        # await self.store_chunks(entries, do_upsert)
+        await self.store_chunks(entries, do_upsert)
