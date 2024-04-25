@@ -3,6 +3,7 @@ import random
 from abc import abstractmethod
 from typing import Any, Optional
 
+from ..providers.eval import EvalProvider
 from ..utils import generate_run_id
 from ..utils.logging import LoggingDatabaseConnection
 from .pipeline import Pipeline
@@ -13,12 +14,12 @@ logger = logging.getLogger(__name__)
 class EvalPipeline(Pipeline):
     def __init__(
         self,
-        frequency: int,
+        eval_provider: EvalProvider,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs,
     ):
-        self.frequency = frequency
+        self.eval_provider = eval_provider
         super().__init__(logging_connection=logging_connection, **kwargs)
 
     def initialize_pipeline(
@@ -45,7 +46,7 @@ class EvalPipeline(Pipeline):
         logger.debug(
             f"Running the `EvaluationPipeline` with id={self.pipeline_run_info}."
         )
-        if random.random() < self.frequency:
+        if random.random() < self.eval_provider.config.sampling_fraction:
             return self.evaluate(query, context, completion)
         return None
 

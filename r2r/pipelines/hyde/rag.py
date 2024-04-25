@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Generator
+from typing import Generator, Optional
 
 from r2r.core import (
     EmbeddingProvider,
@@ -93,14 +93,11 @@ class HyDEPipeline(RAGPipeline):
         formatted_prompt = self.prompt_provider.get_prompt(
             "hyde_prompt", {"message": message, "num_answers": num_answers}
         )
-        print('formatted prompt = ', formatted_prompt)
         completion = self.generate_completion(
             formatted_prompt, generation_config
         )
-        print('completion = ', completion)
         answers = completion.choices[0].message.content.strip().split("\n\n")
         generation_config.stream = orig_stream
-        print('answers = ', answers)
         return answers
 
     @log_execution_to_db
@@ -141,7 +138,6 @@ class HyDEPipeline(RAGPipeline):
         self.initialize_pipeline(message, search_only)
 
         answers = self.transform_message(message, generation_config)
-        print('transformed answers = ', answers)
         search_results_tuple = [
             (
                 answer,
@@ -155,9 +151,10 @@ class HyDEPipeline(RAGPipeline):
         ]
 
         search_results = [
-            result for _, search_results in search_results_tuple for result in search_results
+            result
+            for _, search_results in search_results_tuple
+            for result in search_results
         ]
-
 
         if search_only:
             return RAGPipelineOutput(
@@ -172,10 +169,16 @@ class HyDEPipeline(RAGPipeline):
 
         if not generation_config.stream:
             completion = self.generate_completion(prompt, generation_config)
-            return RAGPipelineOutput(search_results, context, completion, {"answers": answers})
+            return RAGPipelineOutput(
+                search_results, context, completion, {"answers": answers}
+            )
 
         return self._return_stream(
-            search_results, context, prompt, generation_config, metadata={"answers": answers},
+            search_results,
+            context,
+            prompt,
+            generation_config,
+            metadata={"answers": answers},
         )
 
     def run_stream(
@@ -213,15 +216,26 @@ class HyDEPipeline(RAGPipeline):
         context = self._construct_joined_context(search_results_tuple)
         prompt = self.construct_prompt({"query": message, "context": context})
         search_results = [
-            result for _, search_results in search_results_tuple for result in search_results
+            result
+            for _, search_results in search_results_tuple
+            for result in search_results
         ]
 
         return self._return_stream(
             search_results, context, prompt, generation_config
         )
-    
-    def _construct_joined_context(self, search_results_tuple: tuple[str, list[VectorSearchResult]]) -> str:
+
+    def _construct_joined_context(
+        self, search_results_tuple: tuple[str, list[VectorSearchResult]]
+    ) -> str:
         context = ""
-        for offset, (answer, search_results) in enumerate(search_results_tuple):
-            context += self.construct_context(search_results, offset=offset, query=answer) + "\n\n"
+        for offset, (answer, search_results) in enumerate(
+            search_results_tuple
+        ):
+            context += (
+                self.construct_context(
+                    search_results, offset=offset, query=answer
+                )
+                + "\n\n"
+            )
         return context
