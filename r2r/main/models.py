@@ -72,8 +72,8 @@ class GenerationConfigModel(BaseModel):
     generate_with_chat: bool = False
 
 
-class RAGQueryModel(BaseModel):
-    query: str
+class RAGMessageModel(BaseModel):
+    message: str
     search_limit: Optional[int] = 25
     rerank_limit: Optional[int] = 15
     filters: dict = {}

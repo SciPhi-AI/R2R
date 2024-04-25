@@ -39,7 +39,7 @@ from .models import (
     AddEntryRequest,
     EvalPayloadModel,
     LogModel,
-    RAGQueryModel,
+    RAGMessageModel,
     SettingsModel,
     SummaryLogModel,
 )
@@ -210,35 +210,35 @@ def create_app(
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/search/")
-    async def search(query: RAGQueryModel):
+    async def search(msg: RAGMessageModel):
         try:
             rag_completion = rag_pipeline.run(
-                query.query,
-                query.filters,
-                query.search_limit,
-                query.rerank_limit,
+                msg.message,
+                msg.filters,
+                msg.search_limit,
+                msg.rerank_limit,
                 search_only=True,
             )
             return rag_completion.search_results
         except Exception as e:
-            logging.error(f":search: [Error](query={query}, error={str(e)})")
+            logging.error(f":search: [Error](message={msg.message}, error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/rag_completion/")
     async def rag_completion(
         background_tasks: BackgroundTasks,
-        query: RAGQueryModel,
+        msg: RAGMessageModel,
         request: Request,
     ):
         try:
-            stream = query.generation_config.stream
+            stream = msg.generation_config.stream
             if not stream:
                 untyped_completion = rag_pipeline.run(
-                    query=query.query,
-                    filters=query.filters,
-                    search_limit=query.search_limit,
-                    rerank_limit=query.rerank_limit,
-                    generation_config=query.generation_config,
+                    message=msg.message,
+                    filters=msg.filters,
+                    search_limit=msg.search_limit,
+                    rerank_limit=msg.rerank_limit,
+                    generation_config=msg.generation_config,
                 )
                 # Tell the type checker that rag_completion is a RAGPipelineOutput
                 rag_completion = cast(RAGPipelineOutput, untyped_completion)
@@ -263,11 +263,11 @@ def create_app(
 
                 # Pass the payload to the /eval endpoint
                 payload = {
-                    "query": query.query,
+                    "message": msg.message,
                     "context": rag_completion.context or "",
                     "completion_text": completion_text or "",
                     "run_id": str(rag_pipeline.pipeline_run_info["run_id"]),
-                    "settings": query.settings.rag_settings.dict(),
+                    "settings": msg.settings.rag_settings.dict(),
                 }
                 if config.eval.get("frequency", 0.0) > 0.0:
                     background_tasks.add_task(
@@ -279,11 +279,11 @@ def create_app(
             else:
 
                 async def _stream_rag_completion(
-                    query: RAGQueryModel,
+                    msg: RAGMessageModel,
                     rag_pipeline: RAGPipeline,
                 ) -> AsyncGenerator[str, None]:
                     gen_config = GenerationConfig(
-                        **(query.generation_config.dict())
+                        **(msg.generation_config.dict())
                     )
                     if not gen_config.stream:
                         raise ValueError(
@@ -292,10 +292,10 @@ def create_app(
                     completion_generator = cast(
                         Generator[str, None, None],
                         rag_pipeline.run_stream(
-                            query=query.query,
-                            filters=query.filters,
-                            search_limit=query.search_limit,
-                            rerank_limit=query.rerank_limit,
+                            message=msg.message,
+                            filters=msg.filters,
+                            search_limit=msg.search_limit,
+                            rerank_limit=msg.rerank_limit,
                             generation_config=gen_config,
                         ),
                     )
@@ -306,7 +306,7 @@ def create_app(
                     current_marker = None
 
                     logging.info(
-                        f"Streaming RAG completion results to client for query = {query.query}."
+                        f"Streaming RAG completion results to client for message = {msg.message}."
                     )
 
                     for item in completion_generator:
@@ -360,13 +360,13 @@ def create_app(
 
                     # Pass the payload to the /eval endpoint
                     payload = {
-                        "query": query.query,
+                        "message": msg.message,
                         "context": context,
                         "completion_text": completion_text,
                         "run_id": str(
                             rag_pipeline.pipeline_run_info["run_id"]
                         ),
-                        "settings": query.settings.rag_settings.dict(),
+                        "settings": msg.settings.rag_settings.dict(),
                     }
                     logging.info(
                         f"Performing evaluation with payload: {payload} to url: {url}/eval"
@@ -377,12 +377,12 @@ def create_app(
                         )
 
                 return StreamingResponse(
-                    _stream_rag_completion(query, rag_pipeline),
+                    _stream_rag_completion(msg, rag_pipeline),
                     media_type="text/plain",
                 )
         except Exception as e:
             logging.error(
-                f":rag_completion: [Error](query={query}, error={str(e)})"
+                f":rag_completion: [Error](message={msg.message}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -392,14 +392,14 @@ def create_app(
             logging.info(
                 f"Received evaluation payload: {payload.dict(exclude_none=True)}"
             )
-            query = payload.query
+            message = payload.message
             context = payload.context
             completion_text = payload.completion_text
             run_id = payload.run_id
             settings = payload.settings
 
             eval_pipeline.run(
-                query, context, completion_text, run_id, **(settings.dict())
+                message, context, completion_text, run_id, **(settings.dict())
             )
 
             return {"message": "Evaluation completed successfully."}

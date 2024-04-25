@@ -28,9 +28,9 @@ class Pipeline(ABC):
 
         if callable(attr) and name not in [
             "__init__",
-            "close",
-            "_check_pipeline_initialized",
             "__getattribute__",
+            "_check_pipeline_initialized",
+            "close",
             "initialize_pipeline",
             "run",
             "run_stream",

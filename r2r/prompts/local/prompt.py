@@ -5,7 +5,7 @@ from r2r.core.providers.prompt import PromptProvider
 
 class BasicPromptProvider(PromptProvider):
     BASIC_SYSTEM_PROMPT = "You are a helpful assistant."
-    BASIC_TASK_PROMPT = """
+    BASIC_RETURN_PROMPT = """
     ## Task:
     Answer the query given immediately below given the context which follows later.
 
@@ -24,13 +24,15 @@ class BasicPromptProvider(PromptProvider):
     def __init__(
         self,
         system_prompt: Optional[str] = None,
-        task_prompt: Optional[str] = None,
+        return_pompt: Optional[str] = None,
     ):
         self.prompts: dict[str, str] = {}
         self.add_prompt(
             "system_prompt", system_prompt or self.BASIC_SYSTEM_PROMPT
         )
-        self.add_prompt("task_prompt", task_prompt or self.BASIC_TASK_PROMPT)
+        self.add_prompt(
+            "return_pompt", return_pompt or self.BASIC_RETURN_PROMPT
+        )
 
     def add_prompt(self, prompt_name: str, prompt: str) -> None:
         self.prompts[prompt_name] = prompt
@@ -49,5 +51,5 @@ class BasicPromptProvider(PromptProvider):
     def get_system_prompt(self, inputs: dict[str, Any]) -> str:
         return self.get_prompt("system_prompt", inputs)
 
-    def get_task_prompt(self, inputs: dict[str, Any]) -> str:
-        return self.get_prompt("task_prompt", inputs)
+    def get_return_prompt(self, inputs: dict[str, Any]) -> str:
+        return self.get_prompt("return_pompt", inputs)

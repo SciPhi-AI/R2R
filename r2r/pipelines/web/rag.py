@@ -1,27 +1,26 @@
 """
-A simple example to demonstrate the usage of `WebSearchRAGPipeline`.
+A simple example to demonstrate the usage of `WebRAGPipeline`.
 """
 
-import json
 import logging
-from typing import Generator, Optional
+import uuid
+from typing import Optional
 
 from r2r.core import (
-    GenerationConfig,
     LLMProvider,
     LoggingDatabaseConnection,
     RAGPipeline,
     VectorDBProvider,
+    VectorSearchResult,
     log_execution_to_db,
 )
 from r2r.embeddings import OpenAIEmbeddingProvider
 from r2r.integrations import SerperClient
 
 from ...prompts import BasicPromptProvider
-from ..qna.rag import QnARAGPipeline
 
 WEB_RAG_SYSTEM_PROMPT = "You are a helpful assistant."
-WEB_RAG_TASK_PROMPT = """
+WEB_RAG_RETURN_PROMPT = """
 ## Task:
 Answer the query given immediately below given the context which follows later. Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context. Pay close attention to the title of each given source to ensure it is consistent with the query.
 
@@ -40,7 +39,7 @@ REMINDER - Use line item references to like [1], [2], ... refer to specifically 
 logger = logging.getLogger(__name__)
 
 
-class WebRAGPipeline(QnARAGPipeline):
+class WebRAGPipeline(RAGPipeline):
     def __init__(
         self,
         llm_provider: LLMProvider,
@@ -48,10 +47,10 @@ class WebRAGPipeline(QnARAGPipeline):
         vector_db_provider: VectorDBProvider,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         prompt_provider: Optional[BasicPromptProvider] = BasicPromptProvider(
-            WEB_RAG_SYSTEM_PROMPT, WEB_RAG_TASK_PROMPT
+            WEB_RAG_SYSTEM_PROMPT, WEB_RAG_RETURN_PROMPT
         ),
     ) -> None:
-        logger.debug(f"Initalizing `WebRAGPipeline`.")
+        logger.info(f"Initalizing `WebRAGPipeline` to process user requests.")
         super().__init__(
             llm_provider=llm_provider,
             vector_db_provider=vector_db_provider,
@@ -61,57 +60,42 @@ class WebRAGPipeline(QnARAGPipeline):
         )
         self.serper_client = SerperClient()
 
-    def transform_query(self, query: str) -> str:
+    def transform_message(self, query: str) -> str:
         # Placeholder for query transformation - A unit transformation.
         return query
 
     @log_execution_to_db
     def search(
         self,
-        transformed_query: str,
+        query: str,
         filters: dict,
         limit: int,
         *args,
         **kwargs,
-    ) -> list:
-        results = []
-        local_results = super().search(transformed_query, filters, limit)
-        results.extend(
-            [{"type": "local", "result": ele} for ele in local_results]
-        )
+    ) -> list[VectorSearchResult]:
+        """Perform a search using the Serper API and return results in the expected format."""
+        serper_results = self.serper_client.get_raw(query, limit)
+        vector_search_results = []
 
-        external_results = self.serper_client.get_raw(transformed_query, limit)
-        results.extend(
-            [{"type": "external", "result": ele} for ele in external_results]
-        )
+        for result in serper_results:
+            score = result.pop(
+                "score", 1.0
+            )  # Defaulting score to 1.0 if not present
+            entry_id = result.get("title") or str(
+                uuid.uuid4()
+            )  # Use title if present, otherwise generate a random UUID
 
-        return external_results
+            # Create a VectorSearchResult object for each result
+            vector_search_result = VectorSearchResult(
+                entry_id=entry_id,  # Using 'title' as a unique identifier
+                score=score,
+                metadata=result,  # Storing the entire result as metadata
+            )
+            vector_search_results.append(vector_search_result)
 
-    @log_execution_to_db
-    def construct_context(self, results: list) -> str:
-        local_context = super().construct_context(
-            [ele["result"] for ele in results if ele["type"] == "local"]
-        )
-        web_context = self.serper_client.construct_context(
-            [ele["result"] for ele in results if ele["type"] == "external"]
-        )
-        return local_context + "\n\n" + web_context
+        return vector_search_results
 
-    def _stream_run(
-        self,
-        search_results: list,
-        context: str,
-        prompt: str,
-        generation_config: GenerationConfig,
-    ) -> Generator[str, None, None]:
-        yield f"<{RAGPipeline.SEARCH_STREAM_MARKER}>"
-        yield json.dumps(search_results)
-        yield f"</{RAGPipeline.SEARCH_STREAM_MARKER}>"
 
-        yield f"<{RAGPipeline.CONTEXT_STREAM_MARKER}>"
-        yield context
-        yield f"</{RAGPipeline.CONTEXT_STREAM_MARKER}>"
-        yield f"<{RAGPipeline.COMPLETION_STREAM_MARKER}>"
-        for chunk in self.generate_completion(prompt, generation_config):
-            yield chunk
-        yield f"</{RAGPipeline.COMPLETION_STREAM_MARKER}>"
+    @staticmethod
+    def construct_context(results: list) -> str:
+        return SerperClient.construct_context(results)
