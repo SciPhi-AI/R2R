@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, Generator
 
 from r2r.core import (
     EmbeddingProvider,
@@ -93,13 +93,15 @@ class HyDEPipeline(RAGPipeline):
         formatted_prompt = self.prompt_provider.get_prompt(
             "hyde_prompt", {"message": message, "num_answers": num_answers}
         )
-
+        print('formatted prompt = ', formatted_prompt)
         completion = self.generate_completion(
             formatted_prompt, generation_config
         )
-        queries = completion.choices[0].message.content.strip().split("\n\n")
+        print('completion = ', completion)
+        answers = completion.choices[0].message.content.strip().split("\n\n")
         generation_config.stream = orig_stream
-        return queries
+        print('answers = ', answers)
+        return answers
 
     @log_execution_to_db
     def construct_context(
@@ -138,41 +140,88 @@ class HyDEPipeline(RAGPipeline):
         """
         self.initialize_pipeline(message, search_only)
 
-        queries = self.transform_message(message, generation_config)
+        answers = self.transform_message(message, generation_config)
+        print('transformed answers = ', answers)
         search_results_tuple = [
             (
-                query,
+                answer,
                 self.rerank_results(
-                    query,
-                    self.search(query, filters, search_limit),
+                    answer,
+                    self.search(answer, filters, search_limit),
                     rerank_limit,
                 ),
             )
-            for query in queries
+            for answer in answers
         ]
 
-        if search_only:
-            flattened_results = [
-                result for _, search_results in search_results_tuple for result in search_results
-            ]
+        search_results = [
+            result for _, search_results in search_results_tuple for result in search_results
+        ]
 
+
+        if search_only:
             return RAGPipelineOutput(
-                flattened_results,
+                search_results,
                 None,
                 None,
-                {"queries": queries},
+                {"answers": answers},
             )
 
-        context = ""
-        for offset, (query, search_results) in enumerate(search_results_tuple):
-            context += self.construct_context(search_results, offset=offset, query=query) + "\n\n"
-
-        prompt = self.construct_prompt({"query": query, "context": context})
+        context = self._construct_joined_context(search_results_tuple, message)
+        prompt = self.construct_prompt({"query": message, "context": context})
 
         if not generation_config.stream:
             completion = self.generate_completion(prompt, generation_config)
-            return RAGPipelineOutput(search_results, context, completion, {"queries": queries})
+            return RAGPipelineOutput(search_results, context, completion, {"answers": answers})
 
         return self._return_stream(
-            search_results, context, prompt, generation_config, metadata={"queries": queries},
+            search_results, context, prompt, generation_config, metadata={"answers": answers},
         )
+
+    def run_stream(
+        self,
+        message,
+        generation_config: GenerationConfig,
+        filters={},
+        search_limit=25,
+        rerank_limit=15,
+        *args,
+        **kwargs,
+    ) -> Generator[str, None, None]:
+        """
+        Runs the completion pipeline for streaming execution.
+        """
+        if not generation_config.stream:
+            raise ValueError(
+                "Streaming mode must be enabled when running `run_stream."
+            )
+
+        self.initialize_pipeline(message, search_only=False)
+
+        answers = self.transform_message(message, generation_config)
+        search_results_tuple = [
+            (
+                answer,
+                self.rerank_results(
+                    answer,
+                    self.search(answer, filters, search_limit),
+                    rerank_limit,
+                ),
+            )
+            for answer in answers
+        ]
+        context = self._construct_joined_context(search_results_tuple)
+        prompt = self.construct_prompt({"query": message, "context": context})
+        search_results = [
+            result for _, search_results in search_results_tuple for result in search_results
+        ]
+
+        return self._return_stream(
+            search_results, context, prompt, generation_config
+        )
+    
+    def _construct_joined_context(self, search_results_tuple: tuple[str, list[VectorSearchResult]]) -> str:
+        context = ""
+        for offset, (answer, search_results) in enumerate(search_results_tuple):
+            context += self.construct_context(search_results, offset=offset, query=answer) + "\n\n"
+        return context

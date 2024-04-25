@@ -152,6 +152,7 @@ class R2RClient:
         filters: Optional[Dict[str, Any]] = None,
         settings: Optional[Dict[str, Any]] = None,
         generation_config: Optional[Dict[str, Any]] = None,
+        timeout: int = 300
     ):
         if not generation_config:
             generation_config = {}
@@ -175,8 +176,9 @@ class R2RClient:
             "settings": settings or {},
             "generation_config": generation_config or {},
         }
+        timeout_config = httpx.Timeout(timeout)  # Configure the timeout
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=timeout_config) as client:
             async with client.stream(
                 "POST", url, headers=headers, json=json_data
             ) as response:

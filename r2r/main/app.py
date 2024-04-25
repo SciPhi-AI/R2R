@@ -213,6 +213,7 @@ def create_app(
                 msg.search_limit,
                 msg.rerank_limit,
                 search_only=True,
+                generation_config=msg.generation_config,
             )
             return rag_completion.search_results
         except Exception as e:
