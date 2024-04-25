@@ -8,7 +8,7 @@ from r2r.client import R2RClient
 from r2r.core.utils import generate_id_from_label
 
 
-class QnAClient:
+class QnARAGClient:
     def __init__(self, base_url="http://localhost:8000", user_id=None):
         self.client = R2RClient(base_url)
         if not user_id:
@@ -112,4 +112,4 @@ class QnAClient:
 
 
 if __name__ == "__main__":
-    fire.Fire(QnAClient)
+    fire.Fire(QnARAGClient)

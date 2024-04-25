@@ -83,13 +83,13 @@ class SerperClient:
         # Organize results by type
         organized_results = {}
         for result in results:
-            result_type = result.pop(
+            result_type = result.metadata.pop(
                 "type", "Unknown"
             )  # Pop the type and use as key
             if result_type not in organized_results:
-                organized_results[result_type] = [result]
+                organized_results[result_type] = [result.metadata]
             else:
-                organized_results[result_type].append(result)
+                organized_results[result_type].append(result.metadata)
 
         context = ""
         # Iterate over each result type

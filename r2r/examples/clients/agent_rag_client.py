@@ -13,11 +13,11 @@ class ChatbotClient:
             self.user_id = generate_id_from_label("user_id")
         self.history = []
 
-    def rag_chatbot(self, query, model="gpt4-turbo-preview"):
-        while query:
-            self.history.append({"role": "user", "content": query})
+    def rag_chatbot(self, message, model="gpt4-turbo-preview"):
+        while message:
+            self.history.append({"role": "user", "content": message})
             response = self.client.rag_completion(
-                query=json.dumps(self.history)
+                message=json.dumps(self.history)
             )
 
             if response["completion"]:
