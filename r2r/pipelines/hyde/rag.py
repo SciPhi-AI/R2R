@@ -93,14 +93,11 @@ class HyDEPipeline(RAGPipeline):
         formatted_prompt = self.prompt_provider.get_prompt(
             "hyde_prompt", {"message": message, "num_answers": num_answers}
         )
-        print("formatted prompt = ", formatted_prompt)
         completion = self.generate_completion(
             formatted_prompt, generation_config
         )
-        print("completion = ", completion)
         answers = completion.choices[0].message.content.strip().split("\n\n")
         generation_config.stream = orig_stream
-        print("answers = ", answers)
         return answers
 
     @log_execution_to_db
@@ -141,7 +138,6 @@ class HyDEPipeline(RAGPipeline):
         self.initialize_pipeline(message, search_only)
 
         answers = self.transform_message(message, generation_config)
-        print("transformed answers = ", answers)
         search_results_tuple = [
             (
                 answer,
