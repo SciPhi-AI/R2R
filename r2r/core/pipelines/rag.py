@@ -60,7 +60,7 @@ class RAGPipeline(Pipeline):
         return message
 
     @log_execution_to_db
-    def transform_message(self, message: str) -> Any:
+    def transform_message(self, message: str, generation_config: Optional[GenerationConfig] = None) -> Any:
         """
         Transforms the input query before retrieval, if necessary.
         """
@@ -232,7 +232,7 @@ class RAGPipeline(Pipeline):
 
         self.initialize_pipeline(message, search_only=False)
 
-        query = self.transform_message(message)
+        query = self.transform_message(message, generation_config)
         search_results = self.search(query, filters, search_limit)
         search_results = self.rerank_results(
             query, search_results, rerank_limit

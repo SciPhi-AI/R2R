@@ -87,11 +87,11 @@ A local vector database will be used to store the embeddings. The current defaul
 To stand up the server, we can readily choose from one of the two options below:
 
 ```bash
-python -m r2r.examples.servers.config_pipeline --config local_ollama
+python -m r2r.examples.servers.configurable_pipeline --config local_ollama
 ```
 
 ```bash
-python -m r2r.examples.servers.config_pipeline --config local_llama_cpp
+python -m r2r.examples.servers.configurable_pipeline --config local_llama_cpp
 ```
 
 Note, to run with Llama.cpp you must download `tinyllama-1.1b-chat-v1.0.Q2_K.gguf` [here](https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q2_K.gguf?download=true) and place the output into `~/cache/model/`. The choice between ollama and Llama.cpp depends on our preferred LLM provider.
@@ -105,7 +105,7 @@ With our environment set up and our server running in a separate process, we're 
 Run this command to ingest the document:
 
 ```bash
-python -m r2r.examples.clients.run_qna_client ingest
+python -m r2r.examples.clients.qna_rag_client ingest
 ```
 
 The output should look something like this:
@@ -137,7 +137,7 @@ ollama serve llama2
 Then, to ask a question, run:
 
 ```bash
-python -m r2r.examples.clients.run_qna_client rag_completion \
+python -m r2r.examples.clients.qna_rag_client rag_completion \
   --query="What was Lyfts profit in 2020?" \
   --model="ollama/llama2"
 ```
@@ -145,7 +145,7 @@ python -m r2r.examples.clients.run_qna_client rag_completion \
 For Llama.cpp, run:
 
 ```bash
-python -m r2r.examples.clients.run_qna_client rag_completion \
+python -m r2r.examples.clients.qna_rag_client rag_completion \
   --query="What was Lyfts profit in 2020?" \
   --model=tinyllama-1.1b-chat-v1.0.Q2_K.gguf
 ```
