@@ -60,7 +60,11 @@ class RAGPipeline(Pipeline):
         return message
 
     @log_execution_to_db
-    def transform_message(self, message: str) -> Any:
+    def transform_message(
+        self,
+        message: str,
+        generation_config: Optional[GenerationConfig] = None,
+    ) -> Any:
         """
         Transforms the input query before retrieval, if necessary.
         """
@@ -232,7 +236,7 @@ class RAGPipeline(Pipeline):
 
         self.initialize_pipeline(message, search_only=False)
 
-        query = self.transform_message(message)
+        query = self.transform_message(message, generation_config)
         search_results = self.search(query, filters, search_limit)
         search_results = self.rerank_results(
             query, search_results, rerank_limit
@@ -264,7 +268,7 @@ class RAGPipeline(Pipeline):
         yield f"<{RAGPipeline.METADATA_STREAM_MARKER}>"
         yield json.dumps(metadata or {})
         yield f"</{RAGPipeline.METADATA_STREAM_MARKER}>"
-        
+
         yield f"<{RAGPipeline.COMPLETION_STREAM_MARKER}>"
         for chunk in self.generate_completion(prompt, generation_config):
             yield chunk

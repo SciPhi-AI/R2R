@@ -12,6 +12,6 @@
   },
   "eval": {
     "provider": "none",
-    "frequency": 0.0
+    "sampling_fraction": 0.0
   }
 }

@@ -76,7 +76,7 @@ class QnARAGClient:
         async def stream_rag_completion():
             async for chunk in self.client.stream_rag_completion(
                 query,
-                5,
+                10,
                 filters={"user_id": self.user_id},
                 generation_config={"stream": True, "model": model},
             ):

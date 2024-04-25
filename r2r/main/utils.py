@@ -32,7 +32,7 @@ class R2RConfig:
         ],
         "eval": [
             "provider",
-            "frequency",
+            "sampling_fraction",
         ],
         "ingestion": [],
         "language_model": ["provider"],

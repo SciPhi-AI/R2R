@@ -95,7 +95,6 @@ class WebRAGPipeline(RAGPipeline):
 
         return vector_search_results
 
-
     @staticmethod
     def construct_context(results: list) -> str:
         return SerperClient.construct_context(results)

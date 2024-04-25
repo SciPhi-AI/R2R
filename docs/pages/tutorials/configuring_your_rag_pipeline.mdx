@@ -75,7 +75,7 @@ By default, R2R uses the OpenAI `text-embedding-3-small` for creating embeddings
   },
   "evals": {
     "provider": "parea",
-    "frequency": 1.0
+    "sampling_fraction": 1.0
   },
   "language_model": {
     "provider": "litellm"
@@ -133,7 +133,7 @@ At this point we're almost ready to use our new Qdrant vector database. We can u
 To stand up our local server, we can run:
 
 ```bash
-python -m r2r.examples.servers.config_pipeline
+python -m r2r.examples.servers.configurable_pipeline
 ```
 
 ### Ingesting and Embedding Documents
@@ -206,7 +206,7 @@ Once the API call is made, you'll receive a ChatCompletition with responses such
 
 ```bash
 > The revenue growth of Uber from 2020 to 2021 was 57%.
-> Based on the provided context from the Lyft 2021 report, it appears that the customer segments that grew the fastest for Lyft were the Active Riders. The report mentions efforts to grow and recoup the rider base amid the COVID-19 pandemic, as well as an increase in ride frequency and revenue per Active Rider. This indicates that the Active Riders segment experienced significant growth during the period covered in the report.
+> Based on the provided context from the Lyft 2021 report, it appears that the customer segments that grew the fastest for Lyft were the Active Riders. The report mentions efforts to grow and recoup the rider base amid the COVID-19 pandemic, as well as an increase in ride sampling_fraction and revenue per Active Rider. This indicates that the Active Riders segment experienced significant growth during the period covered in the report.
 ```
 
 And just like that, we've built a way to interact with our documents using cloud providers from our terminal!

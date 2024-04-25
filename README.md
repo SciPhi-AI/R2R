@@ -86,23 +86,23 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
 
 ## Q&A Example
 
-[`Configurable Pipeline`](r2r/examples/servers/config_pipeline.py): Execute this script to select and serve a **Q&A RAG**, **Web RAG**, or **Agent RAG** pipeline. This starter pipeline supports ingestion, embedding, and question and the specified RAG, all accessible via a REST API.
+[`Configurable Pipeline`](r2r/examples/servers/configurable_pipeline.py): Execute this script to select and serve a **Q&A RAG**, **Web RAG**, or **Agent RAG** pipeline. This starter pipeline supports ingestion, embedding, and question and the specified RAG, all accessible via a REST API.
    ```bash
    # launch the server
    # For ex., do `export CONFIG_OPTION=local_ollama` or `--config=local_ollama` to run fully locally
    # For ex., do `export PIPELINE_OPTION=web` or `--pipeline=web` to run WebRAG pipeline
-   python -m r2r.examples.servers.config_pipeline --config=default --pipeline=qna
+   python -m r2r.examples.servers.configurable_pipeline --config=default --pipeline=qna
    ```
 
-[`Question & Answer Client`](r2r/examples/clients/run_qna_client.py): This **client script** should be executed subsequent to the server startup above with `pipeline=qna` specified. It facilitates the upload of text entries and PDFs to the server using the Python client and demonstrates the management of document and user-level vectors through its built-in features.
+[`Question & Answer Client`](r2r/examples/clients/qna_rag_client.py): This **client script** should be executed subsequent to the server startup above with `pipeline=qna` specified. It facilitates the upload of text entries and PDFs to the server using the Python client and demonstrates the management of document and user-level vectors through its built-in features.
 
    ```bash
    # run the client
    
    # ingest the default documents (Lyft 10k)
-   python -m r2r.examples.clients.run_qna_client ingest
+   python -m r2r.examples.clients.qna_rag_client ingest
 
-   python -m r2r.examples.clients.run_qna_client search --query="What was lyfts profit in 2020?"
+   python -m r2r.examples.clients.qna_rag_client search --query="What was lyfts profit in 2020?"
 
    # Result 1: Title: Lyft 10k 2021
    # Net loss was $1.0 billion, a decreas e of 42% and 61% compared to 2020 and 2019, respectively.
@@ -121,7 +121,7 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
 
    # ... 
 
-   python -m r2r.examples.clients.run_qna_client rag_completion_streaming --query="What was lyfts profit in 2020?"
+   python -m r2r.examples.clients.qna_rag_client rag_completion_streaming --query="What was lyfts profit in 2020?"
 
    # <search>[{"id": "a0f6b427-9083-5ef2-aaa1-024b6cebbaee", "score": 0.6862949051074227, "metadata": {"user_id": "df7021ed-6e66-5581-bd69-d4e9ac1e5ada", "pipeline_run_id": "0c2c9a81-0720-4e34-8736-b66189956013", "text": "Title: Lyft 10k 2021\nNet loss was $ ... </search>
    #
@@ -136,15 +136,15 @@ docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  e
 
    ```bash
    # launch the server
-   python -m r2r.examples.servers.config_pipeline --config=default --pipeline=hyde
+   python -m r2r.examples.servers.configurable_pipeline --config=default --pipeline=hyde
    ```
 
    ```bash
    # ingests Lyft 10K, Uber 10K, and others
-   python -m r2r.examples.clients.run_qna_client ingest --document_filter=all
+   python -m r2r.examples.clients.qna_rag_client ingest --document_filter=all
 
    # run the client
-   python -m r2r.examples.clients.run_qna_client search --query="What was lyft and ubers profit in 2020?"
+   python -m r2r.examples.clients.qna_rag_client search --query="What was lyft and ubers profit in 2020?"
 
    # {... 'message': {'content': 'In 2020, Lyft reported a net loss of $1.7529 billion [8]. Uber also reported a significant loss for the year 2020, with its net loss improving by $1.8 billion from 2020, indicating a substantial loss for the year as well [38]. Neither company achieved a profit in 2020; instead, they both experienced considerable losses.' ...}
    ```
