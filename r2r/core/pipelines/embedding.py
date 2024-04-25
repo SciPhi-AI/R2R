@@ -56,10 +56,10 @@ class EmbeddingPipeline(Pipeline):
     def store_chunks(self, chunks: list[VectorEntry], *args, **kwargs) -> None:
         pass
 
-    def run(self, document: Any, **kwargs):
+    def run(self, documents: Any, **kwargs):
         pass
 
-    def run_stream(self, document: Any, **kwargs):
+    def run_stream(self, documents: Any, **kwargs):
         raise NotImplementedError(
             "Streaming mode not supported for `EmbeddingPipeline`."
         )

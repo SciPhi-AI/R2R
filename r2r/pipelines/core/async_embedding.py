@@ -4,7 +4,7 @@ A simple example to demonstrate the usage of `BasicEmbeddingPipeline`.
 import asyncio
 import copy
 import logging
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Generator
 
 from r2r.core import (
     DocumentPage,
@@ -41,7 +41,7 @@ class AsyncBasicEmbeddingPipeline(AsyncEmbeddingPipeline):
         Initializes the embedding pipeline with necessary components and configurations.
         """
         logger.info(
-            f"Initalizing a `BasicEmbeddingPipeline` to embed and store documents."
+            f"Initalizing an `AsyncBasicEmbeddingPipeline` to embed and store documents."
         )
 
         super().__init__(
@@ -67,10 +67,9 @@ class AsyncBasicEmbeddingPipeline(AsyncEmbeddingPipeline):
         }
 
     def initialize_pipeline(
-        self, document: DocumentPage, *args, **kwargs
+        self, *args, **kwargs
     ) -> None:
         super().initialize_pipeline(*args, **kwargs)
-        self.ingress(document)
 
     def transform_text(self, text: str) -> str:
         """
@@ -121,7 +120,7 @@ class AsyncBasicEmbeddingPipeline(AsyncEmbeddingPipeline):
 
     async def run(
         self,
-        document: DocumentPage,
+        documents: Generator[DocumentPage, None, None],
         do_chunking=False,
         do_upsert=True,
         **kwargs: Any,
@@ -129,34 +128,36 @@ class AsyncBasicEmbeddingPipeline(AsyncEmbeddingPipeline):
         """
         Executes the embedding pipeline: chunking, transforming, embedding, and storing documents.
         """
-        self.initialize_pipeline(document=document)
+        self.initialize_pipeline()
 
         logger.debug(
             f"Running the `BasicEmbeddingPipeline` asynchronously with pipeline_run_info={self.pipeline_run_info}."
         )
 
         batch_data = []
-
-        chunks = (
-            self.chunk_text(document.text) if do_chunking else [document.text]
-        )
-
         tasks = []
 
-        for chunk_iter, chunk in enumerate(chunks):
-            batch_data.append(
-                (
-                    document.document_id,
-                    document.page_number,
-                    chunk_iter,
-                    chunk,
-                    copy.copy(document.metadata),
-                )
+        for document in documents:
+            self.ingress(document)
+
+            chunks = (
+                self.chunk_text(document.text) if do_chunking else [document.text]
             )
 
-            if len(batch_data) == self.embedding_batch_size:
-                tasks.append(self._process_batches(batch_data, do_upsert))
-                batch_data = []
+            for chunk_iter, chunk in enumerate(chunks):
+                batch_data.append(
+                    (
+                        document.document_id,
+                        document.page_number,
+                        chunk_iter,
+                        chunk,
+                        copy.copy(document.metadata),
+                    )
+                )
+
+                if len(batch_data) == self.embedding_batch_size:
+                    tasks.append(self._process_batches(batch_data, do_upsert))
+                    batch_data = []
 
         # Process any remaining batch
         if batch_data:

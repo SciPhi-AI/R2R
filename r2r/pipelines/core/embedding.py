@@ -4,7 +4,7 @@ A simple example to demonstrate the usage of `BasicEmbeddingPipeline`.
 
 import copy
 import logging
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Generator
 
 from r2r.core import (
     DocumentPage,
@@ -67,10 +67,9 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         }
 
     def initialize_pipeline(
-        self, document: DocumentPage, *args, **kwargs
+        self, *args, **kwargs
     ) -> None:
         super().initialize_pipeline(*args, **kwargs)
-        self.ingress(document)
 
     def transform_text(self, text: str) -> str:
         """
@@ -124,7 +123,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
 
     def run(
         self,
-        document: DocumentPage,
+        documents: Generator[DocumentPage, None, None],
         do_chunking=False,
         do_upsert=True,
         **kwargs: Any,
@@ -132,7 +131,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         """
         Executes the embedding pipeline: chunking, transforming, embedding, and storing documents.
         """
-        self.initialize_pipeline(document=document)
+        self.initialize_pipeline()
 
         logger.debug(
             f"Running the `BasicEmbeddingPipeline` with pipeline_run_info={self.pipeline_run_info}."
@@ -140,23 +139,26 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
 
         batch_data = []
 
-        chunks = (
-            self.chunk_text(document.text) if do_chunking else [document.text]
-        )
-        for chunk_iter, chunk in enumerate(chunks):
-            batch_data.append(
-                (
-                    document.document_id,
-                    document.page_number,
-                    chunk_iter,
-                    chunk,
-                    copy.copy(document.metadata),
-                )
-            )
+        for document in documents:
+            self.ingress(document)
 
-            if len(batch_data) == self.embedding_batch_size:
-                self._process_batches(batch_data, do_upsert)
-                batch_data = []
+            chunks = (
+                self.chunk_text(document.text) if do_chunking else [document.text]
+            )
+            for chunk_iter, chunk in enumerate(chunks):
+                batch_data.append(
+                    (
+                        document.document_id,
+                        document.page_number,
+                        chunk_iter,
+                        chunk,
+                        copy.copy(document.metadata),
+                    )
+                )
+
+                if len(batch_data) == self.embedding_batch_size:
+                    self._process_batches(batch_data, do_upsert)
+                    batch_data = []
 
         # Process any remaining batch
         if batch_data:
