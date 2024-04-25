@@ -129,7 +129,7 @@ class E2EPipelineFactory:
         override_ingestors=None,
         scraper_pipeline_impl=BasicScraperPipeline,
         ingestion_pipeline_impl=BasicIngestionPipeline,
-        embedding_pipeline_impl=BasicEmbeddingPipeline,
+        embedding_pipeline_impl=AsyncBasicEmbeddingPipeline,
         rag_pipeline_impl=QnARAGPipeline,
         eval_pipeline_impl=BasicEvalPipeline,
         app_fn=create_app,
