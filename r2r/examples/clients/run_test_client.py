@@ -5,7 +5,7 @@ from r2r.client import R2RClient
 from r2r.core.utils import generate_id_from_label
 
 # Initialize the client with the base URL of your API
-base_url = "http://localhost:8000"
+base_url = "http://0.0.0.0:8001"
 client = R2RClient(base_url)
 
 
@@ -133,3 +133,7 @@ print(f"Logs response:\n{logs_response}\n")
 print("Fetching logs summary after all steps...")
 logs_summary_response = client.get_logs_summary()
 print(f"Logs summary response:\n{logs_summary_response}\n")
+
+print("Fetching 'rag' logs after all steps...")
+rag_logs_response = client.get_logs(pipeline_type="rag")
+print(f"'Rag' Logs response:\n{rag_logs_response}\n")

@@ -5,8 +5,19 @@ import os
 import types
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+# TODO - Move Run Types to a global enum
+RUN_TYPES = [
+    "ingestion",
+    "embedding",
+    "search",
+    "rag",
+    "evaluation",
+    "scraper",
+]
 
 
 class LoggingProvider(ABC):
@@ -27,7 +38,9 @@ class LoggingProvider(ABC):
         pass
 
     @abstractmethod
-    def get_logs(self, max_logs: int) -> list:
+    def get_logs(
+        self, max_logs: int, pipeline_run_type: Optional[str] = None
+    ) -> list:
         pass
 
 
@@ -114,22 +127,22 @@ class PostgresLoggingProvider(LoggingProvider):
                 f"Error occurred while logging to the PostgreSQL database: {str(e)}"
             )
 
-    def get_logs(self, max_logs: int) -> list:
+    def get_logs(self, max_logs: int, pipeline_run_type=None) -> list:
         logs = []
-        with self.db_module.connect(
-            dbname=os.getenv("POSTGRES_DBNAME"),
-            user=os.getenv("POSTGRES_USER"),
-            password=os.getenv("POSTGRES_PASSWORD"),
-            host=os.getenv("POSTGRES_HOST"),
-            port=os.getenv("POSTGRES_PORT"),
-        ) as conn:
-            with conn.cursor() as cur:
+        with self.conn.cursor() as cur:
+            if pipeline_run_type:
+                cur.execute(
+                    f"SELECT * FROM {self.collection_name} WHERE pipeline_run_type = %s ORDER BY timestamp DESC LIMIT %s",
+                    (pipeline_run_type, max_logs),
+                )
+            else:
                 cur.execute(
                     f"SELECT * FROM {self.collection_name} ORDER BY timestamp DESC LIMIT %s",
                     (max_logs,),
                 )
-                colnames = [desc[0] for desc in cur.description]
-                logs = [dict(zip(colnames, row)) for row in cur.fetchall()]
+            colnames = [desc[0] for desc in cur.description]
+            logs = [dict(zip(colnames, row)) for row in cur.fetchall()]
+        self.conn.commit()
         return logs
 
 
@@ -203,13 +216,20 @@ class LocalLoggingProvider(LoggingProvider):
                 f"Error occurred while logging to the local database: {str(e)}"
             )
 
-    def get_logs(self, max_logs: int) -> list:
+    def get_logs(self, max_logs: int, pipeline_run_type=None) -> list:
         logs = []
         with self.db_module.connect(self.logging_path) as conn:
-            cur = conn.execute(
-                f"SELECT * FROM {self.collection_name} ORDER BY timestamp DESC LIMIT ?",
-                (max_logs,),
-            )
+            cur = conn.cursor()
+            if pipeline_run_type:
+                cur.execute(
+                    f"SELECT * FROM {self.collection_name} WHERE pipeline_run_type = ? ORDER BY timestamp DESC LIMIT ?",
+                    (pipeline_run_type, max_logs),
+                )
+            else:
+                cur.execute(
+                    f"SELECT * FROM {self.collection_name} ORDER BY timestamp DESC LIMIT ?",
+                    (max_logs,),
+                )
             colnames = [desc[0] for desc in cur.description]
             results = cur.fetchall()
             logs = [dict(zip(colnames, row)) for row in results]
@@ -254,7 +274,6 @@ class RedisLoggingProvider(LoggingProvider):
         log_level,
     ):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
         log_entry = {
             "timestamp": timestamp,
             "pipeline_run_id": str(pipeline_run_id),
@@ -264,14 +283,32 @@ class RedisLoggingProvider(LoggingProvider):
             "log_level": log_level,
         }
         try:
-            self.redis.lpush(self.log_key, json.dumps(log_entry))
+            # Save log entry under a key that includes the pipeline_run_type
+            type_specific_key = f"{self.log_key}:{pipeline_run_type}"
+            self.redis.lpush(type_specific_key, json.dumps(log_entry))
         except Exception as e:
-            # Handle any exceptions that occur during the logging process
             logger.error(f"Error occurred while logging to Redis: {str(e)}")
 
-    def get_logs(self, max_logs: int) -> list:
-        logs = self.redis.lrange(self.log_key, 0, max_logs - 1)
-        return [json.loads(log) for log in logs]
+    def get_logs(self, max_logs: int, pipeline_run_type=None) -> list:
+        if pipeline_run_type:
+            if pipeline_run_type not in RUN_TYPES:
+                raise ValueError(
+                    f"Error, `{pipeline_run_type}` is not in LoggingDatabaseConnection's list of supported run types."
+                )
+            # Fetch logs for a specific type
+            key_to_fetch = f"{self.log_key}:{pipeline_run_type}"
+            logs = self.redis.lrange(key_to_fetch, 0, max_logs - 1)
+            return [json.loads(log) for log in logs]
+        else:
+            # Fetch logs for all types
+            all_logs = []
+            for run_type in RUN_TYPES:
+                key_to_fetch = f"{self.log_key}:{run_type}"
+                logs = self.redis.lrange(key_to_fetch, 0, max_logs - 1)
+                all_logs.extend([json.loads(log) for log in logs])
+            # Sort logs by timestamp if needed and slice to max_logs
+            all_logs.sort(key=lambda x: x["timestamp"], reverse=True)
+            return all_logs[:max_logs]
 
 
 class LoggingDatabaseConnection:
@@ -312,8 +349,10 @@ class LoggingDatabaseConnection:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.logging_provider.close()
 
-    def get_logs(self, max_logs: int) -> list:
-        return self.logging_provider.get_logs(max_logs)
+    def get_logs(
+        self, max_logs: int, pipeline_run_type: Optional[str]
+    ) -> list:
+        return self.logging_provider.get_logs(max_logs, pipeline_run_type)
 
 
 def log_execution_to_db(func):

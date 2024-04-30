@@ -7,6 +7,7 @@ from typing import AsyncGenerator, Generator, Optional, Union, cast
 import requests
 from fastapi import (
     BackgroundTasks,
+    Depends,
     FastAPI,
     File,
     Form,
@@ -38,6 +39,7 @@ from .models import (
     AddEntriesRequest,
     AddEntryRequest,
     EvalPayloadModel,
+    LogFilterModel,
     LogModel,
     RAGMessageModel,
     SettingsModel,
@@ -268,6 +270,7 @@ def create_app(
                     "settings": msg.settings.rag_settings.dict(),
                 }
                 if config.eval.get("sampling_fraction", 0.0) > 0.0:
+                    print("posting eval to ", f"{url}/eval")
                     background_tasks.add_task(
                         requests.post, f"{url}/eval", json=payload
                     )
@@ -353,7 +356,11 @@ def create_app(
                         url = "http://localhost:8000"
                     else:
                         url = str(url).split("/rag_completion")[0]
-                        if "localhost" not in url and "127.0.0.1" not in url:
+                        if (
+                            "localhost" not in url
+                            and "127.0.0.1" not in url
+                            and "0.0.0.0" not in url
+                        ):
                             url = url.replace("http://", "https://")
 
                     # Pass the payload to the /eval endpoint
@@ -387,25 +394,26 @@ def create_app(
     @app.post("/eval")
     async def eval(payload: EvalPayloadModel):
         # try:
-            logging.info(
-                f"Received evaluation payload: {payload.dict(exclude_none=True)}"
-            )
-            message = payload.message
-            context = payload.context
-            completion_text = payload.completion_text
-            run_id = payload.run_id
-            settings = payload.settings
+        logging.info(
+            f"Received evaluation payload: {payload.dict(exclude_none=True)}"
+        )
+        message = payload.message
+        context = payload.context
+        completion_text = payload.completion_text
+        run_id = payload.run_id
+        settings = payload.settings
 
-            eval_pipeline.run(
-                message, context, completion_text, run_id, **(settings.dict())
-            )
+        eval_pipeline.run(
+            message, context, completion_text, run_id, **(settings.dict())
+        )
 
-            return {"message": "Evaluation completed successfully."}
-        # except Exception as e:
-        #     logging.error(
-        #         f":eval_endpoint: [Error](payload={payload}, error={str(e)})"
-        #     )
-        #     raise HTTPException(status_code=500, detail=str(e))
+        return {"message": "Evaluation completed successfully."}
+
+    # except Exception as e:
+    #     logging.error(
+    #         f":eval_endpoint: [Error](payload={payload}, error={str(e)})"
+    #     )
+    #     raise HTTPException(status_code=500, detail=str(e))
 
     @app.delete("/filtered_deletion/")
     async def filtered_deletion(key: str, value: Union[bool, int, str]):
@@ -448,13 +456,15 @@ def create_app(
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/logs")
-    async def logs():
+    async def logs(filter: LogFilterModel = Depends()):
         try:
             if logging_connection is None:
                 raise HTTPException(
                     status_code=404, detail="Logging provider not found."
                 )
-            logs = logging_connection.get_logs(config.app.get("max_logs", 100))
+            logs = logging_connection.get_logs(
+                config.app.get("max_logs", 100), filter.pipeline_type
+            )
             for log in logs:
                 LogModel(**log).dict(by_alias=True)
             return {
@@ -465,13 +475,15 @@ def create_app(
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/logs_summary")
-    async def logs_summary():
+    async def logs_summary(filter: LogFilterModel = Depends()):
         try:
             if logging_connection is None:
                 raise HTTPException(
                     status_code=404, detail="Logging provider not found."
                 )
-            logs = logging_connection.get_logs(config.app.get("max_logs", 100))
+            logs = logging_connection.get_logs(
+                config.app.get("max_logs", 100), filter.pipeline_type
+            )
             logs_summary = process_logs(logs)
             events_summary = [
                 SummaryLogModel(**log).dict(by_alias=True)
