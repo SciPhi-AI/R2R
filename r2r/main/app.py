@@ -270,7 +270,6 @@ def create_app(
                     "settings": msg.settings.rag_settings.dict(),
                 }
                 if config.eval.get("sampling_fraction", 0.0) > 0.0:
-                    print("posting eval to ", f"{url}/eval")
                     background_tasks.add_task(
                         requests.post, f"{url}/eval", json=payload
                     )
@@ -393,27 +392,27 @@ def create_app(
 
     @app.post("/eval")
     async def eval(payload: EvalPayloadModel):
-        # try:
-        logging.info(
-            f"Received evaluation payload: {payload.dict(exclude_none=True)}"
-        )
-        message = payload.message
-        context = payload.context
-        completion_text = payload.completion_text
-        run_id = payload.run_id
-        settings = payload.settings
+        try:
+            logging.info(
+                f"Received evaluation payload: {payload.dict(exclude_none=True)}"
+            )
+            message = payload.message
+            context = payload.context
+            completion_text = payload.completion_text
+            run_id = payload.run_id
+            settings = payload.settings
 
-        eval_pipeline.run(
-            message, context, completion_text, run_id, **(settings.dict())
-        )
+            eval_pipeline.run(
+                message, context, completion_text, run_id, **(settings.dict())
+            )
 
-        return {"message": "Evaluation completed successfully."}
+            return {"message": "Evaluation completed successfully."}
 
-    # except Exception as e:
-    #     logging.error(
-    #         f":eval_endpoint: [Error](payload={payload}, error={str(e)})"
-    #     )
-    #     raise HTTPException(status_code=500, detail=str(e))
+        except Exception as e:
+            logging.error(
+                f":eval_endpoint: [Error](payload={payload}, error={str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e))
 
     @app.delete("/filtered_deletion/")
     async def filtered_deletion(key: str, value: Union[bool, int, str]):

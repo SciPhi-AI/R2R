@@ -55,7 +55,6 @@ class R2RClient:
             "settings": settings
             or {"embedding_settings": {"do_upsert": do_upsert}},
         }
-        print("posting to url = ", url)
         response = requests.post(url, json=json_data)
         return response.json()
 
