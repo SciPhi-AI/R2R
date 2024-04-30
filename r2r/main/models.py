@@ -118,3 +118,7 @@ class SummaryLogModel(BaseModel):
     class Config:
         alias_generator = to_camel
         populate_by_name = True
+
+
+class LogFilterModel(BaseModel):
+    pipeline_type: Optional[str] = None

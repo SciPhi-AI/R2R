@@ -190,14 +190,18 @@ class R2RClient:
         response = requests.delete(url, params={"key": key, "value": value})
         return response.json()
 
-    def get_logs(self):
-        url = f"{self.base_url}/logs"
-        response = requests.get(url)
+    def get_logs(self, pipeline_type=None):
+        params = {}
+        if pipeline_type:
+            params["pipeline_type"] = pipeline_type
+        response = requests.get(f"{self.base_url}/logs", params=params)
         return response.json()
 
-    def get_logs_summary(self):
-        url = f"{self.base_url}/logs_summary"
-        response = requests.get(url)
+    def get_logs_summary(self, pipeline_type=None):
+        params = {}
+        if pipeline_type:
+            params["pipeline_type"] = pipeline_type
+        response = requests.get(f"{self.base_url}/logs_summary", params=params)
         return response.json()
 
     def get_user_ids(self):

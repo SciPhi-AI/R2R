@@ -133,3 +133,7 @@ print(f"Logs response:\n{logs_response}\n")
 print("Fetching logs summary after all steps...")
 logs_summary_response = client.get_logs_summary()
 print(f"Logs summary response:\n{logs_summary_response}\n")
+
+print("Fetching 'rag' logs after all steps...")
+rag_logs_response = client.get_logs(pipeline_type="rag")
+print(f"'Rag' Logs response:\n{rag_logs_response}\n")

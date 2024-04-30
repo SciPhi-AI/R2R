@@ -16,7 +16,9 @@ class BasicEvalPipeline(EvalPipeline):
         *args,
         **kwargs,
     ):
-        super().__init__(eval_provider, logging_connection=logging_connection, **kwargs)
+        super().__init__(
+            eval_provider, logging_connection=logging_connection, **kwargs
+        )
 
     @log_execution_to_db
     def evaluate(self, query: str, context: str, completion: str) -> Any:
