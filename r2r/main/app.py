@@ -150,9 +150,14 @@ def create_app(
                 metadata=metadata_json,
                 **settings_model.ingestion_settings.dict(),
             )
-            for document in documents:
+
+            if embedding_pipeline.is_async:
+                await embedding_pipeline.run(
+                    documents, **settings_model.embedding_settings.dict()
+                )
+            else:
                 embedding_pipeline.run(
-                    document, **settings_model.embedding_settings.dict()
+                    documents, **settings_model.embedding_settings.dict()
                 )
 
             return {

@@ -7,15 +7,15 @@ from abc import abstractmethod
 from typing import Any, Optional
 
 from ..providers.embedding import EmbeddingProvider
+from ..utils.logging import LoggingDatabaseConnection
 from ..providers.vector_db import VectorDBProvider, VectorEntry
 from ..utils import generate_run_id
-from ..utils.logging import LoggingDatabaseConnection
-from .pipeline import Pipeline
+from .async_pipeline import AsyncPipeline
 
 logger = logging.getLogger(__name__)
 
 
-class EmbeddingPipeline(Pipeline):
+class AsyncEmbeddingPipeline(AsyncPipeline):
     def __init__(
         self,
         embedding_provider: EmbeddingProvider,
@@ -49,17 +49,13 @@ class EmbeddingPipeline(Pipeline):
         pass
 
     @abstractmethod
-    def embed_chunks(self, chunks: list[Any]) -> list[list[float]]:
+    async def embed_chunks(self, chunks: list[Any]) -> list[list[float]]:
         pass
 
     @abstractmethod
-    def store_chunks(self, chunks: list[VectorEntry], *args, **kwargs) -> None:
+    async def store_chunks(self, chunks: list[VectorEntry], *args, **kwargs) -> None:
         pass
 
-    def run(self, documents: Any, **kwargs):
+    # Probably bad practice to concretely implement this just to pass.
+    async def run(self, document: Any, **kwargs):
         pass
-
-    def run_stream(self, documents: Any, **kwargs):
-        raise NotImplementedError(
-            "Streaming mode not supported for `EmbeddingPipeline`."
-        )

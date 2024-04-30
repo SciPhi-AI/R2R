@@ -4,7 +4,7 @@ from typing import Optional
 from ..utils.logging import LoggingDatabaseConnection
 
 
-class Pipeline(ABC):
+class AsyncPipeline(ABC):
     def __init__(
         self,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
@@ -13,7 +13,7 @@ class Pipeline(ABC):
     ):
         self.logging_connection = logging_connection
         self.pipeline_run_info: Optional[dict] = None
-        self.is_async = False
+        self.is_async = True
 
     def _check_pipeline_initialized(self) -> None:
         if self.pipeline_run_info is None:
@@ -28,12 +28,11 @@ class Pipeline(ABC):
 
         if callable(attr) and name not in [
             "__init__",
-            "__getattribute__",
-            "_check_pipeline_initialized",
             "close",
+            "_check_pipeline_initialized",
+            "__getattribute__",
             "initialize_pipeline",
             "run",
-            "run_stream",
         ]:
 
             def newfunc(*args, **kwargs):
@@ -53,12 +52,5 @@ class Pipeline(ABC):
         pass
 
     @abstractmethod
-    def run(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    def run_stream(self, *args, **kwargs):
-        """
-        Runs the pipeline in streaming mode.
-        """
+    async def run(self, *args, **kwargs):
         pass

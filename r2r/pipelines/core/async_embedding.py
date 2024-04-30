@@ -1,14 +1,14 @@
 """
 A simple example to demonstrate the usage of `BasicEmbeddingPipeline`.
 """
-
+import asyncio
 import copy
 import logging
 from typing import Any, Optional, Tuple, Generator
 
 from r2r.core import (
     DocumentPage,
-    EmbeddingPipeline,
+    AsyncEmbeddingPipeline,
     EmbeddingProvider,
     LoggingDatabaseConnection,
     VectorDBProvider,
@@ -21,7 +21,7 @@ from r2r.embeddings import OpenAIEmbeddingProvider
 logger = logging.getLogger(__name__)
 
 
-class BasicEmbeddingPipeline(EmbeddingPipeline):
+class AsyncBasicEmbeddingPipeline(AsyncEmbeddingPipeline):
     """
     Embeds and stores documents using a specified embedding model and database.
     """
@@ -41,7 +41,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         Initializes the embedding pipeline with necessary components and configurations.
         """
         logger.info(
-            f"Initalizing a `BasicEmbeddingPipeline` to embed and store documents."
+            f"Initalizing an `AsyncBasicEmbeddingPipeline` to embed and store documents."
         )
 
         super().__init__(
@@ -102,26 +102,23 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
                 transformed_chunks.append(chunk)
         return transformed_chunks
 
-    def embed_chunks(self, chunks: list[str]) -> list[list[float]]:
-        """
-        Generates embeddings for each text chunk using the embedding model.
-        """
-        return self.embedding_provider.get_embeddings(
+    async def embed_chunks(self, chunks: list[Any]) -> list[list[float]]:
+        return await self.embedding_provider.async_get_embeddings(
             chunks, EmbeddingProvider.PipelineStage.SEARCH
         )
 
-    def store_chunks(
+    async def store_chunks(
         self, chunks: list[VectorEntry], do_upsert: bool, *args, **kwargs
     ) -> None:
         """
         Stores the embedded chunks in the database, with an option to upsert.
         """
         if do_upsert:
-            self.vector_db_provider.upsert_entries(chunks)
+            self.db.upsert_entries(chunks)
         else:
-            self.vector_db_provider.copy_entries(chunks)
+            self.db.copy_entries(chunks)
 
-    def run(
+    async def run(
         self,
         documents: Generator[DocumentPage, None, None],
         do_chunking=False,
@@ -134,10 +131,11 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         self.initialize_pipeline()
 
         logger.debug(
-            f"Running the `BasicEmbeddingPipeline` with pipeline_run_info={self.pipeline_run_info}."
+            f"Running the `BasicEmbeddingPipeline` asynchronously with pipeline_run_info={self.pipeline_run_info}."
         )
 
         batch_data = []
+        tasks = []
 
         for document in documents:
             self.ingress(document)
@@ -145,6 +143,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             chunks = (
                 self.chunk_text(document.text) if do_chunking else [document.text]
             )
+
             for chunk_iter, chunk in enumerate(chunks):
                 batch_data.append(
                     (
@@ -157,19 +156,16 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
                 )
 
                 if len(batch_data) == self.embedding_batch_size:
-                    self._process_batches(batch_data, do_upsert)
+                    tasks.append(self._process_batches(batch_data, do_upsert))
                     batch_data = []
 
         # Process any remaining batch
         if batch_data:
-            self._process_batches(batch_data, do_upsert)
+            tasks.append(self._process_batches(batch_data, do_upsert))
 
-    def _process_batches(
-        self, batch_data: list[Tuple[str, str, dict]], do_upsert: bool
-    ):
-        """
-        Processes batches of documents: transforms, embeds, and stores chunks.
-        """
+        await asyncio.gather(*tasks)
+
+    async def _process_batches(self, batch_data: list[Tuple[str, str, dict]], do_upsert: bool):
         logger.debug(f"Parsing batch of size {len(batch_data)}.")
 
         entries = []
@@ -179,7 +175,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             *batch_data
         )
         transformed_chunks = self.transform_chunks(raw_chunks, metadatas)
-        embedded_chunks = self.embed_chunks(transformed_chunks)
+        embedded_chunks = await self.embed_chunks(transformed_chunks)
 
         for (
             document_id,
@@ -205,4 +201,4 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
                 f"{document_id}-{page_number}-{chunk_num}"
             )
             entries.append(VectorEntry(chunk_id, embedded_chunk, metadata))
-        self.store_chunks(entries, do_upsert)
+        await self.store_chunks(entries, do_upsert)
