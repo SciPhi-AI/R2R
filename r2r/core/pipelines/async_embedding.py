@@ -56,6 +56,6 @@ class AsyncEmbeddingPipeline(AsyncPipeline):
     async def store_chunks(self, chunks: list[VectorEntry], *args, **kwargs) -> None:
         pass
 
-    # Probably bad practice to concretely implement this just to pass.
+    @abstractmethod    
     async def run(self, document: Any, **kwargs):
         pass
