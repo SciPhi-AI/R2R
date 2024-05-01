@@ -114,9 +114,9 @@ class AsyncBasicEmbeddingPipeline(AsyncEmbeddingPipeline):
         Stores the embedded chunks in the database, with an option to upsert.
         """
         if do_upsert:
-            self.db.upsert_entries(chunks)
+            self.vector_db_provider.upsert_entries(chunks)
         else:
-            self.db.copy_entries(chunks)
+            self.vector_db_provider.copy_entries(chunks)
 
     async def run(
         self,
