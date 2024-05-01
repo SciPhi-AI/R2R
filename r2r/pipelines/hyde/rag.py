@@ -164,7 +164,7 @@ class HyDEPipeline(RAGPipeline):
                 {"answers": answers},
             )
 
-        context = self._construct_joined_context(search_results_tuple, message)
+        context = self._construct_joined_context(search_results_tuple)
         prompt = self.construct_prompt({"query": message, "context": context})
 
         if not generation_config.stream:
@@ -222,7 +222,7 @@ class HyDEPipeline(RAGPipeline):
         ]
 
         return self._return_stream(
-            search_results, context, prompt, generation_config
+            search_results, context, prompt, generation_config, metadata={"answers": answers},
         )
 
     def _construct_joined_context(
