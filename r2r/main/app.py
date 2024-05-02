@@ -499,4 +499,13 @@ def create_app(
             logging.error(f":logs_summary: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
+    @app.get("/get_rag_pipeline_var/")
+    async def get_rag_pipeline():
+        try:
+            rag_pipeline = os.getenv("RAG_PIPELINE", None)
+            return {"rag_pipeline": rag_pipeline}
+        except Exception as e:
+            logging.error(f":rag_pipeline: [Error](error={str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+
     return app
