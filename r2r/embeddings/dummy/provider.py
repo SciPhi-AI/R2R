@@ -67,7 +67,10 @@ class DummyEmbeddingProvider(EmbeddingProvider):
         return texts[:limit]
 
     def tokenize_string(
-        self, text: str, model: str, stage: EmbeddingProvider.PipelineStage,
+        self,
+        text: str,
+        model: str,
+        stage: EmbeddingProvider.PipelineStage,
     ) -> list[int]:
         """Tokenizes the input string."""
         return [0]

@@ -100,7 +100,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     async def async_get_embedding(
         self,
         text: str,
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH
+        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
     ) -> list[float]:
         if stage != EmbeddingProvider.PipelineStage.SEARCH:
             raise ValueError(
@@ -111,7 +111,9 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             input=[text],
             model=self.search_model,
             dimensions=self.search_dimension
-            or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.search_model][-1],
+            or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.search_model][
+                -1
+            ],
         )
         return response.data[0].embedding
 
@@ -151,7 +153,9 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             input=texts,
             model=self.search_model,
             dimensions=self.search_dimension
-            or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.search_model][-1],
+            or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.search_model][
+                -1
+            ],
         )
         return [ele.embedding for ele in response.data]
 

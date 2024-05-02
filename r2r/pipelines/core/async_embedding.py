@@ -1,14 +1,15 @@
 """
 A simple example to demonstrate the usage of `BasicEmbeddingPipeline`.
 """
+
 import asyncio
 import copy
 import logging
-from typing import Any, Optional, Tuple, Generator
+from typing import Any, Generator, Optional, Tuple
 
 from r2r.core import (
-    DocumentPage,
     AsyncEmbeddingPipeline,
+    DocumentPage,
     EmbeddingProvider,
     LoggingDatabaseConnection,
     VectorDBProvider,
@@ -66,9 +67,7 @@ class AsyncBasicEmbeddingPipeline(AsyncEmbeddingPipeline):
             "text": document.text,
         }
 
-    def initialize_pipeline(
-        self, *args, **kwargs
-    ) -> None:
+    def initialize_pipeline(self, *args, **kwargs) -> None:
         super().initialize_pipeline(*args, **kwargs)
 
     def transform_text(self, text: str) -> str:
@@ -141,7 +140,9 @@ class AsyncBasicEmbeddingPipeline(AsyncEmbeddingPipeline):
             self.ingress(document)
 
             chunks = (
-                self.chunk_text(document.text) if do_chunking else [document.text]
+                self.chunk_text(document.text)
+                if do_chunking
+                else [document.text]
             )
 
             for chunk_iter, chunk in enumerate(chunks):
@@ -165,7 +166,9 @@ class AsyncBasicEmbeddingPipeline(AsyncEmbeddingPipeline):
 
         await asyncio.gather(*tasks)
 
-    async def _process_batches(self, batch_data: list[Tuple[str, str, dict]], do_upsert: bool):
+    async def _process_batches(
+        self, batch_data: list[Tuple[str, str, dict]], do_upsert: bool
+    ):
         logger.debug(f"Parsing batch of size {len(batch_data)}.")
 
         entries = []

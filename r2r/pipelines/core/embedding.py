@@ -4,7 +4,7 @@ A simple example to demonstrate the usage of `BasicEmbeddingPipeline`.
 
 import copy
 import logging
-from typing import Any, Optional, Tuple, Generator
+from typing import Any, Generator, Optional, Tuple
 
 from r2r.core import (
     DocumentPage,
@@ -66,9 +66,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             "text": document.text,
         }
 
-    def initialize_pipeline(
-        self, *args, **kwargs
-    ) -> None:
+    def initialize_pipeline(self, *args, **kwargs) -> None:
         super().initialize_pipeline(*args, **kwargs)
 
     def transform_text(self, text: str) -> str:
@@ -143,7 +141,9 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
             self.ingress(document)
 
             chunks = (
-                self.chunk_text(document.text) if do_chunking else [document.text]
+                self.chunk_text(document.text)
+                if do_chunking
+                else [document.text]
             )
             for chunk_iter, chunk in enumerate(chunks):
                 batch_data.append(

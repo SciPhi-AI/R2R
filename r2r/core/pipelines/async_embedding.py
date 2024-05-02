@@ -7,9 +7,9 @@ from abc import abstractmethod
 from typing import Any, Optional
 
 from ..providers.embedding import EmbeddingProvider
-from ..utils.logging import LoggingDatabaseConnection
 from ..providers.vector_db import VectorDBProvider, VectorEntry
 from ..utils import generate_run_id
+from ..utils.logging import LoggingDatabaseConnection
 from .async_pipeline import AsyncPipeline
 
 logger = logging.getLogger(__name__)
@@ -53,9 +53,11 @@ class AsyncEmbeddingPipeline(AsyncPipeline):
         pass
 
     @abstractmethod
-    async def store_chunks(self, chunks: list[VectorEntry], *args, **kwargs) -> None:
+    async def store_chunks(
+        self, chunks: list[VectorEntry], *args, **kwargs
+    ) -> None:
         pass
 
-    @abstractmethod    
+    @abstractmethod
     async def run(self, document: Any, **kwargs):
         pass

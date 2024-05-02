@@ -62,6 +62,7 @@ class E2EPipelineFactory:
             return SentenceTransformerEmbeddingProvider(embedding_config)
         elif embedding_config.provider == "dummy":
             from r2r.embeddings import DummyEmbeddingProvider
+
             return DummyEmbeddingProvider(embedding_config)
         else:
             raise ValueError(
