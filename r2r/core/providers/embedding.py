@@ -50,7 +50,9 @@ class EmbeddingProvider(Provider):
     ):
         pass
 
-    async def async_get_embedding(self, text: str, stage: PipelineStage = PipelineStage.SEARCH):
+    async def async_get_embedding(
+        self, text: str, stage: PipelineStage = PipelineStage.SEARCH
+    ):
         return self.get_embedding(text, stage)
 
     @abstractmethod
@@ -59,7 +61,9 @@ class EmbeddingProvider(Provider):
     ):
         pass
 
-    async def async_get_embeddings(self, texts: list[str], stage: PipelineStage = PipelineStage.SEARCH):
+    async def async_get_embeddings(
+        self, texts: list[str], stage: PipelineStage = PipelineStage.SEARCH
+    ):
         return self.get_embeddings(texts, stage)
 
     @abstractmethod

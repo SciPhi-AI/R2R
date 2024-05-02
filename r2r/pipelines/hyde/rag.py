@@ -222,7 +222,11 @@ class HyDEPipeline(RAGPipeline):
         ]
 
         return self._return_stream(
-            search_results, context, prompt, generation_config, metadata={"answers": answers},
+            search_results,
+            context,
+            prompt,
+            generation_config,
+            metadata={"answers": answers},
         )
 
     def _construct_joined_context(
