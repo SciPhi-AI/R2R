@@ -52,4 +52,3 @@ class QnARAGPipeline(RAGPipeline):
             logging_connection=logging_connection,
             prompt_provider=prompt_provider,
         )
-        self.pipeline_run_info = None

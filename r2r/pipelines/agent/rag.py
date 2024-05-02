@@ -50,7 +50,9 @@ class AgentRAGPipeline(WebRAGPipeline):
 
         super().__init__(*args, **kwargs)
 
-    def transform_message(self, query: str) -> str:
+    def transform_message(
+        self, query: str, generation_config: Optional[GenerationConfig] = None
+    ) -> str:
         return agent_rag_prompt.format(query=query)
 
     # Returns a web search query to execute or None if it needed additional context.

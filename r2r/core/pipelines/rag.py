@@ -40,6 +40,7 @@ class RAGPipeline(Pipeline):
         self.llm_provider = llm_provider
         self.embedding_provider = embedding_provider
         self.vector_db_provider = vector_db_provider
+        self.pipeline_run_info = None
 
         super().__init__(logging_connection=logging_connection, **kwargs)
 
@@ -110,7 +111,11 @@ class RAGPipeline(Pipeline):
         """
         Formats the reranked results into a human-readable string.
         """
-        return "\n\n".join([ele.metadata["text"] for ele in results])
+        context = ""
+        for it, ele in enumerate(results):
+            metadata = ele.metadata
+            context += f"\n\n{it+1} - {metadata['text']}\n\n"
+        return context
 
     @log_execution_to_db
     def construct_context(
@@ -197,7 +202,7 @@ class RAGPipeline(Pipeline):
             )
         self.initialize_pipeline(message, search_only)
 
-        query = self.transform_message(message)
+        query = self.transform_message(message, generation_config)
         search_results = self.search(query, filters, search_limit)
         search_results = self.rerank_results(
             query, search_results, rerank_limit
@@ -218,7 +223,7 @@ class RAGPipeline(Pipeline):
 
     def run_stream(
         self,
-        message,
+        message: str,
         generation_config: GenerationConfig,
         filters={},
         search_limit=25,
