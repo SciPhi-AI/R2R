@@ -110,7 +110,6 @@ class WebRAGPipeline(RAGPipeline):
         )[0:limit]
         for result in local_results:
             vector_search_results.append(result)
-        print("vector_search_results = ", vector_search_results)
 
         return vector_search_results
 
@@ -144,7 +143,6 @@ class WebRAGPipeline(RAGPipeline):
         context = ""
         for it, ele in enumerate(results):
             metadata = ele.metadata
-            print("ele = ", ele)
             if "link" in metadata:
                 context += f"\n\n{it+1} - {metadata['title']} ({metadata['link']})\n{metadata['snippet']}\n\n"
             elif "text" in metadata:
