@@ -42,7 +42,7 @@
     "provider": "local"
   },
   "vector_database": {
-    "provider": "local",
+    "provider": "lancedb",
     "collection_name": "demo_vecs"
   }
 }

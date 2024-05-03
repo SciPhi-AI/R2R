@@ -19,7 +19,7 @@ class VectorDBConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["local", "pgvector", "qdrant"]
+        return ["local", "pgvector", "qdrant", "lancedb"]
 
 
 class VectorDBProvider(Provider, ABC):
