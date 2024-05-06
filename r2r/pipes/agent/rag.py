@@ -44,9 +44,7 @@ Begin.
 
 class AgentRAGPipe(WebRAGPipe):
     def __init__(self, *args, **kwargs):
-        logger.info(
-            f"Initalizing `AgentRAGPipe` to process user requests."
-        )
+        logger.info(f"Initalizing `AgentRAGPipe` to process user requests.")
 
         super().__init__(*args, **kwargs)
 

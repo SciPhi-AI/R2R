@@ -2,13 +2,16 @@ from abc import abstractmethod
 from typing import AsyncGenerator, Iterator, Optional
 
 from ..abstractions.document import Document, DocumentType, Extraction
+from ..abstractions.pipes import AsyncPipe, PipeType
 from ..parsers import Parser
-from ..utils import generate_run_id
 from ..utils.logging import LoggingDatabaseConnection
-from .async_pipe import AsyncPipe
+from .loggable import LoggableAsyncPipe
 
 
-class DocumentParsingPipe(AsyncPipe):
+class DocumentParsingPipe(LoggableAsyncPipe):
+    INPUT_TYPE = AsyncGenerator[Document, None]
+    OUTPUT_TYPE = AsyncGenerator[Extraction, None]
+
     def __init__(
         self,
         selected_parsers: Optional[dict[DocumentType, Parser]] = None,
@@ -21,19 +24,16 @@ class DocumentParsingPipe(AsyncPipe):
         self.override_parsers = override_parsers or {}
         super().__init__(logging_connection=logging_connection, **kwargs)
 
-    def initialize_pipe(self, *args, **kwargs) -> None:
-        self.pipe_run_info = {
-            "run_id": generate_run_id(),
-            "type": "parsing",
-        }
+    @property
+    def pipe_type(self) -> PipeType:
+        return PipeType.PARSING
 
     @property
-    @abstractmethod
     def supported_types(self) -> list[str]:
         """
-        Returns a list of supported data types.
+        Lists the data types supported by the pipe.
         """
-        pass
+        return [entry_type for entry_type in DocumentType]
 
     @abstractmethod
     async def parse(
@@ -41,16 +41,5 @@ class DocumentParsingPipe(AsyncPipe):
     ) -> Iterator[Extraction]:
         """
         Parse the document based on the type and yield `Extraction` objects.
-        """
-        pass
-
-    async def run(
-        self,
-        documents: AsyncGenerator[Document, None],
-        *args,
-        **kwargs,
-    ) -> Iterator[Extraction]:
-        """
-        Parses the provided documents.
         """
         pass

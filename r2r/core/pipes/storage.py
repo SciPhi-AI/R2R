@@ -7,16 +7,20 @@ from abc import abstractmethod
 from typing import AsyncGenerator, Generator, Optional
 
 from ..abstractions.document import Extraction, Fragment
+from ..abstractions.pipes import AsyncPipe, PipeType
 from ..providers.embedding import EmbeddingProvider
 from ..providers.vector_db import VectorDBProvider, VectorEntry
 from ..utils import generate_run_id
 from ..utils.logging import LoggingDatabaseConnection
-from .async_pipe import AsyncPipe
+from .loggable import LoggableAsyncPipe
 
 logger = logging.getLogger(__name__)
 
 
-class StoragePipe(AsyncPipe):
+class StoragePipe(LoggableAsyncPipe):
+    INPUT_TYPE = AsyncGenerator[VectorEntry, None]
+    OUTPUT_TYPE = None
+
     def __init__(
         self,
         vector_db_provider: VectorDBProvider,
@@ -27,18 +31,10 @@ class StoragePipe(AsyncPipe):
         self.vector_db_provider = vector_db_provider
         super().__init__(logging_connection=logging_connection, **kwargs)
 
-    def initialize_pipe(self, *args, **kwargs) -> None:
-        self.pipe_run_info = {
-            "run_id": generate_run_id(),
-            "type": "storage",
-        }
+    @property
+    def pipe_type(self) -> PipeType:
+        return PipeType.STORAGE
 
     @abstractmethod
     async def store(self, vector_entries: list[VectorEntry]) -> None:
-        pass
-
-    @abstractmethod
-    async def run(
-        self, vector_entries: AsyncGenerator[VectorEntry, None], **kwargs
-    ) -> None:
         pass

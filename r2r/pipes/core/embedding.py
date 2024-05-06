@@ -1,6 +1,7 @@
 """
 A simple example to demonstrate the usage of `DefaultEmbeddingPipe`.
 """
+
 import asyncio
 import copy
 import logging
@@ -54,9 +55,6 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
         self.id_prefix = id_prefix
         self.pipe_run_info = None
 
-    def initialize_pipe(self, *args, **kwargs) -> None:
-        super().initialize_pipe(*args, **kwargs)
-
     async def fragment(
         self, extraction: Extraction
     ) -> AsyncGenerator[Fragment, None]:
@@ -106,18 +104,18 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
 
     async def run(
         self,
-        extractions: AsyncGenerator[Extraction, None],
+        input: AsyncGenerator[Extraction, None],
         **kwargs: Any,
     ) -> AsyncGenerator[VectorEntry, None]:
         """
         Executes the embedding pipe: chunking, transforming, embedding, and storing documents.
         """
-        self.initialize_pipe()
+        self._initialize_pipe()
 
         batch_tasks = []
         fragment_batch = []
 
-        async for extraction in extractions:
+        async for extraction in input:
             async for fragment in self.fragment(extraction):
                 fragment_batch.append(fragment)
                 if len(fragment_batch) >= self.embedding_batch_size:

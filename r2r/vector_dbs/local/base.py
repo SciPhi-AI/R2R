@@ -80,9 +80,9 @@ class LocalVectorDBProvider(VectorDBProvider):
                 VALUES (?, ?, ?)
             """,
             (
-                serializeable_entry['id'],
-                str(serializeable_entry['vector']),
-                json.dumps(serializeable_entry['metadata']),
+                serializeable_entry["id"],
+                str(serializeable_entry["vector"]),
+                json.dumps(serializeable_entry["metadata"]),
             ),
         )
         if commit:
@@ -104,9 +104,9 @@ class LocalVectorDBProvider(VectorDBProvider):
                 VALUES (?, ?, ?)
             """,
             (
-                serializeable_entry['id'],
-                str(serializeable_entry['vector']),
-                json.dumps(serializeable_entry['metadata']),
+                serializeable_entry["id"],
+                str(serializeable_entry["vector"]),
+                json.dumps(serializeable_entry["metadata"]),
             ),
         )
         if commit:

@@ -4,12 +4,7 @@ import os
 import uvicorn
 
 from r2r.main import E2EPipeFactory, R2RConfig
-from r2r.pipes import (
-    AgentRAGPipe,
-    HyDEPipe,
-    QnARAGPipe,
-    WebRAGPipe,
-)
+from r2r.pipes import AgentRAGPipe, HyDEPipe, QnARAGPipe, WebRAGPipe
 
 current_file_path = os.path.dirname(__file__)
 configs_path = os.path.join(current_file_path, "..", "configs")

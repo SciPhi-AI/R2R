@@ -4,19 +4,22 @@ Abstract base class for embedding pipe.
 
 import logging
 from abc import abstractmethod
-from typing import AsyncGenerator, Generator, Optional
+from typing import AsyncGenerator, Optional
 
 from ..abstractions.document import Extraction, Fragment
+from ..abstractions.pipes import PipeType
 from ..providers.embedding import EmbeddingProvider
-from ..providers.vector_db import VectorDBProvider, VectorEntry
-from ..utils import generate_run_id
+from ..providers.vector_db import VectorEntry
 from ..utils.logging import LoggingDatabaseConnection
-from .async_pipe import AsyncPipe
+from .loggable import LoggableAsyncPipe
 
 logger = logging.getLogger(__name__)
 
 
-class EmbeddingPipe(AsyncPipe):
+class EmbeddingPipe(LoggableAsyncPipe):
+    INPUT_TYPE = AsyncGenerator[Extraction, None]
+    OUTPUT_TYPE = AsyncGenerator[VectorEntry, None]
+
     def __init__(
         self,
         embedding_provider: EmbeddingProvider,
@@ -27,11 +30,9 @@ class EmbeddingPipe(AsyncPipe):
         self.embedding_provider = embedding_provider
         super().__init__(logging_connection=logging_connection, **kwargs)
 
-    def initialize_pipe(self, *args, **kwargs) -> None:
-        self.pipe_run_info = {
-            "run_id": generate_run_id(),
-            "type": "embedding",
-        }
+    @property
+    def pipe_type(self) -> PipeType:
+        return PipeType.EMBEDDING
 
     @abstractmethod
     async def fragment(
@@ -50,7 +51,5 @@ class EmbeddingPipe(AsyncPipe):
         pass
 
     @abstractmethod
-    async def run(
-        self, extractions: AsyncGenerator[Extraction, None], **kwargs
-    ) -> VectorEntry:
+    async def run(self, input: INPUT_TYPE, **kwargs) -> OUTPUT_TYPE:
         pass

@@ -349,9 +349,7 @@ class LoggingDatabaseConnection:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.logging_provider.close()
 
-    def get_logs(
-        self, max_logs: int, pipe_run_type: Optional[str]
-    ) -> list:
+    def get_logs(self, max_logs: int, pipe_run_type: Optional[str]) -> list:
         return self.logging_provider.get_logs(max_logs, pipe_run_type)
 
 

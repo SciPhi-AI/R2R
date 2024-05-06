@@ -59,7 +59,13 @@ class PGVectorDB(VectorDBProvider):
         serializeable_entry = entry.vector.to_serializable()
 
         self.collection.copy(
-            records=[(serializeable_entry['id'], serializeable_entry['vector'], serializeable_entry['metadata'])]
+            records=[
+                (
+                    serializeable_entry["id"],
+                    serializeable_entry["vector"],
+                    serializeable_entry["metadata"],
+                )
+            ]
         )
 
     def copy_entries(

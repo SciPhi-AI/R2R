@@ -46,7 +46,11 @@ class VectorEntry:
         for key in metadata:
             if isinstance(metadata[key], UUID):
                 metadata[key] = str(metadata[key])
-        return {"id": str(self.id), "vector": self.vector.data, "metadata": json.dumps(metadata)}
+        return {
+            "id": str(self.id),
+            "vector": self.vector.data,
+            "metadata": json.dumps(metadata),
+        }
 
     def __str__(self) -> str:
         """Return a string representation of the VectorEntry."""

@@ -1,6 +1,7 @@
 """
 A simple example to demonstrate the usage of `DefaultDocumentParsingPipe`.
 """
+
 import logging
 from typing import AsyncGenerator, Optional
 
@@ -52,9 +53,10 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
         override_parsers: Optional[dict[DocumentType, Parser]] = None,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
     ):
-        logger.info("Initializing a `DefaultDocumentParsingPipe` to parse incoming documents.")
+        logger.info(
+            "Initializing a `DefaultDocumentParsingPipe` to parse incoming documents."
+        )
         super().__init__(logging_connection)
-        self.pipe_run_info = None
 
         # Initialize parsers with defaults and apply selected parsers
         self.parsers = {
@@ -67,11 +69,19 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
             for doc_type, parser_key in selected_parsers.items():
                 if doc_type not in self.parsers:
                     available_types = ", ".join(self.AVAILABLE_PARSERS.keys())
-                    raise ValueError(f"Unsupported document type '{doc_type}'. Supported types are: {available_types}")
+                    raise ValueError(
+                        f"Unsupported document type '{doc_type}'. Supported types are: {available_types}"
+                    )
                 if parser_key not in self.AVAILABLE_PARSERS[doc_type]:
-                    available_parsers = ", ".join(self.AVAILABLE_PARSERS[doc_type].keys())
-                    raise ValueError(f"Parser '{parser_key}' not available for '{doc_type}'. Available parsers are: {available_parsers}")
-                self.parsers[doc_type] = self.AVAILABLE_PARSERS[doc_type][parser_key]()
+                    available_parsers = ", ".join(
+                        self.AVAILABLE_PARSERS[doc_type].keys()
+                    )
+                    raise ValueError(
+                        f"Parser '{parser_key}' not available for '{doc_type}'. Available parsers are: {available_parsers}"
+                    )
+                self.parsers[doc_type] = self.AVAILABLE_PARSERS[doc_type][
+                    parser_key
+                ]()
 
         # Apply overrides if provided
         if override_parsers:
@@ -79,17 +89,12 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
                 if doc_type in self.parsers:
                     self.parsers[doc_type] = parser
                 else:
-                    logger.warning(f"Attempting to override a parser for an unsupported document type '{doc_type}'.")
+                    logger.warning(
+                        f"Attempting to override a parser for an unsupported document type '{doc_type}'."
+                    )
         if override_parsers is not None:
             for entry_type, parser in override_parsers.items():
                 self.parsers[entry_type] = parser
-
-    @property
-    def supported_types(self) -> list[str]:
-        """
-        Lists the data types supported by the pipe.
-        """
-        return [entry_type for entry_type in DocumentType]
 
     async def parse(
         self,
@@ -116,9 +121,9 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
             iteration += 1
 
     async def run(
-        self, documents: AsyncGenerator[Document, None]
+        self, input: AsyncGenerator[Document, None]
     ) -> AsyncGenerator[Extraction, None]:
-        self.initialize_pipe()
-        async for document in documents:
+        self._initialize_pipe()
+        async for document in input:
             async for extraction in self.parse(document):
                 yield extraction

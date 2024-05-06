@@ -45,9 +45,7 @@ class EmbeddingProvider(Provider):
         super().__init__(config)
 
     @abstractmethod
-    def get_embedding(
-        self, text: str, stage: PipeStage = PipeStage.SEARCH
-    ):
+    def get_embedding(self, text: str, stage: PipeStage = PipeStage.SEARCH):
         pass
 
     async def async_get_embedding(

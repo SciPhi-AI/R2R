@@ -6,12 +6,13 @@ from typing import Any, Optional
 from ..providers.eval import EvalProvider
 from ..utils import generate_run_id
 from ..utils.logging import LoggingDatabaseConnection
+from .loggable import LoggableAsyncPipe
 from .pipe import Pipe
 
 logger = logging.getLogger(__name__)
 
 
-class EvalPipe(Pipe):
+class EvalPipe(LoggableAsyncPipe):
     def __init__(
         self,
         eval_provider: EvalProvider,
@@ -22,9 +23,7 @@ class EvalPipe(Pipe):
         self.eval_provider = eval_provider
         super().__init__(logging_connection=logging_connection, **kwargs)
 
-    def initialize_pipe(
-        self, run_id: Optional[str], *args, **kwargs
-    ) -> None:
+    def initialize_pipe(self, run_id: Optional[str], *args, **kwargs) -> None:
         self.pipe_run_info = {
             "run_id": run_id or generate_run_id(),
             "type": "evaluation",

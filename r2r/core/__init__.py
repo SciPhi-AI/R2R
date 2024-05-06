@@ -11,6 +11,7 @@ from .abstractions.output import (
     LLMChatCompletionChunk,
     RAGPipeOutput,
 )
+from .abstractions.pipes import AsyncPipe
 from .abstractions.vector import (
     Vector,
     VectorEntry,
@@ -18,7 +19,6 @@ from .abstractions.vector import (
     VectorType,
 )
 from .agent.base import Agent
-from .pipes.async_pipe import AsyncPipe
 from .pipes.embedding import EmbeddingPipe
 from .pipes.eval import EvalPipe
 from .pipes.parsing import DocumentParsingPipe

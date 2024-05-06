@@ -1,6 +1,7 @@
 """
 A simple example to demonstrate the usage of `DefaultEmbeddingPipe`.
 """
+
 import asyncio
 import logging
 from typing import Any, AsyncGenerator, Optional
@@ -13,6 +14,7 @@ from r2r.core import (
 )
 
 logger = logging.getLogger(__name__)
+
 
 class DefaultVectorStoragePipe(StoragePipe):
     """
@@ -57,27 +59,29 @@ class DefaultVectorStoragePipe(StoragePipe):
         except Exception as e:
             logger.error(f"Error storing vector entries: {e}")
             raise
-        
+
     async def run(
         self,
-        vector_entries: AsyncGenerator[VectorEntry, None],
+        input: AsyncGenerator[VectorEntry, None],
         do_upsert: bool = True,
         **kwargs: Any,
     ) -> None:
         """
         Executes the async vector storage pipe: storing embeddings in the vector database.
         """
-        self.initialize_pipe()
+        self._initialize_pipe()
 
         batch_tasks = []
         vector_batch = []
 
-        async for vector_entry in vector_entries:
+        async for vector_entry in input:
             vector_batch.append(vector_entry)
             if len(vector_batch) >= self.storage_batch_size:
                 # Schedule the storage task
                 batch_tasks.append(
-                    asyncio.create_task(self.store(vector_batch.copy(), do_upsert))
+                    asyncio.create_task(
+                        self.store(vector_batch.copy(), do_upsert)
+                    )
                 )
                 vector_batch.clear()
 
@@ -88,6 +92,7 @@ class DefaultVectorStoragePipe(StoragePipe):
 
         # Wait for all storage tasks to complete
         await asyncio.gather(*batch_tasks)
+
 
 # """
 # A simple example to demonstrate the usage of `DefaultEmbeddingPipe`.

@@ -147,9 +147,7 @@ class E2EPipeFactory:
         )
         vector_db_provider = (
             vector_db_provider
-            or E2EPipeFactory.get_vector_db_provider(
-                config.vector_database
-            )
+            or E2EPipeFactory.get_vector_db_provider(config.vector_database)
         )
         vector_db_provider.initialize_collection(
             embedding_provider.search_dimension
