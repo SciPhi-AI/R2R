@@ -16,10 +16,9 @@ configs_path = os.path.join(current_file_path, "..", "configs")
 
 CONFIG_OPTIONS = {
     "default": None,
+    "local_ollama_lancedb": os.path.join(configs_path, "local_ollama_lancedb.json"),
     "local_ollama": os.path.join(configs_path, "local_ollama.json"),
-    "local_ollama_qdrant": os.path.join(
-        configs_path, "local_ollama_qdrant.json"
-    ),
+    "local_ollama_qdrant": os.path.join(configs_path, "local_ollama_qdrant.json"),
     "local_ollama_with_rerank": os.path.join(
         configs_path, "local_ollama_with_rerank.json"
     ),
@@ -34,6 +33,7 @@ PIPELINE_OPTIONS = {
 }
 
 
+
 def create_app(config_name: str = "default", pipeline_name: str = "qna"):
     config_name = os.getenv("CONFIG_OPTION") or config_name
     pipeline_name = os.getenv("PIPELINE_OPTION") or pipeline_name
@@ -41,10 +41,15 @@ def create_app(config_name: str = "default", pipeline_name: str = "qna"):
     config_path = CONFIG_OPTIONS[config_name]
     pipeline_impl = PIPELINE_OPTIONS[pipeline_name]
 
+    # delete past dataset for testing
+    if os.path.exists(os.getenv('LANCEDB_URI')):
+            os.remove(os.getenv('LANCEDB_URI'))
+            
     app = E2EPipelineFactory.create_pipeline(
         config=R2RConfig.load_config(config_path),
         rag_pipeline_impl=pipeline_impl,
     )
+    print('app created...')
     return app
 
 

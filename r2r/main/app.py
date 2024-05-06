@@ -88,14 +88,10 @@ def create_app(
                 document_id=document_id, url=str(url), metadata=metadata_json
             )
             for doc in docs:
-                embedding_pipeline.run(
-                    doc, **settings_model.embedding_settings.dict()
-                )
+                embedding_pipeline.run(doc, **settings_model.embedding_settings.dict())
             return {"message": f"URL {url} processed successfully."}
         except Exception as e:
-            logging.error(
-                f"scrape_url_and_process: [Error](url={url}, error={str(e)})"
-            )
+            logging.error(f"scrape_url_and_process: [Error](url={url}, error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/upload_and_process_file/")
@@ -121,9 +117,7 @@ def create_app(
             )
 
         if not file.filename:
-            raise HTTPException(
-                status_code=400, detail="No file was uploaded."
-            )
+            raise HTTPException(status_code=400, detail="No file was uploaded.")
         # Extract file extension and check if it's an allowed type
         file_extension = file.filename.split(".")[-1]
         if file_extension not in ingestion_pipeline.supported_types:
@@ -177,9 +171,7 @@ def create_app(
                 )
             return {"message": "Entry upserted successfully."}
         except Exception as e:
-            logging.error(
-                f":add_entry: [Error](entry={entry_req}, error={str(e)})"
-            )
+            logging.error(f":add_entry: [Error](entry={entry_req}, error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/add_entries/")
@@ -192,11 +184,19 @@ def create_app(
                     metadata=entry.metadata,
                     **entries_req.settings.ingestion_settings.dict(),
                 )
-                for document in documents:
-                    embedding_pipeline.run(
+                logging.info(
+                    f"documents len={len(entries_req.entries)}"
+                )  # this is correct
+                
+                for document in documents:  # this is individual storage call and thats why bulk inserts are causing issue
+                    embedding_pipeline.run(   # storage fn call via embedding_pipeline
                         document,
                         **entries_req.settings.embedding_settings.dict(),
                     )
+                # embedding_pipeline.run(
+                #     documents,        
+                #     **entries_req.settings.embedding_settings.dict(),
+                # )
             return {"message": "Entries upserted successfully."}
         except Exception as e:
             logging.error(
@@ -241,13 +241,9 @@ def create_app(
                 if not rag_completion.completion:
                     if rag_completion.search_results:
                         return rag_completion
-                    raise ValueError(
-                        "No completion found in RAGPipelineOutput."
-                    )
+                    raise ValueError("No completion found in RAGPipelineOutput.")
 
-                completion_text = rag_completion.completion.choices[
-                    0
-                ].message.content
+                completion_text = rag_completion.completion.choices[0].message.content
 
                 # Retrieve the URL dynamically from the request header
                 url = request.url
@@ -277,9 +273,7 @@ def create_app(
                     query: RAGQueryModel,
                     rag_pipeline: RAGPipeline,
                 ) -> AsyncGenerator[str, None]:
-                    gen_config = GenerationConfig(
-                        **(query.generation_config.dict())
-                    )
+                    gen_config = GenerationConfig(**(query.generation_config.dict()))
                     if not gen_config.stream:
                         raise ValueError(
                             "Must pass `stream` as True to stream completions."
@@ -306,41 +300,24 @@ def create_app(
 
                     for item in completion_generator:
                         if item.startswith("<"):
-                            if item.startswith(
-                                f"<{RAGPipeline.SEARCH_STREAM_MARKER}>"
-                            ):
-                                current_marker = (
-                                    RAGPipeline.SEARCH_STREAM_MARKER
-                                )
+                            if item.startswith(f"<{RAGPipeline.SEARCH_STREAM_MARKER}>"):
+                                current_marker = RAGPipeline.SEARCH_STREAM_MARKER
                             elif item.startswith(
                                 f"<{RAGPipeline.CONTEXT_STREAM_MARKER}>"
                             ):
-                                current_marker = (
-                                    RAGPipeline.CONTEXT_STREAM_MARKER
-                                )
+                                current_marker = RAGPipeline.CONTEXT_STREAM_MARKER
                             elif item.startswith(
                                 f"<{RAGPipeline.COMPLETION_STREAM_MARKER}>"
                             ):
-                                current_marker = (
-                                    RAGPipeline.COMPLETION_STREAM_MARKER
-                                )
+                                current_marker = RAGPipeline.COMPLETION_STREAM_MARKER
                             else:
                                 current_marker = None
                         else:
-                            if (
-                                current_marker
-                                == RAGPipeline.SEARCH_STREAM_MARKER
-                            ):
+                            if current_marker == RAGPipeline.SEARCH_STREAM_MARKER:
                                 search_results += item
-                            elif (
-                                current_marker
-                                == RAGPipeline.CONTEXT_STREAM_MARKER
-                            ):
+                            elif current_marker == RAGPipeline.CONTEXT_STREAM_MARKER:
                                 context += item
-                            elif (
-                                current_marker
-                                == RAGPipeline.COMPLETION_STREAM_MARKER
-                            ):
+                            elif current_marker == RAGPipeline.COMPLETION_STREAM_MARKER:
                                 completion_text += item
                         yield item
 
@@ -358,9 +335,7 @@ def create_app(
                         "query": query.query,
                         "context": context,
                         "completion_text": completion_text,
-                        "run_id": str(
-                            rag_pipeline.pipeline_run_info["run_id"]
-                        ),
+                        "run_id": str(rag_pipeline.pipeline_run_info["run_id"]),
                         "settings": query.settings.rag_settings.dict(),
                     }
                     logging.info(
@@ -376,9 +351,7 @@ def create_app(
                     media_type="text/plain",
                 )
         except Exception as e:
-            logging.error(
-                f":rag_completion: [Error](query={query}, error={str(e)})"
-            )
+            logging.error(f":rag_completion: [Error](query={query}, error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/eval")
@@ -399,9 +372,7 @@ def create_app(
 
             return {"message": "Evaluation completed successfully."}
         except Exception as e:
-            logging.error(
-                f":eval_endpoint: [Error](payload={payload}, error={str(e)})"
-            )
+            logging.error(f":eval_endpoint: [Error](payload={payload}, error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.delete("/filtered_deletion/")
@@ -418,10 +389,8 @@ def create_app(
     @app.get("/get_user_ids/")
     async def get_user_ids():
         try:
-            user_ids = (
-                embedding_pipeline.vector_db_provider.get_all_unique_values(
-                    metadata_field="user_id"
-                )
+            user_ids = embedding_pipeline.vector_db_provider.get_all_unique_values(
+                metadata_field="user_id"
             )
 
             return {"user_ids": user_ids}
@@ -432,12 +401,10 @@ def create_app(
     @app.get("/get_user_documents/")
     async def get_user_documents(user_id: str):
         try:
-            document_ids = (
-                embedding_pipeline.vector_db_provider.get_all_unique_values(
-                    metadata_field="document_id",
-                    filter_field="user_id",
-                    filter_value=user_id,
-                )
+            document_ids = embedding_pipeline.vector_db_provider.get_all_unique_values(
+                metadata_field="document_id",
+                filter_field="user_id",
+                filter_value=user_id,
             )
             return {"document_ids": document_ids}
         except Exception as e:
@@ -454,9 +421,7 @@ def create_app(
             logs = logging_connection.get_logs(config.app.get("max_logs", 100))
             for log in logs:
                 LogModel(**log).dict(by_alias=True)
-            return {
-                "logs": [LogModel(**log).dict(by_alias=True) for log in logs]
-            }
+            return {"logs": [LogModel(**log).dict(by_alias=True) for log in logs]}
         except Exception as e:
             logging.error(f":logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
@@ -471,8 +436,7 @@ def create_app(
             logs = logging_connection.get_logs(config.app.get("max_logs", 100))
             logs_summary = process_logs(logs)
             events_summary = [
-                SummaryLogModel(**log).dict(by_alias=True)
-                for log in logs_summary
+                SummaryLogModel(**log).dict(by_alias=True) for log in logs_summary
             ]
             return {"events_summary": events_summary}
 

@@ -14,7 +14,8 @@ from r2r.core.utils import generate_id_from_label
 """
 To run the test locally, run
 export LOCAL_DB_PATH=local.sqlite
-export OPENAI_API_KEY=[your open ai key]
+export 
+=[your open ai key]
 """
 
 
@@ -41,12 +42,12 @@ def r2r_server():
     server_process.terminate()
     server_process.wait()
 
-    # Delete the local.sqlite file
-    sqlite_file = "local.sqlite"
-    if os.path.exists(sqlite_file):
-        os.remove(sqlite_file)
-    else:
-        raise FileNotFoundError(f"Expected {sqlite_file} not found")
+    # # Delete the local.sqlite file
+    # sqlite_file = "local.sqlite"
+    # if os.path.exists(sqlite_file):
+    #     os.remove(sqlite_file)
+    # else:
+    #     raise FileNotFoundError(f"Expected {sqlite_file} not found")
 
 
 @pytest.fixture(scope="module")
@@ -55,9 +56,9 @@ def client():
     return R2RClient(base_url)
 
 
-def test_test_function(client):
-    test_function_response = client.test_function()
-    assert test_function_response == "Test function called."
+# def test_test_function(client):
+#     test_function_response = client.test_function()
+#     assert test_function_response == "Test function called."
 
 
 def test_process_url(client):

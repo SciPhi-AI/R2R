@@ -33,6 +33,10 @@ class E2EPipelineFactory:
     @staticmethod
     def get_vector_db_provider(database_config: dict[str, Any]):
         """Get the vector database provider based on the provided database_config."""
+        if database_config["provider"] == "lancedb":
+            from r2r.vector_dbs import LanceDB
+            return LanceDB(VectorDBConfig.create(**database_config))
+
         if database_config["provider"] == "qdrant":
             from r2r.vector_dbs import QdrantDB
 
@@ -106,9 +110,7 @@ class E2EPipelineFactory:
         """Get the text splitter based on the provided text_splitter_config."""
 
         if text_splitter_config["type"] != "recursive_character":
-            raise ValueError(
-                "Only recursive character text splitter is supported"
-            )
+            raise ValueError("Only recursive character text splitter is supported")
         return RecursiveCharacterTextSplitter(
             chunk_size=text_splitter_config["chunk_size"],
             chunk_overlap=text_splitter_config["chunk_overlap"],
@@ -141,13 +143,13 @@ class E2EPipelineFactory:
         )
         vector_db_provider = (
             vector_db_provider
-            or E2EPipelineFactory.get_vector_db_provider(
-                config.vector_database
-            )
+            or E2EPipelineFactory.get_vector_db_provider(config.vector_database)
         )
-        vector_db_provider.initialize_collection(
-            embedding_provider.search_dimension
-        )
+
+        logging.info(f'\n vec db - {vector_db_provider}')
+        vector_db_provider.initialize_collection(dimension=embedding_provider.search_dimension)
+
+        logging.info(f'collection initialized : {vector_db_provider.collection}')
 
         eval_provider = E2EPipelineFactory.get_eval_provider(config.eval)
 
