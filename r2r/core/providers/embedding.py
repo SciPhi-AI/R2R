@@ -32,7 +32,7 @@ class EmbeddingConfig(ProviderConfig):
 class EmbeddingProvider(Provider):
     """An abstract class to provide a common interface for embedding providers."""
 
-    class PipelineStage(Enum):
+    class PipeStage(Enum):
         SEARCH = 1
         RERANK = 2
 
@@ -46,23 +46,23 @@ class EmbeddingProvider(Provider):
 
     @abstractmethod
     def get_embedding(
-        self, text: str, stage: PipelineStage = PipelineStage.SEARCH
+        self, text: str, stage: PipeStage = PipeStage.SEARCH
     ):
         pass
 
     async def async_get_embedding(
-        self, text: str, stage: PipelineStage = PipelineStage.SEARCH
+        self, text: str, stage: PipeStage = PipeStage.SEARCH
     ):
         return self.get_embedding(text, stage)
 
     @abstractmethod
     def get_embeddings(
-        self, texts: list[str], stage: PipelineStage = PipelineStage.SEARCH
+        self, texts: list[str], stage: PipeStage = PipeStage.SEARCH
     ):
         pass
 
     async def async_get_embeddings(
-        self, texts: list[str], stage: PipelineStage = PipelineStage.SEARCH
+        self, texts: list[str], stage: PipeStage = PipeStage.SEARCH
     ):
         return self.get_embeddings(texts, stage)
 
@@ -71,14 +71,14 @@ class EmbeddingProvider(Provider):
         self,
         query: str,
         documents: list[VectorSearchResult],
-        stage: PipelineStage = PipelineStage.RERANK,
+        stage: PipeStage = PipeStage.RERANK,
         limit: int = 10,
     ):
         pass
 
     @abstractmethod
     def tokenize_string(
-        self, text: str, model: str, stage: PipelineStage
+        self, text: str, model: str, stage: PipeStage
     ) -> list[int]:
         """Tokenizes the input string."""
         pass

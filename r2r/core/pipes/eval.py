@@ -6,12 +6,12 @@ from typing import Any, Optional
 from ..providers.eval import EvalProvider
 from ..utils import generate_run_id
 from ..utils.logging import LoggingDatabaseConnection
-from .pipeline import Pipeline
+from .pipe import Pipe
 
 logger = logging.getLogger(__name__)
 
 
-class EvalPipeline(Pipeline):
+class EvalPipe(Pipe):
     def __init__(
         self,
         eval_provider: EvalProvider,
@@ -22,10 +22,10 @@ class EvalPipeline(Pipeline):
         self.eval_provider = eval_provider
         super().__init__(logging_connection=logging_connection, **kwargs)
 
-    def initialize_pipeline(
+    def initialize_pipe(
         self, run_id: Optional[str], *args, **kwargs
     ) -> None:
-        self.pipeline_run_info = {
+        self.pipe_run_info = {
             "run_id": run_id or generate_run_id(),
             "type": "evaluation",
         }
@@ -42,9 +42,9 @@ class EvalPipeline(Pipeline):
         run_id: Optional[str],
         **kwargs,
     ):
-        self.initialize_pipeline(run_id)
+        self.initialize_pipe(run_id)
         logger.debug(
-            f"Running the `EvaluationPipeline` with id={self.pipeline_run_info}."
+            f"Running the `EvaluationPipe` with id={self.pipe_run_info}."
         )
         if random.random() < self.eval_provider.config.sampling_fraction:
             return self.evaluate(query, context, completion)
@@ -59,5 +59,5 @@ class EvalPipeline(Pipeline):
         **kwargs,
     ):
         raise NotImplementedError(
-            "Streaming mode not supported for `EvalPipeline`."
+            "Streaming mode not supported for `EvalPipe`."
         )

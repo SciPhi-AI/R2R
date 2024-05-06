@@ -7,8 +7,8 @@ from r2r.core import (
     LLMProvider,
     LoggingDatabaseConnection,
     PromptProvider,
-    RAGPipeline,
-    RAGPipelineOutput,
+    RAGPipe,
+    RAGPipeOutput,
     VectorDBProvider,
     VectorSearchResult,
     log_output_to_db,
@@ -52,7 +52,7 @@ Here is the original user query to be transformed into answers:
 """
 
 
-class HyDEPipeline(RAGPipeline):
+class HyDEPipe(RAGPipe):
     def __init__(
         self,
         embedding_provider: EmbeddingProvider,
@@ -64,7 +64,7 @@ class HyDEPipeline(RAGPipeline):
         return_pompt: Optional[str] = DEFAULT_RETURN_PROMPT,
         hyde_prompt: Optional[str] = DEFAULT_HYDE_PROMPT,
     ) -> None:
-        logger.info(f"Initalizing `HydePipeline` to process user requests.")
+        logger.info(f"Initalizing `HydePipe` to process user requests.")
 
         if not prompt_provider:
             prompt_provider = BasicPromptProvider
@@ -120,7 +120,7 @@ class HyDEPipeline(RAGPipeline):
 
         return context
 
-    # Modifies `HydePipeline` run to return search_results and completion
+    # Modifies `HydePipe` run to return search_results and completion
     def run(
         self,
         message,
@@ -133,9 +133,9 @@ class HyDEPipeline(RAGPipeline):
         **kwargs,
     ):
         """
-        Runs the completion pipeline.
+        Runs the completion pipe.
         """
-        self.initialize_pipeline(message, search_only)
+        self.initialize_pipe(message, search_only)
 
         answers = self.transform_message(message, generation_config)
         search_results_tuple = [
@@ -157,7 +157,7 @@ class HyDEPipeline(RAGPipeline):
         ]
 
         if search_only:
-            return RAGPipelineOutput(
+            return RAGPipeOutput(
                 search_results,
                 None,
                 None,
@@ -169,7 +169,7 @@ class HyDEPipeline(RAGPipeline):
 
         if not generation_config.stream:
             completion = self.generate_completion(prompt, generation_config)
-            return RAGPipelineOutput(
+            return RAGPipeOutput(
                 search_results, context, completion, {"answers": answers}
             )
 
@@ -192,14 +192,14 @@ class HyDEPipeline(RAGPipeline):
         **kwargs,
     ) -> Generator[str, None, None]:
         """
-        Runs the completion pipeline for streaming execution.
+        Runs the completion pipe for streaming execution.
         """
         if not generation_config.stream:
             raise ValueError(
                 "Streaming mode must be enabled when running `run_stream."
             )
 
-        self.initialize_pipeline(message, search_only=False)
+        self.initialize_pipe(message, search_only=False)
 
         answers = self.transform_message(message, generation_config)
         search_results_tuple = [

@@ -1,5 +1,5 @@
 """
-Abstract base class for completion pipelines.
+Abstract base class for completion pipe.
 """
 
 import json
@@ -8,19 +8,19 @@ import uuid
 from abc import abstractmethod
 from typing import Any, Generator, Optional, Union
 
-from ..abstractions.output import LLMChatCompletion, RAGPipelineOutput
+from ..abstractions.output import LLMChatCompletion, RAGPipeOutput
 from ..abstractions.vector import VectorSearchResult
 from ..providers.embedding import EmbeddingProvider
 from ..providers.llm import GenerationConfig, LLMProvider
 from ..providers.prompt import PromptProvider
 from ..providers.vector_db import VectorDBProvider
 from ..utils.logging import LoggingDatabaseConnection, log_output_to_db
-from .pipeline import Pipeline
+from .pipe import Pipe
 
 logger = logging.getLogger(__name__)
 
 
-class RAGPipeline(Pipeline):
+class RAGPipe(Pipe):
     SEARCH_STREAM_MARKER = "search"
     CONTEXT_STREAM_MARKER = "context"
     METADATA_STREAM_MARKER = "metadata"
@@ -40,14 +40,14 @@ class RAGPipeline(Pipeline):
         self.llm_provider = llm_provider
         self.embedding_provider = embedding_provider
         self.vector_db_provider = vector_db_provider
-        self.pipeline_run_info = None
+        self.pipe_run_info = None
 
         super().__init__(logging_connection=logging_connection, **kwargs)
 
-    def initialize_pipeline(
+    def initialize_pipe(
         self, message: str, search_only: bool, *args, **kwargs
     ) -> None:
-        self.pipeline_run_info = {
+        self.pipe_run_info = {
             "run_id": uuid.uuid4(),
             "type": "rag" if not search_only else "search",
         }
@@ -56,7 +56,7 @@ class RAGPipeline(Pipeline):
     @log_output_to_db
     def ingress(self, message: str) -> Any:
         """
-        Ingresses data into the pipeline.
+        Ingresses data into the pipe.
         """
         return message
 
@@ -192,15 +192,15 @@ class RAGPipeline(Pipeline):
         generation_config: Optional[GenerationConfig] = None,
         *args,
         **kwargs,
-    ) -> Union[RAGPipelineOutput, LLMChatCompletion]:
+    ) -> Union[RAGPipeOutput, LLMChatCompletion]:
         """
-        Runs the completion pipeline for non-streaming execution.
+        Runs the completion pipe for non-streaming execution.
         """
         if generation_config and generation_config.stream:
             raise ValueError(
                 "Streaming mode must be enabled when running `run_stream`."
             )
-        self.initialize_pipeline(message, search_only)
+        self.initialize_pipe(message, search_only)
 
         query = self.transform_message(message, generation_config)
         search_results = self.search(query, filters, search_limit)
@@ -209,7 +209,7 @@ class RAGPipeline(Pipeline):
         )
 
         if search_only:
-            return RAGPipelineOutput(search_results, None, None)
+            return RAGPipeOutput(search_results, None, None)
         if not generation_config:
             raise ValueError(
                 "GenerationConfig is required for completion generation."
@@ -219,7 +219,7 @@ class RAGPipeline(Pipeline):
         prompt = self.construct_prompt({"query": query, "context": context})
 
         completion = self.generate_completion(prompt, generation_config)
-        return RAGPipelineOutput(search_results, context, completion)
+        return RAGPipeOutput(search_results, context, completion)
 
     def run_stream(
         self,
@@ -232,14 +232,14 @@ class RAGPipeline(Pipeline):
         **kwargs,
     ) -> Generator[str, None, None]:
         """
-        Runs the completion pipeline for streaming execution.
+        Runs the completion pipe for streaming execution.
         """
         if not generation_config.stream:
             raise ValueError(
                 "Streaming mode must be enabled when running `run_stream."
             )
 
-        self.initialize_pipeline(message, search_only=False)
+        self.initialize_pipe(message, search_only=False)
 
         query = self.transform_message(message, generation_config)
         search_results = self.search(query, filters, search_limit)
@@ -262,25 +262,25 @@ class RAGPipeline(Pipeline):
         generation_config: GenerationConfig,
         metadata: Optional[dict] = None,
     ) -> Generator[str, None, None]:
-        yield f"<{RAGPipeline.SEARCH_STREAM_MARKER}>"
+        yield f"<{RAGPipe.SEARCH_STREAM_MARKER}>"
         yield json.dumps([ele.dict() for ele in search_results])
-        yield f"</{RAGPipeline.SEARCH_STREAM_MARKER}>"
+        yield f"</{RAGPipe.SEARCH_STREAM_MARKER}>"
 
-        yield f"<{RAGPipeline.CONTEXT_STREAM_MARKER}>"
+        yield f"<{RAGPipe.CONTEXT_STREAM_MARKER}>"
         yield context
-        yield f"</{RAGPipeline.CONTEXT_STREAM_MARKER}>"
+        yield f"</{RAGPipe.CONTEXT_STREAM_MARKER}>"
 
-        yield f"<{RAGPipeline.METADATA_STREAM_MARKER}>"
+        yield f"<{RAGPipe.METADATA_STREAM_MARKER}>"
         yield json.dumps(metadata or {})
-        yield f"</{RAGPipeline.METADATA_STREAM_MARKER}>"
+        yield f"</{RAGPipe.METADATA_STREAM_MARKER}>"
 
-        yield f"<{RAGPipeline.COMPLETION_STREAM_MARKER}>"
+        yield f"<{RAGPipe.COMPLETION_STREAM_MARKER}>"
         for chunk in self.generate_completion(prompt, generation_config):
             yield chunk
-        yield f"</{RAGPipeline.COMPLETION_STREAM_MARKER}>"
+        yield f"</{RAGPipe.COMPLETION_STREAM_MARKER}>"
 
     def _get_extra_args(self, *args, **kwargs):
         """
-        Retrieves any extra arguments needed for the pipeline's operations.
+        Retrieves any extra arguments needed for the pipe's operations.
         """
         return {}

@@ -1,5 +1,5 @@
 """
-A simple example to demonstrate the usage of `AgentRAGPipeline`.
+A simple example to demonstrate the usage of `AgentRAGPipe`.
 """
 
 import json
@@ -8,9 +8,9 @@ import re
 from typing import Optional
 
 from r2r.core import GenerationConfig
-from r2r.core.abstractions.output import RAGPipelineOutput
+from r2r.core.abstractions.output import RAGPipeOutput
 
-from ..web.rag import WebRAGPipeline
+from ..web.rag import WebRAGPipe
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +42,10 @@ Begin.
 """
 
 
-class AgentRAGPipeline(WebRAGPipeline):
+class AgentRAGPipe(WebRAGPipe):
     def __init__(self, *args, **kwargs):
         logger.info(
-            f"Initalizing `AgentRAGPipeline` to process user requests."
+            f"Initalizing `AgentRAGPipe` to process user requests."
         )
 
         super().__init__(*args, **kwargs)
@@ -71,7 +71,7 @@ class AgentRAGPipeline(WebRAGPipeline):
         *args,
         **kwargs,
     ) -> str:
-        self.initialize_pipeline(message, False)
+        self.initialize_pipe(message, False)
 
         # Extracts the full conversation history from the query.
         # Query is the json encoded message history given as a list of objects as following:
@@ -95,7 +95,7 @@ class AgentRAGPipeline(WebRAGPipeline):
         )
 
         if not search_query:
-            return RAGPipelineOutput(search_results=[], completion=completion)
+            return RAGPipeOutput(search_results=[], completion=completion)
 
         search_results = self.search(
             search_query, filters={}, limit=search_limit
@@ -104,4 +104,4 @@ class AgentRAGPipeline(WebRAGPipeline):
             search_query, search_results, rerank_limit
         )
 
-        return RAGPipelineOutput(search_results, None, None)
+        return RAGPipeOutput(search_results, None, None)

@@ -77,9 +77,9 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     def get_embedding(
         self,
         text: str,
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
     ) -> list[float]:
-        if stage != EmbeddingProvider.PipelineStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.SEARCH:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
             )
@@ -100,9 +100,9 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     async def async_get_embedding(
         self,
         text: str,
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
     ) -> list[float]:
-        if stage != EmbeddingProvider.PipelineStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.SEARCH:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
             )
@@ -120,9 +120,9 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     def get_embeddings(
         self,
         texts: list[str],
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
     ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipelineStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.SEARCH:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
             )
@@ -142,9 +142,9 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     async def async_get_embeddings(
         self,
         texts: list[str],
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
     ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipelineStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.SEARCH:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
             )
@@ -163,7 +163,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self,
         transformed_message: str,
         texts: list[VectorSearchResult],
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.RERANK,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
     ):
         return texts[:limit]

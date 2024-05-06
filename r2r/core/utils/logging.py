@@ -29,8 +29,8 @@ class LoggingProvider(ABC):
     def log(
         self,
         timestamp,
-        pipeline_run_id,
-        pipeline_run_type,
+        pipe_run_id,
+        pipe_run_type,
         method,
         result,
         log_level,
@@ -39,7 +39,7 @@ class LoggingProvider(ABC):
 
     @abstractmethod
     def get_logs(
-        self, max_logs: int, pipeline_run_type: Optional[str] = None
+        self, max_logs: int, pipe_run_type: Optional[str] = None
     ) -> list:
         pass
 
@@ -86,8 +86,8 @@ class PostgresLoggingProvider(LoggingProvider):
                 f"""
                 CREATE TABLE IF NOT EXISTS {self.collection_name} (
                     timestamp TIMESTAMP,
-                    pipeline_run_id UUID,
-                    pipeline_run_type TEXT,
+                    pipe_run_id UUID,
+                    pipe_run_type TEXT,
                     method TEXT,
                     result TEXT,
                     log_level TEXT
@@ -102,8 +102,8 @@ class PostgresLoggingProvider(LoggingProvider):
 
     def log(
         self,
-        pipeline_run_id,
-        pipeline_run_type,
+        pipe_run_id,
+        pipe_run_type,
         method,
         result,
         log_level,
@@ -111,10 +111,10 @@ class PostgresLoggingProvider(LoggingProvider):
         try:
             with self.conn.cursor() as cur:
                 cur.execute(
-                    f"INSERT INTO {self.collection_name} (timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level) VALUES (NOW(), %s, %s, %s, %s, %s)",
+                    f"INSERT INTO {self.collection_name} (timestamp, pipe_run_id, pipe_run_type, method, result, log_level) VALUES (NOW(), %s, %s, %s, %s, %s)",
                     (
-                        str(pipeline_run_id),
-                        pipeline_run_type,
+                        str(pipe_run_id),
+                        pipe_run_type,
                         method,
                         str(result),
                         log_level,
@@ -127,13 +127,13 @@ class PostgresLoggingProvider(LoggingProvider):
                 f"Error occurred while logging to the PostgreSQL database: {str(e)}"
             )
 
-    def get_logs(self, max_logs: int, pipeline_run_type=None) -> list:
+    def get_logs(self, max_logs: int, pipe_run_type=None) -> list:
         logs = []
         with self.conn.cursor() as cur:
-            if pipeline_run_type:
+            if pipe_run_type:
                 cur.execute(
-                    f"SELECT * FROM {self.collection_name} WHERE pipeline_run_type = %s ORDER BY timestamp DESC LIMIT %s",
-                    (pipeline_run_type, max_logs),
+                    f"SELECT * FROM {self.collection_name} WHERE pipe_run_type = %s ORDER BY timestamp DESC LIMIT %s",
+                    (pipe_run_type, max_logs),
                 )
             else:
                 cur.execute(
@@ -175,8 +175,8 @@ class LocalLoggingProvider(LoggingProvider):
             f"""
             CREATE TABLE IF NOT EXISTS {self.collection_name} (
                 timestamp DATETIME,
-                pipeline_run_id TEXT,
-                pipeline_run_type TEXT,
+                pipe_run_id TEXT,
+                pipe_run_type TEXT,
                 method TEXT,
                 result TEXT,
                 log_level TEXT
@@ -191,8 +191,8 @@ class LocalLoggingProvider(LoggingProvider):
 
     def log(
         self,
-        pipeline_run_id,
-        pipeline_run_type,
+        pipe_run_id,
+        pipe_run_type,
         method,
         result,
         log_level,
@@ -200,10 +200,10 @@ class LocalLoggingProvider(LoggingProvider):
         try:
             with self.db_module.connect(self.logging_path) as conn:
                 conn.execute(
-                    f"INSERT INTO {self.collection_name} (timestamp, pipeline_run_id, pipeline_run_type, method, result, log_level) VALUES (datetime('now'), ?, ?, ?, ?, ?)",
+                    f"INSERT INTO {self.collection_name} (timestamp, pipe_run_id, pipe_run_type, method, result, log_level) VALUES (datetime('now'), ?, ?, ?, ?, ?)",
                     (
-                        str(pipeline_run_id),
-                        pipeline_run_type,
+                        str(pipe_run_id),
+                        pipe_run_type,
                         method,
                         str(result),
                         log_level,
@@ -216,14 +216,14 @@ class LocalLoggingProvider(LoggingProvider):
                 f"Error occurred while logging to the local database: {str(e)}"
             )
 
-    def get_logs(self, max_logs: int, pipeline_run_type=None) -> list:
+    def get_logs(self, max_logs: int, pipe_run_type=None) -> list:
         logs = []
         with self.db_module.connect(self.logging_path) as conn:
             cur = conn.cursor()
-            if pipeline_run_type:
+            if pipe_run_type:
                 cur.execute(
-                    f"SELECT * FROM {self.collection_name} WHERE pipeline_run_type = ? ORDER BY timestamp DESC LIMIT ?",
-                    (pipeline_run_type, max_logs),
+                    f"SELECT * FROM {self.collection_name} WHERE pipe_run_type = ? ORDER BY timestamp DESC LIMIT ?",
+                    (pipe_run_type, max_logs),
                 )
             else:
                 cur.execute(
@@ -267,8 +267,8 @@ class RedisLoggingProvider(LoggingProvider):
 
     def log(
         self,
-        pipeline_run_id,
-        pipeline_run_type,
+        pipe_run_id,
+        pipe_run_type,
         method,
         result,
         log_level,
@@ -276,27 +276,27 @@ class RedisLoggingProvider(LoggingProvider):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_entry = {
             "timestamp": timestamp,
-            "pipeline_run_id": str(pipeline_run_id),
-            "pipeline_run_type": pipeline_run_type,
+            "pipe_run_id": str(pipe_run_id),
+            "pipe_run_type": pipe_run_type,
             "method": method,
             "result": str(result),
             "log_level": log_level,
         }
         try:
-            # Save log entry under a key that includes the pipeline_run_type
-            type_specific_key = f"{self.log_key}:{pipeline_run_type}"
+            # Save log entry under a key that includes the pipe_run_type
+            type_specific_key = f"{self.log_key}:{pipe_run_type}"
             self.redis.lpush(type_specific_key, json.dumps(log_entry))
         except Exception as e:
             logger.error(f"Error occurred while logging to Redis: {str(e)}")
 
-    def get_logs(self, max_logs: int, pipeline_run_type=None) -> list:
-        if pipeline_run_type:
-            if pipeline_run_type not in RUN_TYPES:
+    def get_logs(self, max_logs: int, pipe_run_type=None) -> list:
+        if pipe_run_type:
+            if pipe_run_type not in RUN_TYPES:
                 raise ValueError(
-                    f"Error, `{pipeline_run_type}` is not in LoggingDatabaseConnection's list of supported run types."
+                    f"Error, `{pipe_run_type}` is not in LoggingDatabaseConnection's list of supported run types."
                 )
             # Fetch logs for a specific type
-            key_to_fetch = f"{self.log_key}:{pipeline_run_type}"
+            key_to_fetch = f"{self.log_key}:{pipe_run_type}"
             logs = self.redis.lrange(key_to_fetch, 0, max_logs - 1)
             return [json.loads(log) for log in logs]
         else:
@@ -350,9 +350,9 @@ class LoggingDatabaseConnection:
         self.logging_provider.close()
 
     def get_logs(
-        self, max_logs: int, pipeline_run_type: Optional[str]
+        self, max_logs: int, pipe_run_type: Optional[str]
     ) -> list:
-        return self.logging_provider.get_logs(max_logs, pipeline_run_type)
+        return self.logging_provider.get_logs(max_logs, pipe_run_type)
 
 
 def log_output_to_db(func):
@@ -365,8 +365,8 @@ def log_output_to_db(func):
         if not logging_connection:
             return func(*args, **kwargs)
 
-        arg_pipeline_run_id = instance.pipeline_run_info["run_id"]
-        arg_pipeline_run_type = instance.pipeline_run_info["type"]
+        arg_pipe_run_id = instance.pipe_run_info["run_id"]
+        arg_pipe_run_type = instance.pipe_run_info["type"]
 
         try:
             result = func(*args, **kwargs)
@@ -384,8 +384,8 @@ def log_output_to_db(func):
                         log_level = "ERROR"
                     finally:
                         logging_connection.logging_provider.log(
-                            arg_pipeline_run_id,
-                            arg_pipeline_run_type,
+                            arg_pipe_run_id,
+                            arg_pipe_run_type,
                             func.__name__,
                             "".join(results),
                             log_level,
@@ -394,8 +394,8 @@ def log_output_to_db(func):
                 return generator_wrapper()
             else:
                 logging_connection.logging_provider.log(
-                    arg_pipeline_run_id,
-                    arg_pipeline_run_type,
+                    arg_pipe_run_id,
+                    arg_pipe_run_type,
                     func.__name__,
                     str(result),
                     "INFO",
@@ -406,8 +406,8 @@ def log_output_to_db(func):
             result = str(e)
             log_level = "ERROR"
             logging_connection.logging_provider.log(
-                arg_pipeline_run_id,
-                arg_pipeline_run_type,
+                arg_pipe_run_id,
+                arg_pipe_run_type,
                 func.__name__,
                 result,
                 log_level,

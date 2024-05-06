@@ -40,10 +40,10 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         self.do_rerank = False
 
         self.search_encoder = self._init_model(
-            config, EmbeddingProvider.PipelineStage.SEARCH
+            config, EmbeddingProvider.PipeStage.SEARCH
         )
         self.rerank_encoder = self._init_model(
-            config, EmbeddingProvider.PipelineStage.RERANK
+            config, EmbeddingProvider.PipeStage.RERANK
         )
 
     def _init_model(self, config: EmbeddingConfig, stage: str):
@@ -54,7 +54,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             f"{stage_name}_transformer_type", "SentenceTransformer"
         )
 
-        if stage == EmbeddingProvider.PipelineStage.SEARCH:
+        if stage == EmbeddingProvider.PipeStage.SEARCH:
             self.do_search = True
             # Check if a model is set for the stage
             if not (model and dimension and transformer_type):
@@ -62,7 +62,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
                     f"Must set {stage}_model and {stage}_dimension for {stage} stage in order to initialize SentenceTransformerEmbeddingProvider."
                 )
 
-        if stage == EmbeddingProvider.PipelineStage.RERANK:
+        if stage == EmbeddingProvider.PipeStage.RERANK:
             # Check if a model is set for the stage
             if not (model and dimension and transformer_type):
                 return None
@@ -91,9 +91,9 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
     def get_embedding(
         self,
         text: str,
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
     ) -> list[float]:
-        if stage != EmbeddingProvider.PipelineStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.SEARCH:
             raise ValueError("`get_embedding` only supports `SEARCH` stage.")
         if not self.do_search:
             raise ValueError(
@@ -105,9 +105,9 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
     def get_embeddings(
         self,
         texts: list[str],
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
     ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipelineStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.SEARCH:
             raise ValueError("`get_embeddings` only supports `SEARCH` stage.")
         if not self.do_search:
             raise ValueError(
@@ -115,7 +115,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             )
         encoder = (
             self.search_encoder
-            if stage == EmbeddingProvider.PipelineStage.SEARCH
+            if stage == EmbeddingProvider.PipeStage.SEARCH
             else self.rerank_encoder
         )
         return encoder.encode(texts).tolist()
@@ -124,10 +124,10 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         self,
         query: str,
         documents: list[VectorSearchResult],
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.RERANK,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
     ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipelineStage.RERANK:
+        if stage != EmbeddingProvider.PipeStage.RERANK:
             raise ValueError("`rerank` only supports `RERANK` stage.")
         if not self.do_rerank:
             return documents[:limit]
@@ -156,7 +156,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
 
     def tokenize_string(
         self,
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
     ) -> list[int]:
         raise ValueError(
             "SentenceTransformerEmbeddingProvider does not support tokenize_string."

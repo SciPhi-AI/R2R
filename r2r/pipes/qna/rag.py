@@ -1,5 +1,5 @@
 """
-A simple example to demonstrate the usage of `QnARAGPipeline`.
+A simple example to demonstrate the usage of `QnARAGPipe`.
 """
 
 import logging
@@ -10,7 +10,7 @@ from r2r.core import (
     LLMProvider,
     LoggingDatabaseConnection,
     PromptProvider,
-    RAGPipeline,
+    RAGPipe,
     VectorDBProvider,
 )
 
@@ -19,9 +19,9 @@ from ...prompts.local.prompt import BasicPromptProvider
 logger = logging.getLogger(__name__)
 
 
-class QnARAGPipeline(RAGPipeline):
+class QnARAGPipe(RAGPipe):
     """
-    Implements a basic question and answer Retrieval-Augmented-Generation (RAG) pipeline.
+    Implements a basic question and answer Retrieval-Augmented-Generation (RAG) pipe.
     """
 
     def __init__(
@@ -35,9 +35,9 @@ class QnARAGPipeline(RAGPipeline):
         return_pompt: Optional[str] = BasicPromptProvider.BASIC_RETURN_PROMPT,
     ) -> None:
         """
-        Initializes the RAG pipeline with necessary components and configurations.
+        Initializes the RAG pipe with necessary components and configurations.
         """
-        logger.info(f"Initalizing `QnARAGPipeline` to process user requests.")
+        logger.info(f"Initalizing `QnARAGPipe` to process user requests.")
         if not prompt_provider:
             prompt_provider = BasicPromptProvider(
                 system_prompt,

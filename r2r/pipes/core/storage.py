@@ -1,5 +1,5 @@
 """
-A simple example to demonstrate the usage of `DefaultEmbeddingPipeline`.
+A simple example to demonstrate the usage of `DefaultEmbeddingPipe`.
 """
 import asyncio
 import copy
@@ -7,13 +7,13 @@ import logging
 from typing import Any, AsyncGenerator, Generator, Optional
 
 from r2r.core import (
-    EmbeddingPipeline,
+    EmbeddingPipe,
     EmbeddingProvider,
     Extraction,
     Fragment,
     FragmentType,
     LoggingDatabaseConnection,
-    StoragePipeline,
+    StoragePipe,
     Vector,
     VectorDBProvider,
     VectorEntry,
@@ -24,7 +24,7 @@ from r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)
 
-class DefaultVectorStoragePipeline(StoragePipeline):
+class DefaultVectorStoragePipe(StoragePipe):
     """
     Stores embeddings in a vector database asynchronously.
     """
@@ -38,10 +38,10 @@ class DefaultVectorStoragePipeline(StoragePipeline):
         **kwargs,
     ):
         """
-        Initializes the async vector storage pipeline with necessary components and configurations.
+        Initializes the async vector storage pipe with necessary components and configurations.
         """
         logger.info(
-            f"Initalizing an `AsyncVectorStoragePipeline` to store embeddings in a vector database."
+            f"Initalizing an `AsyncVectorStoragePipe` to store embeddings in a vector database."
         )
 
         super().__init__(
@@ -75,9 +75,9 @@ class DefaultVectorStoragePipeline(StoragePipeline):
         **kwargs: Any,
     ) -> None:
         """
-        Executes the async vector storage pipeline: storing embeddings in the vector database.
+        Executes the async vector storage pipe: storing embeddings in the vector database.
         """
-        self.initialize_pipeline()
+        self.initialize_pipe()
 
         batch_tasks = []
         vector_batch = []
@@ -100,7 +100,7 @@ class DefaultVectorStoragePipeline(StoragePipeline):
         await asyncio.gather(*batch_tasks)
 
 # """
-# A simple example to demonstrate the usage of `DefaultEmbeddingPipeline`.
+# A simple example to demonstrate the usage of `DefaultEmbeddingPipe`.
 # """
 # import asyncio
 # import copy
@@ -108,13 +108,13 @@ class DefaultVectorStoragePipeline(StoragePipeline):
 # from typing import Any, AsyncGenerator, Generator, Optional
 
 # from r2r.core import (
-#     EmbeddingPipeline,
+#     EmbeddingPipe,
 #     EmbeddingProvider,
 #     Extraction,
 #     Fragment,
 #     FragmentType,
 #     LoggingDatabaseConnection,
-#     StoragePipeline,
+#     StoragePipe,
 #     Vector,
 #     VectorDBProvider,
 #     VectorEntry,
@@ -126,7 +126,7 @@ class DefaultVectorStoragePipeline(StoragePipeline):
 # logger = logging.getLogger(__name__)
 
 
-# class DefaultVectorStoragePipeline(StoragePipeline):
+# class DefaultVectorStoragePipe(StoragePipe):
 #     """
 #     Stores embeddings in a vector database asynchronously.
 #     """
@@ -140,10 +140,10 @@ class DefaultVectorStoragePipeline(StoragePipeline):
 #         **kwargs,
 #     ):
 #         """
-#         Initializes the async vector storage pipeline with necessary components and configurations.
+#         Initializes the async vector storage pipe with necessary components and configurations.
 #         """
 #         logger.info(
-#             f"Initalizing an `AsyncVectorStoragePipeline` to store embeddings in a vector database."
+#             f"Initalizing an `AsyncVectorStoragePipe` to store embeddings in a vector database."
 #         )
 
 #         super().__init__(
@@ -174,7 +174,7 @@ class DefaultVectorStoragePipeline(StoragePipeline):
 #         **kwargs: Any,
 #     ) -> None:
 #         """
-#         Executes the async vector storage pipeline: storing embeddings in the vector database.
+#         Executes the async vector storage pipe: storing embeddings in the vector database.
 #         """
 #         batch_tasks = []
 #         vector_batch = []

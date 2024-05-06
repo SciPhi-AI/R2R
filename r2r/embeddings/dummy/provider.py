@@ -33,9 +33,9 @@ class DummyEmbeddingProvider(EmbeddingProvider):
     def get_embedding(
         self,
         text: str,
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
     ) -> list[float]:
-        if stage != EmbeddingProvider.PipelineStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.SEARCH:
             raise ValueError(
                 "DummyEmbeddingProvider only supports search stage."
             )
@@ -44,9 +44,9 @@ class DummyEmbeddingProvider(EmbeddingProvider):
     def get_embeddings(
         self,
         texts: list[str],
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
     ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipelineStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.SEARCH:
             raise ValueError(
                 "DummyEmbeddingProvider only supports search stage."
             )
@@ -61,7 +61,7 @@ class DummyEmbeddingProvider(EmbeddingProvider):
         self,
         transformed_query: str,
         texts: list[VectorSearchResult],
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.RERANK,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
     ):
         return texts[:limit]
@@ -70,7 +70,7 @@ class DummyEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         model: str,
-        stage: EmbeddingProvider.PipelineStage,
+        stage: EmbeddingProvider.PipeStage,
     ) -> list[int]:
         """Tokenizes the input string."""
         return [0]

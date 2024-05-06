@@ -1,14 +1,14 @@
 from typing import Any, Optional
 
 from r2r.core import (
-    EvalPipeline,
+    EvalPipe,
     EvalProvider,
     LoggingDatabaseConnection,
     log_output_to_db,
 )
 
 
-class BasicEvalPipeline(EvalPipeline):
+class BasicEvalPipe(EvalPipe):
     def __init__(
         self,
         eval_provider: Optional[EvalProvider] = None,

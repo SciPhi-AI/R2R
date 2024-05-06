@@ -7,11 +7,11 @@ from typing import AsyncGenerator, Generator, Optional, Union, cast
 from fastapi import FastAPI
 
 from r2r.core import (
-    DocumentParsingPipeline,
-    EmbeddingPipeline,
-    EvalPipeline,
+    DocumentParsingPipe,
+    EmbeddingPipe,
+    EvalPipe,
     LoggingDatabaseConnection,
-    RAGPipeline,
+    RAGPipe,
 )
 from r2r.main.utils import R2RConfig, apply_cors, find_project_root
 
@@ -23,10 +23,10 @@ MB_CONVERSION_FACTOR = 1024 * 1024
 
 
 def create_app(
-    parsing_pipeline: DocumentParsingPipeline,
-    embedding_pipeline: EmbeddingPipeline,
-    eval_pipeline: EvalPipeline,
-    rag_pipeline: RAGPipeline,
+    parsing_pipe: DocumentParsingPipe,
+    embedding_pipe: EmbeddingPipe,
+    eval_pipe: EvalPipe,
+    rag_pipe: RAGPipe,
     config: R2RConfig,
     upload_path: Optional[Path] = None,
     logging_connection: Optional[LoggingDatabaseConnection] = None,
@@ -45,12 +45,12 @@ def create_app(
     async def ingest_documents(document_request: DocumentsIngestorModel):
         # try:
         # for document in document_request.documents:
-        extracted_texts = parsing_pipeline.run(
+        extracted_texts = parsing_pipe.run(
             document_request.documents,
             **document_request.settings.ingestion_settings.dict(),
         )
         # for document in documents:
-        #     embedding_pipeline.run(
+        #     embedding_pipe.run(
         #         document,
         #         **document_request.settings.embedding_settings.dict(),
         #     )
@@ -91,29 +91,29 @@ def create_app(
     #         )
     #     # Extract file extension and check if it's an allowed type
     #     file_extension = file.filename.split(".")[-1]
-    #     if file_extension not in ingestion_pipeline.supported_types:
+    #     if file_extension not in ingestion_pipe.supported_types:
     #         raise HTTPException(
     #             status_code=400,
-    #             detail=f"Invalid file type. Allowed types are: {', '.join(ingestion_pipeline.supported_types)}.",
+    #             detail=f"Invalid file type. Allowed types are: {', '.join(ingestion_pipe.supported_types)}.",
     #         )
 
     #     file_location = upload_path / file.filename
     #     try:
     #         file_content = file.file.read()
 
-    #         documents = ingestion_pipeline.run(
+    #         documents = ingestion_pipe.run(
     #             document_id,
     #             {file_extension: file_content},
     #             metadata=metadata_json,
     #             **settings_model.ingestion_settings.dict(),
     #         )
 
-    #         if embedding_pipeline.is_async:
-    #             await embedding_pipeline.run(
+    #         if embedding_pipe.is_async:
+    #             await embedding_pipe.run(
     #                 documents, **settings_model.embedding_settings.dict()
     #             )
     #         else:
-    #             embedding_pipeline.run(
+    #             embedding_pipe.run(
     #                 documents, **settings_model.embedding_settings.dict()
     #             )
 
@@ -129,7 +129,7 @@ def create_app(
     # @app.post("/search/")
     # async def search(msg: RAGMessageModel):
     #     try:
-    #         rag_completion = rag_pipeline.run(
+    #         rag_completion = rag_pipe.run(
     #             msg.message,
     #             msg.filters,
     #             msg.search_limit,
@@ -153,21 +153,21 @@ def create_app(
     #     try:
     #         stream = msg.generation_config.stream
     #         if not stream:
-    #             untyped_completion = rag_pipeline.run(
+    #             untyped_completion = rag_pipe.run(
     #                 message=msg.message,
     #                 filters=msg.filters,
     #                 search_limit=msg.search_limit,
     #                 rerank_limit=msg.rerank_limit,
     #                 generation_config=msg.generation_config,
     #             )
-    #             # Tell the type checker that rag_completion is a RAGPipelineOutput
-    #             rag_completion = cast(RAGPipelineOutput, untyped_completion)
+    #             # Tell the type checker that rag_completion is a RAGPipeOutput
+    #             rag_completion = cast(RAGPipeOutput, untyped_completion)
 
     #             if not rag_completion.completion:
     #                 if rag_completion.search_results:
     #                     return rag_completion
     #                 raise ValueError(
-    #                     "No completion found in RAGPipelineOutput."
+    #                     "No completion found in RAGPipeOutput."
     #                 )
 
     #             completion_text = rag_completion.completion.choices[
@@ -186,7 +186,7 @@ def create_app(
     #                 "message": msg.message,
     #                 "context": rag_completion.context or "",
     #                 "completion_text": completion_text or "",
-    #                 "run_id": str(rag_pipeline.pipeline_run_info["run_id"]),
+    #                 "run_id": str(rag_pipe.pipe_run_info["run_id"]),
     #                 "settings": msg.settings.rag_settings.dict(),
     #             }
     #             if config.eval.get("sampling_fraction", 0.0) > 0.0:
@@ -200,7 +200,7 @@ def create_app(
 
     #             async def _stream_rag_completion(
     #                 msg: RAGMessageModel,
-    #                 rag_pipeline: RAGPipeline,
+    #                 rag_pipe: RAGPipe,
     #             ) -> AsyncGenerator[str, None]:
     #                 gen_config = GenerationConfig(
     #                     **(msg.generation_config.dict())
@@ -211,7 +211,7 @@ def create_app(
     #                     )
     #                 completion_generator = cast(
     #                     Generator[str, None, None],
-    #                     rag_pipeline.run_stream(
+    #                     rag_pipe.run_stream(
     #                         message=msg.message,
     #                         filters=msg.filters,
     #                         search_limit=msg.search_limit,
@@ -232,39 +232,39 @@ def create_app(
     #                 for item in completion_generator:
     #                     if item.startswith("<"):
     #                         if item.startswith(
-    #                             f"<{RAGPipeline.SEARCH_STREAM_MARKER}>"
+    #                             f"<{RAGPipe.SEARCH_STREAM_MARKER}>"
     #                         ):
     #                             current_marker = (
-    #                                 RAGPipeline.SEARCH_STREAM_MARKER
+    #                                 RAGPipe.SEARCH_STREAM_MARKER
     #                             )
     #                         elif item.startswith(
-    #                             f"<{RAGPipeline.CONTEXT_STREAM_MARKER}>"
+    #                             f"<{RAGPipe.CONTEXT_STREAM_MARKER}>"
     #                         ):
     #                             current_marker = (
-    #                                 RAGPipeline.CONTEXT_STREAM_MARKER
+    #                                 RAGPipe.CONTEXT_STREAM_MARKER
     #                             )
     #                         elif item.startswith(
-    #                             f"<{RAGPipeline.COMPLETION_STREAM_MARKER}>"
+    #                             f"<{RAGPipe.COMPLETION_STREAM_MARKER}>"
     #                         ):
     #                             current_marker = (
-    #                                 RAGPipeline.COMPLETION_STREAM_MARKER
+    #                                 RAGPipe.COMPLETION_STREAM_MARKER
     #                             )
     #                         else:
     #                             current_marker = None
     #                     else:
     #                         if (
     #                             current_marker
-    #                             == RAGPipeline.SEARCH_STREAM_MARKER
+    #                             == RAGPipe.SEARCH_STREAM_MARKER
     #                         ):
     #                             search_results += item
     #                         elif (
     #                             current_marker
-    #                             == RAGPipeline.CONTEXT_STREAM_MARKER
+    #                             == RAGPipe.CONTEXT_STREAM_MARKER
     #                         ):
     #                             context += item
     #                         elif (
     #                             current_marker
-    #                             == RAGPipeline.COMPLETION_STREAM_MARKER
+    #                             == RAGPipe.COMPLETION_STREAM_MARKER
     #                         ):
     #                             completion_text += item
     #                     yield item
@@ -288,7 +288,7 @@ def create_app(
     #                     "context": context,
     #                     "completion_text": completion_text,
     #                     "run_id": str(
-    #                         rag_pipeline.pipeline_run_info["run_id"]
+    #                         rag_pipe.pipe_run_info["run_id"]
     #                     ),
     #                     "settings": msg.settings.rag_settings.dict(),
     #                 }
@@ -301,7 +301,7 @@ def create_app(
     #                     )
 
     #             return StreamingResponse(
-    #                 _stream_rag_completion(msg, rag_pipeline),
+    #                 _stream_rag_completion(msg, rag_pipe),
     #                 media_type="text/plain",
     #             )
     #     except Exception as e:
@@ -322,7 +322,7 @@ def create_app(
     #         run_id = payload.run_id
     #         settings = payload.settings
 
-    #         eval_pipeline.run(
+    #         eval_pipe.run(
     #             message, context, completion_text, run_id, **(settings.dict())
     #         )
 
@@ -339,7 +339,7 @@ def create_app(
     #     metadata_field: str, metadata_value: Union[bool, int, str]
     # ):
     #     try:
-    #         embedding_pipeline.vector_db_provider.delete_by_metadata(
+    #         embedding_pipe.vector_db_provider.delete_by_metadata(
     #             metadata_field, metadata_value
     #         )
     #         return {"message": "Entries deleted successfully."}
@@ -353,7 +353,7 @@ def create_app(
     # async def get_user_ids():
     #     try:
     #         user_ids = (
-    #             embedding_pipeline.vector_db_provider.get_all_unique_values(
+    #             embedding_pipe.vector_db_provider.get_all_unique_values(
     #                 metadata_field="user_id"
     #             )
     #         )
@@ -367,7 +367,7 @@ def create_app(
     # async def get_user_documents(user_id: str):
     #     try:
     #         document_ids = (
-    #             embedding_pipeline.vector_db_provider.get_all_unique_values(
+    #             embedding_pipe.vector_db_provider.get_all_unique_values(
     #                 metadata_field="document_id",
     #                 filter_field="user_id",
     #                 filter_value=user_id,
@@ -386,7 +386,7 @@ def create_app(
     #                 status_code=404, detail="Logging provider not found."
     #             )
     #         logs = logging_connection.get_logs(
-    #             config.app.get("max_logs", 100), filter.pipeline_type
+    #             config.app.get("max_logs", 100), filter.pipe_type
     #         )
     #         for log in logs:
     #             LogModel(**log).dict(by_alias=True)
@@ -405,7 +405,7 @@ def create_app(
     #                 status_code=404, detail="Logging provider not found."
     #             )
     #         logs = logging_connection.get_logs(
-    #             config.app.get("max_logs", 100), filter.pipeline_type
+    #             config.app.get("max_logs", 100), filter.pipe_type
     #         )
     #         logs_summary = process_logs(logs)
     #         events_summary = [
@@ -418,13 +418,13 @@ def create_app(
     #         logging.error(f":logs_summary: [Error](error={str(e)})")
     #         raise HTTPException(status_code=500, detail=str(e))
 
-    # @app.get("/get_rag_pipeline_env_var/")
-    # async def get_rag_pipeline_env_var():
+    # @app.get("/get_rag_pipe_env_var/")
+    # async def get_rag_pipe_env_var():
     #     try:
-    #         rag_pipeline = os.getenv("RAG_PIPELINE", None)
-    #         return {"rag_pipeline": rag_pipeline}
+    #         rag_pipe = os.getenv("RAG_PIPELINE", None)
+    #         return {"rag_pipe": rag_pipe}
     #     except Exception as e:
-    #         logging.error(f":rag_pipeline: [Error](error={str(e)})")
+    #         logging.error(f":rag_pipe: [Error](error={str(e)})")
     #         raise HTTPException(status_code=500, detail=str(e))
 
     # return app

@@ -1,5 +1,5 @@
 """
-Abstract base class for embedding pipelines.
+Abstract base class for embedding pipe.
 """
 
 import logging
@@ -11,12 +11,12 @@ from ..providers.embedding import EmbeddingProvider
 from ..providers.vector_db import VectorDBProvider, VectorEntry
 from ..utils import generate_run_id
 from ..utils.logging import LoggingDatabaseConnection
-from .async_pipeline import AsyncPipeline
+from .async_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
 
 
-class StoragePipeline(AsyncPipeline):
+class StoragePipe(AsyncPipe):
     def __init__(
         self,
         vector_db_provider: VectorDBProvider,
@@ -27,8 +27,8 @@ class StoragePipeline(AsyncPipeline):
         self.vector_db_provider = vector_db_provider
         super().__init__(logging_connection=logging_connection, **kwargs)
 
-    def initialize_pipeline(self, *args, **kwargs) -> None:
-        self.pipeline_run_info = {
+    def initialize_pipe(self, *args, **kwargs) -> None:
+        self.pipe_run_info = {
             "run_id": generate_run_id(),
             "type": "storage",
         }

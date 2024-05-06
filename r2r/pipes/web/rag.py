@@ -1,5 +1,5 @@
 """
-A simple example to demonstrate the usage of `WebRAGPipeline`.
+A simple example to demonstrate the usage of `WebRAGPipe`.
 """
 
 import logging
@@ -11,8 +11,8 @@ from r2r.core import (
     LLMChatCompletion,
     LLMProvider,
     LoggingDatabaseConnection,
-    RAGPipeline,
-    RAGPipelineOutput,
+    RAGPipe,
+    RAGPipeOutput,
     VectorDBProvider,
     VectorSearchResult,
     log_output_to_db,
@@ -42,7 +42,7 @@ REMINDER - Use line item references to like [1], [2], ... refer to specifically 
 logger = logging.getLogger(__name__)
 
 
-class WebRAGPipeline(RAGPipeline):
+class WebRAGPipe(RAGPipe):
     def __init__(
         self,
         llm_provider: LLMProvider,
@@ -53,7 +53,7 @@ class WebRAGPipeline(RAGPipeline):
             WEB_RAG_SYSTEM_PROMPT, WEB_RAG_RETURN_PROMPT
         ),
     ) -> None:
-        logger.info(f"Initalizing `WebRAGPipeline` to process user requests.")
+        logger.info(f"Initalizing `WebRAGPipe` to process user requests.")
         super().__init__(
             llm_provider=llm_provider,
             vector_db_provider=vector_db_provider,
@@ -122,9 +122,9 @@ class WebRAGPipeline(RAGPipeline):
         rerank_limit=15,
         *args,
         **kwargs,
-    ) -> Union[RAGPipelineOutput, LLMChatCompletion]:
+    ) -> Union[RAGPipeOutput, LLMChatCompletion]:
         """
-        Run the RAG pipeline in streaming mode.
+        Run the RAG pipe in streaming mode.
         """
         search_limit = rerank_limit
         rerank_limit = 2 * rerank_limit
@@ -163,7 +163,7 @@ class WebRAGPipeline(RAGPipeline):
         **kwargs,
     ) -> Generator[str, None, None]:
         """
-        Run the RAG pipeline in streaming mode.
+        Run the RAG pipe in streaming mode.
         """
         search_limit = rerank_limit
         rerank_limit = 2 * rerank_limit

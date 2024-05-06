@@ -1,5 +1,5 @@
 """
-A simple example to demonstrate the usage of `DefaultDocumentParsingPipeline`.
+A simple example to demonstrate the usage of `DefaultDocumentParsingPipe`.
 """
 import asyncio
 import logging
@@ -7,7 +7,7 @@ from typing import AsyncGenerator, Optional
 
 from r2r.core import (
     Document,
-    DocumentParsingPipeline,
+    DocumentParsingPipe,
     DocumentType,
     Extraction,
     LoggingDatabaseConnection,
@@ -29,7 +29,7 @@ from r2r.core.utils import generate_id_from_label
 logger = logging.getLogger(__name__)
 
 
-class DefaultDocumentParsingPipeline(DocumentParsingPipeline):
+class DefaultDocumentParsingPipe(DocumentParsingPipe):
     """
     Processes incoming documents into plaintext based on their data type.
     Supports TXT, JSON, HTML, and PDF formats.
@@ -49,38 +49,38 @@ class DefaultDocumentParsingPipeline(DocumentParsingPipeline):
 
     def __init__(
         self,
-        selected_parsers: Optional[dict[DocumentType, Parser]] = None,
+        selected_parsers: Optional[dict[DocumentType, str]] = None,
         override_parsers: Optional[dict[DocumentType, Parser]] = None,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
     ):
-        logger.info(
-            f"Initializing a `DefaultDocumentParsingPipeline` to process incoming documents."
-        )
+        logger.info("Initializing a `DefaultDocumentParsingPipe` to parse incoming documents.")
+        super().__init__(logging_connection)
+        self.pipe_run_info = None
 
-        super().__init__(
-            logging_connection,
-        )
-        self.pipeline_run_info = None
-        self.parsers = {}
-        if selected_parsers is not None:
-            for ingestion_type, parser in selected_parsers.items():
-                if ingestion_type not in self.AVAILABLE_PARSERS:
-                    raise ValueError(
-                        f"parser for {ingestion_type} not supported by `DefaultDocumentParsingPipeline`."
-                    )
-                if parser not in self.AVAILABLE_PARSERS[ingestion_type]:
-                    raise ValueError(
-                        f"parser `{parser}` not available for `{ingestion_type}` in `DefaultDocumentParsingPipeline`."
-                    )
-                self.parsers[ingestion_type] = self.AVAILABLE_PARSERS[
-                    ingestion_type
-                ][parser]()
-        else:
-            self.parsers = {
-                k: v["default"]()
-                for k, v in DefaultDocumentParsingPipeline.AVAILABLE_PARSERS.items()
-            }
+        # Initialize parsers with defaults and apply selected parsers
+        self.parsers = {
+            doc_type: self.AVAILABLE_PARSERS[doc_type]["default"]()
+            for doc_type in DefaultDocumentParsingPipe.AVAILABLE_PARSERS
+        }
 
+        # Update with selected parsers if provided
+        if selected_parsers:
+            for doc_type, parser_key in selected_parsers.items():
+                if doc_type not in self.parsers:
+                    available_types = ", ".join(self.AVAILABLE_PARSERS.keys())
+                    raise ValueError(f"Unsupported document type '{doc_type}'. Supported types are: {available_types}")
+                if parser_key not in self.AVAILABLE_PARSERS[doc_type]:
+                    available_parsers = ", ".join(self.AVAILABLE_PARSERS[doc_type].keys())
+                    raise ValueError(f"Parser '{parser_key}' not available for '{doc_type}'. Available parsers are: {available_parsers}")
+                self.parsers[doc_type] = self.AVAILABLE_PARSERS[doc_type][parser_key]()
+
+        # Apply overrides if provided
+        if override_parsers:
+            for doc_type, parser in override_parsers.items():
+                if doc_type in self.parsers:
+                    self.parsers[doc_type] = parser
+                else:
+                    logger.warning(f"Attempting to override a parser for an unsupported document type '{doc_type}'.")
         if override_parsers is not None:
             for entry_type, parser in override_parsers.items():
                 self.parsers[entry_type] = parser
@@ -88,7 +88,7 @@ class DefaultDocumentParsingPipeline(DocumentParsingPipeline):
     @property
     def supported_types(self) -> list[str]:
         """
-        Lists the data types supported by the pipeline.
+        Lists the data types supported by the pipe.
         """
         return [entry_type for entry_type in DocumentType]
 
@@ -98,7 +98,7 @@ class DefaultDocumentParsingPipeline(DocumentParsingPipeline):
     ) -> AsyncGenerator[Extraction, None]:
         if document.type not in self.parsers:
             logger.error(
-                f"Parser for {document.type} not found in `AsyncBasicDocumentParsingPipeline`."
+                f"Parser for {document.type} not found in `AsyncBasicDocumentParsingPipe`."
             )
             return
         parser = self.parsers[document.type]
@@ -119,7 +119,7 @@ class DefaultDocumentParsingPipeline(DocumentParsingPipeline):
     async def run(
         self, documents: AsyncGenerator[Document, None]
     ) -> AsyncGenerator[Extraction, None]:
-        self.initialize_pipeline()
+        self.initialize_pipe()
         async for document in documents:
             async for extraction in self.parse(document):
                 yield extraction

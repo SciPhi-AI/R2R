@@ -5,10 +5,10 @@ from ..abstractions.document import Document, DocumentType, Extraction
 from ..parsers import Parser
 from ..utils import generate_run_id
 from ..utils.logging import LoggingDatabaseConnection
-from .async_pipeline import AsyncPipeline
+from .async_pipe import AsyncPipe
 
 
-class DocumentParsingPipeline(AsyncPipeline):
+class DocumentParsingPipe(AsyncPipe):
     def __init__(
         self,
         selected_parsers: Optional[dict[DocumentType, Parser]] = None,
@@ -21,8 +21,8 @@ class DocumentParsingPipeline(AsyncPipeline):
         self.override_parsers = override_parsers or {}
         super().__init__(logging_connection=logging_connection, **kwargs)
 
-    def initialize_pipeline(self, *args, **kwargs) -> None:
-        self.pipeline_run_info = {
+    def initialize_pipe(self, *args, **kwargs) -> None:
+        self.pipe_run_info = {
             "run_id": generate_run_id(),
             "type": "parsing",
         }

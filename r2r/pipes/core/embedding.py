@@ -1,5 +1,5 @@
 """
-A simple example to demonstrate the usage of `DefaultEmbeddingPipeline`.
+A simple example to demonstrate the usage of `DefaultEmbeddingPipe`.
 """
 import asyncio
 import copy
@@ -7,7 +7,7 @@ import logging
 from typing import Any, AsyncGenerator, Generator, Optional
 
 from r2r.core import (
-    EmbeddingPipeline,
+    EmbeddingPipe,
     EmbeddingProvider,
     Extraction,
     Fragment,
@@ -24,7 +24,7 @@ from r2r.embeddings import OpenAIEmbeddingProvider
 logger = logging.getLogger(__name__)
 
 
-class DefaultEmbeddingPipeline(EmbeddingPipeline):
+class DefaultEmbeddingPipe(EmbeddingPipe):
     """
     Embeds and stores documents using a specified embedding model and database.
     """
@@ -40,10 +40,10 @@ class DefaultEmbeddingPipeline(EmbeddingPipeline):
         **kwargs,
     ):
         """
-        Initializes the embedding pipeline with necessary components and configurations.
+        Initializes the embedding pipe with necessary components and configurations.
         """
         logger.info(
-            f"Initalizing an `DefaultEmbeddingPipeline` to embed and store documents."
+            f"Initalizing an `DefaultEmbeddingPipe` to embed and store documents."
         )
 
         super().__init__(
@@ -53,10 +53,10 @@ class DefaultEmbeddingPipeline(EmbeddingPipeline):
         self.text_splitter = text_splitter
         self.embedding_batch_size = embedding_batch_size
         self.id_prefix = id_prefix
-        self.pipeline_run_info = None
+        self.pipe_run_info = None
 
-    def initialize_pipeline(self, *args, **kwargs) -> None:
-        super().initialize_pipeline(*args, **kwargs)
+    def initialize_pipe(self, *args, **kwargs) -> None:
+        super().initialize_pipe(*args, **kwargs)
 
     async def fragment(
         self, extraction: Extraction
@@ -102,7 +102,7 @@ class DefaultEmbeddingPipeline(EmbeddingPipeline):
     async def embed(self, fragments: list[Fragment]) -> list[float]:
         return await self.embedding_provider.async_get_embeddings(
             [fragment.data for fragment in fragments],
-            EmbeddingProvider.PipelineStage.SEARCH,
+            EmbeddingProvider.PipeStage.SEARCH,
         )
 
     async def run(
@@ -111,9 +111,9 @@ class DefaultEmbeddingPipeline(EmbeddingPipeline):
         **kwargs: Any,
     ) -> AsyncGenerator[VectorEntry, None]:
         """
-        Executes the embedding pipeline: chunking, transforming, embedding, and storing documents.
+        Executes the embedding pipe: chunking, transforming, embedding, and storing documents.
         """
-        self.initialize_pipeline()
+        self.initialize_pipe()
 
         batch_tasks = []
         fragment_batch = []

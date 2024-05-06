@@ -4,7 +4,7 @@ from typing import Optional
 from ..utils.logging import LoggingDatabaseConnection, log_output_to_db
 
 
-class Pipeline(ABC):
+class Pipe(ABC):
     def __init__(
         self,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
@@ -12,13 +12,13 @@ class Pipeline(ABC):
         **kwargs
     ):
         self.logging_connection = logging_connection
-        self.pipeline_run_info: Optional[dict] = None
+        self.pipe_run_info: Optional[dict] = None
         self.is_async = False
 
-    def _check_pipeline_initialized(self) -> None:
-        if self.pipeline_run_info is None:
+    def _check_pipe_initialized(self) -> None:
+        if self.pipe_run_info is None:
             raise ValueError(
-                "The pipeline has not been initialized. Please call `initialize_pipeline` before running the pipeline."
+                "The pipe has not been initialized. Please call `initialize_pipe` before running the pipe."
             )
 
     def __getattribute__(self, name):
@@ -29,15 +29,15 @@ class Pipeline(ABC):
         if callable(attr) and name not in [
             "__init__",
             "__getattribute__",
-            "_check_pipeline_initialized",
+            "_check_pipe_initialized",
             "close",
-            "initialize_pipeline",
+            "initialize_pipe",
             "run",
             "run_stream",
         ]:
 
             def newfunc(*args, **kwargs):
-                self._check_pipeline_initialized()
+                self._check_pipe_initialized()
                 return attr(*args, **kwargs)
 
             return newfunc
@@ -49,7 +49,7 @@ class Pipeline(ABC):
             self.logging_connection.__exit__(None, None, None)
 
     @abstractmethod
-    def initialize_pipeline(self, *args, **kwargs):
+    def initialize_pipe(self, *args, **kwargs):
         pass
 
     @abstractmethod
@@ -59,10 +59,10 @@ class Pipeline(ABC):
     @abstractmethod
     def run_stream(self, *args, **kwargs):
         """
-        Runs the pipeline in streaming mode.
+        Runs the pipe in streaming mode.
         """
         raise NotImplementedError(
-            "Streaming mode is not supported default for `Pipeline`."
+            "Streaming mode is not supported default for `Pipe`."
         )
 
     @log_output_to_db

@@ -8,7 +8,7 @@ LLMChatCompletion = ChatCompletion
 LLMChatCompletionChunk = ChatCompletionChunk
 
 
-class RAGPipelineOutput:
+class RAGPipeOutput:
     def __init__(
         self,
         search_results: list[VectorSearchResult],
@@ -32,4 +32,4 @@ class RAGPipelineOutput:
         }
 
     def __repr__(self):
-        return f"RAGPipelineOutput(search_results={self.search_results}, context={self.context}, completion={self.completion}, metadata={self.metadata})"
+        return f"RAGPipeOutput(search_results={self.search_results}, context={self.context}, completion={self.completion}, metadata={self.metadata})"

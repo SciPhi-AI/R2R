@@ -75,8 +75,8 @@ class DocumentsIngestorModel(BaseModel):
 
 # class LogModel(BaseModel):
 #     timestamp: datetime = Field(alias="timestamp")
-#     pipeline_run_id: str = Field(alias="pipelineRunId")
-#     pipeline_run_type: str = Field(alias="pipelineRunType")
+#     pipe_run_id: str = Field(alias="pipeRunId")
+#     pipe_run_type: str = Field(alias="pipeRunType")
 #     method: str = Field(alias="method")
 #     result: str = Field(alias="result")
 #     log_level: str = Field(alias="logLevel")
@@ -89,8 +89,8 @@ class DocumentsIngestorModel(BaseModel):
 # # TODO - Split apart `retrieval` and `embedding` event logs
 # class SummaryLogModel(BaseModel):
 #     timestamp: datetime = Field(alias="timestamp")
-#     pipeline_run_id: str = Field(alias="pipelineRunId")
-#     pipeline_run_type: str = Field(alias="pipelineRunType")
+#     pipe_run_id: str = Field(alias="pipeRunId")
+#     pipe_run_type: str = Field(alias="pipeRunType")
 #     method: str = Field(alias="method")
 #     embedding_chunks: Optional[str] = Field(alias="embeddingChunks")
 #     search_query: str = Field(alias="searchQuery")
@@ -106,4 +106,4 @@ class DocumentsIngestorModel(BaseModel):
 
 
 # class LogFilterModel(BaseModel):
-#     pipeline_type: Optional[str] = None
+#     pipe_type: Optional[str] = None

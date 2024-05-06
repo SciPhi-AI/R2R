@@ -12,11 +12,11 @@ from r2r.core import (
 )
 from r2r.core.utils import RecursiveCharacterTextSplitter
 from r2r.llms import LiteLLM, LlamaCPP, LlamaCppConfig, OpenAILLM
-from r2r.pipelines import (
-    BasicEvalPipeline,
-    DefaultDocumentParsingPipeline,
-    DefaultEmbeddingPipeline,
-    QnARAGPipeline,
+from r2r.pipes import (
+    BasicEvalPipe,
+    DefaultDocumentParsingPipe,
+    DefaultEmbeddingPipe,
+    QnARAGPipe,
 )
 
 from .app import create_app
@@ -25,8 +25,8 @@ from .utils import R2RConfig
 dotenv.load_dotenv()
 
 
-class E2EPipelineFactory:
-    """Factory class to create the end-to-end pipeline."""
+class E2EPipeFactory:
+    """Factory class to create the end-to-end pipe."""
 
     @staticmethod
     def get_vector_db_provider(database_config: dict[str, Any]):
@@ -124,30 +124,30 @@ class E2EPipelineFactory:
         )
 
     @staticmethod
-    def create_pipeline(
+    def create_pipe(
         config: R2RConfig,
         vector_db_provider=None,
         embedding_provider=None,
         llm_provider=None,
         override_parsers=None,
-        ingestion_pipeline_impl=DefaultDocumentParsingPipeline,
-        embedding_pipeline_impl=DefaultEmbeddingPipeline,
-        rag_pipeline_impl=QnARAGPipeline,
-        eval_pipeline_impl=BasicEvalPipeline,
+        ingestion_pipe_impl=DefaultDocumentParsingPipe,
+        embedding_pipe_impl=DefaultEmbeddingPipe,
+        rag_pipe_impl=QnARAGPipe,
+        eval_pipe_impl=BasicEvalPipe,
         app_fn=create_app,
     ):
         logging.basicConfig(level=config.logging_database.get("level", "INFO"))
 
         embedding_provider = (
             embedding_provider
-            or E2EPipelineFactory.get_embedding_provider(config.embedding)
+            or E2EPipeFactory.get_embedding_provider(config.embedding)
         )
-        llm_provider = llm_provider or E2EPipelineFactory.get_llm_provider(
+        llm_provider = llm_provider or E2EPipeFactory.get_llm_provider(
             config.language_model
         )
         vector_db_provider = (
             vector_db_provider
-            or E2EPipelineFactory.get_vector_db_provider(
+            or E2EPipeFactory.get_vector_db_provider(
                 config.vector_database
             )
         )
@@ -155,46 +155,46 @@ class E2EPipelineFactory:
             embedding_provider.search_dimension
         )
 
-        eval_provider = E2EPipelineFactory.get_eval_provider(config.eval)
+        eval_provider = E2EPipeFactory.get_eval_provider(config.eval)
 
         logging_connection = LoggingDatabaseConnection(
             config.logging_database["provider"],
             config.logging_database["collection_name"],
         )
 
-        scrpr_pipeline = scraper_pipeline_impl()
-        ingst_pipeline = ingestion_pipeline_impl(
+        scrpr_pipe = scraper_pipe_impl()
+        ingst_pipe = ingestion_pipe_impl(
             override_parsers=override_parsers,
             selected_parsers={
                 DocumentType(k): v
                 for k, v in config.ingestion.get("selected_parsers").items()
             },
         )
-        embd_pipeline = embedding_pipeline_impl(
+        embd_pipe = embedding_pipe_impl(
             embedding_provider=embedding_provider,
             vector_db_provider=vector_db_provider,
             logging_connection=logging_connection,
-            text_splitter=E2EPipelineFactory.get_text_splitter(
+            text_splitter=E2EPipeFactory.get_text_splitter(
                 config.embedding["text_splitter"]
             ),
             embedding_batch_size=config.embedding.get("batch_size", 1),
         )
-        rag_pipeline = rag_pipeline_impl(
+        rag_pipe = rag_pipe_impl(
             embedding_provider=embedding_provider,
             llm_provider=llm_provider,
             vector_db_provider=vector_db_provider,
             logging_connection=logging_connection,
         )
-        eval_pipeline = eval_pipeline_impl(
+        eval_pipe = eval_pipe_impl(
             eval_provider, logging_connection=logging_connection
         )
 
         app = app_fn(
-            scraper_pipeline=scrpr_pipeline,
-            ingestion_pipeline=ingst_pipeline,
-            embedding_pipeline=embd_pipeline,
-            rag_pipeline=rag_pipeline,
-            eval_pipeline=eval_pipeline,
+            scraper_pipe=scrpr_pipe,
+            ingestion_pipe=ingst_pipe,
+            embedding_pipe=embd_pipe,
+            rag_pipe=rag_pipe,
+            eval_pipe=eval_pipe,
             config=config,
             logging_connection=logging_connection,
         )

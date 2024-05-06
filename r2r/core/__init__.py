@@ -9,7 +9,7 @@ from .abstractions.document import (
 from .abstractions.output import (
     LLMChatCompletion,
     LLMChatCompletionChunk,
-    RAGPipelineOutput,
+    RAGPipeOutput,
 )
 from .abstractions.vector import (
     Vector,
@@ -18,12 +18,12 @@ from .abstractions.vector import (
     VectorType,
 )
 from .agent.base import Agent
-from .pipelines.async_pipeline import AsyncPipeline
-from .pipelines.embedding import EmbeddingPipeline
-from .pipelines.eval import EvalPipeline
-from .pipelines.parsing import DocumentParsingPipeline
-from .pipelines.rag import RAGPipeline
-from .pipelines.storage import StoragePipeline
+from .pipes.async_pipe import AsyncPipe
+from .pipes.embedding import EmbeddingPipe
+from .pipes.eval import EvalPipe
+from .pipes.parsing import DocumentParsingPipe
+from .pipes.rag import RAGPipe
+from .pipes.storage import StoragePipe
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
 from .providers.eval import EvalConfig, EvalProvider
 from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
@@ -34,24 +34,24 @@ from .utils.logging import LoggingDatabaseConnection, log_output_to_db
 __all__ = [
     "LoggingDatabaseConnection",
     "log_output_to_db",
-    "RAGPipelineOutput",
+    "RAGPipeOutput",
     "VectorSearchResult",
     "VectorEntry",
     "VectorType",
     "Vector",
     "Agent",
-    "AsyncPipeline",
-    "EmbeddingPipeline",
-    "EvalPipeline",
-    "DocumentParsingPipeline",
+    "AsyncPipe",
+    "EmbeddingPipe",
+    "EvalPipe",
+    "DocumentParsingPipe",
     "DataType",
     "DocumentType",
     "Document",
     "Extraction",
     "FragmentType",
     "Fragment",
-    "RAGPipeline",
-    "StoragePipeline",
+    "RAGPipe",
+    "StoragePipe",
     "EmbeddingConfig",
     "EmbeddingProvider",
     "EvalConfig",
