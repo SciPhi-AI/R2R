@@ -41,7 +41,7 @@ class LanceDB(VectorDBProvider):
 
             api_key = os.getenv("LANCEDB_API_KEY")
             uri = os.getenv("LANCEDB_URI")
-            region = os.getenv("LANCEDB_API_KEY")
+region = os.getenv("LANCEDB_REGION")
 
             if uri is None:
                 raise ValueError(
