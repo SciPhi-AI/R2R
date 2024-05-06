@@ -1,7 +1,6 @@
 """
 A simple example to demonstrate the usage of `DefaultDocumentParsingPipe`.
 """
-import asyncio
 import logging
 from typing import AsyncGenerator, Optional
 

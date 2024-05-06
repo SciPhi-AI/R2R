@@ -2,25 +2,15 @@
 A simple example to demonstrate the usage of `DefaultEmbeddingPipe`.
 """
 import asyncio
-import copy
 import logging
-from typing import Any, AsyncGenerator, Generator, Optional
+from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
-    EmbeddingPipe,
-    EmbeddingProvider,
-    Extraction,
-    Fragment,
-    FragmentType,
     LoggingDatabaseConnection,
     StoragePipe,
-    Vector,
     VectorDBProvider,
     VectorEntry,
-    log_output_to_db,
 )
-from r2r.core.utils import TextSplitter, generate_id_from_label
-from r2r.embeddings import OpenAIEmbeddingProvider
 
 logger = logging.getLogger(__name__)
 

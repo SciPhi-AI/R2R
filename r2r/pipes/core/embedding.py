@@ -4,7 +4,7 @@ A simple example to demonstrate the usage of `DefaultEmbeddingPipe`.
 import asyncio
 import copy
 import logging
-from typing import Any, AsyncGenerator, Generator, Optional
+from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
     EmbeddingPipe,
@@ -14,7 +14,6 @@ from r2r.core import (
     FragmentType,
     LoggingDatabaseConnection,
     Vector,
-    VectorDBProvider,
     VectorEntry,
     log_output_to_db,
 )
