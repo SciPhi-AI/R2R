@@ -4,18 +4,19 @@ Abstract base class for embedding pipelines.
 
 import logging
 from abc import abstractmethod
-from typing import Any, Optional
+from typing import Any, Generator, Optional
 
+from ..abstractions.document import Extraction, Fragment
 from ..providers.embedding import EmbeddingProvider
 from ..providers.vector_db import VectorDBProvider, VectorEntry
 from ..utils import generate_run_id
 from ..utils.logging import LoggingDatabaseConnection
-from .pipeline import Pipeline
+from .async_pipeline import AsyncPipeline
 
 logger = logging.getLogger(__name__)
 
 
-class EmbeddingPipeline(Pipeline):
+class EmbeddingPipeline(AsyncPipeline):
     def __init__(
         self,
         embedding_provider: EmbeddingProvider,
@@ -35,31 +36,23 @@ class EmbeddingPipeline(Pipeline):
         }
 
     @abstractmethod
-    def transform_text(self, text: str) -> str:
+    def fragment(self, extraction: Extraction) -> list[Fragment]:
         pass
 
     @abstractmethod
-    def chunk_text(self, text: str) -> list[str]:
+    async def transform_fragments(
+        self, fragments: list[Fragment], metadatas: list[dict]
+    ) -> list[Fragment]:
         pass
 
     @abstractmethod
-    def transform_chunks(
-        self, chunks: list[Any], metadatas: list[dict]
-    ) -> list[Any]:
+    async def embed_fragments(
+        self, fragments: list[Fragment]
+    ) -> list[list[float]]:
         pass
 
     @abstractmethod
-    def embed_chunks(self, chunks: list[Any]) -> list[list[float]]:
+    async def run(
+        self, extractions: Generator[Extraction, None, None], **kwargs
+    ) -> VectorEntry:
         pass
-
-    @abstractmethod
-    def store_chunks(self, chunks: list[VectorEntry], *args, **kwargs) -> None:
-        pass
-
-    def run(self, documents: Any, **kwargs):
-        pass
-
-    def run_stream(self, documents: Any, **kwargs):
-        raise NotImplementedError(
-            "Streaming mode not supported for `EmbeddingPipeline`."
-        )

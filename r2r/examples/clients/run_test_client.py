@@ -59,7 +59,7 @@ print(f"Search response w/ filter:\n{filtered_search_response}\n\n")
 
 print("Deleting sample document in remote vector db...")
 # Delete a document
-response = client.filtered_deletion(
+response = client.delete_by_metadata(
     "document_id", generate_id_from_label("doc 2")
 )
 print(f"Deletion response:\n{response}\n\n")
@@ -82,7 +82,7 @@ file_path = os.path.join(current_file_directory, "..", "data", "test.pdf")
 print(f"Uploading and processing file: {file_path}...")
 # # Upload and process a file
 metadata = {"tags": ["example", "test"]}
-upload_pdf_response = client.upload_and_process_file(
+upload_pdf_response = client.ingest_file(
     generate_id_from_label("pdf 1"), file_path, metadata, None
 )
 print(f"Upload test pdf response:\n{upload_pdf_response}\n\n")

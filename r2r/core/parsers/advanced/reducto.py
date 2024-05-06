@@ -4,7 +4,7 @@ from typing import Optional
 
 import requests
 
-from ..base import Ingestor
+from ..base import Parser
 
 
 class ReductoAPIError(Exception):
@@ -13,14 +13,14 @@ class ReductoAPIError(Exception):
     pass
 
 
-class ReductoAdapter(Ingestor[dict]):
+class ReductoParser(Parser[dict]):
     def __init__(
         self, s3_bucket: Optional[str] = None, api_key: Optional[str] = None
     ):
         try:
             import boto3
         except ImportError:
-            raise ImportError("Please install boto3 to use the ReductoAdapter")
+            raise ImportError("Please install boto3 to use the ReductoParser")
 
         api_key = api_key or os.getenv("REDUCTO_API_KEY")
         s3_bucket = s3_bucket or os.getenv("AWS_S3_BUCKET")

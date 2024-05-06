@@ -21,12 +21,12 @@ class RAGPipelineOutput:
         self.completion = completion
         self.metadata = metadata or {}
 
-    def to_dict(self):
+    def dict(self):
         return {
             "search_results": self.search_results,
             "context": self.context,
             "completion": (
-                self.completion.to_dict() if self.completion else None
+                self.completion.dict() if self.completion else None
             ),
             "metadata": self.metadata,
         }

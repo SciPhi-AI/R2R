@@ -2,26 +2,30 @@ import json
 import string
 from abc import ABC, abstractmethod
 from io import BytesIO
-from typing import Any, Generator, Generic, TypeVar, Union
+from typing import Any, AsyncGenerator, Generic, TypeVar, Union
 
 from bs4 import BeautifulSoup
+
+from ..abstractions.document import DataType
 
 T = TypeVar("T")
 
 
-class Ingestor(ABC, Generic[T]):
+class Parser(ABC, Generic[T]):
     @abstractmethod
-    def ingest(self, data: Any) -> Generator[str, None, None]:
+    async def ingest(self, data: Any) -> AsyncGenerator[DataType, None]:
         pass
 
 
-class TextAdapter(Ingestor[str]):
-    def ingest(self, data: str) -> Generator[str, None, None]:
+class TextParser(Parser[str]):
+    async def ingest(self, data: str) -> AsyncGenerator[DataType, None]:
         yield data
 
 
-class JSONAdapter(Ingestor[str]):
-    def ingest(self, data: Union[str, bytes]) -> Generator[str, None, None]:
+class JSONParser(Parser[str]):
+    async def ingest(
+        self, data: Union[str, bytes]
+    ) -> AsyncGenerator[str, None]:
         if isinstance(data, bytes):
             data = data.decode("utf-8")
         yield self._parse_json(json.loads(data))
@@ -61,13 +65,13 @@ class JSONAdapter(Ingestor[str]):
         return format_json_as_text(remove_objects_with_null(data))
 
 
-class HTMLAdapter(Ingestor[str]):
-    def ingest(self, data: str) -> list[str]:
+class HTMLParser(Parser[str]):
+    async def ingest(self, data: str) -> AsyncGenerator[str, None]:
         soup = BeautifulSoup(data, "html.parser")
         yield soup.get_text()
 
 
-class PDFAdapter(Ingestor[str]):
+class PDFParser(Parser[str]):
     def __init__(self):
         try:
             from pypdf import PdfReader
@@ -75,10 +79,10 @@ class PDFAdapter(Ingestor[str]):
             self.PdfReader = PdfReader
         except ImportError:
             raise ValueError(
-                "Error, `pypdf` is required to run `PyPDFAdapter`. Please install it using `pip install pypdf`."
+                "Error, `pypdf` is required to run `PyPDFParser`. Please install it using `pip install pypdf`."
             )
 
-    def ingest(self, data: bytes) -> Generator[str, None, None]:
+    async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
         pdf = self.PdfReader(BytesIO(data))
         for page in pdf.pages:
             page_text = page.extract_text()
@@ -89,7 +93,7 @@ class PDFAdapter(Ingestor[str]):
                 yield page_text
 
 
-class PPTAdapter(Ingestor[str]):
+class PPTParser(Parser[str]):
     def __init__(self):
         try:
             from pptx import Presentation
@@ -97,10 +101,10 @@ class PPTAdapter(Ingestor[str]):
             self.Presentation = Presentation
         except ImportError:
             raise ValueError(
-                "Error, `python-pptx` is required to run `PPTAdapter`. Please install it using `pip install python-pptx`."
+                "Error, `python-pptx` is required to run `PPTParser`. Please install it using `pip install python-pptx`."
             )
 
-    def ingest(self, data: bytes) -> list[str]:
+    async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
         prs = self.Presentation(BytesIO(data))
         for slide in prs.slides:
             for shape in slide.shapes:
@@ -108,7 +112,7 @@ class PPTAdapter(Ingestor[str]):
                     yield shape.text
 
 
-class DOCXAdapter(Ingestor[str]):
+class DOCXParser(Parser[str]):
     def __init__(self):
         try:
             from docx import Document
@@ -116,16 +120,16 @@ class DOCXAdapter(Ingestor[str]):
             self.Document = Document
         except ImportError:
             raise ValueError(
-                "Error, `python-docx` is required to run `DOCXAdapter`. Please install it using `pip install python-docx`."
+                "Error, `python-docx` is required to run `DOCXParser`. Please install it using `pip install python-docx`."
             )
 
-    def ingest(self, data: bytes) -> Generator[str, None, None]:
+    async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
         doc = self.Document(BytesIO(data))
         for paragraph in doc.paragraphs:
             yield paragraph.text
 
 
-class CSVAdapter(Ingestor[str]):
+class CSVParser(Parser[str]):
     def __init__(self):
         import csv
         from io import StringIO
@@ -133,7 +137,9 @@ class CSVAdapter(Ingestor[str]):
         self.csv = csv
         self.StringIO = StringIO
 
-    def ingest(self, data: Union[str, bytes]) -> Generator[str, None, None]:
+    async def ingest(
+        self, data: Union[str, bytes]
+    ) -> AsyncGenerator[str, None]:
         if isinstance(data, bytes):
             data = data.decode("utf-8")
         csv_reader = self.csv.reader(self.StringIO(data))
@@ -141,7 +147,7 @@ class CSVAdapter(Ingestor[str]):
             yield ", ".join(row)
 
 
-class XLSXAdapter(Ingestor[str]):
+class XLSXParser(Parser[str]):
     def __init__(self):
         try:
             from openpyxl import load_workbook
@@ -149,23 +155,23 @@ class XLSXAdapter(Ingestor[str]):
             self.load_workbook = load_workbook
         except ImportError:
             raise ValueError(
-                "Error, `openpyxl` is required to run `XLSXAdapter`. Please install it using `pip install openpyxl`."
+                "Error, `openpyxl` is required to run `XLSXParser`. Please install it using `pip install openpyxl`."
             )
 
-    def ingest(self, data: bytes) -> Generator[str, None, None]:
+    async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
         wb = self.load_workbook(filename=BytesIO(data))
         for sheet in wb.worksheets:
             for row in sheet.iter_rows(values_only=True):
                 yield ", ".join(map(str, row))
 
 
-class MarkdownAdapter(Ingestor[str]):
+class MarkdownParser(Parser[str]):
     def __init__(self):
         import markdown
 
         self.markdown = markdown
 
-    def ingest(self, data: str) -> Generator[str, None, None]:
+    async def ingest(self, data: str) -> AsyncGenerator[str, None]:
         html = self.markdown.markdown(data)
         soup = BeautifulSoup(html, "html.parser")
         yield soup.get_text()

@@ -13,12 +13,10 @@ from r2r.core import (
 from r2r.core.utils import RecursiveCharacterTextSplitter
 from r2r.llms import LiteLLM, LlamaCPP, LlamaCppConfig, OpenAILLM
 from r2r.pipelines import (
-    AsyncBasicEmbeddingPipeline,
-    BasicEmbeddingPipeline,
     BasicEvalPipeline,
-    BasicIngestionPipeline,
-    BasicScraperPipeline,
-    IngestionType,
+    DefaultDocumentParsingPipeline,
+    DefaultEmbeddingPipeline,
+    DocumentType,
     QnARAGPipeline,
 )
 
@@ -43,9 +41,14 @@ class E2EPipelineFactory:
 
             return PGVectorDB(VectorDBConfig.create(**database_config))
         elif database_config["provider"] == "local":
-            from r2r.vector_dbs import LocalDBConfig, LocalVectorDB
+            from r2r.vector_dbs import (
+                LocalVectorDBConfig,
+                LocalVectorDBProvider,
+            )
 
-            return LocalVectorDB(LocalDBConfig.create(**database_config))
+            return LocalVectorDBProvider(
+                LocalVectorDBConfig.create(**database_config)
+            )
 
     @staticmethod
     def get_embedding_provider(embedding_config: dict[str, Any]):
@@ -127,10 +130,9 @@ class E2EPipelineFactory:
         vector_db_provider=None,
         embedding_provider=None,
         llm_provider=None,
-        override_ingestors=None,
-        scraper_pipeline_impl=BasicScraperPipeline,
-        ingestion_pipeline_impl=BasicIngestionPipeline,
-        embedding_pipeline_impl=AsyncBasicEmbeddingPipeline,
+        override_parsers=None,
+        ingestion_pipeline_impl=DefaultDocumentParsingPipeline,
+        embedding_pipeline_impl=DefaultEmbeddingPipeline,
         rag_pipeline_impl=QnARAGPipeline,
         eval_pipeline_impl=BasicEvalPipeline,
         app_fn=create_app,
@@ -163,10 +165,10 @@ class E2EPipelineFactory:
 
         scrpr_pipeline = scraper_pipeline_impl()
         ingst_pipeline = ingestion_pipeline_impl(
-            override_ingestors=override_ingestors,
-            selected_ingestors={
-                IngestionType(k): v
-                for k, v in config.ingestion.get("selected_ingestors").items()
+            override_parsers=override_parsers,
+            selected_parsers={
+                DocumentType(k): v
+                for k, v in config.ingestion.get("selected_parsers").items()
             },
         )
         embd_pipeline = embedding_pipeline_impl(

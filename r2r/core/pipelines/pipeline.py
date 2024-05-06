@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from ..utils.logging import LoggingDatabaseConnection
+from ..utils.logging import LoggingDatabaseConnection, log_output_to_db
 
 
 class Pipeline(ABC):
@@ -61,4 +61,18 @@ class Pipeline(ABC):
         """
         Runs the pipeline in streaming mode.
         """
-        pass
+        raise NotImplementedError(
+            "Streaming mode is not supported default for `Pipeline`."
+        )
+
+    @log_output_to_db
+    def log(self, data: any) -> dict:
+        """
+        Extracts text from a document.
+        """
+        try:
+            data = data.dict()
+        except AttributeError:
+            raise ValueError("Data must be convertable to a dictionary.")
+
+        return data.dict()

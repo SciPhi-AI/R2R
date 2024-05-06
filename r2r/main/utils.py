@@ -7,7 +7,13 @@ from typing import Any, Union
 
 from fastapi.middleware.cors import CORSMiddleware
 
-from r2r.core import DocumentPage
+from r2r.core import (
+    EmbeddingConfig,
+    EvalConfig,
+    LLMConfig,
+    PromptConfig,
+    VectorDBConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +63,12 @@ class R2RConfig:
             self._validate_config_section(default_config, section, keys)
             setattr(self, section, default_config[section])
 
+        self.embedding = EmbeddingConfig.create(**self.embedding)
+        self.eval = EvalConfig.create(**self.eval)
+        self.language_model = LLMConfig.create(**self.language_model)
+        self.prompt = PromptConfig.create(**self.prompt)
+        self.vector_database = VectorDBConfig.create(**self.vector_database)
+
     def _validate_config_section(
         self, config_data: dict[str, Any], section: str, keys: list
     ):
@@ -66,7 +78,7 @@ class R2RConfig:
             raise ValueError(f"Missing required keys in '{section}' config")
 
     @classmethod
-    def load_config(cls, config_path: str = None) -> "R2RConfig":
+    def from_json(cls, config_path: str = None) -> "R2RConfig":
         if config_path is None:
             # Get the root directory of the project
             root_dir = os.path.dirname(
@@ -228,7 +240,7 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
             metadata = metadata_match.group(1).replace("'", '"')
             metadata_json = json.loads(metadata)
 
-            processed_result["document"] = DocumentPage(
+            processed_result["document"] = BaseDocument(
                 document_id=id_match.group(1),
                 page_number=int(page_number.group(1)),
                 text=text_match.group(1),
@@ -268,13 +280,13 @@ def process_event(event: dict[str, Any], pipeline_type: str) -> dict[str, Any]:
             processed_result["eval_results"] = json.loads(result)
         except Exception as e:
             logger.error(f"Error {e} decoding JSON: {e}")
-    elif method == "transform_chunks":
+    elif method == "transform_fragments":
         try:
             processed_result["method"] = "Embedding"
             processed_result["embedding_chunks"] = result
         except Exception as e:
             logger.error(
-                f"Error {e} processing 'transform_chunks' event: {event}"
+                f"Error {e} processing 'transform_fragments' event: {event}"
             )
 
     return processed_result

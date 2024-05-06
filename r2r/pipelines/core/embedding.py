@@ -1,19 +1,25 @@
 """
-A simple example to demonstrate the usage of `BasicEmbeddingPipeline`.
+A simple example to demonstrate the usage of `DefaultEmbeddingPipeline`.
 """
 
+import asyncio
 import copy
 import logging
+import uuid
 from typing import Any, Generator, Optional, Tuple
 
 from r2r.core import (
-    DocumentPage,
     EmbeddingPipeline,
     EmbeddingProvider,
+    Extraction,
+    Fragment,
+    FragmentType,
     LoggingDatabaseConnection,
+    Vector,
     VectorDBProvider,
     VectorEntry,
-    log_execution_to_db,
+    VectorType,
+    log_output_to_db,
 )
 from r2r.core.utils import TextSplitter, generate_id_from_label
 from r2r.embeddings import OpenAIEmbeddingProvider
@@ -21,7 +27,7 @@ from r2r.embeddings import OpenAIEmbeddingProvider
 logger = logging.getLogger(__name__)
 
 
-class BasicEmbeddingPipeline(EmbeddingPipeline):
+class DefaultEmbeddingPipeline(EmbeddingPipeline):
     """
     Embeds and stores documents using a specified embedding model and database.
     """
@@ -41,7 +47,7 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         Initializes the embedding pipeline with necessary components and configurations.
         """
         logger.info(
-            f"Initalizing a `BasicEmbeddingPipeline` to embed and store documents."
+            f"Initalizing an `DefaultEmbeddingPipeline` to embed and store documents."
         )
 
         super().__init__(
@@ -54,155 +60,118 @@ class BasicEmbeddingPipeline(EmbeddingPipeline):
         self.id_prefix = id_prefix
         self.pipeline_run_info = None
 
-    @log_execution_to_db
-    def ingress(self, document: DocumentPage) -> dict:
-        """
-        Extracts text from a document.
-        """
-        return {
-            "document_id": str(document.document_id),
-            "page_number": str(document.page_number),
-            "metadata": document.metadata,
-            "text": document.text,
-        }
-
     def initialize_pipeline(self, *args, **kwargs) -> None:
         super().initialize_pipeline(*args, **kwargs)
 
-    def transform_text(self, text: str) -> str:
-        """
-        Transforms text before chunking, if necessary.
-        """
-        return text
-
-    def chunk_text(self, text: str) -> list[str]:
+    def fragment(self, extraction: Extraction) -> list[Fragment]:
         """
         Splits text into manageable chunks for embedding.
         """
-        return [
+        if not isinstance(extraction, Extraction):
+            raise ValueError(
+                f"Expected an Extraction, but received {type(extraction)}."
+            )
+        if not isinstance(extraction.data, str):
+            raise ValueError(
+                f"Expected a string, but received {type(extraction.data)}."
+            )
+        text_chunks = [
             ele.page_content
-            for ele in self.text_splitter.create_documents([text])
+            for ele in self.text_splitter.create_documents([extraction.data])
         ]
+        fragments = []
+        for iteration, chunk in enumerate(text_chunks):
+            fragments.append(
+                Fragment(
+                    id=generate_id_from_label(f"{extraction.id}-{iteration}"),
+                    type=FragmentType.TEXT,
+                    data=chunk,
+                    metadata=copy.deepcopy(extraction.metadata),
+                    extraction_id=extraction.id,
+                    document_id=extraction.document_id,
+                )
+            )
+        return fragments
 
-    @log_execution_to_db
-    def transform_chunks(
-        self, chunks: list[str], metadatas: list[dict]
-    ) -> list[str]:
+    @log_output_to_db
+    def transform_fragments(
+        self, fragments: list[Fragment], metadatas: list[dict]
+    ) -> list[Fragment]:
         """
         Transforms text chunks based on their metadata, e.g., adding prefixes.
         """
-        transformed_chunks = []
-        for chunk, metadata in zip(chunks, metadatas):
+        transformed_fragments = []
+        for fragment, metadata in zip(fragments, metadatas):
             if "chunk_prefix" in metadata:
                 prefix = metadata.pop("chunk_prefix")
-                transformed_chunks.append(f"{prefix}\n{chunk}")
-            else:
-                transformed_chunks.append(chunk)
-        return transformed_chunks
+                fragment.data = f"{prefix}\n{fragment.data}"
+            transformed_fragments.append(fragment)
+        return transformed_fragments
 
-    def embed_chunks(self, chunks: list[str]) -> list[list[float]]:
-        """
-        Generates embeddings for each text chunk using the embedding model.
-        """
-        return self.embedding_provider.get_embeddings(
-            chunks, EmbeddingProvider.PipelineStage.SEARCH
+    async def embed_fragments(
+        self, fragments: list[Fragment]
+    ) -> list[list[float]]:
+        return await self.embedding_provider.async_get_embeddings(
+            [fragment.data for fragment in fragments],
+            EmbeddingProvider.PipelineStage.SEARCH,
         )
 
-    def store_chunks(
-        self, chunks: list[VectorEntry], do_upsert: bool, *args, **kwargs
-    ) -> None:
-        """
-        Stores the embedded chunks in the database, with an option to upsert.
-        """
-        if do_upsert:
-            self.vector_db_provider.upsert_entries(chunks)
-        else:
-            self.vector_db_provider.copy_entries(chunks)
-
-    def run(
+    async def run(
         self,
-        documents: Generator[DocumentPage, None, None],
+        extractions: Generator[Extraction, None, None],
         do_chunking=False,
         do_upsert=True,
         **kwargs: Any,
-    ):
+    ) -> Generator[VectorEntry, None, None]:
         """
         Executes the embedding pipeline: chunking, transforming, embedding, and storing documents.
         """
         self.initialize_pipeline()
 
         logger.debug(
-            f"Running the `BasicEmbeddingPipeline` with pipeline_run_info={self.pipeline_run_info}."
+            f"Running the `DefaultEmbeddingPipeline` asynchronously with pipeline_run_info={self.pipeline_run_info}."
         )
+        print("extractions = ", extractions)
 
-        batch_data = []
-
-        for document in documents:
-            self.ingress(document)
-
-            chunks = (
-                self.chunk_text(document.text)
-                if do_chunking
-                else [document.text]
-            )
-            for chunk_iter, chunk in enumerate(chunks):
-                batch_data.append(
-                    (
-                        document.document_id,
-                        document.page_number,
-                        chunk_iter,
-                        chunk,
-                        copy.copy(document.metadata),
-                    )
+        fragment_batch = []
+        async for extraction in extractions:
+            print("extraction = ", extraction)
+            if not isinstance(extraction.data, str):
+                raise ValueError(
+                    f"Expected a string extraction, but received {type(extraction)}."
                 )
+            self.log(extraction)
+            fragments = self.fragment(extraction)
+            print("fragments = ", fragments)
 
-                if len(batch_data) == self.embedding_batch_size:
-                    self._process_batches(batch_data, do_upsert)
-                    batch_data = []
-
-        # Process any remaining batch
-        if batch_data:
-            self._process_batches(batch_data, do_upsert)
-
-    def _process_batches(
-        self, batch_data: list[Tuple[str, str, dict]], do_upsert: bool
-    ):
-        """
-        Processes batches of documents: transforms, embeds, and stores chunks.
-        """
-        logger.debug(f"Parsing batch of size {len(batch_data)}.")
-
-        entries = []
-
-        # Unpack document IDs, indices, and chunks for transformation and embedding
-        document_ids, page_numbers, chunk_nums, raw_chunks, metadatas = zip(
-            *batch_data
-        )
-        transformed_chunks = self.transform_chunks(raw_chunks, metadatas)
-        embedded_chunks = self.embed_chunks(transformed_chunks)
-
-        for (
-            document_id,
-            page_number,
-            chunk_num,
-            transformed_chunk,
-            embedded_chunk,
-            metadata,
-        ) in zip(
-            document_ids,
-            page_numbers,
-            chunk_nums,
-            transformed_chunks,
-            embedded_chunks,
-            metadatas,
-        ):
-            metadata = copy.deepcopy(metadata)
-            metadata["pipeline_run_id"] = str(self.pipeline_run_info["run_id"])  # type: ignore
-            metadata["text"] = transformed_chunk
-            metadata["document_id"] = document_id
-            metadata["page_number"] = page_number
-            chunk_id = generate_id_from_label(
-                f"{document_id}-{page_number}-{chunk_num}"
-            )
-            entries.append(VectorEntry(chunk_id, embedded_chunk, metadata))
-        self.store_chunks(entries, do_upsert)
+            for fragment in fragments:
+                fragment_batch.append(fragment)
+                if len(fragment_batch) >= self.embedding_batch_size:
+                    vectors = await self.embed_fragments(fragment_batch)
+                    for raw_vector, fragment in zip(vectors, fragment_batch):
+                        vector = Vector(data=raw_vector)
+                        metadata = {
+                            "document_id": fragment.document_id,
+                            "extraction_id": fragment.extraction_id,
+                            **fragment.metadata,
+                        }
+                        yield VectorEntry(
+                            id=fragment.id,
+                            vector=vector,
+                            metadata=metadata,
+                        )
+                    fragment_batch = []
+        if len(fragment_batch) > 0:
+            raw_vectors = self.embed_fragments(fragment_batch)
+            for raw_vector, fragment in zip(raw_vectors, fragment_batch):
+                vector = Vector(data=raw_vector)
+                metadata = {
+                    "document_id": fragment.document_id,
+                    "extraction_id": fragment.extraction_id,
+                    **fragment.metadata,
+                }
+                yield VectorEntry(
+                    id=fragment.id,
+                    vector=vector,
+                    metadata=metadata,
+                )

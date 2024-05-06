@@ -83,7 +83,7 @@ def test_process_url(client):
     assert url in search_response[0]["metadata"]["url"]
     assert "Google" in search_response[0]["metadata"]["text"]
 
-    client.filtered_deletion("document_id", document_id)
+    client.delete_by_metadata("document_id", document_id)
 
 
 def test_upload_and_process_json(client):
@@ -99,7 +99,7 @@ def test_upload_and_process_json(client):
         # Upload and process the JSON file
         metadata = {"tags": ["json", "test"]}
         document_id = generate_id_from_label("test_json")
-        upload_json_response = client.upload_and_process_file(
+        upload_json_response = client.ingest_file(
             document_id, temp_json_path, metadata, None
         )
 
@@ -119,7 +119,7 @@ def test_upload_and_process_json(client):
         os.unlink(temp_json_path)
 
         # Delete the uploaded document
-        client.filtered_deletion("document_id", document_id)
+        client.delete_by_metadata("document_id", document_id)
 
 
 def test_upload_and_process_html(client):
@@ -137,7 +137,7 @@ def test_upload_and_process_html(client):
         # Upload and process the HTML file
         metadata = {"tags": ["html", "test"]}
         document_id = generate_id_from_label("test_html")
-        upload_html_response = client.upload_and_process_file(
+        upload_html_response = client.ingest_file(
             document_id, temp_html_path, metadata, None
         )
 
@@ -157,7 +157,7 @@ def test_upload_and_process_html(client):
         os.unlink(temp_html_path)
 
         # Delete the uploaded document
-        client.filtered_deletion("document_id", document_id)
+        client.delete_by_metadata("document_id", document_id)
 
 
 # TODO - Modify these so that they work deterministically
@@ -173,9 +173,9 @@ def test_upload_and_process_html(client):
 #     for result in filtered_search_response:
 #         assert "bulk" in result["metadata"]["tags"]
 
-# def test_filtered_deletion(client):
+# def test_delete_by_metadata(client):
 #     document_id = generate_id_from_label("doc 2")
-#     response = client.filtered_deletion("document_id", document_id)
+#     response = client.delete_by_metadata("document_id", document_id)
 #     assert response["deleted"] == 1
 
 #     post_deletion_filtered_search_response = client.search(
@@ -190,7 +190,7 @@ def test_upload_and_process_pdf(client):
 
     metadata = {"tags": ["example", "test"]}
     document_id = generate_id_from_label("pdf 1")
-    upload_pdf_response = client.upload_and_process_file(
+    upload_pdf_response = client.ingest_file(
         document_id, file_path, metadata, None
     )
     assert "processed and saved" in upload_pdf_response["message"]

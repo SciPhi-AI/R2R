@@ -77,8 +77,8 @@ class VectorDBProvider(Provider, ABC):
             self.copy(entry, commit=commit)
 
     @abstractmethod
-    def filtered_deletion(
-        self, key: str, value: Union[bool, int, str]
+    def delete_by_metadata(
+        self, metadata_field: str, metadata_value: Union[bool, int, str]
     ) -> None:
         pass
 

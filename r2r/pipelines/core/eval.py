@@ -4,7 +4,7 @@ from r2r.core import (
     EvalPipeline,
     EvalProvider,
     LoggingDatabaseConnection,
-    log_execution_to_db,
+    log_output_to_db,
 )
 
 
@@ -20,6 +20,6 @@ class BasicEvalPipeline(EvalPipeline):
             eval_provider, logging_connection=logging_connection, **kwargs
         )
 
-    @log_execution_to_db
+    @log_output_to_db
     def evaluate(self, query: str, context: str, completion: str) -> Any:
         return self.eval_provider.evaluate(query, context, completion)

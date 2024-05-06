@@ -9,14 +9,14 @@ class R2RClient:
     def __init__(self, base_url: str):
         self.base_url = base_url
 
-    def upload_and_process_file(
+    def ingest_file(
         self,
         document_id: str,
         file_path: str,
         metadata: Optional[dict] = None,
         settings: Optional[dict] = None,
     ):
-        url = f"{self.base_url}/upload_and_process_file/"
+        url = f"{self.base_url}/ingest_file/"
         with open(file_path, "rb") as file:
             files = {
                 "file": (file_path.split("/")[-1], file, "application/pdf")
@@ -185,8 +185,8 @@ class R2RClient:
                 async for chunk in response.aiter_bytes():
                     yield chunk.decode()
 
-    def filtered_deletion(self, key: str, value: Union[bool, int, str]):
-        url = f"{self.base_url}/filtered_deletion/"
+    def delete_by_metadata(self, key: str, value: Union[bool, int, str]):
+        url = f"{self.base_url}/delete_by_metadata/"
         response = requests.delete(url, params={"key": key, "value": value})
         return response.json()
 

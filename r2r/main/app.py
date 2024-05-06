@@ -4,50 +4,18 @@ import os
 from pathlib import Path
 from typing import AsyncGenerator, Generator, Optional, Union, cast
 
-import requests
-from fastapi import (
-    BackgroundTasks,
-    Depends,
-    FastAPI,
-    File,
-    Form,
-    HTTPException,
-    Request,
-    UploadFile,
-)
-from fastapi.responses import StreamingResponse
-from pydantic import HttpUrl
+from fastapi import FastAPI
 
 from r2r.core import (
+    DocumentParsingPipeline,
     EmbeddingPipeline,
     EvalPipeline,
-    GenerationConfig,
-    IngestionPipeline,
     LoggingDatabaseConnection,
     RAGPipeline,
-    RAGPipelineOutput,
-    ScraperPipeline,
 )
-from r2r.main.utils import (
-    R2RConfig,
-    apply_cors,
-    find_project_root,
-    process_logs,
-)
+from r2r.main.utils import R2RConfig, apply_cors, find_project_root
 
-from .models import (
-    AddEntriesRequest,
-    AddEntryRequest,
-    EvalPayloadModel,
-    LogFilterModel,
-    LogModel,
-    RAGMessageModel,
-    SettingsModel,
-    SummaryLogModel,
-)
-
-# logger = logging.getLogger("r2r")
-# logging.setLevel(logging.INFO)
+from .models import DocumentsIngestorModel
 
 # Current directory where this script is located
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -55,9 +23,8 @@ MB_CONVERSION_FACTOR = 1024 * 1024
 
 
 def create_app(
-    ingestion_pipeline: IngestionPipeline,
+    parsing_pipeline: DocumentParsingPipeline,
     embedding_pipeline: EmbeddingPipeline,
-    scraper_pipeline: ScraperPipeline,
     eval_pipeline: EvalPipeline,
     rag_pipeline: RAGPipeline,
     config: R2RConfig,
@@ -67,7 +34,6 @@ def create_app(
     app = FastAPI()
     # TODO - Consider impact of logging in remote environments
     # e.g. such as Google Cloud Run
-    # configure_logging()
     apply_cors(app)
 
     upload_path = upload_path or find_project_root(CURRENT_DIR) / "uploads"
@@ -75,437 +41,390 @@ def create_app(
     if not upload_path.exists():
         os.makedirs(upload_path, exist_ok=True)
 
-    @app.post("/process_url")
-    async def process_url(
-        document_id: str = Form(...),
-        url: HttpUrl = Form(...),
-        metadata: str = Form("{}"),
-        settings: str = Form("{}"),
-    ):
-        metadata_json = json.loads(metadata)
-        settings_model = SettingsModel.parse_raw(settings)
+    @app.post("/ingest_documents/")
+    async def ingest_documents(document_request: DocumentsIngestorModel):
+        # try:
+        # for document in document_request.documents:
+        extracted_texts = parsing_pipeline.run(
+            document_request.documents,
+            **document_request.settings.ingestion_settings.dict(),
+        )
+        # for document in documents:
+        #     embedding_pipeline.run(
+        #         document,
+        #         **document_request.settings.embedding_settings.dict(),
+        #     )
+        return {"message": "Entries upserted successfully."}
 
-        try:
-            docs = scraper_pipeline.run(
-                document_id=document_id, url=str(url), metadata=metadata_json
-            )
-            for doc in docs:
-                embedding_pipeline.run(
-                    doc, **settings_model.embedding_settings.dict()
-                )
-            return {"message": f"URL {url} processed successfully."}
-        except Exception as e:
-            logging.error(
-                f"scrape_url_and_process: [Error](url={url}, error={str(e)})"
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+    # except Exception as e:
+    #     logging.error(
+    #         f":add_entries: [Error](document_request={document_request}, error={str(e)})"
+    #     )
+    #     raise HTTPException(status_code=500, detail=str(e))
 
-    @app.post("/upload_and_process_file/")
-    # TODO - Why can't we use a BaseModel to represent the request?
-    # Naive class FileUploadRequest(BaseModel) above fails
-    async def upload_and_process_file(
-        document_id: str = Form(...),
-        metadata: str = Form("{}"),
-        settings: str = Form("{}"),
-        file: UploadFile = File(...),
-    ):
-        metadata_json = json.loads(metadata)
-        settings_model = SettingsModel.parse_raw(settings)
+    # @app.post("/ingest_file/")
+    # # TODO - Add support for multiple files
+    # # TODO - Implement a streaming version of this endpoint
+    # # TODO - Create request model for this endpoint
+    # async def ingest_file(
+    #     document_id: str = Form(...),
+    #     metadata: str = Form("{}"),
+    #     settings: str = Form("{}"),
+    #     file: UploadFile = File(...),
+    # ):
+    #     metadata_json = json.loads(metadata)
+    #     settings_model = SettingsModel.parse_raw(settings)
 
-        if (
-            file is not None
-            and file.size
-            > config.app.get("max_file_size_in_mb", 100) * MB_CONVERSION_FACTOR
-        ):
-            raise HTTPException(
-                status_code=413,
-                detail="File size exceeds maximum allowed size.",
-            )
+    #     if (
+    #         file is not None
+    #         and file.size
+    #         > config.app.get("max_file_size_in_mb", 100) * MB_CONVERSION_FACTOR
+    #     ):
+    #         raise HTTPException(
+    #             status_code=413,
+    #             detail="File size exceeds maximum allowed size.",
+    #         )
 
-        if not file.filename:
-            raise HTTPException(
-                status_code=400, detail="No file was uploaded."
-            )
-        # Extract file extension and check if it's an allowed type
-        file_extension = file.filename.split(".")[-1]
-        if file_extension not in ingestion_pipeline.supported_types:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid file type. Allowed types are: {', '.join(ingestion_pipeline.supported_types)}.",
-            )
+    #     if not file.filename:
+    #         raise HTTPException(
+    #             status_code=400, detail="No file was uploaded."
+    #         )
+    #     # Extract file extension and check if it's an allowed type
+    #     file_extension = file.filename.split(".")[-1]
+    #     if file_extension not in ingestion_pipeline.supported_types:
+    #         raise HTTPException(
+    #             status_code=400,
+    #             detail=f"Invalid file type. Allowed types are: {', '.join(ingestion_pipeline.supported_types)}.",
+    #         )
 
-        file_location = upload_path / file.filename
-        try:
-            file_content = file.file.read()
+    #     file_location = upload_path / file.filename
+    #     try:
+    #         file_content = file.file.read()
 
-            # TODO - Consider saving file to disk
-            # with open(file_location, "wb+") as file_object:
-            # file_object.write(file_content)
+    #         documents = ingestion_pipeline.run(
+    #             document_id,
+    #             {file_extension: file_content},
+    #             metadata=metadata_json,
+    #             **settings_model.ingestion_settings.dict(),
+    #         )
 
-            # TODO - Mark upload as failed if ingestion or embedding fail partway through
+    #         if embedding_pipeline.is_async:
+    #             await embedding_pipeline.run(
+    #                 documents, **settings_model.embedding_settings.dict()
+    #             )
+    #         else:
+    #             embedding_pipeline.run(
+    #                 documents, **settings_model.embedding_settings.dict()
+    #             )
 
-            documents = ingestion_pipeline.run(
-                document_id,
-                {file_extension: file_content},
-                metadata=metadata_json,
-                **settings_model.ingestion_settings.dict(),
-            )
+    #         return {
+    #             "message": f"File '{file.filename}' processed and saved at '{file_location}'"
+    #         }
+    #     except Exception as e:
+    #         logging.error(
+    #             f"ingest_file: [Error](file={file.filename}, error={str(e)})"
+    #         )
+    #         raise HTTPException(status_code=500, detail=str(e))
 
-            if embedding_pipeline.is_async:
-                await embedding_pipeline.run(
-                    documents, **settings_model.embedding_settings.dict()
-                )
-            else:
-                embedding_pipeline.run(
-                    documents, **settings_model.embedding_settings.dict()
-                )
+    # @app.post("/search/")
+    # async def search(msg: RAGMessageModel):
+    #     try:
+    #         rag_completion = rag_pipeline.run(
+    #             msg.message,
+    #             msg.filters,
+    #             msg.search_limit,
+    #             msg.rerank_limit,
+    #             search_only=True,
+    #             generation_config=msg.generation_config,
+    #         )
+    #         return rag_completion.search_results
+    #     except Exception as e:
+    #         logging.error(
+    #             f":search: [Error](message={msg.message}, error={str(e)})"
+    #         )
+    #         raise HTTPException(status_code=500, detail=str(e))
 
-            return {
-                "message": f"File '{file.filename}' processed and saved at '{file_location}'"
-            }
-        except Exception as e:
-            logging.error(
-                f"upload_and_process_file: [Error](file={file.filename}, error={str(e)})"
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+    # @app.post("/rag_completion/")
+    # async def rag_completion(
+    #     background_tasks: BackgroundTasks,
+    #     msg: RAGMessageModel,
+    #     request: Request,
+    # ):
+    #     try:
+    #         stream = msg.generation_config.stream
+    #         if not stream:
+    #             untyped_completion = rag_pipeline.run(
+    #                 message=msg.message,
+    #                 filters=msg.filters,
+    #                 search_limit=msg.search_limit,
+    #                 rerank_limit=msg.rerank_limit,
+    #                 generation_config=msg.generation_config,
+    #             )
+    #             # Tell the type checker that rag_completion is a RAGPipelineOutput
+    #             rag_completion = cast(RAGPipelineOutput, untyped_completion)
 
-    @app.post("/add_entry/")
-    async def add_entry(entry_req: AddEntryRequest):
-        try:
-            documents = ingestion_pipeline.run(
-                entry_req.entry.document_id,
-                entry_req.entry.blobs,
-                metadata=entry_req.entry.metadata,
-                **entry_req.settings.ingestion_settings.dict(),
-            )
-            for document in documents:
-                embedding_pipeline.run(
-                    document, **entry_req.settings.embedding_settings.dict()
-                )
-            return {"message": "Entry upserted successfully."}
-        except Exception as e:
-            logging.error(
-                f":add_entry: [Error](entry={entry_req}, error={str(e)})"
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+    #             if not rag_completion.completion:
+    #                 if rag_completion.search_results:
+    #                     return rag_completion
+    #                 raise ValueError(
+    #                     "No completion found in RAGPipelineOutput."
+    #                 )
 
-    @app.post("/add_entries/")
-    async def add_entries(entries_req: AddEntriesRequest):
-        try:
-            for entry in entries_req.entries:
-                documents = ingestion_pipeline.run(
-                    entry.document_id,
-                    entry.blobs,
-                    metadata=entry.metadata,
-                    **entries_req.settings.ingestion_settings.dict(),
-                )
-                for document in documents:
-                    embedding_pipeline.run(
-                        document,
-                        **entries_req.settings.embedding_settings.dict(),
-                    )
-            return {"message": "Entries upserted successfully."}
-        except Exception as e:
-            logging.error(
-                f":add_entries: [Error](entries={entries_req}, error={str(e)})"
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+    #             completion_text = rag_completion.completion.choices[
+    #                 0
+    #             ].message.content
 
-    @app.post("/search/")
-    async def search(msg: RAGMessageModel):
-        try:
-            rag_completion = rag_pipeline.run(
-                msg.message,
-                msg.filters,
-                msg.search_limit,
-                msg.rerank_limit,
-                search_only=True,
-                generation_config=msg.generation_config,
-            )
-            return rag_completion.search_results
-        except Exception as e:
-            logging.error(
-                f":search: [Error](message={msg.message}, error={str(e)})"
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+    #             # Retrieve the URL dynamically from the request header
+    #             url = request.url
+    #             if not url:
+    #                 url = "http://localhost:8000"
+    #             else:
+    #                 url = str(url).split("/rag_completion")[0]
 
-    @app.post("/rag_completion/")
-    async def rag_completion(
-        background_tasks: BackgroundTasks,
-        msg: RAGMessageModel,
-        request: Request,
-    ):
-        try:
-            stream = msg.generation_config.stream
-            if not stream:
-                untyped_completion = rag_pipeline.run(
-                    message=msg.message,
-                    filters=msg.filters,
-                    search_limit=msg.search_limit,
-                    rerank_limit=msg.rerank_limit,
-                    generation_config=msg.generation_config,
-                )
-                # Tell the type checker that rag_completion is a RAGPipelineOutput
-                rag_completion = cast(RAGPipelineOutput, untyped_completion)
+    #             # Pass the payload to the /eval endpoint
+    #             payload = {
+    #                 "message": msg.message,
+    #                 "context": rag_completion.context or "",
+    #                 "completion_text": completion_text or "",
+    #                 "run_id": str(rag_pipeline.pipeline_run_info["run_id"]),
+    #                 "settings": msg.settings.rag_settings.dict(),
+    #             }
+    #             if config.eval.get("sampling_fraction", 0.0) > 0.0:
+    #                 background_tasks.add_task(
+    #                     requests.post, f"{url}/eval", json=payload
+    #                 )
 
-                if not rag_completion.completion:
-                    if rag_completion.search_results:
-                        return rag_completion
-                    raise ValueError(
-                        "No completion found in RAGPipelineOutput."
-                    )
+    #             return rag_completion
 
-                completion_text = rag_completion.completion.choices[
-                    0
-                ].message.content
+    #         else:
 
-                # Retrieve the URL dynamically from the request header
-                url = request.url
-                if not url:
-                    url = "http://localhost:8000"
-                else:
-                    url = str(url).split("/rag_completion")[0]
+    #             async def _stream_rag_completion(
+    #                 msg: RAGMessageModel,
+    #                 rag_pipeline: RAGPipeline,
+    #             ) -> AsyncGenerator[str, None]:
+    #                 gen_config = GenerationConfig(
+    #                     **(msg.generation_config.dict())
+    #                 )
+    #                 if not gen_config.stream:
+    #                     raise ValueError(
+    #                         "Must pass `stream` as True to stream completions."
+    #                     )
+    #                 completion_generator = cast(
+    #                     Generator[str, None, None],
+    #                     rag_pipeline.run_stream(
+    #                         message=msg.message,
+    #                         filters=msg.filters,
+    #                         search_limit=msg.search_limit,
+    #                         rerank_limit=msg.rerank_limit,
+    #                         generation_config=gen_config,
+    #                     ),
+    #                 )
 
-                # Pass the payload to the /eval endpoint
-                payload = {
-                    "message": msg.message,
-                    "context": rag_completion.context or "",
-                    "completion_text": completion_text or "",
-                    "run_id": str(rag_pipeline.pipeline_run_info["run_id"]),
-                    "settings": msg.settings.rag_settings.dict(),
-                }
-                if config.eval.get("sampling_fraction", 0.0) > 0.0:
-                    background_tasks.add_task(
-                        requests.post, f"{url}/eval", json=payload
-                    )
+    #                 search_results = ""
+    #                 context = ""
+    #                 completion_text = ""
+    #                 current_marker = None
 
-                return rag_completion
+    #                 logging.info(
+    #                     f"Streaming RAG completion results to client for message = {msg.message}."
+    #                 )
 
-            else:
+    #                 for item in completion_generator:
+    #                     if item.startswith("<"):
+    #                         if item.startswith(
+    #                             f"<{RAGPipeline.SEARCH_STREAM_MARKER}>"
+    #                         ):
+    #                             current_marker = (
+    #                                 RAGPipeline.SEARCH_STREAM_MARKER
+    #                             )
+    #                         elif item.startswith(
+    #                             f"<{RAGPipeline.CONTEXT_STREAM_MARKER}>"
+    #                         ):
+    #                             current_marker = (
+    #                                 RAGPipeline.CONTEXT_STREAM_MARKER
+    #                             )
+    #                         elif item.startswith(
+    #                             f"<{RAGPipeline.COMPLETION_STREAM_MARKER}>"
+    #                         ):
+    #                             current_marker = (
+    #                                 RAGPipeline.COMPLETION_STREAM_MARKER
+    #                             )
+    #                         else:
+    #                             current_marker = None
+    #                     else:
+    #                         if (
+    #                             current_marker
+    #                             == RAGPipeline.SEARCH_STREAM_MARKER
+    #                         ):
+    #                             search_results += item
+    #                         elif (
+    #                             current_marker
+    #                             == RAGPipeline.CONTEXT_STREAM_MARKER
+    #                         ):
+    #                             context += item
+    #                         elif (
+    #                             current_marker
+    #                             == RAGPipeline.COMPLETION_STREAM_MARKER
+    #                         ):
+    #                             completion_text += item
+    #                     yield item
 
-                async def _stream_rag_completion(
-                    msg: RAGMessageModel,
-                    rag_pipeline: RAGPipeline,
-                ) -> AsyncGenerator[str, None]:
-                    gen_config = GenerationConfig(
-                        **(msg.generation_config.dict())
-                    )
-                    if not gen_config.stream:
-                        raise ValueError(
-                            "Must pass `stream` as True to stream completions."
-                        )
-                    completion_generator = cast(
-                        Generator[str, None, None],
-                        rag_pipeline.run_stream(
-                            message=msg.message,
-                            filters=msg.filters,
-                            search_limit=msg.search_limit,
-                            rerank_limit=msg.rerank_limit,
-                            generation_config=gen_config,
-                        ),
-                    )
+    #                 # Retrieve the URL dynamically from the request header
+    #                 url = request.url
+    #                 if not url:
+    #                     url = "http://localhost:8000"
+    #                 else:
+    #                     url = str(url).split("/rag_completion")[0]
+    #                     if (
+    #                         "localhost" not in url
+    #                         and "127.0.0.1" not in url
+    #                         and "0.0.0.0" not in url
+    #                     ):
+    #                         url = url.replace("http://", "https://")
 
-                    search_results = ""
-                    context = ""
-                    completion_text = ""
-                    current_marker = None
+    #                 # Pass the payload to the /eval endpoint
+    #                 payload = {
+    #                     "message": msg.message,
+    #                     "context": context,
+    #                     "completion_text": completion_text,
+    #                     "run_id": str(
+    #                         rag_pipeline.pipeline_run_info["run_id"]
+    #                     ),
+    #                     "settings": msg.settings.rag_settings.dict(),
+    #                 }
+    #                 logging.info(
+    #                     f"Performing evaluation with payload: {payload} to url: {url}/eval"
+    #                 )
+    #                 if config.eval.get("sampling_fraction", 0.0) > 0.0:
+    #                     background_tasks.add_task(
+    #                         requests.post, f"{url}/eval", json=payload
+    #                     )
 
-                    logging.info(
-                        f"Streaming RAG completion results to client for message = {msg.message}."
-                    )
+    #             return StreamingResponse(
+    #                 _stream_rag_completion(msg, rag_pipeline),
+    #                 media_type="text/plain",
+    #             )
+    #     except Exception as e:
+    #         logging.error(
+    #             f":rag_completion: [Error](message={msg.message}, error={str(e)})"
+    #         )
+    #         raise HTTPException(status_code=500, detail=str(e))
 
-                    for item in completion_generator:
-                        if item.startswith("<"):
-                            if item.startswith(
-                                f"<{RAGPipeline.SEARCH_STREAM_MARKER}>"
-                            ):
-                                current_marker = (
-                                    RAGPipeline.SEARCH_STREAM_MARKER
-                                )
-                            elif item.startswith(
-                                f"<{RAGPipeline.CONTEXT_STREAM_MARKER}>"
-                            ):
-                                current_marker = (
-                                    RAGPipeline.CONTEXT_STREAM_MARKER
-                                )
-                            elif item.startswith(
-                                f"<{RAGPipeline.COMPLETION_STREAM_MARKER}>"
-                            ):
-                                current_marker = (
-                                    RAGPipeline.COMPLETION_STREAM_MARKER
-                                )
-                            else:
-                                current_marker = None
-                        else:
-                            if (
-                                current_marker
-                                == RAGPipeline.SEARCH_STREAM_MARKER
-                            ):
-                                search_results += item
-                            elif (
-                                current_marker
-                                == RAGPipeline.CONTEXT_STREAM_MARKER
-                            ):
-                                context += item
-                            elif (
-                                current_marker
-                                == RAGPipeline.COMPLETION_STREAM_MARKER
-                            ):
-                                completion_text += item
-                        yield item
+    # @app.post("/eval")
+    # async def eval(payload: EvalPayloadModel):
+    #     try:
+    #         logging.info(
+    #             f"Received evaluation payload: {payload.dict(exclude_none=True)}"
+    #         )
+    #         message = payload.message
+    #         context = payload.context
+    #         completion_text = payload.completion_text
+    #         run_id = payload.run_id
+    #         settings = payload.settings
 
-                    # Retrieve the URL dynamically from the request header
-                    url = request.url
-                    if not url:
-                        url = "http://localhost:8000"
-                    else:
-                        url = str(url).split("/rag_completion")[0]
-                        if (
-                            "localhost" not in url
-                            and "127.0.0.1" not in url
-                            and "0.0.0.0" not in url
-                        ):
-                            url = url.replace("http://", "https://")
+    #         eval_pipeline.run(
+    #             message, context, completion_text, run_id, **(settings.dict())
+    #         )
 
-                    # Pass the payload to the /eval endpoint
-                    payload = {
-                        "message": msg.message,
-                        "context": context,
-                        "completion_text": completion_text,
-                        "run_id": str(
-                            rag_pipeline.pipeline_run_info["run_id"]
-                        ),
-                        "settings": msg.settings.rag_settings.dict(),
-                    }
-                    logging.info(
-                        f"Performing evaluation with payload: {payload} to url: {url}/eval"
-                    )
-                    if config.eval.get("sampling_fraction", 0.0) > 0.0:
-                        background_tasks.add_task(
-                            requests.post, f"{url}/eval", json=payload
-                        )
+    #         return {"message": "Evaluation completed successfully."}
 
-                return StreamingResponse(
-                    _stream_rag_completion(msg, rag_pipeline),
-                    media_type="text/plain",
-                )
-        except Exception as e:
-            logging.error(
-                f":rag_completion: [Error](message={msg.message}, error={str(e)})"
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+    #     except Exception as e:
+    #         logging.error(
+    #             f":eval_endpoint: [Error](payload={payload}, error={str(e)})"
+    #         )
+    #         raise HTTPException(status_code=500, detail=str(e))
 
-    @app.post("/eval")
-    async def eval(payload: EvalPayloadModel):
-        try:
-            logging.info(
-                f"Received evaluation payload: {payload.dict(exclude_none=True)}"
-            )
-            message = payload.message
-            context = payload.context
-            completion_text = payload.completion_text
-            run_id = payload.run_id
-            settings = payload.settings
+    # @app.delete("/delete_by_metadata/")
+    # async def delete_by_metadata(
+    #     metadata_field: str, metadata_value: Union[bool, int, str]
+    # ):
+    #     try:
+    #         embedding_pipeline.vector_db_provider.delete_by_metadata(
+    #             metadata_field, metadata_value
+    #         )
+    #         return {"message": "Entries deleted successfully."}
+    #     except Exception as e:
+    #         logging.error(
+    #             f":delete_by_metadata: [Error](metadata_field={metadata_field}, value={metadata_value}, error={str(e)})"
+    #         )
+    #         raise HTTPException(status_code=500, detail=str(e))
 
-            eval_pipeline.run(
-                message, context, completion_text, run_id, **(settings.dict())
-            )
+    # @app.get("/get_user_ids/")
+    # async def get_user_ids():
+    #     try:
+    #         user_ids = (
+    #             embedding_pipeline.vector_db_provider.get_all_unique_values(
+    #                 metadata_field="user_id"
+    #             )
+    #         )
 
-            return {"message": "Evaluation completed successfully."}
+    #         return {"user_ids": user_ids}
+    #     except Exception as e:
+    #         logging.error(f":get_user_ids: [Error](error={str(e)})")
+    #         raise HTTPException(status_code=500, detail=str(e))
 
-        except Exception as e:
-            logging.error(
-                f":eval_endpoint: [Error](payload={payload}, error={str(e)})"
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+    # @app.get("/get_user_documents/")
+    # async def get_user_documents(user_id: str):
+    #     try:
+    #         document_ids = (
+    #             embedding_pipeline.vector_db_provider.get_all_unique_values(
+    #                 metadata_field="document_id",
+    #                 filter_field="user_id",
+    #                 filter_value=user_id,
+    #             )
+    #         )
+    #         return {"document_ids": document_ids}
+    #     except Exception as e:
+    #         logging.error(f":get_user_documents: [Error](error={str(e)})")
+    #         raise HTTPException(status_code=500, detail=str(e))
 
-    @app.delete("/filtered_deletion/")
-    async def filtered_deletion(key: str, value: Union[bool, int, str]):
-        try:
-            embedding_pipeline.vector_db_provider.filtered_deletion(key, value)
-            return {"message": "Entries deleted successfully."}
-        except Exception as e:
-            logging.error(
-                f":filtered_deletion: [Error](key={key}, value={value}, error={str(e)})"
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+    # @app.get("/logs")
+    # async def logs(filter: LogFilterModel = Depends()):
+    #     try:
+    #         if logging_connection is None:
+    #             raise HTTPException(
+    #                 status_code=404, detail="Logging provider not found."
+    #             )
+    #         logs = logging_connection.get_logs(
+    #             config.app.get("max_logs", 100), filter.pipeline_type
+    #         )
+    #         for log in logs:
+    #             LogModel(**log).dict(by_alias=True)
+    #         return {
+    #             "logs": [LogModel(**log).dict(by_alias=True) for log in logs]
+    #         }
+    #     except Exception as e:
+    #         logging.error(f":logs: [Error](error={str(e)})")
+    #         raise HTTPException(status_code=500, detail=str(e))
 
-    @app.get("/get_user_ids/")
-    async def get_user_ids():
-        try:
-            user_ids = (
-                embedding_pipeline.vector_db_provider.get_all_unique_values(
-                    metadata_field="user_id"
-                )
-            )
+    # @app.get("/logs_summary")
+    # async def logs_summary(filter: LogFilterModel = Depends()):
+    #     try:
+    #         if logging_connection is None:
+    #             raise HTTPException(
+    #                 status_code=404, detail="Logging provider not found."
+    #             )
+    #         logs = logging_connection.get_logs(
+    #             config.app.get("max_logs", 100), filter.pipeline_type
+    #         )
+    #         logs_summary = process_logs(logs)
+    #         events_summary = [
+    #             SummaryLogModel(**log).dict(by_alias=True)
+    #             for log in logs_summary
+    #         ]
+    #         return {"events_summary": events_summary}
 
-            return {"user_ids": user_ids}
-        except Exception as e:
-            logging.error(f":get_user_ids: [Error](error={str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
+    #     except Exception as e:
+    #         logging.error(f":logs_summary: [Error](error={str(e)})")
+    #         raise HTTPException(status_code=500, detail=str(e))
 
-    @app.get("/get_user_documents/")
-    async def get_user_documents(user_id: str):
-        try:
-            document_ids = (
-                embedding_pipeline.vector_db_provider.get_all_unique_values(
-                    metadata_field="document_id",
-                    filter_field="user_id",
-                    filter_value=user_id,
-                )
-            )
-            return {"document_ids": document_ids}
-        except Exception as e:
-            logging.error(f":get_user_documents: [Error](error={str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
+    # @app.get("/get_rag_pipeline_env_var/")
+    # async def get_rag_pipeline_env_var():
+    #     try:
+    #         rag_pipeline = os.getenv("RAG_PIPELINE", None)
+    #         return {"rag_pipeline": rag_pipeline}
+    #     except Exception as e:
+    #         logging.error(f":rag_pipeline: [Error](error={str(e)})")
+    #         raise HTTPException(status_code=500, detail=str(e))
 
-    @app.get("/logs")
-    async def logs(filter: LogFilterModel = Depends()):
-        try:
-            if logging_connection is None:
-                raise HTTPException(
-                    status_code=404, detail="Logging provider not found."
-                )
-            logs = logging_connection.get_logs(
-                config.app.get("max_logs", 100), filter.pipeline_type
-            )
-            for log in logs:
-                LogModel(**log).dict(by_alias=True)
-            return {
-                "logs": [LogModel(**log).dict(by_alias=True) for log in logs]
-            }
-        except Exception as e:
-            logging.error(f":logs: [Error](error={str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
-
-    @app.get("/logs_summary")
-    async def logs_summary(filter: LogFilterModel = Depends()):
-        try:
-            if logging_connection is None:
-                raise HTTPException(
-                    status_code=404, detail="Logging provider not found."
-                )
-            logs = logging_connection.get_logs(
-                config.app.get("max_logs", 100), filter.pipeline_type
-            )
-            logs_summary = process_logs(logs)
-            events_summary = [
-                SummaryLogModel(**log).dict(by_alias=True)
-                for log in logs_summary
-            ]
-            return {"events_summary": events_summary}
-
-        except Exception as e:
-            logging.error(f":logs_summary: [Error](error={str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
-
-    @app.get("/get_rag_pipeline_var/")
-    async def get_rag_pipeline():
-        try:
-            rag_pipeline = os.getenv("RAG_PIPELINE", None)
-            return {"rag_pipeline": rag_pipeline}
-        except Exception as e:
-            logging.error(f":rag_pipeline: [Error](error={str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
-
-    return app
+    # return app

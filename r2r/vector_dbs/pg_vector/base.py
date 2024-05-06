@@ -134,14 +134,14 @@ class PGVectorDB(VectorDBProvider):
     def close(self):
         pass
 
-    def filtered_deletion(
-        self, key: str, value: Union[bool, int, str]
+    def delete_by_metadata(
+        self, metadata_field: str, metadata_value: Union[bool, int, str]
     ) -> None:
         if self.collection is None:
             raise ValueError(
-                "Please call `initialize_collection` before attempting to run `filtered_deletion`."
+                "Please call `initialize_collection` before attempting to run `delete_by_metadata`."
             )
-        self.collection.delete(filters={key: {"$eq": value}})  # type: ignore
+        self.collection.delete(filters={metadata_field: {"$eq": metadata_value}})  # type: ignore
 
     def get_all_unique_values(
         self,

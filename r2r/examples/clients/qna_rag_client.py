@@ -37,7 +37,7 @@ class QnARAGClient:
                         "chunk_prefix": self.titles[file_name],
                     }
                     settings = {}
-                    upload_response = self.client.upload_and_process_file(
+                    upload_response = self.client.ingest_file(
                         document_id, file_path, metadata, settings
                     )
                     print("Upload response = ", upload_response)
@@ -86,7 +86,7 @@ class QnARAGClient:
 
     def delete_document(self, document_path: str):
         document_id = generate_id_from_label(document_path)
-        response = self.client.filtered_deletion("document_id", document_id)
+        response = self.client.delete_by_metadata("document_id", document_id)
         print("Deletion response = ", response)
 
     def get_logs(self):

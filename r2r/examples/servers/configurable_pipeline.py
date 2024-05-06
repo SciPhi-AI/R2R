@@ -42,7 +42,7 @@ def create_app(config_name: str = "default", pipeline_name: str = "qna"):
     pipeline_impl = PIPELINE_OPTIONS[pipeline_name]
 
     app = E2EPipelineFactory.create_pipeline(
-        config=R2RConfig.load_config(config_path),
+        config=R2RConfig.from_json(config_path),
         rag_pipeline_impl=pipeline_impl,
     )
     return app

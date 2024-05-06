@@ -1,39 +1,53 @@
-from .abstractions.document import DocumentPage
+from .abstractions.document import (
+    DataType,
+    Document,
+    DocumentType,
+    Extraction,
+    Fragment,
+    FragmentType,
+)
 from .abstractions.output import (
     LLMChatCompletion,
     LLMChatCompletionChunk,
     RAGPipelineOutput,
 )
-from .abstractions.vector import VectorEntry, VectorSearchResult
+from .abstractions.vector import (
+    Vector,
+    VectorEntry,
+    VectorSearchResult,
+    VectorType,
+)
 from .agent.base import Agent
-from .pipelines.async_embedding import AsyncEmbeddingPipeline
 from .pipelines.embedding import EmbeddingPipeline
 from .pipelines.eval import EvalPipeline
-from .pipelines.ingestion import IngestionPipeline, IngestionType
+from .pipelines.parsing import DocumentParsingPipeline
 from .pipelines.rag import RAGPipeline
-from .pipelines.scraping import ScraperPipeline
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
 from .providers.eval import EvalConfig, EvalProvider
 from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
 from .providers.prompt import PromptConfig, PromptProvider
 from .providers.vector_db import VectorDBConfig, VectorDBProvider
-from .utils.logging import LoggingDatabaseConnection, log_execution_to_db
+from .utils.logging import LoggingDatabaseConnection, log_output_to_db
 
 __all__ = [
     "LoggingDatabaseConnection",
-    "log_execution_to_db",
-    "DocumentPage",
+    "log_output_to_db",
     "RAGPipelineOutput",
     "VectorSearchResult",
     "VectorEntry",
+    "VectorType",
+    "Vector",
     "Agent",
-    "AsyncEmbeddingPipeline",
     "EmbeddingPipeline",
     "EvalPipeline",
-    "IngestionPipeline",
-    "IngestionType",
+    "DocumentParsingPipeline",
+    "DataType",
+    "DocumentType",
+    "Document",
+    "Extraction",
+    "FragmentType",
+    "Fragment",
     "RAGPipeline",
-    "ScraperPipeline",
     "EmbeddingConfig",
     "EmbeddingProvider",
     "EvalConfig",

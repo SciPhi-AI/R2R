@@ -355,7 +355,7 @@ class LoggingDatabaseConnection:
         return self.logging_provider.get_logs(max_logs, pipeline_run_type)
 
 
-def log_execution_to_db(func):
+def log_output_to_db(func):
     """A decorator to log the execution of a method to the database."""
 
     @functools.wraps(func)

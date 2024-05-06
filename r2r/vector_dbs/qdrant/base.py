@@ -150,12 +150,12 @@ class QdrantDB(VectorDBProvider):
     def close(self):
         pass
 
-    def filtered_deletion(
-        self, key: str, value: Union[bool, int, str]
+    def delete_by_metadata(
+        self, metadata_field: str, metadata_value: Union[bool, int, str]
     ) -> None:
         if self.config.collection_name is None:
             raise ValueError(
-                "Please call `initialize_collection` before attempting to run `filtered_deletion`."
+                "Please call `initialize_collection` before attempting to run `delete_by_metadata`."
             )
 
         self.client.delete(
@@ -164,8 +164,8 @@ class QdrantDB(VectorDBProvider):
                 filter=self.models.Filter(
                     must=[
                         self.models.FieldCondition(
-                            key=key,
-                            match=self.models.MatchValue(value=value),
+                            key=metadata_field,
+                            match=self.models.MatchValue(value=metadata_value),
                         ),
                     ],
                 )

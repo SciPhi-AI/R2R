@@ -14,7 +14,11 @@ class ProviderConfig(ABC):
     def create(cls, **kwargs):
         valid_keys = {f.name for f in fields(cls)}
         filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_keys}
-        return cls(**filtered_kwargs)
+        instance = cls(**filtered_kwargs)
+        instance.extras = {
+            k: v for k, v in kwargs.items() if k not in valid_keys
+        }
+        return instance
 
     @abstractproperty
     def supported_providers(self) -> List[str]:

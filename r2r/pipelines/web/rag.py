@@ -15,7 +15,7 @@ from r2r.core import (
     RAGPipelineOutput,
     VectorDBProvider,
     VectorSearchResult,
-    log_execution_to_db,
+    log_output_to_db,
 )
 from r2r.embeddings import OpenAIEmbeddingProvider
 from r2r.integrations import SerperClient
@@ -69,7 +69,7 @@ class WebRAGPipeline(RAGPipeline):
         # Placeholder for query transformation - A unit transformation.
         return query
 
-    @log_execution_to_db
+    @log_output_to_db
     def search(
         self,
         query: str,
@@ -86,7 +86,7 @@ class WebRAGPipeline(RAGPipeline):
             score = result.pop(
                 "score", 1.0
             )  # Defaulting score to 1.0 if not present
-            entry_id = result.get("title") or str(
+            id = result.get("title") or str(
                 uuid.uuid4()
             )  # Use title if present, otherwise generate a random UUID
             snippet = result.get("snippet")
@@ -94,7 +94,7 @@ class WebRAGPipeline(RAGPipeline):
                 continue
             # Create a VectorSearchResult object for each result
             vector_search_result = VectorSearchResult(
-                entry_id=entry_id,  # Using 'title' as a unique identifier
+                id=id,  # Using 'title' as a unique identifier
                 score=score,
                 metadata=result,  # Storing the entire result as metadata
             )

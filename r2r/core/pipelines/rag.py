@@ -14,7 +14,7 @@ from ..providers.embedding import EmbeddingProvider
 from ..providers.llm import GenerationConfig, LLMProvider
 from ..providers.prompt import PromptProvider
 from ..providers.vector_db import VectorDBProvider
-from ..utils.logging import LoggingDatabaseConnection, log_execution_to_db
+from ..utils.logging import LoggingDatabaseConnection, log_output_to_db
 from .pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
@@ -53,14 +53,14 @@ class RAGPipeline(Pipeline):
         }
         self.ingress(message)
 
-    @log_execution_to_db
+    @log_output_to_db
     def ingress(self, message: str) -> Any:
         """
         Ingresses data into the pipeline.
         """
         return message
 
-    @log_execution_to_db
+    @log_output_to_db
     def transform_message(
         self,
         message: str,
@@ -71,7 +71,7 @@ class RAGPipeline(Pipeline):
         """
         return message
 
-    @log_execution_to_db
+    @log_output_to_db
     def search(
         self,
         query: str,
@@ -117,7 +117,7 @@ class RAGPipeline(Pipeline):
             context += f"\n\n{it+1} - {metadata['text']}\n\n"
         return context
 
-    @log_execution_to_db
+    @log_output_to_db
     def construct_context(
         self,
         results: list[VectorSearchResult],
@@ -126,7 +126,7 @@ class RAGPipeline(Pipeline):
     ) -> str:
         return self._format_results(results)
 
-    @log_execution_to_db
+    @log_output_to_db
     def construct_prompt(self, inputs: dict[str, str]) -> str:
         """
         Constructs a prompt for generation based on the reranked chunks.
@@ -135,7 +135,7 @@ class RAGPipeline(Pipeline):
             **inputs
         )
 
-    @log_execution_to_db
+    @log_output_to_db
     def generate_completion(
         self,
         prompt: str,
@@ -263,7 +263,7 @@ class RAGPipeline(Pipeline):
         metadata: Optional[dict] = None,
     ) -> Generator[str, None, None]:
         yield f"<{RAGPipeline.SEARCH_STREAM_MARKER}>"
-        yield json.dumps([ele.to_dict() for ele in search_results])
+        yield json.dumps([ele.dict() for ele in search_results])
         yield f"</{RAGPipeline.SEARCH_STREAM_MARKER}>"
 
         yield f"<{RAGPipeline.CONTEXT_STREAM_MARKER}>"

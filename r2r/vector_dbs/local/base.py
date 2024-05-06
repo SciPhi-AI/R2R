@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class LocalDBConfig(VectorDBConfig):
+class LocalVectorDBConfig(VectorDBConfig):
     db_path: Optional[str] = None
 
     @property
@@ -24,16 +24,16 @@ class LocalDBConfig(VectorDBConfig):
         return ["local"]
 
 
-class LocalVectorDB(VectorDBProvider):
-    def __init__(self, config: LocalDBConfig) -> None:
+class LocalVectorDBProvider(VectorDBProvider):
+    def __init__(self, config: LocalVectorDBConfig) -> None:
         logger.info(
-            "Initializing `LocalVectorDB` to store and retrieve embeddings."
+            "Initializing `LocalVectorDBProvider` to store and retrieve embeddings."
         )
 
         super().__init__(config)
         if config.provider != "local":
             raise ValueError(
-                "LocalVectorDB must be initialized with provider `local`."
+                "LocalVectorDBProvider must be initialized with provider `local`."
             )
 
     def _get_conn(self):
@@ -62,7 +62,7 @@ class LocalVectorDB(VectorDBProvider):
 
     def create_index(self, index_type, column_name, index_options):
         raise NotImplementedError(
-            "LocalVectorDB does not support creating indexes."
+            "LocalVectorDBProvider does not support creating indexes."
         )
 
     def copy(self, entry: VectorEntry, commit=True) -> None:
@@ -146,7 +146,7 @@ class LocalVectorDB(VectorDBProvider):
         conn.close()
         return results[:limit]
 
-    def filtered_deletion(
+    def delete_by_metadata(
         self, key: str, value: Union[bool, int, str]
     ) -> None:
         if self.config.collection_name is None:

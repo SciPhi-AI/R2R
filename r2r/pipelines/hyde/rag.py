@@ -11,7 +11,7 @@ from r2r.core import (
     RAGPipelineOutput,
     VectorDBProvider,
     VectorSearchResult,
-    log_execution_to_db,
+    log_output_to_db,
 )
 
 from ...prompts.local.prompt import BasicPromptProvider
@@ -100,7 +100,7 @@ class HyDEPipeline(RAGPipeline):
         generation_config.stream = orig_stream
         return answers
 
-    @log_execution_to_db
+    @log_output_to_db
     def construct_context(
         self,
         results: list[VectorSearchResult],
