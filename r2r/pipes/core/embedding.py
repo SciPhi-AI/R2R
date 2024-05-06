@@ -148,6 +148,7 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
                 metadata={
                     "document_id": fragment.document_id,
                     "extraction_id": fragment.extraction_id,
+                    "text": fragment.data,
                     **fragment.metadata,
                 },
             )
