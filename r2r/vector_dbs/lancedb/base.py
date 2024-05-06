@@ -206,7 +206,7 @@ region = os.getenv("LANCEDB_REGION")
         self,
         index_type,
         column_name,
-        metric: Optional[int] = "L2",
+metric: Optional[str] = "L2",
         num_partitions: Optional[int] = 256,
         num_sub_vectors: Optional[int] = 96,
         index_cache_size: Optional[int] = None,
