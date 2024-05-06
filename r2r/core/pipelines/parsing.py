@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Iterator, Optional
+from typing import AsyncGenerator, Iterator, Optional
 
 from ..abstractions.document import Document, DocumentType, Extraction
 from ..parsers import Parser
@@ -46,7 +46,7 @@ class DocumentParsingPipeline(AsyncPipeline):
 
     async def run(
         self,
-        documents: list[Document],
+        documents: AsyncGenerator[Document, None],
         *args,
         **kwargs,
     ) -> Iterator[Extraction]:

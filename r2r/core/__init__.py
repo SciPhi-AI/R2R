@@ -18,10 +18,12 @@ from .abstractions.vector import (
     VectorType,
 )
 from .agent.base import Agent
+from .pipelines.async_pipeline import AsyncPipeline
 from .pipelines.embedding import EmbeddingPipeline
 from .pipelines.eval import EvalPipeline
 from .pipelines.parsing import DocumentParsingPipeline
 from .pipelines.rag import RAGPipeline
+from .pipelines.storage import StoragePipeline
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
 from .providers.eval import EvalConfig, EvalProvider
 from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
@@ -38,6 +40,7 @@ __all__ = [
     "VectorType",
     "Vector",
     "Agent",
+    "AsyncPipeline",
     "EmbeddingPipeline",
     "EvalPipeline",
     "DocumentParsingPipeline",
@@ -48,6 +51,7 @@ __all__ = [
     "FragmentType",
     "Fragment",
     "RAGPipeline",
+    "StoragePipeline",
     "EmbeddingConfig",
     "EmbeddingProvider",
     "EvalConfig",

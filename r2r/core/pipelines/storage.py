@@ -16,41 +16,29 @@ from .async_pipeline import AsyncPipeline
 logger = logging.getLogger(__name__)
 
 
-class EmbeddingPipeline(AsyncPipeline):
+class StoragePipeline(AsyncPipeline):
     def __init__(
         self,
-        embedding_provider: EmbeddingProvider,
+        vector_db_provider: VectorDBProvider,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs,
     ):
-        self.embedding_provider = embedding_provider
+        self.vector_db_provider = vector_db_provider
         super().__init__(logging_connection=logging_connection, **kwargs)
 
     def initialize_pipeline(self, *args, **kwargs) -> None:
         self.pipeline_run_info = {
             "run_id": generate_run_id(),
-            "type": "embedding",
+            "type": "storage",
         }
 
     @abstractmethod
-    async def fragment(
-        self, extraction: Extraction
-    ) -> AsyncGenerator[Fragment, None]:
-        pass
-
-    @abstractmethod
-    async def transform_fragments(
-        self, fragments: list[Fragment], metadatas: list[dict]
-    ) -> AsyncGenerator[Fragment, None]:
-        pass
-
-    @abstractmethod
-    async def embed(self, fragments: list[Fragment]) -> list[list[float]]:
+    async def store(self, vector_entries: list[VectorEntry]) -> None:
         pass
 
     @abstractmethod
     async def run(
-        self, extractions: AsyncGenerator[Extraction, None], **kwargs
-    ) -> VectorEntry:
+        self, vector_entries: AsyncGenerator[VectorEntry, None], **kwargs
+    ) -> None:
         pass

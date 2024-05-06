@@ -78,7 +78,7 @@ class QdrantDB(VectorDBProvider):
         points = [
             self.models.PointStruct(
                 id=str(entry.id),
-                vector=list([float(ele) for ele in entry.vector]),
+                vector=list([float(ele) for ele in entry.vector.data]),
                 payload=entry.metadata,
             )
         ]
@@ -97,7 +97,7 @@ class QdrantDB(VectorDBProvider):
         points = [
             self.models.PointStruct(
                 id=str(entry.id),
-                vector=list([float(ele) for ele in entry.vector]),
+                vector=list([float(ele) for ele in entry.vector.data]),
                 payload=entry.metadata,
             )
             for entry in entries

@@ -39,22 +39,14 @@ class VectorEntry:
         self.id = id
         self.metadata = metadata
 
-    def to_json(self) -> str:
-        """Serialize the object to a JSON string."""
-        return json.dumps(
-            {"id": self.id, "vector": self.vector, "metadata": self.metadata},
-            default=lambda o: o.__dict__,
-        )
+    def to_serializable(self) -> str:
+        """Return a serializable representation of the VectorEntry."""
+        metadata = self.metadata
 
-    @staticmethod
-    def from_json(json_str: str) -> "VectorEntry":
-        """Deserialize a JSON string into a VectorEntry object."""
-        data = json.loads(json_str)
-        return VectorEntry(
-            vector=data["vector"],
-            id=data["id"],
-            metadata=data["metadata"],
-        )
+        for key in metadata:
+            if isinstance(metadata[key], UUID):
+                metadata[key] = str(metadata[key])
+        return {"id": str(self.id), "vector": self.vector.data, "metadata": json.dumps(metadata)}
 
     def __str__(self) -> str:
         """Return a string representation of the VectorEntry."""

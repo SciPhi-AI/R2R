@@ -1,7 +1,7 @@
 """
 A simple example to demonstrate the usage of `DefaultDocumentParsingPipeline`.
 """
-
+import asyncio
 import logging
 from typing import AsyncGenerator, Optional
 
@@ -97,9 +97,10 @@ class DefaultDocumentParsingPipeline(DocumentParsingPipeline):
         document: Document,
     ) -> AsyncGenerator[Extraction, None]:
         if document.type not in self.parsers:
-            raise ValueError(
+            logger.error(
                 f"Parser for {document.type} not found in `AsyncBasicDocumentParsingPipeline`."
             )
+            return
         parser = self.parsers[document.type]
         texts = parser.ingest(document.data)
         iteration = 0
@@ -116,20 +117,9 @@ class DefaultDocumentParsingPipeline(DocumentParsingPipeline):
             iteration += 1
 
     async def run(
-        self,
-        documents: list[Document],
-        *args,
-        **kwargs,
+        self, documents: AsyncGenerator[Document, None]
     ) -> AsyncGenerator[Extraction, None]:
         self.initialize_pipeline()
-
-        if len(documents) == 0:
-            raise ValueError("No raw documents provided to parse.")
-
-        for document in documents:
-            if document.type not in self.supported_types:
-                raise ValueError(
-                    f"DocumentType {document.type} not supported by `DefaultDocumentParsingPipeline`."
-                )
+        async for document in documents:
             async for extraction in self.parse(document):
                 yield extraction

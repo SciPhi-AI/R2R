@@ -1,12 +1,10 @@
 """
 A simple example to demonstrate the usage of `DefaultEmbeddingPipeline`.
 """
-
 import asyncio
 import copy
 import logging
-import uuid
-from typing import Any, Generator, Optional, Tuple
+from typing import Any, AsyncGenerator, Generator, Optional
 
 from r2r.core import (
     EmbeddingPipeline,
@@ -18,7 +16,6 @@ from r2r.core import (
     Vector,
     VectorDBProvider,
     VectorEntry,
-    VectorType,
     log_output_to_db,
 )
 from r2r.core.utils import TextSplitter, generate_id_from_label
@@ -35,7 +32,6 @@ class DefaultEmbeddingPipeline(EmbeddingPipeline):
     def __init__(
         self,
         embedding_provider: OpenAIEmbeddingProvider,
-        vector_db_provider: VectorDBProvider,
         text_splitter: TextSplitter,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         embedding_batch_size: int = 1,
@@ -52,7 +48,6 @@ class DefaultEmbeddingPipeline(EmbeddingPipeline):
 
         super().__init__(
             embedding_provider,
-            vector_db_provider,
             logging_connection,
         )
         self.text_splitter = text_splitter
@@ -63,7 +58,9 @@ class DefaultEmbeddingPipeline(EmbeddingPipeline):
     def initialize_pipeline(self, *args, **kwargs) -> None:
         super().initialize_pipeline(*args, **kwargs)
 
-    def fragment(self, extraction: Extraction) -> list[Fragment]:
+    async def fragment(
+        self, extraction: Extraction
+    ) -> AsyncGenerator[Fragment, None]:
         """
         Splits text into manageable chunks for embedding.
         """
@@ -79,38 +76,30 @@ class DefaultEmbeddingPipeline(EmbeddingPipeline):
             ele.page_content
             for ele in self.text_splitter.create_documents([extraction.data])
         ]
-        fragments = []
         for iteration, chunk in enumerate(text_chunks):
-            fragments.append(
-                Fragment(
-                    id=generate_id_from_label(f"{extraction.id}-{iteration}"),
-                    type=FragmentType.TEXT,
-                    data=chunk,
-                    metadata=copy.deepcopy(extraction.metadata),
-                    extraction_id=extraction.id,
-                    document_id=extraction.document_id,
-                )
+            yield Fragment(
+                id=generate_id_from_label(f"{extraction.id}-{iteration}"),
+                type=FragmentType.TEXT,
+                data=chunk,
+                metadata=copy.deepcopy(extraction.metadata),
+                extraction_id=extraction.id,
+                document_id=extraction.document_id,
             )
-        return fragments
 
     @log_output_to_db
-    def transform_fragments(
+    async def transform_fragments(
         self, fragments: list[Fragment], metadatas: list[dict]
-    ) -> list[Fragment]:
+    ) -> AsyncGenerator[Fragment, None]:
         """
         Transforms text chunks based on their metadata, e.g., adding prefixes.
         """
-        transformed_fragments = []
-        for fragment, metadata in zip(fragments, metadatas):
+        async for fragment, metadata in zip(fragments, metadatas):
             if "chunk_prefix" in metadata:
                 prefix = metadata.pop("chunk_prefix")
                 fragment.data = f"{prefix}\n{fragment.data}"
-            transformed_fragments.append(fragment)
-        return transformed_fragments
+            yield fragment
 
-    async def embed_fragments(
-        self, fragments: list[Fragment]
-    ) -> list[list[float]]:
+    async def embed(self, fragments: list[Fragment]) -> list[float]:
         return await self.embedding_provider.async_get_embeddings(
             [fragment.data for fragment in fragments],
             EmbeddingProvider.PipelineStage.SEARCH,
@@ -118,60 +107,52 @@ class DefaultEmbeddingPipeline(EmbeddingPipeline):
 
     async def run(
         self,
-        extractions: Generator[Extraction, None, None],
-        do_chunking=False,
-        do_upsert=True,
+        extractions: AsyncGenerator[Extraction, None],
         **kwargs: Any,
-    ) -> Generator[VectorEntry, None, None]:
+    ) -> AsyncGenerator[VectorEntry, None]:
         """
         Executes the embedding pipeline: chunking, transforming, embedding, and storing documents.
         """
         self.initialize_pipeline()
 
-        logger.debug(
-            f"Running the `DefaultEmbeddingPipeline` asynchronously with pipeline_run_info={self.pipeline_run_info}."
-        )
-        print("extractions = ", extractions)
-
+        batch_tasks = []
         fragment_batch = []
-        async for extraction in extractions:
-            print("extraction = ", extraction)
-            if not isinstance(extraction.data, str):
-                raise ValueError(
-                    f"Expected a string extraction, but received {type(extraction)}."
-                )
-            self.log(extraction)
-            fragments = self.fragment(extraction)
-            print("fragments = ", fragments)
 
-            for fragment in fragments:
+        async for extraction in extractions:
+            async for fragment in self.fragment(extraction):
                 fragment_batch.append(fragment)
                 if len(fragment_batch) >= self.embedding_batch_size:
-                    vectors = await self.embed_fragments(fragment_batch)
-                    for raw_vector, fragment in zip(vectors, fragment_batch):
-                        vector = Vector(data=raw_vector)
-                        metadata = {
-                            "document_id": fragment.document_id,
-                            "extraction_id": fragment.extraction_id,
-                            **fragment.metadata,
-                        }
-                        yield VectorEntry(
-                            id=fragment.id,
-                            vector=vector,
-                            metadata=metadata,
-                        )
-                    fragment_batch = []
-        if len(fragment_batch) > 0:
-            raw_vectors = self.embed_fragments(fragment_batch)
-            for raw_vector, fragment in zip(raw_vectors, fragment_batch):
-                vector = Vector(data=raw_vector)
-                metadata = {
+                    # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
+                    batch_tasks.append(
+                        self._process_batch(fragment_batch.copy())
+                    )  # pass a copy if necessary
+                    fragment_batch.clear()  # Clear the batch for new fragments
+
+        if fragment_batch:  # Process any remaining fragments
+            batch_tasks.append(self._process_batch(fragment_batch.copy()))
+
+        # Process tasks as they complete
+        for task in asyncio.as_completed(batch_tasks):
+            batch_result = await task  # Wait for the next task to complete
+            for vector_entry in batch_result:
+                yield vector_entry
+
+    async def _process_batch(
+        self, fragment_batch: list[Fragment]
+    ) -> list[VectorEntry]:
+        """
+        Embeds a batch of fragments and yields vector entries.
+        """
+        vectors = await self.embed(fragment_batch)
+        return [
+            VectorEntry(
+                id=fragment.id,
+                vector=Vector(data=raw_vector),
+                metadata={
                     "document_id": fragment.document_id,
                     "extraction_id": fragment.extraction_id,
                     **fragment.metadata,
-                }
-                yield VectorEntry(
-                    id=fragment.id,
-                    vector=vector,
-                    metadata=metadata,
-                )
+                },
+            )
+            for raw_vector, fragment in zip(vectors, fragment_batch)
+        ]

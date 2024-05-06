@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from typing import Optional, Union
@@ -55,8 +56,10 @@ class PGVectorDB(VectorDBProvider):
                 "Please call `initialize_collection` before attempting to run `copy`."
             )
 
+        serializeable_entry = entry.vector.to_serializable()
+
         self.collection.copy(
-            records=[(str(entry.id), entry.vector, entry.metadata)]
+            records=[(serializeable_entry['id'], serializeable_entry['vector'], serializeable_entry['metadata'])]
         )
 
     def copy_entries(
@@ -69,7 +72,7 @@ class PGVectorDB(VectorDBProvider):
 
         self.collection.copy(
             records=[
-                (str(entry.id), entry.vector, entry.metadata)
+                (str(entry.id), entry.vector.data, entry.metadata)
                 for entry in entries
             ]
         )
@@ -81,7 +84,7 @@ class PGVectorDB(VectorDBProvider):
             )
 
         self.collection.upsert(
-            records=[(str(entry.id), entry.vector, entry.metadata)]
+            records=[(str(entry.id), entry.vector.data, entry.metadata)]
         )
 
     def upsert_entries(
@@ -94,7 +97,7 @@ class PGVectorDB(VectorDBProvider):
 
         self.collection.upsert(
             records=[
-                (str(entry.id), entry.vector, entry.metadata)
+                (str(entry.id), entry.vector.data, entry.metadata)
                 for entry in entries
             ]
         )

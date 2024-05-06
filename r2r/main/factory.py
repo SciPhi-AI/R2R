@@ -16,7 +16,6 @@ from r2r.pipelines import (
     BasicEvalPipeline,
     DefaultDocumentParsingPipeline,
     DefaultEmbeddingPipeline,
-    DocumentType,
     QnARAGPipeline,
 )
 

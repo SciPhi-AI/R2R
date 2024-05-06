@@ -73,15 +73,16 @@ class LocalVectorDBProvider(VectorDBProvider):
 
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
+        serializeable_entry = entry.to_serializable()
         cursor.execute(
             f"""
                 INSERT OR IGNORE INTO "{self.config.collection_name}" (id, vector, metadata)
                 VALUES (?, ?, ?)
             """,
             (
-                str(entry.id),
-                json.dumps(entry.vector),
-                json.dumps(entry.metadata),
+                serializeable_entry['id'],
+                str(serializeable_entry['vector']),
+                json.dumps(serializeable_entry['metadata']),
             ),
         )
         if commit:
@@ -96,15 +97,16 @@ class LocalVectorDBProvider(VectorDBProvider):
 
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
+        serializeable_entry = entry.to_serializable()
         cursor.execute(
             f"""
-            INSERT OR REPLACE INTO "{self.config.collection_name}" (id, vector, metadata)
-            VALUES (?, ?, ?)
-        """,
+                INSERT OR REPLACE INTO "{self.config.collection_name}" (id, vector, metadata)
+                VALUES (?, ?, ?)
+            """,
             (
-                str(entry.id),
-                json.dumps(entry.vector),
-                json.dumps(entry.metadata),
+                serializeable_entry['id'],
+                str(serializeable_entry['vector']),
+                json.dumps(serializeable_entry['metadata']),
             ),
         )
         if commit:
