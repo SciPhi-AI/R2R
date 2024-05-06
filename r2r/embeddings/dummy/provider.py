@@ -1,7 +1,7 @@
 import logging
 import random
 
-from r2r.core import EmbeddingProvider, VectorSearchResult
+from r2r.core import EmbeddingProvider, SearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class DummyEmbeddingProvider(EmbeddingProvider):
     def rerank(
         self,
         transformed_query: str,
-        texts: list[VectorSearchResult],
+        texts: list[SearchResult],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
     ):

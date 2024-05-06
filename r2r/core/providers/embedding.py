@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
 
+from ..abstractions.search import SearchResult
 from .base import Provider, ProviderConfig
-from .vector_db import VectorSearchResult
 
 
 @dataclass
@@ -68,7 +68,7 @@ class EmbeddingProvider(Provider):
     def rerank(
         self,
         query: str,
-        documents: list[VectorSearchResult],
+        documents: list[SearchResult],
         stage: PipeStage = PipeStage.RERANK,
         limit: int = 10,
     ):

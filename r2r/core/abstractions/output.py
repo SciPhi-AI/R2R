@@ -2,7 +2,7 @@ from typing import Optional
 
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
-from ..abstractions.vector import VectorSearchResult
+from ..abstractions.search import SearchResult
 
 LLMChatCompletion = ChatCompletion
 LLMChatCompletionChunk = ChatCompletionChunk
@@ -11,7 +11,7 @@ LLMChatCompletionChunk = ChatCompletionChunk
 class RAGPipeOutput:
     def __init__(
         self,
-        search_results: list[VectorSearchResult],
+        search_results: list[SearchResult],
         context: Optional[str] = None,
         completion: Optional[LLMChatCompletion] = None,
         metadata: Optional[dict[str, str]] = None,

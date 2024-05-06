@@ -9,7 +9,7 @@ from abc import abstractmethod
 from typing import Any, Generator, Optional, Union
 
 from ..abstractions.output import LLMChatCompletion, RAGPipeOutput
-from ..abstractions.vector import VectorSearchResult
+from ..abstractions.search import SearchResult
 from ..providers.embedding import EmbeddingProvider
 from ..providers.llm import GenerationConfig, LLMProvider
 from ..providers.prompt import PromptProvider
@@ -79,7 +79,7 @@ class RAGPipe(Pipe):
         limit: int,
         *args,
         **kwargs,
-    ) -> list[VectorSearchResult]:
+    ) -> list[SearchResult]:
         """
         Searches the vector database with the transformed query to retrieve relevant documents.
         """
@@ -99,15 +99,15 @@ class RAGPipe(Pipe):
     def rerank_results(
         self,
         query: str,
-        results: list[VectorSearchResult],
+        results: list[SearchResult],
         limit: int,
-    ) -> list[VectorSearchResult]:
+    ) -> list[SearchResult]:
         """
         Reranks the retrieved documents based on relevance, if necessary.
         """
         return self.embedding_provider.rerank(query, results, limit=limit)
 
-    def _format_results(self, results: list[VectorSearchResult]) -> str:
+    def _format_results(self, results: list[SearchResult]) -> str:
         """
         Formats the reranked results into a human-readable string.
         """
@@ -120,7 +120,7 @@ class RAGPipe(Pipe):
     @log_output_to_db
     def construct_context(
         self,
-        results: list[VectorSearchResult],
+        results: list[SearchResult],
         *args,
         **kwargs,
     ) -> str:
@@ -256,7 +256,7 @@ class RAGPipe(Pipe):
 
     def _return_stream(
         self,
-        search_results: list[VectorSearchResult],
+        search_results: list[SearchResult],
         context: str,
         prompt: str,
         generation_config: GenerationConfig,

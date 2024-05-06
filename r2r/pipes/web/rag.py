@@ -13,8 +13,8 @@ from r2r.core import (
     LoggingDatabaseConnection,
     RAGPipe,
     RAGPipeOutput,
+    SearchResult,
     VectorDBProvider,
-    VectorSearchResult,
     log_output_to_db,
 )
 from r2r.embeddings import OpenAIEmbeddingProvider
@@ -77,7 +77,7 @@ class WebRAGPipe(RAGPipe):
         limit: int,
         *args,
         **kwargs,
-    ) -> list[VectorSearchResult]:
+    ) -> list[SearchResult]:
         """Perform a search using the Serper API and return results in the expected format."""
         serper_results = self.serper_client.get_raw(query, limit)
         vector_search_results = []
@@ -92,8 +92,8 @@ class WebRAGPipe(RAGPipe):
             snippet = result.get("snippet")
             if not snippet:
                 continue
-            # Create a VectorSearchResult object for each result
-            vector_search_result = VectorSearchResult(
+            # Create a SearchResult object for each result
+            vector_search_result = SearchResult(
                 id=id,  # Using 'title' as a unique identifier
                 score=score,
                 metadata=result,  # Storing the entire result as metadata
@@ -136,7 +136,7 @@ class WebRAGPipe(RAGPipe):
             rerank_limit=rerank_limit,
         )
 
-    def _format_results(self, results: list[VectorSearchResult]) -> str:
+    def _format_results(self, results: list[SearchResult]) -> str:
         """
         Formats the reranked results into a human-readable string.
         """

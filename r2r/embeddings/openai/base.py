@@ -3,7 +3,7 @@ import os
 
 from openai import AsyncOpenAI, OpenAI
 
-from r2r.core import EmbeddingProvider, VectorSearchResult
+from r2r.core import EmbeddingProvider, SearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -162,7 +162,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     def rerank(
         self,
         transformed_message: str,
-        texts: list[VectorSearchResult],
+        texts: list[SearchResult],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
     ):

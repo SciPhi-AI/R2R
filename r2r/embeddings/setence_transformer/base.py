@@ -1,7 +1,7 @@
 import logging
 from dataclasses import asdict
 
-from r2r.core import EmbeddingConfig, EmbeddingProvider, VectorSearchResult
+from r2r.core import EmbeddingConfig, EmbeddingProvider, SearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +123,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
     def rerank(
         self,
         query: str,
-        documents: list[VectorSearchResult],
+        documents: list[SearchResult],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
     ) -> list[list[float]]:

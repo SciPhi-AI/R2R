@@ -12,17 +12,14 @@ from .abstractions.output import (
     RAGPipeOutput,
 )
 from .abstractions.pipes import AsyncPipe
-from .abstractions.vector import (
-    Vector,
-    VectorEntry,
-    VectorSearchResult,
-    VectorType,
-)
+from .abstractions.search import SearchRequest, SearchResult
+from .abstractions.vector import Vector, VectorEntry, VectorType
 from .agent.base import Agent
 from .pipes.embedding import EmbeddingPipe
 from .pipes.eval import EvalPipe
 from .pipes.parsing import DocumentParsingPipe
 from .pipes.rag import RAGPipe
+from .pipes.search import SearchPipe
 from .pipes.storage import StoragePipe
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
 from .providers.eval import EvalConfig, EvalProvider
@@ -35,10 +32,11 @@ __all__ = [
     "LoggingDatabaseConnection",
     "log_output_to_db",
     "RAGPipeOutput",
-    "VectorSearchResult",
     "VectorEntry",
     "VectorType",
     "Vector",
+    "SearchRequest",
+    "SearchResult",
     "Agent",
     "AsyncPipe",
     "EmbeddingPipe",
@@ -51,6 +49,7 @@ __all__ = [
     "FragmentType",
     "Fragment",
     "RAGPipe",
+    "SearchPipe",
     "StoragePipe",
     "EmbeddingConfig",
     "EmbeddingProvider",

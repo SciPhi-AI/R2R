@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from typing import List, Optional, Union
 
 from r2r.core import (
+    SearchResult,
     VectorDBConfig,
     VectorDBProvider,
     VectorEntry,
-    VectorSearchResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -128,7 +128,7 @@ class LocalVectorDBProvider(VectorDBProvider):
         limit: int = 10,
         *args,
         **kwargs,
-    ) -> list[VectorSearchResult]:
+    ) -> list[SearchResult]:
         if self.config.collection_name is None:
             raise ValueError(
                 "Collection name is not set. Please call `initialize_collection` first."
@@ -143,7 +143,7 @@ class LocalVectorDBProvider(VectorDBProvider):
             if all(metadata.get(k) == v for k, v in filters.items()):
                 # Local cosine similarity calculation
                 score = self._cosine_similarity(query_vector, vector)
-                results.append(VectorSearchResult(id, score, metadata))
+                results.append(SearchResult(id, score, metadata))
         results.sort(key=lambda x: x.score, reverse=True)
         conn.close()
         return results[:limit]

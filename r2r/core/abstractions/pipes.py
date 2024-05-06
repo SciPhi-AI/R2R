@@ -36,6 +36,7 @@ class PipeType(Enum):
     PARSING = "parsing"
     EMBEDDING = "embedding"
     STORAGE = "storage"
+    SEARCH = "search"
     OTHER = "other"
 
 
@@ -122,4 +123,5 @@ class Pipeline:
     async def run(self, input: Any) -> Any:
         for pipe in self.pipes:
             input = pipe.run(input)
-        return await input
+        result = await input
+        return result

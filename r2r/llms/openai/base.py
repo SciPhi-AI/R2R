@@ -36,7 +36,7 @@ class OpenAILLM(LLMProvider):
             raise ImportError(
                 "Error, `openai` is required to run an OpenAILLM. Please install it using `pip install openai`."
             )
-        if config.provider_name != "openai":
+        if config.provider != "openai":
             raise ValueError(
                 "OpenAILLM must be initialized with config with `openai` provider."
             )

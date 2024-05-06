@@ -4,10 +4,10 @@ import os
 from typing import Optional, Union
 
 from r2r.core import (
+    SearchResult,
     VectorDBConfig,
     VectorDBProvider,
     VectorEntry,
-    VectorSearchResult,
 )
 from r2r.vecs.client import Client
 from r2r.vecs.collection import Collection, MetadataValues
@@ -115,7 +115,7 @@ class PGVectorDB(VectorDBProvider):
         limit: int = 10,
         *args,
         **kwargs,
-    ) -> list[VectorSearchResult]:
+    ) -> list[SearchResult]:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `search`."
@@ -126,7 +126,7 @@ class PGVectorDB(VectorDBProvider):
         }
 
         return [
-            VectorSearchResult(ele[0], 1 - ele[1], ele[2])  # type: ignore
+            SearchResult(ele[0], 1 - ele[1], ele[2])  # type: ignore
             for ele in self.collection.query(
                 data=query_vector,
                 limit=limit,

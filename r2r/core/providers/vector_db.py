@@ -4,7 +4,8 @@ from typing import Any, Optional, Union
 
 from r2r.vecs.collection import MetadataValues
 
-from ..abstractions.vector import VectorEntry, VectorSearchResult
+from ..abstractions.search import SearchResult
+from ..abstractions.vector import VectorEntry
 from .base import Provider, ProviderConfig
 
 
@@ -53,7 +54,7 @@ class VectorDBProvider(Provider, ABC):
         limit: int = 10,
         *args,
         **kwargs,
-    ) -> list[VectorSearchResult]:
+    ) -> list[SearchResult]:
         pass
 
     @abstractmethod

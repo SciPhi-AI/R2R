@@ -3,10 +3,10 @@ import os
 from typing import Optional, Union
 
 from r2r.core import (
+    SearchResult,
     VectorDBConfig,
     VectorDBProvider,
     VectorEntry,
-    VectorSearchResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -114,7 +114,7 @@ class QdrantDB(VectorDBProvider):
         limit: int = 10,
         *args,
         **kwargs,
-    ) -> list[VectorSearchResult]:
+    ) -> list[SearchResult]:
         if self.config.collection_name is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `search`."
@@ -138,9 +138,7 @@ class QdrantDB(VectorDBProvider):
         )
 
         return [
-            VectorSearchResult(
-                str(result.id), result.score, result.payload or {}
-            )
+            SearchResult(str(result.id), result.score, result.payload or {})
             for result in results
         ]
 

@@ -9,8 +9,8 @@ from r2r.core import (
     PromptProvider,
     RAGPipe,
     RAGPipeOutput,
+    SearchResult,
     VectorDBProvider,
-    VectorSearchResult,
     log_output_to_db,
 )
 
@@ -103,7 +103,7 @@ class HyDEPipe(RAGPipe):
     @log_output_to_db
     def construct_context(
         self,
-        results: list[VectorSearchResult],
+        results: list[SearchResult],
         offset: int,
         query: str,
         *args,
@@ -111,9 +111,7 @@ class HyDEPipe(RAGPipe):
     ) -> str:
         return f"## Query:\n{query}\n\n## Context:\n{self._format_results(results, offset)}\n\n"
 
-    def _format_results(
-        self, results: list[VectorSearchResult], start=1
-    ) -> str:
+    def _format_results(self, results: list[SearchResult], start=1) -> str:
         context = ""
         for i, ele in enumerate(results, start=start):
             context += f"[{i+start}] {ele.metadata['text']}\n\n"
@@ -230,7 +228,7 @@ class HyDEPipe(RAGPipe):
         )
 
     def _construct_joined_context(
-        self, search_results_tuple: tuple[str, list[VectorSearchResult]]
+        self, search_results_tuple: tuple[str, list[SearchResult]]
     ) -> str:
         context = ""
         for offset, (answer, search_results) in enumerate(
