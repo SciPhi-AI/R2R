@@ -1,15 +1,16 @@
 from typing import Any, Optional
 
-from .search import SearchResult
-from .llm import LLMChatCompletion
 from pydantic import BaseModel
+
+from .llm import LLMChatCompletion
+from .search import SearchResult
 
 
 class RAGRequest(BaseModel):
     message: str
     # TODO - change `Any` to a more specific type
     # e.g. something which can be cast to a string
-    inputs: dict[str, Any] 
+    inputs: dict[str, Any]
 
 
 class RAGResult:

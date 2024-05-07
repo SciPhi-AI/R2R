@@ -11,7 +11,7 @@ from .abstractions.llm import (
     LLMChatCompletionChunk,
     RAGPipeOutput,
 )
-from .abstractions.pipes import AsyncPipe, PipeFlow, PipeType, Pipeline
+from .abstractions.pipes import AsyncPipe, PipeFlow, Pipeline, PipeType
 from .abstractions.rag import RAGRequest, RAGResult
 from .abstractions.search import SearchRequest, SearchResult
 from .abstractions.vector import Vector, VectorEntry, VectorType
@@ -43,7 +43,7 @@ __all__ = [
     "Agent",
     "AsyncPipe",
     "PipeFlow",
-    "PipeType", 
+    "PipeType",
     "Pipeline",
     "EmbeddingPipe",
     "EvalPipe",
