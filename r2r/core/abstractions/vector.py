@@ -49,7 +49,7 @@ class VectorEntry:
         return {
             "id": str(self.id),
             "vector": self.vector.data,
-            "metadata": json.dumps(metadata),
+            "metadata": metadata,
         }
 
     def __str__(self) -> str:

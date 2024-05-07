@@ -6,18 +6,17 @@ import logging
 from abc import abstractmethod
 from typing import AsyncGenerator, Optional
 
-from ..abstractions.pipes import PipeType
-from ..abstractions.search import SearchRequest, SearchResult
-from ..providers.vector_db import VectorDBProvider
-from ..utils.logging import LoggingDatabaseConnection
-from .loggable import LoggableAsyncPipe
+from ...core.abstractions.pipes import AsyncPipe, PipeType
+from ...core.abstractions.rag import RAGRequest, RAGResult
+from ...core.providers.vector_db import VectorDBProvider
+from ...core.utils.logging import LoggingDatabaseConnection
 
 logger = logging.getLogger(__name__)
 
 
-class SearchPipe(LoggableAsyncPipe):
-    INPUT_TYPE = SearchRequest
-    OUTPUT_TYPE = AsyncGenerator[SearchResult, None]
+class RAGPipe(AsyncPipe):
+    INPUT_TYPE = RAGRequest
+    OUTPUT_TYPE = AsyncGenerator[RAGResult, None]
 
     def __init__(
         self,
@@ -33,12 +32,12 @@ class SearchPipe(LoggableAsyncPipe):
 
     @property
     def type(self) -> PipeType:
-        return PipeType.SEARCH
+        return PipeType.RAG
 
     @abstractmethod
-    async def search(
-        self, request: SearchRequest
-    ) -> AsyncGenerator[SearchResult, None]:
+    async def rag(
+        self, request: RAGRequest
+    ) -> AsyncGenerator[RAGResult, None]:
         pass
 
     @abstractmethod

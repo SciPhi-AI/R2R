@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any, AsyncGenerator, Optional, Type
 
 from ..utils import generate_run_id
+from ..utils.logging import LoggingDatabaseConnection, log_output_to_db
 
 
 class RunTypeChecker(ABCMeta):
@@ -186,33 +187,3 @@ class Pipeline:
                 if asyncio.iscoroutinefunction(pipe.run)
                 else pipe.run(current_input)
             )
-
-    # async def run(self, input: Any) -> Any:
-    #     current_input = input
-
-    #     for pipe in self.pipes:
-    #         if self.flow == PipeFlow.STANDARD:
-    #             if pipe.flow == PipeFlow.STANDARD:
-    #                 pass
-    #             elif pipe.flow == PipeFlow.FAN_OUT:
-    #                 self.flow = PipeFlow.FAN_OUT
-    #             elif pipe.flow == PipeFlow.FAN_IN:
-    #                 raise ValueError("A FAN_IN pipe cannot be processed while in STANDARD flow.")
-    #             current_input = pipe.run(current_input)
-
-    #         elif self.flow == PipeFlow.FAN_OUT:
-    #             if pipe.flow == PipeFlow.STANDARD:
-    #                 if asyncio.iscoroutine(current_input):
-    #                     current_input = await current_input
-    #                 if not hasattr(current_input, '__aiter__'):
-    #                     raise TypeError("Expected an async generator, got something else")
-    #                 current_input = [await pipe.run(item) async for item in current_input]
-    #             elif pipe.flow == PipeFlow.FAN_OUT:
-    #                 raise ValueError("A FAN_OUT pipe cannot be processed while in FAN_OUT flow.")
-    #             elif pipe.flow == PipeFlow.FAN_IN:
-    #                 current_input = pipe.run(current_input)
-
-    #     if asyncio.iscoroutine(current_input):
-    #         return await current_input
-    #     else:
-    #         return current_input

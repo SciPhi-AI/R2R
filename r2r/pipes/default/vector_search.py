@@ -8,11 +8,12 @@ from typing import Any, AsyncGenerator, Optional
 from r2r.core import (
     EmbeddingProvider,
     LoggingDatabaseConnection,
-    SearchPipe,
     SearchRequest,
     SearchResult,
     VectorDBProvider,
 )
+
+from ..abstractions.search import SearchPipe
 
 logger = logging.getLogger(__name__)
 

@@ -9,14 +9,10 @@ class SearchRequest(BaseModel):
     filters: Optional[dict[str, Any]] = None
 
 
-class SearchResult:
-    def __init__(
-        self, id: str, score: float, metadata: dict[str, Any]
-    ) -> None:
-        """Create a new SearchResult object."""
-        self.id = id
-        self.score = score
-        self.metadata = metadata
+class SearchResult(BaseModel):
+    id: str
+    score: float
+    metadata: dict[str, Any]
 
     def __str__(self) -> str:
         """Return a string representation of the SearchResult."""

@@ -149,9 +149,6 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
 
         # Sort the documents by the new scores in descending order
         reranked_results.sort(key=lambda doc: doc.score, reverse=True)
-        import pdb
-
-        pdb.set_trace()
         return reranked_results
 
     def tokenize_string(

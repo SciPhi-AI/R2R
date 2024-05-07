@@ -6,12 +6,9 @@ import asyncio
 import logging
 from typing import Any, AsyncGenerator, Optional
 
-from r2r.core import (
-    LoggingDatabaseConnection,
-    StoragePipe,
-    VectorDBProvider,
-    VectorEntry,
-)
+from r2r.core import LoggingDatabaseConnection, VectorDBProvider, VectorEntry
+
+from ..abstractions.storage import StoragePipe
 
 logger = logging.getLogger(__name__)
 

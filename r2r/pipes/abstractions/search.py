@@ -6,17 +6,22 @@ import logging
 from abc import abstractmethod
 from typing import AsyncGenerator, Optional
 
-from ..abstractions.pipes import AsyncPipe, PipeType
-from ..abstractions.rag import RAGRequest, RAGResult
-from ..providers.vector_db import VectorDBProvider
-from ..utils.logging import LoggingDatabaseConnection
+from r2r.core import (
+    LoggingDatabaseConnection,
+    PipeType,
+    SearchRequest,
+    SearchResult,
+    VectorDBProvider,
+)
+
+from ..abstractions.loggable import LoggableAsyncPipe
 
 logger = logging.getLogger(__name__)
 
 
-class RAGPipe(AsyncPipe):
-    INPUT_TYPE = RAGRequest
-    OUTPUT_TYPE = AsyncGenerator[RAGResult, None]
+class SearchPipe(LoggableAsyncPipe):
+    INPUT_TYPE = SearchRequest
+    OUTPUT_TYPE = AsyncGenerator[SearchResult, None]
 
     def __init__(
         self,
@@ -32,12 +37,12 @@ class RAGPipe(AsyncPipe):
 
     @property
     def type(self) -> PipeType:
-        return PipeType.RAG
+        return PipeType.SEARCH
 
     @abstractmethod
-    async def rag(
-        self, request: RAGRequest
-    ) -> AsyncGenerator[RAGResult, None]:
+    async def search(
+        self, request: SearchRequest
+    ) -> AsyncGenerator[SearchResult, None]:
         pass
 
     @abstractmethod

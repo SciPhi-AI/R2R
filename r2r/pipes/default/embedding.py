@@ -5,23 +5,66 @@ A simple example to demonstrate the usage of `DefaultEmbeddingPipe`.
 import asyncio
 import copy
 import logging
+from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
-    EmbeddingPipe,
     EmbeddingProvider,
     Extraction,
     Fragment,
     FragmentType,
     LoggingDatabaseConnection,
+    PipeType,
+    TextSplitter,
     Vector,
     VectorEntry,
+    generate_id_from_label,
     log_output_to_db,
 )
-from r2r.core.utils import TextSplitter, generate_id_from_label
 from r2r.embeddings import OpenAIEmbeddingProvider
 
+from ..abstractions.loggable import LoggableAsyncPipe
+
 logger = logging.getLogger(__name__)
+
+
+class EmbeddingPipe(LoggableAsyncPipe):
+    INPUT_TYPE = AsyncGenerator[Extraction, None]
+    OUTPUT_TYPE = AsyncGenerator[VectorEntry, None]
+
+    def __init__(
+        self,
+        embedding_provider: EmbeddingProvider,
+        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        *args,
+        **kwargs,
+    ):
+        self.embedding_provider = embedding_provider
+        super().__init__(logging_connection=logging_connection, **kwargs)
+
+    @property
+    def type(self) -> PipeType:
+        return PipeType.EMBEDDING
+
+    @abstractmethod
+    async def fragment(
+        self, extraction: Extraction
+    ) -> AsyncGenerator[Fragment, None]:
+        pass
+
+    @abstractmethod
+    async def transform_fragments(
+        self, fragments: list[Fragment], metadatas: list[dict]
+    ) -> AsyncGenerator[Fragment, None]:
+        pass
+
+    @abstractmethod
+    async def embed(self, fragments: list[Fragment]) -> list[list[float]]:
+        pass
+
+    @abstractmethod
+    async def run(self, input: INPUT_TYPE, **kwargs) -> OUTPUT_TYPE:
+        pass
 
 
 class DefaultEmbeddingPipe(EmbeddingPipe):

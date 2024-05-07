@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
-from ..abstractions.pipes import AsyncPipe, PipeType
-from ..utils.logging import LoggingDatabaseConnection, log_output_to_db
+from ...core.abstractions.pipes import AsyncPipe, PipeType
+from ...core.utils.logging import LoggingDatabaseConnection, log_output_to_db
 
 
 class LoggableAsyncPipe(AsyncPipe):

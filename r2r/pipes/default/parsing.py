@@ -1,32 +1,69 @@
 """
 A simple example to demonstrate the usage of `DefaultDocumentParsingPipe`.
 """
-
 import logging
-from typing import AsyncGenerator, Optional
+from abc import abstractmethod
+from typing import AsyncGenerator, Iterator, Optional
 
 from r2r.core import (
-    Document,
-    DocumentParsingPipe,
-    DocumentType,
-    Extraction,
-    LoggingDatabaseConnection,
-)
-from r2r.core.parsers import (
     CSVParser,
+    Document,
+    DocumentType,
     DOCXParser,
+    Extraction,
     HTMLParser,
     JSONParser,
+    LoggingDatabaseConnection,
     MarkdownParser,
     Parser,
     PDFParser,
+    PipeType,
     PPTParser,
     TextParser,
     XLSXParser,
+    generate_id_from_label,
 )
-from r2r.core.utils import generate_id_from_label
+
+from ..abstractions.loggable import LoggableAsyncPipe
 
 logger = logging.getLogger(__name__)
+
+
+class DocumentParsingPipe(LoggableAsyncPipe):
+    INPUT_TYPE = AsyncGenerator[Document, None]
+    OUTPUT_TYPE = AsyncGenerator[Extraction, None]
+
+    def __init__(
+        self,
+        selected_parsers: Optional[dict[DocumentType, Parser]] = None,
+        override_parsers: Optional[dict[DocumentType, Parser]] = None,
+        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        *args,
+        **kwargs,
+    ):
+        self.selected_parsers = selected_parsers or {}
+        self.override_parsers = override_parsers or {}
+        super().__init__(logging_connection=logging_connection, **kwargs)
+
+    @property
+    def type(self) -> PipeType:
+        return PipeType.PARSING
+
+    @property
+    def supported_types(self) -> list[str]:
+        """
+        Lists the data types supported by the pipe.
+        """
+        return [entry_type for entry_type in DocumentType]
+
+    @abstractmethod
+    async def parse(
+        self, document: Document, *args, **kwargs
+    ) -> Iterator[Extraction]:
+        """
+        Parse the document based on the type and yield `Extraction` objects.
+        """
+        pass
 
 
 class DefaultDocumentParsingPipe(DocumentParsingPipe):
@@ -102,7 +139,7 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
     ) -> AsyncGenerator[Extraction, None]:
         if document.type not in self.parsers:
             logger.error(
-                f"Parser for {document.type} not found in `AsyncBasicDocumentParsingPipe`."
+                f"Parser for {document.type} not found in `DefaultDocumentParsingPipe`."
             )
             return
         parser = self.parsers[document.type]

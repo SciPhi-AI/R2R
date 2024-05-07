@@ -6,12 +6,21 @@ import logging
 from abc import abstractmethod
 from typing import AsyncGenerator, Generator, Optional
 
-from ..abstractions.document import Extraction, Fragment
-from ..abstractions.pipes import AsyncPipe, PipeType
-from ..providers.embedding import EmbeddingProvider
-from ..providers.vector_db import VectorDBProvider, VectorEntry
-from ..utils import generate_run_id
-from ..utils.logging import LoggingDatabaseConnection
+from r2r.core import (
+    AsyncPipe,
+    EmbeddingProvider,
+    Extraction,
+    Fragment,
+    LoggingDatabaseConnection,
+    PipeType,
+    SearchRequest,
+    SearchResult,
+    VectorDBProvider,
+    VectorEntry,
+    generate_run_id,
+)
+
+from ..abstractions.loggable import LoggableAsyncPipe
 from .loggable import LoggableAsyncPipe
 
 logger = logging.getLogger(__name__)
