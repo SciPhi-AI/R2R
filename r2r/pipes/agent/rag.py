@@ -8,7 +8,7 @@ import re
 from typing import Optional
 
 from r2r.core import GenerationConfig
-from r2r.core.abstractions.output import RAGPipeOutput
+from r2r.core.abstractions.llm import RAGPipeOutput
 
 from ..web.rag import WebRAGPipe
 

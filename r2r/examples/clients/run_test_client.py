@@ -135,5 +135,5 @@ logs_summary_response = client.get_logs_summary()
 print(f"Logs summary response:\n{logs_summary_response}\n")
 
 print("Fetching 'rag' logs after all steps...")
-rag_logs_response = client.get_logs(pipe_type="rag")
+rag_logs_response = client.get_logs(type="rag")
 print(f"'Rag' Logs response:\n{rag_logs_response}\n")

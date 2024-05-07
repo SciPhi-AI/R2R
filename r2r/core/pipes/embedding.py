@@ -31,7 +31,7 @@ class EmbeddingPipe(LoggableAsyncPipe):
         super().__init__(logging_connection=logging_connection, **kwargs)
 
     @property
-    def pipe_type(self) -> PipeType:
+    def type(self) -> PipeType:
         return PipeType.EMBEDDING
 
     @abstractmethod

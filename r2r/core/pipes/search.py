@@ -32,7 +32,7 @@ class SearchPipe(LoggableAsyncPipe):
         )
 
     @property
-    def pipe_type(self) -> PipeType:
+    def type(self) -> PipeType:
         return PipeType.SEARCH
 
     @abstractmethod

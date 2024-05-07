@@ -106,4 +106,4 @@ class DocumentsIngestorModel(BaseModel):
 
 
 # class LogFilterModel(BaseModel):
-#     pipe_type: Optional[str] = None
+#     type: Optional[str] = None

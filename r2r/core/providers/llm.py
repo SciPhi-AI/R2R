@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from ..abstractions.output import LLMChatCompletion, LLMChatCompletionChunk
+from ..abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
 from .base import Provider, ProviderConfig
 
 

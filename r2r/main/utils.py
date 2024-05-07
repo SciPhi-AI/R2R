@@ -217,7 +217,7 @@ def update_aggregation_entries(
     event_aggregation[pipe_run_id]["events"].append(event)  # type: ignore
 
 
-def process_event(event: dict[str, Any], pipe_type: str) -> dict[str, Any]:
+def process_event(event: dict[str, Any], type: str) -> dict[str, Any]:
     method = event["method"]
     result = event.get("result", "N/A")
     processed_result = {}
@@ -227,7 +227,7 @@ def process_event(event: dict[str, Any], pipe_type: str) -> dict[str, Any]:
             processed_result["search_query"] = result
         except Exception as e:
             logger.error(f"Error {e} processing 'ingress' event: {event}")
-    elif method == "ingress" and pipe_type == "embedding":
+    elif method == "ingress" and type == "embedding":
         try:
             id_match = re.search(r"'document_id': '([^']+)'", result)
             page_number = re.search(r"'page_number': '([^']+)'", result)
@@ -298,7 +298,7 @@ def combine_aggregated_logs(
     logs_summary = []
     for run_id, aggregation in event_aggregation.items():
         # Assuming 'pipe_run_type' is available in the log entries to determine the type of pipe
-        pipe_type = (
+        type = (
             aggregation["pipe_run_type"]
             if "pipe_run_type" in aggregation
             else "unknown"
@@ -307,7 +307,7 @@ def combine_aggregated_logs(
         summary_entry = {
             "timestamp": aggregation["timestamp"],
             "pipe_run_id": run_id,
-            "pipe_run_type": pipe_type,
+            "pipe_run_type": type,
             "method": "",
             "search_query": "",
             "search_results": [],
@@ -323,7 +323,7 @@ def combine_aggregated_logs(
         }
 
         for event in aggregation["events"]:
-            new_event = process_event(event, pipe_type)
+            new_event = process_event(event, type)
             if summary_entry["embedding_chunks"]:
                 new_event["embedding_chunks"] = summary_entry[
                     "embedding_chunks"

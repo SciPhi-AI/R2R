@@ -5,7 +5,7 @@ import logging.config
 from abc import ABC, abstractmethod
 from typing import Sequence
 
-from ..abstractions.output import LLMChatCompletion
+from ..abstractions.llm import LLMChatCompletion
 from ..abstractions.tool import Tool
 from ..providers.llm import LLMProvider
 from ..providers.prompt import PromptProvider

@@ -121,7 +121,7 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
             iteration += 1
 
     async def run(
-        self, input: AsyncGenerator[Document, None]
+        self, input: AsyncGenerator[Document, None], *args, **kwargs
     ) -> AsyncGenerator[Extraction, None]:
         self._initialize_pipe()
         async for document in input:

@@ -64,6 +64,7 @@ class DefaultVectorSearchPipe(SearchPipe):
     async def run(
         self,
         input: SearchRequest,
+        *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[SearchResult, None]:
         """

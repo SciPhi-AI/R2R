@@ -64,6 +64,7 @@ class DefaultVectorStoragePipe(StoragePipe):
         self,
         input: AsyncGenerator[VectorEntry, None],
         do_upsert: bool = True,
+        *args: Any,
         **kwargs: Any,
     ) -> None:
         """

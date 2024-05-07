@@ -6,12 +6,13 @@ from .abstractions.document import (
     Fragment,
     FragmentType,
 )
-from .abstractions.output import (
+from .abstractions.llm import (
     LLMChatCompletion,
     LLMChatCompletionChunk,
     RAGPipeOutput,
 )
-from .abstractions.pipes import AsyncPipe
+from .abstractions.pipes import AsyncPipe, PipeFlow, PipeType, Pipeline
+from .abstractions.rag import RAGRequest, RAGResult
 from .abstractions.search import SearchRequest, SearchResult
 from .abstractions.vector import Vector, VectorEntry, VectorType
 from .agent.base import Agent
@@ -35,10 +36,15 @@ __all__ = [
     "VectorEntry",
     "VectorType",
     "Vector",
+    "RAGRequest",
+    "RAGResult",
     "SearchRequest",
     "SearchResult",
     "Agent",
     "AsyncPipe",
+    "PipeFlow",
+    "PipeType", 
+    "Pipeline",
     "EmbeddingPipe",
     "EvalPipe",
     "DocumentParsingPipe",

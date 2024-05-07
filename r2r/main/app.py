@@ -386,7 +386,7 @@ def create_app(
     #                 status_code=404, detail="Logging provider not found."
     #             )
     #         logs = logging_connection.get_logs(
-    #             config.app.get("max_logs", 100), filter.pipe_type
+    #             config.app.get("max_logs", 100), filter.type
     #         )
     #         for log in logs:
     #             LogModel(**log).dict(by_alias=True)
@@ -405,7 +405,7 @@ def create_app(
     #                 status_code=404, detail="Logging provider not found."
     #             )
     #         logs = logging_connection.get_logs(
-    #             config.app.get("max_logs", 100), filter.pipe_type
+    #             config.app.get("max_logs", 100), filter.type
     #         )
     #         logs_summary = process_logs(logs)
     #         events_summary = [
