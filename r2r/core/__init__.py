@@ -12,6 +12,7 @@ from .abstractions.llm import (
     RAGPipeOutput,
 )
 from .abstractions.pipes import AsyncPipe, PipeFlow, Pipeline, PipeType
+from .abstractions.prompt import Prompt
 from .abstractions.rag import RAGRequest, RAGResult
 from .abstractions.search import SearchRequest, SearchResult
 from .abstractions.vector import Vector, VectorEntry, VectorType
@@ -65,8 +66,9 @@ __all__ = [
     # "Agent",
     "AsyncPipe",
     "PipeFlow",
-    "PipeType",
     "Pipeline",
+    "PipeType",
+    "Prompt",
     # "EmbeddingPipe",
     # "EvalPipe",
     # "DocumentParsingPipe",

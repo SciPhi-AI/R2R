@@ -3,11 +3,15 @@ A simple example to demonstrate the usage of `DefaultEmbeddingPipe`.
 """
 
 import logging
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Optional, Type
+
+from pydantic import BaseModel
 
 from r2r.core import (
     EmbeddingProvider,
+    LLMProvider,
     LoggingDatabaseConnection,
+    PromptProvider,
     SearchRequest,
     SearchResult,
     VectorDBProvider,
@@ -17,14 +21,21 @@ from ..abstractions.loggable import LoggableAsyncPipe
 
 logger = logging.getLogger(__name__)
 
-
-class QueryTransform(LoggableAsyncPipe):
+class QueryRequest(BaseModel):
+    query: str
+    settings: dict
+    
+class DefaultQueryTransformPipe(LoggableAsyncPipe):
     """
     Stores embeddings in a vector database asynchronously.
     """
+    INPUT_TYPE = QueryRequest
+    OUTPUT_TYPE = list[str]
 
     def __init__(
         self,
+        llm_provider: LLMProvider,
+        prompt_provider: PromptProvider,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs,
@@ -44,7 +55,7 @@ class QueryTransform(LoggableAsyncPipe):
 
     async def transform(
         self,
-        request: SearchRequest,
+        request: QueryRequest,
     ) -> AsyncGenerator[SearchResult, None]:
         """
         Stores a batch of vector entries in the database.
@@ -60,13 +71,13 @@ class QueryTransform(LoggableAsyncPipe):
 
     async def run(
         self,
-        input: SearchRequest,
+        input: QueryRequest,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[SearchResult, None]:
+    ) -> OUTPUT_TYPE:
         """
         Executes the async vector storage pipe: storing embeddings in the vector database.
         """
         self._initialize_pipe()
-        async for result in self.search(request=input):
+        async for result in self.transform(request=input):
             yield result

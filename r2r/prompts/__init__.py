@@ -1,3 +1,3 @@
-from .local.prompt import BasicPromptProvider
+from .local.prompt import DefaultPromptProvider
 
-__all__ = ["BasicPromptProvider"]
+__all__ = ["DefaultPromptProvider"]

@@ -1,4 +1,4 @@
-from ..prompts.local.prompt import BasicPromptProvider
+from ..prompts.local.prompt import DefaultPromptProvider
 from .default.embedding import DefaultEmbeddingPipe
 
 # from .default.eval import BasicEvalPipe
@@ -13,5 +13,5 @@ __all__ = [
     "DefaultDocumentParsingPipe",
     "DefaultVectorSearchPipe",
     "DefaultVectorStoragePipe",
-    "BasicPromptProvider",
+    "DefaultPromptProvider",
 ]
