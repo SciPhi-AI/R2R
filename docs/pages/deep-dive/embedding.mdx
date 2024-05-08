@@ -73,7 +73,7 @@ class CustomEmbeddingPipeline(BasicEmbeddingPipeline):
         embedding_provider: OpenAIEmbeddingProvider,
         vector_db_provider: VectorDBProvider,
         text_splitter: TextSplitter,
-        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[LoggingDatabaseConnectionSingleton] = None,
         embedding_batch_size: int = 1,
         id_prefix: str = "demo",
     ):

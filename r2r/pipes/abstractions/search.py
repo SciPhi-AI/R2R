@@ -7,7 +7,7 @@ from abc import abstractmethod
 from typing import AsyncGenerator, Optional
 
 from r2r.core import (
-    LoggingDatabaseConnection,
+    LoggingDatabaseConnectionSingleton,
     PipeConfig,
     PipeType,
     SearchRequest,
@@ -25,7 +25,9 @@ class SearchPipe(LoggableAsyncPipe):
         self,
         config: PipeConfig,
         vector_db_provider: VectorDBProvider,
-        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[
+            LoggingDatabaseConnectionSingleton
+        ] = None,
         *args,
         **kwargs,
     ):

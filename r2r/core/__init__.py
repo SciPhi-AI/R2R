@@ -56,11 +56,11 @@ from .utils import (
     generate_run_id,
 )
 from .utils.config import R2RConfig
-from .utils.logging import LoggingDatabaseConnection, log_output_to_db
+from .utils.logging import LoggingDatabaseConnectionSingleton, log_output_to_db
 
 __all__ = [
     # Abstractions
-    "LoggingDatabaseConnection",
+    "LoggingDatabaseConnectionSingleton",
     "log_output_to_db",
     "RAGPipeOutput",
     "VectorEntry",

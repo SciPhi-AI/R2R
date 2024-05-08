@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from r2r.core import (
     Context,
-    LoggingDatabaseConnection,
+    LoggingDatabaseConnectionSingleton,
     PipeConfig,
     SearchResult,
 )
@@ -26,7 +26,9 @@ class DefaultSearchRAGContextPipe(AggregatorPipe):
     def __init__(
         self,
         config: Optional[SearchRAGContextConfig] = None,
-        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[
+            LoggingDatabaseConnectionSingleton
+        ] = None,
         *args,
         **kwargs,
     ):

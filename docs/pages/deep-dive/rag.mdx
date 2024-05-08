@@ -13,7 +13,7 @@ The `QnARAGPipeline` is initialized with the following parameters:
 - `vector_db_provider`: An instance of `VectorDBProvider` for searching and retrieving documents.
 - `embedding_provider`: An instance of `OpenAIEmbeddingProvider` for generating embeddings.
 - `prompt_provider` (optional): An instance of `PromptProvider` for providing prompts (default is `BasicPromptProvider`).
-- `logging_connection` (optional): An instance of `LoggingDatabaseConnection` for logging.
+- `logging_connection` (optional): An instance of `LoggingDatabaseConnectionSingleton` for logging.
 
 ### Query Transformation
 
@@ -43,7 +43,7 @@ class CustomRAGPipeline(RAGPipeline):
         vector_db_provider: VectorDBProvider,
         embedding_provider: OpenAIEmbeddingProvider,
         prompt_provider: Optional[PromptProvider] = None,
-        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[LoggingDatabaseConnectionSingleton] = None,
     ) -> None:
         if not prompt_provider:
             prompt_provider = BasicPromptProvider()

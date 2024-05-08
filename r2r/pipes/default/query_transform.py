@@ -7,7 +7,7 @@ from r2r.core import (
     Context,
     GenerationConfig,
     LLMProvider,
-    LoggingDatabaseConnection,
+    LoggingDatabaseConnectionSingleton,
     PipeConfig,
     PipeFlow,
     PipeType,
@@ -39,7 +39,9 @@ class DefaultQueryTransformPipe(LoggableAsyncPipe):
         llm_provider: LLMProvider,
         prompt_provider: PromptProvider,
         config: Optional[QueryTransformConfig] = None,
-        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[
+            LoggingDatabaseConnectionSingleton
+        ] = None,
         *args,
         **kwargs,
     ):

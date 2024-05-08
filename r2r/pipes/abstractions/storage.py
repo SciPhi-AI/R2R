@@ -11,7 +11,7 @@ from r2r.core import (
     EmbeddingProvider,
     Extraction,
     Fragment,
-    LoggingDatabaseConnection,
+    LoggingDatabaseConnectionSingleton,
     PipeType,
     SearchRequest,
     SearchResult,
@@ -33,7 +33,9 @@ class StoragePipe(LoggableAsyncPipe):
     def __init__(
         self,
         vector_db_provider: VectorDBProvider,
-        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[
+            LoggingDatabaseConnectionSingleton
+        ] = None,
         *args,
         **kwargs,
     ):

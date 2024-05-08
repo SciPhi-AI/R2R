@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from r2r.core import (
     Context,
     EmbeddingProvider,
-    LoggingDatabaseConnection,
+    LoggingDatabaseConnectionSingleton,
     PipeConfig,
     PipeFlow,
     PipeType,
@@ -37,7 +37,9 @@ class DefaultVectorSearchPipe(SearchPipe):
         vector_db_provider: VectorDBProvider,
         embedding_provider: EmbeddingProvider,
         config: Optional[VectorSearchConfig] = None,
-        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[
+            LoggingDatabaseConnectionSingleton
+        ] = None,
         *args,
         **kwargs,
     ):

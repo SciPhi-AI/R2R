@@ -9,7 +9,7 @@ from typing import AsyncGenerator, Optional
 from ...core.abstractions.pipes import AsyncPipe, PipeType
 from ...core.abstractions.rag import RAGRequest, RAGResult
 from ...core.providers.vector_db import VectorDBProvider
-from ...core.utils.logging import LoggingDatabaseConnection
+from ...core.utils.logging import LoggingDatabaseConnectionSingleton
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,9 @@ class RAGPipe(AsyncPipe):
     def __init__(
         self,
         vector_db_provider: VectorDBProvider,
-        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[
+            LoggingDatabaseConnectionSingleton
+        ] = None,
         *args,
         **kwargs,
     ):

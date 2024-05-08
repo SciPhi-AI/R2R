@@ -13,7 +13,7 @@ from r2r.core import (
     Extraction,
     HTMLParser,
     JSONParser,
-    LoggingDatabaseConnection,
+    LoggingDatabaseConnectionSingleton,
     MarkdownParser,
     Parser,
     PDFParser,
@@ -37,7 +37,9 @@ class DocumentParsingPipe(LoggableAsyncPipe):
         self,
         selected_parsers: Optional[dict[DocumentType, Parser]] = None,
         override_parsers: Optional[dict[DocumentType, Parser]] = None,
-        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[
+            LoggingDatabaseConnectionSingleton
+        ] = None,
         *args,
         **kwargs,
     ):
@@ -88,7 +90,9 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
         self,
         selected_parsers: Optional[dict[DocumentType, str]] = None,
         override_parsers: Optional[dict[DocumentType, Parser]] = None,
-        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[
+            LoggingDatabaseConnectionSingleton
+        ] = None,
     ):
         logger.info(
             "Initializing a `DefaultDocumentParsingPipe` to parse incoming documents."

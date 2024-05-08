@@ -7,7 +7,7 @@ from r2r.core import (
     GenerationConfig,
     LLMChatCompletion,
     LLMProvider,
-    LoggingDatabaseConnection,
+    LoggingDatabaseConnectionSingleton,
     PipeConfig,
     PipeFlow,
     PipeType,
@@ -40,7 +40,9 @@ class DefaultLLMGenerationPipe(LoggableAsyncPipe):
         llm_provider: LLMProvider,
         prompt_provider: PromptProvider,
         config: Optional[LLMGenerationConfig] = None,
-        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[
+            LoggingDatabaseConnectionSingleton
+        ] = None,
         *args,
         **kwargs,
     ):

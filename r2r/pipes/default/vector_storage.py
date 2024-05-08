@@ -9,7 +9,7 @@ from typing import Any, AsyncGenerator, Optional
 from pydantic import BaseModel
 
 from r2r.core import (
-    LoggingDatabaseConnection,
+    LoggingDatabaseConnectionSingleton,
     PipeConfig,
     VectorDBProvider,
     VectorEntry,
@@ -32,7 +32,9 @@ class DefaultVectorStoragePipe(StoragePipe):
     def __init__(
         self,
         vector_db_provider: VectorDBProvider,
-        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[
+            LoggingDatabaseConnectionSingleton
+        ] = None,
         config: Optional[Config] = None,
         storage_batch_size: int = 128,
         *args,

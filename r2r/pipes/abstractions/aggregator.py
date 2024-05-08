@@ -4,7 +4,7 @@ from typing import Any, AsyncGenerator, List, Optional
 
 from r2r.core import (
     Context,
-    LoggingDatabaseConnection,
+    LoggingDatabaseConnectionSingleton,
     PipeConfig,
     PipeFlow,
     PipeType,
@@ -19,7 +19,9 @@ class AggregatorPipe(LoggableAsyncPipe):
     def __init__(
         self,
         config: PipeConfig,
-        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[
+            LoggingDatabaseConnectionSingleton
+        ] = None,
         *args,
         **kwargs
     ):

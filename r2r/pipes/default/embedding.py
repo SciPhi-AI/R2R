@@ -13,7 +13,7 @@ from r2r.core import (
     Extraction,
     Fragment,
     FragmentType,
-    LoggingDatabaseConnection,
+    LoggingDatabaseConnectionSingleton,
     PipeType,
     TextSplitter,
     Vector,
@@ -35,7 +35,9 @@ class EmbeddingPipe(LoggableAsyncPipe):
     def __init__(
         self,
         embedding_provider: EmbeddingProvider,
-        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[
+            LoggingDatabaseConnectionSingleton
+        ] = None,
         *args,
         **kwargs,
     ):
@@ -76,7 +78,9 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
         self,
         embedding_provider: OpenAIEmbeddingProvider,
         text_splitter: TextSplitter,
-        logging_connection: Optional[LoggingDatabaseConnection] = None,
+        logging_connection: Optional[
+            LoggingDatabaseConnectionSingleton
+        ] = None,
         embedding_batch_size: int = 1,
         id_prefix: str = "demo",
         *args,

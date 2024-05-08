@@ -2,6 +2,7 @@ import functools
 import json
 import logging
 import os
+import threading
 import types
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -72,7 +73,7 @@ class PostgresLoggingProvider(LoggingProvider):
             ]
         ):
             raise ValueError(
-                "Please set the environment variables POSTGRES_DBNAME, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, and POSTGRES_PORT to run `LoggingDatabaseConnection` with `postgres`."
+                "Please set the environment variables POSTGRES_DBNAME, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, and POSTGRES_PORT to run `LoggingDatabaseConnectionSingleton` with `postgres`."
             )
         self.conn = self.db_module.connect(
             dbname=os.getenv("POSTGRES_DBNAME"),
@@ -153,7 +154,7 @@ class LocalLoggingProvider(LoggingProvider):
         logging_path = os.getenv("LOCAL_DB_PATH", "local.sqlite")
         if not logging_path:
             raise ValueError(
-                "Please set the environment variable LOCAL_DB_PATH to run `LoggingDatabaseConnection` with `local`."
+                "Please set the environment variable LOCAL_DB_PATH to run `LoggingDatabaseConnectionSingleton` with `local`."
             )
         self.logging_path = logging_path
         self.db_module = self._import_db_module()
@@ -245,7 +246,7 @@ class RedisLoggingProvider(LoggingProvider):
             ]
         ):
             raise ValueError(
-                "Please set the environment variables REDIS_CLUSTER_IP and REDIS_CLUSTER_PORT to run `LoggingDatabaseConnection` with `redis`."
+                "Please set the environment variables REDIS_CLUSTER_IP and REDIS_CLUSTER_PORT to run `LoggingDatabaseConnectionSingleton` with `redis`."
             )
         try:
             from redis import Redis
@@ -293,7 +294,7 @@ class RedisLoggingProvider(LoggingProvider):
         if pipe_run_type:
             if pipe_run_type not in RUN_TYPES:
                 raise ValueError(
-                    f"Error, `{pipe_run_type}` is not in LoggingDatabaseConnection's list of supported run types."
+                    f"Error, `{pipe_run_type}` is not in LoggingDatabaseConnectionSingleton's list of supported run types."
                 )
             # Fetch logs for a specific type
             key_to_fetch = f"{self.log_key}:{pipe_run_type}"
@@ -311,39 +312,56 @@ class RedisLoggingProvider(LoggingProvider):
             return all_logs[:max_logs]
 
 
-class LoggingDatabaseConnection:
-    """
-    A class to connect to a database and log the execution of methods to it.
-    """
-
-    supported_providers = {
+class LoggingDatabaseConnectionSingleton:
+    _instance = None
+    _lock = threading.Lock()
+    _is_configured = False
+    SUPPORTED_PROVIDERS = {
         "postgres": PostgresLoggingProvider,
         "local": LocalLoggingProvider,
         "redis": RedisLoggingProvider,
     }
+    def __new__(cls):
+        with cls._lock:
+            if cls._instance is None:
+                if not cls._is_configured:
+                    # Raise an error if someone tries to create an instance before configuring
+                    raise Exception(
+                        "LoggingDatabaseConnectionSingleton is not configured. Please call configure() before accessing the instance."
+                    )
+                cls._instance = super(
+                    LoggingDatabaseConnectionSingleton, cls
+                ).__new__(cls)
+                # Call init to setup the provider after instance creation
+                cls._instance.init()
+        return cls._instance
 
-    def __init__(
-        self,
-        provider="postgres",
-        collection_name="logs",
-    ):
-        if provider not in self.supported_providers:
-            raise ValueError(
-                f"Error, `{provider}` is not in LoggingDatabaseConnection's list of supported providers."
-            )
-
-        self.provider = provider
-        if provider == "redis":
-            self.logging_provider = self.supported_providers[provider](
-                collection_name
-            )
+    @classmethod
+    def configure(cls, provider="postgres", collection_name="logs"):
+        if not cls._is_configured:
+            cls._provider = provider
+            cls._collection_name = collection_name
+            cls._is_configured = True
         else:
-            self.logging_provider = self.supported_providers[provider](
-                collection_name
+            raise Exception(
+                "LoggingDatabaseConnectionSingleton is already configured."
             )
+
+    def init(self):
+        # Initialize logging provider; this should only run once the singleton instance is being created
+        self.provider = self._provider
+        self.collection_name = self._collection_name
+        self._setup_provider()
+
+    def _setup_provider(self):
+        # Assuming self.provider and self.collection_name are set from the configure method
+        if self.provider not in self.SUPPORTED_PROVIDERS:
+            raise ValueError(f"Unsupported provider: {self.provider}")
+        self.logging_provider = self.SUPPORTED_PROVIDERS[self.provider](
+            self.collection_name
+        )
 
     def __enter__(self):
-        self.logging_provider.connect()
         return self.logging_provider
 
     def __exit__(self, exc_type, exc_val, exc_tb):
