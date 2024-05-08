@@ -78,3 +78,8 @@ class LLMProvider(Provider):
     ) -> LLMChatCompletionChunk:
         """Abstract method to get a completion stream from the provider."""
         pass
+
+    @abstractmethod
+    def extract_content(self, response: LLMChatCompletion) -> str:
+        """Abstract method to parse the response from the provider."""
+        pass

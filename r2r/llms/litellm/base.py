@@ -59,6 +59,9 @@ class LiteLLM(LLMProvider):
             )
         return self._get_completion(messages, generation_config, **kwargs)
 
+    def extract_content(self, response: LLMChatCompletion) -> str:
+        return response.choices[0].message.content
+
     def _get_completion(
         self,
         messages: list[dict],

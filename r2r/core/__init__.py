@@ -11,7 +11,14 @@ from .abstractions.llm import (
     LLMChatCompletionChunk,
     RAGPipeOutput,
 )
-from .abstractions.pipes import AsyncPipe, PipeFlow, Pipeline, PipeType
+from .abstractions.pipes import (
+    AsyncPipe,
+    Context,
+    PipeConfig,
+    PipeFlow,
+    Pipeline,
+    PipeType,
+)
 from .abstractions.prompt import Prompt
 from .abstractions.rag import RAGRequest, RAGResult
 from .abstractions.search import SearchRequest, SearchResult
@@ -68,6 +75,8 @@ __all__ = [
     "PipeFlow",
     "Pipeline",
     "PipeType",
+    "PipeConfig",
+    "Context",
     "Prompt",
     # "EmbeddingPipe",
     # "EvalPipe",

@@ -1,45 +1,36 @@
 import asyncio
-from abc import ABC, ABCMeta, abstractmethod, abstractproperty
+import logging
+from abc import ABC, abstractmethod
+from copy import copy
 from enum import Enum
-from typing import Any, AsyncGenerator, Optional, Type
+from typing import (
+    Any,
+    AsyncGenerator,
+    Generic,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
+
+from pydantic import ValidationError
 
 from ..utils import generate_run_id
-from ..utils.logging import LoggingDatabaseConnection, log_output_to_db
 
-
-class RunTypeChecker(ABCMeta):
-    def __new__(cls, name, bases, namespace, *args, **kwargs):
-        if (
-            "run" in namespace
-            and "INPUT_TYPE" in namespace
-            and "OUTPUT_TYPE" in namespace
-        ):
-            original_run = namespace["run"]
-
-            def wrapped_run(
-                self, input: namespace["INPUT_TYPE"], *args, **kwargs
-            ) -> namespace["OUTPUT_TYPE"]:
-                if not isinstance(input, namespace["INPUT_TYPE"]):
-                    raise TypeError(
-                        f"{self.__class__.__name__}: Expected input of type {namespace['INPUT_TYPE'].__name__}, got {type(input).__name__}"
-                    )
-                result = original_run(self, input, *args, **kwargs)
-                if not isinstance(result, namespace["OUTPUT_TYPE"]):
-                    raise TypeError(
-                        f"{self.__class__.__name__}: Expected output of type {namespace['OUTPUT_TYPE'].__name__}, got {type(result).__name__}"
-                    )
-                return result
-
-            namespace["run"] = wrapped_run
-        return super().__new__(cls, name, bases, namespace)
+logger = logging.getLogger(__name__)
 
 
 class PipeType(Enum):
-    PARSING = "parsing"
     EMBEDDING = "embedding"
-    STORAGE = "storage"
+    GENERATION = "generation"
+    PARSING = "parsing"
+    QUERY_TRANSFORM = "query_transform"
     SEARCH = "search"
-    RAG = "rag"
+    AGGREGATOR = "aggregator"
+    STORAGE = "storage"
     OTHER = "other"
 
 
@@ -55,14 +46,63 @@ class PipeRunInfo:
         self.type = type
 
 
-class AsyncPipe(ABC, metaclass=RunTypeChecker):
-    INPUT_TYPE = Type[Any]
-    OUTPUT_TYPE = Type[Any]
-    FLOW = PipeFlow.STANDARD
+class PipeConfig(ABC):
+    """A base pipe configuration class"""
 
-    def __init__(self, *args, **kwargs):
+    name: str
+
+
+class Context:
+    def __init__(self):
+        self.data = {}
+        self.lock = asyncio.Lock()
+
+    async def update(self, outer_key: str, values: dict):
+        async with self.lock:
+            if not isinstance(values, dict):
+                raise ValueError("Values must be contained in a dictionary.")
+            if outer_key not in self.data:
+                self.data[outer_key] = {}
+            for inner_key, inner_value in values.items():
+                self.data[outer_key][inner_key] = inner_value
+
+    async def get(self, outer_key: str, inner_key: str, default=None):
+        async with self.lock:
+            if outer_key not in self.data:
+                raise ValueError(
+                    f"Key {outer_key} does not exist in the context."
+                )
+            if inner_key not in self.data[outer_key]:
+                return default or {}
+            return self.data[outer_key][inner_key]
+
+    async def delete(self, outer_key: str, inner_key: Optional[str] = None):
+        async with self.lock:
+            if outer_key in self.data and not inner_key:
+                del self.data[outer_key]
+            else:
+                if inner_key not in self.data[outer_key]:
+                    raise ValueError(
+                        f"Key {inner_key} does not exist in the context."
+                    )
+                del self.data[outer_key][inner_key]
+
+
+TInput = TypeVar("TInput")
+TOutput = TypeVar("TOutput")
+
+
+class AsyncPipe(Generic[TInput, TOutput], ABC):
+    def __init__(self, config: PipeConfig, *args, **kwargs):
+        self.__class__.CONFIG_TYPE = type(config)
+        self._config = config
+
         self.pipe_run_info: Optional[PipeRunInfo] = None
         self.is_async = True
+
+        type_hints = get_type_hints(self.run)
+        self.INPUT_TYPE = type_hints.get("input")
+        self.OUTPUT_TYPE = type_hints.get("return")
 
     def __getattribute__(self, name):
         attr = super().__getattribute__(name)
@@ -101,26 +141,83 @@ class AsyncPipe(ABC, metaclass=RunTypeChecker):
                 "The pipe has not been initialized. Please call `_initialize_pipe` before running the pipe."
             )
 
-    def _initialize_pipe(self, *args, **kwargs) -> None:
+    async def _initialize_pipe(
+        self, input: TInput, context: Context, *args, **kwargs
+    ) -> None:
         self.pipe_run_info = PipeRunInfo(
             generate_run_id(),
             self.type,
         )
+        settings = await context.get(self.config.name, "settings")
+        self._update_config(**settings)
+
+    def _update_config(self, config_overrides: Optional[dict] = None) -> None:
+        config_overrides = config_overrides or {}
+        try:
+            # Update the existing config dictionary with the new overrides
+            # Use the setter to apply the updated configuration
+            self.config = {**self.config.dict(), **config_overrides}
+        except ValidationError as e:
+            logger.error(f"Configuration validation error: {e}")
+            raise
 
     @property
-    def flow(self) -> PipeFlow:
-        return self.FLOW
+    def config(self) -> PipeConfig:
+        return self._config
 
-    def close(self):
+    @config.setter
+    def config(self, value: Union[dict, PipeConfig]):
+        if isinstance(value, dict):
+            # Dynamically create an instance of CONFIG_TYPE from a dictionary
+            if self.__class__.CONFIG_TYPE is not None:
+                self._config = self.__class__.CONFIG_TYPE(**value)
+            else:
+                raise ValueError("CONFIG_TYPE is not set for this class.")
+        elif isinstance(value, PipeConfig):
+            # Check if the instance type is compatible
+            if isinstance(value, self.__class__.CONFIG_TYPE):
+                self._config = value
+            else:
+                raise TypeError(
+                    f"Config must be an instance of {self.__class__.CONFIG_TYPE.__name__}"
+                )
+        else:
+            raise TypeError(
+                "Config must be a dictionary or an instance of the defined CONFIG_TYPE"
+            )
+
+    @property
+    @abstractmethod
+    def flow(self) -> PipeFlow:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def type(self) -> PipeType:
         pass
 
     @abstractmethod
-    async def run(self, input: INPUT_TYPE) -> OUTPUT_TYPE:
+    async def run(self, input: TInput, context: Context) -> TOutput:
         pass
+
+
+class ConfigurationAggregator:
+    def __init__(self):
+        self.configs: dict[str, PipeConfig] = {}
+        self.global_config = {}
+
+    def register_pipe(self, pipe: AsyncPipe):
+        """Register or update a pipe's configuration with default and overridden settings."""
+        if pipe.config.name in self.configs:
+            raise ValueError(
+                f"Pipe with name {pipe.config.name} already exists."
+            )
+        config = copy(pipe.config.dict())
+        self.configs[config.pop("name")] = config
+
+    def get_config(self, pipe_name: str) -> PipeConfig:
+        """Get the configuration for a specific pipe."""
+        return self.configs.get(pipe_name, PipeConfig())
 
 
 class Pipeline:
@@ -128,62 +225,62 @@ class Pipeline:
     OUTPUT_TYPE = Type[Any]
 
     def __init__(
-        self, pipes: Optional[list[AsyncPipe]] = None, *args, **kwargs
+        self,
+        context: Optional[Context] = None,
+        config_aggregator: Optional[ConfigurationAggregator] = None,
+        *args,
+        **kwargs,
     ):
-        self.pipes: list[AsyncPipe] = [] if pipes is None else pipes
+        if not config_aggregator:
+            config_aggregator = ConfigurationAggregator()
+        if not context:
+            context = Context()
+
+        self.pipes = []
+        self.context = context
+        self.config_aggregator = config_aggregator
         self.flow = PipeFlow.STANDARD
 
-    def add_pipe(self, pipe: AsyncPipe):
-        if self.pipes and self.pipes[-1].OUTPUT_TYPE != pipe.INPUT_TYPE:
-            raise TypeError(
-                "Output type of the last pipe does not match input type of the new pipe."
-            )
+    async def add_pipe(self, pipe: AsyncPipe):
+        # if self.pipes and self.pipes[-1].OUTPUT_TYPE != pipe.INPUT_TYPE:
+        #     raise TypeError(
+        #         "Output type of the last pipe does not match input type of the new pipe."
+        #     )
         self.pipes.append(pipe)
+        self.config_aggregator.register_pipe(pipe)
+        await self.context.update(pipe.config.name, {"settings": {}})
 
     async def run(self, input: Any) -> Any:
         current_input = input
         for pipe in self.pipes:
-            if self.flow == PipeFlow.STANDARD:
-                if pipe.flow == PipeFlow.FAN_OUT:
-                    self.flow = PipeFlow.FAN_OUT
-                elif pipe.flow == PipeFlow.FAN_IN:
-                    raise ValueError(
-                        "A FAN_IN pipe cannot be processed while in STANDARD flow."
-                    )
-
-            elif self.flow == PipeFlow.FAN_OUT:
-                if pipe.flow == PipeFlow.STANDARD:
-                    current_input = await self.handle_standard_flow(
-                        current_input
-                    )
-                elif pipe.flow == PipeFlow.FAN_OUT:
-                    raise ValueError(
-                        "A FAN_OUT pipe cannot be processed while in FAN_OUT flow."
-                    )
-                elif pipe.flow == PipeFlow.FAN_IN:
-                    # Presumably, handling for transitioning to FAN_IN flow
-                    self.flow = PipeFlow.FAN_IN
             current_input = await self.execute_pipe(pipe, current_input)
-
-        return current_input
-
-    async def handle_standard_flow(self, current_input):
-        if asyncio.iscoroutine(current_input):
-            current_input = await current_input
-        if not hasattr(current_input, "__aiter__"):
-            raise TypeError("Expected an async generator, got something else")
-        return current_input
+        if isinstance(current_input, AsyncGenerator):
+            collection = []
+            async for item in current_input:
+                collection.append(item)
+            return collection
+        else:
+            return await current_input
 
     async def execute_pipe(self, pipe, current_input):
-        if self.flow == PipeFlow.FAN_OUT and hasattr(
-            current_input, "__aiter__"
-        ):
-            # Process each item concurrently if the current flow is FAN_OUT
-            return [await pipe.run(item) async for item in current_input]
+        if self.flow == PipeFlow.FAN_OUT:
+            if pipe.flow == PipeFlow.STANDARD:
+                # Process each item concurrently if the current flow is FAN_OUT
+                if hasattr(current_input, "__aiter__"):
+                    return [
+                        pipe.run(item, self.context)
+                        async for item in current_input
+                    ]
+                else:
+                    return [
+                        pipe.run(item, self.context) for item in current_input
+                    ]
+            elif pipe.flow == PipeFlow.FAN_IN:
+                # Collect the results of the FAN_OUT flow
+                pipe.run(current_input)
+                self.flow = PipeFlow.STANDARD
+
+        elif self.flow == PipeFlow.STANDARD:
+            return pipe.run(current_input, self.context)
         else:
-            # Check if the pipe function is a coroutine function and execute accordingly
-            return (
-                await pipe.run(current_input)
-                if asyncio.iscoroutinefunction(pipe.run)
-                else pipe.run(current_input)
-            )
+            raise ValueError("Invalid flow state.")

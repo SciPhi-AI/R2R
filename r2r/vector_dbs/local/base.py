@@ -143,7 +143,9 @@ class LocalVectorDBProvider(VectorDBProvider):
             if all(metadata.get(k) == v for k, v in filters.items()):
                 # Local cosine similarity calculation
                 score = self._cosine_similarity(query_vector, vector)
-                results.append(SearchResult(id=id, score=score, metadata=json_metadata))
+                results.append(
+                    SearchResult(id=id, score=score, metadata=json_metadata)
+                )
         results.sort(key=lambda x: x.score, reverse=True)
         conn.close()
         return results[:limit]

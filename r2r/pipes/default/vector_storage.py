@@ -6,7 +6,14 @@ import asyncio
 import logging
 from typing import Any, AsyncGenerator, Optional
 
-from r2r.core import LoggingDatabaseConnection, VectorDBProvider, VectorEntry
+from pydantic import BaseModel
+
+from r2r.core import (
+    LoggingDatabaseConnection,
+    PipeConfig,
+    VectorDBProvider,
+    VectorEntry,
+)
 
 from ..abstractions.storage import StoragePipe
 
@@ -18,10 +25,15 @@ class DefaultVectorStoragePipe(StoragePipe):
     Stores embeddings in a vector database asynchronously.
     """
 
+    class Config(BaseModel, PipeConfig):
+        # test: str = "test"
+        pass
+
     def __init__(
         self,
         vector_db_provider: VectorDBProvider,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
+        config: Optional[Config] = None,
         storage_batch_size: int = 128,
         *args,
         **kwargs,
@@ -34,6 +46,7 @@ class DefaultVectorStoragePipe(StoragePipe):
         )
 
         super().__init__(
+            config=config or DefaultVectorStoragePipe.Config(),
             vector_db_provider=vector_db_provider,
             logging_connection=logging_connection,
             **kwargs,

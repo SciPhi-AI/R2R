@@ -4,8 +4,8 @@ from typing import Any, AsyncGenerator, Optional
 from pydantic import BaseModel
 
 from r2r.core import (
-    Context,
     GenerationConfig,
+    LLMChatCompletion,
     LLMProvider,
     LoggingDatabaseConnection,
     PipeConfig,
@@ -19,26 +19,27 @@ from ..abstractions.loggable import LoggableAsyncPipe
 logger = logging.getLogger(__name__)
 
 
-class DefaultQueryTransformPipe(LoggableAsyncPipe):
-    class QueryTransformConfig(BaseModel):
-        name: str = "default_query_transform"
-        num_answers: int = 3
-        model: str = "gpt-3.5-turbo"
-        system_prompt: str = "default_system_prompt"
-        task_prompt: str = "hyde_prompt"
+class LLMGenerationConfig(BaseModel, PipeConfig):
+    name: str = "default_llm_generation"
+    system_prompt: str = "default_system_prompt"
+    rag_prompt: str = "default_rag_prompt"
 
-        class Config:
-            extra = "forbid"
 
+class DefaultLLMGenerationPipe(LoggableAsyncPipe):
     """
     Stores embeddings in a vector database asynchronously.
     """
+
+    INPUT_TYPE = str
+    OUTPUT_TYPE = AsyncGenerator[LLMChatCompletion, None]
+    FLOW = PipeFlow.STANDARD
+    CONFIG = LLMGenerationConfig
 
     def __init__(
         self,
         llm_provider: LLMProvider,
         prompt_provider: PromptProvider,
-        config: Optional[QueryTransformConfig] = None,
+        config: Optional[LLMGenerationConfig] = None,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs,
@@ -46,18 +47,13 @@ class DefaultQueryTransformPipe(LoggableAsyncPipe):
         """
         Initializes the async vector storage pipe with necessary components and configurations.
         """
-        logger.info(
-            f"Initalizing an `DefaultQueryTransformPipe` to store embeddings in a vector database."
-        )
-        if config and not isinstance(
-            config, DefaultQueryTransformPipe.QueryTransformConfig
-        ):
+        logger.info(f"Initalizing an `DefaultLLMGenerationPipe` pipe.")
+        if config and not isinstance(config, LLMGenerationConfig):
             raise ValueError(
-                "Invalid configuration provided for `DefaultQueryTransformPipe`."
+                "Invalid configuration provided for `DefaultLLMGenerationPipe`."
             )
-
         super().__init__(
-            config=config or DefaultQueryTransformPipe.QueryTransformConfig(),
+            config=config or LLMGenerationConfig(),
             logging_connection=logging_connection,
             *args,
             **kwargs,
@@ -67,39 +63,24 @@ class DefaultQueryTransformPipe(LoggableAsyncPipe):
 
     @property
     def type(self) -> PipeType:
-        return PipeType.QUERY_TRANSFORM
-
-    @property
-    def flow(self) -> PipeFlow:
-        return PipeFlow.FAN_OUT
+        return PipeType.GENERATION
 
     async def run(
         self,
         input: str,
-        context: Context,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[str, None]:
+    ) -> OUTPUT_TYPE:
         """
         Executes the async vector storage pipe: storing embeddings in the vector database.
         """
-        await self._initialize_pipe(input, context)
+        self._initialize_pipe(input.settings)
+        messages = self._get_llm_payload(input)
 
-        queries = ["a", "b", "c"]
-        for query in queries:
-            yield query
-
-        # messages = self._get_llm_payload(input)
-
-        # response = self.llm_provider.get_completion(
-        #     messages=messages,
-        #     generation_config=GenerationConfig(model=self.config.model),
-        # )
-        # content = self.llm_provider.extract_content(response)
-        # queries = content.split("\n\n")
-
-        # for query in queries:
-        #     yield query
+        return self.llm_provider.get_completion(
+            messages=messages,
+            generation_config=GenerationConfig(model=self.config.model),
+        )
 
     def _get_llm_payload(self, input: str) -> dict:
         return [
@@ -112,10 +93,10 @@ class DefaultQueryTransformPipe(LoggableAsyncPipe):
             {
                 "role": "user",
                 "content": self.prompt_provider.get_prompt(
-                    self.config.task_prompt,
+                    self.config.rag_prompt,
                     inputs={
-                        "message": input,
-                        "num_answers": self.config.num_answers,
+                        "query": input.message,
+                        "context": input.context,
                     },
                 ),
             },

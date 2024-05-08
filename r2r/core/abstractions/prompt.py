@@ -18,8 +18,12 @@ class Prompt(BaseModel):
             if var not in inputs:
                 raise ValueError(f"Missing input: {var}")
             if not isinstance(inputs[var], expected_type):
-                raise TypeError(f"Input '{var}' must be of type {expected_type.__name__}, got {type(inputs[var]).__name__} instead.")
+                raise TypeError(
+                    f"Input '{var}' must be of type {expected_type.__name__}, got {type(inputs[var]).__name__} instead."
+                )
 
     def _convert_type(self, type_name: str) -> type:
-        type_mapping = {'int': int, 'str': str}  # Extend this dict as needed
-        return type_mapping.get(type_name, str)  # Default to 'str' if type not found
+        type_mapping = {"int": int, "str": str}  # Extend this dict as needed
+        return type_mapping.get(
+            type_name, str
+        )  # Default to 'str' if type not found

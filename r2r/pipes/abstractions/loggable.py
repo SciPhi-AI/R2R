@@ -1,18 +1,19 @@
 from typing import Any, Optional
 
-from ...core.abstractions.pipes import AsyncPipe, PipeType
+from ...core.abstractions.pipes import AsyncPipe, PipeConfig, PipeType
 from ...core.utils.logging import LoggingDatabaseConnection, log_output_to_db
 
 
 class LoggableAsyncPipe(AsyncPipe):
     def __init__(
         self,
+        config: PipeConfig,
         logging_connection: Optional[LoggingDatabaseConnection] = None,
         *args,
         **kwargs
     ):
         self.logging_connection = logging_connection
-        super().__init__(*args, **kwargs)
+        super().__init__(config, *args, **kwargs)
 
     def close(self):
         if self.logging_connection:
