@@ -12,8 +12,8 @@ from .abstractions.llm import (
     RAGPipeOutput,
 )
 from .abstractions.pipes import (
+    AsyncContext,
     AsyncPipe,
-    Context,
     PipeConfig,
     PipeFlow,
     Pipeline,
@@ -76,7 +76,7 @@ __all__ = [
     "Pipeline",
     "PipeType",
     "PipeConfig",
-    "Context",
+    "AsyncContext",
     "Prompt",
     # "EmbeddingPipe",
     # "EvalPipe",

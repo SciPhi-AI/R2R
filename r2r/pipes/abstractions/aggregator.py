@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Any, AsyncGenerator, List, Optional
 
 from r2r.core import (
-    Context,
+    AsyncContext,
     LoggingDatabaseConnectionSingleton,
     PipeConfig,
     PipeFlow,
@@ -42,13 +42,12 @@ class AggregatorPipe(LoggableAsyncPipe):
     def flow(self) -> PipeFlow:
         return PipeFlow.FAN_IN
 
-    async def aggregate(self, input: Any, context: Context):
+    async def aggregate(self, input: Any, context: AsyncContext):
         async for item in input.message:
             self.results.append(item)
             # Optionally, process or transform the item here
 
-    async def run(self, input: Any, context: Context) -> Any:
-        await self._initialize_pipe(input, context)
+    async def _run_logic(self, input: Any, context: AsyncContext) -> Any:
         await self.aggregate(input, context)
         print("returning self.results = ", self.results)
         return self.results

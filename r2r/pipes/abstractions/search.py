@@ -7,6 +7,7 @@ from abc import abstractmethod
 from typing import AsyncGenerator, Optional, Union
 
 from r2r.core import (
+    AsyncContext,
     LoggingDatabaseConnectionSingleton,
     PipeConfig,
     PipeType,
@@ -48,7 +49,10 @@ class SearchPipe(LoggableAsyncPipe):
         pass
 
     @abstractmethod
-    async def run(
-        self, input: Union[AsyncGenerator[str, None], str], **kwargs
+    async def _run_logic(
+        self,
+        input: Union[AsyncGenerator[str, None], str],
+        context: AsyncContext,
+        **kwargs,
     ) -> AsyncGenerator[SearchResult, None]:
         pass

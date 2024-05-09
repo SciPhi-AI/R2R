@@ -4,14 +4,14 @@ from typing import Any, AsyncGenerator, Optional
 from pydantic import BaseModel
 
 from r2r.core import (
-    Context,
+    AsyncContext,
+    AsyncPipe,
     GenerationConfig,
     LLMProvider,
+    PipeConfig,
     PipeFlow,
     PipeType,
     PromptProvider,
-    PipeConfig,
-    AsyncPipe,
 )
 
 from ..abstractions.loggable import LoggableAsyncPipe
@@ -77,10 +77,10 @@ class DefaultQueryTransformPipe(LoggableAsyncPipe):
     def input_from_dict(self, input_dict: dict) -> AsyncPipe.Input:
         return AsyncPipe.Input(**input_dict)
 
-    async def run(
+    async def _run_logic(
         self,
         input: AsyncPipe.Input,
-        context: Context,
+        context: AsyncContext,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[str, None]:

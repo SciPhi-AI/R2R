@@ -4,14 +4,14 @@ from typing import Any, AsyncGenerator, Optional, Union
 from pydantic import BaseModel
 
 from r2r.core import (
-    Context,
+    AsyncContext,
+    AsyncPipe,
     EmbeddingProvider,
     PipeConfig,
     PipeFlow,
     PipeType,
     SearchResult,
     VectorDBProvider,
-    AsyncPipe,
 )
 
 from ..abstractions.search import SearchPipe
@@ -66,6 +66,7 @@ class DefaultVectorSearchPipe(SearchPipe):
         return PipeFlow.FAN_OUT
 
     def input_from_dict(self, input_dict: dict) -> Input:
+        print("input_dict = ", input_dict)
         return DefaultVectorSearchPipe.Input(**input_dict)
 
     async def search(
@@ -85,10 +86,10 @@ class DefaultVectorSearchPipe(SearchPipe):
             result.metadata["query"] = message
             yield result
 
-    async def run(
+    async def _run_logic(
         self,
         input: Input,
-        context: Context,
+        context: AsyncContext,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[SearchResult, None]:
@@ -96,9 +97,6 @@ class DefaultVectorSearchPipe(SearchPipe):
         Executes the async vector storage pipe: storing embeddings in the vector database.
         """
         print("input = ", input)
-        await self._initialize_pipe(
-            input, context, config_overrides=input.config_overrides or {}
-        )
 
         search_results = []
 

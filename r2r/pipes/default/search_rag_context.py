@@ -3,7 +3,13 @@ from typing import Any, AsyncGenerator, Optional
 
 from pydantic import BaseModel
 
-from r2r.core import Context, PipeConfig, SearchResult, PipeFlow, AsyncPipe
+from r2r.core import (
+    AsyncContext,
+    AsyncPipe,
+    PipeConfig,
+    PipeFlow,
+    SearchResult,
+)
 
 from ..abstractions.aggregator import AggregatorPipe
 
@@ -52,25 +58,25 @@ class DefaultSearchRAGContextPipe(AggregatorPipe):
     def input_from_dict(self, input_dict: dict) -> Input:
         return DefaultSearchRAGContextPipe.Input(**input_dict)
 
-    async def run(
+    async def _run_logic(
         self,
         input: Input,
-        context: Context,
+        context: AsyncContext,
         *args: Any,
         **kwargs: Any,
-    ) -> str:
+    ) -> AsyncGenerator[str, None]:
         """
         Executes the async vector storage pipe: storing embeddings in the vector database.
         """
-        await self._initialize_pipe(input, context)
         await self.aggregate(input, context)
         if len(self.results) > 0:
             rag_context = "\n\n".join([str(ele) for ele in self.results])
 
-            await context.update(
-                self.config.name, {"output": {"rag_context": rag_context}}
-            )
-            print("yielding rag_context = ", rag_context)
-            return rag_context
         else:
-            return "No results found."
+            rag_context = "No results found."
+
+        await context.update(
+            self.config.name, {"output": {"rag_context": rag_context}}
+        )
+        print("yielding rag_context = ", rag_context)
+        yield rag_context

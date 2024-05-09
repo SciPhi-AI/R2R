@@ -1,7 +1,9 @@
 import asyncio
 import logging
+import uuid
 from abc import ABC, abstractmethod
 from copy import copy
+from dataclasses import dataclass
 from enum import Enum
 from typing import (
     Any,
@@ -11,6 +13,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    final,
     get_type_hints,
 )
 
@@ -38,19 +41,19 @@ class PipeFlow(Enum):
     FAN_IN = "fan_in"
 
 
-class PipeRunInfo:
-    def __init__(self, run_id: str, type: PipeType) -> None:
-        self.run_id = run_id
-        self.type = type
+class PipeRunInfo(BaseModel):
+    run_id: uuid.UUID
+    type: PipeType
 
 
+@dataclass
 class PipeConfig(ABC):
     """A base pipe configuration class"""
 
     name: str
 
 
-class Context:
+class AsyncContext:
     def __init__(self):
         self.data = {}
         self.lock = asyncio.Lock()
@@ -110,37 +113,9 @@ class AsyncPipe(Generic[TInput, TOutput], ABC):
         self.INPUT_TYPE = type_hints.get("input")
         self.OUTPUT_TYPE = type_hints.get("return")
 
-    def __getattribute__(self, name):
-        attr = super().__getattribute__(name)
-        if isinstance(attr, property):
-            return attr
-
-        # Skip wrapping for these specific attributes or any non-callable attributes
-        if name in [
-            "INPUT_TYPE",
-            "OUTPUT_TYPE",
-            "__dict__",
-            "__class__",
-        ] or not callable(attr):
-            return attr
-
-        if callable(attr) and name not in [
-            "__init__",
-            "__getattribute__",
-            "_check_pipe_initialized",
-            "_initialize_pipe",
-            "input_from_dict",
-            "close",
-            "run",
-        ]:
-
-            def newfunc(*args, **kwargs):
-                self._check_pipe_initialized()
-                return attr(*args, **kwargs)
-
-            return newfunc
-        else:
-            return attr
+        if type(self).run is not AsyncPipe.run:
+            raise TypeError("Subclasses may not override the run() method.")
+        super().__init__(*args, **kwargs)
 
     def _check_pipe_initialized(self) -> None:
         if self.pipe_run_info is None:
@@ -151,14 +126,14 @@ class AsyncPipe(Generic[TInput, TOutput], ABC):
     async def _initialize_pipe(
         self,
         input: TInput,
-        context: Context,
+        context: AsyncContext,
         config_overrides: Optional[dict] = None,
         *args,
         **kwargs,
     ) -> None:
         self.pipe_run_info = PipeRunInfo(
-            generate_run_id(),
-            self.type,
+            run_id=generate_run_id(),
+            type=self.type,
         )
         if not config_overrides:
             config_overrides = {}
@@ -177,6 +152,10 @@ class AsyncPipe(Generic[TInput, TOutput], ABC):
     @property
     def config(self) -> PipeConfig:
         return self._config
+
+    @property
+    def do_await(self) -> bool:
+        return False
 
     @config.setter
     def config(self, value: Union[dict, PipeConfig]):
@@ -199,9 +178,10 @@ class AsyncPipe(Generic[TInput, TOutput], ABC):
                 "Config must be a dictionary or an instance of the defined CONFIG_TYPE"
             )
 
-    @property
-    def do_await(self) -> bool:
-        return False
+    @final
+    async def run(self, input: TInput, context: AsyncContext) -> TOutput:
+        await self._initialize_pipe(input, context)
+        yield self._run_logic(input, context)
 
     @property
     @abstractmethod
@@ -218,7 +198,9 @@ class AsyncPipe(Generic[TInput, TOutput], ABC):
         pass
 
     @abstractmethod
-    async def run(self, input: TInput, context: Context) -> TOutput:
+    async def _run_logic(
+        self, input: TInput, context: AsyncContext
+    ) -> TOutput:
         pass
 
 
@@ -247,7 +229,7 @@ class Pipeline:
 
     def __init__(
         self,
-        context: Optional[Context] = None,
+        context: Optional[AsyncContext] = None,
         config_aggregator: Optional[ConfigurationAggregator] = None,
         *args,
         **kwargs,
@@ -255,7 +237,7 @@ class Pipeline:
         if not config_aggregator:
             config_aggregator = ConfigurationAggregator()
         if not context:
-            context = Context()
+            context = AsyncContext()
 
         self.pipes = []
         self.upstream_inputs_mapping = []
@@ -346,10 +328,14 @@ class Pipeline:
     async def wrapped_run(self, pipe, input, add_upstream_outputs):
         input_dict = {"message": input}
         if pipe.do_await:
+            # ... await previous execution
+            print("input = ", input)
             input = await input
         if len(add_upstream_outputs) > 0:
             for upstream_input in add_upstream_outputs:
-                outputs = await self.context.get(upstream_input["prev_pipe_name"], "output")
+                outputs = await self.context.get(
+                    upstream_input["prev_pipe_name"], "output"
+                )
                 input_dict[upstream_input["input_field"]] = outputs[
                     upstream_input["prev_output_field"]
                 ]
