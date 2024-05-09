@@ -32,7 +32,7 @@ class AggregatorPipe(LoggableAsyncPipe):
             **kwargs
         )
         self.config = config
-        self.results: List[Any] = []
+        self.results: list[Any] = []
 
     @property
     def type(self) -> PipeType:
@@ -43,11 +43,12 @@ class AggregatorPipe(LoggableAsyncPipe):
         return PipeFlow.FAN_IN
 
     async def aggregate(self, input: Any, context: Context):
-        async for item in input:
+        async for item in input.message:
             self.results.append(item)
             # Optionally, process or transform the item here
 
     async def run(self, input: Any, context: Context) -> Any:
         await self._initialize_pipe(input, context)
         await self.aggregate(input, context)
+        print("returning self.results = ", self.results)
         return self.results

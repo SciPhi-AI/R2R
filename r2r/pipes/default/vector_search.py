@@ -1,18 +1,17 @@
 import logging
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Optional, Union
 
 from pydantic import BaseModel
 
 from r2r.core import (
     Context,
     EmbeddingProvider,
-    LoggingDatabaseConnectionSingleton,
     PipeConfig,
     PipeFlow,
     PipeType,
-    SearchRequest,
     SearchResult,
     VectorDBProvider,
+    AsyncPipe,
 )
 
 from ..abstractions.search import SearchPipe
@@ -32,14 +31,14 @@ class DefaultVectorSearchPipe(SearchPipe):
         system_prompt: str = "default_system_prompt"
         task_prompt: str = "hyde_prompt"
 
+    class Input(AsyncPipe.Input):
+        message: Union[str, AsyncGenerator[str, None]]
+
     def __init__(
         self,
         vector_db_provider: VectorDBProvider,
         embedding_provider: EmbeddingProvider,
         config: Optional[VectorSearchConfig] = None,
-        logging_connection: Optional[
-            LoggingDatabaseConnectionSingleton
-        ] = None,
         *args,
         **kwargs,
     ):
@@ -57,19 +56,17 @@ class DefaultVectorSearchPipe(SearchPipe):
         super().__init__(
             config=config or DefaultVectorSearchPipe.VectorSearchConfig(),
             vector_db_provider=vector_db_provider,
-            logging_connection=logging_connection,
             *args,
             **kwargs,
         )
         self.embedding_provider = embedding_provider
 
     @property
-    def type(self) -> PipeType:
-        return PipeType.QUERY_TRANSFORM
-
-    @property
     def flow(self) -> PipeFlow:
         return PipeFlow.FAN_OUT
+
+    def input_from_dict(self, input_dict: dict) -> Input:
+        return DefaultVectorSearchPipe.Input(**input_dict)
 
     async def search(
         self,
@@ -90,7 +87,7 @@ class DefaultVectorSearchPipe(SearchPipe):
 
     async def run(
         self,
-        input: AsyncGenerator[str, None],
+        input: Input,
         context: Context,
         *args: Any,
         **kwargs: Any,
@@ -99,8 +96,25 @@ class DefaultVectorSearchPipe(SearchPipe):
         Executes the async vector storage pipe: storing embeddings in the vector database.
         """
         print("input = ", input)
-        await self._initialize_pipe(input, context)
+        await self._initialize_pipe(
+            input, context, config_overrides=input.config_overrides or {}
+        )
 
-        async for search_request in input:
-            async for result in self.search(message=search_request):
+        search_results = []
+
+        if isinstance(input.message, AsyncGenerator):
+            async for search_request in input.message:
+                if isinstance(search_request, str):
+                    async for result in self.search(message=search_request):
+                        search_results.append(result)
+                        yield result
+        elif isinstance(input.message, str):
+            async for result in self.search(message=input.message):
+                search_results.append(result)
                 yield result
+        else:
+            raise TypeError("Input must be an AsyncGenerator or a string.")
+
+        await context.update(
+            self.config.name, {"output": {"search_results": search_results}}
+        )

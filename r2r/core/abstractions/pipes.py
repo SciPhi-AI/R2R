@@ -11,12 +11,10 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    get_args,
-    get_origin,
     get_type_hints,
 )
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from ..utils import generate_run_id
 
@@ -24,14 +22,14 @@ logger = logging.getLogger(__name__)
 
 
 class PipeType(Enum):
+    AGGREGATOR = "aggregator"
     EMBEDDING = "embedding"
-    GENERATION = "generation"
+    OTHER = "other"
     PARSING = "parsing"
     QUERY_TRANSFORM = "query_transform"
     SEARCH = "search"
-    AGGREGATOR = "aggregator"
+    RAG = "rag"
     STORAGE = "storage"
-    OTHER = "other"
 
 
 class PipeFlow(Enum):
@@ -93,6 +91,14 @@ TOutput = TypeVar("TOutput")
 
 
 class AsyncPipe(Generic[TInput, TOutput], ABC):
+    class Input(BaseModel):
+        message: TInput
+        config_overrides: Optional[dict] = None
+
+        class Config:
+            arbitrary_types_allowed = True
+            extra = "forbid"
+
     def __init__(self, config: PipeConfig, *args, **kwargs):
         self.__class__.CONFIG_TYPE = type(config)
         self._config = config
@@ -123,6 +129,7 @@ class AsyncPipe(Generic[TInput, TOutput], ABC):
             "__getattribute__",
             "_check_pipe_initialized",
             "_initialize_pipe",
+            "input_from_dict",
             "close",
             "run",
         ]:
@@ -142,14 +149,20 @@ class AsyncPipe(Generic[TInput, TOutput], ABC):
             )
 
     async def _initialize_pipe(
-        self, input: TInput, context: Context, *args, **kwargs
+        self,
+        input: TInput,
+        context: Context,
+        config_overrides: Optional[dict] = None,
+        *args,
+        **kwargs,
     ) -> None:
         self.pipe_run_info = PipeRunInfo(
             generate_run_id(),
             self.type,
         )
-        settings = await context.get(self.config.name, "settings")
-        self._update_config(**settings)
+        if not config_overrides:
+            config_overrides = {}
+        self._update_config(**config_overrides)
 
     def _update_config(self, config_overrides: Optional[dict] = None) -> None:
         config_overrides = config_overrides or {}
@@ -187,6 +200,10 @@ class AsyncPipe(Generic[TInput, TOutput], ABC):
             )
 
     @property
+    def do_await(self) -> bool:
+        return False
+
+    @property
     @abstractmethod
     def flow(self) -> PipeFlow:
         pass
@@ -194,6 +211,10 @@ class AsyncPipe(Generic[TInput, TOutput], ABC):
     @property
     @abstractmethod
     def type(self) -> PipeType:
+        pass
+
+    @abstractmethod
+    def input_from_dict(self, input_dict: dict) -> TInput:
         pass
 
     @abstractmethod
@@ -237,50 +258,100 @@ class Pipeline:
             context = Context()
 
         self.pipes = []
+        self.upstream_inputs_mapping = []
         self.context = context
         self.config_aggregator = config_aggregator
         self.flow = PipeFlow.STANDARD
 
-    async def add_pipe(self, pipe: AsyncPipe):
+    async def add_pipe(
+        self,
+        pipe: AsyncPipe,
+        add_upstream_outputs: Optional[dict] = None,
+        *args,
+        **kwargs,
+    ) -> None:
         # if self.pipes and self.pipes[-1].OUTPUT_TYPE != pipe.INPUT_TYPE:
         #     raise TypeError(
         #         "Output type of the last pipe does not match input type of the new pipe."
         #     )
         self.pipes.append(pipe)
+        if not add_upstream_outputs:
+            add_upstream_outputs = {}
+        self.upstream_inputs_mapping.append(add_upstream_outputs)
         self.config_aggregator.register_pipe(pipe)
         await self.context.update(pipe.config.name, {"settings": {}})
 
     async def run(self, input: Any) -> Any:
         current_input = input
-        for pipe in self.pipes:
-            current_input = await self.execute_pipe(pipe, current_input)
+        for pipe, add_upstream_outputs in zip(
+            self.pipes, self.upstream_inputs_mapping
+        ):
+            print("pipe = ", pipe)
+            print("current_input = ", current_input)
+            current_input = await self.execute_pipe(
+                pipe, current_input, add_upstream_outputs
+            )
+            async with self.context.lock:
+                print("context = ", self.context.data)
         if isinstance(current_input, AsyncGenerator):
+            print("qqq")
             collection = []
             async for item in current_input:
                 collection.append(item)
             return collection
         else:
+            print("zzz")
             return await current_input
 
-    async def execute_pipe(self, pipe, current_input):
+    async def execute_pipe(self, pipe, current_input, add_upstream_outputs):
         if self.flow == PipeFlow.FAN_OUT:
             if pipe.flow == PipeFlow.STANDARD:
                 # Process each item concurrently if the current flow is FAN_OUT
+                print("a")
                 if hasattr(current_input, "__aiter__"):
                     return [
-                        pipe.run(item, self.context)
+                        (
+                            await self.wrapped_run(
+                                item, self.context, add_upstream_outputs
+                            )
+                        )
                         async for item in current_input
                     ]
                 else:
+                    print("b")
                     return [
-                        pipe.run(item, self.context) for item in current_input
+                        (
+                            await self.wrapped_run(
+                                item, self.context, add_upstream_outputs
+                            )
+                        )
+                        for item in current_input
                     ]
             elif pipe.flow == PipeFlow.FAN_IN:
+                print("c")
                 # Collect the results of the FAN_OUT flow
-                pipe.run(current_input)
                 self.flow = PipeFlow.STANDARD
+                return await self.wrapped_run(
+                    pipe, current_input, add_upstream_outputs
+                )
 
         elif self.flow == PipeFlow.STANDARD:
-            return pipe.run(current_input, self.context)
+            print("d")
+            return await self.wrapped_run(
+                pipe, current_input, add_upstream_outputs
+            )
         else:
             raise ValueError("Invalid flow state.")
+
+    async def wrapped_run(self, pipe, input, add_upstream_outputs):
+        input_dict = {"message": input}
+        if pipe.do_await:
+            input = await input
+        if len(add_upstream_outputs) > 0:
+            for upstream_input in add_upstream_outputs:
+                outputs = await self.context.get(upstream_input["prev_pipe_name"], "output")
+                input_dict[upstream_input["input_field"]] = outputs[
+                    upstream_input["prev_output_field"]
+                ]
+        pipe_input = pipe.input_from_dict(input_dict)
+        return pipe.run(pipe_input, self.context)

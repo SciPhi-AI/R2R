@@ -4,7 +4,7 @@ Abstract base class for embedding pipe.
 
 import logging
 from abc import abstractmethod
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator, Optional, Union
 
 from r2r.core import (
     LoggingDatabaseConnectionSingleton,
@@ -49,6 +49,6 @@ class SearchPipe(LoggableAsyncPipe):
 
     @abstractmethod
     async def run(
-        self, input: str, **kwargs
+        self, input: Union[AsyncGenerator[str, None], str], **kwargs
     ) -> AsyncGenerator[SearchResult, None]:
         pass

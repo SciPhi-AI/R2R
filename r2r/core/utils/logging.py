@@ -321,6 +321,7 @@ class LoggingDatabaseConnectionSingleton:
         "local": LocalLoggingProvider,
         "redis": RedisLoggingProvider,
     }
+
     def __new__(cls):
         with cls._lock:
             if cls._instance is None:
