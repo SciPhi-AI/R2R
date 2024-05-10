@@ -2,11 +2,11 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Optional, Union
 
-from r2r.vecs.collection import MetadataValues
-
 from ..abstractions.search import SearchResult
 from ..abstractions.vector import VectorEntry
 from .base import Provider, ProviderConfig
+
+# from r2r.vecs.collection import MetadataValues
 
 
 @dataclass

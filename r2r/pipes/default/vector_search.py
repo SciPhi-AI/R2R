@@ -1,15 +1,11 @@
 import logging
-from typing import Any, AsyncGenerator, Optional, Union
-
-from pydantic import BaseModel
+from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
     AsyncContext,
     AsyncPipe,
     EmbeddingProvider,
-    PipeConfig,
     PipeFlow,
-    PipeType,
     SearchResult,
     VectorDBProvider,
 )
@@ -20,24 +16,18 @@ logger = logging.getLogger(__name__)
 
 
 class DefaultVectorSearchPipe(SearchPipe):
-    """
-    Stores embeddings in a vector database asynchronously.
-    """
-
-    class VectorSearchConfig(BaseModel, PipeConfig):
+    class VectorSearchConfig(SearchPipe.PipeConfig):
         name: str = "default_vector_search"
         filters: dict = {}
         limit: int = 10
         system_prompt: str = "default_system_prompt"
         task_prompt: str = "hyde_prompt"
 
-    class Input(AsyncPipe.Input):
-        message: Union[str, AsyncGenerator[str, None]]
-
     def __init__(
         self,
         vector_db_provider: VectorDBProvider,
         embedding_provider: EmbeddingProvider,
+        flow: PipeFlow = PipeFlow.FAN_OUT,
         config: Optional[VectorSearchConfig] = None,
         *args,
         **kwargs,
@@ -55,6 +45,7 @@ class DefaultVectorSearchPipe(SearchPipe):
 
         super().__init__(
             config=config or DefaultVectorSearchPipe.VectorSearchConfig(),
+            flow=flow,
             vector_db_provider=vector_db_provider,
             *args,
             **kwargs,
@@ -63,11 +54,7 @@ class DefaultVectorSearchPipe(SearchPipe):
 
     @property
     def flow(self) -> PipeFlow:
-        return PipeFlow.FAN_OUT
-
-    def input_from_dict(self, input_dict: dict) -> Input:
-        print("input_dict = ", input_dict)
-        return DefaultVectorSearchPipe.Input(**input_dict)
+        return PipeFlow.STANDARD
 
     async def search(
         self,
@@ -88,7 +75,7 @@ class DefaultVectorSearchPipe(SearchPipe):
 
     async def _run_logic(
         self,
-        input: Input,
+        input: AsyncPipe.Input,
         context: AsyncContext,
         *args: Any,
         **kwargs: Any,
@@ -96,10 +83,9 @@ class DefaultVectorSearchPipe(SearchPipe):
         """
         Executes the async vector storage pipe: storing embeddings in the vector database.
         """
+
         print("input = ", input)
-
         search_results = []
-
         if isinstance(input.message, AsyncGenerator):
             async for search_request in input.message:
                 if isinstance(search_request, str):

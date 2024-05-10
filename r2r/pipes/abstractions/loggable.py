@@ -1,6 +1,11 @@
 from typing import Any, Optional
 
-from ...core.abstractions.pipes import AsyncPipe, PipeConfig, PipeType
+from ...core.abstractions.pipes import (
+    AsyncPipe,
+    PipeConfig,
+    PipeFlow,
+    PipeType,
+)
 from ...core.utils.logging import (
     LoggingDatabaseConnectionSingleton,
     log_output_to_db,
@@ -10,17 +15,18 @@ from ...core.utils.logging import (
 class LoggableAsyncPipe(AsyncPipe):
     def __init__(
         self,
-        config: PipeConfig,
         logging_connection: Optional[
             LoggingDatabaseConnectionSingleton
         ] = None,
+        config: Optional[PipeConfig] = None,
+        flow: PipeFlow = PipeFlow.STANDARD,
         *args,
         **kwargs
     ):
         if not logging_connection:
             logging_connection = LoggingDatabaseConnectionSingleton()
         self.logging_connection = logging_connection
-        super().__init__(config, *args, **kwargs)
+        super().__init__(config, flow, *args, **kwargs)
 
     def close(self):
         if self.logging_connection:

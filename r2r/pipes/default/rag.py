@@ -27,7 +27,7 @@ class DefaultRAGPipe(AsyncPipe):
 
     class Input(AsyncPipe.Input):
         message: AsyncGenerator[str, None]
-        context: AsyncGenerator[str, None]
+        context: str
 
     def __init__(
         self,
@@ -62,40 +62,24 @@ class DefaultRAGPipe(AsyncPipe):
     def flow(self) -> PipeFlow:
         return PipeFlow.STANDARD
 
-    def input_from_dict(self, input_dict: dict) -> Input:
-        return DefaultRAGPipe.Input(**input_dict)
-
     async def _run_logic(
         self,
-        input: Input,
-        context: AsyncContext,
+        input,  # : Input,
+        context,  # : AsyncContext,
         *args: Any,
         **kwargs: Any,
     ) -> str:
         """
         Executes the async vector storage pipe: storing embeddings in the vector database.
         """
-        print("run input = ", input)
-        async with context.lock:
-            print("context.data = ", context.data)
-        return "x"
-        # print("input = ", input)
-        # await self._initialize_pipe(input, context, config_overrides=input.config_overrides or {})
+        search_results = []
 
-        # search_results = []
+        async for message in input.message:
+            if not message:
+                return "No message provided."
+            else:
+                return "good output.."
 
-        # if isinstance(input.message, AsyncGenerator):
-        #     async for search_request in input.message:
-        #         async for result in self.search(message=search_request):
-        #             search_results.append(result)
-        #             yield result
-        # elif isinstance(input.message, str):
-        #     async for result in self.search(message=input.message):
-        #         search_results.append(result)
-        #         yield result
-        # else:
-        #     raise TypeError("Input must be an AsyncGenerator or a string.")
-
-        # await context.update(
-        #     self.config.name, {"output": {"search_results": search_results}}
-        # )
+        await context.update(
+            self.config.name, {"output": {"search_results": search_results}}
+        )

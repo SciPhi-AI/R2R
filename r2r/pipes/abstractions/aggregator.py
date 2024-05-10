@@ -43,11 +43,14 @@ class AggregatorPipe(LoggableAsyncPipe):
         return PipeFlow.FAN_IN
 
     async def aggregate(self, input: Any, context: AsyncContext):
-        async for item in input.message:
-            self.results.append(item)
+        for iterator in input.message:
+            async for item in iterator:
+                print("item = ", item)
+                self.results.append(item)
             # Optionally, process or transform the item here
 
     async def _run_logic(self, input: Any, context: AsyncContext) -> Any:
         await self.aggregate(input, context)
+        print("self.results = ", self.results)
         print("returning self.results = ", self.results)
         return self.results
