@@ -62,23 +62,20 @@ class DefaultVectorSearchPipe(SearchPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[SearchResult, None]:
-        for query in ["qq", "rr", "ss"]:
-            yield query
+        search_results = []
+        if isinstance(input.message, AsyncGenerator):
+            async for search_request in input.message:
+                if isinstance(search_request, str):
+                    async for result in self.search(message=search_request):
+                        search_results.append(result)
+                        yield result
+        elif isinstance(input.message, str):
+            async for result in self.search(message=input.message):
+                search_results.append(result)
+                yield result
+        else:
+            raise TypeError("Input must be an AsyncGenerator or a string.")
 
-        # search_results = []
-        # if isinstance(input.message, AsyncGenerator):
-        #     async for search_request in input.message:
-        #         if isinstance(search_request, str):
-        #             async for result in self.search(message=search_request):
-        #                 search_results.append(result)
-        #                 yield result
-        # elif isinstance(input.message, str):
-        #     async for result in self.search(message=input.message):
-        #         search_results.append(result)
-        #         yield result
-        # else:
-        #     raise TypeError("Input must be an AsyncGenerator or a string.")
-
-        # await context.update(
-        #     self.config.name, {"output": {"search_results": search_results}}
-        # )
+        await context.update(
+            self.config.name, {"output": {"search_results": search_results}}
+        )
