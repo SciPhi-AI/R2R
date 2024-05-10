@@ -2,29 +2,22 @@ import logging
 from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
-    AsyncContext,
     AsyncPipe,
-    LLMProvider,
-    PromptProvider,
+    AsyncState,
     GenerationConfig,
     LLMChatCompletion,
+    LLMProvider,
     PipeFlow,
     PipeType,
+    PromptProvider,
 )
+
+from ..abstractions.generator import GeneratorPipe
 
 logger = logging.getLogger(__name__)
 
 
-class DefaultRAGPipe(AsyncPipe):
-
-    class Config(AsyncPipe.PipeConfig):
-        name: str = "default_rag"
-        system_prompt: str = "default_system_prompt"
-        task_prompt: str = "default_rag_prompt"
-        generation_config: GenerationConfig = GenerationConfig(
-            model="gpt-3.5-turbo"
-        )
-
+class DefaultRAGPipe(GeneratorPipe):
     class Input(AsyncPipe.Input):
         message: AsyncGenerator[str, None]
         context: str
@@ -34,25 +27,30 @@ class DefaultRAGPipe(AsyncPipe):
         llm_provider: LLMProvider,
         prompt_provider: PromptProvider,
         flow: PipeFlow = PipeFlow.STANDARD,
-        type: PipeType = PipeType.GENERATION,
-        config: Optional[Config] = None,
+        type: PipeType = PipeType.GENERATOR,
+        config: Optional[GeneratorPipe] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
+            llm_provider=llm_provider,
+            prompt_provider=prompt_provider,
             flow=flow,
             type=type,
-            config=config or DefaultRAGPipe.Config(),
+            config=config
+            or GeneratorPipe.Config(
+                name="default_rag_pipe",
+                task_prompt="default_rag_prompt",
+                generation_config=GenerationConfig(model="gpt-3.5-turbo"),
+            ),
             *args,
             **kwargs,
         )
-        self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
 
     async def _run_logic(
         self,
         input: Input,
-        context: AsyncContext,
+        state: AsyncState,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[LLMChatCompletion, None]:

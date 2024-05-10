@@ -2,7 +2,7 @@ import logging
 from typing import Any, Optional
 
 from r2r.core import (
-    AsyncContext,
+    AsyncState,
     LoggingDatabaseConnectionSingleton,
     PipeConfig,
     PipeFlow,
@@ -14,7 +14,7 @@ from .loggable import LoggableAsyncPipe
 logger = logging.getLogger(__name__)
 
 
-class AggregatorPipe(LoggableAsyncPipe):
+class CollectorPipe(LoggableAsyncPipe):
     def __init__(
         self,
         logging_connection: Optional[
@@ -36,12 +36,11 @@ class AggregatorPipe(LoggableAsyncPipe):
         )
         self.results: list[Any] = []
 
-    async def aggregate(self, input: Any, context: AsyncContext):
+    async def collect(self, input: Any, state: AsyncState):
         for iterator in input.message:
             async for item in iterator:
                 self.results.append(item)
-            # Optionally, process or transform the item here
 
-    async def _run_logic(self, input: Any, context: AsyncContext) -> Any:
-        await self.aggregate(input, context)
+    async def _run_logic(self, input: Any, state: AsyncState) -> Any:
+        await self.collect(input, state)
         return self.results

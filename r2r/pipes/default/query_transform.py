@@ -2,8 +2,8 @@ import logging
 from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
-    AsyncContext,
     AsyncPipe,
+    AsyncState,
     GenerationConfig,
     LLMProvider,
     PipeFlow,
@@ -51,7 +51,7 @@ class DefaultQueryTransformPipe(LoggableAsyncPipe):
     async def _run_logic(
         self,
         input: AsyncPipe.Input,
-        context: AsyncContext,
+        state: AsyncState,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:
@@ -64,9 +64,7 @@ class DefaultQueryTransformPipe(LoggableAsyncPipe):
         content = self.llm_provider.extract_content(response)
         queries = content.split("\n\n")
 
-        await context.update(
-            self.config.name, {"output": {"queries": queries}}
-        )
+        await state.update(self.config.name, {"output": {"queries": queries}})
 
         for query in queries:
             yield query

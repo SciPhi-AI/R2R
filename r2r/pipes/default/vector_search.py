@@ -2,8 +2,8 @@ import logging
 from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
-    AsyncContext,
     AsyncPipe,
+    AsyncState,
     EmbeddingProvider,
     PipeFlow,
     PipeType,
@@ -42,9 +42,6 @@ class DefaultVectorSearchPipe(SearchPipe):
         self,
         message: str,
     ) -> AsyncGenerator[SearchResult, None]:
-        """
-        Stores a batch of vector entries in the database.
-        """
         for result in self.vector_db_provider.search(
             query_vector=self.embedding_provider.get_embedding(
                 message,
@@ -58,7 +55,7 @@ class DefaultVectorSearchPipe(SearchPipe):
     async def _run_logic(
         self,
         input: AsyncPipe.Input,
-        context: AsyncContext,
+        state: AsyncState,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[SearchResult, None]:
@@ -76,6 +73,6 @@ class DefaultVectorSearchPipe(SearchPipe):
         else:
             raise TypeError("Input must be an AsyncGenerator or a string.")
 
-        await context.update(
+        await state.update(
             self.config.name, {"output": {"search_results": search_results}}
         )

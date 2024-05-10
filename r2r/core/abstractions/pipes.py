@@ -15,9 +15,9 @@ class PipeFlow(Enum):
 
 
 class PipeType(Enum):
-    AGGREGATE = "aggregate"
-    GENERATION = "generation"
-    TRANSFORM = "transform"
+    COLLECTOR = "collector"
+    GENERATOR = "generator"
+    TRANSFORM = "transformer"
     SEARCH = "search"
     OTHER = "other"
 
@@ -25,6 +25,42 @@ class PipeType(Enum):
 class PipeRunInfo(BaseModel):
     run_id: uuid.UUID
     type: PipeType
+
+
+class AsyncState:
+    def __init__(self):
+        self.data = {}
+        self.lock = asyncio.Lock()
+
+    async def update(self, outer_key: str, values: dict):
+        async with self.lock:
+            if not isinstance(values, dict):
+                raise ValueError("Values must be contained in a dictionary.")
+            if outer_key not in self.data:
+                self.data[outer_key] = {}
+            for inner_key, inner_value in values.items():
+                self.data[outer_key][inner_key] = inner_value
+
+    async def get(self, outer_key: str, inner_key: str, default=None):
+        async with self.lock:
+            if outer_key not in self.data:
+                raise ValueError(
+                    f"Key {outer_key} does not exist in the state."
+                )
+            if inner_key not in self.data[outer_key]:
+                return default or {}
+            return self.data[outer_key][inner_key]
+
+    async def delete(self, outer_key: str, inner_key: Optional[str] = None):
+        async with self.lock:
+            if outer_key in self.data and not inner_key:
+                del self.data[outer_key]
+            else:
+                if inner_key not in self.data[outer_key]:
+                    raise ValueError(
+                        f"Key {inner_key} does not exist in the state."
+                    )
+                del self.data[outer_key][inner_key]
 
 
 class AsyncPipe(ABC):
@@ -65,58 +101,22 @@ class AsyncPipe(ABC):
         return self._config
 
     async def run(
-        self, input: Input, context: Any
+        self, input: Input, state: AsyncState
     ) -> AsyncGenerator[Any, None]:
-        return self._run_logic(input, context)
+        return self._run_logic(input, state)
 
     @abstractmethod
     async def _run_logic(
-        self, input: Input, context: Any
+        self, input: Input, state: AsyncState
     ) -> AsyncGenerator[Any, None]:
         pass
 
 
-class AsyncContext:
-    def __init__(self):
-        self.data = {}
-        self.lock = asyncio.Lock()
-
-    async def update(self, outer_key: str, values: dict):
-        async with self.lock:
-            if not isinstance(values, dict):
-                raise ValueError("Values must be contained in a dictionary.")
-            if outer_key not in self.data:
-                self.data[outer_key] = {}
-            for inner_key, inner_value in values.items():
-                self.data[outer_key][inner_key] = inner_value
-
-    async def get(self, outer_key: str, inner_key: str, default=None):
-        async with self.lock:
-            if outer_key not in self.data:
-                raise ValueError(
-                    f"Key {outer_key} does not exist in the context."
-                )
-            if inner_key not in self.data[outer_key]:
-                return default or {}
-            return self.data[outer_key][inner_key]
-
-    async def delete(self, outer_key: str, inner_key: Optional[str] = None):
-        async with self.lock:
-            if outer_key in self.data and not inner_key:
-                del self.data[outer_key]
-            else:
-                if inner_key not in self.data[outer_key]:
-                    raise ValueError(
-                        f"Key {inner_key} does not exist in the context."
-                    )
-                del self.data[outer_key][inner_key]
-
-
 class Pipeline:
-    def __init__(self, context: Optional[AsyncContext] = None):
+    def __init__(self, state: Optional[AsyncState] = None):
         self.pipes: list[AsyncPipe] = []
         self.upstream_outputs: list[list[dict[str, str]]] = []
-        self.context = context or AsyncContext()
+        self.state = state or AsyncState()
         self.futures = {}
         self.level = 0
 
@@ -132,7 +132,7 @@ class Pipeline:
         if not add_upstream_outputs:
             add_upstream_outputs = []
         self.upstream_outputs.append(add_upstream_outputs)
-        await self.context.update(pipe.config.name, {"settings": {}})
+        await self.state.update(pipe.config.name, {"settings": {}})
 
     async def run(self, input):
         current_input = input
@@ -199,16 +199,20 @@ class Pipeline:
             if upstream_pipe_name == self.pipes[pipe_num - 1].config.name:
                 input_dict["message"] = replay_items_as_async_gen(temp_results)
 
-            outputs = await self.context.get(
+            outputs = await self.state.get(
                 upstream_input["prev_pipe_name"], "output"
             )
+            prev_output_field = upstream_input.get("prev_output_field", None)
+            if not prev_output_field:
+                raise ValueError(
+                    "`prev_output_field` must be specified in the upstream_input"
+                )
             input_dict[upstream_input["input_field"]] = outputs[
                 upstream_input["prev_output_field"]
             ]
 
-        print("executing input_dict = ", input_dict)
         # Execute the pipe with all inputs resolved
-        return await pipe.run(pipe.Input(**input_dict), self.context)
+        return await pipe.run(pipe.Input(**input_dict), self.state)
 
 
 class PipeConfig:

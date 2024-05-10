@@ -65,7 +65,7 @@ class DefaultLLMGenerationPipe(LoggableAsyncPipe):
 
     @property
     def type(self) -> PipeType:
-        return PipeType.GENERATION
+        return PipeType.GENERATOR
 
     async def run(
         self,
