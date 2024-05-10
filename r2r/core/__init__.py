@@ -11,7 +11,6 @@ from .abstractions.pipes import (
     AsyncPipe,
     AsyncState,
     PipeFlow,
-    Pipeline,
     PipeType,
 )
 from .abstractions.prompt import Prompt
@@ -29,6 +28,7 @@ from .parsers import (
     TextParser,
     XLSXParser,
 )
+from .pipeline.base import Pipeline
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
 from .providers.eval import EvalConfig, EvalProvider
 from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
@@ -56,7 +56,6 @@ __all__ = [
     "SearchResult",
     "AsyncPipe",
     "PipeFlow",
-    "Pipeline",
     "PipeType",
     "AsyncState",
     "Prompt",
@@ -78,6 +77,7 @@ __all__ = [
     "ReductoParser",
     "TextParser",
     "XLSXParser",
+    "Pipeline",
     # Providers
     "EmbeddingConfig",
     "EmbeddingProvider",
