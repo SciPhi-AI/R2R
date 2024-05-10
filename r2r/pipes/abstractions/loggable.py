@@ -18,15 +18,16 @@ class LoggableAsyncPipe(AsyncPipe):
         logging_connection: Optional[
             LoggingDatabaseConnectionSingleton
         ] = None,
-        config: Optional[PipeConfig] = None,
         flow: PipeFlow = PipeFlow.STANDARD,
+        type: PipeType = PipeType.OTHER,
+        config: Optional[PipeConfig] = None,
         *args,
         **kwargs
     ):
         if not logging_connection:
             logging_connection = LoggingDatabaseConnectionSingleton()
         self.logging_connection = logging_connection
-        super().__init__(config, flow, *args, **kwargs)
+        super().__init__(flow=flow, type=type, config=config, *args, **kwargs)
 
     def close(self):
         if self.logging_connection:
@@ -34,9 +35,6 @@ class LoggableAsyncPipe(AsyncPipe):
 
     @log_output_to_db
     def log(self, data: Any) -> dict:
-        """
-        Extracts text from a document.
-        """
         try:
             if not isinstance(data, dict):
                 data = data.dict()

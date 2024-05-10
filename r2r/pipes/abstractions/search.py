@@ -1,7 +1,3 @@
-"""
-Abstract base class for embedding pipe.
-"""
-
 import logging
 from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional, Union
@@ -13,7 +9,6 @@ from r2r.core import (
     PipeConfig,
     PipeFlow,
     PipeType,
-    SearchRequest,
     SearchResult,
     VectorDBProvider,
 )
@@ -24,6 +19,11 @@ logger = logging.getLogger(__name__)
 
 
 class SearchPipe(LoggableAsyncPipe):
+    class SearchConfig(AsyncPipe.PipeConfig):
+        name: str = "default_vector_search"
+        filters: dict = {}
+        limit: int = 10
+
     class Input(AsyncPipe.Input):
         message: Union[AsyncGenerator[str, None], str]
 
@@ -33,23 +33,21 @@ class SearchPipe(LoggableAsyncPipe):
         logging_connection: Optional[
             LoggingDatabaseConnectionSingleton
         ] = None,
-        config: Optional[PipeConfig] = None,
         flow: PipeFlow = PipeFlow.STANDARD,
+        type: PipeType = PipeType.SEARCH,
+        config: Optional[PipeConfig] = None,
         *args,
         **kwargs,
     ):
-        self.vector_db_provider = vector_db_provider
         super().__init__(
             logging_connection=logging_connection,
-            config=config,
             flow=flow,
+            type=type,
+            config=config,
             *args,
             **kwargs,
         )
-
-    @property
-    def type(self) -> PipeType:
-        return PipeType.SEARCH
+        self.vector_db_provider = vector_db_provider
 
     @abstractmethod
     async def search(

@@ -32,32 +32,21 @@ class DefaultQueryTransformPipe(LoggableAsyncPipe):
         llm_provider: LLMProvider,
         prompt_provider: PromptProvider,
         flow: PipeFlow = PipeFlow.FAN_OUT,
+        type: PipeType = PipeType.TRANSFORM,
         config: Optional[QueryTransformConfig] = None,
         *args,
         **kwargs,
     ):
-        logger.info(
-            f"Initalizing an `DefaultQueryTransformPipe` to store embeddings in a vector database."
-        )
-        if config and not isinstance(
-            config, DefaultQueryTransformPipe.QueryTransformConfig
-        ):
-            raise ValueError(
-                "Invalid configuration provided for `DefaultQueryTransformPipe`."
-            )
-
+        logger.info(f"Initalizing an `DefaultQueryTransformPipe` pipe.")
         super().__init__(
-            config=config or DefaultQueryTransformPipe.QueryTransformConfig(),
             flow=flow,
+            type=type,
+            config=config or DefaultQueryTransformPipe.QueryTransformConfig(),
             *args,
             **kwargs,
         )
         self.llm_provider = llm_provider
         self.prompt_provider = prompt_provider
-
-    @property
-    def type(self) -> PipeType:
-        return PipeType.QUERY_TRANSFORM
 
     async def _run_logic(
         self,
@@ -66,10 +55,6 @@ class DefaultQueryTransformPipe(LoggableAsyncPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:
-        """
-        Executes the async vector storage pipe: storing embeddings in the vector database.
-        """
-
         for query in ["a", "b", "c"]:
             yield query
         # messages = self._get_llm_payload(input.message)

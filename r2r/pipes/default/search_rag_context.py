@@ -1,11 +1,7 @@
 import logging
 from typing import Any, AsyncGenerator, Optional
 
-from r2r.core import (
-    AsyncContext,
-    AsyncPipe,
-    PipeFlow,
-)
+from r2r.core import AsyncContext, AsyncPipe, PipeFlow, PipeType
 
 from ..abstractions.aggregator import AggregatorPipe
 
@@ -13,36 +9,23 @@ logger = logging.getLogger(__name__)
 
 
 class DefaultSearchRAGContextPipe(AggregatorPipe):
-    class SearchRAGContextConfig(AsyncPipe.PipeConfig):
-        name: str = "default_search_rag_context"
-
     def __init__(
         self,
-        config: Optional[SearchRAGContextConfig] = None,
+        flow: PipeFlow = PipeFlow.FAN_IN,
+        type: PipeType = PipeType.AGGREGATE,
+        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
-        """
-        Initializes the async vector storage pipe with necessary components and configurations.
-        """
-        logger.info(f"Initalizing an `DefaultVectorSearchPipe` pipe.")
-        config = config or DefaultSearchRAGContextPipe.SearchRAGContextConfig()
-        if not isinstance(
-            config, DefaultSearchRAGContextPipe.SearchRAGContextConfig
-        ):
-            raise ValueError(
-                "Invalid configuration provided for `DefaultSearchRAGContextPipe`."
-            )
-
+        logger.info(f"Initalizing an `DefaultSearchRAGContextPipe` pipe.")
         super().__init__(
-            config=config,
+            flow=flow,
+            type=type,
+            config=config
+            or AsyncPipe.PipeConfig(name="default_search_rag_context"),
             *args,
             **kwargs,
         )
-
-    @property
-    def flow(self) -> PipeFlow:
-        return PipeFlow.FAN_IN
 
     async def _run_logic(
         self,
@@ -51,9 +34,6 @@ class DefaultSearchRAGContextPipe(AggregatorPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
-        """
-        Executes the async vector storage pipe: storing embeddings in the vector database.
-        """
         await self.aggregate(input, context)
         if len(self.results) > 0:
             rag_context = "\n\n".join([str(ele) for ele in self.results])
