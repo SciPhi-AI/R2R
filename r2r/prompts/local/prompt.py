@@ -49,7 +49,6 @@ class DefaultPromptProvider(PromptProvider):
             raise ValueError(f"Prompt '{prompt_name}' not found.")
         if inputs is None:
             inputs = {}
-        print("inputs = ", inputs)
         prompt = self.prompts[prompt_name]
         return prompt.format_prompt(inputs)
 
