@@ -1,17 +1,18 @@
-import inspect
 import asyncio
-from ..abstractions.pipes import AsyncPipe, AsyncState, PipeFlow
+import inspect
 from typing import Optional
 
+from ..abstractions.pipes import AsyncPipe, AsyncState, PipeFlow
+
+
 class Pipeline:
-    def __init__(self, state: Optional[AsyncState] = None):
+    def __init__(self):
         self.pipes: list[AsyncPipe] = []
         self.upstream_outputs: list[list[dict[str, str]]] = []
-        self.state = state or AsyncState()
         self.futures = {}
         self.level = 0
 
-    async def add_pipe(
+    def add_pipe(
         self,
         pipe: AsyncPipe,
         add_upstream_outputs: Optional[list[dict[str, str]]] = None,
@@ -23,13 +24,11 @@ class Pipeline:
         if not add_upstream_outputs:
             add_upstream_outputs = []
         self.upstream_outputs.append(add_upstream_outputs)
-        await self.state.update(pipe.config.name, {"settings": {}})
 
-    async def run(self, input):
+    async def run(self, input, state: Optional[AsyncState] = None):
+        self.state = state or AsyncState()
         current_input = input
         for pipe_num in range(len(self.pipes)):
-            print("executing pipe num = ", pipe_num)
-            print("pipe = ", self.pipes[pipe_num])
             if self.pipes[pipe_num].flow == PipeFlow.FAN_OUT:
                 if self.level == 0:
                     current_input = await self._run_pipe(

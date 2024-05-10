@@ -7,12 +7,7 @@ from .abstractions.document import (
     FragmentType,
 )
 from .abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
-from .abstractions.pipes import (
-    AsyncPipe,
-    AsyncState,
-    PipeFlow,
-    PipeType,
-)
+from .abstractions.pipes import AsyncPipe, AsyncState, PipeFlow, PipeType
 from .abstractions.prompt import Prompt
 from .abstractions.search import SearchRequest, SearchResult
 from .abstractions.vector import Vector, VectorEntry, VectorType

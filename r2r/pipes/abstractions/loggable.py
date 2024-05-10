@@ -1,10 +1,6 @@
 from typing import Any, Optional
 
-from ...core.abstractions.pipes import (
-    AsyncPipe,
-    PipeFlow,
-    PipeType,
-)
+from ...core.abstractions.pipes import AsyncPipe, PipeFlow, PipeType
 from ...core.utils.logging import (
     LoggingDatabaseConnectionSingleton,
     log_output_to_db,
