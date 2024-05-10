@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class EmbeddingPipe(LoggableAsyncPipe):
     class Input(LoggableAsyncPipe.Input):
-        message: Any # AsyncGenerator[Extraction, None]
+        message: Any  # AsyncGenerator[Extraction, None]
 
     def __init__(
         self,
@@ -111,7 +111,8 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
             logging_connection=logging_connection,
             flow=flow,
             type=type,
-            config=config or LoggableAsyncPipe.PipeConfig(name="default_embedding_pipe"),
+            config=config
+            or LoggableAsyncPipe.PipeConfig(name="default_embedding_pipe"),
         )
         self.text_splitter = text_splitter
         self.embedding_batch_size = embedding_batch_size

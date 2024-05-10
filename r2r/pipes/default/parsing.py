@@ -6,7 +6,7 @@ from abc import abstractmethod
 from typing import AsyncGenerator, Iterator, Optional
 
 from r2r.core import (
-    AsyncPipe,
+    AsyncParser,
     AsyncState,
     CSVParser,
     Document,
@@ -17,7 +17,6 @@ from r2r.core import (
     JSONParser,
     LoggingDatabaseConnectionSingleton,
     MarkdownParser,
-    Parser,
     PDFParser,
     PipeFlow,
     PipeType,
@@ -35,8 +34,8 @@ logger = logging.getLogger(__name__)
 class DocumentParsingPipe(LoggableAsyncPipe):
     def __init__(
         self,
-        selected_parsers: Optional[dict[DocumentType, Parser]] = None,
-        override_parsers: Optional[dict[DocumentType, Parser]] = None,
+        selected_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
+        override_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
         logging_connection: Optional[
             LoggingDatabaseConnectionSingleton
         ] = None,
@@ -97,8 +96,8 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
 
     def __init__(
         self,
-        selected_parsers: Optional[dict[DocumentType, Parser]] = None,
-        override_parsers: Optional[dict[DocumentType, Parser]] = None,
+        selected_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
+        override_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
         logging_connection: Optional[
             LoggingDatabaseConnectionSingleton
         ] = None,
@@ -115,7 +114,10 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
             logging_connection=logging_connection,
             flow=flow,
             type=type,
-            config=config or LoggableAsyncPipe.PipeConfig(name="default_document_parsing_pipe"),
+            config=config
+            or LoggableAsyncPipe.PipeConfig(
+                name="default_document_parsing_pipe"
+            ),
             *args,
             **kwargs,
         )

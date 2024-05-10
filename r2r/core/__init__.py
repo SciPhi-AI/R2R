@@ -18,12 +18,12 @@ from .abstractions.prompt import Prompt
 from .abstractions.search import SearchRequest, SearchResult
 from .abstractions.vector import Vector, VectorEntry, VectorType
 from .parsers import (
+    AsyncParser,
     CSVParser,
     DOCXParser,
     HTMLParser,
     JSONParser,
     MarkdownParser,
-    Parser,
     PDFParser,
     PPTParser,
     TextParser,
@@ -67,6 +67,7 @@ __all__ = [
     "FragmentType",
     "Fragment",
     # Parsers
+    "AsyncParser",
     "CSVParser",
     "DOCXParser",
     "HTMLParser",

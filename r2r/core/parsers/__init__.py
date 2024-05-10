@@ -1,10 +1,10 @@
-from .base import (
+from .base import AsyncParser
+from .implementations import (
     CSVParser,
     DOCXParser,
     HTMLParser,
     JSONParser,
     MarkdownParser,
-    Parser,
     PDFParser,
     PPTParser,
     TextParser,
@@ -12,7 +12,7 @@ from .base import (
 )
 
 __all__ = [
-    "Parser",
+    "AsyncParser",
     "CSVParser",
     "DOCXParser",
     "HTMLParser",

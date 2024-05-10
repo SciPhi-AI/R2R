@@ -138,8 +138,8 @@ class Pipeline:
     async def run(self, input):
         current_input = input
         for pipe_num in range(len(self.pipes)):
-            print('executing pipe num = ', pipe_num)
-            print('pipe = ', self.pipes[pipe_num])
+            print("executing pipe num = ", pipe_num)
+            print("pipe = ", self.pipes[pipe_num])
             if self.pipes[pipe_num].flow == PipeFlow.FAN_OUT:
                 if self.level == 0:
                     current_input = await self._run_pipe(
@@ -216,7 +216,3 @@ class Pipeline:
 
         # Execute the pipe with all inputs resolved
         return await pipe.run(pipe.Input(**input_dict), self.state)
-
-
-class PipeConfig:
-    pass
