@@ -4,7 +4,6 @@ from typing import Any, Optional
 from r2r.core import (
     AsyncState,
     LoggingDatabaseConnectionSingleton,
-    PipeConfig,
     PipeFlow,
     PipeType,
 )
@@ -22,7 +21,7 @@ class CollectorPipe(LoggableAsyncPipe):
         ] = None,
         flow: PipeFlow = PipeFlow.FAN_IN,
         type: PipeType = PipeType.OTHER,
-        config: Optional[PipeConfig] = None,
+        config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
         **kwargs
     ):

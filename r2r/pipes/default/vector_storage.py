@@ -9,34 +9,38 @@ from typing import Any, AsyncGenerator, Optional
 from pydantic import BaseModel
 
 from r2r.core import (
+    AsyncState,
     LoggingDatabaseConnectionSingleton,
-    PipeConfig,
+    PipeFlow,
+    PipeType,
     VectorDBProvider,
     VectorEntry,
 )
 
-from ..abstractions.storage import StoragePipe
+from ..abstractions.loggable import LoggableAsyncPipe
 
 logger = logging.getLogger(__name__)
 
 
-class DefaultVectorStoragePipe(StoragePipe):
+class DefaultVectorStoragePipe(LoggableAsyncPipe):
+    class Input(LoggableAsyncPipe.Input):
+        message: AsyncGenerator[VectorEntry, None]
+        do_upsert: bool = True
+
     """
     Stores embeddings in a vector database asynchronously.
     """
 
-    class Config(BaseModel, PipeConfig):
-        # test: str = "test"
-        pass
-
     def __init__(
         self,
         vector_db_provider: VectorDBProvider,
+        storage_batch_size: int = 128,
         logging_connection: Optional[
             LoggingDatabaseConnectionSingleton
         ] = None,
-        config: Optional[Config] = None,
-        storage_batch_size: int = 128,
+        flow: PipeFlow = PipeFlow.STANDARD,
+        type: PipeType = PipeType.INGESTOR,
+        config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
@@ -48,11 +52,14 @@ class DefaultVectorStoragePipe(StoragePipe):
         )
 
         super().__init__(
-            config=config or DefaultVectorStoragePipe.Config(),
-            vector_db_provider=vector_db_provider,
             logging_connection=logging_connection,
+            flow=flow,
+            type=type,
+            config=config,
+            *args,
             **kwargs,
         )
+        self.vector_db_provider = vector_db_provider
         self.storage_batch_size = storage_batch_size
 
     async def store(
@@ -72,36 +79,37 @@ class DefaultVectorStoragePipe(StoragePipe):
             logger.error(f"Error storing vector entries: {e}")
             raise
 
-    async def run(
+    async def _run_logic(
         self,
         input: AsyncGenerator[VectorEntry, None],
-        do_upsert: bool = True,
+        state: AsyncState,
         *args: Any,
         **kwargs: Any,
-    ) -> None:
+    ) -> AsyncGenerator[None, None]:
         """
         Executes the async vector storage pipe: storing embeddings in the vector database.
         """
-        self._initialize_pipe()
-
         batch_tasks = []
         vector_batch = []
 
-        async for vector_entry in input:
+        async for vector_entry in input.message:
             vector_batch.append(vector_entry)
             if len(vector_batch) >= self.storage_batch_size:
                 # Schedule the storage task
                 batch_tasks.append(
                     asyncio.create_task(
-                        self.store(vector_batch.copy(), do_upsert)
+                        self.store(vector_batch.copy(), input.do_upsert)
                     )
                 )
                 vector_batch.clear()
 
         if vector_batch:  # Process any remaining vectors
             batch_tasks.append(
-                asyncio.create_task(self.store(vector_batch.copy(), do_upsert))
+                asyncio.create_task(
+                    self.store(vector_batch.copy(), input.do_upsert)
+                )
             )
 
         # Wait for all storage tasks to complete
         await asyncio.gather(*batch_tasks)
+        yield None

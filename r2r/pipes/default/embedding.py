@@ -1,7 +1,3 @@
-"""
-A simple example to demonstrate the usage of `DefaultEmbeddingPipe`.
-"""
-
 import asyncio
 import copy
 import logging
@@ -9,11 +5,13 @@ from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
+    AsyncState,
     EmbeddingProvider,
     Extraction,
     Fragment,
     FragmentType,
     LoggingDatabaseConnectionSingleton,
+    PipeFlow,
     PipeType,
     TextSplitter,
     Vector,
@@ -29,8 +27,8 @@ logger = logging.getLogger(__name__)
 
 
 class EmbeddingPipe(LoggableAsyncPipe):
-    INPUT_TYPE = AsyncGenerator[Extraction, None]
-    OUTPUT_TYPE = AsyncGenerator[VectorEntry, None]
+    class Input(LoggableAsyncPipe.Input):
+        message: Any # AsyncGenerator[Extraction, None]
 
     def __init__(
         self,
@@ -38,15 +36,21 @@ class EmbeddingPipe(LoggableAsyncPipe):
         logging_connection: Optional[
             LoggingDatabaseConnectionSingleton
         ] = None,
+        flow: PipeFlow = PipeFlow.STANDARD,
+        type: PipeType = PipeType.INGESTOR,
+        config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
+        super().__init__(
+            logging_connection=logging_connection,
+            flow=flow,
+            type=type,
+            config=config,
+            *args,
+            **kwargs,
+        )
         self.embedding_provider = embedding_provider
-        super().__init__(logging_connection=logging_connection, **kwargs)
-
-    @property
-    def type(self) -> PipeType:
-        return PipeType.EMBEDDING
 
     @abstractmethod
     async def fragment(
@@ -65,7 +69,13 @@ class EmbeddingPipe(LoggableAsyncPipe):
         pass
 
     @abstractmethod
-    async def run(self, input: INPUT_TYPE, **kwargs) -> OUTPUT_TYPE:
+    async def _run_logic(
+        self,
+        input: AsyncGenerator[Extraction, None],
+        state: AsyncState,
+        *args: Any,
+        **kwargs: Any,
+    ) -> AsyncGenerator[VectorEntry, None]:
         pass
 
 
@@ -78,11 +88,14 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
         self,
         embedding_provider: OpenAIEmbeddingProvider,
         text_splitter: TextSplitter,
+        embedding_batch_size: int = 1,
+        id_prefix: str = "demo",
         logging_connection: Optional[
             LoggingDatabaseConnectionSingleton
         ] = None,
-        embedding_batch_size: int = 1,
-        id_prefix: str = "demo",
+        flow: PipeFlow = PipeFlow.STANDARD,
+        type: PipeType = PipeType.INGESTOR,
+        config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
@@ -94,8 +107,11 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
         )
 
         super().__init__(
-            embedding_provider,
-            logging_connection,
+            embedding_provider=embedding_provider,
+            logging_connection=logging_connection,
+            flow=flow,
+            type=type,
+            config=config or LoggableAsyncPipe.PipeConfig(name="default_embedding_pipe"),
         )
         self.text_splitter = text_splitter
         self.embedding_batch_size = embedding_batch_size
@@ -149,38 +165,6 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
             EmbeddingProvider.PipeStage.SEARCH,
         )
 
-    async def run(
-        self,
-        input: AsyncGenerator[Extraction, None],
-        **kwargs: Any,
-    ) -> AsyncGenerator[VectorEntry, None]:
-        """
-        Executes the embedding pipe: chunking, transforming, embedding, and storing documents.
-        """
-        self._initialize_pipe()
-
-        batch_tasks = []
-        fragment_batch = []
-
-        async for extraction in input:
-            async for fragment in self.fragment(extraction):
-                fragment_batch.append(fragment)
-                if len(fragment_batch) >= self.embedding_batch_size:
-                    # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
-                    batch_tasks.append(
-                        self._process_batch(fragment_batch.copy())
-                    )  # pass a copy if necessary
-                    fragment_batch.clear()  # Clear the batch for new fragments
-
-        if fragment_batch:  # Process any remaining fragments
-            batch_tasks.append(self._process_batch(fragment_batch.copy()))
-
-        # Process tasks as they complete
-        for task in asyncio.as_completed(batch_tasks):
-            batch_result = await task  # Wait for the next task to complete
-            for vector_entry in batch_result:
-                yield vector_entry
-
     async def _process_batch(
         self, fragment_batch: list[Fragment]
     ) -> list[VectorEntry]:
@@ -201,3 +185,35 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
             )
             for raw_vector, fragment in zip(vectors, fragment_batch)
         ]
+
+    async def _run_logic(
+        self,
+        input: EmbeddingPipe.Input,
+        state: AsyncState,
+        *args: Any,
+        **kwargs: Any,
+    ) -> AsyncGenerator[VectorEntry, None]:
+        """
+        Executes the embedding pipe: chunking, transforming, embedding, and storing documents.
+        """
+        batch_tasks = []
+        fragment_batch = []
+
+        async for extraction in input.message:
+            async for fragment in self.fragment(extraction):
+                fragment_batch.append(fragment)
+                if len(fragment_batch) >= self.embedding_batch_size:
+                    # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
+                    batch_tasks.append(
+                        self._process_batch(fragment_batch.copy())
+                    )  # pass a copy if necessary
+                    fragment_batch.clear()  # Clear the batch for new fragments
+
+        if fragment_batch:  # Process any remaining fragments
+            batch_tasks.append(self._process_batch(fragment_batch.copy()))
+
+        # Process tasks as they complete
+        for task in asyncio.as_completed(batch_tasks):
+            batch_result = await task  # Wait for the next task to complete
+            for vector_entry in batch_result:
+                yield vector_entry

@@ -6,7 +6,6 @@ from r2r.core import (
     AsyncPipe,
     AsyncState,
     LoggingDatabaseConnectionSingleton,
-    PipeConfig,
     PipeFlow,
     PipeType,
     SearchResult,
@@ -35,7 +34,7 @@ class SearchPipe(LoggableAsyncPipe):
         ] = None,
         flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.SEARCH,
-        config: Optional[PipeConfig] = None,
+        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):

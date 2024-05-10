@@ -6,6 +6,8 @@ from abc import abstractmethod
 from typing import AsyncGenerator, Iterator, Optional
 
 from r2r.core import (
+    AsyncPipe,
+    AsyncState,
     CSVParser,
     Document,
     DocumentType,
@@ -17,6 +19,7 @@ from r2r.core import (
     MarkdownParser,
     Parser,
     PDFParser,
+    PipeFlow,
     PipeType,
     PPTParser,
     TextParser,
@@ -30,9 +33,6 @@ logger = logging.getLogger(__name__)
 
 
 class DocumentParsingPipe(LoggableAsyncPipe):
-    INPUT_TYPE = AsyncGenerator[Document, None]
-    OUTPUT_TYPE = AsyncGenerator[Extraction, None]
-
     def __init__(
         self,
         selected_parsers: Optional[dict[DocumentType, Parser]] = None,
@@ -40,16 +40,22 @@ class DocumentParsingPipe(LoggableAsyncPipe):
         logging_connection: Optional[
             LoggingDatabaseConnectionSingleton
         ] = None,
+        flow: PipeFlow = PipeFlow.STANDARD,
+        type: PipeType = PipeType.INGESTOR,
+        config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
+        super().__init__(
+            logging_connection=logging_connection,
+            flow=flow,
+            type=type,
+            config=config,
+            *args,
+            **kwargs,
+        )
         self.selected_parsers = selected_parsers or {}
         self.override_parsers = override_parsers or {}
-        super().__init__(logging_connection=logging_connection, **kwargs)
-
-    @property
-    def type(self) -> PipeType:
-        return PipeType.PARSING
 
     @property
     def supported_types(self) -> list[str]:
@@ -59,7 +65,7 @@ class DocumentParsingPipe(LoggableAsyncPipe):
         return [entry_type for entry_type in DocumentType]
 
     @abstractmethod
-    async def parse(
+    async def _parse(
         self, document: Document, *args, **kwargs
     ) -> Iterator[Extraction]:
         """
@@ -73,6 +79,9 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
     Processes incoming documents into plaintext based on their data type.
     Supports TXT, JSON, HTML, and PDF formats.
     """
+
+    class Input(LoggableAsyncPipe.Input):
+        message: AsyncGenerator[Document, None]
 
     AVAILABLE_PARSERS = {
         DocumentType.CSV: {"default": CSVParser},
@@ -88,16 +97,28 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
 
     def __init__(
         self,
-        selected_parsers: Optional[dict[DocumentType, str]] = None,
+        selected_parsers: Optional[dict[DocumentType, Parser]] = None,
         override_parsers: Optional[dict[DocumentType, Parser]] = None,
         logging_connection: Optional[
             LoggingDatabaseConnectionSingleton
         ] = None,
+        flow: PipeFlow = PipeFlow.STANDARD,
+        type: PipeType = PipeType.INGESTOR,
+        config: Optional[LoggableAsyncPipe.PipeConfig] = None,
+        *args,
+        **kwargs,
     ):
         logger.info(
             "Initializing a `DefaultDocumentParsingPipe` to parse incoming documents."
         )
-        super().__init__(logging_connection)
+        super().__init__(
+            logging_connection=logging_connection,
+            flow=flow,
+            type=type,
+            config=config or LoggableAsyncPipe.PipeConfig(name="default_document_parsing_pipe"),
+            *args,
+            **kwargs,
+        )
 
         # Initialize parsers with defaults and apply selected parsers
         self.parsers = {
@@ -137,7 +158,7 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
             for entry_type, parser in override_parsers.items():
                 self.parsers[entry_type] = parser
 
-    async def parse(
+    async def _parse(
         self,
         document: Document,
     ) -> AsyncGenerator[Extraction, None]:
@@ -161,10 +182,9 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
             )
             iteration += 1
 
-    async def run(
-        self, input: AsyncGenerator[Document, None], *args, **kwargs
+    async def _run_logic(
+        self, input: Input, state: AsyncState, *args, **kwargs
     ) -> AsyncGenerator[Extraction, None]:
-        self._initialize_pipe()
-        async for document in input:
-            async for extraction in self.parse(document):
+        async for document in input.message:
+            async for extraction in self._parse(document):
                 yield extraction

@@ -17,6 +17,7 @@ class PipeFlow(Enum):
 class PipeType(Enum):
     COLLECTOR = "collector"
     GENERATOR = "generator"
+    INGESTOR = "ingestor"
     TRANSFORM = "transformer"
     SEARCH = "search"
     OTHER = "other"
@@ -65,7 +66,7 @@ class AsyncState:
 
 class AsyncPipe(ABC):
     class PipeConfig(BaseModel):
-        name: str
+        name: str = "default_pipe"
 
         class Config:
             extra = "forbid"
@@ -86,7 +87,7 @@ class AsyncPipe(ABC):
     ):
         self._flow = flow
         self._type = type
-        self._config = config or self.Config()
+        self._config = config or self.PipeConfig()
 
     @property
     def flow(self) -> PipeFlow:
@@ -137,6 +138,8 @@ class Pipeline:
     async def run(self, input):
         current_input = input
         for pipe_num in range(len(self.pipes)):
+            print('executing pipe num = ', pipe_num)
+            print('pipe = ', self.pipes[pipe_num])
             if self.pipes[pipe_num].flow == PipeFlow.FAN_OUT:
                 if self.level == 0:
                     current_input = await self._run_pipe(

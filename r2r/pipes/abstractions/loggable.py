@@ -2,7 +2,6 @@ from typing import Any, Optional
 
 from ...core.abstractions.pipes import (
     AsyncPipe,
-    PipeConfig,
     PipeFlow,
     PipeType,
 )
@@ -20,7 +19,7 @@ class LoggableAsyncPipe(AsyncPipe):
         ] = None,
         flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.OTHER,
-        config: Optional[PipeConfig] = None,
+        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs
     ):

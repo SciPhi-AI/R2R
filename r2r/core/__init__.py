@@ -6,21 +6,15 @@ from .abstractions.document import (
     Fragment,
     FragmentType,
 )
-from .abstractions.llm import (
-    LLMChatCompletion,
-    LLMChatCompletionChunk,
-    RAGPipeOutput,
-)
+from .abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
 from .abstractions.pipes import (
     AsyncPipe,
     AsyncState,
-    PipeConfig,
     PipeFlow,
     Pipeline,
     PipeType,
 )
 from .abstractions.prompt import Prompt
-from .abstractions.rag import RAGRequest, RAGResult
 from .abstractions.search import SearchRequest, SearchResult
 from .abstractions.vector import Vector, VectorEntry, VectorType
 from .parsers import (
@@ -35,15 +29,6 @@ from .parsers import (
     TextParser,
     XLSXParser,
 )
-
-# from .agent.base import Agent
-# from .pipes.embedding import EmbeddingPipe
-# from .pipes.eval import EvalPipe
-# from .pipes.parsing import DocumentParsingPipe
-# from .pipes.rag import RAGPipe
-# from .pipes.search import SearchPipe
-# from .pipes.storage import StoragePipe
-# from ..pipes.abstractions.loggable import LoggableAsyncPipe
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
 from .providers.eval import EvalConfig, EvalProvider
 from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
@@ -62,7 +47,6 @@ __all__ = [
     # Abstractions
     "LoggingDatabaseConnectionSingleton",
     "log_output_to_db",
-    "RAGPipeOutput",
     "VectorEntry",
     "VectorType",
     "Vector",
@@ -70,27 +54,18 @@ __all__ = [
     "RAGResult",
     "SearchRequest",
     "SearchResult",
-    # "Agent",
     "AsyncPipe",
     "PipeFlow",
     "Pipeline",
     "PipeType",
-    "PipeConfig",
     "AsyncState",
     "Prompt",
-    # "EmbeddingPipe",
-    # "EvalPipe",
-    # "DocumentParsingPipe",
     "DataType",
     "DocumentType",
     "Document",
     "Extraction",
     "FragmentType",
     "Fragment",
-    # "RAGPipe",
-    # "SearchPipe",
-    # "StoragePipe",
-    # "LoggableAsyncPipe",
     # Parsers
     "CSVParser",
     "DOCXParser",

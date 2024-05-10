@@ -4,6 +4,8 @@ from typing import Union
 
 from pydantic import BaseModel
 
+DataType = Union[str, bytes]
+
 
 class DocumentType(Enum):
     CSV = "csv"
@@ -15,9 +17,6 @@ class DocumentType(Enum):
     PPTX = "pptx"
     TXT = "txt"
     XLSX = "xlsx"
-
-
-DataType = Union[str, bytes]
 
 
 class Document(BaseModel):
