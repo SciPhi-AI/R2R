@@ -17,7 +17,7 @@ from r2r.core import (
     VectorEntry,
 )
 
-from ..abstractions.loggable import LoggableAsyncPipe
+from ...core.pipes.loggable import LoggableAsyncPipe
 
 logger = logging.getLogger(__name__)
 

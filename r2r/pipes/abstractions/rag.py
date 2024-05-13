@@ -6,10 +6,10 @@ import logging
 from abc import abstractmethod
 from typing import AsyncGenerator, Optional
 
-from ...core.abstractions.pipes import AsyncPipe, PipeType
+from ...core.pipes.base import AsyncPipe, PipeType
 from ...core.abstractions.rag import RAGRequest, RAGResult
 from ...core.providers.vector_db import VectorDBProvider
-from ...core.utils.logging import LoggingDatabaseConnectionSingleton
+from ...core.pipes.logging import LoggingDatabaseConnectionSingleton
 
 logger = logging.getLogger(__name__)
 

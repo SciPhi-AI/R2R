@@ -12,7 +12,7 @@ from r2r.core import (
 )
 
 
-class GeneratorPipe(AsyncPipe, ABC):
+class GeneratorPipe(AsyncPipe):
     class Config(AsyncPipe.PipeConfig):
         name: str
         task_prompt: str

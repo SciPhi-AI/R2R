@@ -26,7 +26,7 @@ from r2r.core import (
     generate_id_from_label,
 )
 
-from ..abstractions.loggable import LoggableAsyncPipe
+from ...core.pipes.loggable import LoggableAsyncPipe
 
 logger = logging.getLogger(__name__)
 

@@ -1,14 +1,18 @@
+import uuid
 import asyncio
 import inspect
-from typing import Optional
+from typing import Any, Optional
 
-from ..abstractions.pipes import AsyncPipe, AsyncState, PipeFlow
+from ..pipes.base import AsyncPipe, AsyncState, PipeFlow
+from ..pipes.logging import LoggingDatabaseConnectionSingleton
+from ..utils import generate_run_id
 
 
 class Pipeline:
-    def __init__(self):
+    def __init__(self, logger: Optional[LoggingDatabaseConnectionSingleton] = None):
         self.pipes: list[AsyncPipe] = []
         self.upstream_outputs: list[list[dict[str, str]]] = []
+        self.logger = logger or LoggingDatabaseConnectionSingleton()
         self.futures = {}
         self.level = 0
 
@@ -25,14 +29,17 @@ class Pipeline:
             add_upstream_outputs = []
         self.upstream_outputs.append(add_upstream_outputs)
 
-    async def run(self, input, state: Optional[AsyncState] = None):
+    async def run(self, input: Any, state: Optional[AsyncState] = None):
         self.state = state or AsyncState()
         current_input = input
+        run_id = generate_run_id()
+        self.logger.log(pipe_run_id=run_id, key="pipeline_type", value="rag")
+
         for pipe_num in range(len(self.pipes)):
             if self.pipes[pipe_num].flow == PipeFlow.FAN_OUT:
                 if self.level == 0:
                     current_input = await self._run_pipe(
-                        pipe_num, current_input
+                        pipe_num, current_input, run_id
                     )
                     self.level += 1
                 elif self.level == 1:
@@ -40,7 +47,7 @@ class Pipeline:
             elif self.pipes[pipe_num].flow == PipeFlow.STANDARD:
                 if self.level == 0:
                     current_input = await self._run_pipe(
-                        pipe_num, current_input
+                        pipe_num, current_input, run_id
                     )
                 elif self.level == 1:
                     current_input = [
@@ -52,7 +59,7 @@ class Pipeline:
                     raise ValueError("Fan in not supported at level 0")
                 if self.level == 1:
                     current_input = await self._run_pipe(
-                        pipe_num, current_input
+                        pipe_num, current_input, run_id
                     )
                     self.level -= 1
             self.futures[self.pipes[pipe_num].config.name].set_result(
@@ -67,7 +74,7 @@ class Pipeline:
         else:
             return await current_input
 
-    async def _run_pipe(self, pipe_num, input):
+    async def _run_pipe(self, pipe_num: int, input: Any, run_id: uuid.UUID):
         # Collect inputs, waiting for the necessary futures
         pipe = self.pipes[pipe_num]
         add_upstream_outputs = self.upstream_outputs[pipe_num]
@@ -104,4 +111,4 @@ class Pipeline:
             ]
 
         # Execute the pipe with all inputs resolved
-        return await pipe.run(pipe.Input(**input_dict), self.state)
+        return await pipe.run(pipe.Input(**input_dict), self.state, run_id=run_id)

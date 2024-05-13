@@ -18,14 +18,6 @@ from r2r.core import (
 logger = logging.getLogger(__name__)
 
 
-# Function to find the project root by looking for a .git folder or setup.py file
-def find_project_root(current_dir):
-    for parent in current_dir.parents:
-        if any((parent / marker).exists() for marker in [".git", "setup.py"]):
-            return parent
-    return current_dir  # Fallback to current dir if no marker found
-
-
 class R2RConfig:
     REQUIRED_KEYS: dict[str, list] = {
         "app": [],

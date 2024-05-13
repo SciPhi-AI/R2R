@@ -3,11 +3,18 @@ from .abstractions.document import (
     Document,
     DocumentType,
     Extraction,
+    ExtractionType,
     Fragment,
     FragmentType,
 )
 from .abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
-from .abstractions.pipes import AsyncPipe, AsyncState, PipeFlow, PipeType
+from .pipes.base import (
+    AsyncPipe,
+    AsyncState,
+    PipeFlow,
+    PipeType,
+    PipeRunInfo,
+)
 from .abstractions.prompt import Prompt
 from .abstractions.search import SearchRequest, SearchResult
 from .abstractions.vector import Vector, VectorEntry, VectorType
@@ -36,12 +43,14 @@ from .utils import (
     generate_run_id,
 )
 from .utils.config import R2RConfig
-from .utils.logging import LoggingDatabaseConnectionSingleton, log_output_to_db
+from .pipes.logging import LocalPipeLoggingProvider, LoggingDatabaseConnectionSingleton
+# from .pipes.logging import PostgresPipeLoggingProvider, LocalPipeLoggingProvider, LoggingDatabaseConnectionSingleton
 
 __all__ = [
     # Abstractions
+    # "PostgresPipeLoggingProvider",
+    "LocalPipeLoggingProvider",
     "LoggingDatabaseConnectionSingleton",
-    "log_output_to_db",
     "VectorEntry",
     "VectorType",
     "Vector",
@@ -51,6 +60,7 @@ __all__ = [
     "SearchResult",
     "AsyncPipe",
     "PipeFlow",
+    "PipeRunInfo",
     "PipeType",
     "AsyncState",
     "Prompt",
@@ -58,8 +68,9 @@ __all__ = [
     "DocumentType",
     "Document",
     "Extraction",
-    "FragmentType",
+    "ExtractionType",
     "Fragment",
+    "FragmentType",
     # Parsers
     "AsyncParser",
     "CSVParser",

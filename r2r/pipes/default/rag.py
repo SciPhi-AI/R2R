@@ -29,9 +29,14 @@ class DefaultRAGPipe(GeneratorPipe):
         flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.GENERATOR,
         config: Optional[GeneratorPipe] = None,
+        generation_config: Optional[GenerationConfig] = None,
         *args,
         **kwargs,
     ):
+        if config and generation_config:
+            raise ValueError(
+                "Cannot provide both `config` and `generation_config`."
+            )
         super().__init__(
             llm_provider=llm_provider,
             prompt_provider=prompt_provider,
@@ -41,7 +46,8 @@ class DefaultRAGPipe(GeneratorPipe):
             or GeneratorPipe.Config(
                 name="default_rag_pipe",
                 task_prompt="default_rag_prompt",
-                generation_config=GenerationConfig(model="gpt-3.5-turbo"),
+                generation_config=generation_config
+                or GenerationConfig(model="gpt-3.5-turbo"),
             ),
             *args,
             **kwargs,

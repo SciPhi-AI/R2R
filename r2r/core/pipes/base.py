@@ -1,11 +1,11 @@
 import asyncio
-import inspect
 import uuid
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional
 
 from pydantic import BaseModel
+from ..utils import generate_run_id
 
 
 class PipeFlow(Enum):
@@ -25,8 +25,6 @@ class PipeType(Enum):
 
 class PipeRunInfo(BaseModel):
     run_id: uuid.UUID
-    type: PipeType
-
 
 class AsyncState:
     def __init__(self):
@@ -85,29 +83,44 @@ class AsyncPipe(ABC):
         type: PipeType = PipeType.OTHER,
         config: Optional[PipeConfig] = None,
     ):
-        self._flow = flow
-        self._type = type
         self._config = config or self.PipeConfig()
+        self._flow = flow
+        self._run_info = None
+        self._type = type
 
     @property
     def flow(self) -> PipeFlow:
         return self._flow
 
     @property
+    def config(self) -> PipeConfig:
+        return self._config
+
+    @property
     def type(self) -> PipeType:
         return self._type
 
     @property
-    def config(self) -> PipeConfig:
-        return self._config
+    def run_info(self) -> PipeRunInfo:
+        return self._run_info
 
     async def run(
-        self, input: Input, state: AsyncState
+        self, input: Input, state: AsyncState, run_id: Optional[uuid.UUID] = None
     ) -> AsyncGenerator[Any, None]:
-        return self._run_logic(input, state)
+        await self._initiate_run(run_id)
+        result = self._run_logic(input, state)
+        self._run_info = None
+        return result
 
     @abstractmethod
     async def _run_logic(
         self, input: Input, state: AsyncState
     ) -> AsyncGenerator[Any, None]:
         pass
+
+    async def _initiate_run(self, run_id: Optional[uuid.UUID] = None):
+        if not run_id:
+            run_id = generate_run_id()
+        self._run_info = PipeRunInfo(
+            run_id=run_id
+        )

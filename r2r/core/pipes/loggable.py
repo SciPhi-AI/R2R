@@ -1,9 +1,8 @@
 from typing import Any, Optional
 
-from ...core.abstractions.pipes import AsyncPipe, PipeFlow, PipeType
-from ...core.utils.logging import (
+from .base import AsyncPipe, PipeFlow, PipeType
+from .logging import (
     LoggingDatabaseConnectionSingleton,
-    log_output_to_db,
 )
 
 
@@ -27,13 +26,3 @@ class LoggableAsyncPipe(AsyncPipe):
     def close(self):
         if self.logging_connection:
             self.logging_connection.__exit__(None, None, None)
-
-    @log_output_to_db
-    def log(self, data: Any) -> dict:
-        try:
-            if not isinstance(data, dict):
-                data = data.dict()
-        except AttributeError:
-            raise ValueError("Data must be convertable to a dictionary.")
-
-        return data

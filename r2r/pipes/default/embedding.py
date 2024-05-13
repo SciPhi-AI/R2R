@@ -17,11 +17,10 @@ from r2r.core import (
     Vector,
     VectorEntry,
     generate_id_from_label,
-    log_output_to_db,
 )
 from r2r.embeddings import OpenAIEmbeddingProvider
 
-from ..abstractions.loggable import LoggableAsyncPipe
+from ...core.pipes.loggable import LoggableAsyncPipe
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +146,6 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
                 document_id=extraction.document_id,
             )
 
-    @log_output_to_db
     async def transform_fragments(
         self, fragments: list[Fragment], metadatas: list[dict]
     ) -> AsyncGenerator[Fragment, None]:

@@ -3,7 +3,6 @@ import logging
 import uuid
 from typing import Any, AsyncGenerator
 
-# from fastapi import FastAPI, HTTPException
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.datastructures import UploadFile
 from fastapi.param_functions import File, Form
@@ -38,7 +37,7 @@ class R2RApp:
 
         self.app.add_api_route(
             path="/ingest_documents/",
-            endpoint=self.ingest_documents,  # Instance method as endpoint
+            endpoint=self.ingest_documents,
             methods=["POST"],
         )
         self.app.add_api_route(
@@ -54,7 +53,7 @@ class R2RApp:
     async def ingest_documents(self, documents: list[Document] = Form(...)):
         try:
             # Process the documents through the pipeline
-            self.ingestion_pipeline.run(documents)
+            await self.ingestion_pipeline.run(input=list_to_generator(documents))
             return {"message": "Entries upserted successfully."}
         except Exception as e:
             logging.error(
@@ -126,3 +125,11 @@ class R2RApp:
         except Exception as e:
             logging.error(f"Error[rag(query={query})]:\n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
+
+    def serve(self, host: str="0.0.0.0", port: int=8000):
+        try:
+            import uvicorn
+        except ImportError:
+            raise ImportError("Please install uvicorn using 'pip install uvicorn'")
+        
+        uvicorn.run(self.app, host=host, port=port)

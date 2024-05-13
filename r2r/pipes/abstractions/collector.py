@@ -8,7 +8,7 @@ from r2r.core import (
     PipeType,
 )
 
-from .loggable import LoggableAsyncPipe
+from ...core.pipes.loggable import LoggableAsyncPipe
 
 logger = logging.getLogger(__name__)
 
