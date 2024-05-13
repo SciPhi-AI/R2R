@@ -10,8 +10,8 @@ from pydantic import BaseModel
 
 from r2r.core import (
     AsyncState,
-    LoggingDatabaseConnectionSingleton,
     PipeFlow,
+    PipeLoggingConnectionSingleton,
     PipeType,
     VectorDBProvider,
     VectorEntry,
@@ -35,9 +35,7 @@ class DefaultVectorStoragePipe(LoggableAsyncPipe):
         self,
         vector_db_provider: VectorDBProvider,
         storage_batch_size: int = 128,
-        logging_connection: Optional[
-            LoggingDatabaseConnectionSingleton
-        ] = None,
+        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
         flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
@@ -52,7 +50,7 @@ class DefaultVectorStoragePipe(LoggableAsyncPipe):
         )
 
         super().__init__(
-            logging_connection=logging_connection,
+            pipe_logger=pipe_logger,
             flow=flow,
             type=type,
             config=config,

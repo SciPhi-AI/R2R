@@ -3,7 +3,7 @@
 # from r2r.core import (
 #     EvalPipe,
 #     EvalProvider,
-#     LoggingDatabaseConnectionSingleton,
+#     PipeLoggingConnectionSingleton,
 #     log_output_to_db,
 # )
 
@@ -12,12 +12,12 @@
 #     def __init__(
 #         self,
 #         eval_provider: Optional[EvalProvider] = None,
-#         logging_connection: Optional[LoggingDatabaseConnectionSingleton] = None,
+#         pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
 #         *args,
 #         **kwargs,
 #     ):
 #         super().__init__(
-#             eval_provider, logging_connection=logging_connection, **kwargs
+#             eval_provider, pipe_logger=pipe_logger, **kwargs
 #         )
 
 #     @log_output_to_db

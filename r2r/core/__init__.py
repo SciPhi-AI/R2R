@@ -8,13 +8,6 @@ from .abstractions.document import (
     FragmentType,
 )
 from .abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
-from .pipes.base import (
-    AsyncPipe,
-    AsyncState,
-    PipeFlow,
-    PipeType,
-    PipeRunInfo,
-)
 from .abstractions.prompt import Prompt
 from .abstractions.search import SearchRequest, SearchResult
 from .abstractions.vector import Vector, VectorEntry, VectorType
@@ -31,6 +24,11 @@ from .parsers import (
     XLSXParser,
 )
 from .pipeline.base import Pipeline
+from .pipes.base import AsyncPipe, AsyncState, PipeFlow, PipeRunInfo, PipeType
+from .pipes.logging import (
+    LocalPipeLoggingProvider,
+    PipeLoggingConnectionSingleton,
+)
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
 from .providers.eval import EvalConfig, EvalProvider
 from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
@@ -43,14 +41,14 @@ from .utils import (
     generate_run_id,
 )
 from .utils.config import R2RConfig
-from .pipes.logging import LocalPipeLoggingProvider, LoggingDatabaseConnectionSingleton
-# from .pipes.logging import PostgresPipeLoggingProvider, LocalPipeLoggingProvider, LoggingDatabaseConnectionSingleton
+
+# from .pipes.logging import PostgresPipeLoggingProvider, LocalPipeLoggingProvider, PipeLoggingConnectionSingleton
 
 __all__ = [
     # Abstractions
     # "PostgresPipeLoggingProvider",
     "LocalPipeLoggingProvider",
-    "LoggingDatabaseConnectionSingleton",
+    "PipeLoggingConnectionSingleton",
     "VectorEntry",
     "VectorType",
     "Vector",

@@ -29,7 +29,7 @@ The `BasicEvalPipeline` is a simple implementation of the `EvalPipeline` abstrac
 
 The `BasicEvalPipeline` is initialized with the following parameters:
 - `eval_config`: A dictionary containing the evaluation configuration, including the evaluation sampling_fraction and provider.
-- `logging_connection` (optional): An instance of `LoggingDatabaseConnectionSingleton` for logging.
+- `pipe_logger` (optional): An instance of `PipeLoggingConnectionSingleton` for logging.
 
 The pipeline checks if the specified evaluation provider is supported (currently supports "deepeval" and "parea"). If the provider is "deepeval", it attempts to import the `DeepEvalProvider` and raises an import error if the package is not installed.
 
@@ -43,18 +43,18 @@ To create a custom eval pipeline, you can subclass the `EvalPipeline` abstract b
 
 ```python
 from typing import Any, Optional
-from r2r.core import EvalPipeline, LoggingDatabaseConnectionSingleton, log_execution_to_db
+from r2r.core import EvalPipeline, PipeLoggingConnectionSingleton, log_execution_to_db
 
 class CustomEvalPipeline(EvalPipeline):
     def __init__(
         self,
         eval_config: dict,
-        logging_connection: Optional[LoggingDatabaseConnectionSingleton] = None,
+        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
         *args,
         **kwargs,
     ):
         sampling_fraction = eval_config["sampling_fraction"]
-        super().__init__(sampling_fraction, logging_connection, *args, **kwargs)
+        super().__init__(sampling_fraction, pipe_logger, *args, **kwargs)
         # Custom initialization logic
 
     @log_execution_to_db

@@ -1,6 +1,7 @@
 """
 A simple example to demonstrate the usage of `DefaultDocumentParsingPipe`.
 """
+import json
 import logging
 from abc import abstractmethod
 from typing import AsyncGenerator, Iterator, Optional
@@ -15,10 +16,10 @@ from r2r.core import (
     Extraction,
     HTMLParser,
     JSONParser,
-    LoggingDatabaseConnectionSingleton,
     MarkdownParser,
     PDFParser,
     PipeFlow,
+    PipeLoggingConnectionSingleton,
     PipeType,
     PPTParser,
     TextParser,
@@ -36,9 +37,7 @@ class DocumentParsingPipe(LoggableAsyncPipe):
         self,
         selected_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
         override_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
-        logging_connection: Optional[
-            LoggingDatabaseConnectionSingleton
-        ] = None,
+        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
         flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
@@ -46,7 +45,7 @@ class DocumentParsingPipe(LoggableAsyncPipe):
         **kwargs,
     ):
         super().__init__(
-            logging_connection=logging_connection,
+            pipe_logger=pipe_logger,
             flow=flow,
             type=type,
             config=config,
@@ -98,9 +97,7 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
         self,
         selected_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
         override_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
-        logging_connection: Optional[
-            LoggingDatabaseConnectionSingleton
-        ] = None,
+        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
         flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
@@ -111,7 +108,7 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
             "Initializing a `DefaultDocumentParsingPipe` to parse incoming documents."
         )
         super().__init__(
-            logging_connection=logging_connection,
+            pipe_logger=pipe_logger,
             flow=flow,
             type=type,
             config=config
@@ -176,11 +173,24 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
             extraction_id = generate_id_from_label(
                 f"{document.id}-{iteration}"
             )
-            yield Extraction(
+            extraction = Extraction(
                 id=extraction_id,
                 data=text,
                 metadata=document.metadata,
                 document_id=document.id,
+            )
+            yield extraction
+            extraction_dict = extraction.dict()
+            await self.enqueue_log(
+                pipe_run_id=self.run_info.run_id,
+                key="extraction",
+                value=json.dumps(
+                    {
+                        "data": extraction_dict["data"],
+                        "document_id": str(extraction_dict["document_id"]),
+                        "extraction_id": str(extraction_dict["id"]),
+                    }
+                ),
             )
             iteration += 1
 

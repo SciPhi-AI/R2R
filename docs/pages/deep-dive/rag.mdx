@@ -13,7 +13,7 @@ The `QnARAGPipeline` is initialized with the following parameters:
 - `vector_db_provider`: An instance of `VectorDBProvider` for searching and retrieving documents.
 - `embedding_provider`: An instance of `OpenAIEmbeddingProvider` for generating embeddings.
 - `prompt_provider` (optional): An instance of `PromptProvider` for providing prompts (default is `BasicPromptProvider`).
-- `logging_connection` (optional): An instance of `LoggingDatabaseConnectionSingleton` for logging.
+- `pipe_logger` (optional): An instance of `PipeLoggingConnectionSingleton` for logging.
 
 ### Query Transformation
 
@@ -43,7 +43,7 @@ class CustomRAGPipeline(RAGPipeline):
         vector_db_provider: VectorDBProvider,
         embedding_provider: OpenAIEmbeddingProvider,
         prompt_provider: Optional[PromptProvider] = None,
-        logging_connection: Optional[LoggingDatabaseConnectionSingleton] = None,
+        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
     ) -> None:
         if not prompt_provider:
             prompt_provider = BasicPromptProvider()
@@ -54,7 +54,7 @@ class CustomRAGPipeline(RAGPipeline):
             prompt_provider=prompt_provider,
             embedding_provider=embedding_provider,
             vector_db_provider=vector_db_provider,
-            logging_connection=logging_connection,
+            pipe_logger=pipe_logger,
         )
         self.pipeline_run_info = None
 

@@ -8,7 +8,7 @@ The `BasicEmbeddingPipeline` is a simple implementation of the `EmbeddingPipelin
 
 ### Initialization
 
-The `BasicEmbeddingPipeline` is initialized with an `embedding_provider`, `vector_db_provider`, `text_splitter`, an optional `logging_connection`, `embedding_batch_size`, and `id_prefix`.
+The `BasicEmbeddingPipeline` is initialized with an `embedding_provider`, `vector_db_provider`, `text_splitter`, an optional `pipe_logger`, `embedding_batch_size`, and `id_prefix`.
 
 ### Text Extraction
 
@@ -73,7 +73,7 @@ class CustomEmbeddingPipeline(BasicEmbeddingPipeline):
         embedding_provider: OpenAIEmbeddingProvider,
         vector_db_provider: VectorDBProvider,
         text_splitter: TextSplitter,
-        logging_connection: Optional[LoggingDatabaseConnectionSingleton] = None,
+        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
         embedding_batch_size: int = 1,
         id_prefix: str = "demo",
     ):
@@ -81,7 +81,7 @@ class CustomEmbeddingPipeline(BasicEmbeddingPipeline):
             embedding_provider,
             vector_db_provider,
             text_splitter,
-            logging_connection,
+            pipe_logger,
             embedding_batch_size,
             id_prefix,
         )

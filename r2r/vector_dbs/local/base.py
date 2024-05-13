@@ -195,9 +195,3 @@ class LocalVectorDBProvider(VectorDBProvider):
                     unique_values.add(metadata[metadata_field])
         conn.close()
         return list(unique_values)
-
-    def close(self):
-        pass
-
-    def close(self):
-        pass

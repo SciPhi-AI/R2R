@@ -1,18 +1,20 @@
-import uuid
 import asyncio
 import inspect
+import uuid
 from typing import Any, Optional
 
 from ..pipes.base import AsyncPipe, AsyncState, PipeFlow
-from ..pipes.logging import LoggingDatabaseConnectionSingleton
+from ..pipes.logging import PipeLoggingConnectionSingleton
 from ..utils import generate_run_id
 
 
 class Pipeline:
-    def __init__(self, logger: Optional[LoggingDatabaseConnectionSingleton] = None):
+    def __init__(
+        self, pipe_logger: Optional[PipeLoggingConnectionSingleton] = None
+    ):
         self.pipes: list[AsyncPipe] = []
         self.upstream_outputs: list[list[dict[str, str]]] = []
-        self.logger = logger or LoggingDatabaseConnectionSingleton()
+        self.pipe_logger = pipe_logger or PipeLoggingConnectionSingleton()
         self.futures = {}
         self.level = 0
 
@@ -33,7 +35,13 @@ class Pipeline:
         self.state = state or AsyncState()
         current_input = input
         run_id = generate_run_id()
-        self.logger.log(pipe_run_id=run_id, key="pipeline_type", value="rag")
+        print(f"Running pipeline with run_id: {run_id}")
+        await self.pipe_logger.log(
+            pipe_run_id=run_id,
+            key="pipeline_type",
+            value="rag",
+            is_pipeline_info=True,
+        )
 
         for pipe_num in range(len(self.pipes)):
             if self.pipes[pipe_num].flow == PipeFlow.FAN_OUT:
@@ -66,13 +74,11 @@ class Pipeline:
                 current_input
             )
 
-        if inspect.isasyncgen(current_input):
-            final_result = []
-            async for item in current_input:
-                final_result.append(item)
-            return final_result
-        else:
-            return await current_input
+        # Consume the final generator to return a final result
+        final_result = []
+        async for item in current_input:
+            final_result.append(item)
+        return final_result if len(final_result) > 1 else final_result[0]
 
     async def _run_pipe(self, pipe_num: int, input: Any, run_id: uuid.UUID):
         # Collect inputs, waiting for the necessary futures
@@ -110,5 +116,8 @@ class Pipeline:
                 upstream_input["prev_output_field"]
             ]
 
-        # Execute the pipe with all inputs resolved
-        return await pipe.run(pipe.Input(**input_dict), self.state, run_id=run_id)
+        # Handle the pipe generator
+        async for ele in pipe.run(
+            pipe.Input(**input_dict), self.state, run_id=run_id
+        ):
+            return ele

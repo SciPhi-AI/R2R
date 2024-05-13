@@ -155,7 +155,7 @@
 
 #         eval_provider = E2EPipeFactory.get_eval_provider(config.eval)
 
-#         logging_connection = LoggingDatabaseConnection(
+#         pipe_logger = LoggingDatabaseConnection(
 #             config.logging_database["provider"],
 #             config.logging_database["collection_name"],
 #         )
@@ -171,7 +171,7 @@
 #         embd_pipe = embedding_pipe_impl(
 #             embedding_provider=embedding_provider,
 #             vector_db_provider=vector_db_provider,
-#             logging_connection=logging_connection,
+#             pipe_logger=pipe_logger,
 #             text_splitter=E2EPipeFactory.get_text_splitter(
 #                 config.embedding["text_splitter"]
 #             ),
@@ -181,10 +181,10 @@
 #             embedding_provider=embedding_provider,
 #             llm_provider=llm_provider,
 #             vector_db_provider=vector_db_provider,
-#             logging_connection=logging_connection,
+#             pipe_logger=pipe_logger,
 #         )
 #         eval_pipe = eval_pipe_impl(
-#             eval_provider, logging_connection=logging_connection
+#             eval_provider, pipe_logger=pipe_logger
 #         )
 
 #         app = app_fn(
@@ -194,7 +194,7 @@
 #             rag_pipe=rag_pipe,
 #             eval_pipe=eval_pipe,
 #             config=config,
-#             logging_connection=logging_connection,
+#             pipe_logger=pipe_logger,
 #         )
 
 #         return app

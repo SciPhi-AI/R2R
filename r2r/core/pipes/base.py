@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any, AsyncGenerator, Optional
 
 from pydantic import BaseModel
+
 from ..utils import generate_run_id
 
 
@@ -25,6 +26,7 @@ class PipeType(Enum):
 
 class PipeRunInfo(BaseModel):
     run_id: uuid.UUID
+
 
 class AsyncState:
     def __init__(self):
@@ -105,11 +107,13 @@ class AsyncPipe(ABC):
         return self._run_info
 
     async def run(
-        self, input: Input, state: AsyncState, run_id: Optional[uuid.UUID] = None
+        self,
+        input: Input,
+        state: AsyncState,
+        run_id: Optional[uuid.UUID] = None,
     ) -> AsyncGenerator[Any, None]:
         await self._initiate_run(run_id)
         result = self._run_logic(input, state)
-        self._run_info = None
         return result
 
     @abstractmethod
@@ -121,6 +125,4 @@ class AsyncPipe(ABC):
     async def _initiate_run(self, run_id: Optional[uuid.UUID] = None):
         if not run_id:
             run_id = generate_run_id()
-        self._run_info = PipeRunInfo(
-            run_id=run_id
-        )
+        self._run_info = PipeRunInfo(run_id=run_id)

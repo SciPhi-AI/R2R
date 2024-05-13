@@ -61,7 +61,7 @@ This method creates the end-to-end pipeline by assembling various components bas
 3. Retrieves the vector database using `get_vector_db_provider` or uses the provided `vector_db_provider`.
 4. Initializes the vector database collection with the specified `collection_name` and `embedding_dimension`.
 5. Retrieves the language model using `get_llm_provider` or uses the provided `llm`.
-6. Creates a `LoggingDatabaseConnectionSingleton` instance for logging purposes.
+6. Creates a `PipeLoggingConnectionSingleton` instance for logging purposes.
 7. Creates an instance of the `rag_pipeline_impl` (default: `QnARAGPipeline`) with the language model, vector database, embedding model, embeddings provider, and logging connection.
 9. Creates an instance of the `embedding_pipeline_impl` (default: `BasicEmbeddingPipeline`) with the embedding model, embeddings provider, vector database, logging connection, text splitter, and embedding batch size.
 10. Creates an instance of the `eval_pipeline_impl` (default: `BasicEvalPipeline`) with the evaluation configuration and logging connection.

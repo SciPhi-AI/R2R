@@ -1,3 +1,4 @@
+import json 
 import asyncio
 import copy
 import logging
@@ -10,8 +11,8 @@ from r2r.core import (
     Extraction,
     Fragment,
     FragmentType,
-    LoggingDatabaseConnectionSingleton,
     PipeFlow,
+    PipeLoggingConnectionSingleton,
     PipeType,
     TextSplitter,
     Vector,
@@ -32,9 +33,7 @@ class EmbeddingPipe(LoggableAsyncPipe):
     def __init__(
         self,
         embedding_provider: EmbeddingProvider,
-        logging_connection: Optional[
-            LoggingDatabaseConnectionSingleton
-        ] = None,
+        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
         flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
@@ -42,7 +41,7 @@ class EmbeddingPipe(LoggableAsyncPipe):
         **kwargs,
     ):
         super().__init__(
-            logging_connection=logging_connection,
+            pipe_logger=pipe_logger,
             flow=flow,
             type=type,
             config=config,
@@ -89,9 +88,7 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
         text_splitter: TextSplitter,
         embedding_batch_size: int = 1,
         id_prefix: str = "demo",
-        logging_connection: Optional[
-            LoggingDatabaseConnectionSingleton
-        ] = None,
+        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
         flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
@@ -107,7 +104,7 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
 
         super().__init__(
             embedding_provider=embedding_provider,
-            logging_connection=logging_connection,
+            pipe_logger=pipe_logger,
             flow=flow,
             type=type,
             config=config
@@ -137,7 +134,7 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
             for ele in self.text_splitter.create_documents([extraction.data])
         ]
         for iteration, chunk in enumerate(text_chunks):
-            yield Fragment(
+            fragment = Fragment(
                 id=generate_id_from_label(f"{extraction.id}-{iteration}"),
                 type=FragmentType.TEXT,
                 data=chunk,
@@ -145,6 +142,21 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
                 extraction_id=extraction.id,
                 document_id=extraction.document_id,
             )
+            yield fragment
+            fragment_dict = fragment.dict()
+            await self.enqueue_log(
+                pipe_run_id=self.run_info.run_id,
+                key="fragment",
+                value=json.dumps(
+                    {
+                        "data": fragment_dict["data"],
+                        "document_id": str(fragment_dict["document_id"]),
+                        "extraction_id": str(fragment_dict["extraction_id"]),
+                        "fragment_id": str(fragment_dict["id"]),
+                    }
+                ),
+            )
+            iteration += 1
 
     async def transform_fragments(
         self, fragments: list[Fragment], metadatas: list[dict]

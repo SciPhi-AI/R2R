@@ -61,10 +61,6 @@ class VectorDBProvider(Provider, ABC):
     def create_index(self, index_type, column_name, index_options):
         pass
 
-    @abstractmethod
-    def close(self):
-        pass
-
     def upsert_entries(
         self, entries: list[VectorEntry], commit: bool = True
     ) -> None:

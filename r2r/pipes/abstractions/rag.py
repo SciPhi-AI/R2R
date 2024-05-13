@@ -6,10 +6,10 @@ import logging
 from abc import abstractmethod
 from typing import AsyncGenerator, Optional
 
-from ...core.pipes.base import AsyncPipe, PipeType
 from ...core.abstractions.rag import RAGRequest, RAGResult
+from ...core.pipes.base import AsyncPipe, PipeType
+from ...core.pipes.logging import PipeLoggingConnectionSingleton
 from ...core.providers.vector_db import VectorDBProvider
-from ...core.pipes.logging import LoggingDatabaseConnectionSingleton
 
 logger = logging.getLogger(__name__)
 
@@ -21,16 +21,12 @@ class RAGPipe(AsyncPipe):
     def __init__(
         self,
         vector_db_provider: VectorDBProvider,
-        logging_connection: Optional[
-            LoggingDatabaseConnectionSingleton
-        ] = None,
+        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
         *args,
         **kwargs,
     ):
         self.vector_db_provider = vector_db_provider
-        super().__init__(
-            logging_connection=logging_connection, *args, **kwargs
-        )
+        super().__init__(pipe_logger=pipe_logger, *args, **kwargs)
 
     @property
     def type(self) -> PipeType:

@@ -53,11 +53,13 @@ class R2RApp:
     async def ingest_documents(self, documents: list[Document] = Form(...)):
         try:
             # Process the documents through the pipeline
-            await self.ingestion_pipeline.run(input=list_to_generator(documents))
+            await self.ingestion_pipeline.run(
+                input=list_to_generator(documents)
+            )
             return {"message": "Entries upserted successfully."}
         except Exception as e:
             logging.error(
-                f"Error[ingest_documents(documents={documents})]:\n\n{str(e)})"
+                f"ingest_documents(documents={documents}) - \n\n{str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -106,7 +108,7 @@ class R2RApp:
             }
         except Exception as e:
             logging.error(
-                f"Error[ingest_files(metadata={metadata}, ids={ids}, files={files})]:\n\n{str(e)})"
+                f"ingest_files(metadata={metadata}, ids={ids}, files={files}) - \n\n{str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -123,13 +125,15 @@ class R2RApp:
             results = await self.rag_pipeline.run(input=query)
             return {"results": results}
         except Exception as e:
-            logging.error(f"Error[rag(query={query})]:\n\n{str(e)})")
+            logging.error(f"rag(query={query}) - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
-    def serve(self, host: str="0.0.0.0", port: int=8000):
+    def serve(self, host: str = "0.0.0.0", port: int = 8000):
         try:
             import uvicorn
         except ImportError:
-            raise ImportError("Please install uvicorn using 'pip install uvicorn'")
-        
+            raise ImportError(
+                "Please install uvicorn using 'pip install uvicorn'"
+            )
+
         uvicorn.run(self.app, host=host, port=port)

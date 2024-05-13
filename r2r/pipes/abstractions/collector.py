@@ -3,8 +3,8 @@ from typing import Any, Optional
 
 from r2r.core import (
     AsyncState,
-    LoggingDatabaseConnectionSingleton,
     PipeFlow,
+    PipeLoggingConnectionSingleton,
     PipeType,
 )
 
@@ -16,9 +16,7 @@ logger = logging.getLogger(__name__)
 class CollectorPipe(LoggableAsyncPipe):
     def __init__(
         self,
-        logging_connection: Optional[
-            LoggingDatabaseConnectionSingleton
-        ] = None,
+        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
         flow: PipeFlow = PipeFlow.FAN_IN,
         type: PipeType = PipeType.OTHER,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
@@ -29,7 +27,7 @@ class CollectorPipe(LoggableAsyncPipe):
             flow=flow,
             type=type,
             config=config,
-            logging_connection=logging_connection,
+            pipe_logger=pipe_logger,
             *args,
             **kwargs
         )

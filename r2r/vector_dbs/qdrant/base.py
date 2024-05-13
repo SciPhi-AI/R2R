@@ -145,9 +145,6 @@ class QdrantDB(VectorDBProvider):
     def create_index(self, index_type, column_name, index_options):
         pass
 
-    def close(self):
-        pass
-
     def delete_by_metadata(
         self, metadata_field: str, metadata_value: Union[bool, int, str]
     ) -> None:

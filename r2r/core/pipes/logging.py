@@ -1,68 +1,57 @@
-import uuid
-import functools
-import json
 import logging
 import os
-import threading
-import types
+import uuid
 from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import Optional
+from typing import List, Optional
+
+import aiosqlite
 
 logger = logging.getLogger(__name__)
 
 
 class PipeLoggingProvider(ABC):
     @abstractmethod
-    def close(self):
+    async def close(self):
         pass
 
     @abstractmethod
-    def log(
-        self,
-        timestamp,
-        pipe_run_id,
-        pipe_run_type,
-        method,
-        result,
-        log_level,
-    ):
+    async def log(self, pipe_run_id: uuid.UUID, key: str, value: str):
         pass
 
     @abstractmethod
-    def get_logs(
-        self, max_logs: int, pipe_run_type: Optional[str] = None
-    ) -> list:
+    async def get_run_ids(
+        self, key: Optional[str] = None, pipeline_type: Optional[str] = None
+    ) -> List[str]:
         pass
+
+    @abstractmethod
+    async def get_logs(self, run_ids: List[str], max_logs: int) -> list:
+        pass
+
 
 class LocalPipeLoggingProvider(PipeLoggingProvider):
-    def __init__(self, collection_name="logs", logging_path=None):
+    def __init__(
+        self,
+        data_collection="logs",
+        info_collection="logs_pipeline_info",
+        logging_path=None,
+    ):
+        self.data_collection = data_collection
+        self.info_collection = info_collection
+        self.logging_path = logging_path or os.getenv(
+            "LOCAL_DB_PATH", "local.sqlite"
+        )
+        if not self.logging_path:
+            raise ValueError(
+                "Please set the environment variable LOCAL_DB_PATH."
+            )
         self.conn = None
-        self.collection_name = collection_name
-        logging_path = logging_path or os.getenv("LOCAL_DB_PATH", "local.sqlite")
-        if not logging_path:
-            raise ValueError(
-                "Please set the environment variable LOCAL_DB_PATH to run `LoggingDatabaseConnectionSingleton` with `local`."
-            )
-        self.logging_path = logging_path
-        self.db_module = self._import_db_module()
-        self._init()
 
-    def _import_db_module(self):
-        try:
-            import sqlite3
-
-            return sqlite3
-        except ImportError:
-            raise ValueError(
-                "Error, `sqlite3` is not installed. Please install it using `pip install sqlite3`."
-            )
-
-    def _init(self):
-        self.conn = self.db_module.connect(self.logging_path)
-        self.conn.execute(
+    async def init(self):
+        self.conn = await aiosqlite.connect(self.logging_path)
+        await self.conn.execute(
             f"""
-            CREATE TABLE IF NOT EXISTS {self.collection_name} (
+            CREATE TABLE IF NOT EXISTS {self.data_collection} (
                 timestamp DATETIME,
                 pipe_run_id TEXT,
                 key TEXT,
@@ -70,293 +59,156 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
             )
             """
         )
-        self.conn.commit()
+        await self.conn.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {self.info_collection} (
+                timestamp DATETIME,
+                pipe_run_id TEXT UNIQUE,
+                pipeline_type TEXT
+            )
+        """
+        )
+        await self.conn.commit()
 
-    def close(self):
+    async def __aenter__(self):
+        if self.conn is None:
+            await self.init()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+
+    async def close(self):
         if self.conn:
-            self.conn.close()
+            await self.conn.close()
+            self.conn = None
 
-    def log(
+    async def log(
         self,
         pipe_run_id: uuid.UUID,
         key: str,
         value: str,
+        is_pipeline_info=False,
     ):
-        try:
-            with self.db_module.connect(self.logging_path) as conn:
-                conn.execute(
-                    f"INSERT INTO {self.collection_name} (timestamp, pipe_run_id, key, value) VALUES (datetime('now'), ?, ?, ?)",
-                    (
-                        str(pipe_run_id),
-                        key,
-                        value,
-                    ),
-                )
-                conn.commit()
-        except Exception as e:
-            # Handle any exceptions that occur during the logging process
-            logger.error(
-                f"Error occurred while logging to the local database: {str(e)}"
+        collection = (
+            self.info_collection if is_pipeline_info else self.data_collection
+        )
+
+        if is_pipeline_info:
+            collection = self.info_collection
+            if not key == "pipeline_type":
+                raise ValueError("Metadata keys must be 'pipeline_type'")
+            await self.conn.execute(
+                f"INSERT INTO {collection} (timestamp, pipe_run_id, pipeline_type) VALUES (datetime('now'), ?, ?)",
+                (str(pipe_run_id), value),
             )
+        else:
+            collection = self.data_collection
+            await self.conn.execute(
+                f"INSERT INTO {collection} (timestamp, pipe_run_id, key, value) VALUES (datetime('now'), ?, ?, ?)",
+                (str(pipe_run_id), key, value),
+            )
+        await self.conn.commit()
 
-    def get_logs(self, max_logs: int, pipe_run_type=None) -> list:
-        logs = []
-        with self.db_module.connect(self.logging_path) as conn:
-            cur = conn.cursor()
-            if pipe_run_type:
-                cur.execute(
-                    f"SELECT * FROM {self.collection_name} WHERE pipe_run_type = ? ORDER BY timestamp DESC LIMIT ?",
-                    (pipe_run_type, max_logs),
-                )
-            else:
-                cur.execute(
-                    f"SELECT * FROM {self.collection_name} ORDER BY timestamp DESC LIMIT ?",
-                    (max_logs,),
-                )
-            colnames = [desc[0] for desc in cur.description]
-            results = cur.fetchall()
-            logs = [dict(zip(colnames, row)) for row in results]
-        return logs
+    async def get_run_ids(
+        self, pipeline_type: Optional[str] = None, limit: int = 10
+    ) -> List[str]:
+        cursor = await self.conn.cursor()
+        query = f"SELECT pipe_run_id FROM {self.info_collection}"
+        conditions = []
+        params = []
+        if pipeline_type:
+            conditions.append("pipeline_type = ?")
+            params.append(pipeline_type)
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        query += " ORDER BY timestamp DESC LIMIT ?"  # Order by timestamp descending
+        params.append(limit)
+        await cursor.execute(query, params)
+        return [row[0] for row in await cursor.fetchall()]
 
+    async def get_logs(self, run_ids: List[str], limit_per_run: int = 10) -> list:
+        if not run_ids:
+            raise ValueError("No run ids provided.")
 
-class LoggingDatabaseConnectionSingleton:
+        try:
+            cursor = await self.conn.cursor()
+            # Using a window function to partition by pipe_run_id and limit rows per id
+            placeholders = ",".join(["?" for _ in run_ids])  # placeholders for run_ids
+            query = f"""
+            SELECT *
+            FROM (
+                SELECT *, ROW_NUMBER() OVER (PARTITION BY pipe_run_id ORDER BY timestamp DESC) as rn
+                FROM {self.data_collection}
+                WHERE pipe_run_id IN ({placeholders})
+            )
+            WHERE rn <= ?
+            ORDER BY timestamp DESC
+            """
+            # We need to pass the limit as many times as there are run_ids plus once more for the WHERE clause in the subquery
+            params = run_ids + [limit_per_run]
+            await cursor.execute(query, params)
+            rows = await cursor.fetchall()
+            return [
+                {desc[0]: row[i] for i, desc in enumerate(cursor.description)}
+                for row in rows
+            ]
+        except Exception as e:
+            logger.error(f"Failed to fetch logs: {e}")
+            raise
+
+class PipeLoggingConnectionSingleton:
     _instance = None
-    _lock = threading.Lock()
     _is_configured = False
+
     SUPPORTED_PROVIDERS = {
-        # "postgres": PostgresPipeLoggingProvider,
         "local": LocalPipeLoggingProvider,
-        # "redis": RedisPipeLoggingProvider,
     }
 
-    def __new__(cls):
-        with cls._lock:
-            if cls._instance is None:
-                if not cls._is_configured:
-                    # Raise an error if someone tries to create an instance before configuring
-                    raise Exception(
-                        "LoggingDatabaseConnectionSingleton is not configured. Please call configure() before accessing the instance."
-                    )
-                cls._instance = super(
-                    LoggingDatabaseConnectionSingleton, cls
-                ).__new__(cls)
-                # Call init to setup the provider after instance creation
-                cls._instance.init()
-        return cls._instance
+    @classmethod
+    def get_instance(cls):
+        return cls.SUPPORTED_PROVIDERS[cls._provider](
+                cls.data_collection, cls.info_collection
+            )
 
     @classmethod
-    def configure(cls, provider="postgres", collection_name="logs"):
+    def configure(
+        cls,
+        provider="local",
+        data_collection="logs",
+        info_collection="logs_pipeline_info",
+    ):
         if not cls._is_configured:
             cls._provider = provider
-            cls._collection_name = collection_name
+            cls.data_collection = data_collection
+            cls.info_collection = info_collection
             cls._is_configured = True
         else:
             raise Exception(
-                "LoggingDatabaseConnectionSingleton is already configured."
+                "PipeLoggingConnectionSingleton is already configured."
             )
 
-    def init(self):
-        # Initialize logging provider; this should only run once the singleton instance is being created
-        self.provider = self._provider
-        self.collection_name = self._collection_name
-        self._setup_provider()
-
-    def _setup_provider(self):
-        # Assuming self.provider and self.collection_name are set from the configure method
-        if self.provider not in self.SUPPORTED_PROVIDERS:
-            raise ValueError(f"Unsupported provider: {self.provider}")
-        self.logging_provider = self.SUPPORTED_PROVIDERS[self.provider](
-            self.collection_name
-        )
-
-    def __enter__(self):
-        return self.logging_provider
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.logging_provider.close()
-
-    def log(
-        self,
-        pipe_run_id: str,
+    async def log(
+        cls,
+        pipe_run_id: uuid.UUID,
         key: str,
         value: str,
+        is_pipeline_info=False,
     ):
-        self.logging_provider.log(pipe_run_id, key, value)
+        try:
+            async with cls.get_instance() as provider:
+                await provider.log(
+                    pipe_run_id, key, value, is_pipeline_info=is_pipeline_info
+                )
+        except Exception as e:
+            logger.error(f"Error logging data: {e}")
 
-    def get_logs(self, max_logs: int, pipe_run_type: Optional[str] = None) -> list:
-        return self.logging_provider.get_logs(max_logs, pipe_run_type)
+    async def get_run_ids(
+        cls, pipeline_type: Optional[str] = None, limit: int = 10
+    ) -> List[str]:
+        async with cls.get_instance() as provider:
+            return await provider.get_run_ids(pipeline_type, limit)
 
-# class PostgresPipeLoggingProvider(PipeLoggingProvider):
-#     def __init__(self, collection_name="logs"):
-#         self.conn = None
-#         self.collection_name = collection_name
-#         self.db_module = self._import_db_module()
-#         self._init()
-
-#     def _import_db_module(self):
-#         try:
-#             import psycopg2
-
-#             return psycopg2
-#         except ImportError:
-#             raise ValueError(
-#                 "Error, `psycopg2` is not installed. Please install it using `pip install psycopg2`."
-#             )
-
-#     def _init(self):
-#         if not all(
-#             [
-#                 os.getenv("POSTGRES_DBNAME"),
-#                 os.getenv("POSTGRES_USER"),
-#                 os.getenv("POSTGRES_PASSWORD"),
-#                 os.getenv("POSTGRES_HOST"),
-#                 os.getenv("POSTGRES_PORT"),
-#             ]
-#         ):
-#             raise ValueError(
-#                 "Please set the environment variables POSTGRES_DBNAME, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, and POSTGRES_PORT to run `LoggingDatabaseConnectionSingleton` with `postgres`."
-#             )
-#         self.conn = self.db_module.connect(
-#             dbname=os.getenv("POSTGRES_DBNAME"),
-#             user=os.getenv("POSTGRES_USER"),
-#             password=os.getenv("POSTGRES_PASSWORD"),
-#             host=os.getenv("POSTGRES_HOST"),
-#             port=os.getenv("POSTGRES_PORT"),
-#         )
-#         with self.conn.cursor() as cur:
-#             cur.execute(
-#                 f"""
-#                 CREATE TABLE IF NOT EXISTS {self.collection_name} (
-#                     timestamp TIMESTAMP,
-#                     pipe_run_id UUID,
-#                     pipe_run_type TEXT,
-#                     method TEXT,
-#                     result TEXT,
-#                     log_level TEXT
-#                 )
-#             """
-#             )
-#         self.conn.commit()
-
-#     def close(self):
-#         if self.conn:
-#             self.conn.close()
-
-#     def log(
-#         self,
-#         pipe_run_id,
-#         pipe_run_type,
-#         method,
-#         result,
-#         log_level,
-#     ):
-#         try:
-#             with self.conn.cursor() as cur:
-#                 cur.execute(
-#                     f"INSERT INTO {self.collection_name} (timestamp, pipe_run_id, pipe_run_type, method, result, log_level) VALUES (NOW(), %s, %s, %s, %s, %s)",
-#                     (
-#                         str(pipe_run_id),
-#                         pipe_run_type,
-#                         method,
-#                         str(result),
-#                         log_level,
-#                     ),
-#                 )
-#             self.conn.commit()
-#         except Exception as e:
-#             # Handle any exceptions that occur during the logging process
-#             logger.error(
-#                 f"Error occurred while logging to the PostgreSQL database: {str(e)}"
-#             )
-
-#     def get_logs(self, max_logs: int, pipe_run_type=None) -> list:
-#         logs = []
-#         with self.conn.cursor() as cur:
-#             if pipe_run_type:
-#                 cur.execute(
-#                     f"SELECT * FROM {self.collection_name} WHERE pipe_run_type = %s ORDER BY timestamp DESC LIMIT %s",
-#                     (pipe_run_type, max_logs),
-#                 )
-#             else:
-#                 cur.execute(
-#                     f"SELECT * FROM {self.collection_name} ORDER BY timestamp DESC LIMIT %s",
-#                     (max_logs,),
-#                 )
-#             colnames = [desc[0] for desc in cur.description]
-#             logs = [dict(zip(colnames, row)) for row in cur.fetchall()]
-#         self.conn.commit()
-#         return logs
-
-# class RedisPipeLoggingProvider(PipeLoggingProvider):
-#     def __init__(self, collection_name="logs"):
-#         if not all(
-#             [
-#                 os.getenv("REDIS_CLUSTER_IP"),
-#                 os.getenv("REDIS_CLUSTER_PORT"),
-#             ]
-#         ):
-#             raise ValueError(
-#                 "Please set the environment variables REDIS_CLUSTER_IP and REDIS_CLUSTER_PORT to run `LoggingDatabaseConnectionSingleton` with `redis`."
-#             )
-#         try:
-#             from redis import Redis
-#         except ImportError:
-#             raise ValueError(
-#                 "Error, `redis` is not installed. Please install it using `pip install redis`."
-#             )
-
-#         cluster_ip = os.getenv("REDIS_CLUSTER_IP")
-#         port = os.getenv("REDIS_CLUSTER_PORT")
-#         self.redis = Redis(cluster_ip, port, decode_responses=True)
-#         self.log_key = collection_name
-
-#     def connect(self):
-#         pass
-
-#     def close(self):
-#         pass
-
-#     def log(
-#         self,
-#         pipe_run_id,
-#         pipe_run_type,
-#         method,
-#         result,
-#         log_level,
-#     ):
-#         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-#         log_entry = {
-#             "timestamp": timestamp,
-#             "pipe_run_id": str(pipe_run_id),
-#             "pipe_run_type": pipe_run_type,
-#             "method": method,
-#             "result": str(result),
-#             "log_level": log_level,
-#         }
-#         try:
-#             # Save log entry under a key that includes the pipe_run_type
-#             type_specific_key = f"{self.log_key}:{pipe_run_type}"
-#             self.redis.lpush(type_specific_key, json.dumps(log_entry))
-#         except Exception as e:
-#             logger.error(f"Error occurred while logging to Redis: {str(e)}")
-
-#     def get_logs(self, max_logs: int, pipe_run_type=None) -> list:
-#         if pipe_run_type:
-#             if pipe_run_type not in RUN_TYPES:
-#                 raise ValueError(
-#                     f"Error, `{pipe_run_type}` is not in LoggingDatabaseConnectionSingleton's list of supported run types."
-#                 )
-#             # Fetch logs for a specific type
-#             key_to_fetch = f"{self.log_key}:{pipe_run_type}"
-#             logs = self.redis.lrange(key_to_fetch, 0, max_logs - 1)
-#             return [json.loads(log) for log in logs]
-#         else:
-#             # Fetch logs for all types
-#             all_logs = []
-#             for run_type in RUN_TYPES:
-#                 key_to_fetch = f"{self.log_key}:{run_type}"
-#                 logs = self.redis.lrange(key_to_fetch, 0, max_logs - 1)
-#                 all_logs.extend([json.loads(log) for log in logs])
-#             # Sort logs by timestamp if needed and slice to max_logs
-#             all_logs.sort(key=lambda x: x["timestamp"], reverse=True)
-#             return all_logs[:max_logs]
+    async def get_logs(cls, run_ids: List[str]) -> list:
+        async with cls.get_instance() as provider:
+            return await provider.get_logs(run_ids)
