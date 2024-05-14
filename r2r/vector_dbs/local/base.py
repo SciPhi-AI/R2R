@@ -137,7 +137,7 @@ class LocalVectorDB(VectorDBProvider):
         for id, vector, metadata in cursor.fetchall():
             vector = json.loads(vector)
             json_metadata = json.loads(metadata)
-            if all(metadata.get(k) == v for k, v in filters.items()):
+            if all(json_metadata.get(k) == v for k, v in filters.items()):
                 # Local cosine similarity calculation
                 score = self._cosine_similarity(query_vector, vector)
                 results.append(

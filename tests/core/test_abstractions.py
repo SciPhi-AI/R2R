@@ -12,7 +12,7 @@ from r2r.core import (
     VectorEntry,
     VectorType,
 )
-
+from r2r.core.utils import generate_id_from_label
 
 # Testing AsyncState for state management
 @pytest.mark.asyncio
@@ -91,19 +91,19 @@ def test_search_request_with_optional_filters():
 
 
 def test_search_result_to_string():
-    result = SearchResult(id="1", score=9.5, metadata={"author": "John Doe"})
+    result = SearchResult(id=generate_id_from_label("1"), score=9.5, metadata={"author": "John Doe"})
     result_str = str(result)
     assert (
         result_str
-        == "SearchResult(id=1, score=9.5, metadata={'author': 'John Doe'})"
+        == f"SearchResult(id={str(generate_id_from_label('1'))}, score=9.5, metadata={{'author': 'John Doe'}})"
     )
 
 
 def test_search_result_repr():
-    result = SearchResult(id="1", score=9.5, metadata={"author": "John Doe"})
+    result = SearchResult(id=generate_id_from_label("1"), score=9.5, metadata={"author": "John Doe"})
     assert (
         repr(result)
-        == "SearchResult(id=1, score=9.5, metadata={'author': 'John Doe'})"
+        == f"SearchResult(id={str(generate_id_from_label('1'))}, score=9.5, metadata={{'author': 'John Doe'}})"
     )
 
 

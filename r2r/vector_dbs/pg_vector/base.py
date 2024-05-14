@@ -57,7 +57,7 @@ class PGVectorDB(VectorDBProvider):
                 "Please call `initialize_collection` before attempting to run `copy`."
             )
 
-        serializeable_entry = entry.vector.to_serializable()
+        serializeable_entry = entry.to_serializable()
 
         self.collection.copy(
             records=[
@@ -127,7 +127,7 @@ class PGVectorDB(VectorDBProvider):
         }
 
         return [
-            SearchResult(ele[0], 1 - ele[1], ele[2])  # type: ignore
+            SearchResult(id=ele[0], score=float(1 - ele[1]), metadata=ele[2])  # type: ignore
             for ele in self.collection.query(
                 data=query_vector,
                 limit=limit,

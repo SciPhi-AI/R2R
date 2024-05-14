@@ -7480,7 +7480,6 @@ eval = ["parea-ai"]
 exa = ["exa-py"]
 ionic = ["ionic-api-sdk"]
 local-llm = ["llama-cpp-python", "sentence-transformers"]
-postgres = []
 qdrant = ["qdrant_client"]
 reducto = ["boto3"]
 sentence-transformers-only = ["sentence-transformers"]
@@ -7488,4 +7487,4 @@ sentence-transformers-only = ["sentence-transformers"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "775bbc61b8f9c30bed7cddd3bd83de0960bf4795e2638e7f43d93d2896752cae"
+content-hash = "fdc5606a341140eeb3304333d5f2cf37171b3c88b0e9027d9e1f47efffe2ef93"

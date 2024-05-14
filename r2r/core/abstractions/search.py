@@ -1,3 +1,4 @@
+import uuid
 from typing import Any, Optional
 
 from pydantic import BaseModel
@@ -10,7 +11,7 @@ class SearchRequest(BaseModel):
 
 
 class SearchResult(BaseModel):
-    id: str
+    id: uuid.UUID
     score: float
     metadata: dict[str, Any]
 

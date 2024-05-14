@@ -1,5 +1,6 @@
 import pytest
 from r2r.core import EmbeddingConfig, SearchResult
+from r2r.core.utils import generate_id_from_label
 from r2r.embeddings import (
     OpenAIEmbeddingProvider,
     SentenceTransformerEmbeddingProvider,
@@ -95,8 +96,8 @@ def test_sentence_transformer_get_embeddings(sentence_transformer_provider):
 
 def test_sentence_transformer_rerank(sentence_transformer_provider):
     results = [
-        SearchResult(id="x", score=0.9, metadata={"text": "doc1"}),
-        SearchResult(id="y", score=0.8, metadata={"text": "doc2"}),
+        SearchResult(id=generate_id_from_label("x"), score=0.9, metadata={"text": "doc1"}),
+        SearchResult(id=generate_id_from_label("y"), score=0.8, metadata={"text": "doc2"}),
     ]
     reranked_results = sentence_transformer_provider.rerank("query", results)
     assert len(reranked_results) == 2
