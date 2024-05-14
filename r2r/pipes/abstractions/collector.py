@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
     AsyncState,
@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class CollectorPipe(LoggableAsyncPipe):
+    class Input(LoggableAsyncPipe.Input):
+        message: AsyncGenerator[AsyncGenerator[Any, None], None]
+
     def __init__(
         self,
         pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
@@ -34,10 +37,5 @@ class CollectorPipe(LoggableAsyncPipe):
         self.results: list[Any] = []
 
     async def collect(self, input: Any, state: AsyncState):
-        for iterator in input.message:
-            async for item in iterator:
-                self.results.append(item)
-
-    async def _run_logic(self, input: Any, state: AsyncState) -> Any:
-        await self.collect(input, state)
-        return self.results
+        async for item in input.message:
+            self.results.append(item)

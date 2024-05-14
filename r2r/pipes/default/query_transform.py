@@ -54,20 +54,23 @@ class DefaultQueryTransformPipe(LoggableAsyncPipe):
         state: AsyncState,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[Any, None]:
-        messages = self._get_llm_payload(input.message)
+    ) -> AsyncGenerator[str, None]:
+        async for query in input.message:
+            query_transform_request = self._get_llm_payload(query)
 
-        response = self.llm_provider.get_completion(
-            messages=messages,
-            generation_config=self.config.generation_config,
-        )
-        content = self.llm_provider.extract_content(response)
-        queries = content.split("\n\n")
+            response = self.llm_provider.get_completion(
+                messages=query_transform_request,
+                generation_config=self.config.generation_config,
+            )
+            content = self.llm_provider.extract_content(response)
+            queries = content.split("\n\n")
 
-        await state.update(self.config.name, {"output": {"queries": queries}})
+            await state.update(
+                self.config.name, {"output": {"queries": queries}}
+            )
 
-        for query in queries:
-            yield query
+            for query in queries:
+                yield query
 
     def _get_llm_payload(self, input: str) -> dict:
         return [

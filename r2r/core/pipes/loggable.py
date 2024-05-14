@@ -45,10 +45,14 @@ class LoggableAsyncPipe(AsyncPipe):
         state: AsyncState,
         run_id: Optional[uuid.UUID] = None,
     ) -> AsyncGenerator[Any, None]:
-        await self._initiate_run(run_id)
-        self.log_worker_task = asyncio.create_task(self.log_worker())
-        try:
-            yield self._run_logic(input, state)
-        finally:
-            await self.log_queue.join()
-            self.log_worker_task.cancel()
+        async def wrapped_run() -> AsyncGenerator[Any, None]:
+            await self._initiate_run(run_id)
+            self.log_worker_task = asyncio.create_task(self.log_worker())
+            try:
+                async for result in self._run_logic(input, state):
+                    yield result
+            finally:
+                await self.log_queue.join()
+                self.log_worker_task.cancel()
+
+        return wrapped_run()

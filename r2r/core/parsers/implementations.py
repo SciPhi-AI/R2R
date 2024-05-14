@@ -10,7 +10,11 @@ from .base import AsyncParser
 
 
 class TextParser(AsyncParser[str]):
-    async def ingest(self, data: str) -> AsyncGenerator[DataType, None]:
+    async def ingest(
+        self, data: Union[str, bytes]
+    ) -> AsyncGenerator[DataType, None]:
+        if isinstance(data, bytes):
+            data = data.decode("utf-8")
         yield data
 
 

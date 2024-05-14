@@ -1,11 +1,17 @@
 import asyncio
-import inspect
 import uuid
-from typing import Any, Optional
+from enum import Enum
+from typing import Any, Optional, AsyncGenerator
 
 from ..pipes.base import AsyncPipe, AsyncState, PipeFlow
 from ..pipes.logging import PipeLoggingConnectionSingleton
 from ..utils import generate_run_id
+
+
+class PipelineTypes(Enum):
+    INGESTION = "ingestion"
+    SEARCH = "search"
+    RAG = "rag"
 
 
 class Pipeline:
@@ -31,7 +37,19 @@ class Pipeline:
             add_upstream_outputs = []
         self.upstream_outputs.append(add_upstream_outputs)
 
-    async def run(self, input: Any, state: Optional[AsyncState] = None):
+    async def run(
+        self,
+        input: Any,
+        state: Optional[AsyncState] = None,
+        pipeline_type: str = "ingestion",
+    ):
+        try:
+            PipelineTypes(pipeline_type)
+        except ValueError:
+            raise ValueError(
+                f"Invalid pipeline type: {pipeline_type}, must be one of {PipelineTypes.__members__.keys()}"
+            )
+
         self.state = state or AsyncState()
         current_input = input
         run_id = generate_run_id()
@@ -39,14 +57,14 @@ class Pipeline:
         await self.pipe_logger.log(
             pipe_run_id=run_id,
             key="pipeline_type",
-            value="rag",
+            value=pipeline_type,
             is_pipeline_info=True,
         )
 
         for pipe_num in range(len(self.pipes)):
             if self.pipes[pipe_num].flow == PipeFlow.FAN_OUT:
                 if self.level == 0:
-                    current_input = await self._run_pipe(
+                    current_input = self._run_pipe(
                         pipe_num, current_input, run_id
                     )
                     self.level += 1
@@ -54,38 +72,66 @@ class Pipeline:
                     raise ValueError("Fan out not supported at level 1")
             elif self.pipes[pipe_num].flow == PipeFlow.STANDARD:
                 if self.level == 0:
-                    current_input = await self._run_pipe(
+                    current_input = self._run_pipe(
                         pipe_num, current_input, run_id
                     )
                 elif self.level == 1:
-                    current_input = [
-                        await self._run_pipe(pipe_num, item)
-                        async for item in current_input
-                    ]
+                    input = []
+                    async for item in current_input:
+                        if hasattr(item, "__aiter__"):
+                            # extend the current input if the item is a generator
+                            input.extend(
+                                self._run_pipe(pipe_num, item, run_id)
+                            )
+                        else:
+                            # otherwise, construct a generator from the item
+                            input.append(
+                                self._run_pipe(
+                                    pipe_num,
+                                    self._list_to_generator(item),
+                                    run_id,
+                                )
+                            )
+                    current_input = input
             elif self.pipes[pipe_num].flow == PipeFlow.FAN_IN:
                 if self.level == 0:
                     raise ValueError("Fan in not supported at level 0")
                 if self.level == 1:
-                    current_input = await self._run_pipe(
-                        pipe_num, current_input, run_id
+                    current_input = self._run_pipe(
+                        pipe_num,
+                        self._list_to_generator(current_input),
+                        run_id,
                     )
                     self.level -= 1
             self.futures[self.pipes[pipe_num].config.name].set_result(
                 current_input
             )
 
-        # Consume the final generator to return a final result
-        final_result = []
-        async for item in current_input:
-            final_result.append(item)
+        final_result = await self._consume_all(current_input)
         return final_result if len(final_result) > 1 else final_result[0]
+
+    async def _consume_all(self, gen: AsyncGenerator) -> list[Any]:
+        result = []
+        async for item in gen:
+            if hasattr(
+                item, "__aiter__"
+            ):  # Check if the item is an async generator
+                sub_result = await self._consume_all(item)
+                result.extend(sub_result)
+            else:
+                result.append(item)
+        return result
+
+    async def _list_to_generator(self, lst: list) -> AsyncGenerator:
+        for item in lst:
+            yield item
 
     async def _run_pipe(self, pipe_num: int, input: Any, run_id: uuid.UUID):
         # Collect inputs, waiting for the necessary futures
         pipe = self.pipes[pipe_num]
         add_upstream_outputs = self.upstream_outputs[pipe_num]
         input_dict = {"message": input}
-
+        print("running pipe = ", pipe)
         for upstream_input in add_upstream_outputs:
             upstream_pipe_name = upstream_input["prev_pipe_name"]
 
@@ -117,7 +163,7 @@ class Pipeline:
             ]
 
         # Handle the pipe generator
-        async for ele in pipe.run(
+        async for ele in await pipe.run(
             pipe.Input(**input_dict), self.state, run_id=run_id
         ):
-            return ele
+            yield ele

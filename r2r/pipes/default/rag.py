@@ -62,7 +62,7 @@ class DefaultRAGPipe(GeneratorPipe):
     ) -> AsyncGenerator[LLMChatCompletion, None]:
         async for query in input.message:
             messages = self._get_llm_payload(query, input.context)
-
+            print("fetching a response from messages = ", messages)
             response = self.llm_provider.get_completion(
                 messages=messages,
                 generation_config=self.config.generation_config,

@@ -79,7 +79,7 @@ class DefaultVectorStoragePipe(LoggableAsyncPipe):
 
     async def _run_logic(
         self,
-        input: AsyncGenerator[VectorEntry, None],
+        input: Input,
         state: AsyncState,
         *args: Any,
         **kwargs: Any,
@@ -90,7 +90,9 @@ class DefaultVectorStoragePipe(LoggableAsyncPipe):
         batch_tasks = []
         vector_batch = []
 
+        print("input.message = ", input.message)
         async for vector_entry in input.message:
+            print(vector_entry)
             vector_batch.append(vector_entry)
             if len(vector_batch) >= self.storage_batch_size:
                 # Schedule the storage task

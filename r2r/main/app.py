@@ -54,7 +54,7 @@ class R2RApp:
         try:
             # Process the documents through the pipeline
             await self.ingestion_pipeline.run(
-                input=list_to_generator(documents)
+                input=list_to_generator(documents), pipeline_type="ingestion"
             )
             return {"message": "Entries upserted successfully."}
         except Exception as e:
@@ -71,7 +71,7 @@ class R2RApp:
     ):
         try:
             metadata_json = json.loads(metadata)
-            results = []
+            # results = []
             for file in files:
                 if (
                     file.size
@@ -83,23 +83,22 @@ class R2RApp:
                         detail="File size exceeds maximum allowed size.",
                     )
 
-                content = await file.read()  # Read file content
-                documents = [
-                    Document(
-                        id=uuid.uuid4()
-                        if len(ids) == 0
-                        else uuid.UUID(ids[iteration]),
-                        type=file.filename.split(".")[-1],
-                        data=content,
-                        metadata=metadata_json,
-                    )
-                    for iteration, file in enumerate(files)
-                ]
-                # Run the pipeline asynchronously
-                result = await self.ingestion_pipeline.run(
-                    input=list_to_generator(documents)
+            documents = [
+                Document(
+                    id=uuid.uuid4()
+                    if len(ids) == 0
+                    else uuid.UUID(ids[iteration]),
+                    type=file.filename.split(".")[-1],
+                    data=await file.read(),
+                    metadata=metadata_json,
                 )
-                results.append(result)
+                for iteration, file in enumerate(files)
+            ]
+            # Run the pipeline asynchronously
+            await self.ingestion_pipeline.run(
+                input=list_to_generator(documents),
+                pipeline_type="ingestion",
+            )
             return {
                 "results": [
                     f"File '{file.filename}' processed successfully for each file"
@@ -114,15 +113,19 @@ class R2RApp:
 
     async def search(self, query: str = Form(...)):
         try:
-            results = await self.search_pipeline.run(input=query)
+            results = await self.search_pipeline.run(
+                input=list_to_generator([query])
+            )
             return {"results": results}
         except Exception as e:
-            logging.error(f"Error[search(query={query})]:\n\n{str(e)})")
+            logging.error(f"search(query={query}) - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     async def rag(self, query: str = Form(...)):
         try:
-            results = await self.rag_pipeline.run(input=query)
+            results = await self.rag_pipeline.run(
+                input=list_to_generator([query])
+            )
             return {"results": results}
         except Exception as e:
             logging.error(f"rag(query={query}) - \n\n{str(e)})")

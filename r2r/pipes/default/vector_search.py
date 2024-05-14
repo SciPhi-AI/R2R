@@ -60,18 +60,11 @@ class DefaultVectorSearchPipe(SearchPipe):
         **kwargs: Any,
     ) -> AsyncGenerator[SearchResult, None]:
         search_results = []
-        if isinstance(input.message, AsyncGenerator):
-            async for search_request in input.message:
-                if isinstance(search_request, str):
-                    async for result in self.search(message=search_request):
-                        search_results.append(result)
-                        yield result
-        elif isinstance(input.message, str):
-            async for result in self.search(message=input.message):
+        print("input = ", input)
+        async for search_request in input.message:
+            async for result in self.search(message=search_request):
                 search_results.append(result)
                 yield result
-        else:
-            raise TypeError("Input must be an AsyncGenerator or a string.")
 
         await state.update(
             self.config.name, {"output": {"search_results": search_results}}

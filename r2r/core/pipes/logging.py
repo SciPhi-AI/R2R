@@ -122,19 +122,25 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
             params.append(pipeline_type)
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
-        query += " ORDER BY timestamp DESC LIMIT ?"  # Order by timestamp descending
+        query += (
+            " ORDER BY timestamp DESC LIMIT ?"  # Order by timestamp descending
+        )
         params.append(limit)
         await cursor.execute(query, params)
         return [row[0] for row in await cursor.fetchall()]
 
-    async def get_logs(self, run_ids: List[str], limit_per_run: int = 10) -> list:
+    async def get_logs(
+        self, run_ids: List[str], limit_per_run: int = 10
+    ) -> list:
         if not run_ids:
             raise ValueError("No run ids provided.")
 
         try:
             cursor = await self.conn.cursor()
             # Using a window function to partition by pipe_run_id and limit rows per id
-            placeholders = ",".join(["?" for _ in run_ids])  # placeholders for run_ids
+            placeholders = ",".join(
+                ["?" for _ in run_ids]
+            )  # placeholders for run_ids
             query = f"""
             SELECT *
             FROM (
@@ -157,6 +163,7 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
             logger.error(f"Failed to fetch logs: {e}")
             raise
 
+
 class PipeLoggingConnectionSingleton:
     _instance = None
     _is_configured = False
@@ -168,8 +175,8 @@ class PipeLoggingConnectionSingleton:
     @classmethod
     def get_instance(cls):
         return cls.SUPPORTED_PROVIDERS[cls._provider](
-                cls.data_collection, cls.info_collection
-            )
+            cls.data_collection, cls.info_collection
+        )
 
     @classmethod
     def configure(

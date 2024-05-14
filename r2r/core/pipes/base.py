@@ -73,7 +73,7 @@ class AsyncPipe(ABC):
             arbitrary_types_allowed = True
 
     class Input(BaseModel):
-        message: Any
+        message: AsyncGenerator[Any, None]
 
         class Config:
             extra = "forbid"
