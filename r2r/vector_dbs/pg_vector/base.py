@@ -10,8 +10,8 @@ from r2r.core import (
     VectorEntry,
 )
 
-# from r2r.vecs.client import Client
-# from r2r.vecs.collection import Collection, MetadataValues
+from r2r.vecs.client import Client
+from r2r.vecs.collection import Collection
 
 logger = logging.getLogger(__name__)
 
