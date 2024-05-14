@@ -24,11 +24,14 @@ class LlamaCppConfig(LLMConfig):
     model: str = ""
     model_path: str = ""
 
-    def __post_init__(self):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+
         if not self.model_path or self.model_path == "":
             self.model_path = os.path.join(
                 os.path.expanduser("~"), ".cache", "models"
             )
+            print('self.model_path = ', self.model_path)
         if not self.model or self.model == "":
             self.model = "tinyllama-1.1b-chat-v1.0.Q2_K.gguf"
 
@@ -58,6 +61,7 @@ class LlamaCPP(LLMProvider):
             )
 
         path = os.path.join(self.config.model_path, self.config.model)
+        print('path = ', path)
         self.client = Llama(path, n_ctx=2048)
 
     def get_completion(
@@ -99,23 +103,7 @@ class LlamaCPP(LLMProvider):
         response = self.client(prompt, **args)
 
         if not generation_config.stream:
-            return LLMChatCompletion(
-                # TODO - Set an intelligent id
-                id="777",
-                object="chat.completion",
-                created=int(datetime.datetime.now().timestamp()),
-                model=generation_config.model,
-                choices=[
-                    {
-                        "message": {
-                            "role": "assistant",
-                            "content": str(response),
-                        },
-                        "index": 0,
-                        "finish_reason": "stop",
-                    }
-                ],
-            )
+            return response
         else:
             return LLMChatCompletionChunk(
                 choices=[
@@ -142,3 +130,7 @@ class LlamaCPP(LLMProvider):
             "max_tokens": generation_config.max_tokens_to_sample,
         }
         return args
+
+
+    def extract_content(self, response: LLMChatCompletion) -> str:
+        return response.choices[0].message.content

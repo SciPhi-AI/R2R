@@ -148,7 +148,7 @@ class LocalVectorDB(VectorDBProvider):
         return results[:limit]
 
     def delete_by_metadata(
-        self, key: str, value: Union[bool, int, str]
+        self, metadata_field: str, metadata_value: Union[bool, int, str]
     ) -> None:
         if self.config.collection_name is None:
             raise ValueError(
@@ -160,7 +160,7 @@ class LocalVectorDB(VectorDBProvider):
         cursor.execute(f'SELECT * FROM "{self.config.collection_name}"')
         for id, vector, metadata in cursor.fetchall():
             metadata = json.loads(metadata)
-            if metadata.get(key) == value:
+            if metadata.get(metadata_field) == metadata_value:
                 cursor.execute(
                     f'DELETE FROM "{self.config.collection_name}" WHERE id = ?',
                     (id,),
