@@ -23,7 +23,7 @@ def mock_file():
             "logging": {
                 "provider": "local",
                 "log_table": "logs",
-                "log_info_table": "log_info"
+                "log_info_table": "log_info",
             },
             "prompt": {"provider": "prompt_provider"},
             "vector_database": {
