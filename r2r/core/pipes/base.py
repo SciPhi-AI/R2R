@@ -99,6 +99,8 @@ class AsyncPipe(ABC):
         input: Input,
         state: AsyncState,
         run_id: Optional[uuid.UUID] = None,
+        *args: Any,
+        **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:
         await self._initiate_run(run_id)
         result = self._run_logic(input, state)
@@ -106,7 +108,7 @@ class AsyncPipe(ABC):
 
     @abstractmethod
     async def _run_logic(
-        self, input: Input, state: AsyncState
+        self, input: Input, state: AsyncState, *args: Any, **kwargs: Any
     ) -> AsyncGenerator[Any, None]:
         pass
 

@@ -38,13 +38,18 @@ class DefaultVectorSearchPipe(SearchPipe):
     async def search(
         self,
         message: str,
+        *args: Any,
+        **kwargs: Any,
     ) -> AsyncGenerator[SearchResult, None]:
+        search_filters_override = kwargs.get("search_filters", None)
+        search_limit_override = kwargs.get("search_limit", None)
+        print("search_limit_override = ", search_limit_override)
         for result in self.vector_db_provider.search(
             query_vector=self.embedding_provider.get_embedding(
                 message,
             ),
-            filters=self.config.filters,
-            limit=self.config.limit,
+            filters=search_filters_override or self.config.search_filters,
+            limit=search_limit_override or self.config.search_limit,
         ):
             result.metadata["query"] = message
             yield result
@@ -59,7 +64,9 @@ class DefaultVectorSearchPipe(SearchPipe):
         search_results = []
 
         async for search_request in input.message:
-            async for result in self.search(message=search_request):
+            async for result in self.search(
+                message=search_request, *args, **kwargs
+            ):
                 search_results.append(result)
                 yield result
 

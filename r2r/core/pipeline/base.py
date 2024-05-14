@@ -31,7 +31,6 @@ class Pipeline:
         *args,
         **kwargs,
     ) -> None:
-        self.futures[pipe.config.name] = asyncio.Future()
         self.pipes.append(pipe)
         if not add_upstream_outputs:
             add_upstream_outputs = []
@@ -42,6 +41,8 @@ class Pipeline:
         input: Any,
         state: Optional[AsyncState] = None,
         pipeline_type: str = "ingestion",
+        *args: Any,
+        **kwargs: Any,
     ):
         try:
             PipelineTypes(pipeline_type)
@@ -61,10 +62,13 @@ class Pipeline:
         )
 
         for pipe_num in range(len(self.pipes)):
-            current_input = self._run_pipe(pipe_num, current_input, run_id)
-            self.futures[self.pipes[pipe_num].config.name].set_result(
-                current_input
+            config_name = self.pipes[pipe_num].config.name
+            self.futures[config_name] = asyncio.Future()
+
+            current_input = self._run_pipe(
+                pipe_num, current_input, run_id, *args, **kwargs
             )
+            self.futures[config_name].set_result(current_input)
 
         final_result = await self._consume_all(current_input)
         return final_result if len(final_result) != 1 else final_result[0]
@@ -85,7 +89,14 @@ class Pipeline:
         for item in lst:
             yield item
 
-    async def _run_pipe(self, pipe_num: int, input: Any, run_id: uuid.UUID):
+    async def _run_pipe(
+        self,
+        pipe_num: int,
+        input: Any,
+        run_id: uuid.UUID,
+        *args: Any,
+        **kwargs: Any,
+    ):
         # Collect inputs, waiting for the necessary futures
         pipe = self.pipes[pipe_num]
         add_upstream_outputs = self.upstream_outputs[pipe_num]
@@ -122,6 +133,10 @@ class Pipeline:
 
         # Handle the pipe generator
         async for ele in await pipe.run(
-            pipe.Input(**input_dict), self.state, run_id=run_id
+            pipe.Input(**input_dict),
+            self.state,
+            run_id=run_id,
+            *args,
+            **kwargs,
         ):
             yield ele

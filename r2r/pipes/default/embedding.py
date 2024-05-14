@@ -206,9 +206,7 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
         fragment_batch = []
 
         async for extraction in input.message:
-            print("extraction = ", extraction)
             async for fragment in self.fragment(extraction):
-                print("fragment = ", fragment)
                 fragment_batch.append(fragment)
                 if len(fragment_batch) >= self.embedding_batch_size:
                     # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly

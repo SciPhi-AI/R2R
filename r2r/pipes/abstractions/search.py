@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 class SearchPipe(LoggableAsyncPipe):
     class SearchConfig(AsyncPipe.PipeConfig):
         name: str = "default_vector_search"
-        filters: dict = {}
-        limit: int = 10
+        search_filters: dict = {}
+        search_limit: int = 10
 
     class Input(AsyncPipe.Input):
         message: Union[AsyncGenerator[str, None], str]
@@ -59,6 +59,7 @@ class SearchPipe(LoggableAsyncPipe):
         self,
         input: Input,
         state: AsyncState,
+        *args: Any,
         **kwargs,
     ) -> AsyncGenerator[SearchResult, None]:
         pass

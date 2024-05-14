@@ -1,7 +1,7 @@
 import logging
 import os
 import uuid
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import List, Optional
 
 import aiosqlite
@@ -41,7 +41,9 @@ class PipeLoggingProvider(Provider):
         pass
 
     @abstractmethod
-    async def get_logs(self, run_ids: List[str], limit_per_run_and_type: int) -> list:
+    async def get_logs(
+        self, run_ids: List[str], limit_per_run_and_type: int
+    ) -> list:
         pass
 
 
@@ -167,8 +169,8 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
             """
             # We need to pass the limit as many times as there are run_ids plus once more for the WHERE clause in the subquery
             params = run_ids + [limit_per_run_and_type]
-            print('query = ', query)
-            print('params = ', params)
+            print("query = ", query)
+            print("params = ", params)
             await cursor.execute(query, params)
             rows = await cursor.fetchall()
             return [
@@ -226,6 +228,8 @@ class PipeLoggingConnectionSingleton:
         async with cls.get_instance() as provider:
             return await provider.get_run_ids(pipeline_type, limit)
 
-    async def get_logs(cls, run_ids: List[str], limit_per_run_and_type: int = 10) -> list:
+    async def get_logs(
+        cls, run_ids: List[str], limit_per_run_and_type: int = 10
+    ) -> list:
         async with cls.get_instance() as provider:
             return await provider.get_logs(run_ids, limit_per_run_and_type)

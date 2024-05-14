@@ -43,12 +43,16 @@ class LoggableAsyncPipe(AsyncPipe):
         input: AsyncPipe.Input,
         state: AsyncState,
         run_id: Optional[uuid.UUID] = None,
+        *args: Any,
+        **kwargs: Any
     ) -> AsyncGenerator[Any, None]:
         async def wrapped_run() -> AsyncGenerator[Any, None]:
             await self._initiate_run(run_id)
             self.log_worker_task = asyncio.create_task(self.log_worker())
             try:
-                async for result in self._run_logic(input, state):
+                async for result in self._run_logic(
+                    input, state, *args, **kwargs
+                ):
                     yield result
             finally:
                 await self.log_queue.join()

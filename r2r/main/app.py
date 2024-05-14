@@ -1,7 +1,7 @@
 import json
 import logging
 import uuid
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.datastructures import UploadFile
@@ -115,10 +115,17 @@ class R2RApp:
             )
             raise HTTPException(status_code=500, detail=str(e))
 
-    async def search(self, query: str):
+    async def search(
+        self,
+        query: str,
+        search_filters: Optional[dict] = None,
+        search_limit: int = 10,
+    ):
         try:
             results = await self.search_pipeline.run(
-                input=list_to_generator([query])
+                input=list_to_generator([query]),
+                search_filters=search_filters,
+                search_limit=search_limit,
             )
             return {"results": results}
         except Exception as e:
