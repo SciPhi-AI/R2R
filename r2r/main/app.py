@@ -8,7 +8,7 @@ from fastapi.datastructures import UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.param_functions import File, Form
 
-from r2r.core import Document, Pipeline
+from r2r.core import Document, Pipeline, generate_id_from_label
 
 # Current directory where this script is located
 MB_CONVERSION_FACTOR = 1024 * 1024
@@ -52,7 +52,7 @@ class R2RApp:
             path="/rag/", endpoint=self.rag, methods=["POST"]
         )
 
-    async def ingest_documents(self, documents: list[Document] = Form(...)):
+    async def ingest_documents(self, documents: list[Document] = []):
         try:
             # Process the documents through the pipeline
             await self.ingestion_pipeline.run(
@@ -67,14 +67,17 @@ class R2RApp:
 
     async def ingest_files(
         self,
-        metadata: str = Form(...),
-        ids: list[str] = Form(...),
-        files: list[UploadFile] = File(...),
+        metadata: str = "{}",
+        ids: str = "[]",
+        files: list[UploadFile] = [],
     ):
         try:
+            ids_list = json.loads(
+                ids
+            )  #  if ids else []  # Parse the JSON string to a list
             metadata_json = json.loads(metadata)
-            # results = []
-            for file in files:
+            documents = []
+            for iteration, file in enumerate(files):
                 if (
                     file.size
                     > 128  # config.app.get("max_file_size_in_mb", 128)
@@ -85,17 +88,16 @@ class R2RApp:
                         detail="File size exceeds maximum allowed size.",
                     )
 
-            documents = [
+            documents.append(
                 Document(
-                    id=uuid.uuid4()
-                    if len(ids) == 0
-                    else uuid.UUID(ids[iteration]),
+                    id=generate_id_from_label(file.filename)
+                    if len(ids_list) == 0
+                    else uuid.UUID(ids_list[iteration]),
                     type=file.filename.split(".")[-1],
                     data=await file.read(),
                     metadata=metadata_json,
                 )
-                for iteration, file in enumerate(files)
-            ]
+            )
             # Run the pipeline asynchronously
             await self.ingestion_pipeline.run(
                 input=list_to_generator(documents),
@@ -113,7 +115,7 @@ class R2RApp:
             )
             raise HTTPException(status_code=500, detail=str(e))
 
-    async def search(self, query: str = Form(...)):
+    async def search(self, query: str):
         try:
             results = await self.search_pipeline.run(
                 input=list_to_generator([query])
@@ -123,7 +125,7 @@ class R2RApp:
             logging.error(f"search(query={query}) - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
-    async def rag(self, query: str = Form(...)):
+    async def rag(self, query):
         try:
             results = await self.rag_pipeline.run(
                 input=list_to_generator([query])

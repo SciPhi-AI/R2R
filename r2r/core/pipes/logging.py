@@ -41,7 +41,7 @@ class PipeLoggingProvider(Provider):
         pass
 
     @abstractmethod
-    async def get_logs(self, run_ids: List[str], max_logs: int) -> list:
+    async def get_logs(self, run_ids: List[str], limit_per_run_and_type: int) -> list:
         pass
 
 
@@ -144,7 +144,7 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
         return [row[0] for row in await cursor.fetchall()]
 
     async def get_logs(
-        self, run_ids: List[str], limit_per_run: int = 10
+        self, run_ids: List[str], limit_per_run_and_type: int = 10
     ) -> list:
         if not run_ids:
             raise ValueError("No run ids provided.")
@@ -166,7 +166,9 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
             ORDER BY timestamp DESC
             """
             # We need to pass the limit as many times as there are run_ids plus once more for the WHERE clause in the subquery
-            params = run_ids + [limit_per_run]
+            params = run_ids + [limit_per_run_and_type]
+            print('query = ', query)
+            print('params = ', params)
             await cursor.execute(query, params)
             rows = await cursor.fetchall()
             return [
@@ -224,6 +226,6 @@ class PipeLoggingConnectionSingleton:
         async with cls.get_instance() as provider:
             return await provider.get_run_ids(pipeline_type, limit)
 
-    async def get_logs(cls, run_ids: List[str]) -> list:
+    async def get_logs(cls, run_ids: List[str], limit_per_run_and_type: int = 10) -> list:
         async with cls.get_instance() as provider:
-            return await provider.get_logs(run_ids)
+            return await provider.get_logs(run_ids, limit_per_run_and_type)

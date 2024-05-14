@@ -53,7 +53,6 @@ class Pipeline:
         self.state = state or AsyncState()
         current_input = input
         run_id = generate_run_id()
-        print(f"Running pipeline with run_id: {run_id}")
         await self.pipe_logger.log(
             pipe_run_id=run_id,
             key="pipeline_type",
@@ -68,7 +67,6 @@ class Pipeline:
             )
 
         final_result = await self._consume_all(current_input)
-        print("final_result = ", final_result)
         return final_result if len(final_result) != 1 else final_result[0]
 
     async def _consume_all(self, gen: AsyncGenerator) -> list[Any]:
@@ -92,7 +90,6 @@ class Pipeline:
         pipe = self.pipes[pipe_num]
         add_upstream_outputs = self.upstream_outputs[pipe_num]
         input_dict = {"message": input}
-        print("running pipe = ", pipe)
         for upstream_input in add_upstream_outputs:
             upstream_pipe_name = upstream_input["prev_pipe_name"]
 

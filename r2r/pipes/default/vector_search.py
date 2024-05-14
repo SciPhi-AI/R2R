@@ -57,7 +57,7 @@ class DefaultVectorSearchPipe(SearchPipe):
         **kwargs: Any,
     ) -> AsyncGenerator[SearchResult, None]:
         search_results = []
-        print("input = ", input)
+
         async for search_request in input.message:
             async for result in self.search(message=search_request):
                 search_results.append(result)
