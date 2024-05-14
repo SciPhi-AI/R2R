@@ -1,24 +1,14 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 from r2r.core import (
     EmbeddingProvider,
     LLMProvider,
     Pipeline,
-    PipeLoggingConnectionSingleton,
     PromptProvider,
     R2RConfig,
-    RecursiveCharacterTextSplitter,
     VectorDBProvider,
-)
-from r2r.main.app import R2RApp
-from r2r.pipes import (
-    DefaultDocumentParsingPipe,
-    DefaultEmbeddingPipe,
-    DefaultQueryTransformPipe,
-    DefaultRAGPipe,
-    DefaultSearchCollectorPipe,
-    DefaultVectorSearchPipe,
-    DefaultVectorStoragePipe,
 )
 
 
@@ -32,11 +22,20 @@ class R2RProviders(BaseModel):
         arbitrary_types_allowed = True
 
 
+class R2RPipelines(BaseModel):
+    ingestion_pipeline: Pipeline
+    search_pipeline: Pipeline
+    rag_pipeline: Pipeline
+
+    class Config:
+        arbitrary_types_allowed = True
+
+
 class R2RProviderFactory:
     def __init__(self, config: R2RConfig):
         self.config = config
 
-    def get_vector_db_provider(self, *args, **kwargs) -> VectorDBProvider:
+    def create_vector_db_provider(self, *args, **kwargs) -> VectorDBProvider:
         vector_db_config = self.config.vector_database
         vector_db_provider = None
         if vector_db_config.provider == "qdrant":
@@ -60,7 +59,7 @@ class R2RProviderFactory:
         )
         return vector_db_provider
 
-    def get_embedding_provider(self, *args, **kwargs) -> EmbeddingProvider:
+    def create_embedding_provider(self, *args, **kwargs) -> EmbeddingProvider:
         embedding_config = self.config.embedding
         embedding_provider = None
         if embedding_config.provider == "openai":
@@ -83,7 +82,7 @@ class R2RProviderFactory:
             )
         return embedding_provider
 
-    def get_llm_provider(self, *args, **kwargs) -> LLMProvider:
+    def create_llm_provider(self, *args, **kwargs) -> LLMProvider:
         llm_config = self.config.language_model
         llm_provider = None
         if llm_config.provider == "openai":
@@ -109,7 +108,7 @@ class R2RProviderFactory:
             )
         return llm_provider
 
-    def get_prompt_provider(self, *args, **kwargs) -> PromptProvider:
+    def create_prompt_provider(self, *args, **kwargs) -> PromptProvider:
         prompt_config = self.config.prompt
         prompt_provider = None
         if prompt_config.provider == "local":
@@ -122,73 +121,119 @@ class R2RProviderFactory:
             )
         return prompt_provider
 
-    def get_providers(self) -> R2RProviders:
+    def create_providers(self) -> R2RProviders:
         return R2RProviders(
-            vector_db=self.get_vector_db_provider(),
-            embedding=self.get_embedding_provider(),
-            llm=self.get_llm_provider(),
-            prompt=self.get_prompt_provider(),
+            vector_db=self.create_vector_db_provider(),
+            embedding=self.create_embedding_provider(),
+            llm=self.create_llm_provider(),
+            prompt=self.create_prompt_provider(),
         )
 
 
-def app_factory(config: R2RConfig, providers: R2RProviders) -> R2RApp:
-    text_splitter_config = config.embedding.extra_fields.get("text_splitter")
+class DefaultR2RPipelineFactory:
+    def __init__(self, config: R2RConfig, providers: R2RProviders):
+        self.config = config
+        self.providers = providers
 
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=text_splitter_config["chunk_size"],
-        chunk_overlap=text_splitter_config["chunk_overlap"],
-        length_function=len,
-        is_separator_regex=False,
-    )
+    def create_ingestion_pipeline(self) -> Pipeline:
+        from r2r.core import RecursiveCharacterTextSplitter
+        from r2r.pipes import (
+            DefaultDocumentParsingPipe,
+            DefaultEmbeddingPipe,
+            DefaultVectorStoragePipe,
+        )
 
-    collector_pipe = DefaultSearchCollectorPipe()
-    embedding_pipe = DefaultEmbeddingPipe(
-        embedding_provider=providers.embedding,
-        vector_db_provider=providers.vector_db,
-        text_splitter=text_splitter,
-        embedding_batch_size=128,
-    )
-    parsing_pipe = DefaultDocumentParsingPipe()
-    query_transform_pipe = DefaultQueryTransformPipe(
-        llm_provider=providers.llm,
-        prompt_provider=providers.prompt,
-    )
-    rag_pipe = DefaultRAGPipe(
-        llm_provider=providers.llm,
-        prompt_provider=providers.prompt,
-    )
-    search_pipe = DefaultVectorSearchPipe(
-        vector_db_provider=providers.vector_db,
-        embedding_provider=providers.embedding,
-    )
-    vector_storage_pipe = DefaultVectorStoragePipe(
-        vector_db_provider=providers.vector_db
-    )
+        text_splitter_config = self.config.embedding.extra_fields.get(
+            "text_splitter"
+        )
 
-    ingestion_pipeline = Pipeline()
-    ingestion_pipeline.add_pipe(parsing_pipe)
-    ingestion_pipeline.add_pipe(embedding_pipe)
-    ingestion_pipeline.add_pipe(vector_storage_pipe)
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=text_splitter_config["chunk_size"],
+            chunk_overlap=text_splitter_config["chunk_overlap"],
+            length_function=len,
+            is_separator_regex=False,
+        )
 
-    search_pipeline = Pipeline()
-    search_pipeline.add_pipe(search_pipe)
+        parsing_pipe = DefaultDocumentParsingPipe()
+        embedding_pipe = DefaultEmbeddingPipe(
+            embedding_provider=self.providers.embedding,
+            vector_db_provider=self.providers.vector_db,
+            text_splitter=text_splitter,
+            embedding_batch_size=self.config.embedding.batch_size,
+        )
+        vector_storage_pipe = DefaultVectorStoragePipe(
+            vector_db_provider=self.providers.vector_db
+        )
 
-    rag_pipeline = Pipeline()
-    rag_pipeline.add_pipe(query_transform_pipe)
-    rag_pipeline.add_pipe(search_pipe)
-    rag_pipeline.add_pipe(collector_pipe)
-    rag_pipeline.add_pipe(
-        rag_pipe,
-        add_upstream_outputs=[
-            {
-                "prev_pipe_name": collector_pipe.config.name,
-                "prev_output_field": "search_context",
-                "input_field": "context",
-            }
-        ],
-    )
-    return R2RApp(
-        ingestion_pipeline=ingestion_pipeline,
-        search_pipeline=search_pipeline,
-        rag_pipeline=rag_pipeline,
-    )
+        ingestion_pipeline = Pipeline()
+        ingestion_pipeline.add_pipe(parsing_pipe)
+        ingestion_pipeline.add_pipe(embedding_pipe)
+        ingestion_pipeline.add_pipe(vector_storage_pipe)
+        return ingestion_pipeline
+
+    def create_search_pipeline(self) -> Pipeline:
+        from r2r.pipes import DefaultVectorSearchPipe
+
+        search_pipe = DefaultVectorSearchPipe(
+            vector_db_provider=self.providers.vector_db,
+            embedding_provider=self.providers.embedding,
+        )
+
+        search_pipeline = Pipeline()
+        search_pipeline.add_pipe(search_pipe)
+        return search_pipeline
+
+    def create_rag_pipeline(self) -> Pipeline:
+        from r2r.pipes import (
+            DefaultRAGPipe,
+            DefaultSearchCollectorPipe,
+            DefaultVectorSearchPipe,
+        )
+
+        collector_pipe = DefaultSearchCollectorPipe()
+
+        search_pipe = DefaultVectorSearchPipe(
+            vector_db_provider=self.providers.vector_db,
+            embedding_provider=self.providers.embedding,
+        )
+
+        rag_pipe = DefaultRAGPipe(
+            llm_provider=self.providers.llm,
+            prompt_provider=self.providers.prompt,
+        )
+
+        rag_pipeline = Pipeline()
+        rag_pipeline.add_pipe(search_pipe)
+        rag_pipeline.add_pipe(collector_pipe)
+        rag_pipeline.add_pipe(
+            rag_pipe,
+            add_upstream_outputs=[
+                {
+                    "prev_pipe_name": collector_pipe.config.name,
+                    "prev_output_field": "search_context",
+                    "input_field": "context",
+                }
+            ],
+        )
+        return rag_pipeline
+
+    def create_pipelines(
+        self,
+        ingestion_pipeline: Optional[Pipeline] = None,
+        search_pipeline: Optional[Pipeline] = None,
+        rag_pipeline: Optional[Pipeline] = None,
+    ) -> R2RPipelines:
+        if not ingestion_pipeline:
+            ingestion_pipeline = self.create_ingestion_pipeline()
+
+        if not search_pipeline:
+            search_pipeline = self.create_search_pipeline()
+
+        if not rag_pipeline:
+            rag_pipeline = self.create_rag_pipeline()
+
+        return R2RPipelines(
+            ingestion_pipeline=ingestion_pipeline,
+            search_pipeline=search_pipeline,
+            rag_pipeline=rag_pipeline,
+        )

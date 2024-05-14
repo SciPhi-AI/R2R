@@ -68,7 +68,7 @@ class Pipeline:
             )
 
         final_result = await self._consume_all(current_input)
-        print('final_result = ', final_result)
+        print("final_result = ", final_result)
         return final_result if len(final_result) != 1 else final_result[0]
 
     async def _consume_all(self, gen: AsyncGenerator) -> list[Any]:

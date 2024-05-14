@@ -29,7 +29,7 @@ PIPELINE_OPTIONS = {
 }
 
 
-def app_factory(config_name: str = "default", pipe_name: str = "qna"):
+def default_app(config_name: str = "default", pipe_name: str = "qna"):
     config_name = os.getenv("CONFIG_OPTION") or config_name
     pipe_name = os.getenv("PIPELINE_OPTION") or pipe_name
 
@@ -70,5 +70,5 @@ if __name__ == "__main__":
 
     port = os.getenv("PORT") or args.port
 
-    app = app_factory(args.config, args.pipe)
+    app = default_app(args.config, args.pipe)
     uvicorn.run(app, host="0.0.0.0", port=int(port))

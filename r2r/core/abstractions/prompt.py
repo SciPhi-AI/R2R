@@ -23,7 +23,5 @@ class Prompt(BaseModel):
                 )
 
     def _convert_type(self, type_name: str) -> type:
-        type_mapping = {"int": int, "str": str}  # Extend this dict as needed
-        return type_mapping.get(
-            type_name, str
-        )  # Default to 'str' if type not found
+        type_mapping = {"int": int, "str": str}
+        return type_mapping.get(type_name, str)

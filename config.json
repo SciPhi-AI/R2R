@@ -7,7 +7,7 @@
     "provider": "openai",
     "search_model": "text-embedding-3-small",
     "search_dimension": 512,
-    "batch_size": 32,
+    "batch_size": 128,
     "text_splitter": {
       "type": "recursive_character",
       "chunk_size": 512,

@@ -13,6 +13,7 @@ class EmbeddingConfig(ProviderConfig):
     search_model: Optional[str] = None
     search_dimension: Optional[int] = None
     rerank_model: Optional[str] = None
+    batch_size: int = 1
 
     def validate(self) -> None:
         if not self.provider:

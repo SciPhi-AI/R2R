@@ -19,7 +19,7 @@ app = E2EPipelineFactory.create_pipeline(
     embedding_pipeline_impl=BasicEmbeddingPipeline,
     rag_pipeline_impl=QnARAGPipeline,
     eval_pipeline_impl=BasicEvalPipeline,
-    app_fn=app_factory,
+    app_fn=default_app,
 )
 ```
 
@@ -36,7 +36,7 @@ This method retrieves the appropriate vector database based on the `database_con
 - `pgvector`: Returns an instance of `PGVectorDB`.
 - `local`: Returns an instance of `LocalVectorDB`.
 
-### `get_embedding_provider(embedding_config: dict[str, Any])`
+### `create_embedding_provider(embedding_config: dict[str, Any])`
 
 This method retrieves the appropriate embeddings provider based on the `embedding_config`. It supports the following embeddings providers:
 - `openai`: Returns an instance of `OpenAIEmbeddingProvider`.
@@ -57,14 +57,14 @@ This method retrieves the appropriate text splitter based on the `text_splitter_
 This method creates the end-to-end pipeline by assembling various components based on the provided `config` and optional parameters. It performs the following steps:
 
 1. Sets up logging based on the `logging` configuration.
-2. Retrieves the embeddings provider using `get_embedding_provider` or uses the provided `embedding_provider`.
-3. Retrieves the vector database using `get_vector_db_provider` or uses the provided `vector_db_provider`.
+2. Retrieves the embeddings provider using `create_embedding_provider` or uses the provided `embedding_provider`.
+3. Retrieves the vector database using `create_vector_db_provider` or uses the provided `vector_db_provider`.
 4. Initializes the vector database collection with the specified `collection_name` and `embedding_dimension`.
-5. Retrieves the language model using `get_llm_provider` or uses the provided `llm`.
+5. Retrieves the language model using `create_llm_provider` or uses the provided `llm`.
 6. Creates a `PipeLoggingConnectionSingleton` instance for logging purposes.
 7. Creates an instance of the `rag_pipeline_impl` (default: `QnARAGPipeline`) with the language model, vector database, embedding model, embeddings provider, and logging connection.
 9. Creates an instance of the `embedding_pipeline_impl` (default: `BasicEmbeddingPipeline`) with the embedding model, embeddings provider, vector database, logging connection, text splitter, and embedding batch size.
 10. Creates an instance of the `eval_pipeline_impl` (default: `BasicEvalPipeline`) with the evaluation configuration and logging connection.
 11. Creates an instance of the `ingestion_pipeline_impl` (default: `BasicIngestionPipeline`) with the specified adapters.
-12. Creates the end-to-end pipeline application using the `app_fn` (default: `app_factory`) with the ingestion pipeline, embedding pipeline, RAG pipeline, evaluation pipeline, configuration, and logging connection.
+12. Creates the end-to-end pipeline application using the `app_fn` (default: `default_app`) with the ingestion pipeline, embedding pipeline, RAG pipeline, evaluation pipeline, configuration, and logging connection.
 13. Returns the created pipeline application.
