@@ -9,19 +9,15 @@ from ..abstractions.document import DataType
 from .base import AsyncParser
 
 
-class TextParser(AsyncParser[str]):
-    async def ingest(
-        self, data: Union[str, bytes]
-    ) -> AsyncGenerator[DataType, None]:
+class TextParser(AsyncParser[DataType]):
+    async def ingest(self, data: DataType) -> AsyncGenerator[DataType, None]:
         if isinstance(data, bytes):
             data = data.decode("utf-8")
         yield data
 
 
-class JSONParser(AsyncParser[str]):
-    async def ingest(
-        self, data: Union[str, bytes]
-    ) -> AsyncGenerator[str, None]:
+class JSONParser(AsyncParser[DataType]):
+    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
         if isinstance(data, bytes):
             data = data.decode("utf-8")
         yield self._parse_json(json.loads(data))
@@ -61,13 +57,15 @@ class JSONParser(AsyncParser[str]):
         return format_json_as_text(remove_objects_with_null(data))
 
 
-class HTMLParser(AsyncParser[str]):
-    async def ingest(self, data: str) -> AsyncGenerator[str, None]:
+class HTMLParser(AsyncParser[DataType]):
+    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+        if isinstance(data, bytes):
+            data = data.decode("utf-8")
         soup = BeautifulSoup(data, "html.parser")
         yield soup.get_text()
 
 
-class PDFParser(AsyncParser[str]):
+class PDFParser(AsyncParser[DataType]):
     def __init__(self):
         try:
             from pypdf import PdfReader
@@ -78,7 +76,10 @@ class PDFParser(AsyncParser[str]):
                 "Error, `pypdf` is required to run `PyPDFParser`. Please install it using `pip install pypdf`."
             )
 
-    async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+        if isinstance(data, str):
+            raise ValueError("PDF data must be in bytes format.")
+
         pdf = self.PdfReader(BytesIO(data))
         for page in pdf.pages:
             page_text = page.extract_text()
@@ -89,7 +90,7 @@ class PDFParser(AsyncParser[str]):
                 yield page_text
 
 
-class PPTParser(AsyncParser[str]):
+class PPTParser(AsyncParser[DataType]):
     def __init__(self):
         try:
             from pptx import Presentation
@@ -100,7 +101,10 @@ class PPTParser(AsyncParser[str]):
                 "Error, `python-pptx` is required to run `PPTParser`. Please install it using `pip install python-pptx`."
             )
 
-    async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+        if isinstance(data, str):
+            raise ValueError("PPT data must be in bytes format.")
+
         prs = self.Presentation(BytesIO(data))
         for slide in prs.slides:
             for shape in slide.shapes:
@@ -108,7 +112,7 @@ class PPTParser(AsyncParser[str]):
                     yield shape.text
 
 
-class DOCXParser(AsyncParser[str]):
+class DOCXParser(AsyncParser[DataType]):
     def __init__(self):
         try:
             from docx import Document
@@ -119,13 +123,37 @@ class DOCXParser(AsyncParser[str]):
                 "Error, `python-docx` is required to run `DOCXParser`. Please install it using `pip install python-docx`."
             )
 
-    async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+        if isinstance(data, str):
+            raise ValueError("DOCX data must be in bytes format.")
+
         doc = self.Document(BytesIO(data))
         for paragraph in doc.paragraphs:
             yield paragraph.text
 
 
-class CSVParser(AsyncParser[str]):
+class XLSXParser(AsyncParser[DataType]):
+    def __init__(self):
+        try:
+            from openpyxl import load_workbook
+
+            self.load_workbook = load_workbook
+        except ImportError:
+            raise ValueError(
+                "Error, `openpyxl` is required to run `XLSXParser`. Please install it using `pip install openpyxl`."
+            )
+
+    async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
+        if isinstance(data, str):
+            raise ValueError("XLSX data must be in bytes format.")
+
+        wb = self.load_workbook(filename=BytesIO(data))
+        for sheet in wb.worksheets:
+            for row in sheet.iter_rows(values_only=True):
+                yield ", ".join(map(str, row))
+
+
+class CSVParser(AsyncParser[DataType]):
     def __init__(self):
         import csv
         from io import StringIO
@@ -143,31 +171,15 @@ class CSVParser(AsyncParser[str]):
             yield ", ".join(row)
 
 
-class XLSXParser(AsyncParser[str]):
-    def __init__(self):
-        try:
-            from openpyxl import load_workbook
-
-            self.load_workbook = load_workbook
-        except ImportError:
-            raise ValueError(
-                "Error, `openpyxl` is required to run `XLSXParser`. Please install it using `pip install openpyxl`."
-            )
-
-    async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
-        wb = self.load_workbook(filename=BytesIO(data))
-        for sheet in wb.worksheets:
-            for row in sheet.iter_rows(values_only=True):
-                yield ", ".join(map(str, row))
-
-
-class MarkdownParser(AsyncParser[str]):
+class MarkdownParser(AsyncParser[DataType]):
     def __init__(self):
         import markdown
 
         self.markdown = markdown
 
-    async def ingest(self, data: str) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+        if isinstance(data, bytes):
+            data = data.decode("utf-8")
         html = self.markdown.markdown(data)
         soup = BeautifulSoup(html, "html.parser")
         yield soup.get_text()

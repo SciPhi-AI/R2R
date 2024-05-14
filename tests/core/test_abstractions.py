@@ -45,7 +45,10 @@ class MockAsyncPipe(AsyncPipe):
 @pytest.mark.asyncio
 async def test_async_pipe_run():
     pipe = MockAsyncPipe()
-    input = pipe.Input(message="test")
+    async def list_to_generator(lst):
+        for item in lst:
+            yield item
+    input = pipe.Input(message=list_to_generator(["test"]))
     state = AsyncState()
     async_generator = await pipe.run(input, state)
     results = [result async for result in async_generator]

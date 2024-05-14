@@ -21,8 +21,9 @@ def mock_file():
             "ingestion": {},
             "language_model": {"provider": "lm_provider"},
             "logging": {
-                "provider": "log_db",
-                "collection_name": "logs",
+                "provider": "local",
+                "log_table": "logs",
+                "log_info_table": "log_info"
             },
             "prompt": {"provider": "prompt_provider"},
             "vector_database": {

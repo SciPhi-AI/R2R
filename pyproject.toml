@@ -61,6 +61,7 @@ parea-ai = {version = "^0.2.86", optional = true}
 ionic-api-sdk = {version = "0.9.3", optional = true}
 exa-py = {version = "^1.0.9", optional = true}
 aiosqlite = "^0.20.0"
+asyncpg = "^0.29.0"
 
 [tool.poetry.extras]
 all = ["tiktoken", "datasets", "qdrant_client", "psycopg2-binary", "sentry-sdk", "parea-ai", "boto3", "exa-py", "llama-cpp-python", "ionic-api-sdk"]

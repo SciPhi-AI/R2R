@@ -29,6 +29,8 @@ from .pipes.logging import (
     LocalPipeLoggingProvider,
     LoggingConfig,
     PipeLoggingConnectionSingleton,
+    PostgresLoggingConfig,
+    PostgresPipeLoggingProvider,
 )
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
 from .providers.eval import EvalConfig, EvalProvider
@@ -43,13 +45,13 @@ from .utils import (
 )
 from .utils.config import R2RConfig
 
-# from .pipes.logging import PostgresPipeLoggingProvider, LocalPipeLoggingProvider, PipeLoggingConnectionSingleton
-
 __all__ = [
     # Abstractions
     # "PostgresPipeLoggingProvider",
     "LoggingConfig",
     "LocalPipeLoggingProvider",
+    "PostgresLoggingConfig",
+    "PostgresPipeLoggingProvider",
     "PipeLoggingConnectionSingleton",
     "VectorEntry",
     "VectorType",

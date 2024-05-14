@@ -1,6 +1,4 @@
 from abc import ABC, abstractmethod, abstractproperty
-
-# from typing import List, Optional
 from typing import Any, List, Optional, Type
 
 from pydantic import BaseModel
