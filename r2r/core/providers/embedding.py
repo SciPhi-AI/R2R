@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
 
@@ -7,7 +6,6 @@ from ..abstractions.search import SearchResult
 from .base import Provider, ProviderConfig
 
 
-@dataclass
 class EmbeddingConfig(ProviderConfig):
     """A base embedding configuration class"""
 

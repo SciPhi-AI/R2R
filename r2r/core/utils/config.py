@@ -2,6 +2,7 @@ import json
 import os
 from typing import Any
 
+from ..pipes.logging import LoggingConfig
 from ..providers.embedding import EmbeddingConfig
 from ..providers.eval import EvalConfig
 from ..providers.llm import LLMConfig
@@ -25,7 +26,7 @@ class R2RConfig:
         ],
         "ingestion": [],
         "language_model": ["provider"],
-        "logging_database": ["provider", "collection_name"],
+        "logging": ["provider", "log_table"],
         "prompt": ["provider"],
         "vector_database": ["provider", "collection_name"],
     }
@@ -49,6 +50,7 @@ class R2RConfig:
         self.embedding = EmbeddingConfig.create(**self.embedding)
         self.eval = EvalConfig.create(**self.eval)
         self.language_model = LLMConfig.create(**self.language_model)
+        self.logging = LoggingConfig.create(**self.logging)
         self.prompt = PromptConfig.create(**self.prompt)
         self.vector_database = VectorDBConfig.create(**self.vector_database)
 

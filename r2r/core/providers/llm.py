@@ -1,15 +1,15 @@
 """Base classes for language model providers."""
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 from typing import List, Optional
+
+from pydantic import BaseModel
 
 from ..abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
 from .base import Provider, ProviderConfig
 
 
-@dataclass
-class GenerationConfig(ABC):
+class GenerationConfig(BaseModel):
     temperature: float = 0.1
     top_p: float = 1.0
     top_k: int = 100
@@ -22,12 +22,11 @@ class GenerationConfig(ABC):
     num_beams: int = 1
     do_sample: bool = True
     # Additional args to pass to the generation config
-    add_generation_kwargs: dict = field(default_factory=dict)
     generate_with_chat: bool = False
+    add_generation_kwargs: Optional[dict] = {}
     api_base: Optional[str] = None
 
 
-@dataclass
 class LLMConfig(ProviderConfig):
     """A base LLM config class"""
 

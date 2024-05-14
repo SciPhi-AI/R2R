@@ -31,7 +31,7 @@ The default values for the config are shown below:
   "language_model": {
     "provider": "litellm"
   },
-  "logging_database": {
+  "logging": {
     "provider": "local",
     "collection_name": "demo_logs",
     "level": "INFO"
@@ -65,7 +65,7 @@ The available options for each section are:
 - **language_model**:
   - `provider`: `"litellm"`, `"openai"`, `"llama-cpp"` (see [LLM Providers](/providers/llms.md) for more info)
 
-- **logging_database**:
+- **logging**:
   - `provider`: `"local"`, `"postgres"`, `"redis"`
   - `collection_name`: name of the collection to store logs
   - `level`: logging level (e.g., `"INFO"`, `"DEBUG"`)

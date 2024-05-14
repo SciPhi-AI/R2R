@@ -19,7 +19,7 @@ app = E2EPipelineFactory.create_pipeline(
     embedding_pipeline_impl=BasicEmbeddingPipeline,
     rag_pipeline_impl=QnARAGPipeline,
     eval_pipeline_impl=BasicEvalPipeline,
-    app_fn=create_app,
+    app_fn=app_factory,
 )
 ```
 
@@ -56,7 +56,7 @@ This method retrieves the appropriate text splitter based on the `text_splitter_
 
 This method creates the end-to-end pipeline by assembling various components based on the provided `config` and optional parameters. It performs the following steps:
 
-1. Sets up logging based on the `logging_database` configuration.
+1. Sets up logging based on the `logging` configuration.
 2. Retrieves the embeddings provider using `get_embedding_provider` or uses the provided `embedding_provider`.
 3. Retrieves the vector database using `get_vector_db_provider` or uses the provided `vector_db_provider`.
 4. Initializes the vector database collection with the specified `collection_name` and `embedding_dimension`.
@@ -66,5 +66,5 @@ This method creates the end-to-end pipeline by assembling various components bas
 9. Creates an instance of the `embedding_pipeline_impl` (default: `BasicEmbeddingPipeline`) with the embedding model, embeddings provider, vector database, logging connection, text splitter, and embedding batch size.
 10. Creates an instance of the `eval_pipeline_impl` (default: `BasicEvalPipeline`) with the evaluation configuration and logging connection.
 11. Creates an instance of the `ingestion_pipeline_impl` (default: `BasicIngestionPipeline`) with the specified adapters.
-12. Creates the end-to-end pipeline application using the `app_fn` (default: `create_app`) with the ingestion pipeline, embedding pipeline, RAG pipeline, evaluation pipeline, configuration, and logging connection.
+12. Creates the end-to-end pipeline application using the `app_fn` (default: `app_factory`) with the ingestion pipeline, embedding pipeline, RAG pipeline, evaluation pipeline, configuration, and logging connection.
 13. Returns the created pipeline application.

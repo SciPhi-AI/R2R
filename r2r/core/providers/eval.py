@@ -1,12 +1,10 @@
 import random
 from abc import abstractmethod
-from dataclasses import dataclass
 from typing import List, Optional, Union
 
 from .base import Provider, ProviderConfig
 
 
-@dataclass
 class EvalConfig(ProviderConfig):
     """A base eval config class"""
 

@@ -3,7 +3,6 @@
 import datetime
 import logging
 import os
-from dataclasses import dataclass
 from typing import Union
 
 from r2r.core import (
@@ -17,7 +16,6 @@ from r2r.core import (
 logger = logging.getLogger(__name__)
 
 
-@dataclass
 class LlamaCppConfig(LLMConfig):
     """Configuration for LlamaCpp models."""
 

@@ -1,200 +1,194 @@
-# import logging
-# from typing import Any
+from pydantic import BaseModel
 
-# import dotenv
-
-# from r2r.core import (
-#     EmbeddingConfig,
-#     EvalConfig,
-#     LLMConfig,
-#     LoggingDatabaseConnection,
-#     VectorDBConfig,
-# )
-# from r2r.core.utils import RecursiveCharacterTextSplitter
-# from r2r.llms import LiteLLM, LlamaCPP, LlamaCppConfig, OpenAILLM
-# from r2r.pipes import (
-#     BasicEvalPipe,
-#     DefaultDocumentParsingPipe,
-#     DefaultEmbeddingPipe,
-#     QnARAGPipe,
-# )
-
-# from .app import create_app
-# from .utils import R2RConfig
-
-# dotenv.load_dotenv()
+from r2r.core import (
+    EmbeddingProvider,
+    LLMProvider,
+    Pipeline,
+    PipeLoggingConnectionSingleton,
+    PromptProvider,
+    R2RConfig,
+    RecursiveCharacterTextSplitter,
+    VectorDBProvider,
+)
+from r2r.main.app import R2RApp
+from r2r.pipes import (
+    DefaultDocumentParsingPipe,
+    DefaultEmbeddingPipe,
+    DefaultQueryTransformPipe,
+    DefaultRAGPipe,
+    DefaultSearchCollectorPipe,
+    DefaultVectorSearchPipe,
+    DefaultVectorStoragePipe,
+)
 
 
-# class E2EPipeFactory:
-#     """Factory class to create the end-to-end pipe."""
+class R2RProviders(BaseModel):
+    vector_db: VectorDBProvider
+    embedding: EmbeddingProvider
+    llm: LLMProvider
+    prompt: PromptProvider
 
-#     @staticmethod
-#     def get_vector_db_provider(database_config: dict[str, Any]):
-#         """Get the vector database provider based on the provided database_config."""
-#         if database_config["provider"] == "qdrant":
-#             from r2r.vector_dbs import QdrantDB
+    class Config:
+        arbitrary_types_allowed = True
 
-#             return QdrantDB(VectorDBConfig.create(**database_config))
-#         elif database_config["provider"] == "pgvector":
-#             from r2r.vector_dbs import PGVectorDB
 
-#             return PGVectorDB(VectorDBConfig.create(**database_config))
-#         elif database_config["provider"] == "local":
-#             from r2r.vector_dbs import (
-#                 LocalVectorDBConfig,
-#                 LocalVectorDBProvider,
-#             )
+class R2RProviderFactory:
+    def __init__(self, config: R2RConfig):
+        self.config = config
 
-#             return LocalVectorDBProvider(
-#                 LocalVectorDBConfig.create(**database_config)
-#             )
+    def get_vector_db_provider(self, *args, **kwargs) -> VectorDBProvider:
+        vector_db_config = self.config.vector_database
+        vector_db_provider = None
+        if vector_db_config.provider == "qdrant":
+            from r2r.vector_dbs import QdrantDB
 
-#     @staticmethod
-#     def get_embedding_provider(embedding_config: dict[str, Any]):
-#         """Get the embedding provider based on the provided embedding_config."""
-#         embedding_config = EmbeddingConfig.create(**embedding_config)
+            vector_db_provider = QdrantDB(vector_db_config)
+        elif vector_db_config.provider == "pgvector":
+            from r2r.vector_dbs import PGVectorDB
 
-#         if embedding_config.provider == "openai":
-#             from r2r.embeddings import OpenAIEmbeddingProvider
+            vector_db_provider = PGVectorDB(vector_db_config)
+        elif vector_db_config.provider == "local":
+            from r2r.vector_dbs import LocalVectorDB
 
-#             return OpenAIEmbeddingProvider(embedding_config)
-#         elif embedding_config.provider == "sentence-transformers":
-#             from r2r.embeddings import SentenceTransformerEmbeddingProvider
+            vector_db_provider = LocalVectorDB(vector_db_config)
+        else:
+            raise ValueError(
+                f"Vector database provider {vector_db_config.provider} not supported"
+            )
+        vector_db_provider.initialize_collection(
+            self.config.embedding.search_dimension
+        )
+        return vector_db_provider
 
-#             return SentenceTransformerEmbeddingProvider(embedding_config)
-#         elif embedding_config.provider == "dummy":
-#             from r2r.embeddings import DummyEmbeddingProvider
+    def get_embedding_provider(self, *args, **kwargs) -> EmbeddingProvider:
+        embedding_config = self.config.embedding
+        embedding_provider = None
+        if embedding_config.provider == "openai":
+            from r2r.embeddings import OpenAIEmbeddingProvider
 
-#             return DummyEmbeddingProvider(embedding_config)
-#         else:
-#             raise ValueError(
-#                 f"Embedding provider {embedding_config.provider} not supported"
-#             )
+            embedding_provider = OpenAIEmbeddingProvider(embedding_config)
+        elif embedding_config.provider == "sentence-transformers":
+            from r2r.embeddings import SentenceTransformerEmbeddingProvider
 
-#     @staticmethod
-#     def get_eval_provider(eval_config: dict[str, Any]):
-#         """Get the evaluation provider based on the provided eval_config."""
-#         eval_config = EvalConfig.create(**eval_config)
+            embedding_provider = SentenceTransformerEmbeddingProvider(
+                embedding_config
+            )
+        elif embedding_config.provider == "dummy":
+            from r2r.embeddings import DummyEmbeddingProvider
 
-#         if eval_config.provider == "deepeval":
-#             try:
-#                 from r2r.eval import DeepEvalProvider
-#             except ImportError:
-#                 raise ImportError(
-#                     "DeepEval is not installed. Please install it using `pip install deepeval`."
-#                 )
-#             eval_provider = DeepEvalProvider(eval_config)
+            embedding_provider = DummyEmbeddingProvider(embedding_config)
+        else:
+            raise ValueError(
+                f"Embedding provider {embedding_config.provider} not supported"
+            )
+        return embedding_provider
 
-#         elif eval_config.provider == "parea":
-#             try:
-#                 from r2r.eval import PareaEvalProvider
-#             except ImportError:
-#                 raise ImportError(
-#                     "Parea is not installed. Please install it using `pip install parea-ai`."
-#                 )
-#             eval_provider = PareaEvalProvider(eval_config)
-#         elif eval_config.provider == "none":
-#             eval_provider = None
-#         return eval_provider
+    def get_llm_provider(self, *args, **kwargs) -> LLMProvider:
+        llm_config = self.config.language_model
+        llm_provider = None
+        if llm_config.provider == "openai":
+            from r2r.llms import OpenAILLM
 
-#     @staticmethod
-#     def get_llm_provider(llm_config: dict[str, Any]):
-#         """Get the language model provider based on the provided llm_config."""
+            llm_provider = OpenAILLM(llm_config)
+        elif llm_config.provider == "litellm":
+            from r2r.llms import LiteLLM
 
-#         if llm_config["provider"] == "openai":
-#             return OpenAILLM(LLMConfig.create(**llm_config))
-#         elif llm_config["provider"] == "litellm":
-#             return LiteLLM(LLMConfig.create(**llm_config))
-#         elif llm_config["provider"] == "llama-cpp":
-#             return LlamaCPP(LlamaCppConfig.create(**llm_config))
+            llm_provider = LiteLLM(llm_config)
+        elif llm_config.provider == "llama-cpp":
+            from r2r.llms import LlamaCPP, LlamaCppConfig
 
-#     @staticmethod
-#     def get_text_splitter(text_splitter_config: dict[str, Any]):
-#         """Get the text splitter based on the provided text_splitter_config."""
+            config_dict = llm_config.dict()
+            extra_args = config_dict.pop("extra_args")
 
-#         if text_splitter_config["type"] != "recursive_character":
-#             raise ValueError(
-#                 "Only recursive character text splitter is supported"
-#             )
-#         return RecursiveCharacterTextSplitter(
-#             chunk_size=text_splitter_config["chunk_size"],
-#             chunk_overlap=text_splitter_config["chunk_overlap"],
-#             length_function=len,
-#             is_separator_regex=False,
-#         )
+            llm_provider = LlamaCPP(
+                LlamaCppConfig(**{**config_dict, **extra_args})
+            )
+        else:
+            raise ValueError(
+                f"Language model provider {llm_config.provider} not supported"
+            )
+        return llm_provider
 
-#     @staticmethod
-#     def create_pipe(
-#         config: R2RConfig,
-#         vector_db_provider=None,
-#         embedding_provider=None,
-#         llm_provider=None,
-#         override_parsers=None,
-#         ingestion_pipe_impl=DefaultDocumentParsingPipe,
-#         embedding_pipe_impl=DefaultEmbeddingPipe,
-#         rag_pipe_impl=QnARAGPipe,
-#         eval_pipe_impl=BasicEvalPipe,
-#         app_fn=create_app,
-#     ):
-#         logging.basicConfig(level=config.logging_database.get("level", "INFO"))
+    def get_prompt_provider(self, *args, **kwargs) -> PromptProvider:
+        prompt_config = self.config.prompt
+        prompt_provider = None
+        if prompt_config.provider == "local":
+            from r2r.prompts import DefaultPromptProvider
 
-#         embedding_provider = (
-#             embedding_provider
-#             or E2EPipeFactory.get_embedding_provider(config.embedding)
-#         )
-#         llm_provider = llm_provider or E2EPipeFactory.get_llm_provider(
-#             config.language_model
-#         )
-#         vector_db_provider = (
-#             vector_db_provider
-#             or E2EPipeFactory.get_vector_db_provider(config.vector_database)
-#         )
-#         vector_db_provider.initialize_collection(
-#             embedding_provider.search_dimension
-#         )
+            prompt_provider = DefaultPromptProvider()
+        else:
+            raise ValueError(
+                f"Prompt provider {prompt_config.provider} not supported"
+            )
+        return prompt_provider
 
-#         eval_provider = E2EPipeFactory.get_eval_provider(config.eval)
+    def get_providers(self) -> R2RProviders:
+        return R2RProviders(
+            vector_db=self.get_vector_db_provider(),
+            embedding=self.get_embedding_provider(),
+            llm=self.get_llm_provider(),
+            prompt=self.get_prompt_provider(),
+        )
 
-#         pipe_logger = LoggingDatabaseConnection(
-#             config.logging_database["provider"],
-#             config.logging_database["collection_name"],
-#         )
 
-#         scrpr_pipe = scraper_pipe_impl()
-#         ingst_pipe = ingestion_pipe_impl(
-#             override_parsers=override_parsers,
-#             selected_parsers={
-#                 DocumentType(k): v
-#                 for k, v in config.ingestion.get("selected_parsers").items()
-#             },
-#         )
-#         embd_pipe = embedding_pipe_impl(
-#             embedding_provider=embedding_provider,
-#             vector_db_provider=vector_db_provider,
-#             pipe_logger=pipe_logger,
-#             text_splitter=E2EPipeFactory.get_text_splitter(
-#                 config.embedding["text_splitter"]
-#             ),
-#             embedding_batch_size=config.embedding.get("batch_size", 1),
-#         )
-#         rag_pipe = rag_pipe_impl(
-#             embedding_provider=embedding_provider,
-#             llm_provider=llm_provider,
-#             vector_db_provider=vector_db_provider,
-#             pipe_logger=pipe_logger,
-#         )
-#         eval_pipe = eval_pipe_impl(
-#             eval_provider, pipe_logger=pipe_logger
-#         )
+def app_factory(config: R2RConfig, providers: R2RProviders) -> R2RApp:
+    text_splitter_config = config.embedding.extra_fields.get("text_splitter")
 
-#         app = app_fn(
-#             scraper_pipe=scrpr_pipe,
-#             ingestion_pipe=ingst_pipe,
-#             embedding_pipe=embd_pipe,
-#             rag_pipe=rag_pipe,
-#             eval_pipe=eval_pipe,
-#             config=config,
-#             pipe_logger=pipe_logger,
-#         )
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=text_splitter_config["chunk_size"],
+        chunk_overlap=text_splitter_config["chunk_overlap"],
+        length_function=len,
+        is_separator_regex=False,
+    )
 
-#         return app
+    collector_pipe = DefaultSearchCollectorPipe()
+    embedding_pipe = DefaultEmbeddingPipe(
+        embedding_provider=providers.embedding,
+        vector_db_provider=providers.vector_db,
+        text_splitter=text_splitter,
+        embedding_batch_size=128,
+    )
+    parsing_pipe = DefaultDocumentParsingPipe()
+    query_transform_pipe = DefaultQueryTransformPipe(
+        llm_provider=providers.llm,
+        prompt_provider=providers.prompt,
+    )
+    rag_pipe = DefaultRAGPipe(
+        llm_provider=providers.llm,
+        prompt_provider=providers.prompt,
+    )
+    search_pipe = DefaultVectorSearchPipe(
+        vector_db_provider=providers.vector_db,
+        embedding_provider=providers.embedding,
+    )
+    vector_storage_pipe = DefaultVectorStoragePipe(
+        vector_db_provider=providers.vector_db
+    )
+
+    ingestion_pipeline = Pipeline()
+    ingestion_pipeline.add_pipe(parsing_pipe)
+    ingestion_pipeline.add_pipe(embedding_pipe)
+    ingestion_pipeline.add_pipe(vector_storage_pipe)
+
+    search_pipeline = Pipeline()
+    search_pipeline.add_pipe(search_pipe)
+
+    rag_pipeline = Pipeline()
+    rag_pipeline.add_pipe(query_transform_pipe)
+    rag_pipeline.add_pipe(search_pipe)
+    rag_pipeline.add_pipe(collector_pipe)
+    rag_pipeline.add_pipe(
+        rag_pipe,
+        add_upstream_outputs=[
+            {
+                "prev_pipe_name": collector_pipe.config.name,
+                "prev_output_field": "search_context",
+                "input_field": "context",
+            }
+        ],
+    )
+    return R2RApp(
+        ingestion_pipeline=ingestion_pipeline,
+        search_pipeline=search_pipeline,
+        rag_pipeline=rag_pipeline,
+    )

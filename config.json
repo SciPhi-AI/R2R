@@ -12,7 +12,8 @@
       "type": "recursive_character",
       "chunk_size": 512,
       "chunk_overlap": 20
-    }
+    },
+    "rerank_model": "None"
   },  
   "eval": {
     "provider": "parea",
@@ -33,9 +34,10 @@
   "language_model": {
     "provider": "litellm"
   },
-  "logging_database": {
+  "logging": {
     "provider": "local",
-    "collection_name": "demo_logs",
+    "log_table": "logs",
+    "log_info_table": "log_info",
     "level": "INFO"
   },
   "prompt": {
@@ -43,6 +45,7 @@
   },
   "vector_database": {
     "provider": "local",
-    "collection_name": "demo_vecs"
+    "collection_name": "demo_vecs",
+    "db_path": "none"
   }
 }

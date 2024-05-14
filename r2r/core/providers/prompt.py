@@ -1,11 +1,9 @@
 from abc import abstractmethod
-from dataclasses import dataclass
 from typing import Any, List, Optional
 
 from .base import Provider, ProviderConfig
 
 
-@dataclass
 class PromptConfig(ProviderConfig):
     def validate(self) -> None:
         pass

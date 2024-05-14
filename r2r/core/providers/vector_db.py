@@ -1,18 +1,20 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 from ..abstractions.search import SearchResult
 from ..abstractions.vector import VectorEntry
 from .base import Provider, ProviderConfig
 
-# from r2r.vecs.collection import MetadataValues
 
-
-@dataclass
 class VectorDBConfig(ProviderConfig):
     provider: str
     collection_name: str
+
+    def __post_init__(self):
+        self.validate()
+        # Capture additional fields
+        for key, value in self.extra_fields.items():
+            setattr(self, key, value)
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:

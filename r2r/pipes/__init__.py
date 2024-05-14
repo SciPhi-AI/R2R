@@ -1,7 +1,7 @@
 from ..prompts.local.prompt import DefaultPromptProvider
 from .default.embedding import DefaultEmbeddingPipe
 
-# from .default.eval import BasicEvalPipe
+# from .basic.eval import BasicEvalPipe
 from .default.parsing import DefaultDocumentParsingPipe
 from .default.query_transform import DefaultQueryTransformPipe
 from .default.rag import DefaultRAGPipe

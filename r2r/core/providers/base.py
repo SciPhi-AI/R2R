@@ -1,26 +1,41 @@
 from abc import ABC, abstractmethod, abstractproperty
-from dataclasses import fields
-from typing import List, Optional
+
+# from typing import List, Optional
+from typing import Any, List, Optional, Type
+
+from pydantic import BaseModel
 
 
-class ProviderConfig(ABC):
+class ProviderConfig(BaseModel, ABC):
     """A base provider configuration class"""
+
+    extra_fields: dict[str, str] = {}
+    provider: Optional[str] = None
+
+    class Config:
+        arbitrary_types_allowed = True
+        ignore_extra = True
 
     @abstractmethod
     def validate(self) -> None:
         pass
 
     @classmethod
-    def create(cls, **kwargs):
-        valid_keys = {f.name for f in fields(cls)}
-        filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_keys}
-        instance = cls(**filtered_kwargs)
-        instance.extras = {
-            k: v for k, v in kwargs.items() if k not in valid_keys
+    def create(cls: Type["ProviderConfig"], **kwargs: Any) -> "ProviderConfig":
+        base_args = cls.__fields__.keys()
+        filtered_kwargs = {
+            k: v if v != "None" else None
+            for k, v in kwargs.items()
+            if k in base_args
         }
+        instance = cls(**filtered_kwargs)
+        for k, v in kwargs.items():
+            if k not in base_args:
+                instance.extra_fields[k] = v
         return instance
 
     @abstractproperty
+    @property
     def supported_providers(self) -> List[str]:
         """Define a list of supported providers."""
         pass

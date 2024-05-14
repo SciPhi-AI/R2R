@@ -5,10 +5,10 @@ from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.datastructures import UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.param_functions import File, Form
 
 from r2r.core import Document, Pipeline
-from r2r.main.utils import apply_cors
 
 # Current directory where this script is located
 MB_CONVERSION_FACTOR = 1024 * 1024
@@ -25,12 +25,14 @@ class R2RApp:
         ingestion_pipeline: Pipeline,
         search_pipeline: Pipeline,
         rag_pipeline: Pipeline,
+        do_apply_cors: bool = True,
         *args,
         **kwargs,
     ):
         self.app = FastAPI()
+        if do_apply_cors:
+            R2RApp._apply_cors(self.app)
 
-        apply_cors(self.app)
         self.ingestion_pipeline = ingestion_pipeline
         self.search_pipeline = search_pipeline
         self.rag_pipeline = rag_pipeline
@@ -140,3 +142,20 @@ class R2RApp:
             )
 
         uvicorn.run(self.app, host=host, port=port)
+
+    @staticmethod
+    def _apply_cors(app):
+        # CORS setup
+        origins = [
+            "*",  # TODO - Change this to the actual frontend URL
+            "http://localhost:3000",
+            "http://localhost:8000",
+        ]
+
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,  # Allows specified origins
+            allow_credentials=True,
+            allow_methods=["*"],  # Allows all methods
+            allow_headers=["*"],  # Allows all headers
+        )

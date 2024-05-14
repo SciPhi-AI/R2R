@@ -15,7 +15,7 @@ The R2R application is created using the `E2EPipelineFactory.create_pipeline()` 
 - `embedding_pipeline_impl`: The implementation class for the embedding pipeline (default: `BasicEmbeddingPipeline`).
 - `rag_pipeline_impl`: The implementation class for the RAG pipeline (default: `QnARAGPipeline`).
 - `eval_pipeline_impl`: The implementation class for the evaluation pipeline (default: `BasicEvalPipeline`).
-- `app_fn`: A function that creates the FastAPI application (default: `create_app`).
+- `app_fn`: A function that creates the FastAPI application (default: `app_factory`).
 
 Here's an example of how the application is typically created in the R2R workflow:
 
@@ -29,7 +29,7 @@ app = E2EPipelineFactory.create_pipeline(
 
 In this example, the `E2EPipelineFactory.create_pipeline()` method is called with the default configuration loaded from the `config.json` file. The factory method creates instances of the ingestion pipeline, embedding pipeline, RAG pipeline, and evaluation pipeline using the default implementation classes. It also sets up logging based on the configuration settings.
 
-The `create_app` function, which is the default `app_fn` used by the factory, takes the created pipeline instances and the configuration as parameters and sets up the FastAPI application with the necessary endpoints and middleware.
+The `app_factory` function, which is the default `app_fn` used by the factory, takes the created pipeline instances and the configuration as parameters and sets up the FastAPI application with the necessary endpoints and middleware.
 
 To customize the application, you can provide your own implementation classes for the pipelines or create a custom `app_fn` that sets up the FastAPI application differently.
 
@@ -47,7 +47,7 @@ For more details on how the individual pipelines are created and customized with
 
 ## Adding Custom Endpoints
 
-You can add custom endpoints to the R2R application by modifying the `create_app` function or providing a custom `app_fn` to the `E2EPipelineFactory.create_pipeline()` method.
+You can add custom endpoints to the R2R application by modifying the `app_factory` function or providing a custom `app_fn` to the `E2EPipelineFactory.create_pipeline()` method.
 
 Here's an example of how to add a custom endpoint:
 
@@ -97,7 +97,7 @@ The application uses a configuration file (`config.json`) to set various setting
   "language_model": {
     "provider": "litellm"
   },
-  "logging_database": {
+  "logging": {
     "provider": "local",
     "collection_name": "demo_logs",
     "level": "INFO"

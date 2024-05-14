@@ -27,6 +27,7 @@ from .pipeline.base import Pipeline
 from .pipes.base import AsyncPipe, AsyncState, PipeRunInfo, PipeType
 from .pipes.logging import (
     LocalPipeLoggingProvider,
+    LoggingConfig,
     PipeLoggingConnectionSingleton,
 )
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
@@ -47,6 +48,7 @@ from .utils.config import R2RConfig
 __all__ = [
     # Abstractions
     # "PostgresPipeLoggingProvider",
+    "LoggingConfig",
     "LocalPipeLoggingProvider",
     "PipeLoggingConnectionSingleton",
     "VectorEntry",

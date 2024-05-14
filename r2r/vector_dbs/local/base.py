@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import sqlite3
-from dataclasses import dataclass
 from typing import List, Optional, Union
 
 from r2r.core import (
@@ -15,30 +14,28 @@ from r2r.core import (
 logger = logging.getLogger(__name__)
 
 
-@dataclass
 class LocalVectorDBConfig(VectorDBConfig):
-    db_path: Optional[str] = None
-
     @property
     def supported_providers(self) -> List[str]:
         return ["local"]
 
 
-class LocalVectorDBProvider(VectorDBProvider):
+class LocalVectorDB(VectorDBProvider):
     def __init__(self, config: LocalVectorDBConfig) -> None:
         logger.info(
-            "Initializing `LocalVectorDBProvider` to store and retrieve embeddings."
+            "Initializing `LocalVectorDB` to store and retrieve embeddings."
         )
 
         super().__init__(config)
         if config.provider != "local":
             raise ValueError(
-                "LocalVectorDBProvider must be initialized with provider `local`."
+                "LocalVectorDB must be initialized with provider `local`."
             )
 
     def _get_conn(self):
         conn = sqlite3.connect(
-            self.config.db_path or os.getenv("LOCAL_DB_PATH", "local.sqlite")
+            self.config.extra_fields.get("db_path")
+            or os.getenv("LOCAL_DB_PATH", "local.sqlite")
         )
         return conn
 
@@ -62,7 +59,7 @@ class LocalVectorDBProvider(VectorDBProvider):
 
     def create_index(self, index_type, column_name, index_options):
         raise NotImplementedError(
-            "LocalVectorDBProvider does not support creating indexes."
+            "LocalVectorDB does not support creating indexes."
         )
 
     def copy(self, entry: VectorEntry, commit=True) -> None:

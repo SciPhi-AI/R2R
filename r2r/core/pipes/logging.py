@@ -6,10 +6,26 @@ from typing import List, Optional
 
 import aiosqlite
 
+from ..providers.base import Provider, ProviderConfig
+
 logger = logging.getLogger(__name__)
 
 
-class PipeLoggingProvider(ABC):
+class LoggingConfig(ProviderConfig):
+    provider: str = "local"
+    log_table: str = "logs"
+    log_info_table: str = "logs_pipeline_info"
+    logging_path: Optional[str] = None
+
+    def validate(self) -> None:
+        pass
+
+    @property
+    def supported_providers(self) -> List[str]:
+        return ["local", "postgres", "redis"]
+
+
+class PipeLoggingProvider(Provider):
     @abstractmethod
     async def close(self):
         pass
@@ -32,13 +48,11 @@ class PipeLoggingProvider(ABC):
 class LocalPipeLoggingProvider(PipeLoggingProvider):
     def __init__(
         self,
-        data_collection="logs",
-        info_collection="logs_pipeline_info",
-        logging_path=None,
+        config: LoggingConfig,
     ):
-        self.data_collection = data_collection
-        self.info_collection = info_collection
-        self.logging_path = logging_path or os.getenv(
+        self.log_table = config.log_table
+        self.log_info_table = config.log_info_table
+        self.logging_path = config.logging_path or os.getenv(
             "LOCAL_DB_PATH", "local.sqlite"
         )
         if not self.logging_path:
@@ -51,7 +65,7 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
         self.conn = await aiosqlite.connect(self.logging_path)
         await self.conn.execute(
             f"""
-            CREATE TABLE IF NOT EXISTS {self.data_collection} (
+            CREATE TABLE IF NOT EXISTS {self.log_table} (
                 timestamp DATETIME,
                 pipe_run_id TEXT,
                 key TEXT,
@@ -61,7 +75,7 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
         )
         await self.conn.execute(
             f"""
-            CREATE TABLE IF NOT EXISTS {self.info_collection} (
+            CREATE TABLE IF NOT EXISTS {self.log_info_table} (
                 timestamp DATETIME,
                 pipe_run_id TEXT UNIQUE,
                 pipeline_type TEXT
@@ -91,11 +105,11 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
         is_pipeline_info=False,
     ):
         collection = (
-            self.info_collection if is_pipeline_info else self.data_collection
+            self.log_info_table if is_pipeline_info else self.log_table
         )
 
         if is_pipeline_info:
-            collection = self.info_collection
+            collection = self.log_info_table
             if not key == "pipeline_type":
                 raise ValueError("Metadata keys must be 'pipeline_type'")
             await self.conn.execute(
@@ -103,7 +117,7 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
                 (str(pipe_run_id), value),
             )
         else:
-            collection = self.data_collection
+            collection = self.log_table
             await self.conn.execute(
                 f"INSERT INTO {collection} (timestamp, pipe_run_id, key, value) VALUES (datetime('now'), ?, ?, ?)",
                 (str(pipe_run_id), key, value),
@@ -114,7 +128,7 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
         self, pipeline_type: Optional[str] = None, limit: int = 10
     ) -> List[str]:
         cursor = await self.conn.cursor()
-        query = f"SELECT pipe_run_id FROM {self.info_collection}"
+        query = f"SELECT pipe_run_id FROM {self.log_info_table}"
         conditions = []
         params = []
         if pipeline_type:
@@ -145,7 +159,7 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
             SELECT *
             FROM (
                 SELECT *, ROW_NUMBER() OVER (PARTITION BY pipe_run_id ORDER BY timestamp DESC) as rn
-                FROM {self.data_collection}
+                FROM {self.log_table}
                 WHERE pipe_run_id IN ({placeholders})
             )
             WHERE rn <= ?
@@ -174,21 +188,15 @@ class PipeLoggingConnectionSingleton:
 
     @classmethod
     def get_instance(cls):
-        return cls.SUPPORTED_PROVIDERS[cls._provider](
-            cls.data_collection, cls.info_collection
-        )
+        return cls.SUPPORTED_PROVIDERS[cls._config.provider](cls._config)
 
     @classmethod
     def configure(
         cls,
-        provider="local",
-        data_collection="logs",
-        info_collection="logs_pipeline_info",
+        logging_config: Optional[LoggingConfig] = LoggingConfig(),
     ):
         if not cls._is_configured:
-            cls._provider = provider
-            cls.data_collection = data_collection
-            cls.info_collection = info_collection
+            cls._config = logging_config
             cls._is_configured = True
         else:
             raise Exception(
