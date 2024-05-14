@@ -35,10 +35,9 @@
     "provider": "litellm"
   },
   "logging": {
-    "provider": "postgres",
-    "log_table": "logs___q",
-    "log_info_table": "log_info___q",
-    "level": "INFO"
+    "provider": "local",
+    "log_table": "logs",
+    "log_info_table": "log_info"
   },
   "prompt": {
     "provider": "local"

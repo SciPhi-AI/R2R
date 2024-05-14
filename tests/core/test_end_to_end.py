@@ -18,6 +18,7 @@ from r2r.main.factory import DefaultR2RPipelineFactory, R2RProviderFactory
 @pytest.fixture(scope="function")
 def r2r_app():
     config = R2RConfig.from_json()
+    config.logging.provider = "local"
     config.logging.logging_path = uuid.uuid4().hex + ".log"
 
     try:
