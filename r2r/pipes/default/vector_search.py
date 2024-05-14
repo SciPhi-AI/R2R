@@ -5,7 +5,6 @@ from r2r.core import (
     AsyncPipe,
     AsyncState,
     EmbeddingProvider,
-    PipeFlow,
     PipeType,
     SearchResult,
     VectorDBProvider,
@@ -21,7 +20,6 @@ class DefaultVectorSearchPipe(SearchPipe):
         self,
         vector_db_provider: VectorDBProvider,
         embedding_provider: EmbeddingProvider,
-        flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.SEARCH,
         config: Optional[SearchPipe.SearchConfig] = None,
         *args,
@@ -30,7 +28,6 @@ class DefaultVectorSearchPipe(SearchPipe):
         logger.info(f"Initalizing an `DefaultVectorSearchPipe` pipe.")
         super().__init__(
             vector_db_provider=vector_db_provider,
-            flow=flow,
             type=type,
             config=config or SearchPipe.SearchConfig(),
             *args,

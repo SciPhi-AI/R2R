@@ -2,7 +2,7 @@ import asyncio
 import uuid
 from typing import Any, AsyncGenerator, Optional
 
-from .base import AsyncPipe, AsyncState, PipeFlow, PipeType
+from .base import AsyncPipe, AsyncState, PipeType
 from .logging import PipeLoggingConnectionSingleton
 
 
@@ -14,7 +14,6 @@ class LoggableAsyncPipe(AsyncPipe):
     def __init__(
         self,
         pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
-        flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.OTHER,
         config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
@@ -26,7 +25,7 @@ class LoggableAsyncPipe(AsyncPipe):
         self.log_queue = asyncio.Queue()
         self.log_worker_task = None
 
-        super().__init__(flow=flow, type=type, config=config, *args, **kwargs)
+        super().__init__(type=type, config=config, *args, **kwargs)
 
     async def log_worker(self):
         while True:

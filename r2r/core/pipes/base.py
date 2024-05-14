@@ -9,12 +9,6 @@ from pydantic import BaseModel
 from ..utils import generate_run_id
 
 
-class PipeFlow(Enum):
-    STANDARD = "standard"
-    FAN_OUT = "fan_out"
-    FAN_IN = "fan_in"
-
-
 class PipeType(Enum):
     COLLECTOR = "collector"
     GENERATOR = "generator"
@@ -81,18 +75,12 @@ class AsyncPipe(ABC):
 
     def __init__(
         self,
-        flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.OTHER,
         config: Optional[PipeConfig] = None,
     ):
         self._config = config or self.PipeConfig()
-        self._flow = flow
         self._run_info = None
         self._type = type
-
-    @property
-    def flow(self) -> PipeFlow:
-        return self._flow
 
     @property
     def config(self) -> PipeConfig:

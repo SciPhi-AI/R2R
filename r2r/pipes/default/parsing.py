@@ -18,7 +18,6 @@ from r2r.core import (
     JSONParser,
     MarkdownParser,
     PDFParser,
-    PipeFlow,
     PipeLoggingConnectionSingleton,
     PipeType,
     PPTParser,
@@ -38,7 +37,6 @@ class DocumentParsingPipe(LoggableAsyncPipe):
         selected_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
         override_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
         pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
-        flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
@@ -46,7 +44,6 @@ class DocumentParsingPipe(LoggableAsyncPipe):
     ):
         super().__init__(
             pipe_logger=pipe_logger,
-            flow=flow,
             type=type,
             config=config,
             *args,
@@ -98,7 +95,6 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
         selected_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
         override_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
         pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
-        flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
@@ -109,7 +105,6 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
         )
         super().__init__(
             pipe_logger=pipe_logger,
-            flow=flow,
             type=type,
             config=config
             or LoggableAsyncPipe.PipeConfig(

@@ -11,7 +11,6 @@ from r2r.core import (
     Extraction,
     Fragment,
     FragmentType,
-    PipeFlow,
     PipeLoggingConnectionSingleton,
     PipeType,
     TextSplitter,
@@ -34,7 +33,6 @@ class EmbeddingPipe(LoggableAsyncPipe):
         self,
         embedding_provider: EmbeddingProvider,
         pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
-        flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
@@ -42,7 +40,6 @@ class EmbeddingPipe(LoggableAsyncPipe):
     ):
         super().__init__(
             pipe_logger=pipe_logger,
-            flow=flow,
             type=type,
             config=config,
             *args,
@@ -89,7 +86,6 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
         embedding_batch_size: int = 1,
         id_prefix: str = "demo",
         pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
-        flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
@@ -105,7 +101,6 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
         super().__init__(
             embedding_provider=embedding_provider,
             pipe_logger=pipe_logger,
-            flow=flow,
             type=type,
             config=config
             or LoggableAsyncPipe.PipeConfig(name="default_embedding_pipe"),

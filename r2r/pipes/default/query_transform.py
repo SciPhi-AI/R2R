@@ -6,7 +6,6 @@ from r2r.core import (
     AsyncState,
     GenerationConfig,
     LLMProvider,
-    PipeFlow,
     PipeType,
     PromptProvider,
 )
@@ -31,7 +30,6 @@ class DefaultQueryTransformPipe(LoggableAsyncPipe):
         self,
         llm_provider: LLMProvider,
         prompt_provider: PromptProvider,
-        flow: PipeFlow = PipeFlow.FAN_OUT,
         type: PipeType = PipeType.TRANSFORM,
         config: Optional[QueryTransformConfig] = None,
         *args,
@@ -39,7 +37,6 @@ class DefaultQueryTransformPipe(LoggableAsyncPipe):
     ):
         logger.info(f"Initalizing an `DefaultQueryTransformPipe` pipe.")
         super().__init__(
-            flow=flow,
             type=type,
             config=config or DefaultQueryTransformPipe.QueryTransformConfig(),
             *args,

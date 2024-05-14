@@ -1,12 +1,7 @@
 import logging
 from typing import Any, AsyncGenerator, Optional
 
-from r2r.core import (
-    AsyncState,
-    PipeFlow,
-    PipeLoggingConnectionSingleton,
-    PipeType,
-)
+from r2r.core import AsyncState, PipeLoggingConnectionSingleton, PipeType
 
 from ...core.pipes.loggable import LoggableAsyncPipe
 
@@ -20,19 +15,13 @@ class CollectorPipe(LoggableAsyncPipe):
     def __init__(
         self,
         pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
-        flow: PipeFlow = PipeFlow.FAN_IN,
         type: PipeType = PipeType.OTHER,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
         **kwargs
     ):
         super().__init__(
-            flow=flow,
-            type=type,
-            config=config,
-            pipe_logger=pipe_logger,
-            *args,
-            **kwargs
+            type=type, config=config, pipe_logger=pipe_logger, *args, **kwargs
         )
         self.results: list[Any] = []
 

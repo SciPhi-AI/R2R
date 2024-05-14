@@ -7,7 +7,6 @@ from r2r.core import (
     GenerationConfig,
     LLMChatCompletion,
     LLMProvider,
-    PipeFlow,
     PipeType,
     PromptProvider,
 )
@@ -26,7 +25,6 @@ class DefaultRAGPipe(GeneratorPipe):
         self,
         llm_provider: LLMProvider,
         prompt_provider: PromptProvider,
-        flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.GENERATOR,
         config: Optional[GeneratorPipe] = None,
         generation_config: Optional[GenerationConfig] = None,
@@ -40,7 +38,6 @@ class DefaultRAGPipe(GeneratorPipe):
         super().__init__(
             llm_provider=llm_provider,
             prompt_provider=prompt_provider,
-            flow=flow,
             type=type,
             config=config
             or GeneratorPipe.Config(

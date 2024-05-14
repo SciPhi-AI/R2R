@@ -1,9 +1,9 @@
 import asyncio
 import uuid
 from enum import Enum
-from typing import Any, Optional, AsyncGenerator
+from typing import Any, AsyncGenerator, Optional
 
-from ..pipes.base import AsyncPipe, AsyncState, PipeFlow
+from ..pipes.base import AsyncPipe, AsyncState
 from ..pipes.logging import PipeLoggingConnectionSingleton
 from ..utils import generate_run_id
 
@@ -62,47 +62,7 @@ class Pipeline:
         )
 
         for pipe_num in range(len(self.pipes)):
-            if self.pipes[pipe_num].flow == PipeFlow.FAN_OUT:
-                if self.level == 0:
-                    current_input = self._run_pipe(
-                        pipe_num, current_input, run_id
-                    )
-                    self.level += 1
-                elif self.level == 1:
-                    raise ValueError("Fan out not supported at level 1")
-            elif self.pipes[pipe_num].flow == PipeFlow.STANDARD:
-                if self.level == 0:
-                    current_input = self._run_pipe(
-                        pipe_num, current_input, run_id
-                    )
-                elif self.level == 1:
-                    input = []
-                    async for item in current_input:
-                        if hasattr(item, "__aiter__"):
-                            # extend the current input if the item is a generator
-                            input.extend(
-                                self._run_pipe(pipe_num, item, run_id)
-                            )
-                        else:
-                            # otherwise, construct a generator from the item
-                            input.append(
-                                self._run_pipe(
-                                    pipe_num,
-                                    self._list_to_generator(item),
-                                    run_id,
-                                )
-                            )
-                    current_input = input
-            elif self.pipes[pipe_num].flow == PipeFlow.FAN_IN:
-                if self.level == 0:
-                    raise ValueError("Fan in not supported at level 0")
-                if self.level == 1:
-                    current_input = self._run_pipe(
-                        pipe_num,
-                        self._list_to_generator(current_input),
-                        run_id,
-                    )
-                    self.level -= 1
+            current_input = self._run_pipe(pipe_num, current_input, run_id)
             self.futures[self.pipes[pipe_num].config.name].set_result(
                 current_input
             )

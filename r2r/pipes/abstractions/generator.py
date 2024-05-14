@@ -6,7 +6,6 @@ from r2r.core import (
     AsyncState,
     GenerationConfig,
     LLMProvider,
-    PipeFlow,
     PipeType,
     PromptProvider,
 )
@@ -23,14 +22,12 @@ class GeneratorPipe(AsyncPipe):
         self,
         llm_provider: LLMProvider,
         prompt_provider: PromptProvider,
-        flow: PipeFlow = PipeFlow.STANDARD,
         type: PipeType = PipeType.GENERATOR,
         config: Optional[Config] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
-            flow=flow,
             type=type,
             config=config or self.Config(),
             *args,

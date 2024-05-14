@@ -1,7 +1,7 @@
 import logging
 from typing import Any, AsyncGenerator, Optional
 
-from r2r.core import AsyncPipe, AsyncState, PipeFlow, PipeType, SearchResult
+from r2r.core import AsyncPipe, AsyncState, PipeType, SearchResult
 
 from ..abstractions.collector import CollectorPipe
 
@@ -9,9 +9,11 @@ logger = logging.getLogger(__name__)
 
 
 class DefaultSearchCollectorPipe(CollectorPipe):
+    class Input(CollectorPipe.Input):
+        message: AsyncGenerator[SearchResult, None]
+
     def __init__(
         self,
-        flow: PipeFlow = PipeFlow.FAN_IN,
         type: PipeType = PipeType.COLLECTOR,
         config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
@@ -19,7 +21,6 @@ class DefaultSearchCollectorPipe(CollectorPipe):
     ):
         logger.info(f"Initalizing an `DefaultSearchCollectorPipe` pipe.")
         super().__init__(
-            flow=flow,
             type=type,
             config=config
             or AsyncPipe.PipeConfig(name="default_search_collector"),

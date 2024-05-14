@@ -24,7 +24,7 @@ from .parsers import (
     XLSXParser,
 )
 from .pipeline.base import Pipeline
-from .pipes.base import AsyncPipe, AsyncState, PipeFlow, PipeRunInfo, PipeType
+from .pipes.base import AsyncPipe, AsyncState, PipeRunInfo, PipeType
 from .pipes.logging import (
     LocalPipeLoggingProvider,
     PipeLoggingConnectionSingleton,
@@ -57,7 +57,6 @@ __all__ = [
     "SearchRequest",
     "SearchResult",
     "AsyncPipe",
-    "PipeFlow",
     "PipeRunInfo",
     "PipeType",
     "AsyncState",
