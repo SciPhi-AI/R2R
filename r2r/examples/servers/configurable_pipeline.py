@@ -58,6 +58,7 @@ def default_app(config_name: str = "default", pipe_name: str = "qna"):
 
     r2r = R2RApp(
         config=config,
+        providers=providers,
         ingestion_pipeline=pipelines.ingestion_pipeline,
         search_pipeline=pipelines.search_pipeline,
         rag_pipeline=pipelines.rag_pipeline,

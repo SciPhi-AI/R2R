@@ -43,9 +43,7 @@ class PipeLoggingProvider(Provider):
         pass
 
     @abstractmethod
-    async def get_logs(
-        self, run_ids: List[str], limit_per_run_and_type: int
-    ) -> list:
+    async def get_logs(self, run_ids: List[str], limit_per_run: int) -> list:
         pass
 
 
@@ -149,7 +147,7 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
         return [uuid.UUID(row[0]) for row in await cursor.fetchall()]
 
     async def get_logs(
-        self, run_ids: List[uuid.UUID], limit_per_run_and_type: int = 10
+        self, run_ids: List[uuid.UUID], limit_per_run: int = 10
     ) -> list:
         if not run_ids:
             raise ValueError("No run ids provided.")
@@ -165,7 +163,7 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
         WHERE rn <= ?
         ORDER BY timestamp DESC
         """
-        params = [str(ele) for ele in run_ids] + [limit_per_run_and_type]
+        params = [str(ele) for ele in run_ids] + [limit_per_run]
         await cursor.execute(query, params)
         rows = await cursor.fetchall()
         new_rows = []
@@ -313,7 +311,7 @@ class PostgresPipeLoggingProvider(PipeLoggingProvider):
         return [row["pipe_run_id"] for row in rows]
 
     async def get_logs(
-        self, run_ids: List[uuid.UUID], limit_per_run_and_type: int = 10
+        self, run_ids: List[uuid.UUID], limit_per_run: int = 10
     ) -> list:
         if not run_ids:
             raise ValueError("No run ids provided.")
@@ -328,7 +326,7 @@ class PostgresPipeLoggingProvider(PipeLoggingProvider):
         WHERE sub.rn <= ${len(run_ids) + 1}
         ORDER BY sub.timestamp DESC
         """
-        params = [str(run_id) for run_id in run_ids] + [limit_per_run_and_type]
+        params = [str(run_id) for run_id in run_ids] + [limit_per_run]
         rows = await self.conn.fetch(query, *params)
         return [{key: row[key] for key in row.keys()} for row in rows]
 
@@ -420,12 +418,12 @@ class RedisPipeLoggingProvider(PipeLoggingProvider):
             return [uuid.UUID(key) for key in keys[:limit]]
 
     async def get_logs(
-        self, run_ids: List[uuid.UUID], limit_per_run_and_type: int = 10
+        self, run_ids: List[uuid.UUID], limit_per_run: int = 10
     ) -> list:
         logs = []
         for run_id in run_ids:
             raw_logs = await self.redis.lrange(
-                f"{self.log_key}:{run_id}", 0, limit_per_run_and_type - 1
+                f"{self.log_key}:{run_id}", 0, limit_per_run - 1
             )
             for raw_log in raw_logs:
                 json_log = json.loads(raw_log)
@@ -468,6 +466,7 @@ class PipeLoggingConnectionSingleton:
         value: str,
         is_pipeline_info=False,
     ):
+        print(f"logging pipe_run_id={pipe_run_id}, key={key}, value={value}")
         try:
             async with cls.get_instance() as provider:
                 await provider.log(
@@ -485,7 +484,7 @@ class PipeLoggingConnectionSingleton:
 
     @classmethod
     async def get_logs(
-        cls, run_ids: List[uuid.UUID], limit_per_run_and_type: int = 10
+        cls, run_ids: List[uuid.UUID], limit_per_run: int = 10
     ) -> list:
         async with cls.get_instance() as provider:
-            return await provider.get_logs(run_ids, limit_per_run_and_type)
+            return await provider.get_logs(run_ids, limit_per_run)

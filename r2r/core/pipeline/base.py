@@ -40,11 +40,12 @@ class Pipeline:
         self,
         input: Any,
         state: Optional[AsyncState] = None,
-        pipeline_type: str = "ingestion",
+        pipeline_type: str = "other",
         streaming: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
+        print("calling run...")
         try:
             PipelineTypes(pipeline_type)
         except ValueError:
@@ -74,7 +75,7 @@ class Pipeline:
         print("....")
         if not streaming:
             final_result = await self._consume_all(current_input)
-            return final_result if len(final_result) != 1 else final_result[0]
+            return final_result
         else:
             print("returning current_input = ", current_input)
             return current_input
@@ -163,3 +164,48 @@ class Pipeline:
             add_upstream_outputs, key=get_pipe_index, reverse=True
         )
         return sorted_outputs
+
+
+class IngestionPipeline(Pipeline):
+    async def run(
+        self,
+        input: Any,
+        state: Optional[AsyncState] = None,
+        pipeline_type: str = "ingestion",
+        streaming: bool = False,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        return await super().run(
+            input, state, pipeline_type, streaming, *args, **kwargs
+        )
+
+
+class RAGPipeline(Pipeline):
+    async def run(
+        self,
+        input: Any,
+        state: Optional[AsyncState] = None,
+        pipeline_type: str = "rag",
+        streaming: bool = False,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        return await super().run(
+            input, state, pipeline_type, streaming, *args, **kwargs
+        )
+
+
+class SearchPipeline(Pipeline):
+    async def run(
+        self,
+        input: Any,
+        state: Optional[AsyncState] = None,
+        pipeline_type: str = "search",
+        streaming: bool = False,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        return await super().run(
+            input, state, pipeline_type, streaming, *args, **kwargs
+        )

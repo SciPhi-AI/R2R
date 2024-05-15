@@ -4,11 +4,14 @@ from pydantic import BaseModel
 
 from r2r.core import (
     EmbeddingProvider,
+    IngestionPipeline,
     LLMProvider,
     Pipeline,
     PipeLoggingConnectionSingleton,
     PromptProvider,
     R2RConfig,
+    RAGPipeline,
+    SearchPipeline,
     VectorDBProvider,
 )
 
@@ -24,10 +27,10 @@ class R2RProviders(BaseModel):
 
 
 class R2RPipelines(BaseModel):
-    ingestion_pipeline: Pipeline
-    search_pipeline: Pipeline
-    rag_pipeline: Pipeline
-    streaming_rag_pipeline: Pipeline
+    ingestion_pipeline: IngestionPipeline
+    search_pipeline: SearchPipeline
+    rag_pipeline: RAGPipeline
+    streaming_rag_pipeline: RAGPipeline
 
     class Config:
         arbitrary_types_allowed = True
@@ -167,7 +170,7 @@ class DefaultR2RPipelineFactory:
             vector_db_provider=self.providers.vector_db
         )
 
-        ingestion_pipeline = Pipeline()
+        ingestion_pipeline = IngestionPipeline()
         ingestion_pipeline.add_pipe(parsing_pipe)
         ingestion_pipeline.add_pipe(embedding_pipe)
         ingestion_pipeline.add_pipe(vector_storage_pipe)
@@ -181,7 +184,7 @@ class DefaultR2RPipelineFactory:
             embedding_provider=self.providers.embedding,
         )
 
-        search_pipeline = Pipeline()
+        search_pipeline = SearchPipeline()
         search_pipeline.add_pipe(search_pipe)
         return search_pipeline
 
@@ -213,7 +216,7 @@ class DefaultR2RPipelineFactory:
                 prompt_provider=self.providers.prompt,
             )
 
-        rag_pipeline = Pipeline()
+        rag_pipeline = RAGPipeline()
         rag_pipeline.add_pipe(search_pipe)
         rag_pipeline.add_pipe(collector_pipe)
         rag_pipeline.add_pipe(

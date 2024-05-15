@@ -2,17 +2,17 @@ from abc import ABC, abstractmethod
 from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
-    AsyncPipe,
     AsyncState,
     GenerationConfig,
     LLMProvider,
+    LoggableAsyncPipe,
     PipeType,
     PromptProvider,
 )
 
 
-class GeneratorPipe(AsyncPipe):
-    class Config(AsyncPipe.PipeConfig):
+class GeneratorPipe(LoggableAsyncPipe):
+    class Config(LoggableAsyncPipe.PipeConfig):
         name: str
         task_prompt: str
         generation_config: GenerationConfig
@@ -39,7 +39,7 @@ class GeneratorPipe(AsyncPipe):
     @abstractmethod
     async def _run_logic(
         self,
-        input: AsyncPipe.Input,
+        input: LoggableAsyncPipe.Input,
         state: AsyncState,
         *args: Any,
         **kwargs: Any,

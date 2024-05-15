@@ -46,8 +46,8 @@ class R2RClient:
         url = f"{self.base_url}/search/"
         payload = {
             "query": query,
-            "search_filters": search_filters,
-            "search_limit": search_limit,
+            "search_filters": search_filters or "{}",
+            "search_limit": str(search_limit),
         }
         response = requests.post(url, json=payload)
         return response.json()

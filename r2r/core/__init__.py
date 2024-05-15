@@ -23,8 +23,14 @@ from .parsers import (
     TextParser,
     XLSXParser,
 )
-from .pipeline.base import Pipeline
+from .pipeline.base import (
+    IngestionPipeline,
+    Pipeline,
+    RAGPipeline,
+    SearchPipeline,
+)
 from .pipes.base import AsyncPipe, AsyncState, PipeRunInfo, PipeType
+from .pipes.loggable import LoggableAsyncPipe
 from .pipes.logging import (
     LocalPipeLoggingProvider,
     LoggingConfig,
@@ -65,6 +71,7 @@ __all__ = [
     "PipeRunInfo",
     "PipeType",
     "AsyncState",
+    "LoggableAsyncPipe",
     "Prompt",
     "DataType",
     "DocumentType",
@@ -85,6 +92,9 @@ __all__ = [
     "TextParser",
     "XLSXParser",
     "Pipeline",
+    "IngestionPipeline",
+    "RAGPipeline",
+    "SearchPipeline",
     # Providers
     "EmbeddingConfig",
     "EmbeddingProvider",

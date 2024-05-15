@@ -78,7 +78,11 @@ class PGVectorDB(VectorDBProvider):
 
         self.collection.copy(
             records=[
-                (str(entry.id), entry.vector.data, entry.metadata)
+                (
+                    str(entry.id),
+                    entry.vector.data,
+                    entry.to_serializable()["metadata"],
+                )
                 for entry in entries
             ]
         )
@@ -90,7 +94,13 @@ class PGVectorDB(VectorDBProvider):
             )
 
         self.collection.upsert(
-            records=[(str(entry.id), entry.vector.data, entry.metadata)]
+            records=[
+                (
+                    str(entry.id),
+                    entry.vector.data,
+                    entry.to_serializable()["metadata"],
+                )
+            ]
         )
 
     def upsert_entries(
@@ -103,7 +113,11 @@ class PGVectorDB(VectorDBProvider):
 
         self.collection.upsert(
             records=[
-                (str(entry.id), entry.vector.data, entry.metadata)
+                (
+                    str(entry.id),
+                    entry.vector.data,
+                    entry.to_serializable()["metadata"],
+                )
                 for entry in entries
             ]
         )

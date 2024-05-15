@@ -1,7 +1,7 @@
 import json
 import logging
 import uuid
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Optional, Union
 
 from fastapi import (
     Body,
@@ -21,9 +21,12 @@ from r2r.core import (
     Document,
     GenerationConfig,
     Pipeline,
+    PipeLoggingConnectionSingleton,
     R2RConfig,
     generate_id_from_label,
 )
+
+from .factory import R2RProviders
 
 MB_CONVERSION_FACTOR = 1024 * 1024
 
@@ -37,6 +40,7 @@ class R2RApp:
     def __init__(
         self,
         config: R2RConfig,
+        providers: R2RProviders,
         ingestion_pipeline: Pipeline,
         search_pipeline: Pipeline,
         rag_pipeline: Pipeline,
@@ -46,6 +50,8 @@ class R2RApp:
         **kwargs,
     ):
         self.config = config
+        self.providers = providers
+        self.logging_connection = PipeLoggingConnectionSingleton()
         self.ingestion_pipeline = ingestion_pipeline
         self.search_pipeline = search_pipeline
         self.rag_pipeline = rag_pipeline
@@ -69,6 +75,17 @@ class R2RApp:
         self.app.add_api_route(
             path="/rag/", endpoint=self.rag, methods=["POST"]
         )
+        self.app.add_api_route(
+            path="/delete/", endpoint=self.delete, methods=["DELETE"]
+        )
+        self.app.add_api_route(
+            path="/get_user_ids/", endpoint=self.get_user_ids, methods=["GET"]
+        )
+        self.app.add_api_route(
+            path="/get_user_document_ids/",
+            endpoint=self.get_user_document_ids,
+            methods=["GET"],
+        )
 
     async def ingest_documents(self, documents: list[Document]):
         try:
@@ -76,7 +93,7 @@ class R2RApp:
             await self.ingestion_pipeline.run(
                 input=list_to_generator(documents), pipeline_type="ingestion"
             )
-            return {"message": "Entries upserted successfully."}
+            return {"results": "Entries upserted successfully."}
         except Exception as e:
             logging.error(
                 f"ingest_documents(documents={documents}) - \n\n{str(e)})"
@@ -85,12 +102,9 @@ class R2RApp:
 
     async def ingest_files(
         self,
-        # metadata: str = "{}",
-        # ids: str = "[]",
-        # files: list[UploadFile] = [],
-        files: list[UploadFile] = File(...),
-        metadata: str = Form(...),
-        ids: str = Form(...),
+        metadata: str = "{}",
+        ids: str = "[]",
+        files: list[UploadFile] = [],
     ):
         try:
             ids_list = json.loads(ids)
@@ -136,14 +150,15 @@ class R2RApp:
 
     async def search(
         self,
-        query: str = Body(...),
-        search_filters: Optional[dict[str, str]] = Body(None),
-        search_limit: int = Body(10),
+        query: str = "",
+        search_filters: str = "{}",
+        search_limit: int = 10,
     ):
         try:
+            json_search_filters = json.loads(search_filters)
             results = await self.search_pipeline.run(
                 input=list_to_generator([query]),
-                search_filters=search_filters,
+                search_filters=json_search_filters,
                 search_limit=search_limit,
             )
             return {"results": results}
@@ -153,11 +168,11 @@ class R2RApp:
 
     async def rag(
         self,
-        query: str = Body(...),
-        search_filters: Optional[dict[str, str]] = Body(None),
-        search_limit: int = Body(10),
-        generation_config: Optional[GenerationConfig] = Body(None),
-        streaming: bool = Body(False),
+        query: str = "",
+        search_filters: Optional[dict[str, str]] = None,
+        search_limit: int = 10,
+        generation_config: Optional[GenerationConfig] = None,
+        streaming: bool = False,
     ):
         try:
             if streaming or (generation_config and generation_config.stream):
@@ -186,6 +201,88 @@ class R2RApp:
         except Exception as e:
             logging.error(f"rag(query={query}) - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
+
+    async def delete(self, key: str, value: Union[bool, int, str]):
+        try:
+            self.providers.vector_db.delete_by_metadata(key, value)
+            return {"results": "Entries deleted successfully."}
+        except Exception as e:
+            logging.error(
+                f":delete: [Error](key={key}, value={value}, error={str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e))
+
+    async def get_user_ids(self):
+        try:
+            user_ids = self.providers.vector_db.get_all_unique_values(
+                metadata_field="user_id"
+            )
+
+            return {"results": user_ids}
+        except Exception as e:
+            logging.error(f"get_user_ids() - \n\n{str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    async def get_user_document_ids(self, user_id: str):
+        try:
+            if isinstance(user_id, uuid.UUID):
+                user_id = str(user_id)
+            document_ids = self.providers.vector_db.get_all_unique_values(
+                metadata_field="document_id",
+                filter_field="user_id",
+                filter_value=user_id,
+            )
+            return {"results": document_ids}
+        except Exception as e:
+            logging.error(
+                f"get_user_document_ids(user_id={user_id}) - \n\n{str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e))
+
+    async def get_logs(
+        self, pipeline_type: Optional[str] = None, filter: Optional[str] = None
+    ):
+        try:
+            print(
+                "get logs received with pipeline_type:",
+                pipeline_type,
+                "filter:",
+                filter,
+            )
+            logs_per_run = 10
+            if self.logging_connection is None:
+                raise HTTPException(
+                    status_code=404, detail="Logging provider not found."
+                )
+            run_ids = await self.logging_connection.get_run_ids(
+                pipeline_type=pipeline_type,
+                limit=self.config.app.get("max_logs", 100) // logs_per_run,
+            )
+            logs = await self.logging_connection.get_logs(run_ids)
+            return {"results": logs}
+        except Exception as e:
+            logging.error(f":logs: [Error](error={str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # async def logs_summary(filter: LogFilterModel = Depends()):
+    #     try:
+    #         if logging_connection is None:
+    #             raise HTTPException(
+    #                 status_code=404, detail="Logging provider not found."
+    #             )
+    #         logs = logging_connection.get_logs(
+    #             config.app.get("max_logs", 100), filter.pipeline_type
+    #         )
+    #         logs_summary = process_logs(logs)
+    #         events_summary = [
+    #             SummaryLogModel(**log).dict(by_alias=True)
+    #             for log in logs_summary
+    #         ]
+    #         return {"events_summary": events_summary}
+
+    #     except Exception as e:
+    #         logging.error(f":logs_summary: [Error](error={str(e)})")
+    #         raise HTTPException(status_code=500, detail=str(e))
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         try:

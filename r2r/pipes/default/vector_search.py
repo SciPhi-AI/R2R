@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any, AsyncGenerator, Optional
 
@@ -43,6 +44,10 @@ class DefaultVectorSearchPipe(SearchPipe):
     ) -> AsyncGenerator[SearchResult, None]:
         search_filters_override = kwargs.get("search_filters", None)
         search_limit_override = kwargs.get("search_limit", None)
+        await self.enqueue_log(
+            pipe_run_id=self.run_info.run_id, key="search_query", value=message
+        )
+        results = []
         for result in self.vector_db_provider.search(
             query_vector=self.embedding_provider.get_embedding(
                 message,
@@ -51,7 +56,14 @@ class DefaultVectorSearchPipe(SearchPipe):
             limit=search_limit_override or self.config.search_limit,
         ):
             result.metadata["query"] = message
+            results.append(result)
             yield result
+
+        await self.enqueue_log(
+            pipe_run_id=self.run_info.run_id,
+            key="search_results",
+            value=json.dumps([ele.json() for ele in results]),
+        )
 
     async def _run_logic(
         self,
