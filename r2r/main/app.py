@@ -3,8 +3,17 @@ import logging
 import uuid
 from typing import Any, AsyncGenerator, Optional
 
-from fastapi import FastAPI, HTTPException, UploadFile
-from fastapi.datastructures import UploadFile
+from fastapi import (
+    Body,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+)
+
+# from fastapi.datastructures import UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
@@ -61,7 +70,7 @@ class R2RApp:
             path="/rag/", endpoint=self.rag, methods=["POST"]
         )
 
-    async def ingest_documents(self, documents: list[Document] = []):
+    async def ingest_documents(self, documents: list[Document]):
         try:
             # Process the documents through the pipeline
             await self.ingestion_pipeline.run(
@@ -76,9 +85,12 @@ class R2RApp:
 
     async def ingest_files(
         self,
-        metadata: str = "{}",
-        ids: str = "[]",
-        files: list[UploadFile] = [],
+        # metadata: str = "{}",
+        # ids: str = "[]",
+        # files: list[UploadFile] = [],
+        files: list[UploadFile] = File(...),
+        metadata: str = Form(...),
+        ids: str = Form(...),
     ):
         try:
             ids_list = json.loads(ids)
@@ -124,9 +136,9 @@ class R2RApp:
 
     async def search(
         self,
-        query: str,
-        search_filters: Optional[dict] = None,
-        search_limit: int = 10,
+        query: str = Body(...),
+        search_filters: Optional[dict[str, str]] = Body(None),
+        search_limit: int = Body(10),
     ):
         try:
             results = await self.search_pipeline.run(
@@ -141,11 +153,11 @@ class R2RApp:
 
     async def rag(
         self,
-        query: str,
-        search_filters: Optional[dict] = None,
-        search_limit: int = 10,
-        generation_config: Optional[GenerationConfig] = None,
-        streaming: bool = False,
+        query: str = Body(...),
+        search_filters: Optional[dict[str, str]] = Body(None),
+        search_limit: int = Body(10),
+        generation_config: Optional[GenerationConfig] = Body(None),
+        streaming: bool = Body(False),
     ):
         try:
             if streaming or (generation_config and generation_config.stream):

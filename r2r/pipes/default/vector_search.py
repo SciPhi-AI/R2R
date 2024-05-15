@@ -43,7 +43,6 @@ class DefaultVectorSearchPipe(SearchPipe):
     ) -> AsyncGenerator[SearchResult, None]:
         search_filters_override = kwargs.get("search_filters", None)
         search_limit_override = kwargs.get("search_limit", None)
-        print("search_limit_override = ", search_limit_override)
         for result in self.vector_db_provider.search(
             query_vector=self.embedding_provider.get_embedding(
                 message,

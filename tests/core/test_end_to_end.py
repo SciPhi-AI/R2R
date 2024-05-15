@@ -155,7 +155,7 @@ async def test_ingest_and_search_larger_txt_file(r2r_app, logging_connection):
         in search_results["results"][0].metadata["text"]
     )
 
-    ## test streaming 
+    ## test streaming
     response = await r2r_app.rag(query="Who was aristotle?", streaming=True)
     collector = ""
     async for chunk in response.body_iterator:

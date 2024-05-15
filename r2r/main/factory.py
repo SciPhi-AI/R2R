@@ -6,6 +6,7 @@ from r2r.core import (
     EmbeddingProvider,
     LLMProvider,
     Pipeline,
+    PipeLoggingConnectionSingleton,
     PromptProvider,
     R2RConfig,
     VectorDBProvider,
@@ -257,3 +258,6 @@ class DefaultR2RPipelineFactory:
             rag_pipeline=rag_pipeline,
             streaming_rag_pipeline=streaming_rag_pipeline,
         )
+
+    def configure_logging(self):
+        PipeLoggingConnectionSingleton.configure(self.config.logging)
