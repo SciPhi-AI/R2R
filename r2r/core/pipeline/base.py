@@ -12,6 +12,7 @@ class PipelineTypes(Enum):
     INGESTION = "ingestion"
     SEARCH = "search"
     RAG = "rag"
+    OTHER = "other"
 
 
 class Pipeline:
