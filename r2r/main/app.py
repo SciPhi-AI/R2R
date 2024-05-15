@@ -158,7 +158,7 @@ class R2RApp:
                         search_limit=search_limit,
                         generation_config=generation_config,
                     ):
-                        yield json.dumps(chunk.dict()) + "\n"
+                        yield chunk
 
                 return StreamingResponse(
                     stream_response(), media_type="application/json"

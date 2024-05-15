@@ -19,9 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 class DefaultStreamingRAGPipe(DefaultRAGPipe):
-    class Input(AsyncPipe.Input):
-        message: AsyncGenerator[str, None]
-        context: str
+    SEARCH_STREAM_MARKER = "search"
+    COMPLETION_STREAM_MARKER = "completion"
 
     def __init__(
         self,
@@ -54,19 +53,28 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
 
     async def _run_logic(
         self,
-        input: Input,
+        input: DefaultRAGPipe.Input,
         state: AsyncState,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[LLMChatCompletionChunk, None]:
+    ) -> AsyncGenerator[str, None]:
         config_override = kwargs.get("config_override", None)
         async for query in input.message:
             messages = self._get_llm_payload(query, input.context)
+            print("input.context = ", input.context)
+            print("messages = ", messages)
+            yield f"<{self.SEARCH_STREAM_MARKER}>"
+            for result in input.raw_search_results:
+                yield f'"{str(result)}",'
+            yield f"</{self.SEARCH_STREAM_MARKER}>"
+            yield f"<{self.COMPLETION_STREAM_MARKER}>"
             for chunk in self.llm_provider.get_completion_stream(
                 messages=messages,
-                generation_config=config_override or self.config.generation_config,
+                generation_config=config_override
+                or self.config.generation_config,
             ):
-                yield chunk
+                yield DefaultStreamingRAGPipe._process_chunk(chunk)
+            yield f"</{self.COMPLETION_STREAM_MARKER}>"
 
     def _get_llm_payload(self, query: str, context: str) -> dict:
         return [
@@ -89,13 +97,5 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
         ]
 
     @staticmethod
-    async def process_chunks(
-        chunks: AsyncGenerator[LLMChatCompletionChunk, None]
-    ) -> str:
-        """
-        Processes streamed LLMChatCompletionChunk and returns the final completion text.
-        """
-        final_text = ""
-        async for chunk in chunks:
-            final_text += chunk.choices[0].delta.content or ""
-        return final_text
+    def _process_chunk(chunk: LLMChatCompletionChunk) -> str:
+        return chunk.choices[0].delta.content or ""

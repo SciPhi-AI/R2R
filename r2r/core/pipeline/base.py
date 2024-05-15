@@ -71,12 +71,12 @@ class Pipeline:
             )
             self.futures[config_name].set_result(current_input)
 
-        print('....')
+        print("....")
         if not streaming:
             final_result = await self._consume_all(current_input)
             return final_result if len(final_result) != 1 else final_result[0]
         else:
-            print('returning current_input = ', current_input)
+            print("returning current_input = ", current_input)
             return current_input
 
     async def _consume_all(self, gen: AsyncGenerator) -> list[Any]:
@@ -105,7 +105,9 @@ class Pipeline:
     ):
         # Collect inputs, waiting for the necessary futures
         pipe = self.pipes[pipe_num]
-        add_upstream_outputs = self.upstream_outputs[pipe_num]
+        add_upstream_outputs = self.sort_upstream_outputs(
+            self.upstream_outputs[pipe_num]
+        )
         input_dict = {"message": input}
         for upstream_input in add_upstream_outputs:
             upstream_pipe_name = upstream_input["prev_pipe_name"]
@@ -146,3 +148,18 @@ class Pipeline:
             **kwargs,
         ):
             yield ele
+
+    def sort_upstream_outputs(
+        self, add_upstream_outputs: list[dict[str, str]]
+    ) -> list[dict[str, str]]:
+        pipe_name_to_index = {
+            pipe.config.name: index for index, pipe in enumerate(self.pipes)
+        }
+
+        def get_pipe_index(upstream_output):
+            return pipe_name_to_index[upstream_output["prev_pipe_name"]]
+
+        sorted_outputs = sorted(
+            add_upstream_outputs, key=get_pipe_index, reverse=True
+        )
+        return sorted_outputs

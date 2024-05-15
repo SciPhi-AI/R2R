@@ -9,6 +9,7 @@ from r2r.core import (
     LLMProvider,
     PipeType,
     PromptProvider,
+    SearchResult,
 )
 
 from ..abstractions.generator import GeneratorPipe
@@ -20,6 +21,7 @@ class DefaultRAGPipe(GeneratorPipe):
     class Input(AsyncPipe.Input):
         message: AsyncGenerator[str, None]
         context: str
+        raw_search_results: Optional[list[SearchResult]] = None
 
     def __init__(
         self,
@@ -62,7 +64,8 @@ class DefaultRAGPipe(GeneratorPipe):
             messages = self._get_llm_payload(query, input.context)
             response = self.llm_provider.get_completion(
                 messages=messages,
-                generation_config=config_override or self.config.generation_config,
+                generation_config=config_override
+                or self.config.generation_config,
             )
             yield response
 

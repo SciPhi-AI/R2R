@@ -219,10 +219,15 @@ class DefaultR2RPipelineFactory:
             rag_pipe,
             add_upstream_outputs=[
                 {
+                    "prev_pipe_name": search_pipe.config.name,
+                    "prev_output_field": "search_results",
+                    "input_field": "raw_search_results",
+                },
+                {
                     "prev_pipe_name": collector_pipe.config.name,
                     "prev_output_field": "search_context",
                     "input_field": "context",
-                }
+                },
             ],
         )
         return rag_pipeline
