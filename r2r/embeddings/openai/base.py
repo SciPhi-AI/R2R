@@ -3,7 +3,7 @@ import os
 
 from openai import AsyncOpenAI, OpenAI
 
-from r2r.core import EmbeddingProvider, SearchResult
+from r2r.core import EmbeddingProvider, EmbeddingConfig, SearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         "text-embedding-3-large": [256, 1024, 3072],
     }
 
-    def __init__(self, config: dict):
+    def __init__(self, config: EmbeddingConfig):
         logger.info(
             "Initializing `OpenAIEmbeddingProvider` to provide embeddings."
         )

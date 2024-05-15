@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 
 from pydantic import BaseModel
 
@@ -11,6 +11,7 @@ from r2r.core import (
     PromptProvider,
     R2RConfig,
     RAGPipeline,
+    LLMConfig,
     SearchPipeline,
     VectorDBProvider,
 )
@@ -42,7 +43,8 @@ class R2RProviderFactory:
 
     def create_vector_db_provider(self, *args, **kwargs) -> VectorDBProvider:
         vector_db_config = self.config.vector_database
-        vector_db_provider = None
+        vector_db_provider: Optional[VectorDBProvider] = None
+
         if vector_db_config.provider == "qdrant":
             from r2r.vector_dbs import QdrantDB
 
@@ -59,6 +61,12 @@ class R2RProviderFactory:
             raise ValueError(
                 f"Vector database provider {vector_db_config.provider} not supported"
             )
+        if not vector_db_provider:
+            raise ValueError("Vector database provider not found")
+        
+        if not self.config.embedding.search_dimension:
+            raise ValueError("Search dimension not found in embedding config")
+        
         vector_db_provider.initialize_collection(
             self.config.embedding.search_dimension
         )
@@ -66,7 +74,8 @@ class R2RProviderFactory:
 
     def create_embedding_provider(self, *args, **kwargs) -> EmbeddingProvider:
         embedding_config = self.config.embedding
-        embedding_provider = None
+        embedding_provider: Optional[EmbeddingProvider] = None
+
         if embedding_config.provider == "openai":
             from r2r.embeddings import OpenAIEmbeddingProvider
 
@@ -85,11 +94,14 @@ class R2RProviderFactory:
             raise ValueError(
                 f"Embedding provider {embedding_config.provider} not supported"
             )
+        if not embedding_provider:
+            raise ValueError("Embedding provider not found")
+        
         return embedding_provider
 
     def create_llm_provider(self, *args, **kwargs) -> LLMProvider:
         llm_config = self.config.language_model
-        llm_provider = None
+        llm_provider: Optional[LLMProvider] = None
         if llm_config.provider == "openai":
             from r2r.llms import OpenAILLM
 
@@ -111,6 +123,8 @@ class R2RProviderFactory:
             raise ValueError(
                 f"Language model provider {llm_config.provider} not supported"
             )
+        if not llm_provider:
+            raise ValueError("Language model provider not found")
         return llm_provider
 
     def create_prompt_provider(self, *args, **kwargs) -> PromptProvider:
@@ -140,7 +154,7 @@ class DefaultR2RPipelineFactory:
         self.config = config
         self.providers = providers
 
-    def create_ingestion_pipeline(self) -> Pipeline:
+    def create_ingestion_pipeline(self) -> IngestionPipeline:
         from r2r.core import RecursiveCharacterTextSplitter
         from r2r.pipes import (
             DefaultDocumentParsingPipe,
@@ -152,6 +166,9 @@ class DefaultR2RPipelineFactory:
             "text_splitter"
         )
 
+        if not text_splitter_config:
+            raise ValueError("Text splitter config not found in embedding config")
+        
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=text_splitter_config["chunk_size"],
             chunk_overlap=text_splitter_config["chunk_overlap"],
@@ -176,7 +193,7 @@ class DefaultR2RPipelineFactory:
         ingestion_pipeline.add_pipe(vector_storage_pipe)
         return ingestion_pipeline
 
-    def create_search_pipeline(self) -> Pipeline:
+    def create_search_pipeline(self) -> SearchPipeline:
         from r2r.pipes import DefaultVectorSearchPipe
 
         search_pipe = DefaultVectorSearchPipe(
@@ -188,7 +205,7 @@ class DefaultR2RPipelineFactory:
         search_pipeline.add_pipe(search_pipe)
         return search_pipeline
 
-    def create_rag_pipeline(self, streaming: bool = False) -> Pipeline:
+    def create_rag_pipeline(self, streaming: bool = False) -> RAGPipeline:
         from r2r.pipes import (
             DefaultSearchCollectorPipe,
             DefaultVectorSearchPipe,
@@ -201,6 +218,7 @@ class DefaultR2RPipelineFactory:
             embedding_provider=self.providers.embedding,
         )
 
+        rag_pipe: Any = None
         if streaming:
             from r2r.pipes import DefaultStreamingRAGPipe
 
@@ -238,28 +256,19 @@ class DefaultR2RPipelineFactory:
 
     def create_pipelines(
         self,
-        ingestion_pipeline: Optional[Pipeline] = None,
-        search_pipeline: Optional[Pipeline] = None,
-        rag_pipeline: Optional[Pipeline] = None,
-        streaming_rag_pipeline: Optional[Pipeline] = None,
+        ingestion_pipeline: Optional[IngestionPipeline] = None,
+        search_pipeline: Optional[SearchPipeline] = None,
+        rag_pipeline: Optional[RAGPipeline] = None,
+        streaming_rag_pipeline: Optional[RAGPipeline] = None,
     ) -> R2RPipelines:
-        if not ingestion_pipeline:
-            ingestion_pipeline = self.create_ingestion_pipeline()
-
-        if not search_pipeline:
-            search_pipeline = self.create_search_pipeline()
-
-        if not rag_pipeline:
-            rag_pipeline = self.create_rag_pipeline(streaming=False)
-
-        if not streaming_rag_pipeline:
-            streaming_rag_pipeline = self.create_rag_pipeline(streaming=True)
-
         return R2RPipelines(
-            ingestion_pipeline=ingestion_pipeline,
-            search_pipeline=search_pipeline,
-            rag_pipeline=rag_pipeline,
-            streaming_rag_pipeline=streaming_rag_pipeline,
+            ingestion_pipeline=ingestion_pipeline
+            or self.create_ingestion_pipeline(),
+            search_pipeline=search_pipeline or self.create_search_pipeline(),
+            rag_pipeline=rag_pipeline
+            or self.create_rag_pipeline(streaming=False),
+            streaming_rag_pipeline=streaming_rag_pipeline
+            or self.create_rag_pipeline(streaming=True),
         )
 
     def configure_logging(self):

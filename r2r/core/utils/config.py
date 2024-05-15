@@ -30,6 +30,12 @@ class R2RConfig:
         "prompt": ["provider"],
         "vector_database": ["provider", "collection_name"],
     }
+    app: dict[str, Any]
+    embedding: EmbeddingConfig
+    language_model: LLMConfig
+    logging: LoggingConfig
+    prompt: PromptConfig
+    vector_database: VectorDBConfig
 
     def __init__(self, config_data: dict[str, Any]):
         # Load the default configuration
@@ -47,8 +53,7 @@ class R2RConfig:
             self._validate_config_section(default_config, section, keys)
             setattr(self, section, default_config[section])
 
-
-        self.app = self.app # for type hinting
+        self.app = self.app  # for type hinting
         self.embedding = EmbeddingConfig.create(**self.embedding)
         self.eval = EvalConfig.create(**self.eval)
         self.language_model = LLMConfig.create(**self.language_model)

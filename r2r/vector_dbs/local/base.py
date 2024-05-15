@@ -13,15 +13,8 @@ from r2r.core import (
 
 logger = logging.getLogger(__name__)
 
-
-class LocalVectorDBConfig(VectorDBConfig):
-    @property
-    def supported_providers(self) -> List[str]:
-        return ["local"]
-
-
 class LocalVectorDB(VectorDBProvider):
-    def __init__(self, config: LocalVectorDBConfig) -> None:
+    def __init__(self, config: VectorDBConfig) -> None:
         logger.info(
             "Initializing `LocalVectorDB` to store and retrieve embeddings."
         )

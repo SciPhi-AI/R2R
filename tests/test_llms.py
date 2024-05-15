@@ -9,6 +9,7 @@ def lite_llm():
     config = LLMConfig(provider="litellm")
     return LiteLLM(config)
 
+
 @pytest.mark.parametrize("llm_fixture", ["lite_llm"])
 def test_get_completion_ollama(request, llm_fixture):
     llm = request.getfixturevalue(llm_fixture)

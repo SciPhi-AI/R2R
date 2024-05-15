@@ -81,7 +81,7 @@ class DefaultEmbeddingPipe(EmbeddingPipe):
 
     def __init__(
         self,
-        embedding_provider: OpenAIEmbeddingProvider,
+        embedding_provider: EmbeddingProvider,
         text_splitter: TextSplitter,
         embedding_batch_size: int = 1,
         id_prefix: str = "demo",

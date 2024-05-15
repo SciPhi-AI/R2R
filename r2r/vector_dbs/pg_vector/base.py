@@ -44,6 +44,7 @@ class PGVectorDB(VectorDBProvider):
                 f"Error {e} occurred while attempting to connect to the pgvector provider with {DB_CONNECTION}."
             )
         self.collection: Optional[Collection] = None
+        self.config: VectorDBConfig = config
 
     def initialize_collection(self, dimension: int) -> None:
         self.collection = self.vx.get_or_create_collection(

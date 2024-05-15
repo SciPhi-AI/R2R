@@ -1,13 +1,13 @@
 import logging
 import random
 
-from r2r.core import EmbeddingProvider, SearchResult
+from r2r.core import EmbeddingProvider, EmbeddingConfig, SearchResult
 
 logger = logging.getLogger(__name__)
 
 
 class DummyEmbeddingProvider(EmbeddingProvider):
-    def __init__(self, config: dict):
+    def __init__(self, config: EmbeddingConfig):
         logger.info(
             "Initializing `DummyEmbeddingProvider` to provide embeddings."
         )

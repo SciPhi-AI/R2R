@@ -7,7 +7,7 @@ from pydantic import BaseModel
 class ProviderConfig(BaseModel, ABC):
     """A base provider configuration class"""
 
-    extra_fields: dict[str, str] = {}
+    extra_fields: dict[str, Any] = {}
     provider: Optional[str] = None
 
     class Config:

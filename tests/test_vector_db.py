@@ -6,7 +6,6 @@ import pytest
 from dotenv import load_dotenv
 
 from r2r.core import (
-    SearchResult,
     Vector,
     VectorDBConfig,
     VectorDBProvider,
@@ -15,7 +14,6 @@ from r2r.core import (
 from r2r.core.utils import generate_id_from_label
 from r2r.vector_dbs import (
     LocalVectorDB,
-    LocalVectorDBConfig,
     PGVectorDB,
     QdrantDB,
 )
@@ -46,7 +44,7 @@ def local_vector_db():
     random_collection_name = (
         f"test_collection_{random.randint(0, 1_000_000_000)}"
     )
-    config = LocalVectorDBConfig(
+    config = VectorDBConfig(
         provider="local", collection_name=random_collection_name
     )
     db = LocalVectorDB(config)
