@@ -1,9 +1,7 @@
 import json
 import logging
 import os
-import re
-from logging.handlers import RotatingFileHandler
-from typing import Any, Union
+from typing import Any
 
 from r2r.core import (
     EmbeddingConfig,

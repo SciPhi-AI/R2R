@@ -1,6 +1,6 @@
 """Base classes for language model providers."""
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import List, Optional
 
 from pydantic import BaseModel

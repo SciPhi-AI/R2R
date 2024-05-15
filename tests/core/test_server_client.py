@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 
 from r2r import (
     DefaultR2RPipelineFactory,
-    Document,
     PipeLoggingConnectionSingleton,
     R2RApp,
     R2RConfig,
@@ -31,9 +30,6 @@ def r2r_app(request):
         config.vector_database.extra_fields[
             "db_path"
         ] = config.logging.logging_path
-
-    print("config.logging = ", config.logging)
-    print("config.vector_database = ", config.vector_database)
 
     try:
         PipeLoggingConnectionSingleton.configure(config.logging)
@@ -92,7 +88,14 @@ async def test_ingest_txt_file(client):
     # Prepare the test data
     metadata = {"author": "John Doe"}
     files = [
-        ("files", ("test1.txt", open("r2r/examples/data/test1.txt", "rb"), "text/plain")),
+        (
+            "files",
+            (
+                "test1.txt",
+                open("r2r/examples/data/test1.txt", "rb"),
+                "text/plain",
+            ),
+        ),
     ]
 
     response = client.post(
@@ -101,7 +104,9 @@ async def test_ingest_txt_file(client):
         files=files,
     )
     assert response.status_code == 200
-    assert response.json() == {"results": ["File 'test1.txt' processed successfully for each file"]}
+    assert response.json() == {
+        "results": ["File 'test1.txt' processed successfully for each file"]
+    }
 
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)

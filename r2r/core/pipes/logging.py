@@ -466,7 +466,6 @@ class PipeLoggingConnectionSingleton:
         value: str,
         is_pipeline_info=False,
     ):
-        print(f"logging pipe_run_id={pipe_run_id}, key={key}, value={value}")
         try:
             async with cls.get_instance() as provider:
                 await provider.log(

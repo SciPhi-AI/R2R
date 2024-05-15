@@ -1,7 +1,4 @@
-import argparse
 import os
-
-import uvicorn
 
 from r2r import (
     DefaultR2RPipelineFactory,
@@ -9,10 +6,6 @@ from r2r import (
     R2RConfig,
     R2RProviderFactory,
 )
-
-# from r2r.main import E2EPipeFactory, R2RConfig
-# from r2r.pipes import AgentRAGPipe, HyDEPipe, QnARAGPipe, WebRAGPipe
-
 
 current_file_path = os.path.dirname(__file__)
 configs_path = os.path.join(current_file_path, "..", "configs")
@@ -66,6 +59,7 @@ def default_app(config_name: str = "default", pipe_name: str = "qna"):
     )
 
     return r2r
+
 
 app = default_app().app
 

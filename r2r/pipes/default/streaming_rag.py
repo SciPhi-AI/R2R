@@ -2,7 +2,6 @@ import logging
 from typing import Any, AsyncGenerator, Generator, Optional
 
 from r2r.core import (
-    AsyncPipe,
     AsyncState,
     GenerationConfig,
     LLMChatCompletionChunk,

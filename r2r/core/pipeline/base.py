@@ -46,7 +46,6 @@ class Pipeline:
         *args: Any,
         **kwargs: Any,
     ):
-        print("calling run...")
         try:
             PipelineTypes(pipeline_type)
         except ValueError:
@@ -73,12 +72,10 @@ class Pipeline:
             )
             self.futures[config_name].set_result(current_input)
 
-        print("....")
         if not streaming:
             final_result = await self._consume_all(current_input)
             return final_result
         else:
-            print("returning current_input = ", current_input)
             return current_input
 
     async def _consume_all(self, gen: AsyncGenerator) -> list[Any]:

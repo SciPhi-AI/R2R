@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (

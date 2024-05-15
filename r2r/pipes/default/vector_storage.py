@@ -6,8 +6,6 @@ import asyncio
 import logging
 from typing import Any, AsyncGenerator, Optional
 
-from pydantic import BaseModel
-
 from r2r.core import (
     AsyncState,
     PipeLoggingConnectionSingleton,

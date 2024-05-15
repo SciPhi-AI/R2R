@@ -32,9 +32,6 @@ def r2r_app(request):
             "db_path"
         ] = config.logging.logging_path
 
-    print("config.logging = ", config.logging)
-    print("config.vector_database = ", config.vector_database)
-
     try:
         PipeLoggingConnectionSingleton.configure(config.logging)
     except:
@@ -203,20 +200,29 @@ async def test_ingest_search_then_delete(r2r_app, logging_connection):
     search_results = await r2r_app.search("who was aristotle?")
 
     # Verify that the search results are not empty
-    assert len(search_results["results"]) > 0, "Expected search results, but got none"
-    assert search_results["results"][0].metadata["text"] == "The quick brown fox jumps over the lazy dog."
+    assert (
+        len(search_results["results"]) > 0
+    ), "Expected search results, but got none"
+    assert (
+        search_results["results"][0].metadata["text"]
+        == "The quick brown fox jumps over the lazy dog."
+    )
 
     # Delete the document
     delete_result = await r2r_app.delete("author", "John Doe")
 
     # Verify the deletion was successful
-    assert delete_result == {"results": "Entries deleted successfully."}, f"Expected successful deletion message, but got {delete_result}"
+    assert delete_result == {
+        "results": "Entries deleted successfully."
+    }, f"Expected successful deletion message, but got {delete_result}"
 
     # Search for the document again
     search_results_2 = await r2r_app.search("who was aristotle?")
 
     # Verify that the search results are empty
-    assert len(search_results_2["results"]) == 0, f"Expected no search results, but got {search_results_2['results']}"
+    assert (
+        len(search_results_2["results"]) == 0
+    ), f"Expected no search results, but got {search_results_2['results']}"
 
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)

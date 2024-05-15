@@ -6,7 +6,7 @@ workspace/
 uploads/
 env/
 **/__pycache__
-
+dump/*
 .next
 node_modules
 

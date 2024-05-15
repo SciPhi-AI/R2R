@@ -3,22 +3,13 @@ import logging
 import uuid
 from typing import Any, AsyncGenerator, Optional, Union
 
-from fastapi import (
-    Body,
-    FastAPI,
-    File,
-    Form,
-    HTTPException,
-    Request,
-    UploadFile,
-)
-
-# from fastapi.datastructures import UploadFile
+from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from r2r.core import (
     Document,
+    DocumentType,
     GenerationConfig,
     Pipeline,
     PipeLoggingConnectionSingleton,
@@ -67,7 +58,9 @@ class R2RApp:
             methods=["POST"],
         )
         self.app.add_api_route(
-            path="/ingest_files/", endpoint=self.ingest_files_wrapper, methods=["POST"]
+            path="/ingest_files/",
+            endpoint=self.ingest_files_wrapper,
+            methods=["POST"],
         )
         self.app.add_api_route(
             path="/search/", endpoint=self.search_wrapper, methods=["POST"]
@@ -79,7 +72,9 @@ class R2RApp:
             path="/delete/", endpoint=self.delete_wrapper, methods=["DELETE"]
         )
         self.app.add_api_route(
-            path="/get_user_ids/", endpoint=self.get_user_ids_wrapper, methods=["GET"]
+            path="/get_user_ids/",
+            endpoint=self.get_user_ids_wrapper,
+            methods=["GET"],
         )
         self.app.add_api_route(
             path="/get_user_document_ids/",
@@ -100,7 +95,9 @@ class R2RApp:
             )
             raise HTTPException(status_code=500, detail=str(e))
 
-    async def ingest_documents_wrapper(self, documents: list[Document] = Body(...)):
+    async def ingest_documents_wrapper(
+        self, documents: list[Document] = Body(...)
+    ):
         return await self.ingest_documents(documents)
 
     async def ingest_files(
@@ -123,13 +120,16 @@ class R2RApp:
                         status_code=413,
                         detail="File size exceeds maximum allowed size.",
                     )
-
+            if not file.filename:
+                raise HTTPException(
+                    status_code=400, detail="File name not provided."
+                )
             documents.append(
                 Document(
                     id=generate_id_from_label(file.filename)
                     if len(ids_list) == 0
                     else uuid.UUID(ids_list[iteration]),
-                    type=file.filename.split(".")[-1],
+                    type=DocumentType(file.filename.split(".")[-1]),
                     data=await file.read(),
                     metadata=metadata_json,
                 )
@@ -229,9 +229,16 @@ class R2RApp:
         generation_config: Optional[GenerationConfig] = Body(None),
         streaming: bool = Form(False),
     ):
-        search_filters_dict = json.loads(search_filters) if search_filters else None
-        return await self.rag(query, search_filters_dict, search_limit, generation_config, streaming)
-
+        search_filters_dict = (
+            json.loads(search_filters) if search_filters else None
+        )
+        return await self.rag(
+            query,
+            search_filters_dict,
+            search_limit,
+            generation_config,
+            streaming,
+        )
 
     async def delete(self, key: str, value: Union[bool, int, str]):
         try:
@@ -243,7 +250,9 @@ class R2RApp:
             )
             raise HTTPException(status_code=500, detail=str(e))
 
-    async def delete_wrapper(self, key: str = Form(...), value: Union[bool, int, str] = Form(...)):
+    async def delete_wrapper(
+        self, key: str = Form(...), value: Union[bool, int, str] = Form(...)
+    ):
         return await self.delete(key, value)
 
     async def get_user_ids(self):
@@ -259,7 +268,7 @@ class R2RApp:
 
     async def get_user_ids_wrapper(self):
         return await self.get_user_ids()
-    
+
     async def get_user_document_ids(self, user_id: str):
         try:
             if isinstance(user_id, uuid.UUID):
@@ -283,12 +292,6 @@ class R2RApp:
         self, pipeline_type: Optional[str] = None, filter: Optional[str] = None
     ):
         try:
-            print(
-                "get logs received with pipeline_type:",
-                pipeline_type,
-                "filter:",
-                filter,
-            )
             logs_per_run = 10
             if self.logging_connection is None:
                 raise HTTPException(
@@ -305,7 +308,9 @@ class R2RApp:
             raise HTTPException(status_code=500, detail=str(e))
 
     async def get_logs_wrapper(
-        self, pipeline_type: Optional[str] = Form(None), filter: Optional[str] = Form(None)
+        self,
+        pipeline_type: Optional[str] = Form(None),
+        filter: Optional[str] = Form(None),
     ):
         return await self.get_logs(pipeline_type, filter)
 

@@ -1,6 +1,5 @@
 """A module for creating LlamaCpp model abstractions."""
 
-import datetime
 import logging
 import os
 from typing import Union
@@ -31,7 +30,6 @@ class LlamaCppConfig(LLMConfig):
             self.model_path = os.path.join(
                 os.path.expanduser("~"), ".cache", "models"
             )
-            print("self.model_path = ", self.model_path)
         if not self.model or self.model == "":
             self.model = "tinyllama-1.1b-chat-v1.0.Q2_K.gguf"
 
@@ -61,7 +59,6 @@ class LlamaCPP(LLMProvider):
             )
 
         path = os.path.join(self.config.model_path, self.config.model)
-        print("path = ", path)
         self.client = Llama(path, n_ctx=2048)
 
     def get_completion(

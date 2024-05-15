@@ -1,4 +1,3 @@
-import json
 import uuid
 from enum import Enum
 from typing import Union
@@ -25,19 +24,6 @@ class Document(BaseModel):
     type: DocumentType
     data: DataType
     metadata: dict
-
-    # class Config:
-    #     json_encoders = {
-    #         uuid.UUID: lambda v: str(v)
-    #     }
-
-    # def dict(self):
-    #     return json.dumps({
-    #         "id": str(self.id),
-    #         "type": self.type.value,
-    #         "data": self.data,
-    #         "metadata": self.metadata,
-    #     })
 
 
 class ExtractionType(Enum):
