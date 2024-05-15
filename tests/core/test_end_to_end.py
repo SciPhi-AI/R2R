@@ -40,6 +40,7 @@ def r2r_app():
             ingestion_pipeline=pipelines.ingestion_pipeline,
             search_pipeline=pipelines.search_pipeline,
             rag_pipeline=pipelines.rag_pipeline,
+            streaming_rag_pipeline=pipelines.streaming_rag_pipeline,
         )
 
         yield r2r

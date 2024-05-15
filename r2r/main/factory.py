@@ -26,6 +26,7 @@ class R2RPipelines(BaseModel):
     ingestion_pipeline: Pipeline
     search_pipeline: Pipeline
     rag_pipeline: Pipeline
+    streaming_rag_pipeline: Pipeline
 
     class Config:
         arbitrary_types_allowed = True
@@ -183,9 +184,8 @@ class DefaultR2RPipelineFactory:
         search_pipeline.add_pipe(search_pipe)
         return search_pipeline
 
-    def create_rag_pipeline(self) -> Pipeline:
+    def create_rag_pipeline(self, streaming: bool = False) -> Pipeline:
         from r2r.pipes import (
-            DefaultRAGPipe,
             DefaultSearchCollectorPipe,
             DefaultVectorSearchPipe,
         )
@@ -197,10 +197,20 @@ class DefaultR2RPipelineFactory:
             embedding_provider=self.providers.embedding,
         )
 
-        rag_pipe = DefaultRAGPipe(
-            llm_provider=self.providers.llm,
-            prompt_provider=self.providers.prompt,
-        )
+        if streaming:
+            from r2r.pipes import DefaultStreamingRAGPipe
+
+            rag_pipe = DefaultStreamingRAGPipe(
+                llm_provider=self.providers.llm,
+                prompt_provider=self.providers.prompt,
+            )
+        else:
+            from r2r.pipes import DefaultRAGPipe
+
+            rag_pipe = DefaultRAGPipe(
+                llm_provider=self.providers.llm,
+                prompt_provider=self.providers.prompt,
+            )
 
         rag_pipeline = Pipeline()
         rag_pipeline.add_pipe(search_pipe)
@@ -222,6 +232,7 @@ class DefaultR2RPipelineFactory:
         ingestion_pipeline: Optional[Pipeline] = None,
         search_pipeline: Optional[Pipeline] = None,
         rag_pipeline: Optional[Pipeline] = None,
+        streaming_rag_pipeline: Optional[Pipeline] = None,
     ) -> R2RPipelines:
         if not ingestion_pipeline:
             ingestion_pipeline = self.create_ingestion_pipeline()
@@ -230,10 +241,14 @@ class DefaultR2RPipelineFactory:
             search_pipeline = self.create_search_pipeline()
 
         if not rag_pipeline:
-            rag_pipeline = self.create_rag_pipeline()
+            rag_pipeline = self.create_rag_pipeline(streaming=False)
+
+        if not streaming_rag_pipeline:
+            streaming_rag_pipeline = self.create_rag_pipeline(streaming=True)
 
         return R2RPipelines(
             ingestion_pipeline=ingestion_pipeline,
             search_pipeline=search_pipeline,
             rag_pipeline=rag_pipeline,
+            streaming_rag_pipeline=streaming_rag_pipeline,
         )

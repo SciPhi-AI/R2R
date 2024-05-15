@@ -6,10 +6,16 @@ from typing import Any, AsyncGenerator, Optional
 from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.datastructures import UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
-from r2r.core import Document, Pipeline, R2RConfig, generate_id_from_label, GenerationConfig
+from r2r.core import (
+    Document,
+    GenerationConfig,
+    Pipeline,
+    R2RConfig,
+    generate_id_from_label,
+)
 
-# Current directory where this script is located
 MB_CONVERSION_FACTOR = 1024 * 1024
 
 
@@ -25,6 +31,7 @@ class R2RApp:
         ingestion_pipeline: Pipeline,
         search_pipeline: Pipeline,
         rag_pipeline: Pipeline,
+        streaming_rag_pipeline: Pipeline,
         do_apply_cors: bool = True,
         *args,
         **kwargs,
@@ -33,6 +40,7 @@ class R2RApp:
         self.ingestion_pipeline = ingestion_pipeline
         self.search_pipeline = search_pipeline
         self.rag_pipeline = rag_pipeline
+        self.streaming_rag_pipeline = streaming_rag_pipeline
 
         self.app = FastAPI()
         if do_apply_cors:
@@ -79,7 +87,7 @@ class R2RApp:
             for iteration, file in enumerate(files):
                 if (
                     file.size
-                    > self.config.app.get("max_file_size_in_mb", 128)
+                    > self.config.app.get("max_file_size_in_mb", 32)
                     * MB_CONVERSION_FACTOR
                 ):
                     raise HTTPException(
@@ -132,20 +140,37 @@ class R2RApp:
             raise HTTPException(status_code=500, detail=str(e))
 
     async def rag(
-        self, 
-        query:str,
+        self,
+        query: str,
         search_filters: Optional[dict] = None,
         search_limit: int = 10,
-        generation_config: Optional[GenerationConfig] = None,                  
+        generation_config: Optional[GenerationConfig] = None,
+        streaming: bool = False,
     ):
         try:
-            results = await self.rag_pipeline.run(
-                input=list_to_generator([query]),
-                search_filters=search_filters,
-                search_limit=search_limit,
-                generation_config=generation_config,
-            )
-            return {"results": results}
+            if streaming or (generation_config and generation_config.stream):
+
+                async def stream_response():
+                    async for chunk in await self.streaming_rag_pipeline.run(
+                        input=list_to_generator([query]),
+                        streaming=True,
+                        search_filters=search_filters,
+                        search_limit=search_limit,
+                        generation_config=generation_config,
+                    ):
+                        yield json.dumps(chunk.dict()) + "\n"
+
+                return StreamingResponse(
+                    stream_response(), media_type="application/json"
+                )
+            else:
+                results = await self.rag_pipeline.run(
+                    input=list_to_generator([query]),
+                    search_filters=search_filters,
+                    search_limit=search_limit,
+                    generation_config=generation_config,
+                )
+                return {"results": results}
         except Exception as e:
             logging.error(f"rag(query={query}) - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))

@@ -41,6 +41,7 @@ class Pipeline:
         input: Any,
         state: Optional[AsyncState] = None,
         pipeline_type: str = "ingestion",
+        streaming: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -70,8 +71,13 @@ class Pipeline:
             )
             self.futures[config_name].set_result(current_input)
 
-        final_result = await self._consume_all(current_input)
-        return final_result if len(final_result) != 1 else final_result[0]
+        print('....')
+        if not streaming:
+            final_result = await self._consume_all(current_input)
+            return final_result if len(final_result) != 1 else final_result[0]
+        else:
+            print('returning current_input = ', current_input)
+            return current_input
 
     async def _consume_all(self, gen: AsyncGenerator) -> list[Any]:
         result = []

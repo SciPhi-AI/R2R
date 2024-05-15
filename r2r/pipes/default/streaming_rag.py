@@ -1,22 +1,24 @@
 import logging
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Generator, Optional
 
 from r2r.core import (
     AsyncPipe,
     AsyncState,
     GenerationConfig,
     LLMChatCompletion,
+    LLMChatCompletionChunk,
     LLMProvider,
     PipeType,
     PromptProvider,
 )
 
 from ..abstractions.generator import GeneratorPipe
+from .rag import DefaultRAGPipe
 
 logger = logging.getLogger(__name__)
 
 
-class DefaultRAGPipe(GeneratorPipe):
+class DefaultStreamingRAGPipe(DefaultRAGPipe):
     class Input(AsyncPipe.Input):
         message: AsyncGenerator[str, None]
         context: str
@@ -41,10 +43,10 @@ class DefaultRAGPipe(GeneratorPipe):
             type=type,
             config=config
             or GeneratorPipe.Config(
-                name="default_rag_pipe",
+                name="default_streaming_rag_pipe",
                 task_prompt="default_rag_prompt",
                 generation_config=generation_config
-                or GenerationConfig(model="gpt-3.5-turbo"),
+                or GenerationConfig(model="gpt-3.5-turbo", stream=True),
             ),
             *args,
             **kwargs,
@@ -56,15 +58,15 @@ class DefaultRAGPipe(GeneratorPipe):
         state: AsyncState,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[LLMChatCompletion, None]:
+    ) -> AsyncGenerator[LLMChatCompletionChunk, None]:
         config_override = kwargs.get("config_override", None)
         async for query in input.message:
             messages = self._get_llm_payload(query, input.context)
-            response = self.llm_provider.get_completion(
+            for chunk in self.llm_provider.get_completion_stream(
                 messages=messages,
                 generation_config=config_override or self.config.generation_config,
-            )
-            yield response
+            ):
+                yield chunk
 
     def _get_llm_payload(self, query: str, context: str) -> dict:
         return [
@@ -85,3 +87,15 @@ class DefaultRAGPipe(GeneratorPipe):
                 ),
             },
         ]
+
+    @staticmethod
+    async def process_chunks(
+        chunks: AsyncGenerator[LLMChatCompletionChunk, None]
+    ) -> str:
+        """
+        Processes streamed LLMChatCompletionChunk and returns the final completion text.
+        """
+        final_text = ""
+        async for chunk in chunks:
+            final_text += chunk.choices[0].delta.content or ""
+        return final_text

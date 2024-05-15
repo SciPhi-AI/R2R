@@ -16,8 +16,8 @@ from sqlalchemy import MetaData, create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 
-from r2r.vecs.adapter import Adapter
-from r2r.vecs.exc import CollectionNotFound
+from .adapter import Adapter
+from .exc import CollectionNotFound
 
 if TYPE_CHECKING:
     from r2r.vecs.collection import Collection
