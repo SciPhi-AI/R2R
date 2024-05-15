@@ -85,6 +85,7 @@ isort = "5.12.0"
 mypy = "^1.5.1"
 pytest = "^8.2.0"
 pytest-asyncio = "^0.23.6"
+pytest-dependency = "^0.6.0"
 
 [tool.black]
 line-length = 79

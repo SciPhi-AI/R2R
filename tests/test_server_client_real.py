@@ -77,48 +77,32 @@ def test_ingest_txt_file(client):
         ]
     }
 
-
-@pytest.mark.dependency(
-    depends=["test_ingest_txt_document", "test_ingest_txt_file"]
-)
 def test_search(client):
+    test_ingest_txt_file(client)
+    test_ingest_txt_document(client)
     query = "who was aristotle?"
     response = client.search(query)
     assert "results" in response
     assert len(response["results"]) > 0
 
 
-@pytest.mark.dependency(
-    depends=["test_ingest_txt_document", "test_ingest_txt_file"]
-)
 def test_rag(client):
+    test_ingest_txt_file(client)
+    test_ingest_txt_document(client)
     query = "who was aristotle?"
     response = client.rag(query)
     assert "results" in response
 
-
-@pytest.mark.dependency(
-    depends=[
-        "test_ingest_txt_document",
-        "test_ingest_txt_file",
-        "test_search",
-        "test_rag",
-    ]
-)
 def test_delete(client):
+    test_ingest_txt_file(client)
+    test_ingest_txt_document(client)
     response = client.delete("author", "John Doe")
     assert response == {"results": "Entries deleted successfully."}
 
-
-@pytest.mark.dependency(
-    depends=[
-        "test_ingest_txt_document",
-        "test_ingest_txt_file",
-        "test_search",
-        "test_rag",
-    ]
-)
 def test_get_user_ids(client):
+    test_ingest_txt_file(client)
+    test_ingest_txt_document(client)
+
     response = client.get_user_ids()
     assert "results" in response
     assert len(response["results"]) == 2
@@ -127,16 +111,10 @@ def test_get_user_ids(client):
         str(generate_id_from_label("user_1")),
     }
 
-
-@pytest.mark.dependency(
-    depends=[
-        "test_ingest_txt_document",
-        "test_ingest_txt_file",
-        "test_search",
-        "test_rag",
-    ]
-)
 def test_get_user_document_ids(client):
+    test_ingest_txt_file(client)
+    test_ingest_txt_document(client)
+
     user_id = str(generate_id_from_label("user_0"))
     response = client.get_user_document_ids(user_id)
     assert "results" in response
