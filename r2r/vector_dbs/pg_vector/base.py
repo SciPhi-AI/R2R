@@ -9,7 +9,6 @@ from r2r.core import (
     VectorDBProvider,
     VectorEntry,
 )
-
 from r2r.vecs.client import Client
 from r2r.vecs.collection import Collection
 

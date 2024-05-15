@@ -1,4 +1,5 @@
 import pytest
+
 from r2r.core import EmbeddingConfig, SearchResult
 from r2r.core.utils import generate_id_from_label
 from r2r.embeddings import (
@@ -6,29 +7,34 @@ from r2r.embeddings import (
     SentenceTransformerEmbeddingProvider,
 )
 
+
 @pytest.fixture
 def openai_provider():
     config = EmbeddingConfig(
         provider="openai",
         search_model="text-embedding-3-small",
-        search_dimension=1536
+        search_dimension=1536,
     )
     return OpenAIEmbeddingProvider(config)
+
 
 def test_openai_initialization(openai_provider):
     assert isinstance(openai_provider, OpenAIEmbeddingProvider)
     assert openai_provider.search_model == "text-embedding-3-small"
     assert openai_provider.search_dimension == 1536
 
+
 def test_openai_invalid_provider_initialization():
     config = EmbeddingConfig(provider="invalid_provider")
     with pytest.raises(ValueError):
         OpenAIEmbeddingProvider(config)
 
+
 def test_openai_get_embedding(openai_provider):
     embedding = openai_provider.get_embedding("test text")
     assert len(embedding) == 1536
     assert isinstance(embedding, list)
+
 
 @pytest.mark.asyncio
 async def test_openai_async_get_embedding(openai_provider):
@@ -36,10 +42,12 @@ async def test_openai_async_get_embedding(openai_provider):
     assert len(embedding) == 1536
     assert isinstance(embedding, list)
 
+
 def test_openai_get_embeddings(openai_provider):
     embeddings = openai_provider.get_embeddings(["text1", "text2"])
     assert len(embeddings) == 2
     assert all(len(emb) == 1536 for emb in embeddings)
+
 
 @pytest.mark.asyncio
 async def test_openai_async_get_embeddings(openai_provider):
@@ -47,8 +55,11 @@ async def test_openai_async_get_embeddings(openai_provider):
     assert len(embeddings) == 2
     assert all(len(emb) == 1536 for emb in embeddings)
 
+
 def test_openai_tokenize_string(openai_provider):
-    tokens = openai_provider.tokenize_string("test text", "text-embedding-3-small")
+    tokens = openai_provider.tokenize_string(
+        "test text", "text-embedding-3-small"
+    )
     assert isinstance(tokens, list)
     assert all(isinstance(token, int) for token in tokens)
 
@@ -96,8 +107,16 @@ def test_sentence_transformer_get_embeddings(sentence_transformer_provider):
 
 def test_sentence_transformer_rerank(sentence_transformer_provider):
     results = [
-        SearchResult(id=generate_id_from_label("x"), score=0.9, metadata={"text": "doc1"}),
-        SearchResult(id=generate_id_from_label("y"), score=0.8, metadata={"text": "doc2"}),
+        SearchResult(
+            id=generate_id_from_label("x"),
+            score=0.9,
+            metadata={"text": "doc1"},
+        ),
+        SearchResult(
+            id=generate_id_from_label("y"),
+            score=0.8,
+            metadata={"text": "doc2"},
+        ),
     ]
     reranked_results = sentence_transformer_provider.rerank("query", results)
     assert len(reranked_results) == 2

@@ -14,6 +14,7 @@ from r2r.core import (
 )
 from r2r.core.utils import generate_id_from_label
 
+
 # Testing AsyncState for state management
 @pytest.mark.asyncio
 async def test_async_state_update_and_get():
@@ -91,7 +92,11 @@ def test_search_request_with_optional_filters():
 
 
 def test_search_result_to_string():
-    result = SearchResult(id=generate_id_from_label("1"), score=9.5, metadata={"author": "John Doe"})
+    result = SearchResult(
+        id=generate_id_from_label("1"),
+        score=9.5,
+        metadata={"author": "John Doe"},
+    )
     result_str = str(result)
     assert (
         result_str
@@ -100,7 +105,11 @@ def test_search_result_to_string():
 
 
 def test_search_result_repr():
-    result = SearchResult(id=generate_id_from_label("1"), score=9.5, metadata={"author": "John Doe"})
+    result = SearchResult(
+        id=generate_id_from_label("1"),
+        score=9.5,
+        metadata={"author": "John Doe"},
+    )
     assert (
         repr(result)
         == f"SearchResult(id={str(generate_id_from_label('1'))}, score=9.5, metadata={{'author': 'John Doe'}})"

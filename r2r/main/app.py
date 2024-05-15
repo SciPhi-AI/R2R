@@ -3,12 +3,11 @@ import logging
 import uuid
 from typing import Any, AsyncGenerator, Optional
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.datastructures import UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.param_functions import File, Form
 
-from r2r.core import Document, Pipeline, generate_id_from_label
+from r2r.core import Document, Pipeline, R2RConfig, generate_id_from_label, GenerationConfig
 
 # Current directory where this script is located
 MB_CONVERSION_FACTOR = 1024 * 1024
@@ -22,6 +21,7 @@ async def list_to_generator(array: list[Any]) -> AsyncGenerator[Any, None]:
 class R2RApp:
     def __init__(
         self,
+        config: R2RConfig,
         ingestion_pipeline: Pipeline,
         search_pipeline: Pipeline,
         rag_pipeline: Pipeline,
@@ -29,13 +29,14 @@ class R2RApp:
         *args,
         **kwargs,
     ):
-        self.app = FastAPI()
-        if do_apply_cors:
-            R2RApp._apply_cors(self.app)
-
+        self.config = config
         self.ingestion_pipeline = ingestion_pipeline
         self.search_pipeline = search_pipeline
         self.rag_pipeline = rag_pipeline
+
+        self.app = FastAPI()
+        if do_apply_cors:
+            R2RApp._apply_cors(self.app)
 
         self.app.add_api_route(
             path="/ingest_documents/",
@@ -72,15 +73,13 @@ class R2RApp:
         files: list[UploadFile] = [],
     ):
         try:
-            ids_list = json.loads(
-                ids
-            )  #  if ids else []  # Parse the JSON string to a list
+            ids_list = json.loads(ids)
             metadata_json = json.loads(metadata)
             documents = []
             for iteration, file in enumerate(files):
                 if (
                     file.size
-                    > 128  # config.app.get("max_file_size_in_mb", 128)
+                    > self.config.app.get("max_file_size_in_mb", 128)
                     * MB_CONVERSION_FACTOR
                 ):
                     raise HTTPException(
@@ -132,10 +131,19 @@ class R2RApp:
             logging.error(f"search(query={query}) - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
-    async def rag(self, query):
+    async def rag(
+        self, 
+        query:str,
+        search_filters: Optional[dict] = None,
+        search_limit: int = 10,
+        generation_config: Optional[GenerationConfig] = None,                  
+    ):
         try:
             results = await self.rag_pipeline.run(
-                input=list_to_generator([query])
+                input=list_to_generator([query]),
+                search_filters=search_filters,
+                search_limit=search_limit,
+                generation_config=generation_config,
             )
             return {"results": results}
         except Exception as e:

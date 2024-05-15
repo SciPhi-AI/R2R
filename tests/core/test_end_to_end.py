@@ -5,14 +5,15 @@ import uuid
 import pytest
 from fastapi.datastructures import UploadFile
 
-from r2r.core import (
+from r2r import (
+    DefaultR2RPipelineFactory,
     Document,
     PipeLoggingConnectionSingleton,
+    R2RApp,
     R2RConfig,
+    R2RProviderFactory,
     generate_id_from_label,
 )
-from r2r.main.app import R2RApp
-from r2r.main.factory import DefaultR2RPipelineFactory, R2RProviderFactory
 
 
 @pytest.fixture(scope="function")
@@ -35,9 +36,10 @@ def r2r_app():
         ).create_pipelines()
 
         r2r = R2RApp(
-            pipelines.ingestion_pipeline,
-            pipelines.search_pipeline,
-            pipelines.rag_pipeline,
+            config=config,
+            ingestion_pipeline=pipelines.ingestion_pipeline,
+            search_pipeline=pipelines.search_pipeline,
+            rag_pipeline=pipelines.rag_pipeline,
         )
 
         yield r2r

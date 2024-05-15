@@ -138,7 +138,9 @@ class QdrantDB(VectorDBProvider):
         )
 
         return [
-            SearchResult(id=result.id, score=result.score, metadata=result.payload or {})
+            SearchResult(
+                id=result.id, score=result.score, metadata=result.payload or {}
+            )
             for result in results
         ]
 
