@@ -154,3 +154,14 @@ async def test_ingest_and_search_larger_txt_file(r2r_app, logging_connection):
         "was an Ancient Greek philosopher and polymath"
         in search_results["results"][0].metadata["text"]
     )
+
+    ## test streaming 
+    response = await r2r_app.rag(query="Who was aristotle?", streaming=True)
+    collector = ""
+    async for chunk in response.body_iterator:
+        collector += chunk
+    assert "Aristotle" in collector
+    assert "Greek" in collector
+    assert "philosopher" in collector
+    assert "polymath" in collector
+    assert "Ancient" in collector
