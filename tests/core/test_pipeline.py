@@ -202,7 +202,7 @@ async def multiply_then_fan_out(
 
     expected_result = [[i * multiplier_a] async for i in input_generator()]
     assert (
-        result == expected_result
+        result[0] == expected_result
     ), "Pipeline output did not match expected multipliers"
 
 
@@ -231,7 +231,7 @@ async def test_fan_in_sum(pipe_factory, multiplier, delay, name):
         [sum([j * i for j in [1, 2, 3]]) for i in range(1, multiplier + 1)]
     )
     assert (
-        result == expected_result
+        result[0] == expected_result
     ), "Pipeline output did not match expected sums"
 
 
@@ -272,5 +272,5 @@ async def test_fan_out_then_multiply(
         ]
     )
     assert (
-        result == expected_result
+        result[0] == expected_result
     ), "Pipeline output did not match expected multipliers"

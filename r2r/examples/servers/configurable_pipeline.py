@@ -67,33 +67,34 @@ def default_app(config_name: str = "default", pipe_name: str = "qna"):
 
     return r2r
 
+app = default_app().app
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="R2R Pipe")
-    parser.add_argument(
-        "--config",
-        type=str,
-        default="default",
-        choices=CONFIG_OPTIONS.keys(),
-        help="Configuration option for the pipe",
-    )
-    # parser.add_argument(
-    #     "--pipe",
-    #     type=str,
-    #     default="qna",
-    #     choices=PIPELINE_OPTIONS.keys(),
-    #     help="Pipe implementation to be deployed",
-    # )
-    parser.add_argument(
-        "--port",
-        type=str,
-        default="8000",
-        help="Port to serve deployed pipe on.",
-    )
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description="R2R Pipe")
+#     parser.add_argument(
+#         "--config",
+#         type=str,
+#         default="default",
+#         choices=CONFIG_OPTIONS.keys(),
+#         help="Configuration option for the pipe",
+#     )
+#     # parser.add_argument(
+#     #     "--pipe",
+#     #     type=str,
+#     #     default="qna",
+#     #     choices=PIPELINE_OPTIONS.keys(),
+#     #     help="Pipe implementation to be deployed",
+#     # )
+#     parser.add_argument(
+#         "--port",
+#         type=str,
+#         default="8000",
+#         help="Port to serve deployed pipe on.",
+#     )
 
-    args, _ = parser.parse_known_args()
+#     args, _ = parser.parse_known_args()
 
-    port = os.getenv("PORT") or args.port
+#     port = os.getenv("PORT") or args.port
 
-    app = default_app(args.config)  # , args.pipe)
-    app.serve(host="0.0.0.0", port=int(port))
+#     app = default_app(args.config)  # , args.pipe)
+#     # app.serve(host="0.0.0.0", port=int(port))

@@ -63,28 +63,28 @@ class R2RApp:
 
         self.app.add_api_route(
             path="/ingest_documents/",
-            endpoint=self.ingest_documents,
+            endpoint=self.ingest_documents_wrapper,
             methods=["POST"],
         )
         self.app.add_api_route(
-            path="/ingest_files/", endpoint=self.ingest_files, methods=["POST"]
+            path="/ingest_files/", endpoint=self.ingest_files_wrapper, methods=["POST"]
         )
         self.app.add_api_route(
-            path="/search/", endpoint=self.search, methods=["POST"]
+            path="/search/", endpoint=self.search_wrapper, methods=["POST"]
         )
         self.app.add_api_route(
-            path="/rag/", endpoint=self.rag, methods=["POST"]
+            path="/rag/", endpoint=self.rag_wrapper, methods=["POST"]
         )
         self.app.add_api_route(
-            path="/delete/", endpoint=self.delete, methods=["DELETE"]
+            path="/delete/", endpoint=self.delete_wrapper, methods=["DELETE"]
         )
         self.app.add_api_route(
-            path="/get_user_ids/", endpoint=self.get_user_ids, methods=["GET"]
+            path="/get_user_ids/", endpoint=self.get_user_ids_wrapper, methods=["GET"]
         )
         self.app.add_api_route(
             path="/get_user_document_ids/",
-            endpoint=self.get_user_document_ids,
-            methods=["GET"],
+            endpoint=self.get_user_document_ids_wrapper,
+            methods=["POST"],
         )
 
     async def ingest_documents(self, documents: list[Document]):
@@ -99,6 +99,9 @@ class R2RApp:
                 f"ingest_documents(documents={documents}) - \n\n{str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
+
+    async def ingest_documents_wrapper(self, documents: list[Document] = Body(...)):
+        return await self.ingest_documents(documents)
 
     async def ingest_files(
         self,
@@ -148,6 +151,14 @@ class R2RApp:
             )
             raise HTTPException(status_code=500, detail=str(e))
 
+    async def ingest_files_wrapper(
+        self,
+        metadata: str = Form("{}"),
+        ids: str = Form("[]"),
+        files: list[UploadFile] = File(...),
+    ):
+        return await self.ingest_files(metadata, ids, files)
+
     async def search(
         self,
         query: str = "",
@@ -165,6 +176,14 @@ class R2RApp:
         except Exception as e:
             logging.error(f"search(query={query}) - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
+
+    async def search_wrapper(
+        self,
+        query: str = Form(...),
+        search_filters: str = Form("{}"),
+        search_limit: int = Form(10),
+    ):
+        return await self.search(query, search_filters, search_limit)
 
     async def rag(
         self,
@@ -202,6 +221,18 @@ class R2RApp:
             logging.error(f"rag(query={query}) - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
+    async def rag_wrapper(
+        self,
+        query: str = Form(...),
+        search_filters: Optional[str] = Form(None),
+        search_limit: int = Form(10),
+        generation_config: Optional[GenerationConfig] = Body(None),
+        streaming: bool = Form(False),
+    ):
+        search_filters_dict = json.loads(search_filters) if search_filters else None
+        return await self.rag(query, search_filters_dict, search_limit, generation_config, streaming)
+
+
     async def delete(self, key: str, value: Union[bool, int, str]):
         try:
             self.providers.vector_db.delete_by_metadata(key, value)
@@ -211,6 +242,9 @@ class R2RApp:
                 f":delete: [Error](key={key}, value={value}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
+
+    async def delete_wrapper(self, key: str = Form(...), value: Union[bool, int, str] = Form(...)):
+        return await self.delete(key, value)
 
     async def get_user_ids(self):
         try:
@@ -223,6 +257,9 @@ class R2RApp:
             logging.error(f"get_user_ids() - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
+    async def get_user_ids_wrapper(self):
+        return await self.get_user_ids()
+    
     async def get_user_document_ids(self, user_id: str):
         try:
             if isinstance(user_id, uuid.UUID):
@@ -238,6 +275,9 @@ class R2RApp:
                 f"get_user_document_ids(user_id={user_id}) - \n\n{str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
+
+    async def get_user_document_ids_wrapper(self, user_id: str = Form(...)):
+        return await self.get_user_document_ids(user_id)
 
     async def get_logs(
         self, pipeline_type: Optional[str] = None, filter: Optional[str] = None
@@ -264,25 +304,10 @@ class R2RApp:
             logging.error(f":logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
-    # async def logs_summary(filter: LogFilterModel = Depends()):
-    #     try:
-    #         if logging_connection is None:
-    #             raise HTTPException(
-    #                 status_code=404, detail="Logging provider not found."
-    #             )
-    #         logs = logging_connection.get_logs(
-    #             config.app.get("max_logs", 100), filter.pipeline_type
-    #         )
-    #         logs_summary = process_logs(logs)
-    #         events_summary = [
-    #             SummaryLogModel(**log).dict(by_alias=True)
-    #             for log in logs_summary
-    #         ]
-    #         return {"events_summary": events_summary}
-
-    #     except Exception as e:
-    #         logging.error(f":logs_summary: [Error](error={str(e)})")
-    #         raise HTTPException(status_code=500, detail=str(e))
+    async def get_logs_wrapper(
+        self, pipeline_type: Optional[str] = Form(None), filter: Optional[str] = Form(None)
+    ):
+        return await self.get_logs(pipeline_type, filter)
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         try:
