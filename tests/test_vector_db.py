@@ -5,18 +5,9 @@ import sqlite3
 import pytest
 from dotenv import load_dotenv
 
-from r2r.core import (
-    Vector,
-    VectorDBConfig,
-    VectorDBProvider,
-    VectorEntry,
-)
+from r2r.core import Vector, VectorDBConfig, VectorDBProvider, VectorEntry
 from r2r.core.utils import generate_id_from_label
-from r2r.vector_dbs import (
-    LocalVectorDB,
-    PGVectorDB,
-    QdrantDB,
-)
+from r2r.vector_dbs import LocalVectorDB, PGVectorDB, QdrantDB
 
 load_dotenv()
 

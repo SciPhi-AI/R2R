@@ -80,7 +80,6 @@ class DefaultVectorSearchPipe(SearchPipe):
                 message=search_request, *args, **kwargs
             ):
                 search_results.append(result)
-                print('yielding result... = ', result)
                 yield result
 
         await state.update(
@@ -88,5 +87,11 @@ class DefaultVectorSearchPipe(SearchPipe):
         )
 
         await state.update(
-            self.config.name, {"output": {"search_queries": search_queries, "search_results": search_results}}
+            self.config.name,
+            {
+                "output": {
+                    "search_queries": search_queries,
+                    "search_results": search_results,
+                }
+            },
         )

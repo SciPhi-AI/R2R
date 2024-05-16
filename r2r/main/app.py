@@ -1,7 +1,7 @@
 import json
 import logging
 import uuid
-from typing import Any, AsyncGenerator, Optional, Union, List
+from typing import Any, AsyncGenerator, List, Optional, Union
 
 from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,6 +22,7 @@ from .factory import R2RProviders
 MB_CONVERSION_FACTOR = 1024 * 1024
 
 from pydantic import BaseModel
+
 
 async def list_to_generator(array: list[Any]) -> AsyncGenerator[Any, None]:
     for item in array:
@@ -99,9 +100,7 @@ class R2RApp:
     class IngestDocumentsRequest(BaseModel):
         documents: List[Document]
 
-    async def ingest_documents_wrapper(
-        self, request: IngestDocumentsRequest
-    ):
+    async def ingest_documents_wrapper(self, request: IngestDocumentsRequest):
         return await self.ingest_documents(request.documents)
 
     async def ingest_files(
@@ -110,10 +109,9 @@ class R2RApp:
         ids: str = "[]",
         files: list[UploadFile] = [],
     ):
-        # try:
+        try:
             ids_list = json.loads(ids)
             metadata_jsons = json.loads(metadatas)
-            print('metadata_jsons = ', metadata_jsons)
             documents = []
             for iteration, file in enumerate(files):
                 if (
@@ -150,18 +148,17 @@ class R2RApp:
                     for file in files
                 ]
             }
-        # except Exception as e:
-        #     logging.error(
-        #         f"ingest_files(metadata={metadatas}, ids={ids}, files={files}) - \n\n{str(e)})"
-        #     )
-        #     raise HTTPException(status_code=500, detail=str(e))
-
+        except Exception as e:
+            logging.error(
+                f"ingest_files(metadata={metadatas}, ids={ids}, files={files}) - \n\n{str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e))
 
     async def ingest_files_wrapper(
         self,
         metadatas: str = Form(...),
         ids: str = Form(...),
-        files: List[UploadFile] = File(...)
+        files: List[UploadFile] = File(...),
     ):
         return await self.ingest_files(metadatas, ids, files)
 
@@ -188,11 +185,10 @@ class R2RApp:
         search_filters: Optional[str]
         search_limit: int = 10
 
-    async def search_wrapper(
-        self,
-        request: SearchRequest
-    ):
-        return await self.search(request.query, request.search_filters, request.search_limit)
+    async def search_wrapper(self, request: SearchRequest):
+        return await self.search(
+            request.query, request.search_filters, request.search_limit
+        )
 
     async def rag(
         self,
@@ -237,12 +233,11 @@ class R2RApp:
         generation_config: Optional[GenerationConfig] = None
         streaming: bool = False
 
-    async def rag_wrapper(
-        self,
-        request: RAGRequest
-    ):
+    async def rag_wrapper(self, request: RAGRequest):
         search_filters_dict = (
-            json.loads(request.search_filters) if request.search_filters else None
+            json.loads(request.search_filters)
+            if request.search_filters
+            else None
         )
         return await self.rag(
             request.message,
@@ -266,9 +261,7 @@ class R2RApp:
         key: str
         value: Union[bool, int, str]
 
-    async def delete_wrapper(
-        self, request: DeleteRequest = Body(...)
-    ):
+    async def delete_wrapper(self, request: DeleteRequest = Body(...)):
         return await self.delete(request.key, request.value)
 
     async def get_user_ids(self):
@@ -294,7 +287,6 @@ class R2RApp:
                 filter_field="user_id",
                 filter_value=user_id,
             )
-            print('document_ids = ', document_ids)
             return {"results": document_ids}
         except Exception as e:
             logging.error(
@@ -305,9 +297,10 @@ class R2RApp:
     class UserDocumentRequest(BaseModel):
         user_id: str
 
-    async def get_user_document_data_wrapper(self, request: UserDocumentRequest):
+    async def get_user_document_data_wrapper(
+        self, request: UserDocumentRequest
+    ):
         return await self.get_user_document_data(request.user_id)
-
 
     async def get_logs(
         self, pipeline_type: Optional[str] = None, filter: Optional[str] = None

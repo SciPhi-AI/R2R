@@ -60,14 +60,15 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
         config_override = kwargs.get("config_override", None)
         response = ""
 
-        print('in streaming rag....')
         async for context in input.message:
             messages = self._get_llm_payload(input.query, context)
-            print('messages = ', messages)
 
             response += await self._yield_chunks(
                 f"<{self.SEARCH_STREAM_MARKER}>",
-                (f'"{json.dumps(result.dict())}",' for result in input.raw_search_results),
+                (
+                    f'"{json.dumps(result.dict())}",'
+                    for result in input.raw_search_results
+                ),
                 f"</{self.SEARCH_STREAM_MARKER}>",
             )
             response += await self._yield_chunks(
@@ -183,11 +184,9 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
         iteration = 0
         context = ""
         async for result in input.message:
-            context += (
-                f"Result {iteration+1}:\n{result.metadata['text']}\n\n"
-            )
+            context += f"Result {iteration+1}:\n{result.metadata['text']}\n\n"
             iteration += 1
-        
+
         messages = self._get_llm_payload("\n".join(input.query), context)
 
         async for chunk in self._yield_chunks(

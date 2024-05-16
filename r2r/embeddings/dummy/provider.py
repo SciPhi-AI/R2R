@@ -1,7 +1,7 @@
 import logging
 import random
 
-from r2r.core import EmbeddingProvider, EmbeddingConfig, SearchResult
+from r2r.core import EmbeddingConfig, EmbeddingProvider, SearchResult
 
 logger = logging.getLogger(__name__)
 

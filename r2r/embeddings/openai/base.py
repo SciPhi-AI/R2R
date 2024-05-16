@@ -3,7 +3,7 @@ import os
 
 from openai import AsyncOpenAI, OpenAI
 
-from r2r.core import EmbeddingProvider, EmbeddingConfig, SearchResult
+from r2r.core import EmbeddingConfig, EmbeddingProvider, SearchResult
 
 logger = logging.getLogger(__name__)
 

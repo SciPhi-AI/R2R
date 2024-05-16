@@ -13,6 +13,7 @@ from r2r.core import (
 
 logger = logging.getLogger(__name__)
 
+
 class LocalVectorDB(VectorDBProvider):
     def __init__(self, config: VectorDBConfig) -> None:
         logger.info(
@@ -181,8 +182,15 @@ class LocalVectorDB(VectorDBProvider):
                 filter_field is None
                 or metatada_json.get(filter_field) == filter_value
             ):
-                results.add(json.dumps({k: metatada_json.get(k, None) for k in metadata_fields}))
+                results.add(
+                    json.dumps(
+                        {
+                            k: metatada_json.get(k, None)
+                            for k in metadata_fields
+                        }
+                    )
+                )
         #         if metadata_field in metadata:
         #             unique_values.add(metadata[metadata_field])
         conn.close()
-        return results # list(unique_values)
+        return results  # list(unique_values)

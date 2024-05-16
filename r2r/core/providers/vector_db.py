@@ -35,9 +35,7 @@ class VectorDBProvider(Provider, ABC):
         super().__init__(config)
 
     @abstractmethod
-    def initialize_collection(
-        self, dimension: int
-    ) -> None:
+    def initialize_collection(self, dimension: int) -> None:
         pass
 
     @abstractmethod

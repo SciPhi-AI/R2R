@@ -16,7 +16,10 @@ class R2RClient:
         return response.json()
 
     def ingest_files(
-        self, metadatas: List[Dict], files: List[str], ids: Optional[List[str]] = None
+        self,
+        metadatas: List[Dict],
+        files: List[str],
+        ids: Optional[List[str]] = None,
     ) -> Dict:
         url = f"{self.base_url}/ingest_files/"
         files_to_upload = [
@@ -25,7 +28,7 @@ class R2RClient:
         ]
         data = {
             "metadatas": json.dumps(metadatas),
-            "ids": json.dumps(ids or [])
+            "ids": json.dumps(ids or []),
         }
         response = requests.post(url, files=files_to_upload, data=data)
         response.raise_for_status()

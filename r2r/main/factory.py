@@ -1,17 +1,17 @@
-from typing import Optional, Any
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
 from r2r.core import (
     EmbeddingProvider,
     IngestionPipeline,
+    LLMConfig,
     LLMProvider,
     Pipeline,
     PipeLoggingConnectionSingleton,
     PromptProvider,
     R2RConfig,
     RAGPipeline,
-    LLMConfig,
     SearchPipeline,
     VectorDBProvider,
 )
@@ -63,10 +63,10 @@ class R2RProviderFactory:
             )
         if not vector_db_provider:
             raise ValueError("Vector database provider not found")
-        
+
         if not self.config.embedding.search_dimension:
             raise ValueError("Search dimension not found in embedding config")
-        
+
         vector_db_provider.initialize_collection(
             self.config.embedding.search_dimension
         )
@@ -96,7 +96,7 @@ class R2RProviderFactory:
             )
         if not embedding_provider:
             raise ValueError("Embedding provider not found")
-        
+
         return embedding_provider
 
     def create_llm_provider(self, *args, **kwargs) -> LLMProvider:
@@ -167,8 +167,10 @@ class DefaultR2RPipelineFactory:
         )
 
         if not text_splitter_config:
-            raise ValueError("Text splitter config not found in embedding config")
-        
+            raise ValueError(
+                "Text splitter config not found in embedding config"
+            )
+
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=text_splitter_config["chunk_size"],
             chunk_overlap=text_splitter_config["chunk_overlap"],
@@ -206,10 +208,7 @@ class DefaultR2RPipelineFactory:
         return search_pipeline
 
     def create_rag_pipeline(self, streaming: bool = False) -> RAGPipeline:
-        from r2r.pipes import (
-            DefaultVectorSearchPipe,
-        )
-
+        from r2r.pipes import DefaultVectorSearchPipe
 
         search_pipe = DefaultVectorSearchPipe(
             vector_db_provider=self.providers.vector_db,

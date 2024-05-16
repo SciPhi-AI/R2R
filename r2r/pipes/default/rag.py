@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class DefaultRAGPipe(GeneratorPipe):
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[SearchResult, None] # context
+        message: AsyncGenerator[SearchResult, None]  # context
         query: list[str]
         raw_search_results: Optional[list[SearchResult]] = None
         dummy: Optional[str] = None
