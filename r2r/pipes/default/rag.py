@@ -19,9 +19,10 @@ logger = logging.getLogger(__name__)
 
 class DefaultRAGPipe(GeneratorPipe):
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[str, None]
-        context: str
+        message: AsyncGenerator[SearchResult, None] # context
+        query: list[str]
         raw_search_results: Optional[list[SearchResult]] = None
+        dummy: Optional[str] = None
 
     def __init__(
         self,
@@ -60,8 +61,8 @@ class DefaultRAGPipe(GeneratorPipe):
         **kwargs: Any,
     ) -> AsyncGenerator[LLMChatCompletion, None]:
         config_override = kwargs.get("config_override", None)
-        async for query in input.message:
-            messages = self._get_llm_payload(query, input.context)
+        async for context in input.message:
+            messages = self._get_llm_payload("\n".join(input.query), context)
             response = self.llm_provider.get_completion(
                 messages=messages,
                 generation_config=config_override
@@ -88,7 +89,7 @@ class DefaultRAGPipe(GeneratorPipe):
                 "content": self.prompt_provider.get_prompt(
                     self.config.task_prompt,
                     inputs={
-                        "query": query,
+                        "query": "\n".join(query),
                         "context": context,
                     },
                 ),

@@ -161,9 +161,9 @@ class LocalVectorDB(VectorDBProvider):
         conn.commit()
         conn.close()
 
-    def get_all_unique_values(
+    def get_metadatas(
         self,
-        metadata_field: str,
+        metadata_fields: list[str],
         filter_field: Optional[str] = None,
         filter_value: Optional[str] = None,
     ) -> list[str]:
@@ -174,14 +174,15 @@ class LocalVectorDB(VectorDBProvider):
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
         cursor.execute(f'SELECT metadata FROM "{self.config.collection_name}"')
-        unique_values = set()
+        results = set([])
         for (metadata,) in cursor.fetchall():
-            metadata = json.loads(metadata)
+            metatada_json = json.loads(metadata)
             if (
                 filter_field is None
-                or metadata.get(filter_field) == filter_value
+                or metatada_json.get(filter_field) == filter_value
             ):
-                if metadata_field in metadata:
-                    unique_values.add(metadata[metadata_field])
+                results.add(json.dumps({k: metatada_json.get(k, None) for k in metadata_fields}))
+        #         if metadata_field in metadata:
+        #             unique_values.add(metadata[metadata_field])
         conn.close()
-        return list(unique_values)
+        return results # list(unique_values)

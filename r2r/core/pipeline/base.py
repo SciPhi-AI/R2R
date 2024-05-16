@@ -108,8 +108,16 @@ class Pipeline:
             self.upstream_outputs[pipe_num]
         )
         input_dict = {"message": input}
+
+        # Group upstream outputs by prev_pipe_name
+        grouped_upstream_outputs = {}
         for upstream_input in add_upstream_outputs:
             upstream_pipe_name = upstream_input["prev_pipe_name"]
+            if upstream_pipe_name not in grouped_upstream_outputs:
+                grouped_upstream_outputs[upstream_pipe_name] = []
+            grouped_upstream_outputs[upstream_pipe_name].append(upstream_input)
+
+        for upstream_pipe_name, upstream_inputs in grouped_upstream_outputs.items():
 
             async def resolve_future_output(future):
                 result = future.result()
@@ -120,23 +128,16 @@ class Pipeline:
                 for item in items:
                     yield item
 
-            temp_results = await resolve_future_output(
-                self.futures[upstream_pipe_name]
-            )
+            temp_results = await resolve_future_output(self.futures[upstream_pipe_name])
             if upstream_pipe_name == self.pipes[pipe_num - 1].config.name:
                 input_dict["message"] = replay_items_as_async_gen(temp_results)
 
-            outputs = await self.state.get(
-                upstream_input["prev_pipe_name"], "output"
-            )
-            prev_output_field = upstream_input.get("prev_output_field", None)
-            if not prev_output_field:
-                raise ValueError(
-                    "`prev_output_field` must be specified in the upstream_input"
-                )
-            input_dict[upstream_input["input_field"]] = outputs[
-                upstream_input["prev_output_field"]
-            ]
+            for upstream_input in upstream_inputs:
+                outputs = await self.state.get(upstream_pipe_name, "output")
+                prev_output_field = upstream_input.get("prev_output_field", None)
+                if not prev_output_field:
+                    raise ValueError("`prev_output_field` must be specified in the upstream_input")
+                input_dict[upstream_input["input_field"]] = outputs[prev_output_field]
 
         # Handle the pipe generator
         async for ele in await pipe.run(

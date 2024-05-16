@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any, AsyncGenerator, Generator, Optional
 
@@ -59,12 +60,14 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
         config_override = kwargs.get("config_override", None)
         response = ""
 
-        async for query in input.message:
-            messages = self._get_llm_payload(query, input.context)
+        print('in streaming rag....')
+        async for context in input.message:
+            messages = self._get_llm_payload(input.query, context)
+            print('messages = ', messages)
 
             response += await self._yield_chunks(
                 f"<{self.SEARCH_STREAM_MARKER}>",
-                (f'"{str(result)}",' for result in input.raw_search_results),
+                (f'"{json.dumps(result.dict())}",' for result in input.raw_search_results),
                 f"</{self.SEARCH_STREAM_MARKER}>",
             )
             response += await self._yield_chunks(
@@ -162,7 +165,7 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
                 name="default_streaming_rag_pipe",
                 task_prompt="default_rag_prompt",
                 generation_config=generation_config
-                or GenerationConfig(model="gpt-3.5-turbo", stream=True),
+                or GenerationConfig(model="gpt-4-turbo", stream=True),
             ),
             *args,
             **kwargs,
@@ -177,29 +180,36 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
     ) -> AsyncGenerator[str, None]:
         config_override = kwargs.get("config_override", None)
 
-        async for query in input.message:
-            messages = self._get_llm_payload(query, input.context)
+        iteration = 0
+        context = ""
+        async for result in input.message:
+            context += (
+                f"Result {iteration+1}:\n{result.metadata['text']}\n\n"
+            )
+            iteration += 1
+        
+        messages = self._get_llm_payload("\n".join(input.query), context)
 
-            async for chunk in self._yield_chunks(
-                f"<{self.SEARCH_STREAM_MARKER}>",
-                (f'"{str(result)}",' for result in input.raw_search_results),
-                f"</{self.SEARCH_STREAM_MARKER}>",
-            ):
-                yield chunk
+        async for chunk in self._yield_chunks(
+            f"<{self.SEARCH_STREAM_MARKER}>",
+            json.dumps([result.json() for result in input.raw_search_results]),
+            f"</{self.SEARCH_STREAM_MARKER}>",
+        ):
+            yield chunk
 
-            async for chunk in self._yield_chunks(
-                f"<{self.COMPLETION_STREAM_MARKER}>",
-                (
-                    self._process_chunk(chunk)
-                    for chunk in self.llm_provider.get_completion_stream(
-                        messages=messages,
-                        generation_config=config_override
-                        or self.config.generation_config,
-                    )
-                ),
-                f"</{self.COMPLETION_STREAM_MARKER}>",
-            ):
-                yield chunk
+        async for chunk in self._yield_chunks(
+            f"<{self.COMPLETION_STREAM_MARKER}>",
+            (
+                self._process_chunk(chunk)
+                for chunk in self.llm_provider.get_completion_stream(
+                    messages=messages,
+                    generation_config=config_override
+                    or self.config.generation_config,
+                )
+            ),
+            f"</{self.COMPLETION_STREAM_MARKER}>",
+        ):
+            yield chunk
 
     async def _yield_chunks(
         self,

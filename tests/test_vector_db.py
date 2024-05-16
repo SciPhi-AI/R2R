@@ -163,12 +163,12 @@ def test_delete_by_metadata(request, db_fixture):
 
 
 @pytest.mark.parametrize("db_fixture", ["local_vector_db", "pg_vector_db"])
-def test_get_all_unique_values(request, db_fixture):
+def test_get_metadatas(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     for entry in sample_entries:
         db.copy(entry)
 
-    unique_values = db.get_all_unique_values(metadata_field="key")
+    unique_values = db.get_metadatas(metadata_field="key")
     assert len(unique_values) == num_entries
     assert all(f"value_id_{i}" in unique_values for i in range(num_entries))
 

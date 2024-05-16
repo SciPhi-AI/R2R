@@ -72,15 +72,21 @@ class DefaultVectorSearchPipe(SearchPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[SearchResult, None]:
+        search_queries = []
         search_results = []
-
         async for search_request in input.message:
+            search_queries.append(search_request)
             async for result in self.search(
                 message=search_request, *args, **kwargs
             ):
                 search_results.append(result)
+                print('yielding result... = ', result)
                 yield result
 
         await state.update(
             self.config.name, {"output": {"search_results": search_results}}
+        )
+
+        await state.update(
+            self.config.name, {"output": {"search_queries": search_queries, "search_results": search_results}}
         )

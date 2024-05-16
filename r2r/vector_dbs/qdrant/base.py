@@ -170,7 +170,7 @@ class QdrantDB(VectorDBProvider):
         )
         return
 
-    def get_all_unique_values(
+    def get_metadatas(
         self,
         metadata_field: str,
         filter_field: Optional[str] = None,
@@ -178,7 +178,7 @@ class QdrantDB(VectorDBProvider):
     ) -> list:
         if self.config.collection_name is None:
             raise ValueError(
-                "Please call `initialize_collection` before attempting to run `get_all_unique_values`."
+                "Please call `initialize_collection` before attempting to run `get_metadatas`."
             )
 
         # Create a scroll filter based on the provided filter field and value

@@ -207,11 +207,9 @@ class DefaultR2RPipelineFactory:
 
     def create_rag_pipeline(self, streaming: bool = False) -> RAGPipeline:
         from r2r.pipes import (
-            DefaultSearchCollectorPipe,
             DefaultVectorSearchPipe,
         )
 
-        collector_pipe = DefaultSearchCollectorPipe()
 
         search_pipe = DefaultVectorSearchPipe(
             vector_db_provider=self.providers.vector_db,
@@ -236,7 +234,7 @@ class DefaultR2RPipelineFactory:
 
         rag_pipeline = RAGPipeline()
         rag_pipeline.add_pipe(search_pipe)
-        rag_pipeline.add_pipe(collector_pipe)
+        # rag_pipeline.add_pipe(collector_pipe)
         rag_pipeline.add_pipe(
             rag_pipe,
             add_upstream_outputs=[
@@ -246,9 +244,9 @@ class DefaultR2RPipelineFactory:
                     "input_field": "raw_search_results",
                 },
                 {
-                    "prev_pipe_name": collector_pipe.config.name,
-                    "prev_output_field": "search_context",
-                    "input_field": "context",
+                    "prev_pipe_name": search_pipe.config.name,
+                    "prev_output_field": "search_queries",
+                    "input_field": "query",
                 },
             ],
         )

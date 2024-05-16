@@ -82,9 +82,9 @@ class VectorDBProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def get_all_unique_values(
+    def get_metadatas(
         self,
-        metadata_field: str,
+        metadata_fields: list[str],
         filter_field: Optional[str] = None,
         filter_value: Optional[str] = None,
     ) -> list[str]:

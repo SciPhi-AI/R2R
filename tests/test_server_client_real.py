@@ -51,7 +51,6 @@ def client():
     base_url = "http://localhost:8010"
     return R2RClient(base_url)
 
-
 def test_ingest_txt_document(client):
     user_id = str(generate_id_from_label("user_0"))
     documents = [
@@ -80,6 +79,7 @@ def test_ingest_txt_file(client):
 def test_search(client):
     test_ingest_txt_file(client)
     test_ingest_txt_document(client)
+
     query = "who was aristotle?"
     response = client.search(query)
     assert "results" in response
@@ -89,6 +89,7 @@ def test_search(client):
 def test_rag(client):
     test_ingest_txt_file(client)
     test_ingest_txt_document(client)
+
     query = "who was aristotle?"
     response = client.rag(query)
     assert "results" in response
@@ -96,6 +97,7 @@ def test_rag(client):
 def test_delete(client):
     test_ingest_txt_file(client)
     test_ingest_txt_document(client)
+
     response = client.delete("author", "John Doe")
     assert response == {"results": "Entries deleted successfully."}
 
@@ -111,12 +113,12 @@ def test_get_user_ids(client):
         str(generate_id_from_label("user_1")),
     }
 
-def test_get_user_document_ids(client):
+def test_get_user_document_data(client):
     test_ingest_txt_file(client)
     test_ingest_txt_document(client)
 
     user_id = str(generate_id_from_label("user_0"))
-    response = client.get_user_document_ids(user_id)
+    response = client.get_user_document_data(user_id)
     assert "results" in response
     assert len(response["results"]) == 1
     assert response["results"][0] == str(generate_id_from_label("doc_1"))

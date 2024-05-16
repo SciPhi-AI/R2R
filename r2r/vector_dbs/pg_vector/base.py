@@ -164,7 +164,7 @@ class PGVectorDB(VectorDBProvider):
             )
         self.collection.delete(filters={metadata_field: {"$eq": metadata_value}})  # type: ignore
 
-    def get_all_unique_values(
+    def get_metadatas(
         self,
         metadata_field: str,
         filter_field: Optional[str] = None,
@@ -172,7 +172,7 @@ class PGVectorDB(VectorDBProvider):
     ) -> list[str]:
         if self.collection is None:
             raise ValueError(
-                "Please call `initialize_collection` before attempting to run `get_all_unique_values`."
+                "Please call `initialize_collection` before attempting to run `get_metadatas`."
             )
 
         unique_values = self.collection.get_unique_metadata_values(

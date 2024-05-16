@@ -170,7 +170,7 @@ async def test_ingest_and_search_larger_txt_file(r2r_app, logging_connection):
     )
 
     ## test streaming
-    response = await r2r_app.rag(query="Who was aristotle?", streaming=True)
+    response = await r2r_app.rag(message="Who was aristotle?", streaming=True)
     collector = ""
     async for chunk in response.body_iterator:
         collector += chunk
@@ -252,8 +252,8 @@ async def test_ingest_user_documents(r2r_app, logging_connection):
         [str(user_id_0), str(user_id_1)]
     ), f"Expected user ids {user_id_0} and {user_id_1}, but got {user_ids}"
 
-    user_0_docs = await r2r_app.get_user_document_ids(user_id=str(user_id_0))
-    user_1_docs = await r2r_app.get_user_document_ids(user_id=str(user_id_1))
+    user_0_docs = await r2r_app.get_user_document_data(user_id=str(user_id_0))
+    user_1_docs = await r2r_app.get_user_document_data(user_id=str(user_id_1))
 
     assert (
         len(user_0_docs) == 1
