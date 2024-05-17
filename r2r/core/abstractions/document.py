@@ -22,7 +22,9 @@ class DocumentType(Enum):
     JPG = "jpg"
     JPEG = "jpeg"
     SVG = "svg"
+    MP3 = "mp3"
     MP4 = "mp4"
+
 
 class Document(BaseModel):
     id: uuid.UUID

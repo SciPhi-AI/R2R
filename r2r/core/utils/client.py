@@ -86,7 +86,8 @@ class R2RClient:
         data = {"user_id": user_id}
         response = requests.post(url, json=data)
         response.raise_for_status()
-        return response.json()
+        response_json = response.json()
+        return response_json
 
     def get_logs(
         self, pipeline_type: Optional[str] = None, filter: Optional[str] = None

@@ -69,14 +69,16 @@ def client(r2r_app):
 async def test_ingest_txt_document(client):
     response = client.post(
         "/ingest_documents/",
-        json=[
-            {
-                "id": str(generate_id_from_label("doc_1")),
-                "data": "The quick brown fox jumps over the lazy dog.",
-                "type": "txt",
-                "metadata": {"author": "John Doe"},
-            }
-        ],
+        json={
+            "documents": [
+                {
+                    "id": str(generate_id_from_label("doc_1")),
+                    "data": "The quick brown fox jumps over the lazy dog.",
+                    "type": "txt",
+                    "metadata": {"author": "John Doe"},
+                }
+            ],
+        },
     )
     assert response.status_code == 200
     assert response.json() == {"results": "Entries upserted successfully."}
@@ -100,7 +102,7 @@ async def test_ingest_txt_file(client):
 
     response = client.post(
         "/ingest_files/",
-        data={"metadata": json.dumps(metadata), "ids": "[]"},
+        data={"metadatas": json.dumps([metadata]), "ids": "[]"},
         files=files,
     )
     assert response.status_code == 200
@@ -115,7 +117,7 @@ async def test_search(client):
     query = "who was aristotle?"
     response = client.post(
         "/search/",
-        data={
+        json={
             "query": query,
             "search_filters": "{}",
             "search_limit": "10",
@@ -131,8 +133,8 @@ async def test_rag(client):
     query = "who was aristotle?"
     response = client.post(
         "/rag/",
-        data={
-            "query": query,
+        json={
+            "message": query,
             "search_filters": "{}",
             "search_limit": "10",
             "streaming": "false",
@@ -148,7 +150,7 @@ async def test_delete(client):
     response = client.request(
         "DELETE",
         "/delete/",
-        data={"key": "author", "value": "John Doe"},
+        json={"key": "author", "value": "John Doe"},
     )
     assert response.status_code == 200
     assert response.json() == {"results": "Entries deleted successfully."}
@@ -168,7 +170,7 @@ async def test_get_user_document_data(client):
     user_id = str(generate_id_from_label("user_0"))
     response = client.post(
         "/get_user_document_data/",
-        data={"user_id": user_id},
+        json={"user_id": user_id},
     )
     assert response.status_code == 200
     assert "results" in response.json()

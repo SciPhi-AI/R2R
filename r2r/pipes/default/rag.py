@@ -61,20 +61,21 @@ class DefaultRAGPipe(GeneratorPipe):
         **kwargs: Any,
     ) -> AsyncGenerator[LLMChatCompletion, None]:
         config_override = kwargs.get("config_override", None)
-        async for context in input.message:
-            messages = self._get_llm_payload("\n".join(input.query), context)
-            response = self.llm_provider.get_completion(
-                messages=messages,
-                generation_config=config_override
-                or self.config.generation_config,
-            )
-            yield response
+        context = await self._collect_context(input)
+        messages = self._get_llm_payload("\n".join(input.query), context)
 
-            await self.enqueue_log(
-                pipe_run_id=self.run_info.run_id,
-                key="llm_response",
-                value=response.choices[0].message.content,
-            )
+        response = self.llm_provider.get_completion(
+            messages=messages,
+            generation_config=config_override
+            or self.config.generation_config,
+        )
+        yield response
+
+        await self.enqueue_log(
+            pipe_run_id=self.run_info.run_id,
+            key="llm_response",
+            value=response.choices[0].message.content,
+        )
 
     def _get_llm_payload(self, query: str, context: str) -> dict:
         return [
@@ -95,3 +96,12 @@ class DefaultRAGPipe(GeneratorPipe):
                 ),
             },
         ]
+
+    async def _collect_context(self, input: Input) -> str:
+        iteration = 0
+        context = ""
+        async for result in input.message:
+            context += f"Result {iteration+1}:\n{result.metadata['text']}\n\n"
+            iteration += 1
+
+        return context

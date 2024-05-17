@@ -1,4 +1,3 @@
-import json
 import os
 import subprocess
 import time
@@ -24,7 +23,7 @@ def r2r_server():
             "run",
             "uvicorn",
             "r2r.examples.servers.configurable_pipeline:app",
-            "--port=8010",
+            "--port=8011",
             "--workers=1",
         ]
     )
@@ -48,7 +47,7 @@ def r2r_server():
 
 @pytest.fixture(scope="module")
 def client():
-    base_url = "http://localhost:8010"
+    base_url = "http://localhost:8011"
     return R2RClient(base_url)
 
 
@@ -68,9 +67,9 @@ def test_ingest_txt_document(client):
 
 def test_ingest_txt_file(client):
     user_id = str(generate_id_from_label("user_1"))
-    metadata = {"author": "John Doe", "user_id": user_id}
+    metadatas = [{"author": "John Doe", "user_id": user_id}]
     files = ["r2r/examples/data/test1.txt"]
-    response = client.ingest_files(metadata, files)
+    response = client.ingest_files(metadatas, files)
     assert response == {
         "results": [
             "File 'r2r/examples/data/test1.txt' processed successfully for each file"
@@ -96,6 +95,18 @@ def test_rag(client):
     response = client.rag(query)
     assert "results" in response
 
+
+@pytest.mark.asyncio
+async def test_rag_stream(client):
+
+    test_ingest_txt_file(client)
+    test_ingest_txt_document(client)
+
+    query = "who was aristotle?"
+    response = client.rag(query, streaming=True)
+    collector = ""
+    async for chunk in response.body_iterator:
+        collector += chunk
 
 def test_delete(client):
     test_ingest_txt_file(client)
@@ -126,4 +137,6 @@ def test_get_user_document_data(client):
     response = client.get_user_document_data(user_id)
     assert "results" in response
     assert len(response["results"]) == 1
-    assert response["results"][0] == str(generate_id_from_label("doc_1"))
+    assert response["results"][0]["document_id"] == str(
+        generate_id_from_label("doc_1")
+    )

@@ -190,7 +190,5 @@ class LocalVectorDB(VectorDBProvider):
                         }
                     )
                 )
-        #         if metadata_field in metadata:
-        #             unique_values.add(metadata[metadata_field])
         conn.close()
-        return results  # list(unique_values)
+        return [json.loads(r) for r in results]

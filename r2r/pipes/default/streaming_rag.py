@@ -213,13 +213,12 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
             yield outer_chunk
             if self.COMPLETION_STREAM_MARKER not in outer_chunk:
                 llm_response += outer_chunk
-                
+
         await self.enqueue_log(
             pipe_run_id=self.run_info.run_id,
             key="llm_response",
             value=llm_response,
         )
-
 
     async def _yield_chunks(
         self,

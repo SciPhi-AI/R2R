@@ -172,10 +172,10 @@ class QdrantDB(VectorDBProvider):
 
     def get_metadatas(
         self,
-        metadata_field: str,
+        metadata_fields: list[str],
         filter_field: Optional[str] = None,
         filter_value: Optional[str] = None,
-    ) -> list:
+    ) -> list[dict]:
         if self.config.collection_name is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `get_metadatas`."
@@ -193,12 +193,12 @@ class QdrantDB(VectorDBProvider):
                 ]
             )
 
-        unique_values = set()
+        unique_values = {}
 
         # Scroll through the collection and retrieve points in batches
         next_page_offset = None
         while True:
-            records, next_page_offset = self.scroll(
+            records, next_page_offset = self.client.scroll(
                 collection_name=self.config.collection_name,
                 scroll_filter=scroll_filter,
                 offset=next_page_offset,
@@ -207,10 +207,15 @@ class QdrantDB(VectorDBProvider):
             )
 
             for record in records:
-                if metadata_field in record.payload:
-                    unique_values.add(record.payload[metadata_field])
-
+                metadata = record.payload
+                if all(field in metadata for field in metadata_fields):
+                    key = tuple(metadata[field] for field in metadata_fields)
+                    if key not in unique_values:
+                        unique_values[key] = {}
+                    for field in metadata_fields:
+                        unique_values[key][field] = metadata[field]
+                    
             if next_page_offset is None:
                 break
 
-        return list(unique_values)
+        return list(unique_values.values())

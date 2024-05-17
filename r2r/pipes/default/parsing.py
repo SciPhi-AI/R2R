@@ -9,6 +9,7 @@ from typing import AsyncGenerator, Iterator, Optional
 from r2r.core import (
     AsyncParser,
     AsyncState,
+    AudioParser,
     CSVParser,
     Document,
     DocumentType,
@@ -16,10 +17,10 @@ from r2r.core import (
     Extraction,
     ExtractionType,
     HTMLParser,
-    JSONParser,
     ImageParser,
-    MovieParser,
+    JSONParser,
     MarkdownParser,
+    MovieParser,
     PDFParser,
     PipeLoggingConnectionSingleton,
     PipeType,
@@ -96,6 +97,7 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
         DocumentType.JPG: {"default": ImageParser},
         DocumentType.PNG: {"default": ImageParser},
         DocumentType.SVG: {"default": ImageParser},
+        DocumentType.MP3: {"default": AudioParser},
         DocumentType.MP4: {"default": MovieParser},
     }
 
@@ -195,6 +197,7 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
             # document.metadata["image_data"] = sanitized_data
         elif document.type == DocumentType.MP4:
             extraction_type = ExtractionType.MOV
+            document.metadata["audio_type"] = document.type.value
 
         iteration = 0
         async for text in texts:
@@ -208,7 +211,6 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
                 document_id=document.id,
                 type=extraction_type,
             )
-            print('extraction = ', extraction)
             yield extraction
             extraction_dict = extraction.dict()
             await self.enqueue_log(

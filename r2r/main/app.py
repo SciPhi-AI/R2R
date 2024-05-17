@@ -235,7 +235,7 @@ class R2RApp:
         message: str
         search_filters: Optional[str]
         search_limit: int = 10
-        generation_config: Optional[GenerationConfig] = None
+        generation_config: Optional[str] = None
         streaming: bool = False
 
     async def rag_wrapper(self, request: RAGRequest):
@@ -243,6 +243,11 @@ class R2RApp:
             json.loads(request.search_filters)
             if request.search_filters
             else None
+        )
+        GenerationConfig(
+            **json.loads(request.generation_config)
+            if request.generation_config
+            else {}
         )
         return await self.rag(
             request.message,
@@ -275,7 +280,7 @@ class R2RApp:
                 metadata_fields=["user_id"]
             )
 
-            return {"results": user_ids}
+            return {"results": [ele["user_id"] for ele in user_ids]}
         except Exception as e:
             logging.error(f"get_user_ids() - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
@@ -292,7 +297,7 @@ class R2RApp:
                 filter_field="user_id",
                 filter_value=user_id,
             )
-            return {"results": document_ids}
+            return {"results": [ele for ele in document_ids]}
         except Exception as e:
             logging.error(
                 f"get_user_document_data(user_id={user_id}) - \n\n{str(e)})"
@@ -307,9 +312,7 @@ class R2RApp:
     ):
         return await self.get_user_document_data(request.user_id)
 
-    async def get_logs(
-        self, pipeline_type: Optional[str] = None
-    ):
+    async def get_logs(self, pipeline_type: Optional[str] = None):
         try:
             logs_per_run = 10
             if self.logging_connection is None:
@@ -320,20 +323,27 @@ class R2RApp:
                 pipeline_type=pipeline_type,
                 limit=self.config.app.get("max_logs", 100) // logs_per_run,
             )
-            print('selecting runs from  = ', pipeline_type)
-            print('run_info = ', run_info)
-            logs = await self.logging_connection.get_logs([run.run_id for run in run_info])
+            logs = await self.logging_connection.get_logs(
+                [run.run_id for run in run_info]
+            )
             # Aggregate logs by run_id and include run_type
             aggregated_logs = []
 
             for run in run_info:
-                run_logs = [log for log in logs if log['pipe_run_id'] == run.run_id]
-                entries = [{'key': log['key'], 'value': log['value']} for log in run_logs]
-                aggregated_logs.append({
-                    'run_id': run.run_id,
-                    'run_type': run.pipeline_type,
-                    'entries': entries
-                })
+                run_logs = [
+                    log for log in logs if log["pipe_run_id"] == run.run_id
+                ]
+                entries = [
+                    {"key": log["key"], "value": log["value"]}
+                    for log in run_logs
+                ]
+                aggregated_logs.append(
+                    {
+                        "run_id": run.run_id,
+                        "run_type": run.pipeline_type,
+                        "entries": entries,
+                    }
+                )
 
             return {"results": aggregated_logs}
 
@@ -344,10 +354,7 @@ class R2RApp:
     class LogsRequest(BaseModel):
         pipeline_type: Optional[str] = None
 
-    async def get_logs_wrapper(
-        self,
-        request: LogsRequest
-    ):
+    async def get_logs_wrapper(self, request: LogsRequest):
         return await self.get_logs(request.pipeline_type)
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):

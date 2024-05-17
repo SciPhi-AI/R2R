@@ -13,6 +13,7 @@ from .abstractions.search import SearchRequest, SearchResult
 from .abstractions.vector import Vector, VectorEntry, VectorType
 from .parsers import (
     AsyncParser,
+    AudioParser,
     CSVParser,
     DOCXParser,
     HTMLParser,
@@ -83,6 +84,7 @@ __all__ = [
     "Fragment",
     "FragmentType",
     # Parsers
+    "AudioParser",
     "AsyncParser",
     "CSVParser",
     "DOCXParser",

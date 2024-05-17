@@ -162,22 +162,33 @@ class PGVectorDB(VectorDBProvider):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `delete_by_metadata`."
             )
-        self.collection.delete(filters={metadata_field: {"$eq": metadata_value}})  # type: ignore
+        self.collection.delete(
+            filters={metadata_field: {"$eq": metadata_value}}
+        )
 
     def get_metadatas(
         self,
-        metadata_field: str,
+        metadata_fields: list[str],
         filter_field: Optional[str] = None,
-        filter_value: Optional[str] = None,
-    ) -> list[str]:
+        filter_value: Optional[Union[bool, int, str]] = None,
+    ) -> list[dict]:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `get_metadatas`."
             )
 
-        unique_values = self.collection.get_unique_metadata_values(
-            field=metadata_field,
-            filter_field=filter_field,
-            filter_value=filter_value,
-        )
-        return unique_values
+        results = {tuple(metadata_fields): {}}
+        for field in metadata_fields:
+            unique_values = self.collection.get_unique_metadata_values(
+                field=field,
+                filter_field=filter_field,
+                filter_value=filter_value,
+            )
+            for value in unique_values:
+                if value not in results:
+                    results[value] = {}
+                results[value][field] = value
+
+        return [
+            results[key] for key in results if key != tuple(metadata_fields)
+        ]

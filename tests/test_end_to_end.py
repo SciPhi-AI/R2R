@@ -78,8 +78,8 @@ async def test_ingest_txt_document(r2r_app, logging_connection):
             ),
         ]
     )
-    run_ids = await logging_connection.get_run_info(pipeline_type="ingestion")
-    logs = await logging_connection.get_logs(run_ids)
+    run_info = await logging_connection.get_run_info(pipeline_type="ingestion")
+    logs = await logging_connection.get_logs([run.run_id for run in run_info])
     assert len(logs) == 2, f"Expected 2 logs, but got {len(logs)}"
 
     for log in logs:
@@ -107,12 +107,12 @@ async def test_ingest_txt_file(r2r_app, logging_connection):
         file.file.seek(0)  # Move back to the start of the file
 
     # Convert metadata to JSON string
-    metadata_str = json.dumps(metadata)
+    metadata_str = json.dumps([metadata])
 
-    await r2r_app.ingest_files(metadata=metadata_str, files=files)
+    await r2r_app.ingest_files(metadatas=metadata_str, files=files)
 
-    run_ids = await logging_connection.get_run_info(pipeline_type="ingestion")
-    logs = await logging_connection.get_logs(run_ids)
+    run_info = await logging_connection.get_run_info(pipeline_type="ingestion")
+    logs = await logging_connection.get_logs([run.run_id for run in run_info])
     assert len(logs) == 2, f"Expected 2 logs, but got {len(logs)}"
 
     for log in logs:
@@ -140,12 +140,14 @@ async def test_ingest_and_search_larger_txt_file(r2r_app, logging_connection):
         file.file.seek(0)  # Move back to the start of the file
 
     # Convert metadata to JSON string
-    metadata_str = json.dumps(metadata)
+    metadata_str = json.dumps([metadata])
 
-    await r2r_app.ingest_files(metadata=metadata_str, files=files)
+    await r2r_app.ingest_files(metadatas=metadata_str, files=files)
 
-    run_ids = await logging_connection.get_run_info(pipeline_type="ingestion")
-    logs = await logging_connection.get_logs(run_ids, 100)
+    run_info = await logging_connection.get_run_info(pipeline_type="ingestion")
+    logs = await logging_connection.get_logs(
+        [run.run_id for run in run_info], 100
+    )
     assert len(logs) == 100, f"Expected 100 logs, but got {len(logs)}"
 
     for log in logs:
@@ -157,7 +159,7 @@ async def test_ingest_and_search_larger_txt_file(r2r_app, logging_connection):
     assert len(search_results["results"]) == 10
     assert (
         "was an Ancient Greek philosopher and polymath"
-        in search_results["results"][0].metadata["text"]
+        in search_results["results"][0]["metadata"]["text"]
     )
 
     search_results = await r2r_app.search(
@@ -166,7 +168,7 @@ async def test_ingest_and_search_larger_txt_file(r2r_app, logging_connection):
     assert len(search_results["results"]) == 20
     assert (
         "was an Ancient Greek philosopher and polymath"
-        in search_results["results"][0].metadata["text"]
+        in search_results["results"][0]["metadata"]["text"]
     )
 
     ## test streaming
@@ -204,7 +206,7 @@ async def test_ingest_search_then_delete(r2r_app, logging_connection):
         len(search_results["results"]) > 0
     ), "Expected search results, but got none"
     assert (
-        search_results["results"][0].metadata["text"]
+        search_results["results"][0]["metadata"]["text"]
         == "The quick brown fox jumps over the lazy dog."
     )
 
@@ -256,18 +258,17 @@ async def test_ingest_user_documents(r2r_app, logging_connection):
     user_1_docs = await r2r_app.get_user_document_data(user_id=str(user_id_1))
 
     assert (
-        len(user_0_docs) == 1
-    ), f"Expected 1 document for user {user_id_0}, but got {len(user_0_docs)}"
+        len(user_0_docs["results"]) == 1
+    ), f"Expected 1 document for user {user_id_0}, but got {len(user_0_docs['results'])}"
     assert (
-        len(user_1_docs) == 1
-    ), f"Expected 1 document for user {user_id_1}, but got {len(user_1_docs)}"
-    assert user_0_docs["results"][0] == str(
+        len(user_1_docs["results"]) == 1
+    ), f"Expected 1 document for user {user_id_1}, but got {len(user_1_docs['results'])}"
+    assert user_0_docs["results"][0]["document_id"] == str(
         generate_id_from_label("doc_0")
-    ), f"Expected document id {str(generate_id_from_label('doc_0'))} for user {user_id_0}, but got {user_0_docs[0]}"
-    assert user_1_docs["results"][0] == str(
+    ), f"Expected document id {str(generate_id_from_label('doc_0'))} for user {user_id_0}, but got {user_0_docs['results'][0]['document_id']}"
+    assert user_1_docs["results"][0]["document_id"] == str(
         generate_id_from_label("doc_1")
-    ), f"Expected document id {str(generate_id_from_label('doc_1'))} for user {user_id_1}, but got {user_1_docs[0]}"
-
+    ), f"Expected document id {str(generate_id_from_label('doc_1'))} for user {user_id_1}, but got {user_1_docs['results'][0]['document_id']}"
 
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
@@ -289,9 +290,6 @@ async def test_delete_by_id(r2r_app, logging_connection):
     await r2r_app.delete("document_id", str(generate_id_from_label("doc_1")))
     search_results = await r2r_app.search("who was aristotle?")
     assert len(search_results["results"]) == 0
-
-
-
 
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)

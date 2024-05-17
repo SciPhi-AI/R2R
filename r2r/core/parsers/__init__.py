@@ -1,12 +1,13 @@
 from .base import AsyncParser
 from .implementations import (
+    AudioParser,
     CSVParser,
     DOCXParser,
     HTMLParser,
     ImageParser,
     JSONParser,
-    MovieParser,
     MarkdownParser,
+    MovieParser,
     PDFParser,
     PPTParser,
     TextParser,
@@ -15,6 +16,7 @@ from .implementations import (
 
 __all__ = [
     "AsyncParser",
+    "AudioParser",
     "CSVParser",
     "DOCXParser",
     "HTMLParser",

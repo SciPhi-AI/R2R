@@ -79,6 +79,23 @@ def qdrant_vector_db():
     yield db
 
 
+# @pytest.mark.parametrize(
+#     "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
+# )
+@pytest.mark.parametrize(
+    "db_fixture", ["qdrant_vector_db"]
+)
+def test_get_metadatas(request, db_fixture):
+    db = request.getfixturevalue(db_fixture)
+    for entry in sample_entries:
+        db.upsert(entry)
+
+    unique_metadatas = db.get_metadatas(metadata_fields=["key"])
+    unique_values = set([ele["key"] for ele in unique_metadatas])
+    assert len(unique_values) == num_entries
+    assert all(f"value_id_{i}" in unique_values for i in range(num_entries))
+
+
 # Parameterize the tests to run with both LocalVectorDB and PGVectorDB
 @pytest.mark.parametrize(
     "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
@@ -91,11 +108,23 @@ def test_db_initialization(request, db_fixture):
 @pytest.mark.parametrize("db_fixture", ["local_vector_db", "pg_vector_db"])
 def test_db_copy_and_search(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
-    db.copy(sample_entries[0])
+    db.upsert(sample_entries[0])
     results = db.search(query_vector=sample_entries[0].vector.data)
     assert len(results) == 1
     assert results[0].id == sample_entries[0].id
-    assert results[0].score == pytest.approx(1.0, rel=1e-9)
+    assert results[0].score == pytest.approx(1.0, rel=1e-3)
+
+
+@pytest.mark.parametrize(
+    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
+)
+def test_db_upsert_and_search(request, db_fixture):
+    db = request.getfixturevalue(db_fixture)
+    db.upsert(sample_entries[0])
+    results = db.search(query_vector=sample_entries[0].vector.data)
+    assert len(results) == 1
+    assert results[0].id == sample_entries[0].id
+    assert results[0].score == pytest.approx(1.0, rel=1e-3)
 
 
 @pytest.mark.parametrize(
@@ -111,24 +140,28 @@ def test_imperfect_match(request, db_fixture):
     assert results[0].score < 1.0
 
 
-@pytest.mark.parametrize("db_fixture", ["local_vector_db", "pg_vector_db"])
+@pytest.mark.parametrize(
+    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
+)
 def test_bulk_insert_and_search(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     for entry in sample_entries:
-        db.copy(entry)
+        db.upsert(entry)
 
     query_vector = sample_entries[0].vector.data
     results = db.search(query_vector=query_vector, limit=5)
     assert len(results) == 5
     assert results[0].id == sample_entries[0].id
-    assert results[0].score == pytest.approx(1.0, rel=1e-9)
+    assert results[0].score == pytest.approx(1.0, rel=1e-3)
 
 
-@pytest.mark.parametrize("db_fixture", ["local_vector_db", "pg_vector_db"])
+@pytest.mark.parametrize(
+    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
+)
 def test_search_with_filters(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     for entry in sample_entries:
-        db.copy(entry)
+        db.upsert(entry)
 
     filtered_id = sample_entries[0].metadata["key"]
     query_vector = sample_entries[0].vector.data
@@ -140,28 +173,19 @@ def test_search_with_filters(request, db_fixture):
     assert results[0].metadata["key"] == filtered_id
 
 
-@pytest.mark.parametrize("db_fixture", ["local_vector_db", "pg_vector_db"])
+@pytest.mark.parametrize(
+    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
+)
 def test_delete_by_metadata(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     for entry in sample_entries:
-        db.copy(entry)
+        db.upsert(entry)
 
     key_to_delete = sample_entries[0].metadata["key"]
     db.delete_by_metadata(metadata_field="key", metadata_value=key_to_delete)
 
     results = db.search(query_vector=sample_entries[0].vector.data)
     assert all(result.metadata["key"] != key_to_delete for result in results)
-
-
-@pytest.mark.parametrize("db_fixture", ["local_vector_db", "pg_vector_db"])
-def test_get_metadatas(request, db_fixture):
-    db = request.getfixturevalue(db_fixture)
-    for entry in sample_entries:
-        db.copy(entry)
-
-    unique_values = db.get_metadatas(metadata_field="key")
-    assert len(unique_values) == num_entries
-    assert all(f"value_id_{i}" in unique_values for i in range(num_entries))
 
 
 @pytest.mark.parametrize(

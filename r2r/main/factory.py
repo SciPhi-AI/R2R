@@ -233,7 +233,6 @@ class DefaultR2RPipelineFactory:
 
         rag_pipeline = RAGPipeline()
         rag_pipeline.add_pipe(search_pipe)
-        # rag_pipeline.add_pipe(collector_pipe)
         rag_pipeline.add_pipe(
             rag_pipe,
             add_upstream_outputs=[

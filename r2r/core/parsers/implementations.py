@@ -1,11 +1,11 @@
 import base64
-import requests
-import os
 import json
+import os
 import string
 from io import BytesIO
 from typing import AsyncGenerator, Union
 
+import requests
 from bs4 import BeautifulSoup
 
 from ..abstractions.document import DataType
@@ -186,10 +186,16 @@ class MarkdownParser(AsyncParser[DataType]):
         yield soup.get_text()
 
 
-def process_frame_with_openai(data: bytes, api_key: str, model: str = "gpt-4o", max_tokens: int = 2_048, api_base: str = "https://api.openai.com/v1/chat/completions") -> str:
+def process_frame_with_openai(
+    data: bytes,
+    api_key: str,
+    model: str = "gpt-4o",
+    max_tokens: int = 2_048,
+    api_base: str = "https://api.openai.com/v1/chat/completions",
+) -> str:
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
+        "Authorization": f"Bearer {api_key}",
     }
 
     payload = {
@@ -200,64 +206,108 @@ def process_frame_with_openai(data: bytes, api_key: str, model: str = "gpt-4o", 
                 "content": [
                     {
                         "type": "text",
-                        "text": "First, provide a title for the image, then explain everything that you see. Be very thorough in your analysis as a user will need to understand the image without seeing it. If it is possible to transcribe the image to text directly, then do so. The more detail you provide, the better the user will understand the image."
+                        "text": "First, provide a title for the image, then explain everything that you see. Be very thorough in your analysis as a user will need to understand the image without seeing it. If it is possible to transcribe the image to text directly, then do so. The more detail you provide, the better the user will understand the image.",
                     },
                     {
                         "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{data}"
-                        }
-                    }
-                ]
+                        "image_url": {"url": f"data:image/jpeg;base64,{data}"},
+                    },
+                ],
             }
         ],
-        "max_tokens": max_tokens
+        "max_tokens": max_tokens,
     }
 
     response = requests.post(api_base, headers=headers, json=payload)
     response_json = response.json()
-    return response_json['choices'][0]['message']['content']
+    return response_json["choices"][0]["message"]["content"]
 
-def process_audio_with_openai(audio_file, api_key: str, audio_api_base: str = "https://api.openai.com/v1/audio/transcriptions") -> str:
-    headers = {
-        "Authorization": f"Bearer {api_key}"
-    }
+
+def process_audio_with_openai(
+    audio_file,
+    api_key: str,
+    audio_api_base: str = "https://api.openai.com/v1/audio/transcriptions",
+) -> str:
+    headers = {"Authorization": f"Bearer {api_key}"}
 
     transcription_response = requests.post(
         audio_api_base,
         headers=headers,
         files={"file": audio_file},
-        data={"model": "whisper-1"}
+        data={"model": "whisper-1"},
     )
     transcription = transcription_response.json()
 
-    return transcription['text']
+    return transcription["text"]
+
+
+class AudioParser(AsyncParser[bytes]):
+    def __init__(
+        self, api_base: str = "https://api.openai.com/v1/audio/transcriptions"
+    ):
+        self.api_base = api_base
+        self.openai_api_key = os.environ.get("OPENAI_API_KEY")
+        if not self.openai_api_key:
+            raise ValueError(
+                "Error, environment variable `OPENAI_API_KEY` is required to run `AudioParser`."
+            )
+
+    async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
+        temp_audio_path = "temp_audio.wav"
+        with open(temp_audio_path, "wb") as f:
+            f.write(data)
+        try:
+            transcription_text = process_audio_with_openai(
+                open(temp_audio_path, "rb"), self.openai_api_key
+            )
+            yield transcription_text
+        finally:
+            os.remove(temp_audio_path)
 
 
 class ImageParser(AsyncParser[DataType]):
-    def __init__(self, model: str = "gpt-4o", max_tokens: int = 2_048, api_base: str = "https://api.openai.com/v1/chat/completions"):
-
+    def __init__(
+        self,
+        model: str = "gpt-4o",
+        max_tokens: int = 2_048,
+        api_base: str = "https://api.openai.com/v1/chat/completions",
+    ):
         self.model = model
         self.max_tokens = max_tokens
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
         if not self.openai_api_key:
-            raise ValueError("Error, environment variable `OPENAI_API_KEY` is required to run `ImageParser`.")
+            raise ValueError(
+                "Error, environment variable `OPENAI_API_KEY` is required to run `ImageParser`."
+            )
         self.api_base = api_base
 
-
     async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
-        
         if isinstance(data, bytes):
             import base64
-            # Function to encode the image
-            data = base64.b64encode(data).decode('utf-8')
 
-        return process_frame_with_openai(data, self.openai_api_key, self.model, self.max_tokens, self.api_base)
+            # Function to encode the image
+            data = base64.b64encode(data).decode("utf-8")
+
+        yield process_frame_with_openai(
+            data,
+            self.openai_api_key,
+            self.model,
+            self.max_tokens,
+            self.api_base,
+        )
+
 
 class MovieParser(AsyncParser):
-    def __init__(self, model: str = "gpt-4o", max_tokens: int = 2048, seconds_per_frame: int = 2, max_frames: int = 10):
+    def __init__(
+        self,
+        model: str = "gpt-4o",
+        max_tokens: int = 2048,
+        seconds_per_frame: int = 2,
+        max_frames: int = 10,
+    ):
         try:
             import cv2
+
             self.cv2 = cv2
         except ImportError:
             raise ValueError(
@@ -265,12 +315,12 @@ class MovieParser(AsyncParser):
             )
         try:
             import moviepy.editor as mp
+
             self.mp = mp
         except ImportError:
             raise ValueError(
                 "Error, `moviepy` is required to run `MovieParser`. Please install it using `pip install moviepy`."
             )
-
 
         self.model = model
         self.max_tokens = max_tokens
@@ -278,7 +328,9 @@ class MovieParser(AsyncParser):
         self.max_frames = max_frames
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
         if not self.openai_api_key:
-            raise ValueError("Error, environment variable `OPENAI_API_KEY` is required to run `MovieParser`.")
+            raise ValueError(
+                "Error, environment variable `OPENAI_API_KEY` is required to run `MovieParser`."
+            )
 
     async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
         temp_video_path = "temp_movie.mp4"
@@ -287,11 +339,15 @@ class MovieParser(AsyncParser):
         try:
             raw_frames, audio_file = self.process_video(temp_video_path)
             for frame in raw_frames:
-                frame_text = process_frame_with_openai(frame, self.openai_api_key)
+                frame_text = process_frame_with_openai(
+                    frame, self.openai_api_key
+                )
                 yield frame_text
 
-            # Process audio using OpenAI API
-            transcription_text = process_audio_with_openai(audio_file, self.openai_api_key)
+            if audio_file:
+                transcription_text = process_audio_with_openai(
+                    audio_file, self.openai_api_key
+                )
             yield transcription_text
         finally:
             os.remove(temp_video_path)
@@ -311,7 +367,9 @@ class MovieParser(AsyncParser):
             frames_to_skip = max(total_frames // self.max_frames, 1)
 
         frame_count = 0
-        while curr_frame < total_frames - 1 and (not self.max_frames or frame_count < self.max_frames):
+        while curr_frame < total_frames - 1 and (
+            not self.max_frames or frame_count < self.max_frames
+        ):
             video.set(self.cv2.CAP_PROP_POS_FRAMES, curr_frame)
             success, frame = video.read()
             if not success:
@@ -323,9 +381,12 @@ class MovieParser(AsyncParser):
         video.release()
 
         audio_path = f"{base_video_path}.wav"
+        audio_file = None
         with self.mp.VideoFileClip(video_path) as clip:
             if clip.audio is not None:
-                clip.audio.write_audiofile(audio_path, codec='pcm_s16le', fps=16000)
+                clip.audio.write_audiofile(
+                    audio_path, codec="pcm_s16le", fps=16000
+                )
                 audio_file = open(audio_path, "rb")
                 os.remove(audio_path)
 
