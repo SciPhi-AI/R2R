@@ -132,35 +132,6 @@ class R2RClient:
             chunks.append(chunk)
         return chunks
 
-    # async def rag(
-    #     self,
-    #     message: str,
-    #     search_filters: Optional[Dict] = None,
-    #     search_limit: int = 10,
-    #     generation_config: Optional[Dict] = None,
-    #     streaming: bool = False,
-    # ) -> Union[Dict, AsyncGenerator[str, None]]:
-    #     url = f"{self.base_url}/rag/"
-    #     data = {
-    #         "message": message,
-    #         "search_filters": json.dumps(search_filters or {}),
-    #         "search_limit": search_limit,
-    #         "streaming": streaming,
-    #     }
-    #     if generation_config:
-    #         data["generation_config"] = json.dumps(generation_config)
-
-    #     if streaming:
-    #         async with httpx.AsyncClient() as client:
-    #             async with client.stream("POST", url, json=data) as response:
-    #                 response.raise_for_status()
-    #                 async for chunk in response.aiter_text():
-    #                     yield chunk
-    #     else:
-    #         response = requests.post(url, json=data)
-    #         response.raise_for_status()
-    #         return response.json()
-
     def delete(self, key: str, value: str) -> Dict:
         url = f"{self.base_url}/delete/"
         data = {"key": key, "value": value}
