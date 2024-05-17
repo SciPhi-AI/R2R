@@ -78,7 +78,7 @@ async def test_ingest_txt_document(r2r_app, logging_connection):
             ),
         ]
     )
-    run_ids = await logging_connection.get_run_ids(pipeline_type="ingestion")
+    run_ids = await logging_connection.get_run_info(pipeline_type="ingestion")
     logs = await logging_connection.get_logs(run_ids)
     assert len(logs) == 2, f"Expected 2 logs, but got {len(logs)}"
 
@@ -111,7 +111,7 @@ async def test_ingest_txt_file(r2r_app, logging_connection):
 
     await r2r_app.ingest_files(metadata=metadata_str, files=files)
 
-    run_ids = await logging_connection.get_run_ids(pipeline_type="ingestion")
+    run_ids = await logging_connection.get_run_info(pipeline_type="ingestion")
     logs = await logging_connection.get_logs(run_ids)
     assert len(logs) == 2, f"Expected 2 logs, but got {len(logs)}"
 
@@ -144,7 +144,7 @@ async def test_ingest_and_search_larger_txt_file(r2r_app, logging_connection):
 
     await r2r_app.ingest_files(metadata=metadata_str, files=files)
 
-    run_ids = await logging_connection.get_run_ids(pipeline_type="ingestion")
+    run_ids = await logging_connection.get_run_info(pipeline_type="ingestion")
     logs = await logging_connection.get_logs(run_ids, 100)
     assert len(logs) == 100, f"Expected 100 logs, but got {len(logs)}"
 
@@ -267,3 +267,58 @@ async def test_ingest_user_documents(r2r_app, logging_connection):
     assert user_1_docs["results"][0] == str(
         generate_id_from_label("doc_1")
     ), f"Expected document id {str(generate_id_from_label('doc_1'))} for user {user_id_1}, but got {user_1_docs[0]}"
+
+
+
+@pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
+@pytest.mark.asyncio
+async def test_delete_by_id(r2r_app, logging_connection):
+    await r2r_app.ingest_documents(
+        [
+            Document(
+                id=generate_id_from_label("doc_1"),
+                data="The quick brown fox jumps over the lazy dog.",
+                type="txt",
+                metadata={"author": "John Doe"},
+            ),
+        ]
+    )
+    search_results = await r2r_app.search("who was aristotle?")
+
+    assert len(search_results["results"]) > 0
+    await r2r_app.delete("document_id", str(generate_id_from_label("doc_1")))
+    search_results = await r2r_app.search("who was aristotle?")
+    assert len(search_results["results"]) == 0
+
+
+
+
+
+@pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
+@pytest.mark.asyncio
+async def test_double_ingest(r2r_app, logging_connection):
+    await r2r_app.ingest_documents(
+        [
+            Document(
+                id=generate_id_from_label("doc_1"),
+                data="The quick brown fox jumps over the lazy dog.",
+                type="txt",
+                metadata={"author": "John Doe"},
+            ),
+        ]
+    )
+    search_results = await r2r_app.search("who was aristotle?")
+
+    assert len(search_results["results"]) == 1
+    await r2r_app.ingest_documents(
+        [
+            Document(
+                id=generate_id_from_label("doc_1"),
+                data="The quick brown fox jumps over the lazy dog.",
+                type="txt",
+                metadata={"author": "John Doe"},
+            ),
+        ]
+    )
+    search_results = await r2r_app.search("who was aristotle?")
+    assert len(search_results["results"]) == 1

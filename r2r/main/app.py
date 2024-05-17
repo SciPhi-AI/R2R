@@ -83,6 +83,11 @@ class R2RApp:
             endpoint=self.get_user_document_data_wrapper,
             methods=["POST"],
         )
+        self.app.add_api_route(
+            path="/get_logs/",
+            endpoint=self.get_logs_wrapper,
+            methods=["POST"],
+        )
 
     async def ingest_documents(self, documents: List[Document]):
         try:
@@ -303,7 +308,7 @@ class R2RApp:
         return await self.get_user_document_data(request.user_id)
 
     async def get_logs(
-        self, pipeline_type: Optional[str] = None, filter: Optional[str] = None
+        self, pipeline_type: Optional[str] = None
     ):
         try:
             logs_per_run = 10
@@ -311,22 +316,39 @@ class R2RApp:
                 raise HTTPException(
                     status_code=404, detail="Logging provider not found."
                 )
-            run_ids = await self.logging_connection.get_run_ids(
+            run_info = await self.logging_connection.get_run_info(
                 pipeline_type=pipeline_type,
                 limit=self.config.app.get("max_logs", 100) // logs_per_run,
             )
-            logs = await self.logging_connection.get_logs(run_ids)
-            return {"results": logs}
+            print('selecting runs from  = ', pipeline_type)
+            print('run_info = ', run_info)
+            logs = await self.logging_connection.get_logs([run.run_id for run in run_info])
+            # Aggregate logs by run_id and include run_type
+            aggregated_logs = []
+
+            for run in run_info:
+                run_logs = [log for log in logs if log['pipe_run_id'] == run.run_id]
+                entries = [{'key': log['key'], 'value': log['value']} for log in run_logs]
+                aggregated_logs.append({
+                    'run_id': run.run_id,
+                    'run_type': run.pipeline_type,
+                    'entries': entries
+                })
+
+            return {"results": aggregated_logs}
+
         except Exception as e:
             logging.error(f":logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
+    class LogsRequest(BaseModel):
+        pipeline_type: Optional[str] = None
+
     async def get_logs_wrapper(
         self,
-        pipeline_type: Optional[str] = Form(None),
-        filter: Optional[str] = Form(None),
+        request: LogsRequest
     ):
-        return await self.get_logs(pipeline_type, filter)
+        return await self.get_logs(request.pipeline_type)
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         try:

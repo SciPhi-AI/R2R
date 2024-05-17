@@ -14,8 +14,11 @@ from r2r.core import (
     DocumentType,
     DOCXParser,
     Extraction,
+    ExtractionType,
     HTMLParser,
     JSONParser,
+    ImageParser,
+    MovieParser,
     MarkdownParser,
     PDFParser,
     PipeLoggingConnectionSingleton,
@@ -88,6 +91,20 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
         DocumentType.PPTX: {"default": PPTParser},
         DocumentType.TXT: {"default": TextParser},
         DocumentType.XLSX: {"default": XLSXParser},
+        DocumentType.GIF: {"default": ImageParser},
+        DocumentType.JPEG: {"default": ImageParser},
+        DocumentType.JPG: {"default": ImageParser},
+        DocumentType.PNG: {"default": ImageParser},
+        DocumentType.SVG: {"default": ImageParser},
+        DocumentType.MP4: {"default": MovieParser},
+    }
+
+    IMAGE_TYPES = {
+        DocumentType.GIF,
+        DocumentType.JPG,
+        DocumentType.JPEG,
+        DocumentType.PNG,
+        DocumentType.SVG,
     }
 
     def __init__(
@@ -163,6 +180,22 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
             return
         parser = self.parsers[document.type]
         texts = parser.ingest(document.data)
+        extraction_type = ExtractionType.TXT
+        if document.type in self.IMAGE_TYPES:
+            extraction_type = ExtractionType.IMG
+            document.metadata["image_type"] = document.type.value
+            # SAVE IMAGE DATA
+            # try:
+            #     import base64
+            #     sanitized_data = base64.b64encode(document.data).decode('utf-8')
+            # except Exception as e:
+            #     print(f"sanitization failed with e = {e}")
+            #     sanitized_data = document.data
+
+            # document.metadata["image_data"] = sanitized_data
+        elif document.type == DocumentType.MP4:
+            extraction_type = ExtractionType.MOV
+
         iteration = 0
         async for text in texts:
             extraction_id = generate_id_from_label(
@@ -173,7 +206,9 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
                 data=text,
                 metadata=document.metadata,
                 document_id=document.id,
+                type=extraction_type,
             )
+            print('extraction = ', extraction)
             yield extraction
             extraction_dict = extraction.dict()
             await self.enqueue_log(

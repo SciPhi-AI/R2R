@@ -153,8 +153,8 @@ class LocalVectorDB(VectorDBProvider):
         cursor = self._get_cursor(conn)
         cursor.execute(f'SELECT * FROM "{self.config.collection_name}"')
         for id, vector, metadata in cursor.fetchall():
-            metadata = json.loads(metadata)
-            if metadata.get(metadata_field) == metadata_value:
+            metadata_json = json.loads(metadata)
+            if metadata_json.get(metadata_field) == metadata_value:
                 cursor.execute(
                     f'DELETE FROM "{self.config.collection_name}" WHERE id = ?',
                     (id,),

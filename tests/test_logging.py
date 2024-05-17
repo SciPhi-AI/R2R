@@ -109,7 +109,7 @@ async def test_specific_run_type_retrieval(local_provider):
     )
     await local_provider.log(run_id_1, "key_1", "value_1")
 
-    run_ids = await local_provider.get_run_ids("search")
+    run_ids = await local_provider.get_run_info("search")
     logs = await local_provider.get_logs(run_ids)
     assert len(logs) == 1
     assert logs[0]["pipe_run_id"] == run_id_0
@@ -201,7 +201,7 @@ async def test_postgres_specific_run_type_retrieval(postgres_provider):
     )
     await postgres_provider.log(run_id_1, "key_1", "value_1")
 
-    run_ids = await postgres_provider.get_run_ids("search")
+    run_ids = await postgres_provider.get_run_info("search")
     logs = await postgres_provider.get_logs(run_ids)
     assert len(logs) == 1
     assert logs[0]["pipe_run_id"] == run_id_0
@@ -288,7 +288,7 @@ async def test_redis_specific_run_type_retrieval(redis_provider):
     )
     await redis_provider.log(run_id_1, "key_1", "value_1")
 
-    run_ids = await redis_provider.get_run_ids("search")
+    run_ids = await redis_provider.get_run_info("search")
     logs = await redis_provider.get_logs(run_ids)
     assert len(logs) == 1
     assert logs[0]["pipe_run_id"] == run_id_0

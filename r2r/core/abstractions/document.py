@@ -17,7 +17,12 @@ class DocumentType(Enum):
     PPTX = "pptx"
     TXT = "txt"
     XLSX = "xlsx"
-
+    GIF = "gif"
+    PNG = "png"
+    JPG = "jpg"
+    JPEG = "jpeg"
+    SVG = "svg"
+    MP4 = "mp4"
 
 class Document(BaseModel):
     id: uuid.UUID
@@ -28,6 +33,8 @@ class Document(BaseModel):
 
 class ExtractionType(Enum):
     TXT = "txt"
+    IMG = "img"
+    MOV = "mov"
 
 
 class Extraction(BaseModel):

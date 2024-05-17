@@ -166,7 +166,7 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
                 name="default_streaming_rag_pipe",
                 task_prompt="default_rag_prompt",
                 generation_config=generation_config
-                or GenerationConfig(model="gpt-4-turbo", stream=True),
+                or GenerationConfig(model="gpt-3.5-turbo", stream=True),
             ),
             *args,
             **kwargs,
@@ -196,7 +196,9 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
         ):
             yield chunk
 
-        async for chunk in self._yield_chunks(
+        llm_response = ""
+
+        async for outer_chunk in self._yield_chunks(
             f"<{self.COMPLETION_STREAM_MARKER}>",
             (
                 self._process_chunk(chunk)
@@ -208,7 +210,16 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
             ),
             f"</{self.COMPLETION_STREAM_MARKER}>",
         ):
-            yield chunk
+            yield outer_chunk
+            if self.COMPLETION_STREAM_MARKER not in outer_chunk:
+                llm_response += outer_chunk
+                
+        await self.enqueue_log(
+            pipe_run_id=self.run_info.run_id,
+            key="llm_response",
+            value=llm_response,
+        )
+
 
     async def _yield_chunks(
         self,

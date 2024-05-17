@@ -72,8 +72,8 @@ class DefaultRAGPipe(GeneratorPipe):
 
             await self.enqueue_log(
                 pipe_run_id=self.run_info.run_id,
-                key="response",
-                value=response,
+                key="llm_response",
+                value=response.choices[0].message.content,
             )
 
     def _get_llm_payload(self, query: str, context: str) -> dict:
