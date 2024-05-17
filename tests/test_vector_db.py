@@ -82,9 +82,7 @@ def qdrant_vector_db():
 # @pytest.mark.parametrize(
 #     "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
 # )
-@pytest.mark.parametrize(
-    "db_fixture", ["qdrant_vector_db"]
-)
+@pytest.mark.parametrize("db_fixture", ["qdrant_vector_db"])
 def test_get_metadatas(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     for entry in sample_entries:

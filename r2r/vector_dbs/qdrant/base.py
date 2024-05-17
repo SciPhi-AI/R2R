@@ -214,7 +214,7 @@ class QdrantDB(VectorDBProvider):
                         unique_values[key] = {}
                     for field in metadata_fields:
                         unique_values[key][field] = metadata[field]
-                    
+
             if next_page_offset is None:
                 break
 

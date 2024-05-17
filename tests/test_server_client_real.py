@@ -98,15 +98,16 @@ def test_rag(client):
 
 @pytest.mark.asyncio
 async def test_rag_stream(client):
-
     test_ingest_txt_file(client)
     test_ingest_txt_document(client)
 
     query = "who was aristotle?"
     response = client.rag(query, streaming=True)
     collector = ""
-    async for chunk in response.body_iterator:
+    for chunk in response:
         collector += chunk
+    assert "does not contain information" in collector
+
 
 def test_delete(client):
     test_ingest_txt_file(client)

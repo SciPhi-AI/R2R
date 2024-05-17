@@ -66,8 +66,7 @@ class DefaultRAGPipe(GeneratorPipe):
 
         response = self.llm_provider.get_completion(
             messages=messages,
-            generation_config=config_override
-            or self.config.generation_config,
+            generation_config=config_override or self.config.generation_config,
         )
         yield response
 
