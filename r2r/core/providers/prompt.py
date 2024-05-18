@@ -37,3 +37,14 @@ class PromptProvider(Provider):
     @abstractmethod
     def get_all_prompts(self) -> dict[str, str]:
         pass
+
+    def _get_message_payload(
+        self, system_prompt: str, task_prompt: str
+    ) -> dict:
+        return [
+            {
+                "role": "system",
+                "content": system_prompt,
+            },
+            {"role": "user", "content": task_prompt},
+        ]

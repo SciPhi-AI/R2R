@@ -16,7 +16,7 @@ class GeneratorPipe(LoggableAsyncPipe):
         name: str
         task_prompt: str
         generation_config: GenerationConfig
-        system_prompt: str = "default_system_prompt"
+        system_prompt: str = "default_system"
 
     def __init__(
         self,
@@ -47,7 +47,7 @@ class GeneratorPipe(LoggableAsyncPipe):
         pass
 
     @abstractmethod
-    def _get_llm_payload(
+    def _get_message_payload(
         self, message: str, *args: Any, **kwargs: Any
     ) -> list:
         pass

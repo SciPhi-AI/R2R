@@ -20,8 +20,8 @@ class DefaultQueryTransformPipe(LoggableAsyncPipe):
         name: str = "default_query_transform"
         num_answers: int = 3
         model: str = "gpt-3.5-turbo"
-        system_prompt: str = "default_system_prompt"
-        task_prompt: str = "hyde_prompt"
+        system_prompt: str = "default_system"
+        task_prompt: str = "hyde"
         generation_config: GenerationConfig = GenerationConfig(
             model="gpt-3.5-turbo"
         )
@@ -53,7 +53,7 @@ class DefaultQueryTransformPipe(LoggableAsyncPipe):
         **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
         async for query in input.message:
-            query_transform_request = self._get_llm_payload(query)
+            query_transform_request = self._get_message_payload(query)
 
             response = self.llm_provider.get_completion(
                 messages=query_transform_request,
@@ -69,7 +69,7 @@ class DefaultQueryTransformPipe(LoggableAsyncPipe):
             for query in queries:
                 yield query
 
-    def _get_llm_payload(self, input: str) -> dict:
+    def _get_message_payload(self, input: str) -> dict:
         return [
             {
                 "role": "system",

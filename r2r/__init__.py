@@ -1,4 +1,5 @@
 from .core import *
+from .eval import *
 from .main import *
 
 __all__ = [
@@ -43,6 +44,7 @@ __all__ = [
     "EmbeddingProvider",
     "EvalConfig",
     "EvalProvider",
+    "LocalEvalProvider",
     "PromptConfig",
     "PromptProvider",
     "GenerationConfig",

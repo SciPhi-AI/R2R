@@ -1,7 +1,6 @@
 from ..prompts.local.prompt import DefaultPromptProvider
 from .default.embedding import DefaultEmbeddingPipe
-
-# from .basic.eval import BasicEvalPipe
+from .default.eval import DefaultEvalPipe
 from .default.parsing import DefaultDocumentParsingPipe
 from .default.query_transform import DefaultQueryTransformPipe
 from .default.rag import DefaultRAGPipe
@@ -12,7 +11,7 @@ from .default.vector_storage import DefaultVectorStoragePipe
 __all__ = [
     "AgentRAGPipe",
     "DefaultEmbeddingPipe",
-    # "BasicEvalPipe",
+    "DefaultEvalPipe",
     "DefaultDocumentParsingPipe",
     "DefaultQueryTransformPipe",
     "DefaultRAGPipe",

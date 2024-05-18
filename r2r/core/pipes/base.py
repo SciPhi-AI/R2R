@@ -10,11 +10,11 @@ from ..utils import generate_run_id
 
 
 class PipeType(Enum):
-    COLLECTOR = "collector"
-    GENERATOR = "generator"
     INGESTOR = "ingestor"
-    TRANSFORM = "transformer"
+    EVAL = "eval"
+    GENERATOR = "generator"
     SEARCH = "search"
+    TRANSFORM = "transform"
     OTHER = "other"
 
 

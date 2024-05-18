@@ -9,19 +9,15 @@ class EvalConfig(ProviderConfig):
     """A base eval config class"""
 
     provider: Optional[str] = None
-    sampling_fraction: float = 1.0
+    sampling_fraction: float = 0.0
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} not supported.")
-        if self.provider == "none" and self.sampling_fraction != 0.0:
-            raise ValueError(
-                f"Sampling fraction must be 0.0 when setting evaluation provider to None."
-            )
 
     @property
     def supported_providers(self) -> List[str]:
-        return ["deepeval", "parea", "none"]
+        return ["local"]
 
 
 class EvalProvider(Provider):

@@ -1,4 +1,3 @@
-from .deepeval.base import DeepEvalProvider
-from .parea.base import PareaEvalProvider
+from .local.base import LocalEvalProvider
 
-__all__ = ["DeepEvalProvider", "PareaEvalProvider"]
+__all__ = ["LocalEvalProvider"]

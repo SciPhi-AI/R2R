@@ -44,6 +44,7 @@ markdown = "^3.6"
 pypdf = "^4.2.0"
 python-pptx = "^0.6.23"
 python-docx = "^1.1.0"
+nest-asyncio = "^1.6.0"
 
 # embedding providers
 tiktoken = {version = "^0.5.2", optional = true}
@@ -58,20 +59,12 @@ litellm = "^1.35.18"
 openai = "^1.11.1"
 llama-cpp-python = {version = "^0.2.57", optional = true}
 
-# eval providers
-deepeval = {version ="^0.20.88", optional = true}
-parea-ai = {version = "^0.2.86", optional = true}
-
 # integrations
 ionic-api-sdk = {version = "0.9.3", optional = true}
 exa-py = {version = "^1.0.9", optional = true}
-pytest-mock = "^3.14.0"
-nest-asyncio = "^1.6.0"
 
 [tool.poetry.extras]
-all = ["tiktoken", "datasets", "qdrant_client", "psycopg2-binary", "sentry-sdk", "parea-ai", "boto3", "exa-py", "llama-cpp-python", "ionic-api-sdk"]
-deepeval = ["deepeval"]
-eval = ["parea-ai"]
+all = ["tiktoken", "datasets", "qdrant_client", "psycopg2-binary", "sentry-sdk", "boto3", "exa-py", "llama-cpp-python", "ionic-api-sdk"]
 exa = ["exa-py"]
 ionic = ["ionic-api-sdk"]
 local-llm = ["llama-cpp-python", "sentence-transformers"]
@@ -87,6 +80,7 @@ mypy = "^1.5.1"
 pytest = "^8.2.0"
 pytest-asyncio = "^0.23.6"
 pytest-dependency = "^0.6.0"
+pytest-mock = "^3.14.0"
 
 [tool.black]
 line-length = 79

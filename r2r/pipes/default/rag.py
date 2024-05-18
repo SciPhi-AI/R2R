@@ -45,7 +45,7 @@ class DefaultRAGPipe(GeneratorPipe):
             config=config
             or GeneratorPipe.Config(
                 name="default_rag_pipe",
-                task_prompt="default_rag_prompt",
+                task_prompt="default_rag",
                 generation_config=generation_config
                 or GenerationConfig(model="gpt-3.5-turbo"),
             ),
@@ -62,7 +62,7 @@ class DefaultRAGPipe(GeneratorPipe):
     ) -> AsyncGenerator[LLMChatCompletion, None]:
         config_override = kwargs.get("config_override", None)
         context = await self._collect_context(input)
-        messages = self._get_llm_payload("\n".join(input.query), context)
+        messages = self._get_message_payload("\n".join(input.query), context)
 
         response = self.llm_provider.get_completion(
             messages=messages,
@@ -76,7 +76,7 @@ class DefaultRAGPipe(GeneratorPipe):
             value=response.choices[0].message.content,
         )
 
-    def _get_llm_payload(self, query: str, context: str) -> dict:
+    def _get_message_payload(self, query: str, context: str) -> dict:
         return [
             {
                 "role": "system",

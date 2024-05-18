@@ -42,7 +42,7 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
             config=config
             or GeneratorPipe.Config(
                 name="default_streaming_rag_pipe",
-                task_prompt="default_rag_prompt",
+                task_prompt="default_rag",
                 generation_config=generation_config
                 or GenerationConfig(model="gpt-3.5-turbo", stream=True),
             ),
@@ -61,7 +61,7 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
         response = ""
 
         async for context in input.message:
-            messages = self._get_llm_payload(input.query, context)
+            messages = self._get_message_payload(input.query, context)
 
             response += await self._yield_chunks(
                 f"<{self.SEARCH_STREAM_MARKER}>",
@@ -95,7 +95,7 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
             yield chunk
         yield end_marker
 
-    def _get_llm_payload(
+    def _get_message_payload(
         self, query: str, context: str
     ) -> list[dict[str, str]]:
         return [
@@ -164,7 +164,7 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
             config=config
             or GeneratorPipe.Config(
                 name="default_streaming_rag_pipe",
-                task_prompt="default_rag_prompt",
+                task_prompt="default_rag",
                 generation_config=generation_config
                 or GenerationConfig(model="gpt-3.5-turbo", stream=True),
             ),
@@ -187,7 +187,7 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
             context += f"Result {iteration+1}:\n{result.metadata['text']}\n\n"
             iteration += 1
 
-        messages = self._get_llm_payload("\n".join(input.query), context)
+        messages = self._get_message_payload("\n".join(input.query), context)
 
         async for chunk in self._yield_chunks(
             f"<{self.SEARCH_STREAM_MARKER}>",
@@ -231,7 +231,7 @@ class DefaultStreamingRAGPipe(DefaultRAGPipe):
             yield chunk
         yield end_marker
 
-    def _get_llm_payload(self, query: str, context: str) -> dict:
+    def _get_message_payload(self, query: str, context: str) -> dict:
         return [
             {
                 "role": "system",

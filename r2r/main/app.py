@@ -203,6 +203,7 @@ class R2RApp:
         generation_config: Optional[GenerationConfig] = None,
         streaming: bool = False,
     ):
+        print("receiving rag request ....")
         try:
             if streaming or (generation_config and generation_config.stream):
 
@@ -323,9 +324,10 @@ class R2RApp:
                 pipeline_type=pipeline_type,
                 limit=self.config.app.get("max_logs", 100) // logs_per_run,
             )
-            logs = await self.logging_connection.get_logs(
-                [run.run_id for run in run_info]
-            )
+            run_ids = [run.run_id for run in run_info]
+            if len(run_ids) == 0:
+                return {"results": []}
+            logs = await self.logging_connection.get_logs(run_ids)
             # Aggregate logs by run_id and include run_type
             aggregated_logs = []
 

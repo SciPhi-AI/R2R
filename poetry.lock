@@ -4825,7 +4825,7 @@ tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
 name = "pysbd"
 version = "0.3.4"
 description = "pysbd (Python Sentence Boundary Disambiguation) is a rule-based sentence boundary detection that works out-of-the-box across many languages."
-optional = true
+optional = false
 python-versions = ">=3"
 files = [
     {file = "pysbd-0.3.4-py3-none-any.whl", hash = "sha256:cd838939b7b0b185fcf86b0baf6636667dfb6e474743beeff878e9f42e022953"},
@@ -7501,4 +7501,4 @@ sentence-transformers-only = ["sentence-transformers"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "586924dcead9c71f883f553a2691435d3fc2f572abe220dd6e924010500514c9"
+content-hash = "9f308b7f14e2df23a426d26851ab66f87e327b45c47fdaf623a3ffab090d6513"
