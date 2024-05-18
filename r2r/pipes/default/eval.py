@@ -2,6 +2,8 @@ import logging
 import random
 from typing import Any, AsyncGenerator, Optional
 
+from pydantic import BaseModel
+
 from r2r import (
     AsyncState,
     EvalProvider,
@@ -14,10 +16,13 @@ logger = logging.getLogger(__name__)
 
 
 class DefaultEvalPipe(LoggableAsyncPipe):
-    class Input(LoggableAsyncPipe.Input):
+    class EvalPayload(BaseModel):
         query: str
         context: str
-        completion: LLMChatCompletion
+        completion: str
+
+    class Input(LoggableAsyncPipe.Input):
+        message: AsyncGenerator["DefaultEvalPipe.EvalPayload", None]
 
     def __init__(
         self,
@@ -42,11 +47,10 @@ class DefaultEvalPipe(LoggableAsyncPipe):
         logger.debug(
             f"Running the `EvaluationPipeline` with id={self.run_info}."
         )
-
-        if random.random() < self.eval_provider.config.sampling_fraction:
-            evaluation_result = await self.evaluate(
-                input.query, input.context, input.completion
-            )
-            yield evaluation_result
-        else:
-            yield None
+        async for item in input.message:
+            if random.random() < self.eval_provider.config.sampling_fraction:
+                yield self.eval_provider.evaluate(
+                    item.query, item.context, item.completion
+                )
+            else:
+                yield None

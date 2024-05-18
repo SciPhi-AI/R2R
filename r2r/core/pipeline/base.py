@@ -219,3 +219,18 @@ class SearchPipeline(Pipeline):
         return await super().run(
             input, state, pipeline_type, streaming, *args, **kwargs
         )
+
+
+class EvalPipeline(Pipeline):
+    async def run(
+        self,
+        input: Any,
+        state: Optional[AsyncState] = None,
+        pipeline_type: str = "other",
+        streaming: bool = False,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        return await super().run(
+            input, state, pipeline_type, streaming, *args, **kwargs
+        )

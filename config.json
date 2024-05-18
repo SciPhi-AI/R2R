@@ -19,8 +19,11 @@
     "rerank_model": "None"
   },  
   "eval": {
-    "model": "gpt-4o",
-    "provider": "openai",
+    "provider": "local",
+    "llm":{
+      "model": "gpt-4o",
+      "provider": "openai"
+    },
     "sampling_fraction": 1.0
   },
   "ingestion":{

@@ -16,20 +16,15 @@ class LLMEvalProvider(EvalProvider):
         config: EvalConfig,
         llm_provider: LLMProvider,
         prompt_provider: PromptProvider,
-        model: Optional[str] = None,
         generation_config: Optional[GenerationConfig] = None,
     ):
         super().__init__(config)
-        if model and generation_config:
-            raise ValueError(
-                "Cannot provide both `model` and `generation_config`."
-            )
 
-        if not model:
-            model = "gpt-4o"
-
+        print("config.llm = ", config.llm)
         if not generation_config:
-            generation_config = GenerationConfig(model=model)
+            generation_config = GenerationConfig(
+                model=config.llm.extra_fields.get("model")
+            )
 
         self.generation_config = generation_config
 
@@ -37,12 +32,11 @@ class LLMEvalProvider(EvalProvider):
         self.prompt_provider = prompt_provider
 
     def _calc_query_context_relevancy(self, query: str, context: str) -> float:
-        system_prompt = self.prompt_provider.get_prompt(
-            "default_system"
-        )
+        system_prompt = self.prompt_provider.get_prompt("default_system")
         eval_prompt = self.prompt_provider.get_prompt(
             "rag_context_eval", {"query": query, "context": context}
         )
+        print("self.generation_config = ", self.generation_config)
         response = self.llm_provider.get_completion(
             self.prompt_provider._get_message_payload(
                 system_prompt, eval_prompt
@@ -61,14 +55,15 @@ class LLMEvalProvider(EvalProvider):
         )
         return float(Fraction(fraction))
 
-
-    def _calc_answer_grounding(self, query: str, context: str, answer: str) -> float:
-        system_prompt = self.prompt_provider.get_prompt(
-            "default_system"
-        )
+    def _calc_answer_grounding(
+        self, query: str, context: str, answer: str
+    ) -> float:
+        system_prompt = self.prompt_provider.get_prompt("default_system")
         eval_prompt = self.prompt_provider.get_prompt(
-            "rag_answer_eval", {"query": query, "context": context, "answer": answer}
+            "rag_answer_eval",
+            {"query": query, "context": context, "answer": answer},
         )
+        print("self.generation_config = ", self.generation_config)
         response = self.llm_provider.get_completion(
             self.prompt_provider._get_message_payload(
                 system_prompt, eval_prompt
@@ -93,16 +88,8 @@ class LLMEvalProvider(EvalProvider):
         query_context_relevancy = self._calc_query_context_relevancy(
             query, context
         )
-        answer_grounding = self._calc_answer_grounding(
-            query, context, answer
-        )
+        answer_grounding = self._calc_answer_grounding(query, context, answer)
         return {
             "query_context_relevancy": query_context_relevancy,
             "answer_grounding": answer_grounding,
         }
-
-    def sent_tokenize(self, text: str) -> list[str]:
-        """Split into sentences"""
-        sentences = self.seg.segment(text)
-        assert isinstance(sentences, list)
-        return sentences

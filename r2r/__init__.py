@@ -1,6 +1,8 @@
 from .core import *
 from .eval import *
 from .main import *
+from .pipes import *
+from .prompts import *
 
 __all__ = [
     "LoggingConfig",
@@ -60,4 +62,14 @@ __all__ = [
     "generate_run_id",
     "generate_id_from_label",
     "R2RApp",
+    # Pipes
+    "DefaultEmbeddingPipe",
+    "DefaultEvalPipe",
+    "DefaultDocumentParsingPipe",
+    "DefaultQueryTransformPipe",
+    "DefaultRAGPipe",
+    "DefaultStreamingRAGPipe",
+    "DefaultVectorSearchPipe",
+    "DefaultVectorStoragePipe",
+    "DefaultPromptProvider",
 ]

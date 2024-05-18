@@ -1,18 +1,26 @@
+import logging
 from typing import Any, Optional
 
 from pydantic import BaseModel
 
 from r2r.core import (
+    EmbeddingConfig,
     EmbeddingProvider,
+    EvalPipeline,
+    EvalProvider,
     IngestionPipeline,
+    LLMConfig,
     LLMProvider,
     PipeLoggingConnectionSingleton,
     PromptProvider,
     R2RConfig,
     RAGPipeline,
     SearchPipeline,
+    VectorDBConfig,
     VectorDBProvider,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class R2RProviders(BaseModel):
@@ -20,12 +28,14 @@ class R2RProviders(BaseModel):
     embedding: EmbeddingProvider
     llm: LLMProvider
     prompt: PromptProvider
+    eval: EvalProvider
 
     class Config:
         arbitrary_types_allowed = True
 
 
 class R2RPipelines(BaseModel):
+    eval_pipeline: EvalPipeline
     ingestion_pipeline: IngestionPipeline
     search_pipeline: SearchPipeline
     rag_pipeline: RAGPipeline
@@ -39,10 +49,10 @@ class R2RProviderFactory:
     def __init__(self, config: R2RConfig):
         self.config = config
 
-    def create_vector_db_provider(self, *args, **kwargs) -> VectorDBProvider:
-        vector_db_config = self.config.vector_database
+    def create_vector_db_provider(
+        self, vector_db_config: VectorDBConfig, *args, **kwargs
+    ) -> VectorDBProvider:
         vector_db_provider: Optional[VectorDBProvider] = None
-
         if vector_db_config.provider == "qdrant":
             from r2r.vector_dbs import QdrantDB
 
@@ -70,8 +80,9 @@ class R2RProviderFactory:
         )
         return vector_db_provider
 
-    def create_embedding_provider(self, *args, **kwargs) -> EmbeddingProvider:
-        embedding_config = self.config.embedding
+    def create_embedding_provider(
+        self, embedding_config: EmbeddingConfig, *args, **kwargs
+    ) -> EmbeddingProvider:
         embedding_provider: Optional[EmbeddingProvider] = None
 
         if embedding_config.provider == "openai":
@@ -97,8 +108,29 @@ class R2RProviderFactory:
 
         return embedding_provider
 
-    def create_llm_provider(self, *args, **kwargs) -> LLMProvider:
-        llm_config = self.config.completions
+    def create_eval_provider(
+        self, eval_config, prompt_provider, *args, **kwargs
+    ) -> EvalProvider:
+        if eval_config.provider == "local":
+            from r2r.eval import LLMEvalProvider
+
+            llm_provider = self.create_llm_provider(eval_config.llm)
+            print("llm_provider = ", llm_provider)
+            eval_provider = LLMEvalProvider(
+                eval_config,
+                llm_provider=llm_provider,
+                prompt_provider=prompt_provider,
+            )
+        else:
+            raise ValueError(
+                f"Eval provider {eval_config.provider} not supported."
+            )
+
+        return eval_provider
+
+    def create_llm_provider(
+        self, llm_config: LLMConfig, *args, **kwargs
+    ) -> LLMProvider:
         llm_provider: Optional[LLMProvider] = None
         if llm_config.provider == "openai":
             from r2r.llms import OpenAILLM
@@ -125,8 +157,9 @@ class R2RProviderFactory:
             raise ValueError("Language model provider not found")
         return llm_provider
 
-    def create_prompt_provider(self, *args, **kwargs) -> PromptProvider:
-        prompt_config = self.config.prompt
+    def create_prompt_provider(
+        self, prompt_config, *args, **kwargs
+    ) -> PromptProvider:
         prompt_provider = None
         if prompt_config.provider == "local":
             from r2r.prompts import DefaultPromptProvider
@@ -139,11 +172,18 @@ class R2RProviderFactory:
         return prompt_provider
 
     def create_providers(self) -> R2RProviders:
+        llm_provider = self.create_llm_provider(self.config.completions)
+        prompt_provider = self.create_prompt_provider(self.config.prompt)
         return R2RProviders(
-            vector_db=self.create_vector_db_provider(),
-            embedding=self.create_embedding_provider(),
-            llm=self.create_llm_provider(),
-            prompt=self.create_prompt_provider(),
+            vector_db=self.create_vector_db_provider(
+                self.config.vector_database
+            ),
+            embedding=self.create_embedding_provider(self.config.embedding),
+            eval=self.create_eval_provider(
+                self.config.eval, prompt_provider=prompt_provider
+            ),
+            llm=llm_provider,
+            prompt=prompt_provider,
         )
 
 
@@ -248,13 +288,29 @@ class DefaultR2RPipelineFactory:
         )
         return rag_pipeline
 
+    def create_eval_pipeline(self) -> EvalPipeline:
+        from r2r.pipes import DefaultEvalPipe
+
+        eval_pipe = DefaultEvalPipe(
+            eval_provider=self.providers.eval,
+        )
+
+        eval_pipeline = EvalPipeline()
+        eval_pipeline.add_pipe(eval_pipe)
+        return eval_pipeline
+
     def create_pipelines(
         self,
         ingestion_pipeline: Optional[IngestionPipeline] = None,
         search_pipeline: Optional[SearchPipeline] = None,
         rag_pipeline: Optional[RAGPipeline] = None,
         streaming_rag_pipeline: Optional[RAGPipeline] = None,
+        eval_pipeline: Optional[EvalPipeline] = None,
     ) -> R2RPipelines:
+        try:
+            self.configure_logging()
+        except Exception as e:
+            logger.warn(f"Error configuring logging: {e}")
         return R2RPipelines(
             ingestion_pipeline=ingestion_pipeline
             or self.create_ingestion_pipeline(),
@@ -263,6 +319,7 @@ class DefaultR2RPipelineFactory:
             or self.create_rag_pipeline(streaming=False),
             streaming_rag_pipeline=streaming_rag_pipeline
             or self.create_rag_pipeline(streaming=True),
+            eval_pipeline=eval_pipeline or self.create_eval_pipeline(),
         )
 
     def configure_logging(self):

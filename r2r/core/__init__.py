@@ -27,6 +27,7 @@ from .parsers import (
     XLSXParser,
 )
 from .pipeline.base import (
+    EvalPipeline,
     IngestionPipeline,
     Pipeline,
     RAGPipeline,
@@ -53,6 +54,8 @@ from .utils import (
     TextSplitter,
     generate_id_from_label,
     generate_run_id,
+    list_to_generator,
+    run_pipeline
 )
 from .utils.client import R2RClient
 from .utils.config import R2RConfig
@@ -119,6 +122,8 @@ __all__ = [
     "R2RClient",
     "TextSplitter",
     "RecursiveCharacterTextSplitter",
+    "list_to_generator",
+    "run_pipeline",
     "generate_run_id",
     "generate_id_from_label",
 ]

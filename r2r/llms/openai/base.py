@@ -53,7 +53,7 @@ class OpenAILLM(LLMProvider):
         generation_config: GenerationConfig,
         **kwargs,
     ) -> LLMChatCompletion:
-        if not generation_config.stream:
+        if generation_config.stream:
             raise ValueError(
                 "Stream must be set to False to use the `get_completion` method."
             )

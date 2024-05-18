@@ -3,13 +3,14 @@ from abc import abstractmethod
 from typing import List, Optional, Union
 
 from .base import Provider, ProviderConfig
+from .llm import LLMConfig
 
 
 class EvalConfig(ProviderConfig):
     """A base eval config class"""
 
-    provider: Optional[str] = None
     sampling_fraction: float = 0.0
+    llm: LLMConfig
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:

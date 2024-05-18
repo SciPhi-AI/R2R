@@ -23,8 +23,7 @@ class R2RConfig:
             "text_splitter",
         ],
         "eval": [
-            "model",
-            "provider",
+            "llm",
             "sampling_fraction",
         ],
         "ingestion": ["selected_ingestors"],
@@ -58,7 +57,10 @@ class R2RConfig:
 
         self.app = self.app  # for type hinting
         self.embedding = EmbeddingConfig.create(**self.embedding)
-        self.eval = EvalConfig.create(**self.eval)
+        eval_llm = self.eval.pop("llm")
+        self.eval = EvalConfig.create(
+            **self.eval, llm=LLMConfig.create(**eval_llm)
+        )
         self.completions = LLMConfig.create(**self.completions)
         self.logging = LoggingConfig.create(**self.logging)
         self.prompt = PromptConfig.create(**self.prompt)
