@@ -93,8 +93,8 @@ async def test_ingest_txt_file(client):
         (
             "files",
             (
-                "test1.txt",
-                open("r2r/examples/data/test1.txt", "rb"),
+                "test.txt",
+                open("r2r/examples/data/test.txt", "rb"),
                 "text/plain",
             ),
         ),
@@ -107,7 +107,7 @@ async def test_ingest_txt_file(client):
     )
     assert response.status_code == 200
     assert response.json() == {
-        "results": ["File 'test1.txt' processed successfully for each file"]
+        "results": ["File 'test.txt' processed successfully for each file"]
     }
 
 

@@ -3,6 +3,9 @@
     "max_logs": 100,
     "max_file_size_in_mb": 32
   },
+  "completions": {
+    "provider": "litellm"
+  },
   "embedding": {
     "provider": "openai",
     "search_model": "text-embedding-3-small",
@@ -16,7 +19,8 @@
     "rerank_model": "None"
   },  
   "eval": {
-    "provider": "parea",
+    "model": "gpt-4o",
+    "provider": "openai",
     "sampling_fraction": 1.0
   },
   "ingestion":{
@@ -28,11 +32,16 @@
       "md": "default",
       "pdf": "default",
       "pptx": "default",
-      "txt": "default"
+      "txt": "default",
+      "xlsx": "default",
+      "gif": "default",
+      "png": "default",
+      "jpg": "default",
+      "jpeg": "default",
+      "svg": "default",
+      "mp3": "default",
+      "mp4": "default"
     }
-  },
-  "language_model": {
-    "provider": "litellm"
   },
   "logging": {
     "provider": "local",

@@ -12,7 +12,9 @@ from ..providers.vector_db import VectorDBConfig
 
 class R2RConfig:
     REQUIRED_KEYS: dict[str, list] = {
-        "app": [],
+        "app": [
+            "max_file_size_in_mb",
+        ],
         "embedding": [
             "provider",
             "search_model",
@@ -21,18 +23,19 @@ class R2RConfig:
             "text_splitter",
         ],
         "eval": [
+            "model",
             "provider",
             "sampling_fraction",
         ],
-        "ingestion": [],
-        "language_model": ["provider"],
+        "ingestion": ["selected_ingestors"],
+        "completions": ["provider"],
         "logging": ["provider", "log_table"],
         "prompt": ["provider"],
         "vector_database": ["provider", "collection_name"],
     }
     app: dict[str, Any]
     embedding: EmbeddingConfig
-    language_model: LLMConfig
+    completions: LLMConfig
     logging: LoggingConfig
     prompt: PromptConfig
     vector_database: VectorDBConfig
@@ -56,7 +59,7 @@ class R2RConfig:
         self.app = self.app  # for type hinting
         self.embedding = EmbeddingConfig.create(**self.embedding)
         self.eval = EvalConfig.create(**self.eval)
-        self.language_model = LLMConfig.create(**self.language_model)
+        self.completions = LLMConfig.create(**self.completions)
         self.logging = LoggingConfig.create(**self.logging)
         self.prompt = PromptConfig.create(**self.prompt)
         self.vector_database = VectorDBConfig.create(**self.vector_database)

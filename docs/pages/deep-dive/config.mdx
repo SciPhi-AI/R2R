@@ -28,7 +28,7 @@ The default values for the config are shown below:
     "provider": "deepeval",
     "sampling_fraction": 1.0
   },
-  "language_model": {
+  "completions": {
     "provider": "litellm"
   },
   "logging": {
@@ -62,7 +62,7 @@ The available options for each section are:
   - `provider`: `"deepeval"`, `"parea"` (see [Evaluation Providers](/providers/evals.md) for more info)
   - `sampling_fraction`: sampling sampling_fraction for evaluation (e.g., `1.0` for 100% of requests)
 
-- **language_model**:
+- **completions**:
   - `provider`: `"litellm"`, `"openai"`, `"llama-cpp"` (see [LLM Providers](/providers/llms.md) for more info)
 
 - **logging**:

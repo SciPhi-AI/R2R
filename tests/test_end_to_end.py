@@ -96,8 +96,8 @@ async def test_ingest_txt_file(r2r_app, logging_connection):
     metadata = {"author": "John Doe"}
     files = [
         UploadFile(
-            filename="test1.txt",
-            file=open("r2r/examples/data/test1.txt", "rb"),
+            filename="test.txt",
+            file=open("r2r/examples/data/test.txt", "rb"),
         ),
     ]
     # Set file size manually
@@ -119,7 +119,7 @@ async def test_ingest_txt_file(r2r_app, logging_connection):
         assert log["key"] in ["fragment", "extraction"]
         value = json.loads(log["value"])
         assert value["data"] == "this is a test text"
-        assert value["document_id"] == str(generate_id_from_label("test1.txt"))
+        assert value["document_id"] == str(generate_id_from_label("test.txt"))
 
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)

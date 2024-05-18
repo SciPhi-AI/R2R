@@ -48,10 +48,10 @@ OPENAI_API_KEY=your_openai_key
 ```
 
 
-To toggle between different LLM providers, you need to update the `language_model` section of the configuration file (`config.json`). For example:
+To toggle between different LLM providers, you need to update the `completions` section of the configuration file (`config.json`). For example:
 
 ```json
-"language_model": {
+"completions": {
     "provider": "litellm",
 }
 ```
@@ -77,7 +77,7 @@ By default, R2R uses the OpenAI `text-embedding-3-small` for creating embeddings
     "provider": "parea",
     "sampling_fraction": 1.0
   },
-  "language_model": {
+  "completions": {
     "provider": "litellm"
   },
   ...

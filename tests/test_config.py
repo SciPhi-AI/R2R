@@ -19,7 +19,7 @@ def mock_file():
             },
             "eval": {"provider": "eval_provider", "sampling_fraction": 0.1},
             "ingestion": {},
-            "language_model": {"provider": "lm_provider"},
+            "completions": {"provider": "lm_provider"},
             "logging": {
                 "provider": "local",
                 "log_table": "logs",

@@ -29,7 +29,7 @@ class R2RConfig:
             "sampling_fraction",
         ],
         "ingestion": [],
-        "language_model": ["provider"],
+        "completions": ["provider"],
         "logging": ["provider", "collection_name"],
         "prompt": ["provider"],
         "vector_database": ["provider", "collection_name"],
@@ -53,7 +53,7 @@ class R2RConfig:
 
         self.embedding = EmbeddingConfig.create(**self.embedding)
         self.eval = EvalConfig.create(**self.eval)
-        self.language_model = LLMConfig.create(**self.language_model)
+        self.completions = LLMConfig.create(**self.completions)
         self.prompt = PromptConfig.create(**self.prompt)
         self.vector_database = VectorDBConfig.create(**self.vector_database)
 

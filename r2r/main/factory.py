@@ -98,7 +98,7 @@ class R2RProviderFactory:
         return embedding_provider
 
     def create_llm_provider(self, *args, **kwargs) -> LLMProvider:
-        llm_config = self.config.language_model
+        llm_config = self.config.completions
         llm_provider: Optional[LLMProvider] = None
         if llm_config.provider == "openai":
             from r2r.llms import OpenAILLM

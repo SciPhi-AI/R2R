@@ -44,7 +44,7 @@ __all__ = [
     "EmbeddingProvider",
     "EvalConfig",
     "EvalProvider",
-    "LocalEvalProvider",
+    "LLMEvalProvider",
     "PromptConfig",
     "PromptProvider",
     "GenerationConfig",

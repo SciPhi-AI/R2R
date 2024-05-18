@@ -1,16 +1,16 @@
 from fractions import Fraction
-from typing import Union, Optional
+from typing import Optional, Union
 
 from r2r import (
     EvalConfig,
     EvalProvider,
+    GenerationConfig,
     LLMProvider,
     PromptProvider,
-    GenerationConfig,
 )
 
 
-class LocalEvalProvider(EvalProvider):
+class LLMEvalProvider(EvalProvider):
     def __init__(
         self,
         config: EvalConfig,

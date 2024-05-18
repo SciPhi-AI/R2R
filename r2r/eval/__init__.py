@@ -1,3 +1,3 @@
-from .local.base import LocalEvalProvider
+from .local.base import LLMEvalProvider
 
-__all__ = ["LocalEvalProvider"]
+__all__ = ["LLMEvalProvider"]
