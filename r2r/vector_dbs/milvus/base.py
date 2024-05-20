@@ -155,6 +155,19 @@ class MilvusVectorDB(VectorDBConfig):
         *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
+        """
+        Perform a vector search operation.
+
+        Parameters:
+            query_vector (list[float]): The vector representing the query.
+            filters (dict[str, Union[bool, int, str]], optional): Filters to apply to the search results. Defaults to {}.
+            limit (int, optional): The maximum number of results to return. Defaults to 10.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            list[VectorSearchResult]: A list of search results.
+        """
 
         # TODO: 处理filters
         results = self.client.search(
