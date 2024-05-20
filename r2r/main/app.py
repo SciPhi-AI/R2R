@@ -15,9 +15,10 @@ from r2r.core import (
     PipeLoggingConnectionSingleton,
     R2RConfig,
     generate_id_from_label,
+
 )
 
-from .factory import R2RProviders
+from .abstractions import R2RProviders, R2RPipelines
 
 MB_CONVERSION_FACTOR = 1024 * 1024
 
@@ -34,10 +35,7 @@ class R2RApp:
         self,
         config: R2RConfig,
         providers: R2RProviders,
-        ingestion_pipeline: Pipeline,
-        search_pipeline: Pipeline,
-        rag_pipeline: Pipeline,
-        streaming_rag_pipeline: Pipeline,
+        pipelines: R2RPipelines,
         do_apply_cors: bool = True,
         *args,
         **kwargs,
@@ -45,15 +43,19 @@ class R2RApp:
         self.config = config
         self.providers = providers
         self.logging_connection = PipeLoggingConnectionSingleton()
-        self.ingestion_pipeline = ingestion_pipeline
-        self.search_pipeline = search_pipeline
-        self.rag_pipeline = rag_pipeline
-        self.streaming_rag_pipeline = streaming_rag_pipeline
+        self.ingestion_pipeline = pipelines.ingestion_pipeline
+        self.search_pipeline = pipelines.search_pipeline
+        self.rag_pipeline = pipelines.rag_pipeline
+        self.streaming_rag_pipeline = pipelines.streaming_rag_pipeline
 
         self.app = FastAPI()
+
         if do_apply_cors:
             R2RApp._apply_cors(self.app)
 
+        self._setup_routes()
+    
+    def _setup_routes(self):
         self.app.add_api_route(
             path="/ingest_documents/",
             endpoint=self.ingest_documents_wrapper,

@@ -55,7 +55,7 @@ from .utils import (
     generate_id_from_label,
     generate_run_id,
     list_to_generator,
-    run_pipeline
+    run_pipeline,
 )
 from .utils.client import R2RClient
 from .utils.config import R2RConfig

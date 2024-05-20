@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from r2r import (
-    DefaultR2RPipelineFactory,
+    R2RPipelineFactory,
     PipeLoggingConnectionSingleton,
     R2RApp,
     R2RConfig,
@@ -40,7 +40,7 @@ def r2r_app(request):
 
     try:
         providers = R2RProviderFactory(config).create_providers()
-        pipelines = DefaultR2RPipelineFactory(
+        pipelines = R2RPipelineFactory(
             config, providers
         ).create_pipelines()
 

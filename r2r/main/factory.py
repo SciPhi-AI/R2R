@@ -1,8 +1,6 @@
 import logging
 from typing import Any, Optional
 
-from pydantic import BaseModel
-
 from r2r.core import (
     EmbeddingConfig,
     EmbeddingProvider,
@@ -20,29 +18,9 @@ from r2r.core import (
     VectorDBProvider,
 )
 
+from .abstractions import R2RPipelines, R2RProviders
+
 logger = logging.getLogger(__name__)
-
-
-class R2RProviders(BaseModel):
-    vector_db: VectorDBProvider
-    embedding: EmbeddingProvider
-    llm: LLMProvider
-    prompt: PromptProvider
-    eval: EvalProvider
-
-    class Config:
-        arbitrary_types_allowed = True
-
-
-class R2RPipelines(BaseModel):
-    eval_pipeline: EvalPipeline
-    ingestion_pipeline: IngestionPipeline
-    search_pipeline: SearchPipeline
-    rag_pipeline: RAGPipeline
-    streaming_rag_pipeline: RAGPipeline
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 class R2RProviderFactory:
@@ -115,7 +93,6 @@ class R2RProviderFactory:
             from r2r.eval import LLMEvalProvider
 
             llm_provider = self.create_llm_provider(eval_config.llm)
-            print("llm_provider = ", llm_provider)
             eval_provider = LLMEvalProvider(
                 eval_config,
                 llm_provider=llm_provider,
@@ -187,7 +164,7 @@ class R2RProviderFactory:
         )
 
 
-class DefaultR2RPipelineFactory:
+class R2RPipelineFactory:
     def __init__(self, config: R2RConfig, providers: R2RProviders):
         self.config = config
         self.providers = providers

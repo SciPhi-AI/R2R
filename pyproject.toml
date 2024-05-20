@@ -19,7 +19,6 @@ python = ">=3.9,<3.13"
 
 # python
 pydantic = "^2.6.3"
-python-dotenv = "^1.0.1"
 python-multipart = "^0.0.9"
 
 # infrastructure

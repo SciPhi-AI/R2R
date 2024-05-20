@@ -133,11 +133,8 @@ class DefaultDocumentParsingPipe(DocumentParsingPipe):
             **kwargs,
         )
 
-        # Initialize parsers with defaults and apply selected parsers
-        self.parsers = {
-            doc_type: self.AVAILABLE_PARSERS[doc_type]["default"]()
-            for doc_type in DefaultDocumentParsingPipe.AVAILABLE_PARSERS
-        }
+        # Initialize blank parsers
+        self.parsers = {}
 
         # Update with selected parsers if provided
         if selected_parsers:

@@ -20,7 +20,6 @@ class LLMEvalProvider(EvalProvider):
     ):
         super().__init__(config)
 
-        print("config.llm = ", config.llm)
         if not generation_config:
             generation_config = GenerationConfig(
                 model=config.llm.extra_fields.get("model")

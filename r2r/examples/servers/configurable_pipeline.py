@@ -1,7 +1,7 @@
 import os
 
 from r2r import (
-    DefaultR2RPipelineFactory,
+    R2RPipelineFactory,
     R2RApp,
     R2RConfig,
     R2RProviderFactory,
@@ -37,7 +37,7 @@ def default_app(config_name: str = "default", pipe_name: str = "qna"):
     # config_path = CONFIG_OPTIONS[config_name]
     # # pipe_impl = PIPELINE_OPTIONS[pipe_name]
 
-    # app = DefaultR2RPipelineFactory.create_pipe(
+    # app = R2RPipelineFactory.create_pipe(
     #     config=R2RConfig.from_json(config_path),
     #     rag_pipe_impl=pipe_impl,
     # )
@@ -45,7 +45,7 @@ def default_app(config_name: str = "default", pipe_name: str = "qna"):
     config = R2RConfig.from_json()
 
     providers = R2RProviderFactory(config).create_providers()
-    default_factory = DefaultR2RPipelineFactory(config, providers)
+    default_factory = R2RPipelineFactory(config, providers)
     default_factory.configure_logging()
     pipelines = default_factory.create_pipelines()
 

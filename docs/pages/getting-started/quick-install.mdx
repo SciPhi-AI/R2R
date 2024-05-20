@@ -6,41 +6,38 @@ Install R2R swiftly using `pip` to get started with minimal setup. This method w
 # `'r2r[all]'` to download all optional deps
 pip install 'r2r[eval]'
 
-# setup env 
+# setup default env 
 export OPENAI_API_KEY=sk-...
-
-# OR do `vim .env.example && cp .env.example .env`
+# ... see below for more configuration info
 ```
 
-## Optional - Setup local environment variables:
+
+### Setup Environment
+
+Configure environment variables for your setup:
+
+#### Language Model providers
+
+**OpenAI API Key**
+
+Used by default for embedding and language models **-**
 
 ```bash
-# Path for your local vector_database [`local` in config.json]
-LOCAL_DB_PATH=your_local_db_path
-
-
-# Postgres (used for `postgres` provider during logging, `pg_vector` for vectordb in config.json)
-POSTGRES_USER=your_user
-POSTGRES_PASSWORD=your_password
-POSTGRES_HOST=your_host
-POSTGRES_PORT=your_port
-POSTGRES_DBNAME=your_db
-
-# Qdrant
-QDRANT_HOST=your_qdrant_host
-QDRANT_PORT=your_qdrant_port
-QDRANT_API_KEY=your_qdrant_api_key
-
-# OpenAI
-OPENAI_API_KEY=your_openai_key
-
-# Seprper
-SERPER_API_KEY=your_serper_api_key
-
-# Exa
-EXA_API_KEY=your_exa_api_key
-
-## Reducto
-REDUCTO_API_KEY=your_reducto_api_key
-AWS_S3_BUCKET=your_aws_s3_bucket
+export OPENAI_API_KEY=sk-...
 ```
+
+**Anthropic / Vertex AI / ...**
+
+For optional use at runtime by embedding and language models **-**
+
+```bash
+export ANTHROPIC_API_KEY=...
+export VERTEX_API_KEY=...
+...
+```
+
+
+
+### Customization and Configuration
+
+R2R provides extensive options to customize and configure your pipeline to suit specific needs. You can configure various providers as through the `config.json` file and set environment variables as shown above to specify your vector database, embedding, language model, evaluation, and logging providers.
