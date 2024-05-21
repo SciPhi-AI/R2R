@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # Import your parser classes here
-from r2r.core import (
+from r2r import (
     CSVParser,
     DOCXParser,
     HTMLParser,

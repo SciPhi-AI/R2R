@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from r2r.core import (
+from r2r import (
     AsyncPipe,
     AsyncState,
     Prompt,
@@ -11,8 +11,8 @@ from r2r.core import (
     Vector,
     VectorEntry,
     VectorType,
+    generate_id_from_label,
 )
-from r2r.core.utils import generate_id_from_label
 
 
 # Testing AsyncState for state management

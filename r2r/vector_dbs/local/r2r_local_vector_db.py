@@ -14,12 +14,12 @@ from r2r.core import (
 logger = logging.getLogger(__name__)
 
 
-class LocalVectorDB(VectorDBProvider):
+class R2RLocalVectorDB(VectorDBProvider):
     def __init__(self, config: VectorDBConfig) -> None:
         super().__init__(config)
         if config.provider != "local":
             raise ValueError(
-                "LocalVectorDB must be initialized with provider `local`."
+                "R2RLocalVectorDB must be initialized with provider `local`."
             )
 
     def _get_conn(self):
@@ -49,7 +49,7 @@ class LocalVectorDB(VectorDBProvider):
 
     def create_index(self, index_type, column_name, index_options):
         raise NotImplementedError(
-            "LocalVectorDB does not support creating indexes."
+            "R2RLocalVectorDB does not support creating indexes."
         )
 
     def copy(self, entry: VectorEntry, commit=True) -> None:

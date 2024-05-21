@@ -32,26 +32,24 @@ def r2r_app(request):
         ] = config.logging.logging_path
 
     try:
-        PipeLoggingConnectionSingleton.configure(config.logging)
-    except:
-        PipeLoggingConnectionSingleton._config.logging_path = (
-            config.logging.logging_path
-        )
-
-    try:
         providers = R2RProviderFactory(config).create_providers()
         pipelines = R2RPipelineFactory(config, providers).create_pipelines()
 
         r2r = R2RApp(
             config=config,
             providers=providers,
-            ingestion_pipeline=pipelines.ingestion_pipeline,
-            search_pipeline=pipelines.search_pipeline,
-            rag_pipeline=pipelines.rag_pipeline,
-            streaming_rag_pipeline=pipelines.streaming_rag_pipeline,
+            pipelines=pipelines,
         )
 
+        try:
+            PipeLoggingConnectionSingleton.configure(config.logging)
+        except:
+            PipeLoggingConnectionSingleton._config.logging_path = (
+                config.logging.logging_path
+            )
+
         yield r2r
+
     finally:
         if os.path.exists(config.logging.logging_path):
             os.remove(config.logging.logging_path)
@@ -100,7 +98,7 @@ async def test_ingest_txt_file(client):
 
     response = client.post(
         "/ingest_files/",
-        data={"metadatas": json.dumps([metadata]), "ids": "[]"},
+        data={"metadatas": json.dumps([metadata])},
         files=files,
     )
     assert response.status_code == 200

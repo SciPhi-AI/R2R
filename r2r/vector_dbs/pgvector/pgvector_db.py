@@ -23,13 +23,16 @@ class PGVectorDB(VectorDBProvider):
             raise ValueError(
                 f"Error, PGVectorDB requires the vecs library. Please run `poetry add vecs`."
             )
+        user = os.getenv("POSTGRES_USER")
+        password = os.getenv("POSTGRES_PASSWORD")
+        host = os.getenv("POSTGRES_HOST")
+        port = os.getenv("POSTGRES_PORT")
+        db_name = os.getenv("POSTGRES_DBNAME")
+        if not all([user, password, host, port, db_name]):
+            raise ValueError(
+                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, and POSTGRES_DBNAME environment variables."
+            )
         try:
-            user = os.getenv("POSTGRES_USER")
-            password = os.getenv("POSTGRES_PASSWORD")
-            host = os.getenv("POSTGRES_HOST")
-            port = os.getenv("POSTGRES_PORT")
-            db_name = os.getenv("POSTGRES_DBNAME")
-
             DB_CONNECTION = (
                 f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
             )

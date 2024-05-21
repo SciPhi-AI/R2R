@@ -1,6 +1,6 @@
 import pytest
 
-from r2r.core import GenerationConfig, LLMConfig
+from r2r import GenerationConfig, LLMConfig
 from r2r.llms import LiteLLM
 
 

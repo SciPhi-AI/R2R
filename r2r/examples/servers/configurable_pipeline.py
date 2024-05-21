@@ -57,10 +57,11 @@ def default_app(config_name: str = "default", pipe_name: str = "qna"):
     return r2r
 
 
-app = default_app().serve()
-# app.serve()
+default_app = default_app()
+app = default_app.app
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
+    default_app.serve()
 #     parser = argparse.ArgumentParser(description="R2R Pipe")
 #     parser.add_argument(
 #         "--config",

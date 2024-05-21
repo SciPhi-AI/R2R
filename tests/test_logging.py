@@ -4,15 +4,15 @@ import uuid
 
 import pytest
 
-from r2r.core import (
+from r2r import (
     LocalPipeLoggingProvider,
     LoggingConfig,
     PostgresLoggingConfig,
     PostgresPipeLoggingProvider,
     RedisLoggingConfig,
     RedisPipeLoggingProvider,
+    generate_run_id,
 )
-from r2r.core.utils import generate_run_id
 
 logger = logging.getLogger(__name__)
 

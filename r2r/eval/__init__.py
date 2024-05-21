@@ -1,3 +1,3 @@
-from .llm.llm_eval_base import LLMEvalProvider
+from .llm.base_llm_eval import LLMEvalProvider
 
 __all__ = ["LLMEvalProvider"]

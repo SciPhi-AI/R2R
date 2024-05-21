@@ -40,9 +40,9 @@ class R2RProviderFactory:
 
             vector_db_provider = PGVectorDB(vector_db_config)
         elif vector_db_config.provider == "local":
-            from r2r.vector_dbs import LocalVectorDB
+            from r2r.vector_dbs import R2RLocalVectorDB
 
-            vector_db_provider = LocalVectorDB(vector_db_config)
+            vector_db_provider = R2RLocalVectorDB(vector_db_config)
         else:
             raise ValueError(
                 f"Vector database provider {vector_db_config.provider} not supported"

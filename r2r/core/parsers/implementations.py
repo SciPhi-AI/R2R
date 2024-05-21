@@ -10,7 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from ..abstractions.document import DataType
-from .parser_base import AsyncParser
+from .base_parser import AsyncParser
 
 
 class TextParser(AsyncParser[DataType]):

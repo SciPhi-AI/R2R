@@ -255,52 +255,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
             for file in files:
                 file.file.close()
 
-        # try:
-        #     documents = []
-        #     for iteration, file in enumerate(files):
-        #         print('ingestion file = ', file)
-        #         if (
-        #             file.size
-        #             > self.config.app.get("max_file_size_in_mb", 32)
-        #             * MB_CONVERSION_FACTOR
-        #         ):
-        #             raise HTTPException(
-        #                 status_code=413,
-        #                 detail="File size exceeds maximum allowed size.",
-        #             )
-        #         if not file.filename:
-        #             raise HTTPException(
-        #                 status_code=400, detail="File name not provided."
-        #             )
-        #         documents.append(
-        #             Document(
-        #                 id=generate_id_from_label(file.filename)
-        #                 if ids is None
-        #                 else ids[iteration],
-        #                 type=DocumentType(file.filename.split(".")[-1]),
-        #                 data=await file.read(),
-        #                 metadata=metadatas[iteration] if metadatas else {},
-        #             )
-        #         )
-        #     # # Run the pipeline asynchronously
-        #     # await self.ingestion_pipeline.run(
-        #     #     input=to_async_generator(documents),
-        #     #     pipeline_type="ingestion",
-        #     # )
-        #     print('done ingesting...')
-
-        #     return {
-        #         "results": [
-        #             f"File '{file.filename}' processed successfully for each file"
-        #             for file in files
-        #         ]
-        #     }
-        # except Exception as e:
-        #     logging.error(
-        #         f"ingest_files(metadata={metadatas}, ids={ids}, files={files}) - \n\n{str(e)})"
-        #     )
-        #     raise HTTPException(status_code=500, detail=str(e))
-
     async def ingest_files_app(
         self,
         files: list[UploadFile] = File(...),
@@ -334,12 +288,14 @@ class R2RApp(metaclass=AsyncSyncMeta):
     @syncable
     async def asearch(
         self,
-        query: str = "",
-        search_filters: str = "{}",
+        query: str,
+        search_filters: Optional[str] = None,
         search_limit: int = 10,
     ):
         try:
-            json_search_filters = json.loads(search_filters)
+            json_search_filters = (
+                None if search_filters is None else json.loads(search_filters)
+            )
             results = await self.search_pipeline.run(
                 input=to_async_generator([query]),
                 search_filters=json_search_filters,
@@ -352,7 +308,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     class SearchRequest(BaseModel):
         query: str
-        search_filters: Optional[str]
+        search_filters: Optional[str] = None
         search_limit: int = 10
 
     async def search_app(self, request: SearchRequest):
@@ -363,7 +319,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     @syncable
     async def arag(
         self,
-        message: str = "",
+        message: str,
         search_filters: Optional[dict[str, str]] = None,
         search_limit: int = 10,
         generation_config: Optional[GenerationConfig] = None,
@@ -400,7 +356,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     class RAGRequest(BaseModel):
         message: str
-        search_filters: Optional[str]
+        search_filters: Optional[str] = None
         search_limit: int = 10
         generation_config: Optional[str] = None
         streaming: bool = False
@@ -411,16 +367,16 @@ class R2RApp(metaclass=AsyncSyncMeta):
             if request.search_filters
             else None
         )
-        GenerationConfig(
-            **json.loads(request.generation_config)
+        generation_config = (
+            GenerationConfig(**json.loads(request.generation_config))
             if request.generation_config
-            else {}
+            else None
         )
         return await self.arag(
             request.message,
             search_filters_dict,
             request.search_limit,
-            request.generation_config,
+            generation_config,
             request.streaming,
         )
 

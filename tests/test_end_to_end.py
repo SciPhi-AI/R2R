@@ -33,24 +33,21 @@ def r2r_app(request):
         ] = config.logging.logging_path
 
     try:
-        PipeLoggingConnectionSingleton.configure(config.logging)
-    except:
-        PipeLoggingConnectionSingleton._config.logging_path = (
-            config.logging.logging_path
-        )
-
-    try:
         providers = R2RProviderFactory(config).create_providers()
         pipelines = R2RPipelineFactory(config, providers).create_pipelines()
 
         r2r = R2RApp(
             config=config,
             providers=providers,
-            ingestion_pipeline=pipelines.ingestion_pipeline,
-            search_pipeline=pipelines.search_pipeline,
-            rag_pipeline=pipelines.rag_pipeline,
-            streaming_rag_pipeline=pipelines.streaming_rag_pipeline,
+            pipelines=pipelines,
         )
+
+        try:
+            PipeLoggingConnectionSingleton.configure(config.logging)
+        except:
+            PipeLoggingConnectionSingleton._config.logging_path = (
+                config.logging.logging_path
+            )
 
         yield r2r
     finally:
@@ -66,7 +63,7 @@ def logging_connection():
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_txt_document(r2r_app, logging_connection):
-    await r2r_app.ingest_documents(
+    await r2r_app.aingest_documents(
         [
             Document(
                 id=generate_id_from_label("doc_1"),
@@ -95,8 +92,18 @@ async def test_ingest_txt_file(r2r_app, logging_connection):
     files = [
         UploadFile(
             filename="test.txt",
-            file=open("r2r/examples/data/test.txt", "rb"),
-        ),
+            file=open(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "..",
+                    "r2r",
+                    "examples",
+                    "data",
+                    "test.txt",
+                ),
+                "rb",
+            ),
+        )
     ]
     # Set file size manually
     for file in files:
@@ -104,10 +111,7 @@ async def test_ingest_txt_file(r2r_app, logging_connection):
         file.size = file.file.tell()  # Get the file size
         file.file.seek(0)  # Move back to the start of the file
 
-    # Convert metadata to JSON string
-    metadata_str = json.dumps([metadata])
-
-    await r2r_app.ingest_files(metadatas=metadata_str, files=files)
+    await r2r_app.aingest_files(metadatas=[metadata], files=files)
 
     run_info = await logging_connection.get_run_info(pipeline_type="ingestion")
     logs = await logging_connection.get_logs([run.run_id for run in run_info])
@@ -122,15 +126,26 @@ async def test_ingest_txt_file(r2r_app, logging_connection):
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
 @pytest.mark.asyncio
-async def test_ingest_and_search_larger_txt_file(r2r_app, logging_connection):
+async def test_ingest_search_txt_file(r2r_app, logging_connection):
     # Prepare the test data
     metadata = {}
     files = [
         UploadFile(
-            filename="test2.txt",
-            file=open("r2r/examples/data/test2.txt", "rb"),
+            filename="aristotle.txt",
+            file=open(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "..",
+                    "r2r",
+                    "examples",
+                    "data",
+                    "aristotle.txt",
+                ),
+                "rb",
+            ),
         ),
     ]
+
     # Set file size manually
     for file in files:
         file.file.seek(0, 2)  # Move to the end of the file
@@ -138,9 +153,8 @@ async def test_ingest_and_search_larger_txt_file(r2r_app, logging_connection):
         file.file.seek(0)  # Move back to the start of the file
 
     # Convert metadata to JSON string
-    metadata_str = json.dumps([metadata])
 
-    await r2r_app.ingest_files(metadatas=metadata_str, files=files)
+    await r2r_app.aingest_files(metadatas=[metadata], files=files)
 
     run_info = await logging_connection.get_run_info(pipeline_type="ingestion")
     logs = await logging_connection.get_logs(
@@ -151,16 +165,18 @@ async def test_ingest_and_search_larger_txt_file(r2r_app, logging_connection):
     for log in logs:
         assert log["key"] in ["fragment", "extraction"]
         value = json.loads(log["value"])
-        assert value["document_id"] == str(generate_id_from_label("test2.txt"))
+        assert value["document_id"] == str(
+            generate_id_from_label("aristotle.txt")
+        )
 
-    search_results = await r2r_app.search("who was aristotle?")
+    search_results = await r2r_app.asearch("who was aristotle?")
     assert len(search_results["results"]) == 10
     assert (
         "was an Ancient Greek philosopher and polymath"
         in search_results["results"][0]["metadata"]["text"]
     )
 
-    search_results = await r2r_app.search(
+    search_results = await r2r_app.asearch(
         "who was aristotle?", search_limit=20
     )
     assert len(search_results["results"]) == 20
@@ -170,7 +186,7 @@ async def test_ingest_and_search_larger_txt_file(r2r_app, logging_connection):
     )
 
     ## test streaming
-    response = await r2r_app.rag(message="Who was aristotle?", streaming=True)
+    response = await r2r_app.arag(message="Who was aristotle?", streaming=True)
     collector = ""
     async for chunk in response.body_iterator:
         collector += chunk
@@ -185,7 +201,7 @@ async def test_ingest_and_search_larger_txt_file(r2r_app, logging_connection):
 @pytest.mark.asyncio
 async def test_ingest_search_then_delete(r2r_app, logging_connection):
     # Ingest a document
-    await r2r_app.ingest_documents(
+    await r2r_app.aingest_documents(
         [
             Document(
                 id=generate_id_from_label("doc_1"),
@@ -197,7 +213,7 @@ async def test_ingest_search_then_delete(r2r_app, logging_connection):
     )
 
     # Search for the document
-    search_results = await r2r_app.search("who was aristotle?")
+    search_results = await r2r_app.asearch("who was aristotle?")
 
     # Verify that the search results are not empty
     assert (
@@ -209,7 +225,7 @@ async def test_ingest_search_then_delete(r2r_app, logging_connection):
     )
 
     # Delete the document
-    delete_result = await r2r_app.delete("author", "John Doe")
+    delete_result = await r2r_app.adelete("author", "John Doe")
 
     # Verify the deletion was successful
     assert delete_result == {
@@ -217,7 +233,7 @@ async def test_ingest_search_then_delete(r2r_app, logging_connection):
     }, f"Expected successful deletion message, but got {delete_result}"
 
     # Search for the document again
-    search_results_2 = await r2r_app.search("who was aristotle?")
+    search_results_2 = await r2r_app.asearch("who was aristotle?")
 
     # Verify that the search results are empty
     assert (
@@ -230,7 +246,7 @@ async def test_ingest_search_then_delete(r2r_app, logging_connection):
 async def test_ingest_user_documents(r2r_app, logging_connection):
     user_id_0 = generate_id_from_label("user_0")
     user_id_1 = generate_id_from_label("user_1")
-    await r2r_app.ingest_documents(
+    await r2r_app.aingest_documents(
         [
             Document(
                 id=generate_id_from_label("doc_0"),
@@ -246,14 +262,14 @@ async def test_ingest_user_documents(r2r_app, logging_connection):
             ),
         ]
     )
-    user_id_results = await r2r_app.get_user_ids()
+    user_id_results = await r2r_app.aget_user_ids()
     user_ids = user_id_results["results"]
     assert set(user_ids) == set(
         [str(user_id_0), str(user_id_1)]
     ), f"Expected user ids {user_id_0} and {user_id_1}, but got {user_ids}"
 
-    user_0_docs = await r2r_app.get_user_document_data(user_id=str(user_id_0))
-    user_1_docs = await r2r_app.get_user_document_data(user_id=str(user_id_1))
+    user_0_docs = await r2r_app.aget_user_document_data(user_id=str(user_id_0))
+    user_1_docs = await r2r_app.aget_user_document_data(user_id=str(user_id_1))
 
     assert (
         len(user_0_docs["results"]) == 1
@@ -272,7 +288,7 @@ async def test_ingest_user_documents(r2r_app, logging_connection):
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
 @pytest.mark.asyncio
 async def test_delete_by_id(r2r_app, logging_connection):
-    await r2r_app.ingest_documents(
+    await r2r_app.aingest_documents(
         [
             Document(
                 id=generate_id_from_label("doc_1"),
@@ -282,18 +298,18 @@ async def test_delete_by_id(r2r_app, logging_connection):
             ),
         ]
     )
-    search_results = await r2r_app.search("who was aristotle?")
+    search_results = await r2r_app.asearch("who was aristotle?")
 
     assert len(search_results["results"]) > 0
-    await r2r_app.delete("document_id", str(generate_id_from_label("doc_1")))
-    search_results = await r2r_app.search("who was aristotle?")
+    await r2r_app.adelete("document_id", str(generate_id_from_label("doc_1")))
+    search_results = await r2r_app.asearch("who was aristotle?")
     assert len(search_results["results"]) == 0
 
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
 @pytest.mark.asyncio
 async def test_double_ingest(r2r_app, logging_connection):
-    await r2r_app.ingest_documents(
+    await r2r_app.aingest_documents(
         [
             Document(
                 id=generate_id_from_label("doc_1"),
@@ -303,10 +319,10 @@ async def test_double_ingest(r2r_app, logging_connection):
             ),
         ]
     )
-    search_results = await r2r_app.search("who was aristotle?")
+    search_results = await r2r_app.asearch("who was aristotle?")
 
     assert len(search_results["results"]) == 1
-    await r2r_app.ingest_documents(
+    await r2r_app.aingest_documents(
         [
             Document(
                 id=generate_id_from_label("doc_1"),
@@ -316,5 +332,5 @@ async def test_double_ingest(r2r_app, logging_connection):
             ),
         ]
     )
-    search_results = await r2r_app.search("who was aristotle?")
+    search_results = await r2r_app.asearch("who was aristotle?")
     assert len(search_results["results"]) == 1

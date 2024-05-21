@@ -4,8 +4,7 @@ import time
 
 import pytest
 
-from r2r.core import R2RClient
-from r2r.core.utils import generate_id_from_label
+from r2r import R2RClient, generate_id_from_label
 
 """
 To run the test locally, run

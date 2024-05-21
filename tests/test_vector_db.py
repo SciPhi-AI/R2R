@@ -5,9 +5,14 @@ import sqlite3
 import pytest
 from dotenv import load_dotenv
 
-from r2r.core import Vector, VectorDBConfig, VectorDBProvider, VectorEntry
-from r2r.core.utils import generate_id_from_label
-from r2r.vector_dbs import LocalVectorDB, PGVectorDB, QdrantDB
+from r2r import (
+    Vector,
+    VectorDBConfig,
+    VectorDBProvider,
+    VectorEntry,
+    generate_id_from_label,
+)
+from r2r.vector_dbs import PGVectorDB, QdrantDB, R2RLocalVectorDB
 
 load_dotenv()
 
@@ -29,7 +34,7 @@ sample_entries = [
 ]
 
 
-# Fixture for LocalVectorDB
+# Fixture for R2RLocalVectorDB
 @pytest.fixture
 def local_vector_db():
     random_collection_name = (
@@ -38,7 +43,7 @@ def local_vector_db():
     config = VectorDBConfig(
         provider="local", collection_name=random_collection_name
     )
-    db = LocalVectorDB(config)
+    db = R2RLocalVectorDB(config)
     db.initialize_collection(dimension=dimension)
     yield db
     # Teardown
@@ -93,7 +98,7 @@ def test_get_metadatas(request, db_fixture):
     assert all(f"value_id_{i}" in unique_values for i in range(num_entries))
 
 
-# Parameterize the tests to run with both LocalVectorDB and PGVectorDB
+# Parameterize the tests to run with both R2RLocalVectorDB and PGVectorDB
 @pytest.mark.parametrize(
     "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
 )

@@ -32,8 +32,8 @@ class R2RClient:
             for file in files
         ]
         data = {
-            "metadatas": json.dumps(metadatas),
-            "ids": json.dumps(ids or []),
+            "metadatas": None if not metadatas else json.dumps(metadatas),
+            "ids": None if not ids else json.dumps(ids),
         }
         response = requests.post(url, files=files_to_upload, data=data)
         response.raise_for_status()
