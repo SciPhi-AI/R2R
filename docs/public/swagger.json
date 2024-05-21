@@ -2,23 +2,20 @@
   "openapi": "3.1.0",
   "info": {
     "title": "R2R Application API",
-    "description": "API documentation for the R2R application, outlining the endpoints and operations available.",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "description": "Default API for the R2R server, created via FastAPI in the `R2RApp` class initialization."
   },
-  "servers": [
-    {
-      "url": "https://your-app-url"
-    }
-  ],
   "paths": {
     "/ingest_documents/": {
       "post": {
-        "summary": "Ingest Documents",
-        "operationId": "ingest_documents",
+        "summary": "Ingest Documents App",
+        "operationId": "ingest_documents_app_ingest_documents__post",
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/IngestDocumentsRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/IngestDocumentsRequest"
+              }
             }
           },
           "required": true
@@ -28,7 +25,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "example": { "results": "Entries upserted successfully." }
+                "schema": {}
               }
             }
           },
@@ -36,7 +33,9 @@
             "description": "Validation Error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -45,13 +44,14 @@
     },
     "/ingest_files/": {
       "post": {
-        "summary": "Ingest Files",
-        "operationId": "ingest_files",
+        "summary": "Ingest Files App",
+        "description": "Ingest files into the system.",
+        "operationId": "ingest_files_app_ingest_files__post",
         "requestBody": {
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/IngestFilesRequest"
+                "$ref": "#/components/schemas/Body_ingest_files_app_ingest_files__post"
               }
             }
           },
@@ -62,12 +62,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "example": {
-                  "results": [
-                    "File 'example.pdf' processed successfully",
-                    "File 'example.txt' processed successfully"
-                  ]
-                }
+                "schema": {}
               }
             }
           },
@@ -75,7 +70,9 @@
             "description": "Validation Error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -84,12 +81,14 @@
     },
     "/search/": {
       "post": {
-        "summary": "Search",
-        "operationId": "search",
+        "summary": "Search App",
+        "operationId": "search_app_search__post",
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/SearchRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
             }
           },
           "required": true
@@ -99,15 +98,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "example": {
-                  "results": [
-                    {
-                      "document_id": "doc_1",
-                      "title": "Example Document",
-                      "content": "This is an example document."
-                    }
-                  ]
-                }
+                "schema": {}
               }
             }
           },
@@ -115,7 +106,9 @@
             "description": "Validation Error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -124,12 +117,14 @@
     },
     "/rag/": {
       "post": {
-        "summary": "RAG",
-        "operationId": "rag",
+        "summary": "Rag App",
+        "operationId": "rag_app_rag__post",
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/RAGRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/RAGRequest"
+              }
             }
           },
           "required": true
@@ -139,151 +134,17 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "example": {
-                  "results": {
-                    "document_id": "doc_1",
-                    "content": "Generated response based on the query and context."
-                  }
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/delete/": {
-      "delete": {
-        "summary": "Delete",
-        "operationId": "delete",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/DeleteRequest" }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "example": { "results": "Entries deleted successfully." }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/get_user_ids/": {
-      "get": {
-        "summary": "Get User IDs",
-        "operationId": "get_user_ids",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "example": { "results": ["user_1", "user_2"] }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/get_user_document_data/": {
-      "post": {
-        "summary": "Get User Document Data",
-        "operationId": "get_user_document_data",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/UserDocumentRequest" }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "example": {
-                  "results": [
-                    {
-                      "document_id": "doc_1",
-                      "title": "Example Document",
-                      "content": "This is an example document."
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/get_logs/": {
-      "post": {
-        "summary": "Get Logs",
-        "operationId": "get_logs",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/LogsRequest" }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "example": {
-                  "results": [
-                    {
-                      "run_id": "run_1",
-                      "run_type": "ingestion",
-                      "entries": [
-                        { "key": "pipeline_type", "value": "ingestion" },
-                        { "key": "status", "value": "success" }
-                      ]
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
               }
             }
           }
@@ -292,12 +153,14 @@
     },
     "/evaluate/": {
       "post": {
-        "summary": "Evaluate",
-        "operationId": "evaluate",
+        "summary": "Evaluate App",
+        "operationId": "evaluate_app_evaluate__post",
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/EvalRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/EvalRequest"
+              }
             }
           },
           "required": true
@@ -307,12 +170,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "example": {
-                  "results": {
-                    "evaluation_score": 0.95,
-                    "feedback": "Evaluation successful."
-                  }
-                }
+                "schema": {}
               }
             }
           },
@@ -320,7 +178,149 @@
             "description": "Validation Error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/delete/": {
+      "delete": {
+        "summary": "Delete App",
+        "operationId": "delete_app_delete__delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get_user_ids/": {
+      "get": {
+        "summary": "Get User Ids App",
+        "operationId": "get_user_ids_app_get_user_ids__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get_user_document_data/": {
+      "post": {
+        "summary": "Get User Document Data App",
+        "operationId": "get_user_document_data_app_get_user_document_data__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserDocumentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get_logs/": {
+      "post": {
+        "summary": "Get Logs App",
+        "operationId": "get_logs_app_get_logs__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get_open_api_endpoint/": {
+      "post": {
+        "summary": "Get Open Api Endpoint",
+        "operationId": "get_open_api_endpoint_get_open_api_endpoint__post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           }
@@ -330,64 +330,218 @@
   },
   "components": {
     "schemas": {
-      "IngestDocumentsRequest": {
-        "type": "object",
-        "properties": {
-          "documents": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/Document" }
-          }
-        },
-        "required": ["documents"]
-      },
-      "IngestFilesRequest": {
-        "type": "object",
+      "Body_ingest_files_app_ingest_files__post": {
         "properties": {
           "files": {
-            "type": "array",
             "items": {
               "type": "string",
               "format": "binary"
-            }
+            },
+            "type": "array",
+            "title": "Files"
           },
           "metadatas": {
-            "type": "string",
-            "title": "Metadatas",
-            "default": "null"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadatas"
           },
           "ids": {
-            "type": "string",
-            "title": "IDs",
-            "default": "null"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
           }
         },
-        "required": ["files"]
-      },
-      "SearchRequest": {
         "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_ingest_files_app_ingest_files__post"
+      },
+      "DeleteRequest": {
         "properties": {
-          "query": { "type": "string" },
-          "search_filters": {
+          "key": {
             "type": "string",
-            "title": "Search Filters",
-            "default": "null"
+            "title": "Key"
           },
-          "search_limit": {
-            "type": "integer",
-            "title": "Search Limit",
-            "default": 10
+          "value": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Value"
           }
         },
-        "required": ["query"]
+        "type": "object",
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "DeleteRequest"
+      },
+      "Document": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "type": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "format": "binary"
+              }
+            ],
+            "title": "Data"
+          },
+          "metadata": {
+            "type": "object",
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "data",
+          "metadata"
+        ],
+        "title": "Document",
+        "description": "A document that has been stored in the system."
+      },
+      "DocumentType": {
+        "type": "string",
+        "enum": [
+          "csv",
+          "docx",
+          "html",
+          "json",
+          "md",
+          "pdf",
+          "pptx",
+          "txt",
+          "xlsx",
+          "gif",
+          "png",
+          "jpg",
+          "jpeg",
+          "svg",
+          "mp3",
+          "mp4"
+        ],
+        "title": "DocumentType",
+        "description": "Types of documents that can be stored."
+      },
+      "EvalRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "context": {
+            "type": "string",
+            "title": "Context"
+          },
+          "completion": {
+            "type": "string",
+            "title": "Completion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query",
+          "context",
+          "completion"
+        ],
+        "title": "EvalRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "IngestDocumentsRequest": {
+        "properties": {
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/Document"
+            },
+            "type": "array",
+            "title": "Documents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "documents"
+        ],
+        "title": "IngestDocumentsRequest"
+      },
+      "LogsRequest": {
+        "properties": {
+          "pipeline_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pipeline Type"
+          }
+        },
+        "type": "object",
+        "title": "LogsRequest"
       },
       "RAGRequest": {
-        "type": "object",
         "properties": {
-          "message": { "type": "string" },
-          "search_filters": {
+          "message": {
             "type": "string",
-            "title": "Search Filters",
-            "default": "null"
+            "title": "Message"
+          },
+          "search_filters": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search Filters"
           },
           "search_limit": {
             "type": "integer",
@@ -395,9 +549,15 @@
             "default": 10
           },
           "generation_config": {
-            "type": "string",
-            "title": "Generation Config",
-            "default": "null"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation Config"
           },
           "streaming": {
             "type": "boolean",
@@ -405,79 +565,86 @@
             "default": false
           }
         },
-        "required": ["message"]
-      },
-      "DeleteRequest": {
         "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "RAGRequest"
+      },
+      "SearchRequest": {
         "properties": {
-          "key": { "type": "string" },
-          "value": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "search_filters": {
             "anyOf": [
-              { "type": "boolean" },
-              { "type": "integer" },
-              { "type": "string" }
-            ]
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search Filters"
+          },
+          "search_limit": {
+            "type": "integer",
+            "title": "Search Limit",
+            "default": 10
           }
         },
-        "required": ["key", "value"]
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "title": "SearchRequest"
       },
       "UserDocumentRequest": {
-        "type": "object",
         "properties": {
-          "user_id": { "type": "string" }
-        },
-        "required": ["user_id"]
-      },
-      "LogsRequest": {
-        "type": "object",
-        "properties": {
-          "pipeline_type": { "type": "string", "default": "null" }
-        }
-      },
-      "EvalRequest": {
-        "type": "object",
-        "properties": {
-          "query": { "type": "string" },
-          "context": { "type": "string" },
-          "completion": { "type": "string" }
-        },
-        "required": ["query", "context", "completion"]
-      },
-      "Document": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "type": { "type": "string" },
-          "data": { "type": "string" },
-          "metadata": { "type": "object" }
-        },
-        "required": ["id", "type", "data"]
-      },
-      "HTTPValidationError": {
-        "type": "object",
-        "properties": {
-          "detail": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/ValidationError" }
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
           }
-        }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "UserDocumentRequest"
       },
       "ValidationError": {
-        "type": "object",
         "properties": {
           "loc": {
-            "type": "array",
             "items": {
               "anyOf": [
-                { "type": "string" },
-                { "type": "integer" }
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
               ]
-            }
+            },
+            "type": "array",
+            "title": "Location"
           },
-          "msg": { "type": "string" },
-          "type": { "type": "string" }
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
         },
-        "required": ["loc", "msg", "type"]
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       }
     }
   }

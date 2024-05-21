@@ -157,6 +157,15 @@ class R2RApp(metaclass=AsyncSyncMeta):
             methods=["POST"],
         )
 
+        self.app.add_api_route(
+            path="/get_open_api_endpoint/",
+            endpoint=self.get_open_api_endpoint,
+            methods=["POST"],
+        )
+        # self.app.include_router(self.app.router)
+
+
+
     @syncable
     async def aingest_documents(self, documents: list[Document]):
         try:
@@ -622,6 +631,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def get_logs_app(self, request: LogsRequest):
         return await self.aget_logs(request.pipeline_type)
 
+    def get_open_api_endpoint(self):
+        from fastapi.openapi.utils import get_openapi
+
+        return {"results": get_openapi(title="R2R Application API", version="1.0.0", routes=self.app.routes)}
+    
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         try:
             import uvicorn

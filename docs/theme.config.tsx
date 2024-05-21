@@ -13,7 +13,7 @@ const config: DocsThemeConfig = {
       <span>SciPhi</span>
     </>
   ),
-  logoLink: "https://github.com/SciPhi-AI/R2R",
+  logoLink: "https://r2r-docs.sciphi.ai/",
   head: (
     <>
       <link rel="icon" type="image/png" href="/favicon.ico" />

@@ -35,7 +35,7 @@ class Document(BaseModel):
     id: uuid.UUID
     type: DocumentType
     data: DataType
-    metadata: dict
+    metadata: dict    
 
 
 class ExtractionType(Enum):

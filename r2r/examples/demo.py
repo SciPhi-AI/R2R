@@ -1,4 +1,5 @@
 """A demo script for the R2R library."""
+import json
 import asyncio
 import logging
 import os
@@ -207,6 +208,11 @@ class R2RDemo:
         print(f"Time taken to get logs: {t1-t0:.2f} seconds")
         print(response)
 
+    def get_open_api_endpoint(self):
+        print(json.dumps(self.r2r.get_open_api_endpoint()['results'], indent=2))
+
+    def serve(self, host: str = "0.0.0.0", port: int = 8000):
+        self.r2r.serve(host, port)
 
 if __name__ == "__main__":
     fire.Fire(R2RDemo)
