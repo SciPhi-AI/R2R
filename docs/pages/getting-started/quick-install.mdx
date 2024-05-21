@@ -1,43 +1,76 @@
-## Quick Install with `pip`:
+Sure, here's an improved version of your README:
 
-Install R2R swiftly using `pip` to get started with minimal setup. This method will get you setup with the default configuration:
+---
+
+## Quick Install with `pip`
+
+Install R2R swiftly using `pip` to get started with minimal setup. This method will get you set up with the default configuration:
 
 ```bash
-# `'r2r[all]'` to download all optional deps
+# Install with optional evaluation dependencies
 pip install 'r2r[eval]'
 
-# setup default env 
+# Set up the default environment
 export OPENAI_API_KEY=sk-...
 # ... see below for more configuration info
 ```
 
+## Environment Setup
 
-### Setup Environment
+Below are examples of environment variables that can be configured to facilitate additional downstream functionality.
 
-Configure environment variables for your setup:
+### Language Model Providers
 
-#### Language Model providers
+#### OpenAI API Key
 
-**OpenAI API Key**
-
-Used by default for embedding and language models **-**
+Used by default for embedding and LLM completions:
 
 ```bash
 export OPENAI_API_KEY=sk-...
 ```
 
-**Anthropic / Vertex AI / ...**
+#### Other Providers (Anthropic, Vertex AI, etc.)
 
-For optional use at runtime by embedding and language models **-**
+Configure your environment for additional providers:
 
 ```bash
 export ANTHROPIC_API_KEY=...
 export VERTEX_API_KEY=...
-...
+# Add other provider keys as needed
 ```
 
+### VectorDB Providers
 
+#### R2R Local VectorDB
+
+R2R default selection - a simple SQLite-powered vector DB, optimal for lightweight workloads:
+
+```bash
+export LOCAL_DB_PATH=local.sqlite
+```
+
+#### pgvector
+
+Better for larger scale workloads that benefit from relational data:
+
+```bash
+export POSTGRES_USER=your_user
+export POSTGRES_PASSWORD=your_password
+export POSTGRES_HOST=your_host
+export POSTGRES_PORT=your_port
+export POSTGRES_DBNAME=your_db
+```
+
+#### qdrant
+
+Ideal for scalable vector search use cases:
+
+```bash
+export QDRANT_HOST=your_qdrant_host
+export QDRANT_PORT=your_qdrant_port
+export QDRANT_API_KEY=your_qdrant_api_key
+```
 
 ### Customization and Configuration
 
-R2R provides extensive options to customize and configure your pipeline to suit specific needs. You can configure various providers as through the `config.json` file and set environment variables as shown above to specify your vector database, embedding, language model, evaluation, and logging providers.
+R2R provides extensive options to customize and configure your pipeline to suit specific needs. You can configure various providers through the `config.json` file and set environment variables as shown above to specify your vector database, embedding, language model, evaluation, and logging providers.

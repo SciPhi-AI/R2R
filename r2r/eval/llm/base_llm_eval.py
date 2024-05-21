@@ -35,7 +35,6 @@ class LLMEvalProvider(EvalProvider):
         eval_prompt = self.prompt_provider.get_prompt(
             "rag_context_eval", {"query": query, "context": context}
         )
-        print("self.generation_config = ", self.generation_config)
         response = self.llm_provider.get_completion(
             self.prompt_provider._get_message_payload(
                 system_prompt, eval_prompt
@@ -43,6 +42,7 @@ class LLMEvalProvider(EvalProvider):
             self.generation_config,
         )
         response_text = response.choices[0].message.content
+        print("response_text = ", response_text)
         fraction = (
             response_text
             # Get the fraction in the returned tuple
@@ -62,7 +62,6 @@ class LLMEvalProvider(EvalProvider):
             "rag_answer_eval",
             {"query": query, "context": context, "answer": answer},
         )
-        print("self.generation_config = ", self.generation_config)
         response = self.llm_provider.get_completion(
             self.prompt_provider._get_message_payload(
                 system_prompt, eval_prompt
@@ -70,6 +69,7 @@ class LLMEvalProvider(EvalProvider):
             self.generation_config,
         )
         response_text = response.choices[0].message.content
+        print("response_text = ", response_text)
         fraction = (
             response_text
             # Get the fraction in the returned tuple

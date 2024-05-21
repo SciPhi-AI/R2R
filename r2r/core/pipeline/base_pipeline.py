@@ -23,6 +23,8 @@ class PipelineTypes(Enum):
 class Pipeline:
     """Pipeline class for running a sequence of pipes."""
 
+    pipeline_type: str = "other"
+
     def __init__(
         self, pipe_logger: Optional[PipeLoggingConnectionSingleton] = None
     ):
@@ -49,43 +51,53 @@ class Pipeline:
         self,
         input: Any,
         state: Optional[AsyncState] = None,
-        pipeline_type: str = "other",
         streaming: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
         """Run the pipeline."""
         try:
-            PipelineTypes(pipeline_type)
+            PipelineTypes(self.pipeline_type)
         except ValueError:
             raise ValueError(
-                f"Invalid pipeline type: {pipeline_type}, must be one of {PipelineTypes.__members__.keys()}"
+                f"Invalid pipeline type: {self.pipeline_type}, must be one of {PipelineTypes.__members__.keys()}"
             )
 
         self.state = state or AsyncState()
         current_input = input
-        run_id = generate_run_id()
+        self.run_id = generate_run_id()
         await self.pipe_logger.log(
-            pipe_run_id=run_id,
+            pipe_run_id=self.run_id,
             key="pipeline_type",
-            value=pipeline_type,
+            value=self.pipeline_type,
             is_pipeline_info=True,
         )
+        try:
+            for pipe_num in range(len(self.pipes)):
+                config_name = self.pipes[pipe_num].config.name
+                self.futures[config_name] = asyncio.Future()
 
-        for pipe_num in range(len(self.pipes)):
-            config_name = self.pipes[pipe_num].config.name
-            self.futures[config_name] = asyncio.Future()
+                current_input = self._run_pipe(
+                    pipe_num, current_input, *args, **kwargs
+                )
+                self.futures[config_name].set_result(current_input)
 
-            current_input = self._run_pipe(
-                pipe_num, current_input, run_id, *args, **kwargs
-            )
-            self.futures[config_name].set_result(current_input)
-
-        if not streaming:
-            final_result = await self._consume_all(current_input)
-            return final_result
-        else:
-            return current_input
+            if not streaming:
+                final_result = await self._consume_all(current_input)
+                return final_result
+            else:
+                return current_input
+        except Exception as error:
+            logger.error(f"Pipeline failed with error: {error}")
+            # await self.pipe_logger.log(
+            #     pipe_run_id=run_id,
+            #     key="error",
+            #     value=error,
+            #     is_pipeline_info=False,
+            # )
+            raise error
+        finally:
+            self.run_id = None
 
     async def _consume_all(self, gen: AsyncGenerator) -> list[Any]:
         result = []
@@ -103,7 +115,6 @@ class Pipeline:
         self,
         pipe_num: int,
         input: Any,
-        run_id: uuid.UUID,
         *args: Any,
         **kwargs: Any,
     ):
@@ -159,7 +170,7 @@ class Pipeline:
         async for ele in await pipe.run(
             pipe.Input(**input_dict),
             self.state,
-            run_id=run_id,
+            run_id=self.run_id,
             *args,
             **kwargs,
         ):
@@ -184,18 +195,17 @@ class Pipeline:
 class EvalPipeline(Pipeline):
     """A pipeline for evaluation."""
 
+    pipeline_type: str = "eval"
+
     async def run(
         self,
         input: Any,
         state: Optional[AsyncState] = None,
-        pipeline_type: str = "eval",
         streaming: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
-        return await super().run(
-            input, state, pipeline_type, streaming, *args, **kwargs
-        )
+        return await super().run(input, state, streaming, *args, **kwargs)
 
     def add_pipe(
         self,
@@ -211,18 +221,17 @@ class EvalPipeline(Pipeline):
 class IngestionPipeline(Pipeline):
     """A pipeline for ingestion."""
 
+    pipeline_type: str = "ingestion"
+
     async def run(
         self,
         input: Any,
         state: Optional[AsyncState] = None,
-        pipeline_type: str = "ingestion",
         streaming: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
-        return await super().run(
-            input, state, pipeline_type, streaming, *args, **kwargs
-        )
+        return await super().run(input, state, streaming, *args, **kwargs)
 
     def add_pipe(
         self,
@@ -240,18 +249,17 @@ class IngestionPipeline(Pipeline):
 class RAGPipeline(Pipeline):
     """A pipeline for RAG."""
 
+    pipeline_type: str = "rag"
+
     async def run(
         self,
         input: Any,
         state: Optional[AsyncState] = None,
-        pipeline_type: str = "rag",
         streaming: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
-        return await super().run(
-            input, state, pipeline_type, streaming, *args, **kwargs
-        )
+        return await super().run(input, state, streaming, *args, **kwargs)
 
     def add_pipe(
         self,
@@ -267,18 +275,17 @@ class RAGPipeline(Pipeline):
 class SearchPipeline(Pipeline):
     """A pipeline for search."""
 
+    pipeline_type: str = "search"
+
     async def run(
         self,
         input: Any,
         state: Optional[AsyncState] = None,
-        pipeline_type: str = "search",
         streaming: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
-        return await super().run(
-            input, state, pipeline_type, streaming, *args, **kwargs
-        )
+        return await super().run(input, state, streaming, *args, **kwargs)
 
     def add_pipe(
         self,

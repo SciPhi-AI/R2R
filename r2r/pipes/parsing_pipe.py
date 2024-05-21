@@ -1,8 +1,10 @@
 """
-A simple example to demonstrate the usage of `R2RDocumentParsingPipe`.
+This module contains the `DocumentParsingPipe` class, which is responsible for parsing incoming documents into plaintext.
 """
+import asyncio
 import json
 import logging
+import time
 from abc import abstractmethod
 from typing import AsyncGenerator, Iterator, Optional
 
@@ -147,9 +149,10 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
                     parser_key
                 ]()
             else:
-                logger.error(
-                    f"Parser for {doc_type} not found in `R2RDocumentParsingPipe`."
-                )
+                error_message = f"Parser for {doc_type} not found in `R2RDocumentParsingPipe`."
+
+                logger.error(error_message)
+                raise ValueError(error_message)
 
     async def _parse(
         self,
@@ -163,6 +166,7 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
         parser = self.parsers[document.type]
         texts = parser.ingest(document.data)
         extraction_type = ExtractionType.TXT
+        t0 = time.time()
         if document.type in self.IMAGE_TYPES:
             extraction_type = ExtractionType.IMG
             document.metadata["image_type"] = document.type.value
@@ -205,10 +209,27 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
                 ),
             )
             iteration += 1
+        logger.info(
+            f"Parsed document with metadata={document.metadata} and id={document.id} in t={time.time()-t0:.2f} seconds."
+        )
 
     async def _run_logic(
         self, input: Input, state: AsyncState, *args, **kwargs
     ) -> AsyncGenerator[Extraction, None]:
+        parse_tasks = []
+
         async for document in input.message:
-            async for extraction in self._parse(document):
+            parse_tasks.append(self._handle_parse_task(document))
+
+        # Await all tasks and yield results concurrently
+        for parse_task in asyncio.as_completed(parse_tasks):
+            for extraction in await parse_task:
                 yield extraction
+
+    async def _handle_parse_task(
+        self, document: Document
+    ) -> AsyncGenerator[Extraction, None]:
+        extractions = []
+        async for extraction in self._parse(document):
+            extractions.append(extraction)
+        return extractions

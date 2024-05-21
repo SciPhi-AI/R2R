@@ -1,8 +1,29 @@
+import logging
+
 from .core import *
 from .eval import *
 from .main import *
 from .pipes import *
 from .prompts import *
+
+logger = logging.getLogger("r2r")
+logger.setLevel(logging.INFO)
+
+# Create a console handler and set the level to info
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+
+# Create a formatter and set it for the handler
+formatter = logging.Formatter(
+    "%(name)s - %(levelname)s - %(message)s - %(asctime)s"
+)
+ch.setFormatter(formatter)
+
+# Add the handler to the logger
+logger.addHandler(ch)
+
+# Optional: Prevent propagation to the root logger
+logger.propagate = False
 
 __all__ = [
     "LoggingConfig",

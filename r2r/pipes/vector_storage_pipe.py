@@ -61,8 +61,11 @@ class R2RVectorStoragePipe(LoggableAsyncPipe):
             else:
                 self.vector_db_provider.copy_entries(vector_entries)
         except Exception as e:
-            logger.error(f"Error storing vector entries: {e}")
-            raise
+            error_message = (
+                f"Failed to store vector entries in the database: {e}"
+            )
+            logger.error(error_message)
+            raise ValueError(error_message)
 
     async def _run_logic(
         self,

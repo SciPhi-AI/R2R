@@ -74,6 +74,7 @@ class Client:
 
     def _initialize_database(self):
         retries = 0
+        error = None
         while retries < self.max_retries:
             try:
                 with self.Session() as sess:
@@ -88,11 +89,11 @@ class Client:
                 )
                 retries += 1
                 time.sleep(self.retry_delay)
+                error = e
 
-        logger.error(
-            f"Failed to initialize database after {self.max_retries} retries."
-        )
-        raise RuntimeError("Failed to initialize database.")
+        error_message = f"Failed to initialize database after {self.max_retries} retries with error: {str(error)}"
+        logger.error(error_message)
+        raise RuntimeError(error_message)
 
     def _create_schema(self, sess):
         try:

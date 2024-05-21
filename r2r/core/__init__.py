@@ -1,5 +1,3 @@
-import logging
-
 from .abstractions.document import (
     DataType,
     Document,
@@ -59,8 +57,6 @@ from .utils import (
     run_pipeline,
     to_async_generator,
 )
-
-logging.basicConfig(level=logging.INFO)
 
 __all__ = [
     # Logging

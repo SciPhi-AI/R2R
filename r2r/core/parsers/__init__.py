@@ -1,5 +1,5 @@
 from .base_parser import AsyncParser
-from .implementations import (
+from .parser_impls import (
     AudioParser,
     CSVParser,
     DOCXParser,

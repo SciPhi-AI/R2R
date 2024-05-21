@@ -36,7 +36,12 @@
       "pdf": "default",
       "pptx": "default",
       "txt": "default",
-      "xlsx": "default"
+      "xlsx": "default",
+      "gif": "default",
+      "png": "default",
+      "jpg": "default",
+      "jpeg": "default",
+      "svg": "default"
     }
   },
   "logging": {
