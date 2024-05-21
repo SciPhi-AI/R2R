@@ -1,11 +1,6 @@
 import os
 
-from r2r import (
-    R2RPipelineFactory,
-    R2RApp,
-    R2RConfig,
-    R2RProviderFactory,
-)
+from r2r import R2RApp, R2RConfig, R2RPipelineFactory, R2RProviderFactory
 
 current_file_path = os.path.dirname(__file__)
 configs_path = os.path.join(current_file_path, "..", "configs")
@@ -46,22 +41,24 @@ def default_app(config_name: str = "default", pipe_name: str = "qna"):
 
     providers = R2RProviderFactory(config).create_providers()
     default_factory = R2RPipelineFactory(config, providers)
-    default_factory.configure_logging()
+    # default_factory.configure_logging()
     pipelines = default_factory.create_pipelines()
 
     r2r = R2RApp(
         config=config,
         providers=providers,
-        ingestion_pipeline=pipelines.ingestion_pipeline,
-        search_pipeline=pipelines.search_pipeline,
-        rag_pipeline=pipelines.rag_pipeline,
-        streaming_rag_pipeline=pipelines.streaming_rag_pipeline,
+        pipelines=pipelines,
+        # ingestion_pipeline=pipelines.ingestion_pipeline,
+        # search_pipeline=pipelines.search_pipeline,
+        # rag_pipeline=pipelines.rag_pipeline,
+        # streaming_rag_pipeline=pipelines.streaming_rag_pipeline,
     )
 
     return r2r
 
 
-app = default_app().app
+app = default_app().serve()
+# app.serve()
 
 # if __name__ == "__main__":
 #     parser = argparse.ArgumentParser(description="R2R Pipe")

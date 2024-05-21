@@ -1,3 +1,3 @@
-from .local.prompt import DefaultPromptProvider
+from .local.prompt import R2RPromptProvider
 
-__all__ = ["DefaultPromptProvider"]
+__all__ = ["R2RPromptProvider"]

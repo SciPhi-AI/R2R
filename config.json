@@ -27,7 +27,7 @@
     "sampling_fraction": 1.0
   },
   "ingestion":{
-    "selected_ingestors": {
+    "selected_parsers": {
       "csv": "default",
       "docx": "default",
       "html": "default",

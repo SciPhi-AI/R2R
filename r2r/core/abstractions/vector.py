@@ -1,3 +1,4 @@
+"""Abstraction for a vector that can be stored in the system."""
 from enum import Enum
 from typing import Any
 from uuid import UUID
@@ -8,6 +9,8 @@ class VectorType(Enum):
 
 
 class Vector:
+    """A vector with the option to fix the number of elements."""
+
     def __init__(
         self,
         data: list[float],
@@ -32,6 +35,8 @@ class Vector:
 
 
 class VectorEntry:
+    """A vector entry that can be stored directly in supported vector databases."""
+
     def __init__(self, id: UUID, vector: Vector, metadata: dict[str, Any]):
         """Create a new VectorEntry object."""
         self.vector = vector

@@ -1,3 +1,4 @@
+"""Implementations of parsers for different data types."""
 import base64
 import json
 import os
@@ -9,10 +10,12 @@ import requests
 from bs4 import BeautifulSoup
 
 from ..abstractions.document import DataType
-from .base import AsyncParser
+from .parser_base import AsyncParser
 
 
 class TextParser(AsyncParser[DataType]):
+    """A parser for raw text data."""
+
     async def ingest(self, data: DataType) -> AsyncGenerator[DataType, None]:
         if isinstance(data, bytes):
             data = data.decode("utf-8")
@@ -20,7 +23,10 @@ class TextParser(AsyncParser[DataType]):
 
 
 class JSONParser(AsyncParser[DataType]):
+    """A parser for JSON data."""
+
     async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+        """Ingest JSON data and yield a formatted text representation."""
         if isinstance(data, bytes):
             data = data.decode("utf-8")
         yield self._parse_json(json.loads(data))
@@ -61,12 +67,17 @@ class JSONParser(AsyncParser[DataType]):
 
 
 class HTMLParser(AsyncParser[DataType]):
+    """A parser for HTML data."""
+
     async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+        """Ingest HTML data and yield text."""
         soup = BeautifulSoup(data, "html.parser")
         yield soup.get_text()
 
 
 class PDFParser(AsyncParser[DataType]):
+    """A parser for PDF data."""
+
     def __init__(self):
         try:
             from pypdf import PdfReader
@@ -78,6 +89,7 @@ class PDFParser(AsyncParser[DataType]):
             )
 
     async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+        """Ingest PDF data and yield text from each page."""
         if isinstance(data, str):
             raise ValueError("PDF data must be in bytes format.")
 
@@ -92,6 +104,8 @@ class PDFParser(AsyncParser[DataType]):
 
 
 class PPTParser(AsyncParser[DataType]):
+    """A parser for PPT data."""
+
     def __init__(self):
         try:
             from pptx import Presentation
@@ -103,6 +117,7 @@ class PPTParser(AsyncParser[DataType]):
             )
 
     async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+        """Ingest PPT data and yield text from each slide."""
         if isinstance(data, str):
             raise ValueError("PPT data must be in bytes format.")
 
@@ -114,6 +129,8 @@ class PPTParser(AsyncParser[DataType]):
 
 
 class DOCXParser(AsyncParser[DataType]):
+    """A parser for DOCX data."""
+
     def __init__(self):
         try:
             from docx import Document
@@ -125,6 +142,7 @@ class DOCXParser(AsyncParser[DataType]):
             )
 
     async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+        """Ingest DOCX data and yield text from each paragraph."""
         if isinstance(data, str):
             raise ValueError("DOCX data must be in bytes format.")
 
@@ -134,6 +152,8 @@ class DOCXParser(AsyncParser[DataType]):
 
 
 class XLSXParser(AsyncParser[DataType]):
+    """A parser for XLSX data."""
+
     def __init__(self):
         try:
             from openpyxl import load_workbook
@@ -145,6 +165,7 @@ class XLSXParser(AsyncParser[DataType]):
             )
 
     async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
+        """Ingest XLSX data and yield text from each row."""
         if isinstance(data, str):
             raise ValueError("XLSX data must be in bytes format.")
 
@@ -155,6 +176,8 @@ class XLSXParser(AsyncParser[DataType]):
 
 
 class CSVParser(AsyncParser[DataType]):
+    """A parser for CSV data."""
+
     def __init__(self):
         import csv
         from io import StringIO
@@ -165,6 +188,7 @@ class CSVParser(AsyncParser[DataType]):
     async def ingest(
         self, data: Union[str, bytes]
     ) -> AsyncGenerator[str, None]:
+        """Ingest CSV data and yield text from each row."""
         if isinstance(data, bytes):
             data = data.decode("utf-8")
         csv_reader = self.csv.reader(self.StringIO(data))
@@ -173,12 +197,15 @@ class CSVParser(AsyncParser[DataType]):
 
 
 class MarkdownParser(AsyncParser[DataType]):
+    """A parser for Markdown data."""
+
     def __init__(self):
         import markdown
 
         self.markdown = markdown
 
     async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+        """Ingest Markdown data and yield text."""
         if isinstance(data, bytes):
             data = data.decode("utf-8")
         html = self.markdown.markdown(data)
@@ -242,6 +269,8 @@ def process_audio_with_openai(
 
 
 class AudioParser(AsyncParser[bytes]):
+    """A parser for audio data."""
+
     def __init__(
         self, api_base: str = "https://api.openai.com/v1/audio/transcriptions"
     ):
@@ -253,6 +282,7 @@ class AudioParser(AsyncParser[bytes]):
             )
 
     async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
+        """Ingest audio data and yield a transcription."""
         temp_audio_path = "temp_audio.wav"
         with open(temp_audio_path, "wb") as f:
             f.write(data)
@@ -266,6 +296,8 @@ class AudioParser(AsyncParser[bytes]):
 
 
 class ImageParser(AsyncParser[DataType]):
+    """A parser for image data."""
+
     def __init__(
         self,
         model: str = "gpt-4o",
@@ -282,10 +314,10 @@ class ImageParser(AsyncParser[DataType]):
         self.api_base = api_base
 
     async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+        """Ingest image data and yield a description."""
         if isinstance(data, bytes):
             import base64
 
-            # Function to encode the image
             data = base64.b64encode(data).decode("utf-8")
 
         yield process_frame_with_openai(
@@ -298,6 +330,8 @@ class ImageParser(AsyncParser[DataType]):
 
 
 class MovieParser(AsyncParser):
+    """A parser for movie data."""
+
     def __init__(
         self,
         model: str = "gpt-4o",
@@ -333,6 +367,7 @@ class MovieParser(AsyncParser):
             )
 
     async def ingest(self, data: bytes) -> AsyncGenerator[str, None]:
+        """Ingest movie data and yield a description."""
         temp_video_path = "temp_movie.mp4"
         with open(temp_video_path, "wb") as f:
             f.write(data)
@@ -348,7 +383,7 @@ class MovieParser(AsyncParser):
                 transcription_text = process_audio_with_openai(
                     audio_file, self.openai_api_key
                 )
-            yield transcription_text
+                yield transcription_text
         finally:
             os.remove(temp_video_path)
 

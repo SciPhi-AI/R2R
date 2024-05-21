@@ -1,4 +1,3 @@
-from .base import AsyncParser
 from .implementations import (
     AudioParser,
     CSVParser,
@@ -13,6 +12,7 @@ from .implementations import (
     TextParser,
     XLSXParser,
 )
+from .parser_base import AsyncParser
 
 __all__ = [
     "AsyncParser",

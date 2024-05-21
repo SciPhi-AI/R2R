@@ -1,3 +1,4 @@
+"""Abstractions for documents and their extractions."""
 import uuid
 from enum import Enum
 from typing import Union
@@ -8,6 +9,8 @@ DataType = Union[str, bytes]
 
 
 class DocumentType(Enum):
+    """Types of documents that can be stored."""
+
     CSV = "csv"
     DOCX = "docx"
     HTML = "html"
@@ -27,6 +30,8 @@ class DocumentType(Enum):
 
 
 class Document(BaseModel):
+    """A document that has been stored in the system."""
+
     id: uuid.UUID
     type: DocumentType
     data: DataType
@@ -34,12 +39,16 @@ class Document(BaseModel):
 
 
 class ExtractionType(Enum):
+    """Types of extractions that can be performed."""
+
     TXT = "txt"
     IMG = "img"
     MOV = "mov"
 
 
 class Extraction(BaseModel):
+    """An extraction from a document."""
+
     id: uuid.UUID
     type: ExtractionType = ExtractionType.TXT
     data: DataType
@@ -48,11 +57,15 @@ class Extraction(BaseModel):
 
 
 class FragmentType(Enum):
+    """A type of fragment that can be extracted from a document."""
+
     TEXT = "text"
     IMAGE = "image"
 
 
 class Fragment(BaseModel):
+    """A fragment extracted from a document."""
+
     id: uuid.UUID
     type: FragmentType
     data: DataType

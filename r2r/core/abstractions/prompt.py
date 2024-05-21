@@ -1,9 +1,12 @@
+"""Abstraction for a prompt that can be formatted with inputs."""
 from typing import Any
 
 from pydantic import BaseModel
 
 
 class Prompt(BaseModel):
+    """A prompt that can be formatted with inputs."""
+
     name: str
     template: str
     input_types: dict[str, str]

@@ -1,3 +1,5 @@
+import logging
+
 from .abstractions.document import (
     DataType,
     Document,
@@ -26,16 +28,16 @@ from .parsers import (
     TextParser,
     XLSXParser,
 )
-from .pipeline.base import (
+from .pipeline.base_pipeline import (
     EvalPipeline,
     IngestionPipeline,
     Pipeline,
     RAGPipeline,
     SearchPipeline,
 )
-from .pipes.base import AsyncPipe, AsyncState, PipeRunInfo, PipeType
-from .pipes.loggable import LoggableAsyncPipe
-from .pipes.logging import (
+from .pipes.base_pipe import AsyncPipe, AsyncState, PipeRunInfo, PipeType
+from .pipes.loggable_pipe import LoggableAsyncPipe
+from .pipes.pipe_logging import (
     LocalPipeLoggingProvider,
     LoggingConfig,
     PipeLoggingConnectionSingleton,
@@ -44,23 +46,24 @@ from .pipes.logging import (
     RedisLoggingConfig,
     RedisPipeLoggingProvider,
 )
-from .providers.embedding import EmbeddingConfig, EmbeddingProvider
-from .providers.eval import EvalConfig, EvalProvider
-from .providers.llm import GenerationConfig, LLMConfig, LLMProvider
-from .providers.prompt import PromptConfig, PromptProvider
-from .providers.vector_db import VectorDBConfig, VectorDBProvider
+from .providers.embedding_provider import EmbeddingConfig, EmbeddingProvider
+from .providers.eval_provider import EvalConfig, EvalProvider
+from .providers.llm_provider import GenerationConfig, LLMConfig, LLMProvider
+from .providers.prompt_provider import PromptConfig, PromptProvider
+from .providers.vector_db_provider import VectorDBConfig, VectorDBProvider
 from .utils import (
     RecursiveCharacterTextSplitter,
     TextSplitter,
     generate_id_from_label,
     generate_run_id,
-    list_to_generator,
     run_pipeline,
+    to_async_generator,
 )
-from .utils.client import R2RClient
-from .utils.config import R2RConfig
+
+logging.basicConfig(level=logging.INFO)
 
 __all__ = [
+    # Logging
     "LoggingConfig",
     "LocalPipeLoggingProvider",
     "PostgresLoggingConfig",
@@ -68,6 +71,7 @@ __all__ = [
     "RedisLoggingConfig",
     "RedisPipeLoggingProvider",
     "PipeLoggingConnectionSingleton",
+    # Abstractions
     "VectorEntry",
     "VectorType",
     "Vector",
@@ -100,7 +104,9 @@ __all__ = [
     "PPTParser",
     "TextParser",
     "XLSXParser",
+    # Pipelines
     "Pipeline",
+    "EvalPipeline",
     "IngestionPipeline",
     "RAGPipeline",
     "SearchPipeline",
@@ -118,11 +124,10 @@ __all__ = [
     "LLMProvider",
     "VectorDBConfig",
     "VectorDBProvider",
-    "R2RConfig",
-    "R2RClient",
+    # Other
     "TextSplitter",
     "RecursiveCharacterTextSplitter",
-    "list_to_generator",
+    "to_async_generator",
     "run_pipeline",
     "generate_run_id",
     "generate_id_from_label",

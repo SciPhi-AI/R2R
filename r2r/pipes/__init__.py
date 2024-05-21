@@ -1,19 +1,19 @@
-from .default.embedding import DefaultEmbeddingPipe
-from .default.eval import DefaultEvalPipe
-from .default.parsing import DefaultDocumentParsingPipe
-from .default.query_transform import DefaultQueryTransformPipe
-from .default.rag import DefaultRAGPipe
-from .default.streaming_rag import DefaultStreamingRAGPipe
-from .default.vector_search import DefaultVectorSearchPipe
-from .default.vector_storage import DefaultVectorStoragePipe
+from .embedding_pipe import R2REmbeddingPipe
+from .eval_pipe import R2REvalPipe
+from .parsing_pipe import R2RDocumentParsingPipe
+from .query_transform_pipe import R2RQueryTransformPipe
+from .rag_pipe import R2RRAGPipe
+from .streaming_rag_pipe import R2RStreamingRAGPipe
+from .vector_search_pipe import R2RVectorSearchPipe
+from .vector_storage_pipe import R2RVectorStoragePipe
 
 __all__ = [
-    "DefaultEmbeddingPipe",
-    "DefaultEvalPipe",
-    "DefaultDocumentParsingPipe",
-    "DefaultQueryTransformPipe",
-    "DefaultRAGPipe",
-    "DefaultStreamingRAGPipe",
-    "DefaultVectorSearchPipe",
-    "DefaultVectorStoragePipe",
+    "R2REmbeddingPipe",
+    "R2REvalPipe",
+    "R2RDocumentParsingPipe",
+    "R2RQueryTransformPipe",
+    "R2RRAGPipe",
+    "R2RStreamingRAGPipe",
+    "R2RVectorSearchPipe",
+    "R2RVectorStoragePipe",
 ]
