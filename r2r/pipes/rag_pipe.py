@@ -30,24 +30,16 @@ class R2RRAGPipe(GeneratorPipe):
         prompt_provider: PromptProvider,
         type: PipeType = PipeType.GENERATOR,
         config: Optional[GeneratorPipe] = None,
-        generation_config: Optional[GenerationConfig] = None,
         *args,
         **kwargs,
     ):
-        if config and generation_config:
-            raise ValueError(
-                "Cannot provide both `config` and `generation_config`."
-            )
         super().__init__(
             llm_provider=llm_provider,
             prompt_provider=prompt_provider,
             type=type,
             config=config
             or GeneratorPipe.Config(
-                name="default_rag_pipe",
-                task_prompt="default_rag",
-                generation_config=generation_config
-                or GenerationConfig(model="gpt-3.5-turbo"),
+                name="default_rag_pipe", task_prompt="default_rag"
             ),
             *args,
             **kwargs,
@@ -57,16 +49,15 @@ class R2RRAGPipe(GeneratorPipe):
         self,
         input: Input,
         state: AsyncState,
+        rag_generation_config: GenerationConfig,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[LLMChatCompletion, None]:
-        config_override = kwargs.get("config_override", None)
         context = await self._collect_context(input)
         messages = self._get_message_payload("\n".join(input.query), context)
 
         response = self.llm_provider.get_completion(
-            messages=messages,
-            generation_config=config_override or self.config.generation_config,
+            messages=messages, generation_config=rag_generation_config
         )
         yield response
 

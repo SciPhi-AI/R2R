@@ -33,6 +33,7 @@ class Pipeline:
         self.pipe_logger = pipe_logger or PipeLoggingConnectionSingleton()
         self.futures = {}
         self.level = 0
+        self.run_id = None
 
     def add_pipe(
         self,

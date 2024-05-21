@@ -16,16 +16,8 @@ class LLMEvalProvider(EvalProvider):
         config: EvalConfig,
         llm_provider: LLMProvider,
         prompt_provider: PromptProvider,
-        generation_config: Optional[GenerationConfig] = None,
     ):
         super().__init__(config)
-
-        if not generation_config:
-            generation_config = GenerationConfig(
-                model=config.llm.extra_fields.get("model")
-            )
-
-        self.generation_config = generation_config
 
         self.llm_provider = llm_provider
         self.prompt_provider = prompt_provider
@@ -39,10 +31,9 @@ class LLMEvalProvider(EvalProvider):
             self.prompt_provider._get_message_payload(
                 system_prompt, eval_prompt
             ),
-            self.generation_config,
+            self.eval_generation_config,
         )
         response_text = response.choices[0].message.content
-        print("response_text = ", response_text)
         fraction = (
             response_text
             # Get the fraction in the returned tuple
@@ -66,10 +57,9 @@ class LLMEvalProvider(EvalProvider):
             self.prompt_provider._get_message_payload(
                 system_prompt, eval_prompt
             ),
-            self.generation_config,
+            self.eval_generation_config,
         )
         response_text = response.choices[0].message.content
-        print("response_text = ", response_text)
         fraction = (
             response_text
             # Get the fraction in the returned tuple
@@ -82,8 +72,13 @@ class LLMEvalProvider(EvalProvider):
         return float(Fraction(fraction))
 
     def _evaluate(
-        self, query: str, context: str, answer: str
+        self,
+        query: str,
+        context: str,
+        answer: str,
+        eval_generation_config: GenerationConfig,
     ) -> dict[str, dict[str, Union[str, float]]]:
+        self.eval_generation_config = eval_generation_config
         query_context_relevancy = self._calc_query_context_relevancy(
             query, context
         )

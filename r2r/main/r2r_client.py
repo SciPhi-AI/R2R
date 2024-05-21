@@ -58,7 +58,7 @@ class R2RClient:
         message: str,
         search_filters: Optional[dict] = None,
         search_limit: int = 10,
-        generation_config: Optional[dict] = None,
+        rag_generation_config: Optional[dict] = None,
         streaming: bool = False,
     ) -> Union[dict, Generator[str, None, None]]:
         if streaming:
@@ -66,7 +66,7 @@ class R2RClient:
                 message=message,
                 search_filters=search_filters,
                 search_limit=search_limit,
-                generation_config=generation_config,
+                rag_generation_config=rag_generation_config,
             )
         else:
             url = f"{self.base_url}/rag/"
@@ -76,8 +76,10 @@ class R2RClient:
                 "search_limit": search_limit,
                 "streaming": streaming,
             }
-            if generation_config:
-                data["generation_config"] = json.dumps(generation_config)
+            if rag_generation_config:
+                data["rag_generation_config"] = json.dumps(
+                    rag_generation_config
+                )
             response = requests.post(url, json=data)
             response.raise_for_status()
             return response.json()
@@ -87,7 +89,7 @@ class R2RClient:
         message: str,
         search_filters: Optional[dict] = None,
         search_limit: int = 10,
-        generation_config: Optional[dict] = None,
+        rag_generation_config: Optional[dict] = None,
     ) -> Generator[str, None, None]:
         url = f"{self.base_url}/rag/"
         data = {
@@ -96,9 +98,8 @@ class R2RClient:
             "search_limit": search_limit,
             "streaming": True,
         }
-        if generation_config:
-            data["generation_config"] = json.dumps(generation_config)
-
+        if rag_generation_config:
+            data["rag_generation_config"] = json.dumps(rag_generation_config)
         async with httpx.AsyncClient() as client:
             async with client.stream("POST", url, json=data) as response:
                 response.raise_for_status()
@@ -110,7 +111,7 @@ class R2RClient:
         message: str,
         search_filters: Optional[dict] = None,
         search_limit: int = 10,
-        generation_config: Optional[dict] = None,
+        rag_generation_config: Optional[dict] = None,
     ) -> Generator[str, None, None]:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -118,7 +119,7 @@ class R2RClient:
             message=message,
             search_filters=search_filters,
             search_limit=search_limit,
-            generation_config=generation_config,
+            rag_generation_config=rag_generation_config,
         )
         for chunk in loop.run_until_complete(
             self._iterate_async_gen(async_gen)

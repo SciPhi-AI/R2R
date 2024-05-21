@@ -1,0 +1,55 @@
+# R2R Server-Client Demo
+
+This document extends the [R2R Demo](/getting-started/r2r-demo) by demonstrating how to set up and use the R2R framework with a server-client architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations. The server API can be [viewed here](/getting-started/app-api).
+
+## Overview
+
+The R2R framework provides a way to run a Retrieval-Augmented Generation (RAG) pipeline using a server-client model. This allows for a centralized server to handle requests from multiple clients, enabling more scalable and modular deployments.
+
+## Setting Up the Server
+
+To set up the R2R server, follow these steps:
+
+1. **Quick Install**:
+   Ensure you have all necessary dependencies installed as described in the [R2R Demo](/getting-started/r2r-demo#setup).
+
+2. **Start the R2R Server**:
+   Use the following command to start the server:
+   ```bash
+   poetry run python -m r2r.examples.demo serve
+   ```
+   This command starts the R2R server on the default host `0.0.0.0` and port `8000`.
+
+## Using the Client
+
+The R2R framework includes a client that can communicate with the R2R server to perform various operations. You can use any of the demo commands with the `--base_url` parameter to specify the server's address.
+
+### Example Commands
+
+1. **Ingest Documents as Files**:
+   ```bash
+   poetry run python -m r2r.examples.demo ingest_as_files --base_url=http://localhost:8000
+   ```
+   This command will send the ingestion request to the server running at `http://localhost:8000`.
+
+2. **Perform a Search**:
+   ```bash
+   poetry run python -m r2r.examples.demo search --query="Who was Aristotle?" --base_url=http://localhost:8000
+   ```
+   This command sends the search query to the server and retrieves the results.
+
+3. **Run a RAG Completion**:
+   ```bash
+   poetry run python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?" --base_url=http://localhost:8000
+   ```
+   This command sends the RAG query to the server and retrieves the generated response.
+
+4. **Run a RAG Stream**:
+   ```bash
+   poetry run python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=True --base_url=http://localhost:8000
+   ```
+   This command streams the RAG query results from the server.
+
+## Summary
+
+By using the server-client model, you can extend the basic R2R demo to support more scalable and modular deployments. The server handles requests and performs heavy computations, while clients can communicate with the server to perform ingestion, search, RAG, and other operations, as shown in the examples above. For detailed setup and basic functionality, refer back to the [R2R Demo](#r2r-demo).

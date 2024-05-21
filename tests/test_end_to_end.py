@@ -7,6 +7,7 @@ from fastapi.datastructures import UploadFile
 
 from r2r import (
     Document,
+    GenerationConfig,
     PipeLoggingConnectionSingleton,
     R2RApp,
     R2RConfig,
@@ -186,9 +187,14 @@ async def test_ingest_search_txt_file(r2r_app, logging_connection):
     )
 
     ## test streaming
-    response = await r2r_app.arag(message="Who was aristotle?", streaming=True)
+    response = await r2r_app.arag(
+        message="Who was aristotle?",
+        rag_generation_config=GenerationConfig(
+            **{"model": "gpt-3.5-turbo", "stream": True}
+        ),
+    )
     collector = ""
-    async for chunk in response.body_iterator:
+    async for chunk in response:
         collector += chunk
     assert "Aristotle" in collector
     assert "Greek" in collector

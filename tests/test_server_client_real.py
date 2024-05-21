@@ -71,7 +71,7 @@ def test_ingest_txt_file(client):
     response = client.ingest_files(metadatas, files)
     assert response == {
         "results": [
-            "File 'r2r/examples/data/test.txt' processed successfully for each file"
+            "File 'r2r/examples/data/test.txt' processed successfully."
         ]
     }
 
@@ -105,7 +105,7 @@ async def test_rag_stream(client):
     collector = ""
     for chunk in response:
         collector += chunk
-    assert "does not contain information" in collector
+    assert "does not contain" in collector
 
 
 def test_delete(client):

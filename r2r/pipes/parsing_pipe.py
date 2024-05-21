@@ -175,7 +175,6 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
             #     import base64
             #     sanitized_data = base64.b64encode(document.data).decode('utf-8')
             # except Exception as e:
-            #     print(f"sanitization failed with e = {e}")
             #     sanitized_data = document.data
 
             # document.metadata["image_data"] = sanitized_data

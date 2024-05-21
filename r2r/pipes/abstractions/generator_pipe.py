@@ -15,7 +15,6 @@ class GeneratorPipe(LoggableAsyncPipe):
     class Config(LoggableAsyncPipe.PipeConfig):
         name: str
         task_prompt: str
-        generation_config: GenerationConfig
         system_prompt: str = "default_system"
 
     def __init__(
@@ -41,6 +40,7 @@ class GeneratorPipe(LoggableAsyncPipe):
         self,
         input: LoggableAsyncPipe.Input,
         state: AsyncState,
+        rag_generation_config: GenerationConfig,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:

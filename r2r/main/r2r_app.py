@@ -164,8 +164,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         )
         # self.app.include_router(self.app.router)
 
-
-
     @syncable
     async def aingest_documents(self, documents: list[Document]):
         try:
@@ -274,7 +272,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
             return {
                 "results": [
-                    f"File '{file.filename}' processed successfully for each file"
+                    f"File '{file.filename}' processed successfully."
                     for file in files
                 ]
             }
@@ -395,13 +393,12 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def arag(
         self,
         message: str,
+        rag_generation_config: GenerationConfig,
         search_filters: Optional[dict[str, str]] = None,
         search_limit: int = 10,
-        generation_config: Optional[GenerationConfig] = None,
-        streaming: bool = False,
     ):
         try:
-            if streaming or (generation_config and generation_config.stream):
+            if rag_generation_config.stream:
 
                 async def stream_response():
                     async for chunk in await self.streaming_rag_pipeline.run(
@@ -409,7 +406,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         streaming=True,
                         search_filters=search_filters,
                         search_limit=search_limit,
-                        generation_config=generation_config,
+                        rag_generation_config=rag_generation_config,
                     ):
                         yield chunk
 
@@ -418,9 +415,10 @@ class R2RApp(metaclass=AsyncSyncMeta):
             else:
                 results = await self.rag_pipeline.run(
                     input=to_async_generator([message]),
+                    streaming=False,
                     search_filters=search_filters,
                     search_limit=search_limit,
-                    generation_config=generation_config,
+                    rag_generation_config=rag_generation_config,
                 )
                 return {"results": results}
         except Exception as e:
@@ -431,10 +429,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
         message: str
         search_filters: Optional[str] = None
         search_limit: int = 10
-        generation_config: Optional[str] = None
+        rag_generation_config: Optional[str] = None
         streaming: bool = False
 
     async def rag_app(self, request: RAGRequest):
+        print("request = ", request)
         try:
             search_filters = (
                 None
@@ -442,23 +441,29 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 or request.search_filters == "null"
                 else json.loads(request.search_filters)
             )
-
-            generation_config = (
-                GenerationConfig(**json.loads(request.generation_config))
-                if request.generation_config
-                and request.generation_config != "null"
-                else None
+            rag_generation_config = (
+                GenerationConfig(
+                    **json.loads(request.rag_generation_config),
+                    stream=request.streaming,
+                )
+                if request.rag_generation_config
+                and request.rag_generation_config != "null"
+                else GenerationConfig(
+                    model="gpt-3.5-turbo", stream=request.streaming
+                )
             )
-            stream_response = await self.arag(
+            response = await self.arag(
                 request.message,
+                rag_generation_config,
                 search_filters,
                 request.search_limit,
-                generation_config,
-                request.streaming,
             )
-            return StreamingResponse(
-                stream_response, media_type="application/json"
-            )
+            if request.streaming:
+                return StreamingResponse(
+                    response, media_type="application/json"
+                )
+            else:
+                return {"results": response}
 
         except Exception as e:
             # TODO - Make this more modular
@@ -634,8 +639,14 @@ class R2RApp(metaclass=AsyncSyncMeta):
     def get_open_api_endpoint(self):
         from fastapi.openapi.utils import get_openapi
 
-        return {"results": get_openapi(title="R2R Application API", version="1.0.0", routes=self.app.routes)}
-    
+        return {
+            "results": get_openapi(
+                title="R2R Application API",
+                version="1.0.0",
+                routes=self.app.routes,
+            )
+        }
+
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         try:
             import uvicorn

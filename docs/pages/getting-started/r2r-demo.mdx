@@ -25,7 +25,7 @@ export OPENAI_API_KEY="sk-..."
 To comprehensively demonstrate the RAG functionalities of the R2R framework, we must start by ingesting a realistic set of documents. Running the command below will parse, chunk, embed, and store a preset list of files. The included file types cover HTML, PDF, PNG, and TXT examples:
 
 ```bash
-poetry run python r2r/examples/demo.py ingest_as_files
+poetry run python -m r2r.examples.demo ingest_as_files
 ```
 
 **Example Output:**
@@ -57,7 +57,7 @@ Each ingested document is given its own `document_id`, which is derived uniquely
 To verify the documents associated with the default user ID, you can fetch the metadata for the uploaded documents:
 
 ```bash
-poetry run python r2r/examples/demo.py get_user_document_data --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
+poetry run python -m r2r.examples.demo get_user_document_data --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
 ```
 
 **Example Output:**
@@ -80,7 +80,7 @@ Documents are stored by default in a local vector database. The vector database 
  perform a search query on the ingested user documents, use the following command:
 
 ```bash
-poetry run python r2r/examples/demo.py search --query="Who was Aristotle?"
+poetry run python -m r2r.examples.demo search --query="Who was Aristotle?"
 ```
 
 **Example Output:**
@@ -99,7 +99,7 @@ Time taken to search: 0.39 seconds
 To generate a response for a query using RAG, execute the following command:
 
 ```bash
-poetry run python r2r/examples/demo.py rag --query="What was Ubers profit in 2020?"
+poetry run python -m r2r.examples.demo rag --query="What was Ubers profit in 2020?"
 ```
 
 **Example Output:**
@@ -115,7 +115,7 @@ Time taken to run RAG: 2.29 seconds
 For streaming results from a RAG query, use the following command:
 
 ```bash
-poetry run python r2r/examples/demo.py rag --query="What was Lyfts profit in 2020?" --streaming=True
+poetry run python -m r2r.examples.demo rag --query="What was Lyfts profit in 2020?" --streaming=True
 ```
 
 **Example Output:**
@@ -137,13 +137,13 @@ Effective document management is crucial for maintaining a robust and efficient 
 To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the associated document ID with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
 
 ```bash
-poetry run python r2r/examples/demo.py delete --key=document_id --value=15255e98-e245-5b58-a57f-6c51babf72dd
+poetry run python -m r2r.examples.demo delete --key=document_id --value=15255e98-e245-5b58-a57f-6c51babf72dd
 ```
 
 After deleting a document, you can run a search command to verify its removal:
 
 ```bash
-poetry run python r2r/examples/demo.py search --query="Who was Aristotle?"
+poetry run python -m r2r.examples.demo search --query="Who was Aristotle?"
 ```
 
 **Example Output:**
@@ -167,7 +167,7 @@ To delete all documents associated with a given user, run the delete command on 
 
 ```bash
 # run the following command with care, as it will erase all ingested user data
-# poetry run python r2r/examples/demo.py delete --key=user_id --value=063edaf8-3e63-4cb9-a4d6-a855f36376c3
+# poetry run python -m r2r.examples.demo delete --key=user_id --value=063edaf8-3e63-4cb9-a4d6-a855f36376c3
 ```
 
 Afterwards, we may confirm complete user documentation through the `get_user_document_data` functionality.
@@ -187,7 +187,7 @@ Time taken to get user document data: 0.00 seconds
 An `.png` image of a desktop screen was included as part of the ingestion command shown above. By default, the `ImageParser` uses an OpenAI vision model (gpt-4o) to transcribe the image and embed that transcription. We can then search these results directly, as evidenced below:
 
 ```bash
-poetry run python r2r/examples/demo.py search --query="What is shown on the user screen?"
+poetry run python -m r2r.examples.demo search --query="What is shown on the user screen?"
 ```
 
 **Example Output:**
@@ -204,7 +204,7 @@ Time taken to search: 1.13 seconds
 The R2R framework can evaluate the relevance and accuracy of generated responses using LLM-powered evaluation. Run the following command to perform an evaluation:
 
 ```bash
-poetry run python r2r/examples/demo.py evaluate
+poetry run python -m r2r.examples.demo evaluate
 ```
 
 **Example Output:**
@@ -237,10 +237,10 @@ This output is consistent with the default query, context, and answer, shown bel
 
 ### Step 10: Logging
 
-To retrieve and view logs, run the following command:
+Pipes naturally integrate with your selected logging provider. R2R pipelines for ingestion, search, and RAG create comprehensive logs that allow for total observability.
 
 ```bash
-poetry run python r2r/examples/demo.py get_logs
+poetry run python -m r2r.examples.demo get_logs
 ```
 
 **Example Output:**
