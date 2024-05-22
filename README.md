@@ -110,7 +110,7 @@ Time taken to get user document data: 0.21 seconds
 }
 ```
 
-## Document Search
+## Demo Document Search
 
 Documents are stored by default in a local vector database. The vector database provider and settings can be specified via an input `config.json`. To perform a search query on the ingested user documents, use the following command:
 
@@ -141,7 +141,9 @@ Time taken to search: 0.39 seconds
 ...
 ```
 
-## RAG Completion
+## Demo RAG
+
+### Completion Response
 
 To generate a response for a query using RAG, execute the following command:
 
@@ -185,7 +187,7 @@ Time taken to run RAG: 2.29 seconds
 }
 ```
 
-## RAG Stream
+### Streaming Response
 
 For streaming results from a RAG query, use the following command:
 
@@ -203,7 +205,9 @@ r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.js
 Time taken to stream RAG response: 2.79 seconds
 ```
 
-## Document Deletion
+## Document Management
+
+### Document Deletion
 
 To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the associated document ID with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
 
