@@ -15,6 +15,7 @@ from r2r import (
     R2RApp,
     R2RClient,
     R2RConfig,
+    R2RPipeFactory,
     R2RPipelineFactory,
     R2RProviderFactory,
     generate_id_from_label,
@@ -40,10 +41,10 @@ class R2RDemo:
             self.client = R2RClient(base_url)
         else:
             config = R2RConfig.from_json(config_path=config_path)
+
             providers = R2RProviderFactory(config).create_providers()
-            pipelines = R2RPipelineFactory(
-                config, providers
-            ).create_pipelines()
+            pipes = R2RPipeFactory(config, providers).create_pipes()
+            pipelines = R2RPipelineFactory(config, pipes).create_pipelines()
             self.r2r = R2RApp(config, providers, pipelines)
 
         root_path = os.path.dirname(os.path.abspath(__file__))

@@ -22,7 +22,11 @@ async def to_async_generator(
 
 
 def run_pipeline(pipeline: "Pipeline", input: Any, *args, **kwargs):
-    if not isinstance(input, AsyncGenerator):
+    if not isinstance(input, AsyncGenerator) and not isinstance(input, list):
+        print("a")
+        input = to_async_generator([input])
+    elif not isinstance(input, AsyncGenerator):
+        print("b")
         input = to_async_generator(input)
 
     async def _run_pipeline(input, *args, **kwargs):

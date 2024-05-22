@@ -6,24 +6,23 @@ from r2r.core import (
     AsyncState,
     GenerationConfig,
     LLMProvider,
-    LoggableAsyncPipe,
     PipeType,
     PromptProvider,
 )
 
+from .abstractions.generator_pipe import GeneratorPipe
+
 logger = logging.getLogger(__name__)
 
 
-class R2RQueryTransformPipe(LoggableAsyncPipe):
-    class QueryTransformConfig(LoggableAsyncPipe.PipeConfig):
+class R2RQueryTransformPipe(GeneratorPipe):
+    class QueryTransformConfig(GeneratorPipe.PipeConfig):
         name: str = "default_query_transform"
-        num_answers: int = 3
-        model: str = "gpt-3.5-turbo"
         system_prompt: str = "default_system"
         task_prompt: str = "hyde"
-        generation_config: GenerationConfig = GenerationConfig(
-            model="gpt-3.5-turbo"
-        )
+
+    class Input(GeneratorPipe.Input):
+        message: AsyncGenerator[str, None]
 
     def __init__(
         self,
@@ -36,39 +35,50 @@ class R2RQueryTransformPipe(LoggableAsyncPipe):
     ):
         logger.info(f"Initalizing an `R2RQueryTransformPipe` pipe.")
         super().__init__(
+            llm_provider=llm_provider,
+            prompt_provider=prompt_provider,
             type=type,
             config=config or R2RQueryTransformPipe.QueryTransformConfig(),
             *args,
             **kwargs,
         )
-        self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
 
     async def _run_logic(
         self,
         input: AsyncPipe.Input,
         state: AsyncState,
+        query_transform_config: GenerationConfig,
+        num_query_xf_outputs: int = 3,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
         async for query in input.message:
-            query_transform_request = self._get_message_payload(query)
+            logger.info(
+                f"Transforming query: {query} into {num_query_xf_outputs} outputs with {self.config.task_prompt}."
+            )
+
+            query_transform_request = self._get_message_payload(
+                query, num_outputs=num_query_xf_outputs
+            )
 
             response = self.llm_provider.get_completion(
                 messages=query_transform_request,
-                generation_config=self.config.generation_config,
+                generation_config=query_transform_config,
             )
             content = self.llm_provider.extract_content(response)
-            queries = content.split("\n\n")
-
+            outputs = content.split("\n")
+            outputs = [
+                output.strip() for output in outputs if output.strip() != ""
+            ]
             await state.update(
-                self.config.name, {"output": {"queries": queries}}
+                self.config.name, {"output": {"outputs": outputs}}
             )
 
-            for query in queries:
-                yield query
+            for output in outputs:
+                logger.info(f"Yielding transformed output: {output}")
+                yield output
 
-    def _get_message_payload(self, input: str) -> dict:
+    def _get_message_payload(self, input: str, num_outputs: int) -> dict:
         return [
             {
                 "role": "system",
@@ -82,7 +92,7 @@ class R2RQueryTransformPipe(LoggableAsyncPipe):
                     self.config.task_prompt,
                     inputs={
                         "message": input,
-                        "num_answers": self.config.num_answers,
+                        "num_outputs": num_outputs,
                     },
                 ),
             },

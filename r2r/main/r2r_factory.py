@@ -17,7 +17,7 @@ from r2r.core import (
     VectorDBProvider,
 )
 
-from .r2r_abstractions import R2RPipelines, R2RProviders
+from .r2r_abstractions import R2RPipelines, R2RPipes, R2RProviders
 from .r2r_config import R2RConfig
 
 logger = logging.getLogger(__name__)
@@ -59,27 +59,27 @@ class R2RProviderFactory:
         return vector_db_provider
 
     def create_embedding_provider(
-        self, embedding_config: EmbeddingConfig, *args, **kwargs
+        self, embedding: EmbeddingConfig, *args, **kwargs
     ) -> EmbeddingProvider:
         embedding_provider: Optional[EmbeddingProvider] = None
 
-        if embedding_config.provider == "openai":
+        if embedding.provider == "openai":
             from r2r.embeddings import OpenAIEmbeddingProvider
 
-            embedding_provider = OpenAIEmbeddingProvider(embedding_config)
-        elif embedding_config.provider == "sentence-transformers":
+            embedding_provider = OpenAIEmbeddingProvider(embedding)
+        elif embedding.provider == "sentence-transformers":
             from r2r.embeddings import SentenceTransformerEmbeddingProvider
 
             embedding_provider = SentenceTransformerEmbeddingProvider(
-                embedding_config
+                embedding
             )
-        elif embedding_config.provider == "dummy":
+        elif embedding.provider == "dummy":
             from r2r.embeddings import DummyEmbeddingProvider
 
-            embedding_provider = DummyEmbeddingProvider(embedding_config)
+            embedding_provider = DummyEmbeddingProvider(embedding)
         else:
             raise ValueError(
-                f"Embedding provider {embedding_config.provider} not supported"
+                f"Embedding provider {embedding.provider} not supported"
             )
         if not embedding_provider:
             raise ValueError("Embedding provider not found")
@@ -164,23 +164,38 @@ class R2RProviderFactory:
         )
 
 
-class R2RPipelineFactory:
+class R2RPipeFactory:
     def __init__(self, config: R2RConfig, providers: R2RProviders):
         self.config = config
         self.providers = providers
 
-    def create_ingestion_pipeline(self) -> IngestionPipeline:
-        from r2r.core import RecursiveCharacterTextSplitter
-        from r2r.pipes import (
-            R2RDocumentParsingPipe,
-            R2REmbeddingPipe,
-            R2RVectorStoragePipe,
+    def create_pipes(self) -> R2RPipes:
+        return R2RPipes(
+            parsing_pipe=self.create_parsing_pipe(
+                self.config.ingestion.get("selected_parsers")
+            ),
+            embedding_pipe=self.create_embedding_pipe(),
+            vector_storage_pipe=self.create_vector_storage_pipe(),
+            search_pipe=self.create_search_pipe(),
+            rag_pipe=self.create_rag_pipe(),
+            streaming_rag_pipe=self.create_rag_pipe(streaming=True),
+            eval_pipe=self.create_eval_pipe(),
         )
+
+    def create_parsing_pipe(
+        self, selected_parsers: Optional[dict] = None
+    ) -> Any:
+        from r2r.pipes import R2RDocumentParsingPipe
+
+        return R2RDocumentParsingPipe(selected_parsers=selected_parsers or {})
+
+    def create_embedding_pipe(self) -> Any:
+        from r2r.core import RecursiveCharacterTextSplitter
+        from r2r.pipes import R2REmbeddingPipe
 
         text_splitter_config = self.config.embedding.extra_fields.get(
             "text_splitter"
         )
-
         if not text_splitter_config:
             raise ValueError(
                 "Text splitter config not found in embedding config"
@@ -192,61 +207,72 @@ class R2RPipelineFactory:
             length_function=len,
             is_separator_regex=False,
         )
-
-        parsing_pipe = R2RDocumentParsingPipe(
-            selected_parsers=self.config.ingestion.get("selected_parsers", {})
-        )
-        embedding_pipe = R2REmbeddingPipe(
+        return R2REmbeddingPipe(
             embedding_provider=self.providers.embedding,
             vector_db_provider=self.providers.vector_db,
             text_splitter=text_splitter,
             embedding_batch_size=self.config.embedding.batch_size,
         )
-        vector_storage_pipe = R2RVectorStoragePipe(
+
+    def create_vector_storage_pipe(self) -> Any:
+        from r2r.pipes import R2RVectorStoragePipe
+
+        return R2RVectorStoragePipe(
             vector_db_provider=self.providers.vector_db
         )
 
-        ingestion_pipeline = IngestionPipeline()
-        ingestion_pipeline.add_pipe(parsing_pipe)
-        ingestion_pipeline.add_pipe(embedding_pipe)
-        ingestion_pipeline.add_pipe(vector_storage_pipe)
-        return ingestion_pipeline
-
-    def create_search_pipeline(self) -> SearchPipeline:
+    def create_search_pipe(self) -> Any:
         from r2r.pipes import R2RVectorSearchPipe
 
-        search_pipe = R2RVectorSearchPipe(
+        return R2RVectorSearchPipe(
             vector_db_provider=self.providers.vector_db,
             embedding_provider=self.providers.embedding,
         )
 
-        search_pipeline = SearchPipeline()
-        search_pipeline.add_pipe(search_pipe)
-        return search_pipeline
-
-    def create_rag_pipeline(self, streaming: bool = False) -> RAGPipeline:
-        from r2r.pipes import R2RVectorSearchPipe
-
-        search_pipe = R2RVectorSearchPipe(
-            vector_db_provider=self.providers.vector_db,
-            embedding_provider=self.providers.embedding,
-        )
-
-        rag_pipe: Any = None
+    def create_rag_pipe(self, streaming: bool = False) -> Any:
         if streaming:
             from r2r.pipes import R2RStreamingRAGPipe
 
-            rag_pipe = R2RStreamingRAGPipe(
+            return R2RStreamingRAGPipe(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
             )
         else:
             from r2r.pipes import R2RRAGPipe
 
-            rag_pipe = R2RRAGPipe(
+            return R2RRAGPipe(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
             )
+
+    def create_eval_pipe(self) -> Any:
+        from r2r.pipes import R2REvalPipe
+
+        return R2REvalPipe(eval_provider=self.providers.eval)
+
+
+class R2RPipelineFactory:
+    def __init__(self, config: R2RConfig, pipes: R2RPipes):
+        self.config = config
+        self.pipes = pipes
+
+    def create_ingestion_pipeline(self) -> IngestionPipeline:
+        ingestion_pipeline = IngestionPipeline()
+        ingestion_pipeline.add_pipe(self.pipes.parsing_pipe)
+        ingestion_pipeline.add_pipe(self.pipes.embedding_pipe)
+        ingestion_pipeline.add_pipe(self.pipes.vector_storage_pipe)
+        return ingestion_pipeline
+
+    def create_search_pipeline(self) -> SearchPipeline:
+        search_pipeline = SearchPipeline()
+        search_pipeline.add_pipe(self.pipes.search_pipe)
+        return search_pipeline
+
+    def create_rag_pipeline(self, streaming: bool = False) -> RAGPipeline:
+        search_pipe = self.pipes.search_pipe
+        rag_pipe = (
+            self.pipes.streaming_rag_pipe if streaming else self.pipes.rag_pipe
+        )
 
         rag_pipeline = RAGPipeline()
         rag_pipeline.add_pipe(search_pipe)
@@ -268,14 +294,8 @@ class R2RPipelineFactory:
         return rag_pipeline
 
     def create_eval_pipeline(self) -> EvalPipeline:
-        from r2r.pipes import R2REvalPipe
-
-        eval_pipe = R2REvalPipe(
-            eval_provider=self.providers.eval,
-        )
-
         eval_pipeline = EvalPipeline()
-        eval_pipeline.add_pipe(eval_pipe)
+        eval_pipeline.add_pipe(self.pipes.eval_pipe)
         return eval_pipeline
 
     def create_pipelines(
@@ -290,6 +310,7 @@ class R2RPipelineFactory:
             self.configure_logging()
         except Exception as e:
             logger.warn(f"Error configuring logging: {e}")
+
         return R2RPipelines(
             ingestion_pipeline=ingestion_pipeline
             or self.create_ingestion_pipeline(),

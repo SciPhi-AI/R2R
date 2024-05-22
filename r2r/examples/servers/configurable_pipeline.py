@@ -1,7 +1,13 @@
 import argparse
 import os
 
-from r2r import R2RApp, R2RConfig, R2RPipelineFactory, R2RProviderFactory
+from r2r import (
+    R2RApp,
+    R2RConfig,
+    R2RPipeFactory,
+    R2RPipelineFactory,
+    R2RProviderFactory,
+)
 
 current_file_path = os.path.dirname(__file__)
 configs_path = os.path.join(current_file_path, "..", "configs")
@@ -14,8 +20,8 @@ def default_app():  # config_name: str = "default", pipe_name: str = "qna"):
     config = R2RConfig.from_json()
 
     providers = R2RProviderFactory(config).create_providers()
-    default_factory = R2RPipelineFactory(config, providers)
-    pipelines = default_factory.create_pipelines()
+    pipes = R2RPipeFactory(config, providers).create_pipes()
+    pipelines = R2RPipelineFactory(config, pipes).create_pipelines()
 
     r2r = R2RApp(
         config=config,

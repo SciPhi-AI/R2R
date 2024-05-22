@@ -1,0 +1,70 @@
+## Customizing Your Pipeline
+
+The R2R framework allows you to create custom pipelines by combining different pipes according to your specific requirements. This section demonstrates how to create a custom Retrieval-Augmented Generation (RAG) pipeline by incorporating various pipes.
+
+### Example: Custom RAG Pipeline
+
+To create a custom RAG pipeline, follow these steps:
+
+1. Import the necessary modules and providers.
+2. Initialize the required pipes.
+3. Add the pipes to the pipeline in the desired order.
+
+Here’s an example of creating a custom RAG pipeline with a query transformation pipe, a search pipe, and a streaming RAG pipe:
+
+```python
+from r2r import (
+    R2RQueryTransformPipe,
+    R2RVectorSearchPipe,
+    R2RStreamingRAGPipe,
+    RAGPipeline,
+    R2RConfig,
+    R2RProviderFactory,
+    R2RPipelineFactory
+)
+
+# Load the default configuration
+config = R2RConfig.from_json()
+
+# Create providers
+provider_factory = R2RProviderFactory(config)
+providers = provider_factory.create_providers()
+
+# Initialize the required pipes
+query_transform_pipe = R2RQueryTransformPipe(
+    llm_provider=providers.llm,
+    prompt_provider=providers.prompt,
+    config=R2RQueryTransformPipe.QueryTransformConfig(task_prompt="rag_fusion_prompt")
+)
+
+search_pipe = R2RVectorSearchPipe(
+    vector_db_provider=providers.vector_db,
+    embedding_provider=providers.embedding,
+)
+
+rag_pipe = R2RStreamingRAGPipe(
+    llm_provider=providers.llm,
+    prompt_provider=providers.prompt,
+)
+
+# Create the RAG pipeline and add the pipes
+rag_pipeline = RAGPipeline()
+rag_pipeline.add_pipe(query_transform_pipe)
+rag_pipeline.add_pipe(search_pipe)
+rag_pipeline.add_pipe(
+    rag_pipe,
+    add_upstream_outputs=[
+        {
+            "prev_pipe_name": search_pipe.config.name,
+            "prev_output_field": "search_results",
+            "input_field": "raw_search_results",
+        },
+        {
+            "prev_pipe_name": search_pipe.config.name,
+            "prev_output_field": "search_queries",
+            "input_field": "query",
+        },
+    ],
+)
+
+# Now you can use this custom RAG pipeline for your tasks

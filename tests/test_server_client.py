@@ -9,6 +9,7 @@ from r2r import (
     PipeLoggingConnectionSingleton,
     R2RApp,
     R2RConfig,
+    R2RPipeFactory,
     R2RPipelineFactory,
     R2RProviderFactory,
     generate_id_from_label,
@@ -33,7 +34,8 @@ def r2r_app(request):
 
     try:
         providers = R2RProviderFactory(config).create_providers()
-        pipelines = R2RPipelineFactory(config, providers).create_pipelines()
+        pipes = R2RPipeFactory(config, providers).create_pipes()
+        pipelines = R2RPipelineFactory(config, pipes).create_pipelines()
 
         r2r = R2RApp(
             config=config,

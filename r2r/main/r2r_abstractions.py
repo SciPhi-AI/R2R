@@ -6,6 +6,7 @@ from r2r.core import (
     EvalProvider,
     IngestionPipeline,
     LLMProvider,
+    LoggableAsyncPipe,
     PromptProvider,
     RAGPipeline,
     SearchPipeline,
@@ -19,6 +20,19 @@ class R2RProviders(BaseModel):
     llm: LLMProvider
     prompt: PromptProvider
     eval: EvalProvider
+
+    class Config:
+        arbitrary_types_allowed = True
+
+
+class R2RPipes(BaseModel):
+    parsing_pipe: LoggableAsyncPipe
+    embedding_pipe: LoggableAsyncPipe
+    vector_storage_pipe: LoggableAsyncPipe
+    search_pipe: LoggableAsyncPipe
+    rag_pipe: LoggableAsyncPipe
+    streaming_rag_pipe: LoggableAsyncPipe
+    eval_pipe: LoggableAsyncPipe
 
     class Config:
         arbitrary_types_allowed = True

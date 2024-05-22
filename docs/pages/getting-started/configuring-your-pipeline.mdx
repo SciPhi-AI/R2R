@@ -1,24 +1,23 @@
-## Configuring Your RAG Pipeline
+## Configuring Your Pipelines
 
-The R2R library provides flexibility in customizing various aspects of the Retrieval-Augmented Generation (RAG) pipeline to suit your specific needs.
+The R2R library offers flexibility in customizing various aspects of the Retrieval-Augmented Generation (RAG) pipeline to meet your specific needs.
 
-By default, RAG pipelines are configured with the R2R [`config.json`](https://github.com/SciPhi-AI/R2R/blob/main/config.json) file. You can override any fields in this configuration file with your own custom settings.
+By default, RAG pipelines are configured using the R2R [`config.json`](https://github.com/SciPhi-AI/R2R/blob/main/config.json) file. You can override any fields in this configuration file with your custom settings.
 
 ## Vector Database Provider
 
 R2R supports multiple vector database providers, including:
 
 - **`local`**: A local vector database implementation using SQLite.
-- **`qdrant`**: Integration with Qdrant, a high-performance vector similarity search engine. Good for large datasetes (> 1M embedding vectors) which require fast vector search.
-- **`pgvector`**: Integration with PGVector, a vector similarity search extension for PostgreSQL. Good for moderate sized datasets with relational properties.
+- **`qdrant`**: Integration with Qdrant, a high-performance vector similarity search engine suitable for large datasets (> 1M embedding vectors) requiring fast vector search.
+- **`pgvector`**: Integration with PGVector, a vector similarity search extension for PostgreSQL, ideal for moderate-sized datasets with relational properties.
 - **`sciphi`**: Managed PGVector database from SciPhi.
 
 To specify the vector database provider, set the `provider` field under `vector_database` in the `config.json` file. Ensure you provide the necessary connection details and credentials for your chosen provider.
 
 For more information, refer to [Vector Database Providers](/providers/vector-databases).
 
-
-### Ex. Qdrant Configuration
+### Example: Qdrant Configuration
 
 An example configuration specifying Qdrant as a vector database provider can be found in [`r2r/examples/data/example_qdrant_config.json`](https://github.com/SciPhi-AI/R2R/tree/main/r2r/examples/data/example_qdrant_config.json):
 
@@ -31,15 +30,15 @@ An example configuration specifying Qdrant as a vector database provider can be 
 }
 ```
 
-You can successfully serve the [R2R Demo](/getting-started/r2r-demo) using Qdrant the following command sequence:
+You can serve the [R2R Demo](/getting-started/r2r-demo) using Qdrant with the following command sequence:
 
 ```bash
-# set valid qdrant environment variables
+# Set valid Qdrant environment variables
 export QDRANT_HOST=http://localhost
 export QDRANT_PORT=6333
 export QDRANT_API_KEY=api-...
 
-# serve the demo with the custom user settings
+# Serve the demo with the custom user settings
 export WORKDIR=YOUR_R2R_DIRECTORY
 poetry run python -m r2r.examples.demo --config_path=$WORKDIR/r2r/examples/data/example_qdrant_config.json serve
 ```
@@ -53,8 +52,7 @@ R2R supports both OpenAI and local inference as embedding providers. Configure t
 
 For more information, refer to [Embedding Providers](/providers/embeddings).
 
-
-### Ex. Local Rerank Configuration
+### Example: Local Rerank Configuration
 
 A simple example custom user configuration can be found in [`r2r/examples/data/example_rerank_config.json`](https://github.com/SciPhi-AI/R2R/tree/main/r2r/examples/data/example_rerank_config.json):
 
@@ -77,12 +75,12 @@ A simple example custom user configuration can be found in [`r2r/examples/data/e
 }
 ```
 
-You can successfully serve the [R2R Demo](/getting-started/r2r-demo) using local embeddings with rerank, as shown above, with the following command sequence:
+You can serve the [R2R Demo](/getting-started/r2r-demo) using local embeddings with rerank, as shown above, with the following command sequence:
 
 ```bash
-# be sure to install with pip install `r2r[local-llm]`
+# Be sure to install with pip install `r2r[local-llm]`
 
-# serve the demo with the custom user settings
+# Serve the demo with the custom user settings
 export WORKDIR=YOUR_R2R_DIRECTORY
 poetry run python -m r2r.examples.demo --config_path=$WORKDIR/r2r/examples/data/example_rerank_config.json serve
 ```
@@ -103,12 +101,12 @@ Configure your language model provider to suit your needs:
 
 For more information, refer to [LLM Providers](/providers/llms).
 
-### Ex. LLM Configuration
+### Example: LLM Configuration
 
-Any LLM supported by LiteLLM is immediately supported at runtime. For instance, to run with a local LLM you may serve via ollama and then pass the served model in directly as a generation config json payload. See the example below:
+Any LLM supported by LiteLLM is immediately supported at runtime. For instance, to run with a local LLM, you may serve via Ollama and then pass the served model directly as a generation config JSON payload. See the example below:
 
-```python
-poetry run python -m r2r.examples.demo rag --rag_generation_config='{"model":"ollama/llama2"}' --query="who was aristotle?"
+```bash
+poetry run python -m r2r.examples.demo rag --rag_generation_config='{"model":"ollama/llama2"}' --query="Who was Aristotle?"
 ```
 
 ## Logging Provider
@@ -121,37 +119,40 @@ The R2R library supports various logging providers to store execution logs of th
 
 For more information, refer to [Logging Providers](/providers/logging).
 
+### Example: Postgres Configuration
 
-
-### Ex. Postgres Configuration
-
-An example configuration specifying Qdrant as a vector database provider can be found in [`r2r/examples/data/example_postgres_logger_config.json`](https://github.com/SciPhi-AI/R2R/tree/main/r2r/examples/data/example_postgres_logger_config.json):
+An example configuration specifying Postgres as a logging provider can be found in [`r2r/examples/data/example_postgres_logger_config.json`](https://github.com/SciPhi-AI/R2R/tree/main/r2r/examples/data/example_postgres_logger_config.json):
 
 ```json
 {
-  "vector_database": {
-    "provider": "qdrant",
-    "collection_name": "demo_vecs"
+  "logging": {
+    "provider": "postgres",
+    "connection": {
+      "user": "pg_user",
+      "password": "pg_password",
+      "host": "your_pg_host",
+      "port": 5432,
+      "dbname": "postgres"
+    }
   }
 }
 ```
 
-You can successfully serve the [R2R Demo](/getting-started/r2r-demo) using postgres logging using the following command sequence:
+You can serve the [R2R Demo](/getting-started/r2r-demo) using Postgres logging with the following command sequence:
 
 ```bash
-# set valid qdrant environment variables
+# Set valid Postgres environment variables
 export POSTGRES_USER=pg_user
 export POSTGRES_PASSWORD=pg_password
 export POSTGRES_HOST=http://your_pg_host
 export POSTGRES_PORT=5432
 export POSTGRES_DBNAME=postgres
 
-# serve the demo with the custom user settings
+# Serve the demo with the custom user settings
 export WORKDIR=YOUR_R2R_DIRECTORY
 poetry run python -m r2r.examples.demo --config_path=$WORKDIR/r2r/examples/data/example_postgres_logger_config.json serve
 ```
 
-
 ## Evaluation Provider
 
-R2R supports LLM powered evaluation providers, allowing you to evaluate the performance and quality of your RAG pipeline at regular intervals. Configuration is not yet fully supported for evaluation.
+R2R supports LLM-powered evaluation providers, allowing you to evaluate the performance and quality of your RAG pipeline at regular intervals. Configuration is not yet fully supported for evaluation.
