@@ -1,0 +1,6 @@
+{
+  "vector_database": {
+    "provider": "qdrant",
+    "collection_name": "demo_vecs"
+  }
+}
