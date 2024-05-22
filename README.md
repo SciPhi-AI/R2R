@@ -45,7 +45,7 @@ pip install r2r
 export OPENAI_API_KEY=sk-...
 ```
 
-# Links
+## Links
 
 [Join the Discord server](https://discord.gg/p6KqD2kjtB)
 
@@ -59,7 +59,7 @@ export OPENAI_API_KEY=sk-...
 
 The R2R demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo ingests a list of provided provided documents and demonstrates search, RAG, and advanced functionality. The script at `r2r/examples/demo.py`, which powers the demo, can be configured and extended with sufficient familiarity.
 
-### Ingest Demo Files
+## Ingest Demo Files
 
 To comprehensively demonstrate the RAG functionalities of the R2R framework, we must start by ingesting a realistic set of documents. Running the command below will parse, chunk, embed, and store a preset list of files. The included file types cover HTML, PDF, PNG, and TXT examples:
 
@@ -82,7 +82,7 @@ Time taken to ingest files: 28.49 seconds
 
 Each ingested document derives a unique `document_id` from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, the demo includes a default `user_id` in the document metadata to facilitate user-level document management.
 
-### Confirm User Data
+## Confirm User Data
 
 To verify the successful ingestion of the demo documents, you can fetch the metadata for the uploaded documents associated with the default demo user ID:
 
@@ -114,7 +114,7 @@ Time taken to get user document data: 0.21 seconds
 }
 ```
 
-### Document Search
+## Document Search
 
 Documents are stored by default in a local vector database. The vector database provider and settings can be specified via an input `config.json`. To perform a search query on the ingested user documents, use the following command:
 
@@ -145,7 +145,7 @@ Time taken to search: 0.39 seconds
 ...
 ```
 
-### RAG Completion
+## RAG Completion
 
 To generate a response for a query using RAG, execute the following command:
 
@@ -189,7 +189,7 @@ Time taken to run RAG: 2.29 seconds
 }
 ```
 
-### RAG Stream
+## RAG Stream
 
 For streaming results from a RAG query, use the following command:
 
@@ -207,7 +207,7 @@ r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.js
 Time taken to stream RAG response: 2.79 seconds
 ```
 
-### Document Deletion
+## Document Deletion
 
 To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the associated document ID with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
 
@@ -228,7 +228,7 @@ poetry run python -m r2r.examples.demo delete --key=user_id --value=063edaf8-3e6
 
 This section extends the previous demo by showing how to set up and use the R2R framework with a server-client architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations.
 
-### Launch the Server
+## Launch the Server
 
 Use the following command to start the server:
 
@@ -238,7 +238,7 @@ poetry run python -m r2r.examples.demo serve
 
 This command starts the R2R server on the default host `0.0.0.0` and port `8000`.
 
-### Example Commands
+## Example Commands
 
 1. **Ingest Documents as Files**:
    ```bash
@@ -264,16 +264,16 @@ This command starts the R2R server on the default host `0.0.0.0` and port `8000`
    ```
    This command streams the RAG query results from the server.
 
-### Server-Client Summary
+## Server-Client Summary
 
 By using the server-client model, you can extend the basic R2R demo to support more scalable and modular deployments. The server handles requests and performs heavy computations, while clients can communicate with the server to perform ingestion, search, RAG, and other operations, as shown in the examples above. For detailed setup and basic functionality, refer back to the [R2R Demo](#r2r-demo).
 
 
-## Core Abstractions
+# Core Abstractions
 
 The framework revolves around three core abstractions: Providers, Pipes, and Pipelines.
 
-### Providers
+## Providers
 
 Providers supply the necessary resources and capabilities to the pipes and pipelines. Key provider types include:
 
@@ -283,7 +283,7 @@ Providers supply the necessary resources and capabilities to the pipes and pipel
 - **Prompt Provider**: Manages prompts for various tasks.
 - **Eval Provider**: Evaluates the quality of generated responses.
 
-### Pipes
+## Pipes
 
 Pipes represent individual steps in the data processing workflow. Each pipe performs a specific task, such as parsing, embedding, searching, or generating text. Pipes are designed to be composable and reusable within different pipelines.
 
@@ -295,7 +295,7 @@ Pipes represent individual steps in the data processing workflow. Each pipe perf
 - **Streaming RAG Pipe**: Extends RAG functionality to support streaming responses.
 - **Eval Pipe**: Evaluates the quality of generated responses.
 
-### Pipelines
+## Pipelines
 
 Pipelines are composed of multiple pipes arranged in a sequence. They manage the flow of data through the pipes, ensuring that each step is executed in the correct order. R2R supports several types of pipelines:
 
@@ -306,6 +306,6 @@ Pipelines are composed of multiple pipes arranged in a sequence. They manage the
 
 Each pipeline incorporates logging and observability features to track operations and ensure transparency.
 
-## Summary
+# Summary
 
 R2R (RAG to Riches) is a comprehensive framework designed to streamline the development, deployment, and optimization of Retrieval-Augmented Generation (RAG) systems. With its robust core abstractions—Providers, Pipes, and Pipelines—R2R offers a modular and flexible approach to building high-quality RAG pipelines.
