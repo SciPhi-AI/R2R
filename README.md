@@ -13,37 +13,34 @@ Build, deploy, and optimize your RAG system.
 
 ## About
 
-R2R (RAG to Riches) offers a fast and efficient framework for serving high-quality Retrieval-Augmented Generation (RAG) to end users. The framework is designed with customizable pipelines and a feature-rich FastAPI implementation, enabling developers to quickly deploy and scale RAG-based applications.
-
+R2R, short for RAG to Riches, provides the fastest and most efficient way to deliver high-quality Retrieval-Augmented Generation (RAG) to end users. The framework is built around customizable pipelines and a feature-rich FastAPI implementation.
 
 ## Why?
 
-R2R was conceived to bridge the gap between local LLM experimentation and scalable production solutions. **R2R is to LangChain/LlamaIndex what NextJS is to React**. A JavaScript client for R2R deployments can be [found here](https://github.com/SciPhi-AI/r2r-js).
+R2R was conceived to bridge the gap between local LLM experimentation and scalable production solutions. It is built with observability and customization in mind, ensuring that users can seamlessly transition from development to deployment.
 
 ### Key Features
-
-- **🚀 Deploy**: Instantly launch production-ready RAG pipelines with streaming capabilities.
+- **🔧 Build**: Use the framework to build arbitrary asynchronous pipelines.
+- **🚀 Deploy**: Instantly launch production-ready asynchronous RAG pipelines with streaming capabilities.
 - **🧩 Customize**: Tailor your pipeline with intuitive configuration files.
 - **🔌 Extend**: Enhance your pipeline with custom code integrations.
-- **⚖️ Autoscale**: Scale your pipeline effortlessly in the cloud using [SciPhi](https://sciphi.ai/).
 - **🤖 OSS**: Benefit from a framework developed by the open-source community, designed to simplify RAG deployment.
+
 
 # Table of Contents
 1. [Demo(s)](#demos)
 2. [Links](#links)
 3. [Quick Install](#quick-install)
 4. [Docker](#docker)
-5. [Q&A Example](#q&a-example)
-6. [HyDE Example](#hyde-example)
-7. [Running Local RAG](#running-local-rag)
-8. [Core Abstractions](#core-abstractions)
-
+5. [R2R Demo](#r2r-demo)
+6. [R2R Server-Client Demo](#r2r-server-client-demo)
+7. [Core Abstractions](#core-abstractions)
 
 ## Demo(s)
 
 Using the cloud application to deploy the pre-built basic pipeline:
 
-https://www.loom.com/share/e3b934b554484787b005702ced650ac9
+<iframe src="https://www.loom.com/embed/e3b934b554484787b005702ced650ac9" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style={{ width: '100%', height: '400px', border: 'none' }}></iframe>
 
 Note - the example above uses [SciPhi Cloud](https://sciphi.ai) to pair with the R2R framework for deployment and observability. SciPhi is working to launch a self-hosted version of their cloud platform as R2R matures.
 
@@ -61,16 +58,10 @@ Note - the example above uses [SciPhi Cloud](https://sciphi.ai) to pair with the
 
 ```bash
 # use the `'r2r[all]'` to download all required deps
-pip install 'r2r[eval]'
+pip install r2r
 
 # setup env 
 export OPENAI_API_KEY=sk-...
-# Set `LOCAL_DB_PATH` for local testing
-export LOCAL_DB_PATH=local.sqlite # robust providers available (e.g. qdrant, pgvector, ..)
-
-# OR do `vim .env.example && cp .env.example .env`
-# INCLUDE secrets and modify config.json
-# if using cloud providers (e.g. pgvector, qdrant, ...)
 ```
 
 ## Docker:
@@ -84,74 +75,264 @@ docker pull emrgntcmplxty/r2r:latest
 docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  emrgntcmplxty/r2r:latest
 ```
 
-## Q&A Example
+## R2R Demo
 
-[`Configurable Pipeline`](r2r/examples/servers/configurable_pipeline.py): Execute this script to select and serve a **Q&A RAG**, **Web RAG**, or **Agent RAG** pipeline. This starter pipeline supports ingestion, embedding, and question and the specified RAG, all accessible via a REST API.
+This example demonstrates how to set up and use the R2R framework to run the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo utilizes a locally defined `config.json` (which defaults to the config.json included with R2R) to build ingestion and RAG pipelines, along with several demonstration methods.
+
+The sections below cover R2R setup, basic functionality, document management, and some advanced features.
+
+### Setup
+
+To get started with the R2R framework, follow these steps to install dependencies, set up your environment, and ingest sample documents for the demo.
+
+#### Step 0: Quick Install
+
+First, you'll need to install the necessary dependencies and set up your environment.
+
+```bash
+# use the `'r2r[all]'` to download all possible required deps
+pip install r2r
+
+# OpenAI is the default provider and requires an API key
+export OPENAI_API_KEY="sk-..."
+```
+
+#### Step 1: Ingest Demo Files
+
+To comprehensively demonstrate the RAG functionalities of the R2R framework, we must start by ingesting a realistic set of documents. Running the command below will parse, chunk, embed, and store a preset list of files. The included file types cover HTML, PDF, PNG, and TXT examples:
+
+```bash
+poetry run python -m r2r.examples.demo ingest_as_files
+```
+
+**Note**
+
+Each ingested document is given its own `document_id`, which is derived uniquely from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, a default `user_id` is included throughout the demo to illustrate how user document management can be handled similarly.
+
+#### Step 2: Confirm User Data
+
+To verify the documents associated with the default user ID, you can fetch the metadata for the uploaded documents:
+
+```bash
+poetry run python -m r2r.examples.demo get_user_document_data --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
+```
+
+**Example Output:**
+
+```plaintext
+...
+Time taken to get user document data: 0.21 seconds
+{'results': 
+   [
+      {
+         'document_id': '327f6110-edd1-5fe3-b6b3-49b55f1cbc28',
+         'title': 'pg_essay_3.html'
+      }, 
+      {
+         'document_id': '946859f0-da5c-5db7-9b5c-c586be76d709', 
+         'title': 'pg_essay_5.html'
+      }, 
+      {
+         'document_id': '64c1c913-be06-548f-acbc-3618b00d3616', 
+         'title': 'lyft_2021.pdf'
+      },
+      ...
+   ]
+}
+```
+
+### Basic Functionality
+
+The basic functionality of the R2R framework allows you to search ingested documents and generate responses using Retrieval-Augmented Generation (RAG). These steps will guide you through performing a search query, generating a RAG response, and streaming RAG results.
+
+#### Step 3: Run a Demo Search
+
+Documents are stored by default in a local vector database. The vector database provider and settings can be specified via an input `config.json`. To perform a search query on the ingested user documents, use the following command:
+
+```bash
+poetry run python -m r2r.examples.demo search --query="Who was Aristotle?"
+```
+
+**Example Output:**
+
+```plaintext
+...
+Time taken to search: 0.39 seconds
+{
+   'id': UUID('93c44e73-8e95-50c2-84af-6a42f070b552'), 
+   'score': 0.7739712385010018, 
+   'metadata': 
+   {
+      'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd', 
+      'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484', 
+      'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began
+
+ the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 
+      'title': 'aristotle.txt',
+      'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 
+      'query': 'Who was Aristotle?'
+   }
+}
+...
+```
+
+#### Step 4: Run a Demo RAG Completion
+
+To generate a response for a query using RAG, execute the following command:
+
+```bash
+poetry run python -m r2r.examples.demo rag --query="What was Ubers profit in 2020?"
+```
+
+**Example Output:**
+
+```plaintext
+...
+Time taken to run RAG: 2.29 seconds
+{'results': 
+   [
+      ChatCompletion(
+         id='chatcmpl-9RCB5xUbDuI1f0vPw3RUO7BWQImBN', 
+         choices=[
+            Choice(
+               finish_reason='stop', 
+               index=0, 
+               logprobs=None, 
+               message=ChatCompletionMessage(
+                  content="Uber's profit in 2020 was a net loss of $6,768 million [10].", 
+                  role='assistant', 
+                  function_call=None, 
+                  tool_calls=None
+                  )
+               )
+            ], 
+         created=1716268695, 
+         model='gpt-3.5-turbo-0125', 
+         object='chat.completion', 
+         system_fingerprint=None, 
+         usage=CompletionUsage(
+            completion_tokens=20, 
+            prompt_tokens=1470, 
+            total_tokens=1490
+            )
+         )
+   ]
+}
+```
+
+#### Step 5: Run a Demo RAG Stream
+
+For streaming results from a RAG query, use the following command:
+
+```bash
+poetry run python -m r2r.examples.demo rag --query="What was Lyfts profit in 2020?" --streaming=True
+```
+
+**Example Output:**
+
+```plaintext
+r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.json - 2024-05-20 22:27:31,890
+...
+<search>["{\"id\":\"808c47c5-ebef-504a-a230-aa9ddcfbd87 .... </search>
+<completion>Lyft reported a net loss of $1,752,857,000 in 2020 according to [2]. Therefore, Lyft did not make a profit in 2020.</completion>                                                      
+Time taken to stream RAG response: 2.79 seconds
+```
+
+### Document Management
+
+Effective document management is crucial for maintaining a robust and efficient RAG system. This section guides you through various operations related to document management, including deleting documents and managing user-specific data. These steps will help ensure your document database remains organized and up-to-date.
+
+#### Step 6: Delete a Specified Document
+
+To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the associated document ID with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
+
+```bash
+poetry run python -m r2r.examples.demo delete --key=document_id --value=15255e98-e245-5b58-a57f-6c51babf72dd
+```
+
+After deleting a document, you can run a search command to verify its removal:
+
+```bash
+poetry run python -m r2r.examples.demo search --query="Who was Aristotle?"
+```
+
+
+**Note**
+
+The quality of search results has dramatically decreased now that the Aristotle-specific document has been fully erased. This highlights the importance of the ingested data quality on the RAG results.
+
+#### Step 7: Delete a Specified User's Documents
+
+To delete all documents associated with a given user, run the delete command on the `user_id`.
+
+```bash
+run the following command with care, as it will erase all ingested user data
+poetry run python -m r2r.examples.demo delete --key=user_id --value=063edaf8-3e63-4cb9-a4d6-a855f36376c3
+```
+
+Afterwards, we may confirm complete user documentation through the `get_user_document_data` functionality.
+
+**Example Output:**
+
+```bash
+...
+Time taken to get user document data: 0.00 seconds
+{'results': []}
+```
+
+## R2R Server-Client Demo
+
+This document extends the [R2R Demo](#r2r-demo) by demonstrating how to set up and use the R2R framework with a server-client architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations. The server API can be viewed here.
+
+### Overview
+
+The R2R framework provides a way to run a Retrieval-Augmented Generation (RAG) pipeline using a server-client model. This allows for a centralized server to handle requests from multiple clients, enabling more scalable and modular deployments.
+
+### Setting Up the Server
+
+To set up the R2R server, follow these steps:
+
+1. **Quick Install**:
+   Ensure you have all necessary dependencies installed as described in the [R2R Demo](#r2r-demo#setup).
+
+2. **Start the R2R Server**:
+   Use the following command to start the server:
    ```bash
-   # launch the server
-   # For ex., do `export CONFIG_OPTION=local_ollama` or `--config=local_ollama` to run fully locally
-   # For ex., do `export PIPELINE_OPTION=web` or `--pipeline=web` to run WebRAG pipeline
-   python -m r2r.examples.servers.configurable_pipeline --config=default --pipeline=qna
+   poetry run python -m r2r.examples.demo serve
    ```
+   This command starts the R2R server on the default host `0.0.0.0` and port `8000`.
 
-[`Question & Answer Client`](r2r/examples/clients/qna_rag_client.py): This **client script** should be executed subsequent to the server startup above with `pipeline=qna` specified. It facilitates the upload of text entries and PDFs to the server using the Python client and demonstrates the management of document and user-level vectors through its built-in features.
+### Using the Client
 
+The R2R framework includes a client that can communicate with the R2R server to perform various operations. You can use any of the demo commands with the `--base_url` parameter to specify the server's address.
+
+#### Example Commands
+
+1. **Ingest Documents as Files**:
    ```bash
-   # run the client
-   
-   # ingest the default documents (Lyft 10k)
-   python -m r2r.examples.clients.qna_rag_client ingest
-
-   python -m r2r.examples.clients.qna_rag_client search --query="What was lyfts profit in 2020?"
-
-   # Result 1: Title: Lyft 10k 2021
-   # Net loss was $1.0 billion, a decreas e of 42% and 61% compared to 2020 and 2019, respectively.
-   # Adjusted EBITDA was $92.9 million, marking the Company s first annual Adjusted EBITDA profit.
-   # Cash used in operating activi ties was $101.7 million.
-   # Unrestricted cash and cash equivalents and short-term investments totaled $2.3 billion as of December 31, 2021.Impact of COVID-19 to our Business
-   # The
-
-
-   # Result 2: Title: Lyft 10k 2021
-   # Total revenue was $3.2 billion, an increase of 36% year-over-year.
-   # Total costs and expenses were $4.3 billion, including stock-based compensation expense of $724.6 million and insurance costs related to changes to 
-   # le to historical periods of $250.3 million.
-   # Loss from operations was $1.1 billion. 
-   # Other income was $135.9 million, in cluding a pre-tax gain of $119.3 million as a result of the gain on the transaction with Woven Planet.
-
-   # ... 
-
-   python -m r2r.examples.clients.qna_rag_client rag_completion_streaming --query="What was lyfts profit in 2020?"
-
-   # <search>[{"id": "a0f6b427-9083-5ef2-aaa1-024b6cebbaee", "score": 0.6862949051074227, "metadata": {"user_id": "df7021ed-6e66-5581-bd69-d4e9ac1e5ada", "pipeline_run_id": "0c2c9a81-0720-4e34-8736-b66189956013", "text": "Title: Lyft 10k 2021\nNet loss was $ ... </search>
-   #
-   # <context> Title: Lyft 10k 2021 ... </context>
-   #
-   # <completion>Lyft's net loss in 2020 was $1.8 billion.</completion>
+   poetry run python -m r2r.examples.demo ingest_as_files --base_url=http://localhost:8000
    ```
+   This command will send the ingestion request to the server running at `http://localhost:8000`.
 
-## HyDE Example
-
-[`HyDE Pipeline`](r2r/examples/servers/hyde_pipeline.py): Execute this script to start a backend server equipped with more advanced synthetic query pipeline. This pipeline is designed to create synthetic queries, enhancing the RAG system's learning and performance.
-
+2. **Perform a Search**:
    ```bash
-   # launch the server
-   python -m r2r.examples.servers.configurable_pipeline --config=default --pipeline=hyde
+   poetry run python -m r2r.examples.demo search --query="Who was Aristotle?" --base_url=http://localhost:8000
    ```
+   This command sends the search query to the server and retrieves the results.
 
+3. **Run a RAG Completion**:
    ```bash
-   # ingests Lyft 10K, Uber 10K, and others
-   python -m r2r.examples.clients.qna_rag_client ingest --document_filter=all
-
-   # run the client
-   python -m r2r.examples.clients.qna_rag_client search --query="What was lyft and ubers profit in 2020?"
-
-   # {... 'message': {'content': 'In 2020, Lyft reported a net loss of $1.7529 billion [8]. Uber also reported a significant loss for the year 2020, with its net loss improving by $1.8 billion from 2020, indicating a substantial loss for the year as well [38]. Neither company achieved a profit in 2020; instead, they both experienced considerable losses.' ...}
+   poetry run python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?" --base_url=http://localhost:8000
    ```
+   This command sends the RAG query to the server and retrieves the generated response.
 
-## Running Local RAG
+4. **Run a RAG Stream**:
+   ```bash
+   poetry run python -m r2r.examples.demo rag --query="What was
 
-[Refer here](https://r2r-docs.sciphi.ai/tutorials/local_rag) for a tutorial on how to modify the commands above to use local providers.
+ Lyft's profit in 2020?" --streaming=True --base_url=http://localhost:8000
+   ```
+   This command streams the RAG query results from the server.
 
 ## Core Abstractions
 
