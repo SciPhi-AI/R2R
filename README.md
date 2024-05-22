@@ -110,7 +110,7 @@ Time taken to get user document data: 0.21 seconds
 }
 ```
 
-## Demo Document Search
+## Search Demo Documents
 
 Documents are stored by default in a local vector database. The vector database provider and settings can be specified via an input `config.json`. To perform a search query on the ingested user documents, use the following command:
 
@@ -141,7 +141,7 @@ Time taken to search: 0.39 seconds
 ...
 ```
 
-## Demo RAG
+## RAG Demo
 
 ### Completion Response
 
@@ -205,7 +205,7 @@ r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.js
 Time taken to stream RAG response: 2.79 seconds
 ```
 
-## Document Management
+## Document Management Demo
 
 ### Document Deletion
 
@@ -228,7 +228,7 @@ poetry run python -m r2r.examples.demo delete --key=user_id --value=063edaf8-3e6
 
 This section extends the previous demo by showing how to set up and use the R2R framework with a server-client architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations.
 
-## Launch the Server
+### Launch the Server
 
 Use the following command to start the server:
 
@@ -238,7 +238,7 @@ poetry run python -m r2r.examples.demo serve
 
 This command starts the R2R server on the default host `0.0.0.0` and port `8000`.
 
-## Example Commands
+### Example Commands
 
 1. **Ingest Documents as Files**:
    ```bash
@@ -264,7 +264,7 @@ This command starts the R2R server on the default host `0.0.0.0` and port `8000`
    ```
    This command streams the RAG query results from the server.
 
-## Server-Client Summary
+### Server-Client Summary
 
 By using the server-client model, you can extend the basic R2R demo to support more scalable and modular deployments. The server handles requests and performs heavy computations, while clients can communicate with the server to perform ingestion, search, RAG, and other operations, as shown in the examples above. For detailed setup and basic functionality, refer back to the [R2R Demo](#r2r-demo).
 
