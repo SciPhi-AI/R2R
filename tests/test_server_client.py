@@ -28,9 +28,9 @@ def r2r_app(request):
         config.vector_database.collection_name = config.logging.logging_path
     elif vector_db_provider == "local":
         config.vector_database.provider = "local"
-        config.vector_database.extra_fields["db_path"] = (
-            config.logging.logging_path
-        )
+        config.vector_database.extra_fields[
+            "db_path"
+        ] = config.logging.logging_path
 
     try:
         providers = R2RProviderFactory(config).create_providers()

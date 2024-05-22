@@ -8,10 +8,10 @@
 
 <img src="./docs/pages/r2r.png" alt="Sciphi Framework">
 <h3 align="center">
-Build, deploy, and optimize your RAG system.
+Build, deploy, observe, and optimize your RAG system.
 </h3>
 
-## About
+# About
 
 R2R, short for RAG to Riches, provides the fastest and most efficient way to deliver high-quality Retrieval-Augmented Generation (RAG) to end users. The framework is built around customizable pipelines and a feature-rich FastAPI implementation.
 
@@ -19,42 +19,23 @@ R2R, short for RAG to Riches, provides the fastest and most efficient way to del
 
 R2R was conceived to bridge the gap between local LLM experimentation and scalable production solutions. It is built with observability and customization in mind, ensuring that users can seamlessly transition from development to deployment.
 
-### Key Features
+## Key Features
 - **🔧 Build**: Use the framework to build arbitrary asynchronous pipelines.
 - **🚀 Deploy**: Instantly launch production-ready asynchronous RAG pipelines with streaming capabilities.
-- **🧩 Customize**: Tailor your pipeline with intuitive configuration files.
+- **🧩 Customize**: Tailor your multimodal pipeline with intuitive configuration files.
 - **🔌 Extend**: Enhance your pipeline with custom code integrations.
 - **🤖 OSS**: Benefit from a framework developed by the open-source community, designed to simplify RAG deployment.
 
-
-# Table of Contents
-1. [Demo(s)](#demos)
+## Table of Contents
+1. [Quick Install](#quick-install)
 2. [Links](#links)
-3. [Quick Install](#quick-install)
-4. [Docker](#docker)
-5. [R2R Demo](#r2r-demo)
-6. [R2R Server-Client Demo](#r2r-server-client-demo)
-7. [Core Abstractions](#core-abstractions)
+3. [R2R Demo](#r2r-demo)
+4. [R2R Server-Client Demo](#r2r-server-client-demo)
+5. [Core Abstractions](#core-abstractions)
+6. [Summary](#summary)
 
-## Demo(s)
 
-Using the cloud application to deploy the pre-built basic pipeline:
-
-<iframe src="https://www.loom.com/embed/e3b934b554484787b005702ced650ac9" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style={{ width: '100%', height: '400px', border: 'none' }}></iframe>
-
-Note - the example above uses [SciPhi Cloud](https://sciphi.ai) to pair with the R2R framework for deployment and observability. SciPhi is working to launch a self-hosted version of their cloud platform as R2R matures.
-
-## Links
-
-[Join the Discord server](https://discord.gg/p6KqD2kjtB)
-
-[R2R Docs Quickstart](https://r2r-docs.sciphi.ai/getting-started/quick-install)
-
-[SciPhi Cloud Docs](https://docs.sciphi.ai/)
-
-[Local RAG Tutorial](https://r2r-docs.sciphi.ai/tutorials/local_rag)
-
-## Quick Install:
+# Quick Install:
 
 ```bash
 # use the `'r2r[all]'` to download all required deps
@@ -64,40 +45,21 @@ pip install r2r
 export OPENAI_API_KEY=sk-...
 ```
 
-## Docker:
+# Links
 
-```bash
-docker pull emrgntcmplxty/r2r:latest
+[Join the Discord server](https://discord.gg/p6KqD2kjtB)
 
-# Choose from CONFIG_OPTION in {`default`, `local_ollama`}
-# For cloud deployment, select `default` and pass `--env-file .env`
-# For local deployment, select `local_ollama`
-docker run -d --name r2r_container -p 8000:8000 -e CONFIG_OPTION=local_ollama  emrgntcmplxty/r2r:latest
-```
+[R2R Docs Quickstart](https://r2r-docs.sciphi.ai/getting-started/quick-install)
 
-## R2R Demo
+[SciPhi Cloud Docs](https://docs.sciphi.ai/)
 
-This example demonstrates how to set up and use the R2R framework to run the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo utilizes a locally defined `config.json` (which defaults to the config.json included with R2R) to build ingestion and RAG pipelines, along with several demonstration methods.
+[Local RAG Tutorial](https://r2r-docs.sciphi.ai/tutorials/local_rag)
 
-The sections below cover R2R setup, basic functionality, document management, and some advanced features.
+# R2R Demo
 
-### Setup
+The R2R demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo ingests a list of provided provided documents and demonstrates search, RAG, and advanced functionality. The script at `r2r/examples/demo.py`, which powers the demo, can be configured and extended with sufficient familiarity.
 
-To get started with the R2R framework, follow these steps to install dependencies, set up your environment, and ingest sample documents for the demo.
-
-#### Step 0: Quick Install
-
-First, you'll need to install the necessary dependencies and set up your environment.
-
-```bash
-# use the `'r2r[all]'` to download all possible required deps
-pip install r2r
-
-# OpenAI is the default provider and requires an API key
-export OPENAI_API_KEY="sk-..."
-```
-
-#### Step 1: Ingest Demo Files
+### Ingest Demo Files
 
 To comprehensively demonstrate the RAG functionalities of the R2R framework, we must start by ingesting a realistic set of documents. Running the command below will parse, chunk, embed, and store a preset list of files. The included file types cover HTML, PDF, PNG, and TXT examples:
 
@@ -105,19 +67,30 @@ To comprehensively demonstrate the RAG functionalities of the R2R framework, we 
 poetry run python -m r2r.examples.demo ingest_as_files
 ```
 
+**Demo Output:**
+
+```plaintext
+...
+r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'pg_essay_1.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=4a4fb848-fc03-5487-a7e5-33c9fdfb73cc in t=0.00 seconds. - 2024-05-21 08:39:59,003
+r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'lyft_2021.pdf', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=c5abc0b7-b9e5-54d9-b3d3-fdb14af4d065 in t=3.47 seconds. - 2024-05-21 08:40:02,477
+r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'screen_shot.png', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'image_type': 'png'} and id=74f1506a-9a37-59d7-b288-5ef3683dca8f in t=18.37 seconds. - 2024-05-21 08:40:32,310
+...
+Time taken to ingest files: 28.49 seconds
+```
+
 **Note**
 
-Each ingested document is given its own `document_id`, which is derived uniquely from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, a default `user_id` is included throughout the demo to illustrate how user document management can be handled similarly.
+Each ingested document derives a unique `document_id` from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, the demo includes a default `user_id` in the document metadata to facilitate user-level document management.
 
-#### Step 2: Confirm User Data
+### Confirm User Data
 
-To verify the documents associated with the default user ID, you can fetch the metadata for the uploaded documents:
+To verify the successful ingestion of the demo documents, you can fetch the metadata for the uploaded documents associated with the default demo user ID:
 
 ```bash
 poetry run python -m r2r.examples.demo get_user_document_data --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
 ```
 
-**Example Output:**
+**Demo Output:**
 
 ```plaintext
 ...
@@ -141,11 +114,7 @@ Time taken to get user document data: 0.21 seconds
 }
 ```
 
-### Basic Functionality
-
-The basic functionality of the R2R framework allows you to search ingested documents and generate responses using Retrieval-Augmented Generation (RAG). These steps will guide you through performing a search query, generating a RAG response, and streaming RAG results.
-
-#### Step 3: Run a Demo Search
+### Document Search
 
 Documents are stored by default in a local vector database. The vector database provider and settings can be specified via an input `config.json`. To perform a search query on the ingested user documents, use the following command:
 
@@ -153,7 +122,7 @@ Documents are stored by default in a local vector database. The vector database 
 poetry run python -m r2r.examples.demo search --query="Who was Aristotle?"
 ```
 
-**Example Output:**
+**Demo Output:**
 
 ```plaintext
 ...
@@ -165,9 +134,9 @@ Time taken to search: 0.39 seconds
    {
       'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd', 
       'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484', 
-      'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began
+      'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics,
 
- the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 
+ psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 
       'title': 'aristotle.txt',
       'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 
       'query': 'Who was Aristotle?'
@@ -176,15 +145,15 @@ Time taken to search: 0.39 seconds
 ...
 ```
 
-#### Step 4: Run a Demo RAG Completion
+### RAG Completion
 
 To generate a response for a query using RAG, execute the following command:
 
 ```bash
-poetry run python -m r2r.examples.demo rag --query="What was Ubers profit in 2020?"
+poetry run python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?"
 ```
 
-**Example Output:**
+**Demo Output:**
 
 ```plaintext
 ...
@@ -220,15 +189,15 @@ Time taken to run RAG: 2.29 seconds
 }
 ```
 
-#### Step 5: Run a Demo RAG Stream
+### RAG Stream
 
 For streaming results from a RAG query, use the following command:
 
 ```bash
-poetry run python -m r2r.examples.demo rag --query="What was Lyfts profit in 2020?" --streaming=True
+poetry run python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=True
 ```
 
-**Example Output:**
+**Demo Output:**
 
 ```plaintext
 r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.json - 2024-05-20 22:27:31,890
@@ -238,11 +207,7 @@ r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.js
 Time taken to stream RAG response: 2.79 seconds
 ```
 
-### Document Management
-
-Effective document management is crucial for maintaining a robust and efficient RAG system. This section guides you through various operations related to document management, including deleting documents and managing user-specific data. These steps will help ensure your document database remains organized and up-to-date.
-
-#### Step 6: Delete a Specified Document
+### Document Deletion
 
 To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the associated document ID with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
 
@@ -250,63 +215,30 @@ To delete a document by its ID, or any other metadata field, use the delete comm
 poetry run python -m r2r.examples.demo delete --key=document_id --value=15255e98-e245-5b58-a57f-6c51babf72dd
 ```
 
-After deleting a document, you can run a search command to verify its removal:
+### User Deletion
 
-```bash
-poetry run python -m r2r.examples.demo search --query="Who was Aristotle?"
-```
-
-
-**Note**
-
-The quality of search results has dramatically decreased now that the Aristotle-specific document has been fully erased. This highlights the importance of the ingested data quality on the RAG results.
-
-#### Step 7: Delete a Specified User's Documents
-
-To delete all documents associated with a given user, run the delete command on the `user_id`.
+To delete all documents associated with a given user, run the delete command on the `user_id`:
 
 ```bash
 run the following command with care, as it will erase all ingested user data
 poetry run python -m r2r.examples.demo delete --key=user_id --value=063edaf8-3e63-4cb9-a4d6-a855f36376c3
 ```
 
-Afterwards, we may confirm complete user documentation through the `get_user_document_data` functionality.
-
-**Example Output:**
-
-```bash
-...
-Time taken to get user document data: 0.00 seconds
-{'results': []}
-```
-
 ## R2R Server-Client Demo
 
-This document extends the [R2R Demo](#r2r-demo) by demonstrating how to set up and use the R2R framework with a server-client architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations. The server API can be viewed here.
+This section extends the previous demo by showing how to set up and use the R2R framework with a server-client architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations.
 
-### Overview
+### Launch the Server
 
-The R2R framework provides a way to run a Retrieval-Augmented Generation (RAG) pipeline using a server-client model. This allows for a centralized server to handle requests from multiple clients, enabling more scalable and modular deployments.
+Use the following command to start the server:
 
-### Setting Up the Server
+```bash
+poetry run python -m r2r.examples.demo serve
+```
 
-To set up the R2R server, follow these steps:
+This command starts the R2R server on the default host `0.0.0.0` and port `8000`.
 
-1. **Quick Install**:
-   Ensure you have all necessary dependencies installed as described in the [R2R Demo](#r2r-demo#setup).
-
-2. **Start the R2R Server**:
-   Use the following command to start the server:
-   ```bash
-   poetry run python -m r2r.examples.demo serve
-   ```
-   This command starts the R2R server on the default host `0.0.0.0` and port `8000`.
-
-### Using the Client
-
-The R2R framework includes a client that can communicate with the R2R server to perform various operations. You can use any of the demo commands with the `--base_url` parameter to specify the server's address.
-
-#### Example Commands
+### Example Commands
 
 1. **Ingest Documents as Files**:
    ```bash
@@ -328,22 +260,52 @@ The R2R framework includes a client that can communicate with the R2R server to 
 
 4. **Run a RAG Stream**:
    ```bash
-   poetry run python -m r2r.examples.demo rag --query="What was
-
- Lyft's profit in 2020?" --streaming=True --base_url=http://localhost:8000
+   poetry run python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=True --base_url=http://localhost:8000
    ```
    This command streams the RAG query results from the server.
 
+### Server-Client Summary
+
+By using the server-client model, you can extend the basic R2R demo to support more scalable and modular deployments. The server handles requests and performs heavy computations, while clients can communicate with the server to perform ingestion, search, RAG, and other operations, as shown in the examples above. For detailed setup and basic functionality, refer back to the [R2R Demo](#r2r-demo).
+
+
 ## Core Abstractions
 
-The framework primarily revolves around three core abstractions:
+The framework revolves around three core abstractions: Providers, Pipes, and Pipelines.
 
-- The **Ingestion Pipeline**: Facilitates the preparation of embeddable 'Documents' from various data formats (json, txt, pdf, html, etc.). The abstraction can be found in [`ingestion.py`](r2r/core/pipelines/ingestion.py) and relevant documentation is available [here](https://r2r-docs.sciphi.ai/deep-dive/ingestion).
+### Providers
 
-- The **Embedding Pipeline**: Manages the transformation of text into stored vector embeddings, interacting with embedding and vector database providers through a series of steps (e.g., extract_text, transform_text, chunk_text, embed_chunks, etc.). The abstraction can be found in [`embedding.py`](r2r/core/pipelines/embedding.py) and relevant documentation is available [here](https://r2r-docs.sciphi.ai/deep-dive/embedding).
+Providers supply the necessary resources and capabilities to the pipes and pipelines. Key provider types include:
 
-- The **RAG Pipeline**: Works similarly to the embedding pipeline but incorporates an LLM provider to produce text completions. The abstraction can be found in [`rag.py`](r2r/core/pipelines/rag.py) and relevant documentation is available [here](https://r2r-docs.sciphi.ai/deep-dive/rag).
+- **Vector Database Provider**: Manages the storage and retrieval of vector embeddings. Examples include Qdrant, PGVector, and LocalVectorDB.
+- **Embedding Provider**: Converts text into vector embeddings. Supported providers include OpenAI, SentenceTransformers, and DummyEmbeddingProvider.
+- **LLM Provider**: Interfaces with large language models for text generation. Supported providers include OpenAI, LiteLLM, and LlamaCPP.
+- **Prompt Provider**: Manages prompts for various tasks.
+- **Eval Provider**: Evaluates the quality of generated responses.
 
-- The **Eval Pipeline**: Samples some subset of rag_completion calls for evaluation. Currently [DeepEval](https://github.com/confident-ai/deepeval) and [Parea](https://github.com/parea-ai/parea-sdk-py) are supported. The abstraction can be found in [`eval.py`](r2r/core/pipelines/eval.py) and relevant documentation is available [here](https://r2r-docs.sciphi.ai/deep-dive/eval).
+### Pipes
 
-Each pipeline incorporates a logging database for operation tracking and observability.
+Pipes represent individual steps in the data processing workflow. Each pipe performs a specific task, such as parsing, embedding, searching, or generating text. Pipes are designed to be composable and reusable within different pipelines.
+
+- **Parsing Pipe**: Extracts and structures data from various formats.
+- **Embedding Pipe**: Generates embeddings from text and stores them in a vector database.
+- **Vector Storage Pipe**: Handles the storage of embeddings in a vector database.
+- **Search Pipe**: Performs vector-based searches.
+- **RAG Pipe**: Integrates search results with language generation to produce responses.
+- **Streaming RAG Pipe**: Extends RAG functionality to support streaming responses.
+- **Eval Pipe**: Evaluates the quality of generated responses.
+
+### Pipelines
+
+Pipelines are composed of multiple pipes arranged in a sequence. They manage the flow of data through the pipes, ensuring that each step is executed in the correct order. R2R supports several types of pipelines:
+
+- **Ingestion Pipeline**: Prepares and ingests documents, converting them into embeddings.
+- **Embedding Pipeline**: Manages the transformation of text into vector embeddings.
+- **RAG Pipeline**: Combines search and language generation to produce detailed responses.
+- **Eval Pipeline**: Evaluates the quality of generated responses using LLM-powered evaluations.
+
+Each pipeline incorporates logging and observability features to track operations and ensure transparency.
+
+## Summary
+
+R2R (RAG to Riches) is a comprehensive framework designed to streamline the development, deployment, and optimization of Retrieval-Augmented Generation (RAG) systems. With its robust core abstractions—Providers, Pipes, and Pipelines—R2R offers a modular and flexible approach to building high-quality RAG pipelines.

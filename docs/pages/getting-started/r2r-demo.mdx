@@ -1,8 +1,6 @@
 ## R2R Demo
 
-This example demonstrates how to set up and use the R2R framework to run the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo utilizes a locally defined `config.json` (which defaults to the config.json included with R2R) to build ingestion and RAG pipelines, along with several demonstration methods.
-
-The sections below cover R2R setup, basic functionality, document management, and some advanced features.
+The R2R demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo ingests a list of provided provided documents and demonstrates search, RAG, and advanced functionality. The script at r2r/examples/demo.py, which powers the demo, can be configured and extended with sufficient familiarity.
 
 ## Setup
 
@@ -28,7 +26,7 @@ To comprehensively demonstrate the RAG functionalities of the R2R framework, we 
 poetry run python -m r2r.examples.demo ingest_as_files
 ```
 
-**Example Output:**
+**Demo Output:**
 
 ```plaintext
 r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.json - 2024-05-20 22:08:48,025
@@ -50,23 +48,38 @@ Time taken to ingest files: 28.49 seconds
 
 **Note**
 
-Each ingested document is given its own `document_id`, which is derived uniquely from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, a default `user_id` is included throughout the demo to illustrate how user document management can be handled similarly.
+Each ingested document derives a unique `document_id` from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, a the demo includes a default `user_id` in the document metadata to facilitate user-level document management.
 
 ### Step 2: Confirm User Data
 
-To verify the documents associated with the default user ID, you can fetch the metadata for the uploaded documents:
+To verify the successful ingestion of the demo documents, you can fetch the metadata for the uploaded documents associated with the default demo user ID:
 
 ```bash
 poetry run python -m r2r.examples.demo get_user_document_data --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
 ```
 
-**Example Output:**
+**Demo Output:**
 
 ```plaintext
 ...
 Time taken to get user document data: 0.21 seconds
-{'results': [{'document_id': '327f6110-edd1-5fe3-b6b3-49b55f1cbc28', 'title': 'pg_essay_3.html'}, {'document_id': '946859f0-da5c-5db7-9b5c-c586be76d709', 'title': 'pg_essay_5.html'}, {'document_id': '64c1c913-be06-548f-acbc-3618b00d3616', 'title': 'lyft_2021.pdf'}, {'document_id': '766082fd-bde4-561a-b27e-63b811056efb', 'title': 'pg_essay_4.html'}, {'document_id': '888591ba-2639-5fe7-b617-395d640c1910', 'title': 'pg_essay_1.html'}, {'document_id': '8d78f34d-f795-5c82-a90f-18b8cc3a883c', 'title': 'uber_2021.pdf'}, {'document_id': '5d3a25d3-0933-54d5-a4e2-0434a069e578', 'title': 'pg_essay_2.html'}, {'document_id': 'dd8ed784-4826-523b-9c24-93409cea93f7', 'title': 'screen_shot.png'}]}
-...
+{'results': 
+   [
+      {
+         'document_id': '327f6110-edd1-5fe3-b6b3-49b55f1cbc28',
+         'title': 'pg_essay_3.html'
+      }, 
+      {
+         'document_id': '946859f0-da5c-5db7-9b5c-c586be76d709', 
+         'title': 'pg_essay_5.html'
+      }, 
+      {
+         'document_id': '64c1c913-be06-548f-acbc-3618b00d3616', 
+         'title': 'lyft_2021.pdf'
+      },
+      ...
+   ]
+}
 ```
 
 ## Basic Functionality
@@ -83,14 +96,26 @@ Documents are stored by default in a local vector database. The vector database 
 poetry run python -m r2r.examples.demo search --query="Who was Aristotle?"
 ```
 
-**Example Output:**
+**Demo Output:**
 
 ```plaintext
 ...
 Time taken to search: 0.39 seconds
-{'id': UUID('93c44e73-8e95-50c2-84af-6a42f070b552'), 'score': 0.7739712385010018, 'metadata': {'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd', 'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484', 'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 'title': 'aristotle.txt', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'query': 'Who was Aristotle?'}}
-{'id': UUID('a3da125c-cf13-58df-a470-6d9df9ff22d3'), 'score': 0.6876935337857121, 'metadata': {'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd', 'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484', 'text': 'Aristotle was revered among medieval Muslim scholars as "The First Teacher", and among medieval Christians like Thomas Aquinas as simply "The Philosopher", while the poet Dante called him "the master of those who know". His works contain the earliest known formal study of logic, and were studied by medieval scholars such as Peter Abelard and Jean Buridan. Aristotle\'s influence on logic continued well into the 19th century. In addition, his ethics, although always influential, gained renewed interest with', 'title': 'aristotle.txt', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'query': 'Who was Aristotle?'}}
-{'id': UUID('c7da6421-25c2-5d12-808f-8c5ce4091d12'), 'score': 0.6620316195257511, 'metadata': {'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd', 'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484', 'text': "Aristotle was born in 384 BC[C] in Stagira, Chalcidice,[2] about 55 km (34 miles) east of modern-day Thessaloniki.[3][4] His father, Nicomachus, was the personal physician to King Amyntas of Macedon. While he was young, Aristotle learned about biology and medical information, which was taught by his father.[5] Both of Aristotle's parents died when he was about thirteen, and Proxenus of Atarneus became his guardian.[6] Although little information about Aristotle's childhood has survived, he probably spent", 'title': 'aristotle.txt', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'query': 'Who was Aristotle?'}}
+{
+    'id': UUID('93c44e73-8e95-50c2-84af-6a42f070b552'), 
+    'score': 0.7739712385010018, 
+    'metadata': 
+    {
+        'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd', 
+        'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484', 
+        'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began
+
+the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 
+        'title': 'aristotle.txt',
+        'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 
+        'query': 'Who was Aristotle?'
+    }
+},
 ...
 ```
 
@@ -102,7 +127,7 @@ To generate a response for a query using RAG, execute the following command:
 poetry run python -m r2r.examples.demo rag --query="What was Ubers profit in 2020?"
 ```
 
-**Example Output:**
+**Demo Output:**
 
 ```plaintext
 ...
@@ -118,7 +143,7 @@ For streaming results from a RAG query, use the following command:
 poetry run python -m r2r.examples.demo rag --query="What was Lyfts profit in 2020?" --streaming=True
 ```
 
-**Example Output:**
+**Demo Output:**
 
 ```plaintext
 r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.json - 2024-05-20 22:27:31,890
@@ -146,7 +171,7 @@ After deleting a document, you can run a search command to verify its removal:
 poetry run python -m r2r.examples.demo search --query="Who was Aristotle?"
 ```
 
-**Example Output:**
+**Demo Output:**
 
 ```plaintext
 Time taken to search: 1.10 seconds
@@ -172,7 +197,7 @@ To delete all documents associated with a given user, run the delete command on 
 
 Afterwards, we may confirm complete user documentation through the `get_user_document_data` functionality.
 
-**Example Output:**
+**Demo Output:**
 
 ```bash
 ...
@@ -190,7 +215,7 @@ An `.png` image of a desktop screen was included as part of the ingestion comman
 poetry run python -m r2r.examples.demo search --query="What is shown on the user screen?"
 ```
 
-**Example Output:**
+**Demo Output:**
 
 ```plaintext
 Time taken to search: 1.13 seconds
@@ -207,7 +232,7 @@ The R2R framework can evaluate the relevance and accuracy of generated responses
 poetry run python -m r2r.examples.demo evaluate
 ```
 
-**Example Output:**
+**Demo Output:**
 
 ```plaintext
 Time taken to evaluate: 2.42 seconds
@@ -243,7 +268,7 @@ Pipes naturally integrate with your selected logging provider. R2R pipelines for
 poetry run python -m r2r.examples.demo get_logs
 ```
 
-**Example Output:**
+**Demo Output:**
 
 ```plaintext
 ...
