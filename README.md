@@ -64,7 +64,7 @@ The R2R demo offers a step-by-step guide on running the default R2R Retrieval-Au
 To comprehensively demonstrate the RAG functionalities of the R2R framework, we must start by ingesting a realistic set of documents. Running the command below will parse, chunk, embed, and store a preset list of files. The included file types cover HTML, PDF, PNG, and TXT examples:
 
 ```bash
-poetry run python -m r2r.examples.demo ingest_as_files
+python -m r2r.examples.demo ingest_as_files
 ```
 
 **Demo Output:**
@@ -83,7 +83,7 @@ Time taken to ingest files: 28.49 seconds
 To verify the successful ingestion of the demo documents, you can fetch the metadata for the uploaded documents associated with the default demo user ID:
 
 ```bash
-poetry run python -m r2r.examples.demo get_user_document_data --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
+python -m r2r.examples.demo get_user_document_data --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
 ```
 
 **Demo Output:**
@@ -115,7 +115,7 @@ Time taken to get user document data: 0.21 seconds
 Documents are stored by default in a local vector database. The vector database provider and settings can be specified via an input `config.json`. To perform a search query on the ingested user documents, use the following command:
 
 ```bash
-poetry run python -m r2r.examples.demo search --query="Who was Aristotle?"
+python -m r2r.examples.demo search --query="Who was Aristotle?"
 ```
 
 **Demo Output:**
@@ -148,7 +148,7 @@ Time taken to search: 0.39 seconds
 To generate a response for a query using RAG, execute the following command:
 
 ```bash
-poetry run python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?"
+python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?"
 ```
 
 **Demo Output:**
@@ -192,7 +192,7 @@ Time taken to run RAG: 2.29 seconds
 For streaming results from a RAG query, use the following command:
 
 ```bash
-poetry run python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=True
+python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=True
 ```
 
 **Demo Output:**
@@ -212,7 +212,7 @@ Time taken to stream RAG response: 2.79 seconds
 To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the associated document ID with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
 
 ```bash
-poetry run python -m r2r.examples.demo delete --key=document_id --value=15255e98-e245-5b58-a57f-6c51babf72dd
+python -m r2r.examples.demo delete --key=document_id --value=15255e98-e245-5b58-a57f-6c51babf72dd
 ```
 
 ### User Deletion
@@ -221,7 +221,7 @@ To delete all documents associated with a given user, run the delete command on 
 
 ```bash
 run the following command with care, as it will erase all ingested user data
-poetry run python -m r2r.examples.demo delete --key=user_id --value=063edaf8-3e63-4cb9-a4d6-a855f36376c3
+python -m r2r.examples.demo delete --key=user_id --value=063edaf8-3e63-4cb9-a4d6-a855f36376c3
 ```
 
 ## R2R Server-Client Demo
@@ -233,7 +233,7 @@ This section extends the previous demo by showing how to set up and use the R2R 
 Use the following command to start the server:
 
 ```bash
-poetry run python -m r2r.examples.demo serve
+python -m r2r.examples.demo serve
 ```
 
 This command starts the R2R server on the default host `0.0.0.0` and port `8000`.
@@ -242,25 +242,25 @@ This command starts the R2R server on the default host `0.0.0.0` and port `8000`
 
 1. **Ingest Documents as Files**:
    ```bash
-   poetry run python -m r2r.examples.demo ingest_as_files --base_url=http://localhost:8000
+   python -m r2r.examples.demo ingest_as_files --base_url=http://localhost:8000
    ```
    This command will send the ingestion request to the server running at `http://localhost:8000`.
 
 2. **Perform a Search**:
    ```bash
-   poetry run python -m r2r.examples.demo search --query="Who was Aristotle?" --base_url=http://localhost:8000
+   python -m r2r.examples.demo search --query="Who was Aristotle?" --base_url=http://localhost:8000
    ```
    This command sends the search query to the server and retrieves the results.
 
 3. **Run a RAG Completion**:
    ```bash
-   poetry run python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?" --base_url=http://localhost:8000
+   python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?" --base_url=http://localhost:8000
    ```
    This command sends the RAG query to the server and retrieves the generated response.
 
 4. **Run a RAG Stream**:
    ```bash
-   poetry run python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=True --base_url=http://localhost:8000
+   python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=True --base_url=http://localhost:8000
    ```
    This command streams the RAG query results from the server.
 
