@@ -3,7 +3,6 @@ import os
 from typing import Optional, Union
 
 from pymilvus import DataType
-from pymilvus.milvus_client import IndexParams
 
 from r2r.core import (
     VectorDBConfig,
@@ -11,12 +10,14 @@ from r2r.core import (
     VectorEntry,
     VectorSearchResult,
 )
-from r2r.vecs.client import Client
-from r2r.vecs.collection import Collection, MetadataValues
+
+from r2r.vector_dbs.milvus.exception import CollectionNotInitializedError, MilvusDBInitializationError, \
+    PymilvusImportError, MilvusCilentConnectionError, CollectionCreationError, CollectionDeletionError
 
 logger = logging.getLogger(__name__)
 
-class MilvusVectorDB(VectorDBConfig):
+
+class MilvusVectorDB(VectorDBProvider):
     def __init__(self, config: VectorDBConfig) -> None:
         # initialize the vector db usage
         logger.info(
@@ -26,7 +27,7 @@ class MilvusVectorDB(VectorDBConfig):
         super().__init__(config)
         self.config = config
         if config.provider != "milvus":
-            raise ValueError(
+            raise MilvusDBInitializationError(
                 "MilvusVectorDB must be initialized with provider `milvus`."
             )
 
@@ -34,36 +35,35 @@ class MilvusVectorDB(VectorDBConfig):
         try:
             from pymilvus import MilvusClient
         except ImportError:
-            raise ValueError(
+            raise PymilvusImportError(
                 f"Error, `pymilvus` is not installed. Please install it using `pip install -U pymilvus`."
             )
 
         # set up milvus client information
         try:
             uri = os.getenv("MILVUS_URI")
-            api_key = os.getenv("MILVUS_API_KEY")
+            api_key = os.getenv("ZILLIZ_CLOUD_API_KEY")
 
             if not uri:
-                raise ValueError(
+                raise MilvusCilentConnectionError(
                     "Error, MilvusVectorDB missing the MILVUS_URI environment variables."
                     "If you wish run it locally, please initialize it as local path file \"xxx.db\" in the current directory"
                     "If you wish to use cloud service, please add btoh uri as cloud endpoint and api_key as cloud api"
                 )
-
-            self.client = MilvusClient(uri=uri, api_key=api_key)
+            if api_key:
+                self.client = MilvusClient(uri=uri, token=api_key)
+            else:
+                self.client = MilvusClient(uri=uri)
         except Exception as e:
-            raise ValueError(
+            raise MilvusCilentConnectionError(
                 f"Error {e} occurred while attempting to connect to the milvus provider."
             )
 
     def initialize_collection(
-        self, dimension: int
+        self, collection_name: str, dimension: int
     ) -> None:
         """
         Initialize a collection.
-
-        TODO:
-        Adding pre set schema and indexing right now, need to decide how to adjust this.
 
         Parameters:
             collection_name: str
@@ -87,8 +87,8 @@ class MilvusVectorDB(VectorDBConfig):
 
             # prepare index parameters
             param = self.client.prepare_index_params()
-            index_params = self.create_index(index_params=param, index_type="AUTOINDEX",
-                                             field_name="vector", metric_type="COSINE")
+            index_params = param.add_index(index_type="AUTOINDEX", field_name="vector",
+                                           metric_type="COSINE")
 
             # create a collection
             self.client.create_collection(
@@ -97,15 +97,9 @@ class MilvusVectorDB(VectorDBConfig):
                 index_params=index_params
             )
 
-            # TODO: 商讨是否使用这一种简便的创造方法
-            # self.client.create_collection(
-            #     collection_name=collection_name,
-            #     dimension=dimension,
-            #     enable_dynamic_field=True,
-            # )
         except Exception as e:
-            raise ValueError(
-                f"Error {e} occurred while attempting to creat colelction {self.config.collection_name}."
+            raise CollectionCreationError(
+                f"Error {e} occurred while attempting to creat collection {self.config.collection_name}."
             )
 
     def copy(self, entry: VectorEntry, commit: bool = True) -> None:
@@ -120,28 +114,25 @@ class MilvusVectorDB(VectorDBConfig):
             commit (bool, optional): Whether to commit the upsert operation immediately. Defaults to True.
 
         Raises:
-            ValueError: If the collection is not initialized before attempting to run `upsert`.
-
-        TODO:
-            Determine how to handle metadata.
-            - Currently, only 'id' and 'vector' fields are included in the data dictionary.
-            - Decide how to incorporate metadata into the `upsert` operation.
+            CollectionNotInitializedError: If the collection is not initialized before attempting to run `upsert`.
 
         Returns:
             None
         """
         if not self.client.has_collection(collection_name=self.config.collection_name):
-            raise ValueError(
+            raise CollectionNotInitializedError(
                 "Please call `initialize_collection` before attempting to run `upsert`."
             )
 
-        # TODO：该如何处理metadata
         data = {
-            'id': entry.to_json()['id'],
-            'vector': entry.to_json()['vector'],
+            'id': entry.id,
+            'vector': entry.vector,
         }
 
-        # 测试如果不行改成insert
+        for key, value in entry.metadata.items():
+            data[key] = value
+
+        # Can change to insert if upsert not working
         self.client.upsert(
             collection_name=self.config.collection_name,
             data=data
@@ -169,14 +160,26 @@ class MilvusVectorDB(VectorDBConfig):
             list[VectorSearchResult]: A list of search results.
         """
 
-        # TODO: 处理filters
+        filter_conditions = []
+        for key, value in filters.items():
+            if isinstance(value, str):
+                filter_conditions.append(f"{key} like {value}")
+            else:
+                filter_conditions.append(f"{key} == {value}")
+
+        if len(filter_conditions) == 1:
+            filter = filter_conditions[0]
+        else:
+            filter = " and ".join(filter_conditions)
+
         results = self.client.search(
             collection_name=self.config.collection_name,
             data=query_vector,
+            filter=filter,
             limit=limit,
             *args,
             **kwargs,
-        )
+        )[0]
 
         return [
             VectorSearchResult(
@@ -185,67 +188,49 @@ class MilvusVectorDB(VectorDBConfig):
             for result in results
         ]
 
-    def create_index(
-            self,
-            index_params: IndexParams,
-            index_type: str,
-            field_name: str,
-            metric_type: str,
-            index_name: str = None,
-            params: dict = None,
-    ) -> IndexParams:
-        """
-        Add indexes to the index parameters.
-
-        Parameters:
-            index_params: IndexParams
-                The index parameters object to which the index will be added.
-            index_type: str
-                The type of index to be added.
-            field_name: str
-                The name of the field for which the index will be added.
-            metric_type: str
-                The type of metric to be used for the index.
-            index_name: str, optional
-                The name of the index. Defaults to None.
-            params: dict, optional
-                Additional parameters for the index. Defaults to None.
-
-        Returns:
-            IndexParams: The updated index parameters.
-        """
-        index_params.add_index(
-            field_name=field_name,
-            index_type=index_type,
-            metric_type=metric_type,
-            index_name=index_name,
-            params=params,
-        )
-
-        return index_params
-
     def close(self):
         """
         close the milvus connection.
         """
         self.client.close()
 
-    def upsert_entries(
-        self, entries: list[VectorEntry], commit: bool = True
-    ) -> None:
-        for entry in entries:
-            self.upsert(entry, commit=commit)
-
-    def copy_entries(
-        self, entries: list[VectorEntry], commit: bool = True
-    ) -> None:
-        for entry in entries:
-            self.copy(entry, commit=commit)
-
     def filtered_deletion(
         self, key: str, value: Union[bool, int, str]
     ) -> None:
-        pass
+        """
+        Delete entries from the collection based on a filtered condition.
+
+        Parameters:
+            key (str): The key to filter on.
+            value (Union[bool, int, str]): The value to filter against.
+
+        Raises:
+            CollectionNotInitializedError: If the collection is not initialized before attempting deletion.
+            CollectionDeletionError: If an error occurs during deletion.
+
+        Returns:
+            None
+        """
+        if not self.client.has_collection(collection_name=self.config.collection_name):
+            raise CollectionNotInitializedError(
+                "Please call `initialize_collection` before attempting to run `filtered_deletion`."
+            )
+
+        # Build filter condition based on value type
+        if isinstance(value, str):
+            filter = f"{key} like {value}"
+        else:
+            filter = f"{key} == {value}"
+
+        try:
+            if key == 'id':
+                self.client.delete(collection_name=self.config.collection_name,
+                                   ids=value)
+            else:
+                self.client.delete(collection_name=self.config.collection_name,
+                                   filter=filter)
+        except Exception as e:
+            raise CollectionDeletionError(f"Error {e} occurs in deletion of key value pair {self.config.collection_name}.")
 
     def get_all_unique_values(
         self,
@@ -253,4 +238,40 @@ class MilvusVectorDB(VectorDBConfig):
         filter_field: Optional[str] = None,
         filter_value: Optional[str] = None,
     ) -> list[str]:
-        pass
+        """
+        Retrieve all unique values of a metadata field, optionally filtered by another field-value pair.
+        # 在filter_field是filter_value下的metadata_field
+
+        Parameters:
+            metadata_field (str): The metadata field for which unique values are to be retrieved.
+            filter_field (Optional[str]): The field to filter on. Defaults to None.
+            filter_value (Optional[str]): The value to filter against. Defaults to None.
+
+        Raises:
+            CollectionNotInitializedError: If the collection is not initialized before attempting retrieval.
+
+        Returns:
+            list[str]: A list of unique values of the specified metadata field.
+        """
+        if not self.client.has_collection(collection_name=self.config.collection_name):
+            raise CollectionNotInitializedError(
+                "Please call `initialize_collection` before attempting to run `filtered_deletion`."
+            )
+
+        # Build filter condition based on value type
+        if filter_field is not None and filter_value is not None:
+            filter = f"{filter_field} like '{filter_value}'"
+        else:
+            filter = None
+
+        unique_values = []
+        results = self.client.query(
+            collection_name=self.config.collection_name,
+            filter=filter,
+            output_fields=[metadata_field],
+        )
+
+        for result in results:
+            unique_values.append(result[metadata_field])
+
+        return unique_values
