@@ -304,8 +304,6 @@ Pipelines are composed of multiple pipes arranged in a sequence. They manage the
 - **RAG Pipeline**: Combines search and language generation to produce detailed responses.
 - **Eval Pipeline**: Evaluates the quality of generated responses using LLM-powered evaluations.
 
-Each pipeline incorporates logging and observability features to track operations and ensure transparency.
-
 # Summary
 
 R2R (RAG to Riches) is a comprehensive framework designed to streamline the development, deployment, and optimization of Retrieval-Augmented Generation (RAG) systems. With its robust core abstractions—Providers, Pipes, and Pipelines—R2R offers a modular and flexible approach to building high-quality RAG pipelines.
