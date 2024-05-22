@@ -57,7 +57,7 @@ export OPENAI_API_KEY=sk-...
 
 # R2R Demo
 
-The R2R demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo ingests a list of provided provided documents and demonstrates search, RAG, and advanced functionality. The script at `r2r/examples/demo.py`, which powers the demo, can be configured and extended with sufficient familiarity.
+The R2R demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo ingests a list of provided provided documents and demonstrates search, RAG, and advanced functionality. The script at `r2r/examples/demo.py`, which powers the demo, can be configured and extended with sufficient developer familiarity.
 
 ## Ingest Demo Files
 
@@ -78,11 +78,7 @@ r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'screen_
 Time taken to ingest files: 28.49 seconds
 ```
 
-**Note**
-
-Each ingested document derives a unique `document_id` from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, the demo includes a default `user_id` in the document metadata to facilitate user-level document management.
-
-## Confirm User Data
+### Confirm User Data
 
 To verify the successful ingestion of the demo documents, you can fetch the metadata for the uploaded documents associated with the default demo user ID:
 
