@@ -1,0 +1,281 @@
+## R2R Demo
+
+The R2R demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo ingests a list of provided provided documents and demonstrates search, RAG, and advanced functionality. The script at r2r/examples/demo.py, which powers the demo, can be configured and extended with sufficient developer familiarity.
+
+## Setup
+
+To get started with the R2R framework, follow these steps to install dependencies, set up your environment, and ingest sample documents for the demo.
+
+### Step 0: Quick Install
+
+First, you'll need to install the necessary dependencies and set up your environment.
+
+```bash
+# use the `'r2r[all]'` to download all possible required deps
+pip install r2r
+
+# OpenAI is the default provider and requires an API key
+export OPENAI_API_KEY="sk-..."
+```
+
+### Step 1: Ingest Demo Files
+
+To comprehensively demonstrate the RAG functionalities of the R2R framework, we must start by ingesting a realistic set of documents. Running the command below will parse, chunk, embed, and store a preset list of files. The included file types cover HTML, PDF, PNG, and TXT examples:
+
+```bash
+poetry run python -m r2r.examples.demo ingest_as_files
+```
+
+**Demo Output:**
+
+```plaintext
+r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.json - 2024-05-20 22:08:48,025
+r2r.core.providers.llm_provider - INFO - Initializing LLM provider with config: extra_fields={} provider='litellm' - 2024-05-20 22:08:48,562
+r2r.core.providers.vector_db_provider - INFO - Initializing VectorDBProvider with config extra_fields={} provider='local' collection_name='demo_vecs'. - 2024-05-20 22:08:48,765
+r2r.embeddings.openai.openai_base - INFO - Initializing `OpenAIEmbeddingProvider` to provide embeddings. - 2024-05-20 22:08:48,774
+...
+r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'pg_essay_1.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=4a4fb848-fc03-5487-a7e5-33c9fdfb73cc in t=0.00 seconds. - 2024-05-21 08:39:59,003
+r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'lyft_2021.pdf', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=c5abc0b7-b9e5-54d9-b3d3-fdb14af4d065 in t=3.47 seconds. - 2024-05-21 08:40:02,477
+r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'pg_essay_2.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=f0c63aff-af59-50c9-81fc-2fe55004c771 in t=0.00 seconds. - 2024-05-21 08:40:02,479
+r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'uber_2021.pdf', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=c996e617-88a4-5c65-ab1e-948344b18d27 in t=4.96 seconds. - 2024-05-21 08:40:07,440
+r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'pg_essay_3.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=1a9d4d3b-bbe9-53b9-8149-67806bdf60f2 in t=0.00 seconds. - 2024-05-21 08:40:07,442
+r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'screen_shot.png', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'image_type': 'png'} and id=74f1506a-9a37-59d7-b288-5ef3683dca8f in t=24.87 seconds. - 2024-05-21 08:40:32,310
+r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'pg_essay_4.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=b722f1ec-b90e-5ed8-b7c8-c768e8b323cb in t=0.00 seconds. - 2024-05-21 08:40:32,313
+r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'aristotle.txt', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=c9bdbac7-0ea3-5c9e-b590-018bd09b127b in t=0.00 seconds. - 2024-05-21 08:40:32,313
+r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'pg_essay_5.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=ef66e5dd-2130-5fd5-9bdd-aa7eff59fda5 in t=0.00 seconds. - 2024-05-21 08:40:32,317
+Time taken to ingest files: 28.49 seconds
+```
+
+**Note**
+
+Each ingested document derives a unique `document_id` from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, a the demo includes a default `user_id` in the document metadata to facilitate user-level document management.
+
+### Step 2: Confirm User Data
+
+To verify the successful ingestion of the demo documents, you can fetch the metadata for the uploaded documents associated with the default demo user ID:
+
+```bash
+poetry run python -m r2r.examples.demo get_user_document_data --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
+```
+
+**Demo Output:**
+
+```plaintext
+...
+Time taken to get user document data: 0.21 seconds
+{'results': 
+   [
+      {
+         'document_id': '327f6110-edd1-5fe3-b6b3-49b55f1cbc28',
+         'title': 'pg_essay_3.html'
+      }, 
+      {
+         'document_id': '946859f0-da5c-5db7-9b5c-c586be76d709', 
+         'title': 'pg_essay_5.html'
+      }, 
+      {
+         'document_id': '64c1c913-be06-548f-acbc-3618b00d3616', 
+         'title': 'lyft_2021.pdf'
+      },
+      ...
+   ]
+}
+```
+
+## Basic Functionality
+
+The basic functionality of the R2R framework allows you to search ingested documents and generate responses using Retrieval-Augmented Generation (RAG). These steps will guide you through performing a search query, generating a RAG response, and streaming RAG results.
+
+### Step 3: Run a Demo Search
+
+Documents are stored by default in a local vector database. The vector database provider and settings can be specified via an input `config.json`. To
+
+ perform a search query on the ingested user documents, use the following command:
+
+```bash
+poetry run python -m r2r.examples.demo search --query="Who was Aristotle?"
+```
+
+**Demo Output:**
+
+```plaintext
+...
+Time taken to search: 0.39 seconds
+{
+    'id': UUID('93c44e73-8e95-50c2-84af-6a42f070b552'), 
+    'score': 0.7739712385010018, 
+    'metadata': 
+    {
+        'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd', 
+        'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484', 
+        'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began
+
+the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 
+        'title': 'aristotle.txt',
+        'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 
+        'query': 'Who was Aristotle?'
+    }
+},
+...
+```
+
+### Step 4: Run a Demo RAG Completion
+
+To generate a response for a query using RAG, execute the following command:
+
+```bash
+poetry run python -m r2r.examples.demo rag --query="What was Ubers profit in 2020?"
+```
+
+**Demo Output:**
+
+```plaintext
+...
+Time taken to run RAG: 2.29 seconds
+{'results': [ChatCompletion(id='chatcmpl-9RCB5xUbDuI1f0vPw3RUO7BWQImBN', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessage(content="Uber's profit in 2020 was a net loss of $6,768 million [10].", role='assistant', function_call=None, tool_calls=None))], created=1716268695, model='gpt-3.5-turbo-0125', object='chat.completion', system_fingerprint=None, usage=CompletionUsage(completion_tokens=20, prompt_tokens=1470, total_tokens=1490))]}
+```
+
+### Step 5: Run a Demo RAG Stream
+
+For streaming results from a RAG query, use the following command:
+
+```bash
+poetry run python -m r2r.examples.demo rag --query="What was Lyfts profit in 2020?" --streaming=True
+```
+
+**Demo Output:**
+
+```plaintext
+r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.json - 2024-05-20 22:27:31,890
+...
+<search>["{\"id\":\"808c47c5-ebef-504a-a230-aa9ddcfbd87 .... </search>
+<completion>Lyft reported a net loss of $1,752,857,000 in 2020 according to [2]. Therefore, Lyft did not make a profit in 2020.</completion>                                                      
+Time taken to stream RAG response: 2.79 seconds
+```
+
+## Document Management
+
+Effective document management is crucial for maintaining a robust and efficient RAG system. This section guides you through various operations related to document management, including deleting documents and managing user-specific data. These steps will help ensure your document database remains organized and up-to-date.
+
+### Step 6: Delete a Specified Document
+
+To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the associated document ID with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
+
+```bash
+poetry run python -m r2r.examples.demo delete --key=document_id --value=15255e98-e245-5b58-a57f-6c51babf72dd
+```
+
+After deleting a document, you can run a search command to verify its removal:
+
+```bash
+poetry run python -m r2r.examples.demo search --query="Who was Aristotle?"
+```
+
+**Demo Output:**
+
+```plaintext
+Time taken to search: 1.10 seconds
+{'id': UUID('37993d2c-b61a-58b4-9a89-f167d59b8633'), 'score': 0.2662125334175588, 'metadata': {'document_id': '327f6110-edd1-5fe3-b6b3-49b55f1cbc28', 'extraction_id': '7293e1fc-d399-5bfe-a74a-967c2b2ce351', 'text': "completely as soon as it was discovered — that whatever the church thought\nof the heliocentric model, astronomers must have been convinced as\nsoon as Copernicus proposed it. Far, in fact, from it. Copernicus\npublished the heliocentric model in 1532, but it wasn't till the\nmid seventeenth century that the balance of scientific opinion\nshifted in its favor.\n[5]Few understand how feeble new ideas look when they first appear.\nSo if you want to have new ideas yourself, one of the most valuable", 'title': 'pg_essay_3.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'query': 'Who was Aristotle?'}}
+{'id': UUID('1669532f-8b2c-5eb0-b203-f0731490f8e9'), 'score': 0.2565397481515653, 'metadata': {'document_id': '327f6110-edd1-5fe3-b6b3-49b55f1cbc28', 'extraction_id': '7293e1fc-d399-5bfe-a74a-967c2b2ce351', 'text': "Structure of Scientific Revolutions, but I also recommend his\nCopernican Revolution, where you can see him at work developing the\nidea.[4]\nThis is one reason people with a touch of Asperger's may have\nan advantage in discovering new ideas. They're always flying on\ninstruments.[5]\nHall, Rupert. From Galileo to Newton. Collins, 1963. This\nbook is particularly good at getting into contemporaries' heads.Thanks to Trevor Blackwell, Patrick Collison, Suhail Doshi, Daniel", 'title': 'pg_essay_3.html', 'user_id': '063ed
+
+af8-3e63-4cb9-a4d6-a855f36376c3', 'query': 'Who was Aristotle?'}}
+...
+```
+
+**Note**
+
+The quality of search results has dramatically decreased now that the Aristotle-specific document has been fully erased. This highlights the importance of the ingested data quality on the RAG results.
+
+### Step 7: Delete a Specified User's Documents
+
+To delete all documents associated with a given user, run the delete command on the `user_id`.
+
+```bash
+# run the following command with care, as it will erase all ingested user data
+# poetry run python -m r2r.examples.demo delete --key=user_id --value=063edaf8-3e63-4cb9-a4d6-a855f36376c3
+```
+
+Afterwards, we may confirm complete user documentation through the `get_user_document_data` functionality.
+
+**Demo Output:**
+
+```bash
+...
+Time taken to get user document data: 0.00 seconds
+{'results': []}
+```
+
+## Advanced Functionality
+
+### Step 8: Demo Multi-Modal Support
+
+An `.png` image of a desktop screen was included as part of the ingestion command shown above. By default, the `ImageParser` uses an OpenAI vision model (gpt-4o) to transcribe the image and embed that transcription. We can then search these results directly, as evidenced below:
+
+```bash
+poetry run python -m r2r.examples.demo search --query="What is shown on the user screen?"
+```
+
+**Demo Output:**
+
+```plaintext
+Time taken to search: 1.13 seconds
+{'id': UUID('a2a6044b-3643-5c8b-99a2-19f3d5169cd4'), 'score': 0.4199612099317459, 'metadata': {'document_id': 'dd8ed784-4826-523b-9c24-93409cea93f7', 'extraction_id': 'f20b8ff5-a555-5caa-a996-98b58a9bcd16', 'text': '1. **Top Menu and Tabs:**\n   - At the very top of the window, the title bar of the VSCode application shows the project directory name `R2R-DEV-2`.\n   - Below the title bar, there are several tabs, indicating open files:\n     - `config.json`\n     - `dry_run.py`\n     - `test.pptx`\n     - `parsing.py` (active tab)\n     - `test.txt`\n     - `test.html`', 'title': 'screen_shot.png', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'image_type': 'png', 'query': 'What is shown on the user screen?'}}
+{'id': UUID('053db868-5acc-5e81-b68a-653aff566d9a'), 'score': 0.39689371815723873, 'metadata': {'document_id': 'dd8ed784-4826-523b-9c24-93409cea93f7', 'extraction_id': 'f20b8ff5-a555-5caa-a996-98b58a9bcd16', 'text': '2. **Sidebar (File Explorer):**\n   - On the left side, there is a vertical sidebar showing the file explorer with the structure of the project directory `R2R-DEV-2`.\n   - The file explorer tree expands to show various files and directories, including:\n     - `examples`\n     - `data`\n     - A file `test.txt`\n     - A file `uber_2021.pdf`\n     - A directory `servers` containing a file `__init__.py`\n     - A directory `integrations` containing various files including `llms`', 'title': 'screen_shot.png', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'image_type': 'png', 'query': 'What is shown on the user screen?'}}
+{'id': UUID('5c57cd4c-a7d2-5003-b59d-3637b545a32c'), 'score': 0.34990526831895197, 'metadata': {'document_id': '8d78f34d-f795-5c82-a90f-18b8cc3a883c', 'extraction_id': '8c11b793-b744-5f73-bb76-23cb45c36538', 'text': 'users with a contextual, intuitive interface, continually evolve features and functionality, and deliver safety andtrust.\nWe intend to continue to inv\nest in new platform offerings that we believe will further strengthen our platform and existing offerings.We\n believe  that  all  of  these  synergies  serve  the  customer  experience,  enabling  us  to  attract  new  platform  users  and  to  deepen  engagement  with  existingplatform', 'title': 'uber_2021.pdf', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'query': 'What is shown on the user screen?'}}
+```
+
+### Step 9: Run LLM-Powered Evaluation
+
+The R2R framework can evaluate the relevance and accuracy of generated responses using LLM-powered evaluation. Run the following command to perform an evaluation:
+
+```bash
+poetry run python -m r2r.examples.demo evaluate
+```
+
+**Demo Output:**
+
+```plaintext
+Time taken to evaluate: 2.42 seconds
+{'results': [{'query_context_relevancy': 0.5, 'answer_grounding': 1.0}]}
+```
+
+This output is consistent with the default query, context, and answer, shown below.
+
+```plaintext
+> Query
+    What is the meaning of life?
+> Context
+    Search Results:
+        1. The meaning of life is 42.
+        2. The car is red.
+        3. The meaning of life is to help others.
+        4. The car is blue.
+        5. The meaning of life is to learn and grow.
+        6. The car is green.
+        7. The meaning of life is to make a difference.
+        8. The car is yellow.
+        9. The meaning of life is to enjoy the journey.
+        10. The car is black.
+> Completion
+    The meaning of life is to help others, learn and grow, and to make a difference.
+```
+
+### Step 10: Logging
+
+Pipes naturally integrate with your selected logging provider. R2R pipelines for ingestion, search, and RAG create comprehensive logs that allow for total observability.
+
+```bash
+poetry run python -m r2r.examples.demo get_logs
+```
+
+**Demo Output:**
+
+```plaintext
+...
+Time taken to get logs: 0.01 seconds
+{'results': [{'run_id': UUID('9b70a494-c5c9-4485-b7a5-675f0eacb4a0'), 'run_type': 'ingestion', 'entries': [{'key': 'extraction', 'value': '{"data": "\\n\\nA Project of One\'s Own\\n\\nJune 2021A few days ago, on the way home from school, my nine year old son\\ntold me he couldn\'t wait to get home to write more of the story he\\nwas working on. This mad
+```
+
+## Summary
+
+This R2R demo guides you through setting up and using the R2R framework to run a Retrieval-Augmented Generation (RAG) pipeline. By following the detailed steps, you can install necessary dependencies, ingest sample documents, perform search queries, generate responses, and manage documents. Additionally, the demo showcases advanced features like multi-modal support, LLM-powered evaluations, and user-specific configurations, demonstrating the flexibility and robustness of the R2R framework.

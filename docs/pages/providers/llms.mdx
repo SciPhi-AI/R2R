@@ -23,10 +23,10 @@ R2R currently supports the following LLM providers:
 
 R2R uses a factory pattern to create instances of LLM providers based on the provided configuration. The `E2EPipelineFactory` class is responsible for creating the appropriate LLM provider instance using the `get_llm` method.
 
-To toggle between different LLM providers, you need to update the `language_model` section of the configuration file (`config.json`). For example:
+To toggle between different LLM providers, you need to update the `completions` section of the configuration file (`config.json`). For example:
 
 ```json
-"language_model": {
+"completions": {
     "provider": "litellm",
 }
 ```
@@ -91,18 +91,18 @@ pip install llama-cpp-python # or poetry install ... -E local-llm
 
 ### Configuring LlamaCpp
 
-To configure the LlamaCpp provider, you need to set the following options in the `language_model` section of the configuration file (`config.json`):
+To configure the LlamaCpp provider, you need to set the following options in the `completions` section of the configuration file (`config.json`):
 
 - `provider`: Set it to `"llama-cpp"` to use the LlamaCpp provider.
-- `model_path`: Specify the path where the LlamaCpp models are located. If not provided, it defaults to `~/.cache/models`.
+- `path_to_model`: Specify the path where the LlamaCpp models are located. If not provided, it defaults to `~/.cache/models`.
 - `model_name`: Specify the name of the LlamaCpp model to use. If not provided, it defaults to `"tinyllama-1.1b-chat-v1.0.Q2_K.gguf"`.
 
 Example configuration:
 
 ```json
-"language_model": {
+"completions": {
     "provider": "llama-cpp",
-    "model_path": "/path/to/models",
+    "path_to_model": "/path/to/models",
     "model_name": "custom_model.gguf"
 }
 ```
@@ -110,7 +110,7 @@ Example configuration:
 
 ## Configuring Remote LLM Providers
 
-To configure a specific LLM provider, you need to set the appropriate environment variables and update the `language_model` section of the configuration file (`config.json`).
+To configure a specific LLM provider, you need to set the appropriate environment variables and update the `completions` section of the configuration file (`config.json`).
 
 ### OpenAI
 
@@ -120,4 +120,4 @@ To configure a specific LLM provider, you need to set the appropriate environmen
 
 - Set the appropriate environment variables for the desired LLM provider, as mentioned in the previous section.
 
-Make sure to update the `language_model` section of the configuration file (`config.json`) with the desired provider and any additional provider-specific settings.
+Make sure to update the `completions` section of the configuration file (`config.json`) with the desired provider and any additional provider-specific settings.

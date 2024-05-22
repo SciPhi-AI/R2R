@@ -1,79 +1,65 @@
 import argparse
 import os
 
-import uvicorn
-
-from r2r.main import E2EPipelineFactory, R2RConfig
-from r2r.pipelines import (
-    AgentRAGPipeline,
-    HyDEPipeline,
-    QnARAGPipeline,
-    WebRAGPipeline,
+from r2r import (
+    R2RApp,
+    R2RConfig,
+    R2RPipeFactory,
+    R2RPipelineFactory,
+    R2RProviderFactory,
 )
 
 current_file_path = os.path.dirname(__file__)
 configs_path = os.path.join(current_file_path, "..", "configs")
 
-CONFIG_OPTIONS = {
-    "default": None,
-    "local_ollama": os.path.join(configs_path, "local_ollama.json"),
-    "local_ollama_qdrant": os.path.join(
-        configs_path, "local_ollama_qdrant.json"
-    ),
-    "local_ollama_with_rerank": os.path.join(
-        configs_path, "local_ollama_with_rerank.json"
-    ),
-    "local_llama_cpp": os.path.join(configs_path, "local_llama_cpp.json"),
-}
 
-PIPELINE_OPTIONS = {
-    "qna": QnARAGPipeline,
-    "web": WebRAGPipeline,
-    "agent": AgentRAGPipeline,
-    "hyde": HyDEPipeline,
-}
+def default_app():  # config_name: str = "default", pipe_name: str = "qna"):
+    # config_name = os.getenv("CONFIG_OPTION") or config_name
+    # pipe_name = os.getenv("PIPELINE_OPTION") or pipe_name
 
+    config = R2RConfig.from_json()
 
-def create_app(config_name: str = "default", pipeline_name: str = "qna"):
-    config_name = os.getenv("CONFIG_OPTION") or config_name
-    pipeline_name = os.getenv("PIPELINE_OPTION") or pipeline_name
+    providers = R2RProviderFactory(config).create_providers()
+    pipes = R2RPipeFactory(config, providers).create_pipes()
+    pipelines = R2RPipelineFactory(config, pipes).create_pipelines()
 
-    config_path = CONFIG_OPTIONS[config_name]
-    pipeline_impl = PIPELINE_OPTIONS[pipeline_name]
-
-    app = E2EPipelineFactory.create_pipeline(
-        config=R2RConfig.load_config(config_path),
-        rag_pipeline_impl=pipeline_impl,
+    r2r = R2RApp(
+        config=config,
+        providers=providers,
+        pipelines=pipelines,
     )
-    return app
 
+    return r2r
+
+
+r2r = default_app()  # args.config)
+app = r2r.app
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="R2R Pipeline")
+    parser = argparse.ArgumentParser(description="R2R Pipe")
     parser.add_argument(
-        "--config",
+        "--host",
         type=str,
-        default="default",
-        choices=CONFIG_OPTIONS.keys(),
-        help="Configuration option for the pipeline",
-    )
-    parser.add_argument(
-        "--pipeline",
-        type=str,
-        default="qna",
-        choices=PIPELINE_OPTIONS.keys(),
-        help="Pipeline implementation to be deployed",
+        default="0.0.0.0",
+        help="Port to serve deployed pipe on.",
     )
     parser.add_argument(
         "--port",
         type=str,
         default="8000",
-        help="Port to serve deployed pipeline on.",
+        help="Port to serve deployed pipe on.",
     )
+    # parser.add_argument(
+    #     "--config",
+    #     type=str,
+    #     default="default",
+    #     choices=CONFIG_OPTIONS.keys(),
+    #     help="Configuration option for the pipe",
+    # )
 
     args, _ = parser.parse_known_args()
 
+    host = os.getenv("HOST") or args.host
     port = os.getenv("PORT") or args.port
 
-    app = create_app(args.config, args.pipeline)
-    uvicorn.run(app, host="0.0.0.0", port=int(port))
+    r2r.serve()

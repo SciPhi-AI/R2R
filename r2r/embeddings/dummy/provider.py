@@ -1,13 +1,13 @@
 import logging
 import random
 
-from r2r.core import EmbeddingProvider, VectorSearchResult
+from r2r.core import EmbeddingConfig, EmbeddingProvider, SearchResult
 
 logger = logging.getLogger(__name__)
 
 
 class DummyEmbeddingProvider(EmbeddingProvider):
-    def __init__(self, config: dict):
+    def __init__(self, config: EmbeddingConfig):
         logger.info(
             "Initializing `DummyEmbeddingProvider` to provide embeddings."
         )
@@ -33,9 +33,9 @@ class DummyEmbeddingProvider(EmbeddingProvider):
     def get_embedding(
         self,
         text: str,
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
     ) -> list[float]:
-        if stage != EmbeddingProvider.PipelineStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.SEARCH:
             raise ValueError(
                 "DummyEmbeddingProvider only supports search stage."
             )
@@ -44,9 +44,9 @@ class DummyEmbeddingProvider(EmbeddingProvider):
     def get_embeddings(
         self,
         texts: list[str],
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
     ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipelineStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.SEARCH:
             raise ValueError(
                 "DummyEmbeddingProvider only supports search stage."
             )
@@ -60,8 +60,8 @@ class DummyEmbeddingProvider(EmbeddingProvider):
     def rerank(
         self,
         transformed_query: str,
-        texts: list[VectorSearchResult],
-        stage: EmbeddingProvider.PipelineStage = EmbeddingProvider.PipelineStage.RERANK,
+        texts: list[SearchResult],
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
     ):
         return texts[:limit]
@@ -70,7 +70,7 @@ class DummyEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         model: str,
-        stage: EmbeddingProvider.PipelineStage,
+        stage: EmbeddingProvider.PipeStage,
     ) -> list[int]:
         """Tokenizes the input string."""
         return [0]

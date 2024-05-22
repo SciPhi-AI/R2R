@@ -43,8 +43,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects import postgresql
 
-from r2r.vecs.adapter import Adapter, AdapterContext, NoOp
-from r2r.vecs.exc import (
+from .adapter import Adapter, AdapterContext, NoOp
+from .exc import (
     ArgError,
     CollectionAlreadyExists,
     CollectionNotFound,
@@ -184,6 +184,8 @@ class Collection:
             dimension (int): The dimension of the vectors in the collection.
             client (Client): The client to use for interacting with the database.
         """
+        from r2r.vecs.adapter import Adapter
+
         self.client = client
         self.name = name
         self.dimension = dimension

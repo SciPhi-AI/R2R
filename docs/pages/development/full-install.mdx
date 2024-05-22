@@ -23,7 +23,7 @@ To install poetry, visit the [official Poetry website](https://python-poetry.org
   ```bash
   # See pyproject.toml for available extras
   # use "all" to include every optional dependency
-  poetry install -E eval
+  poetry install -E all
   ```
 
 ##### Configure Environment Variables:
@@ -31,9 +31,7 @@ To install poetry, visit the [official Poetry website](https://python-poetry.org
 Copy the `.env.example` to `.env` and then apply your secrets. Afterwards, inspect the `config.json` and make any desired modifications.
 
 ```bash
-cp .env.example .env
-# Update your secrets
-vim .env
+vim .env # save env variables here
 
 # Modify the config.json
 vim config.json

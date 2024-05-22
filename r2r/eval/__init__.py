@@ -1,4 +1,3 @@
-from .deepeval.base import DeepEvalProvider
-from .parea.base import PareaEvalProvider
+from .llm.base_llm_eval import LLMEvalProvider
 
-__all__ = ["DeepEvalProvider", "PareaEvalProvider"]
+__all__ = ["LLMEvalProvider"]

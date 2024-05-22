@@ -1,0 +1,100 @@
+## Customizing Your Pipeline
+
+The R2R framework allows you to create custom pipelines by combining different pipes according to your specific requirements. This section demonstrates how to create a custom Retrieval-Augmented Generation (RAG) pipeline by incorporating various pipes.
+
+### Example: Custom RAG Pipeline
+
+To create a custom RAG pipeline, follow these steps:
+
+1. Import the necessary modules and providers.
+2. Initialize the required pipes.
+3. Add the pipes to the pipeline in the desired order.
+
+Here’s an example of creating a custom RAG pipeline with a query transformation pipe, a search pipe, and an output RAG pipe:
+
+```python
+"""A custom RAG pipeline that includes a custom query transformation prompt."""
+from r2r import (
+    GenerationConfig,
+    PipeLoggingConnectionSingleton,
+    R2RConfig,
+    R2RPipeFactory,
+    R2RProviderFactory,
+    R2RQueryTransformPipe,
+    RAGPipeline,
+    run_pipeline,
+)
+
+# Load the default configuration
+config = R2RConfig.from_json()
+PipeLoggingConnectionSingleton().configure(config.logging)
+
+# Create input providers and pipes
+providers = R2RProviderFactory(config).create_providers()
+pipes = R2RPipeFactory(config, providers).create_pipes()
+
+# Add a custom prompt for transforming the user query
+transform_prompt = {
+    "name": "rag_fusion_prompt_custom",
+    "template": "### Instruction:\n\nGiven the following query that follows to write a double newline separated list of up to {num_outputs} queries meant to help answer the original query. \nDO NOT generate any single query which is likely to require information from multiple distinct documents, \nEACH single query will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents. \nFOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, the two queries would be \n`What are the key themes of Great Gatsby?` and `What are the key themes of 1984?`.\nHere is the original user query to be transformed into answers:\n\n### Query:\n{message}\n\n### Response:\n",
+    "input_types": {"num_outputs": "int", "message": "str"},
+}
+providers.prompt.add_prompt(**transform_prompt)
+
+# Initialize the new query transform pipe
+query_transform_pipe = R2RQueryTransformPipe(
+    llm_provider=providers.llm,
+    prompt_provider=providers.prompt,
+    config=R2RQueryTransformPipe.QueryTransformConfig(
+        task_prompt=transform_prompt["name"]
+    ),
+)
+
+# Create the RAG pipeline and add the pipes
+rag_pipeline = RAGPipeline()
+rag_pipeline.add_pipe(query_transform_pipe)
+rag_pipeline.add_pipe(pipes.search_pipe)
+rag_pipeline.add_pipe(
+    pipes.rag_pipe,
+    add_upstream_outputs=[
+        {
+            "prev_pipe_name": pipes.search_pipe.config.name,
+            "prev_output_field": "search_results",
+            "input_field": "raw_search_results",
+        },
+        {
+            "prev_pipe_name": pipes.search_pipe.config.name,
+            "prev_output_field": "search_queries",
+            "input_field": "query",
+        },
+    ],
+)
+
+# Run the pipeline
+result = run_pipeline(
+    rag_pipeline,
+    input="Who was aristotle?",
+    num_query_xf_outputs=3,  # Number of transformed queries to generate
+    query_transform_config=GenerationConfig(
+        model="gpt-4o"
+    ),  # LLM configuration for the query transformer
+    rag_generation_config=GenerationConfig(
+        model="gpt-4o"
+    ),  # LLM configuration for the RAG model
+)
+
+print(f"Final Result:\n\n{result}")
+```
+
+
+```plaintext
+...
+r2r.pipes.query_transform_pipe - INFO - Transforming query: Who was aristotle? into 3 outputs with rag_fusion_prompt_custom. - 2024-05-21 18:35:04,980
+r2r.pipes.query_transform_pipe - INFO - Yielding transformed output: Who was Aristotle in ancient Greek philosophy? - 2024-05-21 18:35:06,021
+r2r.pipes.query_transform_pipe - INFO - Yielding transformed output: What were the major contributions of Aristotle to science and philosophy? - 2024-05-21 18:35:06,224
+r2r.pipes.query_transform_pipe - INFO - Yielding transformed output: What is the historical significance of Aristotle's works? - 2024-05-21 18:35:06,441
+...
+Final Result:
+[ChatCompletion(id='chatcmpl-9RVAgbqsmZaXo4hqbXhZbXe3xKQUQ', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessage(content='To answer the query about Aristotle in ancient Greek philosophy, his major contributions to science and philosophy, and the historical significance of his works, we need to refer to the provided context. However, since the context is missing, I will provide a general response based on commonly known information about Aristotle.\n\n### Who was Aristotle in ancient Greek philosophy?\n\nAristotle was a prominent ancient Greek philosopher and polymath, a student of Plato, and the teacher of Alexander the Great. He made significant contributions to various fields of knowledge, including metaphysics, ethics, politics, logic, and natural sciences.\n\n### What were the major contributions of Aristotle to science and philosophy?\n\n1. **Logic**: Aristotle is often credited with the development of formal logic, particularly syllogistic logic, which became the basis for deductive reasoning [1].\n\n2. **Metaphysics**: He explored the nature of being and existence, introducing concepts such as substance, form, and matter [2].\n\n3. **Ethics**: Aristotle\'s "Nicomachean Ethics" outlines his virtue ethics, emphasizing the importance of character and virtue in achieving eudaimonia (flourishing or happiness) [3].\n\n4. **Politics**: In "Politics," Aristotle examined various political systems and advocated for a constitutional government as the best form of governance [4].\n\n5. **Natural Sciences**: Aristotle made extensive observations in biology, zoology, and physics, classifying living organisms and studying their functions and behaviors [5].\n\n### What is the historical significance of Aristotle\'s works?\n\nAristotle\'s works have had a profound and lasting impact on Western thought. His ideas influenced medieval scholarship, particularly through the works of Islamic philosophers and later European scholastics. His contributions to logic and scientific methodology laid the groundwork for the development of modern science. Aristotle\'s ethical and political theories continue to be studied and debated, shaping contemporary discussions in philosophy and political theory [6].\n\nWithout the specific context, these references are based on general knowledge about Aristotle. If you provide the context, I can tailor the response more precisely to the given information.', role='assistant', function_call=None, tool_calls=None))], created=1716341706, model='gpt-4o-2024-05-13', object='chat.completion', system_fingerprint='fp_729ea513f7', usage=CompletionUsage(completion_tokens=422, prompt_tokens=717, total_tokens=1139))]
+```
+# Now you can use this custom RAG pipeline for your tasks
