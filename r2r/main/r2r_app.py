@@ -399,7 +399,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
     ):
         try:
             if rag_generation_config.stream:
-
                 async def stream_response():
                     async for chunk in await self.streaming_rag_pipeline.run(
                         input=to_async_generator([message]),
@@ -420,7 +419,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     search_limit=search_limit,
                     rag_generation_config=rag_generation_config,
                 )
-                return {"results": results}
+                return results
         except Exception as e:
             logger.error(f"rag(message={message}) - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
@@ -433,7 +432,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         streaming: bool = False
 
     async def rag_app(self, request: RAGRequest):
-        print("request = ", request)
         try:
             search_filters = (
                 None

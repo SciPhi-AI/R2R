@@ -168,6 +168,7 @@ class Pipeline:
                 ]
 
         print("input_dict = ", input_dict)
+        print("pipe = ", pipe)
         # Handle the pipe generator
         async for ele in await pipe.run(
             pipe.Input(**input_dict),

@@ -50,30 +50,35 @@ class R2RStreamingRAGPipe(R2RRAGPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
+        iteration = 0
+        context = ""
+        # dump the search results and construct the context
+        yield f"<{self.SEARCH_STREAM_MARKER}>"
+        for result in input.raw_search_results:
+            yield f'"{json.dumps(result.json())}"'
+            if iteration >= 1:
+                yield ","
+            context += f"Result {iteration+1}:\n{result.metadata['text']}\n\n"
+            iteration += 1
+        yield f"</{self.SEARCH_STREAM_MARKER}>"
+
+        messages = self._get_message_payload(str(input.query), context)
+        yield f"<{self.COMPLETION_STREAM_MARKER}>"
         response = ""
+        for chunk in self.llm_provider.get_completion_stream(
+            messages=messages, generation_config=rag_generation_config
+        ):
+            chunk = R2RStreamingRAGPipe._process_chunk(chunk)
+            response += chunk
+            yield response
 
-        async for context in input.message:
-            messages = self._get_message_payload(input.query, context)
+        yield f"</{self.COMPLETION_STREAM_MARKER}>"
 
-            response += await self._yield_chunks(
-                f"<{self.SEARCH_STREAM_MARKER}>",
-                (
-                    f'"{json.dumps(result.dict())}",'
-                    for result in input.raw_search_results
-                ),
-                f"</{self.SEARCH_STREAM_MARKER}>",
-            )
-            response += await self._yield_chunks(
-                f"<{self.COMPLETION_STREAM_MARKER}>",
-                (
-                    self._process_chunk(chunk)
-                    for chunk in self.llm_provider.get_completion_stream(
-                        messages=messages,
-                        generation_config=rag_generation_config,
-                    )
-                ),
-                f"</{self.COMPLETION_STREAM_MARKER}>",
-            )
+        await self.enqueue_log(
+            pipe_run_id=self.run_info.run_id,
+            key="llm_response",
+            value=response,
+        )
 
     async def _yield_chunks(
         self,

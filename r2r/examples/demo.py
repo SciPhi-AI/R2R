@@ -163,8 +163,8 @@ class R2RDemo:
                 response = self.client.rag(
                     query,
                     search_filters={"user_id": self.user_id},
-                    streaming=streaming,
                     rag_generation_config=rag_generation_config,
+                    streaming=streaming,
                 )
                 t1 = time.time()
                 print(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
@@ -175,8 +175,8 @@ class R2RDemo:
                 response = self.client.rag(
                     query,
                     search_filters={"user_id": self.user_id},
-                    streaming=streaming,
                     rag_generation_config=rag_generation_config,
+                    streaming=streaming,
                 )
                 collector = ""
                 for chunk in response:
@@ -191,7 +191,7 @@ class R2RDemo:
                 GenerationConfig(**rag_generation_config, streaming=streaming)
                 if rag_generation_config
                 else GenerationConfig(
-                    **{"streaming": streaming, "model": "gpt-3.5-turbo"}
+                    **{"stream": streaming, "model": "gpt-3.5-turbo"}
                 )
             )
             response = self.r2r.rag(
@@ -208,7 +208,7 @@ class R2RDemo:
 
                 async def _stream_response():
                     async for chunk in response:
-                        print(chunk, end="")
+                        print(chunk, end="", flush=True)
 
                 asyncio.run(_stream_response())
                 t1 = time.time()
