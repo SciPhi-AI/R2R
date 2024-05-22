@@ -1,6 +1,7 @@
 """
 This module contains the `DocumentParsingPipe` class, which is responsible for parsing incoming documents into plaintext.
 """
+
 import asyncio
 import json
 import logging

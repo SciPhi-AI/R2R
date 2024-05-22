@@ -1,4 +1,5 @@
 """Abstractions for search functionality."""
+
 import uuid
 from typing import Any, Optional
 

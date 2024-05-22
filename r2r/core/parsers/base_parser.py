@@ -1,4 +1,5 @@
 """Abstract base class for parsers."""
+
 from abc import ABC, abstractmethod
 from typing import AsyncGenerator, Generic, TypeVar
 

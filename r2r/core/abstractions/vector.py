@@ -1,4 +1,5 @@
 """Abstraction for a vector that can be stored in the system."""
+
 from enum import Enum
 from typing import Any
 from uuid import UUID

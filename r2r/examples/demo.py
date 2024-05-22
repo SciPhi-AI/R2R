@@ -1,4 +1,5 @@
-"""A demo script for the R2R library."""
+"""A complete demo class for the R2R library."""
+
 import asyncio
 import json
 import logging
@@ -26,9 +27,9 @@ logger.setLevel(logging.DEBUG)
 
 
 class R2RDemo:
-    DEMO_USER_ID = "063edaf8-3e63-4cb9-a4d6-a855f36376c3"
-
     """A demo class for the R2R library."""
+
+    DEMO_USER_ID = "063edaf8-3e63-4cb9-a4d6-a855f36376c3"
 
     def __init__(
         self,
@@ -257,11 +258,11 @@ class R2RDemo:
                 query=query,
                 context=context,
                 completion=completion,
-                eval_generation_config=GenerationConfig(
-                    **eval_generation_config
-                )
-                if eval_generation_config
-                else None,
+                eval_generation_config=(
+                    GenerationConfig(**eval_generation_config)
+                    if eval_generation_config
+                    else None
+                ),
             )
             t1 = time.time()
             print(f"Time taken to evaluate: {t1-t0:.2f} seconds")

@@ -1,121 +1,103 @@
 ## RAG Pipeline
 
-The RAG (Retrieve-Augmented-Generation) Pipeline is responsible for retrieving relevant documents based on a query and generating a response using the retrieved documents as context. It transforms the query, searches for relevant documents, reranks the results, constructs a context, and generates a completion.
+The RAG (Retrieval-Augmented Generation) Pipeline combines search results with language generation to produce more informative and contextually relevant outputs. Key features include:
 
-## Question and Answer RAG Pipeline
+- **Search and Generate**: Combines search results with language generation for enhanced responses.
+- **Customizable**: Supports custom configurations for search and generation prompts.
+- **Asynchronous Processing**: Efficiently handles data and operations asynchronously.
+- **Streaming and Non-Streaming Modes**: Supports both regular and streaming RAG pipelines for different use cases.
 
-The `QnARAGPipeline` is a simple implementation of the `RAGPipeline` abstract base class. It provides a straightforward way to perform document retrieval and generation using a specified language model, vector database, and embedding model. It is designed to support single-turn question and answer style RAG.
+### RAG Pipe
 
-### Initialization
+The **R2RRAGPipe** integrates search results and generates responses using a language model provider.
 
-The `QnARAGPipeline` is initialized with the following parameters:
-- `llm_provider`: An instance of `LLMProvider` for generating completions.
-- `vector_db_provider`: An instance of `VectorDBProvider` for searching and retrieving documents.
-- `embedding_provider`: An instance of `OpenAIEmbeddingProvider` for generating embeddings.
-- `prompt_provider` (optional): An instance of `PromptProvider` for providing prompts (default is `BasicPromptProvider`).
-- `pipe_logger` (optional): An instance of `PipeLoggingConnectionSingleton` for logging.
+#### Logic
 
-### Query Transformation
+- **Collect Context**: Aggregates search results to form the context.
+- **Generate Responses**: Uses the aggregated context to generate responses via the language model.
+- **Logging**: Logs the generated responses and context for auditing and debugging.
 
-The `transform_query` method transforms the input query before retrieval, if necessary. In the basic implementation, it returns the query as is.
+### Streaming RAG Pipe
 
-### Document Retrieval
+The **R2RStreamingRAGPipe** extends the RAG functionality to support streaming, allowing for real-time generation of responses.
 
-The `search` method searches the vector database with the transformed query to retrieve relevant documents. It uses the specified embedding model and embeddings provider to generate embeddings for the query and performs a similarity search in the database.
+#### Logic
 
-### Result Reranking
+- **Stream Search Results**: Streams search results as they are being processed.
+- **Stream Generation**: Streams the generated responses chunk by chunk.
+- **Markers**: Uses markers to delineate search results and generation phases in the stream.
 
-The `rerank_results` method reranks the retrieved documents based on relevance, if necessary. In the basic implementation, it returns the results as is (a unit transformation).
+### Example Custom RAG Pipeline
 
-### Result Formatting
+To create a custom RAG pipeline, follow these steps:
 
-The `_format_results` method formats the reranked results into a human-readable string. In the basic implementation, it joins the text metadata of each result with newline separators.
+1. **Define Custom Prompts and Configurations (if needed)**: Implement any custom prompts required for specific needs.
+2. **Create and Configure the Pipeline**: Add the necessary pipes to the pipeline.
 
-## Using a Custom RAG Pipeline
-
-To create a custom RAG pipeline, you can subclass the `RAGPipeline` abstract base class and override the necessary methods. Here's an example:
-
-```python
-class CustomRAGPipeline(RAGPipeline):
-    def __init__(
-        self,
-        llm_provider: LLMProvider,
-        vector_db_provider: VectorDBProvider,
-        embedding_provider: OpenAIEmbeddingProvider,
-        prompt_provider: Optional[PromptProvider] = None,
-        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
-    ) -> None:
-        if not prompt_provider:
-            prompt_provider = BasicPromptProvider()
-        self.prompt_provider = prompt_provider
-
-        super().__init__(
-            llm_provider=llm_provider,
-            prompt_provider=prompt_provider,
-            embedding_provider=embedding_provider,
-            vector_db_provider=vector_db_provider,
-            pipe_logger=pipe_logger,
-        )
-        self.pipeline_run_info = None
-
-    def transform_query(self, query: str) -> str:
-        # Custom query transformation logic
-        return f"Custom query: {query}"
-
-    @log_execution_to_db
-    def search(
-        self,
-        transformed_query: str,
-        filters: dict,
-        limit: int,
-        *args,
-        **kwargs,
-    ) -> list[VectorSearchResult]:
-        # Custom document retrieval logic
-        results = self.vector_db_provider.search(
-            query_vector=self.embedding_provider.get_embedding(
-                transformed_query,
-            ),
-            filters=filters,
-            limit=limit,
-        )
-        return results
-
-    def rerank_results(
-        self, transformed_query: str, results: list[VectorSearchResult], limit
-    ) -> list[VectorSearchResult]:
-        # Custom result reranking logic
-        return list(reversed(results))[0:limit]
-
-    def _format_results(self, results: list[VectorSearchResult]) -> str:
-        # Custom result formatting logic
-        formatted_results = [
-            f"{i+1}. {result.metadata['text']}"
-            for i, result in enumerate(results)
-        ]
-        return "\n".join(formatted_results)
-```
-
-In this example, the `CustomRAGPipeline` overrides the following methods:
-- `transform_query`: Applies custom query transformation logic.
-- `search`: Implements custom document retrieval logic.
-- `rerank_results`: Implements custom result reranking logic.
-- `_format_results`: Formats the results in a custom way.
-
-## Passing the Custom RAG Pipeline to the Factory
-
-To use the custom RAG pipeline with the `E2EPipelineFactory`, you can pass it when creating the pipeline:
+#### Example Custom RAG Pipeline with Query Transformation
 
 ```python
-from r2r.main import E2EPipelineFactory
-from my_custom_pipeline import CustomRAGPipeline
+from r2r import RAGPipeline, R2RConfig, R2RProviderFactory, R2RPipeFactory, R2RPipelineFactory, R2RQueryTransformPipe, GenerationConfig
 
-app = E2EPipelineFactory.create_pipeline(
-    config=config,
-    rag_pipeline_impl=CustomRAGPipeline,
+# Load configuration
+config = R2RConfig.from_json()
+
+# Create providers and pipes
+providers = R2RProviderFactory(config).create_providers()
+pipes = R2RPipeFactory(config, providers).create_pipes()
+
+# Add a custom prompt for transforming the user query
+transform_prompt = {
+    "name": "custom_rag_transform_prompt",
+    "template": "Transform the following query into multiple sub-queries to improve search results:\n\nQuery: {message}\n\nSub-queries:\n",
+    "input_types": {"message": "str"},
+}
+providers.prompt.add_prompt(**transform_prompt)
+
+# Initialize the new query transform pipe
+query_transform_pipe = R2RQueryTransformPipe(
+    llm_provider=providers.llm,
+    prompt_provider=providers.prompt,
+    config=R2RQueryTransformPipe.QueryTransformConfig(
+        task_prompt=transform_prompt["name"]
+    ),
 )
+
+# Define the custom RAG pipeline
+class CustomRAGPipeline(RAGPipeline):
+    def __init__(self, streaming: bool = False):
+        super().__init__()
+        self.add_pipe(query_transform_pipe)
+        self.add_pipe(pipes.search_pipe)
+        rag_pipe = pipes.streaming_rag_pipe if streaming else pipes.rag_pipe
+        self.add_pipe(
+            rag_pipe,
+            add_upstream_outputs=[
+                {
+                    "prev_pipe_name": pipes.search_pipe.config.name,
+                    "prev_output_field": "search_results",
+                    "input_field": "raw_search_results",
+                },
+                {
+                    "prev_pipe_name": pipes.search_pipe.config.name,
+                    "prev_output_field": "search_queries",
+                    "input_field": "query",
+                },
+            ],
+        )
+
+# Instantiate and run the pipeline
+custom_pipeline = CustomRAGPipeline(streaming=False)
+result = await custom_pipeline.run(
+    input="What are the key differences between apples and oranges?",
+    query_transform_config=GenerationConfig(model="gpt-4"),
+    rag_generation_config=GenerationConfig(model="gpt-4"),
+    search_limit=5  # Custom search limit
+)
+
+print(f"Final Result:\n\n{result}")
 ```
 
-By passing the `CustomRAGPipeline` to the `create_pipeline` method using the `rag_pipeline_impl` parameter, the factory will use the custom pipeline instead of the default `QnARAGPipeline`.
+### Conclusion
 
-That's it! You now have a custom RAG pipeline that demonstrates how to modify various aspects of the pipeline and can be passed to the `E2EPipelineFactory` for use in the end-to-end pipeline.
+The RAG Pipeline is a powerful tool for combining search and language generation to produce detailed and contextually accurate responses. Its modular design supports customization and asynchronous processing, and the option for streaming enhances its applicability for real-time use cases.

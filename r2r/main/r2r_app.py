@@ -399,6 +399,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     ):
         try:
             if rag_generation_config.stream:
+
                 async def stream_response():
                     async for chunk in await self.streaming_rag_pipeline.run(
                         input=to_async_generator([message]),

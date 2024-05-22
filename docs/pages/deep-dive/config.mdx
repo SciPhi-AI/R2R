@@ -7,83 +7,128 @@ During the example pipeline creation, a default `config.json` is loaded and pass
 - LLM settings
 - Parsing logic
 - Evaluation provider
-- and more
+- Logging
+- Application settings
 
 The default values for the config are shown below:
 
 ```json
 {
-  "embedding": {
-    "provider": "openai",
-    "model": "text-embedding-ada-002",
-    "dimension": 1536,
-    "batch_size": 32,
-    "text_splitter": {
-      "type": "recursive_character",
-      "chunk_size": 512,
-      "chunk_overlap": 20
-    }
-  },
-  "evals": {
-    "provider": "deepeval",
-    "sampling_fraction": 1.0
+  "app": {
+    "max_logs": 100,
+    "max_file_size_in_mb": 32
   },
   "completions": {
     "provider": "litellm"
   },
-  "logging": {
+  "embedding": {
+    "provider": "openai",
+    "search_model": "text-embedding-3-small",
+    "search_dimension": 512,
+    "batch_size": 128,
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 512,
+      "chunk_overlap": 20
+    },
+    "rerank_model": "None"
+  },  
+  "eval": {
     "provider": "local",
-    "collection_name": "demo_logs",
-    "level": "INFO"
+    "llm": {
+      "model": "gpt-4o",
+      "provider": "openai"
+    },
+    "sampling_fraction": 1.0
   },
   "ingestion": {
+    "selected_parsers": {
+      "csv": "default",
+      "docx": "default",
+      "html": "default",
+      "json": "default",
+      "md": "default",
+      "pdf": "default",
+      "pptx": "default",
+      "txt": "default",
+      "xlsx": "default",
+      "gif": "default",
+      "png": "default",
+      "jpg": "default",
+      "jpeg": "default",
+      "svg": "default"
+    }
+  },
+  "logging": {
+    "provider": "local",
+    "log_table": "logs",
+    "log_info_table": "log_info"
+  },
+  "prompt": {
     "provider": "local"
   },
   "vector_database": {
     "provider": "local",
-    "collection_name": "demo_vecs" 
-  },
-  "app": {
-    "max_logs": 100,
-    "max_file_size_in_mb": 100
+    "collection_name": "demo_vecs"
   }
 }
 ```
 
 The available options for each section are:
 
-- **embedding**:
-  - `provider`: `"openai"`, `"sentence-transformers"` (see [Embedding Providers](/providers/embeddings.md) for more info)
-  - `model`: embedding model to use (e.g., `"text-embedding-ada-002"` for OpenAI)
-  - `dimension`: embedding dimension
-  - `batch_size`: number of texts to embed in each batch
-
-- **evals**:
-  - `provider`: `"deepeval"`, `"parea"` (see [Evaluation Providers](/providers/evals.md) for more info)
-  - `sampling_fraction`: sampling sampling_fraction for evaluation (e.g., `1.0` for 100% of requests)
+- **app**:
+  - `max_logs`: Maximum number of logs to retrieve.
+  - `max_file_size_in_mb`: Maximum file size allowed for ingestion (in MB).
 
 - **completions**:
-  - `provider`: `"litellm"`, `"openai"`, `"llama-cpp"` (see [LLM Providers](/providers/llms.md) for more info)
+  - `provider`: `"litellm"`, `"openai"`, `"llama-cpp"` (see [LLM Providers](/providers/llms.md) for more info).
 
-- **logging**:
-  - `provider`: `"local"`, `"postgres"`, `"redis"`
-  - `collection_name`: name of the collection to store logs
-  - `level`: logging level (e.g., `"INFO"`, `"DEBUG"`)
+- **embedding**:
+  - `provider`: `"openai"`, `"sentence-transformers"` (see [Embedding Providers](/providers/embeddings.md) for more info).
+  - `search_model`: Embedding model to use (e.g., `"text-embedding-3-small"` for OpenAI).
+  - `search_dimension`: Embedding dimension.
+  - `batch_size`: Number of texts to embed in each batch.
+  - `text_splitter`: Configuration for text splitting.
+    - `type`: `"recursive_character"`.
+    - `chunk_size`: Target chunk size in characters.
+    - `chunk_overlap`: Number of overlapping characters between chunks.
+  - `rerank_model`: Model used for re-ranking (optional).
+
+- **eval**:
+  - `provider`: `"local"`, `"deepeval"`, `"parea"` (see [Evaluation Providers](/providers/evals.md) for more info).
+  - `llm`: LLM configuration for evaluation.
+    - `model`: Model to use (e.g., `"gpt-4o"`).
+    - `provider`: Provider to use (e.g., `"openai"`).
+  - `sampling_fraction`: Fraction of data to sample for evaluation (e.g., `1.0` for 100% of requests).
 
 - **ingestion**:
-  - `provider`: `"local"`
-  - `text_splitter`: configuration for text splitting
-    - `type`: `"recursive_character"`
-    - `chunk_size`: target chunk size in characters
-    - `chunk_overlap`: number of overlapping characters between chunks
+  - `selected_parsers`: Specifies the parsers for different file types.
+    - `csv`: `"default"`.
+    - `docx`: `"default"`.
+    - `html`: `"default"`.
+    - `json`: `"default"`.
+    - `md`: `"default"`.
+    - `pdf`: `"default"`.
+    - `pptx`: `"default"`.
+    - `txt`: `"default"`.
+    - `xlsx`: `"default"`.
+    - `gif`: `"default"`.
+    - `png`: `"default"`.
+    - `jpg`: `"default"`.
+    - `jpeg`: `"default"`.
+    - `svg`: `"default"`.
+
+- **logging**:
+  - `provider`: `"local"`, `"postgres"`, `"redis"`.
+  - `log_table`: Name of the table to store logs.
+  - `log_info_table`: Name of the table to store log info.
+
+- **prompt**:
+  - `provider`: `"local"`.
 
 - **vector_database**:
-  - `provider`: `"local"`, `"pgvector"`, `"qdrant"` (see [Vector Database Providers](/providers/vector-databases.md) for more info)
-  - `collection_name`: name of the collection to store vector embeddings
-
-- **app**:
-  - `max_logs`: maximum number of logs to retrieve
-  - `max_file_size_in_mb`: maximum file size allowed for ingestion (in MB)
+  - `provider`: `"local"`, `"pgvector"`, `"qdrant"` (see [Vector Database Providers](/providers/vector-databases.md) for more info).
+  - `collection_name`: Name of the collection to store vector embeddings.
 
 For more detailed information on configuring specific providers, please refer to the relevant documentation:
 
@@ -97,10 +142,13 @@ These documentation files provide in-depth guides on setting up and using each p
 To launch the default pipeline with your own config, you may run the following code:
 
 ```python
-class E2EPipelineFactory:
-    ...
-    app = E2EPipelineFactory.create_pipeline(
-        # override with your own config.json
-        config=R2RConfig.load_config("your_config_path.json"),
-    )
+...
+
+config_path = PATH_TO_YOUR_CONFIG
+config = R2RConfig.from_json(config_path=config_path)
+
+providers = R2RProviderFactory(config).create_providers()
+pipes = R2RPipeFactory(config, providers).create_pipes()
+pipelines = R2RPipelineFactory(config, pipes).create_pipelines()
+r2r = R2RApp(config, providers, pipelines)
 ```

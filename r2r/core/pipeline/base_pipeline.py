@@ -1,4 +1,5 @@
 """Base pipeline class for running a sequence of pipes."""
+
 import asyncio
 import logging
 import uuid
@@ -167,8 +168,6 @@ class Pipeline:
                     prev_output_field
                 ]
 
-        print("input_dict = ", input_dict)
-        print("pipe = ", pipe)
         # Handle the pipe generator
         async for ele in await pipe.run(
             pipe.Input(**input_dict),

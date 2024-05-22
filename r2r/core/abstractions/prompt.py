@@ -1,4 +1,5 @@
 """Abstraction for a prompt that can be formatted with inputs."""
+
 from typing import Any
 
 from pydantic import BaseModel

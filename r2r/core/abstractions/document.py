@@ -1,4 +1,5 @@
 """Abstractions for documents and their extractions."""
+
 import uuid
 from enum import Enum
 from typing import Union
