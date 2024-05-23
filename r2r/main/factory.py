@@ -46,6 +46,10 @@ class E2EPipelineFactory:
             from r2r.vector_dbs import LocalDBConfig, LocalVectorDB
 
             return LocalVectorDB(LocalDBConfig.create(**database_config))
+        elif database_config["provider"] == "milvus":
+            from r2r.vector_dbs import MilvusVectorDB
+
+            return MilvusVectorDB(VectorDBConfig.create(**database_config))
 
     @staticmethod
     def get_embedding_provider(embedding_config: dict[str, Any]):

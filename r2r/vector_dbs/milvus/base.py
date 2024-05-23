@@ -2,8 +2,6 @@ import logging
 import os
 from typing import Optional, Union
 
-from pymilvus import DataType
-
 from r2r.core import (
     VectorDBConfig,
     VectorDBProvider,
@@ -12,7 +10,8 @@ from r2r.core import (
 )
 
 from r2r.vector_dbs.milvus.exception import CollectionNotInitializedError, MilvusDBInitializationError, \
-    PymilvusImportError, MilvusCilentConnectionError, CollectionCreationError, CollectionDeletionError
+    PymilvusImportError, MilvusCilentConnectionError, CollectionCreationError, CollectionDeletionError, \
+    CollectionUpseartError
 
 logger = logging.getLogger(__name__)
 
@@ -53,14 +52,14 @@ class MilvusVectorDB(VectorDBProvider):
             if api_key:
                 self.client = MilvusClient(uri=uri, token=api_key)
             else:
-                self.client = MilvusClient(uri=uri)
+                self.client = MilvusClient(uri)
         except Exception as e:
             raise MilvusCilentConnectionError(
                 f"Error {e} occurred while attempting to connect to the milvus provider."
             )
 
     def initialize_collection(
-        self, collection_name: str, dimension: int
+        self, dimension: int
     ) -> None:
         """
         Initialize a collection.
@@ -75,6 +74,8 @@ class MilvusVectorDB(VectorDBProvider):
             None
         """
         try:
+            from pymilvus import DataType
+
             # create schema, with dynamic field available
             schema = self.client.create_schema(
                 auto_id=False,
@@ -86,9 +87,9 @@ class MilvusVectorDB(VectorDBProvider):
             schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=dimension)
 
             # prepare index parameters
-            param = self.client.prepare_index_params()
-            index_params = param.add_index(index_type="AUTOINDEX", field_name="vector",
-                                           metric_type="COSINE")
+            index_params = self.client.prepare_index_params()
+            index_params.add_index(index_type="AUTOINDEX", field_name="vector",
+                                   metric_type="COSINE")
 
             # create a collection
             self.client.create_collection(
@@ -132,11 +133,16 @@ class MilvusVectorDB(VectorDBProvider):
         for key, value in entry.metadata.items():
             data[key] = value
 
-        # Can change to insert if upsert not working
-        self.client.upsert(
-            collection_name=self.config.collection_name,
-            data=data
-        )
+        try:
+            # Can change to insert if upsert not working
+            self.client.insert(
+                collection_name=self.config.collection_name,
+                data=data
+            )
+        except Exception as e:
+            raise CollectionUpseartError(
+                f"Upsert data failure cause exception {e} occurs."
+            )
 
     def search(
         self,
@@ -163,7 +169,7 @@ class MilvusVectorDB(VectorDBProvider):
         filter_conditions = []
         for key, value in filters.items():
             if isinstance(value, str):
-                filter_conditions.append(f"{key} like {value}")
+                filter_conditions.append(f"{key} like \"{value}\"")
             else:
                 filter_conditions.append(f"{key} == {value}")
 
@@ -174,7 +180,7 @@ class MilvusVectorDB(VectorDBProvider):
 
         results = self.client.search(
             collection_name=self.config.collection_name,
-            data=query_vector,
+            data=[query_vector],
             filter=filter,
             limit=limit,
             *args,
@@ -187,6 +193,9 @@ class MilvusVectorDB(VectorDBProvider):
             )
             for result in results
         ]
+
+    def create_index(self, index_type, column_name, index_options):
+        pass
 
     def close(self):
         """
@@ -218,7 +227,7 @@ class MilvusVectorDB(VectorDBProvider):
 
         # Build filter condition based on value type
         if isinstance(value, str):
-            filter = f"{key} like {value}"
+            filter = f"{key} like \"{value}\""
         else:
             filter = f"{key} == {value}"
 
@@ -240,7 +249,7 @@ class MilvusVectorDB(VectorDBProvider):
     ) -> list[str]:
         """
         Retrieve all unique values of a metadata field, optionally filtered by another field-value pair.
-        # 在filter_field是filter_value下的metadata_field
+        # 取在filter_field是filter_value下的metadata_field
 
         Parameters:
             metadata_field (str): The metadata field for which unique values are to be retrieved.
@@ -260,7 +269,7 @@ class MilvusVectorDB(VectorDBProvider):
 
         # Build filter condition based on value type
         if filter_field is not None and filter_value is not None:
-            filter = f"{filter_field} like '{filter_value}'"
+            filter = f"{filter_field} like \"{filter_value}\""
         else:
             filter = None
 

@@ -20,3 +20,7 @@ class CollectionCreationError(Exception):
 
 class CollectionDeletionError(Exception):
     pass
+
+
+class CollectionUpseartError(Exception):
+    pass
