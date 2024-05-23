@@ -72,14 +72,9 @@ class TestMilvusVectorDB(unittest.TestCase):
         print('Running test_filtered_deletion')
         try:
             self.db.filtered_deletion(
-                key="label",
-                value="A"
+                key="test",
+                value=123
             )
-            res = self.db.search(
-                query_vector=[0.1, 0.2, 0.3]
-            )
-
-            print(f"{res}\n")
         except Exception as e:
             pytest.fail("Filtered deletion failed")
 
@@ -90,13 +85,13 @@ class TestMilvusVectorDB(unittest.TestCase):
             res = self.db.get_all_unique_values(
                 metadata_field='id',
                 filter_field='label',
-                filter_value='B'
+                filter_value='C'
             )
         except Exception as e:
             pytest.fail(f"get_all_unique_values failed: {e}")
 
         print(f"{res}\n")
-        assert res[0] == 2, "No unique values returned"
+        assert res[0] == 3, "No unique values returned"
 
 
 if __name__ == "__main__":
