@@ -8,7 +8,7 @@ All public classes, enums, and functions are re-exported by `vecs.adapters` modu
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, Generator, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Generator, Iterable, Optional, Tuple
 
 from vecs.exc import ArgError
 
@@ -63,12 +63,12 @@ class Adapter:
     Class representing a sequence of AdapterStep instances forming a pipeline.
     """
 
-    def __init__(self, steps: List[AdapterStep]):
+    def __init__(self, steps: list[AdapterStep]):
         """
         Initialize an Adapter instance with a list of AdapterStep instances.
 
         Args:
-            steps: List of AdapterStep instances.
+            steps: list of AdapterStep instances.
 
         Raises:
             ArgError: Raised if the steps list is empty.

@@ -9,16 +9,7 @@
   "providers": {
     "title": "Providers"
   },
-  "tutorials": {
-    "title": "Tutorials"
-  },
   "development": {
     "title": "Development"
-  },
-  "startups-enterprise": {
-    "title": "Startups & Enterprise"
-  },
-  "knowledge-base": {
-    "title": "Knowledge Base"
   }
 }

@@ -1,9 +1,7 @@
 {
-  "ingestion": "Ingestion Pipeline",
-  "embedding": "Embedding Pipeline",
-  "rag": "RAG Pipeline",
-  "eval": "Evaluation Pipeline",
-  "config": "Config setup",
   "app": "Application",
-  "factory": "Factory"
+  "config": "Config Setup",
+  "ingestion": "Ingestion Pipeline",
+  "search": "Search Pipeline",
+  "rag": "RAG Pipeline"
 }

@@ -1,46 +1,71 @@
-## Quick Install with `pip`:
+## Quick Install with `pip`
 
-Install R2R swiftly using `pip` to get started with minimal setup. This method will get you setup with the default configuration:
+Install R2R swiftly using `pip` to get started with minimal setup. This method will get you set up with the default configuration:
 
 ```bash
-# `'r2r[all]'` to download all optional deps
-pip install 'r2r[eval]'
+pip install r2r
 
-# setup env 
+# Set up the default environment
 export OPENAI_API_KEY=sk-...
-
-# OR do `vim .env.example && cp .env.example .env`
+# ... see below for more configuration info
 ```
 
-## Optional - Setup local environment variables:
+## Environment Setup
+
+Below are examples of environment variables that can be configured to facilitate additional downstream functionality.
+
+### Language Model Providers
+
+#### OpenAI API Key
+
+Used by default for embedding and LLM completions:
 
 ```bash
-# Path for your local vector_database [`local` in config.json]
-LOCAL_DB_PATH=your_local_db_path
-
-
-# Postgres (used for `postgres` provider during logging, `pg_vector` for vectordb in config.json)
-POSTGRES_USER=your_user
-POSTGRES_PASSWORD=your_password
-POSTGRES_HOST=your_host
-POSTGRES_PORT=your_port
-POSTGRES_DBNAME=your_db
-
-# Qdrant
-QDRANT_HOST=your_qdrant_host
-QDRANT_PORT=your_qdrant_port
-QDRANT_API_KEY=your_qdrant_api_key
-
-# OpenAI
-OPENAI_API_KEY=your_openai_key
-
-# Seprper
-SERPER_API_KEY=your_serper_api_key
-
-# Exa
-EXA_API_KEY=your_exa_api_key
-
-## Reducto
-REDUCTO_API_KEY=your_reducto_api_key
-AWS_S3_BUCKET=your_aws_s3_bucket
+export OPENAI_API_KEY=sk-...
 ```
+
+#### Other Providers (Anthropic, Vertex AI, etc.)
+
+Configure your environment for additional providers:
+
+```bash
+export ANTHROPIC_API_KEY=...
+export VERTEX_API_KEY=...
+# Add other provider keys as needed
+```
+
+### VectorDB Providers
+
+#### R2R Local VectorDB
+
+R2R default selection - a simple SQLite-powered vector DB, optimal for lightweight workloads:
+
+```bash
+export LOCAL_DB_PATH=local.sqlite
+```
+
+#### pgvector
+
+Better for larger scale workloads that benefit from relational data:
+
+```bash
+export POSTGRES_USER=your_user
+export POSTGRES_PASSWORD=your_password
+export POSTGRES_HOST=your_host
+export POSTGRES_PORT=your_port
+export POSTGRES_DBNAME=your_db
+```
+
+#### Qdrant
+
+Ideal for scalable vector search use cases:
+
+```bash
+export QDRANT_HOST=your_qdrant_host
+export QDRANT_PORT=your_qdrant_port
+export QDRANT_API_KEY=your_qdrant_api_key
+```
+
+### Customization and Configuration
+
+R2R provides extensive options to customize and configure your pipeline to suit specific needs. You can configure various providers through the `config.json` file and set environment variables as shown above to specify your vector database, embedding, language model, evaluation, and logging providers.

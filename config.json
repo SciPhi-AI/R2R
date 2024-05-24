@@ -3,23 +3,31 @@
     "max_logs": 100,
     "max_file_size_in_mb": 32
   },
+  "completions": {
+    "provider": "litellm"
+  },
   "embedding": {
     "provider": "openai",
     "search_model": "text-embedding-3-small",
     "search_dimension": 512,
-    "batch_size": 32,
+    "batch_size": 128,
     "text_splitter": {
       "type": "recursive_character",
       "chunk_size": 512,
       "chunk_overlap": 20
-    }
+    },
+    "rerank_model": "None"
   },  
   "eval": {
-    "provider": "parea",
+    "provider": "local",
+    "llm":{
+      "model": "gpt-4o",
+      "provider": "openai"
+    },
     "sampling_fraction": 1.0
   },
   "ingestion":{
-    "selected_ingestors": {
+    "selected_parsers": {
       "csv": "default",
       "docx": "default",
       "html": "default",
@@ -27,16 +35,19 @@
       "md": "default",
       "pdf": "default",
       "pptx": "default",
-      "txt": "default"
+      "txt": "default",
+      "xlsx": "default",
+      "gif": "default",
+      "png": "default",
+      "jpg": "default",
+      "jpeg": "default",
+      "svg": "default"
     }
   },
-  "language_model": {
-    "provider": "litellm"
-  },
-  "logging_database": {
+  "logging": {
     "provider": "local",
-    "collection_name": "demo_logs",
-    "level": "INFO"
+    "log_table": "logs",
+    "log_info_table": "log_info"
   },
   "prompt": {
     "provider": "local"

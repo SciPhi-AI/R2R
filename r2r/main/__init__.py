@@ -1,10 +1,16 @@
-from .app import create_app
-from .factory import E2EPipelineFactory
-from .utils import R2RConfig, configure_logging
+from .r2r_abstractions import R2RPipelines, R2RProviders
+from .r2r_app import R2RApp
+from .r2r_client import R2RClient
+from .r2r_config import R2RConfig
+from .r2r_factory import R2RPipeFactory, R2RPipelineFactory, R2RProviderFactory
 
 __all__ = [
-    "create_app",
-    "configure_logging",
+    "R2RPipelines",
+    "R2RProviders",
+    "R2RApp",
     "R2RConfig",
-    "E2EPipelineFactory",
+    "R2RClient",
+    "R2RPipeFactory",
+    "R2RPipelineFactory",
+    "R2RProviderFactory",
 ]

@@ -71,7 +71,7 @@ class SerperClient:
     # TODO - Add explicit typing for the return value
     def get_raw(self, query: str, limit: int = 10) -> list:
         connection = http.client.HTTPSConnection(self.api_base)
-        payload = json.dumps({"q": query, "num": limit})
+        payload = json.dumps({"q": query, "num_outputs": limit})
         connection.request("POST", "/search", payload, self.headers)
         response = connection.getresponse()
         data = response.read()

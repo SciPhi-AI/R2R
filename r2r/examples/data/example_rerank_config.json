@@ -1,0 +1,16 @@
+{
+    "embedding": {
+      "provider": "sentence-transformers",
+      "search_model": "mixedbread-ai/mxbai-embed-large-v1",
+      "search_dimension": 512,
+      "rerank_model": "jinaai/jina-reranker-v1-turbo-en",
+      "rerank_dimension": 384,
+      "rerank_transformer_type": "CrossEncoder",
+      "batch_size": 32,
+      "text_splitter": {
+        "type": "recursive_character",
+        "chunk_size": 512,
+        "chunk_overlap": 20
+      }
+    }
+  }  
