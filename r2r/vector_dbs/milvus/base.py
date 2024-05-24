@@ -9,6 +9,8 @@ from r2r.core import (
     VectorSearchResult,
 )
 
+from pymilvus import DataType
+
 from r2r.vector_dbs.milvus.exception import CollectionNotInitializedError, MilvusDBInitializationError, \
     PymilvusImportError, MilvusCilentConnectionError, CollectionCreationError, CollectionDeletionError, \
     CollectionUpseartError
@@ -49,9 +51,12 @@ class MilvusVectorDB(VectorDBProvider):
                     "If you wish run it locally, please initialize it as local path file \"xxx.db\" in the current directory"
                     "If you wish to use cloud service, please add btoh uri as cloud endpoint and api_key as cloud api"
                 )
+            # TODO: 合成一个
             if api_key:
+                print('1')
                 self.client = MilvusClient(uri=uri, token=api_key)
             else:
+                print('2')
                 self.client = MilvusClient(uri)
         except Exception as e:
             raise MilvusCilentConnectionError(
@@ -65,8 +70,6 @@ class MilvusVectorDB(VectorDBProvider):
         Initialize a collection.
 
         Parameters:
-            collection_name: str
-                The name of the collection.
             dimension: int
                 The dimension of the collection.
 
@@ -74,8 +77,6 @@ class MilvusVectorDB(VectorDBProvider):
             None
         """
         try:
-            from pymilvus import DataType
-
             # create schema, with dynamic field available
             schema = self.client.create_schema(
                 auto_id=False,
@@ -83,6 +84,7 @@ class MilvusVectorDB(VectorDBProvider):
             )
 
             # add fields to schema
+            # TODO: uuid
             schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True)
             schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=dimension)
 
@@ -165,23 +167,23 @@ class MilvusVectorDB(VectorDBProvider):
         Returns:
             list[VectorSearchResult]: A list of search results.
         """
-
+        # TODO: 封装一下
         filter_conditions = []
         for key, value in filters.items():
             if isinstance(value, str):
-                filter_conditions.append(f"{key} like \"{value}\"")
+                filter_conditions.append(f"{key} == \"{value}\"")
             else:
                 filter_conditions.append(f"{key} == {value}")
 
         if len(filter_conditions) == 1:
-            filter = filter_conditions[0]
+            filter_expression = filter_conditions[0]
         else:
-            filter = " and ".join(filter_conditions)
+            filter_expression = " and ".join(filter_conditions)
 
         results = self.client.search(
             collection_name=self.config.collection_name,
             data=[query_vector],
-            filter=filter,
+            filter=filter_expression,
             limit=limit,
             *args,
             **kwargs,
@@ -227,17 +229,14 @@ class MilvusVectorDB(VectorDBProvider):
 
         # Build filter condition based on value type
         if isinstance(value, str):
-            filter = f"{key} like \"{value}\""
+            filter_expression = f"{key} == \"{value}\""
         else:
-            filter = f"{key} == {value}"
+            filter_expression = f"{key} == {value}"
 
         try:
-            if key == 'id':
-                self.client.delete(collection_name=self.config.collection_name,
-                                   ids=value)
-            else:
-                self.client.delete(collection_name=self.config.collection_name,
-                                   filter=filter)
+            res = self.client.delete(collection_name=self.config.collection_name,
+                               filter=filter_expression)
+            print(res)
         except Exception as e:
             raise CollectionDeletionError(f"Error {e} occurs in deletion of key value pair {self.config.collection_name}.")
 
@@ -249,7 +248,6 @@ class MilvusVectorDB(VectorDBProvider):
     ) -> list[str]:
         """
         Retrieve all unique values of a metadata field, optionally filtered by another field-value pair.
-        # 取在filter_field是filter_value下的metadata_field
 
         Parameters:
             metadata_field (str): The metadata field for which unique values are to be retrieved.
@@ -269,14 +267,14 @@ class MilvusVectorDB(VectorDBProvider):
 
         # Build filter condition based on value type
         if filter_field is not None and filter_value is not None:
-            filter = f"{filter_field} like \"{filter_value}\""
+            filter_expression = f"{filter_field} == \"{filter_value}\""
         else:
-            filter = None
+            filter_expression = None
 
         unique_values = []
         results = self.client.query(
             collection_name=self.config.collection_name,
-            filter=filter,
+            filter=filter_expression,
             output_fields=[metadata_field],
         )
 

@@ -9,15 +9,18 @@ from r2r.vector_dbs.milvus.base import MilvusVectorDB, CollectionNotInitializedE
 from r2r.core import VectorDBConfig
 import os
 
-os.environ['MILVUS_URI'] = "https://in03-d33c3d7fa502071.api.gcp-us-west1.zillizcloud.com"
-os.environ['ZILLIZ_CLOUD_API_KEY'] = "4e4cacaf44822536891630f8457822e930b4896c6623b16575e9e4802e74bdc5adbc355fc0a789d09185772e4a7a71afc10fd46a"
+# os.environ['MILVUS_URI'] = "https://in03-d33c3d7fa502071.api.gcp-us-west1.zillizcloud.com"
+# os.environ['ZILLIZ_CLOUD_API_KEY'] = "4e4cacaf44822536891630f8457822e930b4896c6623b16575e9e4802e74bdc5adbc355fc0a789d09185772e4a7a71afc10fd46a"
+os.environ['MILVUS_URI'] = "http://10.100.30.11:19530"
+# os.environ['MILVUS_URI'] = "./demo_milvus.db"
+
 
 class TestMilvusVectorDB(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up the test class with a mock configuration for the MilvusVectorDB."""
         config = MagicMock(spec=VectorDBConfig)
-        config.collection_name = "test_collection"
+        config.collection_name = "demo"
         config.provider = "milvus"
         cls.db = MilvusVectorDB(config)
         print('Start of TestMilvusVectorDB tests\n')
