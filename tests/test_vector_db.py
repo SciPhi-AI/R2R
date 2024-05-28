@@ -20,8 +20,6 @@ from r2r.vector_dbs import (
 )
 
 load_dotenv()
-os.environ["MILVUS_URI"] = "./milvus_lite_demo1.db"
-
 
 # Sample vector entries
 def generate_random_vector_entry(id: str, dimension: int) -> VectorEntry:
@@ -119,7 +117,6 @@ def test_get_metadatas(request, db_fixture):
         db.upsert(entry)
 
     unique_metadatas = db.get_metadatas(metadata_fields=["key"])
-    print(unique_metadatas)
     unique_values = set([ele["key"] for ele in unique_metadatas])
     assert len(unique_values) == num_entries
     assert all(f"value_id_{i}" in unique_values for i in range(num_entries))

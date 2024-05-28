@@ -2,7 +2,7 @@ import unittest
 from uuid import uuid4
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from r2r.core.abstractions.vector import VectorEntry, Vector
 from r2r.vector_dbs.milvus.base import (
@@ -10,17 +10,6 @@ from r2r.vector_dbs.milvus.base import (
     CollectionNotInitializedError,
 )
 from r2r.core import VectorDBConfig
-import os
-
-# Zilliz cloud
-# os.environ['MILVUS_URI'] = "https://in03-d33c3d7fa502071.api.gcp-us-west1.zillizcloud.com"
-# os.environ['ZILLIZ_CLOUD_API_KEY'] = "4e4cacaf44822536891630f8457822e930b4896c6623b16575e9e4802e74bdc5adbc355fc0a789d09185772e4a7a71afc10fd46a"
-
-# Docker
-# os.environ['MILVUS_URI'] = "http://10.100.30.11:19530"
-
-# Local Milvus Lite
-os.environ["MILVUS_URI"] = "./milvus_lite_demo1.db"
 
 
 class TestMilvusVectorDB(unittest.TestCase):
@@ -121,7 +110,6 @@ class TestMilvusVectorDB(unittest.TestCase):
         print(f"{res}\n")
 
 
-# TODO: 解决一下顺序问题
 if __name__ == "__main__":
     test = TestMilvusVectorDB()
     test.setUpClass()

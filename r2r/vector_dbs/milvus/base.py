@@ -23,6 +23,12 @@ from r2r.vector_dbs.milvus.exception import (
 
 logger = logging.getLogger(__name__)
 
+GET_ALL_LIMIT = 1000
+# Set up test with:
+# os.environ["MILVUS_URI"] = "./milvus_lite_demo1.db"
+
+# Local Docker pass all tests, but lite version fail on get_metadatas() without filters
+# Fix this issue soon
 
 class MilvusVectorDB(VectorDBProvider):
     def __init__(self, config: VectorDBConfig) -> None:
@@ -107,6 +113,7 @@ class MilvusVectorDB(VectorDBProvider):
                 collection_name=self.config.collection_name,
                 schema=schema,
                 index_params=index_params,
+                consistency_level=0
             )
 
         except Exception as e:
@@ -276,16 +283,16 @@ class MilvusVectorDB(VectorDBProvider):
         if filter_field is not None and filter_value is not None:
             filter_expression = f'{filter_field} == "{filter_value}"'
         else:
-            filter_expression = None
+            filter_expression = ''
 
         unique_values = []
         if not filter_expression:
             results = self.client.query(
                 collection_name=self.config.collection_name,
                 filter=filter_expression,
-                consistency_level=3,
+                consistency_level=0,
                 output_fields=metadata_fields,
-                limit=1000,
+                limit=GET_ALL_LIMIT
             )
         else:
             results = self.client.query(
