@@ -6,14 +6,20 @@ from r2r.core import (
     VectorDBConfig,
     VectorDBProvider,
     VectorEntry,
-    VectorSearchResult,
+    SearchResult,
 )
 
 from pymilvus import DataType
 
-from r2r.vector_dbs.milvus.exception import CollectionNotInitializedError, MilvusDBInitializationError, \
-    PymilvusImportError, MilvusCilentConnectionError, CollectionCreationError, CollectionDeletionError, \
-    CollectionUpseartError
+from r2r.vector_dbs.milvus.exception import (
+    CollectionNotInitializedError,
+    MilvusDBInitializationError,
+    PymilvusImportError,
+    MilvusCilentConnectionError,
+    CollectionCreationError,
+    CollectionDeletionError,
+    CollectionUpseartError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -48,24 +54,16 @@ class MilvusVectorDB(VectorDBProvider):
             if not uri:
                 raise MilvusCilentConnectionError(
                     "Error, MilvusVectorDB missing the MILVUS_URI environment variables."
-                    "If you wish run it locally, please initialize it as local path file \"xxx.db\" in the current directory"
+                    'If you wish run it locally, please initialize it as local path file "xxx.db" in the current directory'
                     "If you wish to use cloud service, please add btoh uri as cloud endpoint and api_key as cloud api"
                 )
-            # TODO: 合成一个
-            if api_key:
-                print('1')
-                self.client = MilvusClient(uri=uri, token=api_key)
-            else:
-                print('2')
-                self.client = MilvusClient(uri)
+            self.client = MilvusClient(uri=uri, token=api_key)
         except Exception as e:
             raise MilvusCilentConnectionError(
                 f"Error {e} occurred while attempting to connect to the milvus provider."
             )
 
-    def initialize_collection(
-        self, dimension: int
-    ) -> None:
+    def initialize_collection(self, dimension: int) -> None:
         """
         Initialize a collection.
 
@@ -84,20 +82,31 @@ class MilvusVectorDB(VectorDBProvider):
             )
 
             # add fields to schema
-            # TODO: uuid
-            schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True)
-            schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=dimension)
+            schema.add_field(
+                field_name="id",
+                datatype=DataType.VARCHAR,
+                is_primary=True,
+                max_length=36,
+            )
+            schema.add_field(
+                field_name="vector",
+                datatype=DataType.FLOAT_VECTOR,
+                dim=dimension,
+            )
 
             # prepare index parameters
             index_params = self.client.prepare_index_params()
-            index_params.add_index(index_type="AUTOINDEX", field_name="vector",
-                                   metric_type="COSINE")
+            index_params.add_index(
+                index_type="AUTOINDEX",
+                field_name="vector",
+                metric_type="COSINE",
+            )
 
             # create a collection
             self.client.create_collection(
                 collection_name=self.config.collection_name,
                 schema=schema,
-                index_params=index_params
+                index_params=index_params,
             )
 
         except Exception as e:
@@ -122,14 +131,16 @@ class MilvusVectorDB(VectorDBProvider):
         Returns:
             None
         """
-        if not self.client.has_collection(collection_name=self.config.collection_name):
+        if not self.client.has_collection(
+            collection_name=self.config.collection_name
+        ):
             raise CollectionNotInitializedError(
                 "Please call `initialize_collection` before attempting to run `upsert`."
             )
 
         data = {
-            'id': entry.id,
-            'vector': entry.vector,
+            "id": str(entry.id),
+            "vector": entry.vector.data,
         }
 
         for key, value in entry.metadata.items():
@@ -137,9 +148,8 @@ class MilvusVectorDB(VectorDBProvider):
 
         try:
             # Can change to insert if upsert not working
-            self.client.insert(
-                collection_name=self.config.collection_name,
-                data=data
+            self.client.upsert(
+                collection_name=self.config.collection_name, data=data
             )
         except Exception as e:
             raise CollectionUpseartError(
@@ -153,7 +163,7 @@ class MilvusVectorDB(VectorDBProvider):
         limit: int = 10,
         *args,
         **kwargs,
-    ) -> list[VectorSearchResult]:
+    ) -> list[SearchResult]:
         """
         Perform a vector search operation.
 
@@ -167,31 +177,33 @@ class MilvusVectorDB(VectorDBProvider):
         Returns:
             list[VectorSearchResult]: A list of search results.
         """
-        # TODO: 封装一下
-        filter_conditions = []
-        for key, value in filters.items():
-            if isinstance(value, str):
-                filter_conditions.append(f"{key} == \"{value}\"")
-            else:
-                filter_conditions.append(f"{key} == {value}")
+        if filters:
+            filter_conditions = []
+            for key, value in filters.items():
+                filter_conditions.append(self.build_filter(key, value))
 
-        if len(filter_conditions) == 1:
-            filter_expression = filter_conditions[0]
+            if len(filter_conditions) == 1:
+                filter_expression = filter_conditions[0]
+            else:
+                filter_expression = " and ".join(filter_conditions)
         else:
-            filter_expression = " and ".join(filter_conditions)
+            filter_expression = None
 
         results = self.client.search(
             collection_name=self.config.collection_name,
             data=[query_vector],
             filter=filter_expression,
             limit=limit,
+            output_fields=["*"],
             *args,
             **kwargs,
         )[0]
 
         return [
-            VectorSearchResult(
-                str(result['id']), result['distance'], result['entity'] or {}
+            SearchResult(
+                id=result["id"],
+                score=float(result["distance"]),
+                metadata=result["entity"] or {},
             )
             for result in results
         ]
@@ -199,21 +211,15 @@ class MilvusVectorDB(VectorDBProvider):
     def create_index(self, index_type, column_name, index_options):
         pass
 
-    def close(self):
-        """
-        close the milvus connection.
-        """
-        self.client.close()
-
-    def filtered_deletion(
-        self, key: str, value: Union[bool, int, str]
+    def delete_by_metadata(
+        self, metadata_field: str, metadata_value: Union[bool, int, str]
     ) -> None:
         """
         Delete entries from the collection based on a filtered condition.
 
         Parameters:
-            key (str): The key to filter on.
-            value (Union[bool, int, str]): The value to filter against.
+            metadata_field (str): The key to filter on.
+            metadata_value (Union[bool, int, str]): The value to filter against.
 
         Raises:
             CollectionNotInitializedError: If the collection is not initialized before attempting deletion.
@@ -222,35 +228,34 @@ class MilvusVectorDB(VectorDBProvider):
         Returns:
             None
         """
-        if not self.client.has_collection(collection_name=self.config.collection_name):
+        if not self.client.has_collection(
+            collection_name=self.config.collection_name
+        ):
             raise CollectionNotInitializedError(
                 "Please call `initialize_collection` before attempting to run `filtered_deletion`."
             )
 
-        # Build filter condition based on value type
-        if isinstance(value, str):
-            filter_expression = f"{key} == \"{value}\""
-        else:
-            filter_expression = f"{key} == {value}"
-
         try:
-            res = self.client.delete(collection_name=self.config.collection_name,
-                               filter=filter_expression)
-            print(res)
+            self.client.delete(
+                collection_name=self.config.collection_name,
+                filter=self.build_filter(metadata_field, metadata_value),
+            )
         except Exception as e:
-            raise CollectionDeletionError(f"Error {e} occurs in deletion of key value pair {self.config.collection_name}.")
+            raise CollectionDeletionError(
+                f"Error {e} occurs in deletion of key value pair {self.config.collection_name}."
+            )
 
-    def get_all_unique_values(
+    def get_metadatas(
         self,
-        metadata_field: str,
+        metadata_fields: list[str],
         filter_field: Optional[str] = None,
         filter_value: Optional[str] = None,
-    ) -> list[str]:
+    ) -> list[dict]:
         """
         Retrieve all unique values of a metadata field, optionally filtered by another field-value pair.
 
         Parameters:
-            metadata_field (str): The metadata field for which unique values are to be retrieved.
+            metadata_fields (str): The metadata field for which unique values are to be retrieved.
             filter_field (Optional[str]): The field to filter on. Defaults to None.
             filter_value (Optional[str]): The value to filter against. Defaults to None.
 
@@ -260,25 +265,43 @@ class MilvusVectorDB(VectorDBProvider):
         Returns:
             list[str]: A list of unique values of the specified metadata field.
         """
-        if not self.client.has_collection(collection_name=self.config.collection_name):
+        if not self.client.has_collection(
+            collection_name=self.config.collection_name
+        ):
             raise CollectionNotInitializedError(
                 "Please call `initialize_collection` before attempting to run `filtered_deletion`."
             )
 
         # Build filter condition based on value type
         if filter_field is not None and filter_value is not None:
-            filter_expression = f"{filter_field} == \"{filter_value}\""
+            filter_expression = f'{filter_field} == "{filter_value}"'
         else:
             filter_expression = None
 
         unique_values = []
-        results = self.client.query(
-            collection_name=self.config.collection_name,
-            filter=filter_expression,
-            output_fields=[metadata_field],
-        )
-
+        if not filter_expression:
+            results = self.client.query(
+                collection_name=self.config.collection_name,
+                filter=filter_expression,
+                consistency_level=3,
+                output_fields=metadata_fields,
+                limit=1000,
+            )
+        else:
+            results = self.client.query(
+                collection_name=self.config.collection_name,
+                filter=filter_expression,
+                output_fields=metadata_fields,
+            )
         for result in results:
-            unique_values.append(result[metadata_field])
-
+            unique_values.append(result)
         return unique_values
+
+    @staticmethod
+    def build_filter(key, value) -> str:
+        if isinstance(value, str):
+            filter_expression = f'{key} == "{value}"'
+        else:
+            filter_expression = f"{key} == {value}"
+
+        return filter_expression

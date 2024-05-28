@@ -43,6 +43,10 @@ class R2RProviderFactory:
             from r2r.vector_dbs import R2RLocalVectorDB
 
             vector_db_provider = R2RLocalVectorDB(vector_db_config)
+        elif vector_db_config.provider == "milvus":
+            from r2r.vector_dbs import MilvusVectorDB
+
+            vector_db_provider = MilvusVectorDB(vector_db_config)
         else:
             raise ValueError(
                 f"Vector database provider {vector_db_config.provider} not supported"

@@ -12,9 +12,15 @@ from r2r import (
     VectorEntry,
     generate_id_from_label,
 )
-from r2r.vector_dbs import PGVectorDB, QdrantDB, R2RLocalVectorDB
+from r2r.vector_dbs import (
+    PGVectorDB,
+    QdrantDB,
+    R2RLocalVectorDB,
+    MilvusVectorDB,
+)
 
 load_dotenv()
+os.environ["MILVUS_URI"] = "./milvus_lite_demo1.db"
 
 
 # Sample vector entries
@@ -84,8 +90,28 @@ def qdrant_vector_db():
     yield db
 
 
+# Fixture for milvus
+@pytest.fixture
+def milvus_vector_db():
+    random_collection_name = (
+        f"test_collection_{random.randint(0, 1_000_000_000)}"
+    )
+    config = VectorDBConfig(
+        provider="milvus", collection_name=random_collection_name
+    )
+    db = MilvusVectorDB(config)
+    db.initialize_collection(dimension=dimension)
+    yield db
+
+
 @pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
+    "db_fixture",
+    [
+        "local_vector_db",
+        "pg_vector_db",
+        "qdrant_vector_db",
+        "milvus_vector_db",
+    ],
 )
 def test_get_metadatas(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
@@ -93,6 +119,7 @@ def test_get_metadatas(request, db_fixture):
         db.upsert(entry)
 
     unique_metadatas = db.get_metadatas(metadata_fields=["key"])
+    print(unique_metadatas)
     unique_values = set([ele["key"] for ele in unique_metadatas])
     assert len(unique_values) == num_entries
     assert all(f"value_id_{i}" in unique_values for i in range(num_entries))
@@ -100,7 +127,13 @@ def test_get_metadatas(request, db_fixture):
 
 # Parameterize the tests to run with both R2RLocalVectorDB and PGVectorDB
 @pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
+    "db_fixture",
+    [
+        "local_vector_db",
+        "pg_vector_db",
+        "qdrant_vector_db",
+        "milvus_vector_db",
+    ],
 )
 def test_db_initialization(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
@@ -118,7 +151,13 @@ def test_db_copy_and_search(request, db_fixture):
 
 
 @pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
+    "db_fixture",
+    [
+        "local_vector_db",
+        "pg_vector_db",
+        "qdrant_vector_db",
+        "milvus_vector_db",
+    ],
 )
 def test_db_upsert_and_search(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
@@ -130,7 +169,13 @@ def test_db_upsert_and_search(request, db_fixture):
 
 
 @pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
+    "db_fixture",
+    [
+        "local_vector_db",
+        "pg_vector_db",
+        "qdrant_vector_db",
+        "milvus_vector_db",
+    ],
 )
 def test_imperfect_match(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
@@ -143,7 +188,13 @@ def test_imperfect_match(request, db_fixture):
 
 
 @pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
+    "db_fixture",
+    [
+        "local_vector_db",
+        "pg_vector_db",
+        "qdrant_vector_db",
+        "milvus_vector_db",
+    ],
 )
 def test_bulk_insert_and_search(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
@@ -158,7 +209,13 @@ def test_bulk_insert_and_search(request, db_fixture):
 
 
 @pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
+    "db_fixture",
+    [
+        "local_vector_db",
+        "pg_vector_db",
+        "qdrant_vector_db",
+        "milvus_vector_db",
+    ],
 )
 def test_search_with_filters(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
@@ -176,7 +233,13 @@ def test_search_with_filters(request, db_fixture):
 
 
 @pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
+    "db_fixture",
+    [
+        "local_vector_db",
+        "pg_vector_db",
+        "qdrant_vector_db",
+        "milvus_vector_db",
+    ],
 )
 def test_delete_by_metadata(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
@@ -191,7 +254,13 @@ def test_delete_by_metadata(request, db_fixture):
 
 
 @pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
+    "db_fixture",
+    [
+        "local_vector_db",
+        "pg_vector_db",
+        "qdrant_vector_db",
+        "milvus_vector_db",
+    ],
 )
 def test_upsert(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
