@@ -76,10 +76,12 @@ class AsyncSyncMeta(type):
                                 except Exception as e:
                                     exception = e
                                 finally:
-                                    loop.run_until_complete(
-                                        loop.shutdown_asyncgens()
-                                    )
-                                    loop.close()
+                                    generation_config = kwargs.get('rag_generation_config', None)
+                                    if not generation_config or not generation_config.stream:
+                                        loop.run_until_complete(
+                                            loop.shutdown_asyncgens()
+                                        )
+                                        loop.close()
 
                             thread = Thread(target=run)
                             thread.start()

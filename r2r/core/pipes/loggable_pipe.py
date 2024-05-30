@@ -58,8 +58,6 @@ class LoggableAsyncPipe(AsyncPipe):
                     self.log_worker(), name=f"log-worker-{self.config.name}"
                 )
                 try:
-                    print("trying with args = ", args)
-                    print("trying with kwargs = ", kwargs)
                     async for result in self._run_logic(
                         input, state, *args, **kwargs
                     ):
