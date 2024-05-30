@@ -11,7 +11,7 @@ COPY pyproject.toml poetry.lock* /app/
 RUN pip install poetry keyring
 
 # Export dependencies to requirements.txt
-RUN poetry export --without-hashes --format=requirements.txt --output=requirements.txt -E eval -E sentence_transformers
+RUN poetry export --without-hashes --format=requirements.txt --output=requirements.txt 
 
 # Install dependencies from requirements.txt
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
