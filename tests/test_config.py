@@ -1,7 +1,9 @@
 import json
-from unittest.mock import mock_open, patch, Mock
+from unittest.mock import Mock, mock_open, patch
+
 import pytest
-from r2r import R2RConfig, DocumentType
+
+from r2r import DocumentType, R2RConfig
 
 
 @pytest.fixture

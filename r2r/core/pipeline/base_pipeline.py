@@ -1,13 +1,13 @@
 """Base pipeline class for running a sequence of pipes."""
 import asyncio
-from contextlib import asynccontextmanager
 import logging
 import uuid
+from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional
 
 from ..pipes.base_pipe import AsyncPipe, AsyncState
-from ..pipes.pipe_logging import PipeLoggingConnectionSingleton
+from ..pipes.pipe_logging import KVLoggingConnectionSingleton
 from ..utils import generate_run_id
 
 logger = logging.getLogger(__name__)
@@ -36,11 +36,11 @@ class Pipeline:
     pipeline_type: str = "other"
 
     def __init__(
-        self, pipe_logger: Optional[PipeLoggingConnectionSingleton] = None
+        self, pipe_logger: Optional[KVLoggingConnectionSingleton] = None
     ):
         self.pipes: list[AsyncPipe] = []
         self.upstream_outputs: list[list[dict[str, str]]] = []
-        self.pipe_logger = pipe_logger or PipeLoggingConnectionSingleton()
+        self.pipe_logger = pipe_logger or KVLoggingConnectionSingleton()
         self.futures = {}
         self.level = 0
         # self.run_id = None

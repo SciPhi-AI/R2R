@@ -4,8 +4,8 @@ from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
     AsyncState,
+    KVLoggingConnectionSingleton,
     LoggableAsyncPipe,
-    PipeLoggingConnectionSingleton,
     PipeType,
     VectorDBProvider,
     VectorEntry,
@@ -23,7 +23,7 @@ class R2RVectorStoragePipe(LoggableAsyncPipe):
         self,
         vector_db_provider: VectorDBProvider,
         storage_batch_size: int = 128,
-        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingConnectionSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,

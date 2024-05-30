@@ -1,5 +1,5 @@
 from fractions import Fraction
-from typing import Optional, Union
+from typing import Union
 
 from r2r import (
     EvalConfig,

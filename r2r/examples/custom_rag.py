@@ -2,11 +2,11 @@
 
 from r2r import (
     GenerationConfig,
-    PipeLoggingConnectionSingleton,
+    KVLoggingConnectionSingleton,
     R2RConfig,
     R2RPipeFactory,
-    R2RProviderFactory,
     R2RPipelineFactory,
+    R2RProviderFactory,
     R2RQueryTransformPipe,
     RAGPipeline,
     run_pipeline,
@@ -15,7 +15,7 @@ from r2r import (
 if __name__ == "__main__":
     # Load the default configuration
     config = R2RConfig.from_json()
-    PipeLoggingConnectionSingleton().configure(config.logging)
+    KVLoggingConnectionSingleton().configure(config.logging)
 
     # Create input providers and pipes
     providers = R2RProviderFactory(config).create_providers()
