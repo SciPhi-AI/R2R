@@ -27,7 +27,7 @@ def mock_file():
                 "batch_size": 16,
                 "text_splitter": "default",
             },
-            "eval": {"llm": {"provider": "local"}, "sampling_fraction": 0.1},
+            "eval": {"llm": {"provider": "local"}},
             "ingestion": {"selected_parsers": {}},
             "completions": {"provider": "lm_provider"},
             "logging": {

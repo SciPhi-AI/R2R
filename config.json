@@ -23,8 +23,7 @@
     "llm":{
       "model": "gpt-4o",
       "provider": "openai"
-    },
-    "sampling_fraction": 1.0
+    }
   },
   "ingestion":{
     "selected_parsers": {

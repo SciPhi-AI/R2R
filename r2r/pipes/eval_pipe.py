@@ -45,9 +45,6 @@ class R2REvalPipe(LoggableAsyncPipe):
         self, input: Input, state: AsyncState, *args: Any, **kwargs: Any
     ) -> AsyncGenerator[LLMChatCompletion, None]:
         async for item in input.message:
-            if random.random() < self.eval_provider.config.sampling_fraction:
-                yield self.eval_provider.evaluate(
-                    item.query, item.context, item.completion
-                )
-            else:
-                yield None
+            yield self.eval_provider.evaluate(
+                item.query, item.context, item.completion
+            )

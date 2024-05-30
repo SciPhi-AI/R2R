@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 import asyncio
 import logging
 import uuid
@@ -68,6 +69,18 @@ class AsyncState:
                 del self.data[outer_key][inner_key]
 
 
+@asynccontextmanager
+async def manage_run_info(
+    pipe: "AsyncPipe", run_id: Optional[uuid.UUID] = None
+):
+    try:
+        run_id = run_id or generate_run_id()
+        pipe._run_info = PipeRunInfo(run_id=run_id)
+        yield
+    finally:
+        pipe.run_id = None
+
+
 class AsyncPipe(ABC):
     """An asynchronous pipe for processing data."""
 
@@ -97,6 +110,7 @@ class AsyncPipe(ABC):
         self._config = config or self.PipeConfig()
         self._run_info = None
         self._type = type
+
         logger.info(f"Initialized pipe {self.config.name} of type {self.type}")
 
     @property
@@ -119,17 +133,12 @@ class AsyncPipe(ABC):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:
-        await self._initiate_run(run_id)
-        result = self._run_logic(input, state)
-        return result
+        async with manage_run_info(self, run_id):
+            result = self._run_logic(input, state)
+            return result
 
     @abstractmethod
     async def _run_logic(
         self, input: Input, state: AsyncState, *args: Any, **kwargs: Any
     ) -> AsyncGenerator[Any, None]:
         pass
-
-    async def _initiate_run(self, run_id: Optional[uuid.UUID] = None):
-        if not run_id:
-            run_id = generate_run_id()
-        self._run_info = PipeRunInfo(run_id=run_id)

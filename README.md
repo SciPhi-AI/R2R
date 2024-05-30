@@ -192,7 +192,7 @@ Time taken to run RAG: 2.29 seconds
 For streaming results from a RAG query, use the following command:
 
 ```bash
-python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=True
+python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=true
 ```
 
 **Demo Output:**
@@ -260,7 +260,7 @@ This command starts the R2R server on the default host `0.0.0.0` and port `8000`
 
 4. **Run a RAG Stream**:
    ```bash
-   python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=True --base_url=http://localhost:8000
+   python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=true --base_url=http://localhost:8000
    ```
    This command streams the RAG query results from the server.
 

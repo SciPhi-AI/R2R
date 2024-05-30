@@ -6,6 +6,7 @@ from r2r import (
     R2RConfig,
     R2RPipeFactory,
     R2RProviderFactory,
+    R2RPipelineFactory,
     R2RQueryTransformPipe,
     RAGPipeline,
     run_pipeline,

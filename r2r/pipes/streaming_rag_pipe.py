@@ -55,9 +55,9 @@ class R2RStreamingRAGPipe(R2RRAGPipe):
         # dump the search results and construct the context
         yield f"<{self.SEARCH_STREAM_MARKER}>"
         for result in input.raw_search_results:
-            yield f'"{json.dumps(result.json())}"'
             if iteration >= 1:
                 yield ","
+            yield json.dumps(result.json())
             context += f"Result {iteration+1}:\n{result.metadata['text']}\n\n"
             iteration += 1
         yield f"</{self.SEARCH_STREAM_MARKER}>"
@@ -70,7 +70,7 @@ class R2RStreamingRAGPipe(R2RRAGPipe):
         ):
             chunk = R2RStreamingRAGPipe._process_chunk(chunk)
             response += chunk
-            yield response
+            yield chunk
 
         yield f"</{self.COMPLETION_STREAM_MARKER}>"
 

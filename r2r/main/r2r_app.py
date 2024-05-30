@@ -36,7 +36,14 @@ def syncable(func):
 
 
 class AsyncSyncMeta(type):
-    """Metaclass to create synchronous wrappers for async methods."""
+    _event_loop = None  # Class-level shared event loop
+
+    @classmethod
+    def get_event_loop(cls):
+        if cls._event_loop is None or cls._event_loop.is_closed():
+            cls._event_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(cls._event_loop)
+        return cls._event_loop
 
     def __new__(cls, name, bases, dct):
         new_cls = super().__new__(cls, name, bases, dct)
@@ -51,19 +58,42 @@ class AsyncSyncMeta(type):
 
                 def make_sync_method(async_method):
                     def sync_wrapper(self, *args, **kwargs):
-                        try:
-                            import nest_asyncio
+                        loop = cls.get_event_loop()
+                        if not loop.is_running():
+                            # Setup to run the loop in a background thread if necessary
+                            # to prevent blocking the main thread in a synchronous call environment
+                            from threading import Thread
 
-                            nest_asyncio.apply()
-                            result = asyncio.run(
-                                async_method(self, *args, **kwargs)
-                            )
+                            result = None
+                            exception = None
+
+                            def run():
+                                nonlocal result, exception
+                                try:
+                                    asyncio.set_event_loop(loop)
+                                    result = loop.run_until_complete(
+                                        async_method(self, *args, **kwargs)
+                                    )
+                                except Exception as e:
+                                    exception = e
+                                finally:
+                                    loop.run_until_complete(
+                                        loop.shutdown_asyncgens()
+                                    )
+                                    loop.close()
+
+                            thread = Thread(target=run)
+                            thread.start()
+                            thread.join()
+                            if exception:
+                                raise exception
                             return result
-                        except Exception as e:
-                            logger.error(
-                                f"Error in sync method {sync_method_name}: {str(e)}"
+                        else:
+                            # If there's already a running loop, schedule and execute the coroutine
+                            future = asyncio.run_coroutine_threadsafe(
+                                async_method(self, *args, **kwargs), loop
                             )
-                            raise
+                            return future.result()
 
                     return sync_wrapper
 
@@ -430,7 +460,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         search_filters: Optional[str] = None
         search_limit: int = 10
         rag_generation_config: Optional[str] = None
-        streaming: bool = False
+        streaming: Optional[bool] = None
 
     async def rag_app(self, request: RAGRequest):
         try:

@@ -28,7 +28,6 @@ class R2RConfig:
         ],
         "eval": [
             "llm",
-            "sampling_fraction",
         ],
         "ingestion": ["selected_parsers"],
         "completions": ["provider"],

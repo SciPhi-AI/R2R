@@ -1,6 +1,5 @@
-import random
 from abc import abstractmethod
-from typing import Optional, Union
+from typing import Union
 
 from .base_provider import Provider, ProviderConfig
 from .llm_provider import LLMConfig
@@ -9,7 +8,6 @@ from .llm_provider import LLMConfig
 class EvalConfig(ProviderConfig):
     """A base eval config class"""
 
-    sampling_fraction: float = 0.0
     llm: LLMConfig
 
     def validate(self) -> None:
@@ -32,15 +30,7 @@ class EvalProvider(Provider):
 
         super().__init__(config)
 
-    @abstractmethod
-    def _evaluate(
-        self, query: str, context: str, completion: str
-    ) -> dict[str, dict[str, Union[str, float]]]:
-        pass
-
     def evaluate(
         self, query: str, context: str, completion: str
-    ) -> Optional[dict]:
-        if random.random() < self.config.sampling_fraction:
-            return self._evaluate(query, context, completion)
-        return None
+    ) -> dict[str, dict[str, Union[str, float]]]:
+        return self._evaluate(query, context, completion)
