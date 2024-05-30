@@ -54,7 +54,7 @@ class R2RVectorSearchPipe(SearchPipe):
             filters=search_filters_override or self.config.search_filters,
             limit=search_limit_override or self.config.search_limit,
         ):
-            result.metadata["query"] = message
+            result.metadata["associatedQuery"] = message
             results.append(result)
             yield result
 

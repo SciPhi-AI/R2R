@@ -5,13 +5,12 @@ from typing import Any, AsyncGenerator, Optional, Union
 from r2r.core import (
     AsyncPipe,
     AsyncState,
+    LoggableAsyncPipe,
     PipeLoggingConnectionSingleton,
     PipeType,
     SearchResult,
     VectorDBProvider,
 )
-
-from ...core.pipes.loggable_pipe import LoggableAsyncPipe
 
 logger = logging.getLogger(__name__)
 

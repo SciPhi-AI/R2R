@@ -4,13 +4,12 @@ from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
     AsyncState,
+    LoggableAsyncPipe,
     PipeLoggingConnectionSingleton,
     PipeType,
     VectorDBProvider,
     VectorEntry,
 )
-
-from ..core.pipes.loggable_pipe import LoggableAsyncPipe
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +85,8 @@ class R2RVectorStoragePipe(LoggableAsyncPipe):
                 # Schedule the storage task
                 batch_tasks.append(
                     asyncio.create_task(
-                        self.store(vector_batch.copy(), input.do_upsert)
+                        self.store(vector_batch.copy(), input.do_upsert),
+                        name=f"vector-store-{self.config.name}",
                     )
                 )
                 vector_batch.clear()
@@ -94,7 +94,8 @@ class R2RVectorStoragePipe(LoggableAsyncPipe):
         if vector_batch:  # Process any remaining vectors
             batch_tasks.append(
                 asyncio.create_task(
-                    self.store(vector_batch.copy(), input.do_upsert)
+                    self.store(vector_batch.copy(), input.do_upsert),
+                    name=f"vector-store-{self.config.name}",
                 )
             )
 

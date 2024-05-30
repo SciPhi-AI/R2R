@@ -89,8 +89,7 @@ The application uses a configuration file (`config.json`) to set various setting
     "llm": {
       "model": "gpt-4o",
       "provider": "openai"
-    },
-    "sampling_fraction": 1.0
+    }
   },
   "ingestion": {
     "selected_parsers": {
@@ -150,7 +149,6 @@ The available options for each section are:
   - `llm`: LLM configuration for evaluation.
     - `model`: Model to use (e.g., `"gpt-4o"`).
     - `provider`: Provider to use (e.g., `"openai"`).
-  - `sampling_fraction`: Fraction of data to sample for evaluation (e.g., `1.0` for 100% of requests).
 
 - **ingestion**:
   - `selected_parsers`: Specifies the parsers for different file types.
