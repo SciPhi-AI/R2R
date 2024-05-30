@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from enum import Enum
 from typing import Any, Type
 
 from pydantic import BaseModel
@@ -127,11 +128,18 @@ class R2RConfig:
 
     @staticmethod
     def _serialize_config(config_section: Any) -> dict:
+        # TODO - Make this approach cleaner
         if isinstance(config_section, ProviderConfig):
-            return config_section.json()
-        elif isinstance(config_section, dict):
-            return config_section
-        else:
-            raise ValueError(
-                f"Unsupported configuration type: {type(config_section)}"
-            )
+            config_section = config_section.dict()
+        filtered_result = {}
+        for k, v in config_section.items():
+            if isinstance(k, Enum):
+                k = k.value
+            if isinstance(v, dict):
+                formatted_v = {
+                    k2.value if isinstance(k2, Enum) else k2: v2
+                    for k2, v2 in v.items()
+                }
+                v = formatted_v
+            filtered_result[k] = v
+        return filtered_result

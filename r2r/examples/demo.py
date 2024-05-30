@@ -56,83 +56,76 @@ class R2RDemo:
         ]
 
     def ingest_as_documents(self, file_paths: Optional[list[str]] = None):
-        # file_paths = file_paths or self.default_files
-        for file in self.default_files:
-            file_paths = [file]
-            documents = []
-            for file_path in file_paths:
-                with open(file_path, "rb") as f:
-                    data = f.read()
+        file_paths = file_paths or self.default_files
+        documents = []
+        for file_path in file_paths:
+            with open(file_path, "rb") as f:
+                data = f.read()
 
-                documents.append(
-                    Document(
-                        id=generate_id_from_label(file_path),
-                        data=data,
-                        type=file_path.split(".")[-1],
-                        metadata={
-                            "title": file_path.split(os.path.sep)[-1],
-                            "user_id": self.user_id,
-                        },
-                    )
+            documents.append(
+                Document(
+                    id=generate_id_from_label(file_path),
+                    data=data,
+                    type=file_path.split(".")[-1],
+                    metadata={
+                        "title": file_path.split(os.path.sep)[-1],
+                        "user_id": self.user_id,
+                    },
                 )
+            )
 
-            if hasattr(self, "client"):
-                documents_dicts = [doc.dict() for doc in documents]
-                t0 = time.time()
-                response = self.client.ingest_documents(documents_dicts)
-                t1 = time.time()
-                print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
-                print(response)
-            else:
-                t0 = time.time()
-                response = self.r2r.ingest_documents(documents)
-                t1 = time.time()
-                print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
-                print(response)
+        if hasattr(self, "client"):
+            documents_dicts = [doc.dict() for doc in documents]
+            t0 = time.time()
+            response = self.client.ingest_documents(documents_dicts)
+            t1 = time.time()
+            print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
+            print(response)
+        else:
+            t0 = time.time()
+            response = self.r2r.ingest_documents(documents)
+            t1 = time.time()
+            print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
+            print(response)
 
     def ingest_as_files(self, file_paths: Optional[list[str]] = None):
-        # file_paths = file_paths or self.default_files
-        for file in self.default_files:
-            print("file = ", file)
-            file_paths = [file]
+        file_paths = file_paths or self.default_files
 
-            files = [
-                UploadFile(
-                    filename=file_path.split(os.path.sep)[-1],
-                    file=open(file_path, "rb"),
-                )
-                for file_path in file_paths
-            ]
+        files = [
+            UploadFile(
+                filename=file_path.split(os.path.sep)[-1],
+                file=open(file_path, "rb"),
+            )
+            for file_path in file_paths
+        ]
 
-            # Set file size manually
-            for file in files:
-                file.file.seek(0, 2)  # Move to the end of the file
-                file.size = file.file.tell()  # Get the file size
-                file.file.seek(0)  # Move back to the start of the file
+        # Set file size manually
+        for file in files:
+            file.file.seek(0, 2)  # Move to the end of the file
+            file.size = file.file.tell()  # Get the file size
+            file.file.seek(0)  # Move back to the start of the file
 
-            metadatas = [
-                {
-                    "title": file_path.split(os.path.sep)[-1],
-                    "user_id": self.user_id,
-                }
-                for file_path in file_paths
-            ]
+        metadatas = [
+            {
+                "title": file_path.split(os.path.sep)[-1],
+                "user_id": self.user_id,
+            }
+            for file_path in file_paths
+        ]
 
-            if hasattr(self, "client"):
-                t0 = time.time()
-                response = self.client.ingest_files(
-                    metadatas=metadatas, files=file_paths
-                )
-                t1 = time.time()
-                print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
-                print(response)
-            else:
-                t0 = time.time()
-                response = self.r2r.ingest_files(
-                    files=files, metadatas=metadatas
-                )
-                t1 = time.time()
-                print("response = ", response)
+        if hasattr(self, "client"):
+            t0 = time.time()
+            response = self.client.ingest_files(
+                metadatas=metadatas, files=file_paths
+            )
+            t1 = time.time()
+            print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
+            print(response)
+        else:
+            t0 = time.time()
+            response = self.r2r.ingest_files(files=files, metadatas=metadatas)
+            t1 = time.time()
+            print("response = ", response)
 
     def search(self, query: str):
         if hasattr(self, "client"):

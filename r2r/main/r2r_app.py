@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 import uuid
-from typing import Optional, Union, Any
+from typing import Any, Optional, Union
 
 from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
