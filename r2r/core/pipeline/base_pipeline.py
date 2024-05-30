@@ -54,6 +54,7 @@ class Pipeline:
         input: Any,
         state: Optional[AsyncState] = None,
         streaming: bool = False,
+        run_id: Optional[uuid.UUID] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -67,7 +68,7 @@ class Pipeline:
 
         self.state = state or AsyncState()
         current_input = input
-        self.run_id = generate_run_id()
+        self.run_id = run_id or generate_run_id()
         await self.pipe_logger.log(
             pipe_run_id=self.run_id,
             key="pipeline_type",

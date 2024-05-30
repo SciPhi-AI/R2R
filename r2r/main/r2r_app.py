@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import uuid
+import time
 from typing import Optional, Union
 
 from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile
@@ -156,6 +157,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
             endpoint=self.get_logs_app,
             methods=["POST"],
         )
+        self.app.add_api_route(
+            path="/analytics/",
+            endpoint=self.get_analytics_app,
+            methods=["GET"],
+        )
 
         self.app.add_api_route(
             path="/get_open_api_endpoint/",
@@ -174,7 +180,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             return {"results": "Entries upserted successfully."}
         except Exception as e:
             logger.error(
-                f"ingest_documents(documents={documents}) - \n\n{str(e)})"
+                f"ingest_documents(documents={documents}) - \n\n{str(e)}"
             )
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -183,6 +189,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     async def ingest_documents_app(self, request: IngestDocumentsRequest):
         try:
+            await self.alog_throughput(time.time(), 1, "ingest_documents")
             return await self.aingest_documents(request.documents)
         except Exception as e:
             run_id = self.ingestion_pipeline.run_id or generate_run_id()
@@ -294,6 +301,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     ):
         """Ingest files into the system."""
         try:
+            await self.alog_throughput(time.time(), 1, "ingest_files")
             if ids and ids != "null":
                 ids_list = json.loads(ids)
                 if len(ids_list) != 0:
@@ -344,13 +352,28 @@ class R2RApp(metaclass=AsyncSyncMeta):
     ):
         """Search for documents based on the query."""
         try:
+            await self.alog_throughput(time.time(), 1, "search")
+
+            t0 = time.time()
+            run_id = generate_run_id()
             search_filters = search_filters or {}
             results = await self.search_pipeline.run(
                 input=to_async_generator([query]),
                 search_filters=search_filters,
                 search_limit=search_limit,
+                run_id=run_id,
             )
-            return {"results": [results.dict() for results in results]}
+            t1 = time.time()
+            latency = f"{t1-t0:.2f}"
+            
+            await self.search_pipeline.pipe_logger.log(
+                pipe_run_id=run_id,
+                key="vector_search_latency",
+                value=latency,
+                is_pipeline_info=False,
+            )
+
+            return {"results": [result.dict() for result in results]}
         except Exception as e:
             logger.error(f"search(query={query}) - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
@@ -398,7 +421,21 @@ class R2RApp(metaclass=AsyncSyncMeta):
         search_limit: int = 10,
     ):
         try:
+            await self.alog_throughput(time.time(), 1, "rag")
+
+            t0 = time.time()
+            run_id = generate_run_id()
+            
             if rag_generation_config.stream:
+                t1 = time.time()
+                latency = f"{t1-t0:.2f}"
+
+                await self.streaming_rag_pipeline.pipe_logger.log(
+                    pipe_run_id=run_id,
+                    key="rag_generation_latency",
+                    value=latency,
+                    is_pipeline_info=False,
+                )
 
                 async def stream_response():
                     async for chunk in await self.streaming_rag_pipeline.run(
@@ -407,6 +444,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         search_filters=search_filters,
                         search_limit=search_limit,
                         rag_generation_config=rag_generation_config,
+                        run_id=run_id,
                     ):
                         yield chunk
 
@@ -419,10 +457,22 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     search_filters=search_filters,
                     search_limit=search_limit,
                     rag_generation_config=rag_generation_config,
+                    run_id=run_id,
+                )
+                t1 = time.time()
+                latency = f"{t1-t0:.2f}"
+
+                logger.info(f"RAG generation latency: {latency}")
+
+                await self.rag_pipeline.pipe_logger.log(
+                    pipe_run_id=run_id,
+                    key="rag_generation_latency",
+                    value=latency,
+                    is_pipeline_info=False,
                 )
                 return results
         except Exception as e:
-            logger.error(f"rag(message={message}) - \n\n{str(e)})")
+            logger.error(f"rag(message={message}) - \n\n{str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
 
     class RAGRequest(BaseModel):
@@ -510,6 +560,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     async def evaluate_app(self, request: EvalRequest):
         try:
+            await self.alog_throughput(time.time(), 1, "evaluate")
+            
             return await self.aevaluate(
                 query=request.query,
                 context=request.context,
@@ -548,6 +600,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         value: Union[bool, int, str]
 
     async def delete_app(self, request: DeleteRequest = Body(...)):
+        await self.alog_throughput(time.time(), 1, "delete")
         return await self.adelete(request.key, request.value)
 
     @syncable
@@ -563,6 +616,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             raise HTTPException(status_code=500, detail=str(e))
 
     async def get_user_ids_app(self):
+        await self.alog_throughput(time.time(), 1, "get_user_ids")
         return await self.aget_user_ids()
 
     @syncable
@@ -586,6 +640,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         user_id: str
 
     async def get_user_document_data_app(self, request: UserDocumentRequest):
+        await self.alog_throughput(time.time(), 1, "get_user_document_data")
         return await self.aget_user_document_data(request.user_id)
 
     @syncable
@@ -628,12 +683,44 @@ class R2RApp(metaclass=AsyncSyncMeta):
         except Exception as e:
             logger.error(f":logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
+        
+    @syncable
+    async def alog_throughput(self, timestamp: float, num_requests: int, request_type: str):
+        try:
+            # logger.info(f"Logging throughput: {timestamp}, {num_requests}, {request_type}")
+            await self.logging_connection.log_throughput(timestamp, num_requests, request_type)
+        except Exception as e:
+            logger.error(f"log_throughput(timestamp={timestamp}, num_requests={num_requests}, request_type={request_type}) - \n\n{str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+
+        
+    @syncable
+    async def aget_throughput_data(self, start_time: float, end_time: float, request_type: Optional[str] = None):
+        try:
+            throughput_data = await self.logging_connection.get_throughput_data(start_time, end_time, request_type)
+            return {"results": throughput_data}
+        except Exception as e:
+            logger.error(f"get_throughput_data(start_time={start_time}, end_time={end_time}, request_type={request_type}) - \n\n{str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     class LogsRequest(BaseModel):
         pipeline_type: Optional[str] = None
 
     async def get_logs_app(self, request: LogsRequest):
+        await self.alog_throughput(time.time(), 1, "get_logs")
         return await self.aget_logs(request.pipeline_type)
+
+    async def get_analytics_app(self, pipeline_type: Optional[str] = None):
+        await self.alog_throughput(time.time(), 1, "get_analytics")
+        try:
+            analytics_data = await PipeLoggingConnectionSingleton.get_analytics(
+                pipeline_type=pipeline_type
+            )
+            return {"results": analytics_data}
+        except Exception as e:
+            logger.error(f"get_analytics() - \n\n{str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+
 
     def get_open_api_endpoint(self):
         from fastapi.openapi.utils import get_openapi
