@@ -1,25 +1,23 @@
 import json
 import logging
 import os
-from typing import Any
+from typing import Any, Type
+from pydantic import BaseModel
 
 from ..core.abstractions.document import DocumentType
 from ..core.pipes.pipe_logging import LoggingConfig
-from ..core.providers.base_provider import ProviderConfig
 from ..core.providers.embedding_provider import EmbeddingConfig
 from ..core.providers.eval_provider import EvalConfig
 from ..core.providers.llm_provider import LLMConfig
 from ..core.providers.prompt_provider import PromptConfig
-from ..core.providers.vector_db_provider import VectorDBConfig
+from ..core.providers.vector_db_provider import VectorDBConfig, ProviderConfig
 
 logger = logging.getLogger(__name__)
 
 
 class R2RConfig:
     REQUIRED_KEYS: dict[str, list] = {
-        "app": [
-            "max_file_size_in_mb",
-        ],
+        "app": ["max_file_size_in_mb"],
         "embedding": [
             "provider",
             "search_model",
@@ -27,9 +25,7 @@ class R2RConfig:
             "batch_size",
             "text_splitter",
         ],
-        "eval": [
-            "llm",
-        ],
+        "eval": ["llm"],
         "ingestion": ["selected_parsers"],
         "completions": ["provider"],
         "logging": ["provider", "log_table"],
@@ -112,7 +108,12 @@ class R2RConfig:
             raise ValueError(
                 f"Configuration not found in Redis with key '{key}'"
             )
-        return cls(json.loads(config_data))
+        config_data = json.loads(config_data)
+        # config_data["ingestion"]["selected_parsers"] = {
+        #     DocumentType(k): v
+        #     for k, v in config_data["ingestion"]["selected_parsers"].items()
+        # }
+        return cls(config_data)
 
     @classmethod
     def load_default_config(cls) -> dict:
