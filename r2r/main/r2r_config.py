@@ -18,7 +18,13 @@ logger = logging.getLogger(__name__)
 class R2RConfig:
     REQUIRED_KEYS: dict[str, list] = {
         "app": ["max_file_size_in_mb"],
-        "embedding": ["provider", "search_model", "search_dimension", "batch_size", "text_splitter"],
+        "embedding": [
+            "provider",
+            "search_model",
+            "search_dimension",
+            "batch_size",
+            "text_splitter",
+        ],
         "eval": ["llm"],
         "ingestion": ["selected_parsers"],
         "completions": ["provider"],
@@ -52,17 +58,22 @@ class R2RConfig:
         self.app = self.app  # for type hinting
         self.ingestion = self.ingestion  # for type hinting
         self.ingestion["selected_parsers"] = {
-            DocumentType(k): v for k, v in self.ingestion["selected_parsers"].items()
+            DocumentType(k): v
+            for k, v in self.ingestion["selected_parsers"].items()
         }
         self.embedding = EmbeddingConfig.create(**self.embedding)
         eval_llm = self.eval.pop("llm")
-        self.eval = EvalConfig.create(**self.eval, llm=LLMConfig.create(**eval_llm))
+        self.eval = EvalConfig.create(
+            **self.eval, llm=LLMConfig.create(**eval_llm)
+        )
         self.completions = LLMConfig.create(**self.completions)
         self.logging = LoggingConfig.create(**self.logging)
         self.prompt = PromptConfig.create(**self.prompt)
         self.vector_database = VectorDBConfig.create(**self.vector_database)
 
-    def _validate_config_section(self, config_data: dict[str, Any], section: str, keys: list):
+    def _validate_config_section(
+        self, config_data: dict[str, Any], section: str, keys: list
+    ):
         if section not in config_data:
             raise ValueError(f"Missing '{section}' section in config")
         if not all(key in config_data[section] for key in keys):
@@ -94,11 +105,14 @@ class R2RConfig:
     def load_from_redis(cls, redis_client: Any, key: str) -> "R2RConfig":
         config_data = redis_client.get(f"R2RConfig:{key}")
         if config_data is None:
-            raise ValueError(f"Configuration not found in Redis with key '{key}'")
+            raise ValueError(
+                f"Configuration not found in Redis with key '{key}'"
+            )
         config_data = json.loads(config_data)
-        config_data["ingestion"]["selected_parsers"] = {
-            DocumentType(k): v for k, v in config_data["ingestion"]["selected_parsers"].items()
-        }
+        # config_data["ingestion"]["selected_parsers"] = {
+        #     DocumentType(k): v
+        #     for k, v in config_data["ingestion"]["selected_parsers"].items()
+        # }
         return cls(config_data)
 
     @classmethod
@@ -115,5 +129,8 @@ class R2RConfig:
         if isinstance(config_section, ProviderConfig):
             return config_section.dict()
         if isinstance(config_section, dict):
-            return {k: R2RConfig._serialize_config(v) for k, v in config_section.items()}
+            return {
+                k: R2RConfig._serialize_config(v)
+                for k, v in config_section.items()
+            }
         return config_section

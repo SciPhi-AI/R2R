@@ -95,7 +95,7 @@ def test_r2r_config_deserialization(mock_file, mock_redis_client):
         },
     }
     mock_redis_client.get.return_value = json.dumps(config_data)
-    config = R2RConfig.load_from_redis(mock_redis_client , "test_key")
+    config = R2RConfig.load_from_redis(mock_redis_client, "test_key")
     assert config.app["max_file_size_in_mb"] == 128
     assert config.ingestion["selected_parsers"][DocumentType.PDF] == "default"
 
