@@ -1,7 +1,7 @@
 import json
 from unittest.mock import mock_open, patch, Mock
 import pytest
-from r2r import R2RConfig
+from r2r import R2RConfig, DocumentType
 
 
 @pytest.fixture
@@ -81,7 +81,7 @@ def test_r2r_config_deserialization(mock_file, mock_redis_client):
             "text_splitter": "default",
         },
         "eval": {"llm": {"provider": "local"}},
-        "ingestion": {"selected_parsers": {}},
+        "ingestion": {"selected_parsers": {"pdf": "default"}},
         "completions": {"provider": "lm_provider"},
         "logging": {
             "provider": "local",
@@ -95,8 +95,9 @@ def test_r2r_config_deserialization(mock_file, mock_redis_client):
         },
     }
     mock_redis_client.get.return_value = json.dumps(config_data)
-    config = R2RConfig.load_from_redis(mock_redis_client, "test_key")
+    config = R2RConfig.load_from_redis(mock_redis_client , "test_key")
     assert config.app["max_file_size_in_mb"] == 128
+    assert config.ingestion["selected_parsers"][DocumentType.PDF] == "default"
 
 
 def test_r2r_config_missing_section():
