@@ -5,8 +5,8 @@ from typing import Any, AsyncGenerator, Optional, Union
 from r2r.core import (
     AsyncPipe,
     AsyncState,
+    KVLoggingConnectionSingleton,
     LoggableAsyncPipe,
-    PipeLoggingConnectionSingleton,
     PipeType,
     SearchResult,
     VectorDBProvider,
@@ -26,8 +26,7 @@ class SearchPipe(LoggableAsyncPipe):
 
     def __init__(
         self,
-        vector_db_provider: VectorDBProvider,
-        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingConnectionSingleton] = None,
         type: PipeType = PipeType.SEARCH,
         config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
@@ -40,7 +39,6 @@ class SearchPipe(LoggableAsyncPipe):
             *args,
             **kwargs,
         )
-        self.vector_db_provider = vector_db_provider
 
     @abstractmethod
     async def search(

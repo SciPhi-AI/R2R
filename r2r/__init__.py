@@ -2,6 +2,7 @@ import logging
 
 from .core import *
 from .eval import *
+from .integrations import *
 from .main import *
 from .pipes import *
 from .prompts import *
@@ -32,7 +33,7 @@ __all__ = [
     "PostgresPipeLoggingProvider",
     "RedisLoggingConfig",
     "RedisPipeLoggingProvider",
-    "PipeLoggingConnectionSingleton",
+    "KVLoggingConnectionSingleton",
     "VectorEntry",
     "VectorType",
     "Vector",
@@ -50,6 +51,7 @@ __all__ = [
     "ExtractionType",
     "Fragment",
     "FragmentType",
+    "SearchPipe",
     # Parsers
     "AsyncParser",
     "CSVParser",
@@ -93,4 +95,8 @@ __all__ = [
     "R2RVectorSearchPipe",
     "R2RVectorStoragePipe",
     "R2RPromptProvider",
+    "R2RWebSearchPipe",
+    "R2RAppBuilder",
+    # Integrations
+    "SerperClient",
 ]

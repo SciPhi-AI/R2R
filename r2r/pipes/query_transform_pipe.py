@@ -47,11 +47,13 @@ class R2RQueryTransformPipe(GeneratorPipe):
         self,
         input: AsyncPipe.Input,
         state: AsyncState,
-        query_transform_config: GenerationConfig,
+        query_transform_generation_config: GenerationConfig,
         num_query_xf_outputs: int = 3,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
+        print("input.message = ", input.message)
+        print("query_transform_config = ", query_transform_generation_config)
         async for query in input.message:
             logger.info(
                 f"Transforming query: {query} into {num_query_xf_outputs} outputs with {self.config.task_prompt}."
@@ -63,7 +65,7 @@ class R2RQueryTransformPipe(GeneratorPipe):
 
             response = self.llm_provider.get_completion(
                 messages=query_transform_request,
-                generation_config=query_transform_config,
+                generation_config=query_transform_generation_config,
             )
             content = self.llm_provider.extract_content(response)
             outputs = content.split("\n")

@@ -8,7 +8,7 @@ from fastapi.datastructures import UploadFile
 from r2r import (
     Document,
     GenerationConfig,
-    PipeLoggingConnectionSingleton,
+    KVLoggingConnectionSingleton,
     R2RApp,
     R2RConfig,
     R2RPipeFactory,
@@ -46,9 +46,9 @@ def r2r_app(request):
         )
 
         try:
-            PipeLoggingConnectionSingleton.configure(config.logging)
+            KVLoggingConnectionSingleton.configure(config.logging)
         except:
-            PipeLoggingConnectionSingleton._config.logging_path = (
+            KVLoggingConnectionSingleton._config.logging_path = (
                 config.logging.logging_path
             )
 
@@ -60,7 +60,7 @@ def r2r_app(request):
 
 @pytest.fixture
 def logging_connection():
-    return PipeLoggingConnectionSingleton()
+    return KVLoggingConnectionSingleton()
 
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)

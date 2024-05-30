@@ -3,7 +3,7 @@ import uuid
 from typing import Any, AsyncGenerator, Optional
 
 from .base_pipe import AsyncPipe, AsyncState, PipeType, manage_run_info
-from .pipe_logging import PipeLoggingConnectionSingleton
+from .pipe_logging import KVLoggingConnectionSingleton
 
 
 class LoggableAsyncPipe(AsyncPipe):
@@ -17,14 +17,14 @@ class LoggableAsyncPipe(AsyncPipe):
 
     def __init__(
         self,
-        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingConnectionSingleton] = None,
         type: PipeType = PipeType.OTHER,
         config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
         if not pipe_logger:
-            pipe_logger = PipeLoggingConnectionSingleton()
+            pipe_logger = KVLoggingConnectionSingleton()
         self.pipe_logger = pipe_logger
         self.log_queue = asyncio.Queue()
         self.log_worker_task = None
@@ -58,6 +58,8 @@ class LoggableAsyncPipe(AsyncPipe):
                     self.log_worker(), name=f"log-worker-{self.config.name}"
                 )
                 try:
+                    print("trying with args = ", args)
+                    print("trying with kwargs = ", kwargs)
                     async for result in self._run_logic(
                         input, state, *args, **kwargs
                     ):
