@@ -5,6 +5,7 @@ from typing import Any
 
 from ..core.abstractions.document import DocumentType
 from ..core.pipes.pipe_logging import LoggingConfig
+from ..core.providers.base_provider import ProviderConfig
 from ..core.providers.embedding_provider import EmbeddingConfig
 from ..core.providers.eval_provider import EvalConfig
 from ..core.providers.llm_provider import LLMConfig
@@ -97,10 +98,9 @@ class R2RConfig:
 
         return cls(config_data)
 
-    # TODO - How to type 'redis.Redis' without introducing dependency on 'redis' package?
     def save_to_redis(self, redis_client: Any, key: str):
         config_data = {
-            section: getattr(self, section)
+            section: self._serialize_config(getattr(self, section))
             for section in R2RConfig.REQUIRED_KEYS.keys()
         }
         redis_client.set(f"R2RConfig:{key}", json.dumps(config_data))
@@ -122,3 +122,14 @@ class R2RConfig:
         # Load default configuration from JSON file
         with open(default_config_path) as f:
             return json.load(f)
+
+    @staticmethod
+    def _serialize_config(config_section: Any) -> dict:
+        if isinstance(config_section, ProviderConfig):
+            return config_section.dict()
+        if isinstance(config_section, dict):
+            return {
+                k: R2RConfig._serialize_config(v)
+                for k, v in config_section.items()
+            }
+        return config_section
