@@ -7,7 +7,7 @@ from r2r.core import (
     EvalPipeline,
     EvalProvider,
     IngestionPipeline,
-    KVLoggingConnectionSingleton,
+    KVLoggingSingleton,
     LLMConfig,
     LLMProvider,
     LoggableAsyncPipe,
@@ -373,4 +373,4 @@ class R2RPipelineFactory:
         )
 
     def configure_logging(self):
-        KVLoggingConnectionSingleton.configure(self.config.logging)
+        KVLoggingSingleton.configure(self.config.logging)

@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
@@ -36,13 +37,14 @@ class R2RWebSearchPipe(SearchPipe):
     async def search(
         self,
         message: str,
+        run_id: uuid.UUID,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[SearchResult, None]:
         search_filters_override = kwargs.get("search_filters", None)
         search_limit_override = kwargs.get("search_limit", None)
         await self.enqueue_log(
-            pipe_run_id=self.run_info.run_id, key="search_query", value=message
+            run_id=run_id, key="search_query", value=message
         )
         # TODO - Make more general in the future by creating a SearchProvider interface
         results = self.serper_client.get_raw(
@@ -66,7 +68,7 @@ class R2RWebSearchPipe(SearchPipe):
             yield search_result
 
         await self.enqueue_log(
-            pipe_run_id=self.run_info.run_id,
+            run_id=run_id,
             key="search_results",
             value=json.dumps([ele.json() for ele in search_results]),
         )
@@ -75,6 +77,7 @@ class R2RWebSearchPipe(SearchPipe):
         self,
         input: AsyncPipe.Input,
         state: AsyncState,
+        run_id: uuid.UUID,
         *args: Any,
         **kwargs,
     ) -> AsyncGenerator[SearchResult, None]:
@@ -83,7 +86,7 @@ class R2RWebSearchPipe(SearchPipe):
         async for search_request in input.message:
             search_queries.append(search_request)
             async for result in self.search(
-                message=search_request, *args, **kwargs
+                message=search_request, run_id=run_id, *args, **kwargs
             ):
                 search_results.append(result)
                 yield result

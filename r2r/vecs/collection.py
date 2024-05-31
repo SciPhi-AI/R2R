@@ -952,8 +952,6 @@ class Collection:
 
 def build_filters(json_col: Column, filters: Dict):
     """
-    PRIVATE
-
     Builds filters for SQL query based on provided dictionary.
 
     Args:
@@ -966,38 +964,18 @@ def build_filters(json_col: Column, filters: Dict):
     Returns:
         The filter clause for the SQL query.
     """
-
     if not isinstance(filters, dict):
         raise FilterError("filters must be a dict")
 
-    if len(filters) > 1:
-        raise FilterError("max 1 entry per filter")
+    filter_clauses = []
 
     for key, value in filters.items():
         if not isinstance(key, str):
             raise FilterError("*filters* keys must be strings")
 
-        if key in ("$and", "$or"):
-            if not isinstance(value, list):
-                raise FilterError(
-                    "$and/$or filters must have associated list of conditions"
-                )
-
-            if key == "$and":
-                return and_(
-                    *[build_filters(json_col, subcond) for subcond in value]
-                )
-
-            if key == "$or":
-                return or_(
-                    *[build_filters(json_col, subcond) for subcond in value]
-                )
-
-            raise Unreachable()
-
         if isinstance(value, dict):
             if len(value) > 1:
-                raise FilterError("only one operator permitted")
+                raise FilterError("only one operator permitted per key")
             for operator, clause in value.items():
                 if operator not in (
                     "$eq",
@@ -1010,55 +988,60 @@ def build_filters(json_col: Column, filters: Dict):
                 ):
                     raise FilterError("unknown operator")
 
-                # equality of singular values can take advantage of the metadata index
-                # using containment operator. Containment can not be used to test equality
-                # of lists or dicts so we restrict to single values with a __len__ check.
                 if operator == "$eq" and not hasattr(clause, "__len__"):
                     contains_value = cast({key: clause}, postgresql.JSONB)
-                    return json_col.op("@>")(contains_value)
-
-                if operator == "$in":
+                    filter_clauses.append(json_col.op("@>")(contains_value))
+                elif operator == "$in":
                     if not isinstance(clause, list):
                         raise FilterError(
                             "argument to $in filter must be a list"
                         )
-
                     for elem in clause:
                         if not isinstance(elem, (int, str, float)):
                             raise FilterError(
-                                "argument to $in filter must be a list or scalars"
+                                "argument to $in filter must be a list of scalars"
                             )
-
-                    # cast the array of scalars to a postgres array of jsonb so we can
-                    # directly compare json types in the query
                     contains_value = [
                         cast(elem, postgresql.JSONB) for elem in clause
                     ]
-                    return json_col.op("->")(key).in_(contains_value)
-
-                matches_value = cast(clause, postgresql.JSONB)
-
-                # handles non-singular values
-                if operator == "$eq":
-                    return json_col.op("->")(key) == matches_value
-
-                elif operator == "$ne":
-                    return json_col.op("->")(key) != matches_value
-
-                elif operator == "$lt":
-                    return json_col.op("->")(key) < matches_value
-
-                elif operator == "$lte":
-                    return json_col.op("->")(key) <= matches_value
-
-                elif operator == "$gt":
-                    return json_col.op("->")(key) > matches_value
-
-                elif operator == "$gte":
-                    return json_col.op("->")(key) >= matches_value
-
+                    filter_clauses.append(
+                        json_col.op("->")(key).in_(contains_value)
+                    )
                 else:
-                    raise Unreachable()
+                    matches_value = cast(clause, postgresql.JSONB)
+                    if operator == "$eq":
+                        filter_clauses.append(
+                            json_col.op("->")(key) == matches_value
+                        )
+                    elif operator == "$ne":
+                        filter_clauses.append(
+                            json_col.op("->")(key) != matches_value
+                        )
+                    elif operator == "$lt":
+                        filter_clauses.append(
+                            json_col.op("->")(key) < matches_value
+                        )
+                    elif operator == "$lte":
+                        filter_clauses.append(
+                            json_col.op("->")(key) <= matches_value
+                        )
+                    elif operator == "$gt":
+                        filter_clauses.append(
+                            json_col.op("->")(key) > matches_value
+                        )
+                    elif operator == "$gte":
+                        filter_clauses.append(
+                            json_col.op("->")(key) >= matches_value
+                        )
+                    else:
+                        raise Unreachable()
+        else:
+            raise FilterError("Filter value must be a dict with an operator")
+
+    if len(filter_clauses) == 1:
+        return filter_clauses[0]
+    else:
+        return and_(*filter_clauses)
 
 
 def build_table(name: str, meta: MetaData, dimension: int) -> Table:

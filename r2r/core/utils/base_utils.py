@@ -31,3 +31,9 @@ def run_pipeline(pipeline: "Pipeline", input: Any, *args, **kwargs):
         return await pipeline.run(input, *args, **kwargs)
 
     return asyncio.run(_run_pipeline(input, *args, **kwargs))
+
+
+def increment_version(version: str) -> str:
+    prefix = version[:-1]
+    suffix = int(version[-1])
+    return f"{prefix}{suffix + 1}"

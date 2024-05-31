@@ -5,12 +5,12 @@ import uuid
 import pytest
 
 from r2r import (
-    LocalPipeLoggingProvider,
+    LocalKVLoggingProvider,
     LoggingConfig,
+    PostgresKVLoggingProvider,
     PostgresLoggingConfig,
-    PostgresPipeLoggingProvider,
+    RedisKVLoggingProvider,
     RedisLoggingConfig,
-    RedisPipeLoggingProvider,
     generate_run_id,
 )
 
@@ -19,15 +19,13 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture(scope="function")
 def local_provider():
-    """Fixture to create and tear down the LocalPipeLoggingProvider with a unique database file."""
+    """Fixture to create and tear down the LocalKVLoggingProvider with a unique database file."""
     # Generate a unique file name for the SQLite database
     unique_id = str(uuid.uuid4())
     logging_path = f"test_{unique_id}.sqlite"
 
-    # Setup the LocalPipeLoggingProvider with the unique file
-    provider = LocalPipeLoggingProvider(
-        LoggingConfig(logging_path=logging_path)
-    )
+    # Setup the LocalKVLoggingProvider with the unique file
+    provider = LocalKVLoggingProvider(LoggingConfig(logging_path=logging_path))
 
     # Provide the setup provider to the test
     yield provider
@@ -72,9 +70,9 @@ async def test_multiple_log_entries(local_provider):
     # Check that logs are returned in the correct order (most recent first if applicable)
     for log in logs:
         selected_entry = [
-            entry for entry in entries if entry[0] == log["pipe_run_id"]
+            entry for entry in entries if entry[0] == log["log_id"]
         ][0]
-        assert log["pipe_run_id"] == selected_entry[0]
+        assert log["log_id"] == selected_entry[0]
         assert log["key"] == selected_entry[1]
         assert log["value"] == selected_entry[2]
 
@@ -101,29 +99,29 @@ async def test_specific_run_type_retrieval(local_provider):
     run_id_1 = generate_run_id()
 
     await local_provider.log(
-        run_id_0, "pipeline_type", "search", is_pipeline_info=True
+        run_id_0, "pipeline_type", "search", is_info_log=True
     )
     await local_provider.log(run_id_0, "key_0", "value_0")
     await local_provider.log(
-        run_id_1, "pipeline_type", "rag", is_pipeline_info=True
+        run_id_1, "pipeline_type", "rag", is_info_log=True
     )
     await local_provider.log(run_id_1, "key_1", "value_1")
 
-    run_info = await local_provider.get_run_info("search")
+    run_info = await local_provider.get_run_info(log_type_filter="search")
     logs = await local_provider.get_logs([run.run_id for run in run_info])
     assert len(logs) == 1
-    assert logs[0]["pipe_run_id"] == run_id_0
+    assert logs[0]["log_id"] == run_id_0
     assert logs[0]["key"] == "key_0"
     assert logs[0]["value"] == "value_0"
 
 
 @pytest.fixture(scope="function")
 def postgres_provider():
-    """Fixture to create and tear down the PostgresPipeLoggingProvider."""
+    """Fixture to create and tear down the PostgresKVLoggingProvider."""
     log_table = f"logs_{str(uuid.uuid4()).replace('-', '_')}"
     log_info_table = f"log_info_{str(uuid.uuid4()).replace('-', '_')}"
 
-    provider = PostgresPipeLoggingProvider(
+    provider = PostgresKVLoggingProvider(
         PostgresLoggingConfig(
             log_table=log_table, log_info_table=log_info_table
         )
@@ -165,9 +163,9 @@ async def test_postgres_multiple_log_entries(postgres_provider):
     # Check that logs are returned in the correct order (most recent first if applicable)
     for log in logs:
         selected_entry = [
-            entry for entry in entries if entry[0] == log["pipe_run_id"]
+            entry for entry in entries if entry[0] == log["log_id"]
         ][0]
-        assert log["pipe_run_id"] == selected_entry[0]
+        assert log["log_id"] == selected_entry[0]
         assert log["key"] == selected_entry[1]
         assert log["value"] == selected_entry[2]
 
@@ -193,29 +191,29 @@ async def test_postgres_specific_run_type_retrieval(postgres_provider):
     run_id_1 = generate_run_id()
 
     await postgres_provider.log(
-        run_id_0, "pipeline_type", "search", is_pipeline_info=True
+        run_id_0, "pipeline_type", "search", is_info_log=True
     )
     await postgres_provider.log(run_id_0, "key_0", "value_0")
     await postgres_provider.log(
-        run_id_1, "pipeline_type", "rag", is_pipeline_info=True
+        run_id_1, "pipeline_type", "rag", is_info_log=True
     )
     await postgres_provider.log(run_id_1, "key_1", "value_1")
 
-    run_info = await postgres_provider.get_run_info("search")
+    run_info = await postgres_provider.get_run_info(log_type_filter="search")
     logs = await postgres_provider.get_logs([run.run_id for run in run_info])
     assert len(logs) == 1
-    assert logs[0]["pipe_run_id"] == run_id_0
+    assert logs[0]["log_id"] == run_id_0
     assert logs[0]["key"] == "key_0"
     assert logs[0]["value"] == "value_0"
 
 
 @pytest.fixture(scope="function")
 def redis_provider():
-    """Fixture to create and tear down the RedisPipeLoggingProvider."""
+    """Fixture to create and tear down the RedisKVLoggingProvider."""
     log_table = f"logs_{str(uuid.uuid4()).replace('-', '_')}"
     log_info_table = f"log_info_{str(uuid.uuid4()).replace('-', '_')}"
 
-    provider = RedisPipeLoggingProvider(
+    provider = RedisKVLoggingProvider(
         RedisLoggingConfig(log_table=log_table, log_info_table=log_info_table)
     )
     yield provider
@@ -254,9 +252,9 @@ async def test_redis_multiple_log_entries(redis_provider):
     # Check that logs are returned in the correct order (most recent first if applicable)
     for log in logs:
         selected_entry = [
-            entry for entry in entries if entry[0] == log["pipe_run_id"]
+            entry for entry in entries if entry[0] == log["log_id"]
         ][0]
-        assert log["pipe_run_id"] == selected_entry[0]
+        assert log["log_id"] == selected_entry[0]
         assert log["key"] == selected_entry[1]
         assert log["value"] == selected_entry[2]
 
@@ -280,17 +278,17 @@ async def test_redis_specific_run_type_retrieval(redis_provider):
     run_id_1 = generate_run_id()
 
     await redis_provider.log(
-        run_id_0, "pipeline_type", "search", is_pipeline_info=True
+        run_id_0, "pipeline_type", "search", is_info_log=True
     )
     await redis_provider.log(run_id_0, "key_0", "value_0")
     await redis_provider.log(
-        run_id_1, "pipeline_type", "rag", is_pipeline_info=True
+        run_id_1, "pipeline_type", "rag", is_info_log=True
     )
     await redis_provider.log(run_id_1, "key_1", "value_1")
 
-    run_info = await redis_provider.get_run_info("search")
+    run_info = await redis_provider.get_run_info(log_type_filter="search")
     logs = await redis_provider.get_logs([run.run_id for run in run_info])
     assert len(logs) == 1
-    assert logs[0]["pipe_run_id"] == run_id_0
+    assert logs[0]["log_id"] == run_id_0
     assert logs[0]["key"] == "key_0"
     assert logs[0]["value"] == "value_0"

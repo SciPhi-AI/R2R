@@ -16,7 +16,7 @@ Here’s an example of creating a custom RAG pipeline with a query transformatio
 """A custom RAG pipeline that includes a custom query transformation prompt."""
 from r2r import (
     GenerationConfig,
-    KVLoggingConnectionSingleton,
+    KVLoggingSingleton,
     R2RConfig,
     R2RPipeFactory,
     R2RProviderFactory,
@@ -27,7 +27,7 @@ from r2r import (
 
 # Load the default configuration
 config = R2RConfig.from_json()
-KVLoggingConnectionSingleton().configure(config.logging)
+KVLoggingSingleton().configure(config.logging)
 
 # Create input providers and pipes
 providers = R2RProviderFactory(config).create_providers()
@@ -97,4 +97,4 @@ r2r.pipes.query_transform_pipe - INFO - Yielding transformed output: What is the
 Final Result:
 [ChatCompletion(id='chatcmpl-9RVAgbqsmZaXo4hqbXhZbXe3xKQUQ', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessage(content='To answer the query about Aristotle in ancient Greek philosophy, his major contributions to science and philosophy, and the historical significance of his works, we need to refer to the provided context. However, since the context is missing, I will provide a general response based on commonly known information about Aristotle.\n\n### Who was Aristotle in ancient Greek philosophy?\n\nAristotle was a prominent ancient Greek philosopher and polymath, a student of Plato, and the teacher of Alexander the Great. He made significant contributions to various fields of knowledge, including metaphysics, ethics, politics, logic, and natural sciences.\n\n### What were the major contributions of Aristotle to science and philosophy?\n\n1. **Logic**: Aristotle is often credited with the development of formal logic, particularly syllogistic logic, which became the basis for deductive reasoning [1].\n\n2. **Metaphysics**: He explored the nature of being and existence, introducing concepts such as substance, form, and matter [2].\n\n3. **Ethics**: Aristotle\'s "Nicomachean Ethics" outlines his virtue ethics, emphasizing the importance of character and virtue in achieving eudaimonia (flourishing or happiness) [3].\n\n4. **Politics**: In "Politics," Aristotle examined various political systems and advocated for a constitutional government as the best form of governance [4].\n\n5. **Natural Sciences**: Aristotle made extensive observations in biology, zoology, and physics, classifying living organisms and studying their functions and behaviors [5].\n\n### What is the historical significance of Aristotle\'s works?\n\nAristotle\'s works have had a profound and lasting impact on Western thought. His ideas influenced medieval scholarship, particularly through the works of Islamic philosophers and later European scholastics. His contributions to logic and scientific methodology laid the groundwork for the development of modern science. Aristotle\'s ethical and political theories continue to be studied and debated, shaping contemporary discussions in philosophy and political theory [6].\n\nWithout the specific context, these references are based on general knowledge about Aristotle. If you provide the context, I can tailor the response more precisely to the given information.', role='assistant', function_call=None, tool_calls=None))], created=1716341706, model='gpt-4o-2024-05-13', object='chat.completion', system_fingerprint='fp_729ea513f7', usage=CompletionUsage(completion_tokens=422, prompt_tokens=717, total_tokens=1139))]
 ```
-# Now you can use this custom RAG pipeline for your tasks
+Now you can use this custom RAG pipeline for your tasks!
