@@ -164,10 +164,10 @@ async def test_get_user_ids(client):
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
 @pytest.mark.asyncio
-async def test_get_user_document_data(client):
+async def test_get_user_document_metadata(client):
     user_id = str(generate_id_from_label("user_0"))
     response = client.post(
-        "/get_user_document_data/",
+        "/get_user_document_metadata/",
         json={"user_id": user_id},
     )
     assert response.status_code == 200

@@ -55,7 +55,7 @@ class LoggableAsyncPipe(AsyncPipe):
     ) -> AsyncGenerator[Any, None]:
         """Run the pipe with logging capabilities."""
 
-        # run_manager = run_manager or self._run_manager
+        run_manager = run_manager or self._run_manager
 
         async def wrapped_run() -> AsyncGenerator[Any, None]:
             async with manage_run(run_manager, self.config.name) as run_id:
@@ -66,9 +66,6 @@ class LoggableAsyncPipe(AsyncPipe):
                     async for result in self._run_logic(
                         input, state, run_id=run_id, *args, **kwargs
                     ):
-                        await self.enqueue_log(
-                            run_id, "processed", str(result)
-                        )
                         yield result
                 finally:
                     await self.log_queue.join()

@@ -129,12 +129,12 @@ def test_get_user_ids(client):
     }
 
 
-def test_get_user_document_data(client):
+def test_get_user_document_metadata(client):
     test_ingest_txt_file(client)
     test_ingest_txt_document(client)
 
     user_id = str(generate_id_from_label("user_0"))
-    response = client.get_user_document_data(user_id)
+    response = client.get_user_document_metadata(user_id)
     assert "results" in response
     assert len(response["results"]) == 1
     assert response["results"][0]["document_id"] == str(
