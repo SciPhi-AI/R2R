@@ -148,7 +148,7 @@ async def test_delete(client):
     response = client.request(
         "DELETE",
         "/delete/",
-        json={"key": "author", "value": "John Doe"},
+        json={"keys": ["author"], "values": ["John Doe"]},
     )
     assert response.status_code == 200
     assert response.json() == {"results": "Entries deleted successfully."}

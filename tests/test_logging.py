@@ -70,9 +70,9 @@ async def test_multiple_log_entries(local_provider):
     # Check that logs are returned in the correct order (most recent first if applicable)
     for log in logs:
         selected_entry = [
-            entry for entry in entries if entry[0] == log["pipe_run_id"]
+            entry for entry in entries if entry[0] == log["log_id"]
         ][0]
-        assert log["pipe_run_id"] == selected_entry[0]
+        assert log["log_id"] == selected_entry[0]
         assert log["key"] == selected_entry[1]
         assert log["value"] == selected_entry[2]
 
@@ -110,7 +110,7 @@ async def test_specific_run_type_retrieval(local_provider):
     run_info = await local_provider.get_run_info(log_type_filter="search")
     logs = await local_provider.get_logs([run.run_id for run in run_info])
     assert len(logs) == 1
-    assert logs[0]["pipe_run_id"] == run_id_0
+    assert logs[0]["log_id"] == run_id_0
     assert logs[0]["key"] == "key_0"
     assert logs[0]["value"] == "value_0"
 
@@ -163,9 +163,9 @@ async def test_postgres_multiple_log_entries(postgres_provider):
     # Check that logs are returned in the correct order (most recent first if applicable)
     for log in logs:
         selected_entry = [
-            entry for entry in entries if entry[0] == log["pipe_run_id"]
+            entry for entry in entries if entry[0] == log["log_id"]
         ][0]
-        assert log["pipe_run_id"] == selected_entry[0]
+        assert log["log_id"] == selected_entry[0]
         assert log["key"] == selected_entry[1]
         assert log["value"] == selected_entry[2]
 
@@ -202,7 +202,7 @@ async def test_postgres_specific_run_type_retrieval(postgres_provider):
     run_info = await postgres_provider.get_run_info(log_type_filter="search")
     logs = await postgres_provider.get_logs([run.run_id for run in run_info])
     assert len(logs) == 1
-    assert logs[0]["pipe_run_id"] == run_id_0
+    assert logs[0]["log_id"] == run_id_0
     assert logs[0]["key"] == "key_0"
     assert logs[0]["value"] == "value_0"
 
@@ -252,9 +252,9 @@ async def test_redis_multiple_log_entries(redis_provider):
     # Check that logs are returned in the correct order (most recent first if applicable)
     for log in logs:
         selected_entry = [
-            entry for entry in entries if entry[0] == log["pipe_run_id"]
+            entry for entry in entries if entry[0] == log["log_id"]
         ][0]
-        assert log["pipe_run_id"] == selected_entry[0]
+        assert log["log_id"] == selected_entry[0]
         assert log["key"] == selected_entry[1]
         assert log["value"] == selected_entry[2]
 
@@ -289,6 +289,6 @@ async def test_redis_specific_run_type_retrieval(redis_provider):
     run_info = await redis_provider.get_run_info(log_type_filter="search")
     logs = await redis_provider.get_logs([run.run_id for run in run_info])
     assert len(logs) == 1
-    assert logs[0]["pipe_run_id"] == run_id_0
+    assert logs[0]["log_id"] == run_id_0
     assert logs[0]["key"] == "key_0"
     assert logs[0]["value"] == "value_0"
