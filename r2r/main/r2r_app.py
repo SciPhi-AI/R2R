@@ -202,8 +202,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
             methods=["GET"],
         )
         self.app.add_api_route(
-            path="/get_user_document_data/",
-            endpoint=self.get_user_document_data_app,
+            path="/get_user_document_metadata/",
+            endpoint=self.get_user_document_metadata_app,
             methods=["POST"],
         )
         self.app.add_api_route(
@@ -772,7 +772,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
-    async def aget_user_document_data(
+    async def aget_user_document_metadata(
         self, user_id: str, *args: Any, **kwargs: Any
     ):
         if isinstance(user_id, uuid.UUID):
@@ -787,12 +787,14 @@ class R2RApp(metaclass=AsyncSyncMeta):
     class UserDocumentRequest(BaseModel):
         user_id: str
 
-    async def get_user_document_data_app(self, request: UserDocumentRequest):
+    async def get_user_document_metadata_app(
+        self, request: UserDocumentRequest
+    ):
         try:
-            return await self.aget_user_document_data(request.user_id)
+            return await self.aget_user_document_metadata(request.user_id)
         except Exception as e:
             logger.error(
-                f"get_user_document_data(user_id={request.user_id}) - \n\n{str(e)})"
+                f"get_user_document_metadata(user_id={request.user_id}) - \n\n{str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -857,11 +859,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
         return {"results": aggregated_logs}
 
     class LogsRequest(BaseModel):
-        pipeline_type: Optional[str] = None
+        log_type_filter: Optional[str] = None
 
     async def get_logs_app(self, request: LogsRequest):
         try:
-            return await self.aget_logs(request.pipeline_type)
+            return await self.aget_logs(request.log_type_filter)
         except Exception as e:
             logger.error(f":logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
