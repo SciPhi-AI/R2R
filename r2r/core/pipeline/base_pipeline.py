@@ -4,7 +4,7 @@ import logging
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional
 
-from ..logging.kv_logger import KVLoggingConnectionSingleton
+from ..logging.kv_logger import KVLoggingSingleton
 from ..logging.run_manager import RunManager, manage_run
 from ..pipes.base_pipe import AsyncPipe, AsyncState
 
@@ -26,12 +26,12 @@ class Pipeline:
 
     def __init__(
         self,
-        pipe_logger: Optional[KVLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
         run_manager: Optional[RunManager] = None,
     ):
         self.pipes: list[AsyncPipe] = []
         self.upstream_outputs: list[list[dict[str, str]]] = []
-        self.pipe_logger = pipe_logger or KVLoggingConnectionSingleton()
+        self.pipe_logger = pipe_logger or KVLoggingSingleton()
         self.run_manager = run_manager or RunManager(self.pipe_logger)
         self.futures = {}
         self.level = 0
@@ -71,7 +71,6 @@ class Pipeline:
         self.state = state or AsyncState()
         current_input = input
         async with manage_run(run_manager, self.pipeline_type) as run_id:
-            print('Running pipeline with run_id:', run_id)
             await run_manager.log_run_info(
                 key="pipeline_type",
                 value=self.pipeline_type,
@@ -82,16 +81,14 @@ class Pipeline:
                     config_name = self.pipes[pipe_num].config.name
                     self.futures[config_name] = asyncio.Future()
 
-                    print('running the pipe now...')
                     current_input = self._run_pipe(
                         pipe_num,
                         current_input,
                         run_manager,
                         *args,
-                        **kwargs,  # pass run_manager to retain value throughout execution.
+                        **kwargs,
                     )
                     self.futures[config_name].set_result(current_input)
-
                 if not streaming:
                     final_result = await self._consume_all(current_input)
                     return final_result
@@ -173,7 +170,7 @@ class Pipeline:
         async for ele in await pipe.run(
             pipe.Input(**input_dict),
             self.state,
-            # run_manager,
+            run_manager,
             *args,
             **kwargs,
         ):

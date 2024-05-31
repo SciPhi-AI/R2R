@@ -16,7 +16,7 @@ Here’s an example of creating a custom RAG pipeline with a query transformatio
 """A custom RAG pipeline that includes a custom query transformation prompt."""
 from r2r import (
     GenerationConfig,
-    KVLoggingConnectionSingleton,
+    KVLoggingSingleton,
     R2RConfig,
     R2RPipeFactory,
     R2RProviderFactory,
@@ -27,7 +27,7 @@ from r2r import (
 
 # Load the default configuration
 config = R2RConfig.from_json()
-KVLoggingConnectionSingleton().configure(config.logging)
+KVLoggingSingleton().configure(config.logging)
 
 # Create input providers and pipes
 providers = R2RProviderFactory(config).create_providers()

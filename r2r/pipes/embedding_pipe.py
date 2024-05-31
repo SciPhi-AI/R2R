@@ -12,7 +12,7 @@ from r2r.core import (
     Extraction,
     Fragment,
     FragmentType,
-    KVLoggingConnectionSingleton,
+    KVLoggingSingleton,
     LoggableAsyncPipe,
     PipeType,
     TextSplitter,
@@ -31,7 +31,7 @@ class EmbeddingPipe(LoggableAsyncPipe):
     def __init__(
         self,
         embedding_provider: EmbeddingProvider,
-        pipe_logger: Optional[KVLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
@@ -85,7 +85,7 @@ class R2REmbeddingPipe(EmbeddingPipe):
         text_splitter: TextSplitter,
         embedding_batch_size: int = 1,
         id_prefix: str = "demo",
-        pipe_logger: Optional[KVLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
@@ -199,14 +199,11 @@ class R2REmbeddingPipe(EmbeddingPipe):
         """
         Executes the embedding pipe: chunking, transforming, embedding, and storing documents.
         """
-        print('running the embedding pipe')
         batch_tasks = []
         fragment_batch = []
 
         async for extraction in input.message:
-            print('received extraction')
             async for fragment in self.fragment(extraction, run_id):
-                print('made fragment...')
                 fragment_batch.append(fragment)
                 if len(fragment_batch) >= self.embedding_batch_size:
                     # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
@@ -218,10 +215,8 @@ class R2REmbeddingPipe(EmbeddingPipe):
         if fragment_batch:  # Process any remaining fragments
             batch_tasks.append(self._process_batch(fragment_batch.copy()))
 
-        print('waiting for embedding tasks to complete')
         # Process tasks as they complete
         for task in asyncio.as_completed(batch_tasks):
             batch_result = await task  # Wait for the next task to complete
             for vector_entry in batch_result:
                 yield vector_entry
-        print('embedding tasks completed')

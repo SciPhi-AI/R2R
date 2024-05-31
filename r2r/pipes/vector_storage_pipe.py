@@ -5,7 +5,7 @@ from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
     AsyncState,
-    KVLoggingConnectionSingleton,
+    KVLoggingSingleton,
     LoggableAsyncPipe,
     PipeType,
     VectorDBProvider,
@@ -24,7 +24,7 @@ class R2RVectorStoragePipe(LoggableAsyncPipe):
         self,
         vector_db_provider: VectorDBProvider,
         storage_batch_size: int = 128,
-        pipe_logger: Optional[KVLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
@@ -82,7 +82,6 @@ class R2RVectorStoragePipe(LoggableAsyncPipe):
         vector_batch = []
 
         async for vector_entry in input.message:
-            print('storing vector entry = ', vector_entry)
             vector_batch.append(vector_entry)
             if len(vector_batch) >= self.storage_batch_size:
                 # Schedule the storage task
@@ -102,8 +101,6 @@ class R2RVectorStoragePipe(LoggableAsyncPipe):
                 )
             )
 
-        print('awaiting storing...')
         # Wait for all storage tasks to complete
         await asyncio.gather(*batch_tasks)
-        print('done storing..')
         yield None

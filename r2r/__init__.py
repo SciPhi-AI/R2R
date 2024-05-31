@@ -29,12 +29,12 @@ logger.propagate = False
 
 __all__ = [
     "LoggingConfig",
-    "LocalPipeLoggingProvider",
+    "LocalKVLoggingProvider",
     "PostgresLoggingConfig",
-    "PostgresPipeLoggingProvider",
+    "PostgresKVLoggingProvider",
     "RedisLoggingConfig",
-    "RedisPipeLoggingProvider",
-    "KVLoggingConnectionSingleton",
+    "RedisKVLoggingProvider",
+    "KVLoggingSingleton",
     "VectorEntry",
     "VectorType",
     "Vector",

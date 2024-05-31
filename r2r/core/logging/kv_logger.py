@@ -33,7 +33,7 @@ class LoggingConfig(ProviderConfig):
         return ["local", "postgres", "redis"]
 
 
-class PipeLoggingProvider(Provider):
+class KVLoggingProvider(Provider):
     @abstractmethod
     async def close(self):
         pass
@@ -44,7 +44,9 @@ class PipeLoggingProvider(Provider):
 
     @abstractmethod
     async def get_run_info(
-        self, key: Optional[str] = None, log_type: Optional[str] = None
+        self,
+        log_type: Optional[str] = None,
+        log_type_filter: Optional[str] = None,
     ) -> list[RunInfo]:
         pass
 
@@ -55,7 +57,7 @@ class PipeLoggingProvider(Provider):
         pass
 
 
-class LocalPipeLoggingProvider(PipeLoggingProvider):
+class LocalKVLoggingProvider(KVLoggingProvider):
     def __init__(self, config: LoggingConfig):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
@@ -73,7 +75,7 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
             self.aiosqlite = aiosqlite
         except ImportError:
             raise ImportError(
-                "Please install aiosqlite to use the LocalPipeLoggingProvider."
+                "Please install aiosqlite to use the LocalKVLoggingProvider."
             )
 
     async def init(self):
@@ -122,8 +124,8 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
         collection = self.log_info_table if is_info_log else self.log_table
 
         if is_info_log:
-            if key != "log_type":
-                raise ValueError("Metadata keys must be 'log_type'")
+            if "type" not in key:
+                raise ValueError("Info log keys must contain the text 'type'")
             await self.conn.execute(
                 f"INSERT INTO {collection} (timestamp, log_id, log_type) VALUES (datetime('now'), ?, ?)",
                 (str(log_id), value),
@@ -136,15 +138,15 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
         await self.conn.commit()
 
     async def get_run_info(
-        self, log_type: Optional[str] = None, limit: int = 10
+        self, limit: int = 10, log_type_filter: Optional[str] = None
     ) -> list[RunInfo]:
         cursor = await self.conn.cursor()
         query = f"SELECT log_id, log_type FROM {self.log_info_table}"
         conditions = []
         params = []
-        if log_type:
+        if log_type_filter:
             conditions.append("log_type = ?")
-            params.append(log_type)
+            params.append(log_type_filter)
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
         query += " ORDER BY timestamp DESC LIMIT ?"
@@ -208,7 +210,7 @@ class PostgresLoggingConfig(LoggingConfig):
         return ["postgres"]
 
 
-class PostgresPipeLoggingProvider(PipeLoggingProvider):
+class PostgresKVLoggingProvider(KVLoggingProvider):
     def __init__(self, config: PostgresLoggingConfig):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
@@ -302,14 +304,14 @@ class PostgresPipeLoggingProvider(PipeLoggingProvider):
             )
 
     async def get_run_info(
-        self, log_type: Optional[str] = None, limit: int = 10
+        self, limit: int = 10, log_type_filter: Optional[str] = None
     ) -> list[RunInfo]:
         query = f"SELECT log_id, log_type FROM {self.log_info_table}"
         conditions = []
         params = []
-        if log_type:
+        if log_type_filter:
             conditions.append("log_type = $1")
-            params.append(log_type)
+            params.append(log_type_filter)
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
         query += " ORDER BY timestamp DESC LIMIT $2"
@@ -357,7 +359,7 @@ class RedisLoggingConfig(LoggingConfig):
         return ["redis"]
 
 
-class RedisPipeLoggingProvider(PipeLoggingProvider):
+class RedisKVLoggingProvider(KVLoggingProvider):
     def __init__(self, config: RedisLoggingConfig):
         if not all(
             [
@@ -455,14 +457,14 @@ class RedisPipeLoggingProvider(PipeLoggingProvider):
         return logs
 
 
-class KVLoggingConnectionSingleton:
+class KVLoggingSingleton:
     _instance = None
     _is_configured = False
 
     SUPPORTED_PROVIDERS = {
-        "local": LocalPipeLoggingProvider,
-        "postgres": PostgresPipeLoggingProvider,
-        "redis": RedisPipeLoggingProvider,
+        "local": LocalKVLoggingProvider,
+        "postgres": PostgresKVLoggingProvider,
+        "redis": RedisKVLoggingProvider,
     }
 
     @classmethod
@@ -477,9 +479,7 @@ class KVLoggingConnectionSingleton:
             cls._config = logging_config
             cls._is_configured = True
         else:
-            raise Exception(
-                "KVLoggingConnectionSingleton is already configured."
-            )
+            raise Exception("KVLoggingSingleton is already configured.")
 
     @classmethod
     async def log(
@@ -491,19 +491,18 @@ class KVLoggingConnectionSingleton:
     ):
         try:
             async with cls.get_instance() as provider:
-                print('log_id = ', log_id)
-                print('key = ', key)
-                print('value = ', value)
                 await provider.log(log_id, key, value, is_info_log=is_info_log)
         except Exception as e:
             logger.error(f"Error logging data: {e}")
 
     @classmethod
     async def get_run_info(
-        cls, log_type: Optional[str] = None, limit: int = 10
+        cls, limit: int = 10, log_type_filter: Optional[str] = None
     ) -> list[RunInfo]:
         async with cls.get_instance() as provider:
-            return await provider.get_run_info(log_type, limit)
+            return await provider.get_run_info(
+                limit, log_type_filter=log_type_filter
+            )
 
     @classmethod
     async def get_logs(
