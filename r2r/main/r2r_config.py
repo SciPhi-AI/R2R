@@ -7,7 +7,7 @@ from typing import Any, Type
 from pydantic import BaseModel
 
 from ..core.abstractions.document import DocumentType
-from ..core.pipes.pipe_logging import LoggingConfig
+from ..core.logging.kv_logger import LoggingConfig
 from ..core.providers.embedding_provider import EmbeddingConfig
 from ..core.providers.eval_provider import EvalConfig
 from ..core.providers.llm_provider import LLMConfig

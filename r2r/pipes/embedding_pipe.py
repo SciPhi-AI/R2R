@@ -2,6 +2,7 @@ import asyncio
 import copy
 import json
 import logging
+import uuid
 from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional
 
@@ -66,6 +67,7 @@ class EmbeddingPipe(LoggableAsyncPipe):
         self,
         input: AsyncGenerator[Extraction, None],
         state: AsyncState,
+        run_id: uuid.UUID,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorEntry, None]:
@@ -105,7 +107,7 @@ class R2REmbeddingPipe(EmbeddingPipe):
         self.pipe_run_info = None
 
     async def fragment(
-        self, extraction: Extraction
+        self, extraction: Extraction, run_id: uuid.UUID
     ) -> AsyncGenerator[Fragment, None]:
         """
         Splits text into manageable chunks for embedding.
@@ -134,7 +136,7 @@ class R2REmbeddingPipe(EmbeddingPipe):
             yield fragment
             fragment_dict = fragment.dict()
             await self.enqueue_log(
-                pipe_run_id=self.run_info.run_id,
+                run_id=run_id,
                 key="fragment",
                 value=json.dumps(
                     {
@@ -190,17 +192,21 @@ class R2REmbeddingPipe(EmbeddingPipe):
         self,
         input: EmbeddingPipe.Input,
         state: AsyncState,
+        run_id: uuid.UUID,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorEntry, None]:
         """
         Executes the embedding pipe: chunking, transforming, embedding, and storing documents.
         """
+        print('running the embedding pipe')
         batch_tasks = []
         fragment_batch = []
 
         async for extraction in input.message:
-            async for fragment in self.fragment(extraction):
+            print('received extraction')
+            async for fragment in self.fragment(extraction, run_id):
+                print('made fragment...')
                 fragment_batch.append(fragment)
                 if len(fragment_batch) >= self.embedding_batch_size:
                     # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
@@ -212,8 +218,10 @@ class R2REmbeddingPipe(EmbeddingPipe):
         if fragment_batch:  # Process any remaining fragments
             batch_tasks.append(self._process_batch(fragment_batch.copy()))
 
+        print('waiting for embedding tasks to complete')
         # Process tasks as they complete
         for task in asyncio.as_completed(batch_tasks):
             batch_result = await task  # Wait for the next task to complete
             for vector_entry in batch_result:
                 yield vector_entry
+        print('embedding tasks completed')

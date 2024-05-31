@@ -1,4 +1,5 @@
 import logging
+import uuid
 from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional, Union
 
@@ -56,6 +57,7 @@ class SearchPipe(LoggableAsyncPipe):
         self,
         input: Input,
         state: AsyncState,
+        run_id: uuid.UUID,
         *args: Any,
         **kwargs,
     ) -> AsyncGenerator[SearchResult, None]:
