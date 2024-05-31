@@ -113,7 +113,7 @@ def test_delete(client):
     test_ingest_txt_file(client)
     test_ingest_txt_document(client)
 
-    response = client.delete("author", "John Doe")
+    response = client.delete(["author"], ["John Doe"])
     assert response == {"results": "Entries deleted successfully."}
 
 
