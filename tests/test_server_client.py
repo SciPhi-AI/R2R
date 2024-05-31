@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from r2r import (
-    KVLoggingConnectionSingleton,
+    KVLoggingSingleton,
     R2RApp,
     R2RConfig,
     R2RPipeFactory,
@@ -44,9 +44,9 @@ def r2r_app(request):
         )
 
         try:
-            KVLoggingConnectionSingleton.configure(config.logging)
+            KVLoggingSingleton.configure(config.logging)
         except:
-            KVLoggingConnectionSingleton._config.logging_path = (
+            KVLoggingSingleton._config.logging_path = (
                 config.logging.logging_path
             )
 

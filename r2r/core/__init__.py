@@ -12,14 +12,15 @@ from .abstractions.prompt import Prompt
 from .abstractions.search import SearchRequest, SearchResult
 from .abstractions.vector import Vector, VectorEntry, VectorType
 from .logging.kv_logger import (
-    KVLoggingConnectionSingleton,
-    LocalPipeLoggingProvider,
+    KVLoggingSingleton,
+    LocalKVLoggingProvider,
     LoggingConfig,
+    PostgresKVLoggingProvider,
     PostgresLoggingConfig,
-    PostgresPipeLoggingProvider,
+    RedisKVLoggingProvider,
     RedisLoggingConfig,
-    RedisPipeLoggingProvider,
 )
+from .logging.run_manager import RunManager, manage_run
 from .parsers import (
     AsyncParser,
     AudioParser,
@@ -62,12 +63,14 @@ from .utils import (
 __all__ = [
     # Logging
     "LoggingConfig",
-    "LocalPipeLoggingProvider",
+    "LocalKVLoggingProvider",
     "PostgresLoggingConfig",
-    "PostgresPipeLoggingProvider",
+    "PostgresKVLoggingProvider",
     "RedisLoggingConfig",
-    "RedisPipeLoggingProvider",
-    "KVLoggingConnectionSingleton",
+    "RedisKVLoggingProvider",
+    "KVLoggingSingleton",
+    "RunManager",
+    "manage_run",
     # Abstractions
     "VectorEntry",
     "VectorType",

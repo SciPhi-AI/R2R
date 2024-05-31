@@ -14,10 +14,12 @@ from r2r.core import (
     Document,
     DocumentType,
     GenerationConfig,
-    KVLoggingConnectionSingleton,
+    KVLoggingSingleton,
+    RunManager,
     generate_id_from_label,
     generate_run_id,
     increment_version,
+    manage_run,
     to_async_generator,
 )
 from r2r.pipes import R2REvalPipe
@@ -134,19 +136,20 @@ class R2RApp(metaclass=AsyncSyncMeta):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
+        run_manager: Optional[RunManager] = None,
         do_apply_cors: bool = True,
         *args,
         **kwargs,
     ):
         self.config = config
         self.providers = providers
-        self.logging_connection = KVLoggingConnectionSingleton()
+        self.logging_connection = KVLoggingSingleton()
         self.ingestion_pipeline = pipelines.ingestion_pipeline
         self.search_pipeline = pipelines.search_pipeline
         self.rag_pipeline = pipelines.rag_pipeline
         self.streaming_rag_pipeline = pipelines.streaming_rag_pipeline
         self.eval_pipeline = pipelines.eval_pipeline
-
+        self.run_manager = run_manager or RunManager(self.logging_connection)
         self.app = FastAPI()
 
         self._setup_routes()
@@ -245,14 +248,14 @@ class R2RApp(metaclass=AsyncSyncMeta):
         except Exception as e:
             run_id = self.ingestion_pipeline.run_id or generate_run_id()
             await self.ingestion_pipeline.pipe_logger.log(
-                pipe_run_id=run_id,
+                log_id=run_id,
                 key="pipeline_type",
                 value=self.ingestion_pipeline.pipeline_type,
                 is_info_log=True,
             )
 
             await self.ingestion_pipeline.pipe_logger.log(
-                pipe_run_id=run_id,
+                log_id=run_id,
                 key="error",
                 value=str(e),
                 is_info_log=False,
@@ -424,14 +427,14 @@ class R2RApp(metaclass=AsyncSyncMeta):
             logger.error(f"ingest_files() - \n\n{str(e)})")
             run_id = self.ingestion_pipeline.run_id or generate_run_id()
             await self.ingestion_pipeline.pipe_logger.log(
-                pipe_run_id=run_id,
+                log_id=run_id,
                 key="pipeline_type",
                 value=self.ingestion_pipeline.pipeline_type,
                 is_info_log=True,
             )
 
             await self.ingestion_pipeline.pipe_logger.log(
-                pipe_run_id=run_id,
+                log_id=run_id,
                 key="error",
                 value=str(e),
                 is_info_log=False,
@@ -544,17 +547,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
         **kwargs: Any,
     ):
         """Search for documents based on the query."""
-        try:
-            search_filters = search_filters or {}
-            results = await self.search_pipeline.run(
-                input=to_async_generator([query]),
-                search_filters=search_filters,
-                search_limit=search_limit,
-            )
-            return {"results": [results.dict() for results in results]}
-        except Exception as e:
-            logger.error(f"search(query={query}) - \n\n{str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
+        search_filters = search_filters or {}
+        results = await self.search_pipeline.run(
+            input=to_async_generator([query]),
+            search_filters=search_filters,
+            search_limit=search_limit,
+        )
+        return {"results": [results.dict() for results in results]}
 
     class SearchRequest(BaseModel):
         query: str
@@ -562,33 +561,34 @@ class R2RApp(metaclass=AsyncSyncMeta):
         search_limit: int = 10
 
     async def search_app(self, request: SearchRequest):
-        try:
-            search_filters = (
-                {}
-                if request.search_filters is None
-                or request.search_filters == "null"
-                else json.loads(request.search_filters)
-            )
-            return await self.asearch(
-                request.query, search_filters, request.search_limit
-            )
-        except Exception as e:
-            # TODO - Make this more modular
-            run_id = self.search_pipeline.run_id or generate_run_id()
-            await self.search_pipeline.pipe_logger.log(
-                pipe_run_id=run_id,
-                key="pipeline_type",
-                value=self.search_pipeline.pipeline_type,
-                is_info_log=True,
-            )
+        async with manage_run(self.run_manager, "search_app") as run_id:
+            try:
+                search_filters = (
+                    {}
+                    if request.search_filters is None
+                    or request.search_filters == "null"
+                    else json.loads(request.search_filters)
+                )
+                return await self.asearch(
+                    request.query, search_filters, request.search_limit
+                )
+            except Exception as e:
+                # TODO - Make this more modular
+                run_id = self.search_pipeline.run_id or generate_run_id()
+                await self.search_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="pipeline_type",
+                    value=self.search_pipeline.pipeline_type,
+                    is_info_log=True,
+                )
 
-            await self.search_pipeline.pipe_logger.log(
-                pipe_run_id=run_id,
-                key="error",
-                value=str(e),
-                is_info_log=False,
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+                await self.search_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="error",
+                    value=str(e),
+                    is_info_log=False,
+                )
+                raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def arag(
@@ -600,35 +600,31 @@ class R2RApp(metaclass=AsyncSyncMeta):
         *args,
         **kwargs,
     ):
-        try:
-            if rag_generation_config.stream:
+        if rag_generation_config.stream:
 
-                async def stream_response():
-                    async for chunk in await self.streaming_rag_pipeline.run(
-                        input=to_async_generator([message]),
-                        streaming=True,
-                        search_filters=search_filters,
-                        search_limit=search_limit,
-                        rag_generation_config=rag_generation_config,
-                        *args,
-                        **kwargs,
-                    ):
-                        yield chunk
-
-                return stream_response()
-
-            else:
-                results = await self.rag_pipeline.run(
+            async def stream_response():
+                async for chunk in await self.streaming_rag_pipeline.run(
                     input=to_async_generator([message]),
-                    streaming=False,
+                    streaming=True,
                     search_filters=search_filters,
                     search_limit=search_limit,
                     rag_generation_config=rag_generation_config,
-                )
-                return results
-        except Exception as e:
-            logger.error(f"rag(message={message}) - \n\n{str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
+                    *args,
+                    **kwargs,
+                ):
+                    yield chunk
+
+            return stream_response()
+
+        else:
+            results = await self.rag_pipeline.run(
+                input=to_async_generator([message]),
+                streaming=False,
+                search_filters=search_filters,
+                search_limit=search_limit,
+                rag_generation_config=rag_generation_config,
+            )
+            return results
 
     class RAGRequest(BaseModel):
         message: str
@@ -638,54 +634,53 @@ class R2RApp(metaclass=AsyncSyncMeta):
         streaming: Optional[bool] = None
 
     async def rag_app(self, request: RAGRequest):
-        try:
-            search_filters = (
-                None
-                if request.search_filters is None
-                or request.search_filters == "null"
-                else json.loads(request.search_filters)
-            )
-            rag_generation_config = (
-                GenerationConfig(
-                    **json.loads(request.rag_generation_config),
-                    stream=request.streaming,
+        async with manage_run(self.run_manager, "rag_app") as run_id:
+            try:
+                search_filters = (
+                    None
+                    if request.search_filters is None
+                    or request.search_filters == "null"
+                    else json.loads(request.search_filters)
                 )
-                if request.rag_generation_config
-                and request.rag_generation_config != "null"
-                else GenerationConfig(
-                    model="gpt-3.5-turbo", stream=request.streaming
+                rag_generation_config = (
+                    GenerationConfig(
+                        **json.loads(request.rag_generation_config),
+                        stream=request.streaming,
+                    )
+                    if request.rag_generation_config
+                    and request.rag_generation_config != "null"
+                    else GenerationConfig(
+                        model="gpt-3.5-turbo", stream=request.streaming
+                    )
                 )
-            )
-            response = await self.arag(
-                request.message,
-                rag_generation_config,
-                search_filters,
-                request.search_limit,
-            )
-            if request.streaming:
-                return StreamingResponse(
-                    response, media_type="application/json"
+                response = await self.arag(
+                    request.message,
+                    rag_generation_config,
+                    search_filters,
+                    request.search_limit,
                 )
-            else:
-                return {"results": response}
+                if request.streaming:
+                    return StreamingResponse(
+                        response, media_type="application/json"
+                    )
+                else:
+                    return {"results": response}
 
-        except Exception as e:
-            # TODO - Make this more modular
-            run_id = self.rag_pipeline.run_id or generate_run_id()
-            await self.rag_pipeline.pipe_logger.log(
-                pipe_run_id=run_id,
-                key="pipeline_type",
-                value=self.rag_pipeline.pipeline_type,
-                is_info_log=True,
-            )
-
-            await self.rag_pipeline.pipe_logger.log(
-                pipe_run_id=run_id,
-                key="error",
-                value=str(e),
-                is_info_log=False,
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+            except Exception as e:
+                # TODO - Modularize this, somehow
+                await self.rag_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="pipeline_type",
+                    value=self.rag_pipeline.pipeline_type,
+                    is_info_log=True,
+                )
+                await self.rag_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="error",
+                    value=str(e),
+                    is_info_log=False,
+                )
+                raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def aevaluate(
@@ -696,19 +691,15 @@ class R2RApp(metaclass=AsyncSyncMeta):
         *args: Any,
         **kwargs: Any,
     ):
-        try:
-            eval_payload = R2REvalPipe.EvalPayload(
-                query=query,
-                context=context,
-                completion=completion,
-            )
-            result = await self.eval_pipeline.run(
-                input=to_async_generator([eval_payload])
-            )
-            return {"results": result}
-        except Exception as e:
-            logger.error(f"evaluate(query={query}) - \n\n{str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
+        eval_payload = R2REvalPipe.EvalPayload(
+            query=query,
+            context=context,
+            completion=completion,
+        )
+        result = await self.eval_pipeline.run(
+            input=to_async_generator([eval_payload])
+        )
+        return {"results": result}
 
     class EvalRequest(BaseModel):
         query: str
@@ -716,28 +707,28 @@ class R2RApp(metaclass=AsyncSyncMeta):
         completion: str
 
     async def evaluate_app(self, request: EvalRequest):
-        try:
-            return await self.aevaluate(
-                query=request.query,
-                context=request.context,
-                completion=request.completion,
-            )
-        except Exception as e:
-            run_id = self.eval_pipeline.run_id or generate_run_id()
-            await self.eval_pipeline.pipe_logger.log(
-                pipe_run_id=run_id,
-                key="pipeline_type",
-                value=self.eval_pipeline.pipeline_type,
-                is_info_log=True,
-            )
+        async with manage_run(self.run_manager, "evaluate_app") as run_id:
+            try:
+                return await self.aevaluate(
+                    query=request.query,
+                    context=request.context,
+                    completion=request.completion,
+                )
+            except Exception as e:
+                await self.eval_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="pipeline_type",
+                    value=self.eval_pipeline.pipeline_type,
+                    is_info_log=True,
+                )
 
-            await self.eval_pipeline.pipe_logger.log(
-                pipe_run_id=run_id,
-                key="error",
-                value=str(e),
-                is_info_log=False,
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+                await self.eval_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="error",
+                    value=str(e),
+                    is_info_log=False,
+                )
+                raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def adelete(
@@ -747,14 +738,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
         *args: Any,
         **kwargs: Any,
     ):
-        try:
-            self.providers.vector_db.delete_by_metadata(keys, values)
-            return {"results": "Entries deleted successfully."}
-        except Exception as e:
-            logger.error(
-                f":delete: [Error](key={keys}, value={values}, error={str(e)})"
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+        self.providers.vector_db.delete_by_metadata(keys, values)
+        return {"results": "Entries deleted successfully."}
 
     class DeleteRequest(BaseModel):
         keys: list[str]
@@ -763,39 +748,51 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def delete_app(
         self, request: DeleteRequest = Body(...), *args: Any, **kwargs: Any
     ):
-        return await self.adelete(request.keys, request.values)
+        try:
+            return await self.adelete(request.keys, request.values)
+        except Exception as e:
+            logger.error(
+                f":delete: [Error](key={request.keys}, value={request.values}, error={str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def aget_user_ids(self, *args: Any, **kwargs: Any):
-        try:
-            user_ids = self.providers.vector_db.get_metadatas(
-                metadata_fields=["user_id"]
-            )
+        user_ids = self.providers.vector_db.get_metadatas(
+            metadata_fields=["user_id"]
+        )
 
-            return {"results": [ele["user_id"] for ele in user_ids]}
+        return {"results": [ele["user_id"] for ele in user_ids]}
+
+    async def get_user_ids_app(self):
+        try:
+            return await self.aget_user_ids()
         except Exception as e:
             logger.error(f"get_user_ids() - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
-
-    async def get_user_ids_app(self):
-        return await self.aget_user_ids()
 
     @syncable
     async def aget_user_document_data(
         self, user_id: str, *args: Any, **kwargs: Any
     ):
+        if isinstance(user_id, uuid.UUID):
+            user_id = str(user_id)
+        document_ids = self.providers.vector_db.get_metadatas(
+            metadata_fields=["document_id", "title"],
+            filter_field="user_id",
+            filter_value=user_id,
+        )
+        return {"results": [ele for ele in document_ids]}
+
+    class UserDocumentRequest(BaseModel):
+        user_id: str
+
+    async def get_user_document_data_app(self, request: UserDocumentRequest):
         try:
-            if isinstance(user_id, uuid.UUID):
-                user_id = str(user_id)
-            document_ids = self.providers.vector_db.get_metadatas(
-                metadata_fields=["document_id", "title"],
-                filter_field="user_id",
-                filter_value=user_id,
-            )
-            return {"results": [ele for ele in document_ids]}
+            return await self.aget_user_document_data(request.user_id)
         except Exception as e:
             logger.error(
-                f"get_user_document_data(user_id={user_id}) - \n\n{str(e)})"
+                f"get_user_document_data(user_id={request.user_id}) - \n\n{str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -803,81 +800,71 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def aget_document_data(
         self, document_id: str, *args: Any, **kwargs: Any
     ):
-        try:
-            if isinstance(document_id, uuid.UUID):
-                document_id = str(document_id)
-            document_ids = self.providers.vector_db.get_metadatas(
-                metadata_fields=["document_id", "title", "version"],
-                filter_field="document_id",
-                filter_value=document_id,
-            )
-            return {"results": [ele for ele in document_ids]}
-        except Exception as e:
-            logger.error(
-                f"get_document_data(document_id={document_id}) - \n\n{str(e)})"
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+        if isinstance(document_id, uuid.UUID):
+            document_id = str(document_id)
+        document_ids = self.providers.vector_db.get_metadatas(
+            metadata_fields=["document_id", "title", "version"],
+            filter_field="document_id",
+            filter_value=document_id,
+        )
+        return {"results": [ele for ele in document_ids]}
 
     class DocumentDataRequest(BaseModel):
         document_id: str
 
     async def get_document_data_app(self, request: DocumentDataRequest):
-        return await self.aget_document_data_app(request.document_id)
-
-    class UserDocumentRequest(BaseModel):
-        user_id: str
-
-    async def get_user_document_data_app(self, request: UserDocumentRequest):
-        return await self.aget_user_document_data(request.user_id)
+        try:
+            return await self.aget_document_data_app(request.document_id)
+        except Exception as e:
+            logger.error(
+                f"get_document_data(document_id={request.document_id}) - \n\n{str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def aget_logs(
-        self, pipeline_type: Optional[str] = None, *args: Any, **kwargs: Any
+        self, log_type_filter: Optional[str] = None, *args: Any, **kwargs: Any
     ):
-        try:
-            logs_per_run = 10
-            if self.logging_connection is None:
-                raise HTTPException(
-                    status_code=404, detail="Logging provider not found."
-                )
-            run_info = await self.logging_connection.get_run_info(
-                pipeline_type=pipeline_type,
-                limit=self.config.app.get("max_logs", 100) // logs_per_run,
+        logs_per_run = 10
+        if self.logging_connection is None:
+            raise HTTPException(
+                status_code=404, detail="Logging provider not found."
             )
-            run_ids = [run.run_id for run in run_info]
-            if len(run_ids) == 0:
-                return {"results": []}
-            logs = await self.logging_connection.get_logs(run_ids)
-            # Aggregate logs by run_id and include run_type
-            aggregated_logs = []
+        run_info = await self.logging_connection.get_run_info(
+            limit=self.config.app.get("max_logs", 100) // logs_per_run,
+            log_type_filter=log_type_filter,
+        )
+        run_ids = [run.run_id for run in run_info]
+        if len(run_ids) == 0:
+            return {"results": []}
+        logs = await self.logging_connection.get_logs(run_ids)
+        # Aggregate logs by run_id and include run_type
+        aggregated_logs = []
 
-            for run in run_info:
-                run_logs = [
-                    log for log in logs if log["pipe_run_id"] == run.run_id
-                ]
-                entries = [
-                    {"key": log["key"], "value": log["value"]}
-                    for log in run_logs
-                ]
-                aggregated_logs.append(
-                    {
-                        "run_id": run.run_id,
-                        "run_type": run.pipeline_type,
-                        "entries": entries,
-                    }
-                )
+        for run in run_info:
+            run_logs = [log for log in logs if log["log_id"] == run.run_id]
+            entries = [
+                {"key": log["key"], "value": log["value"]} for log in run_logs
+            ]
+            aggregated_logs.append(
+                {
+                    "run_id": run.run_id,
+                    "run_type": run.log_type,
+                    "entries": entries,
+                }
+            )
 
-            return {"results": aggregated_logs}
-
-        except Exception as e:
-            logger.error(f":logs: [Error](error={str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
+        return {"results": aggregated_logs}
 
     class LogsRequest(BaseModel):
         pipeline_type: Optional[str] = None
 
     async def get_logs_app(self, request: LogsRequest):
-        return await self.aget_logs(request.pipeline_type)
+        try:
+            return await self.aget_logs(request.pipeline_type)
+        except Exception as e:
+            logger.error(f":logs: [Error](error={str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
 
     def get_open_api_endpoint(self):
         from fastapi.openapi.utils import get_openapi

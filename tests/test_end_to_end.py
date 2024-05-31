@@ -8,7 +8,7 @@ from fastapi.datastructures import UploadFile
 from r2r import (
     Document,
     GenerationConfig,
-    KVLoggingConnectionSingleton,
+    KVLoggingSingleton,
     R2RApp,
     R2RConfig,
     R2RPipeFactory,
@@ -46,9 +46,9 @@ def r2r_app(request):
         )
 
         try:
-            KVLoggingConnectionSingleton.configure(config.logging)
+            KVLoggingSingleton.configure(config.logging)
         except:
-            KVLoggingConnectionSingleton._config.logging_path = (
+            KVLoggingSingleton._config.logging_path = (
                 config.logging.logging_path
             )
 
@@ -60,7 +60,7 @@ def r2r_app(request):
 
 @pytest.fixture
 def logging_connection():
-    return KVLoggingConnectionSingleton()
+    return KVLoggingSingleton()
 
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
@@ -76,7 +76,9 @@ async def test_ingest_txt_document(r2r_app, logging_connection):
             ),
         ]
     )
-    run_info = await logging_connection.get_run_info(pipeline_type="ingestion")
+    run_info = await logging_connection.get_run_info(
+        log_type_filter="ingestion"
+    )
     logs = await logging_connection.get_logs([run.run_id for run in run_info])
     assert len(logs) == 2, f"Expected 2 logs, but got {len(logs)}"
 
@@ -116,7 +118,9 @@ async def test_ingest_txt_file(r2r_app, logging_connection):
 
     await r2r_app.aingest_files(metadatas=[metadata], files=files)
 
-    run_info = await logging_connection.get_run_info(pipeline_type="ingestion")
+    run_info = await logging_connection.get_run_info(
+        log_type_filter="ingestion"
+    )
     logs = await logging_connection.get_logs([run.run_id for run in run_info])
     assert len(logs) == 2, f"Expected 2 logs, but got {len(logs)}"
 
@@ -159,7 +163,9 @@ async def test_ingest_search_txt_file(r2r_app, logging_connection):
 
     await r2r_app.aingest_files(metadatas=[metadata], files=files)
 
-    run_info = await logging_connection.get_run_info(pipeline_type="ingestion")
+    run_info = await logging_connection.get_run_info(
+        log_type_filter="ingestion"
+    )
     logs = await logging_connection.get_logs(
         [run.run_id for run in run_info], 100
     )

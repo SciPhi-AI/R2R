@@ -3,11 +3,11 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import Any, AsyncGenerator, Optional
 
-from ..logging.kv_logger import KVLoggingConnectionSingleton
+from ..logging.kv_logger import KVLoggingSingleton
 from ..logging.run_manager import RunManager, manage_run
 from .base_pipe import AsyncPipe, AsyncState, PipeType
 
-from r2r.core.utils import generate_run_id
+
 class LoggableAsyncPipe(AsyncPipe):
     """An asynchronous pipe for processing data with logging capabilities."""
 
@@ -19,7 +19,7 @@ class LoggableAsyncPipe(AsyncPipe):
 
     def __init__(
         self,
-        pipe_logger: Optional[KVLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.OTHER,
         config: Optional[AsyncPipe.PipeConfig] = None,
         run_manager: Optional[RunManager] = None,
@@ -27,19 +27,18 @@ class LoggableAsyncPipe(AsyncPipe):
         **kwargs,
     ):
         if not pipe_logger:
-            pipe_logger = KVLoggingConnectionSingleton()
+            pipe_logger = KVLoggingSingleton()
         self.pipe_logger = pipe_logger
         self.log_queue = asyncio.Queue()
         self.log_worker_task = None
         self._run_manager = run_manager or RunManager(pipe_logger)
-
         super().__init__(type=type, config=config, *args, **kwargs)
 
     async def log_worker(self):
         while True:
             log_data = await self.log_queue.get()
-            key, value = log_data
-            await self.pipe_logger.log(key, value)
+            run_id, key, value = log_data
+            await self.pipe_logger.log(run_id, key, value)
             self.log_queue.task_done()
 
     async def enqueue_log(self, run_id: uuid.UUID, key: str, value: str):
@@ -56,12 +55,10 @@ class LoggableAsyncPipe(AsyncPipe):
     ) -> AsyncGenerator[Any, None]:
         """Run the pipe with logging capabilities."""
 
-        run_manager = run_manager or self._run_manager
+        # run_manager = run_manager or self._run_manager
 
         async def wrapped_run() -> AsyncGenerator[Any, None]:
-                run_id = generate_run_id()
-            # async with manage_run(run_manager, self.type) as run_id:
-                print('in wrapped run')
+            async with manage_run(run_manager, self.config.name) as run_id:
                 self.log_worker_task = asyncio.create_task(
                     self.log_worker(), name=f"log-worker-{self.config.name}"
                 )
@@ -69,7 +66,9 @@ class LoggableAsyncPipe(AsyncPipe):
                     async for result in self._run_logic(
                         input, state, run_id=run_id, *args, **kwargs
                     ):
-                        print("result:", result)
+                        await self.enqueue_log(
+                            run_id, "processed", str(result)
+                        )
                         yield result
                 finally:
                     await self.log_queue.join()

@@ -191,10 +191,12 @@ class R2RClient:
         return response_json
 
     def get_logs(
-        self, pipeline_type: Optional[str] = None, filter: Optional[str] = None
+        self,
+        log_type_filter: Optional[str] = None,
+        filter: Optional[str] = None,
     ) -> dict:
         url = f"{self.base_url}/get_logs/"
-        data = {"pipeline_type": pipeline_type, "filter": filter}
+        data = {"log_type_filter": log_type_filter, "filter": filter}
         response = requests.post(url, json=data)
         response.raise_for_status()
         return response.json()

@@ -45,11 +45,9 @@ class R2RVectorSearchPipe(SearchPipe):
     ) -> AsyncGenerator[SearchResult, None]:
         search_filters_override = kwargs.get("search_filters", None)
         search_limit_override = kwargs.get("search_limit", None)
-        print('enqueuing log')
         await self.enqueue_log(
             run_id=run_id, key="search_query", value=message
         )
-        print('past enqueuing log')
         results = []
         for result in self.vector_db_provider.search(
             query_vector=self.embedding_provider.get_embedding(
@@ -61,7 +59,6 @@ class R2RVectorSearchPipe(SearchPipe):
             result.metadata["associatedQuery"] = message
             results.append(result)
             yield result
-
         await self.enqueue_log(
             run_id=run_id,
             key="search_results",
@@ -78,15 +75,12 @@ class R2RVectorSearchPipe(SearchPipe):
     ) -> AsyncGenerator[SearchResult, None]:
         search_queries = []
         search_results = []
-        print('running vector search')
         async for search_request in input.message:
             search_queries.append(search_request)
-            print('searching now...')
             async for result in self.search(
                 message=search_request, run_id=run_id, *args, **kwargs
             ):
                 search_results.append(result)
-                print('yielding result')
                 yield result
 
         await state.update(
