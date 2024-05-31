@@ -212,11 +212,12 @@ class R2RApp(metaclass=AsyncSyncMeta):
             endpoint=self.get_logs_app,
             methods=["POST"],
         )
-        self.app.add_api_route(
-            path="/analytics/",
-            endpoint=self.get_analytics_app,
-            methods=["GET"],
-        )
+        #FIXME: This needs to be reimplemented
+        # self.app.add_api_route(
+        #     path="/analytics/",
+        #     endpoint=self.get_analytics_app,
+        #     methods=["GET"],
+        # )
 
         self.app.add_api_route(
             path="/get_open_api_endpoint",
@@ -250,7 +251,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     async def ingest_documents_app(self, request: IngestDocumentsRequest):
         try:
-            await self.alog_throughput(time.time(), 1, "ingest_documents")
             return await self.aingest_documents(request.documents)
         except Exception as e:
             run_id = self.ingestion_pipeline.run_id or generate_run_id()
@@ -331,7 +331,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 status_code=400,
                 detail="Number of ids does not match number of files.",
             )
-        if len(files) == 0:
+        if not files:
             raise HTTPException(
                 status_code=400, detail="No files provided for ingestion."
             )
@@ -354,6 +354,14 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     logger.error("File name not provided.")
                     raise HTTPException(
                         status_code=400, detail="File name not provided."
+                    )
+
+                file_extension = file.filename.split(".")[-1]
+                if file_extension not in DocumentType._member_names_:
+                    logger.error(f"'{file_extension}' is not a valid DocumentType")
+                    raise HTTPException(
+                        status_code=415,
+                        detail=f"'{file_extension}' is not a valid DocumentType.",
                     )
 
                 file_content = await file.read()
@@ -389,11 +397,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     for file in files
                 ]
             }
+        except HTTPException as http_exc:
+            raise
         except Exception as e:
             logger.error(
                 f"ingest_files(metadata={metadatas}, ids={ids}, files={files}) - \n\n{str(e)})"
             )
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
         finally:
             # Ensure all file handles are closed
             for file in files:
@@ -406,48 +416,39 @@ class R2RApp(metaclass=AsyncSyncMeta):
         ids: Optional[str] = Form(None),
     ):
         """Ingest files into the system."""
-        try:
-            await self.alog_throughput(time.time(), 1, "ingest_files")
-            if ids and ids != "null":
-                ids_list = json.loads(ids)
-                if len(ids_list) != 0:
-                    try:
-                        ids_list = [uuid.UUID(id) for id in ids_list]
-                    except ValueError:
-                        raise HTTPException(
-                            status_code=400, detail="Invalid UUID provided."
-                        )
-            else:
-                ids_list = None
+        async with manage_run(self.run_manager, "ingest_files_app") as run_id:
+            try:
+                await self.run_manager.log_run_info("pipeline_type", "ingestion", is_info_log=True)
 
-            # Parse metadatas if provided
-            metadatas = (
-                json.loads(metadatas)
-                if metadatas and metadatas != "null"
-                else None
-            )
+                if ids and ids != "null":
+                    ids_list = json.loads(ids)
+                    if len(ids_list) != 0:
+                        try:
+                            ids_list = [uuid.UUID(id) for id in ids_list]
+                        except ValueError as e:
+                            raise HTTPException(
+                                status_code=400, detail="Invalid UUID provided."
+                            ) from e
+                else:
+                    ids_list = None
 
-            # Call aingest_files with the correct order of arguments
-            return await self.aingest_files(
-                files=files, metadatas=metadatas, ids=ids_list
-            )
-        except Exception as e:
-            logger.error(f"ingest_files() - \n\n{str(e)})")
-            run_id = self.ingestion_pipeline.run_id or generate_run_id()
-            await self.ingestion_pipeline.pipe_logger.log(
-                log_id=run_id,
-                key="pipeline_type",
-                value=self.ingestion_pipeline.pipeline_type,
-                is_info_log=True,
-            )
+                # Parse metadatas if provided
+                metadatas = (
+                    json.loads(metadatas)
+                    if metadatas and metadatas != "null"
+                    else None
+                )
 
-            await self.ingestion_pipeline.pipe_logger.log(
-                log_id=run_id,
-                key="error",
-                value=str(e),
-                is_info_log=False,
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+                # Call aingest_files with the correct order of arguments
+                return await self.aingest_files(
+                    files=files, metadatas=metadatas, ids=ids_list
+                )
+            except HTTPException as http_exc:
+                await self.run_manager.log_run_info("error", http_exc.detail, is_info_log=False)
+                raise
+            except Exception as e:
+                await self.run_manager.log_run_info("error", str(e), is_info_log=False)
+                raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
     async def aupdate_files(
@@ -556,8 +557,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
     ):
         """Search for documents based on the query."""
         try:
-            await self.alog_throughput(time.time(), 1, "search")
-
             t0 = time.time()
             run_id = generate_run_id()
             search_filters = search_filters or {}
@@ -628,8 +627,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         **kwargs,
     ):
         try:
-            await self.alog_throughput(time.time(), 1, "rag")
-
             t0 = time.time()
             run_id = generate_run_id()
             
@@ -767,8 +764,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def evaluate_app(self, request: EvalRequest):
         async with manage_run(self.run_manager, "evaluate_app") as run_id:
             try:
-                await self.alog_throughput(time.time(), 1, "evaluate")
-            
                 return await self.aevaluate(
                     query=request.query,
                     context=request.context,
@@ -822,7 +817,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def delete_app(
         self, request: DeleteRequest = Body(...), *args: Any, **kwargs: Any
     ):
-        await self.alog_throughput(time.time(), 1, "delete")
         return await self.adelete(request.key, request.value)
 
     @syncable
@@ -884,7 +878,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         document_id: str
 
     async def get_document_data_app(self, request: DocumentDataRequest):
-        await self.alog_throughput(time.time(), 1, "get_user_document_data")
         try:
             return await self.aget_document_data_app(request.document_id)
         except Exception as e:
@@ -936,25 +929,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
             return await self.aget_logs(request.log_type_filter)
         except Exception as e:
             logger.error(f":logs: [Error](error={str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
-        
-    @syncable
-    async def alog_throughput(self, timestamp: float, num_requests: int, request_type: str):
-        try:
-            # logger.info(f"Logging throughput: {timestamp}, {num_requests}, {request_type}")
-            await self.logging_connection.log_throughput(timestamp, num_requests, request_type)
-        except Exception as e:
-            logger.error(f"log_throughput(timestamp={timestamp}, num_requests={num_requests}, request_type={request_type}) - \n\n{str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
-
-        
-    @syncable
-    async def aget_throughput_data(self, start_time: float, end_time: float, request_type: Optional[str] = None):
-        try:
-            throughput_data = await self.logging_connection.get_throughput_data(start_time, end_time, request_type)
-            return {"results": throughput_data}
-        except Exception as e:
-            logger.error(f"get_throughput_data(start_time={start_time}, end_time={end_time}, request_type={request_type}) - \n\n{str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
 
     def get_open_api_endpoint(self):
