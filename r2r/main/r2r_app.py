@@ -745,9 +745,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         keys: list[str]
         values: list[Union[bool, int, str]]
 
-    async def delete_app(
-        self, request: DeleteRequest = Body(...), *args: Any, **kwargs: Any
-    ):
+    async def delete_app(self, request: DeleteRequest = Body(...)):
         try:
             return await self.adelete(request.keys, request.values)
         except Exception as e:

@@ -239,7 +239,7 @@ async def test_ingest_search_then_delete(r2r_app, logging_connection):
     )
 
     # Delete the document
-    delete_result = await r2r_app.adelete("author", "John Doe")
+    delete_result = await r2r_app.adelete(["author"], ["John Doe"])
 
     # Verify the deletion was successful
     assert delete_result == {
@@ -319,7 +319,9 @@ async def test_delete_by_id(r2r_app, logging_connection):
     search_results = await r2r_app.asearch("who was aristotle?")
 
     assert len(search_results["results"]) > 0
-    await r2r_app.adelete("document_id", str(generate_id_from_label("doc_1")))
+    await r2r_app.adelete(
+        ["document_id"], [str(generate_id_from_label("doc_1"))]
+    )
     search_results = await r2r_app.asearch("who was aristotle?")
     assert len(search_results["results"]) == 0
 

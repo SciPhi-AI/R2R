@@ -288,8 +288,10 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
         collection = self.log_info_table if is_info_log else self.log_table
 
         if is_info_log:
-            if key != "log_type":
-                raise ValueError("Metadata keys must be 'log_type'")
+            if "type" not in key:
+                raise ValueError(
+                    "Info log key must contain the string `type`."
+                )
             await self.conn.execute(
                 f"INSERT INTO {collection} (timestamp, log_id, log_type) VALUES (NOW(), $1, $2)",
                 log_id,
@@ -401,8 +403,8 @@ class RedisKVLoggingProvider(KVLoggingProvider):
             "value": value,
         }
         if is_info_log:
-            if key != "log_type":
-                raise ValueError("Metadata keys must be 'log_type'")
+            if "type" not in key:
+                raise ValueError("Metadata keys must contain the text 'type'")
             log_entry["log_type"] = value
             await self.redis.hset(
                 self.log_info_key, str(log_id), json.dumps(log_entry)
@@ -413,16 +415,16 @@ class RedisKVLoggingProvider(KVLoggingProvider):
             )
 
     async def get_run_info(
-        self, log_type: Optional[str] = None, limit: int = 10
+        self, log_type_filter: Optional[str] = None, limit: int = 10
     ) -> list[RunInfo]:
-        if log_type:
+        if log_type_filter:
             keys = await self.redis.hkeys(self.log_info_key)
             matched_ids = []
             for key in keys:
                 log_entry = json.loads(
                     await self.redis.hget(self.log_info_key, key)
                 )
-                if log_entry["log_type"] == log_type:
+                if log_entry["log_type"] == log_type_filter:
                     matched_ids.append(
                         RunInfo(
                             run_id=uuid.UUID(log_entry["log_id"]),

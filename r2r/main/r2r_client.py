@@ -135,11 +135,13 @@ class R2RClient:
             url = f"{self.base_url}/rag/"
             data = {
                 "message": message,
-                "search_filters": json.dumps(search_filters or {}),
+                "search_filters": json.dumps(search_filters)
+                if search_filters
+                else None,
                 "search_limit": search_limit,
-                "rag_generation_config": json.dumps(
-                    rag_generation_config or {}
-                ),
+                "rag_generation_config": json.dumps(rag_generation_config)
+                if rag_generation_config
+                else None,
                 "streaming": streaming,
             }
             response = requests.post(url, json=data)
@@ -156,9 +158,13 @@ class R2RClient:
         url = f"{self.base_url}/rag/"
         data = {
             "message": message,
-            "search_filters": json.dumps(search_filters or {}),
+            "search_filters": json.dumps(search_filters)
+            if search_filters
+            else None,
             "search_limit": search_limit,
-            "rag_generation_config": json.dumps(rag_generation_config or {}),
+            "rag_generation_config": json.dumps(rag_generation_config)
+            if rag_generation_config
+            else None,
             "streaming": True,
         }
         async with httpx.AsyncClient() as client:

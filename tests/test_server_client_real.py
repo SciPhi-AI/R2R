@@ -101,7 +101,8 @@ async def test_rag_stream(client):
     test_ingest_txt_document(client)
 
     query = "who was aristotle?"
-    response = client.rag(query, streaming=True)
+    response = client.rag(query, rag_generation_config=None, streaming=True)
+
     collector = ""
     for chunk in response:
         collector += chunk
