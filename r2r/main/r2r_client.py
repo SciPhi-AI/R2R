@@ -31,7 +31,7 @@ class R2RClient:
         self.base_url = base_url
 
     def ingest_documents(self, documents: list[dict]) -> dict:
-        url = f"{self.base_url}/ingest_documents/"
+        url = f"{self.base_url}/ingest_documents"
         data = {"documents": documents}
         serialized_data = json.dumps(data, default=default_serializer)
         response = requests.post(
@@ -49,7 +49,7 @@ class R2RClient:
         files: list[str],
         ids: Optional[list[str]] = None,
     ) -> dict:
-        url = f"{self.base_url}/ingest_files/"
+        url = f"{self.base_url}/ingest_files"
         files_to_upload = [
             ("files", (file, open(file, "rb"), "application/octet-stream"))
             for file in files
@@ -67,7 +67,7 @@ class R2RClient:
         return response.json()
 
     def update_documents(self, documents: list[dict]) -> dict:
-        url = f"{self.base_url}/update_documents/"
+        url = f"{self.base_url}/update_documents"
         data = {"documents": documents}
         serialized_data = json.dumps(data, default=default_serializer)
         response = requests.post(
@@ -84,7 +84,7 @@ class R2RClient:
         files: list[str],
         ids: list[str],
     ) -> dict:
-        url = f"{self.base_url}/update_files/"
+        url = f"{self.base_url}/update_files"
         files_to_upload = [
             ("files", (file, open(file, "rb"), "application/octet-stream"))
             for file in files
@@ -105,7 +105,7 @@ class R2RClient:
         search_filters: Optional[dict] = None,
         search_limit: int = 10,
     ) -> dict:
-        url = f"{self.base_url}/search/"
+        url = f"{self.base_url}/search"
         data = {
             "query": query,
             "search_filters": json.dumps(search_filters or {}),
@@ -131,7 +131,7 @@ class R2RClient:
                 rag_generation_config=rag_generation_config,
             )
         else:
-            url = f"{self.base_url}/rag/"
+            url = f"{self.base_url}/rag"
             data = {
                 "message": message,
                 "search_filters": json.dumps(search_filters)
@@ -154,7 +154,7 @@ class R2RClient:
         search_limit: int = 10,
         rag_generation_config: Optional[dict] = None,
     ) -> AsyncGenerator[str, None]:
-        url = f"{self.base_url}/rag/"
+        url = f"{self.base_url}/rag"
         data = {
             "message": message,
             "search_filters": json.dumps(search_filters)
@@ -203,34 +203,34 @@ class R2RClient:
     def delete(
         self, keys: list[str], values: list[Union[bool, int, str]]
     ) -> dict:
-        url = f"{self.base_url}/delete/"
+        url = f"{self.base_url}/delete"
         data = {"keys": keys, "values": values}
         response = requests.request("DELETE", url, json=data)
         response.raise_for_status()
         return response.json()
 
     def get_user_ids(self) -> dict:
-        url = f"{self.base_url}/get_user_ids/"
+        url = f"{self.base_url}/get_user_ids"
         response = requests.get(url)
         response.raise_for_status()
         return response.json()
 
     def get_user_documents_metadata(self, user_id: str) -> dict:
-        url = f"{self.base_url}/get_user_documents_metadata/"
+        url = f"{self.base_url}/get_user_documents_metadata"
         data = {"user_id": user_id}
         response = requests.post(url, json=data)
         response.raise_for_status()
         return response.json()
 
     def get_document_data(self, document_id: str) -> dict:
-        url = f"{self.base_url}/get_document_data/"
+        url = f"{self.base_url}/get_document_data"
         data = {"document_id": document_id}
         response = requests.post(url, json=data)
         response.raise_for_status()
         return response.json()
 
     def get_logs(self, log_type_filter: Optional[str] = None) -> dict:
-        url = f"{self.base_url}/get_logs/"
+        url = f"{self.base_url}/get_logs"
         data = {"log_type_filter": log_type_filter}
         response = requests.post(url, json=data)
         response.raise_for_status()

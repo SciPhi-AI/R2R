@@ -158,64 +158,64 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     def _setup_routes(self):
         self.app.add_api_route(
-            path="/ingest_documents/",
+            path="/ingest_documents",
             endpoint=self.ingest_documents_app,
             methods=["POST"],
         )
         self.app.add_api_route(
-            path="/ingest_files/",
+            path="/ingest_files",
             endpoint=self.ingest_files_app,
             methods=["POST"],
         )
         self.app.add_api_route(
-            path="/update_documents/",
+            path="/update_documents",
             endpoint=self.update_documents_app,
             methods=["POST"],
         )
         self.app.add_api_route(
-            path="/update_files/",
+            path="/update_files",
             endpoint=self.update_files_app,
             methods=["POST"],
         )
         self.app.add_api_route(
-            path="/search/", endpoint=self.search_app, methods=["POST"]
+            path="/search", endpoint=self.search_app, methods=["POST"]
         )
         self.app.add_api_route(
-            path="/rag/", endpoint=self.rag_app, methods=["POST"]
+            path="/rag", endpoint=self.rag_app, methods=["POST"]
         )
         self.app.add_api_route(
-            path="/evaluate/",
+            path="/evaluate",
             endpoint=self.evaluate_app,
             methods=["POST"],
         )
         self.app.add_api_route(
-            path="/delete/", endpoint=self.delete_app, methods=["DELETE"]
+            path="/delete", endpoint=self.delete_app, methods=["DELETE"]
         )
         self.app.add_api_route(
-            path="/get_document_data/",
+            path="/get_document_data",
             endpoint=self.get_document_data_app,
             methods=["GET"],
         )
         self.app.add_api_route(
-            path="/get_user_ids/",
+            path="/get_user_ids",
             endpoint=self.get_user_ids_app,
             methods=["GET"],
         )
         self.app.add_api_route(
-            path="/get_user_documents_metadata/",
+            path="/get_user_documents_metadata",
             endpoint=self.get_user_documents_metadata_app,
             methods=["POST"],
         )
         self.app.add_api_route(
-            path="/get_logs/",
+            path="/get_logs",
             endpoint=self.get_logs_app,
             methods=["POST"],
         )
 
         self.app.add_api_route(
-            path="/get_open_api_endpoint/",
+            path="/get_open_api_endpoint",
             endpoint=self.get_open_api_endpoint,
-            methods=["POST"],
+            methods=["GET"],
         )
 
     @syncable
