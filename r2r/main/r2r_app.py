@@ -356,8 +356,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         status_code=400, detail="File name not provided."
                     )
 
-                file_extension = file.filename.split(".")[-1]
-                if file_extension not in DocumentType._member_names_:
+                file_extension = file.filename.split(".")[-1].lower()
+                if file_extension.upper() not in DocumentType.__members__:
                     logger.error(f"'{file_extension}' is not a valid DocumentType")
                     raise HTTPException(
                         status_code=415,
@@ -376,7 +376,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 documents.append(
                     Document(
                         id=document_id,
-                        type=DocumentType(file.filename.split(".")[-1]),
+                        type=DocumentType[file_extension.upper()],
                         data=file_content,
                         metadata=document_metadata,
                     )
@@ -444,7 +444,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     files=files, metadatas=metadatas, ids=ids_list
                 )
             except HTTPException as http_exc:
-                await self.run_manager.log_run_info("error", http_exc.detail, is_info_log=False)
+                await self.run_manager.log_run_info("error", str(http_exc.status_code), is_info_log=False)
                 raise
             except Exception as e:
                 await self.run_manager.log_run_info("error", str(e), is_info_log=False)
