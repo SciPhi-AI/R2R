@@ -160,7 +160,7 @@ Time taken to stream RAG response: 2.79 seconds
 
 Effective document management is crucial for maintaining a robust and efficient RAG system. This section guides you through various operations related to document management, including deleting documents and managing user-specific data. These steps will help ensure your document database remains organized and up-to-date.
 
-### Step 6: Delete a Specified Document
+### Delete a Specified Document
 
 To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the associated document ID with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
 
@@ -190,7 +190,19 @@ af8-3e63-4cb9-a4d6-a855f36376c3', 'query': 'Who was Aristotle?'}}
 
 The quality of search results has dramatically decreased now that the Aristotle-specific document has been fully erased. This highlights the importance of the ingested data quality on the RAG results.
 
-### Step 7: Delete a Specified User's Documents
+### Delete a Specified User's Documents
+
+To delete all documents associated with a given user, run the delete command on the `user_id`.
+
+```bash
+# run the following command with care, as it will erase all ingested user data
+# python -m r2r.examples.demo delete --keys="['user_id']" --values="['063edaf8-3e63-4cb9-a4d6-a855f36376c3']"
+```
+
+Afterwards, we may confirm complete user documentation through the `get_user_documents_metadata` functionality.
+
+
+### Delete a Specified User's Documents
 
 To delete all documents associated with a given user, run the delete command on the `user_id`.
 
@@ -211,7 +223,7 @@ Time taken to get user document data: 0.00 seconds
 
 ## Advanced Functionality
 
-### Step 8: Demo Multi-Modal Support
+### Demo Multi-Modal Support
 
 An `.png` image of a desktop screen was included as part of the ingestion command shown above. By default, the `ImageParser` uses an OpenAI vision model (gpt-4o) to transcribe the image and embed that transcription. We can then search these results directly, as evidenced below:
 
@@ -228,7 +240,7 @@ Time taken to search: 1.13 seconds
 {'id': UUID('5c57cd4c-a7d2-5003-b59d-3637b545a32c'), 'score': 0.34990526831895197, 'metadata': {'document_id': '8d78f34d-f795-5c82-a90f-18b8cc3a883c', 'extraction_id': '8c11b793-b744-5f73-bb76-23cb45c36538', 'text': 'users with a contextual, intuitive interface, continually evolve features and functionality, and deliver safety andtrust.\nWe intend to continue to inv\nest in new platform offerings that we believe will further strengthen our platform and existing offerings.We\n believe  that  all  of  these  synergies  serve  the  customer  experience,  enabling  us  to  attract  new  platform  users  and  to  deepen  engagement  with  existingplatform', 'title': 'uber_2021.pdf', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'query': 'What is shown on the user screen?'}}
 ```
 
-### Step 9: Run LLM-Powered Evaluation
+### Run LLM-Powered Evaluation
 
 The R2R framework can evaluate the relevance and accuracy of generated responses using LLM-powered evaluation. Run the following command to perform an evaluation:
 
@@ -264,7 +276,7 @@ This output is consistent with the default query, context, and answer, shown bel
     The meaning of life is to help others, learn and grow, and to make a difference.
 ```
 
-### Step 10: Logging
+### Logging
 
 Pipes naturally integrate with your selected logging provider. R2R pipelines for ingestion, search, and RAG create comprehensive logs that allow for total observability.
 

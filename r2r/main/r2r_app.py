@@ -226,41 +226,36 @@ class R2RApp(metaclass=AsyncSyncMeta):
         *args: Any,
         **kwargs: Any,
     ):
-        try:
-            # Process the documents through the pipeline
-            await self.ingestion_pipeline.run(
-                input=to_async_generator(documents),
-                versions=versions,
-            )
-            return {"results": "Entries upserted successfully."}
-        except Exception as e:
-            logger.error(
-                f"ingest_documents(documents={documents}) - \n\n{str(e)})"
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+        # Process the documents through the pipeline
+        await self.ingestion_pipeline.run(
+            input=to_async_generator(documents),
+            versions=versions,
+            run_manager=self.run_manager,
+        )
+        return {"results": "Entries upserted successfully."}
 
     class IngestDocumentsRequest(BaseModel):
         documents: list[Document]
 
     async def ingest_documents_app(self, request: IngestDocumentsRequest):
-        try:
-            return await self.aingest_documents(request.documents)
-        except Exception as e:
-            run_id = self.ingestion_pipeline.run_id or generate_run_id()
-            await self.ingestion_pipeline.pipe_logger.log(
-                log_id=run_id,
-                key="pipeline_type",
-                value=self.ingestion_pipeline.pipeline_type,
-                is_info_log=True,
-            )
+        async with manage_run(self.run_manager, "ingest_documents_app") as run_id:
+            try:
+                return await self.aingest_documents(request.documents)
+            except Exception as e:
+                await self.ingestion_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="pipeline_type",
+                    value=self.ingestion_pipeline.pipeline_type,
+                    is_info_log=True,
+                )
 
-            await self.ingestion_pipeline.pipe_logger.log(
-                log_id=run_id,
-                key="error",
-                value=str(e),
-                is_info_log=False,
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+                await self.ingestion_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="error",
+                    value=str(e),
+                    is_info_log=False,
+                )
+                raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def aupdate_documents(
@@ -299,10 +294,24 @@ class R2RApp(metaclass=AsyncSyncMeta):
         documents: list[Document]
 
     async def update_documents_app(self, request: UpdateDocumentsRequest):
-        try:
-            return await self.aupdate_documents(request.documents)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+        async with manage_run(self.run_manager, "update_documents_app") as run_id:
+            try:
+                return await self.aupdate_documents(request.documents)
+            except Exception as e:
+                await self.ingestion_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="pipeline_type",
+                    value=self.ingestion_pipeline.pipeline_type,
+                    is_info_log=True,
+                )
+                await self.ingestion_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="error",
+                    value=str(e),
+                    is_info_log=False,
+                )
+                raise HTTPException(status_code=500, detail=str(e))
+                
 
     @syncable
     async def aingest_files(
@@ -369,12 +378,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 logger.info(f"Document created: {document_id}")
 
             # Run the pipeline asynchronously
-            logger.info("Running the ingestion pipeline...")
             await self.ingestion_pipeline.run(
                 input=to_async_generator(documents),
                 versions=versions,
+                run_manager=self.run_manager,
             )
-            logger.info("Ingestion pipeline completed.")
 
             return {
                 "results": [
@@ -399,47 +407,47 @@ class R2RApp(metaclass=AsyncSyncMeta):
         ids: Optional[str] = Form(None),
     ):
         """Ingest files into the system."""
-        try:
-            if ids and ids != "null":
-                ids_list = json.loads(ids)
-                if len(ids_list) != 0:
-                    try:
-                        ids_list = [uuid.UUID(id) for id in ids_list]
-                    except ValueError:
-                        raise HTTPException(
-                            status_code=400, detail="Invalid UUID provided."
-                        )
-            else:
-                ids_list = None
+        async with manage_run(self.run_manager, "ingest_files_app") as run_id:
+            try:
+                if ids and ids != "null":
+                    ids_list = json.loads(ids)
+                    if len(ids_list) != 0:
+                        try:
+                            ids_list = [uuid.UUID(id) for id in ids_list]
+                        except ValueError:
+                            raise HTTPException(
+                                status_code=400, detail="Invalid UUID provided."
+                            )
+                else:
+                    ids_list = None
 
-            # Parse metadatas if provided
-            metadatas = (
-                json.loads(metadatas)
-                if metadatas and metadatas != "null"
-                else None
-            )
+                # Parse metadatas if provided
+                metadatas = (
+                    json.loads(metadatas)
+                    if metadatas and metadatas != "null"
+                    else None
+                )
 
-            # Call aingest_files with the correct order of arguments
-            return await self.aingest_files(
-                files=files, metadatas=metadatas, ids=ids_list
-            )
-        except Exception as e:
-            logger.error(f"ingest_files() - \n\n{str(e)})")
-            run_id = self.ingestion_pipeline.run_id or generate_run_id()
-            await self.ingestion_pipeline.pipe_logger.log(
-                log_id=run_id,
-                key="pipeline_type",
-                value=self.ingestion_pipeline.pipeline_type,
-                is_info_log=True,
-            )
+                # Call aingest_files with the correct order of arguments
+                return await self.aingest_files(
+                    files=files, metadatas=metadatas, ids=ids_list
+                )
+            except Exception as e:
+                logger.error(f"ingest_files() - \n\n{str(e)})")
+                await self.ingestion_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="pipeline_type",
+                    value=self.ingestion_pipeline.pipeline_type,
+                    is_info_log=True,
+                )
 
-            await self.ingestion_pipeline.pipe_logger.log(
-                log_id=run_id,
-                key="error",
-                value=str(e),
-                is_info_log=False,
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+                await self.ingestion_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="error",
+                    value=str(e),
+                    is_info_log=False,
+                )
+                raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def aupdate_files(
@@ -509,33 +517,48 @@ class R2RApp(metaclass=AsyncSyncMeta):
         metadatas: Optional[str] = Form(None),
         ids: Optional[str] = Form(None),
     ):
-        try:
-            # Parse metadatas if provided
-            metadatas = (
-                json.loads(metadatas)
-                if metadatas and metadatas != "null"
-                else None
-            )
+        async with manage_run(self.run_manager, "update_files_app") as run_id:
+            
+            try:
+                # Parse metadatas if provided
+                metadatas = (
+                    json.loads(metadatas)
+                    if metadatas and metadatas != "null"
+                    else None
+                )
 
-            # Parse ids if provided
-            ids_list = json.loads(ids)
-            if ids_list:
-                ids_list = [uuid.UUID(id) for id in ids_list]
-            if len(ids_list) != len(files):
-                raise HTTPException(
-                    status_code=400,
-                    detail="Number of ids does not match number of files.",
+                # Parse ids if provided
+                ids_list = json.loads(ids)
+                if ids_list:
+                    ids_list = [uuid.UUID(id) for id in ids_list]
+                if len(ids_list) != len(files):
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Number of ids does not match number of files.",
+                    )
+                if len(ids_list) != len(metadatas):
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Number of metadata entries does not match number of files.",
+                    )
+                return await self.aupdate_files(
+                    files=files, metadatas=metadatas, ids=ids_list
                 )
-            if len(ids_list) != len(metadatas):
-                raise HTTPException(
-                    status_code=400,
-                    detail="Number of metadata entries does not match number of files.",
+            except Exception as e:
+                await self.ingestion_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="pipeline_type",
+                    value=self.ingestion_pipeline.pipeline_type,
+                    is_info_log=True,
                 )
-            return await self.aupdate_files(
-                files=files, metadatas=metadatas, ids=ids_list
-            )
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+
+                await self.ingestion_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="error",
+                    value=str(e),
+                    is_info_log=False,
+                )                
+                raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def asearch(
@@ -552,6 +575,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             input=to_async_generator([query]),
             search_filters=search_filters,
             search_limit=search_limit,
+            run_manager=self.run_manager,
         )
         return {"results": [results.dict() for results in results]}
 
@@ -574,7 +598,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
             except Exception as e:
                 # TODO - Make this more modular
-                run_id = self.search_pipeline.run_id or generate_run_id()
                 await self.search_pipeline.pipe_logger.log(
                     log_id=run_id,
                     key="pipeline_type",
@@ -609,6 +632,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     search_filters=search_filters,
                     search_limit=search_limit,
                     rag_generation_config=rag_generation_config,
+                    run_manager=self.run_manager,
                     *args,
                     **kwargs,
                 ):
@@ -623,6 +647,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 search_filters=search_filters,
                 search_limit=search_limit,
                 rag_generation_config=rag_generation_config,
+                run_manager=self.run_manager,
             )
             return results
 
@@ -697,7 +722,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
             completion=completion,
         )
         result = await self.eval_pipeline.run(
-            input=to_async_generator([eval_payload])
+            input=to_async_generator([eval_payload]),
+            run_manager=self.run_manager,
         )
         return {"results": result}
 
