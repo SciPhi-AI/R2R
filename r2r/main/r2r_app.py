@@ -762,7 +762,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def get_analytics_app(self, pipeline_type: Optional[str] = None):
         await self.alog_throughput(time.time(), 1, "get_analytics")
         try:
-            analytics_data = await PipeLoggingConnectionSingleton.get_analytics(
+            analytics_data = await KVLoggingConnectionSingleton.get_analytics(
                 pipeline_type=pipeline_type
             )
             return {"results": analytics_data}

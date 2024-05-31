@@ -619,6 +619,7 @@ class KVLoggingConnectionSingleton:
 
     @classmethod
     async def get_analytics(cls, pipeline_type: Optional[str] = None):
+        #FIXME: add run ideas here to harmonize with the rest of the code
         run_info = await cls.get_run_info(pipeline_type=pipeline_type)
         run_ids = [info.run_id for info in run_info]
 
@@ -642,6 +643,7 @@ class KVLoggingConnectionSingleton:
 
     @classmethod
     def process_logs(cls, logs):
+        # Move up to the top of the file
         from collections import defaultdict
         import json
         import re
@@ -653,7 +655,7 @@ class KVLoggingConnectionSingleton:
         error_counts = defaultdict(int)
         error_timestamps = defaultdict(lambda: defaultdict(int))
         timestamp_format = "%Y-%m-%d %H:%M:%S"
-        retrieval_scores = []
+        retrieval_scores = [] # Initialize dict on different keys?
         query_timestamps = []
         vector_search_latencies = []
         rag_generation_latencies = []
@@ -675,6 +677,7 @@ class KVLoggingConnectionSingleton:
 
             if log["key"] == "search_results":
                 results = log["value"]
+                # Histogram over the max similarity, as aggregate is not necessarily interpretable and do aggregate statistics, more informative
                 try:
                     results_list = json.loads(results)
                     for result_str in results_list:
@@ -684,6 +687,8 @@ class KVLoggingConnectionSingleton:
                 except Exception as e:
                     logger.error(f"Error parsing search results: {results} - {e}")
             elif log["key"] == "search_query":
+                # Expand run_info class to include arbitrary filters
+                # Atomic widgets to get filtered run ids, then calculate statistics over them
                 query_timestamps.append(log["timestamp"])
             elif log["key"] == "vector_search_latency":
                 vector_search_latencies.append(float(log["value"]))

@@ -22,9 +22,9 @@ class PipelineTypes(Enum):
 
 
 @asynccontextmanager
-async def manage_run_id(pipeline: "Pipeline"):
+async def manage_run_id(pipeline: "Pipeline", run_id: Optional[uuid.UUID] = None):
     try:
-        pipeline.run_id = generate_run_id()
+        pipeline.run_id = run_id or generate_run_id()
         yield
     finally:
         pipeline.run_id = None
@@ -78,7 +78,7 @@ class Pipeline:
         self.state = state or AsyncState()
         current_input = input
 
-        async with manage_run_id(self):
+        async with manage_run_id(self, run_id):
             await self.pipe_logger.log(
                 pipe_run_id=self.run_id,
                 key="pipeline_type",
