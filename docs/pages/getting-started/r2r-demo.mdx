@@ -1,6 +1,6 @@
 ## R2R Demo
 
-The R2R demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo ingests a list of provided provided documents and demonstrates search, RAG, and advanced functionality. The script at r2r/examples/demo.py, which powers the demo, can be configured and extended with sufficient developer familiarity.
+The R2R demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo ingests a list of provided documents and demonstrates search, RAG, and advanced functionality. The script at r2r/examples/demo.py, which powers the demo, can be configured and extended with sufficient developer familiarity.
 
 ## Setup
 
@@ -192,7 +192,7 @@ To delete all documents associated with a given user, run the delete command on 
 
 ```bash
 # run the following command with care, as it will erase all ingested user data
-# python -m r2r.examples.demo delete --key=user_id --value=063edaf8-3e63-4cb9-a4d6-a855f36376c3
+python -m r2r.examples.demo delete --key=user_id --value=063edaf8-3e63-4cb9-a4d6-a855f36376c3
 ```
 
 Afterwards, we may confirm complete user documentation through the `get_user_document_data` functionality.

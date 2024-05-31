@@ -53,8 +53,6 @@ export OPENAI_API_KEY=sk-...
 
 [SciPhi Cloud Docs](https://docs.sciphi.ai/)
 
-[Local RAG Tutorial](https://r2r-docs.sciphi.ai/tutorials/local_rag)
-
 # R2R Demo
 
 The R2R demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo ingests a list of provided provided documents and demonstrates search, RAG, and advanced functionality. The script at `r2r/examples/demo.py`, which powers the demo, can be configured and extended with sufficient developer familiarity.
