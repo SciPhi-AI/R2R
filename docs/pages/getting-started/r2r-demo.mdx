@@ -57,7 +57,7 @@ Each ingested document derives a unique `document_id` from the input file path. 
 To verify the successful ingestion of the demo documents, you can fetch the metadata for the uploaded documents associated with the default demo user ID:
 
 ```bash
-python -m r2r.examples.demo get_user_document_data --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
+python -m r2r.examples.demo get_user_documents_metadata --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
 ```
 
 **Demo Output:**
@@ -164,8 +164,9 @@ Effective document management is crucial for maintaining a robust and efficient 
 To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the associated document ID with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
 
 ```bash
-python -m r2r.examples.demo delete --key=document_id --value=c9bdbac7-0ea3-5c9e-b590-018bd09b127b
+poetry run python -m r2r.examples.demo delete --keys="['document_id']" --values="['c9bdbac7-0ea3-5c9e-b590-018bd09b127b']"
 ```
+By default the delete method will perform an AND operation over all given metadata keys and values.
 
 After deleting a document, you can run a search command to verify its removal:
 
@@ -194,10 +195,10 @@ To delete all documents associated with a given user, run the delete command on 
 
 ```bash
 # run the following command with care, as it will erase all ingested user data
-python -m r2r.examples.demo delete --key=user_id --value=063edaf8-3e63-4cb9-a4d6-a855f36376c3
+# python -m r2r.examples.demo delete --keys="['user_id']" --values="['063edaf8-3e63-4cb9-a4d6-a855f36376c3']"
 ```
 
-Afterwards, we may confirm complete user documentation through the `get_user_document_data` functionality.
+Afterwards, we may confirm complete user documentation through the `get_user_documents_metadata` functionality.
 
 **Demo Output:**
 

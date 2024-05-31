@@ -1,10 +1,11 @@
 import asyncio
 import logging
+import uuid
 from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
     AsyncState,
-    KVLoggingConnectionSingleton,
+    KVLoggingSingleton,
     LoggableAsyncPipe,
     PipeType,
     VectorDBProvider,
@@ -23,7 +24,7 @@ class R2RVectorStoragePipe(LoggableAsyncPipe):
         self,
         vector_db_provider: VectorDBProvider,
         storage_batch_size: int = 128,
-        pipe_logger: Optional[KVLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
@@ -70,6 +71,7 @@ class R2RVectorStoragePipe(LoggableAsyncPipe):
         self,
         input: Input,
         state: AsyncState,
+        run_id: uuid.UUID,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[None, None]:

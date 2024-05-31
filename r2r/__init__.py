@@ -5,8 +5,8 @@ from .eval import *
 from .integrations import *
 from .main import *
 from .pipes import *
-from .prompts import *
 from .prebuilts import *
+from .prompts import *
 
 logger = logging.getLogger("r2r")
 logger.setLevel(logging.INFO)
@@ -29,19 +29,18 @@ logger.propagate = False
 
 __all__ = [
     "LoggingConfig",
-    "LocalPipeLoggingProvider",
+    "LocalKVLoggingProvider",
     "PostgresLoggingConfig",
-    "PostgresPipeLoggingProvider",
+    "PostgresKVLoggingProvider",
     "RedisLoggingConfig",
-    "RedisPipeLoggingProvider",
-    "KVLoggingConnectionSingleton",
+    "RedisKVLoggingProvider",
+    "KVLoggingSingleton",
     "VectorEntry",
     "VectorType",
     "Vector",
     "SearchRequest",
     "SearchResult",
     "AsyncPipe",
-    "PipeRunInfo",
     "PipeType",
     "AsyncState",
     "Prompt",

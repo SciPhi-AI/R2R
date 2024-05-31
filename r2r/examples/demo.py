@@ -68,7 +68,6 @@ class R2RDemo:
         for file_path in file_paths:
             with open(file_path, "rb") as f:
                 data = f.read()
-
             documents.append(
                 Document(
                     id=generate_id_from_label(file_path),
@@ -132,6 +131,11 @@ class R2RDemo:
     def ingest_as_files(self, file_paths: Optional[list[str]] = None):
         file_paths = file_paths or self.default_files
 
+        ids = [
+            generate_id_from_label(file_path.split(os.path.sep)[-1])
+            for file_path in file_paths
+        ]
+
         files = [
             UploadFile(
                 filename=file_path.split(os.path.sep)[-1],
@@ -157,14 +161,16 @@ class R2RDemo:
         if hasattr(self, "client"):
             t0 = time.time()
             response = self.client.ingest_files(
-                metadatas=metadatas, files=file_paths
+                metadatas=metadatas, files=file_paths, ids=ids
             )
             t1 = time.time()
             print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
             print(response)
         else:
             t0 = time.time()
-            response = self.r2r.ingest_files(files=files, metadatas=metadatas)
+            response = self.r2r.ingest_files(
+                files=files, metadatas=metadatas, ids=ids
+            )
             t1 = time.time()
             print("response = ", response)
 
@@ -398,16 +404,16 @@ class R2RDemo:
             print(f"Time taken to get user IDs: {t1-t0:.2f} seconds")
             print(response)
 
-    def get_user_document_data(self):
+    def get_user_documents_metadata(self):
         if hasattr(self, "client"):
             t0 = time.time()
-            response = self.client.get_user_document_data(self.user_id)
+            response = self.client.get_user_documents_metadata(self.user_id)
             t1 = time.time()
             print(f"Time taken to get user document data: {t1-t0:.2f} seconds")
             print(response)
         else:
             t0 = time.time()
-            response = self.r2r.get_user_document_data(self.user_id)
+            response = self.r2r.get_user_documents_metadata(self.user_id)
             t1 = time.time()
             print(f"Time taken to get user document data: {t1-t0:.2f} seconds")
             print(response)

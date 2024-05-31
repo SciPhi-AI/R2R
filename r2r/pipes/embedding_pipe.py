@@ -2,6 +2,7 @@ import asyncio
 import copy
 import json
 import logging
+import uuid
 from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional
 
@@ -11,7 +12,7 @@ from r2r.core import (
     Extraction,
     Fragment,
     FragmentType,
-    KVLoggingConnectionSingleton,
+    KVLoggingSingleton,
     LoggableAsyncPipe,
     PipeType,
     TextSplitter,
@@ -30,7 +31,7 @@ class EmbeddingPipe(LoggableAsyncPipe):
     def __init__(
         self,
         embedding_provider: EmbeddingProvider,
-        pipe_logger: Optional[KVLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
@@ -66,6 +67,7 @@ class EmbeddingPipe(LoggableAsyncPipe):
         self,
         input: AsyncGenerator[Extraction, None],
         state: AsyncState,
+        run_id: uuid.UUID,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorEntry, None]:
@@ -83,7 +85,7 @@ class R2REmbeddingPipe(EmbeddingPipe):
         text_splitter: TextSplitter,
         embedding_batch_size: int = 1,
         id_prefix: str = "demo",
-        pipe_logger: Optional[KVLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
@@ -105,7 +107,7 @@ class R2REmbeddingPipe(EmbeddingPipe):
         self.pipe_run_info = None
 
     async def fragment(
-        self, extraction: Extraction
+        self, extraction: Extraction, run_id: uuid.UUID
     ) -> AsyncGenerator[Fragment, None]:
         """
         Splits text into manageable chunks for embedding.
@@ -134,7 +136,7 @@ class R2REmbeddingPipe(EmbeddingPipe):
             yield fragment
             fragment_dict = fragment.dict()
             await self.enqueue_log(
-                pipe_run_id=self.run_info.run_id,
+                run_id=run_id,
                 key="fragment",
                 value=json.dumps(
                     {
@@ -190,6 +192,7 @@ class R2REmbeddingPipe(EmbeddingPipe):
         self,
         input: EmbeddingPipe.Input,
         state: AsyncState,
+        run_id: uuid.UUID,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorEntry, None]:
@@ -200,7 +203,7 @@ class R2REmbeddingPipe(EmbeddingPipe):
         fragment_batch = []
 
         async for extraction in input.message:
-            async for fragment in self.fragment(extraction):
+            async for fragment in self.fragment(extraction, run_id):
                 fragment_batch.append(fragment)
                 if len(fragment_batch) >= self.embedding_batch_size:
                     # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly

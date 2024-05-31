@@ -11,6 +11,16 @@ from .abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
 from .abstractions.prompt import Prompt
 from .abstractions.search import SearchRequest, SearchResult
 from .abstractions.vector import Vector, VectorEntry, VectorType
+from .logging.kv_logger import (
+    KVLoggingSingleton,
+    LocalKVLoggingProvider,
+    LoggingConfig,
+    PostgresKVLoggingProvider,
+    PostgresLoggingConfig,
+    RedisKVLoggingProvider,
+    RedisLoggingConfig,
+)
+from .logging.run_manager import RunManager, manage_run
 from .parsers import (
     AsyncParser,
     AudioParser,
@@ -33,17 +43,8 @@ from .pipeline.base_pipeline import (
     RAGPipeline,
     SearchPipeline,
 )
-from .pipes.base_pipe import AsyncPipe, AsyncState, PipeRunInfo, PipeType
+from .pipes.base_pipe import AsyncPipe, AsyncState, PipeType
 from .pipes.loggable_pipe import LoggableAsyncPipe
-from .pipes.pipe_logging import (
-    KVLoggingConnectionSingleton,
-    LocalPipeLoggingProvider,
-    LoggingConfig,
-    PostgresLoggingConfig,
-    PostgresPipeLoggingProvider,
-    RedisLoggingConfig,
-    RedisPipeLoggingProvider,
-)
 from .providers.embedding_provider import EmbeddingConfig, EmbeddingProvider
 from .providers.eval_provider import EvalConfig, EvalProvider
 from .providers.llm_provider import GenerationConfig, LLMConfig, LLMProvider
@@ -62,12 +63,14 @@ from .utils import (
 __all__ = [
     # Logging
     "LoggingConfig",
-    "LocalPipeLoggingProvider",
+    "LocalKVLoggingProvider",
     "PostgresLoggingConfig",
-    "PostgresPipeLoggingProvider",
+    "PostgresKVLoggingProvider",
     "RedisLoggingConfig",
-    "RedisPipeLoggingProvider",
-    "KVLoggingConnectionSingleton",
+    "RedisKVLoggingProvider",
+    "KVLoggingSingleton",
+    "RunManager",
+    "manage_run",
     # Abstractions
     "VectorEntry",
     "VectorType",
@@ -75,7 +78,6 @@ __all__ = [
     "SearchRequest",
     "SearchResult",
     "AsyncPipe",
-    "PipeRunInfo",
     "PipeType",
     "AsyncState",
     "LoggableAsyncPipe",

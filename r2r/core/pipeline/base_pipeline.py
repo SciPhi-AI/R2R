@@ -1,14 +1,12 @@
 """Base pipeline class for running a sequence of pipes."""
 import asyncio
 import logging
-import uuid
-from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional
 
+from ..logging.kv_logger import KVLoggingSingleton
+from ..logging.run_manager import RunManager, manage_run
 from ..pipes.base_pipe import AsyncPipe, AsyncState
-from ..pipes.pipe_logging import KVLoggingConnectionSingleton
-from ..utils import generate_run_id
 
 logger = logging.getLogger(__name__)
 
@@ -21,29 +19,22 @@ class PipelineTypes(Enum):
     OTHER = "other"
 
 
-@asynccontextmanager
-async def manage_run_id(pipeline: "Pipeline"):
-    try:
-        pipeline.run_id = generate_run_id()
-        yield
-    finally:
-        pipeline.run_id = None
-
-
 class Pipeline:
     """Pipeline class for running a sequence of pipes."""
 
     pipeline_type: str = "other"
 
     def __init__(
-        self, pipe_logger: Optional[KVLoggingConnectionSingleton] = None
+        self,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
+        run_manager: Optional[RunManager] = None,
     ):
         self.pipes: list[AsyncPipe] = []
         self.upstream_outputs: list[list[dict[str, str]]] = []
-        self.pipe_logger = pipe_logger or KVLoggingConnectionSingleton()
+        self.pipe_logger = pipe_logger or KVLoggingSingleton()
+        self.run_manager = run_manager or RunManager(self.pipe_logger)
         self.futures = {}
         self.level = 0
-        # self.run_id = None
 
     def add_pipe(
         self,
@@ -63,10 +54,13 @@ class Pipeline:
         input: Any,
         state: Optional[AsyncState] = None,
         streaming: bool = False,
+        run_manager: Optional[RunManager] = None,
         *args: Any,
         **kwargs: Any,
     ):
         """Run the pipeline."""
+        run_manager = run_manager or self.run_manager
+
         try:
             PipelineTypes(self.pipeline_type)
         except ValueError:
@@ -76,12 +70,11 @@ class Pipeline:
 
         self.state = state or AsyncState()
         current_input = input
-        async with manage_run_id(self):
-            await self.pipe_logger.log(
-                pipe_run_id=self.run_id,
+        async with manage_run(run_manager, self.pipeline_type) as run_id:
+            await run_manager.log_run_info(
                 key="pipeline_type",
                 value=self.pipeline_type,
-                is_pipeline_info=True,
+                is_info_log=True,
             )
             try:
                 for pipe_num in range(len(self.pipes)):
@@ -90,13 +83,12 @@ class Pipeline:
 
                     current_input = self._run_pipe(
                         pipe_num,
-                        self.run_id,
                         current_input,
+                        run_manager,
                         *args,
-                        **kwargs,  # pass run_id to retain value throughout execution.
+                        **kwargs,
                     )
                     self.futures[config_name].set_result(current_input)
-
                 if not streaming:
                     final_result = await self._consume_all(current_input)
                     return final_result
@@ -105,8 +97,6 @@ class Pipeline:
             except Exception as error:
                 logger.error(f"Pipeline failed with error: {error}")
                 raise error
-            finally:
-                pass
 
     async def _consume_all(self, gen: AsyncGenerator) -> list[Any]:
         result = []
@@ -123,8 +113,8 @@ class Pipeline:
     async def _run_pipe(
         self,
         pipe_num: int,
-        run_id: uuid.UUID,
         input: Any,
+        run_manager: RunManager,
         *args: Any,
         **kwargs: Any,
     ):
@@ -180,7 +170,7 @@ class Pipeline:
         async for ele in await pipe.run(
             pipe.Input(**input_dict),
             self.state,
-            run_id=run_id,
+            run_manager,
             *args,
             **kwargs,
         ):
@@ -212,10 +202,13 @@ class EvalPipeline(Pipeline):
         input: Any,
         state: Optional[AsyncState] = None,
         streaming: bool = False,
+        run_manager: Optional[RunManager] = None,
         *args: Any,
         **kwargs: Any,
     ):
-        return await super().run(input, state, streaming, *args, **kwargs)
+        return await super().run(
+            input, state, streaming, run_manager, *args, **kwargs
+        )
 
     def add_pipe(
         self,
@@ -238,10 +231,13 @@ class IngestionPipeline(Pipeline):
         input: Any,
         state: Optional[AsyncState] = None,
         streaming: bool = False,
+        run_manager: Optional[RunManager] = None,
         *args: Any,
         **kwargs: Any,
     ):
-        return await super().run(input, state, streaming, *args, **kwargs)
+        return await super().run(
+            input, state, streaming, run_manager, *args, **kwargs
+        )
 
     def add_pipe(
         self,
@@ -266,10 +262,13 @@ class RAGPipeline(Pipeline):
         input: Any,
         state: Optional[AsyncState] = None,
         streaming: bool = False,
+        run_manager: Optional[RunManager] = None,
         *args: Any,
         **kwargs: Any,
     ):
-        return await super().run(input, state, streaming, *args, **kwargs)
+        return await super().run(
+            input, state, streaming, run_manager, *args, **kwargs
+        )
 
     def add_pipe(
         self,
@@ -292,10 +291,13 @@ class SearchPipeline(Pipeline):
         input: Any,
         state: Optional[AsyncState] = None,
         streaming: bool = False,
+        run_manager: Optional[RunManager] = None,
         *args: Any,
         **kwargs: Any,
     ):
-        return await super().run(input, state, streaming, *args, **kwargs)
+        return await super().run(
+            input, state, streaming, run_manager, *args, **kwargs
+        )
 
     def add_pipe(
         self,
