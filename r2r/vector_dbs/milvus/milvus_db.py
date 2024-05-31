@@ -11,16 +11,6 @@ from r2r.core import (
 
 from pymilvus import DataType
 
-from r2r.vector_dbs.milvus.exception import (
-    CollectionNotInitializedError,
-    MilvusDBInitializationError,
-    PymilvusImportError,
-    MilvusCilentConnectionError,
-    CollectionCreationError,
-    CollectionDeletionError,
-    CollectionUpseartError,
-)
-
 logger = logging.getLogger(__name__)
 
 GET_ALL_LIMIT = 1000
@@ -40,7 +30,7 @@ class MilvusVectorDB(VectorDBProvider):
         super().__init__(config)
         self.config = config
         if config.provider != "milvus":
-            raise MilvusDBInitializationError(
+            raise ValueError(
                 "MilvusVectorDB must be initialized with provider `milvus`."
             )
 
@@ -48,7 +38,7 @@ class MilvusVectorDB(VectorDBProvider):
         try:
             from pymilvus import MilvusClient
         except ImportError:
-            raise PymilvusImportError(
+            raise ValueError(
                 f"Error, `pymilvus` is not installed. Please install it using `pip install -U pymilvus`."
             )
 
@@ -58,14 +48,14 @@ class MilvusVectorDB(VectorDBProvider):
             api_key = os.getenv("ZILLIZ_CLOUD_API_KEY")
 
             if not uri:
-                raise MilvusCilentConnectionError(
+                raise ValueError(
                     "Error, MilvusVectorDB missing the MILVUS_URI environment variables."
                     'If you wish run it locally, please initialize it as local path file "xxx.db" in the current directory'
                     "If you wish to use cloud service, please add btoh uri as cloud endpoint and api_key as cloud api"
                 )
             self.client = MilvusClient(uri=uri, token=api_key)
         except Exception as e:
-            raise MilvusCilentConnectionError(
+            raise ValueError(
                 f"Error {e} occurred while attempting to connect to the milvus provider."
             )
 
@@ -117,7 +107,7 @@ class MilvusVectorDB(VectorDBProvider):
             )
 
         except Exception as e:
-            raise CollectionCreationError(
+            raise ValueError(
                 f"Error {e} occurred while attempting to creat collection {self.config.collection_name}."
             )
 
@@ -141,7 +131,7 @@ class MilvusVectorDB(VectorDBProvider):
         if not self.client.has_collection(
             collection_name=self.config.collection_name
         ):
-            raise CollectionNotInitializedError(
+            raise ValueError(
                 "Please call `initialize_collection` before attempting to run `upsert`."
             )
 
@@ -159,7 +149,7 @@ class MilvusVectorDB(VectorDBProvider):
                 collection_name=self.config.collection_name, data=data
             )
         except Exception as e:
-            raise CollectionUpseartError(
+            raise ValueError(
                 f"Upsert data failure cause exception {e} occurs."
             )
 
@@ -238,7 +228,7 @@ class MilvusVectorDB(VectorDBProvider):
         if not self.client.has_collection(
             collection_name=self.config.collection_name
         ):
-            raise CollectionNotInitializedError(
+            raise ValueError(
                 "Please call `initialize_collection` before attempting to run `filtered_deletion`."
             )
 
@@ -248,7 +238,7 @@ class MilvusVectorDB(VectorDBProvider):
                 filter=self.build_filter(metadata_field, metadata_value),
             )
         except Exception as e:
-            raise CollectionDeletionError(
+            raise ValueError(
                 f"Error {e} occurs in deletion of key value pair {self.config.collection_name}."
             )
 
@@ -275,7 +265,7 @@ class MilvusVectorDB(VectorDBProvider):
         if not self.client.has_collection(
             collection_name=self.config.collection_name
         ):
-            raise CollectionNotInitializedError(
+            raise ValueError(
                 "Please call `initialize_collection` before attempting to run `filtered_deletion`."
             )
 
