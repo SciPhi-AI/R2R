@@ -33,7 +33,6 @@ class R2RClient:
     def ingest_documents(self, documents: list[dict]) -> dict:
         url = f"{self.base_url}/ingest_documents/"
         data = {"documents": documents}
-        # response = requests.post(url, json=data, default=default_serializer)
         serialized_data = json.dumps(data, default=default_serializer)
         response = requests.post(
             url,
@@ -216,8 +215,8 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
-    def get_user_document_metadata(self, user_id: str) -> dict:
-        url = f"{self.base_url}/get_user_document_metadata/"
+    def get_user_documents_metadata(self, user_id: str) -> dict:
+        url = f"{self.base_url}/get_user_documents_metadata/"
         data = {"user_id": user_id}
         response = requests.post(url, json=data)
         response.raise_for_status()

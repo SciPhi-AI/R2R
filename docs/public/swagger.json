@@ -239,10 +239,10 @@
         }
       }
     },
-    "/get_user_document_metadata/": {
+    "/get_user_documents_metadata/": {
       "post": {
         "summary": "Get User Document Data App",
-        "operationId": "get_user_document_metadata_app_get_user_document_metadata__post",
+        "operationId": "get_user_documents_metadata_app_get_user_documents_metadata__post",
         "requestBody": {
           "content": {
             "application/json": {

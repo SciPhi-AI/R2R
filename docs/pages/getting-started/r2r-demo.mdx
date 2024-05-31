@@ -57,7 +57,7 @@ Each ingested document derives a unique `document_id` from the input file path. 
 To verify the successful ingestion of the demo documents, you can fetch the metadata for the uploaded documents associated with the default demo user ID:
 
 ```bash
-python -m r2r.examples.demo get_user_document_metadata --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
+python -m r2r.examples.demo get_user_documents_metadata --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
 ```
 
 **Demo Output:**
@@ -198,7 +198,7 @@ To delete all documents associated with a given user, run the delete command on 
 # python -m r2r.examples.demo delete --keys="['user_id']" --values="['063edaf8-3e63-4cb9-a4d6-a855f36376c3']"
 ```
 
-Afterwards, we may confirm complete user documentation through the `get_user_document_metadata` functionality.
+Afterwards, we may confirm complete user documentation through the `get_user_documents_metadata` functionality.
 
 **Demo Output:**
 

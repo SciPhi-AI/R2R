@@ -202,8 +202,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
             methods=["GET"],
         )
         self.app.add_api_route(
-            path="/get_user_document_metadata/",
-            endpoint=self.get_user_document_metadata_app,
+            path="/get_user_documents_metadata/",
+            endpoint=self.get_user_documents_metadata_app,
             methods=["POST"],
         )
         self.app.add_api_route(
@@ -770,7 +770,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
-    async def aget_user_document_metadata(
+    async def aget_user_documents_metadata(
         self, user_id: str, *args: Any, **kwargs: Any
     ):
         if isinstance(user_id, uuid.UUID):
@@ -785,14 +785,14 @@ class R2RApp(metaclass=AsyncSyncMeta):
     class UserDocumentRequest(BaseModel):
         user_id: str
 
-    async def get_user_document_metadata_app(
+    async def get_user_documents_metadata_app(
         self, request: UserDocumentRequest
     ):
         try:
-            return await self.aget_user_document_metadata(request.user_id)
+            return await self.aget_user_documents_metadata(request.user_id)
         except Exception as e:
             logger.error(
-                f"get_user_document_metadata(user_id={request.user_id}) - \n\n{str(e)})"
+                f"get_user_documents_metadata(user_id={request.user_id}) - \n\n{str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
 

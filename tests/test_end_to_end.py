@@ -282,10 +282,10 @@ async def test_ingest_user_documents(r2r_app, logging_connection):
         [str(user_id_0), str(user_id_1)]
     ), f"Expected user ids {user_id_0} and {user_id_1}, but got {user_ids}"
 
-    user_0_docs = await r2r_app.aget_user_document_metadata(
+    user_0_docs = await r2r_app.aget_user_documents_metadata(
         user_id=str(user_id_0)
     )
-    user_1_docs = await r2r_app.aget_user_document_metadata(
+    user_1_docs = await r2r_app.aget_user_documents_metadata(
         user_id=str(user_id_1)
     )
 

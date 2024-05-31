@@ -404,16 +404,16 @@ class R2RDemo:
             print(f"Time taken to get user IDs: {t1-t0:.2f} seconds")
             print(response)
 
-    def get_user_document_metadata(self):
+    def get_user_documents_metadata(self):
         if hasattr(self, "client"):
             t0 = time.time()
-            response = self.client.get_user_document_metadata(self.user_id)
+            response = self.client.get_user_documents_metadata(self.user_id)
             t1 = time.time()
             print(f"Time taken to get user document data: {t1-t0:.2f} seconds")
             print(response)
         else:
             t0 = time.time()
-            response = self.r2r.get_user_document_metadata(self.user_id)
+            response = self.r2r.get_user_documents_metadata(self.user_id)
             t1 = time.time()
             print(f"Time taken to get user document data: {t1-t0:.2f} seconds")
             print(response)
