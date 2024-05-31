@@ -41,6 +41,32 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
+    def update_documents(self, documents: list[dict]) -> dict:
+        url = f"{self.base_url}/update_documents/"
+        data = {"documents": documents}
+        response = requests.post(url, json=data)
+        response.raise_for_status()
+        return response.json()
+
+    def update_files(
+        self,
+        metadatas: list[dict],
+        files: list[str],
+        ids: Optional[list[str]] = None,
+    ) -> dict:
+        url = f"{self.base_url}/update_files/"
+        files_to_upload = [
+            ("files", (file, open(file, "rb"), "application/octet-stream"))
+            for file in files
+        ]
+        data = {
+            "metadatas": None if not metadatas else json.dumps(metadatas),
+            "ids": None if not ids else json.dumps(ids),
+        }
+        response = requests.post(url, files=files_to_upload, data=data)
+        response.raise_for_status()
+        return response.json()
+
     def search(
         self, query: str, search_filters: dict = {}, search_limit: int = 10
     ) -> dict:
@@ -135,9 +161,9 @@ class R2RClient:
             chunks.append(chunk)
         return chunks
 
-    def delete(self, key: str, value: str) -> dict:
+    def delete(self, keys: list[str], values: list[str]) -> dict:
         url = f"{self.base_url}/delete/"
-        data = {"key": key, "value": value}
+        data = {"keys": keys, "values": values}
         response = requests.request("DELETE", url, json=data)
         response.raise_for_status()
         return response.json()
@@ -151,6 +177,14 @@ class R2RClient:
     def get_user_document_data(self, user_id: str) -> dict:
         url = f"{self.base_url}/get_user_document_data/"
         data = {"user_id": user_id}
+        response = requests.post(url, json=data)
+        response.raise_for_status()
+        response_json = response.json()
+        return response_json
+
+    def get_document_data(self, document_id: str) -> dict:
+        url = f"{self.base_url}/get_document_data/"
+        data = {"document_id": document_id}
         response = requests.post(url, json=data)
         response.raise_for_status()
         response_json = response.json()

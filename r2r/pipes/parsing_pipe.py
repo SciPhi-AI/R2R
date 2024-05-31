@@ -214,12 +214,20 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
         )
 
     async def _run_logic(
-        self, input: Input, state: AsyncState, *args, **kwargs
+        self,
+        input: Input,
+        state: AsyncState,
+        versions: Optional[list[str]] = None,
+        *args,
+        **kwargs,
     ) -> AsyncGenerator[Extraction, None]:
         parse_tasks = []
 
+        iteration = 0
         async for document in input.message:
-            parse_tasks.append(self._handle_parse_task(document))
+            version = versions[iteration] if versions else "v0"
+            iteration += 1
+            parse_tasks.append(self._handle_parse_task(document, version))
 
         # Await all tasks and yield results concurrently
         for parse_task in asyncio.as_completed(parse_tasks):
@@ -227,9 +235,10 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
                 yield extraction
 
     async def _handle_parse_task(
-        self, document: Document
+        self, document: Document, version: str
     ) -> AsyncGenerator[Extraction, None]:
         extractions = []
         async for extraction in self._parse(document):
+            extraction.metadata["version"] = version
             extractions.append(extraction)
         return extractions

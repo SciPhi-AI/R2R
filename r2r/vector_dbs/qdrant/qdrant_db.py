@@ -144,8 +144,11 @@ class QdrantDB(VectorDBProvider):
         pass
 
     def delete_by_metadata(
-        self, metadata_field: str, metadata_value: Union[bool, int, str]
+        self,
+        metadata_fields: list[str],
+        metadata_values: list[Union[bool, int, str]],
     ) -> None:
+        super().delete_by_metadata(metadata_fields, metadata_values)
         if self.config.collection_name is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `delete_by_metadata`."
@@ -157,9 +160,12 @@ class QdrantDB(VectorDBProvider):
                 filter=self.models.Filter(
                     must=[
                         self.models.FieldCondition(
-                            key=metadata_field,
-                            match=self.models.MatchValue(value=metadata_value),
-                        ),
+                            key=field,
+                            match=self.models.MatchValue(value=value),
+                        )
+                        for field, value in zip(
+                            metadata_fields, metadata_values
+                        )
                     ],
                 )
             ),

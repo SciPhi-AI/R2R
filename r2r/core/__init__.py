@@ -54,6 +54,7 @@ from .utils import (
     TextSplitter,
     generate_id_from_label,
     generate_run_id,
+    increment_version,
     run_pipeline,
     to_async_generator,
 )
@@ -124,6 +125,7 @@ __all__ = [
     "TextSplitter",
     "RecursiveCharacterTextSplitter",
     "to_async_generator",
+    "increment_version",
     "run_pipeline",
     "generate_run_id",
     "generate_id_from_label",
