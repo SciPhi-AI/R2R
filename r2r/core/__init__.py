@@ -36,9 +36,9 @@ from .pipeline.base_pipeline import (
 from .pipes.base_pipe import AsyncPipe, AsyncState, PipeRunInfo, PipeType
 from .pipes.loggable_pipe import LoggableAsyncPipe
 from .pipes.pipe_logging import (
+    KVLoggingConnectionSingleton,
     LocalPipeLoggingProvider,
     LoggingConfig,
-    PipeLoggingConnectionSingleton,
     PostgresLoggingConfig,
     PostgresPipeLoggingProvider,
     RedisLoggingConfig,
@@ -66,7 +66,7 @@ __all__ = [
     "PostgresPipeLoggingProvider",
     "RedisLoggingConfig",
     "RedisPipeLoggingProvider",
-    "PipeLoggingConnectionSingleton",
+    "KVLoggingConnectionSingleton",
     # Abstractions
     "VectorEntry",
     "VectorType",

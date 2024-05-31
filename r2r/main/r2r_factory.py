@@ -7,9 +7,10 @@ from r2r.core import (
     EvalPipeline,
     EvalProvider,
     IngestionPipeline,
+    KVLoggingConnectionSingleton,
     LLMConfig,
     LLMProvider,
-    PipeLoggingConnectionSingleton,
+    LoggableAsyncPipe,
     PromptProvider,
     RAGPipeline,
     SearchPipeline,
@@ -148,19 +149,44 @@ class R2RProviderFactory:
             )
         return prompt_provider
 
-    def create_providers(self) -> R2RProviders:
-        llm_provider = self.create_llm_provider(self.config.completions)
-        prompt_provider = self.create_prompt_provider(self.config.prompt)
+    def create_providers(
+        self,
+        vector_db_provider_override: Optional[VectorDBProvider] = None,
+        embedding_provider_override: Optional[EmbeddingProvider] = None,
+        eval_provider_override: Optional[EvalProvider] = None,
+        llm_provider_override: Optional[LLMProvider] = None,
+        prompt_provider_override: Optional[PromptProvider] = None,
+        *args,
+        **kwargs,
+    ) -> R2RProviders:
+        prompt_provider = (
+            prompt_provider_override
+            or self.create_prompt_provider(self.config.prompt, *args, **kwargs)
+        )
         return R2RProviders(
-            vector_db=self.create_vector_db_provider(
-                self.config.vector_database
+            vector_db=vector_db_provider_override
+            or self.create_vector_db_provider(
+                self.config.vector_database, *args, **kwargs
             ),
-            embedding=self.create_embedding_provider(self.config.embedding),
-            eval=self.create_eval_provider(
-                self.config.eval, prompt_provider=prompt_provider
+            embedding=embedding_provider_override
+            or self.create_embedding_provider(
+                self.config.embedding, *args, **kwargs
             ),
-            llm=llm_provider,
-            prompt=prompt_provider,
+            eval=eval_provider_override
+            or self.create_eval_provider(
+                self.config.eval,
+                prompt_provider=prompt_provider,
+                *args,
+                **kwargs,
+            ),
+            llm=llm_provider_override
+            or self.create_llm_provider(
+                self.config.completions, *args, **kwargs
+            ),
+            prompt=prompt_provider_override
+            or self.create_prompt_provider(
+                self.config.prompt, *args, **kwargs
+            ),
         )
 
 
@@ -169,27 +195,45 @@ class R2RPipeFactory:
         self.config = config
         self.providers = providers
 
-    def create_pipes(self) -> R2RPipes:
+    def create_pipes(
+        self,
+        parsing_pipe_override: Optional[LoggableAsyncPipe] = None,
+        embedding_pipe_override: Optional[LoggableAsyncPipe] = None,
+        vector_storage_pipe_override: Optional[LoggableAsyncPipe] = None,
+        search_pipe_override: Optional[LoggableAsyncPipe] = None,
+        rag_pipe_override: Optional[LoggableAsyncPipe] = None,
+        streaming_rag_pipe_override: Optional[LoggableAsyncPipe] = None,
+        eval_pipe_override: Optional[LoggableAsyncPipe] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> R2RPipes:
         return R2RPipes(
-            parsing_pipe=self.create_parsing_pipe(
-                self.config.ingestion.get("selected_parsers")
+            parsing_pipe=parsing_pipe_override
+            or self.create_parsing_pipe(
+                self.config.ingestion.get("selected_parsers"), *args, **kwargs
             ),
-            embedding_pipe=self.create_embedding_pipe(),
-            vector_storage_pipe=self.create_vector_storage_pipe(),
-            search_pipe=self.create_search_pipe(),
-            rag_pipe=self.create_rag_pipe(),
-            streaming_rag_pipe=self.create_rag_pipe(streaming=True),
-            eval_pipe=self.create_eval_pipe(),
+            embedding_pipe=embedding_pipe_override
+            or self.create_embedding_pipe(*args, **kwargs),
+            vector_storage_pipe=vector_storage_pipe_override
+            or self.create_vector_storage_pipe(*args, **kwargs),
+            search_pipe=search_pipe_override
+            or self.create_search_pipe(*args, **kwargs),
+            rag_pipe=rag_pipe_override
+            or self.create_rag_pipe(*args, **kwargs),
+            streaming_rag_pipe=streaming_rag_pipe_override
+            or self.create_rag_pipe(streaming=True),
+            eval_pipe=eval_pipe_override
+            or self.create_eval_pipe(*args, **kwargs),
         )
 
     def create_parsing_pipe(
-        self, selected_parsers: Optional[dict] = None
+        self, selected_parsers: Optional[dict] = None, *args, **kwargs
     ) -> Any:
         from r2r.pipes import R2RDocumentParsingPipe
 
         return R2RDocumentParsingPipe(selected_parsers=selected_parsers or {})
 
-    def create_embedding_pipe(self) -> Any:
+    def create_embedding_pipe(self, *args, **kwargs) -> Any:
         from r2r.core import RecursiveCharacterTextSplitter
         from r2r.pipes import R2REmbeddingPipe
 
@@ -214,14 +258,14 @@ class R2RPipeFactory:
             embedding_batch_size=self.config.embedding.batch_size,
         )
 
-    def create_vector_storage_pipe(self) -> Any:
+    def create_vector_storage_pipe(self, *args, **kwargs) -> Any:
         from r2r.pipes import R2RVectorStoragePipe
 
         return R2RVectorStoragePipe(
             vector_db_provider=self.providers.vector_db
         )
 
-    def create_search_pipe(self) -> Any:
+    def create_search_pipe(self, *args, **kwargs) -> Any:
         from r2r.pipes import R2RVectorSearchPipe
 
         return R2RVectorSearchPipe(
@@ -229,7 +273,7 @@ class R2RPipeFactory:
             embedding_provider=self.providers.embedding,
         )
 
-    def create_rag_pipe(self, streaming: bool = False) -> Any:
+    def create_rag_pipe(self, streaming: bool = False, *args, **kwargs) -> Any:
         if streaming:
             from r2r.pipes import R2RStreamingRAGPipe
 
@@ -245,7 +289,7 @@ class R2RPipeFactory:
                 prompt_provider=self.providers.prompt,
             )
 
-    def create_eval_pipe(self) -> Any:
+    def create_eval_pipe(self, *args, **kwargs) -> Any:
         from r2r.pipes import R2REvalPipe
 
         return R2REvalPipe(eval_provider=self.providers.eval)
@@ -256,19 +300,21 @@ class R2RPipelineFactory:
         self.config = config
         self.pipes = pipes
 
-    def create_ingestion_pipeline(self) -> IngestionPipeline:
+    def create_ingestion_pipeline(self, *args, **kwargs) -> IngestionPipeline:
         ingestion_pipeline = IngestionPipeline()
         ingestion_pipeline.add_pipe(self.pipes.parsing_pipe)
         ingestion_pipeline.add_pipe(self.pipes.embedding_pipe)
         ingestion_pipeline.add_pipe(self.pipes.vector_storage_pipe)
         return ingestion_pipeline
 
-    def create_search_pipeline(self) -> SearchPipeline:
+    def create_search_pipeline(self, *args, **kwargs) -> SearchPipeline:
         search_pipeline = SearchPipeline()
         search_pipeline.add_pipe(self.pipes.search_pipe)
         return search_pipeline
 
-    def create_rag_pipeline(self, streaming: bool = False) -> RAGPipeline:
+    def create_rag_pipeline(
+        self, streaming: bool = False, *args, **kwargs
+    ) -> RAGPipeline:
         search_pipe = self.pipes.search_pipe
         rag_pipe = (
             self.pipes.streaming_rag_pipe if streaming else self.pipes.rag_pipe
@@ -293,7 +339,7 @@ class R2RPipelineFactory:
         )
         return rag_pipeline
 
-    def create_eval_pipeline(self) -> EvalPipeline:
+    def create_eval_pipeline(self, *args, **kwargs) -> EvalPipeline:
         eval_pipeline = EvalPipeline()
         eval_pipeline.add_pipe(self.pipes.eval_pipe)
         return eval_pipeline
@@ -305,6 +351,8 @@ class R2RPipelineFactory:
         rag_pipeline: Optional[RAGPipeline] = None,
         streaming_rag_pipeline: Optional[RAGPipeline] = None,
         eval_pipeline: Optional[EvalPipeline] = None,
+        *args,
+        **kwargs,
     ) -> R2RPipelines:
         try:
             self.configure_logging()
@@ -313,14 +361,16 @@ class R2RPipelineFactory:
 
         return R2RPipelines(
             ingestion_pipeline=ingestion_pipeline
-            or self.create_ingestion_pipeline(),
-            search_pipeline=search_pipeline or self.create_search_pipeline(),
+            or self.create_ingestion_pipeline(*args, **kwargs),
+            search_pipeline=search_pipeline
+            or self.create_search_pipeline(*args, **kwargs),
             rag_pipeline=rag_pipeline
-            or self.create_rag_pipeline(streaming=False),
+            or self.create_rag_pipeline(streaming=False, *args, **kwargs),
             streaming_rag_pipeline=streaming_rag_pipeline
-            or self.create_rag_pipeline(streaming=True),
-            eval_pipeline=eval_pipeline or self.create_eval_pipeline(),
+            or self.create_rag_pipeline(streaming=True, *args, **kwargs),
+            eval_pipeline=eval_pipeline
+            or self.create_eval_pipeline(*args, **kwargs),
         )
 
     def configure_logging(self):
-        PipeLoggingConnectionSingleton.configure(self.config.logging)
+        KVLoggingConnectionSingleton.configure(self.config.logging)

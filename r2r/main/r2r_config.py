@@ -1,7 +1,10 @@
 import json
 import logging
 import os
-from typing import Any
+from enum import Enum
+from typing import Any, Type
+
+from pydantic import BaseModel
 
 from ..core.abstractions.document import DocumentType
 from ..core.pipes.pipe_logging import LoggingConfig
@@ -9,16 +12,14 @@ from ..core.providers.embedding_provider import EmbeddingConfig
 from ..core.providers.eval_provider import EvalConfig
 from ..core.providers.llm_provider import LLMConfig
 from ..core.providers.prompt_provider import PromptConfig
-from ..core.providers.vector_db_provider import VectorDBConfig
+from ..core.providers.vector_db_provider import ProviderConfig, VectorDBConfig
 
 logger = logging.getLogger(__name__)
 
 
 class R2RConfig:
     REQUIRED_KEYS: dict[str, list] = {
-        "app": [
-            "max_file_size_in_mb",
-        ],
+        "app": ["max_file_size_in_mb"],
         "embedding": [
             "provider",
             "search_model",
@@ -26,10 +27,7 @@ class R2RConfig:
             "batch_size",
             "text_splitter",
         ],
-        "eval": [
-            "llm",
-            "sampling_fraction",
-        ],
+        "eval": ["llm"],
         "ingestion": ["selected_parsers"],
         "completions": ["provider"],
         "logging": ["provider", "log_table"],
@@ -98,10 +96,9 @@ class R2RConfig:
 
         return cls(config_data)
 
-    # TODO - How to type 'redis.Redis' without introducing dependency on 'redis' package?
     def save_to_redis(self, redis_client: Any, key: str):
         config_data = {
-            section: getattr(self, section)
+            section: self._serialize_config(getattr(self, section))
             for section in R2RConfig.REQUIRED_KEYS.keys()
         }
         redis_client.set(f"R2RConfig:{key}", json.dumps(config_data))
@@ -113,7 +110,12 @@ class R2RConfig:
             raise ValueError(
                 f"Configuration not found in Redis with key '{key}'"
             )
-        return cls(json.loads(config_data))
+        config_data = json.loads(config_data)
+        # config_data["ingestion"]["selected_parsers"] = {
+        #     DocumentType(k): v
+        #     for k, v in config_data["ingestion"]["selected_parsers"].items()
+        # }
+        return cls(config_data)
 
     @classmethod
     def load_default_config(cls) -> dict:
@@ -123,3 +125,21 @@ class R2RConfig:
         # Load default configuration from JSON file
         with open(default_config_path) as f:
             return json.load(f)
+
+    @staticmethod
+    def _serialize_config(config_section: Any) -> dict:
+        # TODO - Make this approach cleaner
+        if isinstance(config_section, ProviderConfig):
+            config_section = config_section.dict()
+        filtered_result = {}
+        for k, v in config_section.items():
+            if isinstance(k, Enum):
+                k = k.value
+            if isinstance(v, dict):
+                formatted_v = {
+                    k2.value if isinstance(k2, Enum) else k2: v2
+                    for k2, v2 in v.items()
+                }
+                v = formatted_v
+            filtered_result[k] = v
+        return filtered_result

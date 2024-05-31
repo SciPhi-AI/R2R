@@ -3,17 +3,18 @@ import json
 import logging
 import uuid
 import time
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from r2r.core import (
     Document,
     DocumentType,
     GenerationConfig,
-    PipeLoggingConnectionSingleton,
+    KVLoggingConnectionSingleton,
     generate_id_from_label,
     generate_run_id,
     to_async_generator,
@@ -25,8 +26,6 @@ from .r2r_config import R2RConfig
 
 MB_CONVERSION_FACTOR = 1024 * 1024
 
-from pydantic import BaseModel
-
 logger = logging.getLogger(__name__)
 
 
@@ -37,7 +36,14 @@ def syncable(func):
 
 
 class AsyncSyncMeta(type):
-    """Metaclass to create synchronous wrappers for async methods."""
+    _event_loop = None  # Class-level shared event loop
+
+    @classmethod
+    def get_event_loop(cls):
+        if cls._event_loop is None or cls._event_loop.is_closed():
+            cls._event_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(cls._event_loop)
+        return cls._event_loop
 
     def __new__(cls, name, bases, dct):
         new_cls = super().__new__(cls, name, bases, dct)
@@ -52,19 +58,44 @@ class AsyncSyncMeta(type):
 
                 def make_sync_method(async_method):
                     def sync_wrapper(self, *args, **kwargs):
-                        try:
-                            import nest_asyncio
+                        loop = cls.get_event_loop()
+                        if not loop.is_running():
+                            # Setup to run the loop in a background thread if necessary
+                            # to prevent blocking the main thread in a synchronous call environment
+                            from threading import Thread
 
-                            nest_asyncio.apply()
-                            result = asyncio.run(
-                                async_method(self, *args, **kwargs)
-                            )
+                            result = None
+                            exception = None
+
+                            def run():
+                                nonlocal result, exception
+                                try:
+                                    asyncio.set_event_loop(loop)
+                                    result = loop.run_until_complete(
+                                        async_method(self, *args, **kwargs)
+                                    )
+                                except Exception as e:
+                                    exception = e
+                                finally:
+                                    generation_config = kwargs.get('rag_generation_config', None)
+                                    if not generation_config or not generation_config.stream:
+                                        loop.run_until_complete(
+                                            loop.shutdown_asyncgens()
+                                        )
+                                        loop.close()
+
+                            thread = Thread(target=run)
+                            thread.start()
+                            thread.join()
+                            if exception:
+                                raise exception
                             return result
-                        except Exception as e:
-                            logger.error(
-                                f"Error in sync method {sync_method_name}: {str(e)}"
+                        else:
+                            # If there's already a running loop, schedule and execute the coroutine
+                            future = asyncio.run_coroutine_threadsafe(
+                                async_method(self, *args, **kwargs), loop
                             )
-                            raise
+                            return future.result()
 
                     return sync_wrapper
 
@@ -97,13 +128,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
-        do_apply_cors: bool = True,
+        # do_apply_cors: bool = True,
         *args,
         **kwargs,
     ):
         self.config = config
         self.providers = providers
-        self.logging_connection = PipeLoggingConnectionSingleton()
+        self.logging_connection = KVLoggingConnectionSingleton()
         self.ingestion_pipeline = pipelines.ingestion_pipeline
         self.search_pipeline = pipelines.search_pipeline
         self.rag_pipeline = pipelines.rag_pipeline
@@ -112,10 +143,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
         self.app = FastAPI()
 
-        if do_apply_cors:
-            R2RApp._apply_cors(self.app)
-
         self._setup_routes()
+        self._apply_cors()
 
     def _setup_routes(self):
         self.app.add_api_route(
@@ -168,10 +197,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
             endpoint=self.get_open_api_endpoint,
             methods=["POST"],
         )
-        # self.app.include_router(self.app.router)
 
     @syncable
-    async def aingest_documents(self, documents: list[Document]):
+    async def aingest_documents(
+        self, documents: list[Document], *args: Any, **kwargs: Any
+    ):
         try:
             # Process the documents through the pipeline
             await self.ingestion_pipeline.run(
@@ -214,6 +244,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
         files: list[UploadFile],
         metadatas: Optional[list[dict]] = None,
         ids: Optional[list[uuid.UUID]] = None,
+        *args: Any,
+        **kwargs: Any,
     ):
         if metadatas and len(metadatas) != len(files):
             raise HTTPException(
@@ -349,6 +381,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
         query: str,
         search_filters: Optional[dict] = None,
         search_limit: int = 10,
+        *args: Any,
+        **kwargs: Any,
     ):
         """Search for documents based on the query."""
         try:
@@ -419,6 +453,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
         rag_generation_config: GenerationConfig,
         search_filters: Optional[dict[str, str]] = None,
         search_limit: int = 10,
+        *args,
+        **kwargs,
     ):
         try:
             await self.alog_throughput(time.time(), 1, "rag")
@@ -445,6 +481,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         search_limit=search_limit,
                         rag_generation_config=rag_generation_config,
                         run_id=run_id,
+                        *args,
+                        **kwargs,
                     ):
                         yield chunk
 
@@ -480,7 +518,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         search_filters: Optional[str] = None
         search_limit: int = 10
         rag_generation_config: Optional[str] = None
-        streaming: bool = False
+        streaming: Optional[bool] = None
 
     async def rag_app(self, request: RAGRequest):
         try:
@@ -538,6 +576,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
         query: str,
         context: str,
         completion: str,
+        *args: Any,
+        **kwargs: Any,
     ):
         try:
             eval_payload = R2REvalPipe.EvalPayload(
@@ -585,7 +625,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
             raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
-    async def adelete(self, key: str, value: Union[bool, int, str]):
+    async def adelete(
+        self, key: str, value: Union[bool, int, str], *args: Any, **kwargs: Any
+    ):
         try:
             self.providers.vector_db.delete_by_metadata(key, value)
             return {"results": "Entries deleted successfully."}
@@ -599,12 +641,15 @@ class R2RApp(metaclass=AsyncSyncMeta):
         key: str
         value: Union[bool, int, str]
 
-    async def delete_app(self, request: DeleteRequest = Body(...)):
+
+    async def delete_app(
+        self, request: DeleteRequest = Body(...), *args: Any, **kwargs: Any
+    ):
         await self.alog_throughput(time.time(), 1, "delete")
         return await self.adelete(request.key, request.value)
 
     @syncable
-    async def aget_user_ids(self):
+    async def aget_user_ids(self, *args: Any, **kwargs: Any):
         try:
             user_ids = self.providers.vector_db.get_metadatas(
                 metadata_fields=["user_id"]
@@ -620,7 +665,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
         return await self.aget_user_ids()
 
     @syncable
-    async def aget_user_document_data(self, user_id: str):
+    async def aget_user_document_data(
+        self, user_id: str, *args: Any, **kwargs: Any
+    ):
         try:
             if isinstance(user_id, uuid.UUID):
                 user_id = str(user_id)
@@ -644,7 +691,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
         return await self.aget_user_document_data(request.user_id)
 
     @syncable
-    async def aget_logs(self, pipeline_type: Optional[str] = None):
+    async def aget_logs(
+        self, pipeline_type: Optional[str] = None, *args: Any, **kwargs: Any
+    ):
         try:
             logs_per_run = 10
             if self.logging_connection is None:
@@ -743,8 +792,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
         uvicorn.run(self.app, host=host, port=port)
 
-    @staticmethod
-    def _apply_cors(app):
+    def _apply_cors(self):
         # CORS setup
         origins = [
             "*",  # TODO - Change this to the actual frontend URL
@@ -752,7 +800,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             "http://localhost:8000",
         ]
 
-        app.add_middleware(
+        self.app.add_middleware(
             CORSMiddleware,
             allow_origins=origins,  # Allows specified origins
             allow_credentials=True,

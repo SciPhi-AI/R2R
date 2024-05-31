@@ -13,12 +13,9 @@ from fastapi.datastructures import UploadFile
 from r2r import (
     Document,
     GenerationConfig,
-    R2RApp,
+    R2RAppBuilder,
     R2RClient,
     R2RConfig,
-    R2RPipeFactory,
-    R2RPipelineFactory,
-    R2RProviderFactory,
     generate_id_from_label,
 )
 
@@ -42,11 +39,7 @@ class R2RDemo:
             self.client = R2RClient(base_url)
         else:
             config = R2RConfig.from_json(config_path=config_path)
-
-            providers = R2RProviderFactory(config).create_providers()
-            pipes = R2RPipeFactory(config, providers).create_pipes()
-            pipelines = R2RPipelineFactory(config, pipes).create_pipelines()
-            self.r2r = R2RApp(config, providers, pipelines)
+            self.r2r = R2RAppBuilder(config).build()
 
         root_path = os.path.dirname(os.path.abspath(__file__))
         self.user_id = user_id
@@ -90,12 +83,14 @@ class R2RDemo:
             print(response)
         else:
             t0 = time.time()
-            self.r2r.ingest_documents(documents)
+            response = self.r2r.ingest_documents(documents)
             t1 = time.time()
             print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
+            print(response)
 
     def ingest_as_files(self, file_paths: Optional[list[str]] = None):
         file_paths = file_paths or self.default_files
+
         files = [
             UploadFile(
                 filename=file_path.split(os.path.sep)[-1],
@@ -128,9 +123,9 @@ class R2RDemo:
             print(response)
         else:
             t0 = time.time()
-            self.r2r.ingest_files(files=files, metadatas=metadatas)
+            response = self.r2r.ingest_files(files=files, metadatas=metadatas)
             t1 = time.time()
-            print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
+            print("response = ", response)
 
     def search(self, query: str):
         if hasattr(self, "client"):

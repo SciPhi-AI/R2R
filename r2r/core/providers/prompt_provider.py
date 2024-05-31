@@ -29,7 +29,9 @@ class PromptProvider(Provider):
         super().__init__(config)
 
     @abstractmethod
-    def add_prompt(self, prompt_name: str, prompt: str) -> None:
+    def add_prompt(
+        self, name: str, template: str, input_types: dict[str, str]
+    ) -> None:
         pass
 
     @abstractmethod

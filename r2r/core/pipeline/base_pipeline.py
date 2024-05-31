@@ -1,13 +1,13 @@
 """Base pipeline class for running a sequence of pipes."""
-
 import asyncio
 import logging
 import uuid
+from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional
 
 from ..pipes.base_pipe import AsyncPipe, AsyncState
-from ..pipes.pipe_logging import PipeLoggingConnectionSingleton
+from ..pipes.pipe_logging import KVLoggingConnectionSingleton
 from ..utils import generate_run_id
 
 logger = logging.getLogger(__name__)
@@ -21,20 +21,29 @@ class PipelineTypes(Enum):
     OTHER = "other"
 
 
+@asynccontextmanager
+async def manage_run_id(pipeline: "Pipeline"):
+    try:
+        pipeline.run_id = generate_run_id()
+        yield
+    finally:
+        pipeline.run_id = None
+
+
 class Pipeline:
     """Pipeline class for running a sequence of pipes."""
 
     pipeline_type: str = "other"
 
     def __init__(
-        self, pipe_logger: Optional[PipeLoggingConnectionSingleton] = None
+        self, pipe_logger: Optional[KVLoggingConnectionSingleton] = None
     ):
         self.pipes: list[AsyncPipe] = []
         self.upstream_outputs: list[list[dict[str, str]]] = []
-        self.pipe_logger = pipe_logger or PipeLoggingConnectionSingleton()
+        self.pipe_logger = pipe_logger or KVLoggingConnectionSingleton()
         self.futures = {}
         self.level = 0
-        self.run_id = None
+        # self.run_id = None
 
     def add_pipe(
         self,
@@ -68,39 +77,39 @@ class Pipeline:
 
         self.state = state or AsyncState()
         current_input = input
-        self.run_id = run_id or generate_run_id()
-        await self.pipe_logger.log(
-            pipe_run_id=self.run_id,
-            key="pipeline_type",
-            value=self.pipeline_type,
-            is_pipeline_info=True,
-        )
-        try:
-            for pipe_num in range(len(self.pipes)):
-                config_name = self.pipes[pipe_num].config.name
-                self.futures[config_name] = asyncio.Future()
 
-                current_input = self._run_pipe(
-                    pipe_num, current_input, *args, **kwargs
-                )
-                self.futures[config_name].set_result(current_input)
+        async with manage_run_id(self):
+            await self.pipe_logger.log(
+                pipe_run_id=self.run_id,
+                key="pipeline_type",
+                value=self.pipeline_type,
+                is_pipeline_info=True,
+            )
+            try:
+                for pipe_num in range(len(self.pipes)):
+                    config_name = self.pipes[pipe_num].config.name
+                    self.futures[config_name] = asyncio.Future()
 
-            if not streaming:
-                final_result = await self._consume_all(current_input)
-                return final_result
-            else:
-                return current_input
-        except Exception as error:
-            logger.error(f"Pipeline failed with error: {error}")
-            # await self.pipe_logger.log(
-            #     pipe_run_id=run_id,
-            #     key="error",
-            #     value=error,
-            #     is_pipeline_info=False,
-            # )
-            raise error
-        finally:
-            self.run_id = None
+                    current_input = self._run_pipe(
+                        pipe_num,
+                        self.run_id,
+                        current_input,
+                        *args,
+                        **kwargs,  # pass run_id to retain value throughout execution.
+                    )
+                    self.futures[config_name].set_result(current_input)
+
+                if not streaming:
+                    final_result = await self._consume_all(current_input)
+                    return final_result
+                else:
+                    return current_input
+            except Exception as error:
+                logger.error(f"Pipeline failed with error: {error}")
+                raise error
+            finally:
+                pass
+
 
     async def _consume_all(self, gen: AsyncGenerator) -> list[Any]:
         result = []
@@ -117,6 +126,7 @@ class Pipeline:
     async def _run_pipe(
         self,
         pipe_num: int,
+        run_id: uuid.UUID,
         input: Any,
         *args: Any,
         **kwargs: Any,
@@ -173,7 +183,7 @@ class Pipeline:
         async for ele in await pipe.run(
             pipe.Input(**input_dict),
             self.state,
-            run_id=self.run_id,
+            run_id=run_id,
             *args,
             **kwargs,
         ):

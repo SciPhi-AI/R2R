@@ -2,8 +2,8 @@ import asyncio
 import uuid
 from typing import Any, AsyncGenerator, Optional
 
-from .base_pipe import AsyncPipe, AsyncState, PipeType
-from .pipe_logging import PipeLoggingConnectionSingleton
+from .base_pipe import AsyncPipe, AsyncState, PipeType, manage_run_info
+from .pipe_logging import KVLoggingConnectionSingleton
 
 
 class LoggableAsyncPipe(AsyncPipe):
@@ -17,14 +17,14 @@ class LoggableAsyncPipe(AsyncPipe):
 
     def __init__(
         self,
-        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingConnectionSingleton] = None,
         type: PipeType = PipeType.OTHER,
         config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         if not pipe_logger:
-            pipe_logger = PipeLoggingConnectionSingleton()
+            pipe_logger = KVLoggingConnectionSingleton()
         self.pipe_logger = pipe_logger
         self.log_queue = asyncio.Queue()
         self.log_worker_task = None
@@ -48,20 +48,23 @@ class LoggableAsyncPipe(AsyncPipe):
         state: AsyncState,
         run_id: Optional[uuid.UUID] = None,
         *args: Any,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:
         """Run the pipe with logging capabilities."""
 
         async def wrapped_run() -> AsyncGenerator[Any, None]:
-            await self._initiate_run(run_id)
-            self.log_worker_task = asyncio.create_task(self.log_worker())
-            try:
-                async for result in self._run_logic(
-                    input, state, *args, **kwargs
-                ):
-                    yield result
-            finally:
-                await self.log_queue.join()
-                self.log_worker_task.cancel()
+            async with manage_run_info(self, run_id):
+                self.log_worker_task = asyncio.create_task(
+                    self.log_worker(), name=f"log-worker-{self.config.name}"
+                )
+                try:
+                    async for result in self._run_logic(
+                        input, state, *args, **kwargs
+                    ):
+                        yield result
+                finally:
+                    await self.log_queue.join()
+                    self.log_worker_task.cancel()
+                    self.log_queue = asyncio.Queue()
 
         return wrapped_run()

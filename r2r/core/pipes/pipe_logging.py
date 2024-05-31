@@ -548,7 +548,7 @@ class RedisPipeLoggingProvider(PipeLoggingProvider):
         return logs
 
 
-class PipeLoggingConnectionSingleton:
+class KVLoggingConnectionSingleton:
     _instance = None
     _is_configured = False
 
@@ -571,7 +571,7 @@ class PipeLoggingConnectionSingleton:
             cls._is_configured = True
         else:
             raise Exception(
-                "PipeLoggingConnectionSingleton is already configured."
+                "KVLoggingConnectionSingleton is already configured."
             )
 
     @classmethod
