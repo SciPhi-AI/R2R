@@ -244,36 +244,26 @@ class R2RApp(metaclass=AsyncSyncMeta):
             logger.error(
                 f"ingest_documents(documents={documents}) - \n\n{str(e)}"
             )
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     class IngestDocumentsRequest(BaseModel):
         documents: list[Document]
 
     async def ingest_documents_app(self, request: IngestDocumentsRequest):
-        try:
-            return await self.aingest_documents(request.documents)
-        except Exception as e:
-            run_id = self.ingestion_pipeline.run_id or generate_run_id()
-            await self.ingestion_pipeline.pipe_logger.log(
-                log_id=run_id,
-                key="pipeline_type",
-                value=self.ingestion_pipeline.pipeline_type,
-                is_info_log=True,
-            )
-
-            await self.ingestion_pipeline.pipe_logger.log(
-                log_id=run_id,
-                key="error",
-                value=str(e),
-                is_info_log=False,
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+        async with manage_run(self.run_manager, "ingest_documents_app") as run_id:
+            try:
+                await self.run_manager.log_run_info("pipeline_type", "ingestion", is_info_log=True)
+                
+                return await self.aingest_documents(request.documents)
+            except Exception as e:
+                await self.run_manager.log_run_info("error", str(e), is_info_log=False)
+                raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
     async def aupdate_documents(
         self, documents: list[Document], *args: Any, **kwargs: Any
     ):
-        if len(documents) == 0:
+        if not documents:
             raise HTTPException(
                 status_code=400, detail="No documents provided for update."
             )
@@ -295,12 +285,12 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     ["document_id", "version"], [str(doc.id), old_version]
                 )
 
-            return {"results": f"Documents updated."}
+            return {"results": "Documents updated."}
         except Exception as e:
             logger.error(
-                f"update_documents(documents={documents}) - \n\n{str(e)})"
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+                f"update_documents(documents={documents}) - \n\n{str(e)}"
+                )
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     class UpdateDocumentsRequest(BaseModel):
         documents: list[Document]
@@ -309,7 +299,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         try:
             return await self.aupdate_documents(request.documents)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
     async def aingest_files(
@@ -459,7 +449,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         *args: Any,
         **kwargs: Any,
     ):
-        if len(files) == 0:
+        if not files:
             raise HTTPException(
                 status_code=400, detail="No files provided for update."
             )
@@ -499,10 +489,10 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     ["document_id", "version"], [str(id), old_version]
                 )
 
-            return {"results": f"Files updated."}
+            return {"results": "Files updated."}
         except Exception as e:
-            logger.error(f"update_files(files={files}) - \n\n{str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
+            logger.error(f"update_files(files={files}) - \n\n{str(e)}")
+            raise HTTPException(status_code=500, detail=str(e)) from e
         finally:
             for file in files:
                 file.file.close()
@@ -544,7 +534,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 files=files, metadatas=metadatas, ids=ids_list
             )
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
     async def asearch(
@@ -557,6 +547,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     ):
         """Search for documents based on the query."""
         try:
+            # FIXME: This can now be logged at a higher level
             t0 = time.time()
             run_id = generate_run_id()
             search_filters = search_filters or {}
@@ -578,8 +569,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
             return {"results": [result.dict() for result in results]}
         except Exception as e:
-            logger.error(f"search(query={query}) - \n\n{str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
+            logger.error(f"search(query={query}) - \n\n{str(e)}")
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     class SearchRequest(BaseModel):
         query: str
@@ -599,22 +590,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     request.query, search_filters, request.search_limit
                 )
             except Exception as e:
-                # TODO - Make this more modular
-                run_id = self.search_pipeline.run_id or generate_run_id()
-                await self.search_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="pipeline_type",
-                    value=self.search_pipeline.pipeline_type,
-                    is_info_log=True,
-                )
-
-                await self.search_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="error",
-                    value=str(e),
-                    is_info_log=False,
-                )
-                raise HTTPException(status_code=500, detail=str(e))
+                await self.run_manager.log_run_info("error", str(e), is_info_log=False)
+                raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
     async def arag(
@@ -722,20 +699,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     return {"results": response}
 
             except Exception as e:
-                # TODO - Modularize this, somehow
-                await self.rag_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="pipeline_type",
-                    value=self.rag_pipeline.pipeline_type,
-                    is_info_log=True,
-                )
-                await self.rag_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="error",
-                    value=str(e),
-                    is_info_log=False,
-                )
-                raise HTTPException(status_code=500, detail=str(e))
+                await self.run_manager.log_run_info("error", str(e), is_info_log=False)
+                raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
     async def aevaluate(
@@ -770,20 +735,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     completion=request.completion,
                 )
             except Exception as e:
-                await self.eval_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="pipeline_type",
-                    value=self.eval_pipeline.pipeline_type,
-                    is_info_log=True,
-                )
-
-                await self.eval_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="error",
-                    value=str(e),
-                    is_info_log=False,
-                )
-                raise HTTPException(status_code=500, detail=str(e))
+                await self.run_manager.log_run_info("error", str(e), is_info_log=False)
+                raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
     async def adelete(
@@ -807,7 +760,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             logger.error(
                 f":delete: [Error](key={request.keys}, value={request.values}, error={str(e)})"
             )
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     class DeleteRequest(BaseModel):
         key: str
@@ -831,21 +784,21 @@ class R2RApp(metaclass=AsyncSyncMeta):
         try:
             return await self.aget_user_ids()
         except Exception as e:
-            logger.error(f"get_user_ids() - \n\n{str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
+            logger.error(f"get_user_ids() - \n\n{str(e)}")
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
     async def aget_user_documents_metadata(
         self, user_id: str, *args: Any, **kwargs: Any
     ):
         if isinstance(user_id, uuid.UUID):
-            user_id = str(user_id)
+            user_id = user_id
         document_ids = self.providers.vector_db.get_metadatas(
             metadata_fields=["document_id", "title"],
             filter_field="user_id",
             filter_value=user_id,
         )
-        return {"results": [ele for ele in document_ids]}
+        return {"results": list(document_ids)}
 
     class UserDocumentRequest(BaseModel):
         user_id: str
@@ -857,22 +810,20 @@ class R2RApp(metaclass=AsyncSyncMeta):
             return await self.aget_user_documents_metadata(request.user_id)
         except Exception as e:
             logger.error(
-                f"get_user_documents_metadata(user_id={request.user_id}) - \n\n{str(e)})"
+                f"get_user_documents_metadata(user_id={request.user_id}) - \n\n{str(e)}"
             )
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
     async def aget_document_data(
         self, document_id: str, *args: Any, **kwargs: Any
     ):
-        if isinstance(document_id, uuid.UUID):
-            document_id = str(document_id)
         document_ids = self.providers.vector_db.get_metadatas(
             metadata_fields=["document_id", "title", "version"],
             filter_field="document_id",
             filter_value=document_id,
         )
-        return {"results": [ele for ele in document_ids]}
+        return {"results": list(document_ids)}
 
     class DocumentDataRequest(BaseModel):
         document_id: str
@@ -882,9 +833,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
             return await self.aget_document_data_app(request.document_id)
         except Exception as e:
             logger.error(
-                f"get_document_data(document_id={request.document_id}) - \n\n{str(e)})"
+                f"get_document_data(document_id={request.document_id}) - \n\n{str(e)}"
             )
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
     async def aget_logs(
@@ -900,7 +851,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             log_type_filter=log_type_filter,
         )
         run_ids = [run.run_id for run in run_info]
-        if len(run_ids) == 0:
+        if not run_ids:
             return {"results": []}
         logs = await self.logging_connection.get_logs(run_ids)
         # Aggregate logs by run_id and include run_type
@@ -929,7 +880,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             return await self.aget_logs(request.log_type_filter)
         except Exception as e:
             logger.error(f":logs: [Error](error={str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     def get_open_api_endpoint(self):
         from fastapi.openapi.utils import get_openapi
@@ -945,10 +896,10 @@ class R2RApp(metaclass=AsyncSyncMeta):
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         try:
             import uvicorn
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "Please install uvicorn using 'pip install uvicorn'"
-            )
+            ) from e
 
         uvicorn.run(self.app, host=host, port=port)
 
