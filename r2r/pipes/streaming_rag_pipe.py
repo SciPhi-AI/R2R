@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 from typing import Any, AsyncGenerator, Generator, Optional
 
 from r2r.core import (
@@ -46,6 +47,7 @@ class R2RStreamingRAGPipe(R2RRAGPipe):
         self,
         input: R2RRAGPipe.Input,
         state: AsyncState,
+        run_id: uuid.UUID,
         rag_generation_config: GenerationConfig,
         *args: Any,
         **kwargs: Any,
@@ -75,7 +77,7 @@ class R2RStreamingRAGPipe(R2RRAGPipe):
         yield f"</{self.COMPLETION_STREAM_MARKER}>"
 
         await self.enqueue_log(
-            pipe_run_id=self.run_info.run_id,
+            run_id=run_id,
             key="llm_response",
             value=response,
         )

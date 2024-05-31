@@ -1,4 +1,5 @@
 import logging
+import uuid
 from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
@@ -49,6 +50,7 @@ class R2RRAGPipe(GeneratorPipe):
         self,
         input: Input,
         state: AsyncState,
+        run_id: uuid.UUID,
         rag_generation_config: GenerationConfig,
         *args: Any,
         **kwargs: Any,
@@ -62,7 +64,7 @@ class R2RRAGPipe(GeneratorPipe):
         yield response
 
         await self.enqueue_log(
-            pipe_run_id=self.run_info.run_id,
+            run_id=run_id,
             key="llm_response",
             value=response.choices[0].message.content,
         )

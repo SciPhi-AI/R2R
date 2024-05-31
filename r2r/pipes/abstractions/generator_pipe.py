@@ -1,3 +1,4 @@
+import uuid
 from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional
 
@@ -40,6 +41,7 @@ class GeneratorPipe(LoggableAsyncPipe):
         self,
         input: LoggableAsyncPipe.Input,
         state: AsyncState,
+        run_id: uuid.UUID,
         rag_generation_config: GenerationConfig,
         *args: Any,
         **kwargs: Any,

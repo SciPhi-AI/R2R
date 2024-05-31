@@ -101,11 +101,11 @@ async def test_specific_run_type_retrieval(local_provider):
     run_id_1 = generate_run_id()
 
     await local_provider.log(
-        run_id_0, "pipeline_type", "search", is_pipeline_info=True
+        run_id_0, "pipeline_type", "search", is_info_log=True
     )
     await local_provider.log(run_id_0, "key_0", "value_0")
     await local_provider.log(
-        run_id_1, "pipeline_type", "rag", is_pipeline_info=True
+        run_id_1, "pipeline_type", "rag", is_info_log=True
     )
     await local_provider.log(run_id_1, "key_1", "value_1")
 
@@ -193,11 +193,11 @@ async def test_postgres_specific_run_type_retrieval(postgres_provider):
     run_id_1 = generate_run_id()
 
     await postgres_provider.log(
-        run_id_0, "pipeline_type", "search", is_pipeline_info=True
+        run_id_0, "pipeline_type", "search", is_info_log=True
     )
     await postgres_provider.log(run_id_0, "key_0", "value_0")
     await postgres_provider.log(
-        run_id_1, "pipeline_type", "rag", is_pipeline_info=True
+        run_id_1, "pipeline_type", "rag", is_info_log=True
     )
     await postgres_provider.log(run_id_1, "key_1", "value_1")
 
@@ -280,11 +280,11 @@ async def test_redis_specific_run_type_retrieval(redis_provider):
     run_id_1 = generate_run_id()
 
     await redis_provider.log(
-        run_id_0, "pipeline_type", "search", is_pipeline_info=True
+        run_id_0, "pipeline_type", "search", is_info_log=True
     )
     await redis_provider.log(run_id_0, "key_0", "value_0")
     await redis_provider.log(
-        run_id_1, "pipeline_type", "rag", is_pipeline_info=True
+        run_id_1, "pipeline_type", "rag", is_info_log=True
     )
     await redis_provider.log(run_id_1, "key_1", "value_1")
 

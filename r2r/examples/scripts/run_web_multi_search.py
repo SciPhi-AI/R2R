@@ -1,11 +1,11 @@
 from r2r import (
     GenerationConfig,
+    MultiSearchPipe,
     R2RAppBuilder,
     R2RConfig,
+    R2RPipeFactoryWithMultiSearch,
     R2RWebSearchPipe,
     SerperClient,
-    MultiSearchPipe,
-    R2RPipeFactoryWithMultiSearch,
 )
 
 if __name__ == "__main__":

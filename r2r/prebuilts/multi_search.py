@@ -3,11 +3,12 @@ from typing import Any, AsyncGenerator, Optional
 from r2r import (
     GenerationConfig,
     LoggableAsyncPipe,
-    SearchResult,
-    SearchPipe,
+    R2RPipeFactory,
     R2RQueryTransformPipe,
-    R2RPipeFactory
+    SearchPipe,
+    SearchResult,
 )
+
 
 class MultiSearchPipe(LoggableAsyncPipe):
     class PipeConfig(LoggableAsyncPipe.PipeConfig):
@@ -87,7 +88,10 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
             search_task_template_override: {'template': str, 'input_types': dict[str, str]}
         """
         multi_search_config = MultiSearchPipe.PipeConfig()
-        task_prompt_name = kwargs.get("task_prompt_name") or f"{multi_search_config.name}_task_prompt"
+        task_prompt_name = (
+            kwargs.get("task_prompt_name")
+            or f"{multi_search_config.name}_task_prompt"
+        )
 
         # Initialize the new query transform pipe
         query_transform_pipe = kwargs.get(

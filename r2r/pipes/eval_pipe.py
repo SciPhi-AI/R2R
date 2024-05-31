@@ -1,5 +1,6 @@
 import logging
 import random
+import uuid
 from typing import Any, AsyncGenerator, Optional
 
 from pydantic import BaseModel
@@ -42,7 +43,12 @@ class R2REvalPipe(LoggableAsyncPipe):
         )
 
     async def _run_logic(
-        self, input: Input, state: AsyncState, *args: Any, **kwargs: Any
+        self,
+        input: Input,
+        run_id: uuid.UUID,
+        state: AsyncState,
+        *args: Any,
+        **kwargs: Any,
     ) -> AsyncGenerator[LLMChatCompletion, None]:
         async for item in input.message:
             yield self.eval_provider.evaluate(

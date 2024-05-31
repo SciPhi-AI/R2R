@@ -2,13 +2,10 @@ import asyncio
 import logging
 import uuid
 from abc import ABC, abstractmethod
-from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional
 
 from pydantic import BaseModel
-
-from ..utils import generate_run_id
 
 logger = logging.getLogger(__name__)
 
@@ -20,12 +17,6 @@ class PipeType(Enum):
     SEARCH = "search"
     TRANSFORM = "transform"
     OTHER = "other"
-
-
-class PipeRunInfo(BaseModel):
-    """Information about a pipe run."""
-
-    run_id: uuid.UUID
 
 
 class AsyncState:
@@ -69,18 +60,6 @@ class AsyncState:
                 del self.data[outer_key][inner_key]
 
 
-@asynccontextmanager
-async def manage_run_info(
-    pipe: "AsyncPipe", run_id: Optional[uuid.UUID] = None
-):
-    try:
-        run_id = run_id or generate_run_id()
-        pipe._run_info = PipeRunInfo(run_id=run_id)
-        yield
-    finally:
-        pipe.run_id = None
-
-
 class AsyncPipe(ABC):
     """An asynchronous pipe for processing data."""
 
@@ -121,21 +100,15 @@ class AsyncPipe(ABC):
     def type(self) -> PipeType:
         return self._type
 
-    @property
-    def run_info(self) -> PipeRunInfo:
-        return self._run_info
-
     async def run(
         self,
         input: Input,
         state: AsyncState,
-        run_id: Optional[uuid.UUID] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:
-        async with manage_run_info(self, run_id):
-            result = self._run_logic(input, state)
-            return result
+        result = self._run_logic(input, state)
+        return result
 
     @abstractmethod
     async def _run_logic(

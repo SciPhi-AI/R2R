@@ -248,14 +248,14 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 pipe_run_id=run_id,
                 key="pipeline_type",
                 value=self.ingestion_pipeline.pipeline_type,
-                is_pipeline_info=True,
+                is_info_log=True,
             )
 
             await self.ingestion_pipeline.pipe_logger.log(
                 pipe_run_id=run_id,
                 key="error",
                 value=str(e),
-                is_pipeline_info=False,
+                is_info_log=False,
             )
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -427,14 +427,14 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 pipe_run_id=run_id,
                 key="pipeline_type",
                 value=self.ingestion_pipeline.pipeline_type,
-                is_pipeline_info=True,
+                is_info_log=True,
             )
 
             await self.ingestion_pipeline.pipe_logger.log(
                 pipe_run_id=run_id,
                 key="error",
                 value=str(e),
-                is_pipeline_info=False,
+                is_info_log=False,
             )
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -579,14 +579,14 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 pipe_run_id=run_id,
                 key="pipeline_type",
                 value=self.search_pipeline.pipeline_type,
-                is_pipeline_info=True,
+                is_info_log=True,
             )
 
             await self.search_pipeline.pipe_logger.log(
                 pipe_run_id=run_id,
                 key="error",
                 value=str(e),
-                is_pipeline_info=False,
+                is_info_log=False,
             )
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -676,14 +676,14 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 pipe_run_id=run_id,
                 key="pipeline_type",
                 value=self.rag_pipeline.pipeline_type,
-                is_pipeline_info=True,
+                is_info_log=True,
             )
 
             await self.rag_pipeline.pipe_logger.log(
                 pipe_run_id=run_id,
                 key="error",
                 value=str(e),
-                is_pipeline_info=False,
+                is_info_log=False,
             )
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -728,14 +728,14 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 pipe_run_id=run_id,
                 key="pipeline_type",
                 value=self.eval_pipeline.pipeline_type,
-                is_pipeline_info=True,
+                is_info_log=True,
             )
 
             await self.eval_pipeline.pipe_logger.log(
                 pipe_run_id=run_id,
                 key="error",
                 value=str(e),
-                is_pipeline_info=False,
+                is_info_log=False,
             )
             raise HTTPException(status_code=500, detail=str(e))
 
