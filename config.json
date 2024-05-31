@@ -52,7 +52,7 @@
     "provider": "local"
   },
   "vector_database": {
-    "provider": "local",
-    "collection_name": "demo_vecs"
+    "provider": "qdrant",
+    "collection_name": "demo_vecs_uuiijj"
   }
 }

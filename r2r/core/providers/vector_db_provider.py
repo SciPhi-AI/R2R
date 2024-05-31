@@ -78,8 +78,14 @@ class VectorDBProvider(Provider, ABC):
 
     @abstractmethod
     def delete_by_metadata(
-        self, metadata_field: str, metadata_value: Union[bool, int, str]
+        self,
+        metadata_fields: list[str],
+        metadata_values: list[Union[bool, int, str]],
     ) -> None:
+        if len(metadata_fields) != len(metadata_values):
+            raise ValueError(
+                "The number of metadata fields and values must be equal."
+            )
         pass
 
     @abstractmethod

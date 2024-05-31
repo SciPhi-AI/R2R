@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 import uuid
 from typing import Any, Optional, Union
 
@@ -16,6 +17,7 @@ from r2r.core import (
     KVLoggingConnectionSingleton,
     generate_id_from_label,
     generate_run_id,
+    increment_version,
     to_async_generator,
 )
 from r2r.pipes import R2REvalPipe
@@ -76,8 +78,13 @@ class AsyncSyncMeta(type):
                                 except Exception as e:
                                     exception = e
                                 finally:
-                                    generation_config = kwargs.get('rag_generation_config', None)
-                                    if not generation_config or not generation_config.stream:
+                                    generation_config = kwargs.get(
+                                        "rag_generation_config", None
+                                    )
+                                    if (
+                                        not generation_config
+                                        or not generation_config.stream
+                                    ):
                                         loop.run_until_complete(
                                             loop.shutdown_asyncgens()
                                         )
@@ -127,7 +134,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
-        # do_apply_cors: bool = True,
+        do_apply_cors: bool = True,
         *args,
         **kwargs,
     ):
@@ -143,7 +150,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
         self.app = FastAPI()
 
         self._setup_routes()
-        self._apply_cors()
+        if do_apply_cors:
+            self._apply_cors()
 
     def _setup_routes(self):
         self.app.add_api_route(
@@ -154,6 +162,16 @@ class R2RApp(metaclass=AsyncSyncMeta):
         self.app.add_api_route(
             path="/ingest_files/",
             endpoint=self.ingest_files_app,
+            methods=["POST"],
+        )
+        self.app.add_api_route(
+            path="/update_documents/",
+            endpoint=self.update_documents_app,
+            methods=["POST"],
+        )
+        self.app.add_api_route(
+            path="/update_files/",
+            endpoint=self.update_files_app,
             methods=["POST"],
         )
         self.app.add_api_route(
@@ -169,6 +187,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
         )
         self.app.add_api_route(
             path="/delete/", endpoint=self.delete_app, methods=["DELETE"]
+        )
+        self.app.add_api_route(
+            path="/get_document_data/",
+            endpoint=self.get_document_data_app,
+            methods=["GET"],
         )
         self.app.add_api_route(
             path="/get_user_ids/",
@@ -194,12 +217,17 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     @syncable
     async def aingest_documents(
-        self, documents: list[Document], *args: Any, **kwargs: Any
+        self,
+        documents: list[Document],
+        versions: Optional[list[str]] = None,
+        *args: Any,
+        **kwargs: Any,
     ):
         try:
             # Process the documents through the pipeline
             await self.ingestion_pipeline.run(
-                input=to_async_generator(documents)
+                input=to_async_generator(documents),
+                versions=versions,
             )
             return {"results": "Entries upserted successfully."}
         except Exception as e:
@@ -232,11 +260,54 @@ class R2RApp(metaclass=AsyncSyncMeta):
             raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
+    async def aupdate_documents(
+        self, documents: list[Document], *args: Any, **kwargs: Any
+    ):
+        if len(documents) == 0:
+            raise HTTPException(
+                status_code=400, detail="No documents provided for update."
+            )
+
+        try:
+            old_versions = []
+            new_versions = []
+            for doc in documents:
+                document_data = await self.aget_document_data(doc.id)
+                current_version = document_data["results"][0]["version"]
+                old_versions.append(current_version)
+                new_versions.append(increment_version(current_version))
+
+            await self.aingest_documents(documents, versions=new_versions)
+
+            # Delete the old version
+            for doc, old_version in zip(documents, old_versions):
+                await self.adelete(
+                    ["document_id", "version"], [str(doc.id), old_version]
+                )
+
+            return {"results": f"Documents updated."}
+        except Exception as e:
+            logger.error(
+                f"update_documents(documents={documents}) - \n\n{str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e))
+
+    class UpdateDocumentsRequest(BaseModel):
+        documents: list[Document]
+
+    async def update_documents_app(self, request: UpdateDocumentsRequest):
+        try:
+            return await self.aupdate_documents(request.documents)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @syncable
     async def aingest_files(
         self,
         files: list[UploadFile],
         metadatas: Optional[list[dict]] = None,
         ids: Optional[list[uuid.UUID]] = None,
+        versions: Optional[list[str]] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -284,7 +355,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     else ids[iteration]
                 )
                 document_metadata = metadatas[iteration] if metadatas else {}
-
                 documents.append(
                     Document(
                         id=document_id,
@@ -299,6 +369,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             logger.info("Running the ingestion pipeline...")
             await self.ingestion_pipeline.run(
                 input=to_async_generator(documents),
+                versions=versions,
             )
             logger.info("Ingestion pipeline completed.")
 
@@ -365,6 +436,106 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 value=str(e),
                 is_pipeline_info=False,
             )
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @syncable
+    async def aupdate_files(
+        self,
+        files: list[UploadFile],
+        metadatas: Optional[list[dict]] = None,
+        ids: list[uuid.UUID] = None,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        if len(files) == 0:
+            raise HTTPException(
+                status_code=400, detail="No files provided for update."
+            )
+
+        try:
+            # Parse ids if provided
+            if ids and len(ids) != len(files):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Number of ids does not match number of files.",
+                )
+
+            # Ensure metadatas length matches files length
+            if metadatas and len(metadatas) != len(files):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Number of metadata entries does not match number of files.",
+                )
+
+            # Get the current version
+            # document_id = ids[]
+            # document_data = await self.aget_document_data(document_id)
+            # current_version = document_data["results"][0]["version"]
+            # new_version = increment_version(current_version)
+            old_versions = []
+            new_versions = []
+            for id in ids:
+                document_data = await self.aget_document_data(id)
+                current_version = document_data["results"][0]["version"]
+                old_versions.append(current_version)
+                new_versions.append(increment_version(current_version))
+
+            # Update files with the new version
+            await self.aingest_files(
+                files, metadatas, ids, versions=new_versions
+            )
+
+            # Delete the old version
+            for id, old_version in zip(ids, old_versions):
+                await self.adelete(
+                    ["document_id", "version"], [str(id), old_version]
+                )
+
+            return {"results": f"Files updated."}
+        except Exception as e:
+            logger.error(f"update_files(files={files}) - \n\n{str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            for file in files:
+                file.file.close()
+
+    class UpdateFilesRequest(BaseModel):
+        files: list[UploadFile] = File(...)
+        metadatas: Optional[str] = Form(None)
+        ids: str = Form("")
+
+    async def update_files_app(
+        self,
+        files: list[UploadFile] = File(...),
+        metadatas: Optional[str] = Form(None),
+        ids: Optional[str] = Form(None),
+    ):
+        try:
+            # Parse metadatas if provided
+            metadatas = (
+                json.loads(metadatas)
+                if metadatas and metadatas != "null"
+                else None
+            )
+
+            # Parse ids if provided
+            ids_list = json.loads(ids)
+            if ids_list:
+                ids_list = [uuid.UUID(id) for id in ids_list]
+            if len(ids_list) != len(files):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Number of ids does not match number of files.",
+                )
+            if len(ids_list) != len(metadatas):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Number of metadata entries does not match number of files.",
+                )
+            return await self.aupdate_files(
+                files=files, metadatas=metadatas, ids=ids_list
+            )
+        except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
@@ -574,25 +745,29 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     @syncable
     async def adelete(
-        self, key: str, value: Union[bool, int, str], *args: Any, **kwargs: Any
+        self,
+        keys: list[str],
+        values: list[Union[bool, int, str]],
+        *args: Any,
+        **kwargs: Any,
     ):
         try:
-            self.providers.vector_db.delete_by_metadata(key, value)
+            self.providers.vector_db.delete_by_metadata(keys, values)
             return {"results": "Entries deleted successfully."}
         except Exception as e:
             logger.error(
-                f":delete: [Error](key={key}, value={value}, error={str(e)})"
+                f":delete: [Error](key={keys}, value={values}, error={str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
 
     class DeleteRequest(BaseModel):
-        key: str
-        value: Union[bool, int, str]
+        keys: list[str]
+        values: list[Union[bool, int, str]]
 
     async def delete_app(
         self, request: DeleteRequest = Body(...), *args: Any, **kwargs: Any
     ):
-        return await self.adelete(request.key, request.value)
+        return await self.adelete(request.keys, request.values)
 
     @syncable
     async def aget_user_ids(self, *args: Any, **kwargs: Any):
@@ -627,6 +802,31 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 f"get_user_document_data(user_id={user_id}) - \n\n{str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e))
+
+    @syncable
+    async def aget_document_data(
+        self, document_id: str, *args: Any, **kwargs: Any
+    ):
+        try:
+            if isinstance(document_id, uuid.UUID):
+                document_id = str(document_id)
+            document_ids = self.providers.vector_db.get_metadatas(
+                metadata_fields=["document_id", "title", "version"],
+                filter_field="document_id",
+                filter_value=document_id,
+            )
+            return {"results": [ele for ele in document_ids]}
+        except Exception as e:
+            logger.error(
+                f"get_document_data(document_id={document_id}) - \n\n{str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e))
+
+    class DocumentDataRequest(BaseModel):
+        document_id: str
+
+    async def get_document_data_app(self, request: DocumentDataRequest):
+        return await self.aget_document_data_app(request.document_id)
 
     class UserDocumentRequest(BaseModel):
         user_id: str
