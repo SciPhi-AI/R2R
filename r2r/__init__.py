@@ -6,6 +6,7 @@ from .integrations import *
 from .main import *
 from .pipes import *
 from .prompts import *
+from .prebuilts import *
 
 logger = logging.getLogger("r2r")
 logger.setLevel(logging.INFO)
@@ -97,6 +98,9 @@ __all__ = [
     "R2RPromptProvider",
     "R2RWebSearchPipe",
     "R2RAppBuilder",
+    # Prebuilts
+    "MultiSearchPipe",
+    "R2RPipeFactoryWithMultiSearch",
     # Integrations
     "SerperClient",
 ]
