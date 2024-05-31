@@ -468,10 +468,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
 
             # Get the current version
-            # document_id = ids[]
-            # document_data = await self.aget_document_data(document_id)
-            # current_version = document_data["results"][0]["version"]
-            # new_version = increment_version(current_version)
             old_versions = []
             new_versions = []
             for id in ids:

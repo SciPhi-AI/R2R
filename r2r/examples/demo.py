@@ -45,15 +45,15 @@ class R2RDemo:
         root_path = os.path.dirname(os.path.abspath(__file__))
         self.user_id = user_id
         self.default_files = file_list or [
-            # os.path.join(root_path, "data", "screen_shot.png"),
+            os.path.join(root_path, "data", "screen_shot.png"),
             os.path.join(root_path, "data", "aristotle.txt"),
-            # os.path.join(root_path, "data", "pg_essay_1.html"),
-            # os.path.join(root_path, "data", "pg_essay_2.html"),
-            # os.path.join(root_path, "data", "pg_essay_3.html"),
-            # os.path.join(root_path, "data", "pg_essay_4.html"),
-            # os.path.join(root_path, "data", "pg_essay_5.html"),
-            # os.path.join(root_path, "data", "lyft_2021.pdf"),
-            # os.path.join(root_path, "data", "uber_2021.pdf"),
+            os.path.join(root_path, "data", "pg_essay_1.html"),
+            os.path.join(root_path, "data", "pg_essay_2.html"),
+            os.path.join(root_path, "data", "pg_essay_3.html"),
+            os.path.join(root_path, "data", "pg_essay_4.html"),
+            os.path.join(root_path, "data", "pg_essay_5.html"),
+            os.path.join(root_path, "data", "lyft_2021.pdf"),
+            os.path.join(root_path, "data", "uber_2021.pdf"),
         ]
         self.file_tuples = file_tuples or [
             (
