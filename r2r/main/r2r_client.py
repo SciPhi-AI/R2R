@@ -1,7 +1,6 @@
 """Module for the R2RClient class."""
 
 import asyncio
-import base64
 import json
 import uuid
 from typing import AsyncGenerator, Generator, Optional, Union
