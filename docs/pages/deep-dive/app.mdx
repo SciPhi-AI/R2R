@@ -8,19 +8,16 @@ The application API specifications are included [here](/getting-started/app-api)
 
 ### Application Creation and Launching
 
-The R2R application is created using the `R2RPipelineFactory.create_pipelines()` method, which assembles various components based on the provided configuration. Here's an example of how the application is typically created in the R2R workflow:
+The R2R application is created using the `R2RAppBuilder` class, which leverages factories and the builder pattern to assemble various components based on the provided configuration. Here's an example of how the application is typically created in the R2R workflow:
 
 ```python
-from r2r import R2RConfig, R2RProviderFactory, R2RPipeFactory, R2RPipelineFactory, R2RApp
+from r2r import R2RConfig, R2RAppBuilder
 
 config = R2RConfig.from_json("path/to/config.json")
-providers = R2RProviderFactory(config).create_providers()
-pipes = R2RPipeFactory(config, providers).create_pipes()
-pipelines = R2RPipelineFactory(config, pipes).create_pipelines()
-app = R2RApp(config, providers, pipelines).app
+app = R2RAppBuilder(config).build().app
 ```
 
-In this example, the configuration is loaded from a `config.json` file. The `R2RProviderFactory` creates providers based on the configuration, and the `R2RPipeFactory` creates the necessary pipes. These are then assembled into pipelines by the `R2RPipelineFactory`, and the FastAPI application is set up with the necessary endpoints and middleware.
+In this example, the configuration is loaded from a `config.json` file. The `R2RAppBuilder` creates the necessary providers, pipes, and pipelines based on the configuration, and the FastAPI application is set up with the necessary endpoints and middleware.
 
 To launch the application, you can use a web server such as Uvicorn:
 
@@ -38,13 +35,10 @@ Here's an example of how to add a custom endpoint:
 
 ```python
 from fastapi import FastAPI
-from r2r import R2RConfig, R2RProviderFactory, R2RPipeFactory, R2RPipelineFactory, R2RApp
+from r2r import R2RConfig, R2RAppBuilder
 
 config = R2RConfig.from_json("path/to/config.json")
-providers = R2RProviderFactory(config).create_providers()
-pipes = R2RPipeFactory(config, providers).create_pipes()
-pipelines = R2RPipelineFactory(config, pipes).create_pipelines()
-r2r_app = R2RApp(config, providers, pipelines)
+r2r_app = R2RAppBuilder(config).build()
 
 app = r2r_app.app
 
@@ -188,14 +182,11 @@ For more detailed information on configuring specific providers, please refer to
 
 These documentation files provide in-depth guides on setting up and using each provider, including any required environment variables and additional configuration options.
 
-To launch the application with your own configuration, you can create a `config.json` file with your desired settings and pass it to the `R2RPipelineFactory.create_pipelines()` method:
+To launch the application with your own configuration, you can create a `config.json` file with your desired settings and pass it to the `R2RAppBuilder`:
 
 ```python
 config = R2RConfig.from_json("your_config_path.json")
-providers = R2RProviderFactory(config).create_providers()
-pipes = R2RPipeFactory(config, providers).create_pipes()
-pipelines = R2RPipelineFactory(config, pipes).create_pipelines()
-app = R2RApp(config, providers, pipelines).app
+app = R2RAppBuilder(config).build().app
 ```
 
 This will create the application with your custom configuration.
@@ -233,7 +224,9 @@ Here’s an example of creating a custom RAG pipeline:
 ```python
 class CustomRAGPipeline(RAGPipeline):
     def __init__(self, pipes, streaming=False):
-        super().__init__()
+       
+
+ super().__init__()
         search_pipe = pipes.custom_search_pipe
         rag_pipe = pipes.custom_streaming_rag_pipe if streaming else pipes.custom_rag_pipe
 
@@ -271,7 +264,9 @@ class CustomEvalPipeline(EvalPipeline):
 The `R2RClient` class provides a client interface for interacting with the R2R application’s API endpoints. Here are some key methods:
 
 - `ingest_documents(documents: list[dict]) -> dict`: Ingests documents.
+- `update_documents(documents: list[dict]) -> dict`: Updates the list of documents.
 - `ingest_files(metadatas: list[dict], files: list[str], ids: Optional[list[str]] = None) -> dict`: Ingests files.
+- `update_files(metadatas: list[dict], files: list[str], ids: Optional[list[str]] = None) -> dict`: Updates the list of files.
 - `search(query: str, search_filters: dict = {}, search_limit: int = 10) -> dict`: Performs a search.
 - `rag(message: str, search_filters: Optional[dict] = None, search_limit: int = 10, rag_generation_config: Optional[dict] = None, streaming: bool = False) -> Union[dict, Generator[str, None, None]]`: Generates a RAG completion.
 - `delete(key: str, value: str) -> dict`: Deletes entries based on filters.

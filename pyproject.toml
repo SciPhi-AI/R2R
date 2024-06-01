@@ -65,8 +65,8 @@ exa-py = {version = "^1.0.9", optional = true}
 all = ["tiktoken", "qdrant_client", "llama-cpp-python", "sentence-transformers"]
 exa = ["exa-py"]
 ionic = ["ionic-api-sdk"]
-local-llm = ["llama-cpp-python", "sentence-transformers"]
-sentence-transformers-only = ["sentence-transformers"]
+local-llm = ["llama-cpp-python"]
+local-embedding = ["sentence-transformers"]
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.3.0"

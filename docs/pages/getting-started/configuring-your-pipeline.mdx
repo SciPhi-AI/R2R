@@ -19,7 +19,7 @@ For more information, refer to [Vector Database Providers](/providers/vector-dat
 
 ### Example: Qdrant Configuration
 
-An example configuration specifying Qdrant as a vector database provider can be found in [`r2r/examples/data/example_qdrant_config.json`](https://github.com/SciPhi-AI/R2R/tree/main/r2r/examples/data/example_qdrant_config.json):
+An example configuration specifying Qdrant as a vector database provider can be found in [`r2r/examples/data/example_qdrant_config.json`](https://github.com/SciPhi-AI/R2R/tree/main/r2r/examples/data/example_qdrant_config.json). When R2R is ran with this configuration the `vector_database` settings on the default `config.json` are overriden:
 
 ```json
 {
@@ -78,7 +78,7 @@ A simple example custom user configuration can be found in [`r2r/examples/data/e
 You can serve the [R2R Demo](/getting-started/r2r-demo) using local embeddings with rerank, as shown above, with the following command sequence:
 
 ```bash
-# Be sure to install with pip install `r2r[local-llm]`
+# Be sure to install with pip install `r2r[local-embedding]`
 
 # Serve the demo with the custom user settings
 export WORKDIR=YOUR_R2R_DIRECTORY

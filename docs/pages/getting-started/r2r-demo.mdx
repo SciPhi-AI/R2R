@@ -1,6 +1,6 @@
 ## R2R Demo
 
-The R2R demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo ingests a list of provided documents and demonstrates search, RAG, and advanced functionality. The script at r2r/examples/demo.py, which powers the demo, can be configured and extended with sufficient developer familiarity.
+The R2R demo offers a step-by-step walkthrough of the features provided by the R2R application. The application ships with a REST API exposing a Retrieval-Augmented Generation (RAG) pipeline and more. The demo demonstrates how to directly interface with the application logic to ingest a list of provided documents and demonstrates search, RAG, and more advanced functionality. The script at `r2r/examples/demo.py`, which powers the demo, can be configured and extended with sufficient developer familiarity.
 
 ![R2R App Architecture](./r2r_demo_architecture.png)
 
@@ -51,11 +51,11 @@ Time taken to ingest files: 28.49 seconds
 
 **Note**
 
-Each ingested document derives a unique `document_id` from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, a the demo includes a default `user_id` in the document metadata to facilitate user-level document management.
+Each ingested document derives a unique `document_id` from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, the demo includes a default `user_id` in the document metadata to facilitate user-level document management.
 
 ### Step 2: Confirm User Data
 
-To verify the successful ingestion of the demo documents, you can fetch the metadata for the uploaded documents associated with the default demo user ID:
+To verify the successful ingestion of the demo documents, fetch the metadata for the uploaded documents associated with the demo userId:
 
 ```bash
 python -m r2r.examples.demo get_user_documents_metadata --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
@@ -156,7 +156,7 @@ r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.js
 Time taken to stream RAG response: 2.79 seconds
 ```
 
-## Document Management
+## Advanced - Document Management
 
 Effective document management is crucial for maintaining a robust and efficient RAG system. This section guides you through various operations related to document management, including deleting documents and managing user-specific data. These steps will help ensure your document database remains organized and up-to-date.
 
@@ -221,7 +221,7 @@ Time taken to get user document data: 0.00 seconds
 {'results': []}
 ```
 
-## Advanced Functionality
+## Advanced - Other Features
 
 ### Demo Multi-Modal Support
 
