@@ -1,3 +1,4 @@
+import uuid
 from typing import Any, AsyncGenerator, Optional
 
 from r2r import (
@@ -49,6 +50,7 @@ class MultiSearchPipe(LoggableAsyncPipe):
         self,
         input: Any,
         state: Any,
+        run_id: uuid.UUID,
         query_transform_generation_config: Optional[GenerationConfig] = None,
         *args: Any,
         **kwargs: Any,

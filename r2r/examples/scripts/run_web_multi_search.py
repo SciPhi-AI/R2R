@@ -1,34 +1,45 @@
 from r2r import (
     GenerationConfig,
-    MultiSearchPipe,
     R2RAppBuilder,
-    R2RConfig,
     R2RPipeFactoryWithMultiSearch,
     R2RWebSearchPipe,
     SerperClient,
 )
 
 if __name__ == "__main__":
-    # Load the configuration file
-    config = R2RConfig.from_json()
+    # Initialize a web search pipe
+    web_search_pipe = R2RWebSearchPipe(serper_client=SerperClient())
 
-    multi_search_config = MultiSearchPipe.PipeConfig()
-
-    # Override default inner search pipe (vector store search) with web search
-    web_search_pipe = R2RWebSearchPipe(
-        serper_client=SerperClient(),  # TODO - Develop a `WebSearchProvider` for configurability
-    )
-
+    # Define a new synthetic query generation template
     synthetic_query_generation_template = {
-        "template": "### Instruction:\n\nGiven the following query that follows to write a double newline separated list of up to {num_outputs} advanced queries meant to help answer the original query. \nDO NOT generate any single query which is likely to require information from multiple distinct documents, \nEACH single query will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents. \nFOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, the two queries would be \n`What are the key themes of Great Gatsby?` and `What are the key themes of 1984?`.\nHere is the original user query to be transformed into answers:\n\n### Query:\n{message}\n\n### Response:\n",
-        "input_types": {"num_outputs": "int", "message": "str"},
+        "template": 
+            """
+            ### Instruction:
+            Given the following query, write a double newline separated list of up to {num_outputs} advanced queries meant to help answer the original query.
+            DO NOT generate any single query which is likely to require information from multiple distinct documents.
+            EACH single query will be used to carry out a cosine similarity semantic search over distinct indexed documents.
+            FOR EXAMPLE, if asked `how do the key themes of Great Gatsby compare with 1984`, the two queries would be
+            `What are the key themes of Great Gatsby?` and `What are the key themes of 1984?`.
+            Here is the original user query to be transformed into answers:
+
+            ### Query:
+            {message}
+
+            ### Response:
+            """,
+        "input_types": 
+            {
+                "num_outputs": "int", 
+                "message": "str"
+            },
     }
 
+    # Build the R2R application with the custom pipeline
     r2r_app = (
-        R2RAppBuilder(config)
+        R2RAppBuilder()
         .with_pipe_factory(R2RPipeFactoryWithMultiSearch)
         .build(
-            # Add optional override arguments which propagate to the pipe factory
+            # override inputs consumed in building the MultiSearchPipe
             multi_inner_search_pipe_override=web_search_pipe,
             query_generation_template_override=synthetic_query_generation_template,
         )
@@ -36,9 +47,8 @@ if __name__ == "__main__":
 
     # Run the RAG pipeline through the R2R application
     result = r2r_app.rag(
-        "Who was aristotle?",
-        # query_transform_generation_config=GenerationConfig(model="gpt-4o"),
-        rag_generation_config=GenerationConfig(model="gpt-3.5-turbo"),
+        "Who was Aristotle?",
+        rag_generation_config=GenerationConfig(model="gpt-4o"),
     )
 
     print(f"Final Result:\n\n{result}")
