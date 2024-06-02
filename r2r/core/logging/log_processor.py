@@ -3,9 +3,13 @@ import re
 from datetime import datetime
 import logging
 from collections import defaultdict
-from typing import List, Dict, Any, Callable, Union
+from typing import List, Dict, Any, Callable, Optional, Union
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
+
+class FilterCriteria(BaseModel):
+        filters: Optional[dict[str, str]] = None
 
 class LogProcessor:
     timestamp_format = "%Y-%m-%d %H:%M:%S"
@@ -64,47 +68,3 @@ class LogAnalytics:
             }
 
         return self.visualization_preparer.prepare_visualization_data(analytics, self.config.vis_functions)
-
-# Example filters
-filters = {
-    "error_logs": lambda log: log["key"] == "error",
-    "search_results": lambda log: log["key"] == "search_results",
-    "vector_search_latency": lambda log: log["key"] == "vector_search_latency"
-}
-
-# Example statistics functions
-stat_functions = {
-    "error_count": lambda population: len(population),
-    "average_latency": lambda population: sum(float(log["value"]) for log in population) / len(population) if population else 0
-}
-
-# Example distribution functions
-dist_functions = {
-    "error_distribution": lambda population: defaultdict(int, {re.findall(r'\b\d{3}\b', log["value"])[-1]: 1 for log in population if re.findall(r'\b\d{3}\b', log["value"])}),
-    "latency_distribution": lambda population: [float(log["value"]) for log in population]
-}
-
-# Example visualization functions
-vis_functions = {
-    "stacked_bar_chart": lambda data: {
-        "labels": list(data.keys()),
-        "datasets": [{"label": name, "data": [stats["average_latency"] for stats in data.values()]} for name in data.keys()]
-    },
-    "pie_chart": lambda data: [{"error_type": k, "count": v} for k, v in data["error_logs"]["distributions"]["error_distribution"].items()]
-}
-
-# Configuration
-config = LogAnalyticsConfig(filters, stat_functions, dist_functions, vis_functions)
-
-# Example usage
-logs = [
-    {"key": "error", "value": "404", "timestamp": "2024-05-30 10:00:00"},
-    {"key": "error", "value": "500", "timestamp": "2024-05-30 11:00:00"},
-    {"key": "search_results", "value": "0.9", "timestamp": "2024-05-30 12:00:00"},
-    {"key": "vector_search_latency", "value": "0.05", "timestamp": "2024-05-30 13:00:00"},
-]
-
-log_analytics = LogAnalytics(logs, config)
-result = log_analytics.process_logs()
-
-print(result)

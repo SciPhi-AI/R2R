@@ -19,6 +19,8 @@ from r2r import (
     generate_id_from_label,
 )
 
+from r2r.core import FilterCriteria
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -446,6 +448,22 @@ class R2RDemo:
             response = self.r2r.get_logs(pipeline_type)
             t1 = time.time()
             print(f"Time taken to get logs: {t1-t0:.2f} seconds")
+            print(response)
+    
+    def analytics(self):
+        # Hardcoding filter criteria for errors
+        filter_criteria = FilterCriteria(filters={"error_logs": "error"})
+        if hasattr(self, "client"):
+            t0 = time.time()
+            response = self.client.analytics(filter_criteria=filter_criteria)
+            t1 = time.time()
+            print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
+            print(response)
+        else:
+            t0 = time.time()
+            response = self.r2r.analytics(filter_criteria=filter_criteria)
+            t1 = time.time()
+            print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
             print(response)
 
     def get_open_api_endpoint(self):

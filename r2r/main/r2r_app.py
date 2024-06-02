@@ -14,8 +14,10 @@ from pydantic import BaseModel
 from r2r.core import (
     Document,
     DocumentType,
+    FilterCriteria,
     GenerationConfig,
     KVLoggingSingleton,
+    LogProcessor,
     RunManager,
     generate_id_from_label,
     generate_run_id,
@@ -130,6 +132,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     - Retrieve user IDs
     - Retrieve user document data
     - Retrieve logs
+    - Retrieve analytics
     """
 
     def __init__(
@@ -212,13 +215,12 @@ class R2RApp(metaclass=AsyncSyncMeta):
             endpoint=self.get_logs_app,
             methods=["POST"],
         )
-        #FIXME: This needs to be reimplemented
-        # self.app.add_api_route(
-        #     path="/analytics/",
-        #     endpoint=self.get_analytics_app,
-        #     methods=["GET"],
-        # )
-
+        # FIXME: This needs to be reimplemented
+        self.app.add_api_route(
+            path="/analytics",
+            endpoint=self.analytics_app,
+            methods=["GET"],
+        )
         self.app.add_api_route(
             path="/get_open_api_endpoint",
             endpoint=self.get_open_api_endpoint,
@@ -836,11 +838,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 f"get_document_data(document_id={request.document_id}) - \n\n{str(e)}"
             )
             raise HTTPException(status_code=500, detail=str(e)) from e
-
-    @syncable
-    async def aget_logs(
-        self, log_type_filter: Optional[str] = None, *args: Any, **kwargs: Any
-    ):
+        
+    async def _fetch_logs(self, log_type_filter: Optional[str] = None):
         logs_per_run = 10
         if self.logging_connection is None:
             raise HTTPException(
@@ -852,24 +851,26 @@ class R2RApp(metaclass=AsyncSyncMeta):
         )
         run_ids = [run.run_id for run in run_info]
         if not run_ids:
-            return {"results": []}
+            return []
         logs = await self.logging_connection.get_logs(run_ids)
-        # Aggregate logs by run_id and include run_type
         aggregated_logs = []
 
         for run in run_info:
             run_logs = [log for log in logs if log["log_id"] == run.run_id]
-            entries = [
-                {"key": log["key"], "value": log["value"]} for log in run_logs
-            ]
-            aggregated_logs.append(
-                {
-                    "run_id": run.run_id,
-                    "run_type": run.log_type,
-                    "entries": entries,
-                }
-            )
+            entries = [{"key": log["key"], "value": log["value"]} for log in run_logs]
+            aggregated_logs.append({
+                "run_id": run.run_id,
+                "run_type": run.log_type,
+                "entries": entries,
+            })
 
+        return aggregated_logs
+
+    @syncable
+    async def aget_logs(
+        self, log_type_filter: Optional[str] = None, *args: Any, **kwargs: Any
+    ):
+        aggregated_logs = await self._fetch_logs(log_type_filter)
         return {"results": aggregated_logs}
 
     class LogsRequest(BaseModel):
@@ -881,6 +882,38 @@ class R2RApp(metaclass=AsyncSyncMeta):
         except Exception as e:
             logger.error(f":logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e)) from e
+    
+    @syncable
+    async def aanalytics(self, filter_criteria: FilterCriteria, *args: Any, **kwargs: Any):
+        logs = await self._fetch_logs()
+        
+        # Create filters based on filter criteria
+        filters = {}
+        if filter_criteria.filters:
+            for key, value in filter_criteria.filters.items():
+                filters[key] = lambda log, value=value: any(entry['key'] == value for entry in log["entries"])
+
+        log_processor = LogProcessor(filters)
+        for log in logs:
+            log_processor.process_log(log)
+        
+        filtered_logs = dict(log_processor.populations.items())
+        
+        # Print the count of filtered logs
+        for name, logs in filtered_logs.items():
+            print(f"Number of logs for filter '{name}': {len(logs)}")
+        
+        # TODO: Implement more analytics logic if needed
+        
+        return {"results": {"analytics_data": "Analytics data", "filtered_logs": filtered_logs}}
+
+    async def analytics_app(self, filter_criteria: FilterCriteria = Body(...)):
+        async with manage_run(self.run_manager, "analytics_app") as run_id:
+            try:
+                return await self.aanalytics(filter_criteria)
+            except Exception as e:
+                await self.run_manager.log_run_info("error", str(e), is_info_log=False)
+                raise HTTPException(status_code=500, detail=str(e)) from e
 
     def get_open_api_endpoint(self):
         from fastapi.openapi.utils import get_openapi
