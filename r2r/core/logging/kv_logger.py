@@ -45,7 +45,7 @@ class KVLoggingProvider(Provider):
     @abstractmethod
     async def get_run_info(
         self,
-        log_type: Optional[str] = None,
+        limit: int = 10,
         log_type_filter: Optional[str] = None,
     ) -> list[RunInfo]:
         pass
@@ -385,6 +385,13 @@ class RedisKVLoggingProvider(KVLoggingProvider):
         self.log_key = config.log_table
         self.log_info_key = config.log_info_table
 
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.close()
+
     async def close(self):
         await self.redis.close()
 
@@ -415,10 +422,12 @@ class RedisKVLoggingProvider(KVLoggingProvider):
             )
 
     async def get_run_info(
-        self, log_type_filter: Optional[str] = None, limit: int = 10
+        self, limit: int = 10, log_type_filter: Optional[str] = None
     ) -> list[RunInfo]:
+        print('getting keys...')
+        keys = await self.redis.hkeys(self.log_info_key)
+        print('keys = ', keys)
         if log_type_filter:
-            keys = await self.redis.hkeys(self.log_info_key)
             matched_ids = []
             for key in keys:
                 log_entry = json.loads(
@@ -471,6 +480,7 @@ class KVLoggingSingleton:
 
     @classmethod
     def get_instance(cls):
+        print('getting instance...')
         return cls.SUPPORTED_PROVIDERS[cls._config.provider](cls._config)
 
     @classmethod

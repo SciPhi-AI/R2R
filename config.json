@@ -44,7 +44,7 @@
     }
   },
   "logging": {
-    "provider": "local",
+    "provider": "redis",
     "log_table": "logs",
     "log_info_table": "log_info"
   },
