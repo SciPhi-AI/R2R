@@ -2,7 +2,7 @@
 
 ### Introduction
 
-R2R comes complete with a FastAPI-based web service that provides endpoints for various operations related to the Retrieval-Augmented Generation (RAG) pipeline. It allows users to upload and process files, add entries, perform searches, generate RAG completions, evaluate completions, delete entries based on filters, retrieve user IDs and documents, and access logs.
+R2R comes complete with a FastAPI-powered REST API which provides endpoints for various operations related to the Retrieval-Augmented Generation (RAG) pipeline. These features support uploading and ingesting files, performing searches, generating RAG completions, as well as document management. Document management includes deletion based on filters and document updates. Lastly, the application includes end to end observability of the default R2R pipeline.
 
 The application API specifications are included [here](/getting-started/app-api).
 
@@ -26,6 +26,12 @@ uvicorn path.to.your.module:app --host 0.0.0.0 --port 8000
 ```
 
 In this example, Uvicorn runs the FastAPI application specified by the `app` variable. The application will be accessible at `http://localhost:8000`.
+
+### Overriding Existing Endpoints
+
+Existing endpoints can be modified by creating a custom application which overrides the existing endpoints.
+
+
 
 ### Adding Custom Endpoints
 
