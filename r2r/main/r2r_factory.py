@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Any, Optional
 
 from r2r.core import (
@@ -34,15 +35,12 @@ class R2RProviderFactory:
         vector_db_provider: Optional[VectorDBProvider] = None
         if vector_db_config.provider == "qdrant":
             from r2r.vector_dbs import QdrantDB
-
             vector_db_provider = QdrantDB(vector_db_config)
         elif vector_db_config.provider == "pgvector":
             from r2r.vector_dbs import PGVectorDB
-
             vector_db_provider = PGVectorDB(vector_db_config)
         elif vector_db_config.provider == "local":
             from r2r.vector_dbs import R2RLocalVectorDB
-
             vector_db_provider = R2RLocalVectorDB(vector_db_config)
         else:
             raise ValueError(
@@ -65,18 +63,17 @@ class R2RProviderFactory:
         embedding_provider: Optional[EmbeddingProvider] = None
 
         if embedding.provider == "openai":
+            if not os.getenv("OPENAI_API_KEY"):
+                raise ValueError(
+                    "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
+                )
             from r2r.embeddings import OpenAIEmbeddingProvider
-
             embedding_provider = OpenAIEmbeddingProvider(embedding)
         elif embedding.provider == "sentence-transformers":
             from r2r.embeddings import SentenceTransformerEmbeddingProvider
-
-            embedding_provider = SentenceTransformerEmbeddingProvider(
-                embedding
-            )
+            embedding_provider = SentenceTransformerEmbeddingProvider(embedding)
         elif embedding.provider == "dummy":
             from r2r.embeddings import DummyEmbeddingProvider
-
             embedding_provider = DummyEmbeddingProvider(embedding)
         else:
             raise ValueError(
@@ -87,12 +84,12 @@ class R2RProviderFactory:
 
         return embedding_provider
 
+
     def create_eval_provider(
         self, eval_config, prompt_provider, *args, **kwargs
     ) -> EvalProvider:
         if eval_config.provider == "local":
             from r2r.eval import LLMEvalProvider
-
             llm_provider = self.create_llm_provider(eval_config.llm)
             eval_provider = LLMEvalProvider(
                 eval_config,
@@ -112,18 +109,14 @@ class R2RProviderFactory:
         llm_provider: Optional[LLMProvider] = None
         if llm_config.provider == "openai":
             from r2r.llms import OpenAILLM
-
             llm_provider = OpenAILLM(llm_config)
         elif llm_config.provider == "litellm":
             from r2r.llms import LiteLLM
-
             llm_provider = LiteLLM(llm_config)
         elif llm_config.provider == "llama-cpp":
             from r2r.llms import LlamaCPP, LlamaCppConfig
-
             config_dict = llm_config.dict()
             extra_args = config_dict.pop("extra_args")
-
             llm_provider = LlamaCPP(
                 LlamaCppConfig(**{**config_dict, **extra_args})
             )
@@ -141,7 +134,6 @@ class R2RProviderFactory:
         prompt_provider = None
         if prompt_config.provider == "local":
             from r2r.prompts import R2RPromptProvider
-
             prompt_provider = R2RPromptProvider()
         else:
             raise ValueError(

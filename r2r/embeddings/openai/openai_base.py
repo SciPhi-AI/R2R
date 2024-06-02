@@ -7,7 +7,6 @@ from r2r.core import EmbeddingConfig, EmbeddingProvider, SearchResult
 
 logger = logging.getLogger(__name__)
 
-
 class OpenAIEmbeddingProvider(EmbeddingProvider):
     MODEL_TO_TOKENIZER = {
         "text-embedding-ada-002": "cl100k_base",
@@ -28,7 +27,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         provider = config.provider
         if not provider:
             raise ValueError(
-                "Must set provider in order to initialize SentenceTransformerEmbeddingProvider."
+                "Must set provider in order to initialize OpenAIEmbeddingProvider."
             )
 
         if provider != "openai":
