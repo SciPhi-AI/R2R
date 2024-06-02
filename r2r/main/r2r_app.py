@@ -155,6 +155,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         self._setup_routes()
         if do_apply_cors:
             self._apply_cors()
+        self._check_embedding_provider()
 
     def _setup_routes(self):
         self.app.add_api_route(
@@ -238,7 +239,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         documents: list[Document]
 
     async def ingest_documents_app(self, request: IngestDocumentsRequest):
-        async with manage_run(self.run_manager, "ingest_documents_app") as run_id:
+        async with manage_run(self.run_manager, "ingest_documents_app") as run_id:        
             try:
                 return await self.aingest_documents(request.documents)
             except Exception as e:
@@ -390,10 +391,15 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     for file in files
                 ]
             }
-        except Exception as e:
+        except ValueError as e:
             logger.error(
                 f"ingest_files(metadata={metadatas}, ids={ids}, files={files}) - \n\n{str(e)})"
-            )
+                )
+            raise HTTPException(status_code=401, detail=str(e))
+        except Exception as e:
+            logger.error(
+                f"ingest_files(metadata={metadatas}, ids={ids}, files={files}) - \n\n{str(e)}"
+                )
             raise HTTPException(status_code=500, detail=str(e))
         finally:
             # Ensure all file handles are closed
@@ -929,3 +935,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
             allow_methods=["*"],  # Allows all methods
             allow_headers=["*"],  # Allows all headers
         )
+
+    def _check_embedding_provider(self):
+        if self.config.embedding.provider == "openai" and not os.getenv("OPENAI_API_KEY"):
+            logger.warning("OpenAI API key not found. Embedding provider will not be used.")
+            raise ValueError("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
