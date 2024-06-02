@@ -340,8 +340,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
             )
 
         try:
-            # set OPENAI_API_KEY environment variable to "" for testing
-            logger.info(f"Got into aingest_files with Openaikey of {os.environ.get('OPENAI_API_KEY')}")
             documents = []
             for iteration, file in enumerate(files):
                 logger.info(f"Processing file: {file.filename}")
