@@ -155,7 +155,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         self._setup_routes()
         if do_apply_cors:
             self._apply_cors()
-        self._check_embedding_provider()
 
     def _setup_routes(self):
         self.app.add_api_route(
@@ -935,8 +934,3 @@ class R2RApp(metaclass=AsyncSyncMeta):
             allow_methods=["*"],  # Allows all methods
             allow_headers=["*"],  # Allows all headers
         )
-
-    def _check_embedding_provider(self):
-        if self.config.embedding.provider == "openai" and not os.getenv("OPENAI_API_KEY"):
-            logger.warning("OpenAI API key not found. Embedding provider will not be used.")
-            raise ValueError("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")

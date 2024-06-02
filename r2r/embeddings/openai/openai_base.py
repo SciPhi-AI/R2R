@@ -36,12 +36,11 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 "OpenAIEmbeddingProvider must be initialized with provider `openai`."
             )
         if not os.getenv("OPENAI_API_KEY"):
-            logger.warning("OPENAI_API_KEY not set. OpenAIEmbeddingProvider will not be used.")
-            self.client = None
-            self.async_client = None
-        else:
-            self.client = OpenAI()
-            self.async_client = AsyncOpenAI()
+            raise ValueError(
+                "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
+                )
+        self.client = OpenAI()
+        self.async_client = AsyncOpenAI()
 
         if config.rerank_model:
             raise ValueError(
@@ -80,8 +79,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         text: str,
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
     ) -> list[float]:
-        if not self.client:
-            raise ValueError("OpenAIEmbeddingProvider not initialized due to missing OPENAI_API_KEY.")
         if stage != EmbeddingProvider.PipeStage.SEARCH:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
@@ -108,8 +105,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         text: str,
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
     ) -> list[float]:
-        if not self.client:
-            raise ValueError("OpenAIEmbeddingProvider not initialized due to missing OPENAI_API_KEY.")
         if stage != EmbeddingProvider.PipeStage.SEARCH:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
@@ -133,8 +128,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         texts: list[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
     ) -> list[list[float]]:
-        if not self.client:
-            raise ValueError("OpenAIEmbeddingProvider not initialized due to missing OPENAI_API_KEY.")
         if stage != EmbeddingProvider.PipeStage.SEARCH:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
