@@ -478,6 +478,7 @@ class KVLoggingSingleton:
 
     @classmethod
     def get_instance(cls):
+        print('getting instance...')
         return cls.SUPPORTED_PROVIDERS[cls._config.provider](cls._config)
 
     @classmethod
