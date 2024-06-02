@@ -424,9 +424,7 @@ class RedisKVLoggingProvider(KVLoggingProvider):
     async def get_run_info(
         self, limit: int = 10, log_type_filter: Optional[str] = None
     ) -> list[RunInfo]:
-        print('getting keys...')
         keys = await self.redis.hkeys(self.log_info_key)
-        print('keys = ', keys)
         if log_type_filter:
             matched_ids = []
             for key in keys:
@@ -480,7 +478,6 @@ class KVLoggingSingleton:
 
     @classmethod
     def get_instance(cls):
-        print('getting instance...')
         return cls.SUPPORTED_PROVIDERS[cls._config.provider](cls._config)
 
     @classmethod
