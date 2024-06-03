@@ -431,14 +431,20 @@ class RedisKVLoggingProvider(KVLoggingProvider):
         count_per_batch = 100  # Adjust batch size as needed
 
         while len(run_info_list) < limit:
-            log_ids = await self.redis.zrevrange(f"{self.log_info_key}_sorted", start, start + count_per_batch - 1)
+            log_ids = await self.redis.zrevrange(
+                f"{self.log_info_key}_sorted",
+                start,
+                start + count_per_batch - 1,
+            )
             if not log_ids:
                 break  # No more log IDs to process
 
             start += count_per_batch
 
             for log_id in log_ids:
-                log_entry = json.loads(await self.redis.hget(self.log_info_key, log_id))
+                log_entry = json.loads(
+                    await self.redis.hget(self.log_info_key, log_id)
+                )
                 if log_type_filter:
                     if log_entry["log_type"] == log_type_filter:
                         run_info_list.append(

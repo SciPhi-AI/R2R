@@ -9,7 +9,7 @@ from r2r import (
     R2RWebSearchPipe,
     SerperClient,
     # For HyDE & the like.
-    R2RPipeFactoryWithMultiSearch
+    R2RPipeFactoryWithMultiSearch,
 )
 
 logger = logging.getLogger(__name__)
@@ -22,12 +22,17 @@ CONFIG_OPTIONS = {
     "local_ollama": os.path.join(configs_path, "local_ollama.json"),
 }
 
+
 class PipelineType(Enum):
     QNA = "qna"
     WEB = "web"
     HYDE = "hyde"
 
-def r2r_app(config_name: str = "default", pipeline_type: PipelineType = PipelineType.QNA):
+
+def r2r_app(
+    config_name: str = "default",
+    pipeline_type: PipelineType = PipelineType.QNA,
+):
     if config_path := CONFIG_OPTIONS.get(config_name):
         logger.info(f"Using config path: {config_path}")
         config = R2RConfig.from_json(config_path)
@@ -36,8 +41,13 @@ def r2r_app(config_name: str = "default", pipeline_type: PipelineType = Pipeline
         logger.info(f"Using default config path: {default_config_path}")
         config = R2RConfig.from_json(default_config_path)
 
-    if config.embedding.provider == 'openai' and 'OPENAI_API_KEY' not in os.environ:
-        raise ValueError("Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider.")
+    if (
+        config.embedding.provider == "openai"
+        and "OPENAI_API_KEY" not in os.environ
+    ):
+        raise ValueError(
+            "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
+        )
 
     if pipeline_type == PipelineType.QNA:
         return R2RAppBuilder(config).build()
@@ -48,11 +58,15 @@ def r2r_app(config_name: str = "default", pipeline_type: PipelineType = Pipeline
         )
         return R2RAppBuilder(config).with_search_pipe(web_search_pipe).build()
     elif pipeline_type == PipelineType.HYDE:
-        return R2RAppBuilder(config).with_pipe_factory(R2RPipeFactoryWithMultiSearch) \
+        return (
+            R2RAppBuilder(config)
+            .with_pipe_factory(R2RPipeFactoryWithMultiSearch)
             .build(
                 # Add optional override arguments which propagate to the pipe factory
                 task_prompt_name="hyde",
             )
+        )
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

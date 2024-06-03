@@ -12,8 +12,7 @@ if __name__ == "__main__":
 
     # Define a new synthetic query generation template
     synthetic_query_generation_template = {
-        "template": 
-            """
+        "template": """
             ### Instruction:
             Given the following query, write a double newline separated list of up to {num_outputs} advanced queries meant to help answer the original query.
             DO NOT generate any single query which is likely to require information from multiple distinct documents.
@@ -27,11 +26,7 @@ if __name__ == "__main__":
 
             ### Response:
             """,
-        "input_types": 
-            {
-                "num_outputs": "int", 
-                "message": "str"
-            },
+        "input_types": {"num_outputs": "int", "message": "str"},
     }
 
     # Build the R2R application with the custom pipeline

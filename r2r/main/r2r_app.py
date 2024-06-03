@@ -238,7 +238,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
         documents: list[Document]
 
     async def ingest_documents_app(self, request: IngestDocumentsRequest):
-        async with manage_run(self.run_manager, "ingest_documents_app") as run_id:        
+        async with manage_run(
+            self.run_manager, "ingest_documents_app"
+        ) as run_id:
             try:
                 return await self.aingest_documents(request.documents)
             except Exception as e:
@@ -294,7 +296,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
         documents: list[Document]
 
     async def update_documents_app(self, request: UpdateDocumentsRequest):
-        async with manage_run(self.run_manager, "update_documents_app") as run_id:
+        async with manage_run(
+            self.run_manager, "update_documents_app"
+        ) as run_id:
             try:
                 return await self.aupdate_documents(request.documents)
             except Exception as e:
@@ -311,7 +315,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     is_info_log=False,
                 )
                 raise HTTPException(status_code=500, detail=str(e))
-                
 
     @syncable
     async def aingest_files(
@@ -393,12 +396,12 @@ class R2RApp(metaclass=AsyncSyncMeta):
         except ValueError as e:
             logger.error(
                 f"ingest_files(metadata={metadatas}, ids={ids}, files={files}) - \n\n{str(e)})"
-                )
+            )
             raise HTTPException(status_code=401, detail=str(e))
         except Exception as e:
             logger.error(
                 f"ingest_files(metadata={metadatas}, ids={ids}, files={files}) - \n\n{str(e)}"
-                )
+            )
             raise HTTPException(status_code=500, detail=str(e))
         finally:
             # Ensure all file handles are closed
@@ -421,7 +424,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                             ids_list = [uuid.UUID(id) for id in ids_list]
                         except ValueError:
                             raise HTTPException(
-                                status_code=400, detail="Invalid UUID provided."
+                                status_code=400,
+                                detail="Invalid UUID provided.",
                             )
                 else:
                     ids_list = None
@@ -523,7 +527,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         ids: Optional[str] = Form(None),
     ):
         async with manage_run(self.run_manager, "update_files_app") as run_id:
-            
             try:
                 # Parse metadatas if provided
                 metadatas = (
@@ -562,7 +565,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     key="error",
                     value=str(e),
                     is_info_log=False,
-                )                
+                )
                 raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
@@ -629,6 +632,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         **kwargs,
     ):
         if rag_generation_config.stream:
+
             async def stream_response():
                 # We must re-enter the manage_run context for the streaming pipeline
                 async with manage_run(self.run_manager, "arag"):
@@ -855,15 +859,24 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     @syncable
     async def aget_logs(
-        self, log_type_filter: Optional[str] = None, *args: Any, **kwargs: Any
+        self,
+        log_type_filter: Optional[str] = None,
+        max_runs_requested: int = 100,
+        *args: Any,
+        **kwargs: Any,
     ):
-        logs_per_run = 10
         if self.logging_connection is None:
             raise HTTPException(
                 status_code=404, detail="Logging provider not found."
             )
+        if self.config.app.get("max_logs_per_request", 100) > max_runs_requested:
+            raise HTTPException(
+                status_code=400,
+                detail="Max runs requested exceeds the limit.",
+            )
+
         run_info = await self.logging_connection.get_run_info(
-            limit=self.config.app.get("max_logs", 100) // logs_per_run,
+            limit=max_runs_requested,
             log_type_filter=log_type_filter,
         )
         run_ids = [run.run_id for run in run_info]
@@ -890,10 +903,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     class LogsRequest(BaseModel):
         log_type_filter: Optional[str] = None
+        max_runs_requested: int = 100
 
     async def get_logs_app(self, request: LogsRequest):
         try:
-            return await self.aget_logs(request.log_type_filter)
+            return await self.aget_logs(
+                request.log_type_filter, request.max_runs_requested
+            )
         except Exception as e:
             logger.error(f":logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
