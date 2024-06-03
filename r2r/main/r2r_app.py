@@ -158,6 +158,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     def _setup_routes(self):
         self.app.add_api_route(
+            path="/update_prompt",
+            endpoint=self.update_prompt_app,
+            methods=["POST"],
+        )
+        self.app.add_api_route(
             path="/ingest_documents",
             endpoint=self.ingest_documents_app,
             methods=["POST"],
@@ -211,12 +216,41 @@ class R2RApp(metaclass=AsyncSyncMeta):
             endpoint=self.get_logs_app,
             methods=["POST"],
         )
-
+        self.app.add_api_route(
+            path="/get_app_data",
+            endpoint=self.get_app_data_app,
+            methods=["GET"],
+        )
         self.app.add_api_route(
             path="/get_open_api_endpoint",
             endpoint=self.get_open_api_endpoint,
             methods=["GET"],
         )
+
+    @syncable
+    async def aupsert_prompt(self, name: str, template: str, input_types: dict):
+        """Upsert a prompt into the system."""
+        try:
+            self.providers.prompt.add_prompt(name, template, input_types)
+            return {"results": f"Prompt '{name}' added successfully."}
+        except Exception as e:
+            logger.error(f"upsert_prompt(name={name}) - \n\n{str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    class UpdatePromptRequest(BaseModel):
+        name: str
+        template: Optional[str] = None
+        input_types: Optional[dict[str, str]] = None
+
+    async def update_prompt_app(self, request: UpdatePromptRequest):
+        """Update a prompt's template and/or input types."""
+        try:
+            return await self.aupsert_prompt(
+                request.name, request.template, request.input_types
+            )
+        except Exception as e:
+            logger.error(f"update_prompt(name={request.name}) - \n\n{str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def aingest_documents(
@@ -238,7 +272,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
         documents: list[Document]
 
     async def ingest_documents_app(self, request: IngestDocumentsRequest):
-        async with manage_run(self.run_manager, "ingest_documents_app") as run_id:        
+        async with manage_run(
+            self.run_manager, "ingest_documents_app"
+        ) as run_id:
             try:
                 return await self.aingest_documents(request.documents)
             except Exception as e:
@@ -294,7 +330,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
         documents: list[Document]
 
     async def update_documents_app(self, request: UpdateDocumentsRequest):
-        async with manage_run(self.run_manager, "update_documents_app") as run_id:
+        async with manage_run(
+            self.run_manager, "update_documents_app"
+        ) as run_id:
             try:
                 return await self.aupdate_documents(request.documents)
             except Exception as e:
@@ -311,7 +349,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     is_info_log=False,
                 )
                 raise HTTPException(status_code=500, detail=str(e))
-                
 
     @syncable
     async def aingest_files(
@@ -393,12 +430,12 @@ class R2RApp(metaclass=AsyncSyncMeta):
         except ValueError as e:
             logger.error(
                 f"ingest_files(metadata={metadatas}, ids={ids}, files={files}) - \n\n{str(e)})"
-                )
+            )
             raise HTTPException(status_code=401, detail=str(e))
         except Exception as e:
             logger.error(
                 f"ingest_files(metadata={metadatas}, ids={ids}, files={files}) - \n\n{str(e)}"
-                )
+            )
             raise HTTPException(status_code=500, detail=str(e))
         finally:
             # Ensure all file handles are closed
@@ -421,7 +458,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                             ids_list = [uuid.UUID(id) for id in ids_list]
                         except ValueError:
                             raise HTTPException(
-                                status_code=400, detail="Invalid UUID provided."
+                                status_code=400,
+                                detail="Invalid UUID provided.",
                             )
                 else:
                     ids_list = None
@@ -523,7 +561,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         ids: Optional[str] = Form(None),
     ):
         async with manage_run(self.run_manager, "update_files_app") as run_id:
-            
             try:
                 # Parse metadatas if provided
                 metadatas = (
@@ -562,7 +599,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     key="error",
                     value=str(e),
                     is_info_log=False,
-                )                
+                )
                 raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
@@ -629,6 +666,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         **kwargs,
     ):
         if rag_generation_config.stream:
+
             async def stream_response():
                 # We must re-enter the manage_run context for the streaming pipeline
                 async with manage_run(self.run_manager, "arag"):
@@ -877,15 +915,24 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     @syncable
     async def aget_logs(
-        self, log_type_filter: Optional[str] = None, *args: Any, **kwargs: Any
+        self,
+        log_type_filter: Optional[str] = None,
+        max_runs_requested: int = 100,
+        *args: Any,
+        **kwargs: Any,
     ):
-        logs_per_run = 10
         if self.logging_connection is None:
             raise HTTPException(
                 status_code=404, detail="Logging provider not found."
             )
+        if self.config.app.get("max_logs_per_request", 100) > max_runs_requested:
+            raise HTTPException(
+                status_code=400,
+                detail="Max runs requested exceeds the limit.",
+            )
+
         run_info = await self.logging_connection.get_run_info(
-            limit=self.config.app.get("max_logs", 100) // logs_per_run,
+            limit=max_runs_requested,
             log_type_filter=log_type_filter,
         )
         run_ids = [run.run_id for run in run_info]
@@ -899,7 +946,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             run_logs = [log for log in logs if log["log_id"] == run.run_id]
             entries = [
                 {"key": log["key"], "value": log["value"]} for log in run_logs
-            ]
+            ][::-1] # Reverse order so that earliest logged values appear first.
             aggregated_logs.append(
                 {
                     "run_id": run.run_id,
@@ -912,12 +959,36 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     class LogsRequest(BaseModel):
         log_type_filter: Optional[str] = None
+        max_runs_requested: int = 100
 
     async def get_logs_app(self, request: LogsRequest):
         try:
-            return await self.aget_logs(request.log_type_filter)
+            return await self.aget_logs(
+                request.log_type_filter, request.max_runs_requested
+            )
         except Exception as e:
             logger.error(f":logs: [Error](error={str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @syncable
+    async def aget_app_data(self, *args: Any, **kwargs: Any):
+        try:
+            # config_data = self.config.app  # Assuming this holds your config.json data
+            prompts = self.providers.prompt.get_all_prompts()
+            return {
+                "config": self.config.to_json(),
+                "prompts": {name: prompt.dict() for name, prompt in prompts.items()}
+            }
+        except Exception as e:
+            logger.error(f"get_app_data() - \n\n{str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    async def get_app_data_app(self):
+        """Return the config.json and all prompts."""
+        try:
+            return await self.aget_app_data()
+        except Exception as e:
+            logger.error(f"get_app_data() - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     def get_open_api_endpoint(self):

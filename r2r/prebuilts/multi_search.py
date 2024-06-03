@@ -1,3 +1,4 @@
+from copy import copy
 import uuid
 from typing import Any, AsyncGenerator, Optional
 
@@ -55,16 +56,22 @@ class MultiSearchPipe(LoggableAsyncPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[SearchResult, None]:
+        query_transform_generation_config = (
+            query_transform_generation_config
+            or copy(kwargs.get("rag_generation_config", None))
+            or GenerationConfig(model="gpt-4o")
+        )
+        query_transform_generation_config.stream = False
+
         query_generator = await self.query_transform_pipe.run(
             input,
             state,
-            query_transform_generation_config=query_transform_generation_config
-            or kwargs.get("rag_generation_config", None)
-            or GenerationConfig(model="gpt-4o"),
+            query_transform_generation_config=query_transform_generation_config,
             num_query_xf_outputs=3,
             *args,
             **kwargs,
         )
+
         async for search_result in await self.search_pipe.run(
             self.search_pipe.Input(message=query_generator),
             state,

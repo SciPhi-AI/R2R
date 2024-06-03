@@ -45,7 +45,7 @@ class KVLoggingProvider(Provider):
     @abstractmethod
     async def get_run_info(
         self,
-        log_type: Optional[str] = None,
+        limit: int = 10,
         log_type_filter: Optional[str] = None,
     ) -> list[RunInfo]:
         pass
@@ -385,6 +385,12 @@ class RedisKVLoggingProvider(KVLoggingProvider):
         self.log_key = config.log_table
         self.log_info_key = config.log_info_table
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.close()
+
     async def close(self):
         await self.redis.close()
 
@@ -395,7 +401,7 @@ class RedisKVLoggingProvider(KVLoggingProvider):
         value: str,
         is_info_log=False,
     ):
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = datetime.now().timestamp()
         log_entry = {
             "timestamp": timestamp,
             "log_id": str(log_id),
@@ -409,40 +415,56 @@ class RedisKVLoggingProvider(KVLoggingProvider):
             await self.redis.hset(
                 self.log_info_key, str(log_id), json.dumps(log_entry)
             )
+            await self.redis.zadd(
+                f"{self.log_info_key}_sorted", {str(log_id): timestamp}
+            )
         else:
             await self.redis.lpush(
                 f"{self.log_key}:{str(log_id)}", json.dumps(log_entry)
             )
 
     async def get_run_info(
-        self, log_type_filter: Optional[str] = None, limit: int = 10
+        self, limit: int = 10, log_type_filter: Optional[str] = None
     ) -> list[RunInfo]:
-        if log_type_filter:
-            keys = await self.redis.hkeys(self.log_info_key)
-            matched_ids = []
-            for key in keys:
+        run_info_list = []
+        start = 0
+        count_per_batch = 100  # Adjust batch size as needed
+
+        while len(run_info_list) < limit:
+            log_ids = await self.redis.zrevrange(
+                f"{self.log_info_key}_sorted",
+                start,
+                start + count_per_batch - 1,
+            )
+            if not log_ids:
+                break  # No more log IDs to process
+
+            start += count_per_batch
+
+            for log_id in log_ids:
                 log_entry = json.loads(
-                    await self.redis.hget(self.log_info_key, key)
+                    await self.redis.hget(self.log_info_key, log_id)
                 )
-                if log_entry["log_type"] == log_type_filter:
-                    matched_ids.append(
+                if log_type_filter:
+                    if log_entry["log_type"] == log_type_filter:
+                        run_info_list.append(
+                            RunInfo(
+                                run_id=uuid.UUID(log_entry["log_id"]),
+                                log_type=log_entry["log_type"],
+                            )
+                        )
+                else:
+                    run_info_list.append(
                         RunInfo(
                             run_id=uuid.UUID(log_entry["log_id"]),
                             log_type=log_entry["log_type"],
                         )
                     )
-            return matched_ids[:limit]
-        else:
-            keys = await self.redis.hkeys(self.log_info_key)
-            return [
-                RunInfo(
-                    run_id=uuid.UUID(key),
-                    log_type=json.loads(
-                        await self.redis.hget(self.log_info_key, key)
-                    )["log_type"],
-                )
-                for key in keys[:limit]
-            ]
+
+                if len(run_info_list) >= limit:
+                    break
+
+        return run_info_list[:limit]
 
     async def get_logs(
         self, run_ids: list[uuid.UUID], limit_per_run: int = 10

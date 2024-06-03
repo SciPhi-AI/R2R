@@ -29,6 +29,21 @@ class R2RClient:
     def __init__(self, base_url: str):
         self.base_url = base_url
 
+    def update_prompt(self, name: str, template: Optional[str] = None, input_types: Optional[dict] = None) -> dict:
+        url = f"{self.base_url}/update_prompt"
+        data = {
+            "name": name,
+            "template": template,
+            "input_types": input_types,
+        }
+        response = requests.post(
+            url,
+            data=json.dumps(data, default=default_serializer),
+            headers={"Content-Type": "application/json"},
+        )
+        response.raise_for_status()
+        return response.json()
+
     def ingest_documents(self, documents: list[dict]) -> dict:
         url = f"{self.base_url}/ingest_documents"
         data = {"documents": documents}
@@ -234,3 +249,10 @@ class R2RClient:
         response = requests.post(url, json=data)
         response.raise_for_status()
         return response.json()
+
+    def get_app_data(self) -> dict:
+        url = f"{self.base_url}/get_app_data"
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+

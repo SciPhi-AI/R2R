@@ -8,7 +8,7 @@ from r2r import (
 if __name__ == "__main__":
     # Create search pipe override and pipes
     web_search_pipe = R2RWebSearchPipe(
-        serper_client=SerperClient()  # TODO - Develop a `WebSearchProvider`` for configurability
+        serper_client=SerperClient()  # TODO - Develop a `WebSearchProvider` for configurability
     )
 
     r2r_app = R2RAppBuilder().with_search_pipe(web_search_pipe).build()

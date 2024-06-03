@@ -111,7 +111,7 @@ if __name__ == "__main__":
         R2RAppBuilder()
         .with_pipe_factory(R2RPipeFactoryWithMultiSearch)
         .build(
-            # override inputs consumed in building the MultiSearchPipe
+            # override inputs consumed by `R2RPipeFactoryWithMultiSearch.create_search_pipe`
             multi_inner_search_pipe_override=web_search_pipe,
             query_generation_template_override=synthetic_query_generation_template,
         )
@@ -190,9 +190,7 @@ The `R2RProviderFactory` is responsible for creating various providers that the 
 
 #### R2RPipeFactory
 
-The `R2RPipeFactory` is
-
- responsible for creating the pipes used in the `R2RApp`. Pipes are the core components that handle various stages of processing within the pipelines.
+The `R2RPipeFactory` is responsible for creating the pipes used in the `R2RApp`. Pipes are the core components that handle various stages of processing within the pipelines.
 
 **Key Methods**
 - **create_pipes**: Aggregates all pipe creation methods to return an `R2RPipes` instance.
