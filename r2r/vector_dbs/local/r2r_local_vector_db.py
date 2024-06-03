@@ -138,8 +138,11 @@ class R2RLocalVectorDB(VectorDBProvider):
         return results[:limit]
 
     def delete_by_metadata(
-        self, metadata_field: str, metadata_value: Union[bool, int, str]
+        self,
+        metadata_fields: list[str],
+        metadata_values: list[Union[bool, int, str]],
     ) -> None:
+        super().delete_by_metadata(metadata_fields, metadata_values)
         if self.config.collection_name is None:
             raise ValueError(
                 "Collection name is not set. Please call `initialize_collection` first."
@@ -148,9 +151,16 @@ class R2RLocalVectorDB(VectorDBProvider):
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
         cursor.execute(f'SELECT * FROM "{self.config.collection_name}"')
-        for id, vector, metadata in cursor.fetchall():
+        for id, _, metadata in cursor.fetchall():
             metadata_json = json.loads(metadata)
-            if metadata_json.get(metadata_field) == metadata_value:
+            is_valid = True
+            for metadata_field, metadata_value in zip(
+                metadata_fields, metadata_values
+            ):
+                if metadata_json.get(metadata_field) != metadata_value:
+                    is_valid = False
+                    break
+            if is_valid:
                 cursor.execute(
                     f'DELETE FROM "{self.config.collection_name}" WHERE id = ?',
                     (id,),

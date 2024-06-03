@@ -6,22 +6,21 @@ from typing import Any, AsyncGenerator, Optional
 from r2r.core import (
     AsyncPipe,
     AsyncState,
-    EmbeddingProvider,
     PipeType,
     SearchResult,
-    VectorDBProvider,
+    generate_id_from_label,
 )
+from r2r.integrations import SerperClient
 
 from .abstractions.search_pipe import SearchPipe
 
 logger = logging.getLogger(__name__)
 
 
-class R2RVectorSearchPipe(SearchPipe):
+class R2RWebSearchPipe(SearchPipe):
     def __init__(
         self,
-        vector_db_provider: VectorDBProvider,
-        embedding_provider: EmbeddingProvider,
+        serper_client: SerperClient,
         type: PipeType = PipeType.SEARCH,
         config: Optional[SearchPipe.SearchConfig] = None,
         *args,
@@ -33,8 +32,7 @@ class R2RVectorSearchPipe(SearchPipe):
             *args,
             **kwargs,
         )
-        self.embedding_provider = embedding_provider
-        self.vector_db_provider = vector_db_provider
+        self.serper_client = serper_client
 
     async def search(
         self,
@@ -48,21 +46,31 @@ class R2RVectorSearchPipe(SearchPipe):
         await self.enqueue_log(
             run_id=run_id, key="search_query", value=message
         )
-        results = []
-        for result in self.vector_db_provider.search(
-            query_vector=self.embedding_provider.get_embedding(
-                message,
-            ),
-            filters=search_filters_override or self.config.search_filters,
+        # TODO - Make more general in the future by creating a SearchProvider interface
+        results = self.serper_client.get_raw(
+            query=message,
             limit=search_limit_override or self.config.search_limit,
-        ):
-            result.metadata["associatedQuery"] = message
-            results.append(result)
-            yield result
+        )
+
+        search_results = []
+        for result in results:
+            if result.get("snippet") is None:
+                continue
+            result["text"] = result.pop("snippet")
+            search_result = SearchResult(
+                id=generate_id_from_label(str(result)),
+                score=result.get(
+                    "score", 0
+                ),  # TODO - Consider dynamically generating scores based on similarity
+                metadata=result,
+            )
+            search_results.append(search_result)
+            yield search_result
+
         await self.enqueue_log(
             run_id=run_id,
             key="search_results",
-            value=json.dumps([ele.json() for ele in results]),
+            value=json.dumps([ele.json() for ele in search_results]),
         )
 
     async def _run_logic(
@@ -71,7 +79,7 @@ class R2RVectorSearchPipe(SearchPipe):
         state: AsyncState,
         run_id: uuid.UUID,
         *args: Any,
-        **kwargs: Any,
+        **kwargs,
     ) -> AsyncGenerator[SearchResult, None]:
         search_queries = []
         search_results = []

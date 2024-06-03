@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class RunInfo(BaseModel):
     run_id: uuid.UUID
-    pipeline_type: str
+    log_type: str
 
 
 class LoggingConfig(ProviderConfig):
@@ -33,18 +33,20 @@ class LoggingConfig(ProviderConfig):
         return ["local", "postgres", "redis"]
 
 
-class PipeLoggingProvider(Provider):
+class KVLoggingProvider(Provider):
     @abstractmethod
     async def close(self):
         pass
 
     @abstractmethod
-    async def log(self, pipe_run_id: uuid.UUID, key: str, value: str):
+    async def log(self, log_id: uuid.UUID, key: str, value: str):
         pass
 
     @abstractmethod
     async def get_run_info(
-        self, key: Optional[str] = None, pipeline_type: Optional[str] = None
+        self,
+        limit: int = 10,
+        log_type_filter: Optional[str] = None,
     ) -> list[RunInfo]:
         pass
 
@@ -55,7 +57,7 @@ class PipeLoggingProvider(Provider):
         pass
 
 
-class LocalPipeLoggingProvider(PipeLoggingProvider):
+class LocalKVLoggingProvider(KVLoggingProvider):
     def __init__(self, config: LoggingConfig):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
@@ -73,7 +75,7 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
             self.aiosqlite = aiosqlite
         except ImportError:
             raise ImportError(
-                "Please install aiosqlite to use the LocalPipeLoggingProvider."
+                "Please install aiosqlite to use the LocalKVLoggingProvider."
             )
 
     async def init(self):
@@ -82,7 +84,7 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
             f"""
             CREATE TABLE IF NOT EXISTS {self.log_table} (
                 timestamp DATETIME,
-                pipe_run_id TEXT,
+                log_id TEXT,
                 key TEXT,
                 value TEXT
             )
@@ -92,8 +94,8 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
             f"""
             CREATE TABLE IF NOT EXISTS {self.log_info_table} (
                 timestamp DATETIME,
-                pipe_run_id TEXT UNIQUE,
-                pipeline_type TEXT
+                log_id TEXT UNIQUE,
+                log_type TEXT
             )
         """
         )
@@ -114,39 +116,37 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
 
     async def log(
         self,
-        pipe_run_id: uuid.UUID,
+        log_id: uuid.UUID,
         key: str,
         value: str,
-        is_pipeline_info=False,
+        is_info_log=False,
     ):
-        collection = (
-            self.log_info_table if is_pipeline_info else self.log_table
-        )
+        collection = self.log_info_table if is_info_log else self.log_table
 
-        if is_pipeline_info:
-            if key != "pipeline_type":
-                raise ValueError("Metadata keys must be 'pipeline_type'")
+        if is_info_log:
+            if "type" not in key:
+                raise ValueError("Info log keys must contain the text 'type'")
             await self.conn.execute(
-                f"INSERT INTO {collection} (timestamp, pipe_run_id, pipeline_type) VALUES (datetime('now'), ?, ?)",
-                (str(pipe_run_id), value),
+                f"INSERT INTO {collection} (timestamp, log_id, log_type) VALUES (datetime('now'), ?, ?)",
+                (str(log_id), value),
             )
         else:
             await self.conn.execute(
-                f"INSERT INTO {collection} (timestamp, pipe_run_id, key, value) VALUES (datetime('now'), ?, ?, ?)",
-                (str(pipe_run_id), key, value),
+                f"INSERT INTO {collection} (timestamp, log_id, key, value) VALUES (datetime('now'), ?, ?, ?)",
+                (str(log_id), key, value),
             )
         await self.conn.commit()
 
     async def get_run_info(
-        self, pipeline_type: Optional[str] = None, limit: int = 10
+        self, limit: int = 10, log_type_filter: Optional[str] = None
     ) -> list[RunInfo]:
         cursor = await self.conn.cursor()
-        query = f"SELECT pipe_run_id, pipeline_type FROM {self.log_info_table}"
+        query = f"SELECT log_id, log_type FROM {self.log_info_table}"
         conditions = []
         params = []
-        if pipeline_type:
-            conditions.append("pipeline_type = ?")
-            params.append(pipeline_type)
+        if log_type_filter:
+            conditions.append("log_type = ?")
+            params.append(log_type_filter)
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
         query += " ORDER BY timestamp DESC LIMIT ?"
@@ -154,8 +154,7 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
         await cursor.execute(query, params)
         rows = await cursor.fetchall()
         return [
-            RunInfo(run_id=uuid.UUID(row[0]), pipeline_type=row[1])
-            for row in rows
+            RunInfo(run_id=uuid.UUID(row[0]), log_type=row[1]) for row in rows
         ]
 
     async def get_logs(
@@ -168,9 +167,9 @@ class LocalPipeLoggingProvider(PipeLoggingProvider):
         query = f"""
         SELECT *
         FROM (
-            SELECT *, ROW_NUMBER() OVER (PARTITION BY pipe_run_id ORDER BY timestamp DESC) as rn
+            SELECT *, ROW_NUMBER() OVER (PARTITION BY log_id ORDER BY timestamp DESC) as rn
             FROM {self.log_table}
-            WHERE pipe_run_id IN ({placeholders})
+            WHERE log_id IN ({placeholders})
         )
         WHERE rn <= ?
         ORDER BY timestamp DESC
@@ -211,7 +210,7 @@ class PostgresLoggingConfig(LoggingConfig):
         return ["postgres"]
 
 
-class PostgresPipeLoggingProvider(PipeLoggingProvider):
+class PostgresKVLoggingProvider(KVLoggingProvider):
     def __init__(self, config: PostgresLoggingConfig):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
@@ -250,7 +249,7 @@ class PostgresPipeLoggingProvider(PipeLoggingProvider):
             f"""
             CREATE TABLE IF NOT EXISTS {self.log_table} (
                 timestamp TIMESTAMPTZ,
-                pipe_run_id UUID,
+                log_id UUID,
                 key TEXT,
                 value TEXT
             )
@@ -260,8 +259,8 @@ class PostgresPipeLoggingProvider(PipeLoggingProvider):
             f"""
             CREATE TABLE IF NOT EXISTS {self.log_info_table} (
                 timestamp TIMESTAMPTZ,
-                pipe_run_id UUID UNIQUE,
-                pipeline_type TEXT
+                log_id UUID UNIQUE,
+                log_type TEXT
             )
         """
         )
@@ -281,49 +280,47 @@ class PostgresPipeLoggingProvider(PipeLoggingProvider):
 
     async def log(
         self,
-        pipe_run_id: uuid.UUID,
+        log_id: uuid.UUID,
         key: str,
         value: str,
-        is_pipeline_info=False,
+        is_info_log=False,
     ):
-        collection = (
-            self.log_info_table if is_pipeline_info else self.log_table
-        )
+        collection = self.log_info_table if is_info_log else self.log_table
 
-        if is_pipeline_info:
-            if key != "pipeline_type":
-                raise ValueError("Metadata keys must be 'pipeline_type'")
+        if is_info_log:
+            if "type" not in key:
+                raise ValueError(
+                    "Info log key must contain the string `type`."
+                )
             await self.conn.execute(
-                f"INSERT INTO {collection} (timestamp, pipe_run_id, pipeline_type) VALUES (NOW(), $1, $2)",
-                pipe_run_id,
+                f"INSERT INTO {collection} (timestamp, log_id, log_type) VALUES (NOW(), $1, $2)",
+                log_id,
                 value,
             )
         else:
             await self.conn.execute(
-                f"INSERT INTO {collection} (timestamp, pipe_run_id, key, value) VALUES (NOW(), $1, $2, $3)",
-                pipe_run_id,
+                f"INSERT INTO {collection} (timestamp, log_id, key, value) VALUES (NOW(), $1, $2, $3)",
+                log_id,
                 key,
                 value,
             )
 
     async def get_run_info(
-        self, pipeline_type: Optional[str] = None, limit: int = 10
+        self, limit: int = 10, log_type_filter: Optional[str] = None
     ) -> list[RunInfo]:
-        query = f"SELECT pipe_run_id, pipeline_type FROM {self.log_info_table}"
+        query = f"SELECT log_id, log_type FROM {self.log_info_table}"
         conditions = []
         params = []
-        if pipeline_type:
-            conditions.append("pipeline_type = $1")
-            params.append(pipeline_type)
+        if log_type_filter:
+            conditions.append("log_type = $1")
+            params.append(log_type_filter)
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
         query += " ORDER BY timestamp DESC LIMIT $2"
         params.append(limit)
         rows = await self.conn.fetch(query, *params)
         return [
-            RunInfo(
-                run_id=row["pipe_run_id"], pipeline_type=row["pipeline_type"]
-            )
+            RunInfo(run_id=row["log_id"], log_type=row["log_type"])
             for row in rows
         ]
 
@@ -336,9 +333,9 @@ class PostgresPipeLoggingProvider(PipeLoggingProvider):
         placeholders = ",".join([f"${i+1}" for i in range(len(run_ids))])
         query = f"""
         SELECT * FROM (
-            SELECT *, ROW_NUMBER() OVER (PARTITION BY pipe_run_id ORDER BY timestamp DESC) as rn
+            SELECT *, ROW_NUMBER() OVER (PARTITION BY log_id ORDER BY timestamp DESC) as rn
             FROM {self.log_table}
-            WHERE pipe_run_id::text IN ({placeholders})
+            WHERE log_id::text IN ({placeholders})
         ) sub
         WHERE sub.rn <= ${len(run_ids) + 1}
         ORDER BY sub.timestamp DESC
@@ -364,7 +361,7 @@ class RedisLoggingConfig(LoggingConfig):
         return ["redis"]
 
 
-class RedisPipeLoggingProvider(PipeLoggingProvider):
+class RedisKVLoggingProvider(KVLoggingProvider):
     def __init__(self, config: RedisLoggingConfig):
         if not all(
             [
@@ -388,64 +385,80 @@ class RedisPipeLoggingProvider(PipeLoggingProvider):
         self.log_key = config.log_table
         self.log_info_key = config.log_info_table
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.close()
+
     async def close(self):
         await self.redis.close()
 
     async def log(
         self,
-        pipe_run_id: uuid.UUID,
+        log_id: uuid.UUID,
         key: str,
         value: str,
-        is_pipeline_info=False,
+        is_info_log=False,
     ):
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = datetime.now().timestamp()
         log_entry = {
             "timestamp": timestamp,
-            "pipe_run_id": str(pipe_run_id),
+            "log_id": str(log_id),
             "key": key,
             "value": value,
         }
-        if is_pipeline_info:
-            if key != "pipeline_type":
-                raise ValueError("Metadata keys must be 'pipeline_type'")
-            log_entry["pipeline_type"] = value
+        if is_info_log:
+            if "type" not in key:
+                raise ValueError("Metadata keys must contain the text 'type'")
+            log_entry["log_type"] = value
             await self.redis.hset(
-                self.log_info_key, str(pipe_run_id), json.dumps(log_entry)
+                self.log_info_key, str(log_id), json.dumps(log_entry)
+            )
+            await self.redis.zadd(
+                f"{self.log_info_key}_sorted", {str(log_id): timestamp}
             )
         else:
             await self.redis.lpush(
-                f"{self.log_key}:{str(pipe_run_id)}", json.dumps(log_entry)
+                f"{self.log_key}:{str(log_id)}", json.dumps(log_entry)
             )
 
     async def get_run_info(
-        self, pipeline_type: Optional[str] = None, limit: int = 10
+        self, limit: int = 10, log_type_filter: Optional[str] = None
     ) -> list[RunInfo]:
-        if pipeline_type:
-            keys = await self.redis.hkeys(self.log_info_key)
-            matched_ids = []
-            for key in keys:
-                log_entry = json.loads(
-                    await self.redis.hget(self.log_info_key, key)
-                )
-                if log_entry["pipeline_type"] == pipeline_type:
-                    matched_ids.append(
+        run_info_list = []
+        start = 0
+        count_per_batch = 100  # Adjust batch size as needed
+
+        while len(run_info_list) < limit:
+            log_ids = await self.redis.zrevrange(f"{self.log_info_key}_sorted", start, start + count_per_batch - 1)
+            if not log_ids:
+                break  # No more log IDs to process
+
+            start += count_per_batch
+
+            for log_id in log_ids:
+                log_entry = json.loads(await self.redis.hget(self.log_info_key, log_id))
+                if log_type_filter:
+                    if log_entry["log_type"] == log_type_filter:
+                        run_info_list.append(
+                            RunInfo(
+                                run_id=uuid.UUID(log_entry["log_id"]),
+                                log_type=log_entry["log_type"],
+                            )
+                        )
+                else:
+                    run_info_list.append(
                         RunInfo(
-                            run_id=uuid.UUID(log_entry["pipe_run_id"]),
-                            pipeline_type=log_entry["pipeline_type"],
+                            run_id=uuid.UUID(log_entry["log_id"]),
+                            log_type=log_entry["log_type"],
                         )
                     )
-            return matched_ids[:limit]
-        else:
-            keys = await self.redis.hkeys(self.log_info_key)
-            return [
-                RunInfo(
-                    run_id=uuid.UUID(key),
-                    pipeline_type=json.loads(
-                        await self.redis.hget(self.log_info_key, key)
-                    )["pipeline_type"],
-                )
-                for key in keys[:limit]
-            ]
+
+                if len(run_info_list) >= limit:
+                    break
+
+        return run_info_list[:limit]
 
     async def get_logs(
         self, run_ids: list[uuid.UUID], limit_per_run: int = 10
@@ -457,19 +470,19 @@ class RedisPipeLoggingProvider(PipeLoggingProvider):
             )
             for raw_log in raw_logs:
                 json_log = json.loads(raw_log)
-                json_log["pipe_run_id"] = uuid.UUID(json_log["pipe_run_id"])
+                json_log["log_id"] = uuid.UUID(json_log["log_id"])
                 logs.append(json_log)
         return logs
 
 
-class PipeLoggingConnectionSingleton:
+class KVLoggingSingleton:
     _instance = None
     _is_configured = False
 
     SUPPORTED_PROVIDERS = {
-        "local": LocalPipeLoggingProvider,
-        "postgres": PostgresPipeLoggingProvider,
-        "redis": RedisPipeLoggingProvider,
+        "local": LocalKVLoggingProvider,
+        "postgres": PostgresKVLoggingProvider,
+        "redis": RedisKVLoggingProvider,
     }
 
     @classmethod
@@ -484,32 +497,30 @@ class PipeLoggingConnectionSingleton:
             cls._config = logging_config
             cls._is_configured = True
         else:
-            raise Exception(
-                "PipeLoggingConnectionSingleton is already configured."
-            )
+            raise Exception("KVLoggingSingleton is already configured.")
 
     @classmethod
     async def log(
         cls,
-        pipe_run_id: uuid.UUID,
+        log_id: uuid.UUID,
         key: str,
         value: str,
-        is_pipeline_info=False,
+        is_info_log=False,
     ):
         try:
             async with cls.get_instance() as provider:
-                await provider.log(
-                    pipe_run_id, key, value, is_pipeline_info=is_pipeline_info
-                )
+                await provider.log(log_id, key, value, is_info_log=is_info_log)
         except Exception as e:
             logger.error(f"Error logging data: {e}")
 
     @classmethod
     async def get_run_info(
-        cls, pipeline_type: Optional[str] = None, limit: int = 10
+        cls, limit: int = 10, log_type_filter: Optional[str] = None
     ) -> list[RunInfo]:
         async with cls.get_instance() as provider:
-            return await provider.get_run_info(pipeline_type, limit)
+            return await provider.get_run_info(
+                limit, log_type_filter=log_type_filter
+            )
 
     @classmethod
     async def get_logs(

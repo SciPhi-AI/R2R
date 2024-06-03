@@ -8,7 +8,7 @@ from fastapi.datastructures import UploadFile
 from r2r import (
     Document,
     GenerationConfig,
-    PipeLoggingConnectionSingleton,
+    KVLoggingSingleton,
     R2RApp,
     R2RConfig,
     R2RPipeFactory,
@@ -46,9 +46,9 @@ def r2r_app(request):
         )
 
         try:
-            PipeLoggingConnectionSingleton.configure(config.logging)
+            KVLoggingSingleton.configure(config.logging)
         except:
-            PipeLoggingConnectionSingleton._config.logging_path = (
+            KVLoggingSingleton._config.logging_path = (
                 config.logging.logging_path
             )
 
@@ -60,7 +60,7 @@ def r2r_app(request):
 
 @pytest.fixture
 def logging_connection():
-    return PipeLoggingConnectionSingleton()
+    return KVLoggingSingleton()
 
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
@@ -76,7 +76,9 @@ async def test_ingest_txt_document(r2r_app, logging_connection):
             ),
         ]
     )
-    run_info = await logging_connection.get_run_info(pipeline_type="ingestion")
+    run_info = await logging_connection.get_run_info(
+        log_type_filter="ingestion"
+    )
     logs = await logging_connection.get_logs([run.run_id for run in run_info])
     assert len(logs) == 2, f"Expected 2 logs, but got {len(logs)}"
 
@@ -116,7 +118,9 @@ async def test_ingest_txt_file(r2r_app, logging_connection):
 
     await r2r_app.aingest_files(metadatas=[metadata], files=files)
 
-    run_info = await logging_connection.get_run_info(pipeline_type="ingestion")
+    run_info = await logging_connection.get_run_info(
+        log_type_filter="ingestion"
+    )
     logs = await logging_connection.get_logs([run.run_id for run in run_info])
     assert len(logs) == 2, f"Expected 2 logs, but got {len(logs)}"
 
@@ -159,7 +163,9 @@ async def test_ingest_search_txt_file(r2r_app, logging_connection):
 
     await r2r_app.aingest_files(metadatas=[metadata], files=files)
 
-    run_info = await logging_connection.get_run_info(pipeline_type="ingestion")
+    run_info = await logging_connection.get_run_info(
+        log_type_filter="ingestion"
+    )
     logs = await logging_connection.get_logs(
         [run.run_id for run in run_info], 100
     )
@@ -233,7 +239,7 @@ async def test_ingest_search_then_delete(r2r_app, logging_connection):
     )
 
     # Delete the document
-    delete_result = await r2r_app.adelete("author", "John Doe")
+    delete_result = await r2r_app.adelete(["author"], ["John Doe"])
 
     # Verify the deletion was successful
     assert delete_result == {
@@ -276,8 +282,12 @@ async def test_ingest_user_documents(r2r_app, logging_connection):
         [str(user_id_0), str(user_id_1)]
     ), f"Expected user ids {user_id_0} and {user_id_1}, but got {user_ids}"
 
-    user_0_docs = await r2r_app.aget_user_document_data(user_id=str(user_id_0))
-    user_1_docs = await r2r_app.aget_user_document_data(user_id=str(user_id_1))
+    user_0_docs = await r2r_app.aget_user_documents_metadata(
+        user_id=str(user_id_0)
+    )
+    user_1_docs = await r2r_app.aget_user_documents_metadata(
+        user_id=str(user_id_1)
+    )
 
     assert (
         len(user_0_docs["results"]) == 1
@@ -309,7 +319,9 @@ async def test_delete_by_id(r2r_app, logging_connection):
     search_results = await r2r_app.asearch("who was aristotle?")
 
     assert len(search_results["results"]) > 0
-    await r2r_app.adelete("document_id", str(generate_id_from_label("doc_1")))
+    await r2r_app.adelete(
+        ["document_id"], [str(generate_id_from_label("doc_1"))]
+    )
     search_results = await r2r_app.asearch("who was aristotle?")
     assert len(search_results["results"]) == 0
 

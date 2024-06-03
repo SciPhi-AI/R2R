@@ -13,7 +13,7 @@ Build, deploy, observe, and optimize your RAG system.
 
 # About
 
-R2R, short for RAG to Riches, provides the fastest and most efficient way to deliver high-quality Retrieval-Augmented Generation (RAG) to end users. The framework is built around customizable pipelines and a feature-rich FastAPI implementation.
+R2R, short for RAG to Riches, provides the fastest and most efficient way to deliver high-quality Retrieval-Augmented Generation (RAG) to end users. The framework is built around customizable pipelines and ships with a feature-rich REST API.
 
 ## Why?
 
@@ -53,8 +53,6 @@ export OPENAI_API_KEY=sk-...
 
 [SciPhi Cloud Docs](https://docs.sciphi.ai/)
 
-[Local RAG Tutorial](https://r2r-docs.sciphi.ai/tutorials/local_rag)
-
 # R2R Demo
 
 The R2R demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo ingests a list of provided provided documents and demonstrates search, RAG, and advanced functionality. The script at `r2r/examples/demo.py`, which powers the demo, can be configured and extended with sufficient developer familiarity.
@@ -83,7 +81,7 @@ Time taken to ingest files: 28.49 seconds
 To verify the successful ingestion of the demo documents, you can fetch the metadata for the uploaded documents associated with the default demo user ID:
 
 ```bash
-python -m r2r.examples.demo get_user_document_data --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
+python -m r2r.examples.demo get_user_documents_metadata --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
 ```
 
 **Demo Output:**
@@ -192,7 +190,7 @@ Time taken to run RAG: 2.29 seconds
 For streaming results from a RAG query, use the following command:
 
 ```bash
-python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=True
+python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=true
 ```
 
 **Demo Output:**
@@ -207,12 +205,20 @@ Time taken to stream RAG response: 2.79 seconds
 
 ## Document Management Demo
 
-### Document Deletion
+### Update Document 
 
-To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the associated document ID with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
+To update document(s) we may use the `update_as_files` or `update_as_documents` endpoints. Running the demo with `update_as_files` overwrites the data associated with 'aristotle.txt' with new data corresponding to 'aristotle_v2.txt' and increments the file version.
 
 ```bash
-python -m r2r.examples.demo delete --key=document_id --value=15255e98-e245-5b58-a57f-6c51babf72dd
+poetry run python -m r2r.examples.demo update_as_files
+```
+
+### Document Deletion
+
+To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the metadata field `document_id` with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
+
+```bash
+poetry run python -m r2r.examples.demo delete --keys="['document_id']" --values="['c9bdbac7-0ea3-5c9e-b590-018bd09b127b']"
 ```
 
 ### User Deletion
@@ -221,7 +227,7 @@ To delete all documents associated with a given user, run the delete command on 
 
 ```bash
 run the following command with care, as it will erase all ingested user data
-python -m r2r.examples.demo delete --key=user_id --value=063edaf8-3e63-4cb9-a4d6-a855f36376c3
+python -m r2r.examples.demo delete --keys="['user_id']" --values="['063edaf8-3e63-4cb9-a4d6-a855f36376c3']"
 ```
 
 ## R2R Server-Client Demo
@@ -260,7 +266,7 @@ This command starts the R2R server on the default host `0.0.0.0` and port `8000`
 
 4. **Run a RAG Stream**:
    ```bash
-   python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=True --base_url=http://localhost:8000
+   python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=true --base_url=http://localhost:8000
    ```
    This command streams the RAG query results from the server.
 

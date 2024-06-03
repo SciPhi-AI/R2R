@@ -7,8 +7,6 @@ from typing import Any, AsyncGenerator, Optional
 
 from pydantic import BaseModel
 
-from ..utils import generate_run_id
-
 logger = logging.getLogger(__name__)
 
 
@@ -19,12 +17,6 @@ class PipeType(Enum):
     SEARCH = "search"
     TRANSFORM = "transform"
     OTHER = "other"
-
-
-class PipeRunInfo(BaseModel):
-    """Information about a pipe run."""
-
-    run_id: uuid.UUID
 
 
 class AsyncState:
@@ -97,6 +89,7 @@ class AsyncPipe(ABC):
         self._config = config or self.PipeConfig()
         self._run_info = None
         self._type = type
+
         logger.info(f"Initialized pipe {self.config.name} of type {self.type}")
 
     @property
@@ -107,19 +100,13 @@ class AsyncPipe(ABC):
     def type(self) -> PipeType:
         return self._type
 
-    @property
-    def run_info(self) -> PipeRunInfo:
-        return self._run_info
-
     async def run(
         self,
         input: Input,
         state: AsyncState,
-        run_id: Optional[uuid.UUID] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:
-        await self._initiate_run(run_id)
         result = self._run_logic(input, state)
         return result
 
@@ -128,8 +115,3 @@ class AsyncPipe(ABC):
         self, input: Input, state: AsyncState, *args: Any, **kwargs: Any
     ) -> AsyncGenerator[Any, None]:
         pass
-
-    async def _initiate_run(self, run_id: Optional[uuid.UUID] = None):
-        if not run_id:
-            run_id = generate_run_id()
-        self._run_info = PipeRunInfo(run_id=run_id)

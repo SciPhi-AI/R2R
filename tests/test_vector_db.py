@@ -244,7 +244,9 @@ def test_delete_by_metadata(request, db_fixture):
         db.upsert(entry)
 
     key_to_delete = sample_entries[0].metadata["key"]
-    db.delete_by_metadata(metadata_field="key", metadata_value=key_to_delete)
+    db.delete_by_metadata(
+        metadata_fields=["key"], metadata_values=[key_to_delete]
+    )
 
     results = db.search(query_vector=sample_entries[0].vector.data)
     assert all(result.metadata["key"] != key_to_delete for result in results)

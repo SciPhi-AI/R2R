@@ -154,14 +154,17 @@ class PGVectorDB(VectorDBProvider):
         pass
 
     def delete_by_metadata(
-        self, metadata_field: str, metadata_value: Union[bool, int, str]
+        self, metadata_fields: str, metadata_values: Union[bool, int, str]
     ) -> None:
+        super().delete_by_metadata(metadata_fields, metadata_values)
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `delete_by_metadata`."
             )
         self.collection.delete(
-            filters={metadata_field: {"$eq": metadata_value}}
+            filters={
+                k: {"$eq": v} for k, v in zip(metadata_fields, metadata_values)
+            }
         )
 
     def get_metadatas(

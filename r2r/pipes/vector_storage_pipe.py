@@ -1,16 +1,16 @@
 import asyncio
 import logging
+import uuid
 from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
     AsyncState,
-    PipeLoggingConnectionSingleton,
+    KVLoggingSingleton,
+    LoggableAsyncPipe,
     PipeType,
     VectorDBProvider,
     VectorEntry,
 )
-
-from ..core.pipes.loggable_pipe import LoggableAsyncPipe
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class R2RVectorStoragePipe(LoggableAsyncPipe):
         self,
         vector_db_provider: VectorDBProvider,
         storage_batch_size: int = 128,
-        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
@@ -71,6 +71,7 @@ class R2RVectorStoragePipe(LoggableAsyncPipe):
         self,
         input: Input,
         state: AsyncState,
+        run_id: uuid.UUID,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[None, None]:
@@ -86,7 +87,8 @@ class R2RVectorStoragePipe(LoggableAsyncPipe):
                 # Schedule the storage task
                 batch_tasks.append(
                     asyncio.create_task(
-                        self.store(vector_batch.copy(), input.do_upsert)
+                        self.store(vector_batch.copy(), input.do_upsert),
+                        name=f"vector-store-{self.config.name}",
                     )
                 )
                 vector_batch.clear()
@@ -94,7 +96,8 @@ class R2RVectorStoragePipe(LoggableAsyncPipe):
         if vector_batch:  # Process any remaining vectors
             batch_tasks.append(
                 asyncio.create_task(
-                    self.store(vector_batch.copy(), input.do_upsert)
+                    self.store(vector_batch.copy(), input.do_upsert),
+                    name=f"vector-store-{self.config.name}",
                 )
             )
 

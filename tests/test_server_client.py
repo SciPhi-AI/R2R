@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from r2r import (
-    PipeLoggingConnectionSingleton,
+    KVLoggingSingleton,
     R2RApp,
     R2RConfig,
     R2RPipeFactory,
@@ -44,9 +44,9 @@ def r2r_app(request):
         )
 
         try:
-            PipeLoggingConnectionSingleton.configure(config.logging)
+            KVLoggingSingleton.configure(config.logging)
         except:
-            PipeLoggingConnectionSingleton._config.logging_path = (
+            KVLoggingSingleton._config.logging_path = (
                 config.logging.logging_path
             )
 
@@ -148,7 +148,7 @@ async def test_delete(client):
     response = client.request(
         "DELETE",
         "/delete/",
-        json={"key": "author", "value": "John Doe"},
+        json={"keys": ["author"], "values": ["John Doe"]},
     )
     assert response.status_code == 200
     assert response.json() == {"results": "Entries deleted successfully."}
@@ -164,10 +164,10 @@ async def test_get_user_ids(client):
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
 @pytest.mark.asyncio
-async def test_get_user_document_data(client):
+async def test_get_user_documents_metadata(client):
     user_id = str(generate_id_from_label("user_0"))
     response = client.post(
-        "/get_user_document_data/",
+        "/get_user_documents_metadata/",
         json={"user_id": user_id},
     )
     assert response.status_code == 200

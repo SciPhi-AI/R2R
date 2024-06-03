@@ -1,17 +1,17 @@
 import logging
+import uuid
 from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional, Union
 
 from r2r.core import (
     AsyncPipe,
     AsyncState,
-    PipeLoggingConnectionSingleton,
+    KVLoggingSingleton,
+    LoggableAsyncPipe,
     PipeType,
     SearchResult,
     VectorDBProvider,
 )
-
-from ...core.pipes.loggable_pipe import LoggableAsyncPipe
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +27,7 @@ class SearchPipe(LoggableAsyncPipe):
 
     def __init__(
         self,
-        vector_db_provider: VectorDBProvider,
-        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.SEARCH,
         config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
@@ -41,7 +40,6 @@ class SearchPipe(LoggableAsyncPipe):
             *args,
             **kwargs,
         )
-        self.vector_db_provider = vector_db_provider
 
     @abstractmethod
     async def search(
@@ -59,6 +57,7 @@ class SearchPipe(LoggableAsyncPipe):
         self,
         input: Input,
         state: AsyncState,
+        run_id: uuid.UUID,
         *args: Any,
         **kwargs,
     ) -> AsyncGenerator[SearchResult, None]:

@@ -11,7 +11,7 @@ COPY pyproject.toml poetry.lock* /app/
 RUN pip install poetry keyring
 
 # Export dependencies to requirements.txt
-RUN poetry export --without-hashes --format=requirements.txt --output=requirements.txt -E eval -E sentence_transformers
+RUN poetry export --without-hashes --format=requirements.txt --output=requirements.txt 
 
 # Install dependencies from requirements.txt
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
@@ -26,4 +26,4 @@ COPY . /app
 EXPOSE 8000
 
 # Set the command to run the application with Gunicorn
-CMD ["gunicorn", "r2r.examples.servers.configurable_pipeline:default_app", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "8", "--timeout", "0", "--worker-class", "uvicorn.workers.UvicornWorker"]
+CMD ["gunicorn", "r2r.examples.base_app:app", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "8", "--timeout", "0", "--worker-class", "uvicorn.workers.UvicornWorker"]

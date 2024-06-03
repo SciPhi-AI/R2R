@@ -2,8 +2,10 @@ import logging
 
 from .core import *
 from .eval import *
+from .integrations import *
 from .main import *
 from .pipes import *
+from .prebuilts import *
 from .prompts import *
 
 logger = logging.getLogger("r2r")
@@ -27,19 +29,18 @@ logger.propagate = False
 
 __all__ = [
     "LoggingConfig",
-    "LocalPipeLoggingProvider",
+    "LocalKVLoggingProvider",
     "PostgresLoggingConfig",
-    "PostgresPipeLoggingProvider",
+    "PostgresKVLoggingProvider",
     "RedisLoggingConfig",
-    "RedisPipeLoggingProvider",
-    "PipeLoggingConnectionSingleton",
+    "RedisKVLoggingProvider",
+    "KVLoggingSingleton",
     "VectorEntry",
     "VectorType",
     "Vector",
     "SearchRequest",
     "SearchResult",
     "AsyncPipe",
-    "PipeRunInfo",
     "PipeType",
     "AsyncState",
     "Prompt",
@@ -50,6 +51,7 @@ __all__ = [
     "ExtractionType",
     "Fragment",
     "FragmentType",
+    "SearchPipe",
     # Parsers
     "AsyncParser",
     "CSVParser",
@@ -93,4 +95,11 @@ __all__ = [
     "R2RVectorSearchPipe",
     "R2RVectorStoragePipe",
     "R2RPromptProvider",
+    "R2RWebSearchPipe",
+    "R2RAppBuilder",
+    # Prebuilts
+    "MultiSearchPipe",
+    "R2RPipeFactoryWithMultiSearch",
+    # Integrations
+    "SerperClient",
 ]

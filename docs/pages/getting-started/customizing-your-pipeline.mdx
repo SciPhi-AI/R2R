@@ -1,100 +1,265 @@
 ## Customizing Your Pipeline
 
-The R2R framework allows you to create custom pipelines by combining different pipes according to your specific requirements. This section demonstrates how to create a custom Retrieval-Augmented Generation (RAG) pipeline by incorporating various pipes.
+The R2R framework uses factories along with a builder pattern to create the `R2RApp`. This approach allows for seamless customization and overriding of default components. The examples below demonstrate how to override the default search pipe in the basic R2R application and how to then extend it further with more complex customizations.
 
-### Example: Custom RAG Pipeline
+### Example: Custom RAG Pipeline with Web Search
 
-To create a custom RAG pipeline, follow these steps:
-
-1. Import the necessary modules and providers.
-2. Initialize the required pipes.
-3. Add the pipes to the pipeline in the desired order.
-
-Here’s an example of creating a custom RAG pipeline with a query transformation pipe, a search pipe, and an output RAG pipe:
+This example demonstrates how to override the default vector search module with a custom web search module by leveraging the `R2RAppBuilder`.
 
 ```python
-"""A custom RAG pipeline that includes a custom query transformation prompt."""
 from r2r import (
     GenerationConfig,
-    PipeLoggingConnectionSingleton,
-    R2RConfig,
-    R2RPipeFactory,
-    R2RProviderFactory,
-    R2RQueryTransformPipe,
-    RAGPipeline,
-    run_pipeline,
+    R2RAppBuilder,
+    R2RWebSearchPipe,
+    SerperClient,
 )
 
-# Load the default configuration
-config = R2RConfig.from_json()
-PipeLoggingConnectionSingleton().configure(config.logging)
+if __name__ == "__main__":
+    # Initialize a web search pipe that uses Serper to scrape Google
+    web_search_pipe = R2RWebSearchPipe(serper_client=SerperClient())
 
-# Create input providers and pipes
-providers = R2RProviderFactory(config).create_providers()
-pipes = R2RPipeFactory(config, providers).create_pipes()
+    # Build the R2R application with the custom search pipe
+    r2r_app = R2RAppBuilder().with_search_pipe(web_search_pipe).build()
 
-# Add a custom prompt for transforming the user query
-transform_prompt = {
-    "name": "rag_fusion_prompt_custom",
-    "template": "### Instruction:\n\nGiven the following query that follows to write a double newline separated list of up to {num_outputs} queries meant to help answer the original query. \nDO NOT generate any single query which is likely to require information from multiple distinct documents, \nEACH single query will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents. \nFOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, the two queries would be \n`What are the key themes of Great Gatsby?` and `What are the key themes of 1984?`.\nHere is the original user query to be transformed into answers:\n\n### Query:\n{message}\n\n### Response:\n",
-    "input_types": {"num_outputs": "int", "message": "str"},
-}
-providers.prompt.add_prompt(**transform_prompt)
+    # Run the RAG pipeline through the R2R application
+    result = r2r_app.rag(
+        "Who was Aristotle?",
+        rag_generation_config=GenerationConfig(model="gpt-4o"),
+    )
 
-# Initialize the new query transform pipe
-query_transform_pipe = R2RQueryTransformPipe(
-    llm_provider=providers.llm,
-    prompt_provider=providers.prompt,
-    config=R2RQueryTransformPipe.QueryTransformConfig(
-        task_prompt=transform_prompt["name"]
-    ),
-)
-
-# Create the RAG pipeline and add the pipes
-rag_pipeline = RAGPipeline()
-rag_pipeline.add_pipe(query_transform_pipe)
-rag_pipeline.add_pipe(pipes.search_pipe)
-rag_pipeline.add_pipe(
-    pipes.rag_pipe,
-    add_upstream_outputs=[
-        {
-            "prev_pipe_name": pipes.search_pipe.config.name,
-            "prev_output_field": "search_results",
-            "input_field": "raw_search_results",
-        },
-        {
-            "prev_pipe_name": pipes.search_pipe.config.name,
-            "prev_output_field": "search_queries",
-            "input_field": "query",
-        },
-    ],
-)
-
-# Run the pipeline
-result = run_pipeline(
-    rag_pipeline,
-    input="Who was aristotle?",
-    num_query_xf_outputs=3,  # Number of transformed queries to generate
-    query_transform_config=GenerationConfig(
-        model="gpt-4o"
-    ),  # LLM configuration for the query transformer
-    rag_generation_config=GenerationConfig(
-        model="gpt-4o"
-    ),  # LLM configuration for the RAG model
-)
-
-print(f"Final Result:\n\n{result}")
+    # Print the final result
+    print(result)
 ```
 
-
-```plaintext
-...
-r2r.pipes.query_transform_pipe - INFO - Transforming query: Who was aristotle? into 3 outputs with rag_fusion_prompt_custom. - 2024-05-21 18:35:04,980
-r2r.pipes.query_transform_pipe - INFO - Yielding transformed output: Who was Aristotle in ancient Greek philosophy? - 2024-05-21 18:35:06,021
-r2r.pipes.query_transform_pipe - INFO - Yielding transformed output: What were the major contributions of Aristotle to science and philosophy? - 2024-05-21 18:35:06,224
-r2r.pipes.query_transform_pipe - INFO - Yielding transformed output: What is the historical significance of Aristotle's works? - 2024-05-21 18:35:06,441
-...
-Final Result:
-[ChatCompletion(id='chatcmpl-9RVAgbqsmZaXo4hqbXhZbXe3xKQUQ', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessage(content='To answer the query about Aristotle in ancient Greek philosophy, his major contributions to science and philosophy, and the historical significance of his works, we need to refer to the provided context. However, since the context is missing, I will provide a general response based on commonly known information about Aristotle.\n\n### Who was Aristotle in ancient Greek philosophy?\n\nAristotle was a prominent ancient Greek philosopher and polymath, a student of Plato, and the teacher of Alexander the Great. He made significant contributions to various fields of knowledge, including metaphysics, ethics, politics, logic, and natural sciences.\n\n### What were the major contributions of Aristotle to science and philosophy?\n\n1. **Logic**: Aristotle is often credited with the development of formal logic, particularly syllogistic logic, which became the basis for deductive reasoning [1].\n\n2. **Metaphysics**: He explored the nature of being and existence, introducing concepts such as substance, form, and matter [2].\n\n3. **Ethics**: Aristotle\'s "Nicomachean Ethics" outlines his virtue ethics, emphasizing the importance of character and virtue in achieving eudaimonia (flourishing or happiness) [3].\n\n4. **Politics**: In "Politics," Aristotle examined various political systems and advocated for a constitutional government as the best form of governance [4].\n\n5. **Natural Sciences**: Aristotle made extensive observations in biology, zoology, and physics, classifying living organisms and studying their functions and behaviors [5].\n\n### What is the historical significance of Aristotle\'s works?\n\nAristotle\'s works have had a profound and lasting impact on Western thought. His ideas influenced medieval scholarship, particularly through the works of Islamic philosophers and later European scholastics. His contributions to logic and scientific methodology laid the groundwork for the development of modern science. Aristotle\'s ethical and political theories continue to be studied and debated, shaping contemporary discussions in philosophy and political theory [6].\n\nWithout the specific context, these references are based on general knowledge about Aristotle. If you provide the context, I can tailor the response more precisely to the given information.', role='assistant', function_call=None, tool_calls=None))], created=1716341706, model='gpt-4o-2024-05-13', object='chat.completion', system_fingerprint='fp_729ea513f7', usage=CompletionUsage(completion_tokens=422, prompt_tokens=717, total_tokens=1139))]
+Example output:
+```bash
+[
+    ChatCompletion(
+        id='chatcmpl-9V8I0uzunubIn4rg4c56gG5Z33yFU', 
+        choices=[
+            Choice(
+                finish_reason='stop', 
+                index=0, 
+                logprobs=None, 
+                message=ChatCompletionMessage(
+                    content='Aristotle was an ancient Greek philosopher and scientist who is considered one of the 
+                    greatest intellectual figures in Western history [1]. He was a polymath whose writings covered 
+                    a broad range of subjects, including natural sciences, philosophy, and linguistics [2]. Along 
+                    with Socrates and Plato, Aristotle laid much of the groundwork for Western philosophy [4]. He 
+                    made significant contributions to various fields such as logic, criticism, rhetoric, physics, 
+                    biology, and psychology [6]. Aristotle was also known for systemizing deductive logic and writing 
+                    on physical sciences [8]. He was born in 384 BC in Stagira, a Greek seaport, and was the son of 
+                    Nichomachus, the court physician to the Macedonian royal family [7][9]. Additionally, Aristotle 
+                    was a student of Plato and the teacher of Alexander the Great, which further solidified his lasting 
+                    impact on Western philosophy [13].',
+                    role='assistant', 
+                    function_call=None, 
+                    tool_calls=None
+                )
+            )
+        ], 
+        created=1717207060, 
+        model='gpt-4o-2024-05-13',
+        object='chat.completion', 
+        system_fingerprint='fp_319be4768e', 
+        usage=CompletionUsage(completion_tokens=180, prompt_tokens=742, total_tokens=922)
+    )
+]
 ```
-# Now you can use this custom RAG pipeline for your tasks
+
+### Example: Multi-Web Search with Factory Overrides
+
+In this more advanced example, we use a factory override to customize the pipeline further by including a query transformation pipe and a multi-search pipe.
+
+```python
+from r2r import (
+    GenerationConfig,
+    R2RAppBuilder,
+    R2RPipeFactoryWithMultiSearch,
+    R2RWebSearchPipe,
+    SerperClient,
+)
+
+if __name__ == "__main__":
+    # Initialize a web search pipe
+    web_search_pipe = R2RWebSearchPipe(serper_client=SerperClient())
+
+    # Define a new synthetic query generation template
+    synthetic_query_generation_template = {
+        "template": """
+            ### Instruction:
+            Given the following query, write a double newline separated list of up to {num_outputs} advanced queries meant to help answer the original query.
+            DO NOT generate any single query which is likely to require information from multiple distinct documents.
+            EACH single query will be used to carry out a cosine similarity semantic search over distinct indexed documents.
+            FOR EXAMPLE, if asked `how do the key themes of Great Gatsby compare with 1984`, the two queries would be
+            `What are the key themes of Great Gatsby?` and `What are the key themes of 1984?`.
+            Here is the original user query to be transformed into answers:
+
+            ### Query:
+            {message}
+
+            ### Response:
+            """,
+        "input_types": {
+            "num_outputs": "int", 
+            "message": "str"
+        },
+    }
+
+    # Build the R2R application with the custom pipeline
+    r2r_app = (
+        R2RAppBuilder()
+        .with_pipe_factory(R2RPipeFactoryWithMultiSearch)
+        .build(
+            # override inputs consumed by `R2RPipeFactoryWithMultiSearch.create_search_pipe`
+            multi_inner_search_pipe_override=web_search_pipe,
+            query_generation_template_override=synthetic_query_generation_template,
+        )
+    )
+
+    # Run the RAG pipeline through the R2R application
+    result = r2r_app.rag(
+        "Who was Aristotle?",
+        rag_generation_config=GenerationConfig(model="gpt-4o"),
+    )
+
+    print(f"Final Result:\n\n{result}")
+```
+
+Example output:
+```bash
+r2r.pipes.query_transform_pipe - INFO - Yielding transformed output: What were the main contributions of Aristotle to philosophy? - 2024-05-31 21:23:12,441
+r2r.pipes.query_transform_pipe - INFO - Yielding transformed output: What is known about the life and background of Aristotle? - 2024-05-31 21:23:13,327
+r2r.pipes.query_transform_pipe - INFO - Yielding transformed output: What are some of the key works written by Aristotle? - 2024-05-31 21:23:14,208
+```
+
+### R2R App Builder
+
+The `R2RAppBuilder` class is demonstrated in the examples above and utilizes factories and developer-specified overrides to create and customize an instance of the `R2RApp`:
+
+1. **Application Overrides**:
+   - `with_app`: Allows overriding the default `R2RApp` class.
+
+2. **Provider Factory Overrides**:
+   - `with_provider_factory`: Allows overriding the default `R2RProviderFactory`.
+
+3. **Pipe Factory Overrides**:
+   - `with_pipe_factory`: Allows overriding the default `R2RPipeFactory`.
+
+4. **Pipeline Factory Overrides**:
+   - `with_pipeline_factory`: Allows overriding the default `R2RPipelineFactory`.
+
+5. **Provider Overrides**:
+   - `with_vector_db_provider`: Allows overriding the default `VectorDBProvider`.
+   - `with_embedding_provider`: Allows overriding the default `EmbeddingProvider`.
+   - `with_eval_provider`: Allows overriding the default `EvalProvider`.
+   - `with_llm_provider`: Allows overriding the default `LLMProvider`.
+   - `with_prompt_provider`: Allows overriding the default `PromptProvider`.
+
+6. **Pipe Overrides**:
+   - `with_parsing_pipe`: Allows overriding the default parsing pipe.
+   - `with_embedding_pipe`: Allows overriding the default embedding pipe.
+   - `with_vector_storage_pipe`: Allows overriding the default vector storage pipe.
+   - `with_search_pipe`: Allows overriding the default search pipe.
+   - `with_rag_pipe`: Allows overriding the default RAG pipe.
+   - `with_streaming_rag_pipe`: Allows overriding the default streaming RAG pipe.
+   - `with_eval_pipe`: Allows overriding the default evaluation pipe.
+
+7. **Pipeline Overrides**:
+   - `with_ingestion_pipeline`: Allows overriding the default ingestion pipeline.
+   - `with_search_pipeline`: Allows overriding the default search pipeline.
+   - `with_rag_pipeline`: Allows overriding the default RAG pipeline.
+   - `with_streaming_rag_pipeline`: Allows overriding the default streaming RAG pipeline.
+   - `with_eval_pipeline`: Allows overriding the default evaluation pipeline.
+
+### R2R Factories
+
+The R2R framework includes a set of factories that allow for the creation and customization of various components required to build and run an `R2RApp`. These factories are integral to the R2R framework, providing flexibility and extensibility in how components are instantiated and configured.
+
+#### R2RProviderFactory
+
+The `R2RProviderFactory` is responsible for creating various providers that the `R2RApp` relies on. These include vector database providers, embedding providers, evaluation providers, language model providers, and prompt providers.
+
+**Key Methods**
+- **create_vector_db_provider**: Creates a vector database provider based on the given configuration.
+- **create_embedding_provider**: Creates an embedding provider based on the given configuration.
+- **create_eval_provider**: Creates an evaluation provider based on the given configuration.
+- **create_llm_provider**: Creates a language model provider based on the given configuration.
+- **create_prompt_provider**: Creates a prompt provider based on the given configuration.
+- **create_providers**: Aggregates all provider creation methods to return an `R2RProviders` instance.
+
+#### R2RPipeFactory
+
+The `R2RPipeFactory` is responsible for creating the pipes used in the `R2RApp`. Pipes are the core components that handle various stages of processing within the pipelines.
+
+**Key Methods**
+- **create_pipes**: Aggregates all pipe creation methods to return an `R2RPipes` instance.
+- **create_parsing_pipe**: Creates the parsing pipe.
+- **create_embedding_pipe**: Creates the embedding pipe.
+- **create_vector_storage_pipe**: Creates the vector storage pipe.
+- **create_search_pipe**: Creates the search pipe.
+- **create_rag_pipe**: Creates the RAG pipe.
+- **create_eval_pipe**: Creates the evaluation pipe.
+
+#### R2RPipelineFactory
+
+The `R2RPipelineFactory` is responsible for creating the various pipelines used in the `R2RApp`. Pipelines are collections of pipes that work together to process data through different stages.
+
+**Key Methods**
+- **create_ingestion_pipeline**: Creates the ingestion pipeline.
+- **create_search_pipeline**: Creates the search pipeline.
+- **create_rag_pipeline**: Creates the RAG pipeline.
+- **create_eval_pipeline**: Creates the evaluation pipeline.
+- **create_pipelines**: Aggregates all pipeline creation methods to return an `R2RPipelines` instance.
+
+### Example - Custom Pipe Factory
+
+The `R2RPipeFactoryWithMultiSearch` class shown below demonstrates how to override the `create_search_pipe` method of the `R2RPipeFactory` to use a `MultiSearchPipe`.
+
+```python
+class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
+    def create_search_pipe(self, *args, **kwargs):
+        multi_search_config = MultiSearchPipe.PipeConfig()
+        task_prompt_name = kwargs.get("task_prompt_name") or f"{multi_search_config.name}_task_prompt"
+
+        query_transform_pipe = kwargs.get("multi_query_transform_pipe_override", None) or R2RQueryTransformPipe(
+            llm_provider=self.providers.llm,
+            prompt_provider=self.providers.prompt,
+            config=R2RQueryTransformPipe.QueryTransformConfig(
+                name=multi_search_config.name,
+                task_prompt=task_prompt_name,
+            ),
+        )
+
+        if kwargs.get("task_prompt_name") is None:
+            self.providers.prompt.add_prompt(
+                name=task_prompt_name,
+                **(kwargs.get("query_generation_template_override") or self.QUERY_GENERATION_TEMPLATE),
+            )
+
+        inner_search_pipe = kwargs.get("multi_inner_search_pipe_override", None) or super().create_search_pipe(*args, **kwargs)
+        inner_search_pipe.config.name = multi_search_config.name
+
+        return MultiSearchPipe(
+            query_transform_pipe=query_transform_pipe,
+            inner_search_pipe=inner_search_pipe,
+            config=multi_search_config,
+        )
+```
+
+```python
+# Build the R2R application with the custom factory
+r2r_app = (
+    R2RAppBuilder()
+    .with_pipe_factory(R2RPipeFactoryWithMultiSearch)
+    .build(
+        # override inputs consumed in building the MultiSearchPipe
+        multi_inner_search_pipe_override=web_search_pipe,
+        query_generation_template_override=synthetic_query_generation_template,
+    )
+)
+```
+
+### Conclusion
+
+By using factories and the builder pattern, the R2R framework enables easy customization and extension of pipelines. You can seamlessly override default components with your own implementations to fit specific needs.

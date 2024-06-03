@@ -3903,10 +3903,10 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 all = ["llama-cpp-python", "qdrant_client", "sentence-transformers", "tiktoken"]
 exa = ["exa-py"]
 ionic = ["ionic-api-sdk"]
-local-llm = ["llama-cpp-python", "sentence-transformers"]
-sentence-transformers-only = ["sentence-transformers"]
+local-embedding = ["sentence-transformers"]
+local-llm = ["llama-cpp-python"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "edafa8a3e61e53b784c80bdf0e7c24d12b1ab7f697a508ded087f6424713894c"
+content-hash = "8dfb7a03d516b584b884afbbcdca54a40f356d62ceb8747369ccfba64684ffac"

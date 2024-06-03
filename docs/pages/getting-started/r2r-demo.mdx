@@ -1,10 +1,13 @@
 ## R2R Demo
 
-The R2R demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo ingests a list of provided provided documents and demonstrates search, RAG, and advanced functionality. The script at r2r/examples/demo.py, which powers the demo, can be configured and extended with sufficient developer familiarity.
+The R2R demo offers a step-by-step walkthrough of the features provided by the R2R application. The application ships with a REST API exposing a Retrieval-Augmented Generation (RAG) pipeline and more. The demo demonstrates how to directly interface with the application logic to ingest a list of provided documents and demonstrates search, RAG, and more advanced functionality. The script at `r2r/examples/demo.py`, which powers the demo, can be configured and extended with sufficient developer familiarity.
+
+![R2R App Architecture](./r2r_demo_architecture.png)
 
 ## Setup
 
 To get started with the R2R framework, follow these steps to install dependencies, set up your environment, and ingest sample documents for the demo.
+
 
 ### Step 0: Quick Install
 
@@ -48,14 +51,14 @@ Time taken to ingest files: 28.49 seconds
 
 **Note**
 
-Each ingested document derives a unique `document_id` from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, a the demo includes a default `user_id` in the document metadata to facilitate user-level document management.
+Each ingested document derives a unique `document_id` from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, the demo includes a default `user_id` in the document metadata to facilitate user-level document management.
 
 ### Step 2: Confirm User Data
 
-To verify the successful ingestion of the demo documents, you can fetch the metadata for the uploaded documents associated with the default demo user ID:
+To verify the successful ingestion of the demo documents, fetch the metadata for the uploaded documents associated with the demo userId:
 
 ```bash
-python -m r2r.examples.demo get_user_document_data --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
+python -m r2r.examples.demo get_user_documents_metadata --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
 ```
 
 **Demo Output:**
@@ -140,7 +143,7 @@ Time taken to run RAG: 2.29 seconds
 For streaming results from a RAG query, use the following command:
 
 ```bash
-python -m r2r.examples.demo rag --query="What was Lyfts profit in 2020?" --streaming=True
+python -m r2r.examples.demo rag --query="What was Lyfts profit in 2020?" --streaming=true
 ```
 
 **Demo Output:**
@@ -153,17 +156,18 @@ r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.js
 Time taken to stream RAG response: 2.79 seconds
 ```
 
-## Document Management
+## Advanced - Document Management
 
 Effective document management is crucial for maintaining a robust and efficient RAG system. This section guides you through various operations related to document management, including deleting documents and managing user-specific data. These steps will help ensure your document database remains organized and up-to-date.
 
-### Step 6: Delete a Specified Document
+### Delete a Specified Document
 
 To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the associated document ID with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
 
 ```bash
-python -m r2r.examples.demo delete --key=document_id --value=15255e98-e245-5b58-a57f-6c51babf72dd
+poetry run python -m r2r.examples.demo delete --keys="['document_id']" --values="['c9bdbac7-0ea3-5c9e-b590-018bd09b127b']"
 ```
+By default the delete method will perform an AND operation over all given metadata keys and values.
 
 After deleting a document, you can run a search command to verify its removal:
 
@@ -186,16 +190,28 @@ af8-3e63-4cb9-a4d6-a855f36376c3', 'query': 'Who was Aristotle?'}}
 
 The quality of search results has dramatically decreased now that the Aristotle-specific document has been fully erased. This highlights the importance of the ingested data quality on the RAG results.
 
-### Step 7: Delete a Specified User's Documents
+### Delete a Specified User's Documents
 
 To delete all documents associated with a given user, run the delete command on the `user_id`.
 
 ```bash
 # run the following command with care, as it will erase all ingested user data
-# python -m r2r.examples.demo delete --key=user_id --value=063edaf8-3e63-4cb9-a4d6-a855f36376c3
+# python -m r2r.examples.demo delete --keys="['user_id']" --values="['063edaf8-3e63-4cb9-a4d6-a855f36376c3']"
 ```
 
-Afterwards, we may confirm complete user documentation through the `get_user_document_data` functionality.
+Afterwards, we may confirm complete user documentation through the `get_user_documents_metadata` functionality.
+
+
+### Delete a Specified User's Documents
+
+To delete all documents associated with a given user, run the delete command on the `user_id`.
+
+```bash
+# run the following command with care, as it will erase all ingested user data
+# python -m r2r.examples.demo delete --keys="['user_id']" --values="['063edaf8-3e63-4cb9-a4d6-a855f36376c3']"
+```
+
+Afterwards, we may confirm complete user documentation through the `get_user_documents_metadata` functionality.
 
 **Demo Output:**
 
@@ -205,9 +221,9 @@ Time taken to get user document data: 0.00 seconds
 {'results': []}
 ```
 
-## Advanced Functionality
+## Advanced - Other Features
 
-### Step 8: Demo Multi-Modal Support
+### Demo Multi-Modal Support
 
 An `.png` image of a desktop screen was included as part of the ingestion command shown above. By default, the `ImageParser` uses an OpenAI vision model (gpt-4o) to transcribe the image and embed that transcription. We can then search these results directly, as evidenced below:
 
@@ -224,7 +240,7 @@ Time taken to search: 1.13 seconds
 {'id': UUID('5c57cd4c-a7d2-5003-b59d-3637b545a32c'), 'score': 0.34990526831895197, 'metadata': {'document_id': '8d78f34d-f795-5c82-a90f-18b8cc3a883c', 'extraction_id': '8c11b793-b744-5f73-bb76-23cb45c36538', 'text': 'users with a contextual, intuitive interface, continually evolve features and functionality, and deliver safety andtrust.\nWe intend to continue to inv\nest in new platform offerings that we believe will further strengthen our platform and existing offerings.We\n believe  that  all  of  these  synergies  serve  the  customer  experience,  enabling  us  to  attract  new  platform  users  and  to  deepen  engagement  with  existingplatform', 'title': 'uber_2021.pdf', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'query': 'What is shown on the user screen?'}}
 ```
 
-### Step 9: Run LLM-Powered Evaluation
+### Run LLM-Powered Evaluation
 
 The R2R framework can evaluate the relevance and accuracy of generated responses using LLM-powered evaluation. Run the following command to perform an evaluation:
 
@@ -260,7 +276,7 @@ This output is consistent with the default query, context, and answer, shown bel
     The meaning of life is to help others, learn and grow, and to make a difference.
 ```
 
-### Step 10: Logging
+### Logging
 
 Pipes naturally integrate with your selected logging provider. R2R pipelines for ingestion, search, and RAG create comprehensive logs that allow for total observability.
 

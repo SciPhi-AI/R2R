@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import time
+import uuid
 from abc import abstractmethod
 from typing import AsyncGenerator, Iterator, Optional
 
@@ -22,11 +23,11 @@ from r2r.core import (
     HTMLParser,
     ImageParser,
     JSONParser,
+    KVLoggingSingleton,
     LoggableAsyncPipe,
     MarkdownParser,
     MovieParser,
     PDFParser,
-    PipeLoggingConnectionSingleton,
     PipeType,
     PPTParser,
     TextParser,
@@ -42,7 +43,7 @@ class DocumentParsingPipe(LoggableAsyncPipe):
         self,
         selected_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
         override_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
-        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
@@ -115,7 +116,7 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
         self,
         selected_parsers: dict[DocumentType, AsyncParser],
         override_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
-        pipe_logger: Optional[PipeLoggingConnectionSingleton] = None,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
         *args,
@@ -158,6 +159,7 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
     async def _parse(
         self,
         document: Document,
+        run_id: uuid.UUID,
     ) -> AsyncGenerator[Extraction, None]:
         if document.type not in self.parsers:
             logger.error(
@@ -198,7 +200,7 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
             yield extraction
             extraction_dict = extraction.dict()
             await self.enqueue_log(
-                pipe_run_id=self.run_info.run_id,
+                run_id=run_id,
                 key="extraction",
                 value=json.dumps(
                     {
@@ -214,12 +216,23 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
         )
 
     async def _run_logic(
-        self, input: Input, state: AsyncState, *args, **kwargs
+        self,
+        input: Input,
+        state: AsyncState,
+        run_id: uuid.UUID,
+        versions: Optional[list[str]] = None,
+        *args,
+        **kwargs,
     ) -> AsyncGenerator[Extraction, None]:
         parse_tasks = []
 
+        iteration = 0
         async for document in input.message:
-            parse_tasks.append(self._handle_parse_task(document))
+            version = versions[iteration] if versions else "v0"
+            iteration += 1
+            parse_tasks.append(
+                self._handle_parse_task(document, version, run_id)
+            )
 
         # Await all tasks and yield results concurrently
         for parse_task in asyncio.as_completed(parse_tasks):
@@ -227,9 +240,10 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
                 yield extraction
 
     async def _handle_parse_task(
-        self, document: Document
+        self, document: Document, version: str, run_id: uuid.UUID
     ) -> AsyncGenerator[Extraction, None]:
         extractions = []
-        async for extraction in self._parse(document):
+        async for extraction in self._parse(document, run_id):
+            extraction.metadata["version"] = version
             extractions.append(extraction)
         return extractions
