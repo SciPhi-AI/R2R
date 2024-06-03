@@ -647,15 +647,21 @@ class R2RApp(metaclass=AsyncSyncMeta):
             return stream_response()
 
         else:
-            results = await self.rag_pipeline.run(
-                input=to_async_generator([message]),
-                streaming=False,
-                search_filters=search_filters,
-                search_limit=search_limit,
-                rag_generation_config=rag_generation_config,
-                run_manager=self.run_manager,
-            )
-            return results
+            try:
+                results = await self.rag_pipeline.run(
+                    input=to_async_generator([message]),
+                    streaming=False,
+                    search_filters=search_filters,
+                    search_limit=search_limit,
+                    rag_generation_config=rag_generation_config,
+                    run_manager=self.run_manager,
+                )
+                return results
+            except Exception as e:
+                logger.error(f"Pipeline error: {str(e)}")
+                if 'NoneType' in str(e):
+                    raise HTTPException(status_code=502, detail="Ollama server not reachable or returned an invalid response")
+                raise HTTPException(status_code=500, detail="Internal Server Error")
 
     class RAGRequest(BaseModel):
         message: str
@@ -667,38 +673,55 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def rag_app(self, request: RAGRequest):
         async with manage_run(self.run_manager, "rag_app") as run_id:
             try:
-                search_filters = (
-                    None
-                    if request.search_filters is None
-                    or request.search_filters == "null"
-                    else json.loads(request.search_filters)
+                # Parse search filters
+                search_filters = None
+                if request.search_filters and request.search_filters != "null":
+                    try:
+                        search_filters = json.loads(request.search_filters)
+                        logger.info(f"Parsed search filters: {search_filters}")
+                    except json.JSONDecodeError as jde:
+                        logger.error(f"Error parsing search filters: {str(jde)}")
+                        raise HTTPException(status_code=400, detail=f"Error parsing search filters: {str(jde)}")
+
+                # Parse RAG generation config
+                rag_generation_config = GenerationConfig(
+                    model="gpt-3.5-turbo", stream=request.streaming
                 )
-                rag_generation_config = (
-                    GenerationConfig(
-                        **json.loads(request.rag_generation_config),
-                        stream=request.streaming,
-                    )
-                    if request.rag_generation_config
-                    and request.rag_generation_config != "null"
-                    else GenerationConfig(
-                        model="gpt-3.5-turbo", stream=request.streaming
-                    )
-                )
+                if request.rag_generation_config and request.rag_generation_config != "null":
+                    try:
+                        parsed_config = json.loads(request.rag_generation_config)
+                        rag_generation_config = GenerationConfig(
+                            **parsed_config,
+                            stream=request.streaming,
+                        )
+                    except json.JSONDecodeError as jde:
+                        logger.error(f"Error parsing RAG generation config: {str(jde)}")
+                        raise HTTPException(status_code=400, detail=f"Error parsing RAG generation config: {str(jde)}")
+
+                # Call the async RAG method
                 response = await self.arag(
                     request.message,
                     rag_generation_config,
                     search_filters,
                     request.search_limit,
                 )
+
                 if request.streaming:
-                    return StreamingResponse(
-                        response, media_type="application/json"
-                    )
+                    return StreamingResponse(response, media_type="application/json")
                 else:
                     return {"results": response}
 
+            except json.JSONDecodeError as jde:
+                error_message = f"JSON decoding error: {str(jde)}"
+                logger.error(error_message)
+                raise HTTPException(status_code=400, detail=error_message)
+            
+            except HTTPException as he:
+                raise he
+
             except Exception as e:
-                # TODO - Modularize this, somehow
+                # Log the error with pipeline details
+                logger.error(f"Exception in RAG app: {str(e)}")
                 await self.rag_pipeline.pipe_logger.log(
                     log_id=run_id,
                     key="pipeline_type",

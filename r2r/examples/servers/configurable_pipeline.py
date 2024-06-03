@@ -1,7 +1,7 @@
 import argparse
 import os
 import logging
-
+from fastapi import FastAPI
 from r2r import (
     R2RApp,
     R2RConfig,
@@ -20,7 +20,9 @@ CONFIG_OPTIONS = {
     "local_ollama": os.path.join(configs_path, "local_ollama.json"),
 }
 
-def r2r_app(config_name: str = "default"):
+def create_r2r_app(config_name: str = "default") -> FastAPI:
+    config_name = os.getenv("CONFIG_OPTION") or config_name
+
     if config_path := CONFIG_OPTIONS.get(config_name):
         logger.info(f"Using config path: {config_path}")
         config = R2RConfig.from_json(config_path)
@@ -29,18 +31,20 @@ def r2r_app(config_name: str = "default"):
         logger.info(f"Using default config path: {default_config_path}")
         config = R2RConfig.from_json(default_config_path)
 
-    if config.embedding['provider'] == 'openai' and 'OPENAI_API_KEY' not in os.environ:
+    if config.embedding.provider == 'openai' and 'OPENAI_API_KEY' not in os.environ:
         raise ValueError("Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider.")
 
     providers = R2RProviderFactory(config).create_providers()
     pipes = R2RPipeFactory(config, providers).create_pipes()
     pipelines = R2RPipelineFactory(config, pipes).create_pipelines()
 
-    return R2RApp(
+    r2r_app = R2RApp(
         config=config,
         providers=providers,
         pipelines=pipelines,
     )
+
+    return r2r_app.app
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
@@ -58,23 +62,13 @@ if __name__ == "__main__":
         default="8000",
         help="Port to serve deployed pipe on.",
     )
-    parser.add_argument(
-        "--config",
-        type=str,
-        default="default",
-        choices=CONFIG_OPTIONS.keys(),
-        help="Configuration option for the pipe",
-    )
 
     args, _ = parser.parse_known_args()
 
     host = os.getenv("HOST") or args.host
     port = os.getenv("PORT") or args.port
-    config_name = os.getenv("CONFIG_OPTION") or args.config
 
-    logger.info(f"Environment CONFIG_OPTION: {config_name}")
+    app = create_r2r_app()
 
-    r2r = r2r_app(config_name)
-    app = r2r.app
-
-    r2r.serve(host, int(port))
+    import uvicorn
+    uvicorn.run(app, host=host, port=int(port))

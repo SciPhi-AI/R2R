@@ -53,7 +53,7 @@ Let's move on to setting up the R2R pipeline. R2R relies on a `config.json` file
 
 For setting up an on-premises RAG system, we need to adjust the configuration to use local resources. This involves changing the embedding provider, selecting the appropriate LLM provider, and disabling evaluations.
 
-To streamline this process, we've provided pre-configured local settings in the [`examples/configs`](https://github.com/SciPhi-AI/R2R/tree/main/r2r/examples/configs) directory, named `local_ollama` and `local_llama_cpp`. Here's an overview of the primary changes from the default configuration:
+To streamline this process, we've provided pre-configured local settings in the [`examples/configs`](https://github.com/SciPhi-AI/R2R/tree/main/r2r/examples/configs) directory, named `local_ollama`. Here's an overview of the primary changes from the default configuration:
 
 ```json
 {
@@ -68,8 +68,7 @@ To streamline this process, we've provided pre-configured local settings in the 
     "frequency": 0.0
   },
   "language_model": {
-    "provider": "ollama"  // or "llama-cpp"
-    // "model-name": "your-target-model.gguf" necessary for "llama-cpp"
+    "provider": "ollama"
     // default model-name is `tinyllama-1.1b-chat-v1.0.Q2_K.gguf`
   },
   ...

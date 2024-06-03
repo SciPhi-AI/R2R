@@ -87,7 +87,8 @@ class R2RProviderFactory:
 
     def create_eval_provider(
         self, eval_config, prompt_provider, *args, **kwargs
-    ) -> EvalProvider:
+    ) -> Optional[EvalProvider]:
+        logger.info(f"Creating eval provider with config: {eval_config} and prompt provider: {prompt_provider}. The eval provider is {eval_config.provider}")
         if eval_config.provider == "local":
             from r2r.eval import LLMEvalProvider
             llm_provider = self.create_llm_provider(eval_config.llm)
@@ -96,6 +97,8 @@ class R2RProviderFactory:
                 llm_provider=llm_provider,
                 prompt_provider=prompt_provider,
             )
+        elif eval_config.provider == "none":
+            eval_provider = None
         else:
             raise ValueError(
                 f"Eval provider {eval_config.provider} not supported."
@@ -113,13 +116,6 @@ class R2RProviderFactory:
         elif llm_config.provider == "litellm":
             from r2r.llms import LiteLLM
             llm_provider = LiteLLM(llm_config)
-        elif llm_config.provider == "llama-cpp":
-            from r2r.llms import LlamaCPP, LlamaCppConfig
-            config_dict = llm_config.dict()
-            extra_args = config_dict.pop("extra_args")
-            llm_provider = LlamaCPP(
-                LlamaCppConfig(**{**config_dict, **extra_args})
-            )
         else:
             raise ValueError(
                 f"Language model provider {llm_config.provider} not supported"
@@ -166,10 +162,7 @@ class R2RProviderFactory:
             ),
             eval=eval_provider_override
             or self.create_eval_provider(
-                self.config.eval,
-                prompt_provider=prompt_provider,
-                *args,
-                **kwargs,
+                self.config.eval, prompt_provider=prompt_provider, *args, **kwargs,
             ),
             llm=llm_provider_override
             or self.create_llm_provider(

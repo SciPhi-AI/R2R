@@ -16,7 +16,6 @@ R2R currently supports the following LLM providers:
   - Ollama
   - Together AI
   - Openrouter
-- LLama.cpp
 
 
 ## Toggling Between LLM Providers
@@ -31,7 +30,7 @@ To toggle between different LLM providers, you need to update the `completions` 
 }
 ```
 
-By changing the `provider` value to `"openai"`, `"litellm"`, or `"llama-cpp"`, you can switch between the supported LLM providers. Note that for additional fields defined below are likely required to run successfully with `"llama-cpp"`.
+By changing the `provider` value to `"openai"` or `"litellm"`, you can switch between the supported LLM providers.
 
 
 ## LiteLLM Provider (Default)
@@ -69,43 +68,6 @@ Key features of the `OpenAILLM` implementation:
 - Allows passing additional arguments to the OpenAI API.
 
 To use the OpenAI provider, you need to set the `OPENAI_API_KEY` environment variable with your OpenAI API key.
-
-
-Here's the LlamaCpp section added to the LLM Provider Configuration Guide:
-
-## Llama.cpp Provider
-
-The `Llama.cpp` class is an implementation of the `LLMProvider` that integrates with the Llama.cpp library for generating completions using local models.
-
-Key features of the `LlamaCPP` implementation:
-
-- Initializes the LlamaCpp client using the provided model path and model name.
-- Supports both non-streaming and streaming completions.
-- Allows passing additional arguments to the LlamaCpp client.
-
-To use the LlamaCpp provider, you need to install the `llama-cpp-python` package:
-
-```
-pip install llama-cpp-python # or poetry install ... -E local-llm
-```
-
-### Configuring LlamaCpp
-
-To configure the LlamaCpp provider, you need to set the following options in the `completions` section of the configuration file (`config.json`):
-
-- `provider`: Set it to `"llama-cpp"` to use the LlamaCpp provider.
-- `path_to_model`: Specify the path where the LlamaCpp models are located. If not provided, it defaults to `~/.cache/models`.
-- `model_name`: Specify the name of the LlamaCpp model to use. If not provided, it defaults to `"tinyllama-1.1b-chat-v1.0.Q2_K.gguf"`.
-
-Example configuration:
-
-```json
-"completions": {
-    "provider": "llama-cpp",
-    "path_to_model": "/path/to/models",
-    "model_name": "custom_model.gguf"
-}
-```
 
 
 ## Configuring Remote LLM Providers
