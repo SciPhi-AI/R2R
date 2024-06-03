@@ -890,7 +890,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             run_logs = [log for log in logs if log["log_id"] == run.run_id]
             entries = [
                 {"key": log["key"], "value": log["value"]} for log in run_logs
-            ]
+            ][::-1] # Reverse order so that earliest logged values appear first.
             aggregated_logs.append(
                 {
                     "run_id": run.run_id,
