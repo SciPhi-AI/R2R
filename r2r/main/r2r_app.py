@@ -158,6 +158,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     def _setup_routes(self):
         self.app.add_api_route(
+            path="/update_prompt",
+            endpoint=self.update_prompt_app,
+            methods=["POST"],
+        )
+        self.app.add_api_route(
             path="/ingest_documents",
             endpoint=self.ingest_documents_app,
             methods=["POST"],
@@ -211,12 +216,41 @@ class R2RApp(metaclass=AsyncSyncMeta):
             endpoint=self.get_logs_app,
             methods=["POST"],
         )
-
+        self.app.add_api_route(
+            path="/get_app_data",
+            endpoint=self.get_app_data_app,
+            methods=["GET"],
+        )
         self.app.add_api_route(
             path="/get_open_api_endpoint",
             endpoint=self.get_open_api_endpoint,
             methods=["GET"],
         )
+
+    @syncable
+    async def aupsert_prompt(self, name: str, template: str, input_types: dict):
+        """Upsert a prompt into the system."""
+        try:
+            self.providers.prompt.add_prompt(name, template, input_types)
+            return {"results": f"Prompt '{name}' added successfully."}
+        except Exception as e:
+            logger.error(f"upsert_prompt(name={name}) - \n\n{str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    class UpdatePromptRequest(BaseModel):
+        name: str
+        template: Optional[str] = None
+        input_types: Optional[dict[str, str]] = None
+
+    async def update_prompt_app(self, request: UpdatePromptRequest):
+        """Update a prompt's template and/or input types."""
+        try:
+            return await self.aupsert_prompt(
+                request.name, request.template, request.input_types
+            )
+        except Exception as e:
+            logger.error(f"update_prompt(name={request.name}) - \n\n{str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def aingest_documents(
@@ -912,6 +946,27 @@ class R2RApp(metaclass=AsyncSyncMeta):
             )
         except Exception as e:
             logger.error(f":logs: [Error](error={str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @syncable
+    async def aget_app_data(self, *args: Any, **kwargs: Any):
+        try:
+            # config_data = self.config.app  # Assuming this holds your config.json data
+            prompts = self.providers.prompt.get_all_prompts()
+            return {
+                "config": self.config.to_json(),
+                "prompts": {name: prompt.dict() for name, prompt in prompts.items()}
+            }
+        except Exception as e:
+            logger.error(f"get_app_data() - \n\n{str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    async def get_app_data_app(self):
+        """Return the config.json and all prompts."""
+        try:
+            return await self.aget_app_data()
+        except Exception as e:
+            logger.error(f"get_app_data() - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
 
     def get_open_api_endpoint(self):

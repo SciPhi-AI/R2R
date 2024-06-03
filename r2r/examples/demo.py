@@ -448,6 +448,20 @@ class R2RDemo:
             print(f"Time taken to get logs: {t1-t0:.2f} seconds")
             print(response)
 
+    def get_app_data(self):
+        if hasattr(self, "client"):
+            t0 = time.time()
+            response = self.client.get_app_data()
+            t1 = time.time()
+            print(f"Time taken to get app data: {t1-t0:.2f} seconds")
+            print(response)
+        else:
+            t0 = time.time()
+            response = self.r2r.get_app_data()
+            t1 = time.time()
+            print(f"Time taken to get app data: {t1-t0:.2f} seconds")
+            print(response)
+            
     def get_open_api_endpoint(self):
         if hasattr(self, "client"):
             print(
