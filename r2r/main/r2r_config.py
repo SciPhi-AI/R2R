@@ -89,7 +89,6 @@ class R2RConfig:
             config_path = os.path.join(file_dir, "..", "..", "config.json")
 
         # Load configuration from JSON file
-        logger.info(f"Loading configuration from {config_path}")
         with open(config_path) as f:
             config_data = json.load(f)
 

@@ -88,7 +88,6 @@ class R2RProviderFactory:
     def create_eval_provider(
         self, eval_config, prompt_provider, *args, **kwargs
     ) -> Optional[EvalProvider]:
-        logger.info(f"Creating eval provider with config: {eval_config} and prompt provider: {prompt_provider}. The eval provider is {eval_config.provider}")
         if eval_config.provider == "local":
             from r2r.eval import LLMEvalProvider
             llm_provider = self.create_llm_provider(eval_config.llm)

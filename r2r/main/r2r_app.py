@@ -678,7 +678,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 if request.search_filters and request.search_filters != "null":
                     try:
                         search_filters = json.loads(request.search_filters)
-                        logger.info(f"Parsed search filters: {search_filters}")
                     except json.JSONDecodeError as jde:
                         logger.error(f"Error parsing search filters: {str(jde)}")
                         raise HTTPException(status_code=400, detail=f"Error parsing search filters: {str(jde)}")
