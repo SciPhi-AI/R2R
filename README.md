@@ -285,7 +285,7 @@ Providers supply the necessary resources and capabilities to the pipes and pipel
 
 - **Vector Database Provider**: Manages the storage and retrieval of vector embeddings. Examples include Qdrant, PGVector, and LocalVectorDB.
 - **Embedding Provider**: Converts text into vector embeddings. Supported providers include OpenAI, SentenceTransformers, and DummyEmbeddingProvider.
-- **LLM Provider**: Interfaces with large language models for text generation. Supported providers include OpenAI, LiteLLM, and LlamaCPP.
+- **LLM Provider**: Interfaces with large language models for text generation. Supported providers include OpenAI, and LiteLLM.
 - **Prompt Provider**: Manages prompts for various tasks.
 - **Eval Provider**: Evaluates the quality of generated responses.
 

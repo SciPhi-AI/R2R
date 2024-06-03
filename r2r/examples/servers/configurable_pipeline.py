@@ -2,14 +2,17 @@ import argparse
 import os
 import logging
 from enum import Enum
+from fastapi import FastAPI
 from r2r import (
     R2RConfig,
     R2RAppBuilder,
-    # For Web Search
     R2RWebSearchPipe,
     SerperClient,
-    # For HyDE & the like.
     R2RPipeFactoryWithMultiSearch,
+    R2RProviderFactory,
+    R2RPipeFactory,
+    R2RPipelineFactory,
+    R2RApp
 )
 
 logger = logging.getLogger(__name__)
@@ -22,17 +25,17 @@ CONFIG_OPTIONS = {
     "local_ollama": os.path.join(configs_path, "local_ollama.json"),
 }
 
-
 class PipelineType(Enum):
     QNA = "qna"
     WEB = "web"
     HYDE = "hyde"
 
-
 def r2r_app(
     config_name: str = "default",
     pipeline_type: PipelineType = PipelineType.QNA,
-):
+) -> FastAPI:
+    config_name = os.getenv("CONFIG_OPTION") or config_name
+
     if config_path := CONFIG_OPTIONS.get(config_name):
         logger.info(f"Using config path: {config_path}")
         config = R2RConfig.from_json(config_path)
@@ -41,32 +44,24 @@ def r2r_app(
         logger.info(f"Using default config path: {default_config_path}")
         config = R2RConfig.from_json(default_config_path)
 
-    if (
-        config.embedding.provider == "openai"
-        and "OPENAI_API_KEY" not in os.environ
-    ):
-        raise ValueError(
-            "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
-        )
+    if config.embedding.provider == 'openai' and 'OPENAI_API_KEY' not in os.environ:
+        raise ValueError("Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider.")
 
     if pipeline_type == PipelineType.QNA:
-        return R2RAppBuilder(config).build()
+        return R2RAppBuilder(config).build().app
     elif pipeline_type == PipelineType.WEB:
-        # Create search pipe override and pipes
         web_search_pipe = R2RWebSearchPipe(
             serper_client=SerperClient()  # TODO - Develop a `WebSearchProvider` for configurability
         )
-        return R2RAppBuilder(config).with_search_pipe(web_search_pipe).build()
+        return R2RAppBuilder(config).with_search_pipe(web_search_pipe).build().app
     elif pipeline_type == PipelineType.HYDE:
         return (
             R2RAppBuilder(config)
             .with_pipe_factory(R2RPipeFactoryWithMultiSearch)
             .build(
-                # Add optional override arguments which propagate to the pipe factory
                 task_prompt_name="hyde",
-            )
+            ).app
         )
-
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
@@ -108,7 +103,7 @@ if __name__ == "__main__":
 
     logger.info(f"Environment CONFIG_OPTION: {config_name}")
 
-    r2r = r2r_app(config_name, PipelineType(pipeline_type))
-    app = r2r.app
+    app = r2r_app(config_name, PipelineType(pipeline_type))
 
-    r2r.serve(host, int(port))
+    import uvicorn
+    uvicorn.run(app, host=host, port=int(port))

@@ -145,21 +145,21 @@ class R2RClient:
                 rag_generation_config=rag_generation_config,
             )
         else:
-            url = f"{self.base_url}/rag"
-            data = {
-                "message": message,
-                "search_filters": json.dumps(search_filters)
-                if search_filters
-                else None,
-                "search_limit": search_limit,
-                "rag_generation_config": json.dumps(rag_generation_config)
-                if rag_generation_config
-                else None,
-                "streaming": streaming,
-            }
-            response = requests.post(url, json=data)
-            response.raise_for_status()
-            return response.json()
+            try:
+                url = f"{self.base_url}/rag"
+                data = {
+                    "message": message,
+                    "search_filters": json.dumps(search_filters) if search_filters else None,
+                    "search_limit": search_limit,
+                    "rag_generation_config": json.dumps(rag_generation_config) if rag_generation_config else None,
+                    "streaming": streaming,
+                }
+                
+                response = requests.post(url, json=data)
+                response.raise_for_status()
+                return response.json()
+            except requests.exceptions.RequestException as e:
+                raise e
 
     async def _stream_rag(
         self,
