@@ -310,7 +310,11 @@ class R2RClient:
         self, document_id: Optional[str] = None, user_id: Optional[str] = None
     ) -> dict:
         url = f"{self.base_url}/documents_info"
-        params = {"document_id": document_id, "user_id": user_id}
+        params = {}
+        params["document_ids"] = (
+            json.dumps(document_ids) if document_ids else None
+        )
+        params["user_ids"] = json.dumps(user_ids) if user_ids else None
         response = requests.get(url, params=params)
         response.raise_for_status()
         return response.json()

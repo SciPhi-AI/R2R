@@ -95,7 +95,6 @@ class Client:
         logger.error(error_message)
         raise RuntimeError(error_message)
 
-
     def _create_schema(self, sess):
         try:
             sess.execute(text("CREATE SCHEMA IF NOT EXISTS vecs;"))
