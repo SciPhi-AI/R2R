@@ -319,9 +319,11 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
-    def user_stats(self, user_ids: Optional[list[str]] = None) -> dict:
-        url = f"{self.base_url}/user_stats"
-        params = {"user_ids": json.dumps(user_ids) if user_ids else None}
-        response = requests.get(url, params=params)
+    def users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
+        url = f"{self.base_url}/users_stats"
+        params = {}
+        if user_ids:
+            params = {"user_ids": user_ids}
+        response = requests.get(url, json=params)
         response.raise_for_status()
         return response.json()
