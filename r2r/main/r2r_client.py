@@ -275,10 +275,10 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
-    def get_document_info(
+    def get_documents_info(
         self, document_id: Optional[str] = None, user_id: Optional[str] = None
     ) -> dict:
-        url = f"{self.base_url}/get_document_info"
+        url = f"{self.base_url}/get_documents_info"
         data = {"document_id": document_id, "user_id": user_id}
         response = requests.post(url, json=data)
         response.raise_for_status()

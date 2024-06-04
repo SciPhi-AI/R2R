@@ -81,7 +81,7 @@ class VectorDBProvider(Provider, ABC):
         self,
         metadata_fields: list[str],
         metadata_values: list[Union[bool, int, str]],
-    ) -> None:
+    ) -> list[str]:
         if len(metadata_fields) != len(metadata_values):
             raise ValueError(
                 "The number of metadata fields and values must be equal."
@@ -95,4 +95,12 @@ class VectorDBProvider(Provider, ABC):
         filter_field: Optional[str] = None,
         filter_value: Optional[str] = None,
     ) -> list[str]:
+        pass
+
+    @abstractmethod
+    def upsert_document_info(self, document_info: dict) -> None:
+        pass
+
+    @abstractmethod
+    def delete_document_info(self, document_id: str) -> dict:
         pass

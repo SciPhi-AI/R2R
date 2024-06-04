@@ -52,6 +52,27 @@ class PGVectorDB(VectorDBProvider):
         self.collection = self.vx.get_or_create_collection(
             name=self.config.collection_name, dimension=dimension
         )
+        self._create_document_info_table()
+
+
+    def _create_document_info_table(self):
+        with self.vx.Session() as sess:
+            with sess.begin():
+                query = f"""
+                CREATE TABLE IF NOT EXISTS document_info_{self.config.collection_name} (
+                    document_id UUID PRIMARY KEY,
+                    title TEXT,
+                    user_id UUID,
+                    version TEXT,
+                    size_in_bytes INT,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW(),
+                    metadata JSONB
+                );
+                """
+                sess.execute(text(query))
+                sess.commit()
+
 
     def copy(self, entry: VectorEntry, commit=True) -> None:
         if self.collection is None:
@@ -159,18 +180,17 @@ class PGVectorDB(VectorDBProvider):
 
     def delete_by_metadata(
         self, metadata_fields: str, metadata_values: Union[bool, int, str]
-    ) -> None:
+    ) -> list[str]:
         super().delete_by_metadata(metadata_fields, metadata_values)
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `delete_by_metadata`."
             )
-        self.collection.delete(
+        return self.collection.delete(
             filters={
                 k: {"$eq": v} for k, v in zip(metadata_fields, metadata_values)
             }
         )
-        self.delete_document_info_by_metadata(metadata_fields, metadata_values)
 
     def delete_document_info_by_metadata(
         self, metadata_fields: str, metadata_values: Union[bool, int, str]
@@ -211,7 +231,7 @@ class PGVectorDB(VectorDBProvider):
         return [
             results[key] for key in results if key != tuple(metadata_fields)
         ]
-
+    
     def upsert_document_info(self, document_info: dict) -> None:
         # Extract and remove the fields from the metadata
         metadata = document_info.pop("metadata", None)
@@ -219,21 +239,26 @@ class PGVectorDB(VectorDBProvider):
             metadata = {}
         else:
             metadata = json.loads(metadata)
-        document_info["user_id"] = metadata.pop("user_id", "")
+
+        # Handle user_id with default value if not present
+        user_id = metadata.pop("user_id", None)
+        if user_id is None:
+            logger.warning("user_id is missing; proceeding with user_id as None.")
+        
+        document_info["user_id"] = user_id
         document_info["title"] = metadata.pop("title", "")
-        document_info["created_at"] = (
-            datetime.now()
-        )  # Use the latest timestamp
-        document_info["updated_at"] = (
-            datetime.now()
-        )  # Use the latest timestamp
+        document_info["created_at"] = datetime.now()
+        document_info["updated_at"] = datetime.now()
 
         # Convert remaining metadata to JSON
         document_info["metadata"] = json.dumps(metadata)
 
+        print('document_info = ', document_info)
+        print('metadata = ', metadata)
+
         query = text(
-            """
-        INSERT INTO document_info (document_id, title, user_id, version, created_at, updated_at, size_in_bytes, metadata)
+            f"""
+        INSERT INTO document_info_{self.config.collection_name} (document_id, title, user_id, version, created_at, updated_at, size_in_bytes, metadata)
         VALUES (:document_id, :title, :user_id, :version, :created_at, :updated_at, :size_in_bytes, :metadata)
         ON CONFLICT (document_id) DO UPDATE SET
         title = EXCLUDED.title,
@@ -247,13 +272,50 @@ class PGVectorDB(VectorDBProvider):
         with self.vx.Session() as sess:
             with sess.begin():
                 sess.execute(query, document_info)
-
+            sess.commit()
     def delete_document_info(self, document_id: str) -> None:
         query = text(
-            """
-        DELETE FROM document_info WHERE document_id = :document_id;
+            f"""
+        DELETE FROM document_info_{self.config.collection_name} WHERE document_id = :document_id;
         """
         )
         with self.vx.Session() as sess:
             with sess.begin():
                 sess.execute(query, {"document_id": document_id})
+            sess.commit()
+    def get_documents_info(
+        self, document_id: Optional[str] = None, user_id: Optional[str] = None
+    ):
+        query = f"""
+        SELECT document_id, title, user_id, version, size_in_bytes, created_at, updated_at, metadata
+        FROM document_info_{self.config.collection_name}
+        """
+        conditions = []
+        params = {}
+        if document_id:
+            conditions.append("document_id = :document_id")
+            params["document_id"] = document_id
+        if user_id:
+            conditions.append("user_id = :user_id")
+            params["user_id"] = user_id
+
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+
+        print('query = ', query)
+        with self.vx.Session() as sess:
+            results = sess.execute(text(query), params).fetchall()
+            print('results = ', results)
+            return [
+                {
+                    "document_id": str(row[0]),
+                    "title": row[1],
+                    "user_id": row[2],
+                    "version": row[3],
+                    "size_in_bytes": row[4],
+                    "created_at": row[5].isoformat(),
+                    "updated_at": row[6].isoformat(),
+                    "metadata": row[7],
+                }
+                for row in results
+            ]

@@ -48,15 +48,15 @@ class R2RDemo:
         root_path = os.path.dirname(os.path.abspath(__file__))
         self.user_id = user_id
         self.default_files = file_list or [
-            os.path.join(root_path, "data", "aristotle.txt"),
-            os.path.join(root_path, "data", "screen_shot.png"),
+            # os.path.join(root_path, "data", "aristotle.txt"),
+            # os.path.join(root_path, "data", "screen_shot.png"),
             os.path.join(root_path, "data", "pg_essay_1.html"),
-            os.path.join(root_path, "data", "pg_essay_2.html"),
-            os.path.join(root_path, "data", "pg_essay_3.html"),
-            os.path.join(root_path, "data", "pg_essay_4.html"),
-            os.path.join(root_path, "data", "pg_essay_5.html"),
-            os.path.join(root_path, "data", "lyft_2021.pdf"),
-            os.path.join(root_path, "data", "uber_2021.pdf"),
+            # os.path.join(root_path, "data", "pg_essay_2.html"),
+            # os.path.join(root_path, "data", "pg_essay_3.html"),
+            # os.path.join(root_path, "data", "pg_essay_4.html"),
+            # os.path.join(root_path, "data", "pg_essay_5.html"),
+            # os.path.join(root_path, "data", "lyft_2021.pdf"),
+            # os.path.join(root_path, "data", "uber_2021.pdf"),
         ]
         self.file_tuples = file_tuples or [
             (
@@ -490,18 +490,18 @@ class R2RDemo:
             print(f"Time taken to get app data: {t1-t0:.2f} seconds")
             print(response)
 
-    def get_document_info(
+    def get_documents_info(
         self, document_id: Optional[str] = None, user_id: Optional[str] = None
     ):
         if hasattr(self, "client"):
             t0 = time.time()
-            response = self.client.get_document_info(document_id, user_id)
+            response = self.client.get_documents_info(document_id, user_id)
             t1 = time.time()
             print(f"Time taken to get document info: {t1-t0:.2f} seconds")
             print(response)
         else:
             t0 = time.time()
-            response = self.r2r.get_document_info(document_id, user_id)
+            response = self.r2r.get_documents_info(document_id, user_id)
             t1 = time.time()
             print(f"Time taken to get document info: {t1-t0:.2f} seconds")
             print(response)

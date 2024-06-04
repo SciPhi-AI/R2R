@@ -44,6 +44,20 @@ class R2RLocalVectorDB(VectorDBProvider):
             )
         """
         )
+        cursor.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS document_info_{self.config.collection_name} (
+                document_id TEXT PRIMARY KEY,
+                title TEXT,
+                user_id TEXT,
+                version TEXT,
+                size_in_bytes INT,
+                created_at TEXT DEFAULT (DATETIME('now')),
+                updated_at TEXT DEFAULT (DATETIME('now')),
+                metadata TEXT
+            );
+        """
+        )
         conn.commit()
         conn.close()
 
@@ -141,7 +155,7 @@ class R2RLocalVectorDB(VectorDBProvider):
         self,
         metadata_fields: list[str],
         metadata_values: list[Union[bool, int, str]],
-    ) -> None:
+    ) -> list[str]:
         super().delete_by_metadata(metadata_fields, metadata_values)
         if self.config.collection_name is None:
             raise ValueError(
@@ -151,6 +165,7 @@ class R2RLocalVectorDB(VectorDBProvider):
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
         cursor.execute(f'SELECT * FROM "{self.config.collection_name}"')
+        deleted_ids = set([])
         for id, _, metadata in cursor.fetchall():
             metadata_json = json.loads(metadata)
             is_valid = True
@@ -165,8 +180,10 @@ class R2RLocalVectorDB(VectorDBProvider):
                     f'DELETE FROM "{self.config.collection_name}" WHERE id = ?',
                     (id,),
                 )
+                deleted_ids.add(metadata_json.get("document_id", None))
         conn.commit()
         conn.close()
+        return deleted_ids
 
     def get_metadatas(
         self,
@@ -198,3 +215,85 @@ class R2RLocalVectorDB(VectorDBProvider):
                 )
         conn.close()
         return [json.loads(r) for r in results]
+
+    def upsert_document_info(self, document_info: dict) -> None:
+        conn = self._get_conn()
+        cursor = self._get_cursor(conn)
+        # Convert UUID to db-friendly string
+        document_info["document_id"] = str(document_info["document_id"])
+        metadata = document_info.pop("metadata", None)
+        if metadata is None:
+            metadata = {}
+        else:
+            metadata = json.loads(metadata)
+        document_info["user_id"] = metadata.pop("user_id", "")
+        document_info["title"] = metadata.pop("title", "")
+        # Convert remaining metadata to JSON
+        document_info["metadata"] = json.dumps(metadata)
+
+        cursor.execute(
+            f"""
+            INSERT INTO document_info_{self.config.collection_name} (document_id, title, user_id, version, size_in_bytes, metadata)
+            VALUES (:document_id, :title, :user_id, :version, :size_in_bytes, :metadata)
+            ON CONFLICT(document_id) DO UPDATE SET
+                title = EXCLUDED.title,
+                user_id = EXCLUDED.user_id,
+                version = EXCLUDED.version,
+                updated_at = DATETIME('now'),
+                size_in_bytes = EXCLUDED.size_in_bytes,
+                metadata = EXCLUDED.metadata;
+        """,
+            document_info,
+        )
+        conn.commit()
+        conn.close()
+
+    def delete_document_info(self, document_id: str) -> None:
+        conn = self._get_conn()
+        cursor = self._get_cursor(conn)
+        cursor.execute(
+            f"""
+            DELETE FROM document_info_{self.config.collection_name} WHERE document_id = ?;
+        """,
+            (document_id,),
+        )
+        conn.commit()
+        conn.close()
+
+    def get_documents_info(
+        self, document_id: Optional[str] = None, user_id: Optional[str] = None
+    ):
+        conn = self._get_conn()
+        cursor = self._get_cursor(conn)
+        query = f"""
+        SELECT document_id, title, user_id, version, size_in_bytes, created_at, updated_at, metadata
+        FROM document_info_{self.config.collection_name}
+        """
+        conditions = []
+        params = []
+        if document_id:
+            conditions.append("document_id = ?")
+            params.append(document_id)
+        if user_id:
+            conditions.append("user_id = ?")
+            params.append(user_id)
+
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        print('query = ', query)
+        cursor.execute(query, params)
+        results = cursor.fetchall()
+        conn.close()
+        return [
+            {
+                "document_id": row[0],
+                "title": row[1],
+                "user_id": row[2],
+                "version": row[3],
+                "size_in_bytes": row[4],
+                "created_at": row[5],
+                "updated_at": row[6],
+                "metadata": row[7],
+            }
+            for row in results
+        ]
