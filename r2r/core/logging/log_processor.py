@@ -93,13 +93,10 @@ class AnalysisTypes(BaseModel):
         values = []
         for log in logs:
             if log["key"] == "search_results":
-                print(f"v: {log['value']}")
                 results = json.loads(log["value"])
-                print(f"Results: {results}")
                 scores = [
                     float(json.loads(result)["score"]) for result in results
                 ]
-                print(f"Scores: {scores}")
                 values.extend(scores)
             else:
                 value = log.get("value")
@@ -107,7 +104,6 @@ class AnalysisTypes(BaseModel):
                     with contextlib.suppress(ValueError):
                         values.append(float(value))
 
-        print(f"Got values: {values}")
         if not values:
             return {
                 "mean": None,

@@ -1107,7 +1107,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         if not run_ids:
             return {
                 "results": {
-                    "analytics_data": "No logs found.}",
+                    "analytics_data": "No logs found.",
                     "filtered_logs": {},
                 }
             }
