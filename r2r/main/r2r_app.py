@@ -234,8 +234,38 @@ class R2RApp(metaclass=AsyncSyncMeta):
             methods=["GET"],
         )
         self.app.add_api_route(
+<<<<<<< HEAD
             path="/open_api_spec",
             endpoint=self.openapi_spec_app,
+=======
+            path="/get_user_ids",
+            endpoint=self.get_user_ids_app,
+            methods=["GET"],
+        )
+        self.app.add_api_route(
+            path="/get_user_documents_metadata",
+            endpoint=self.get_user_documents_metadata_app,
+            methods=["POST"],
+        )
+        self.app.add_api_route(
+            path="/get_logs",
+            endpoint=self.get_logs_app,
+            methods=["POST"],
+        )
+        self.app.add_api_route(
+            path="/get_app_data",
+            endpoint=self.get_app_data_app,
+            methods=["GET"],
+        )
+        self.app.add_api_route(
+            path="/get_documents_info",
+            endpoint=self.get_documents_info_app,
+            methods=["POST"],
+        )
+        self.app.add_api_route(
+            path="/get_open_api_endpoint",
+            endpoint=self.get_open_api_endpoint,
+>>>>>>> 69ade2e (checkin work)
             methods=["GET"],
         )
 
@@ -444,6 +474,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     )
                 )
                 # Upsert document info
+<<<<<<< HEAD
                 document_infos.append(
                     DocumentInfo(
                         **{
@@ -458,6 +489,21 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         }
                     )
                 )
+=======
+                document_info = {
+                    "document_id": document_id,
+                    "title": file.filename,
+                    "user_id": metadata.get("user_id", ""),
+                    "version": versions[iteration] if versions else "1.0",
+                    "created_at": datetime.now(),  # Use the latest timestamp
+                    "updated_at": datetime.now(),  # Use the latest timestamp
+                    "size_in_bytes": len(file_content),
+                    "metadata": json.dumps(
+                        metadata
+                    ),  # Include the remaining metadata
+                }
+                document_infos.append(document_info)
+>>>>>>> 69ade2e (checkin work)
 
             # Run the pipeline asynchronously
             await self.ingestion_pipeline.run(
@@ -466,8 +512,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 run_manager=self.run_manager,
             )
 
+<<<<<<< HEAD
             if not skip_document_info:
                 self.providers.vector_db.upsert_documents_info(document_infos)
+=======
+            for document_info in document_infos:
+                self.providers.vector_db.upsert_document_info(document_info)
+>>>>>>> 69ade2e (checkin work)
 
             return {
                 "results": [
@@ -987,6 +1038,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
     ):
         ids = self.providers.vector_db.delete_by_metadata(keys, values)
         self.providers.vector_db.delete_documents_info(ids)
+=======
+        for id in ids:
+            if id is not None:
+                self.providers.vector_db.delete_document_info(id)
+>>>>>>> 69ade2e (checkin work)
 
         return {"results": "Entries deleted successfully."}
 
@@ -1173,6 +1229,19 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 "prompts": {
                     name: prompt.dict() for name, prompt in prompts.items()
                 },
+=======
+    async def aget_app_data(self, *args: Any, **kwargs: Any):
+        try:
+            # config_data = self.config.app  # Assuming this holds your config.json data
+            prompts = self.providers.prompt.get_all_prompts()
+            return {
+                "results": {
+                    "config": self.config.to_json(),
+                    "prompts": {
+                        name: prompt.dict() for name, prompt in prompts.items()
+                    },
+                }
+>>>>>>> 69ade2e (checkin work)
             }
         }
 
@@ -1185,6 +1254,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
+<<<<<<< HEAD
     async def ausers_stats(self, user_ids: Optional[list[uuid.UUID]] = None):
         return self.providers.vector_db.get_users_stats(
             [str(ele) for ele in user_ids]
@@ -1199,6 +1269,33 @@ class R2RApp(metaclass=AsyncSyncMeta):
         except Exception as e:
             logger.error(
                 f"users_stats_app(user_ids={user_ids}) - \n\n{str(e)})"
+=======
+    async def aget_documents_info(
+        self,
+        document_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        return self.providers.vector_db.get_documents_info(
+            document_id=document_id, user_id=user_id
+        )
+
+    class DocumentInfoRequest(BaseModel):
+        document_id: Optional[str] = None
+        user_id: Optional[str] = None
+
+    async def get_documents_info_app(self, request: DocumentInfoRequest):
+        try:
+            documents_info = await self.aget_documents_info(
+                document_id=request.document_id, user_id=request.user_id
+            )
+            print('documents_info = ', documents_info)
+            return {"results": documents_info}
+        except Exception as e:
+            logger.error(
+                f"get_documents_info(document_id={request.document_id}, user_id={request.user_id}) - \n\n{str(e)})"
+>>>>>>> 69ade2e (checkin work)
             )
             raise HTTPException(status_code=500, detail=str(e)) from e
 

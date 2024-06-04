@@ -191,7 +191,6 @@ class PGVectorDB(VectorDBProvider):
                 k: {"$eq": v} for k, v in zip(metadata_fields, metadata_values)
             }
         )
-        self.delete_document_info_by_metadata(metadata_fields, metadata_values)
 
     def delete_document_info_by_metadata(
         self, metadata_fields: str, metadata_values: Union[bool, int, str]
