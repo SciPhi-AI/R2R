@@ -1,4 +1,4 @@
-## Building a Local RAG System with R2R: A Step-by-Step Guide
+## Building a Local RAG System with R2R
 
 ### Introduction 
 
@@ -7,6 +7,51 @@ R2R, short for "RAG to Riches," is a game-changing framework that simplifies the
 In this comprehensive, step-by-step tutorial, we'll guide you through the process of installing R2R, ingesting your documents, querying those docs using a local LLM, and tailoring the RAG pipeline to perfectly fit your unique requirements. By the end of this guide, you'll have a fully functional, locally-hosted, and readily deployable LLM application at your fingertips!
 
 ### Setting up and Running R2R
+
+R2R supports  `Ollama`, a popular tool for Local LLM inference. Ollama is provided through a connection managed by the `litellm` library.
+
+If you wish to use Ollama, it must be installed independently. You can install Ollama by following the instructions on their [official website](https://ollama.com/) or by referring to their [GitHub README](https://github.com/ollama/ollama).
+
+**Docker Installation**: Using Docker can be a convenient way to run R2R without having to manage dependencies and installations on your local machine. The Docker image comes pre-configured and ready to run.
+
+**Local Installation**: If you prefer to run R2R directly on your local machine, you can install it and its dependencies manually. This approach may be preferred if you need more control over the installation or want to integrate R2R with other local tools and environments.
+
+<details>
+<summary>Docker</summary>
+
+To run R2R using Docker, you can use the following commands:
+
+```bash
+docker pull emrgntcmplxty/r2r:latest
+```
+
+This will pull the latest R2R Docker image.
+
+Then, run the container with:
+
+```bash
+docker run -d \
+  --name r2r \
+  --add-host=host.docker.internal:host-gateway \
+  -p 8000:8000 \
+  -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
+  -e CONFIG_OPTION=local_ollama \
+  r2r:latest
+```
+
+This command starts the R2R container with the following options:
+
+- `--name r2r`: Assigns the name "r2r" to the container.
+- `--add-host=host.docker.internal:host-gateway`: Adds a host entry for the Docker host.
+- `-p 8000:8000`: Maps port 8000 of the container to port 8000 of the host.
+- `-e OLLAMA_API_BASE=http://host.docker.internal:11434`: Specifies the Ollama API base URL.
+- `-e CONFIG_OPTION=local_ollama`: Selects the "local_ollama" configuration option.
+- `r2r:latest`: Specifies the Docker image to use.
+
+</details>
+
+<details>
+<summary>Local Installation</summary>
 
 To begin running R2R for local inference, we first need to clone the R2R repository locally. This can be done with the command:
 
@@ -24,9 +69,7 @@ And install the project dependencies using Poetry
 poetry install
 ```
 
-R2R supports  `Ollama`, a popular tool for Local LLM inference. Ollama is provided through a connection managed by the `litellm` library.
-
-If you wish to use Ollama, it must be installed independently. You can install Ollama by following the instructions on their [official website](https://ollama.com/) or by referring to their [GitHub README](https://github.com/ollama/ollama).
+</details>
 
 ### Pipeline Configuration
 
@@ -59,10 +102,9 @@ A local vector database will be used to store the embeddings. The current defaul
 
 ### Server Standup
 
-To stand up the server, we can readily choose from one of the two options below:
+If you are using Docker, your server will be stood up upon running the Dockerfile. If you are developing locally, you can stand up the server by running:
 
 ```bash
-python -m r2r.examples.servers.basic_pipeline --config local_ollama
 python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config local_ollama --pipeline_type qna
 ```
 
@@ -70,7 +112,7 @@ The server exposes a basic API for interacting with the RAG pipeline. See the [A
 
 ### Ingesting and Embedding Documents
 
-With our environment set up and our server running in a separate process, we're ready to ingest a document! As an example, R2R includes the famous Stoic text "Meditations" by Marcus Aurelius as a PDF. This file ships with the package and is included by default.
+With our environment set up and our server running in a separate process, we're ready to ingest a document! As an example, R2R includes a biography on Aristotle as a text file. This file ships with the package and is included by default.
 
 Run this command to ingest the document:
 
@@ -94,7 +136,7 @@ With just one command, we've gone from a raw document to an embedded knowledge b
 
 ### Running Queries on the Local LLM
 
-Time for the fun part - asking questions!
+Time for the fun part—asking questions!
 
 To query our knowledge base using Ollama, first ensure that you have started the Ollama server with this command in the terminal:
 
@@ -106,7 +148,7 @@ Then, to ask a question, run:
 
 ```bash
 python -m r2r.examples.clients.run_qna_client rag_completion \
-  --query="What does Marcus Aurelius say about the rules of life?" \
+  --query="What contributions did Aristotle make to biology?" \
   --model="ollama/llama2"
 ```
 
@@ -125,15 +167,6 @@ After a brief wait, you should see the LLM's response, perhaps something like:
 > 2. **Development of the concept of evolution**: Aristotle recognized that living things change over time and proposed a mechanism for these changes (the "great chain of being"). While his ideas about evolution were not entirely correct, they were an important precursor to the modern theory of evolution.
 > 3. **Influence on medieval scholarship**: Aristotle's work profoundly impacted medieval scholarship, shaping the field of biology for centuries after his death.
 > 4. **Contributions to logic and metaphysics**: Aristotle's work in logic and metaphysics also influenced the development of biology, as these areas of study inform our understanding of the natural world.
-> 
-> In terms of how Aristotle's work has influenced the field of biology specifically, he:
-> 
-> 1. **Established the concept of species**: Aristotle recognized that living things could be grouped into categories based on their shared characteristics, proposing the idea of a "species" to understand these groups.
-> 2. **Developed the concept of phylogeny**: Aristotle's work on the "great chain of being" laid the foundation for modern phylogenetic theory, which seeks to understand the evolutionary relationships between different species.
-> 3. **Proposed a mechanism for evolution**: While Aristotle's ideas about evolution were not entirely correct, they were an important precursor to the modern theory of evolution by natural selection.
-> 4. **Influenced the development of modern taxonomy**: Aristotle's work on classification and taxonomy has had a lasting impact on how we organize and understand living things today.
-> 
-> Overall, Aristotle's work in biology has had a profound and lasting impact on the field, and his ideas continue to influence our understanding of the natural world today.
 
 How cool is that? With R2R, we've built a simple Q&A system backed by a local LLM that we can converse with. The best part is, all the data and compute stayed on our own machine!
 
@@ -144,7 +177,6 @@ R2R provides flexibility in customizing various aspects of the RAG pipeline to s
 #### Vector Database Provider
 R2R supports multiple vector database providers:
 - `local`: A SQLite-based local vector database
-- `qdrant`: Integration with Qdrant
 - `pgvector`: Integration with pgvector extension for Postgres
 
 Set the `provider` field under `vector_database` in `config.json` to specify your provider.
