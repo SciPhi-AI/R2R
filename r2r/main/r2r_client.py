@@ -29,7 +29,12 @@ class R2RClient:
     def __init__(self, base_url: str):
         self.base_url = base_url
 
-    def update_prompt(self, name: str, template: Optional[str] = None, input_types: Optional[dict] = None) -> dict:
+    def update_prompt(
+        self,
+        name: str,
+        template: Optional[str] = None,
+        input_types: Optional[dict] = None,
+    ) -> dict:
         url = f"{self.base_url}/update_prompt"
         data = {
             "name": name,
@@ -149,12 +154,16 @@ class R2RClient:
                 url = f"{self.base_url}/rag"
                 data = {
                     "message": message,
-                    "search_filters": json.dumps(search_filters) if search_filters else None,
+                    "search_filters": json.dumps(search_filters)
+                    if search_filters
+                    else None,
                     "search_limit": search_limit,
-                    "rag_generation_config": json.dumps(rag_generation_config) if rag_generation_config else None,
+                    "rag_generation_config": json.dumps(rag_generation_config)
+                    if rag_generation_config
+                    else None,
                     "streaming": streaming,
                 }
-                
+
                 response = requests.post(url, json=data)
                 response.raise_for_status()
                 return response.json()
@@ -253,12 +262,5 @@ class R2RClient:
     def get_app_data(self) -> dict:
         url = f"{self.base_url}/get_app_data"
         response = requests.get(url)
-        response.raise_for_status()
-        return response.json()
-    
-    def analytics(self, filter_criteria: dict, analysis_types: dict) -> dict:
-        url = f"{self.base_url}/analytics"
-        data = {"filter_criteria": json.dumps(filter_criteria), "analysis_types": json.dumps(analysis_types)}
-        response = requests.post(url, json=data)
         response.raise_for_status()
         return response.json()

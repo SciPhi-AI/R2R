@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional, Union
 
-from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile, Query
+from fastapi import Body, FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -252,7 +252,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 request.name, request.template, request.input_types
             )
         except Exception as e:
-            logger.error(f"update_prompt_app(name={request.name}) - \n\n{str(e)})")
+            logger.error(
+                f"update_prompt_app(name={request.name}) - \n\n{str(e)})"
+            )
             raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
@@ -294,7 +296,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     value=str(e),
                     is_info_log=False,
                 )
-                logger.error(f"ingest_documents_app(documents={request.documents}) - \n\n{str(e)})")
+                logger.error(
+                    f"ingest_documents_app(documents={request.documents}) - \n\n{str(e)})"
+                )
                 raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
@@ -345,7 +349,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     value=str(e),
                     is_info_log=False,
                 )
-                logger.error(f"update_documents_app(documents={request.documents}) - \n\n{str(e)})")
+                logger.error(
+                    f"update_documents_app(documents={request.documents}) - \n\n{str(e)})"
+                )
                 raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
@@ -555,7 +561,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         *args: Any,
         **kwargs: Any,
     ):
-        print('files = ', files)
+        print("files = ", files)
         if len(files) == 0:
             raise HTTPException(
                 status_code=400, detail="No files provided for update."
@@ -579,11 +585,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
             # Get the current document info
             old_versions = []
             new_versions = []
-            documents_info = await self.adocuments_info(
-                document_ids=ids
-            )
+            documents_info = await self.adocuments_info(document_ids=ids)
             documents_info_modified = []
-            print(' document_infos before  = ', documents_info)
+            print(" document_infos before  = ", documents_info)
             if len(documents_info) != len(files):
                 raise HTTPException(
                     status_code=404,
@@ -606,12 +610,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
                 document_info.size_in_bytes = files[it].size
                 document_info.updated_at = datetime.now()
-                print('document_info.metadata = ', document_info.metadata)
-                document_info.metadata['title'] = files[it].filename.split(os.path.sep)[-1]
+                print("document_info.metadata = ", document_info.metadata)
+                document_info.metadata["title"] = files[it].filename.split(
+                    os.path.sep
+                )[-1]
                 documents_info_modified.append(document_info)
-                
 
-            print(' document_infos after  = ', documents_info_modified)
+            print(" document_infos after  = ", documents_info_modified)
             # print(' ids = ', ids)
             # # Update files with the new version, skipping document info update
             await self.aingest_files(
@@ -628,7 +633,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     ["document_id", "version"], [str(id), old_version]
                 )
 
-            self.providers.vector_db.upsert_documents_info(documents_info_modified)
+            self.providers.vector_db.upsert_documents_info(
+                documents_info_modified
+            )
 
             return {"results": "Files updated successfully."}
         except Exception as e:
@@ -1013,12 +1020,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
         return {"results": aggregated_logs}
 
-
-    async def logs_app(self, log_type_filter: Optional[str] = Query(None), max_runs_requested: int = Query(100)):
+    async def logs_app(
+        self,
+        log_type_filter: Optional[str] = Query(None),
+        max_runs_requested: int = Query(100),
+    ):
         try:
-            return await self.alogs(
-                log_type_filter, max_runs_requested
-            )
+            return await self.alogs(log_type_filter, max_runs_requested)
         except Exception as e:
             logger.error(f":logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
@@ -1050,12 +1058,16 @@ class R2RApp(metaclass=AsyncSyncMeta):
             [str(ele) for ele in user_ids]
         )
 
-    async def users_stats_app(self, user_ids: Optional[list[uuid.UUID]] = Query(None)):
+    async def users_stats_app(
+        self, user_ids: Optional[list[uuid.UUID]] = Query(None)
+    ):
         try:
             users_stats = await self.ausers_stats(user_ids)
             return {"results": users_stats}
         except Exception as e:
-            logger.error(f"users_stats_app(user_ids={user_ids}) - \n\n{str(e)})")
+            logger.error(
+                f"users_stats_app(user_ids={user_ids}) - \n\n{str(e)})"
+            )
             raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
@@ -1067,13 +1079,18 @@ class R2RApp(metaclass=AsyncSyncMeta):
         **kwargs: Any,
     ):
         return self.providers.vector_db.get_documents_info(
-            filter_document_ids=[str(ele) for ele in document_ids] if document_ids else None,
-            filter_user_ids=[str(ele) for ele in user_ids] if user_ids else None,
+            filter_document_ids=[str(ele) for ele in document_ids]
+            if document_ids
+            else None,
+            filter_user_ids=[str(ele) for ele in user_ids]
+            if user_ids
+            else None,
         )
 
-    async def documents_info_app(self,     
+    async def documents_info_app(
+        self,
         document_ids: Optional[list[str]] = Query(None),
-        user_ids: Optional[list[str]] = Query(None)
+        user_ids: Optional[list[str]] = Query(None),
     ):
         try:
             documents_info = await self.adocuments_info(
