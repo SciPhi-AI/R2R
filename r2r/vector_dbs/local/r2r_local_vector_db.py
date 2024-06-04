@@ -1,3 +1,4 @@
+import uuid
 import json
 import logging
 import os
@@ -5,10 +6,12 @@ import sqlite3
 from typing import Optional, Union
 
 from r2r.core import (
+    DocumentInfo,
     SearchResult,
     VectorDBConfig,
     VectorDBProvider,
     VectorEntry,
+    UserStats
 )
 
 logger = logging.getLogger(__name__)
@@ -216,34 +219,24 @@ class R2RLocalVectorDB(VectorDBProvider):
         conn.close()
         return [json.loads(r) for r in results]
 
-    def upsert_document_info(self, document_info: dict) -> None:
+    def upsert_document_info(self, document_info: DocumentInfo) -> None:
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
-        # Convert UUID to db-friendly string
-        document_info["document_id"] = str(document_info["document_id"])
-        metadata = document_info.pop("metadata", None)
-        if metadata is None:
-            metadata = {}
-        else:
-            metadata = json.loads(metadata)
-        document_info["user_id"] = metadata.pop("user_id", "")
-        document_info["title"] = metadata.pop("title", "")
-        # Convert remaining metadata to JSON
-        document_info["metadata"] = json.dumps(metadata)
+        db_entry = document_info.convert_to_db_entry()
 
         cursor.execute(
             f"""
-            INSERT INTO document_info_{self.config.collection_name} (document_id, title, user_id, version, size_in_bytes, metadata)
-            VALUES (:document_id, :title, :user_id, :version, :size_in_bytes, :metadata)
+            INSERT INTO document_info_{self.config.collection_name} (document_id, title, user_id, version, size_in_bytes, metadata, created_at, updated_at)
+            VALUES (:document_id, :title, :user_id, :version, :size_in_bytes, :metadata, :created_at, :updated_at)
             ON CONFLICT(document_id) DO UPDATE SET
                 title = EXCLUDED.title,
                 user_id = EXCLUDED.user_id,
                 version = EXCLUDED.version,
-                updated_at = DATETIME('now'),
+                updated_at = EXCLUDED.updated_at,
                 size_in_bytes = EXCLUDED.size_in_bytes,
                 metadata = EXCLUDED.metadata;
-        """,
-            document_info,
+            """,
+            db_entry
         )
         conn.commit()
         conn.close()
@@ -260,9 +253,7 @@ class R2RLocalVectorDB(VectorDBProvider):
         conn.commit()
         conn.close()
 
-    def get_documents_info(
-        self, document_id: Optional[str] = None, user_id: Optional[str] = None
-    ):
+    def get_documents_info(self, document_id: Optional[str] = None, user_id: Optional[str] = None):
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
         query = f"""
@@ -280,20 +271,51 @@ class R2RLocalVectorDB(VectorDBProvider):
 
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
-        print('query = ', query)
         cursor.execute(query, params)
         results = cursor.fetchall()
         conn.close()
+
+        document_infos = []
+        for row in results:
+            document_info = DocumentInfo(
+                document_id=uuid.UUID(row[0]),
+                title=row[1],
+                user_id=uuid.UUID(row[2]),
+                version=row[3],
+                size_in_bytes=row[4],
+                created_at=row[5],
+                updated_at=row[6],
+                metadata=json.loads(row[7])
+            )
+            document_infos.append(document_info)
+
+        return document_infos
+
+    def get_users_stats(self, user_ids: Optional[list[uuid.UUID]] = None):
+        user_ids_condition = ""
+        params = []
+        if user_ids:
+            user_ids_condition = "WHERE user_id IN (" + ",".join("?" for _ in user_ids) + ")"
+            params = user_ids
+
+        query = f"""
+            SELECT user_id, COUNT(document_id) AS num_files, SUM(size_in_bytes) AS total_size, GROUP_CONCAT(document_id) AS document_ids
+            FROM document_info_{self.config.collection_name}
+            {user_ids_condition}
+            GROUP BY user_id
+        """
+
+        conn = self._get_conn()
+        cursor = self._get_cursor(conn)
+        cursor.execute(query, params)
+        results = cursor.fetchall()
+        conn.close()
+
         return [
-            {
-                "document_id": row[0],
-                "title": row[1],
-                "user_id": row[2],
-                "version": row[3],
-                "size_in_bytes": row[4],
-                "created_at": row[5],
-                "updated_at": row[6],
-                "metadata": row[7],
-            }
-            for row in results
+            UserStats(
+                user_id=uuid.UUID(row[0]),
+                num_files=row[1],
+                total_size=row[2],
+                document_ids=[uuid.UUID(doc_id) for doc_id in row[3].split(',')]
+            ) for row in results
         ]

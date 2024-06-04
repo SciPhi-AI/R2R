@@ -104,3 +104,7 @@ class VectorDBProvider(Provider, ABC):
     @abstractmethod
     def delete_document_info(self, document_id: str) -> dict:
         pass
+
+    @abstractmethod
+    def get_users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
+        pass

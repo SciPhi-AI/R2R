@@ -1,5 +1,7 @@
 """Abstractions for documents and their extractions."""
 
+import json
+from datetime import datetime
 import uuid
 from enum import Enum
 from typing import Union
@@ -38,7 +40,32 @@ class Document(BaseModel):
     data: DataType
     metadata: dict
 
+class DocumentInfo(BaseModel):
+    """Base class for document information handling."""
+    document_id: uuid.UUID
+    version: str
+    size_in_bytes: int
+    metadata: dict
+    created_at: datetime = None
+    updated_at: datetime = None
 
+    def convert_to_db_entry(self):
+        """Prepare the document info for database entry, extracting certain fields from metadata."""
+        # Extract user_id and title from metadata if present
+        user_id = self.metadata.pop("user_id", "")
+        title = self.metadata.pop("title", "")
+
+        return {
+            "document_id": str(self.document_id),
+            "title": title,
+            "user_id": user_id,
+            "version": self.version,
+            "size_in_bytes": self.size_in_bytes,
+            "metadata": json.dumps(self.metadata),
+            "created_at": self.created_at if self.created_at else datetime.now(),
+            "updated_at": self.updated_at if self.updated_at else datetime.now(),
+        }
+    
 class ExtractionType(Enum):
     """Types of extractions that can be performed."""
 

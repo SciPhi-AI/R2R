@@ -2,11 +2,14 @@ from .abstractions.document import (
     DataType,
     Document,
     DocumentType,
+    DocumentInfo,
     Extraction,
     ExtractionType,
     Fragment,
     FragmentType,
 )
+from .abstractions.user import UserStats
+
 from .abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
 from .abstractions.prompt import Prompt
 from .abstractions.search import SearchRequest, SearchResult
@@ -90,10 +93,12 @@ __all__ = [
     "DataType",
     "DocumentType",
     "Document",
+    "DocumentInfo",
     "Extraction",
     "ExtractionType",
     "Fragment",
     "FragmentType",
+    "UserStats",
     # Parsers
     "AudioParser",
     "AsyncParser",

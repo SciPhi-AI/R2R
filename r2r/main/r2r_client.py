@@ -1,5 +1,3 @@
-"""Module for the R2RClient class."""
-
 import asyncio
 import json
 import uuid
@@ -20,7 +18,6 @@ def default_serializer(obj):
     if isinstance(obj, DocumentType):
         return obj.value
     if isinstance(obj, bytes):
-        # return base64.b64encode(obj).decode('utf-8')
         raise TypeError("Bytes serialization is not yet supported.")
     raise TypeError(f"Type {type(obj)} not serializable.")
 
@@ -58,7 +55,6 @@ class R2RClient:
             data=serialized_data,
             headers={"Content-Type": "application/json"},
         )
-
         response.raise_for_status()
         return response.json()
 
@@ -242,44 +238,31 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
-    def get_user_ids(self) -> dict:
-        url = f"{self.base_url}/get_user_ids"
+    def logs(self, log_type_filter: Optional[str] = None) -> dict:
+        url = f"{self.base_url}/logs"
+        params = {"log_type_filter": log_type_filter}
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+
+    def app_settings(self) -> dict:
+        url = f"{self.base_url}/app_settings"
         response = requests.get(url)
         response.raise_for_status()
         return response.json()
 
-    def get_user_documents_metadata(self, user_id: str) -> dict:
-        url = f"{self.base_url}/get_user_documents_metadata"
-        data = {"user_id": user_id}
-        response = requests.post(url, json=data)
-        response.raise_for_status()
-        return response.json()
-
-    def get_document_data(self, document_id: str) -> dict:
-        url = f"{self.base_url}/get_document_data"
-        data = {"document_id": document_id}
-        response = requests.post(url, json=data)
-        response.raise_for_status()
-        return response.json()
-
-    def get_logs(self, log_type_filter: Optional[str] = None) -> dict:
-        url = f"{self.base_url}/get_logs"
-        data = {"log_type_filter": log_type_filter}
-        response = requests.post(url, json=data)
-        response.raise_for_status()
-        return response.json()
-
-    def get_app_data(self) -> dict:
-        url = f"{self.base_url}/get_app_data"
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.json()
-
-    def get_documents_info(
+    def documents_info(
         self, document_id: Optional[str] = None, user_id: Optional[str] = None
     ) -> dict:
-        url = f"{self.base_url}/get_documents_info"
-        data = {"document_id": document_id, "user_id": user_id}
-        response = requests.post(url, json=data)
+        url = f"{self.base_url}/documents_info"
+        params = {"document_id": document_id, "user_id": user_id}
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+
+    def user_stats(self, user_ids: Optional[list[str]] = None) -> dict:
+        url = f"{self.base_url}/user_stats"
+        params = {"user_ids": json.dumps(user_ids) if user_ids else None}
+        response = requests.get(url, params=params)
         response.raise_for_status()
         return response.json()
