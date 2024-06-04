@@ -53,6 +53,6 @@
   },
   "vector_database": {
     "provider": "pgvector",
-    "collection_name": "demo_vecs3"
+    "collection_name": "demo_vecs33334"
   }
 }

@@ -59,7 +59,7 @@ Each ingested document derives a unique `document_id` from the input file path. 
 To verify the successful ingestion of the demo documents, fetch the metadata for the uploaded documents associated with the demo userId:
 
 ```bash
-poetry run python -m r2r.examples.demo documents_info
+python -m r2r.examples.demo documents_info
 ```
 **Demo Output:**
 
@@ -77,7 +77,7 @@ poetry run python -m r2r.examples.demo documents_info
 ```
 
 ```bash
-poetry run python -m r2r.examples.demo users_stats
+python -m r2r.examples.demo users_stats
 ```
 
 
@@ -190,7 +190,7 @@ Effective document management is crucial for maintaining a robust and efficient 
 To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the associated document ID with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
 
 ```bash
-poetry run python -m r2r.examples.demo delete --keys="['document_id']" --values="['c9bdbac7-0ea3-5c9e-b590-018bd09b127b']"
+python -m r2r.examples.demo delete --keys="['document_id']" --values="['c9bdbac7-0ea3-5c9e-b590-018bd09b127b']"
 ```
 By default the delete method will perform an AND operation over all given metadata keys and values.
 

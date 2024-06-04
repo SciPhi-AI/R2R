@@ -238,7 +238,7 @@ class PGVectorDB(VectorDBProvider):
         for document_info in documents_info:
             db_entry = document_info.convert_to_db_entry()
             query = text(
-                """
+                f"""
                 INSERT INTO document_info_{self.config.collection_name} (document_id, title, user_id, version, created_at, updated_at, size_in_bytes, metadata)
                 VALUES (:document_id, :title, :user_id, :version, :created_at, :updated_at, :size_in_bytes, :metadata)
                 ON CONFLICT (document_id) DO UPDATE SET
@@ -249,7 +249,7 @@ class PGVectorDB(VectorDBProvider):
                     size_in_bytes = EXCLUDED.size_in_bytes,
                     metadata = EXCLUDED.metadata;
             """
-            ).format(self.config.collection_name)
+            )
         with self.vx.Session() as sess:
             sess.execute(query, db_entry)
             sess.commit()
@@ -315,14 +315,14 @@ class PGVectorDB(VectorDBProvider):
             results = sess.execute(text(query), params).fetchall()
             return [
                 DocumentInfo(
-                    document_id=uuid.UUID(row[0]),
+                    document_id=row[0],
                     title=row[1],
-                    user_id=uuid.UUID(row[2]),
+                    user_id=row[2],
                     version=row[3],
                     size_in_bytes=row[4],
                     created_at=row[5],
                     updated_at=row[6],
-                    metadata=json.loads(row[7]),
+                    metadata=row[7],
                 )
                 for row in results
             ]

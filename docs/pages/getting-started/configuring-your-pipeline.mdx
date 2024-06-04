@@ -55,7 +55,7 @@ You can serve the [R2R Demo](/getting-started/r2r-demo) using local embeddings w
 
 # Serve the demo with the custom user settings
 export WORKDIR=YOUR_R2R_DIRECTORY
-poetry run python -m r2r.examples.demo --config_path=$WORKDIR/r2r/examples/data/example_rerank_config.json serve
+python -m r2r.examples.demo --config_path=$WORKDIR/r2r/examples/data/example_rerank_config.json serve
 ```
 
 ## Language Model Provider
@@ -78,7 +78,7 @@ For more information, refer to [LLM Providers](/providers/llms).
 Any LLM supported by LiteLLM is immediately supported at runtime. For instance, to run with a local LLM, you may serve via Ollama and then pass the served model directly as a generation config JSON payload. See the example below:
 
 ```bash
-poetry run python -m r2r.examples.demo rag --rag_generation_config='{"model":"ollama/llama2"}' --query="Who was Aristotle?"
+python -m r2r.examples.demo rag --rag_generation_config='{"model":"ollama/llama2"}' --query="Who was Aristotle?"
 ```
 
 ## Logging Provider
@@ -122,7 +122,7 @@ export POSTGRES_DBNAME=postgres
 
 # Serve the demo with the custom user settings
 export WORKDIR=YOUR_R2R_DIRECTORY
-poetry run python -m r2r.examples.demo --config_path=$WORKDIR/r2r/examples/data/example_postgres_logger_config.json serve
+python -m r2r.examples.demo --config_path=$WORKDIR/r2r/examples/data/example_postgres_logger_config.json serve
 ```
 
 ## Evaluation Provider
