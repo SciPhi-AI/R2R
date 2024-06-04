@@ -26,6 +26,7 @@ from r2r.core import (
     increment_version,
     manage_run,
     to_async_generator,
+    DocumentInfo,
 )
 from r2r.pipes import R2REvalPipe
 
@@ -212,6 +213,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             path="/analytics", endpoint=self.analytics_app, methods=["POST"]
         )
 
+<<<<<<< HEAD
         # Document & User Management
         self.app.add_api_route(
             path="/users_stats",
@@ -265,6 +267,17 @@ class R2RApp(metaclass=AsyncSyncMeta):
             path="/get_open_api_endpoint",
             endpoint=self.get_open_api_endpoint,
 >>>>>>> 69ade2e (checkin work)
+=======
+        # Other
+        self.app.add_api_route(
+            path="/app_settings",
+            endpoint=self.app_settings_app,
+            methods=["GET"],
+        )
+        self.app.add_api_route(
+            path="/open_api_spec",
+            endpoint=self.openapi_spec_app,
+>>>>>>> 307f4f8 (add user stats)
             methods=["GET"],
         )
 
@@ -354,7 +367,18 @@ class R2RApp(metaclass=AsyncSyncMeta):
             old_versions.append(current_version)
             new_versions.append(increment_version(current_version))
 
+<<<<<<< HEAD
         await self.aingest_documents(documents, versions=new_versions)
+=======
+        try:
+            old_versions = []
+            new_versions = []
+            for doc in documents:
+                document_data = await self.adocument_data(doc.id)
+                current_version = document_data["results"][0]["version"]
+                old_versions.append(current_version)
+                new_versions.append(increment_version(current_version))
+>>>>>>> 307f4f8 (add user stats)
 
         # Delete the old version
         for doc, old_version in zip(documents, old_versions):
@@ -472,6 +496,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         user_ids=user_id,
                     )
                 )
+<<<<<<< HEAD
                 # Upsert document info
 <<<<<<< HEAD
                 document_infos.append(
@@ -490,19 +515,32 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
 =======
                 document_info = {
+=======
+                logger.info(f"Document created: {document_id}")
+
+                metadata = document_metadata.copy()
+                metadata['title'] = metadata.get("title", None) or file.filename
+                version = versions[iteration] if versions else "v0"
+                now = datetime.now()
+                # Upsert document info
+                document_infos.append(DocumentInfo(**{
+>>>>>>> 307f4f8 (add user stats)
                     "document_id": document_id,
-                    "title": file.filename,
-                    "user_id": metadata.get("user_id", ""),
-                    "version": versions[iteration] if versions else "1.0",
-                    "created_at": datetime.now(),  # Use the latest timestamp
-                    "updated_at": datetime.now(),  # Use the latest timestamp
+                    "version": version,
                     "size_in_bytes": len(file_content),
+<<<<<<< HEAD
                     "metadata": json.dumps(
                         metadata
                     ),  # Include the remaining metadata
                 }
                 document_infos.append(document_info)
 >>>>>>> 69ade2e (checkin work)
+=======
+                    "metadata": metadata,
+                    "created_at": now,
+                    "updated_at": now
+                }))
+>>>>>>> 307f4f8 (add user stats)
 
             # Run the pipeline asynchronously
             await self.ingestion_pipeline.run(
@@ -635,6 +673,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             # Get the current document info
             old_versions = []
             new_versions = []
+<<<<<<< HEAD
             documents_info = await self.adocuments_info(document_ids=ids)
             documents_info_modified = []
             if len(documents_info) != len(files):
@@ -648,6 +687,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         status_code=404,
                         detail=f"Document with id {id} not found.",
                     )
+=======
+            for id in ids:
+                document_data = await self.adocument_data(id)
+                current_version = document_data["results"][0]["version"]
+                old_versions.append(current_version)
+                new_versions.append(increment_version(current_version))
+>>>>>>> 307f4f8 (add user stats)
 
                 current_version = document_info.version
                 old_versions.append(current_version)
@@ -1106,6 +1152,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
         return {"results": aggregated_logs}
 
+<<<<<<< HEAD
     async def logs_app(
         self,
         log_type_filter: Optional[str] = Query(None),
@@ -1113,6 +1160,17 @@ class R2RApp(metaclass=AsyncSyncMeta):
     ):
         try:
             return await self.alogs(log_type_filter, max_runs_requested)
+=======
+    class LogsRequest(BaseModel):
+        log_type_filter: Optional[str] = None
+        max_runs_requested: int = 100
+
+    async def logs(self, request: LogsRequest):
+        try:
+            return await self.alogs(
+                request.log_type_filter, request.max_runs_requested
+            )
+>>>>>>> 307f4f8 (add user stats)
         except Exception as e:
             logger.error(f":logs: [Error](error={str(e)})")
             raise HTTPException(status_code=500, detail=str(e))
@@ -1229,6 +1287,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 },
 =======
     async def aget_app_data(self, *args: Any, **kwargs: Any):
+=======
+    async def aapp_settings(self, *args: Any, **kwargs: Any):
+>>>>>>> 307f4f8 (add user stats)
         try:
             # config_data = self.config.app  # Assuming this holds your config.json data
             prompts = self.providers.prompt.get_all_prompts()
@@ -1246,12 +1307,21 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def app_settings_app(self):
         """Return the config.json and all prompts."""
         try:
+<<<<<<< HEAD
             return await self.aapp_settings()
+=======
+<<<<<<< HEAD
+            return await self.asettings()
+=======
+            return await self.aapp_settings()
+>>>>>>> 307f4f8 (add user stats)
+>>>>>>> 73f9cf1 (add user stats)
         except Exception as e:
             logger.error(f"app_settings_app() - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
+<<<<<<< HEAD
 <<<<<<< HEAD
     async def ausers_stats(self, user_ids: Optional[list[uuid.UUID]] = None):
         return self.providers.vector_db.get_users_stats(
@@ -1269,6 +1339,24 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 f"users_stats_app(user_ids={user_ids}) - \n\n{str(e)})"
 =======
     async def aget_documents_info(
+=======
+    async def ausers_stats(self, user_ids: Optional[list[uuid.UUID]] = None):
+        return self.providers.vector_db.get_users_stats(user_ids)
+    
+    class UserStatsRequest(BaseModel):
+        user_ids: Optional[list[uuid.UUID]] = None
+
+    async def user_stats_app(self, request: UserStatsRequest):
+        try:
+            user_stats = await self.users_stats(request.user_ids)
+            return {"results": user_stats}
+        except Exception as e:
+            logger.error(f"get_user_stats() - \n\n{str(e)})")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @syncable
+    async def adocuments_info(
+>>>>>>> 307f4f8 (add user stats)
         self,
         document_id: Optional[str] = None,
         user_id: Optional[str] = None,
@@ -1283,9 +1371,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
         document_id: Optional[str] = None
         user_id: Optional[str] = None
 
-    async def get_documents_info_app(self, request: DocumentInfoRequest):
+    async def documents_info_app(self, request: DocumentInfoRequest):
         try:
-            documents_info = await self.aget_documents_info(
+            documents_info = await self.adocuments_info(
                 document_id=request.document_id, user_id=request.user_id
             )
             print('documents_info = ', documents_info)
@@ -1297,6 +1385,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             )
             raise HTTPException(status_code=500, detail=str(e)) from e
 
+<<<<<<< HEAD
     @syncable
     async def adocuments_info(
         self,
@@ -1330,6 +1419,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
             )
             raise HTTPException(status_code=500, detail=str(e)) from e
 
+=======
+>>>>>>> 307f4f8 (add user stats)
     def openapi_spec_app(self):
         from fastapi.openapi.utils import get_openapi
 

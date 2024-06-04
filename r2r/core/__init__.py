@@ -3,11 +3,14 @@ from .abstractions.document import (
     Document,
     DocumentInfo,
     DocumentType,
+    DocumentInfo,
     Extraction,
     ExtractionType,
     Fragment,
     FragmentType,
 )
+from .abstractions.user import UserStats
+
 from .abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
 from .abstractions.prompt import Prompt
 from .abstractions.search import SearchRequest, SearchResult

@@ -1,3 +1,4 @@
+import uuid
 import json
 import logging
 import os
@@ -12,6 +13,7 @@ from r2r.core import (
     VectorDBConfig,
     VectorDBProvider,
     VectorEntry,
+    UserStats
 )
 
 logger = logging.getLogger(__name__)
