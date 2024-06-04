@@ -82,6 +82,7 @@ class Client:
                         self._create_schema(sess)
                         self._create_extension(sess)
                         self._get_vector_version(sess)
+                        self._create_document_info_table(sess)
                 return
             except Exception as e:
                 logger.warning(
@@ -94,6 +95,21 @@ class Client:
         error_message = f"Failed to initialize database after {self.max_retries} retries with error: {str(error)}"
         logger.error(error_message)
         raise RuntimeError(error_message)
+    
+    def _create_document_info_table(self, sess):
+        query = """
+        CREATE TABLE IF NOT EXISTS document_info (
+            document_id UUID PRIMARY KEY,
+            title TEXT,
+            user_id UUID,
+            version TEXT,
+            size_in_bytes INT,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
+            metadata JSONB
+        );
+        """
+        sess.execute(text(query))
 
     def _create_schema(self, sess):
         try:

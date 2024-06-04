@@ -190,17 +190,6 @@ af8-3e63-4cb9-a4d6-a855f36376c3', 'query': 'Who was Aristotle?'}}
 
 The quality of search results has dramatically decreased now that the Aristotle-specific document has been fully erased. This highlights the importance of the ingested data quality on the RAG results.
 
-### Delete a Specified User's Documents
-
-To delete all documents associated with a given user, run the delete command on the `user_id`.
-
-```bash
-# run the following command with care, as it will erase all ingested user data
-# python -m r2r.examples.demo delete --keys="['user_id']" --values="['063edaf8-3e63-4cb9-a4d6-a855f36376c3']"
-```
-
-Afterwards, we may confirm complete user documentation through the `get_user_documents_metadata` functionality.
-
 
 ### Delete a Specified User's Documents
 

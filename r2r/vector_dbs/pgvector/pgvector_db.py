@@ -1,3 +1,6 @@
+import json
+from datetime import datetime
+from sqlalchemy import text
 import logging
 import os
 from typing import Optional, Union
@@ -153,6 +156,7 @@ class PGVectorDB(VectorDBProvider):
     def create_index(self, index_type, column_name, index_options):
         pass
 
+
     def delete_by_metadata(
         self, metadata_fields: str, metadata_values: Union[bool, int, str]
     ) -> None:
@@ -162,10 +166,20 @@ class PGVectorDB(VectorDBProvider):
                 "Please call `initialize_collection` before attempting to run `delete_by_metadata`."
             )
         self.collection.delete(
-            filters={
-                k: {"$eq": v} for k, v in zip(metadata_fields, metadata_values)
-            }
+            filters={k: {"$eq": v} for k, v in zip(metadata_fields, metadata_values)}
         )
+        self.delete_document_info_by_metadata(metadata_fields, metadata_values)
+
+    def delete_document_info_by_metadata(
+        self, metadata_fields: str, metadata_values: Union[bool, int, str]
+    ) -> None:
+        filters = {k: v for k, v in zip(metadata_fields, metadata_values)}
+        query = text(f"""
+        DELETE FROM document_info WHERE {" AND ".join([f"{k} = :{k}" for k in filters.keys()])};
+        """)
+        with self.vx.Session() as sess:
+            with sess.begin():
+                sess.execute(query, filters)
 
     def get_metadatas(
         self,
@@ -193,3 +207,41 @@ class PGVectorDB(VectorDBProvider):
         return [
             results[key] for key in results if key != tuple(metadata_fields)
         ]
+    
+    def upsert_document_info(self, document_info: dict) -> None:
+        # Extract and remove the fields from the metadata
+        metadata = document_info.pop("metadata", None)
+        if metadata is None:
+            metadata = {}
+        else:
+            metadata = json.loads(metadata)
+        document_info["user_id"] = metadata.pop("user_id", "")
+        document_info["title"] = metadata.pop("title", "")
+        document_info["created_at"] = datetime.now()  # Use the latest timestamp
+        document_info["updated_at"] = datetime.now()  # Use the latest timestamp
+
+        # Convert remaining metadata to JSON
+        document_info["metadata"] = json.dumps(metadata)
+
+        query = text("""
+        INSERT INTO document_info (document_id, title, user_id, version, created_at, updated_at, size_in_bytes, metadata)
+        VALUES (:document_id, :title, :user_id, :version, :created_at, :updated_at, :size_in_bytes, :metadata)
+        ON CONFLICT (document_id) DO UPDATE SET
+        title = EXCLUDED.title,
+        user_id = EXCLUDED.user_id,
+        version = EXCLUDED.version,
+        updated_at = EXCLUDED.updated_at,
+        size_in_bytes = EXCLUDED.size_in_bytes,
+        metadata = EXCLUDED.metadata;
+        """)
+        with self.vx.Session() as sess:
+            with sess.begin():
+                sess.execute(query, document_info)
+
+    def delete_document_info(self, document_id: str) -> None:
+        query = text("""
+        DELETE FROM document_info WHERE document_id = :document_id;
+        """)
+        with self.vx.Session() as sess:
+            with sess.begin():
+                sess.execute(query, {"document_id": document_id})
