@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import Optional, Union
+from uuid import UUID
 
 from r2r.core import (
     VectorDBConfig,
@@ -15,10 +16,14 @@ logger = logging.getLogger(__name__)
 
 GET_ALL_LIMIT = 1000
 # Set up test with:
-# os.environ["MILVUS_URI"] = "./milvus_lite_demo1.db"
+os.environ["MILVUS_URI"] = "./milvus_lite_demo1.db"
+os.environ["OPENAI_API_KEY"] = (
+    "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"
+)
 
 # Local Docker pass all tests, but lite version fail on get_metadatas() without filters
 # Fix this issue soon
+
 
 class MilvusVectorDB(VectorDBProvider):
     def __init__(self, config: VectorDBConfig) -> None:
@@ -103,7 +108,7 @@ class MilvusVectorDB(VectorDBProvider):
                 collection_name=self.config.collection_name,
                 schema=schema,
                 index_params=index_params,
-                consistency_level=0
+                consistency_level=0,
             )
 
         except Exception as e:
@@ -139,9 +144,11 @@ class MilvusVectorDB(VectorDBProvider):
             "id": str(entry.id),
             "vector": entry.vector.data,
         }
-
         for key, value in entry.metadata.items():
-            data[key] = value
+            if type(value) == UUID:
+                data[key] = str(value)
+            else:
+                data[key] = value
 
         try:
             # Can change to insert if upsert not working
@@ -209,14 +216,16 @@ class MilvusVectorDB(VectorDBProvider):
         pass
 
     def delete_by_metadata(
-        self, metadata_field: str, metadata_value: Union[bool, int, str]
+        self,
+        metadata_fields: list[str],
+        metadata_values: list[Union[bool, int, str]],
     ) -> None:
         """
         Delete entries from the collection based on a filtered condition.
 
         Parameters:
-            metadata_field (str): The key to filter on.
-            metadata_value (Union[bool, int, str]): The value to filter against.
+            metadata_fields (list[str]): The key to filter on.
+            metadata_values (list[Union[bool, int, str]]): The value to filter against.
 
         Raises:
             CollectionNotInitializedError: If the collection is not initialized before attempting deletion.
@@ -225,6 +234,7 @@ class MilvusVectorDB(VectorDBProvider):
         Returns:
             None
         """
+        super().delete_by_metadata(metadata_fields, metadata_values)
         if not self.client.has_collection(
             collection_name=self.config.collection_name
         ):
@@ -232,11 +242,17 @@ class MilvusVectorDB(VectorDBProvider):
                 "Please call `initialize_collection` before attempting to run `filtered_deletion`."
             )
 
+        filter_expressions = []
+        for i in range(len(metadata_fields)):
+            filter = self.build_filter(metadata_fields[i], metadata_values[i])
+            filter_expressions.append(filter)
+
         try:
-            self.client.delete(
-                collection_name=self.config.collection_name,
-                filter=self.build_filter(metadata_field, metadata_value),
-            )
+            for i in range(len(filter_expressions)):
+                self.client.delete(
+                    collection_name=self.config.collection_name,
+                    filter=filter_expressions[i],
+                )
         except Exception as e:
             raise ValueError(
                 f"Error {e} occurs in deletion of key value pair {self.config.collection_name}."
@@ -273,7 +289,7 @@ class MilvusVectorDB(VectorDBProvider):
         if filter_field is not None and filter_value is not None:
             filter_expression = f'{filter_field} == "{filter_value}"'
         else:
-            filter_expression = ''
+            filter_expression = ""
 
         unique_values = []
         if not filter_expression:
@@ -282,7 +298,7 @@ class MilvusVectorDB(VectorDBProvider):
                 filter=filter_expression,
                 consistency_level=0,
                 output_fields=metadata_fields,
-                limit=GET_ALL_LIMIT
+                limit=GET_ALL_LIMIT,
             )
         else:
             results = self.client.query(
