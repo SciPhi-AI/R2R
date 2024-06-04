@@ -641,7 +641,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
                 t1 = time.time()
                 latency = f"{t1-t0:.2f}"
-                print(f"Search latency: {latency}")
 
                 await self.logging_connection.log(
                     log_id=run_id,
@@ -1108,7 +1107,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         if not run_ids:
             return {
                 "results": {
-                    "analytics_data": "No logs found.",
+                    "analytics_data": "No logs found.}",
                     "filtered_logs": {},
                 }
             }
@@ -1143,15 +1142,34 @@ class R2RApp(metaclass=AsyncSyncMeta):
         results = {"filtered_logs": filtered_logs}
 
         if analysis_types and analysis_types.analysis_types:
-            for filter_key, (
-                analysis_type,
-                extract_key,
+            for (
+                filter_key,
+                analysis_config,
             ) in analysis_types.analysis_types.items():
                 if filter_key in filtered_logs:
+                    analysis_type = analysis_config[0]
                     if analysis_type == "bar_chart":
+                        extract_key = analysis_config[1]
                         results[filter_key] = (
                             AnalysisTypes.generate_bar_chart_data(
                                 filtered_logs[filter_key], extract_key
+                            )
+                        )
+                    elif analysis_type == "basic_statistics":
+                        extract_key = analysis_config[1]
+                        results[filter_key] = (
+                            AnalysisTypes.calculate_basic_statistics(
+                                filtered_logs[filter_key], extract_key
+                            )
+                        )
+                    elif analysis_type == "percentile":
+                        extract_key = analysis_config[1]
+                        percentile = int(analysis_config[2])
+                        results[filter_key] = (
+                            AnalysisTypes.calculate_percentile(
+                                filtered_logs[filter_key],
+                                extract_key,
+                                percentile,
                             )
                         )
                     else:

@@ -1,9 +1,10 @@
+import contextlib
 import json
-import re
-from datetime import datetime
 import logging
+import statistics
 from collections import defaultdict
-from typing import List, Dict, Any, Callable, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
+
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -66,7 +67,7 @@ class LogAnalyticsConfig:
 
 
 class AnalysisTypes(BaseModel):
-    analysis_types: Optional[dict[str, tuple[str, str]]] = None
+    analysis_types: Optional[dict[str, tuple[str, ...]]] = None
 
     @staticmethod
     def generate_bar_chart_data(logs, key):
@@ -86,6 +87,80 @@ class AnalysisTypes(BaseModel):
             chart_data["datasets"].append({"label": key, "data": [count]})
 
         return chart_data
+
+    @staticmethod
+    def calculate_basic_statistics(logs, key):
+        values = []
+        for log in logs:
+            if log["key"] == "search_results":
+                print(f"v: {log['value']}")
+                results = json.loads(log["value"])
+                print(f"Results: {results}")
+                scores = [
+                    float(json.loads(result)["score"]) for result in results
+                ]
+                print(f"Scores: {scores}")
+                values.extend(scores)
+            else:
+                value = log.get("value")
+                if value is not None:
+                    with contextlib.suppress(ValueError):
+                        values.append(float(value))
+
+        print(f"Got values: {values}")
+        if not values:
+            return {
+                "mean": None,
+                "median": None,
+                "mode": None,
+                "std_dev": None,
+                "variance": None,
+            }
+
+        if len(values) == 1:
+            return {
+                "mean": values[0],
+                "median": values[0],
+                "mode": values[0],
+                "std_dev": 0,
+                "variance": 0,
+            }
+
+        mean = sum(values) / len(values)
+        median = statistics.median(values)
+        mode = (
+            statistics.mode(values)
+            if len(set(values)) != len(values)
+            else None
+        )
+        std_dev = statistics.stdev(values) if len(values) > 1 else 0
+        variance = statistics.variance(values) if len(values) > 1 else 0
+
+        return {
+            "mean": mean,
+            "median": median,
+            "mode": mode,
+            "std_dev": std_dev,
+            "variance": variance,
+        }
+
+    @staticmethod
+    def calculate_percentile(logs, key, percentile):
+        values = []
+        for log in logs:
+            if log["key"] == "search_results":
+                results = json.loads(log["value"])
+                scores = [
+                    float(json.loads(result)["score"]) for result in results
+                ]
+                values.extend(scores)
+
+        if not values:
+            return {"percentile": percentile, "value": None}
+
+        values.sort()
+        index = int((percentile / 100) * (len(values) - 1))
+        return {"percentile": percentile, "value": values[index]}
 
 
 class LogAnalytics:
