@@ -472,11 +472,11 @@ class R2RDemo:
             print(f"Time taken to get app data: {t1-t0:.2f} seconds")
             print(response)
 
-    def user_stats(self, user_ids: Optional[list[uuid.UUID]] = None):
+    def users_stats(self, user_ids: Optional[list[uuid.UUID]] = None):
         user_ids = user_ids or [self.user_id]
         if hasattr(self, "client"):
             t0 = time.time()
-            response = self.client.user_stats(user_ids)
+            response = self.client.users_stats(user_ids)
             t1 = time.time()
             print(f"Time taken to get user stats: {t1-t0:.2f} seconds")
             print(response)

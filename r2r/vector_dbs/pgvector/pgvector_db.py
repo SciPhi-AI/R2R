@@ -327,7 +327,7 @@ class PGVectorDB(VectorDBProvider):
                 for row in results
             ]
 
-    def get_users_stats(self, user_ids: Optional[list[uuid.UUID]] = None):
+    def get_users_stats(self, user_ids: Optional[list[str]] = None):
         user_ids_condition = ""
         params = {}
         if user_ids:

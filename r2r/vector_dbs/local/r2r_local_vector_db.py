@@ -310,7 +310,7 @@ class R2RLocalVectorDB(VectorDBProvider):
 
         return document_infos
 
-    def get_users_stats(self, user_ids: Optional[list[uuid.UUID]] = None):
+    def get_users_stats(self, user_ids: Optional[list[str]] = None):
         user_ids_condition = ""
         params = []
         if user_ids:

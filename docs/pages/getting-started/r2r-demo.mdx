@@ -77,7 +77,7 @@ poetry run python -m r2r.examples.demo documents_info
 ```
 
 ```bash
-poetry run python -m r2r.examples.demo user_stats
+poetry run python -m r2r.examples.demo users_stats
 ```
 
 
@@ -140,7 +140,6 @@ python -m r2r.examples.demo rag --query="What was Ubers profit in 2020?"
 
 ```plaintext
 ...
-Time taken to run RAG: 2.29 seconds
 {'results': [
     ChatCompletion(
         id='chatcmpl-9RCB5xUbDuI1f0vPw3RUO7BWQImBN', 
@@ -180,7 +179,6 @@ r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.js
 ...
 <search>["{\"id\":\"808c47c5-ebef-504a-a230-aa9ddcfbd87 .... </search>
 <completion>Lyft reported a net loss of $1,752,857,000 in 2020 according to [2]. Therefore, Lyft did not make a profit in 2020.</completion>                                                      
-Time taken to stream RAG response: 2.79 seconds
 ```
 
 ## Advanced - Document Management
@@ -205,11 +203,8 @@ python -m r2r.examples.demo search --query="Who was Aristotle?"
 **Demo Output:**
 
 ```plaintext
-Time taken to search: 1.10 seconds
-{'id': UUID('37993d2c-b61a-58b4-9a89-f167d59b8633'), 'score': 0.2662125334175588, 'metadata': {'document_id': '327f6110-edd1-5fe3-b6b3-49b55f1cbc28', 'extraction_id': '7293e1fc-d399-5bfe-a74a-967c2b2ce351', 'text': "completely as soon as it was discovered — that whatever the church thought\nof the heliocentric model, astronomers must have been convinced as\nsoon as Copernicus proposed it. Far, in fact, from it. Copernicus\npublished the heliocentric model in 1532, but it wasn't till the\nmid seventeenth century that the balance of scientific opinion\nshifted in its favor.\n[5]Few understand how feeble new ideas look when they first appear.\nSo if you want to have new ideas yourself, one of the most valuable", 'title': 'pg_essay_3.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'query': 'Who was Aristotle?'}}
-{'id': UUID('1669532f-8b2c-5eb0-b203-f0731490f8e9'), 'score': 0.2565397481515653, 'metadata': {'document_id': '327f6110-edd1-5fe3-b6b3-49b55f1cbc28', 'extraction_id': '7293e1fc-d399-5bfe-a74a-967c2b2ce351', 'text': "Structure of Scientific Revolutions, but I also recommend his\nCopernican Revolution, where you can see him at work developing the\nidea.[4]\nThis is one reason people with a touch of Asperger's may have\nan advantage in discovering new ideas. They're always flying on\ninstruments.[5]\nHall, Rupert. From Galileo to Newton. Collins, 1963. This\nbook is particularly good at getting into contemporaries' heads.Thanks to Trevor Blackwell, Patrick Collison, Suhail Doshi, Daniel", 'title': 'pg_essay_3.html', 'user_id': '063ed
-
-af8-3e63-4cb9-a4d6-a855f36376c3', 'query': 'Who was Aristotle?'}}
+{'id': UUID('37993d2c-b61a-58b4-9a89-f167d59b8633'), 'score': 0.2662125334175588, ...}
+{'id': UUID('1669532f-8b2c-5eb0-b203-f0731490f8e9'), 'score': 0.2565397481515653, ...}
 ...
 ```
 
@@ -233,7 +228,6 @@ Afterwards, we may confirm complete user documentation through the `get_user_doc
 
 ```bash
 ...
-Time taken to get user document data: 0.00 seconds
 {'results': []}
 ```
 
@@ -250,7 +244,6 @@ python -m r2r.examples.demo search --query="What is shown on the user screen?"
 **Demo Output:**
 
 ```plaintext
-Time taken to search: 1.13 seconds
 {'id': UUID('a2a6044b-3643-5c8b-99a2-19f3d5169cd4'), 'score': 0.4199612099317459, 'metadata': {'document_id': 'dd8ed784-4826-523b-9c24-93409cea93f7', 'extraction_id': 'f20b8ff5-a555-5caa-a996-98b58a9bcd16', 'text': '1. **Top Menu and Tabs:**\n   - At the very top of the window, the title bar of the VSCode application shows the project directory name `R2R-DEV-2`.\n   - Below the title bar, there are several tabs, indicating open files:\n     - `config.json`\n     - `dry_run.py`\n     - `test.pptx`\n     - `parsing.py` (active tab)\n     - `test.txt`\n     - `test.html`', 'title': 'screen_shot.png', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'image_type': 'png', 'query': 'What is shown on the user screen?'}}
 {'id': UUID('053db868-5acc-5e81-b68a-653aff566d9a'), 'score': 0.39689371815723873, 'metadata': {'document_id': 'dd8ed784-4826-523b-9c24-93409cea93f7', 'extraction_id': 'f20b8ff5-a555-5caa-a996-98b58a9bcd16', 'text': '2. **Sidebar (File Explorer):**\n   - On the left side, there is a vertical sidebar showing the file explorer with the structure of the project directory `R2R-DEV-2`.\n   - The file explorer tree expands to show various files and directories, including:\n     - `examples`\n     - `data`\n     - A file `test.txt`\n     - A file `uber_2021.pdf`\n     - A directory `servers` containing a file `__init__.py`\n     - A directory `integrations` containing various files including `llms`', 'title': 'screen_shot.png', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'image_type': 'png', 'query': 'What is shown on the user screen?'}}
 {'id': UUID('5c57cd4c-a7d2-5003-b59d-3637b545a32c'), 'score': 0.34990526831895197, 'metadata': {'document_id': '8d78f34d-f795-5c82-a90f-18b8cc3a883c', 'extraction_id': '8c11b793-b744-5f73-bb76-23cb45c36538', 'text': 'users with a contextual, intuitive interface, continually evolve features and functionality, and deliver safety andtrust.\nWe intend to continue to inv\nest in new platform offerings that we believe will further strengthen our platform and existing offerings.We\n believe  that  all  of  these  synergies  serve  the  customer  experience,  enabling  us  to  attract  new  platform  users  and  to  deepen  engagement  with  existingplatform', 'title': 'uber_2021.pdf', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'query': 'What is shown on the user screen?'}}
@@ -267,7 +260,6 @@ python -m r2r.examples.demo evaluate
 **Demo Output:**
 
 ```plaintext
-Time taken to evaluate: 2.42 seconds
 {'results': [{'query_context_relevancy': 0.5, 'answer_grounding': 1.0}]}
 ```
 
