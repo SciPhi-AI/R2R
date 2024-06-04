@@ -490,6 +490,22 @@ class R2RDemo:
             print(f"Time taken to get app data: {t1-t0:.2f} seconds")
             print(response)
 
+    def get_document_info(
+        self, document_id: Optional[str] = None, user_id: Optional[str] = None
+    ):
+        if hasattr(self, "client"):
+            t0 = time.time()
+            response = self.client.get_document_info(document_id, user_id)
+            t1 = time.time()
+            print(f"Time taken to get document info: {t1-t0:.2f} seconds")
+            print(response)
+        else:
+            t0 = time.time()
+            response = self.r2r.get_document_info(document_id, user_id)
+            t1 = time.time()
+            print(f"Time taken to get document info: {t1-t0:.2f} seconds")
+            print(response)
+
     def get_open_api_endpoint(self):
         if hasattr(self, "client"):
             print(

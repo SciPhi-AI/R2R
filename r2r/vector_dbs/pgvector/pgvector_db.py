@@ -221,12 +221,12 @@ class PGVectorDB(VectorDBProvider):
             metadata = json.loads(metadata)
         document_info["user_id"] = metadata.pop("user_id", "")
         document_info["title"] = metadata.pop("title", "")
-        document_info[
-            "created_at"
-        ] = datetime.now()  # Use the latest timestamp
-        document_info[
-            "updated_at"
-        ] = datetime.now()  # Use the latest timestamp
+        document_info["created_at"] = (
+            datetime.now()
+        )  # Use the latest timestamp
+        document_info["updated_at"] = (
+            datetime.now()
+        )  # Use the latest timestamp
 
         # Convert remaining metadata to JSON
         document_info["metadata"] = json.dumps(metadata)

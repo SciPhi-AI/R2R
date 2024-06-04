@@ -74,12 +74,16 @@ class R2RClient:
             for file in files
         ]
         data = {
-            "metadatas": None
-            if metadatas is None
-            else json.dumps(metadatas, default=default_serializer),
-            "ids": None
-            if ids is None
-            else json.dumps(ids, default=default_serializer),
+            "metadatas": (
+                None
+                if metadatas is None
+                else json.dumps(metadatas, default=default_serializer)
+            ),
+            "ids": (
+                None
+                if ids is None
+                else json.dumps(ids, default=default_serializer)
+            ),
         }
         response = requests.post(url, files=files_to_upload, data=data)
         response.raise_for_status()
@@ -109,9 +113,11 @@ class R2RClient:
             for file in files
         ]
         data = {
-            "metadatas": None
-            if metadatas is None
-            else json.dumps(metadatas, default=default_serializer),
+            "metadatas": (
+                None
+                if metadatas is None
+                else json.dumps(metadatas, default=default_serializer)
+            ),
             "ids": json.dumps(ids, default=default_serializer),
         }
         response = requests.post(url, files=files_to_upload, data=data)
@@ -154,13 +160,15 @@ class R2RClient:
                 url = f"{self.base_url}/rag"
                 data = {
                     "message": message,
-                    "search_filters": json.dumps(search_filters)
-                    if search_filters
-                    else None,
+                    "search_filters": (
+                        json.dumps(search_filters) if search_filters else None
+                    ),
                     "search_limit": search_limit,
-                    "rag_generation_config": json.dumps(rag_generation_config)
-                    if rag_generation_config
-                    else None,
+                    "rag_generation_config": (
+                        json.dumps(rag_generation_config)
+                        if rag_generation_config
+                        else None
+                    ),
                     "streaming": streaming,
                 }
 
@@ -180,13 +188,15 @@ class R2RClient:
         url = f"{self.base_url}/rag"
         data = {
             "message": message,
-            "search_filters": json.dumps(search_filters)
-            if search_filters
-            else None,
+            "search_filters": (
+                json.dumps(search_filters) if search_filters else None
+            ),
             "search_limit": search_limit,
-            "rag_generation_config": json.dumps(rag_generation_config)
-            if rag_generation_config
-            else None,
+            "rag_generation_config": (
+                json.dumps(rag_generation_config)
+                if rag_generation_config
+                else None
+            ),
             "streaming": True,
         }
         async with httpx.AsyncClient() as client:
@@ -262,5 +272,14 @@ class R2RClient:
     def get_app_data(self) -> dict:
         url = f"{self.base_url}/get_app_data"
         response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+
+    def get_document_info(
+        self, document_id: Optional[str] = None, user_id: Optional[str] = None
+    ) -> dict:
+        url = f"{self.base_url}/get_document_info"
+        data = {"document_id": document_id, "user_id": user_id}
+        response = requests.post(url, json=data)
         response.raise_for_status()
         return response.json()
