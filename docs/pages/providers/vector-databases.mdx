@@ -100,11 +100,11 @@ To configure a specific vector database provider, you need to set the appropriat
 
 - Set the following environment variables with the appropriate values:
   - Initialize via Milvus Lite(store data in local .db file):
-      - `MILVUS_URI`: Local '.db' file path
+      - `MILVUS_URI_KEY`: Local '.db' file path
   - Initialize via Docker:
-      - `MILVUS_URI`: Docker server host
+      - `MILVUS_URI_KEY`: Docker server host
   - Initialize via Zilliz Cloud:
-      - `MILVUS_URI`: Zilliz Cloud end point
+      - `MILVUS_URI_KEY`: Zilliz Cloud end point
       - `ZILLIZ_CLOUD_API_KEY`: Zilliz Cloud api key
 
 Make sure to update the `vector_database` section of the configuration file (`config.json`) with the desired provider and any additional provider-specific settings.

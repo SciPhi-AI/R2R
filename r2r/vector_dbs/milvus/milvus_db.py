@@ -16,10 +16,8 @@ logger = logging.getLogger(__name__)
 
 GET_ALL_LIMIT = 1000
 # Set up test with:
-os.environ["MILVUS_URI"] = "./milvus_lite_demo1.db"
-os.environ["OPENAI_API_KEY"] = (
-    "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"
-)
+# os.environ["MILVUS_URI_KEY"] = "./milvus_lite_demo1.db"
+# os.environ["OPENAI_API_KEY"] =
 
 # Local Docker pass all tests, but lite version fail on get_metadatas() without filters
 # Fix this issue soon
@@ -49,7 +47,7 @@ class MilvusVectorDB(VectorDBProvider):
 
         # set up milvus client information
         try:
-            uri = os.getenv("MILVUS_URI")
+            uri = os.getenv("MILVUS_URI_KEY")
             api_key = os.getenv("ZILLIZ_CLOUD_API_KEY")
 
             if not uri:
