@@ -22,7 +22,7 @@ configs_path = os.path.join(current_file_path, "..", "..", "..")
 
 CONFIG_OPTIONS = {
     "default": None,
-    "local_ollama": os.path.join(configs_path, "local_ollama.json"),
+    "local_ollama": os.path.join(current_file_path, "..", "configs", "local_ollama.json"),
 }
 
 class PipelineType(Enum):
