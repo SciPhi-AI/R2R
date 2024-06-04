@@ -322,8 +322,8 @@ class R2RClient:
     def users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
         url = f"{self.base_url}/users_stats"
         params = {}
-        if user_ids:
-            params = {"user_ids": user_ids}
-        response = requests.get(url, json=params)
+        if user_ids is not None:
+            params["user_ids"] = ",".join(user_ids)
+        response = requests.get(url, params=params)
         response.raise_for_status()
         return response.json()
