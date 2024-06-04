@@ -561,7 +561,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         *args: Any,
         **kwargs: Any,
     ):
-        print('files = ', files)
+        print("files = ", files)
         if len(files) == 0:
             raise HTTPException(
                 status_code=400, detail="No files provided for update."
