@@ -1,6 +1,6 @@
 ## R2R Demo
 
-The R2R demo offers a step-by-step walkthrough of the features provided by the R2R application. The application ships with a REST API exposing a Retrieval-Augmented Generation (RAG) pipeline and more. The demo demonstrates how to directly interface with the application logic to ingest a list of provided documents and demonstrates search, RAG, and more advanced functionality. The script at `r2r/examples/demo.py`, which powers the demo, can be configured and extended with sufficient developer familiarity.
+The R2R demo offers a step-by-step walkthrough of the features provided by the R2R application. The application ships with a REST API exposing a Retrieval-Augmented Generation (RAG) pipeline and more. The demo demonstrates how to directly interface with the application logic to ingest a list of provided documents and demonstrates search, RAG, and more advanced functionality. The script at `r2r/examples/demo.py`, which powers the demo, can be configured and extended for your specific use case.
 
 ![R2R App Architecture](./r2r_demo_architecture.png)
 
@@ -52,7 +52,7 @@ r2r.pipes.embedding_pipe - INFO - Fragmented the input document ids into counts 
 
 **Note**
 
-Each ingested document derives a unique `document_id` from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, the demo includes a default `user_id` in the document metadata to facilitate user-level document management.
+Each ingested document derives a unique `document_id` from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, the demo includes a `user_id` during the document creation process to facilitate user-level document management.
 
 ### Step 2: Document Info
 

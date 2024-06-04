@@ -249,8 +249,7 @@ class R2RClient:
         params = {}
         if log_type_filter:
             params["log_type_filter"] = log_type_filter
-        print("params = ", params)
-        response = requests.get(url, json=params)
+        response = requests.get(url, params=params)
         response.raise_for_status()
         return response.json()
 
@@ -268,18 +267,18 @@ class R2RClient:
         url = f"{self.base_url}/documents_info"
         params = {}
         if document_ids is not None:
-            params["document_ids"] = document_ids
+            params["document_ids"] = ",".join(document_ids)
         if user_ids is not None:
-            params["user_ids"] = user_ids
-        response = requests.get(url, json=params)  # json.dumps(params))
+            params["user_ids"] = ",".join(user_ids)
+        response = requests.get(url, params=params)
         response.raise_for_status()
         return response.json()
 
     def users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
         url = f"{self.base_url}/users_stats"
         params = {}
-        if user_ids:
-            params = {"user_ids": user_ids}
-        response = requests.get(url, json=params)
+        if user_ids is not None:
+            params["user_ids"] = ",".join(user_ids)
+        response = requests.get(url, params=params)
         response.raise_for_status()
         return response.json()

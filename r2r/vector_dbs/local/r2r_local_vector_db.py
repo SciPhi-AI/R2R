@@ -299,7 +299,7 @@ class R2RLocalVectorDB(VectorDBProvider):
             document_info = DocumentInfo(
                 document_id=uuid.UUID(row[0]),
                 title=row[1],
-                user_id=uuid.UUID(row[2]) if row[2] else None,
+                user_id=uuid.UUID(row[2]) if row[2] != "None" else None,
                 version=row[3],
                 size_in_bytes=row[4],
                 created_at=row[5],
