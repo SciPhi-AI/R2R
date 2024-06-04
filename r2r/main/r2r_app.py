@@ -134,7 +134,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
     - Retrieve user IDs
     - Retrieve user document data
     - Retrieve logs
-    - Retrieve analytics
     """
 
     def __init__(
@@ -414,16 +413,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         status_code=400, detail="File name not provided."
                     )
 
-                file_extension = file.filename.split(".")[-1].lower()
-                if file_extension.upper() not in DocumentType.__members__:
-                    logger.error(
-                        f"'{file_extension}' is not a valid DocumentType"
-                    )
-                    raise HTTPException(
-                        status_code=415,
-                        detail=f"'{file_extension}' is not a valid DocumentType.",
-                    )
-
                 file_content = await file.read()
                 logger.info(f"File read successfully: {file.filename}")
 
@@ -447,7 +436,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 documents.append(
                     Document(
                         id=document_id,
-                        type=DocumentType[file_extension.upper()],
+                        type=DocumentType(file.filename.split(".")[-1]),
                         data=file_content,
                         metadata=document_metadata,
                         title=document_title,
@@ -508,11 +497,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     if len(ids_list) != 0:
                         try:
                             ids_list = [uuid.UUID(id) for id in ids_list]
-                        except ValueError as e:
+                        except ValueError:
                             raise HTTPException(
                                 status_code=400,
                                 detail="Invalid UUID provided.",
-                            ) from e
+                            )
                 else:
                     ids_list = None
 
@@ -572,7 +561,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
         *args: Any,
         **kwargs: Any,
     ):
-        if not files:
+        print('files = ', files)
+        if len(files) == 0:
             raise HTTPException(
                 status_code=400, detail="No files provided for update."
             )
@@ -701,7 +691,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     value=str(e),
                     is_info_log=False,
                 )
-                raise HTTPException(status_code=500, detail=str(e)) from e
+                raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def asearch(
@@ -844,6 +834,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     status_code=500, detail="Internal Server Error"
                 )
 
+
+
     class RAGRequest(BaseModel):
         message: str
         search_filters: Optional[str] = None
@@ -891,7 +883,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         raise HTTPException(
                             status_code=400,
                             detail=f"Error parsing RAG generation config: {str(jde)}",
-                        ) from jde
+                        )
 
                 # Call the async RAG method
                 response = await self.arag(
@@ -1068,7 +1060,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             return await self.alogs(log_type_filter, max_runs_requested)
         except Exception as e:
             logger.error(f":logs: [Error](error={str(e)})")
-            raise HTTPException(status_code=500, detail=str(e)) from e
+            raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def aanalytics(

@@ -178,6 +178,7 @@ class PGVectorDB(VectorDBProvider):
     def create_index(self, index_type, column_name, index_options):
         pass
 
+
     def delete_by_metadata(
         self, metadata_fields: str, metadata_values: Union[bool, int, str]
     ) -> list[str]:
@@ -191,6 +192,18 @@ class PGVectorDB(VectorDBProvider):
                 k: {"$eq": v} for k, v in zip(metadata_fields, metadata_values)
             }
         )
+        self.delete_document_info_by_metadata(metadata_fields, metadata_values)
+
+    def delete_document_info_by_metadata(
+        self, metadata_fields: str, metadata_values: Union[bool, int, str]
+    ) -> None:
+        filters = {k: v for k, v in zip(metadata_fields, metadata_values)}
+        query = text(f"""
+        DELETE FROM document_info WHERE {" AND ".join([f"{k} = :{k}" for k in filters.keys()])};
+        """)
+        with self.vx.Session() as sess:
+            with sess.begin():
+                sess.execute(query, filters)
 
     def get_metadatas(
         self,
