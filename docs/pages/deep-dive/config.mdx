@@ -15,7 +15,7 @@ The default values for the config are shown below:
 ```json
 {
   "app": {
-    "max_logs": 100,
+    "max_logs_per_request": 100,
     "max_file_size_in_mb": 32
   },
   "completions": {
@@ -76,11 +76,11 @@ The default values for the config are shown below:
 The available options for each section are:
 
 - **app**:
-  - `max_logs`: Maximum number of logs to retrieve.
+  - `max_logs_per_request`: Maximum number of logs to retrieve.
   - `max_file_size_in_mb`: Maximum file size allowed for ingestion (in MB).
 
 - **completions**:
-  - `provider`: `"litellm"`, `"openai"`, `"llama-cpp"` (see [LLM Providers](/providers/llms.md) for more info).
+  - `provider`: `"litellm"`, `"openai"` (see [LLM Providers](/providers/llms.md) for more info).
 
 - **embedding**:
   - `provider`: `"openai"`, `"sentence-transformers"` (see [Embedding Providers](/providers/embeddings.md) for more info).

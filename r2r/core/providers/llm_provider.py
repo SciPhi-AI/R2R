@@ -44,7 +44,7 @@ class LLMConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["litellm", "llama-cpp", "openai"]
+        return ["litellm", "openai"]
 
 
 class LLMProvider(Provider):

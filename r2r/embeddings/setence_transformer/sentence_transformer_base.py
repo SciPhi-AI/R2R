@@ -29,10 +29,10 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             self.SentenceTransformer = SentenceTransformer
             # TODO - Modify this to be configurable, as `bge-reranker-large` is a `SentenceTransformer` model
             self.CrossEncoder = CrossEncoder
-        except ImportError:
+        except ImportError as e:
             raise ValueError(
                 "Must download sentence-transformers library to run `SentenceTransformerEmbeddingProvider`."
-            )
+            ) from e
 
         # Initialize separate models for search and rerank
         self.do_search = False

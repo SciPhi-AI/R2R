@@ -52,5 +52,15 @@ class R2RPromptProvider(PromptProvider):
         prompt = self.prompts[prompt_name]
         return prompt.format_prompt(inputs)
 
+    def update_prompt(
+        self, name: str, template: Optional[str] = None, input_types: Optional[dict[str, str]] = None
+    ) -> None:
+        if name not in self.prompts:
+            raise ValueError(f"Prompt '{name}' not found.")
+        if template:
+            self.prompts[name].template = template
+        if input_types:
+            self.prompts[name].input_types = input_types
+
     def get_all_prompts(self) -> dict[str, Prompt]:
         return self.prompts

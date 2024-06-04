@@ -66,7 +66,7 @@ The application uses a configuration file (`config.json`) to set various setting
 ```json
 {
   "app": {
-    "max_logs": 100,
+    "max_logs_per_request": 100,
     "max_file_size_in_mb": 32
   },
   "completions": {
@@ -127,11 +127,11 @@ The application uses a configuration file (`config.json`) to set various setting
 The available options for each section are:
 
 - **app**:
-  - `max_logs`: Maximum number of logs to retrieve.
+  - `max_logs_per_request`: Maximum number of logs to retrieve.
   - `max_file_size_in_mb`: Maximum file size allowed for ingestion (in MB).
 
 - **completions**:
-  - `provider`: `"litellm"`, `"openai"`, `"llama-cpp"` (see [LLM Providers](/providers/llms.md) for more info).
+  - `provider`: `"litellm"`, `"openai"` (see [LLM Providers](/providers/llms.md) for more info).
 
 - **embedding**:
   - `provider`: `"openai"`, `"sentence-transformers"` (see [Embedding Providers](/providers/embeddings.md) for more info).

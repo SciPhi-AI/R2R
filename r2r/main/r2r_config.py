@@ -88,20 +88,21 @@ class R2RConfig:
             file_dir = os.path.dirname(os.path.abspath(__file__))
             config_path = os.path.join(file_dir, "..", "..", "config.json")
 
-        logger.info(f"Loading configuration from {config_path}")
-
         # Load configuration from JSON file
         with open(config_path) as f:
             config_data = json.load(f)
 
         return cls(config_data)
 
-    def save_to_redis(self, redis_client: Any, key: str):
+    def to_json(self):
         config_data = {
             section: self._serialize_config(getattr(self, section))
             for section in R2RConfig.REQUIRED_KEYS.keys()
         }
-        redis_client.set(f"R2RConfig:{key}", json.dumps(config_data))
+        return json.dumps(config_data)
+
+    def save_to_redis(self, redis_client: Any, key: str):
+        redis_client.set(f"R2RConfig:{key}", self.to_json())
 
     @classmethod
     def load_from_redis(cls, redis_client: Any, key: str) -> "R2RConfig":

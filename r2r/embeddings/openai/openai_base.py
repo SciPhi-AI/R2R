@@ -7,7 +7,6 @@ from r2r.core import EmbeddingConfig, EmbeddingProvider, SearchResult
 
 logger = logging.getLogger(__name__)
 
-
 class OpenAIEmbeddingProvider(EmbeddingProvider):
     MODEL_TO_TOKENIZER = {
         "text-embedding-ada-002": "cl100k_base",
@@ -28,7 +27,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         provider = config.provider
         if not provider:
             raise ValueError(
-                "Must set provider in order to initialize SentenceTransformerEmbeddingProvider."
+                "Must set provider in order to initialize OpenAIEmbeddingProvider."
             )
 
         if provider != "openai":
@@ -38,7 +37,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         if not os.getenv("OPENAI_API_KEY"):
             raise ValueError(
                 "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
-                )
+            )
         self.client = OpenAI()
         self.async_client = AsyncOpenAI()
 
@@ -83,7 +82,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
             )
-        
+
         try:
             return (
                 self.client.embeddings.create(
@@ -98,7 +97,9 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 .embedding
             )
         except AuthenticationError as e:
-            raise ValueError("Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable.") from e
+            raise ValueError(
+                "Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable."
+            ) from e
 
     async def async_get_embedding(
         self,
@@ -115,13 +116,15 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 input=[text],
                 model=self.search_model,
                 dimensions=self.search_dimension
-                or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.search_model][
-                    -1
-                ],
+                or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
+                    self.search_model
+                ][-1],
             )
             return response.data[0].embedding
         except AuthenticationError as e:
-            raise ValueError("Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable.") from e
+            raise ValueError(
+                "Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable."
+            ) from e
 
     def get_embeddings(
         self,
@@ -146,7 +149,9 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 ).data
             ]
         except AuthenticationError as e:
-            raise ValueError("Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable.") from e
+            raise ValueError(
+                "Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable."
+            ) from e
 
     async def async_get_embeddings(
         self,
@@ -157,19 +162,21 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
             )
-        
+
         try:
             response = await self.async_client.embeddings.create(
                 input=texts,
                 model=self.search_model,
                 dimensions=self.search_dimension
-                or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.search_model][
-                    -1
-                ],
+                or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
+                    self.search_model
+                ][-1],
             )
             return [ele.embedding for ele in response.data]
         except AuthenticationError as e:
-            raise ValueError("Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable.") from e
+            raise ValueError(
+                "Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable."
+            ) from e
 
     def rerank(
         self,
