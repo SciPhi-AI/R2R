@@ -95,7 +95,7 @@ class Client:
         error_message = f"Failed to initialize database after {self.max_retries} retries with error: {str(error)}"
         logger.error(error_message)
         raise RuntimeError(error_message)
-    
+
     def _create_document_info_table(self, sess):
         query = """
         CREATE TABLE IF NOT EXISTS document_info (
