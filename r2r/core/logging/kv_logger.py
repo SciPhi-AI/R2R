@@ -2,13 +2,13 @@ import json
 import logging
 import os
 import re
-import numpy as np
 import uuid
 from abc import abstractmethod
 from datetime import datetime
 from typing import Optional
 
 import asyncpg
+import numpy as np
 from pydantic import BaseModel
 
 from ..providers.base_provider import Provider, ProviderConfig
@@ -25,7 +25,6 @@ class LoggingConfig(ProviderConfig):
     provider: str = "local"
     log_table: str = "logs"
     log_info_table: str = "logs_pipeline_info"
-    log_throughput_table: str = "throughput_logs"
     logging_path: Optional[str] = None
 
     def validate(self) -> None:
@@ -64,7 +63,6 @@ class LocalKVLoggingProvider(KVLoggingProvider):
     def __init__(self, config: LoggingConfig):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
-        self.log_throughput_table = config.log_throughput_table
         self.logging_path = config.logging_path or os.getenv(
             "LOCAL_DB_PATH", "local.sqlite"
         )
@@ -102,15 +100,6 @@ class LocalKVLoggingProvider(KVLoggingProvider):
                 log_type TEXT
             )
         """
-        )
-        await self.conn.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {self.log_throughput_table} (
-                timestamp DATETIME,
-                num_requests INTEGER,
-                request_type TEXT
-            )
-            """
         )
         await self.conn.commit()
 
@@ -169,27 +158,6 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         return [
             RunInfo(run_id=uuid.UUID(row[0]), log_type=row[1]) for row in rows
         ]
-    
-    async def log_throughput(self, timestamp: float, num_requests: int, request_type: str):
-        await self.conn.execute(
-            f"INSERT INTO throughput_logs (timestamp, num_requests, request_type) VALUES (datetime(?, 'unixepoch'), ?, ?)",
-            timestamp,
-            num_requests,
-            request_type,
-        )
-        await self.conn.commit()
-
-    async def get_throughput_data(self, start_time: Optional[float] = None, end_time: Optional[float] = None):
-        cursor = await self.conn.cursor()
-        query = "SELECT timestamp, num_requests, request_type FROM throughput_logs"
-        params = []
-        if start_time and end_time:
-            query += " WHERE timestamp BETWEEN datetime(?, 'unixepoch') AND datetime(?, 'unixepoch')"
-            params.extend([start_time, end_time])
-        await cursor.execute(query, params)
-        rows = await cursor.fetchall()
-        return [{"timestamp": row[0], "num_requests": row[1], "request_type": row[2]} for row in rows]
-
 
     async def get_logs(
         self, run_ids: list[uuid.UUID], limit_per_run: int = 10
@@ -226,7 +194,6 @@ class PostgresLoggingConfig(LoggingConfig):
     provider: str = "postgres"
     log_table: str = "logs"
     log_info_table: str = "logs_pipeline_info"
-    log_throughput_table: str = "throughput_logs"
 
     def validate(self) -> None:
         required_env_vars = [
@@ -249,7 +216,6 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
     def __init__(self, config: PostgresLoggingConfig):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
-        self.log_throughput_table = config.log_throughput_table
         self.config = config
         self.conn = None
         if not os.getenv("POSTGRES_DBNAME"):
@@ -299,15 +265,6 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
                 log_type TEXT
             )
         """
-        )
-        await self.conn.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {self.log_throughput_table} (
-                timestamp TIMESTAMPTZ,
-                num_requests INTEGER,
-                request_type TEXT
-            )
-            """
         )
 
     async def __aenter__(self):
@@ -388,34 +345,12 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
         params = [str(run_id) for run_id in run_ids] + [limit_per_run]
         rows = await self.conn.fetch(query, *params)
         return [{key: row[key] for key in row.keys()} for row in rows]
-    
-    async def log_throughput(self, timestamp: float, num_requests: int, request_type: str):
-        async with self.connection.acquire() as conn:
-            await conn.execute(
-                "INSERT INTO throughput_logs (timestamp, num_requests, request_type) VALUES ($1, $2, $3)",
-                timestamp,
-                num_requests,
-                request_type,
-            )
-
-    async def get_throughput_data(self, start_time: Optional[float] = None, end_time: Optional[float] = None):
-        async with self.connection.acquire() as conn:
-            if start_time and end_time:
-                result = await conn.fetch(
-                    "SELECT timestamp, num_requests, request_type FROM throughput_logs WHERE timestamp BETWEEN $1 AND $2",
-                    start_time,
-                    end_time,
-                )
-            else:
-                result = await conn.fetch("SELECT timestamp, num_requests, request_type FROM throughput_logs")
-            return [dict(row) for row in result]
 
 
 class RedisLoggingConfig(LoggingConfig):
     provider: str = "redis"
     log_table: str = "logs"
     log_info_table: str = "logs_pipeline_info"
-    throughput_logs_table: str = "throughput_logs"
 
     def validate(self) -> None:
         required_env_vars = ["REDIS_CLUSTER_IP", "REDIS_CLUSTER_PORT"]
@@ -451,7 +386,6 @@ class RedisKVLoggingProvider(KVLoggingProvider):
         self.redis = Redis(host=cluster_ip, port=port, decode_responses=True)
         self.log_key = config.log_table
         self.log_info_key = config.log_info_table
-        self.throughput_logs_key = config.throughput_logs_table
 
     async def __aenter__(self):
         return self
@@ -602,16 +536,3 @@ class KVLoggingSingleton:
     ) -> list:
         async with cls.get_instance() as provider:
             return await provider.get_logs(run_ids, limit_per_run)
-        
-    @classmethod
-    async def log_throughput(cls, timestamp: float, num_requests: int, request_type: str):
-        try:
-            async with cls.get_instance() as provider:
-                await provider.log_throughput(timestamp, num_requests, request_type)
-        except Exception as e:
-            logger.error(f"Error logging throughput data: {e}")
-    
-    @classmethod
-    async def get_throughput_data(cls, start_time: Optional[float] = None, end_time: Optional[float] = None):
-        async with cls.get_instance() as provider:
-            return await provider.get_throughput_data(start_time, end_time)
