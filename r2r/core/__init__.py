@@ -21,6 +21,7 @@ from .logging.kv_logger import (
     RedisLoggingConfig,
 )
 from .logging.run_manager import RunManager, manage_run
+from .logging.log_processor import AnalysisTypes, LogProcessor, FilterCriteria, LogAnalytics, LogAnalyticsConfig
 from .parsers import (
     AsyncParser,
     AudioParser,
@@ -62,6 +63,10 @@ from .utils import (
 
 __all__ = [
     # Logging
+    "AnalysisTypes",
+    "LogAnalytics",
+    "LogAnalyticsConfig",
+    "LogProcessor",
     "LoggingConfig",
     "LocalKVLoggingProvider",
     "PostgresLoggingConfig",
@@ -124,6 +129,7 @@ __all__ = [
     "VectorDBConfig",
     "VectorDBProvider",
     # Other
+    "FilterCriteria",
     "TextSplitter",
     "RecursiveCharacterTextSplitter",
     "to_async_generator",

@@ -1,5 +1,6 @@
 """A complete demo class for the R2R library."""
 
+import argparse
 import asyncio
 import json
 import logging
@@ -18,6 +19,8 @@ from r2r import (
     R2RConfig,
     generate_id_from_label,
 )
+
+from r2r.core import AnalysisTypes, FilterCriteria
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -448,6 +451,31 @@ class R2RDemo:
             print(f"Time taken to get logs: {t1-t0:.2f} seconds")
             print(response)
 
+    def analytics(
+        self,
+        filters: Optional[str] = None,
+        analysis_types: Optional[str] = None,
+    ):
+        filter_criteria = FilterCriteria(filters=filters)
+        analysis_types = AnalysisTypes(analysis_types=analysis_types)
+        if hasattr(self, "client"):
+            t0 = time.time()
+            response = self.client.analytics(
+                filter_criteria=filter_criteria.model_dump(),
+                analysis_types=analysis_types.model_dump(),
+            )
+            t1 = time.time()
+            print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
+            print(response)
+        else:
+            t0 = time.time()
+            response = self.r2r.analytics(
+                filter_criteria=filter_criteria, analysis_types=analysis_types
+            )
+            t1 = time.time()
+            print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
+            print(response)
+
     def get_app_data(self):
         if hasattr(self, "client"):
             t0 = time.time()
@@ -461,7 +489,7 @@ class R2RDemo:
             t1 = time.time()
             print(f"Time taken to get app data: {t1-t0:.2f} seconds")
             print(response)
-            
+
     def get_open_api_endpoint(self):
         if hasattr(self, "client"):
             print(

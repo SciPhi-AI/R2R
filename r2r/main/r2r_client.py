@@ -255,4 +255,10 @@ class R2RClient:
         response = requests.get(url)
         response.raise_for_status()
         return response.json()
-
+    
+    def analytics(self, filter_criteria: dict, analysis_types: dict) -> dict:
+        url = f"{self.base_url}/analytics"
+        data = {"filter_criteria": json.dumps(filter_criteria), "analysis_types": json.dumps(analysis_types)}
+        response = requests.post(url, json=data)
+        response.raise_for_status()
+        return response.json()
