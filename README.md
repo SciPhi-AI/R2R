@@ -13,7 +13,7 @@ Build, deploy, observe, and optimize your RAG system.
 
 # About
 
-R2R, short for RAG to Riches, provides the fastest and most efficient way to deliver high-quality Retrieval-Augmented Generation (RAG) to end users. The framework is built around customizable pipelines and a feature-rich FastAPI implementation.
+R2R, short for RAG to Riches, provides the fastest and most efficient way to deliver high-quality Retrieval-Augmented Generation (RAG) to end users. The framework is built around customizable pipelines and ships with a feature-rich REST API.
 
 ## Why?
 
@@ -205,6 +205,14 @@ Time taken to stream RAG response: 2.79 seconds
 
 ## Document Management Demo
 
+### Update Document 
+
+To update document(s) we may use the `update_as_files` or `update_as_documents` endpoints. Running the demo with `update_as_files` overwrites the data associated with 'aristotle.txt' with new data corresponding to 'aristotle_v2.txt' and increments the file version.
+
+```bash
+poetry run python -m r2r.examples.demo update_as_files
+```
+
 ### Document Deletion
 
 To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the metadata field `document_id` with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
@@ -277,7 +285,7 @@ Providers supply the necessary resources and capabilities to the pipes and pipel
 
 - **Vector Database Provider**: Manages the storage and retrieval of vector embeddings. Examples include Qdrant, PGVector, and LocalVectorDB.
 - **Embedding Provider**: Converts text into vector embeddings. Supported providers include OpenAI, SentenceTransformers, and DummyEmbeddingProvider.
-- **LLM Provider**: Interfaces with large language models for text generation. Supported providers include OpenAI, LiteLLM, and LlamaCPP.
+- **LLM Provider**: Interfaces with large language models for text generation. Supported providers include OpenAI, and LiteLLM.
 - **Prompt Provider**: Manages prompts for various tasks.
 - **Eval Provider**: Evaluates the quality of generated responses.
 

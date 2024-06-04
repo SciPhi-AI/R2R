@@ -1,0 +1,211 @@
+## Building a Local RAG System with R2R
+
+### Introduction 
+
+R2R, short for "RAG to Riches," is a game-changing framework that simplifies the process of building RAG applications with LLMs. With R2R, you can hit the ground running and have a system running locally in minutes, eliminating the need for complex cloud infrastructure or costly hosted services.
+
+In this comprehensive, step-by-step tutorial, we'll guide you through the process of installing R2R, ingesting your documents, querying those docs using a local LLM, and tailoring the RAG pipeline to perfectly fit your unique requirements. By the end of this guide, you'll have a fully functional, locally-hosted, and readily deployable LLM application at your fingertips!
+
+### Setting up and Running R2R
+
+R2R supports  `Ollama`, a popular tool for Local LLM inference. Ollama is provided through a connection managed by the `litellm` library.
+
+If you wish to use Ollama, it must be installed independently. You can install Ollama by following the instructions on their [official website](https://ollama.com/) or by referring to their [GitHub README](https://github.com/ollama/ollama).
+
+**Docker Installation**: Using Docker can be a convenient way to run R2R without having to manage dependencies and installations on your local machine. The Docker image comes pre-configured and ready to run.
+
+**Local Installation**: If you prefer to run R2R directly on your local machine, you can install it and its dependencies manually. This approach may be preferred if you need more control over the installation or want to integrate R2R with other local tools and environments.
+
+<details>
+<summary>Docker</summary>
+
+To run R2R using Docker, you can use the following commands:
+
+```bash
+docker pull emrgntcmplxty/r2r:latest
+```
+
+This will pull the latest R2R Docker image.
+
+Then, run the container with:
+
+```bash
+docker run -d \
+  --name r2r \
+  --add-host=host.docker.internal:host-gateway \
+  -p 8000:8000 \
+  -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
+  -e CONFIG_OPTION=local_ollama \
+  r2r:latest
+```
+
+This command starts the R2R container with the following options:
+
+- `--name r2r`: Assigns the name "r2r" to the container.
+- `--add-host=host.docker.internal:host-gateway`: Adds a host entry for the Docker host.
+- `-p 8000:8000`: Maps port 8000 of the container to port 8000 of the host.
+- `-e OLLAMA_API_BASE=http://host.docker.internal:11434`: Specifies the Ollama API base URL.
+- `-e CONFIG_OPTION=local_ollama`: Selects the "local_ollama" configuration option.
+- `r2r:latest`: Specifies the Docker image to use.
+
+</details>
+
+<details>
+<summary>Local Installation</summary>
+
+To begin running R2R for local inference, we first need to clone the R2R repository locally. This can be done with the command:
+
+```bash
+git clone https://github.com/SciPhi-AI/R2R.git
+```
+
+Then you should navigate to the project directory:
+```bash
+cd R2R
+```
+
+And install the project dependencies using Poetry
+```bash
+poetry install
+```
+
+</details>
+
+### Pipeline Configuration
+
+Let's move on to setting up the R2R pipeline. R2R relies on a `config.json` file for defining various settings, such as embedding models and chunk sizes. By default, the `config.json` found in the R2R GitHub repository's root directory is set up for cloud-based services.
+
+For setting up an on-premises RAG system, we need to adjust the configuration to use local resources. This involves changing the embedding provider, selecting the appropriate LLM provider, and disabling evaluations.
+
+To streamline this process, we've provided pre-configured local settings in the [`examples/configs`](https://github.com/SciPhi-AI/R2R/blob/main/r2r/examples/configs) directory, named `local_ollama`. Here's an overview of the primary changes from the default configuration:
+
+```json
+{
+    "embedding": {
+      "provider": "sentence-transformers",
+      "search_model": "all-MiniLM-L6-v2",
+      "dimension": 384,
+      "batch_size": 32
+    },
+    "completions": {
+      "provider": "litellm"
+    },
+    …
+}
+```
+
+You may also modify the configuration defaults for ingestion, logging, and your vector database provider in a similar manner. More information on this follows below.
+
+This chosen config modification above instructs R2R to use the `sentence-transformers` library for embeddings with the `all-MiniLM-L6-v2` model, turns off evals, and sets the LLM provider to `ollama`. During ingestion, the default is to split documents into chunks of 512 characters with 20 characters of overlap between chunks. 
+
+A local vector database will be used to store the embeddings. The current default is a minimal sqlite implementation.
+
+### Server Standup
+
+If you are using Docker, your server will be stood up upon running the Dockerfile. If you are developing locally, you can stand up the server by running:
+
+```bash
+python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config local_ollama --pipeline_type qna
+```
+
+The server exposes a basic API for interacting with the RAG pipeline. See the [API docs](/getting-started/app-api) for more details on other available endpoints.
+
+### Ingesting and Embedding Documents
+
+With our environment set up and our server running in a separate process, we're ready to ingest a document! As an example, R2R includes a biography on Aristotle as a text file. This file ships with the package and is included by default.
+
+Run this command to ingest the document:
+
+```bash
+python -m r2r.examples.clients.run_qna_client ingest
+```
+
+The output should look something like this:
+
+```
+> {'results': ["File '/Users/user/R2R/r2r/examples/clients/../data/aristotle.txt' processed successfully."]}
+```
+
+Here's what's happening under the hood:
+1. R2R loads and processes the document.
+2. It splits the text into chunks of 512 characters each, with 20 characters overlapping between chunks.
+3. Each chunk is embedded using the `all-MiniLM-L6-v2` model from `sentence-transformers`.
+4. The chunks and embeddings are stored in the specified vector database, which defaults to a local SQLite database.
+
+With just one command, we've gone from a raw document to an embedded knowledge base we can query. In addition to the raw chunks, metadata such as user ID or document ID can be attached to enable easy filtering later.
+
+### Running Queries on the Local LLM
+
+Time for the fun part—asking questions!
+
+To query our knowledge base using Ollama, first ensure that you have started the Ollama server with this command in the terminal:
+
+```bash
+ollama serve llama2
+```
+
+Then, to ask a question, run:
+
+```bash
+python -m r2r.examples.clients.run_qna_client rag_completion \
+  --query="What contributions did Aristotle make to biology?" \
+  --model="ollama/llama2"
+```
+
+This command tells R2R to use the specified model to generate a completion for the given query. R2R will:
+1. Embed the query using `all-MiniLM-L6-v2`.
+2. Find the chunks most similar to the query embedding.
+3. Pass the query and relevant chunks to the LLM to generate a response.
+
+After a brief wait, you should see the LLM's response, perhaps something like:
+
+> ### Aristotle's Contributions to Biology
+> 
+> Aristotle's work has had a significant impact on the field of biology, earning him the title "father of biology." His contributions to the field include:
+> 
+> 1. **Systematic observation and classification of living things**: Aristotle was one of the first people to study biology systematically, laying the foundation for modern taxonomy.
+> 2. **Development of the concept of evolution**: Aristotle recognized that living things change over time and proposed a mechanism for these changes (the "great chain of being"). While his ideas about evolution were not entirely correct, they were an important precursor to the modern theory of evolution.
+> 3. **Influence on medieval scholarship**: Aristotle's work profoundly impacted medieval scholarship, shaping the field of biology for centuries after his death.
+> 4. **Contributions to logic and metaphysics**: Aristotle's work in logic and metaphysics also influenced the development of biology, as these areas of study inform our understanding of the natural world.
+
+How cool is that? With R2R, we've built a simple Q&A system backed by a local LLM that we can converse with. The best part is, all the data and compute stayed on our own machine!
+
+### Configuring Your RAG Pipeline
+
+R2R provides flexibility in customizing various aspects of the RAG pipeline to suit your needs. This can be done through the `config.json` file. Some key configuration options include:
+
+#### Vector Database Provider
+R2R supports multiple vector database providers:
+- `local`: A SQLite-based local vector database
+- `pgvector`: Integration with pgvector extension for Postgres
+
+Set the `provider` field under `vector_database` in `config.json` to specify your provider.
+
+#### Embedding Provider
+R2R supports OpenAI and local inference embedding providers:
+- `openai`: OpenAI models like `text-embedding-3-small`
+- `sentence-transformers`: HuggingFace models like `all-MiniLM-L6-v2`
+
+Configure the `embedding` section to set your desired embedding model, dimension, and batch size.
+
+#### Language Model Provider
+- `openai`: Models like `gpt-3.5-turbo`
+- `litellm` (default): Integrates with many providers (OpenAI, Anthropic, Vertex AI, etc.)
+- `ollama`: A specifically supported provider, with the connection managed by `litellm`
+
+#### Logging Provider
+R2R supports logging to Postgres, SQLite (local), and Redis. The logs capture pipeline execution information.
+
+Check out the [full R2R configuration docs](/deep-dive/config) for more details on all available options.
+
+### Next Steps
+
+Together we've walked through the steps to get a local LLM application up and running with R2R:
+1. Installing dependencies
+2. Configuring the R2R pipeline
+3. Ingesting and embedding documents
+4. Running queries on a local LLM
+
+But we've only scratched the surface of what you can build with R2R! I encourage you to keep experimenting - try ingesting your own documents, customizing your pipeline, tweaking model parameters, and exploring R2R's evaluation capabilities.
+
+If you have any questions or want to learn more, [R2R's GitHub repo](https://github.com/SciPhi-ai/R2R), [R2R Discord](https://discord.gg/p6KqD2kjtB), and [docs](https://r2r-docs.sciphi.ai/) are great resources.

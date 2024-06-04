@@ -47,8 +47,8 @@ class R2RDemo:
         root_path = os.path.dirname(os.path.abspath(__file__))
         self.user_id = user_id
         self.default_files = file_list or [
-            os.path.join(root_path, "data", "screen_shot.png"),
             os.path.join(root_path, "data", "aristotle.txt"),
+            os.path.join(root_path, "data", "screen_shot.png"),
             os.path.join(root_path, "data", "pg_essay_1.html"),
             os.path.join(root_path, "data", "pg_essay_2.html"),
             os.path.join(root_path, "data", "pg_essay_3.html"),
@@ -466,6 +466,20 @@ class R2RDemo:
             print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
             print(response)
 
+    def get_app_data(self):
+        if hasattr(self, "client"):
+            t0 = time.time()
+            response = self.client.get_app_data()
+            t1 = time.time()
+            print(f"Time taken to get app data: {t1-t0:.2f} seconds")
+            print(response)
+        else:
+            t0 = time.time()
+            response = self.r2r.get_app_data()
+            t1 = time.time()
+            print(f"Time taken to get app data: {t1-t0:.2f} seconds")
+            print(response)
+            
     def get_open_api_endpoint(self):
         if hasattr(self, "client"):
             print(

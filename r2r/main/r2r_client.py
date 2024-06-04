@@ -1,7 +1,6 @@
 """Module for the R2RClient class."""
 
 import asyncio
-import base64
 import json
 import uuid
 from typing import AsyncGenerator, Generator, Optional, Union
@@ -29,6 +28,21 @@ def default_serializer(obj):
 class R2RClient:
     def __init__(self, base_url: str):
         self.base_url = base_url
+
+    def update_prompt(self, name: str, template: Optional[str] = None, input_types: Optional[dict] = None) -> dict:
+        url = f"{self.base_url}/update_prompt"
+        data = {
+            "name": name,
+            "template": template,
+            "input_types": input_types,
+        }
+        response = requests.post(
+            url,
+            data=json.dumps(data, default=default_serializer),
+            headers={"Content-Type": "application/json"},
+        )
+        response.raise_for_status()
+        return response.json()
 
     def ingest_documents(self, documents: list[dict]) -> dict:
         url = f"{self.base_url}/ingest_documents"
@@ -131,21 +145,21 @@ class R2RClient:
                 rag_generation_config=rag_generation_config,
             )
         else:
-            url = f"{self.base_url}/rag"
-            data = {
-                "message": message,
-                "search_filters": json.dumps(search_filters)
-                if search_filters
-                else None,
-                "search_limit": search_limit,
-                "rag_generation_config": json.dumps(rag_generation_config)
-                if rag_generation_config
-                else None,
-                "streaming": streaming,
-            }
-            response = requests.post(url, json=data)
-            response.raise_for_status()
-            return response.json()
+            try:
+                url = f"{self.base_url}/rag"
+                data = {
+                    "message": message,
+                    "search_filters": json.dumps(search_filters) if search_filters else None,
+                    "search_limit": search_limit,
+                    "rag_generation_config": json.dumps(rag_generation_config) if rag_generation_config else None,
+                    "streaming": streaming,
+                }
+                
+                response = requests.post(url, json=data)
+                response.raise_for_status()
+                return response.json()
+            except requests.exceptions.RequestException as e:
+                raise e
 
     async def _stream_rag(
         self,
@@ -235,3 +249,10 @@ class R2RClient:
         response = requests.post(url, json=data)
         response.raise_for_status()
         return response.json()
+
+    def get_app_data(self) -> dict:
+        url = f"{self.base_url}/get_app_data"
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+

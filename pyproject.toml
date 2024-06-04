@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "r2r"
-version = "0.2.03"
+version = "0.2.08"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
@@ -55,18 +55,16 @@ qdrant_client = {version = "^1.7.0"}
 # llm providers
 litellm = "^1.35.18"
 openai = "^1.11.1"
-llama-cpp-python = {version = "^0.2.57", optional = true}
 
 # integrations
 ionic-api-sdk = {version = "0.9.3", optional = true}
 exa-py = {version = "^1.0.9", optional = true}
 
 [tool.poetry.extras]
-all = ["tiktoken", "qdrant_client", "llama-cpp-python", "sentence-transformers"]
+all = ["tiktoken", "qdrant_client", "sentence-transformers"]
 exa = ["exa-py"]
 ionic = ["ionic-api-sdk"]
-local-llm = ["llama-cpp-python", "sentence-transformers"]
-sentence-transformers-only = ["sentence-transformers"]
+local-embedding = ["sentence-transformers"]
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.3.0"
