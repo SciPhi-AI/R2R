@@ -309,8 +309,15 @@ class R2RClient:
     def get_documents_info(
         self, document_id: Optional[str] = None, user_id: Optional[str] = None
     ) -> dict:
-        url = f"{self.base_url}/get_documents_info"
-        data = {"document_id": document_id, "user_id": user_id}
-        response = requests.post(url, json=data)
+        url = f"{self.base_url}/documents_info"
+        params = {"document_id": document_id, "user_id": user_id}
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+
+    def user_stats(self, user_ids: Optional[list[str]] = None) -> dict:
+        url = f"{self.base_url}/user_stats"
+        params = {"user_ids": json.dumps(user_ids) if user_ids else None}
+        response = requests.get(url, params=params)
         response.raise_for_status()
         return response.json()

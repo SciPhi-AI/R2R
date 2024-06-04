@@ -1,3 +1,4 @@
+import uuid
 import json
 import logging
 import os
@@ -13,6 +14,7 @@ from r2r.core import (
     VectorDBConfig,
     VectorDBProvider,
     VectorEntry,
+    UserStats
 )
 from r2r.vecs.client import Client
 from r2r.vecs.collection import Collection
