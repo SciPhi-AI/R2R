@@ -246,8 +246,11 @@ class R2RClient:
 
     def logs(self, log_type_filter: Optional[str] = None) -> dict:
         url = f"{self.base_url}/logs"
-        params = {"log_type_filter": log_type_filter}
-        response = requests.get(url, params=params)
+        params = {}
+        if log_type_filter:
+            params["log_type_filter"] = log_type_filter
+        print("params = ", params)
+        response = requests.get(url, json=params)
         response.raise_for_status()
         return response.json()
 
