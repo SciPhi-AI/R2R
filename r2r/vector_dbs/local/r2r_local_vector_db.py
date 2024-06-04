@@ -1,4 +1,3 @@
-import uuid
 import json
 import logging
 import os
@@ -13,7 +12,6 @@ from r2r.core import (
     VectorDBConfig,
     VectorDBProvider,
     VectorEntry,
-    UserStats
 )
 
 logger = logging.getLogger(__name__)
@@ -296,6 +294,8 @@ class R2RLocalVectorDB(VectorDBProvider):
 
         document_infos = []
         for row in results:
+            print("results = ", results)
+            print("result user id = ", row[2])
             document_info = DocumentInfo(
                 document_id=uuid.UUID(row[0]),
                 title=row[1],
