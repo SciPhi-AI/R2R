@@ -107,7 +107,7 @@ class VectorDBProvider(Provider, ABC):
         self,
         filter_document_ids: Optional[list[str]] = None,
         filter_user_ids: Optional[list[str]] = None,
-    ):
+    ) -> list[DocumentInfo]:
         pass
 
     @abstractmethod

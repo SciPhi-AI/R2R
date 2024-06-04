@@ -530,9 +530,8 @@ class Collection:
             with sess.begin():
                 if ids:
                     for id_chunk in flu(ids).chunk(12):
-                        stmt = (
-                            select(self.table.c.metadata)
-                            .where(self.table.c.id.in_(id_chunk))
+                        stmt = select(self.table.c.metadata).where(
+                            self.table.c.id.in_(id_chunk)
                         )
                         results = sess.execute(stmt).fetchall()
                         for result in results:
@@ -540,7 +539,7 @@ class Collection:
                             document_id = metadata_json.get("document_id")
                             if document_id:
                                 del_document_ids.add(document_id)
-                        
+
                         delete_stmt = (
                             delete(self.table)
                             .where(self.table.c.id.in_(id_chunk))
@@ -557,7 +556,7 @@ class Collection:
                         document_id = metadata_json.get("document_id")
                         if document_id:
                             del_document_ids.add(document_id)
-                    
+
                     delete_stmt = (
                         delete(self.table)
                         .where(meta_filter)

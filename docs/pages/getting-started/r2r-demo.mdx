@@ -222,7 +222,7 @@ To delete all documents associated with a given user, run the delete command on 
 # python -m r2r.examples.demo delete --keys="['user_id']" --values="['063edaf8-3e63-4cb9-a4d6-a855f36376c3']"
 ```
 
-Afterwards, we may confirm complete user documentation through the `get_user_documents_metadata` functionality.
+Afterwards, we may confirm complete user documentation through the `documents_info` endpoint.
 
 **Demo Output:**
 
@@ -235,7 +235,7 @@ Afterwards, we may confirm complete user documentation through the `get_user_doc
 
 ### Demo Multi-Modal Support
 
-An `.png` image of a desktop screen was included as part of the ingestion command shown above. By default, the `ImageParser` uses an OpenAI vision model (gpt-4o) to transcribe the image and embed that transcription. We can then search these results directly, as evidenced below:
+An `.png` image of a desktop screen was included as part of the files processed during the demo ingestion. By default, the `ImageParser` uses an OpenAI vision model (gpt-4o) to transcribe the image and embed that transcription. We can then search these results directly, as evidenced below:
 
 ```bash
 python -m r2r.examples.demo search --query="What is shown on the user screen?"

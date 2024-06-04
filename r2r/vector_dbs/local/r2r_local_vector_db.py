@@ -266,7 +266,7 @@ class R2RLocalVectorDB(VectorDBProvider):
         self,
         filter_document_ids: Optional[list[str]] = None,
         filter_user_ids: Optional[list[str]] = None,
-    ):
+    ) -> list[DocumentInfo]:
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
         query = f"""
