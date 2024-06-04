@@ -70,11 +70,8 @@ class AnalysisTypes(BaseModel):
 
     @staticmethod
     def generate_bar_chart_data(logs, key):
-        print("Generating bar chart data inside LogAnalytics class.")
         chart_data = {"labels": [], "datasets": []}
         value_counts = defaultdict(int)
-
-        print(f"Logs in log_processor: {logs}")
 
         for log in logs:
             if "entries" in log:

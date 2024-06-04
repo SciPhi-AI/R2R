@@ -17,12 +17,9 @@ from r2r.core import (
     FilterCriteria,
     GenerationConfig,
     KVLoggingSingleton,
-    LogAnalytics,
-    LogAnalyticsConfig,
     LogProcessor,
     RunManager,
     generate_id_from_label,
-    generate_run_id,
     increment_version,
     manage_run,
     to_async_generator,
@@ -297,18 +294,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
             try:
                 return await self.aingest_documents(request.documents)
             except Exception as e:
-                await self.ingestion_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="pipeline_type",
-                    value=self.ingestion_pipeline.pipeline_type,
+                await self.run_manager.log_run_info(
+                    "pipeline_type",
+                    self.ingestion_pipeline.pipeline_type,
                     is_info_log=True,
                 )
-
-                await self.ingestion_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="error",
-                    value=str(e),
-                    is_info_log=False,
+                await self.run_manager.log_run_info(
+                    "error", str(e), is_info_log=False
                 )
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -355,17 +347,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
             try:
                 return await self.aupdate_documents(request.documents)
             except Exception as e:
-                await self.ingestion_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="pipeline_type",
-                    value=self.ingestion_pipeline.pipeline_type,
+                await self.run_manager.log_run_info(
+                    "pipeline_type",
+                    self.ingestion_pipeline.pipeline_type,
                     is_info_log=True,
                 )
-                await self.ingestion_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="error",
-                    value=str(e),
-                    is_info_log=False,
+                await self.run_manager.log_run_info(
+                    "error", str(e), is_info_log=False
                 )
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -619,11 +607,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     files=files, metadatas=metadatas, ids=ids_list
                 )
             except Exception as e:
-                await self.ingestion_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="pipeline_type",
-                    value=self.ingestion_pipeline.pipeline_type,
+                await self.run_manager.log_run_info(
+                    "pipeline_type",
+                    self.ingestion_pipeline.pipeline_type,
                     is_info_log=True,
+                )
+                await self.run_manager.log_run_info(
+                    "error", str(e), is_info_log=False
                 )
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -637,31 +627,33 @@ class R2RApp(metaclass=AsyncSyncMeta):
         **kwargs: Any,
     ):
         """Search for documents based on the query."""
-        try:
-            # FIXME: This can now be logged at a higher level
-            t0 = time.time()
-            run_id = generate_run_id()
-            search_filters = search_filters or {}
-            results = await self.search_pipeline.run(
-                input=to_async_generator([query]),
-                search_filters=search_filters,
-                search_limit=search_limit,
-                run_manager=self.run_manager,
-            )
-            t1 = time.time()
-            latency = f"{t1-t0:.2f}"
+        async with manage_run(self.run_manager, "search_app") as run_id:
+            try:
+                t0 = time.time()
 
-            await self.search_pipeline.pipe_logger.log(
-                pipe_run_id=run_id,
-                key="vector_search_latency",
-                value=latency,
-                is_pipeline_info=False,
-            )
+                search_filters = search_filters or {}
+                results = await self.search_pipeline.run(
+                    input=to_async_generator([query]),
+                    search_filters=search_filters,
+                    search_limit=search_limit,
+                    run_manager=self.run_manager,
+                )
 
-            return {"results": [result.dict() for result in results]}
-        except Exception as e:
-            logger.error(f"search(query={query}) - \n\n{str(e)}")
-            raise HTTPException(status_code=500, detail=str(e)) from e
+                t1 = time.time()
+                latency = f"{t1-t0:.2f}"
+                print(f"Search latency: {latency}")
+
+                await self.logging_connection.log(
+                    log_id=run_id,
+                    key="search_latency",
+                    value=latency,
+                    is_info_log=False,
+                )
+
+                return {"results": [result.dict() for result in results]}
+            except Exception as e:
+                logger.error(f"search(query={query}) - \n\n{str(e)}")
+                raise HTTPException(status_code=500, detail=str(e)) from e
 
     class SearchRequest(BaseModel):
         query: str
@@ -696,74 +688,86 @@ class R2RApp(metaclass=AsyncSyncMeta):
         *args,
         **kwargs,
     ):
-        try:
-            t0 = time.time()
-            run_id = generate_run_id()
+        async with manage_run(self.run_manager, "rag_app") as run_id:
+            try:
+                t0 = time.time()
 
-            if rag_generation_config.stream:
-                t1 = time.time()
-                latency = f"{t1-t0:.2f}"
+                if rag_generation_config.stream:
+                    t1 = time.time()
+                    latency = f"{t1-t0:.2f}"
 
-                await self.streaming_rag_pipeline.pipe_logger.log(
-                    pipe_run_id=run_id,
-                    key="rag_generation_latency",
-                    value=latency,
-                    is_pipeline_info=False,
-                )
+                    await self.logging_connection.log(
+                        log_id=run_id,
+                        key="rag_generation_latency",
+                        value=latency,
+                        is_info_log=False,
+                    )
+
+                    async def stream_response():
+                        async for (
+                            chunk
+                        ) in await self.streaming_rag_pipeline.run(
+                            input=to_async_generator([message]),
+                            streaming=True,
+                            search_filters=search_filters,
+                            search_limit=search_limit,
+                            rag_generation_config=rag_generation_config,
+                            run_id=run_id,
+                            *args,
+                            **kwargs,
+                        ):
+                            yield chunk
+
+                    return stream_response()
 
                 async def stream_response():
-                    async for chunk in await self.streaming_rag_pipeline.run(
-                        input=to_async_generator([message]),
-                        streaming=True,
-                        search_filters=search_filters,
-                        search_limit=search_limit,
-                        rag_generation_config=rag_generation_config,
-                        run_id=run_id,
-                        *args,
-                        **kwargs,
-                    ):
-                        yield chunk
+                    # We must re-enter the manage_run context for the streaming pipeline
+                    async with manage_run(self.run_manager, "arag"):
+                        async for (
+                            chunk
+                        ) in await self.streaming_rag_pipeline.run(
+                            input=to_async_generator([message]),
+                            streaming=True,
+                            search_filters=search_filters,
+                            search_limit=search_limit,
+                            rag_generation_config=rag_generation_config,
+                            run_manager=self.run_manager,
+                            *args,
+                            **kwargs,
+                        ):
+                            yield chunk
 
-                return stream_response()
-
-            async def stream_response():
-                # We must re-enter the manage_run context for the streaming pipeline
-                async with manage_run(self.run_manager, "arag"):
-                    async for chunk in await self.streaming_rag_pipeline.run(
+                if not rag_generation_config.stream:
+                    results = await self.rag_pipeline.run(
                         input=to_async_generator([message]),
-                        streaming=True,
+                        streaming=False,
                         search_filters=search_filters,
                         search_limit=search_limit,
                         rag_generation_config=rag_generation_config,
                         run_manager=self.run_manager,
-                        *args,
-                        **kwargs,
-                    ):
-                        yield chunk
+                    )
 
-                t1 = time.time()
-                latency = f"{t1-t0:.2f}"
+                    t1 = time.time()
+                    latency = f"{t1-t0:.2f}"
 
-            if not rag_generation_config.stream:
-                results = await self.rag_pipeline.run(
-                    input=to_async_generator([message]),
-                    streaming=False,
-                    search_filters=search_filters,
-                    search_limit=search_limit,
-                    rag_generation_config=rag_generation_config,
-                    run_manager=self.run_manager,
-                )
-                return results
-        except Exception as e:
-            logger.error(f"Pipeline error: {str(e)}")
-            if "NoneType" in str(e):
+                    await self.logging_connection.log(
+                        log_id=run_id,
+                        key="rag_generation_latency",
+                        value=latency,
+                        is_info_log=False,
+                    )
+
+                    return results
+            except Exception as e:
+                logger.error(f"Pipeline error: {str(e)}")
+                if "NoneType" in str(e):
+                    raise HTTPException(
+                        status_code=502,
+                        detail="Ollama server not reachable or returned an invalid response",
+                    )
                 raise HTTPException(
-                    status_code=502,
-                    detail="Ollama server not reachable or returned an invalid response",
+                    status_code=500, detail="Internal Server Error"
                 )
-            raise HTTPException(
-                status_code=500, detail="Internal Server Error"
-            )
 
     class RAGRequest(BaseModel):
         message: str
