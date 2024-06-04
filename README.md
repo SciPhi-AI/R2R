@@ -283,7 +283,7 @@ The framework revolves around three core abstractions: Providers, Pipes, and Pip
 
 Providers supply the necessary resources and capabilities to the pipes and pipelines. Key provider types include:
 
-- **Vector Database Provider**: Manages the storage and retrieval of vector embeddings. Examples include Qdrant, PGVector, and LocalVectorDB.
+- **Vector Database Provider**: Manages the storage and retrieval of vector embeddings. Examples include PGVector, and SQLite.
 - **Embedding Provider**: Converts text into vector embeddings. Supported providers include OpenAI, SentenceTransformers, and DummyEmbeddingProvider.
 - **LLM Provider**: Interfaces with large language models for text generation. Supported providers include OpenAI, and LiteLLM.
 - **Prompt Provider**: Manages prompts for various tasks.

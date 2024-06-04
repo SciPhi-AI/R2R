@@ -33,11 +33,7 @@ class R2RProviderFactory:
         self, vector_db_config: VectorDBConfig, *args, **kwargs
     ) -> VectorDBProvider:
         vector_db_provider: Optional[VectorDBProvider] = None
-        if vector_db_config.provider == "qdrant":
-            from r2r.vector_dbs import QdrantDB
-
-            vector_db_provider = QdrantDB(vector_db_config)
-        elif vector_db_config.provider == "pgvector":
+        if vector_db_config.provider == "pgvector":
             from r2r.vector_dbs import PGVectorDB
 
             vector_db_provider = PGVectorDB(vector_db_config)

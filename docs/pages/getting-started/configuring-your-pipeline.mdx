@@ -9,39 +9,12 @@ By default, RAG pipelines are configured using the R2R [`config.json`](https://g
 R2R supports multiple vector database providers, including:
 
 - **`local`**: A local vector database implementation using SQLite.
-- **`qdrant`**: Integration with Qdrant, a high-performance vector similarity search engine suitable for large datasets (> 1M embedding vectors) requiring fast vector search.
 - **`pgvector`**: Integration with PGVector, a vector similarity search extension for PostgreSQL, ideal for moderate-sized datasets with relational properties.
 - **`sciphi`**: Managed PGVector database from SciPhi.
 
 To specify the vector database provider, set the `provider` field under `vector_database` in the `config.json` file. Ensure you provide the necessary connection details and credentials for your chosen provider.
 
 For more information, refer to [Vector Database Providers](/providers/vector-databases).
-
-### Example: Qdrant Configuration
-
-An example configuration specifying Qdrant as a vector database provider can be found in [`r2r/examples/data/example_qdrant_config.json`](https://github.com/SciPhi-AI/R2R/tree/main/r2r/examples/data/example_qdrant_config.json). When R2R is ran with this configuration the `vector_database` settings on the default `config.json` are overriden:
-
-```json
-{
-  "vector_database": {
-    "provider": "qdrant",
-    "collection_name": "demo_vecs"
-  }
-}
-```
-
-You can serve the [R2R Demo](/getting-started/r2r-demo) using Qdrant with the following command sequence:
-
-```bash
-# Set valid Qdrant environment variables
-export QDRANT_HOST=http://localhost
-export QDRANT_PORT=6333
-export QDRANT_API_KEY=api-...
-
-# Serve the demo with the custom user settings
-export WORKDIR=YOUR_R2R_DIRECTORY
-poetry run python -m r2r.examples.demo --config_path=$WORKDIR/r2r/examples/data/example_qdrant_config.json serve
-```
 
 ## Embedding Provider
 
