@@ -63,6 +63,7 @@ class R2RClient:
         metadatas: Optional[list[dict]],
         files: list[str],
         ids: Optional[list[str]] = None,
+        user_ids: Optional[list[str]] = None,
     ) -> dict:
         url = f"{self.base_url}/ingest_files"
         files_to_upload = [
@@ -75,10 +76,15 @@ class R2RClient:
                 if metadatas is None
                 else json.dumps(metadatas, default=default_serializer)
             ),
-            "ids": (
+            "document_ids": (
                 None
                 if ids is None
                 else json.dumps(ids, default=default_serializer)
+            ),
+            "user_ids": (
+                None
+                if user_ids is None
+                else json.dumps(user_ids, default=default_serializer)
             ),
         }
         response = requests.post(url, files=files_to_upload, data=data)
@@ -252,10 +258,16 @@ class R2RClient:
         return response.json()
 
     def documents_info(
-        self, document_id: Optional[str] = None, user_id: Optional[str] = None
+        self,
+        document_ids: Optional[list[str]] = None,
+        user_ids: Optional[list[str]] = None,
     ) -> dict:
         url = f"{self.base_url}/documents_info"
-        params = {"document_id": document_id, "user_id": user_id}
+        params = {}
+        params["document_ids"] = (
+            json.dumps(document_ids) if document_ids else None
+        )
+        params["user_ids"] = json.dumps(user_ids) if user_ids else None
         response = requests.get(url, params=params)
         response.raise_for_status()
         return response.json()

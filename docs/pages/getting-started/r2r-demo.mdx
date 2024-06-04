@@ -46,44 +46,52 @@ r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'screen_
 r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'pg_essay_4.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=b722f1ec-b90e-5ed8-b7c8-c768e8b323cb in t=0.00 seconds. - 2024-05-21 08:40:32,313
 r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'aristotle.txt', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=c9bdbac7-0ea3-5c9e-b590-018bd09b127b in t=0.00 seconds. - 2024-05-21 08:40:32,313
 r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'pg_essay_5.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=ef66e5dd-2130-5fd5-9bdd-aa7eff59fda5 in t=0.00 seconds. - 2024-05-21 08:40:32,317
-Time taken to ingest files: 28.49 seconds
+r2r.pipes.embedding_pipe - INFO - Fragmented the input document ids into counts as shown: {UUID('4a4fb848-fc03-5487-a7e5-33c9fdfb73cc'): 31, UUID('c5abc0b7-b9e5-54d9-b3d3-fdb14af4d065'): 2094, UUID('f0c63aff-af59-50c9-81fc-2fe55004c771'): 17, UUID('c996e617-88a4-5c65-ab1e-948344b18d27'): 3108, UUID('1a9d4d3b-bbe9-53b9-8149-67806bdf60f2'): 18, UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'): 233, UUID('b722f1ec-b90e-5ed8-b7c8-c768e8b323cb'): 5, UUID('74f1506a-9a37-59d7-b288-5ef3683dca8f'): 10, UUID('ef66e5dd-2130-5fd5-9bdd-aa7eff59fda5'): 11} - 2024-06-04 13:34:40,885
+{'results': ["File 'aristotle.txt' processed successfully.", "File 'screen_shot.png' processed successfully.", "File 'pg_essay_1.html' processed successfully.", "File 'pg_essay_2.html' processed successfully.", "File 'pg_essay_3.html' processed successfully.", "File 'pg_essay_4.html' processed successfully.", "File 'pg_essay_5.html' processed successfully.", "File 'lyft_2021.pdf' processed successfully.", "File 'uber_2021.pdf' processed successfully."]}
 ```
 
 **Note**
 
 Each ingested document derives a unique `document_id` from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, the demo includes a default `user_id` in the document metadata to facilitate user-level document management.
 
-### Step 2: Confirm User Data
+### Step 2: Document Info
 
 To verify the successful ingestion of the demo documents, fetch the metadata for the uploaded documents associated with the demo userId:
 
 ```bash
-python -m r2r.examples.demo get_user_documents_metadata --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
+poetry run python -m r2r.examples.demo documents_info
 ```
-
 **Demo Output:**
 
 ```plaintext
-...
-Time taken to get user document data: 0.21 seconds
-{'results': 
-   [
-      {
-         'document_id': '327f6110-edd1-5fe3-b6b3-49b55f1cbc28',
-         'title': 'pg_essay_3.html'
-      }, 
-      {
-         'document_id': '946859f0-da5c-5db7-9b5c-c586be76d709', 
-         'title': 'pg_essay_5.html'
-      }, 
-      {
-         'document_id': '64c1c913-be06-548f-acbc-3618b00d3616', 
-         'title': 'lyft_2021.pdf'
-      },
-      ...
-   ]
-}
+[
+    DocumentInfo(
+        document_id=UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'), 
+        version='v0', 
+        size_in_bytes=73353, 
+        metadata={'title': 'aristotle.txt', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'}, 
+        title='aristotle.txt'
+    ), 
+    ... 
+]
 ```
+
+```bash
+poetry run python -m r2r.examples.demo user_stats
+```
+
+
+```plaintext
+[
+    UserStats(
+        user_id=UUID('063edaf8-3e63-4cb9-a4d6-a855f36376c3'), 
+        num_files=9,
+        total_size_in_bytes=4809510, 
+        document_ids=[UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'), ...]
+    ), 
+]
+```
+
 
 ## Basic Functionality
 
@@ -102,8 +110,6 @@ python -m r2r.examples.demo search --query="Who was Aristotle?"
 **Demo Output:**
 
 ```plaintext
-...
-Time taken to search: 0.39 seconds
 {
     'id': UUID('93c44e73-8e95-50c2-84af-6a42f070b552'), 
     'score': 0.7739712385010018, 
@@ -116,7 +122,7 @@ Time taken to search: 0.39 seconds
 the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 
         'title': 'aristotle.txt',
         'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 
-        'query': 'Who was Aristotle?'
+        'associatedQuery': 'Who was Aristotle?'
     }
 },
 ...
@@ -135,7 +141,28 @@ python -m r2r.examples.demo rag --query="What was Ubers profit in 2020?"
 ```plaintext
 ...
 Time taken to run RAG: 2.29 seconds
-{'results': [ChatCompletion(id='chatcmpl-9RCB5xUbDuI1f0vPw3RUO7BWQImBN', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessage(content="Uber's profit in 2020 was a net loss of $6,768 million [10].", role='assistant', function_call=None, tool_calls=None))], created=1716268695, model='gpt-3.5-turbo-0125', object='chat.completion', system_fingerprint=None, usage=CompletionUsage(completion_tokens=20, prompt_tokens=1470, total_tokens=1490))]}
+{'results': [
+    ChatCompletion(
+        id='chatcmpl-9RCB5xUbDuI1f0vPw3RUO7BWQImBN', 
+        choices=[
+            Choice(
+                finish_reason='stop', 
+                index=0, 
+                logprobs=None, 
+                message=ChatCompletionMessage(
+                    content="Uber's profit in 2020 was a net loss of $6,768 million [10].", 
+                    role='assistant', 
+                    function_call=None, 
+                    tool_calls=None)
+                )
+            ], 
+        created=1716268695, 
+        model='gpt-3.5-turbo-0125', 
+        object='chat.completion', 
+        system_fingerprint=None, 
+        usage=CompletionUsage(completion_tokens=20, prompt_tokens=1470, total_tokens=1490)
+    )
+]}
 ```
 
 ### Step 5: Run a Demo RAG Stream
@@ -270,15 +297,19 @@ This output is consistent with the default query, context, and answer, shown bel
 Pipes naturally integrate with your selected logging provider. R2R pipelines for ingestion, search, and RAG create comprehensive logs that allow for total observability.
 
 ```bash
-python -m r2r.examples.demo get_logs
+python -m r2r.examples.demo logs
 ```
 
 **Demo Output:**
 
 ```plaintext
 ...
-Time taken to get logs: 0.01 seconds
-{'results': [{'run_id': UUID('9b70a494-c5c9-4485-b7a5-675f0eacb4a0'), 'run_type': 'ingestion', 'entries': [{'key': 'extraction', 'value': '{"data": "\\n\\nA Project of One\'s Own\\n\\nJune 2021A few days ago, on the way home from school, my nine year old son\\ntold me he couldn\'t wait to get home to write more of the story he\\nwas working on. This mad
+{'results': [
+    {
+        'run_id': UUID('9b70a494-c5c9-4485-b7a5-675f0eacb4a0'), 
+        'run_type': 'ingestion', 
+        'entries': [
+            {'key': 'extraction', 'value': '{"data": "\\n\\nA Project of One\'s Ow ....
 ```
 
 ## Summary

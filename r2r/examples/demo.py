@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import time
+import uuid
 from typing import Optional
 
 import fire
@@ -36,7 +37,7 @@ class R2RDemo:
         config_path: Optional[str] = None,
         file_list: Optional[list[str]] = None,
         file_tuples: Optional[list[tuple]] = None,
-        user_id: str = DEMO_USER_ID,
+        user_id: uuid.UUID = DEMO_USER_ID,
         base_url: Optional[str] = None,
     ):
         if base_url:
@@ -49,14 +50,14 @@ class R2RDemo:
         self.user_id = user_id
         self.default_files = file_list or [
             os.path.join(root_path, "data", "aristotle.txt"),
-            os.path.join(root_path, "data", "screen_shot.png"),
-            os.path.join(root_path, "data", "pg_essay_1.html"),
-            os.path.join(root_path, "data", "pg_essay_2.html"),
-            os.path.join(root_path, "data", "pg_essay_3.html"),
-            os.path.join(root_path, "data", "pg_essay_4.html"),
-            os.path.join(root_path, "data", "pg_essay_5.html"),
-            os.path.join(root_path, "data", "lyft_2021.pdf"),
-            os.path.join(root_path, "data", "uber_2021.pdf"),
+            # os.path.join(root_path, "data", "screen_shot.png"),
+            # os.path.join(root_path, "data", "pg_essay_1.html"),
+            # os.path.join(root_path, "data", "pg_essay_2.html"),
+            # os.path.join(root_path, "data", "pg_essay_3.html"),
+            # os.path.join(root_path, "data", "pg_essay_4.html"),
+            # os.path.join(root_path, "data", "pg_essay_5.html"),
+            # os.path.join(root_path, "data", "lyft_2021.pdf"),
+            # os.path.join(root_path, "data", "uber_2021.pdf"),
         ]
 
         self.file_tuples = file_tuples or [
@@ -75,12 +76,11 @@ class R2RDemo:
             documents.append(
                 Document(
                     id=generate_id_from_label(file_path),
+                    user_id=self.user_id,
+                    title=file_path.split(os.path.sep)[-1],
                     data=data,
                     type=file_path.split(".")[-1],
-                    metadata={
-                        "title": file_path.split(os.path.sep)[-1],
-                        "user_id": self.user_id,
-                    },
+                    metadata={},
                 )
             )
 
@@ -109,12 +109,13 @@ class R2RDemo:
             documents.append(
                 Document(
                     id=generate_id_from_label(old_file),
+                    user_id=self.user_id,
+                    title=old_file.split(os.path.sep)[
+                        -1
+                    ],  # preserve the old title
                     data=data,
                     type=new_file.split(".")[-1],
-                    metadata={
-                        "title": old_file.split(os.path.sep)[-1],
-                        "user_id": self.user_id,
-                    },
+                    metadata={},
                 )
             )
 
@@ -153,18 +154,14 @@ class R2RDemo:
             file.size = file.file.tell()
             file.file.seek(0)
 
-        metadatas = [
-            {
-                "title": file_path.split(os.path.sep)[-1],
-                "user_id": self.user_id,
-            }
-            for file_path in file_paths
-        ]
+        metadatas = [{} for file_path in file_paths]
+
+        user_ids = [self.user_id for _ in file_paths]
 
         if hasattr(self, "client"):
             t0 = time.time()
             response = self.client.ingest_files(
-                metadatas=metadatas, files=file_paths, ids=ids
+                metadatas=None, files=file_paths, ids=ids, user_ids=user_ids
             )
             t1 = time.time()
             print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
@@ -172,10 +169,10 @@ class R2RDemo:
         else:
             t0 = time.time()
             response = self.r2r.ingest_files(
-                files=files, metadatas=metadatas, ids=ids
+                files=files, metadatas=metadatas, ids=ids, user_ids=user_ids
             )
             t1 = time.time()
-            print("response = ", response)
+            print(response)
 
     def update_as_files(self, file_tuples: Optional[list[tuple]] = None):
         file_tuples = file_tuples or self.file_tuples
@@ -363,7 +360,7 @@ class R2RDemo:
                 eval_generation_config=(
                     GenerationConfig(**eval_generation_config)
                     if eval_generation_config
-                    else None
+                    else GenerationConfig(model="gpt-3.5-turbo")
                 ),
             )
             t1 = time.time()
@@ -450,13 +447,13 @@ class R2RDemo:
     ):
         if hasattr(self, "client"):
             t0 = time.time()
-            response = self.client.documents_info(document_id, user_id)
+            response = self.client.documents_info(document_ids, user_ids)
             t1 = time.time()
             print(f"Time taken to get document info: {t1-t0:.2f} seconds")
             print(response)
         else:
             t0 = time.time()
-            response = self.r2r.documents_info(document_id, user_id)
+            response = self.r2r.documents_info(document_ids, user_ids)
             t1 = time.time()
             print(f"Time taken to get document info: {t1-t0:.2f} seconds")
             print(response)
@@ -475,16 +472,17 @@ class R2RDemo:
             print(f"Time taken to get app data: {t1-t0:.2f} seconds")
             print(response)
 
-    def user_stats(self):
+    def user_stats(self, user_ids: Optional[list[uuid.UUID]] = None):
+        user_ids = user_ids or [self.user_id]
         if hasattr(self, "client"):
             t0 = time.time()
-            response = self.client.user_stats([self.user_id])
+            response = self.client.user_stats(user_ids)
             t1 = time.time()
             print(f"Time taken to get user stats: {t1-t0:.2f} seconds")
             print(response)
         else:
             t0 = time.time()
-            response = self.r2r.users_stats([self.user_id])
+            response = self.r2r.users_stats(user_ids)
             t1 = time.time()
             print(f"Time taken to get user stats: {t1-t0:.2f} seconds")
             print(response)

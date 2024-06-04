@@ -202,8 +202,13 @@ class R2REmbeddingPipe(EmbeddingPipe):
         batch_tasks = []
         fragment_batch = []
 
+        fragment_info = {}
         async for extraction in input.message:
             async for fragment in self.fragment(extraction, run_id):
+                if extraction.document_id in fragment_info:
+                    fragment_info[extraction.document_id] += 1
+                else:
+                    fragment_info[extraction.document_id] = 1
                 fragment_batch.append(fragment)
                 if len(fragment_batch) >= self.embedding_batch_size:
                     # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
@@ -211,6 +216,10 @@ class R2REmbeddingPipe(EmbeddingPipe):
                         self._process_batch(fragment_batch.copy())
                     )  # pass a copy if necessary
                     fragment_batch.clear()  # Clear the batch for new fragments
+
+        logger.info(
+            f"Fragmented the input document ids into counts as shown: {fragment_info}"
+        )
 
         if fragment_batch:  # Process any remaining fragments
             batch_tasks.append(self._process_batch(fragment_batch.copy()))

@@ -1,7 +1,7 @@
-import uuid
 import json
 import logging
 import os
+import uuid
 from typing import Optional, Union
 
 from sqlalchemy import text
@@ -9,10 +9,10 @@ from sqlalchemy import text
 from r2r.core import (
     DocumentInfo,
     SearchResult,
+    UserStats,
     VectorDBConfig,
     VectorDBProvider,
     VectorEntry,
-    UserStats
 )
 from r2r.vecs.client import Client
 from r2r.vecs.collection import Collection
@@ -56,7 +56,6 @@ class PGVectorDB(VectorDBProvider):
         )
         self._create_document_info_table()
 
-
     def _create_document_info_table(self):
         with self.vx.Session() as sess:
             with sess.begin():
@@ -74,7 +73,6 @@ class PGVectorDB(VectorDBProvider):
                 """
                 sess.execute(text(query))
                 sess.commit()
-
 
     def copy(self, entry: VectorEntry, commit=True) -> None:
         if self.collection is None:
@@ -233,44 +231,78 @@ class PGVectorDB(VectorDBProvider):
         return [
             results[key] for key in results if key != tuple(metadata_fields)
         ]
-        
-    def upsert_document_info(self, document_info: DocumentInfo) -> None:
-        db_entry = document_info.convert_to_db_entry()
-        query = text("""
-            INSERT INTO document_info_{self.config.collection_name} (document_id, title, user_id, version, created_at, updated_at, size_in_bytes, metadata)
-            VALUES (:document_id, :title, :user_id, :version, :created_at, :updated_at, :size_in_bytes, :metadata)
-            ON CONFLICT (document_id) DO UPDATE SET
-                title = EXCLUDED.title,
-                user_id = EXCLUDED.user_id,
-                version = EXCLUDED.version,
-                updated_at = EXCLUDED.updated_at,
-                size_in_bytes = EXCLUDED.size_in_bytes,
-                metadata = EXCLUDED.metadata;
-        """).format(self.config.collection_name)
+
+    def upsert_documents_info(
+        self, documents_info: list[DocumentInfo]
+    ) -> None:
+        for document_info in documents_info:
+            db_entry = document_info.convert_to_db_entry()
+            query = text(
+                """
+                INSERT INTO document_info_{self.config.collection_name} (document_id, title, user_id, version, created_at, updated_at, size_in_bytes, metadata)
+                VALUES (:document_id, :title, :user_id, :version, :created_at, :updated_at, :size_in_bytes, :metadata)
+                ON CONFLICT (document_id) DO UPDATE SET
+                    title = EXCLUDED.title,
+                    user_id = EXCLUDED.user_id,
+                    version = EXCLUDED.version,
+                    updated_at = EXCLUDED.updated_at,
+                    size_in_bytes = EXCLUDED.size_in_bytes,
+                    metadata = EXCLUDED.metadata;
+            """
+            ).format(self.config.collection_name)
         with self.vx.Session() as sess:
             sess.execute(query, db_entry)
             sess.commit()
-                
-    def delete_document_info(self, document_id: str) -> None:
+
+    def delete_documents_info(self, document_ids: list[str]) -> None:
+        placeholders = ", ".join(
+            f":doc_id_{i}" for i in range(len(document_ids))
+        )
         query = text(
             f"""
-        DELETE FROM document_info_{self.config.collection_name} WHERE document_id = :document_id;
-        """
+            DELETE FROM document_info_{self.config.collection_name} WHERE document_id IN ({placeholders});
+            """
         )
+        params = {
+            f"doc_id_{i}": document_id
+            for i, document_id in enumerate(document_ids)
+        }
+
         with self.vx.Session() as sess:
             with sess.begin():
-                sess.execute(query, {"document_id": document_id})
+                sess.execute(query, params)
             sess.commit()
 
-    def get_documents_info(self, document_id: Optional[uuid.UUID] = None, user_id: Optional[uuid.UUID] = None):
+    def get_documents_info(
+        self,
+        filter_document_ids: Optional[list[str]] = None,
+        filter_user_ids: Optional[list[str]] = None,
+    ):
         conditions = []
         params = {}
-        if document_id:
-            conditions.append("document_id = :document_id")
-            params["document_id"] = str(document_id)
-        if user_id:
-            conditions.append("user_id = :user_id")
-            params["user_id"] = str(user_id)
+
+        if filter_document_ids:
+            placeholders = ", ".join(
+                f":doc_id_{i}" for i in range(len(filter_document_ids))
+            )
+            conditions.append(f"document_id IN ({placeholders})")
+            params.update(
+                {
+                    f"doc_id_{i}": str(document_id)
+                    for i, document_id in enumerate(filter_document_ids)
+                }
+            )
+        if filter_user_ids:
+            placeholders = ", ".join(
+                f":user_id_{i}" for i in range(len(filter_user_ids))
+            )
+            conditions.append(f"user_id IN ({placeholders})")
+            params.update(
+                {
+                    f"user_id_{i}": str(user_id)
+                    for i, user_id in enumerate(filter_user_ids)
+                }
+            )
 
         query = f"""
             SELECT document_id, title, user_id, version, size_in_bytes, created_at, updated_at, metadata
@@ -290,19 +322,22 @@ class PGVectorDB(VectorDBProvider):
                     size_in_bytes=row[4],
                     created_at=row[5],
                     updated_at=row[6],
-                    metadata=json.loads(row[7])
-                ) for row in results
-            ]    
-        
+                    metadata=json.loads(row[7]),
+                )
+                for row in results
+            ]
+
     def get_users_stats(self, user_ids: Optional[list[uuid.UUID]] = None):
         user_ids_condition = ""
         params = {}
         if user_ids:
             user_ids_condition = "WHERE user_id IN :user_ids"
-            params["user_ids"] = tuple(map(str, user_ids))  # Convert UUIDs to strings
+            params["user_ids"] = tuple(
+                map(str, user_ids)
+            )  # Convert UUIDs to strings
 
         query = f"""
-            SELECT user_id, COUNT(document_id) AS num_files, SUM(size_in_bytes) AS total_size, ARRAY_AGG(document_id) AS document_ids
+            SELECT user_id, COUNT(document_id) AS num_files, SUM(size_in_bytes) AS total_size_in_bytes, ARRAY_AGG(document_id) AS document_ids
             FROM document_info_{self.config.collection_name}
             {user_ids_condition}
             GROUP BY user_id
@@ -315,7 +350,8 @@ class PGVectorDB(VectorDBProvider):
             UserStats(
                 user_id=uuid.UUID(row[0]),
                 num_files=row[1],
-                total_size=row[2],
-                document_ids=[uuid.UUID(doc_id) for doc_id in row[3]]
-            ) for row in results
+                total_size_in_bytes=row[2],
+                document_ids=[uuid.UUID(doc_id) for doc_id in row[3]],
+            )
+            for row in results
         ]

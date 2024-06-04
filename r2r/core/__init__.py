@@ -1,18 +1,17 @@
 from .abstractions.document import (
     DataType,
     Document,
-    DocumentType,
     DocumentInfo,
+    DocumentType,
     Extraction,
     ExtractionType,
     Fragment,
     FragmentType,
 )
-from .abstractions.user import UserStats
-
 from .abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
 from .abstractions.prompt import Prompt
 from .abstractions.search import SearchRequest, SearchResult
+from .abstractions.user import UserStats
 from .abstractions.vector import Vector, VectorEntry, VectorType
 from .logging.kv_logger import (
     KVLoggingSingleton,

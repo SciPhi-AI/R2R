@@ -1,17 +1,17 @@
-import uuid
 import json
 import logging
 import os
 import sqlite3
+import uuid
 from typing import Optional, Union
 
 from r2r.core import (
     DocumentInfo,
     SearchResult,
+    UserStats,
     VectorDBConfig,
     VectorDBProvider,
     VectorEntry,
-    UserStats
 )
 
 logger = logging.getLogger(__name__)
@@ -186,7 +186,7 @@ class R2RLocalVectorDB(VectorDBProvider):
                 deleted_ids.add(metadata_json.get("document_id", None))
         conn.commit()
         conn.close()
-        return deleted_ids
+        return list(deleted_ids)
 
     def get_metadatas(
         self,
@@ -219,41 +219,54 @@ class R2RLocalVectorDB(VectorDBProvider):
         conn.close()
         return [json.loads(r) for r in results]
 
-    def upsert_document_info(self, document_info: DocumentInfo) -> None:
+    def upsert_documents_info(
+        self, documents_info: list[DocumentInfo]
+    ) -> None:
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
-        db_entry = document_info.convert_to_db_entry()
+        for document_info in documents_info:
+            db_entry = document_info.convert_to_db_entry()
 
+            cursor.execute(
+                f"""
+                INSERT INTO document_info_{self.config.collection_name} (document_id, title, user_id, version, size_in_bytes, metadata, created_at, updated_at)
+                VALUES (:document_id, :title, :user_id, :version, :size_in_bytes, :metadata, :created_at, :updated_at)
+                ON CONFLICT(document_id) DO UPDATE SET
+                    title = EXCLUDED.title,
+                    user_id = EXCLUDED.user_id,
+                    version = EXCLUDED.version,
+                    updated_at = EXCLUDED.updated_at,
+                    size_in_bytes = EXCLUDED.size_in_bytes,
+                    metadata = EXCLUDED.metadata;
+                """,
+                db_entry,
+            )
+        conn.commit()
+        conn.close()
+
+    def delete_documents_info(self, document_ids: list[str]) -> None:
+        conn = self._get_conn()
+        cursor = self._get_cursor(conn)
+
+        # Create a placeholder string for the SQL query
+        placeholders = ", ".join("?" for _ in document_ids)
+
+        # Execute the deletion query with the list of document IDs
         cursor.execute(
             f"""
-            INSERT INTO document_info_{self.config.collection_name} (document_id, title, user_id, version, size_in_bytes, metadata, created_at, updated_at)
-            VALUES (:document_id, :title, :user_id, :version, :size_in_bytes, :metadata, :created_at, :updated_at)
-            ON CONFLICT(document_id) DO UPDATE SET
-                title = EXCLUDED.title,
-                user_id = EXCLUDED.user_id,
-                version = EXCLUDED.version,
-                updated_at = EXCLUDED.updated_at,
-                size_in_bytes = EXCLUDED.size_in_bytes,
-                metadata = EXCLUDED.metadata;
+            DELETE FROM document_info_{self.config.collection_name} WHERE document_id IN ({placeholders});
             """,
-            db_entry
+            document_ids,
         )
+
         conn.commit()
         conn.close()
 
-    def delete_document_info(self, document_id: str) -> None:
-        conn = self._get_conn()
-        cursor = self._get_cursor(conn)
-        cursor.execute(
-            f"""
-            DELETE FROM document_info_{self.config.collection_name} WHERE document_id = ?;
-        """,
-            (document_id,),
-        )
-        conn.commit()
-        conn.close()
-
-    def get_documents_info(self, document_id: Optional[str] = None, user_id: Optional[str] = None):
+    def get_documents_info(
+        self,
+        filter_document_ids: Optional[list[str]] = None,
+        filter_user_ids: Optional[list[str]] = None,
+    ):
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
         query = f"""
@@ -262,30 +275,36 @@ class R2RLocalVectorDB(VectorDBProvider):
         """
         conditions = []
         params = []
-        if document_id:
-            conditions.append("document_id = ?")
-            params.append(document_id)
-        if user_id:
-            conditions.append("user_id = ?")
-            params.append(user_id)
+
+        if filter_document_ids:
+            placeholders = ", ".join("?" for _ in filter_document_ids)
+            conditions.append(f"document_id IN ({placeholders})")
+            params.extend(filter_document_ids)
+        if filter_user_ids:
+            placeholders = ", ".join("?" for _ in filter_document_ids)
+            conditions.append(f"user_id IN ({placeholders})")
+            params.extend(filter_document_ids)
 
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
+
         cursor.execute(query, params)
         results = cursor.fetchall()
         conn.close()
 
         document_infos = []
         for row in results:
+            print("results = ", results)
+            print("result user id = ", row[2])
             document_info = DocumentInfo(
                 document_id=uuid.UUID(row[0]),
                 title=row[1],
-                user_id=uuid.UUID(row[2]),
+                user_id=uuid.UUID(row[2]) if row[2] else None,
                 version=row[3],
                 size_in_bytes=row[4],
                 created_at=row[5],
                 updated_at=row[6],
-                metadata=json.loads(row[7])
+                metadata=json.loads(row[7]),
             )
             document_infos.append(document_info)
 
@@ -295,11 +314,13 @@ class R2RLocalVectorDB(VectorDBProvider):
         user_ids_condition = ""
         params = []
         if user_ids:
-            user_ids_condition = "WHERE user_id IN (" + ",".join("?" for _ in user_ids) + ")"
+            user_ids_condition = (
+                "WHERE user_id IN (" + ",".join("?" for _ in user_ids) + ")"
+            )
             params = user_ids
 
         query = f"""
-            SELECT user_id, COUNT(document_id) AS num_files, SUM(size_in_bytes) AS total_size, GROUP_CONCAT(document_id) AS document_ids
+            SELECT user_id, COUNT(document_id) AS num_files, SUM(size_in_bytes) AS total_size_in_bytes, GROUP_CONCAT(document_id) AS document_ids
             FROM document_info_{self.config.collection_name}
             {user_ids_condition}
             GROUP BY user_id
@@ -315,7 +336,10 @@ class R2RLocalVectorDB(VectorDBProvider):
             UserStats(
                 user_id=uuid.UUID(row[0]),
                 num_files=row[1],
-                total_size=row[2],
-                document_ids=[uuid.UUID(doc_id) for doc_id in row[3].split(',')]
-            ) for row in results
+                total_size_in_bytes=row[2],
+                document_ids=[
+                    uuid.UUID(doc_id) for doc_id in row[3].split(",")
+                ],
+            )
+            for row in results
         ]

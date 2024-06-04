@@ -212,7 +212,7 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
             )
             iteration += 1
         logger.info(
-            f"Parsed document with metadata={document.metadata} and id={document.id} in t={time.time()-t0:.2f} seconds."
+            f"Parsed document with id={document.id}, title={document.title}, user_id={document.user_id}, metadata={document.metadata} into {iteration} extractions in t={time.time()-t0:.2f} seconds."
         )
 
     async def _run_logic(

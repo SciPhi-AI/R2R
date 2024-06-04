@@ -2,6 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Optional, Union
 
+from ..abstractions.document import DocumentInfo
 from ..abstractions.search import SearchResult
 from ..abstractions.vector import VectorEntry
 from .base_provider import Provider, ProviderConfig
@@ -98,11 +99,19 @@ class VectorDBProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def upsert_document_info(self, document_info: dict) -> None:
+    def upsert_documents_info(self, document_infs: list[DocumentInfo]) -> None:
         pass
 
     @abstractmethod
-    def delete_document_info(self, document_id: str) -> dict:
+    def get_documents_info(
+        self,
+        filter_document_ids: Optional[list[str]] = None,
+        filter_user_ids: Optional[list[str]] = None,
+    ):
+        pass
+
+    @abstractmethod
+    def delete_documents_info(self, document_ids: list[str]) -> dict:
         pass
 
     @abstractmethod
