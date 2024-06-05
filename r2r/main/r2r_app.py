@@ -1310,6 +1310,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         try:
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             return await self.aapp_settings()
 =======
 <<<<<<< HEAD
@@ -1321,6 +1322,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
 =======
             return await self.asettings()
 >>>>>>> ace5611 (basic demo func work)
+=======
+            return await self.aapp_settings()
+>>>>>>> 491d7b2 (harmonize app)
         except Exception as e:
             logger.error(f"app_settings_app() - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e)) from e
