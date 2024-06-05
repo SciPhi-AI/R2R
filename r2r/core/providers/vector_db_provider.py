@@ -2,6 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Optional, Union
 
+from ..abstractions.document import DocumentInfo
 from ..abstractions.search import SearchResult
 from ..abstractions.vector import VectorEntry
 from .base_provider import Provider, ProviderConfig
@@ -25,7 +26,7 @@ class VectorDBConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["local", "pgvector", "qdrant"]
+        return ["local", "pgvector"]
 
 
 class VectorDBProvider(Provider, ABC):
@@ -81,7 +82,7 @@ class VectorDBProvider(Provider, ABC):
         self,
         metadata_fields: list[str],
         metadata_values: list[Union[bool, int, str]],
-    ) -> None:
+    ) -> list[str]:
         if len(metadata_fields) != len(metadata_values):
             raise ValueError(
                 "The number of metadata fields and values must be equal."
@@ -95,4 +96,24 @@ class VectorDBProvider(Provider, ABC):
         filter_field: Optional[str] = None,
         filter_value: Optional[str] = None,
     ) -> list[str]:
+        pass
+
+    @abstractmethod
+    def upsert_documents_info(self, document_infs: list[DocumentInfo]) -> None:
+        pass
+
+    @abstractmethod
+    def get_documents_info(
+        self,
+        filter_document_ids: Optional[list[str]] = None,
+        filter_user_ids: Optional[list[str]] = None,
+    ) -> list[DocumentInfo]:
+        pass
+
+    @abstractmethod
+    def delete_documents_info(self, document_ids: list[str]) -> dict:
+        pass
+
+    @abstractmethod
+    def get_users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
         pass

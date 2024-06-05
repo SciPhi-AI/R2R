@@ -210,7 +210,7 @@ Time taken to stream RAG response: 2.79 seconds
 To update document(s) we may use the `update_as_files` or `update_as_documents` endpoints. Running the demo with `update_as_files` overwrites the data associated with 'aristotle.txt' with new data corresponding to 'aristotle_v2.txt' and increments the file version.
 
 ```bash
-poetry run python -m r2r.examples.demo update_as_files
+python -m r2r.examples.demo update_as_files
 ```
 
 ### Document Deletion
@@ -218,7 +218,7 @@ poetry run python -m r2r.examples.demo update_as_files
 To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the metadata field `document_id` with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
 
 ```bash
-poetry run python -m r2r.examples.demo delete --keys="['document_id']" --values="['c9bdbac7-0ea3-5c9e-b590-018bd09b127b']"
+python -m r2r.examples.demo delete --keys="['document_id']" --values="['c9bdbac7-0ea3-5c9e-b590-018bd09b127b']"
 ```
 
 ### User Deletion
@@ -283,7 +283,7 @@ The framework revolves around three core abstractions: Providers, Pipes, and Pip
 
 Providers supply the necessary resources and capabilities to the pipes and pipelines. Key provider types include:
 
-- **Vector Database Provider**: Manages the storage and retrieval of vector embeddings. Examples include Qdrant, PGVector, and LocalVectorDB.
+- **Vector Database Provider**: Manages the storage and retrieval of vector embeddings. Examples include PGVector, and SQLite.
 - **Embedding Provider**: Converts text into vector embeddings. Supported providers include OpenAI, SentenceTransformers, and DummyEmbeddingProvider.
 - **LLM Provider**: Interfaces with large language models for text generation. Supported providers include OpenAI, and LiteLLM.
 - **Prompt Provider**: Manages prompts for various tasks.

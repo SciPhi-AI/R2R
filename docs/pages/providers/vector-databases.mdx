@@ -4,7 +4,6 @@ R2R provides a flexible and provider-agnostic approach to integrate with various
 
 - Local (SQLite)
 - PGVector
-- Qdrant
 
 ## Toggling Between Vector DB Providers
 
@@ -17,7 +16,7 @@ To toggle between different vector database providers, you need to update the `v
 }
 ```
 
-By changing the `provider` value to `"local"`, `"pgvector"`, or `"qdrant"`, you can switch between the previously mentioned supported vector database providers.
+By changing the `provider` value to `"local"`, `"pgvector"` you can switch between the previously mentioned supported vector database providers.
 
 
 ## Local Implementation (SQLite)
@@ -45,19 +44,6 @@ Key features of the `PGVectorDB` implementation:
 - Allows filtered deletion of entries based on metadata key-value pairs.
 - Retrieves unique values for a specific metadata field.
 
-## Qdrant Implementation
-
-The `QdrantDB` class is an implementation of the `VectorDBProvider` that integrates with the Qdrant vector database for storing and retrieving vector embeddings.
-
-Key features of the `QdrantDB` implementation:
-
-- Connects to a Qdrant server using the provided host, port, and API key.
-- Initializes a collection with the specified name and dimension.
-- Supports upserting vector entries with their associated metadata.
-- Performs similarity search using Qdrant's search functionality.
-- Allows filtered deletion of entries based on metadata key-value pairs.
-- Retrieves unique values for a specific metadata field.
-
 ## Configuring Vector DB Providers
 
 To configure a specific vector database provider, you need to set the appropriate environment variables and update the `vector_database` section of the configuration file (`config.json`).
@@ -74,12 +60,5 @@ To configure a specific vector database provider, you need to set the appropriat
   - `POSTGRES_HOST`: PostgreSQL database host
   - `POSTGRES_PORT`: PostgreSQL database port
   - `POSTGRES_DBNAME`: PostgreSQL database name
-
-### Qdrant
-
-- Set the following environment variables with the appropriate values:
-  - `QDRANT_HOST`: Qdrant server host
-  - `QDRANT_PORT`: Qdrant server port
-  - `QDRANT_API_KEY`: Qdrant API key
 
 Make sure to update the `vector_database` section of the configuration file (`config.json`) with the desired provider and any additional provider-specific settings.

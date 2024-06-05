@@ -12,7 +12,7 @@ from r2r import (
     VectorEntry,
     generate_id_from_label,
 )
-from r2r.vector_dbs import PGVectorDB, QdrantDB, R2RLocalVectorDB
+from r2r.vector_dbs import PGVectorDB, R2RLocalVectorDB
 
 load_dotenv()
 
@@ -70,23 +70,7 @@ def pg_vector_db():
     db.vx.delete_collection(db.config.collection_name)
 
 
-# Fixture for qdrant
-@pytest.fixture
-def qdrant_vector_db():
-    random_collection_name = (
-        f"test_collection_{random.randint(0, 1_000_000_000)}"
-    )
-    config = VectorDBConfig(
-        provider="qdrant", collection_name=random_collection_name
-    )
-    db = QdrantDB(config)
-    db.initialize_collection(dimension=dimension)
-    yield db
-
-
-@pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
-)
+@pytest.mark.parametrize("db_fixture", ["local_vector_db", "pg_vector_db"])
 def test_get_metadatas(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     for entry in sample_entries:
@@ -99,9 +83,7 @@ def test_get_metadatas(request, db_fixture):
 
 
 # Parameterize the tests to run with both R2RLocalVectorDB and PGVectorDB
-@pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
-)
+@pytest.mark.parametrize("db_fixture", ["local_vector_db", "pg_vector_db"])
 def test_db_initialization(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     assert isinstance(db, VectorDBProvider)
@@ -117,9 +99,7 @@ def test_db_copy_and_search(request, db_fixture):
     assert results[0].score == pytest.approx(1.0, rel=1e-3)
 
 
-@pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
-)
+@pytest.mark.parametrize("db_fixture", ["local_vector_db", "pg_vector_db"])
 def test_db_upsert_and_search(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     db.upsert(sample_entries[0])
@@ -129,9 +109,7 @@ def test_db_upsert_and_search(request, db_fixture):
     assert results[0].score == pytest.approx(1.0, rel=1e-3)
 
 
-@pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
-)
+@pytest.mark.parametrize("db_fixture", ["local_vector_db", "pg_vector_db"])
 def test_imperfect_match(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     db.upsert(sample_entries[0])
@@ -142,9 +120,7 @@ def test_imperfect_match(request, db_fixture):
     assert results[0].score < 1.0
 
 
-@pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
-)
+@pytest.mark.parametrize("db_fixture", ["local_vector_db", "pg_vector_db"])
 def test_bulk_insert_and_search(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     for entry in sample_entries:
@@ -157,9 +133,7 @@ def test_bulk_insert_and_search(request, db_fixture):
     assert results[0].score == pytest.approx(1.0, rel=1e-3)
 
 
-@pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
-)
+@pytest.mark.parametrize("db_fixture", ["local_vector_db", "pg_vector_db"])
 def test_search_with_filters(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     for entry in sample_entries:
@@ -175,9 +149,7 @@ def test_search_with_filters(request, db_fixture):
     assert results[0].metadata["key"] == filtered_id
 
 
-@pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
-)
+@pytest.mark.parametrize("db_fixture", ["local_vector_db", "pg_vector_db"])
 def test_delete_by_metadata(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     for entry in sample_entries:
@@ -192,9 +164,7 @@ def test_delete_by_metadata(request, db_fixture):
     assert all(result.metadata["key"] != key_to_delete for result in results)
 
 
-@pytest.mark.parametrize(
-    "db_fixture", ["local_vector_db", "pg_vector_db", "qdrant_vector_db"]
-)
+@pytest.mark.parametrize("db_fixture", ["local_vector_db", "pg_vector_db"])
 def test_upsert(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     db.upsert(sample_entries[0])

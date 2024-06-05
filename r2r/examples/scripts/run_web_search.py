@@ -1,9 +1,4 @@
-from r2r import (
-    GenerationConfig,
-    R2RAppBuilder,
-    R2RWebSearchPipe,
-    SerperClient,
-)
+from r2r import GenerationConfig, R2RAppBuilder, R2RWebSearchPipe, SerperClient
 
 if __name__ == "__main__":
     # Create search pipe override and pipes

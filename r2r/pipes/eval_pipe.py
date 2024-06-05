@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from r2r import (
     AsyncState,
     EvalProvider,
+    GenerationConfig,
     LLMChatCompletion,
     LoggableAsyncPipe,
     PipeType,
@@ -45,12 +46,16 @@ class R2REvalPipe(LoggableAsyncPipe):
     async def _run_logic(
         self,
         input: Input,
-        run_id: uuid.UUID,
         state: AsyncState,
+        run_id: uuid.UUID,
+        eval_generation_config: GenerationConfig,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[LLMChatCompletion, None]:
         async for item in input.message:
             yield self.eval_provider.evaluate(
-                item.query, item.context, item.completion
+                item.query,
+                item.context,
+                item.completion,
+                eval_generation_config,
             )

@@ -1,6 +1,7 @@
 from .abstractions.document import (
     DataType,
     Document,
+    DocumentInfo,
     DocumentType,
     Extraction,
     ExtractionType,
@@ -10,6 +11,7 @@ from .abstractions.document import (
 from .abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
 from .abstractions.prompt import Prompt
 from .abstractions.search import SearchRequest, SearchResult
+from .abstractions.user import UserStats
 from .abstractions.vector import Vector, VectorEntry, VectorType
 from .logging.kv_logger import (
     KVLoggingSingleton,
@@ -20,8 +22,14 @@ from .logging.kv_logger import (
     RedisKVLoggingProvider,
     RedisLoggingConfig,
 )
+from .logging.log_processor import (
+    AnalysisTypes,
+    FilterCriteria,
+    LogAnalytics,
+    LogAnalyticsConfig,
+    LogProcessor,
+)
 from .logging.run_manager import RunManager, manage_run
-from .logging.log_processor import AnalysisTypes, LogProcessor, FilterCriteria, LogAnalytics, LogAnalyticsConfig
 from .parsers import (
     AsyncParser,
     AudioParser,
@@ -90,10 +98,12 @@ __all__ = [
     "DataType",
     "DocumentType",
     "Document",
+    "DocumentInfo",
     "Extraction",
     "ExtractionType",
     "Fragment",
     "FragmentType",
+    "UserStats",
     # Parsers
     "AudioParser",
     "AsyncParser",
