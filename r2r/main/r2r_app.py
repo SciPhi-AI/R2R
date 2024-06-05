@@ -134,6 +134,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     - Retrieve user IDs
     - Retrieve user document data
     - Retrieve logs
+    - Retrieve analytics
     """
 
     def __init__(
@@ -413,6 +414,16 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         status_code=400, detail="File name not provided."
                     )
 
+                file_extension = file.filename.split(".")[-1].lower()
+                if file_extension.upper() not in DocumentType.__members__:
+                    logger.error(
+                        f"'{file_extension}' is not a valid DocumentType"
+                    )
+                    raise HTTPException(
+                        status_code=415,
+                        detail=f"'{file_extension}' is not a valid DocumentType.",
+                    )
+
                 file_content = await file.read()
                 logger.info(f"File read successfully: {file.filename}")
 
@@ -436,7 +447,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 documents.append(
                     Document(
                         id=document_id,
-                        type=DocumentType(file.filename.split(".")[-1]),
+                        type=DocumentType[file_extension.upper()],
                         data=file_content,
                         metadata=document_metadata,
                         title=document_title,
@@ -497,11 +508,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     if len(ids_list) != 0:
                         try:
                             ids_list = [uuid.UUID(id) for id in ids_list]
-                        except ValueError:
+                        except ValueError as e:
                             raise HTTPException(
                                 status_code=400,
                                 detail="Invalid UUID provided.",
-                            )
+                            ) from e
                 else:
                     ids_list = None
 
@@ -550,6 +561,16 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     value=str(e),
                     is_info_log=False,
                 )
+<<<<<<< HEAD
+=======
+
+                await self.ingestion_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="error",
+                    value=str(e),
+                    is_info_log=False,
+                )
+>>>>>>> 520fe20 (merge w/ nolan changes)
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
@@ -561,8 +582,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         *args: Any,
         **kwargs: Any,
     ):
-        print("files = ", files)
-        if len(files) == 0:
+        if not files:
             raise HTTPException(
                 status_code=400, detail="No files provided for update."
             )
@@ -691,7 +711,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     value=str(e),
                     is_info_log=False,
                 )
-                raise HTTPException(status_code=500, detail=str(e))
+                raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
     async def asearch(
@@ -883,7 +903,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         raise HTTPException(
                             status_code=400,
                             detail=f"Error parsing RAG generation config: {str(jde)}",
-                        )
+                        ) from jde
 
                 # Call the async RAG method
                 response = await self.arag(
@@ -974,6 +994,16 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     value=str(e),
                     is_info_log=False,
                 )
+<<<<<<< HEAD
+=======
+
+                await self.eval_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="error",
+                    value=str(e),
+                    is_info_log=False,
+                )
+>>>>>>> 520fe20 (merge w/ nolan changes)
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
@@ -1060,7 +1090,107 @@ class R2RApp(metaclass=AsyncSyncMeta):
             return await self.alogs(log_type_filter, max_runs_requested)
         except Exception as e:
             logger.error(f":logs: [Error](error={str(e)})")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    @syncable
+    async def aanalytics(
+        self,
+        filter_criteria: FilterCriteria,
+        analysis_types: AnalysisTypes,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        run_info = await self.logging_connection.get_run_info(limit=100)
+        run_ids = [info.run_id for info in run_info]
+
+        if not run_ids:
+            return {
+                "results": {
+                    "analytics_data": "No logs found.",
+                    "filtered_logs": {},
+                }
+            }
+
+        logs = await self.logging_connection.get_logs(run_ids=run_ids)
+
+        filters = {}
+        if filter_criteria.filters:
+            for key, value in filter_criteria.filters.items():
+                filters[key] = lambda log, value=value: (
+                    any(
+                        entry.get("key") == value
+                        for entry in log.get("entries", [])
+                    )
+                    if "entries" in log
+                    else log.get("key") == value
+                )
+
+        log_processor = LogProcessor(filters)
+        for log in logs:
+            if "entries" in log and isinstance(log["entries"], list):
+                log_processor.process_log(log)
+            elif "key" in log:
+                log_processor.process_log(log)
+            else:
+                logger.warning(
+                    f"Skipping log due to missing or malformed 'entries': {log}"
+                )
+
+        filtered_logs = dict(log_processor.populations.items())
+
+        results = {"filtered_logs": filtered_logs}
+
+        if analysis_types and analysis_types.analysis_types:
+            for (
+                filter_key,
+                analysis_config,
+            ) in analysis_types.analysis_types.items():
+                if filter_key in filtered_logs:
+                    analysis_type = analysis_config[0]
+                    if analysis_type == "bar_chart":
+                        extract_key = analysis_config[1]
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.generate_bar_chart_data(
+                            filtered_logs[filter_key], extract_key
+                        )
+                    elif analysis_type == "basic_statistics":
+                        extract_key = analysis_config[1]
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.calculate_basic_statistics(
+                            filtered_logs[filter_key], extract_key
+                        )
+                    elif analysis_type == "percentile":
+                        extract_key = analysis_config[1]
+                        percentile = int(analysis_config[2])
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.calculate_percentile(
+                            filtered_logs[filter_key],
+                            extract_key,
+                            percentile,
+                        )
+                    else:
+                        logger.warning(
+                            f"Unknown analysis type for filter key '{filter_key}': {analysis_type}"
+                        )
+
+        return {"results": results}
+
+    async def analytics_app(
+        self,
+        filter_criteria: FilterCriteria = Body(...),
+        analysis_types: AnalysisTypes = Body(...),
+    ):
+        async with manage_run(self.run_manager, "analytics_app") as run_id:
+            try:
+                return await self.aanalytics(filter_criteria, analysis_types)
+            except Exception as e:
+                await self.run_manager.log_run_info(
+                    "error", str(e), is_info_log=False
+                )
+                raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
     async def aanalytics(
