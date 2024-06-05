@@ -796,19 +796,21 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     )
 
                     async def stream_response():
-                        async for (
-                            chunk
-                        ) in await self.streaming_rag_pipeline.run(
-                            input=to_async_generator([message]),
-                            streaming=True,
-                            search_filters=search_filters,
-                            search_limit=search_limit,
-                            rag_generation_config=rag_generation_config,
-                            run_manager=self.run_manager,
-                            *args,
-                            **kwargs,
-                        ):
-                            yield chunk
+                        # We must re-enter the manage_run context for the streaming pipeline
+                        async with manage_run(self.run_manager, "arag"):
+                            async for (
+                                chunk
+                            ) in await self.streaming_rag_pipeline.run(
+                                input=to_async_generator([message]),
+                                streaming=True,
+                                search_filters=search_filters,
+                                search_limit=search_limit,
+                                rag_generation_config=rag_generation_config,
+                                run_manager=self.run_manager,
+                                *args,
+                                **kwargs,
+                            ):
+                                yield chunk
 
                     return stream_response()
 
