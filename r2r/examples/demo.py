@@ -18,7 +18,6 @@ from r2r import (
     R2RConfig,
     generate_id_from_label,
 )
-
 from r2r.core import AnalysisTypes, FilterCriteria
 
 logger = logging.getLogger(__name__)
@@ -137,7 +136,9 @@ class R2RDemo:
         print(f"Time taken to update documents: {t1-t0:.2f} seconds")
         print(response)
 
-    def ingest_as_files(self, file_paths: Optional[list[str]] = None, no_images=False):
+    def ingest_as_files(
+        self, file_paths: Optional[list[str]] = None, no_images=False
+    ):
         file_paths = file_paths or self.default_files
 
         if no_images:
@@ -151,6 +152,8 @@ class R2RDemo:
             generate_id_from_label(file_path.split(os.path.sep)[-1])
             for file_path in file_paths
         ]
+
+        seeds = [file_path.split(os.path.sep)[-1] for file_path in file_paths]
         files = [
             UploadFile(
                 filename=file_path.split(os.path.sep)[-1],

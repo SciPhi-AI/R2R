@@ -307,7 +307,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 logger.error(
                     f"ingest_documents_app(documents={request.documents}) - \n\n{str(e)})"
                 )
-                logger.error(f"ingest_documents_app(documents={request.documents}) - \n\n{str(e)})")
+                logger.error(
+                    f"ingest_documents_app(documents={request.documents}) - \n\n{str(e)})"
+                )
                 raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
@@ -361,7 +363,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 logger.error(
                     f"update_documents_app(documents={request.documents}) - \n\n{str(e)})"
                 )
-                logger.error(f"update_documents_app(documents={request.documents}) - \n\n{str(e)})")
+                logger.error(
+                    f"update_documents_app(documents={request.documents}) - \n\n{str(e)})"
+                )
                 raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
@@ -796,19 +800,21 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     )
 
                     async def stream_response():
-                        async for (
-                            chunk
-                        ) in await self.streaming_rag_pipeline.run(
-                            input=to_async_generator([message]),
-                            streaming=True,
-                            search_filters=search_filters,
-                            search_limit=search_limit,
-                            rag_generation_config=rag_generation_config,
-                            run_manager=self.run_manager,
-                            *args,
-                            **kwargs,
-                        ):
-                            yield chunk
+                        # We must re-enter the manage_run context for the streaming pipeline
+                        async with manage_run(self.run_manager, "arag"):
+                            async for (
+                                chunk
+                            ) in await self.streaming_rag_pipeline.run(
+                                input=to_async_generator([message]),
+                                streaming=True,
+                                search_filters=search_filters,
+                                search_limit=search_limit,
+                                rag_generation_config=rag_generation_config,
+                                run_manager=self.run_manager,
+                                *args,
+                                **kwargs,
+                            ):
+                                yield chunk
 
                     return stream_response()
 
@@ -1127,27 +1133,27 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     analysis_type = analysis_config[0]
                     if analysis_type == "bar_chart":
                         extract_key = analysis_config[1]
-                        results[filter_key] = (
-                            AnalysisTypes.generate_bar_chart_data(
-                                filtered_logs[filter_key], extract_key
-                            )
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.generate_bar_chart_data(
+                            filtered_logs[filter_key], extract_key
                         )
                     elif analysis_type == "basic_statistics":
                         extract_key = analysis_config[1]
-                        results[filter_key] = (
-                            AnalysisTypes.calculate_basic_statistics(
-                                filtered_logs[filter_key], extract_key
-                            )
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.calculate_basic_statistics(
+                            filtered_logs[filter_key], extract_key
                         )
                     elif analysis_type == "percentile":
                         extract_key = analysis_config[1]
                         percentile = int(analysis_config[2])
-                        results[filter_key] = (
-                            AnalysisTypes.calculate_percentile(
-                                filtered_logs[filter_key],
-                                extract_key,
-                                percentile,
-                            )
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.calculate_percentile(
+                            filtered_logs[filter_key],
+                            extract_key,
+                            percentile,
                         )
                     else:
                         logger.warning(
