@@ -53,6 +53,6 @@
   },
   "vector_database": {
     "provider": "local",
-    "collection_name": "demo_vecs33334"
+    "collection_name": "demo_vecs"
   }
 }
