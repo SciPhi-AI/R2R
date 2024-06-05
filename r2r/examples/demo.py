@@ -58,14 +58,14 @@ class R2RDemo:
         self.user_id = user_id
         self.default_files = file_list or [
             os.path.join(root_path, "data", "aristotle.txt"),
-            os.path.join(root_path, "data", "screen_shot.png"),
-            os.path.join(root_path, "data", "pg_essay_1.html"),
-            os.path.join(root_path, "data", "pg_essay_2.html"),
-            os.path.join(root_path, "data", "pg_essay_3.html"),
-            os.path.join(root_path, "data", "pg_essay_4.html"),
-            os.path.join(root_path, "data", "pg_essay_5.html"),
-            os.path.join(root_path, "data", "lyft_2021.pdf"),
-            os.path.join(root_path, "data", "uber_2021.pdf"),
+            # os.path.join(root_path, "data", "screen_shot.png"),
+            # os.path.join(root_path, "data", "pg_essay_1.html"),
+            # os.path.join(root_path, "data", "pg_essay_2.html"),
+            # os.path.join(root_path, "data", "pg_essay_3.html"),
+            # os.path.join(root_path, "data", "pg_essay_4.html"),
+            # os.path.join(root_path, "data", "pg_essay_5.html"),
+            # os.path.join(root_path, "data", "lyft_2021.pdf"),
+            # os.path.join(root_path, "data", "uber_2021.pdf"),
         ]
 
         self.file_tuples = file_tuples or [
@@ -406,6 +406,16 @@ class R2RDemo:
             response = self.r2r.documents_info(document_ids, user_ids)
         t1 = time.time()
         print(f"Time taken to get document info: {t1-t0:.2f} seconds")
+        print(response)
+
+    def document_chunks(self, document_id: str):
+        t0 = time.time()
+        if hasattr(self, "client"):
+            response = self.client.document_chunks(document_id)
+        else:
+            response = self.r2r.document_chunks(document_id)
+        t1 = time.time()
+        print(f"Time taken to get document chunks: {t1-t0:.2f} seconds")
         print(response)
 
     def app_settings(self):

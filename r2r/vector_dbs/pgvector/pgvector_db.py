@@ -314,6 +314,26 @@ class PGVectorDB(VectorDBProvider):
                 for row in results
             ]
 
+    def get_document_chunks(self, document_id: str) -> list[dict]:
+        if not self.collection:
+            raise ValueError("Collection is not initialized.")
+
+        table_name = self.collection.table.name
+        query = text(
+            f"""
+            SELECT metadata
+            FROM vecs."{table_name}"
+            WHERE metadata->>'document_id' = :document_id
+            ORDER BY CAST(metadata->>'chunk_order' AS INTEGER)
+        """
+        )
+
+        params = {"document_id": document_id}
+
+        with self.vx.Session() as sess:
+            results = sess.execute(query, params).fetchall()
+            return [result[0] for result in results]
+
     def get_users_stats(self, user_ids: Optional[list[str]] = None):
         user_ids_condition = ""
         params = {}

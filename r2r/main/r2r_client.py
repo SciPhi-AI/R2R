@@ -305,7 +305,7 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
-    def get_documents_info(
+    def documents_info(
         self,
         document_ids: Optional[str] = None,
         user_ids: Optional[str] = None,
@@ -316,6 +316,13 @@ class R2RClient:
             json.dumps(document_ids) if document_ids else None
         )
         params["user_ids"] = json.dumps(user_ids) if user_ids else None
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+
+    def document_chunks(self, document_id: str) -> dict:
+        url = f"{self.base_url}/document_chunks"
+        params = {"document_id": document_id}
         response = requests.get(url, params=params)
         response.raise_for_status()
         return response.json()

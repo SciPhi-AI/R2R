@@ -111,6 +111,10 @@ class VectorDBProvider(Provider, ABC):
         pass
 
     @abstractmethod
+    def get_document_chunks(self, document_id: str) -> list[dict]:
+        pass
+
+    @abstractmethod
     def delete_documents_info(self, document_ids: list[str]) -> dict:
         pass
 
