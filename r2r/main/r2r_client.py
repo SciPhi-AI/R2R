@@ -274,7 +274,6 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
-
     def analytics(self, filter_criteria: dict, analysis_types: dict) -> dict:
         url = f"{self.base_url}/analytics"
         data = {
@@ -307,7 +306,9 @@ class R2RClient:
         return response.json()
 
     def get_documents_info(
-        self, document_ids: Optional[str] = None, user_ids: Optional[str] = None
+        self,
+        document_ids: Optional[str] = None,
+        user_ids: Optional[str] = None,
     ) -> dict:
         url = f"{self.base_url}/documents_info"
         params = {}

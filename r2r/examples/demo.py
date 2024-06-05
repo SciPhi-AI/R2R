@@ -18,7 +18,6 @@ from r2r import (
     R2RConfig,
     generate_id_from_label,
 )
-
 from r2r.core import AnalysisTypes, FilterCriteria
 
 logger = logging.getLogger(__name__)
@@ -59,14 +58,14 @@ class R2RDemo:
         self.user_id = user_id
         self.default_files = file_list or [
             os.path.join(root_path, "data", "aristotle.txt"),
-            os.path.join(root_path, "data", "screen_shot.png"),
-            os.path.join(root_path, "data", "pg_essay_1.html"),
-            os.path.join(root_path, "data", "pg_essay_2.html"),
-            os.path.join(root_path, "data", "pg_essay_3.html"),
-            os.path.join(root_path, "data", "pg_essay_4.html"),
-            os.path.join(root_path, "data", "pg_essay_5.html"),
-            os.path.join(root_path, "data", "lyft_2021.pdf"),
-            os.path.join(root_path, "data", "uber_2021.pdf"),
+            # os.path.join(root_path, "data", "screen_shot.png"),
+            # os.path.join(root_path, "data", "pg_essay_1.html"),
+            # os.path.join(root_path, "data", "pg_essay_2.html"),
+            # os.path.join(root_path, "data", "pg_essay_3.html"),
+            # os.path.join(root_path, "data", "pg_essay_4.html"),
+            # os.path.join(root_path, "data", "pg_essay_5.html"),
+            # os.path.join(root_path, "data", "lyft_2021.pdf"),
+            # os.path.join(root_path, "data", "uber_2021.pdf"),
         ]
 
         self.file_tuples = file_tuples or [
@@ -137,7 +136,9 @@ class R2RDemo:
         print(f"Time taken to update documents: {t1-t0:.2f} seconds")
         print(response)
 
-    def ingest_as_files(self, file_paths: Optional[list[str]] = None, no_images=False):
+    def ingest_as_files(
+        self, file_paths: Optional[list[str]] = None, no_images=False
+    ):
         file_paths = file_paths or self.default_files
 
         if no_images:
@@ -152,10 +153,7 @@ class R2RDemo:
             for file_path in file_paths
         ]
 
-        seeds = [
-            file_path.split(os.path.sep)[-1]
-            for file_path in file_paths
-        ]
+        seeds = [file_path.split(os.path.sep)[-1] for file_path in file_paths]
         files = [
             UploadFile(
                 filename=file_path.split(os.path.sep)[-1],
