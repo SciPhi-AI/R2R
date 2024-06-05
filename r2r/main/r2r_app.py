@@ -307,7 +307,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 logger.error(
                     f"ingest_documents_app(documents={request.documents}) - \n\n{str(e)})"
                 )
-                raise HTTPException(status_code=500, detail=str(e)) from e
+                logger.error(f"ingest_documents_app(documents={request.documents}) - \n\n{str(e)})")
+                raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def aupdate_documents(
@@ -360,7 +361,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 logger.error(
                     f"update_documents_app(documents={request.documents}) - \n\n{str(e)})"
                 )
-                raise HTTPException(status_code=500, detail=str(e)) from e
+                logger.error(f"update_documents_app(documents={request.documents}) - \n\n{str(e)})")
+                raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def aingest_files(
@@ -554,6 +556,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
 
                 await self.logging_connection.log(
+                    log_id=run_id,
+                    key="error",
+                    value=str(e),
+                    is_info_log=False,
+                )
+
+                await self.ingestion_pipeline.pipe_logger.log(
                     log_id=run_id,
                     key="error",
                     value=str(e),
@@ -761,6 +770,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
 
                 await self.logging_connection.log(
+                    log_id=run_id,
+                    key="error",
+                    value=str(e),
+                    is_info_log=False,
+                )
+
+                await self.search_pipeline.pipe_logger.log(
                     log_id=run_id,
                     key="error",
                     value=str(e),
@@ -980,6 +996,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     value=str(e),
                     is_info_log=False,
                 )
+
+                await self.eval_pipeline.pipe_logger.log(
+                    log_id=run_id,
+                    key="error",
+                    value=str(e),
+                    is_info_log=False,
+                )
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
@@ -1184,7 +1207,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def app_settings_app(self):
         """Return the config.json and all prompts."""
         try:
-            return await self.asettings()
+            return await self.aapp_settings()
         except Exception as e:
             logger.error(f"app_settings_app() - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e)) from e
