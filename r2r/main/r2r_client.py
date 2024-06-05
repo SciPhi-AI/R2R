@@ -307,7 +307,7 @@ class R2RClient:
         return response.json()
 
     def get_documents_info(
-        self, document_id: Optional[str] = None, user_id: Optional[str] = None
+        self, document_ids: Optional[str] = None, user_ids: Optional[str] = None
     ) -> dict:
         url = f"{self.base_url}/documents_info"
         params = {}

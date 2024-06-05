@@ -72,21 +72,6 @@ class DocumentInfo(BaseModel):
         }
 
 
-    def convert_to_db_entry(self):
-        """Prepare the document info for database entry, extracting certain fields from metadata."""
-        now = datetime.now()
-        return {
-            "document_id": str(self.document_id),
-            "title": self.title or "N/A",
-            "user_id": str(self.user_id),
-            "version": self.version,
-            "size_in_bytes": self.size_in_bytes,
-            "metadata": json.dumps(self.metadata),
-            "created_at": self.created_at or now,
-            "updated_at": self.updated_at or now,
-        }
-
-
 class ExtractionType(Enum):
     """Types of extractions that can be performed."""
 

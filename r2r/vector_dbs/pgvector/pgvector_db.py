@@ -192,32 +192,6 @@ class PGVectorDB(VectorDBProvider):
             }
         )
 
-    def delete_document_info_by_metadata(
-        self, metadata_fields: str, metadata_values: Union[bool, int, str]
-    ) -> None:
-        filters = {k: v for k, v in zip(metadata_fields, metadata_values)}
-        query = text(
-            f"""
-        DELETE FROM document_info WHERE {" AND ".join([f"{k} = :{k}" for k in filters.keys()])};
-        """
-        )
-        with self.vx.Session() as sess:
-            with sess.begin():
-                sess.execute(query, filters)
-
-    def delete_document_info_by_metadata(
-        self, metadata_fields: str, metadata_values: Union[bool, int, str]
-    ) -> None:
-        filters = {k: v for k, v in zip(metadata_fields, metadata_values)}
-        query = text(
-            f"""
-        DELETE FROM document_info WHERE {" AND ".join([f"{k} = :{k}" for k in filters.keys()])};
-        """
-        )
-        with self.vx.Session() as sess:
-            with sess.begin():
-                sess.execute(query, filters)
-
     def get_metadatas(
         self,
         metadata_fields: list[str],

@@ -117,7 +117,3 @@ class VectorDBProvider(Provider, ABC):
     @abstractmethod
     def get_users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
         pass
-
-    @abstractmethod
-    def get_users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
-        pass
