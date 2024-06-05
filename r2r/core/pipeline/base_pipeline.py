@@ -99,7 +99,6 @@ class Pipeline:
                 logger.error(f"Pipeline failed with error: {error}")
                 raise error
 
-
     async def _consume_all(self, gen: AsyncGenerator) -> list[Any]:
         result = []
         async for item in gen:

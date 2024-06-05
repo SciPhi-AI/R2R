@@ -20,7 +20,6 @@ from r2r import (
     R2RConfig,
     generate_id_from_label,
 )
-
 from r2r.core import AnalysisTypes, FilterCriteria
 
 logger = logging.getLogger(__name__)
