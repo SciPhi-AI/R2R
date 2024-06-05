@@ -28,25 +28,25 @@ The R2R framework includes a client that can communicate with the R2R server to 
 
 1. **Ingest Documents as Files**:
    ```bash
-   python -m r2r.examples.demo ingest_as_files --base_url=http://localhost:8000
+   python -m r2r.examples.demo ingest_as_files --client_server_mode
    ```
    This command will send the ingestion request to the server running at `http://localhost:8000`.
 
 2. **Perform a Search**:
    ```bash
-   python -m r2r.examples.demo search --query="Who was Aristotle?" --base_url=http://localhost:8000
+   python -m r2r.examples.demo search --query="Who was Aristotle?" --client_server_mode
    ```
    This command sends the search query to the server and retrieves the results.
 
 3. **Run a RAG Completion**:
    ```bash
-   python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?" --base_url=http://localhost:8000
+   python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?" --client_server_mode
    ```
    This command sends the RAG query to the server and retrieves the generated response.
 
 4. **Run a RAG Stream**:
    ```bash
-   python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=true --base_url=http://localhost:8000
+   python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=true --client_server_mode
    ```
    This command streams the RAG query results from the server.
 
