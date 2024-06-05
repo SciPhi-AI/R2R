@@ -3,8 +3,6 @@ from .abstractions.document import (
     Document,
     DocumentInfo,
     DocumentType,
-    DocumentInfo,
-    DocumentType,
     Extraction,
     ExtractionType,
     Fragment,
