@@ -792,8 +792,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         value=latency,
                         is_info_log=False,
                     )
+
                     async def stream_response():
-                        async for chunk in await self.streaming_rag_pipeline.run(
+                        async for (
+                            chunk
+                        ) in await self.streaming_rag_pipeline.run(
                             input=to_async_generator([message]),
                             streaming=True,
                             search_filters=search_filters,
@@ -1122,27 +1125,27 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     analysis_type = analysis_config[0]
                     if analysis_type == "bar_chart":
                         extract_key = analysis_config[1]
-                        results[
-                            filter_key
-                        ] = AnalysisTypes.generate_bar_chart_data(
-                            filtered_logs[filter_key], extract_key
+                        results[filter_key] = (
+                            AnalysisTypes.generate_bar_chart_data(
+                                filtered_logs[filter_key], extract_key
+                            )
                         )
                     elif analysis_type == "basic_statistics":
                         extract_key = analysis_config[1]
-                        results[
-                            filter_key
-                        ] = AnalysisTypes.calculate_basic_statistics(
-                            filtered_logs[filter_key], extract_key
+                        results[filter_key] = (
+                            AnalysisTypes.calculate_basic_statistics(
+                                filtered_logs[filter_key], extract_key
+                            )
                         )
                     elif analysis_type == "percentile":
                         extract_key = analysis_config[1]
                         percentile = int(analysis_config[2])
-                        results[
-                            filter_key
-                        ] = AnalysisTypes.calculate_percentile(
-                            filtered_logs[filter_key],
-                            extract_key,
-                            percentile,
+                        results[filter_key] = (
+                            AnalysisTypes.calculate_percentile(
+                                filtered_logs[filter_key],
+                                extract_key,
+                                percentile,
+                            )
                         )
                     else:
                         logger.warning(
@@ -1213,12 +1216,12 @@ class R2RApp(metaclass=AsyncSyncMeta):
         **kwargs: Any,
     ):
         return self.providers.vector_db.get_documents_info(
-            filter_document_ids=[str(ele) for ele in document_ids]
-            if document_ids
-            else None,
-            filter_user_ids=[str(ele) for ele in user_ids]
-            if user_ids
-            else None,
+            filter_document_ids=(
+                [str(ele) for ele in document_ids] if document_ids else None
+            ),
+            filter_user_ids=(
+                [str(ele) for ele in user_ids] if user_ids else None
+            ),
         )
 
     async def documents_info_app(

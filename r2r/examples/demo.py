@@ -9,9 +9,9 @@ import fire
 from fastapi.datastructures import UploadFile
 
 from r2r import (
-    AnalysisTypes, 
-    FilterCriteria,
+    AnalysisTypes,
     Document,
+    FilterCriteria,
     GenerationConfig,
     R2RAppBuilder,
     R2RClient,
@@ -470,7 +470,6 @@ class R2RDemo:
             t1 = time.time()
             print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
             print(response)
-
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         self.r2r.serve(host, port)
