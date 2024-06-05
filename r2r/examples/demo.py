@@ -1,8 +1,4 @@
-"""A complete demo class for the R2R library."""
-
-import argparse
 import asyncio
-import json
 import logging
 import os
 import time
@@ -13,6 +9,8 @@ import fire
 from fastapi.datastructures import UploadFile
 
 from r2r import (
+    AnalysisTypes, 
+    FilterCriteria,
     Document,
     GenerationConfig,
     R2RAppBuilder,
@@ -20,7 +18,6 @@ from r2r import (
     R2RConfig,
     generate_id_from_label,
 )
-from r2r.core import AnalysisTypes, FilterCriteria
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -49,14 +46,14 @@ class R2RDemo:
         self.user_id = user_id
         self.default_files = file_list or [
             os.path.join(root_path, "data", "aristotle.txt"),
-            # os.path.join(root_path, "data", "screen_shot.png"),
+            os.path.join(root_path, "data", "screen_shot.png"),
             os.path.join(root_path, "data", "pg_essay_1.html"),
-            # os.path.join(root_path, "data", "pg_essay_2.html"),
-            # os.path.join(root_path, "data", "pg_essay_3.html"),
-            # os.path.join(root_path, "data", "pg_essay_4.html"),
-            # os.path.join(root_path, "data", "pg_essay_5.html"),
+            os.path.join(root_path, "data", "pg_essay_2.html"),
+            os.path.join(root_path, "data", "pg_essay_3.html"),
+            os.path.join(root_path, "data", "pg_essay_4.html"),
+            os.path.join(root_path, "data", "pg_essay_5.html"),
             os.path.join(root_path, "data", "lyft_2021.pdf"),
-            # os.path.join(root_path, "data", "uber_2021.pdf"),
+            os.path.join(root_path, "data", "uber_2021.pdf"),
         ]
 
         self.file_tuples = file_tuples or [
@@ -402,47 +399,10 @@ class R2RDemo:
             print(f"Time taken to get logs: {t1-t0:.2f} seconds")
             print(response)
 
-    def analytics(
+    def documents_info(
         self,
-        filters: Optional[str] = None,
-        analysis_types: Optional[str] = None,
-    ):
-        filter_criteria = FilterCriteria(filters=filters)
-        analysis_types = AnalysisTypes(analysis_types=analysis_types)
-        if hasattr(self, "client"):
-            t0 = time.time()
-            response = self.client.analytics(
-                filter_criteria=filter_criteria.model_dump(),
-                analysis_types=analysis_types.model_dump(),
-            )
-            t1 = time.time()
-            print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
-            print(response)
-        else:
-            t0 = time.time()
-            response = self.r2r.analytics(
-                filter_criteria=filter_criteria, analysis_types=analysis_types
-            )
-            t1 = time.time()
-            print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
-            print(response)
-
-    def get_app_data(self):
-        if hasattr(self, "client"):
-            t0 = time.time()
-            response = self.client.get_app_data()
-            t1 = time.time()
-            print(f"Time taken to get app data: {t1-t0:.2f} seconds")
-            print(response)
-        else:
-            t0 = time.time()
-            response = self.r2r.get_app_data()
-            t1 = time.time()
-            print(f"Time taken to get app data: {t1-t0:.2f} seconds")
-            print(response)
-
-    def get_documents_info(
-        self, document_id: Optional[str] = None, user_id: Optional[str] = None
+        document_ids: Optional[list[str]] = None,
+        user_ids: Optional[list[str]] = None,
     ):
         if hasattr(self, "client"):
             t0 = time.time()
@@ -485,6 +445,32 @@ class R2RDemo:
             t1 = time.time()
             print(f"Time taken to get user stats: {t1-t0:.2f} seconds")
             print(response)
+
+    def analytics(
+        self,
+        filters: Optional[str] = None,
+        analysis_types: Optional[str] = None,
+    ):
+        filter_criteria = FilterCriteria(filters=filters)
+        analysis_types = AnalysisTypes(analysis_types=analysis_types)
+        if hasattr(self, "client"):
+            t0 = time.time()
+            response = self.client.analytics(
+                filter_criteria=filter_criteria.model_dump(),
+                analysis_types=analysis_types.model_dump(),
+            )
+            t1 = time.time()
+            print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
+            print(response)
+        else:
+            t0 = time.time()
+            response = self.r2r.analytics(
+                filter_criteria=filter_criteria, analysis_types=analysis_types
+            )
+            t1 = time.time()
+            print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
+            print(response)
+
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         self.r2r.serve(host, port)

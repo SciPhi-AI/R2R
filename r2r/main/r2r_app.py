@@ -476,7 +476,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
             )
 
             if not skip_document_info:
-                print("upserting document_infos...")
                 self.providers.vector_db.upsert_documents_info(document_infos)
 
             return {
@@ -793,30 +792,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         value=latency,
                         is_info_log=False,
                     )
-
                     async def stream_response():
-                        async for (
-                            chunk
-                        ) in await self.streaming_rag_pipeline.run(
-                            input=to_async_generator([message]),
-                            streaming=True,
-                            search_filters=search_filters,
-                            search_limit=search_limit,
-                            rag_generation_config=rag_generation_config,
-                            run_id=run_id,
-                            *args,
-                            **kwargs,
-                        ):
-                            yield chunk
-
-                    return stream_response()
-
-                async def stream_response():
-                    # We must re-enter the manage_run context for the streaming pipeline
-                    async with manage_run(self.run_manager, "arag"):
-                        async for (
-                            chunk
-                        ) in await self.streaming_rag_pipeline.run(
+                        async for chunk in await self.streaming_rag_pipeline.run(
                             input=to_async_generator([message]),
                             streaming=True,
                             search_filters=search_filters,
@@ -827,6 +804,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                             **kwargs,
                         ):
                             yield chunk
+
+                    return stream_response()
 
                 if not rag_generation_config.stream:
                     results = await self.rag_pipeline.run(
@@ -1009,7 +988,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         **kwargs: Any,
     ):
         ids = self.providers.vector_db.delete_by_metadata(keys, values)
-        print("ids = ", ids)
         self.providers.vector_db.delete_documents_info(ids)
 
         return {"results": "Entries deleted successfully."}
