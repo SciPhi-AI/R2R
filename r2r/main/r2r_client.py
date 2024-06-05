@@ -1,5 +1,3 @@
-"""Module for the R2RClient class."""
-
 import asyncio
 import json
 import uuid
@@ -20,7 +18,6 @@ def default_serializer(obj):
     if isinstance(obj, DocumentType):
         return obj.value
     if isinstance(obj, bytes):
-        # return base64.b64encode(obj).decode('utf-8')
         raise TypeError("Bytes serialization is not yet supported.")
     raise TypeError(f"Type {type(obj)} not serializable.")
 
@@ -29,7 +26,12 @@ class R2RClient:
     def __init__(self, base_url: str):
         self.base_url = base_url
 
-    def update_prompt(self, name: str, template: Optional[str] = None, input_types: Optional[dict] = None) -> dict:
+    def update_prompt(
+        self,
+        name: str,
+        template: Optional[str] = None,
+        input_types: Optional[dict] = None,
+    ) -> dict:
         url = f"{self.base_url}/update_prompt"
         data = {
             "name": name,
@@ -53,7 +55,6 @@ class R2RClient:
             data=serialized_data,
             headers={"Content-Type": "application/json"},
         )
-
         response.raise_for_status()
         return response.json()
 
@@ -62,6 +63,7 @@ class R2RClient:
         metadatas: Optional[list[dict]],
         files: list[str],
         ids: Optional[list[str]] = None,
+        user_ids: Optional[list[str]] = None,
     ) -> dict:
         url = f"{self.base_url}/ingest_files"
         files_to_upload = [
@@ -69,12 +71,21 @@ class R2RClient:
             for file in files
         ]
         data = {
-            "metadatas": None
-            if metadatas is None
-            else json.dumps(metadatas, default=default_serializer),
-            "ids": None
-            if ids is None
-            else json.dumps(ids, default=default_serializer),
+            "metadatas": (
+                None
+                if metadatas is None
+                else json.dumps(metadatas, default=default_serializer)
+            ),
+            "document_ids": (
+                None
+                if ids is None
+                else json.dumps(ids, default=default_serializer)
+            ),
+            "user_ids": (
+                None
+                if user_ids is None
+                else json.dumps(user_ids, default=default_serializer)
+            ),
         }
         response = requests.post(url, files=files_to_upload, data=data)
         response.raise_for_status()
@@ -104,9 +115,11 @@ class R2RClient:
             for file in files
         ]
         data = {
-            "metadatas": None
-            if metadatas is None
-            else json.dumps(metadatas, default=default_serializer),
+            "metadatas": (
+                None
+                if metadatas is None
+                else json.dumps(metadatas, default=default_serializer)
+            ),
             "ids": json.dumps(ids, default=default_serializer),
         }
         response = requests.post(url, files=files_to_upload, data=data)
@@ -149,12 +162,18 @@ class R2RClient:
                 url = f"{self.base_url}/rag"
                 data = {
                     "message": message,
-                    "search_filters": json.dumps(search_filters) if search_filters else None,
+                    "search_filters": (
+                        json.dumps(search_filters) if search_filters else None
+                    ),
                     "search_limit": search_limit,
-                    "rag_generation_config": json.dumps(rag_generation_config) if rag_generation_config else None,
+                    "rag_generation_config": (
+                        json.dumps(rag_generation_config)
+                        if rag_generation_config
+                        else None
+                    ),
                     "streaming": streaming,
                 }
-                
+
                 response = requests.post(url, json=data)
                 response.raise_for_status()
                 return response.json()
@@ -171,13 +190,15 @@ class R2RClient:
         url = f"{self.base_url}/rag"
         data = {
             "message": message,
-            "search_filters": json.dumps(search_filters)
-            if search_filters
-            else None,
+            "search_filters": (
+                json.dumps(search_filters) if search_filters else None
+            ),
             "search_limit": search_limit,
-            "rag_generation_config": json.dumps(rag_generation_config)
-            if rag_generation_config
-            else None,
+            "rag_generation_config": (
+                json.dumps(rag_generation_config)
+                if rag_generation_config
+                else None
+            ),
             "streaming": True,
         }
         async with httpx.AsyncClient() as client:
@@ -223,42 +244,41 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
-    def get_user_ids(self) -> dict:
-        url = f"{self.base_url}/get_user_ids"
+    def logs(self, log_type_filter: Optional[str] = None) -> dict:
+        url = f"{self.base_url}/logs"
+        params = {}
+        if log_type_filter:
+            params["log_type_filter"] = log_type_filter
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+
+    def app_settings(self) -> dict:
+        url = f"{self.base_url}/app_settings"
         response = requests.get(url)
         response.raise_for_status()
         return response.json()
 
-    def get_user_documents_metadata(self, user_id: str) -> dict:
-        url = f"{self.base_url}/get_user_documents_metadata"
-        data = {"user_id": user_id}
-        response = requests.post(url, json=data)
+    def documents_info(
+        self,
+        document_ids: Optional[list[str]] = None,
+        user_ids: Optional[list[str]] = None,
+    ) -> dict:
+        url = f"{self.base_url}/documents_info"
+        params = {}
+        if document_ids is not None:
+            params["document_ids"] = ",".join(document_ids)
+        if user_ids is not None:
+            params["user_ids"] = ",".join(user_ids)
+        response = requests.get(url, params=params)
         response.raise_for_status()
         return response.json()
 
-    def get_document_data(self, document_id: str) -> dict:
-        url = f"{self.base_url}/get_document_data"
-        data = {"document_id": document_id}
-        response = requests.post(url, json=data)
-        response.raise_for_status()
-        return response.json()
-
-    def get_logs(self, log_type_filter: Optional[str] = None) -> dict:
-        url = f"{self.base_url}/get_logs"
-        data = {"log_type_filter": log_type_filter}
-        response = requests.post(url, json=data)
-        response.raise_for_status()
-        return response.json()
-
-    def get_app_data(self) -> dict:
-        url = f"{self.base_url}/get_app_data"
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.json()
-    
-    def analytics(self, filter_criteria: dict, analysis_types: dict) -> dict:
-        url = f"{self.base_url}/analytics"
-        data = {"filter_criteria": json.dumps(filter_criteria), "analysis_types": json.dumps(analysis_types)}
-        response = requests.post(url, json=data)
+    def users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
+        url = f"{self.base_url}/users_stats"
+        params = {}
+        if user_ids is not None:
+            params["user_ids"] = ",".join(user_ids)
+        response = requests.get(url, params=params)
         response.raise_for_status()
         return response.json()

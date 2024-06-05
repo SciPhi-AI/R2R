@@ -501,7 +501,7 @@ class Collection:
     def delete(
         self,
         ids: Optional[Iterable[str]] = None,
-        filters: Optional[Metadata] = None,
+        filters: Optional[Dict[str, Any]] = None,
     ) -> List[str]:
         """
         Deletes vectors from the collection by matching filters or ids.
@@ -511,7 +511,7 @@ class Collection:
             filters (Optional[Dict], optional): Filters to apply to the search. Defaults to None.
 
         Returns:
-            List[str]: A list of the identifiers of the deleted vectors.
+            List[str]: A list of the document IDs of the deleted vectors.
         """
         if ids is None and filters is None:
             raise ArgError("Either ids or filters must be provided.")
@@ -524,28 +524,47 @@ class Collection:
 
         ids = ids or []
         filters = filters or {}
-        del_ids = []
+        del_document_ids = set([])
 
         with self.client.Session() as sess:
             with sess.begin():
                 if ids:
                     for id_chunk in flu(ids).chunk(12):
-                        stmt = (
+                        stmt = select(self.table.c.metadata).where(
+                            self.table.c.id.in_(id_chunk)
+                        )
+                        results = sess.execute(stmt).fetchall()
+                        for result in results:
+                            metadata_json = result[0]
+                            document_id = metadata_json.get("document_id")
+                            if document_id:
+                                del_document_ids.add(document_id)
+
+                        delete_stmt = (
                             delete(self.table)
                             .where(self.table.c.id.in_(id_chunk))
                             .returning(self.table.c.id)
                         )
-                        del_ids.extend(sess.execute(stmt).scalars() or [])
+                        sess.execute(delete_stmt)
 
                 if filters:
                     meta_filter = build_filters(self.table.c.metadata, filters)
-                    stmt = (
-                        delete(self.table).where(meta_filter).returning(self.table.c.id)  # type: ignore
-                    )
-                    result = sess.execute(stmt).scalars()
-                    del_ids.extend(result.fetchall())
+                    stmt = select(self.table.c.metadata).where(meta_filter)
+                    results = sess.execute(stmt).fetchall()
+                    for result in results:
+                        metadata_json = result[0]
+                        document_id = metadata_json.get("document_id")
+                        if document_id:
+                            del_document_ids.add(document_id)
 
-        return del_ids
+                    delete_stmt = (
+                        delete(self.table)
+                        .where(meta_filter)
+                        .returning(self.table.c.id)
+                    )
+                    sess.execute(delete_stmt)
+
+        return list(del_document_ids)
 
     def __getitem__(self, items):
         """

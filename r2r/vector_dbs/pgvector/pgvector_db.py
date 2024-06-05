@@ -1,9 +1,15 @@
+import json
 import logging
 import os
+import uuid
 from typing import Optional, Union
 
+from sqlalchemy import text
+
 from r2r.core import (
+    DocumentInfo,
     SearchResult,
+    UserStats,
     VectorDBConfig,
     VectorDBProvider,
     VectorEntry,
@@ -48,6 +54,25 @@ class PGVectorDB(VectorDBProvider):
         self.collection = self.vx.get_or_create_collection(
             name=self.config.collection_name, dimension=dimension
         )
+        self._create_document_info_table()
+
+    def _create_document_info_table(self):
+        with self.vx.Session() as sess:
+            with sess.begin():
+                query = f"""
+                CREATE TABLE IF NOT EXISTS document_info_{self.config.collection_name} (
+                    document_id UUID PRIMARY KEY,
+                    title TEXT,
+                    user_id UUID,
+                    version TEXT,
+                    size_in_bytes INT,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW(),
+                    metadata JSONB
+                );
+                """
+                sess.execute(text(query))
+                sess.commit()
 
     def copy(self, entry: VectorEntry, commit=True) -> None:
         if self.collection is None:
@@ -155,17 +180,30 @@ class PGVectorDB(VectorDBProvider):
 
     def delete_by_metadata(
         self, metadata_fields: str, metadata_values: Union[bool, int, str]
-    ) -> None:
+    ) -> list[str]:
         super().delete_by_metadata(metadata_fields, metadata_values)
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `delete_by_metadata`."
             )
-        self.collection.delete(
+        return self.collection.delete(
             filters={
                 k: {"$eq": v} for k, v in zip(metadata_fields, metadata_values)
             }
         )
+
+    def delete_document_info_by_metadata(
+        self, metadata_fields: str, metadata_values: Union[bool, int, str]
+    ) -> None:
+        filters = {k: v for k, v in zip(metadata_fields, metadata_values)}
+        query = text(
+            f"""
+        DELETE FROM document_info WHERE {" AND ".join([f"{k} = :{k}" for k in filters.keys()])};
+        """
+        )
+        with self.vx.Session() as sess:
+            with sess.begin():
+                sess.execute(query, filters)
 
     def get_metadatas(
         self,
@@ -192,4 +230,128 @@ class PGVectorDB(VectorDBProvider):
 
         return [
             results[key] for key in results if key != tuple(metadata_fields)
+        ]
+
+    def upsert_documents_info(
+        self, documents_info: list[DocumentInfo]
+    ) -> None:
+        for document_info in documents_info:
+            db_entry = document_info.convert_to_db_entry()
+            query = text(
+                f"""
+                INSERT INTO document_info_{self.config.collection_name} (document_id, title, user_id, version, created_at, updated_at, size_in_bytes, metadata)
+                VALUES (:document_id, :title, :user_id, :version, :created_at, :updated_at, :size_in_bytes, :metadata)
+                ON CONFLICT (document_id) DO UPDATE SET
+                    title = EXCLUDED.title,
+                    user_id = EXCLUDED.user_id,
+                    version = EXCLUDED.version,
+                    updated_at = EXCLUDED.updated_at,
+                    size_in_bytes = EXCLUDED.size_in_bytes,
+                    metadata = EXCLUDED.metadata;
+            """
+            )
+        with self.vx.Session() as sess:
+            sess.execute(query, db_entry)
+            sess.commit()
+
+    def delete_documents_info(self, document_ids: list[str]) -> None:
+        placeholders = ", ".join(
+            f":doc_id_{i}" for i in range(len(document_ids))
+        )
+        query = text(
+            f"""
+            DELETE FROM document_info_{self.config.collection_name} WHERE document_id IN ({placeholders});
+            """
+        )
+        params = {
+            f"doc_id_{i}": document_id
+            for i, document_id in enumerate(document_ids)
+        }
+
+        with self.vx.Session() as sess:
+            with sess.begin():
+                sess.execute(query, params)
+            sess.commit()
+
+    def get_documents_info(
+        self,
+        filter_document_ids: Optional[list[str]] = None,
+        filter_user_ids: Optional[list[str]] = None,
+    ):
+        conditions = []
+        params = {}
+
+        if filter_document_ids:
+            placeholders = ", ".join(
+                f":doc_id_{i}" for i in range(len(filter_document_ids))
+            )
+            conditions.append(f"document_id IN ({placeholders})")
+            params.update(
+                {
+                    f"doc_id_{i}": str(document_id)
+                    for i, document_id in enumerate(filter_document_ids)
+                }
+            )
+        if filter_user_ids:
+            placeholders = ", ".join(
+                f":user_id_{i}" for i in range(len(filter_user_ids))
+            )
+            conditions.append(f"user_id IN ({placeholders})")
+            params.update(
+                {
+                    f"user_id_{i}": str(user_id)
+                    for i, user_id in enumerate(filter_user_ids)
+                }
+            )
+
+        query = f"""
+            SELECT document_id, title, user_id, version, size_in_bytes, created_at, updated_at, metadata
+            FROM document_info_{self.config.collection_name}
+        """
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+
+        with self.vx.Session() as sess:
+            results = sess.execute(text(query), params).fetchall()
+            return [
+                DocumentInfo(
+                    document_id=row[0],
+                    title=row[1],
+                    user_id=row[2],
+                    version=row[3],
+                    size_in_bytes=row[4],
+                    created_at=row[5],
+                    updated_at=row[6],
+                    metadata=row[7],
+                )
+                for row in results
+            ]
+
+    def get_users_stats(self, user_ids: Optional[list[str]] = None):
+        user_ids_condition = ""
+        params = {}
+        if user_ids:
+            user_ids_condition = "WHERE user_id IN :user_ids"
+            params["user_ids"] = tuple(
+                map(str, user_ids)
+            )  # Convert UUIDs to strings
+
+        query = f"""
+            SELECT user_id, COUNT(document_id) AS num_files, SUM(size_in_bytes) AS total_size_in_bytes, ARRAY_AGG(document_id) AS document_ids
+            FROM document_info_{self.config.collection_name}
+            {user_ids_condition}
+            GROUP BY user_id
+        """
+
+        with self.vx.Session() as sess:
+            results = sess.execute(text(query), params).fetchall()
+
+        return [
+            UserStats(
+                user_id=row[0],
+                num_files=row[1],
+                total_size_in_bytes=row[2],
+                document_ids=[uuid.UUID(doc_id) for doc_id in row[3]],
+            )
+            for row in results
         ]

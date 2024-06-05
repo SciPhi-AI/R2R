@@ -1,7 +1,7 @@
-from typing import Union
+from typing import Optional, Union
 
 from .base_provider import Provider, ProviderConfig
-from .llm_provider import LLMConfig
+from .llm_provider import GenerationConfig, LLMConfig
 
 
 class EvalConfig(ProviderConfig):
@@ -30,6 +30,12 @@ class EvalProvider(Provider):
         super().__init__(config)
 
     def evaluate(
-        self, query: str, context: str, completion: str
+        self,
+        query: str,
+        context: str,
+        completion: str,
+        eval_generation_config: Optional[GenerationConfig] = None,
     ) -> dict[str, dict[str, Union[str, float]]]:
-        return self._evaluate(query, context, completion)
+        return self._evaluate(
+            query, context, completion, eval_generation_config
+        )

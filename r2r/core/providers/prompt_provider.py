@@ -46,10 +46,13 @@ class PromptProvider(Provider):
 
     @abstractmethod
     def update_prompt(
-        self, name: str, template: Optional[str] = None, input_types: Optional[dict[str, str]] = None
+        self,
+        name: str,
+        template: Optional[str] = None,
+        input_types: Optional[dict[str, str]] = None,
     ) -> None:
         pass
-    
+
     def _get_message_payload(
         self, system_prompt: str, task_prompt: str
     ) -> dict:

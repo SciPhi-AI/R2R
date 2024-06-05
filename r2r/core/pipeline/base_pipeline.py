@@ -1,4 +1,5 @@
 """Base pipeline class for running a sequence of pipes."""
+
 import asyncio
 import logging
 from enum import Enum
@@ -97,7 +98,6 @@ class Pipeline:
             except Exception as error:
                 logger.error(f"Pipeline failed with error: {error}")
                 raise error
-
 
     async def _consume_all(self, gen: AsyncGenerator) -> list[Any]:
         result = []

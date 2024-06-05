@@ -6,6 +6,7 @@ import fire
 
 from r2r import R2RClient, generate_id_from_label
 
+
 class QuestionAndAnswerClient:
     def __init__(
         self,
@@ -48,7 +49,7 @@ class QuestionAndAnswerClient:
         )
         for result in results["results"]:
             print(result)
-    
+
     def rag_completion(self, query: str, model: str = "ollama/llama2"):
         rag_generation_config = {
             "model": model,
@@ -62,10 +63,10 @@ class QuestionAndAnswerClient:
         )
         print(response)
 
-    def rag_completion_streaming(self, query: str, model: str = "ollama/llama2"):
-        rag_generation_config = {
-            "model": model
-        }
+    def rag_completion_streaming(
+        self, query: str, model: str = "ollama/llama2"
+    ):
+        rag_generation_config = {"model": model}
 
         response = self.client.rag(
             message=query,
