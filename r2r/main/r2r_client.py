@@ -274,6 +274,29 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
+
+    def analytics(self, filter_criteria: dict, analysis_types: dict) -> dict:
+        url = f"{self.base_url}/analytics"
+        data = {
+            "filter_criteria": filter_criteria,
+            "analysis_types": analysis_types,
+        }
+
+        try:
+            response = requests.post(url, json=data)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            if e.response is None:
+                raise requests.exceptions.RequestException(
+                    f"Error occurred while calling analytics API. {str(e)}"
+                ) from e
+            status_code = e.response.status_code
+            error_message = e.response.text
+            raise requests.exceptions.RequestException(
+                f"Error occurred while calling analytics API. Status Code: {status_code}, Error Message: {error_message}"
+            ) from e
+
     def users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
         url = f"{self.base_url}/users_stats"
         params = {}

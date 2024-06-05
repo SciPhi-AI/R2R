@@ -19,6 +19,8 @@ from r2r import (
     generate_id_from_label,
 )
 
+from r2r.core import AnalysisTypes, FilterCriteria
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -34,13 +36,24 @@ class R2RDemo:
         file_list: Optional[list[str]] = None,
         file_tuples: Optional[list[tuple]] = None,
         user_id: uuid.UUID = DEMO_USER_ID,
+        client_server_mode: bool = False,
         base_url: Optional[str] = None,
     ):
-        if base_url:
-            self.client = R2RClient(base_url)
+        if base_url and not client_server_mode:
+            raise ValueError(
+                "base_url is provided but client_server_mode is not set to True"
+            )
+
+        if client_server_mode:
+            self.base_url = base_url or "http://localhost:8000"
+            self.client = R2RClient(self.base_url)
+            logger.info(
+                f"Running in client-server mode with base_url: {self.base_url}"
+            )
         else:
             config = R2RConfig.from_json(config_path=config_path)
             self.r2r = R2RAppBuilder(config).build()
+            logger.info("Running locally")
 
         root_path = os.path.dirname(os.path.abspath(__file__))
         self.user_id = user_id
@@ -66,6 +79,8 @@ class R2RDemo:
     def ingest_as_documents(self, file_paths: Optional[list[str]] = None):
         file_paths = file_paths or self.default_files
         documents = []
+        t0 = time.time()
+
         for file_path in file_paths:
             with open(file_path, "rb") as f:
                 data = f.read()
@@ -82,22 +97,19 @@ class R2RDemo:
 
         if hasattr(self, "client"):
             documents_dicts = [doc.dict() for doc in documents]
-            t0 = time.time()
             response = self.client.ingest_documents(documents_dicts)
-            t1 = time.time()
-            print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
-            print(response)
         else:
-            t0 = time.time()
             response = self.r2r.ingest_documents(documents)
-            t1 = time.time()
-            print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
-            print(response)
+
+        t1 = time.time()
+        print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
+        print(response)
 
     def update_as_documents(self, file_tuples: Optional[list[tuple]] = None):
         file_tuples = file_tuples or self.file_tuples
-
         documents = []
+        t0 = time.time()
+
         for old_file, new_file in file_tuples:
             with open(new_file, "rb") as f:
                 data = f.read()
@@ -117,26 +129,20 @@ class R2RDemo:
 
         if hasattr(self, "client"):
             documents_dicts = [doc.dict() for doc in documents]
-            t0 = time.time()
             response = self.client.update_documents(documents_dicts)
-            t1 = time.time()
-            print(f"Time taken to update documents: {t1-t0:.2f} seconds")
-            print(response)
         else:
-            t0 = time.time()
             response = self.r2r.update_documents(documents)
-            t1 = time.time()
-            print(f"Time taken to update documents: {t1-t0:.2f} seconds")
-            print(response)
+
+        t1 = time.time()
+        print(f"Time taken to update documents: {t1-t0:.2f} seconds")
+        print(response)
 
     def ingest_as_files(self, file_paths: Optional[list[str]] = None):
         file_paths = file_paths or self.default_files
-
         ids = [
             generate_id_from_label(file_path.split(os.path.sep)[-1])
             for file_path in file_paths
         ]
-
         files = [
             UploadFile(
                 filename=file_path.split(os.path.sep)[-1],
@@ -150,25 +156,22 @@ class R2RDemo:
             file.size = file.file.tell()
             file.file.seek(0)
 
-        metadatas = [{} for file_path in file_paths]
+        metadatas = [{} for _ in file_paths]
 
         user_ids = [self.user_id for _ in file_paths]
+        t0 = time.time()
 
         if hasattr(self, "client"):
-            t0 = time.time()
             response = self.client.ingest_files(
                 metadatas=None, files=file_paths, ids=ids, user_ids=user_ids
             )
-            t1 = time.time()
-            print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
-            print(response)
         else:
-            t0 = time.time()
             response = self.r2r.ingest_files(
                 files=files, metadatas=metadatas, ids=ids, user_ids=user_ids
             )
-            t1 = time.time()
-            print(response)
+        t1 = time.time()
+        print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
+        print(response)
 
     def update_as_files(self, file_tuples: Optional[list[tuple]] = None):
         file_tuples = file_tuples or self.file_tuples
@@ -193,9 +196,9 @@ class R2RDemo:
             }
             for old_file, new_file in file_tuples
         ]
+        t0 = time.time()
 
         if hasattr(self, "client"):
-            t0 = time.time()
             response = self.client.update_files(
                 metadatas=metadatas,
                 files=[new for old, new in file_tuples],
@@ -204,11 +207,7 @@ class R2RDemo:
                     for old_file, new_file in file_tuples
                 ],
             )
-            t1 = time.time()
-            print(f"Time taken to update files: {t1-t0:.2f} seconds")
-            print(response)
         else:
-            t0 = time.time()
             print(
                 "ids = ",
                 [
@@ -224,28 +223,25 @@ class R2RDemo:
                     for old_file, new_file in file_tuples
                 ],
             )
-            t1 = time.time()
-            print("response = ", response)
+        t1 = time.time()
+        print(f"Time taken to update files: {t1-t0:.2f} seconds")
+        print(response)
 
     def search(self, query: str):
+        t0 = time.time()
         if hasattr(self, "client"):
-            t0 = time.time()
             results = self.client.search(
                 query, search_filters={"user_id": self.user_id}
             )
-            t1 = time.time()
-            print(f"Time taken to search: {t1-t0:.2f} seconds")
-            for result in results["results"]:
-                print(result)
         else:
-            t0 = time.time()
             results = self.r2r.search(
                 query, search_filters={"user_id": self.user_id}
             )
-            t1 = time.time()
-            print(f"Time taken to search: {t1-t0:.2f} seconds")
-            for result in results["results"]:
-                print(result)
+
+        t1 = time.time()
+        print(f"Time taken to search: {t1-t0:.2f} seconds")
+        for result in results["results"]:
+            print(result)
 
     def rag(
         self,
@@ -253,9 +249,9 @@ class R2RDemo:
         rag_generation_config: Optional[dict] = None,
         streaming: bool = False,
     ):
+        t0 = time.time()
         if hasattr(self, "client"):
             if not streaming:
-                t0 = time.time()
                 response = self.client.rag(
                     query,
                     search_filters={"user_id": self.user_id},
@@ -266,8 +262,6 @@ class R2RDemo:
                 print(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
                 print(response)
             else:
-                t0 = time.time()
-
                 response = self.client.rag(
                     query,
                     search_filters={"user_id": self.user_id},
@@ -282,7 +276,6 @@ class R2RDemo:
                     f"\nTime taken to stream RAG response: {t1-t0:.2f} seconds"
                 )
         else:
-            t0 = time.time()
             rag_generation_config = (
                 GenerationConfig(**rag_generation_config, streaming=streaming)
                 if rag_generation_config
@@ -337,18 +330,14 @@ class R2RDemo:
         if not completion:
             completion = "The meaning of life is to help others, learn and grow, and to make a difference."
 
+        t0 = time.time()
         if hasattr(self, "client"):
-            t0 = time.time()
             response = self.client.evaluate(
                 query=query,
                 context=context,
                 completion=completion,
             )
-            t1 = time.time()
-            print(f"Time taken to evaluate: {t1-t0:.2f} seconds")
-            print(response)
         else:
-            t0 = time.time()
             response = self.r2r.evaluate(
                 query=query,
                 context=context,
@@ -359,9 +348,10 @@ class R2RDemo:
                     else GenerationConfig(model="gpt-3.5-turbo")
                 ),
             )
-            t1 = time.time()
-            print(f"Time taken to evaluate: {t1-t0:.2f} seconds")
-            print(response)
+
+        t1 = time.time()
+        print(f"Time taken to evaluate: {t1-t0:.2f} seconds")
+        print(response)
 
     def delete(
         self,
@@ -372,104 +362,86 @@ class R2RDemo:
         if version:
             keys.append("version")
             values.append(version)
+        t0 = time.time()
         if hasattr(self, "client"):
-            t0 = time.time()
             response = self.client.delete(keys, values)
-            t1 = time.time()
-            print(f"Time taken to delete: {t1-t0:.2f} seconds")
-            print(response)
         else:
-            t0 = time.time()
             response = self.r2r.delete(keys, values)
             t1 = time.time()
-            print(f"Time taken to delete: {t1-t0:.2f} seconds")
-            print(response)
+        print(f"Time taken to delete: {t1-t0:.2f} seconds")
+        print(response)
 
     def logs(self, log_type_filter: Optional[str] = None):
+        t0 = time.time()
         if hasattr(self, "client"):
-            t0 = time.time()
             response = self.client.logs(log_type_filter)
-            t1 = time.time()
-            print(f"Time taken to get logs: {t1-t0:.2f} seconds")
-            print(response)
         else:
             t0 = time.time()
             response = self.r2r.logs(log_type_filter)
-            t1 = time.time()
-            print(f"Time taken to get logs: {t1-t0:.2f} seconds")
-            print(response)
+        t1 = time.time()
+        print(f"Time taken to get logs: {t1-t0:.2f} seconds")
+        print(response)
 
     def documents_info(
         self,
         document_ids: Optional[list[str]] = None,
         user_ids: Optional[list[str]] = None,
     ):
+        t0 = time.time()
         if hasattr(self, "client"):
-            t0 = time.time()
             response = self.client.documents_info(document_ids, user_ids)
-            t1 = time.time()
-            print(f"Time taken to get document info: {t1-t0:.2f} seconds")
-            print(response)
         else:
             t0 = time.time()
             response = self.r2r.documents_info(document_ids, user_ids)
-            t1 = time.time()
-            print(f"Time taken to get document info: {t1-t0:.2f} seconds")
-            print(response)
+        t1 = time.time()
+        print(f"Time taken to get document info: {t1-t0:.2f} seconds")
+        print(response)
 
     def app_settings(self):
+        t0 = time.time()
         if hasattr(self, "client"):
-            t0 = time.time()
             response = self.client.app_settings()
-            t1 = time.time()
-            print(f"Time taken to get app data: {t1-t0:.2f} seconds")
-            print(response)
         else:
             t0 = time.time()
             response = self.r2r.app_settings()
-            t1 = time.time()
-            print(f"Time taken to get app data: {t1-t0:.2f} seconds")
-            print(response)
+        t1 = time.time()
+        print(f"Time taken to get app data: {t1-t0:.2f} seconds")
+        print(response)
 
     def users_stats(self, user_ids: Optional[list[uuid.UUID]] = None):
         user_ids = user_ids or [self.user_id]
+        t0 = time.time()
         if hasattr(self, "client"):
-            t0 = time.time()
             response = self.client.users_stats(user_ids)
-            t1 = time.time()
-            print(f"Time taken to get user stats: {t1-t0:.2f} seconds")
-            print(response)
         else:
             t0 = time.time()
             response = self.r2r.users_stats(user_ids)
-            t1 = time.time()
-            print(f"Time taken to get user stats: {t1-t0:.2f} seconds")
-            print(response)
+        t1 = time.time()
+        print(f"Time taken to get user stats: {t1-t0:.2f} seconds")
+        print(response)
 
     def analytics(
         self,
         filters: Optional[str] = None,
         analysis_types: Optional[str] = None,
     ):
+        t0 = time.time()
         filter_criteria = FilterCriteria(filters=filters)
         analysis_types = AnalysisTypes(analysis_types=analysis_types)
+
         if hasattr(self, "client"):
-            t0 = time.time()
             response = self.client.analytics(
                 filter_criteria=filter_criteria.model_dump(),
                 analysis_types=analysis_types.model_dump(),
             )
-            t1 = time.time()
-            print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
-            print(response)
         else:
-            t0 = time.time()
             response = self.r2r.analytics(
                 filter_criteria=filter_criteria, analysis_types=analysis_types
             )
-            t1 = time.time()
-            print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
-            print(response)
+
+        t1 = time.time()
+        print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
+        print(response)
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         self.r2r.serve(host, port)

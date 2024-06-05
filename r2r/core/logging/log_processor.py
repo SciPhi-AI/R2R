@@ -3,7 +3,7 @@ import json
 import logging
 import statistics
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from pydantic import BaseModel
 
@@ -67,7 +67,7 @@ class LogAnalyticsConfig:
 
 
 class AnalysisTypes(BaseModel):
-    analysis_types: Optional[dict[str, tuple[str, ...]]] = None
+    analysis_types: Optional[dict[str, Sequence[str]]] = None
 
     @staticmethod
     def generate_bar_chart_data(logs, key):
