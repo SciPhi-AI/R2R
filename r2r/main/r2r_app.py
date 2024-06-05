@@ -235,7 +235,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             methods=["GET"],
         )
         self.app.add_api_route(
-            path="/openapi_spec",
+            path="/open_api_spec",
             endpoint=self.openapi_spec_app,
             methods=["GET"],
         )
@@ -561,16 +561,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     value=str(e),
                     is_info_log=False,
                 )
-<<<<<<< HEAD
-=======
-
-                await self.ingestion_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="error",
-                    value=str(e),
-                    is_info_log=False,
-                )
->>>>>>> 520fe20 (merge w/ nolan changes)
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
@@ -854,8 +844,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     status_code=500, detail="Internal Server Error"
                 )
 
-
-
     class RAGRequest(BaseModel):
         message: str
         search_filters: Optional[str] = None
@@ -994,16 +982,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     value=str(e),
                     is_info_log=False,
                 )
-<<<<<<< HEAD
-=======
-
-                await self.eval_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="error",
-                    value=str(e),
-                    is_info_log=False,
-                )
->>>>>>> 520fe20 (merge w/ nolan changes)
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
@@ -1208,23 +1186,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def app_settings_app(self):
         """Return the config.json and all prompts."""
         try:
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
             return await self.aapp_settings()
-=======
-<<<<<<< HEAD
-            return await self.asettings()
-=======
-            return await self.aapp_settings()
->>>>>>> 307f4f8 (add user stats)
->>>>>>> 73f9cf1 (add user stats)
-=======
-            return await self.asettings()
->>>>>>> ace5611 (basic demo func work)
-=======
-            return await self.aapp_settings()
->>>>>>> 491d7b2 (harmonize app)
         except Exception as e:
             logger.error(f"app_settings_app() - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e)) from e
