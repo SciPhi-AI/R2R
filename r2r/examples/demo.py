@@ -137,8 +137,19 @@ class R2RDemo:
         print(f"Time taken to update documents: {t1-t0:.2f} seconds")
         print(response)
 
-    def ingest_as_files(self, file_paths: Optional[list[str]] = None):
+    def ingest_as_files(self, file_paths: Optional[list[str]] = None, no_images=False):
         file_paths = file_paths or self.default_files
+<<<<<<< HEAD
+=======
+
+        if no_images:
+            file_paths = [
+                file_path
+                for file_path in file_paths
+                if file_path.split(".")[-1] != "png"
+            ]
+
+>>>>>>> ea9cc3e (attempts at cleaning up documentation)
         ids = [
             generate_id_from_label(file_path.split(os.path.sep)[-1])
             for file_path in file_paths

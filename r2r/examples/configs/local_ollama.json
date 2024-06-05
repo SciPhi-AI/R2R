@@ -1,36 +1,8 @@
 {
-    "embedding": {
-      "provider": "sentence-transformers",
-      "search_model": "all-MiniLM-L6-v2",
-      "dimension": 384,
-      "batch_size": 32
-    },
-    "completions": {
-      "provider": "litellm"
-    },
-    "eval": {
-      "provider": "local",
-      "frequency": 0.0,
-      "llm":{
-        "provider": "litellm"
-      }
-    },
-    "logging_database": {
-      "provider": "local",
-      "collection_name": "demo_logs",
-      "level": "INFO"
-    },
-    "ingestion":{
-        "selected_parsers": {
-          "txt": "default"
-        }
-      },
-    "vector_database": {
-      "provider": "local",
-      "collection_name": "demo_vecs"
-    },
-    "app": {
-      "max_logs": 100,
-      "max_file_size_in_mb": 100
-    }
+  "embedding": {
+    "provider": "sentence-transformers",
+    "search_model": "all-MiniLM-L6-v2",
+    "dimension": 384,
+    "batch_size": 32
   }
+}

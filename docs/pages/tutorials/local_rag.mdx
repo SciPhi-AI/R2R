@@ -1,20 +1,55 @@
 ## Building a Local RAG System with R2R
 
-### Introduction 
+### Installation
 
-R2R, short for "RAG to Riches," is a game-changing framework that simplifies the process of building RAG applications with LLMs. With R2R, you can hit the ground running and have a system running locally in minutes, eliminating the need for complex cloud infrastructure or costly hosted services.
+We can start by using `pip` to install R2R with the local-embeddding dependencies:
 
-In this comprehensive, step-by-step tutorial, we'll guide you through the process of installing R2R, ingesting your documents, querying those docs using a local LLM, and tailoring the RAG pipeline to perfectly fit your unique requirements. By the end of this guide, you'll have a fully functional, locally-hosted, and readily deployable LLM application at your fingertips!
-
-### Setting up and Running R2R
+```bash
+pip install r2r[local-embedding]
+```
 
 R2R supports  `Ollama`, a popular tool for Local LLM inference. Ollama is provided through a connection managed by the `litellm` library.
 
-If you wish to use Ollama, it must be installed independently. You can install Ollama by following the instructions on their [official website](https://ollama.com/) or by referring to their [GitHub README](https://github.com/ollama/ollama).
+Ollama must be installed independently. You can install Ollama by following the instructions on their [official website](https://ollama.com/) or by referring to their [GitHub README](https://github.com/ollama/ollama).
+
+
+### Configuration
+
+Let's move on to setting up the R2R pipeline. R2R relies on a `config.json` file for defining various settings, such as embedding models and chunk sizes. By default, the `config.json` found in the R2R GitHub repository's root directory is set up for cloud-based services.
+
+For setting up an on-premises RAG system, we need to adjust the configuration to use local resources. For this example, this only involves changing the embedding provider as our default LLM provider integrates seamlessly with Ollama.
+
+To streamline this process, we've provided pre-configured local settings in the [`examples/configs`](https://github.com/SciPhi-AI/R2R/blob/main/r2r/examples/configs) directory, named `local_ollama`. We've included a printout of the config below for your convenience:
+
+```json
+{
+    "embedding": {
+      "provider": "sentence-transformers",
+      "search_model": "all-MiniLM-L6-v2",
+      "dimension": 384,
+      "batch_size": 32
+    }
+}
+```
+
+You may also modify the configuration defaults for ingestion, logging, and your vector database provider in a similar manner. More information on these settings are included in this tutorial and throughout the documentation.
+
+This chosen config modification above instructs R2R to use the `sentence-transformers` library for embeddings with the `all-MiniLM-L6-v2` model, turns off evals, and sets the LLM provider to `ollama`. During ingestion, the default is to split documents into chunks of 512 characters with 20 characters of overlap between chunks. 
+
+A local vector database will be used to store the embeddings. The current default is a minimal sqlite implementation.
+
+### Server Standup
+
+
+```bash
+# cd $WORKDIR
+python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config local_ollama --pipeline_type qna
+```
+
+The server exposes a REST API for interacting with the R2R RAG pipeline and application. See the [API docs](/getting-started/app-api) for more details on the available endpoints.
 
 **Docker Installation**: Using Docker can be a convenient way to run R2R without having to manage dependencies and installations on your local machine. The Docker image comes pre-configured and ready to run.
 
-**Local Installation**: If you prefer to run R2R directly on your local machine, you can install it and its dependencies manually. This approach may be preferred if you need more control over the installation or want to integrate R2R with other local tools and environments.
 
 <details>
 <summary>Docker</summary>
@@ -50,80 +85,32 @@ This command starts the R2R container with the following options:
 
 </details>
 
-<details>
-<summary>Local Installation</summary>
+## Ingesting and Embedding Documents
 
-To begin running R2R for local inference, we first need to clone the R2R repository locally. This can be done with the command:
-
-```bash
-git clone https://github.com/SciPhi-AI/R2R.git
-```
-
-Then you should navigate to the project directory:
-```bash
-cd R2R
-```
-
-And install the project dependencies using Poetry
-```bash
-poetry install
-```
-
-</details>
-
-### Pipeline Configuration
-
-Let's move on to setting up the R2R pipeline. R2R relies on a `config.json` file for defining various settings, such as embedding models and chunk sizes. By default, the `config.json` found in the R2R GitHub repository's root directory is set up for cloud-based services.
-
-For setting up an on-premises RAG system, we need to adjust the configuration to use local resources. This involves changing the embedding provider, selecting the appropriate LLM provider, and disabling evaluations.
-
-To streamline this process, we've provided pre-configured local settings in the [`examples/configs`](https://github.com/SciPhi-AI/R2R/blob/main/r2r/examples/configs) directory, named `local_ollama`. Here's an overview of the primary changes from the default configuration:
-
-```json
-{
-    "embedding": {
-      "provider": "sentence-transformers",
-      "search_model": "all-MiniLM-L6-v2",
-      "dimension": 384,
-      "batch_size": 32
-    },
-    "completions": {
-      "provider": "litellm"
-    },
-    …
-}
-```
-
-You may also modify the configuration defaults for ingestion, logging, and your vector database provider in a similar manner. More information on this follows below.
-
-This chosen config modification above instructs R2R to use the `sentence-transformers` library for embeddings with the `all-MiniLM-L6-v2` model, turns off evals, and sets the LLM provider to `ollama`. During ingestion, the default is to split documents into chunks of 512 characters with 20 characters of overlap between chunks. 
-
-A local vector database will be used to store the embeddings. The current default is a minimal sqlite implementation.
-
-### Server Standup
-
-If you are using Docker, your server will be stood up upon running the Dockerfile. If you are developing locally, you can stand up the server by running:
-
-```bash
-python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config local_ollama --pipeline_type qna
-```
-
-The server exposes a basic API for interacting with the RAG pipeline. See the [API docs](/getting-started/app-api) for more details on other available endpoints.
-
-### Ingesting and Embedding Documents
-
-With our environment set up and our server running in a separate process, we're ready to ingest a document! As an example, R2R includes a biography on Aristotle as a text file. This file ships with the package and is included by default.
+With our environment set up and our server running in a separate process, we're ready to ingest a document! As an example, R2R includes a several files such as Aristotle's wikipedia page in `.txt` an assortment of Paul Graham's essays in `.html` and a few 10ks in `.pdf`. This file ships with the package and is included by default.
 
 Run this command to ingest the document:
 
 ```bash
-python -m r2r.examples.clients.run_qna_client ingest
+poetry run python -m r2r.examples.demo ingest_as_files --no-images=true --base_url=http://0.0.0.0:8000
 ```
 
 The output should look something like this:
 
 ```
-> {'results': ["File '/Users/user/R2R/r2r/examples/clients/../data/aristotle.txt' processed successfully."]}
+...
+{'results': 
+  [
+    "File 'aristotle.txt' processed successfully.", 
+    "File 'pg_essay_1.html' processed successfully.", 
+    "File 'pg_essay_2.html' processed successfully.", 
+    "File 'pg_essay_3.html' processed successfully.", 
+    "File 'pg_essay_4.html' processed successfully.", 
+    "File 'pg_essay_5.html' processed successfully.", 
+    "File 'lyft_2021.pdf' processed successfully.", 
+    "File 'uber_2021.pdf' processed successfully."
+  ]
+}
 ```
 
 Here's what's happening under the hood:
@@ -132,7 +119,7 @@ Here's what's happening under the hood:
 3. Each chunk is embedded using the `all-MiniLM-L6-v2` model from `sentence-transformers`.
 4. The chunks and embeddings are stored in the specified vector database, which defaults to a local SQLite database.
 
-With just one command, we've gone from a raw document to an embedded knowledge base we can query. In addition to the raw chunks, metadata such as user ID or document ID can be attached to enable easy filtering later.
+With just one command, we've gone from a raw document to an embedded knowledge base we can query. In addition to the raw chunks, metadata such as user ID or document ID can be attached to enable easy filtering later. For more information on similar functionalities provided by the demo, refer to the [R2R Demo](/getting-started/r2r-demo).
 
 ### Running Queries on the Local LLM
 
@@ -147,9 +134,9 @@ ollama serve llama2
 Then, to ask a question, run:
 
 ```bash
-python -m r2r.examples.clients.run_qna_client rag_completion \
+python -m r2r.examples.demo rag \
   --query="What contributions did Aristotle make to biology?" \
-  --model="ollama/llama2"
+  --rag_generation_config='{"model": "ollama/llama2"}'
 ```
 
 This command tells R2R to use the specified model to generate a completion for the given query. R2R will:
