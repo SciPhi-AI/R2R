@@ -814,7 +814,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         value=latency,
                         is_info_log=False,
                     )
-
                     async def stream_response():
                         async for (
                             chunk
