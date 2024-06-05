@@ -139,8 +139,6 @@ class R2RDemo:
 
     def ingest_as_files(self, file_paths: Optional[list[str]] = None, no_images=False):
         file_paths = file_paths or self.default_files
-<<<<<<< HEAD
-=======
 
         if no_images:
             file_paths = [
@@ -149,7 +147,6 @@ class R2RDemo:
                 if file_path.split(".")[-1] != "png"
             ]
 
->>>>>>> ea9cc3e (attempts at cleaning up documentation)
         ids = [
             generate_id_from_label(file_path.split(os.path.sep)[-1])
             for file_path in file_paths
