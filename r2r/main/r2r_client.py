@@ -29,7 +29,12 @@ class R2RClient:
     def __init__(self, base_url: str):
         self.base_url = base_url
 
-    def update_prompt(self, name: str, template: Optional[str] = None, input_types: Optional[dict] = None) -> dict:
+    def update_prompt(
+        self,
+        name: str,
+        template: Optional[str] = None,
+        input_types: Optional[dict] = None,
+    ) -> dict:
         url = f"{self.base_url}/update_prompt"
         data = {
             "name": name,
@@ -69,12 +74,16 @@ class R2RClient:
             for file in files
         ]
         data = {
-            "metadatas": None
-            if metadatas is None
-            else json.dumps(metadatas, default=default_serializer),
-            "ids": None
-            if ids is None
-            else json.dumps(ids, default=default_serializer),
+            "metadatas": (
+                None
+                if metadatas is None
+                else json.dumps(metadatas, default=default_serializer)
+            ),
+            "ids": (
+                None
+                if ids is None
+                else json.dumps(ids, default=default_serializer)
+            ),
         }
         response = requests.post(url, files=files_to_upload, data=data)
         response.raise_for_status()
@@ -104,9 +113,11 @@ class R2RClient:
             for file in files
         ]
         data = {
-            "metadatas": None
-            if metadatas is None
-            else json.dumps(metadatas, default=default_serializer),
+            "metadatas": (
+                None
+                if metadatas is None
+                else json.dumps(metadatas, default=default_serializer)
+            ),
             "ids": json.dumps(ids, default=default_serializer),
         }
         response = requests.post(url, files=files_to_upload, data=data)
@@ -149,12 +160,18 @@ class R2RClient:
                 url = f"{self.base_url}/rag"
                 data = {
                     "message": message,
-                    "search_filters": json.dumps(search_filters) if search_filters else None,
+                    "search_filters": (
+                        json.dumps(search_filters) if search_filters else None
+                    ),
                     "search_limit": search_limit,
-                    "rag_generation_config": json.dumps(rag_generation_config) if rag_generation_config else None,
+                    "rag_generation_config": (
+                        json.dumps(rag_generation_config)
+                        if rag_generation_config
+                        else None
+                    ),
                     "streaming": streaming,
                 }
-                
+
                 response = requests.post(url, json=data)
                 response.raise_for_status()
                 return response.json()
@@ -171,13 +188,15 @@ class R2RClient:
         url = f"{self.base_url}/rag"
         data = {
             "message": message,
-            "search_filters": json.dumps(search_filters)
-            if search_filters
-            else None,
+            "search_filters": (
+                json.dumps(search_filters) if search_filters else None
+            ),
             "search_limit": search_limit,
-            "rag_generation_config": json.dumps(rag_generation_config)
-            if rag_generation_config
-            else None,
+            "rag_generation_config": (
+                json.dumps(rag_generation_config)
+                if rag_generation_config
+                else None
+            ),
             "streaming": True,
         }
         async with httpx.AsyncClient() as client:
@@ -255,10 +274,25 @@ class R2RClient:
         response = requests.get(url)
         response.raise_for_status()
         return response.json()
-    
+
     def analytics(self, filter_criteria: dict, analysis_types: dict) -> dict:
         url = f"{self.base_url}/analytics"
-        data = {"filter_criteria": json.dumps(filter_criteria), "analysis_types": json.dumps(analysis_types)}
-        response = requests.post(url, json=data)
-        response.raise_for_status()
-        return response.json()
+        data = {
+            "filter_criteria": filter_criteria,
+            "analysis_types": analysis_types,
+        }
+
+        try:
+            response = requests.post(url, json=data)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            if e.response is None:
+                raise requests.exceptions.RequestException(
+                    f"Error occurred while calling analytics API. {str(e)}"
+                ) from e
+            status_code = e.response.status_code
+            error_message = e.response.text
+            raise requests.exceptions.RequestException(
+                f"Error occurred while calling analytics API. Status Code: {status_code}, Error Message: {error_message}"
+            ) from e
