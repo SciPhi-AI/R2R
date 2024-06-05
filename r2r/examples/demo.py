@@ -39,6 +39,11 @@ class R2RDemo:
         client_server_mode: bool = False,
         base_url: Optional[str] = None,
     ):
+        if base_url and not client_server_mode:
+            raise ValueError(
+                "base_url is provided but client_server_mode is not set to True"
+            )
+
         if client_server_mode:
             self.base_url = base_url or "http://localhost:8000"
             self.client = R2RClient(self.base_url)
