@@ -151,6 +151,11 @@ class R2RDemo:
             generate_id_from_label(file_path.split(os.path.sep)[-1])
             for file_path in file_paths
         ]
+
+        seeds = [
+            file_path.split(os.path.sep)[-1]
+            for file_path in file_paths
+        ]
         files = [
             UploadFile(
                 filename=file_path.split(os.path.sep)[-1],

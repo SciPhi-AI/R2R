@@ -45,6 +45,19 @@ pip install r2r
 export OPENAI_API_KEY=sk-...
 ```
 
+# Serving R2R RAG backend
+
+## With local installation
+
+```bash
+python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000
+```
+## With Docker
+
+```bash
+docker run -d --name r2r -p 8000:8000 r2r:latest
+```
+
 ## Links
 
 [Join the Discord server](https://discord.gg/p6KqD2kjtB)
