@@ -1,11 +1,12 @@
 import logging
 import os
 
-from openai import AsyncOpenAI, OpenAI, AuthenticationError
+from openai import AsyncOpenAI, AuthenticationError, OpenAI
 
 from r2r.core import EmbeddingConfig, EmbeddingProvider, SearchResult
 
 logger = logging.getLogger(__name__)
+
 
 class OpenAIEmbeddingProvider(EmbeddingProvider):
     MODEL_TO_TOKENIZER = {

@@ -1,17 +1,17 @@
-"""A complete demo class for the R2R library."""
-
 import asyncio
-import json
 import logging
 import os
 import time
+import uuid
 from typing import Optional
 
 import fire
 from fastapi.datastructures import UploadFile
 
 from r2r import (
+    AnalysisTypes,
     Document,
+    FilterCriteria,
     GenerationConfig,
     R2RAppBuilder,
     R2RClient,
@@ -33,7 +33,7 @@ class R2RDemo:
         config_path: Optional[str] = None,
         file_list: Optional[list[str]] = None,
         file_tuples: Optional[list[tuple]] = None,
-        user_id: str = DEMO_USER_ID,
+        user_id: uuid.UUID = DEMO_USER_ID,
         base_url: Optional[str] = None,
     ):
         if base_url:
@@ -55,6 +55,7 @@ class R2RDemo:
             os.path.join(root_path, "data", "lyft_2021.pdf"),
             os.path.join(root_path, "data", "uber_2021.pdf"),
         ]
+
         self.file_tuples = file_tuples or [
             (
                 os.path.join(root_path, "data", "aristotle.txt"),
@@ -71,12 +72,11 @@ class R2RDemo:
             documents.append(
                 Document(
                     id=generate_id_from_label(file_path),
+                    user_id=self.user_id,
+                    title=file_path.split(os.path.sep)[-1],
                     data=data,
                     type=file_path.split(".")[-1],
-                    metadata={
-                        "title": file_path.split(os.path.sep)[-1],
-                        "user_id": self.user_id,
-                    },
+                    metadata={},
                 )
             )
 
@@ -105,12 +105,13 @@ class R2RDemo:
             documents.append(
                 Document(
                     id=generate_id_from_label(old_file),
+                    user_id=self.user_id,
+                    title=old_file.split(os.path.sep)[
+                        -1
+                    ],  # preserve the old title
                     data=data,
                     type=new_file.split(".")[-1],
-                    metadata={
-                        "title": old_file.split(os.path.sep)[-1],
-                        "user_id": self.user_id,
-                    },
+                    metadata={},
                 )
             )
 
@@ -144,24 +145,19 @@ class R2RDemo:
             for file_path in file_paths
         ]
 
-        # Set file size manually
         for file in files:
-            file.file.seek(0, 2)  # Move to the end of the file
-            file.size = file.file.tell()  # Get the file size
-            file.file.seek(0)  # Move back to the start of the file
+            file.file.seek(0, 2)
+            file.size = file.file.tell()
+            file.file.seek(0)
 
-        metadatas = [
-            {
-                "title": file_path.split(os.path.sep)[-1],
-                "user_id": self.user_id,
-            }
-            for file_path in file_paths
-        ]
+        metadatas = [{} for file_path in file_paths]
+
+        user_ids = [self.user_id for _ in file_paths]
 
         if hasattr(self, "client"):
             t0 = time.time()
             response = self.client.ingest_files(
-                metadatas=metadatas, files=file_paths, ids=ids
+                metadatas=None, files=file_paths, ids=ids, user_ids=user_ids
             )
             t1 = time.time()
             print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
@@ -169,10 +165,10 @@ class R2RDemo:
         else:
             t0 = time.time()
             response = self.r2r.ingest_files(
-                files=files, metadatas=metadatas, ids=ids
+                files=files, metadatas=metadatas, ids=ids, user_ids=user_ids
             )
             t1 = time.time()
-            print("response = ", response)
+            print(response)
 
     def update_as_files(self, file_tuples: Optional[list[tuple]] = None):
         file_tuples = file_tuples or self.file_tuples
@@ -185,11 +181,10 @@ class R2RDemo:
             for old_file, new_file in file_tuples
         ]
 
-        # Set file size manually
         for file in new_files:
-            file.file.seek(0, 2)  # Move to the end of the file
-            file.size = file.file.tell()  # Get the file size
-            file.file.seek(0)  # Move back to the start of the file
+            file.file.seek(0, 2)
+            file.size = file.file.tell()
+            file.file.seek(0)
 
         metadatas = [
             {
@@ -361,7 +356,7 @@ class R2RDemo:
                 eval_generation_config=(
                     GenerationConfig(**eval_generation_config)
                     if eval_generation_config
-                    else None
+                    else GenerationConfig(model="gpt-3.5-turbo")
                 ),
             )
             t1 = time.time()
@@ -390,91 +385,91 @@ class R2RDemo:
             print(f"Time taken to delete: {t1-t0:.2f} seconds")
             print(response)
 
-    def get_user_ids(self):
+    def logs(self, log_type_filter: Optional[str] = None):
         if hasattr(self, "client"):
             t0 = time.time()
-            response = self.client.get_user_ids()
+            response = self.client.logs(log_type_filter)
             t1 = time.time()
-            print(f"Time taken to get user IDs: {t1-t0:.2f} seconds")
+            print(f"Time taken to get logs: {t1-t0:.2f} seconds")
             print(response)
         else:
             t0 = time.time()
-            response = self.r2r.get_user_ids()
+            response = self.r2r.logs(log_type_filter)
             t1 = time.time()
-            print(f"Time taken to get user IDs: {t1-t0:.2f} seconds")
+            print(f"Time taken to get logs: {t1-t0:.2f} seconds")
             print(response)
 
-    def get_user_documents_metadata(self):
-        if hasattr(self, "client"):
-            t0 = time.time()
-            response = self.client.get_user_documents_metadata(self.user_id)
-            t1 = time.time()
-            print(f"Time taken to get user document data: {t1-t0:.2f} seconds")
-            print(response)
-        else:
-            t0 = time.time()
-            response = self.r2r.get_user_documents_metadata(self.user_id)
-            t1 = time.time()
-            print(f"Time taken to get user document data: {t1-t0:.2f} seconds")
-            print(response)
-
-    def get_document_data(
-        self, document_id: str = "c9bdbac7-0ea3-5c9e-b590-018bd09b127b"
+    def documents_info(
+        self,
+        document_ids: Optional[list[str]] = None,
+        user_ids: Optional[list[str]] = None,
     ):
         if hasattr(self, "client"):
             t0 = time.time()
-            response = self.client.get_document_data(document_id)
+            response = self.client.documents_info(document_ids, user_ids)
             t1 = time.time()
-            print(f"Time taken to get document data: {t1-t0:.2f} seconds")
+            print(f"Time taken to get document info: {t1-t0:.2f} seconds")
             print(response)
         else:
             t0 = time.time()
-            response = self.r2r.get_document_data(document_id)
+            response = self.r2r.documents_info(document_ids, user_ids)
             t1 = time.time()
-            print(f"Time taken to get document data: {t1-t0:.2f} seconds")
+            print(f"Time taken to get document info: {t1-t0:.2f} seconds")
             print(response)
 
-    def get_logs(self, pipeline_type: Optional[str] = None):
+    def app_settings(self):
         if hasattr(self, "client"):
             t0 = time.time()
-            response = self.client.get_logs(pipeline_type)
-            t1 = time.time()
-            print(f"Time taken to get logs: {t1-t0:.2f} seconds")
-            print(response)
-        else:
-            t0 = time.time()
-            response = self.r2r.get_logs(pipeline_type)
-            t1 = time.time()
-            print(f"Time taken to get logs: {t1-t0:.2f} seconds")
-            print(response)
-
-    def get_app_data(self):
-        if hasattr(self, "client"):
-            t0 = time.time()
-            response = self.client.get_app_data()
+            response = self.client.app_settings()
             t1 = time.time()
             print(f"Time taken to get app data: {t1-t0:.2f} seconds")
             print(response)
         else:
             t0 = time.time()
-            response = self.r2r.get_app_data()
+            response = self.r2r.app_settings()
             t1 = time.time()
             print(f"Time taken to get app data: {t1-t0:.2f} seconds")
             print(response)
-            
-    def get_open_api_endpoint(self):
+
+    def users_stats(self, user_ids: Optional[list[uuid.UUID]] = None):
+        user_ids = user_ids or [self.user_id]
         if hasattr(self, "client"):
-            print(
-                json.dumps(
-                    self.client.get_open_api_endpoint()["results"], indent=2
-                )
-            )
+            t0 = time.time()
+            response = self.client.users_stats(user_ids)
+            t1 = time.time()
+            print(f"Time taken to get user stats: {t1-t0:.2f} seconds")
+            print(response)
         else:
-            print(
-                json.dumps(
-                    self.r2r.get_open_api_endpoint()["results"], indent=2
-                )
+            t0 = time.time()
+            response = self.r2r.users_stats(user_ids)
+            t1 = time.time()
+            print(f"Time taken to get user stats: {t1-t0:.2f} seconds")
+            print(response)
+
+    def analytics(
+        self,
+        filters: Optional[str] = None,
+        analysis_types: Optional[str] = None,
+    ):
+        filter_criteria = FilterCriteria(filters=filters)
+        analysis_types = AnalysisTypes(analysis_types=analysis_types)
+        if hasattr(self, "client"):
+            t0 = time.time()
+            response = self.client.analytics(
+                filter_criteria=filter_criteria.model_dump(),
+                analysis_types=analysis_types.model_dump(),
             )
+            t1 = time.time()
+            print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
+            print(response)
+        else:
+            t0 = time.time()
+            response = self.r2r.analytics(
+                filter_criteria=filter_criteria, analysis_types=analysis_types
+            )
+            t1 = time.time()
+            print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
+            print(response)
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         self.r2r.serve(host, port)

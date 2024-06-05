@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "r2r"
-version = "0.2.07"
+version = "0.2.08"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
@@ -50,7 +50,6 @@ sentence-transformers = {version = "^2.7.0", optional = true}
 
 # vector db providers
 vecs = "^0.4.0"
-qdrant_client = {version = "^1.7.0"}
 pymilvus = {version = "^2.4.3"}
 
 # llm providers
@@ -62,7 +61,7 @@ ionic-api-sdk = {version = "0.9.3", optional = true}
 exa-py = {version = "^1.0.9", optional = true}
 
 [tool.poetry.extras]
-all = ["tiktoken", "qdrant_client", "sentence-transformers"]
+all = ["tiktoken", "sentence-transformers"]
 exa = ["exa-py"]
 ionic = ["ionic-api-sdk"]
 local-embedding = ["sentence-transformers"]

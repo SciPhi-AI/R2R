@@ -11,5 +11,8 @@
   },
   "development": {
     "title": "Development"
+  },
+  "tutorials": {
+    "title": "Tutorials"
   }
 }

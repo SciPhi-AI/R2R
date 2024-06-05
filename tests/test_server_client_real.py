@@ -15,7 +15,7 @@ export OPENAI_API_KEY=[your open ai key]
 
 @pytest.fixture(scope="session", autouse=True)
 def r2r_server():
-    # Start the R2R server using poetry run uvicorn
+    # Start the R2R server using uvicorn
     server_process = subprocess.Popen(
         [
             "poetry",

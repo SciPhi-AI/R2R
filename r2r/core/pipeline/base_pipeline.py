@@ -1,4 +1,5 @@
 """Base pipeline class for running a sequence of pipes."""
+
 import asyncio
 import logging
 from enum import Enum
