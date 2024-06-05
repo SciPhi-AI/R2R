@@ -49,10 +49,11 @@ class R2RVectorSearchPipe(SearchPipe):
             run_id=run_id, key="search_query", value=message
         )
         results = []
-        for result in self.vector_db_provider.search(
+        for result in self.vector_db_provider.hybrid_search(
             query_vector=self.embedding_provider.get_embedding(
                 message,
             ),
+            query_text=message,
             filters=search_filters_override or self.config.search_filters,
             limit=search_limit_override or self.config.search_limit,
         ):
