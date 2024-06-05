@@ -235,7 +235,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             methods=["GET"],
         )
         self.app.add_api_route(
-            path="/open_api_spec",
+            path="/openapi_spec",
             endpoint=self.openapi_spec_app,
             methods=["GET"],
         )
