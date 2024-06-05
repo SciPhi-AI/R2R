@@ -1177,7 +1177,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
-    async def asettings(self, *args: Any, **kwargs: Any):
+    async def aapp_settings(self, *args: Any, **kwargs: Any):
         # config_data = self.config.app  # Assuming this holds your config.json data
         prompts = self.providers.prompt.get_all_prompts()
         return {
