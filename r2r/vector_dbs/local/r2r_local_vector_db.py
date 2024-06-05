@@ -308,6 +308,25 @@ class R2RLocalVectorDB(VectorDBProvider):
 
         return document_infos
 
+    def get_document_chunks(self, document_id: str) -> list[str]:
+        if not self.config.collection_name:
+            raise ValueError(
+                "Collection name is not set. Please call `initialize_collection` first."
+            )
+
+        conn = self._get_conn()
+        cursor = self._get_cursor(conn)
+        query = f"""
+            SELECT metadata
+            FROM "{self.config.collection_name}"
+            WHERE json_extract(metadata, '$.document_id') = ?
+            ORDER BY CAST(json_extract(metadata, '$.chunk_order') AS INTEGER)
+        """
+        cursor.execute(query, (document_id,))
+        results = cursor.fetchall()
+        conn.close()
+        return [json.loads(result[0]) for result in results]
+
     def get_users_stats(self, user_ids: Optional[list[str]] = None):
         user_ids_condition = ""
         params = []

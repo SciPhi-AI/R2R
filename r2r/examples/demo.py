@@ -408,6 +408,16 @@ class R2RDemo:
         print(f"Time taken to get document info: {t1-t0:.2f} seconds")
         print(response)
 
+    def document_chunks(self, document_id: str):
+        t0 = time.time()
+        if hasattr(self, "client"):
+            response = self.client.document_chunks(document_id)
+        else:
+            response = self.r2r.document_chunks(document_id)
+        t1 = time.time()
+        print(f"Time taken to get document chunks: {t1-t0:.2f} seconds")
+        print(response)
+
     def app_settings(self):
         t0 = time.time()
         if hasattr(self, "client"):

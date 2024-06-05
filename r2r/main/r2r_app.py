@@ -225,6 +225,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
             methods=["GET"],
         )
         self.app.add_api_route(
+            path="/document_chunks",
+            endpoint=self.document_chunks_app,
+            methods=["GET"],
+        )
+        self.app.add_api_route(
             path="/delete", endpoint=self.delete_app, methods=["DELETE"]
         )
 
@@ -1245,6 +1250,20 @@ class R2RApp(metaclass=AsyncSyncMeta):
         except Exception as e:
             logger.error(
                 f"documents_info_app(document_ids={document_ids}, user_ids={user_ids}) - \n\n{str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    @syncable
+    async def adocument_chunks(self, document_id: str) -> list[str]:
+        return self.providers.vector_db.get_document_chunks(document_id)
+
+    async def document_chunks_app(self, document_id: str):
+        try:
+            chunks = await self.adocument_chunks(document_id)
+            return {"results": chunks}
+        except Exception as e:
+            logger.error(
+                f"get_document_chunks_app(document_id={document_id}) - \n\n{str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e)) from e
 

@@ -209,6 +209,9 @@ class R2REmbeddingPipe(EmbeddingPipe):
                     fragment_info[extraction.document_id] += 1
                 else:
                     fragment_info[extraction.document_id] = 1
+                extraction.metadata["chunk_order"] = fragment_info[
+                    extraction.document_id
+                ]
                 fragment_batch.append(fragment)
                 if len(fragment_batch) >= self.embedding_batch_size:
                     # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
