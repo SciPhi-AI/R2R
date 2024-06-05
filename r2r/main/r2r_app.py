@@ -235,7 +235,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             methods=["GET"],
         )
         self.app.add_api_route(
-            path="/open_api_spec",
+            path="/openapi_spec",
             endpoint=self.openapi_spec_app,
             methods=["GET"],
         )
@@ -561,13 +561,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     value=str(e),
                     is_info_log=False,
                 )
-
-                await self.ingestion_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="error",
-                    value=str(e),
-                    is_info_log=False,
-                )
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
@@ -770,13 +763,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
 
                 await self.logging_connection.log(
-                    log_id=run_id,
-                    key="error",
-                    value=str(e),
-                    is_info_log=False,
-                )
-
-                await self.search_pipeline.pipe_logger.log(
                     log_id=run_id,
                     key="error",
                     value=str(e),
@@ -991,13 +977,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
 
                 await self.logging_connection.log(
-                    log_id=run_id,
-                    key="error",
-                    value=str(e),
-                    is_info_log=False,
-                )
-
-                await self.eval_pipeline.pipe_logger.log(
                     log_id=run_id,
                     key="error",
                     value=str(e),
