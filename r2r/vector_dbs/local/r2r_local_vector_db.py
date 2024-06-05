@@ -294,8 +294,6 @@ class R2RLocalVectorDB(VectorDBProvider):
 
         document_infos = []
         for row in results:
-            print("results = ", results)
-            print("result user id = ", row[2])
             document_info = DocumentInfo(
                 document_id=uuid.UUID(row[0]),
                 title=row[1],
