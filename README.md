@@ -20,8 +20,8 @@ R2R, short for RAG to Riches, provides the fastest and most featureful way for d
 R2R was conceived to help developers bridge the gap between local LLM experimentation and serving a scalable, production-ready application. Built with document management, observability and customization in mind, R2R provides adequate performance and features for most RAG use cases.
 
 ## Key Features
-- **🔧 Build**: Effortlessly create and manage observable, high-performance RAG pipelines with our robust framework.
-- **🚀 Deploy**: Launch production-ready asynchronous RAG pipelines with seamless streaming capabilities
+- **🔧 Build**: Effortlessly create and manage observable, high-performance RAG pipelines with our robust framework. Including multimodal RAG, hybrid search, and latest methods such as HyDE.
+- **🚀 Deploy**: Launch production-ready asynchronous RAG pipelines with seamless streaming capabilities.
 - **🧩 Customize**: Easily tailor your multimodal pipeline using intuitive configuration files to meet your specific needs.
 - **🔌 Extend**: Enhance and extend your pipeline with custom code integrations to add new functionalities.
 - **🤖 OSS**: Leverage a framework developed by the open-source community, ensuring flexibility, scalability, and ease of deployment.
