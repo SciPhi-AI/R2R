@@ -60,8 +60,8 @@ class R2RClient:
 
     def ingest_files(
         self,
-        metadatas: Optional[list[dict]],
         files: list[str],
+        metadatas: Optional[list[dict]] = None,
         ids: Optional[list[str]] = None,
         user_ids: Optional[list[str]] = None,
     ) -> dict:
