@@ -66,6 +66,8 @@ class R2RDemo:
             os.path.join(root_path, "data", "pg_essay_5.html"),
             os.path.join(root_path, "data", "lyft_2021.pdf"),
             os.path.join(root_path, "data", "uber_2021.pdf"),
+            os.path.join(root_path, "data", "sample.mp3"),
+            os.path.join(root_path, "data", "sample2.mp3")
         ]
 
         self.file_tuples = file_tuples or [
@@ -284,9 +286,8 @@ class R2RDemo:
                     rag_generation_config=rag_generation_config,
                     streaming=streaming,
                 )
-                collector = ""
                 for chunk in response:
-                    collector += chunk
+                    print(chunk, end="", flush=True)
                 t1 = time.time()
                 print(
                     f"\nTime taken to stream RAG response: {t1-t0:.2f} seconds"

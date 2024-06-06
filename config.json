@@ -40,7 +40,8 @@
       "png": "default",
       "jpg": "default",
       "jpeg": "default",
-      "svg": "default"
+      "svg": "default",
+      "mp3": "default"
     }
   },
   "logging": {
