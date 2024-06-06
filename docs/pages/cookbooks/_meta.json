@@ -1,3 +1,5 @@
 {
-    "local_rag": "Local RAG"
+    "local_rag": "Local RAG",
+    "hybrid_search": "Hybrid Search",
+    "rerank_search": "Search w/ Reranking"
 }

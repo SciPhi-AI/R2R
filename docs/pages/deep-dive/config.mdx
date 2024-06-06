@@ -23,8 +23,8 @@ The default values for the config are shown below:
   },
   "embedding": {
     "provider": "openai",
-    "search_model": "text-embedding-3-small",
-    "search_dimension": 512,
+    "base_model": "text-embedding-3-small",
+    "base_dimension": 512,
     "batch_size": 128,
     "text_splitter": {
       "type": "recursive_character",
@@ -84,8 +84,8 @@ The available options for each section are:
 
 - **embedding**:
   - `provider`: `"openai"`, `"sentence-transformers"` (see [Embedding Providers](/providers/embeddings.md) for more info).
-  - `search_model`: Embedding model to use (e.g., `"text-embedding-3-small"` for OpenAI).
-  - `search_dimension`: Embedding dimension.
+  - `base_model`: Embedding model to use (e.g., `"text-embedding-3-small"` for OpenAI).
+  - `base_dimension`: Embedding dimension.
   - `batch_size`: Number of texts to embed in each batch.
   - `text_splitter`: Configuration for text splitting.
     - `type`: `"recursive_character"`.

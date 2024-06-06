@@ -46,27 +46,27 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             raise ValueError(
                 "OpenAIEmbeddingProvider does not support separate reranking."
             )
-        self.search_model = config.search_model
-        self.search_dimension = config.search_dimension
+        self.base_model = config.base_model
+        self.base_dimension = config.base_dimension
 
-        if self.search_model not in OpenAIEmbeddingProvider.MODEL_TO_TOKENIZER:
+        if self.base_model not in OpenAIEmbeddingProvider.MODEL_TO_TOKENIZER:
             raise ValueError(
-                f"OpenAI embedding model {self.search_model} not supported."
+                f"OpenAI embedding model {self.base_model} not supported."
             )
         if (
-            self.search_dimension
-            and self.search_dimension
+            self.base_dimension
+            and self.base_dimension
             not in OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                self.search_model
+                self.base_model
             ]
         ):
             raise ValueError(
-                f"Dimensions {self.dimension} for {self.search_model} are not supported"
+                f"Dimensions {self.dimension} for {self.base_model} are not supported"
             )
 
-        if not self.search_model or not self.search_dimension:
+        if not self.base_model or not self.base_dimension:
             raise ValueError(
-                "Must set search_model and search_dimension in order to initialize OpenAIEmbeddingProvider."
+                "Must set base_model and base_dimension in order to initialize OpenAIEmbeddingProvider."
             )
 
         if config.rerank_model:
@@ -77,9 +77,9 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     def get_embedding(
         self,
         text: str,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
     ) -> list[float]:
-        if stage != EmbeddingProvider.PipeStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
             )
@@ -88,10 +88,10 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             return (
                 self.client.embeddings.create(
                     input=[text],
-                    model=self.search_model,
-                    dimensions=self.search_dimension
+                    model=self.base_model,
+                    dimensions=self.base_dimension
                     or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                        self.search_model
+                        self.base_model
                     ][-1],
                 )
                 .data[0]
@@ -105,9 +105,9 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     async def async_get_embedding(
         self,
         text: str,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
     ) -> list[float]:
-        if stage != EmbeddingProvider.PipeStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
             )
@@ -115,10 +115,10 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         try:
             response = await self.async_client.embeddings.create(
                 input=[text],
-                model=self.search_model,
-                dimensions=self.search_dimension
+                model=self.base_model,
+                dimensions=self.base_dimension
                 or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                    self.search_model
+                    self.base_model
                 ][-1],
             )
             return response.data[0].embedding
@@ -130,9 +130,9 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     def get_embeddings(
         self,
         texts: list[str],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
     ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipeStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
             )
@@ -142,10 +142,10 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 ele.embedding
                 for ele in self.client.embeddings.create(
                     input=texts,
-                    model=self.search_model,
-                    dimensions=self.search_dimension
+                    model=self.base_model,
+                    dimensions=self.base_dimension
                     or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                        self.search_model
+                        self.base_model
                     ][-1],
                 ).data
             ]
@@ -157,9 +157,9 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     async def async_get_embeddings(
         self,
         texts: list[str],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
     ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipeStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
             )
@@ -167,10 +167,10 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         try:
             response = await self.async_client.embeddings.create(
                 input=texts,
-                model=self.search_model,
-                dimensions=self.search_dimension
+                model=self.base_model,
+                dimensions=self.base_dimension
                 or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                    self.search_model
+                    self.base_model
                 ][-1],
             )
             return [ele.embedding for ele in response.data]
@@ -181,12 +181,12 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
 
     def rerank(
         self,
-        transformed_message: str,
-        texts: list[SearchResult],
+        query: str,
+        results: list[SearchResult],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
     ):
-        return texts[:limit]
+        return results[:limit]
 
     def tokenize_string(self, text: str, model: str) -> list[int]:
         try:

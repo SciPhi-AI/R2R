@@ -1,0 +1,120 @@
+import { Callout } from 'nextra/components'
+
+## Running R2R with Search Reranking
+
+Search with reranking enhances traditional search by applying additional downstream ranking powered by language models. This technique refines the results, leading to more accurate and contextually relevant outcomes.
+
+<Callout>
+Currently, reranking is only supported when running with local embedding models.
+</Callout>
+
+### Running with Local Embedding and Reranking
+
+This guide assumes R2R is already installed and the basic local RAG cookbook [located here](/cookbooks/local_rag) has been completed. To run R2R with local embedding and reranking, override the default `config.json` with settings like those shown below:
+
+```json filename="local_ollama_rerank.json"
+{
+  "embedding": {
+    "provider": "sentence-transformers",
+    "base_model": "all-MiniLM-L6-v2",
+    "base_dimension": 384,
+    "rerank_model": "jinaai/jina-reranker-v1-turbo-en",
+    "rerank_dimension": 384,
+    "rerank_transformer_type": "CrossEncoder",
+    "batch_size": 32,
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 512,
+      "chunk_overlap": 20
+    }
+  }
+}
+```
+
+These settings build upon those shown in `/examples/configs/local_ollama.json` and are provided by default in the config file located at `/examples/configs/local_ollama_rerank.json`.
+
+### Executing a Basic Search
+
+To execute a basic search, start by running the backend with the basic `local_ollama` config.
+
+```bash filename="bash"
+# cd $WORKDIR
+python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config local_ollama
+```
+
+If the target database is empty, quickly populate it with demo files, which include `.txt`, `.pdf`, `.html`, and `.png` examples, using the command shown below. The `client_server_mode` flag specifies communication with an R2R server with the default URL of `http://localhost:8000`. To replicate the exact results shown below, these commands must be run in order on a clean database.
+
+```bash filename="bash"
+python -m r2r.examples.demo ingest_as_files --client_server_mode
+```
+
+Once the files are populated, run a search with the following command:
+
+```bash filename="bash"
+python -m r2r.examples.demo search --query="Who was Aristotle?" --client_server_mode
+```
+
+```plaintext
+{
+  ...
+  'score': '0.742869408806949',
+  'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.',
+  ...
+},
+{
+  ...
+  'score': '0.6987192091029945',
+  'text': 'School of Aristotle in Mieza, Macedonia, Greece.'
+  ...
+},
+{
+  ...
+  'score': '0.6987192091029945',
+  'text': 'In Protrepticus, the character 'Aristotle' states:[123]'
+  ...
+},
+...
+```
+
+### Executing a Reranked Search
+
+Executing a reranked search is as simple as specifying a config with a `rerank_model`, `rerank_dimension`, and optionally a `rerank_transformer_type`. We will now run with the reranking config specified at the start of this cookbook:
+
+```bash filename="bash"
+# cd $WORKDIR
+python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config local_ollama_rerank
+```
+
+Now we can execute a search as shown:
+
+```bash filename="bash"
+python -m r2r.examples.demo search --query="Who was Aristotle?" --client_server_mode
+```
+
+```plaintext
+{
+  ...
+  'score': '0.9439374804496765',
+  'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.',
+  ...
+},
+{
+  ...
+  'score': '0.8488454222679138',
+  'text': 'Aristotle was born in 384 BC[C] in Stagira, Chalcidice,[2] about 55 km (34 miles) east of modern-day Thessaloniki.[3][4] His father, Nicomachus, was the personal physician to King Amyntas of Macedon. While he was young, Aristotle learned about biology and medical information, which was taught by his father.[5] Both of Aristotle's parents died when he was about thirteen, and Proxenus of Atarneus became his guardian.[6] Although little information about Aristotle's childhood has survived, he probably spent'
+  ...
+},
+{
+  ...
+  'score': '0.6268636584281921',
+  'text': 'Little is known about Aristotle's life. He was born in the city of Stagira in northern Greece during the Classical period. His father, Nicomachus, died when Aristotle was a child, and he was brought up by a guardian. At 17 or 18, he joined Plato's Academy in Athens and remained there until the age of 37 (c.\u2009347 BC). Shortly after Plato died, Aristotle left Athens and, at the request of Philip II of Macedon, tutored his son Alexander the Great beginning in 343 BC. He established a library in the Lyceum'
+  ...
+},
+...
+```
+
+With the embedding and reranking model used in this cookbook, we can see a dramatic increase in the quality of returned search results.
+
+
+### Summary
+The reranked search in R2R significantly improves the quality and relevance of search results by adding an additional reranking step powered by language models. This process first uses traditional and semantic search methods to retrieve initial results, which are then refined using a reranking model. The reranking model evaluates the context and relevance of each result, ensuring that the most pertinent documents are prioritized. This approach leverages both the empirical strengths of traditional keyword searches and the nuanced understanding provided by modern semantic models, resulting in a highly accurate and contextually relevant search experience.

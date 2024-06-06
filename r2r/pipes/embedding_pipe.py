@@ -164,7 +164,7 @@ class R2REmbeddingPipe(EmbeddingPipe):
     async def embed(self, fragments: list[Fragment]) -> list[float]:
         return await self.embedding_provider.async_get_embeddings(
             [fragment.data for fragment in fragments],
-            EmbeddingProvider.PipeStage.SEARCH,
+            EmbeddingProvider.PipeStage.BASE,
         )
 
     async def _process_batch(
