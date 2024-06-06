@@ -48,11 +48,11 @@ class R2RProviderFactory:
         if not vector_db_provider:
             raise ValueError("Vector database provider not found")
 
-        if not self.config.embedding.search_dimension:
+        if not self.config.embedding.base_dimension:
             raise ValueError("Search dimension not found in embedding config")
 
         vector_db_provider.initialize_collection(
-            self.config.embedding.search_dimension
+            self.config.embedding.base_dimension
         )
         return vector_db_provider
 

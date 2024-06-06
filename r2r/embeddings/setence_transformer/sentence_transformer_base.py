@@ -39,7 +39,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         self.do_rerank = False
 
         self.search_encoder = self._init_model(
-            config, EmbeddingProvider.PipeStage.SEARCH
+            config, EmbeddingProvider.PipeStage.BASE
         )
         self.rerank_encoder = self._init_model(
             config, EmbeddingProvider.PipeStage.RERANK
@@ -49,16 +49,17 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         stage_name = stage.name.lower()
         model = config.dict().get(f"{stage_name}_model", None)
         dimension = config.dict().get(f"{stage_name}_dimension", None)
+
         transformer_type = config.dict().get(
             f"{stage_name}_transformer_type", "SentenceTransformer"
         )
 
-        if stage == EmbeddingProvider.PipeStage.SEARCH:
+        if stage == EmbeddingProvider.PipeStage.BASE:
             self.do_search = True
             # Check if a model is set for the stage
             if not (model and dimension and transformer_type):
                 raise ValueError(
-                    f"Must set {stage}_model and {stage}_dimension for {stage} stage in order to initialize SentenceTransformerEmbeddingProvider."
+                    f"Must set {stage.name.lower()}_model and {stage.name.lower()}_dimension for {stage} stage in order to initialize SentenceTransformerEmbeddingProvider."
                 )
 
         if stage == EmbeddingProvider.PipeStage.RERANK:
@@ -90,9 +91,9 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
     def get_embedding(
         self,
         text: str,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
     ) -> list[float]:
-        if stage != EmbeddingProvider.PipeStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError("`get_embedding` only supports `SEARCH` stage.")
         if not self.do_search:
             raise ValueError(
@@ -104,9 +105,9 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
     def get_embeddings(
         self,
         texts: list[str],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
     ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipeStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError("`get_embeddings` only supports `SEARCH` stage.")
         if not self.do_search:
             raise ValueError(
@@ -114,7 +115,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             )
         encoder = (
             self.search_encoder
-            if stage == EmbeddingProvider.PipeStage.SEARCH
+            if stage == EmbeddingProvider.PipeStage.BASE
             else self.rerank_encoder
         )
         return encoder.encode(texts).tolist()
@@ -122,18 +123,18 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
     def rerank(
         self,
         query: str,
-        documents: list[SearchResult],
+        results: list[SearchResult],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
-    ) -> list[list[float]]:
+    ) -> list[SearchResult]:
         if stage != EmbeddingProvider.PipeStage.RERANK:
             raise ValueError("`rerank` only supports `RERANK` stage.")
         if not self.do_rerank:
-            return documents[:limit]
+            return results[:limit]
 
         from copy import copy
 
-        texts = copy([doc.metadata["text"] for doc in documents])
+        texts = copy([doc.metadata["text"] for doc in results])
         # Use the rank method from the rerank_encoder, which is a CrossEncoder model
         reranked_scores = self.rerank_encoder.rank(
             query, texts, return_documents=False, top_k=limit
@@ -142,7 +143,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         reranked_results = []
         for score in reranked_scores:
             corpus_id = score["corpus_id"]
-            new_result = documents[corpus_id]
+            new_result = results[corpus_id]
             new_result.score = float(score["score"])
             reranked_results.append(new_result)
 
@@ -152,7 +153,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
 
     def tokenize_string(
         self,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
     ) -> list[int]:
         raise ValueError(
             "SentenceTransformerEmbeddingProvider does not support tokenize_string."

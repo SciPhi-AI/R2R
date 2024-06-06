@@ -11,9 +11,11 @@ This guide assumes R2R is already installed and the basic demo [located here](/g
 By default, R2R ships with hybrid search enabled when using PostgreSQL and pgvector as the vector database provider. To run R2R with Postgres, override the default `config.json` with settings like those shown below:
 
 ```json filename="pgvector.json"
-"vector_database": {
-  "provider": "pgvector",
-  "collection_name": "vecs"
+{
+  "vector_database": {
+    "provider": "pgvector",
+    "collection_name": "vecs"
+  }
 }
 ```
 

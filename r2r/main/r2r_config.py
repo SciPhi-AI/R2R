@@ -22,8 +22,8 @@ class R2RConfig:
         "app": ["max_file_size_in_mb"],
         "embedding": [
             "provider",
-            "search_model",
-            "search_dimension",
+            "base_model",
+            "base_dimension",
             "batch_size",
             "text_splitter",
         ],

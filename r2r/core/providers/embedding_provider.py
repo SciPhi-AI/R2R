@@ -10,9 +10,11 @@ class EmbeddingConfig(ProviderConfig):
     """A base embedding configuration class"""
 
     provider: Optional[str] = None
-    search_model: Optional[str] = None
-    search_dimension: Optional[int] = None
+    base_model: Optional[str] = None
+    base_dimension: Optional[int] = None
     rerank_model: Optional[str] = None
+    rerank_dimension: Optional[int] = None
+    rerank_transformer_type: Optional[str] = None
     batch_size: int = 1
 
     def validate(self) -> None:
@@ -32,7 +34,7 @@ class EmbeddingProvider(Provider):
     """An abstract class to provide a common interface for embedding providers."""
 
     class PipeStage(Enum):
-        SEARCH = 1
+        BASE = 1
         RERANK = 2
 
     def __init__(self, config: EmbeddingConfig):
@@ -44,22 +46,22 @@ class EmbeddingProvider(Provider):
         super().__init__(config)
 
     @abstractmethod
-    def get_embedding(self, text: str, stage: PipeStage = PipeStage.SEARCH):
+    def get_embedding(self, text: str, stage: PipeStage = PipeStage.BASE):
         pass
 
     async def async_get_embedding(
-        self, text: str, stage: PipeStage = PipeStage.SEARCH
+        self, text: str, stage: PipeStage = PipeStage.BASE
     ):
         return self.get_embedding(text, stage)
 
     @abstractmethod
     def get_embeddings(
-        self, texts: list[str], stage: PipeStage = PipeStage.SEARCH
+        self, texts: list[str], stage: PipeStage = PipeStage.BASE
     ):
         pass
 
     async def async_get_embeddings(
-        self, texts: list[str], stage: PipeStage = PipeStage.SEARCH
+        self, texts: list[str], stage: PipeStage = PipeStage.BASE
     ):
         return self.get_embeddings(texts, stage)
 
@@ -67,7 +69,7 @@ class EmbeddingProvider(Provider):
     def rerank(
         self,
         query: str,
-        documents: list[SearchResult],
+        results: list[SearchResult],
         stage: PipeStage = PipeStage.RERANK,
         limit: int = 10,
     ):

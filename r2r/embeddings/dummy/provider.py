@@ -18,11 +18,11 @@ class DummyEmbeddingProvider(EmbeddingProvider):
                 "Must set provider in order to initialize SentenceTransformerEmbeddingProvider."
             )
 
-        self.search_dimension = config.search_dimension
+        self.base_dimension = config.base_dimension
 
-        if not self.search_dimension:
+        if not self.base_dimension:
             raise ValueError(
-                "Must set search_dimension in order to initialize DummyEmbeddingProvider."
+                "Must set base_dimension in order to initialize DummyEmbeddingProvider."
             )
 
         if config.rerank_model:
@@ -33,26 +33,26 @@ class DummyEmbeddingProvider(EmbeddingProvider):
     def get_embedding(
         self,
         text: str,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
     ) -> list[float]:
-        if stage != EmbeddingProvider.PipeStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "DummyEmbeddingProvider only supports search stage."
             )
-        return [random.random() for _ in range(self.search_dimension)]
+        return [random.random() for _ in range(self.base_dimension)]
 
     def get_embeddings(
         self,
         texts: list[str],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.SEARCH,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
     ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipeStage.SEARCH:
+        if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "DummyEmbeddingProvider only supports search stage."
             )
 
         return [
-            [random.random() for _ in range(self.search_dimension)]
+            [random.random() for _ in range(self.base_dimension)]
             for text in texts
         ]
 
