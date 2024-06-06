@@ -27,6 +27,9 @@ CONFIG_OPTIONS = {
     "local_ollama": os.path.join(
         current_file_path, "..", "configs", "local_ollama.json"
     ),
+    "pgvector": os.path.join(
+        current_file_path, "..", "configs", "pgvector.json"
+    ),
 }
 
 
