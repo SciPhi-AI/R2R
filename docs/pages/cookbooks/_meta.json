@@ -1,4 +1,5 @@
 {
+    "starter": "Starter",
     "multiple_llms": "Multiple LLMs",
     "local_rag": "Local RAG",
     "hybrid_search": "Hybrid Search",
