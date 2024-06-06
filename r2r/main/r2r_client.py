@@ -105,9 +105,9 @@ class R2RClient:
 
     def update_files(
         self,
-        metadatas: Optional[list[dict]],
         files: list[str],
         ids: list[str],
+        metadatas: Optional[list[dict]] = None,
     ) -> dict:
         url = f"{self.base_url}/update_files"
         files_to_upload = [
