@@ -225,6 +225,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
             methods=["GET"],
         )
         self.app.add_api_route(
+            path="/document_chunks",
+            endpoint=self.document_chunks_app,
+            methods=["GET"],
+        )
+        self.app.add_api_route(
             path="/delete", endpoint=self.delete_app, methods=["DELETE"]
         )
 
@@ -235,7 +240,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             methods=["GET"],
         )
         self.app.add_api_route(
-            path="/open_api_spec",
+            path="/openapi_spec",
             endpoint=self.openapi_spec_app,
             methods=["GET"],
         )
@@ -269,16 +274,58 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def aingest_documents(
         self,
         documents: list[Document],
+        metadatas: Optional[list[dict]] = None,
         versions: Optional[list[str]] = None,
         *args: Any,
         **kwargs: Any,
     ):
-        # Process the documents through the pipeline
+        if metadatas and len(metadatas) != len(documents):
+            raise ValueError(
+                "Number of metadata entries does not match number of documents."
+            )
+        if len(documents) == 0:
+            raise HTTPException(
+                status_code=400, detail="No documents provided for ingestion."
+            )
+
+        document_infos = []
+        for iteration, document in enumerate(documents):
+            document_metadata = (
+                metadatas[iteration] if metadatas else document.metadata
+            )
+            document_title = (
+                document_metadata.get("title", None) or document.title
+            )
+            document_metadata["title"] = document_title
+
+            if document.user_id:
+                document_metadata["user_id"] = str(document.user_id)
+            document.metadata = document_metadata
+
+            now = datetime.now()
+            version = versions[iteration] if versions else "v0"
+            document_infos.append(
+                DocumentInfo(
+                    **{
+                        "document_id": document.id,
+                        "version": version,
+                        "size_in_bytes": len(document.data),
+                        "metadata": document_metadata.copy(),
+                        "title": document_title,
+                        "user_id": document.user_id,
+                        "created_at": now,
+                        "updated_at": now,
+                    }
+                )
+            )
+
         await self.ingestion_pipeline.run(
             input=to_async_generator(documents),
             versions=versions,
             run_manager=self.run_manager,
         )
+
+        self.providers.vector_db.upsert_documents_info(document_infos)
         return {"results": "Entries upserted successfully."}
 
     class IngestDocumentsRequest(BaseModel):
@@ -307,33 +354,70 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 logger.error(
                     f"ingest_documents_app(documents={request.documents}) - \n\n{str(e)})"
                 )
-                logger.error(f"ingest_documents_app(documents={request.documents}) - \n\n{str(e)})")
+                logger.error(
+                    f"ingest_documents_app(documents={request.documents}) - \n\n{str(e)})"
+                )
                 raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def aupdate_documents(
-        self, documents: list[Document], *args: Any, **kwargs: Any
+        self,
+        documents: list[Document],
+        metadatas: Optional[list[dict]] = None,
+        *args: Any,
+        **kwargs: Any,
     ):
         if len(documents) == 0:
             raise HTTPException(
                 status_code=400, detail="No documents provided for update."
             )
+
         old_versions = []
         new_versions = []
-        for doc in documents:
-            document_data = await self.adocument_data(doc.id)
-            current_version = document_data["results"][0]["version"]
+        document_infos_modified = []
+
+        documents_info = await self.adocuments_info(
+            document_ids=[doc.id for doc in documents]
+        )
+
+        for iteration, doc in enumerate(documents):
+            document_info = documents_info[iteration]
+            current_version = document_info.version
             old_versions.append(current_version)
             new_versions.append(increment_version(current_version))
 
+            document_metadata = (
+                metadatas[iteration] if metadatas else doc.metadata
+            )
+            document_metadata["title"] = (
+                document_metadata.get("title", None) or doc.title
+            )
+            document_metadata["user_id"] = (
+                str(doc.user_id) if doc.user_id else None
+            )
+            document_infos_modified.append(
+                DocumentInfo(
+                    **{
+                        "document_id": doc.id,
+                        "version": new_versions[-1],
+                        "size_in_bytes": len(doc.data),
+                        "metadata": document_metadata.copy(),
+                        "title": document_metadata["title"],
+                        "user_id": doc.user_id,
+                        "created_at": document_info.created_at,
+                        "updated_at": datetime.now(),
+                    }
+                )
+            )
+
         await self.aingest_documents(documents, versions=new_versions)
 
-        # Delete the old version
         for doc, old_version in zip(documents, old_versions):
             await self.adelete(
                 ["document_id", "version"], [str(doc.id), old_version]
             )
 
+        self.providers.vector_db.upsert_documents_info(document_infos_modified)
         return {"results": "Documents updated."}
 
     class UpdateDocumentsRequest(BaseModel):
@@ -361,7 +445,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 logger.error(
                     f"update_documents_app(documents={request.documents}) - \n\n{str(e)})"
                 )
-                logger.error(f"update_documents_app(documents={request.documents}) - \n\n{str(e)})")
+                logger.error(
+                    f"update_documents_app(documents={request.documents}) - \n\n{str(e)})"
+                )
                 raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
@@ -561,13 +647,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     value=str(e),
                     is_info_log=False,
                 )
-
-                await self.ingestion_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="error",
-                    value=str(e),
-                    is_info_log=False,
-                )
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
@@ -716,6 +795,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         query: str,
         search_filters: Optional[dict] = None,
         search_limit: int = 10,
+        do_hybrid_search: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -729,6 +809,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 search_filters=search_filters,
                 search_limit=search_limit,
                 run_manager=self.run_manager,
+                do_hybrid_search=do_hybrid_search,
             )
 
             t1 = time.time()
@@ -747,6 +828,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         query: str
         search_filters: Optional[str] = None
         search_limit: int = 10
+        do_hybrid_search: Optional[bool] = False
 
     async def search_app(self, request: SearchRequest):
         async with manage_run(self.run_manager, "search_app") as run_id:
@@ -758,7 +840,10 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     else json.loads(request.search_filters)
                 )
                 return await self.asearch(
-                    request.query, search_filters, request.search_limit
+                    request.query,
+                    search_filters,
+                    request.search_limit,
+                    request.do_hybrid_search,
                 )
             except Exception as e:
                 # TODO - Make this more modular
@@ -770,13 +855,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
 
                 await self.logging_connection.log(
-                    log_id=run_id,
-                    key="error",
-                    value=str(e),
-                    is_info_log=False,
-                )
-
-                await self.search_pipeline.pipe_logger.log(
                     log_id=run_id,
                     key="error",
                     value=str(e),
@@ -810,19 +888,21 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     )
 
                     async def stream_response():
-                        async for (
-                            chunk
-                        ) in await self.streaming_rag_pipeline.run(
-                            input=to_async_generator([message]),
-                            streaming=True,
-                            search_filters=search_filters,
-                            search_limit=search_limit,
-                            rag_generation_config=rag_generation_config,
-                            run_manager=self.run_manager,
-                            *args,
-                            **kwargs,
-                        ):
-                            yield chunk
+                        # We must re-enter the manage_run context for the streaming pipeline
+                        async with manage_run(self.run_manager, "arag"):
+                            async for (
+                                chunk
+                            ) in await self.streaming_rag_pipeline.run(
+                                input=to_async_generator([message]),
+                                streaming=True,
+                                search_filters=search_filters,
+                                search_limit=search_limit,
+                                rag_generation_config=rag_generation_config,
+                                run_manager=self.run_manager,
+                                *args,
+                                **kwargs,
+                            ):
+                                yield chunk
 
                     return stream_response()
 
@@ -996,13 +1076,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     value=str(e),
                     is_info_log=False,
                 )
-
-                await self.eval_pipeline.pipe_logger.log(
-                    log_id=run_id,
-                    key="error",
-                    value=str(e),
-                    is_info_log=False,
-                )
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
@@ -1148,27 +1221,27 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     analysis_type = analysis_config[0]
                     if analysis_type == "bar_chart":
                         extract_key = analysis_config[1]
-                        results[filter_key] = (
-                            AnalysisTypes.generate_bar_chart_data(
-                                filtered_logs[filter_key], extract_key
-                            )
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.generate_bar_chart_data(
+                            filtered_logs[filter_key], extract_key
                         )
                     elif analysis_type == "basic_statistics":
                         extract_key = analysis_config[1]
-                        results[filter_key] = (
-                            AnalysisTypes.calculate_basic_statistics(
-                                filtered_logs[filter_key], extract_key
-                            )
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.calculate_basic_statistics(
+                            filtered_logs[filter_key], extract_key
                         )
                     elif analysis_type == "percentile":
                         extract_key = analysis_config[1]
                         percentile = int(analysis_config[2])
-                        results[filter_key] = (
-                            AnalysisTypes.calculate_percentile(
-                                filtered_logs[filter_key],
-                                extract_key,
-                                percentile,
-                            )
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.calculate_percentile(
+                            filtered_logs[filter_key],
+                            extract_key,
+                            percentile,
                         )
                     else:
                         logger.warning(
@@ -1192,7 +1265,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
-    async def asettings(self, *args: Any, **kwargs: Any):
+    async def aapp_settings(self, *args: Any, **kwargs: Any):
         # config_data = self.config.app  # Assuming this holds your config.json data
         prompts = self.providers.prompt.get_all_prompts()
         return {
@@ -1260,6 +1333,20 @@ class R2RApp(metaclass=AsyncSyncMeta):
         except Exception as e:
             logger.error(
                 f"documents_info_app(document_ids={document_ids}, user_ids={user_ids}) - \n\n{str(e)})"
+            )
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    @syncable
+    async def adocument_chunks(self, document_id: str) -> list[str]:
+        return self.providers.vector_db.get_document_chunks(document_id)
+
+    async def document_chunks_app(self, document_id: str):
+        try:
+            chunks = await self.adocument_chunks(document_id)
+            return {"results": chunks}
+        except Exception as e:
+            logger.error(
+                f"get_document_chunks_app(document_id={document_id}) - \n\n{str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e)) from e
 

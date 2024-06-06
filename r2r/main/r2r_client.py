@@ -131,12 +131,14 @@ class R2RClient:
         query: str,
         search_filters: Optional[dict] = None,
         search_limit: int = 10,
+        do_hybrid_search: bool = False,
     ) -> dict:
         url = f"{self.base_url}/search"
         data = {
             "query": query,
             "search_filters": json.dumps(search_filters or {}),
             "search_limit": search_limit,
+            "do_hybrid_search": do_hybrid_search,
         }
         response = requests.post(url, json=data)
         response.raise_for_status()
@@ -270,6 +272,59 @@ class R2RClient:
             params["document_ids"] = ",".join(document_ids)
         if user_ids is not None:
             params["user_ids"] = ",".join(user_ids)
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+
+    def analytics(self, filter_criteria: dict, analysis_types: dict) -> dict:
+        url = f"{self.base_url}/analytics"
+        data = {
+            "filter_criteria": filter_criteria,
+            "analysis_types": analysis_types,
+        }
+
+        try:
+            response = requests.post(url, json=data)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            if e.response is None:
+                raise requests.exceptions.RequestException(
+                    f"Error occurred while calling analytics API. {str(e)}"
+                ) from e
+            status_code = e.response.status_code
+            error_message = e.response.text
+            raise requests.exceptions.RequestException(
+                f"Error occurred while calling analytics API. Status Code: {status_code}, Error Message: {error_message}"
+            ) from e
+
+    def users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
+        url = f"{self.base_url}/users_stats"
+        params = {}
+        if user_ids is not None:
+            params["user_ids"] = ",".join(user_ids)
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+
+    def documents_info(
+        self,
+        document_ids: Optional[str] = None,
+        user_ids: Optional[str] = None,
+    ) -> dict:
+        url = f"{self.base_url}/documents_info"
+        params = {}
+        params["document_ids"] = (
+            json.dumps(document_ids) if document_ids else None
+        )
+        params["user_ids"] = json.dumps(user_ids) if user_ids else None
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+
+    def document_chunks(self, document_id: str) -> dict:
+        url = f"{self.base_url}/document_chunks"
+        params = {"document_id": document_id}
         response = requests.get(url, params=params)
         response.raise_for_status()
         return response.json()

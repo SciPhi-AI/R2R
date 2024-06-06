@@ -62,6 +62,22 @@ class VectorDBProvider(Provider, ABC):
         pass
 
     @abstractmethod
+    def hybrid_search(
+        self,
+        query_text: str,
+        query_vector: list[float],
+        limit: int = 10,
+        filters: Optional[dict[str, Union[bool, int, str]]] = None,
+        # Hybrid search parameters
+        full_text_weight: float = 1.0,
+        semantic_weight: float = 1.0,
+        rrf_k: int = 20,  # typical value is ~2x the number of results you want
+        *args,
+        **kwargs,
+    ) -> list[SearchResult]:
+        pass
+
+    @abstractmethod
     def create_index(self, index_type, column_name, index_options):
         pass
 
@@ -108,6 +124,10 @@ class VectorDBProvider(Provider, ABC):
         filter_document_ids: Optional[list[str]] = None,
         filter_user_ids: Optional[list[str]] = None,
     ) -> list[DocumentInfo]:
+        pass
+
+    @abstractmethod
+    def get_document_chunks(self, document_id: str) -> list[dict]:
         pass
 
     @abstractmethod

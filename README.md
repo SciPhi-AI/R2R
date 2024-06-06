@@ -13,18 +13,18 @@ Build, deploy, observe, and optimize your RAG system.
 
 # About
 
-R2R, short for RAG to Riches, provides the fastest and most efficient way to deliver high-quality Retrieval-Augmented Generation (RAG) to end users. The framework is built around customizable pipelines and ships with a feature-rich REST API.
+R2R, short for RAG to Riches, provides the fastest and most featureful way for developers to deliver high-quality Retrieval-Augmented Generation (RAG) to end users. The framework ships with a REST API powered by Postgres and pgvector - it includes user-level and document-level management as well as advanced RAG features.
 
 ## Why?
 
-R2R was conceived to bridge the gap between local LLM experimentation and scalable production solutions. It is built with observability and customization in mind, ensuring that users can seamlessly transition from development to deployment.
+R2R was conceived to help developers bridge the gap between local LLM experimentation and serving a scalable, production-ready application. Built with document management, observability and customization in mind, R2R provides adequate performance and features for most RAG use cases.
 
 ## Key Features
-- **🔧 Build**: Use the framework to build arbitrary asynchronous pipelines.
-- **🚀 Deploy**: Instantly launch production-ready asynchronous RAG pipelines with streaming capabilities.
-- **🧩 Customize**: Tailor your multimodal pipeline with intuitive configuration files.
-- **🔌 Extend**: Enhance your pipeline with custom code integrations.
-- **🤖 OSS**: Benefit from a framework developed by the open-source community, designed to simplify RAG deployment.
+- **🔧 Build**: Effortlessly create and manage observable, high-performance RAG pipelines with our robust framework. Including multimodal RAG, hybrid search, and latest methods such as HyDE.
+- **🚀 Deploy**: Launch production-ready asynchronous RAG pipelines with seamless streaming capabilities. Begin serving users immediately with built-in user and document management features.
+- **🧩 Customize**: Easily tailor your pipeline using intuitive configuration files to meet your specific needs.
+- **🔌 Extend**: Enhance and extend your pipeline with custom code integrations to add new functionalities.
+- **🤖 OSS**: Leverage a framework developed by the open-source community, ensuring flexibility, scalability, and ease of deployment.
 
 ## Table of Contents
 1. [Quick Install](#quick-install)
@@ -43,6 +43,19 @@ pip install r2r
 
 # setup env 
 export OPENAI_API_KEY=sk-...
+```
+
+# Serving R2R RAG backend
+
+## With local installation
+
+```bash
+python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000
+```
+## With Docker
+
+```bash
+docker run -d --name r2r -p 8000:8000 r2r:latest
 ```
 
 ## Links
@@ -248,25 +261,25 @@ This command starts the R2R server on the default host `0.0.0.0` and port `8000`
 
 1. **Ingest Documents as Files**:
    ```bash
-   python -m r2r.examples.demo ingest_as_files --base_url=http://localhost:8000
+   python -m r2r.examples.demo ingest_as_files --client_server_mode
    ```
    This command will send the ingestion request to the server running at `http://localhost:8000`.
 
 2. **Perform a Search**:
    ```bash
-   python -m r2r.examples.demo search --query="Who was Aristotle?" --base_url=http://localhost:8000
+   python -m r2r.examples.demo search --query="Who was Aristotle?" --client_server_mode
    ```
    This command sends the search query to the server and retrieves the results.
 
 3. **Run a RAG Completion**:
    ```bash
-   python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?" --base_url=http://localhost:8000
+   python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?" --client_server_mode
    ```
    This command sends the RAG query to the server and retrieves the generated response.
 
 4. **Run a RAG Stream**:
    ```bash
-   python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=true --base_url=http://localhost:8000
+   python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=true --client_server_mode
    ```
    This command streams the RAG query results from the server.
 
