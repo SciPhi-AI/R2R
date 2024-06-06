@@ -718,6 +718,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         query: str,
         search_filters: Optional[dict] = None,
         search_limit: int = 10,
+        do_hybrid_search: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -726,11 +727,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
             t0 = time.time()
 
             search_filters = search_filters or {}
+            print('do_hybrid_search = ', do_hybrid_search)
             results = await self.search_pipeline.run(
                 input=to_async_generator([query]),
                 search_filters=search_filters,
                 search_limit=search_limit,
                 run_manager=self.run_manager,
+                do_hybrid_search=do_hybrid_search,
             )
 
             t1 = time.time()
@@ -749,6 +752,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         query: str
         search_filters: Optional[str] = None
         search_limit: int = 10
+        do_hybrid_search: Optional[bool] = False
 
     async def search_app(self, request: SearchRequest):
         async with manage_run(self.run_manager, "search_app") as run_id:
@@ -760,7 +764,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     else json.loads(request.search_filters)
                 )
                 return await self.asearch(
-                    request.query, search_filters, request.search_limit
+                    request.query, search_filters, request.search_limit, request.do_hybrid_search
                 )
             except Exception as e:
                 # TODO - Make this more modular

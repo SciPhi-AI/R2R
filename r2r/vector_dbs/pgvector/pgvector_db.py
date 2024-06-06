@@ -19,6 +19,7 @@ from r2r.vecs.collection import Collection
 
 logger = logging.getLogger(__name__)
 
+
 class PGVectorDB(VectorDBProvider):
     def __init__(self, config: VectorDBConfig) -> None:
         super().__init__(config)
@@ -76,7 +77,7 @@ class PGVectorDB(VectorDBProvider):
 
     def _create_hybrid_search_function(self):
         hybrid_search_function = f"""
-        CREATE OR REPLACE FUNCTION hybrid_search(
+        CREATE OR REPLACE FUNCTION hybrid_search_{self.config.collection_name}(
             query_text TEXT,
             query_embedding VECTOR(512),
             match_limit INT,
@@ -227,7 +228,7 @@ class PGVectorDB(VectorDBProvider):
                 include_metadata=True,
             )
         ]
-    
+
     def hybrid_search(
         self,
         query_text: str,
@@ -239,7 +240,7 @@ class PGVectorDB(VectorDBProvider):
         semantic_weight: float = 1.0,
         rrf_k: int = 20,  # typical value is ~2x the number of results you want
         *args,
-        **kwargs
+        **kwargs,
     ) -> list[SearchResult]:
         if self.collection is None:
             raise ValueError(
@@ -251,13 +252,15 @@ class PGVectorDB(VectorDBProvider):
         if filters:
             filter_condition = json.dumps(filters)
 
-        query = text("""
-            SELECT * FROM hybrid_search(
+        query = text(
+            f"""
+            SELECT * FROM hybrid_search_{self.config.collection_name}(
                 cast(:query_text as TEXT), cast(:query_embedding as VECTOR), cast(:match_limit as INT), 
                 cast(:full_text_weight as FLOAT), cast(:semantic_weight as FLOAT), cast(:rrf_k as INT),
                 cast(:filter_condition as JSONB)
             )
-        """)
+        """
+        )
 
         params = {
             "query_text": str(query_text),
@@ -266,16 +269,15 @@ class PGVectorDB(VectorDBProvider):
             "full_text_weight": full_text_weight,
             "semantic_weight": semantic_weight,
             "rrf_k": rrf_k,
-            "filter_condition": filter_condition
+            "filter_condition": filter_condition,
         }
 
         with self.vx.Session() as session:
             result = session.execute(query, params).fetchall()
         return [
-            SearchResult(id=row[0], score=1., metadata=row[-1])
+            SearchResult(id=row[0], score=1.0, metadata=row[-1])
             for row in result
         ]
-
 
     def create_index(self, index_type, column_name, index_options):
         pass

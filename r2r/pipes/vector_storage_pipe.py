@@ -82,6 +82,7 @@ class R2RVectorStoragePipe(LoggableAsyncPipe):
         vector_batch = []
 
         async for vector_entry in input.message:
+            print('trying to store vector entry.. = ', vector_entry)
             vector_batch.append(vector_entry)
             if len(vector_batch) >= self.storage_batch_size:
                 # Schedule the storage task

@@ -131,12 +131,14 @@ class R2RClient:
         query: str,
         search_filters: Optional[dict] = None,
         search_limit: int = 10,
+        do_hybrid_search: bool = False,
     ) -> dict:
         url = f"{self.base_url}/search"
         data = {
             "query": query,
             "search_filters": json.dumps(search_filters or {}),
             "search_limit": search_limit,
+            "do_hybrid_search": do_hybrid_search,
         }
         response = requests.post(url, json=data)
         response.raise_for_status()

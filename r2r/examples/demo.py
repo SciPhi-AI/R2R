@@ -58,14 +58,14 @@ class R2RDemo:
         self.user_id = user_id
         self.default_files = file_list or [
             os.path.join(root_path, "data", "aristotle.txt"),
-            os.path.join(root_path, "data", "screen_shot.png"),
+            # os.path.join(root_path, "data", "screen_shot.png"),
             os.path.join(root_path, "data", "pg_essay_1.html"),
-            os.path.join(root_path, "data", "pg_essay_2.html"),
-            os.path.join(root_path, "data", "pg_essay_3.html"),
-            os.path.join(root_path, "data", "pg_essay_4.html"),
-            os.path.join(root_path, "data", "pg_essay_5.html"),
-            os.path.join(root_path, "data", "lyft_2021.pdf"),
-            os.path.join(root_path, "data", "uber_2021.pdf"),
+            # os.path.join(root_path, "data", "pg_essay_2.html"),
+            # os.path.join(root_path, "data", "pg_essay_3.html"),
+            # os.path.join(root_path, "data", "pg_essay_4.html"),
+            # os.path.join(root_path, "data", "pg_essay_5.html"),
+            # os.path.join(root_path, "data", "lyft_2021.pdf"),
+            # os.path.join(root_path, "data", "uber_2021.pdf"),
         ]
 
         self.file_tuples = file_tuples or [
@@ -238,15 +238,15 @@ class R2RDemo:
         print(f"Time taken to update files: {t1-t0:.2f} seconds")
         print(response)
 
-    def search(self, query: str):
+    def search(self, query: str, do_hybrid_search: bool = False):
         t0 = time.time()
         if hasattr(self, "client"):
             results = self.client.search(
-                query, search_filters={"user_id": self.user_id}
+                query, search_filters={"user_id": self.user_id}, do_hybrid_search=do_hybrid_search
             )
         else:
             results = self.r2r.search(
-                query, search_filters={"user_id": self.user_id}
+                query, search_filters={"user_id": self.user_id}, do_hybrid_search=do_hybrid_search
             )
 
         t1 = time.time()
