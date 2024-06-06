@@ -32,7 +32,7 @@ To streamline this process, we've provided pre-configured local settings in the 
 }
 ```
 
-You may also modify the configuration defaults for ingestion, logging, and your vector database provider in a similar manner. More information on these settings are included in this tutorial and throughout the documentation.
+You may also modify the configuration defaults for ingestion, logging, and your vector database provider in a similar manner. More information on these settings are included in this coookbook and throughout the documentation.
 
 This chosen config modification above instructs R2R to use the `sentence-transformers` library for embeddings with the `all-MiniLM-L6-v2` model, turns off evals, and sets the LLM provider to `ollama`. During ingestion, the default is to split documents into chunks of 512 characters with 20 characters of overlap between chunks. 
 

@@ -1,6 +1,8 @@
 {
-  "app": "Application",
-  "config": "Config Setup",
+  "configuring-your-pipeline": "Configuring Your Pipeline",
+  "customizing-your-pipeline": "Customizing Your Pipeline",
+  "app": "R2R Application",
+  "config": "R2R Config",
   "ingestion": "Ingestion Pipeline",
   "search": "Search Pipeline",
   "rag": "RAG Pipeline"

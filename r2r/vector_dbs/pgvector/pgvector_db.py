@@ -27,7 +27,7 @@ class PGVectorDB(VectorDBProvider):
             import r2r.vecs
         except ImportError:
             raise ValueError(
-                f"Error, PGVectorDB requires the vecs library. Please run `poetry add vecs`."
+                f"Error, PGVectorDB requires the vecs library. Please run `pip install vecs`."
             )
         user = os.getenv("POSTGRES_USER")
         password = os.getenv("POSTGRES_PASSWORD")
