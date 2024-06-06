@@ -727,7 +727,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
             t0 = time.time()
 
             search_filters = search_filters or {}
-            print("do_hybrid_search = ", do_hybrid_search)
             results = await self.search_pipeline.run(
                 input=to_async_generator([query]),
                 search_filters=search_filters,

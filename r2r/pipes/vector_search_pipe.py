@@ -46,7 +46,6 @@ class R2RVectorSearchPipe(SearchPipe):
     ) -> AsyncGenerator[SearchResult, None]:
         search_filters_override = kwargs.get("search_filters", None)
         search_limit_override = kwargs.get("search_limit", None)
-        print("in search, do_hybrid_search = ", do_hybrid_search)
         await self.enqueue_log(
             run_id=run_id, key="search_query", value=message
         )
@@ -58,29 +57,17 @@ class R2RVectorSearchPipe(SearchPipe):
             self.vector_db_provider.hybrid_search(
                 query_vector=query_vector,
                 query_text=message,
-                filters={},  # search_filters_override or self.config.search_filters,
+                filters=search_filters_override or self.config.search_filters,
                 limit=search_limit_override or self.config.search_limit,
             )
             if do_hybrid_search
             else self.vector_db_provider.search(
                 query_vector=query_vector,
-                filters={},  # search_filters_override or self.config.search_filters,
+                filters=search_filters_override or self.config.search_filters,
                 limit=search_limit_override or self.config.search_limit,
             )
         )
 
-        print(
-            "search_filters_override or self.config.search_filters = ",
-            search_filters_override or self.config.search_filters,
-        )
-        print(
-            "vanilla search reuslt = ",
-            self.vector_db_provider.search(
-                query_vector=query_vector,
-                filters=search_filters_override or self.config.search_filters,
-                limit=search_limit_override or self.config.search_limit,
-            ),
-        )
         for result in search_generator:
             result.metadata["associatedQuery"] = message
             results.append(result)

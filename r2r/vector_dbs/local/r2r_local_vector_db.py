@@ -154,6 +154,21 @@ class R2RLocalVectorDB(VectorDBProvider):
         conn.close()
         return results[:limit]
 
+    def hybrid_search(
+        self,
+        query_text: str,
+        query_vector: list[float],
+        limit: int = 10,
+        filters: Optional[dict[str, Union[bool, int, str]]] = None,
+        # Hybrid search parameters
+        full_text_weight: float = 1.0,
+        semantic_weight: float = 1.0,
+        rrf_k: int = 20,  # typical value is ~2x the number of results you want
+        *args,
+        **kwargs,
+    ) -> list[SearchResult]:
+        raise NotImplementedError("Hybrid search is not supported in R2RLocalVectorDB.")
+
     def delete_by_metadata(
         self,
         metadata_fields: list[str],
