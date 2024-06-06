@@ -104,6 +104,8 @@ class Client:
     def _create_extension(self, sess):
         try:
             sess.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+            sess.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
+            sess.execute(text("CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;"))
         except Exception as e:
             logger.warning(f"Failed to create extension: {str(e)}")
 

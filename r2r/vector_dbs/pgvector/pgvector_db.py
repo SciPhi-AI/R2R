@@ -55,6 +55,7 @@ class PGVectorDB(VectorDBProvider):
             name=self.config.collection_name, dimension=dimension
         )
         self._create_document_info_table()
+        self._create_hybrid_search_function()
 
     def _create_document_info_table(self):
         with self.vx.Session() as sess:
@@ -73,6 +74,59 @@ class PGVectorDB(VectorDBProvider):
                 """
                 sess.execute(text(query))
                 sess.commit()
+
+    def _create_hybrid_search_function(self):
+        hybrid_search_function = f"""
+        CREATE OR REPLACE FUNCTION hybrid_search_{self.config.collection_name}(
+            query_text TEXT,
+            query_embedding VECTOR(512),
+            match_limit INT,
+            full_text_weight FLOAT = 1,
+            semantic_weight FLOAT = 1,
+            rrf_k INT = 50,
+            filter_condition JSONB = NULL
+        )
+        RETURNS SETOF vecs."{self.config.collection_name}"
+        LANGUAGE sql
+        AS $$
+        WITH full_text AS (
+            SELECT
+                id,
+                ROW_NUMBER() OVER (ORDER BY ts_rank(to_tsvector('english', metadata->>'text'), websearch_to_tsquery(query_text)) DESC) AS rank_ix
+            FROM vecs."{self.config.collection_name}"
+            WHERE to_tsvector('english', metadata->>'text') @@ websearch_to_tsquery(query_text)
+            AND (filter_condition IS NULL OR (metadata @> filter_condition))
+            ORDER BY rank_ix
+            LIMIT LEAST(match_limit, 30) * 2
+        ),
+        semantic AS (
+            SELECT
+                id,
+                ROW_NUMBER() OVER (ORDER BY vec <#> query_embedding) AS rank_ix
+            FROM vecs."{self.config.collection_name}"
+            WHERE filter_condition IS NULL OR (metadata @> filter_condition)
+            ORDER BY rank_ix
+            LIMIT LEAST(match_limit, 30) * 2
+        )
+        SELECT
+            vecs."{self.config.collection_name}".*
+        FROM
+            full_text
+            FULL OUTER JOIN semantic
+                ON full_text.id = semantic.id
+            JOIN vecs."{self.config.collection_name}"
+                ON vecs."{self.config.collection_name}".id = COALESCE(full_text.id, semantic.id)
+        ORDER BY
+            COALESCE(1.0 / (rrf_k + full_text.rank_ix), 0.0) * full_text_weight +
+            COALESCE(1.0 / (rrf_k + semantic.rank_ix), 0.0) * semantic_weight
+            DESC
+        LIMIT
+            LEAST(match_limit, 30);
+        $$;
+        """
+        with self.vx.Session() as sess:
+            sess.execute(text(hybrid_search_function))
+            sess.commit()
 
     def copy(self, entry: VectorEntry, commit=True) -> None:
         if self.collection is None:
@@ -173,6 +227,56 @@ class PGVectorDB(VectorDBProvider):
                 include_value=True,
                 include_metadata=True,
             )
+        ]
+
+    def hybrid_search(
+        self,
+        query_text: str,
+        query_vector: list[float],
+        limit: int = 10,
+        filters: Optional[dict[str, Union[bool, int, str]]] = None,
+        # Hybrid search parameters
+        full_text_weight: float = 1.0,
+        semantic_weight: float = 1.0,
+        rrf_k: int = 20,  # typical value is ~2x the number of results you want
+        *args,
+        **kwargs,
+    ) -> list[SearchResult]:
+        if self.collection is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `hybrid_search`."
+            )
+
+        # Convert filters to a JSON-compatible format
+        filter_condition = None
+        if filters:
+            filter_condition = json.dumps(filters)
+
+        query = text(
+            f"""
+            SELECT * FROM hybrid_search_{self.config.collection_name}(
+                cast(:query_text as TEXT), cast(:query_embedding as VECTOR), cast(:match_limit as INT), 
+                cast(:full_text_weight as FLOAT), cast(:semantic_weight as FLOAT), cast(:rrf_k as INT),
+                cast(:filter_condition as JSONB)
+            )
+        """
+        )
+
+        params = {
+            "query_text": str(query_text),
+            "query_embedding": list(query_vector),
+            "match_limit": limit,
+            "full_text_weight": full_text_weight,
+            "semantic_weight": semantic_weight,
+            "rrf_k": rrf_k,
+            "filter_condition": filter_condition,
+        }
+
+        with self.vx.Session() as session:
+            result = session.execute(query, params).fetchall()
+        return [
+            SearchResult(id=row[0], score=1.0, metadata=row[-1])
+            for row in result
         ]
 
     def create_index(self, index_type, column_name, index_options):

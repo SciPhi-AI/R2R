@@ -238,15 +238,19 @@ class R2RDemo:
         print(f"Time taken to update files: {t1-t0:.2f} seconds")
         print(response)
 
-    def search(self, query: str):
+    def search(self, query: str, do_hybrid_search: bool = False):
         t0 = time.time()
         if hasattr(self, "client"):
             results = self.client.search(
-                query, search_filters={"user_id": self.user_id}
+                query,
+                search_filters={"user_id": self.user_id},
+                do_hybrid_search=do_hybrid_search,
             )
         else:
             results = self.r2r.search(
-                query, search_filters={"user_id": self.user_id}
+                query,
+                search_filters={"user_id": self.user_id},
+                do_hybrid_search=do_hybrid_search,
             )
 
         t1 = time.time()

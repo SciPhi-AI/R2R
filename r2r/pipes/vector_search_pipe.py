@@ -40,6 +40,7 @@ class R2RVectorSearchPipe(SearchPipe):
         self,
         message: str,
         run_id: uuid.UUID,
+        do_hybrid_search: bool,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[SearchResult, None]:
@@ -49,13 +50,25 @@ class R2RVectorSearchPipe(SearchPipe):
             run_id=run_id, key="search_query", value=message
         )
         results = []
-        for result in self.vector_db_provider.search(
-            query_vector=self.embedding_provider.get_embedding(
-                message,
-            ),
-            filters=search_filters_override or self.config.search_filters,
-            limit=search_limit_override or self.config.search_limit,
-        ):
+        query_vector = self.embedding_provider.get_embedding(
+            message,
+        )
+        search_generator = (
+            self.vector_db_provider.hybrid_search(
+                query_vector=query_vector,
+                query_text=message,
+                filters=search_filters_override or self.config.search_filters,
+                limit=search_limit_override or self.config.search_limit,
+            )
+            if do_hybrid_search
+            else self.vector_db_provider.search(
+                query_vector=query_vector,
+                filters=search_filters_override or self.config.search_filters,
+                limit=search_limit_override or self.config.search_limit,
+            )
+        )
+
+        for result in search_generator:
             result.metadata["associatedQuery"] = message
             results.append(result)
             yield result
@@ -70,6 +83,7 @@ class R2RVectorSearchPipe(SearchPipe):
         input: AsyncPipe.Input,
         state: AsyncState,
         run_id: uuid.UUID,
+        do_hybrid_search: bool = False,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[SearchResult, None]:
@@ -78,7 +92,11 @@ class R2RVectorSearchPipe(SearchPipe):
         async for search_request in input.message:
             search_queries.append(search_request)
             async for result in self.search(
-                message=search_request, run_id=run_id, *args, **kwargs
+                message=search_request,
+                run_id=run_id,
+                do_hybrid_search=do_hybrid_search,
+                *args,
+                **kwargs,
             ):
                 search_results.append(result)
                 yield result
