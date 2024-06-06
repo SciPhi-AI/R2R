@@ -8,8 +8,8 @@
   },
   "embedding": {
     "provider": "openai",
-    "search_model": "text-embedding-3-small",
-    "search_dimension": 512,
+    "base_model": "text-embedding-3-small",
+    "base_dimension": 512,
     "batch_size": 128,
     "text_splitter": {
       "type": "recursive_character",
