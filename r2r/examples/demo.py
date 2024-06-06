@@ -76,6 +76,7 @@ class R2RDemo:
         ]
 
     def ingest_as_documents(self, file_paths: Optional[list[str]] = None):
+        # An alternative demo which shows how to directly ingest processed documents.
         file_paths = file_paths or self.default_files
         documents = []
         t0 = time.time()

@@ -274,16 +274,58 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def aingest_documents(
         self,
         documents: list[Document],
+        metadatas: Optional[list[dict]] = None,
         versions: Optional[list[str]] = None,
         *args: Any,
         **kwargs: Any,
     ):
-        # Process the documents through the pipeline
+        if metadatas and len(metadatas) != len(documents):
+            raise ValueError(
+                "Number of metadata entries does not match number of documents."
+            )
+        if len(documents) == 0:
+            raise HTTPException(
+                status_code=400, detail="No documents provided for ingestion."
+            )
+
+        document_infos = []
+        for iteration, document in enumerate(documents):
+            document_metadata = (
+                metadatas[iteration] if metadatas else document.metadata
+            )
+            document_title = (
+                document_metadata.get("title", None) or document.title
+            )
+            document_metadata["title"] = document_title
+
+            if document.user_id:
+                document_metadata["user_id"] = str(document.user_id)
+            document.metadata = document_metadata
+
+            now = datetime.now()
+            version = versions[iteration] if versions else "v0"
+            document_infos.append(
+                DocumentInfo(
+                    **{
+                        "document_id": document.id,
+                        "version": version,
+                        "size_in_bytes": len(document.data),
+                        "metadata": document_metadata.copy(),
+                        "title": document_title,
+                        "user_id": document.user_id,
+                        "created_at": now,
+                        "updated_at": now,
+                    }
+                )
+            )
+
         await self.ingestion_pipeline.run(
             input=to_async_generator(documents),
             versions=versions,
             run_manager=self.run_manager,
         )
+
+        self.providers.vector_db.upsert_documents_info(document_infos)
         return {"results": "Entries upserted successfully."}
 
     class IngestDocumentsRequest(BaseModel):
@@ -319,28 +361,63 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     @syncable
     async def aupdate_documents(
-        self, documents: list[Document], *args: Any, **kwargs: Any
+        self,
+        documents: list[Document],
+        metadatas: Optional[list[dict]] = None,
+        *args: Any,
+        **kwargs: Any,
     ):
         if len(documents) == 0:
             raise HTTPException(
                 status_code=400, detail="No documents provided for update."
             )
+
         old_versions = []
         new_versions = []
-        for doc in documents:
-            document_data = await self.adocument_data(doc.id)
-            current_version = document_data["results"][0]["version"]
+        document_infos_modified = []
+
+        documents_info = await self.adocuments_info(
+            document_ids=[doc.id for doc in documents]
+        )
+
+        for iteration, doc in enumerate(documents):
+            document_info = documents_info[iteration]
+            current_version = document_info.version
             old_versions.append(current_version)
             new_versions.append(increment_version(current_version))
 
+            document_metadata = (
+                metadatas[iteration] if metadatas else doc.metadata
+            )
+            document_metadata["title"] = (
+                document_metadata.get("title", None) or doc.title
+            )
+            document_metadata["user_id"] = (
+                str(doc.user_id) if doc.user_id else None
+            )
+            document_infos_modified.append(
+                DocumentInfo(
+                    **{
+                        "document_id": doc.id,
+                        "version": new_versions[-1],
+                        "size_in_bytes": len(doc.data),
+                        "metadata": document_metadata.copy(),
+                        "title": document_metadata["title"],
+                        "user_id": doc.user_id,
+                        "created_at": document_info.created_at,
+                        "updated_at": datetime.now(),
+                    }
+                )
+            )
+
         await self.aingest_documents(documents, versions=new_versions)
 
-        # Delete the old version
         for doc, old_version in zip(documents, old_versions):
             await self.adelete(
                 ["document_id", "version"], [str(doc.id), old_version]
             )
 
+        self.providers.vector_db.upsert_documents_info(document_infos_modified)
         return {"results": "Documents updated."}
 
     class UpdateDocumentsRequest(BaseModel):
