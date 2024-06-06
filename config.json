@@ -52,7 +52,7 @@
     "provider": "local"
   },
   "vector_database": {
-    "provider": "pgvector",
-  "collection_name": "demo_vecs_alphabetazetabeta_x_"
+    "provider": "local",
+  "collection_name": "demo_vecs"
   }
 }
