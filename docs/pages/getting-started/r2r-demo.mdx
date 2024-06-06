@@ -56,7 +56,7 @@ r2r.pipes.embedding_pipe - INFO - Fragmented the input document ids into counts 
 
 Each ingested document derives a unique `document_id` from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, the demo submits a `user_id` during the document creation process which will be used to facilitate user-level document management.
 
-### Step 2: Document Info
+### Step 2: Document info
 
 We can fetch associated document metadata after successfully ingesting the demo documents:
 
@@ -185,7 +185,16 @@ r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.js
 
 Effective document management is crucial for maintaining a robust and efficient RAG system. This section guides you through various operations related to document management, including deleting documents and managing user-specific data. These steps will help ensure your document database remains organized and up-to-date.
 
-### Delete a Specified Document
+
+### Update Document(s) 
+
+To update document(s) we may use the `update_as_files` or `update_as_documents` endpoints. Running the demo with `update_as_files` overwrites the data associated with 'aristotle.txt' with new data corresponding to 'aristotle_v2.txt' and increments the file version.
+
+```bash
+python -m r2r.examples.demo update_as_files
+```
+
+### Delete Specified Document(s)
 
 To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the associated document ID with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
 
@@ -218,7 +227,7 @@ The quality of search results has dramatically decreased now that the Aristotle-
 To delete all documents associated with a given user, run the delete command on the `user_id`.
 
 ```bash
-# run the following command with care, as it will erase all ingested user data
+# run the following command with care, as it will erase all ingested user data for `063edaf8-3e63-4cb9-a4d6-a855f36376c3`
 # python -m r2r.examples.demo delete --keys="['user_id']" --values="['063edaf8-3e63-4cb9-a4d6-a855f36376c3']"
 ```
 

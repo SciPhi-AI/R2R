@@ -13,14 +13,14 @@ Build, deploy, observe, and optimize your RAG system.
 
 # About
 
-R2R, short for RAG to Riches, provides the fastest and most featureful way for developers to deliver high-quality Retrieval-Augmented Generation (RAG) to end users. The framework ships with a REST API powered by Postgres and pgvector - it includes user-level and document-level management as well as advanced RAG features.
+R2R, short for RAG to Riches, provides the fastest and most feature-rich way for developers to deliver high-quality Retrieval-Augmented Generation (RAG) to end users. The framework ships with a fully configurable and customizable REST API that includes user-level and document-level management as well as advanced RAG features.
 
 ## Why?
 
-R2R was conceived to help developers bridge the gap between local LLM experimentation and serving a scalable, production-ready application. Built with document management, observability and customization in mind, R2R provides adequate performance and features for most RAG use cases.
+R2R was conceived to help developers bridge the gap between local LLM experimentation and serving a scalable, production-ready application. Built with powering a user-facing RAG application in mind, R2R provides adequate performance and features for most RAG use cases.
 
 ## Key Features
-- **🔧 Build**: Effortlessly create and manage observable, high-performance RAG pipelines with our robust framework. Including multimodal RAG, hybrid search, and latest methods such as HyDE.
+- **🔧 Build**: Effortlessly create and manage observable, high-performance RAG pipelines with our robust framework, including multimodal RAG, hybrid search, and the latest methods such as HyDE.
 - **🚀 Deploy**: Launch production-ready asynchronous RAG pipelines with seamless streaming capabilities. Begin serving users immediately with built-in user and document management features.
 - **🧩 Customize**: Easily tailor your pipeline using intuitive configuration files to meet your specific needs.
 - **🔌 Extend**: Enhance and extend your pipeline with custom code integrations to add new functionalities.
@@ -45,14 +45,14 @@ pip install r2r
 export OPENAI_API_KEY=sk-...
 ```
 
-# Serving R2R RAG backend
+## Serving R2R RAG backend
 
-## With local installation
+### With local installation
 
 ```bash
 python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000
 ```
-## With Docker
+### With Docker
 
 ```bash
 docker run -d --name r2r -p 8000:8000 r2r:latest
@@ -64,7 +64,14 @@ docker run -d --name r2r -p 8000:8000 r2r:latest
 
 [R2R Docs Quickstart](https://r2r-docs.sciphi.ai/getting-started/quick-install)
 
-[SciPhi Cloud Docs](https://docs.sciphi.ai/)
+### Docs
+- [R2R Demo](https://r2r-docs.sciphi.ai/getting-started/r2r-demo): A basic demo script designed to get you started with an R2R RAG application. 
+- [R2R Server-Client](https://r2r-docs.sciphi.ai/getting-started/r2r-server-client): An extension of the basic `R2R Demo` with client-server interactions.
+- [Local RAG](https://r2r-docs.sciphi.ai/cookbooks/local_rag): A quick cookbook demonstration of how to run R2R with local LLMs.
+- [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid_search): A brief introduction to running hybrid search with R2R.
+- [Reranking](https://r2r-docs.sciphi.ai/cookbooks/rerank_search): A short guide on how to apply reranking to R2R results.
+- [SciPhi Cloud Docs](https://docs.sciphi.ai/): SciPhi Cloud documentation.
+
 
 # R2R Demo
 
@@ -82,11 +89,15 @@ python -m r2r.examples.demo ingest_as_files
 
 ```plaintext
 ...
-r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'pg_essay_1.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=4a4fb848-fc03-5487-a7e5-33c9fdfb73cc in t=0.00 seconds. - 2024-05-21 08:39:59,003
-r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'lyft_2021.pdf', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=c5abc0b7-b9e5-54d9-b3d3-fdb14af4d065 in t=3.47 seconds. - 2024-05-21 08:40:02,477
-r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'screen_shot.png', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'image_type': 'png'} and id=74f1506a-9a37-59d7-b288-5ef3683dca8f in t=18.37 seconds. - 2024-05-21 08:40:32,310
+r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.json - 2024-05-20 22:08:48,025
+r2r.core.providers.llm_provider - INFO - Initializing LLM provider with config: extra_fields={} provider='litellm' - 2024-05-20 22:08:48,562
+r2r.core.providers.vector_db_provider - INFO - Initializing VectorDBProvider with config extra_fields={} provider='local' collection_name='demo_vecs'. - 2024-05-20 22:08:48,765
+r2r.embeddings.openai.openai_base - INFO - Initializing `OpenAIEmbeddingProvider` to provide embeddings. - 2024-05-20 22:08:48,774
 ...
-Time taken to ingest files: 28.49 seconds
+r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'pg_essay_5.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=ef66e5dd-2130-5fd5-9bdd-aa7eff59fda5 in t=0.00 seconds. - 2024-05-21 08:40:32,317
+r2r.pipes.embedding_pipe - INFO - Fragmented the input document ids into counts as shown: {UUID('4a4fb848-fc03-5487-a7e5-33c9fdfb73cc'): 31, UUID('c5abc0b7-b9e5-54d9-b3d3-fdb14af4d065'): 2094, UUID('f0c63aff-af59-50c9-81fc-2fe55004c771'): 17, UUID('c996e617-88a4-5c65-ab1e-948344b18d27'): 3108, UUID('1a9d4d3b-bbe9-53b9-8149-67806bdf60f2'): 18, UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'): 233, UUID('b722f1ec-b90e-5ed8-b7c8-c768e8b323cb'): 5, UUID('74f1506a-9a37-59d7-b288-5ef3683dca8f'): 10, UUID('ef66e5dd-2130-5fd5-9bdd-aa7eff59fda5'): 11} - 2024-06-04 13:34:40,885
+{'results': ["File 'aristotle.txt' processed successfully.", "File 'screen_shot.png' processed successfully.", "File 'pg_essay_1.html' processed successfully.", "File 'pg_essay_2.html' processed successfully.", "File 'pg_essay_3.html' processed successfully.", "File 'pg_essay_4.html' processed successfully.", "File 'pg_essay_5.html' processed successfully.", "File 'lyft_2021.pdf' processed successfully.", "File 'uber_2021.pdf' processed successfully."]}
+...
 ```
 
 ### Confirm User Data
@@ -94,31 +105,39 @@ Time taken to ingest files: 28.49 seconds
 To verify the successful ingestion of the demo documents, you can fetch the metadata for the uploaded documents associated with the default demo user ID:
 
 ```bash
-python -m r2r.examples.demo get_user_documents_metadata --user_id="063edaf8-3e63-4cb9-a4d6-a855f36376c3"
+python -m r2r.examples.demo documents_info
 ```
 
 **Demo Output:**
 
 ```plaintext
-...
-Time taken to get user document data: 0.21 seconds
-{'results': 
-   [
-      {
-         'document_id': '327f6110-edd1-5fe3-b6b3-49b55f1cbc28',
-         'title': 'pg_essay_3.html'
-      }, 
-      {
-         'document_id': '946859f0-da5c-5db7-9b5c-c586be76d709', 
-         'title': 'pg_essay_5.html'
-      }, 
-      {
-         'document_id': '64c1c913-be06-548f-acbc-3618b00d3616', 
-         'title': 'lyft_2021.pdf'
-      },
-      ...
-   ]
-}
+[
+    DocumentInfo(
+        document_id=UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'), 
+        version='v0', 
+        size_in_bytes=73353, 
+        metadata={'title': 'aristotle.txt', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'}, 
+        title='aristotle.txt'
+    ), 
+    ... 
+]
+```
+
+
+```bash
+python -m r2r.examples.demo users_stats
+```
+
+
+```plaintext
+[
+    UserStats(
+        user_id=UUID('063edaf8-3e63-4cb9-a4d6-a855f36376c3'), 
+        num_files=9,
+        total_size_in_bytes=4809510, 
+        document_ids=[UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'), ...]
+    ), 
+]
 ```
 
 ## Search Demo Documents
@@ -132,23 +151,21 @@ python -m r2r.examples.demo search --query="Who was Aristotle?"
 **Demo Output:**
 
 ```plaintext
-...
-Time taken to search: 0.39 seconds
 {
-   'id': UUID('93c44e73-8e95-50c2-84af-6a42f070b552'), 
-   'score': 0.7739712385010018, 
-   'metadata': 
-   {
-      'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd', 
-      'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484', 
-      'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics,
+    'id': UUID('93c44e73-8e95-50c2-84af-6a42f070b552'), 
+    'score': 0.7739712385010018, 
+    'metadata': 
+    {
+        'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd', 
+        'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484', 
+        'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began
 
- psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 
-      'title': 'aristotle.txt',
-      'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 
-      'query': 'Who was Aristotle?'
-   }
-}
+the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 
+        'title': 'aristotle.txt',
+        'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 
+        'associatedQuery': 'Who was Aristotle?'
+    }
+},
 ...
 ```
 
@@ -239,7 +256,7 @@ python -m r2r.examples.demo delete --keys="['document_id']" --values="['c9bdbac7
 To delete all documents associated with a given user, run the delete command on the `user_id`:
 
 ```bash
-run the following command with care, as it will erase all ingested user data
+# run the following command with care, as it will erase all ingested user data for `063edaf8-3e63-4cb9-a4d6-a855f36376c3`
 python -m r2r.examples.demo delete --keys="['user_id']" --values="['063edaf8-3e63-4cb9-a4d6-a855f36376c3']"
 ```
 
