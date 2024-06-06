@@ -14,7 +14,7 @@ This guide assumes R2R is already installed and the basic demo [located here](/g
 
 #### Default (OpenAI)
 
-If you have not completed the demo, or if your target database has been cleared, start by quickly populating it with the demo files. These example files include `.txt`, `.pdf`, `.html`, and `.png` examples, and can be ingested using the command shown below. 
+If you have not completed the demo, or if your target database has been cleared, start by quickly populating it with the demo files. These example files include `.txt`, `.pdf`, `.html`, `.mp3`, and `.png` examples, and can be ingested using the command shown below. 
 
 ```bash filename="bash"
 # export OPENAI_API_KEY=...
@@ -142,7 +142,7 @@ python -m r2r.examples.demo rag --query="Who was Aristotle?" \
 
 #### Local (ollama)
 
-It is possible to run R2R with ollama as a model provider. See the [Local RAG](/cookbooks/local_rag) for a comprehensive walkthrough.
+It is possible to run R2R with ollama as a model provider. See the [Local RAG](/cookbooks/local-rag) for a comprehensive walkthrough.
 
 ```bash filename="bash"
 python -m r2r.examples.demo rag --query="Who was Aristotle?" \
@@ -184,4 +184,4 @@ python -m r2r.examples.demo rag --query="Who was Aristotle?" \
 
 ### Summary
 
-This guide provides instructions for running R2R with multiple LLMs, highlighting the flexibility and ease of use offered by selecting LLMs at runtime. By leveraging different models from providers like OpenAI, Anthropic, and local options like ollama, you have ultimate flexibity in how to serve user responses.
+This guide provides instructions for running R2R with multiple LLMs, highlighting the versatility of this approach. By leveraging different models from providers like OpenAI, Anthropic, and local options like ollama, you have ultimate control in how to serve user responses.

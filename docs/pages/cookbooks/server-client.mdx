@@ -1,0 +1,84 @@
+## R2R Server-Client Demo
+The server-client architecture in R2R allows for a flexible and scalable approach to handling Retrieval-Augmented Generation (RAG) tasks. By centralizing the server to process requests and distribute tasks among multiple clients, this architecture supports efficient and modular deployments.
+
+### Setting Up the Server
+
+This document extends the [R2R Demo](/getting-started/r2r-demo) by demonstrating how to set up and use the R2R framework with a server-client architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations. The server API can be [viewed here](/getting-started/app-api).
+
+
+To set up the R2R server, follow these steps:
+
+**Local Installation**:
+   Ensure you have all necessary dependencies installed as described in the [R2R Demo](/getting-started/r2r-demo#setup). Then, use the following command to start the server:
+   ```bash filename="bash"
+   python -m r2r.examples.demo serve
+   ```
+   This command starts the R2R server on the default host `0.0.0.0` and port `8000`.
+
+
+
+**Docker Installation**: Using Docker can be a convenient way to run R2R without having to manage dependencies and installations on your local machine. The Docker image comes pre-configured and ready to run.
+
+
+<details>
+<summary>Docker</summary>
+
+To run R2R using Docker, you can use the following commands:
+
+```bash filename="bash"
+docker pull emrgntcmplxty/r2r:latest
+```
+
+This will pull the latest R2R Docker image.
+
+Then, run the container with:
+
+```bash filename="bash"
+docker run -d \
+  --name r2r \
+  --add-host=host.docker.internal:host-gateway \
+  -p 8000:8000 \
+  r2r:latest
+```
+
+This command starts the R2R container with the following options:
+
+- `--name r2r`: Assigns the name "r2r" to the container.
+- `--add-host=host.docker.internal:host-gateway`: Adds a host entry for the Docker host.
+- `-p 8000:8000`: Maps port 8000 of the container to port 8000 of the host.
+- `r2r:latest`: Specifies the Docker image to use.
+
+</details>
+### Using the Client
+
+The R2R framework includes a [python client](https://github.com/SciPhi-AI/R2R/blob/main/r2r/main/r2r_client.py) and a [typescript client](https://github.com/SciPhi-AI/r2r-js/blob/main/src/r2rClient.ts). All of the demo commands can be run with the python client using the `--client_server_mode` parameter to run the demo in server-client mode. Note that these commands will only run successfully if the server is active at http://0.0.0.0:8000.
+
+### Example Commands
+
+1. **Ingest Documents as Files**:
+   ```bash filename="bash"
+   python -m r2r.examples.demo ingest_as_files --client_server_mode
+   ```
+   This command will send the ingestion request to the server running at `http://localhost:8000`.
+
+2. **Perform a Search**:
+   ```bash filename="bash"
+   python -m r2r.examples.demo search --query="Who was Aristotle?" --client_server_mode
+   ```
+   This command sends the search query to the server and retrieves the results.
+
+3. **Run a RAG Completion**:
+   ```bash filename="bash"
+   python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?" --client_server_mode
+   ```
+   This command sends the RAG query to the server and retrieves the generated response.
+
+4. **Run a RAG Stream**:
+   ```bash filename="bash"
+   python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=true --client_server_mode
+   ```
+   This command streams the RAG query results from the server.
+
+## Summary
+
+By using the server-client model, you can extend the basic R2R demo to support more scalable and modular deployments. The server handles requests and performs heavy computations, while clients can communicate with the server to perform ingestion, search, RAG, and other operations, as shown in the examples above. For detailed setup and basic functionality, refer back to the [R2R Demo](/getting-started/r2r-demo).

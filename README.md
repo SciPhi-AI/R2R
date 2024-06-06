@@ -66,10 +66,10 @@ docker run -d --name r2r -p 8000:8000 r2r:latest
 
 ### Docs
 - [R2R Demo](https://r2r-docs.sciphi.ai/getting-started/r2r-demo): A basic demo script designed to get you started with an R2R RAG application. 
-- [R2R Server-Client](https://r2r-docs.sciphi.ai/getting-started/r2r-server-client): An extension of the basic `R2R Demo` with client-server interactions.
-- [Local RAG](https://r2r-docs.sciphi.ai/cookbooks/local_rag): A quick cookbook demonstration of how to run R2R with local LLMs.
-- [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid_search): A brief introduction to running hybrid search with R2R.
-- [Reranking](https://r2r-docs.sciphi.ai/cookbooks/rerank_search): A short guide on how to apply reranking to R2R results.
+- [R2R Server-Client](https://r2r-docs.sciphi.ai/cookbooks/server-client): An extension of the basic `R2R Demo` with client-server interactions.
+- [Local RAG](https://r2r-docs.sciphi.ai/cookbooks/local-rag): A quick cookbook demonstration of how to run R2R with local LLMs.
+- [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): A brief introduction to running hybrid search with R2R.
+- [Reranking](https://r2r-docs.sciphi.ai/cookbooks/rerank-search): A short guide on how to apply reranking to R2R results.
 - [SciPhi Cloud Docs](https://docs.sciphi.ai/): SciPhi Cloud documentation.
 
 
@@ -96,7 +96,7 @@ r2r.embeddings.openai.openai_base - INFO - Initializing `OpenAIEmbeddingProvider
 ...
 r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'pg_essay_5.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=ef66e5dd-2130-5fd5-9bdd-aa7eff59fda5 in t=0.00 seconds. - 2024-05-21 08:40:32,317
 r2r.pipes.embedding_pipe - INFO - Fragmented the input document ids into counts as shown: {UUID('4a4fb848-fc03-5487-a7e5-33c9fdfb73cc'): 31, UUID('c5abc0b7-b9e5-54d9-b3d3-fdb14af4d065'): 2094, UUID('f0c63aff-af59-50c9-81fc-2fe55004c771'): 17, UUID('c996e617-88a4-5c65-ab1e-948344b18d27'): 3108, UUID('1a9d4d3b-bbe9-53b9-8149-67806bdf60f2'): 18, UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'): 233, UUID('b722f1ec-b90e-5ed8-b7c8-c768e8b323cb'): 5, UUID('74f1506a-9a37-59d7-b288-5ef3683dca8f'): 10, UUID('ef66e5dd-2130-5fd5-9bdd-aa7eff59fda5'): 11} - 2024-06-04 13:34:40,885
-{'results': ["File 'aristotle.txt' processed successfully.", "File 'screen_shot.png' processed successfully.", "File 'pg_essay_1.html' processed successfully.", "File 'pg_essay_2.html' processed successfully.", "File 'pg_essay_3.html' processed successfully.", "File 'pg_essay_4.html' processed successfully.", "File 'pg_essay_5.html' processed successfully.", "File 'lyft_2021.pdf' processed successfully.", "File 'uber_2021.pdf' processed successfully."]}
+{'results': ["File 'aristotle.txt' processed successfully.", "File 'screen_shot.png' processed successfully.", "File 'pg_essay_1.html' processed successfully.", "File 'pg_essay_2.html' processed successfully.", "File 'pg_essay_3.html' processed successfully.", "File 'pg_essay_4.html' processed successfully.", "File 'pg_essay_5.html' processed successfully.", "File 'lyft_2021.pdf' processed successfully.", "File 'uber_2021.pdf' processed successfully.", "File sample.mp3 processed successfully.", "File sample2.mp3 processed successfully."]}
 ...
 ```
 

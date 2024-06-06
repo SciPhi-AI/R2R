@@ -1,7 +1,10 @@
 {
     "starter": "Starter",
-    "multiple_llms": "Multiple LLMs",
-    "local_rag": "Local RAG",
-    "hybrid_search": "Hybrid Search",
-    "rerank_search": "Search w/ Reranking"
+    "server-client": "Server-Client",
+    "multiple-llms": "Multiple LLMs",
+    "local-rag": "Local RAG",
+    "hybrid-search": "Hybrid Search",
+    "rerank-search": "Search w/ Reranking",
+    "multimodal-rag": "Multimodal RAG"
+
 }
