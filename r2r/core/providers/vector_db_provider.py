@@ -76,7 +76,7 @@ class VectorDBProvider(Provider, ABC):
         **kwargs,
     ) -> list[SearchResult]:
         pass
-    
+
     @abstractmethod
     def create_index(self, index_type, column_name, index_options):
         pass

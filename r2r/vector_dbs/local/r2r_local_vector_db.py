@@ -167,7 +167,9 @@ class R2RLocalVectorDB(VectorDBProvider):
         *args,
         **kwargs,
     ) -> list[SearchResult]:
-        raise NotImplementedError("Hybrid search is not supported in R2RLocalVectorDB.")
+        raise NotImplementedError(
+            "Hybrid search is not supported in R2RLocalVectorDB."
+        )
 
     def delete_by_metadata(
         self,
