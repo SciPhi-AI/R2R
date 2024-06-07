@@ -4,7 +4,7 @@
 
 We can start by using `pip` to install R2R with the local-embeddding dependencies:
 
-```bash filename="bash"
+```bash filename="bash" copy
 pip install 'r2r[local-embedding]'
 ```
 
@@ -48,7 +48,7 @@ A local vector database will be used to store the embeddings. The current defaul
 ### Server Standup
 
 
-```bash filename="bash"
+```bash filename="bash" copy
 # cd $WORKDIR
 python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config local_ollama --pipeline_type qna --no_images
 ```
@@ -63,7 +63,7 @@ The server exposes a REST API for interacting with the R2R RAG pipeline and appl
 
 To run R2R using Docker, you can use the following commands:
 
-```bash filename="bash"
+```bash filename="bash" copy
 docker pull emrgntcmplxty/r2r:latest
 ```
 
@@ -71,7 +71,7 @@ This will pull the latest R2R Docker image.
 
 Then, run the container with:
 
-```bash filename="bash"
+```bash filename="bash" copy
 docker run -d \
   --name r2r \
   --add-host=host.docker.internal:host-gateway \
@@ -98,7 +98,7 @@ With our environment set up and our server running in a separate process, we're 
 
 Run this command to ingest the document:
 
-```bash filename="bash"
+```bash filename="bash" copy
 python -m r2r.examples.demo ingest_as_files --no-images=true --client_server_mode
 ```
 
@@ -134,13 +134,13 @@ Time for the fun part—asking questions!
 
 To query our knowledge base using Ollama, first ensure that you have started the Ollama server with this command in the terminal:
 
-```bash filename="bash"
+```bash filename="bash" copy
 ollama serve llama2
 ```
 
 Then, to ask a question, run:
 
-```bash filename="bash"
+```bash filename="bash" copy
 python -m r2r.examples.demo rag \
   --query="What contributions did Aristotle make to biology?" \
   --client_server_mode \

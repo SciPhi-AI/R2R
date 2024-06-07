@@ -23,7 +23,7 @@ These settings are provided by default in the config file located at `/examples/
 
 
 
-```bash filename="bash"
+```bash filename="bash" copy
 export POSTGRES_USER=MY_USER
 export POSTGRES_PASSWORD=MY_PASSWORD
 export POSTGRES_HOST=MY_HOST
@@ -39,7 +39,7 @@ Now the server is ready to run:
 
 
 
-```bash filename="bash"
+```bash filename="bash" copy
 # cd $WORKDIR
 # export OPENAI_API_KEY=...
 python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config pgvector
@@ -50,13 +50,13 @@ python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 
 
 If the target database is empty, quickly populate it with demo files, which include `.txt`, `.pdf`, `.html`, and `.png` examples, using the command shown below. The `client_server_mode` flag specifies communication with an R2R server with the default URL of `http://localhost:8000`. To replicate the exact results shown below, these commands must be run in order on a clean database.
 
-```bash filename="bash"
+```bash filename="bash" copy
 python -m r2r.examples.demo ingest_as_files --client_server_mode
 ```
 
 Once the files are populated, run a search with the following command:
 
-```bash filename="bash"
+```bash filename="bash" copy
 python -m r2r.examples.demo search --query="Who was Aristotle?" --client_server_mode
 ```
 
@@ -97,7 +97,7 @@ python -m r2r.examples.demo search --query="Who was Aristotle?" --client_server_
 
 Executing a hybrid search is as simple as passing the correct flag to the REST application. To do so, run with the command below:
 
-```python filename="bash"
+```python filename="bash" copy
 python -m r2r.examples.demo search --query="What is a fierce nerd?" --client_server_mode  --do_hybrid_search
 ```
 

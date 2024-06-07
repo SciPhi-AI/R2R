@@ -2,7 +2,7 @@
 
 Install R2R using `pip` to get started with minimal setup. This method will get you set up with the default configuration:
 
-```bash
+```bash filename="bash" copy
 pip install r2r
 
 # Set up the default environment
@@ -20,7 +20,7 @@ Below are examples of environment variables that can be configured to facilitate
 
 Used by default for embedding and LLM completions:
 
-```bash
+```bash filename="bash" copy
 export OPENAI_API_KEY=sk-...
 ```
 
@@ -28,7 +28,7 @@ export OPENAI_API_KEY=sk-...
 
 Configure your environment for additional providers:
 
-```bash
+```bash filename="bash" copy
 export ANTHROPIC_API_KEY=...
 export VERTEX_API_KEY=...
 # Add other provider keys as needed
@@ -40,7 +40,7 @@ export VERTEX_API_KEY=...
 
 R2R default selection - a simple SQLite-powered vector DB, optimal for lightweight workloads:
 
-```bash
+```bash filename="bash" copy
 export LOCAL_DB_PATH=local.sqlite
 ```
 
@@ -48,7 +48,7 @@ export LOCAL_DB_PATH=local.sqlite
 
 Better for larger scale workloads that benefit from relational data:
 
-```bash
+```bash filename="bash" copy
 export POSTGRES_USER=your_user
 export POSTGRES_PASSWORD=your_password
 export POSTGRES_HOST=your_host
