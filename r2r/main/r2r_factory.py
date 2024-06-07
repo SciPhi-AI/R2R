@@ -3,6 +3,7 @@ import os
 from typing import Any, Optional
 
 from r2r.core import (
+    DocumentType,
     EmbeddingConfig,
     EmbeddingProvider,
     EvalPipeline,
@@ -198,9 +199,11 @@ class R2RPipeFactory:
         rag_pipe_override: Optional[LoggableAsyncPipe] = None,
         streaming_rag_pipe_override: Optional[LoggableAsyncPipe] = None,
         eval_pipe_override: Optional[LoggableAsyncPipe] = None,
-        *args: Any,
-        **kwargs: Any,
+        *args,
+        **kwargs,
     ) -> R2RPipes:
+        no_images = kwargs.get("no_images", False)
+
         return R2RPipes(
             parsing_pipe=parsing_pipe_override
             or self.create_parsing_pipe(
@@ -215,7 +218,7 @@ class R2RPipeFactory:
             rag_pipe=rag_pipe_override
             or self.create_rag_pipe(*args, **kwargs),
             streaming_rag_pipe=streaming_rag_pipe_override
-            or self.create_rag_pipe(streaming=True),
+            or self.create_rag_pipe(streaming=True, *args, **kwargs),
             eval_pipe=eval_pipe_override
             or self.create_eval_pipe(*args, **kwargs),
         )
@@ -225,7 +228,21 @@ class R2RPipeFactory:
     ) -> Any:
         from r2r.pipes import R2RDocumentParsingPipe
 
-        return R2RDocumentParsingPipe(selected_parsers=selected_parsers or {})
+        no_images = kwargs.get("no_images", False)
+
+        if no_images:
+            excluded_types = R2RDocumentParsingPipe.IMAGE_TYPES | {
+                DocumentType.MP3
+            }
+            selected_parsers = {
+                doc_type: parser_key
+                for doc_type, parser_key in (selected_parsers or {}).items()
+                if doc_type not in excluded_types
+            }
+
+        return R2RDocumentParsingPipe(
+            selected_parsers=selected_parsers or {}, no_images=no_images
+        )
 
     def create_embedding_pipe(self, *args, **kwargs) -> Any:
         from r2r.core import RecursiveCharacterTextSplitter
