@@ -99,7 +99,7 @@ With our environment set up and our server running in a separate process, we're 
 Run this command to ingest the document:
 
 ```bash filename="bash"
-poetry run python -m r2r.examples.demo ingest_as_files --no-images=true --client_server_mode
+python -m r2r.examples.demo ingest_as_files --no-images=true --client_server_mode
 ```
 
 The output should look something like this:
@@ -143,6 +143,7 @@ Then, to ask a question, run:
 ```bash filename="bash"
 python -m r2r.examples.demo rag \
   --query="What contributions did Aristotle make to biology?" \
+  --client_server_mode \
   --rag_generation_config='{"model": "ollama/llama2"}'
 ```
 
