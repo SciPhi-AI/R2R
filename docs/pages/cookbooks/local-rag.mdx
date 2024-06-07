@@ -50,7 +50,7 @@ A local vector database will be used to store the embeddings. The current defaul
 
 ```bash filename="bash"
 # cd $WORKDIR
-python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config local_ollama --pipeline_type qna
+python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config local_ollama --pipeline_type qna --no_images
 ```
 
 The server exposes a REST API for interacting with the R2R RAG pipeline and application. See the [API docs](/getting-started/app-api) for more details on the available endpoints.
