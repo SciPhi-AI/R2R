@@ -70,6 +70,7 @@ docker run -d --name r2r -p 8000:8000 r2r:latest
 - [Local RAG](https://r2r-docs.sciphi.ai/cookbooks/local-rag): A quick cookbook demonstration of how to run R2R with local LLMs.
 - [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): A brief introduction to running hybrid search with R2R.
 - [Reranking](https://r2r-docs.sciphi.ai/cookbooks/rerank-search): A short guide on how to apply reranking to R2R results.
+- [Dashboard](https://r2r-docs.sciphi.ai/cookbooks/dashboard): A how-to guide on connecting with the R2R Dashboard.
 - [SciPhi Cloud Docs](https://docs.sciphi.ai/): SciPhi Cloud documentation.
 
 
@@ -304,6 +305,10 @@ This command starts the R2R server on the default host `0.0.0.0` and port `8000`
 
 By using the server-client model, you can extend the basic R2R demo to support more scalable and modular deployments. The server handles requests and performs heavy computations, while clients can communicate with the server to perform ingestion, search, RAG, and other operations, as shown in the examples above. For detailed setup and basic functionality, refer back to the [R2R Demo](#r2r-demo).
 
+
+# R2R Dashboard
+
+R2R ships with an open-source React+Next.js dashboard to facilitate managing and interacting with deployed pipelines. You can download the dashboard [here](https://github.com/SciPhi-AI/R2R-Dashboard).
 
 # Core Abstractions
 
