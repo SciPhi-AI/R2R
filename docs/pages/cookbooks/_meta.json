@@ -5,6 +5,6 @@
     "local-rag": "Local RAG",
     "hybrid-search": "Hybrid Search",
     "rerank-search": "Search w/ Reranking",
-    "multimodal-rag": "Multimodal RAG"
-
+    "multimodal-rag": "Multimodal RAG",
+    "dashboard": "Dashboard"
 }
