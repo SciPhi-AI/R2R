@@ -812,7 +812,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 do_hybrid_search=do_hybrid_search,
             )
 
-
             t1 = time.time()
             latency = f"{t1-t0:.2f}"
 

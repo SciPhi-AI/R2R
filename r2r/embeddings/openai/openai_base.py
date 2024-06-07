@@ -56,9 +56,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         if (
             self.base_dimension
             and self.base_dimension
-            not in OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                self.base_model
-            ]
+            not in OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.base_model]
         ):
             raise ValueError(
                 f"Dimensions {self.dimension} for {self.base_model} are not supported"
