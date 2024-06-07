@@ -10,7 +10,7 @@ The application API specifications are included [here](/getting-started/app-api)
 
 The R2R application is created using the `R2RAppBuilder` class, which leverages factories and the builder pattern to assemble various components based on the provided configuration. Here's an example of how the application is typically created in the R2R workflow:
 
-```python
+```python copy
 from r2r import R2RConfig, R2RAppBuilder
 
 config = R2RConfig.from_json("path/to/config.json")
@@ -21,7 +21,7 @@ In this example, the configuration is loaded from a `config.json` file. The `R2R
 
 To launch the application, you can use a web server such as Uvicorn:
 
-```bash
+```bash filename="bash" copy
 uvicorn path.to.your.module:app --host 0.0.0.0 --port 8000
 ```
 
@@ -39,7 +39,7 @@ You can add custom endpoints to the R2R application by modifying the `R2RApp` cl
 
 Here's an example of how to add a custom endpoint:
 
-```python
+```python copy
 from fastapi import FastAPI
 from r2r import R2RConfig, R2RAppBuilder
 
@@ -190,7 +190,7 @@ These documentation files provide in-depth guides on setting up and using each p
 
 To launch the application with your own configuration, you can create a `config.json` file with your desired settings and pass it to the `R2RAppBuilder`:
 
-```python
+```python copy
 config = R2RConfig.from_json("your_config_path.json")
 app = R2RAppBuilder(config).build().app
 ```
@@ -209,7 +209,7 @@ The ingestion pipeline is responsible for parsing, embedding, and storing docume
 
 You can create a custom ingestion pipeline by implementing your own logic and adding it to the pipeline. Here’s an example of a custom ingestion pipeline:
 
-```python
+```python copy
 class CustomIngestionPipeline(IngestionPipeline):
     def __init__(self, pipes):
         super().__init__()
@@ -227,7 +227,7 @@ The RAG pipeline handles search and retrieval of documents, followed by generati
 
 Here’s an example of creating a custom RAG pipeline:
 
-```python
+```python copy
 class CustomRAGPipeline(RAGPipeline):
     def __init__(self, pipes, streaming=False):
        
@@ -258,7 +258,7 @@ class CustomRAGPipeline(RAGPipeline):
 
 The evaluation pipeline assesses the quality of generated completions. Here’s an example of creating a custom evaluation pipeline:
 
-```python
+```python copy
 class CustomEvalPipeline(EvalPipeline):
     def __init__(self, pipes):
         super().__init__()
@@ -281,7 +281,7 @@ The `R2RClient` class provides a client interface for interacting with the R2R a
 
 Here’s an example of how to use `R2RClient`:
 
-```python
+```python copy
 client = R2RClient(base_url="http://localhost:8000")
 
 # Ingest documents

@@ -10,7 +10,7 @@ To set up the R2R server, follow these steps:
 
 **Local Installation**:
    Ensure you have all necessary dependencies installed as described in the [R2R Demo](/getting-started/r2r-demo#setup). Then, use the following command to start the server:
-   ```bash filename="bash"
+   ```bash filename="bash" copy
    python -m r2r.examples.demo serve
    ```
    This command starts the R2R server on the default host `0.0.0.0` and port `8000`.
@@ -25,7 +25,7 @@ To set up the R2R server, follow these steps:
 
 To run R2R using Docker, you can use the following commands:
 
-```bash filename="bash"
+```bash filename="bash" copy
 docker pull emrgntcmplxty/r2r:latest
 ```
 
@@ -33,7 +33,7 @@ This will pull the latest R2R Docker image.
 
 Then, run the container with:
 
-```bash filename="bash"
+```bash filename="bash" copy
 docker run -d \
   --name r2r \
   --add-host=host.docker.internal:host-gateway \
@@ -56,25 +56,25 @@ The R2R framework includes a [python client](https://github.com/SciPhi-AI/R2R/bl
 ### Example Commands
 
 1. **Ingest Documents as Files**:
-   ```bash filename="bash"
+   ```bash filename="bash" copy
    python -m r2r.examples.demo ingest_as_files --client_server_mode
    ```
    This command will send the ingestion request to the server running at `http://localhost:8000`.
 
 2. **Perform a Search**:
-   ```bash filename="bash"
+   ```bash filename="bash" copy
    python -m r2r.examples.demo search --query="Who was Aristotle?" --client_server_mode
    ```
    This command sends the search query to the server and retrieves the results.
 
 3. **Run a RAG Completion**:
-   ```bash filename="bash"
+   ```bash filename="bash" copy
    python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?" --client_server_mode
    ```
    This command sends the RAG query to the server and retrieves the generated response.
 
 4. **Run a RAG Stream**:
-   ```bash filename="bash"
+   ```bash filename="bash" copy
    python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=true --client_server_mode
    ```
    This command streams the RAG query results from the server.

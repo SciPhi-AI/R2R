@@ -15,12 +15,12 @@ To install poetry, visit the [official Poetry website](https://python-poetry.org
 ##### Clone and Install Dependencies:
 
 - Clone the project repository and navigate to the project directory:
-  ```bash
+  ```bash filename="bash" copy
   git clone git@github.com:SciPhi-AI/r2r.git
   cd r2r
   ```
 - Install the project dependencies with Poetry:
-  ```bash
+  ```bash filename="bash" copy
   # See pyproject.toml for available extras
   # use "all" to include every optional dependency
   poetry install -E all
@@ -30,7 +30,7 @@ To install poetry, visit the [official Poetry website](https://python-poetry.org
 
 Copy the `.env.example` to `.env` and then apply your secrets. Afterwards, inspect the `config.json` and make any desired modifications.
 
-```bash
+```bash filename="bash" copy
 vim .env # save env variables here
 
 # Modify the config.json

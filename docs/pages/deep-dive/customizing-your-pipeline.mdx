@@ -6,7 +6,7 @@ The R2R framework uses factories along with a builder pattern to create the `R2R
 
 This example demonstrates how to override the default vector search module with a custom web search module by leveraging the `R2RAppBuilder`.
 
-```python
+```python copy
 from r2r import (
     GenerationConfig,
     R2RAppBuilder,
@@ -32,7 +32,7 @@ if __name__ == "__main__":
 ```
 
 Example output:
-```bash
+```bash filename="bash" copy
 [
     ChatCompletion(
         id='chatcmpl-9V8I0uzunubIn4rg4c56gG5Z33yFU', 
@@ -71,7 +71,7 @@ Example output:
 
 In this more advanced example, we use a factory override to customize the pipeline further by including a query transformation pipe and a multi-search pipe.
 
-```python
+```python copy
 from r2r import (
     GenerationConfig,
     R2RAppBuilder,
@@ -127,7 +127,7 @@ if __name__ == "__main__":
 ```
 
 Example output:
-```bash
+```bash filename="bash" copy
 r2r.pipes.query_transform_pipe - INFO - Yielding transformed output: What were the main contributions of Aristotle to philosophy? - 2024-05-31 21:23:12,441
 r2r.pipes.query_transform_pipe - INFO - Yielding transformed output: What is known about the life and background of Aristotle? - 2024-05-31 21:23:13,327
 r2r.pipes.query_transform_pipe - INFO - Yielding transformed output: What are some of the key works written by Aristotle? - 2024-05-31 21:23:14,208
@@ -216,7 +216,7 @@ The `R2RPipelineFactory` is responsible for creating the various pipelines used 
 
 The `R2RPipeFactoryWithMultiSearch` class shown below demonstrates how to override the `create_search_pipe` method of the `R2RPipeFactory` to use a `MultiSearchPipe`.
 
-```python
+```python copy
 class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
     def create_search_pipe(self, *args, **kwargs):
         multi_search_config = MultiSearchPipe.PipeConfig()
@@ -247,7 +247,7 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
         )
 ```
 
-```python
+```python copy
 # Build the R2R application with the custom factory
 r2r_app = (
     R2RAppBuilder()
