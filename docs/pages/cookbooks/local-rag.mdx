@@ -23,12 +23,19 @@ To streamline this process, we've provided pre-configured local settings in the 
 
 ```json
 {
-    "embedding": {
-      "provider": "sentence-transformers",
-      "base_model": "all-MiniLM-L6-v2",
-      "dimension": 384,
-      "batch_size": 32
+  "embedding": {
+    "provider": "sentence-transformers",
+    "base_model": "all-MiniLM-L6-v2",
+    "base_dimension": 384,
+    "batch_size": 32
+  },
+  "eval": {
+    "provider": "local",
+    "frequency": 0.0,
+    "llm":{
+      "provider": "litellm"
     }
+  }
 }
 ```
 
