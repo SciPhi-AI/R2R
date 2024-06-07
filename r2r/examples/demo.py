@@ -67,7 +67,7 @@ class R2RDemo:
             os.path.join(root_path, "data", "lyft_2021.pdf"),
             os.path.join(root_path, "data", "uber_2021.pdf"),
             os.path.join(root_path, "data", "sample.mp3"),
-            os.path.join(root_path, "data", "sample2.mp3")
+            os.path.join(root_path, "data", "sample2.mp3"),
         ]
 
         self.file_tuples = file_tuples or [

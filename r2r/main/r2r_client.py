@@ -208,7 +208,7 @@ class R2RClient:
                 response.raise_for_status()
                 async for chunk in response.aiter_text():
                     yield chunk
-                    
+
     def _stream_rag_sync(
         self,
         message: str,
@@ -240,6 +240,7 @@ class R2RClient:
             pass
         finally:
             loop.close()
+
     def delete(
         self, keys: list[str], values: list[Union[bool, int, str]]
     ) -> dict:
