@@ -12,7 +12,7 @@ RUN pip install poetry keyring
 
 # Install dependencies using Poetry with all extras
 RUN poetry config virtualenvs.create false \
-  && poetry install -E all --no-interaction --no-ansi
+  && poetry install --no-interaction --no-ansi
 
 # Install gunicorn and uvicorn
 RUN pip install gunicorn uvicorn
