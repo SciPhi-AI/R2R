@@ -119,7 +119,6 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
-        no_images: bool = False,
         *args,
         **kwargs,
     ):
@@ -137,17 +136,10 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
             **kwargs,
         )
 
-        self.no_images = no_images
         self.parsers = {}
 
         if not override_parsers:
             override_parsers = {}
-
-        available_parsers = self.AVAILABLE_PARSERS.copy()
-        if self.no_images:
-            for doc_type in self.IMAGE_TYPES:
-                if doc_type in available_parsers:
-                    del available_parsers[doc_type]
 
         for doc_type, parser_key in selected_parsers.items():
             if doc_type in override_parsers:

@@ -202,7 +202,6 @@ class R2RPipeFactory:
         *args,
         **kwargs,
     ) -> R2RPipes:
-        no_images = kwargs.get("no_images", False)
 
         return R2RPipes(
             parsing_pipe=parsing_pipe_override
@@ -228,21 +227,7 @@ class R2RPipeFactory:
     ) -> Any:
         from r2r.pipes import R2RDocumentParsingPipe
 
-        no_images = kwargs.get("no_images", False)
-
-        if no_images:
-            excluded_types = R2RDocumentParsingPipe.IMAGE_TYPES | {
-                DocumentType.MP3
-            }
-            selected_parsers = {
-                doc_type: parser_key
-                for doc_type, parser_key in (selected_parsers or {}).items()
-                if doc_type not in excluded_types
-            }
-
-        return R2RDocumentParsingPipe(
-            selected_parsers=selected_parsers or {}, no_images=no_images
-        )
+        return R2RDocumentParsingPipe(selected_parsers=selected_parsers or {})
 
     def create_embedding_pipe(self, *args, **kwargs) -> Any:
         from r2r.core import RecursiveCharacterTextSplitter

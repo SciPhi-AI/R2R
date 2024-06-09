@@ -11,5 +11,18 @@
     "llm":{
       "provider": "litellm"
     }
+  },
+  "ingestion":{
+    "selected_parsers": {
+      "csv": "default",
+      "docx": "default",
+      "html": "default",
+      "json": "default",
+      "md": "default",
+      "pdf": "default",
+      "pptx": "default",
+      "txt": "default",
+      "xlsx": "default"
+    }
   }
 }
