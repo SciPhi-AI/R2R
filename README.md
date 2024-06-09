@@ -55,6 +55,7 @@ python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000
 ### With Docker
 
 ```bash
+docker pull emrgntcmplxty/r2r:latest
 docker run -d --name r2r -p 8000:8000 r2r:latest
 ```
 
