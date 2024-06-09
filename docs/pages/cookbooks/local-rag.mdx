@@ -78,6 +78,7 @@ docker run -d \
   -p 8000:8000 \
   -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
   -e CONFIG_OPTION=local_ollama \
+  -e NO_IMAGES=true \
   emrgntcmplxty/r2r:latest
 ```
 
