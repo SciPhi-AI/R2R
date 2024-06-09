@@ -35,6 +35,19 @@ To streamline this process, we've provided pre-configured local settings in the 
     "llm":{
       "provider": "litellm"
     }
+  },
+  "ingestion":{
+    "selected_parsers": {
+      "csv": "default",
+      "docx": "default",
+      "html": "default",
+      "json": "default",
+      "md": "default",
+      "pdf": "default",
+      "pptx": "default",
+      "txt": "default",
+      "xlsx": "default"
+    }
   }
 }
 ```
@@ -50,7 +63,7 @@ A local vector database will be used to store the embeddings. The current defaul
 
 ```bash filename="bash" copy
 # cd $WORKDIR
-python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config local_ollama --pipeline_type qna --no_images
+python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config local_ollama --pipeline_type qna
 ```
 
 The server exposes a REST API for interacting with the R2R RAG pipeline and application. See the [API docs](/getting-started/app-api) for more details on the available endpoints.
@@ -78,7 +91,6 @@ docker run -d \
   -p 8000:8000 \
   -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
   -e CONFIG_OPTION=local_ollama \
-  -e NO_IMAGES=true \
   emrgntcmplxty/r2r:latest
 ```
 

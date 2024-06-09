@@ -66,7 +66,7 @@ def r2r_app(
         )
 
     if pipeline_type == PipelineType.QNA:
-        return R2RAppBuilder(config).build(no_images=no_images).app
+        return R2RAppBuilder(config).build().app
     elif pipeline_type == PipelineType.WEB:
         web_search_pipe = R2RWebSearchPipe(
             serper_client=SerperClient()  # TODO - Develop a `WebSearchProvider` for configurability
@@ -115,11 +115,6 @@ if __name__ == "__main__":
         choices=[ele.lower() for ele in PipelineType.__members__.keys()],
         help="Specific pipeline to deploy",
     )
-    parser.add_argument(
-        "--no_images",
-        action="store_true",
-        help="Flag to exclude image files from ingestion",
-    )
 
     args, _ = parser.parse_known_args()
 
@@ -127,13 +122,10 @@ if __name__ == "__main__":
     port = os.getenv("PORT") or args.port
     config_name = os.getenv("CONFIG_OPTION") or args.config
     pipeline_type = os.getenv("PIPELINE_TYPE") or args.pipeline_type
-    no_images = os.getenv("NO_IMAGES") or args.no_images
 
     logger.info(f"Environment CONFIG_OPTION: {config_name}")
 
-    app = r2r_app(
-        config_name, PipelineType(pipeline_type), no_images=no_images
-    )
+    app = r2r_app(config_name, PipelineType(pipeline_type))
 
     import uvicorn
 

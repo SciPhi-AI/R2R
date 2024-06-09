@@ -31,13 +31,14 @@ docker pull emrgntcmplxty/r2r:latest
 
 This will pull the latest R2R Docker image.
 
-Then, run the container with:
+Be sure to set an OpenAI API key in your environment and then run the container with:
 
 ```bash filename="bash" copy
 docker run -d \
   --name r2r \
   --add-host=host.docker.internal:host-gateway \
   -p 8000:8000 \
+  -e OPENAI_API_KEY=$OPENAI_API_KEY \
   r2r:latest
 ```
 
@@ -46,6 +47,7 @@ This command starts the R2R container with the following options:
 - `--name r2r`: Assigns the name "r2r" to the container.
 - `--add-host=host.docker.internal:host-gateway`: Adds a host entry for the Docker host.
 - `-p 8000:8000`: Maps port 8000 of the container to port 8000 of the host.
+- `-e OPENAI_API_KEY=$OPENAI_API_KEY`: Pulls your OpenAI API key from your local enviornment for use in the container.
 - `r2r:latest`: Specifies the Docker image to use.
 
 </details>
