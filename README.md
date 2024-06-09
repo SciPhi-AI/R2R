@@ -37,7 +37,7 @@ R2R was conceived to help developers bridge the gap between local LLM experiment
 
 # Quick Install:
 
-```bash copy
+```bash
 # use the `'r2r[all]'` to download all required deps
 pip install r2r
 
@@ -49,12 +49,12 @@ export OPENAI_API_KEY=sk-...
 
 ### With local installation
 
-```bash copy
+```bash
 python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000
 ```
 ### With Docker
 
-```bash copy
+```bash
 docker pull emrgntcmplxty/r2r:latest
 docker run -d --name r2r -p 8000:8000 emrgntcmplxty/r2r:latest -e OPENAI_API_KEY=...
 ```
@@ -83,7 +83,7 @@ The R2R demo offers a step-by-step guide on running the default R2R Retrieval-Au
 
 To comprehensively demonstrate the RAG functionalities of the R2R framework, we must start by ingesting a realistic set of documents. Running the command below will parse, chunk, embed, and store a preset list of files. The included file types cover HTML, PDF, PNG, and TXT examples:
 
-```bash copy
+```bash
 python -m r2r.examples.demo ingest_as_files
 ```
 
@@ -106,7 +106,7 @@ r2r.pipes.embedding_pipe - INFO - Fragmented the input document ids into counts 
 
 To verify the successful ingestion of the demo documents, you can fetch the metadata for the uploaded documents associated with the default demo user ID:
 
-```bash copy
+```bash
 python -m r2r.examples.demo documents_info
 ```
 
@@ -126,7 +126,7 @@ python -m r2r.examples.demo documents_info
 ```
 
 
-```bash copy
+```bash
 python -m r2r.examples.demo users_stats
 ```
 
@@ -146,7 +146,7 @@ python -m r2r.examples.demo users_stats
 
 Documents are stored by default in a local vector database. The vector database provider and settings can be specified via an input `config.json`. To perform a search query on the ingested user documents, use the following command:
 
-```bash copy
+```bash
 python -m r2r.examples.demo search --query="Who was Aristotle?"
 ```
 
@@ -177,7 +177,7 @@ the wider Aristotelian tradition that followed, which set the groundwork for the
 
 To generate a response for a query using RAG, execute the following command:
 
-```bash copy
+```bash
 python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?"
 ```
 
@@ -221,7 +221,7 @@ Time taken to run RAG: 2.29 seconds
 
 For streaming results from a RAG query, use the following command:
 
-```bash copy
+```bash
 python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=true
 ```
 
@@ -241,7 +241,7 @@ Time taken to stream RAG response: 2.79 seconds
 
 To update document(s) we may use the `update_as_files` or `update_as_documents` endpoints. Running the demo with `update_as_files` overwrites the data associated with 'aristotle.txt' with new data corresponding to 'aristotle_v2.txt' and increments the file version.
 
-```bash copy
+```bash
 python -m r2r.examples.demo update_as_files
 ```
 
@@ -249,7 +249,7 @@ python -m r2r.examples.demo update_as_files
 
 To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the metadata field `document_id` with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
 
-```bash copy
+```bash
 python -m r2r.examples.demo delete --keys="['document_id']" --values="['c9bdbac7-0ea3-5c9e-b590-018bd09b127b']"
 ```
 
@@ -257,7 +257,7 @@ python -m r2r.examples.demo delete --keys="['document_id']" --values="['c9bdbac7
 
 To delete all documents associated with a given user, run the delete command on the `user_id`:
 
-```bash copy
+```bash
 # run the following command with care, as it will erase all ingested user data for `063edaf8-3e63-4cb9-a4d6-a855f36376c3`
 python -m r2r.examples.demo delete --keys="['user_id']" --values="['063edaf8-3e63-4cb9-a4d6-a855f36376c3']"
 ```
@@ -270,7 +270,7 @@ This section extends the previous demo by showing how to set up and use the R2R 
 
 Use the following command to start the server:
 
-```bash copy
+```bash
 python -m r2r.examples.demo serve
 ```
 
@@ -279,25 +279,25 @@ This command starts the R2R server on the default host `0.0.0.0` and port `8000`
 ### Example Commands
 
 1. **Ingest Documents as Files**:
-   ```bash copy
+   ```bash
    python -m r2r.examples.demo ingest_as_files --client_server_mode
    ```
    This command will send the ingestion request to the server running at `http://localhost:8000`.
 
 2. **Perform a Search**:
-   ```bash copy
+   ```bash
    python -m r2r.examples.demo search --query="Who was Aristotle?" --client_server_mode
    ```
    This command sends the search query to the server and retrieves the results.
 
 3. **Run a RAG Completion**:
-   ```bash copy
+   ```bash
    python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?" --client_server_mode
    ```
    This command sends the RAG query to the server and retrieves the generated response.
 
 4. **Run a RAG Stream**:
-   ```bash copy
+   ```bash
    python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=true --client_server_mode
    ```
    This command streams the RAG query results from the server.
