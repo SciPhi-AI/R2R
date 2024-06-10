@@ -705,9 +705,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
                 document_info.size_in_bytes = files[it].size
                 document_info.updated_at = datetime.now()
-                document_info.metadata["title"] = files[it].filename.split(
-                    os.path.sep
-                )[-1]
+
+                title = files[it].filename.split(os.path.sep)[-1]
+                document_info.title = title
+                document_info.metadata["title"] = title
+
                 documents_info_modified.append(document_info)
 
             await self.aingest_files(
