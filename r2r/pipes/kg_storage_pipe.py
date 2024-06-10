@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import uuid
 from typing import Any, AsyncGenerator, Optional, Protocol, runtime_checkable
 
@@ -381,18 +382,26 @@ class R2RKGStoragePipe(LoggableAsyncPipe):
             *args,
             **kwargs,
         )
-        username = "neo4j"
-        password = "password"
-        url = "bolt://localhost:7687"
-        database = "neo4j"
+        user = os.getenv("NEO4J_USER")
+        password = os.getenv("NEO4J_PASSWORD")
+        url = os.getenv("NEO4J_URL")
+        database = os.getenv("NEO4J_DATABASE")
+        if not all([user, password, url, database]):
+            raise ValueError(
+                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, and POSTGRES_DBNAME environment variables."
+            )
+        try:
+            self.graph_store = Neo4jGraphStore(
+                username=user,
+                password=password,
+                url=url,
+                database=database,
+            )
+        except Exception as e:
+            raise ValueError(
+                f"Error {e} occurred while attempting to connect to the pgvector provider with user={user}, password={password}, url={url}, database={database}."
+            )
 
-        graph_store = Neo4jGraphStore(
-            username=username,
-            password=password,
-            url=url,
-            database=database,
-        )
-        self.graph_store = graph_store
         self.storage_batch_size = storage_batch_size
 
     async def store(
@@ -405,7 +414,7 @@ class R2RKGStoragePipe(LoggableAsyncPipe):
         try:
             for extraction in kg_extractions:
                 for triple in extraction.triples:
-                    print('upserting triplet = ', triple)
+                    print("upserting triplet = ", triple)
                     self.graph_store.upsert_triplet(
                         triple.subject, triple.predicate, triple.object
                     )
@@ -429,7 +438,6 @@ class R2RKGStoragePipe(LoggableAsyncPipe):
         kg_batch = []
 
         async for kg_extraction in input.message:
-            print(f"ingesting kg_extraction = {kg_extraction}")
             kg_batch.append(kg_extraction)
             if len(kg_batch) >= self.storage_batch_size:
                 # Schedule the storage task

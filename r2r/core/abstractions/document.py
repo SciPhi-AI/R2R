@@ -153,6 +153,12 @@ def extract_triples(
         if object_key in entities:
             object = entities[object_key]
         else:
+            for entities_key, entities_value in entities.items():
+                if entities_key in object_key:
+                    object_key = object_key.replace(
+                        entities_key, entities_value
+                    )
+
             object = object_key
 
         triples.append(
