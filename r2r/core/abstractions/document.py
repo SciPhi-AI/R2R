@@ -106,3 +106,63 @@ class Fragment(BaseModel):
     metadata: dict
     document_id: uuid.UUID
     extraction_id: uuid.UUID
+
+
+class Entity(BaseModel):
+    """An entity extracted from a document."""
+
+    category: str
+    sub_category: Optional[str] = None
+    value: str
+
+
+def extract_entities(entity_data: dict[str, str]) -> list[Entity]:
+    entities = []
+    for entity_key, entity_value in entity_data.items():
+        parts = entity_value.split(":")
+        if len(parts) == 2:
+            category, value = parts
+            sub_category = None
+        else:
+            category, sub_category, value = parts
+        entities.append(
+            Entity(category=category, sub_category=sub_category, value=value)
+        )
+    return entities
+
+
+class Triple(BaseModel):
+    """A triple extracted from a document."""
+
+    subject: str
+    predicate: str
+    object: str
+
+
+def extract_triples(
+    triplet_data: list[str], entities: dict[str, str]
+) -> list[Triple]:
+    triples = []
+    for triplet in triplet_data:
+        parts = triplet.split(": ")
+        subject_key = parts[0]
+        predicate = parts[1]
+        object_key = parts[2]
+
+        subject = entities[subject_key]
+        if object_key in entities:
+            object = entities[object_key]
+        else:
+            object = object_key
+
+        triples.append(
+            Triple(subject=subject, predicate=predicate, object=object)
+        )
+    return triples
+
+
+class KGExtraction(BaseModel):
+    """An extraction from a document that is part of a knowledge graph."""
+
+    entities: list[Entity]
+    triples: list[Triple]

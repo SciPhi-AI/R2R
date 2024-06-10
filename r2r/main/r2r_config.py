@@ -28,6 +28,11 @@ class R2RConfig:
             "text_splitter",
         ],
         "eval": ["llm"],
+        "kg": [
+            "provider",
+            "batch_size",
+            "text_splitter",
+        ],
         "ingestion": ["selected_parsers"],
         "completions": ["provider"],
         "logging": ["provider", "log_table"],
@@ -64,6 +69,7 @@ class R2RConfig:
             for k, v in self.ingestion["selected_parsers"].items()
         }
         self.embedding = EmbeddingConfig.create(**self.embedding)
+        self.kg = EmbeddingConfig.create(**self.kg)
         eval_llm = self.eval.pop("llm")
         self.eval = EvalConfig.create(
             **self.eval, llm=LLMConfig.create(**eval_llm)

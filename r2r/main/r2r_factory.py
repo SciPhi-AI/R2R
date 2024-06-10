@@ -259,13 +259,9 @@ class R2RPipeFactory:
         from r2r.core import RecursiveCharacterTextSplitter
         from r2r.pipes import R2RKGPipe
 
-        text_splitter_config = self.config.embedding.extra_fields.get(
-            "text_splitter"
-        )
+        text_splitter_config = self.config.kg.extra_fields.get("text_splitter")
         if not text_splitter_config:
-            raise ValueError(
-                "Text splitter config not found in embedding config"
-            )
+            raise ValueError("Text splitter config not found in kg config.")
 
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=text_splitter_config["chunk_size"],
@@ -275,6 +271,7 @@ class R2RPipeFactory:
         )
         return R2RKGPipe(
             llm_provider=self.providers.llm,
+            prompt_provider=self.providers.prompt,
             vector_db_provider=self.providers.vector_db,
             text_splitter=text_splitter,
             embedding_batch_size=self.config.embedding.batch_size,
