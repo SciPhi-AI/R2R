@@ -251,10 +251,6 @@ class R2RKGPipe(KGPipe):
                         self._process_batch(fragment_batch.copy())
                     )  # pass a copy if necessary
                     fragment_batch.clear()  # Clear the batch for new fragments
-                # break
-                if len(fragment_batch) > 25:
-                    break
-            # break
 
         logger.info(
             f"Fragmented the input document ids into counts as shown: {fragment_info}"
