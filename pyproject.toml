@@ -60,6 +60,7 @@ openai = "^1.11.1"
 # integrations
 ionic-api-sdk = {version = "0.9.3", optional = true}
 exa-py = {version = "^1.0.9", optional = true}
+dateutils = "^0.6.12"
 
 [tool.poetry.extras]
 all = ["tiktoken", "sentence-transformers"]
