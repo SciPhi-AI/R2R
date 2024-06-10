@@ -11,8 +11,9 @@ COPY pyproject.toml poetry.lock* /app/
 RUN pip install poetry keyring
 
 # Install dependencies using Poetry with all extras
-RUN poetry config virtualenvs.create false \
-  && poetry install -E local-embedding --no-interaction --no-ansi
+RUN poetry \
+&& export REQUESTS_TIMEOUT=120 \
+&& for i in 1 2 3; do poetry install -E local-embedding --no-interaction --no-ansi && break || sleep 10; done
 
 # Install gunicorn and uvicorn
 RUN pip install gunicorn uvicorn
