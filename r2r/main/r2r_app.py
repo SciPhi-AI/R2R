@@ -1221,27 +1221,27 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     analysis_type = analysis_config[0]
                     if analysis_type == "bar_chart":
                         extract_key = analysis_config[1]
-                        results[filter_key] = (
-                            AnalysisTypes.generate_bar_chart_data(
-                                filtered_logs[filter_key], extract_key
-                            )
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.generate_bar_chart_data(
+                            filtered_logs[filter_key], extract_key
                         )
                     elif analysis_type == "basic_statistics":
                         extract_key = analysis_config[1]
-                        results[filter_key] = (
-                            AnalysisTypes.calculate_basic_statistics(
-                                filtered_logs[filter_key], extract_key
-                            )
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.calculate_basic_statistics(
+                            filtered_logs[filter_key], extract_key
                         )
                     elif analysis_type == "percentile":
                         extract_key = analysis_config[1]
                         percentile = int(analysis_config[2])
-                        results[filter_key] = (
-                            AnalysisTypes.calculate_percentile(
-                                filtered_logs[filter_key],
-                                extract_key,
-                                percentile,
-                            )
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.calculate_percentile(
+                            filtered_logs[filter_key],
+                            extract_key,
+                            percentile,
                         )
                     else:
                         logger.warning(

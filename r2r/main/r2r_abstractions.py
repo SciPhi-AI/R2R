@@ -33,6 +33,7 @@ class R2RPipes(BaseModel):
     rag_pipe: LoggableAsyncPipe
     streaming_rag_pipe: LoggableAsyncPipe
     eval_pipe: LoggableAsyncPipe
+    kg_pipe: LoggableAsyncPipe
 
     class Config:
         arbitrary_types_allowed = True

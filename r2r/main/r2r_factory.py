@@ -194,6 +194,7 @@ class R2RPipeFactory:
         self,
         parsing_pipe_override: Optional[LoggableAsyncPipe] = None,
         embedding_pipe_override: Optional[LoggableAsyncPipe] = None,
+        kg_pipe_override: Optional[LoggableAsyncPipe] = None,
         vector_storage_pipe_override: Optional[LoggableAsyncPipe] = None,
         search_pipe_override: Optional[LoggableAsyncPipe] = None,
         rag_pipe_override: Optional[LoggableAsyncPipe] = None,
@@ -202,7 +203,6 @@ class R2RPipeFactory:
         *args,
         **kwargs,
     ) -> R2RPipes:
-
         return R2RPipes(
             parsing_pipe=parsing_pipe_override
             or self.create_parsing_pipe(
@@ -210,6 +210,7 @@ class R2RPipeFactory:
             ),
             embedding_pipe=embedding_pipe_override
             or self.create_embedding_pipe(*args, **kwargs),
+            kg_pipe=kg_pipe_override or self.create_kg_pipe(*args, **kwargs),
             vector_storage_pipe=vector_storage_pipe_override
             or self.create_vector_storage_pipe(*args, **kwargs),
             search_pipe=search_pipe_override
@@ -249,6 +250,31 @@ class R2RPipeFactory:
         )
         return R2REmbeddingPipe(
             embedding_provider=self.providers.embedding,
+            vector_db_provider=self.providers.vector_db,
+            text_splitter=text_splitter,
+            embedding_batch_size=self.config.embedding.batch_size,
+        )
+
+    def create_kg_pipe(self, *args, **kwargs) -> Any:
+        from r2r.core import RecursiveCharacterTextSplitter
+        from r2r.pipes import R2RKGPipe
+
+        text_splitter_config = self.config.embedding.extra_fields.get(
+            "text_splitter"
+        )
+        if not text_splitter_config:
+            raise ValueError(
+                "Text splitter config not found in embedding config"
+            )
+
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=text_splitter_config["chunk_size"],
+            chunk_overlap=text_splitter_config["chunk_overlap"],
+            length_function=len,
+            is_separator_regex=False,
+        )
+        return R2RKGPipe(
+            llm_provider=self.providers.llm,
             vector_db_provider=self.providers.vector_db,
             text_splitter=text_splitter,
             embedding_batch_size=self.config.embedding.batch_size,
@@ -299,8 +325,8 @@ class R2RPipelineFactory:
     def create_ingestion_pipeline(self, *args, **kwargs) -> IngestionPipeline:
         ingestion_pipeline = IngestionPipeline()
         ingestion_pipeline.add_pipe(self.pipes.parsing_pipe)
-        ingestion_pipeline.add_pipe(self.pipes.embedding_pipe)
-        ingestion_pipeline.add_pipe(self.pipes.vector_storage_pipe)
+        ingestion_pipeline.add_pipe(self.pipes.kg_pipe)
+        # ingestion_pipeline.add_pipe(self.pipes.vector_storage_pipe)
         return ingestion_pipeline
 
     def create_search_pipeline(self, *args, **kwargs) -> SearchPipeline:
