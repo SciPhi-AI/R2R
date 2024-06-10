@@ -20,7 +20,7 @@
   },
   "kg": {
     "provider": "openai",
-    "batch_size": 128,
+    "batch_size": 1,
     "text_splitter": {
       "type": "recursive_character",
       "chunk_size": 2048,

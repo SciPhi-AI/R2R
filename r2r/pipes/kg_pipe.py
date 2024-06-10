@@ -186,31 +186,54 @@ class R2RKGPipe(KGPipe):
             self.prompt_provider.get_prompt("default_system"), task_prompt
         )
 
-        for attempt in range(retries):
-            try:
-                response = self.llm_provider.get_completion(
-                    messages, GenerationConfig(model="gpt-4o")
-                )
-                kg_extraction = response.choices[0].message.content
 
-                kg_json = json.loads(
-                    kg_extraction.split("```json")[1].split("```")[0]
-                )
+        try:
+            response = self.llm_provider.get_completion(
+                messages, GenerationConfig(model="gpt-4o")
+            )
+            kg_extraction = response.choices[0].message.content
 
-                entities_dict = kg_json["entities"]
-                entities = extract_entities(entities_dict)
+            kg_json = json.loads(
+                kg_extraction.split("```json")[1].split("```")[0]
+            )
 
-                # Extract triples
-                triples = extract_triples(kg_json["triplets"], entities_dict)
+            entities_dict = kg_json["entities"]
+            entities = extract_entities(entities_dict)
 
-                # Create KG extraction object
-                return KGExtraction(entities=entities, triples=triples)
-            except (ClientError, json.JSONDecodeError, KeyError) as e:
-                if attempt < retries - 1:
-                    await asyncio.sleep(delay)
-                    continue
-                else:
-                    raise e
+            # Extract triples
+            triples = extract_triples(kg_json["triplets"], entities_dict)
+
+            # Create KG extraction object
+            return KGExtraction(entities=entities, triples=triples)
+        except (ClientError, json.JSONDecodeError, KeyError) as e:
+                logger.error(e)
+                return KGExtraction(entities=[], triples=[])
+
+        # for attempt in range(retries):
+        #     try:
+        #         response = self.llm_provider.get_completion(
+        #             messages, GenerationConfig(model="gpt-4o")
+        #         )
+        #         kg_extraction = response.choices[0].message.content
+
+        #         kg_json = json.loads(
+        #             kg_extraction.split("```json")[1].split("```")[0]
+        #         )
+
+        #         entities_dict = kg_json["entities"]
+        #         entities = extract_entities(entities_dict)
+
+        #         # Extract triples
+        #         triples = extract_triples(kg_json["triplets"], entities_dict)
+
+        #         # Create KG extraction object
+        #         return KGExtraction(entities=entities, triples=triples)
+        #     except (ClientError, json.JSONDecodeError, KeyError) as e:
+        #         if attempt < retries - 1:
+        #             await asyncio.sleep(delay)
+        #             continue
+        #         else:
+        #             raise e
 
     async def _process_batch(
         self, fragment_batch: list[Fragment]
@@ -255,6 +278,10 @@ class R2RKGPipe(KGPipe):
                         self._process_batch(fragment_batch.copy())
                     )  # pass a copy if necessary
                     fragment_batch.clear()  # Clear the batch for new fragments
+                # break
+                if len(fragment_batch) > 25:
+                    break
+            # break
 
         logger.info(
             f"Fragmented the input document ids into counts as shown: {fragment_info}"
@@ -269,4 +296,3 @@ class R2RKGPipe(KGPipe):
             for kg_extraction in batch_result:
                 print("yielding kg extraction = ", kg_extraction)
                 yield kg_extraction
-                break
