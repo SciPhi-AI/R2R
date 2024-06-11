@@ -9,6 +9,7 @@ from r2r.core import (
     EvalPipeline,
     EvalProvider,
     IngestionPipeline,
+    KGProvider,
     KVLoggingSingleton,
     LLMConfig,
     LLMProvider,
@@ -35,11 +36,11 @@ class R2RProviderFactory:
     ) -> VectorDBProvider:
         vector_db_provider: Optional[VectorDBProvider] = None
         if vector_db_config.provider == "pgvector":
-            from r2r.vector_dbs import PGVectorDB
+            from r2r.providers.vector_dbs import PGVectorDB
 
             vector_db_provider = PGVectorDB(vector_db_config)
         elif vector_db_config.provider == "local":
-            from r2r.vector_dbs import R2RLocalVectorDB
+            from r2r.providers.vector_dbs import R2RLocalVectorDB
 
             vector_db_provider = R2RLocalVectorDB(vector_db_config)
         else:
@@ -67,17 +68,19 @@ class R2RProviderFactory:
                 raise ValueError(
                     "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
                 )
-            from r2r.embeddings import OpenAIEmbeddingProvider
+            from r2r.providers.embeddings import OpenAIEmbeddingProvider
 
             embedding_provider = OpenAIEmbeddingProvider(embedding)
         elif embedding.provider == "sentence-transformers":
-            from r2r.embeddings import SentenceTransformerEmbeddingProvider
+            from r2r.providers.embeddings import (
+                SentenceTransformerEmbeddingProvider,
+            )
 
             embedding_provider = SentenceTransformerEmbeddingProvider(
                 embedding
             )
         elif embedding.provider == "dummy":
-            from r2r.embeddings import DummyEmbeddingProvider
+            from r2r.providers.embeddings import DummyEmbeddingProvider
 
             embedding_provider = DummyEmbeddingProvider(embedding)
         elif embedding.provider == None:
@@ -93,7 +96,7 @@ class R2RProviderFactory:
         self, eval_config, prompt_provider, *args, **kwargs
     ) -> Optional[EvalProvider]:
         if eval_config.provider == "local":
-            from r2r.eval import LLMEvalProvider
+            from r2r.providers.eval import LLMEvalProvider
 
             llm_provider = self.create_llm_provider(eval_config.llm)
             eval_provider = LLMEvalProvider(
@@ -115,11 +118,11 @@ class R2RProviderFactory:
     ) -> LLMProvider:
         llm_provider: Optional[LLMProvider] = None
         if llm_config.provider == "openai":
-            from r2r.llms import OpenAILLM
+            from r2r.providers.llms import OpenAILLM
 
             llm_provider = OpenAILLM(llm_config)
         elif llm_config.provider == "litellm":
-            from r2r.llms import LiteLLM
+            from r2r.providers.llms import LiteLLM
 
             llm_provider = LiteLLM(llm_config)
         else:
@@ -144,6 +147,18 @@ class R2RProviderFactory:
             )
         return prompt_provider
 
+    def create_kg_provider(self, kg_config, *args, **kwargs):
+        if kg_config.provider == "neo4j":
+            from r2r.providers.kg import Neo4jKGProvider
+
+            return Neo4jKGProvider(kg_config)
+        elif kg_config.provider == None:
+            return None
+        else:
+            raise ValueError(
+                f"KG provider {kg_config.provider} not supported."
+            )
+
     def create_providers(
         self,
         vector_db_provider_override: Optional[VectorDBProvider] = None,
@@ -151,6 +166,7 @@ class R2RProviderFactory:
         eval_provider_override: Optional[EvalProvider] = None,
         llm_provider_override: Optional[LLMProvider] = None,
         prompt_provider_override: Optional[PromptProvider] = None,
+        kg_provider_override: Optional[KGProvider] = None,
         *args,
         **kwargs,
     ) -> R2RProviders:
@@ -182,6 +198,8 @@ class R2RProviderFactory:
             or self.create_prompt_provider(
                 self.config.prompt, *args, **kwargs
             ),
+            kg=kg_provider_override
+            or self.create_kg_provider(self.config.kg, *args, **kwargs),
         )
 
 
@@ -283,7 +301,7 @@ class R2RPipeFactory:
     def create_kg_storage_pipe(self, *args, **kwargs) -> Any:
         from r2r.pipes import R2RKGStoragePipe
 
-        return R2RKGStoragePipe()
+        return R2RKGStoragePipe(kg_provider=self.providers.kg)
 
     def create_vector_storage_pipe(self, *args, **kwargs) -> Any:
         from r2r.pipes import R2RVectorStoragePipe

@@ -13,24 +13,26 @@ Build, deploy, observe, and optimize your RAG system.
 
 # About
 
-R2R, short for RAG to Riches, provides the fastest and most feature-rich way for developers to deliver high-quality Retrieval-Augmented Generation (RAG) to end users. The framework ships with a fully configurable and customizable REST API that includes user-level and document-level management as well as advanced RAG features.
+R2R (Rag to Riches) is the ultimate open-source framework for building and deploying high-quality Retrieval-Augmented Generation (RAG) systems. Designed to bridge the gap between local LLM experimentation and scalable, production-ready applications, R2R provides a comprehensive, feature-rich environment for developers.
 
-## Why?
-
-R2R was conceived to help developers bridge the gap between local LLM experimentation and serving a scalable, production-ready application. Built with powering a user-facing RAG application in mind, R2R provides adequate performance and features for most RAG use cases.
 
 ## Key Features
-- **🔧 Build**: Effortlessly create and manage observable, high-performance RAG pipelines with our robust framework, including multimodal RAG, hybrid search, and the latest methods such as HyDE.
-- **🚀 Deploy**: Launch production-ready asynchronous RAG pipelines with seamless streaming capabilities. Begin serving users immediately with built-in user and document management features.
-- **🧩 Customize**: Easily tailor your pipeline using intuitive configuration files to meet your specific needs.
-- **🔌 Extend**: Enhance and extend your pipeline with custom code integrations to add new functionalities.
-- **🤖 OSS**: Leverage a framework developed by the open-source community, ensuring flexibility, scalability, and ease of deployment.
+- **📁 Multimodal Support**: Ingest files ranging from `.txt`, `.pdf`, `.json` to `.png`, `.mp3`, and more.
+- **🔍 Hybrid Search**: Combine semantic and keyword search with reciprocal rank fusion for enhanced relevancy.
+- **🔗 Graph RAG**: Automatically extract relationships and build knowledge graphs.
+- **🗂️ App Management**: Efficiently manage documents and users with rich observability and analytics.
+- **🌐 Client-Server**: RESTful API support out of the box.
+- **🧩 Configurable**: Provision your application using intuitive configuration files..
+- **🔌 Extensible**: Develop your application further with easy builder + factory pattern.
+
+R2R ships with a fully configurable and customizable REST API that includes user-level and document-level management as well as advanced RAG features. This framework ensures adequate performance and feature support for most RAG use cases, making it an ideal solution for developers looking to create observable user-facing RAG applications.
+
 
 ## Table of Contents
 1. [Quick Install](#quick-install)
 2. [Links](#links)
 3. [R2R Demo](#r2r-demo)
-4. [R2R Server-Client Demo](#r2r-server-client-demo)
+4. [R2R Client-Server Demo](#r2r-client-server-demo)
 5. [Core Abstractions](#core-abstractions)
 6. [Summary](#summary)
 
@@ -67,7 +69,7 @@ docker run -d --name r2r -p 8000:8000 emrgntcmplxty/r2r:latest -e OPENAI_API_KEY
 
 ### Docs
 - [R2R Demo](https://r2r-docs.sciphi.ai/getting-started/r2r-demo): A basic demo script designed to get you started with an R2R RAG application. 
-- [R2R Server-Client](https://r2r-docs.sciphi.ai/cookbooks/server-client): An extension of the basic `R2R Demo` with client-server interactions.
+- [R2R Client-Server](https://r2r-docs.sciphi.ai/cookbooks/client-server): An extension of the basic `R2R Demo` with client-server interactions.
 - [Local RAG](https://r2r-docs.sciphi.ai/cookbooks/local-rag): A quick cookbook demonstration of how to run R2R with local LLMs.
 - [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): A brief introduction to running hybrid search with R2R.
 - [Reranking](https://r2r-docs.sciphi.ai/cookbooks/rerank-search): A short guide on how to apply reranking to R2R results.
@@ -94,7 +96,7 @@ python -m r2r.examples.demo ingest_as_files
 r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.json - 2024-05-20 22:08:48,025
 r2r.core.providers.llm_provider - INFO - Initializing LLM provider with config: extra_fields={} provider='litellm' - 2024-05-20 22:08:48,562
 r2r.core.providers.vector_db_provider - INFO - Initializing VectorDBProvider with config extra_fields={} provider='local' collection_name='demo_vecs'. - 2024-05-20 22:08:48,765
-r2r.embeddings.openai.openai_base - INFO - Initializing `OpenAIEmbeddingProvider` to provide embeddings. - 2024-05-20 22:08:48,774
+r2r.providers.embeddings.openai.openai_base - INFO - Initializing `OpenAIEmbeddingProvider` to provide embeddings. - 2024-05-20 22:08:48,774
 ...
 r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'pg_essay_5.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=ef66e5dd-2130-5fd5-9bdd-aa7eff59fda5 in t=0.00 seconds. - 2024-05-21 08:40:32,317
 r2r.pipes.embedding_pipe - INFO - Fragmented the input document ids into counts as shown: {UUID('4a4fb848-fc03-5487-a7e5-33c9fdfb73cc'): 31, UUID('c5abc0b7-b9e5-54d9-b3d3-fdb14af4d065'): 2094, UUID('f0c63aff-af59-50c9-81fc-2fe55004c771'): 17, UUID('c996e617-88a4-5c65-ab1e-948344b18d27'): 3108, UUID('1a9d4d3b-bbe9-53b9-8149-67806bdf60f2'): 18, UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'): 233, UUID('b722f1ec-b90e-5ed8-b7c8-c768e8b323cb'): 5, UUID('74f1506a-9a37-59d7-b288-5ef3683dca8f'): 10, UUID('ef66e5dd-2130-5fd5-9bdd-aa7eff59fda5'): 11} - 2024-06-04 13:34:40,885
@@ -262,9 +264,9 @@ To delete all documents associated with a given user, run the delete command on 
 python -m r2r.examples.demo delete --keys="['user_id']" --values="['063edaf8-3e63-4cb9-a4d6-a855f36376c3']"
 ```
 
-## R2R Server-Client Demo
+## R2R Client-Server Demo
 
-This section extends the previous demo by showing how to set up and use the R2R framework with a server-client architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations.
+This section extends the previous demo by showing how to set up and use the R2R framework with a Client-Server architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations.
 
 ### Launch the Server
 
@@ -302,9 +304,9 @@ This command starts the R2R server on the default host `0.0.0.0` and port `8000`
    ```
    This command streams the RAG query results from the server.
 
-### Server-Client Summary
+### Client-Server Summary
 
-By using the server-client model, you can extend the basic R2R demo to support more scalable and modular deployments. The server handles requests and performs heavy computations, while clients can communicate with the server to perform ingestion, search, RAG, and other operations, as shown in the examples above. For detailed setup and basic functionality, refer back to the [R2R Demo](#r2r-demo).
+By using the Client-Server model, you can extend the basic R2R demo to support more scalable and modular deployments. The server handles requests and performs heavy computations, while clients can communicate with the server to perform ingestion, search, RAG, and other operations, as shown in the examples above. For detailed setup and basic functionality, refer back to the [R2R Demo](#r2r-demo).
 
 
 # R2R Dashboard
