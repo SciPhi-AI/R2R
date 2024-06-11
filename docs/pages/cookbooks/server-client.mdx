@@ -39,7 +39,7 @@ docker run -d \
   --add-host=host.docker.internal:host-gateway \
   -p 8000:8000 \
   -e OPENAI_API_KEY=$OPENAI_API_KEY \
-  r2r:latest
+  emrgntcmplxty/r2r:latest
 ```
 
 This command starts the R2R container with the following options:
@@ -48,7 +48,7 @@ This command starts the R2R container with the following options:
 - `--add-host=host.docker.internal:host-gateway`: Adds a host entry for the Docker host.
 - `-p 8000:8000`: Maps port 8000 of the container to port 8000 of the host.
 - `-e OPENAI_API_KEY=$OPENAI_API_KEY`: Pulls your OpenAI API key from your local enviornment for use in the container.
-- `r2r:latest`: Specifies the Docker image to use.
+- `emrgntcmplxty/r2r:latest`: Specifies the Docker image to use.
 
 </details>
 ### Using the Client
