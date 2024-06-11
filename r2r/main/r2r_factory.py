@@ -80,13 +80,13 @@ class R2RProviderFactory:
             from r2r.embeddings import DummyEmbeddingProvider
 
             embedding_provider = DummyEmbeddingProvider(embedding)
+        elif embedding.provider == None:
+            embedding_provider = None
         else:
             raise ValueError(
                 f"Embedding provider {embedding.provider} not supported"
             )
-        if not embedding_provider:
-            raise ValueError("Embedding provider not found")
-
+            
         return embedding_provider
 
     def create_eval_provider(
@@ -334,15 +334,19 @@ class R2RPipelineFactory:
             pipe=self.pipes.parsing_pipe, parsing_pipe=True
         )
 
-        ingestion_pipeline.add_pipe(
-            self.pipes.embedding_pipe, embedding_pipe=True
-        )
-        ingestion_pipeline.add_pipe(
-            self.pipes.vector_storage_pipe, embedding_pipe=True
-        )
-
-        ingestion_pipeline.add_pipe(self.pipes.kg_pipe, kg_pipe=True)
-        ingestion_pipeline.add_pipe(self.pipes.kg_storage_pipe, kg_pipe=True)
+        if self.config.embedding.provider != None:
+            ingestion_pipeline.add_pipe(
+                self.pipes.embedding_pipe, embedding_pipe=True
+            )
+            ingestion_pipeline.add_pipe(
+                self.pipes.vector_storage_pipe, embedding_pipe=True
+            )
+        # Add KG pipes if KG is enabled
+        if self.config.kg.provider != None:
+            ingestion_pipeline.add_pipe(self.pipes.kg_pipe, kg_pipe=True)
+            ingestion_pipeline.add_pipe(
+                self.pipes.kg_storage_pipe, kg_pipe=True
+            )
 
         return ingestion_pipeline
 

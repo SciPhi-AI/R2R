@@ -10,6 +10,7 @@ from ..core.abstractions.document import DocumentType
 from ..core.logging.kv_logger import LoggingConfig
 from ..core.providers.embedding_provider import EmbeddingConfig
 from ..core.providers.eval_provider import EvalConfig
+from ..core.providers.kg_provider import KGConfig
 from ..core.providers.llm_provider import LLMConfig
 from ..core.providers.prompt_provider import PromptConfig
 from ..core.providers.vector_db_provider import ProviderConfig, VectorDBConfig
@@ -69,7 +70,7 @@ class R2RConfig:
             for k, v in self.ingestion["selected_parsers"].items()
         }
         self.embedding = EmbeddingConfig.create(**self.embedding)
-        self.kg = EmbeddingConfig.create(**self.kg)
+        self.kg = KGConfig.create(**self.kg)
         eval_llm = self.eval.pop("llm")
         self.eval = EvalConfig.create(
             **self.eval, llm=LLMConfig.create(**eval_llm)

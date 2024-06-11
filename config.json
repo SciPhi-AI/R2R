@@ -19,7 +19,7 @@
     "rerank_model": "None"
   },
   "kg": {
-    "provider": "openai",
+    "provider": "None",
     "batch_size": 1,
     "text_splitter": {
       "type": "recursive_character",
