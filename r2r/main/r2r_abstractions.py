@@ -7,6 +7,7 @@ from r2r.core import (
     EvalPipeline,
     EvalProvider,
     IngestionPipeline,
+    KGProvider,
     LLMProvider,
     LoggableAsyncPipe,
     PromptProvider,
@@ -22,6 +23,7 @@ class R2RProviders(BaseModel):
     llm: Optional[LLMProvider]
     prompt: Optional[PromptProvider]
     eval: Optional[EvalProvider]
+    kg: Optional[KGProvider]
 
     class Config:
         arbitrary_types_allowed = True

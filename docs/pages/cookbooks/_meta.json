@@ -1,6 +1,6 @@
 {
     "starter": "Starter",
-    "server-client": "Server-Client",
+    "client-server": "Client-Server",
     "multiple-llms": "Multiple LLMs",
     "local-rag": "Local RAG",
     "hybrid-search": "Hybrid Search",

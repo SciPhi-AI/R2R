@@ -3787,4 +3787,4 @@ local-embedding = ["sentence-transformers"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "ad28364f87b31dd21889597728d021ca0a43d0cf0e3d3d4016bfd52829e7c460"
+content-hash = "739bf3252eabe7f0d85d01e06e85a25220431bf526a549e7c1ef0a0f2f19381d"
