@@ -86,7 +86,7 @@ class R2RProviderFactory:
             raise ValueError(
                 f"Embedding provider {embedding.provider} not supported"
             )
-            
+
         return embedding_provider
 
     def create_eval_provider(
@@ -277,7 +277,7 @@ class R2RPipeFactory:
             prompt_provider=self.providers.prompt,
             vector_db_provider=self.providers.vector_db,
             text_splitter=text_splitter,
-            embedding_batch_size=self.config.embedding.batch_size,
+            kg_batch_size=self.config.kg.batch_size,
         )
 
     def create_kg_storage_pipe(self, *args, **kwargs) -> Any:

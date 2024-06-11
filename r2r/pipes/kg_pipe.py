@@ -94,7 +94,7 @@ class R2RKGPipe(KGPipe):
         llm_provider: LLMProvider,
         prompt_provider: PromptProvider,
         text_splitter: TextSplitter,
-        embedding_batch_size: int = 1,
+        kg_batch_size: int = 1,
         id_prefix: str = "demo",
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
@@ -114,7 +114,7 @@ class R2RKGPipe(KGPipe):
             or LoggableAsyncPipe.PipeConfig(name="default_embedding_pipe"),
         )
         self.text_splitter = text_splitter
-        self.embedding_batch_size = embedding_batch_size
+        self.kg_batch_size = kg_batch_size
         self.id_prefix = id_prefix
         self.pipe_run_info = None
 
@@ -173,7 +173,7 @@ class R2RKGPipe(KGPipe):
         )
         for attempt in range(retries):
             try:
-                response = self.llm_provider.get_completion(
+                response = await self.llm_provider.aget_completion(
                     messages, GenerationConfig(model="gpt-4o")
                 )
                 kg_extraction = response.choices[0].message.content
@@ -214,11 +214,11 @@ class R2RKGPipe(KGPipe):
         """
         Embeds a batch of fragments and yields vector entries.
         """
-        kg_extractions = []
-        for fragment in fragment_batch:
-            kg_extraction = await self.extract_kg(fragment)
-            kg_extractions.append(kg_extraction)
-        return kg_extractions
+        tasks = [
+            asyncio.create_task(self.extract_kg(fragment))
+            for fragment in fragment_batch
+        ]
+        return await asyncio.gather(*tasks)
 
     async def _run_logic(
         self,
@@ -245,7 +245,7 @@ class R2RKGPipe(KGPipe):
                     extraction.document_id
                 ]
                 fragment_batch.append(fragment)
-                if len(fragment_batch) >= self.embedding_batch_size:
+                if len(fragment_batch) >= self.kg_batch_size:
                     # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
                     batch_tasks.append(
                         self._process_batch(fragment_batch.copy())
