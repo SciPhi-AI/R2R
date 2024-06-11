@@ -1,3 +1,5 @@
+import { Callout } from 'nextra/components'
+
 ## R2R Server-Client Demo
 The server-client architecture in R2R allows for a flexible and scalable approach to handling Retrieval-Augmented Generation (RAG) tasks. By centralizing the server to process requests and distribute tasks among multiple clients, this architecture supports efficient and modular deployments.
 
@@ -8,20 +10,12 @@ This document extends the [R2R Demo](/getting-started/r2r-demo) by demonstrating
 
 To set up the R2R server, follow these steps:
 
-**Local Installation**:
-   Ensure you have all necessary dependencies installed as described in the [R2R Demo](/getting-started/r2r-demo#setup). Then, use the following command to start the server:
-   ```bash filename="bash" copy
-   python -m r2r.examples.demo serve
-   ```
-   This command starts the R2R server on the default host `0.0.0.0` and port `8000`.
-
-
-
-**Docker Installation**: Using Docker can be a convenient way to run R2R without having to manage dependencies and installations on your local machine. The Docker image comes pre-configured and ready to run.
-
+<Callout type="info" emoji="🐳">
+   Docker makes it convenient to run R2R without managing your local environment.
+</Callout>
 
 <details>
-<summary>Docker</summary>
+<summary>Docker Installation</summary>
 
 To run R2R using Docker, you can use the following commands:
 
@@ -51,6 +45,14 @@ This command starts the R2R container with the following options:
 - `emrgntcmplxty/r2r:latest`: Specifies the Docker image to use.
 
 </details>
+
+**Local Installation**:
+   Ensure you have all necessary dependencies installed as described in the [R2R Demo](/getting-started/r2r-demo#setup). Then, use the following command to start the server:
+   ```bash filename="bash" copy
+   python -m r2r.examples.demo serve
+   ```
+   This command starts the R2R server on the default host `0.0.0.0` and port `8000`.
+
 ### Using the Client
 
 The R2R framework includes a [python client](https://github.com/SciPhi-AI/R2R/blob/main/r2r/main/r2r_client.py) and a [typescript client](https://github.com/SciPhi-AI/r2r-js/blob/main/src/r2rClient.ts). All of the demo commands can be run with the python client using the `--client_server_mode` parameter to run the demo in server-client mode. Note that these commands will only run successfully if the server is active at http://0.0.0.0:8000.

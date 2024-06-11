@@ -1,6 +1,46 @@
+import { Callout } from 'nextra/components'
+
 ## Building a Local RAG System with R2R
 
 ### Installation
+
+<Callout type="info" emoji="🐳">
+   Docker makes it convenient to run R2R without managing your local environment.
+</Callout>
+
+<details>
+<summary>Docker</summary>
+
+To run R2R using Docker, you can use the following commands:
+
+```bash filename="bash" copy
+docker pull emrgntcmplxty/r2r:latest
+```
+
+This will pull the latest R2R Docker image.
+
+Then, run the container with:
+
+```bash filename="bash" copy
+docker run -d \
+  --name r2r \
+  --add-host=host.docker.internal:host-gateway \
+  -p 8000:8000 \
+  -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
+  -e CONFIG_OPTION=local_ollama \
+  emrgntcmplxty/r2r:latest
+```
+
+This command starts the R2R container with the following options:
+
+- `--name r2r`: Assigns the name "r2r" to the container.
+- `--add-host=host.docker.internal:host-gateway`: Adds a host entry for the Docker host.
+- `-p 8000:8000`: Maps port 8000 of the container to port 8000 of the host.
+- `-e OLLAMA_API_BASE=http://host.docker.internal:11434`: Specifies the Ollama API base URL.
+- `-e CONFIG_OPTION=local_ollama`: Selects the "local_ollama" configuration option.
+- `emrgntcmplxty/r2r:latest`: Specifies the Docker image to use.
+
+</details>
 
 We can start by using `pip` to install R2R with the local-embeddding dependencies:
 
@@ -67,43 +107,6 @@ python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 
 ```
 
 The server exposes a REST API for interacting with the R2R RAG pipeline and application. See the [API docs](/getting-started/app-api) for more details on the available endpoints.
-
-**Docker Installation**: Using Docker can be a convenient way to run R2R without having to manage dependencies and installations on your local machine. The Docker image comes pre-configured and ready to run.
-
-
-<details>
-<summary>Docker</summary>
-
-To run R2R using Docker, you can use the following commands:
-
-```bash filename="bash" copy
-docker pull emrgntcmplxty/r2r:latest
-```
-
-This will pull the latest R2R Docker image.
-
-Then, run the container with:
-
-```bash filename="bash" copy
-docker run -d \
-  --name r2r \
-  --add-host=host.docker.internal:host-gateway \
-  -p 8000:8000 \
-  -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
-  -e CONFIG_OPTION=local_ollama \
-  emrgntcmplxty/r2r:latest
-```
-
-This command starts the R2R container with the following options:
-
-- `--name r2r`: Assigns the name "r2r" to the container.
-- `--add-host=host.docker.internal:host-gateway`: Adds a host entry for the Docker host.
-- `-p 8000:8000`: Maps port 8000 of the container to port 8000 of the host.
-- `-e OLLAMA_API_BASE=http://host.docker.internal:11434`: Specifies the Ollama API base URL.
-- `-e CONFIG_OPTION=local_ollama`: Selects the "local_ollama" configuration option.
-- `emrgntcmplxty/r2r:latest`: Specifies the Docker image to use.
-
-</details>
 
 ## Ingesting and Embedding Documents
 
