@@ -106,57 +106,57 @@ class AnalysisTypes(BaseModel):
 
         if not values:
             return {
-                "mean": None,
-                "median": None,
-                "mode": None,
-                "std_dev": None,
-                "variance": None,
+                "Mean": None,
+                "Median": None,
+                "Mode": None,
+                "Standard Deviation": None,
+                "Variance": None,
             }
 
         if len(values) == 1:
+            single_value = round(values[0], 3)
             return {
-                "mean": values[0],
-                "median": values[0],
-                "mode": values[0],
-                "std_dev": 0,
-                "variance": 0,
+                "Mean": single_value,
+                "Median": single_value,
+                "Mode": single_value,
+                "Standard Deviation": 0,
+                "Variance": 0,
             }
 
-        mean = sum(values) / len(values)
-        median = statistics.median(values)
+        mean = round(sum(values) / len(values), 3)
+        median = round(statistics.median(values), 3)
         mode = (
-            statistics.mode(values)
+            round(statistics.mode(values), 3)
             if len(set(values)) != len(values)
             else None
         )
-        std_dev = statistics.stdev(values) if len(values) > 1 else 0
-        variance = statistics.variance(values) if len(values) > 1 else 0
+        std_dev = round(statistics.stdev(values) if len(values) > 1 else 0, 3)
+        variance = round(statistics.variance(values) if len(values) > 1 else 0, 3)
 
         return {
-            "mean": mean,
-            "median": median,
-            "mode": mode,
-            "std_dev": std_dev,
-            "variance": variance,
+            "Mean": mean,
+            "Median": median,
+            "Mode": mode,
+            "Standard Deviation": std_dev,
+            "Variance": variance,
         }
 
     @staticmethod
     def calculate_percentile(logs, key, percentile):
         values = []
         for log in logs:
-            if log["key"] == "search_results":
-                results = json.loads(log["value"])
-                scores = [
-                    float(json.loads(result)["score"]) for result in results
-                ]
-                values.extend(scores)
+            if log["key"] == key:
+                value = log.get("value")
+                if value is not None:
+                    with contextlib.suppress(ValueError):
+                        values.append(float(value))
 
         if not values:
             return {"percentile": percentile, "value": None}
 
         values.sort()
         index = int((percentile / 100) * (len(values) - 1))
-        return {"percentile": percentile, "value": values[index]}
+        return {"percentile": percentile, "value": round(values[index], 3)}
 
 
 class LogAnalytics:
