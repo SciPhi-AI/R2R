@@ -1,6 +1,8 @@
 from .abstractions.search_pipe import SearchPipe
 from .embedding_pipe import R2REmbeddingPipe
 from .eval_pipe import R2REvalPipe
+from .kg_pipe import R2RKGPipe
+from .kg_storage_pipe import R2RKGStoragePipe
 from .parsing_pipe import R2RDocumentParsingPipe
 from .query_transform_pipe import R2RQueryTransformPipe
 from .rag_pipe import R2RRAGPipe
@@ -20,4 +22,6 @@ __all__ = [
     "R2RVectorSearchPipe",
     "R2RVectorStoragePipe",
     "R2RWebSearchPipe",
+    "R2RKGPipe",
+    "R2RKGStoragePipe",
 ]

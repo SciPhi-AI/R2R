@@ -17,7 +17,16 @@
       "chunk_overlap": 20
     },
     "rerank_model": "None"
-  },  
+  },
+  "kg": {
+    "provider": "None",
+    "batch_size": 1,
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 2048,
+      "chunk_overlap": 0
+    }
+  },
   "eval": {
     "provider": "local",
     "llm":{

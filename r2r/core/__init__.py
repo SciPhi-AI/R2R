@@ -3,10 +3,15 @@ from .abstractions.document import (
     Document,
     DocumentInfo,
     DocumentType,
+    Entity,
     Extraction,
     ExtractionType,
     Fragment,
     FragmentType,
+    KGExtraction,
+    Triple,
+    extract_entities,
+    extract_triples,
 )
 from .abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
 from .abstractions.prompt import Prompt
@@ -103,6 +108,11 @@ __all__ = [
     "ExtractionType",
     "Fragment",
     "FragmentType",
+    "extract_entities",
+    "Entity",
+    "extract_triples",
+    "Triple",
+    "KGExtraction",
     "UserStats",
     # Parsers
     "AudioParser",

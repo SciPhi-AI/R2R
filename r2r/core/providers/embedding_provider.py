@@ -18,16 +18,12 @@ class EmbeddingConfig(ProviderConfig):
     batch_size: int = 1
 
     def validate(self) -> None:
-        if not self.provider:
-            raise ValueError(
-                "The 'provider' field must be set for EmbeddingConfig."
-            )
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider '{self.provider}' is not supported.")
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["dummy", "openai", "sentence-transformers"]
+        return [None, "dummy", "openai", "sentence-transformers"]
 
 
 class EmbeddingProvider(Provider):

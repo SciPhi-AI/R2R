@@ -135,15 +135,19 @@ class PGVectorDB(VectorDBProvider):
                         sess.commit()
                     finally:
                         # Release the advisory lock
-                        sess.execute(text("SELECT pg_advisory_unlock(123456789)"))
+                        sess.execute(
+                            text("SELECT pg_advisory_unlock(123456789)")
+                        )
                 break  # Break the loop if successful
             except sqlalchemy.exc.InternalError as e:
                 if "tuple concurrently updated" in str(e):
-                    time.sleep(2 ** attempt)  # Exponential backoff
+                    time.sleep(2**attempt)  # Exponential backoff
                 else:
                     raise  # Re-raise the exception if it's not a concurrency issue
         else:
-            raise RuntimeError("Failed to create hybrid search function after multiple attempts")
+            raise RuntimeError(
+                "Failed to create hybrid search function after multiple attempts"
+            )
 
     def copy(self, entry: VectorEntry, commit=True) -> None:
         if self.collection is None:
