@@ -414,7 +414,6 @@ class R2RKGStoragePipe(LoggableAsyncPipe):
         try:
             for extraction in kg_extractions:
                 for triple in extraction.triples:
-                    print("upserting triplet = ", triple)
                     self.graph_store.upsert_triplet(
                         triple.subject, triple.predicate, triple.object
                     )
