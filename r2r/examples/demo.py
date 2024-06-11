@@ -58,6 +58,7 @@ class R2RDemo:
         self.user_id = user_id
         self.default_files = file_list or [
             os.path.join(root_path, "data", "got.txt"),
+            os.path.join(root_path, "data", "aristotle.txt"),
             os.path.join(root_path, "data", "screen_shot.png"),
             os.path.join(root_path, "data", "pg_essay_1.html"),
             os.path.join(root_path, "data", "pg_essay_2.html"),
