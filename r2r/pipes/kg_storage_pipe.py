@@ -382,15 +382,17 @@ class R2RKGStoragePipe(LoggableAsyncPipe):
             *args,
             **kwargs,
         )
-        if config.provider == "neo4j":
-            user = os.getenv("NEO4J_USER")
-            password = os.getenv("NEO4J_PASSWORD")
-            url = os.getenv("NEO4J_URL")
-            database = os.getenv("NEO4J_DATABASE")
-            if not all([user, password, url, database]):
-                raise ValueError(
-                    "Error, please set the NEO4J_USER, NEO4J_PASSWORD, NEO4J_URL, NEO4J_DATABASE environment variables."
-                )
+        # if config.provider == "neo4j":
+        user = os.getenv("NEO4J_USER")
+        password = os.getenv("NEO4J_PASSWORD")
+        url = os.getenv("NEO4J_URL")
+        database = os.getenv("NEO4J_DATABASE")
+        if not all([user, password, url, database]):
+            # raise ValueError(
+            #     "Error, please set the NEO4J_USER, NEO4J_PASSWORD, NEO4J_URL, NEO4J_DATABASE environment variables."
+            # )
+            pass
+        else:
             try:
                 self.graph_store = Neo4jGraphStore(
                     username=user,
