@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from asyncio import Queue
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional
 
@@ -227,6 +228,16 @@ class IngestionPipeline(Pipeline):
 
     pipeline_type: str = "ingestion"
 
+    def __init__(
+        self,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
+        run_manager: Optional[RunManager] = None,
+    ):
+        super().__init__(pipe_logger, run_manager)
+        self.parsing_pipe = None
+        self.embedding_pipe = None
+        self.kg_pipe = None
+
     async def run(
         self,
         input: Any,
@@ -236,21 +247,85 @@ class IngestionPipeline(Pipeline):
         *args: Any,
         **kwargs: Any,
     ):
-        return await super().run(
-            input, state, streaming, run_manager, *args, **kwargs
-        )
+        async with manage_run(run_manager, self.pipeline_type):
+            # Use queues to duplicate the documents for each pipeline
+            embedding_queue = Queue()
+            kg_queue = Queue()
+
+            print("input = ", input)
+            document_generator = await self.parsing_pipe.run(
+                self.parsing_pipe.Input(message=input), state, run_manager
+            )
+
+            async for document in document_generator:
+                print("enqueuing document = ", document)
+                if self.embedding_pipe:
+                    await embedding_queue.put(document)
+                if self.kg_pipe:
+                    await kg_queue.put(document)
+
+            await embedding_queue.put(None)
+            await kg_queue.put(None)
+
+            async def dequeue_documents(queue: Queue) -> AsyncGenerator:
+                while True:
+                    document = await queue.get()
+                    print("dequeuing document = ", document)
+                    if document is None:
+                        break
+                    yield document
+
+            if self.embedding_pipe:
+                print("running embedding...")
+                await self.embedding_pipe.run(
+                    dequeue_documents(embedding_queue),
+                    state,
+                    streaming,
+                    run_manager,
+                    *args,
+                    **kwargs,
+                )
+
+            if self.kg_pipe:
+                print("running kg....")
+                await self.kg_pipe.run(
+                    dequeue_documents(kg_queue),
+                    state,
+                    streaming,
+                    run_manager,
+                    *args,
+                    **kwargs,
+                )
 
     def add_pipe(
         self,
         pipe: AsyncPipe,
         add_upstream_outputs: Optional[list[dict[str, str]]] = None,
+        parsing_pipe: bool = False,
+        kg_pipe: bool = False,
+        embedding_pipe: bool = False,
         *args,
         **kwargs,
     ) -> None:
         logger.debug(
             f"Adding pipe {pipe.config.name} to the IngestionPipeline"
         )
-        return super().add_pipe(pipe, add_upstream_outputs, *args, **kwargs)
+
+        if parsing_pipe:
+            print("setting parsing_pipe = ", pipe)
+            self.parsing_pipe = pipe
+        elif embedding_pipe:
+            if not self.embedding_pipe:
+                self.embedding_pipe = Pipeline()
+            self.embedding_pipe.add_pipe(
+                pipe, add_upstream_outputs, *args, **kwargs
+            )
+        elif kg_pipe:
+            if not self.kg_pipe:
+                self.kg_pipe = Pipeline()
+            self.kg_pipe.add_pipe(pipe, add_upstream_outputs, *args, **kwargs)
+        else:
+            raise ValueError("Pipe must be a parsing, embedding, or KG pipe")
 
 
 class RAGPipeline(Pipeline):

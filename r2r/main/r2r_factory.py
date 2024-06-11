@@ -329,10 +329,21 @@ class R2RPipelineFactory:
 
     def create_ingestion_pipeline(self, *args, **kwargs) -> IngestionPipeline:
         ingestion_pipeline = IngestionPipeline()
-        ingestion_pipeline.add_pipe(self.pipes.parsing_pipe)
-        ingestion_pipeline.add_pipe(self.pipes.kg_pipe)
-        ingestion_pipeline.add_pipe(self.pipes.kg_storage_pipe)
-        # ingestion_pipeline.add_pipe(self.pipes.vector_storage_pipe)
+
+        ingestion_pipeline.add_pipe(
+            pipe=self.pipes.parsing_pipe, parsing_pipe=True
+        )
+
+        ingestion_pipeline.add_pipe(
+            self.pipes.embedding_pipe, embedding_pipe=True
+        )
+        ingestion_pipeline.add_pipe(
+            self.pipes.vector_storage_pipe, embedding_pipe=True
+        )
+
+        ingestion_pipeline.add_pipe(self.pipes.kg_pipe, kg_pipe=True)
+        ingestion_pipeline.add_pipe(self.pipes.kg_storage_pipe, kg_pipe=True)
+
         return ingestion_pipeline
 
     def create_search_pipeline(self, *args, **kwargs) -> SearchPipeline:
