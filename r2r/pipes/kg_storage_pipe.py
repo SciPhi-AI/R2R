@@ -56,7 +56,7 @@ class R2RKGStoragePipe(LoggableAsyncPipe):
         try:
             for extraction in kg_extractions:
                 for triple in extraction.triples:
-                    self.graph_store.upsert_triplet(
+                    self.kg_provider.upsert_triplet(
                         triple.subject, triple.predicate, triple.object
                     )
         except Exception as e:
