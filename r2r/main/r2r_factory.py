@@ -86,7 +86,7 @@ class R2RProviderFactory:
             raise ValueError(
                 f"Embedding provider {embedding.provider} not supported"
             )
-            
+
         return embedding_provider
 
     def create_eval_provider(

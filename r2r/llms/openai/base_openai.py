@@ -118,7 +118,9 @@ class OpenAILLM(LLMProvider):
             raise ValueError(
                 "Stream must be set to False to use the `aget_completion` method."
             )
-        return await self._aget_completion(messages, generation_config, **kwargs)
+        return await self._aget_completion(
+            messages, generation_config, **kwargs
+        )
 
     async def _aget_completion(
         self,
@@ -140,4 +142,3 @@ class OpenAILLM(LLMProvider):
         args = {**args, **kwargs}
         # Create the chat completion
         return await self.client.chat.completions.create(**args)
-

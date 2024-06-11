@@ -22,7 +22,7 @@ class LiteLLM(LLMProvider):
         **kwargs,
     ) -> None:
         try:
-            from litellm import completion, acompletion
+            from litellm import acompletion, completion
 
             self.litellm_completion = completion
             self.litellm_acompletion = acompletion
@@ -106,7 +106,6 @@ class LiteLLM(LLMProvider):
         }
         return args
 
-
     async def aget_completion(
         self,
         messages: list[dict],
@@ -117,7 +116,9 @@ class LiteLLM(LLMProvider):
             raise ValueError(
                 "Stream must be set to False to use the `aget_completion` method."
             )
-        return await self._aget_completion(messages, generation_config, **kwargs)
+        return await self._aget_completion(
+            messages, generation_config, **kwargs
+        )
 
     async def _aget_completion(
         self,
