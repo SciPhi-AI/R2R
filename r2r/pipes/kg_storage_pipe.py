@@ -382,25 +382,26 @@ class R2RKGStoragePipe(LoggableAsyncPipe):
             *args,
             **kwargs,
         )
-        user = os.getenv("NEO4J_USER")
-        password = os.getenv("NEO4J_PASSWORD")
-        url = os.getenv("NEO4J_URL")
-        database = os.getenv("NEO4J_DATABASE")
-        if not all([user, password, url, database]):
-            raise ValueError(
-                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, and POSTGRES_DBNAME environment variables."
-            )
-        try:
-            self.graph_store = Neo4jGraphStore(
-                username=user,
-                password=password,
-                url=url,
-                database=database,
-            )
-        except Exception as e:
-            raise ValueError(
-                f"Error {e} occurred while attempting to connect to the pgvector provider with user={user}, password={password}, url={url}, database={database}."
-            )
+        if config.provider == "neo4j":
+            user = os.getenv("NEO4J_USER")
+            password = os.getenv("NEO4J_PASSWORD")
+            url = os.getenv("NEO4J_URL")
+            database = os.getenv("NEO4J_DATABASE")
+            if not all([user, password, url, database]):
+                raise ValueError(
+                    "Error, please set the NEO4J_USER, NEO4J_PASSWORD, NEO4J_URL, NEO4J_DATABASE environment variables."
+                )
+            try:
+                self.graph_store = Neo4jGraphStore(
+                    username=user,
+                    password=password,
+                    url=url,
+                    database=database,
+                )
+            except Exception as e:
+                raise ValueError(
+                    f"Error {e} occurred while attempting to connect to the pgvector provider with user={user}, password={password}, url={url}, database={database}."
+                )
 
         self.storage_batch_size = storage_batch_size
 
