@@ -10,7 +10,7 @@ set -eo pipefail
 # Set current working directory to the directory of the script
 cd "$(dirname "$0")"
 
-dockerImage="emrgntcmplxty/r2r:2.0.15"
+dockerImage="emrgntcmplxty/r2r:latest"
 
 # Function to check if a command exists
 command_exists() {
