@@ -27,7 +27,7 @@ class PGVectorDB(VectorDBProvider):
             import r2r.vecs
         except ImportError:
             raise ValueError(
-                f"Error, PGVectorDB requires the vecs library. Please run `poetry add vecs`."
+                f"Error, PGVectorDB requires the vecs library. Please run `pip install vecs`."
             )
         user = os.getenv("POSTGRES_USER")
         password = os.getenv("POSTGRES_PASSWORD")
@@ -124,9 +124,30 @@ class PGVectorDB(VectorDBProvider):
             LEAST(match_limit, 30);
         $$;
         """
-        with self.vx.Session() as sess:
-            sess.execute(text(hybrid_search_function))
-            sess.commit()
+        retry_attempts = 5
+        for attempt in range(retry_attempts):
+            try:
+                with self.vx.Session() as sess:
+                    # Acquire an advisory lock
+                    sess.execute(text("SELECT pg_advisory_lock(123456789)"))
+                    try:
+                        sess.execute(text(hybrid_search_function))
+                        sess.commit()
+                    finally:
+                        # Release the advisory lock
+                        sess.execute(
+                            text("SELECT pg_advisory_unlock(123456789)")
+                        )
+                break  # Break the loop if successful
+            except sqlalchemy.exc.InternalError as e:
+                if "tuple concurrently updated" in str(e):
+                    time.sleep(2**attempt)  # Exponential backoff
+                else:
+                    raise  # Re-raise the exception if it's not a concurrency issue
+        else:
+            raise RuntimeError(
+                "Failed to create hybrid search function after multiple attempts"
+            )
 
     def copy(self, entry: VectorEntry, commit=True) -> None:
         if self.collection is None:

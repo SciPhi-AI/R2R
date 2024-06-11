@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 from r2r.core import (
@@ -15,11 +17,11 @@ from r2r.core import (
 
 
 class R2RProviders(BaseModel):
-    vector_db: VectorDBProvider
-    embedding: EmbeddingProvider
-    llm: LLMProvider
-    prompt: PromptProvider
-    eval: EvalProvider
+    vector_db: Optional[VectorDBProvider]
+    embedding: Optional[EmbeddingProvider]
+    llm: Optional[LLMProvider]
+    prompt: Optional[PromptProvider]
+    eval: Optional[EvalProvider]
 
     class Config:
         arbitrary_types_allowed = True
@@ -33,6 +35,8 @@ class R2RPipes(BaseModel):
     rag_pipe: LoggableAsyncPipe
     streaming_rag_pipe: LoggableAsyncPipe
     eval_pipe: LoggableAsyncPipe
+    kg_pipe: LoggableAsyncPipe
+    kg_storage_pipe: LoggableAsyncPipe
 
     class Config:
         arbitrary_types_allowed = True

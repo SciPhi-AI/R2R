@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "r2r"
-version = "0.2.1"
+version = "0.2.13"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
@@ -61,6 +61,7 @@ openai = "^1.11.1"
 # integrations
 ionic-api-sdk = {version = "0.9.3", optional = true}
 exa-py = {version = "^1.0.9", optional = true}
+dateutils = "^0.6.12"
 
 [tool.poetry.extras]
 all = ["tiktoken", "sentence-transformers"]

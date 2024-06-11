@@ -4,8 +4,8 @@
 
 We can start by using `pip` to install R2R with the local-embeddding dependencies:
 
-```bash
-pip install r2r[local-embedding]
+```bash filename="bash" copy
+pip install 'r2r[local-embedding]'
 ```
 
 R2R supports  `Ollama`, a popular tool for Local LLM inference. Ollama is provided through a connection managed by the `litellm` library.
@@ -23,16 +23,36 @@ To streamline this process, we've provided pre-configured local settings in the 
 
 ```json
 {
-    "embedding": {
-      "provider": "sentence-transformers",
-      "search_model": "all-MiniLM-L6-v2",
-      "dimension": 384,
-      "batch_size": 32
+  "embedding": {
+    "provider": "sentence-transformers",
+    "base_model": "all-MiniLM-L6-v2",
+    "base_dimension": 384,
+    "batch_size": 32
+  },
+  "eval": {
+    "provider": "local",
+    "frequency": 0.0,
+    "llm":{
+      "provider": "litellm"
     }
+  },
+  "ingestion":{
+    "selected_parsers": {
+      "csv": "default",
+      "docx": "default",
+      "html": "default",
+      "json": "default",
+      "md": "default",
+      "pdf": "default",
+      "pptx": "default",
+      "txt": "default",
+      "xlsx": "default"
+    }
+  }
 }
 ```
 
-You may also modify the configuration defaults for ingestion, logging, and your vector database provider in a similar manner. More information on these settings are included in this tutorial and throughout the documentation.
+You may also modify the configuration defaults for ingestion, logging, and your vector database provider in a similar manner. More information on these settings are included in this coookbook and throughout the documentation.
 
 This chosen config modification above instructs R2R to use the `sentence-transformers` library for embeddings with the `all-MiniLM-L6-v2` model, turns off evals, and sets the LLM provider to `ollama`. During ingestion, the default is to split documents into chunks of 512 characters with 20 characters of overlap between chunks. 
 
@@ -41,7 +61,7 @@ A local vector database will be used to store the embeddings. The current defaul
 ### Server Standup
 
 
-```bash
+```bash filename="bash" copy
 # cd $WORKDIR
 python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config local_ollama --pipeline_type qna
 ```
@@ -56,7 +76,7 @@ The server exposes a REST API for interacting with the R2R RAG pipeline and appl
 
 To run R2R using Docker, you can use the following commands:
 
-```bash
+```bash filename="bash" copy
 docker pull emrgntcmplxty/r2r:latest
 ```
 
@@ -64,14 +84,14 @@ This will pull the latest R2R Docker image.
 
 Then, run the container with:
 
-```bash
+```bash filename="bash" copy
 docker run -d \
   --name r2r \
   --add-host=host.docker.internal:host-gateway \
   -p 8000:8000 \
   -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
   -e CONFIG_OPTION=local_ollama \
-  r2r:latest
+  emrgntcmplxty/r2r:latest
 ```
 
 This command starts the R2R container with the following options:
@@ -81,7 +101,7 @@ This command starts the R2R container with the following options:
 - `-p 8000:8000`: Maps port 8000 of the container to port 8000 of the host.
 - `-e OLLAMA_API_BASE=http://host.docker.internal:11434`: Specifies the Ollama API base URL.
 - `-e CONFIG_OPTION=local_ollama`: Selects the "local_ollama" configuration option.
-- `r2r:latest`: Specifies the Docker image to use.
+- `emrgntcmplxty/r2r:latest`: Specifies the Docker image to use.
 
 </details>
 
@@ -91,8 +111,8 @@ With our environment set up and our server running in a separate process, we're 
 
 Run this command to ingest the document:
 
-```bash
-poetry run python -m r2r.examples.demo ingest_as_files --no-images=true --client_server_mode
+```bash filename="bash" copy
+python -m r2r.examples.demo ingest_as_files --no-images=true --client_server_mode
 ```
 
 The output should look something like this:
@@ -127,15 +147,16 @@ Time for the fun part—asking questions!
 
 To query our knowledge base using Ollama, first ensure that you have started the Ollama server with this command in the terminal:
 
-```bash
+```bash filename="bash" copy
 ollama serve llama2
 ```
 
 Then, to ask a question, run:
 
-```bash
+```bash filename="bash" copy
 python -m r2r.examples.demo rag \
   --query="What contributions did Aristotle make to biology?" \
+  --client_server_mode \
   --rag_generation_config='{"model": "ollama/llama2"}'
 ```
 

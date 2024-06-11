@@ -705,9 +705,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
                 document_info.size_in_bytes = files[it].size
                 document_info.updated_at = datetime.now()
-                document_info.metadata["title"] = files[it].filename.split(
-                    os.path.sep
-                )[-1]
+
+                title = files[it].filename.split(os.path.sep)[-1]
+                document_info.title = title
+                document_info.metadata["title"] = title
+
                 documents_info_modified.append(document_info)
 
             await self.aingest_files(
@@ -765,7 +767,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         status_code=400,
                         detail="Number of ids does not match number of files.",
                     )
-                if len(ids_list) != len(metadatas):
+                if metadatas and len(metadatas) != len(files):
                     raise HTTPException(
                         status_code=400,
                         detail="Number of metadata entries does not match number of files.",

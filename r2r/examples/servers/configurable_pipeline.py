@@ -27,6 +27,12 @@ CONFIG_OPTIONS = {
     "local_ollama": os.path.join(
         current_file_path, "..", "configs", "local_ollama.json"
     ),
+    "local_ollama_rerank": os.path.join(
+        current_file_path, "..", "configs", "local_ollama_rerank.json"
+    ),
+    "pgvector": os.path.join(
+        current_file_path, "..", "configs", "pgvector.json"
+    ),
 }
 
 
@@ -39,6 +45,7 @@ class PipelineType(Enum):
 def r2r_app(
     config_name: str = "default",
     pipeline_type: PipelineType = PipelineType.QNA,
+    no_images: bool = False,
 ) -> FastAPI:
     config_name = os.getenv("CONFIG_OPTION") or config_name
 

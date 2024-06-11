@@ -20,8 +20,8 @@ def mock_file():
             "app": {"max_file_size_in_mb": 128},
             "embedding": {
                 "provider": "example_provider",
-                "search_model": "model",
-                "search_dimension": 128,
+                "base_model": "model",
+                "base_dimension": 128,
                 "batch_size": 16,
                 "text_splitter": "default",
             },
@@ -77,8 +77,8 @@ def test_r2r_config_deserialization(mock_file, mock_redis_client):
         "app": {"max_file_size_in_mb": 128},
         "embedding": {
             "provider": "example_provider",
-            "search_model": "model",
-            "search_dimension": 128,
+            "base_model": "model",
+            "base_dimension": 128,
             "batch_size": 16,
             "text_splitter": "default",
         },
@@ -106,8 +106,8 @@ def test_r2r_config_missing_section():
     invalid_data = {
         "embedding": {
             "provider": "example_provider",
-            "search_model": "model",
-            "search_dimension": 128,
+            "base_model": "model",
+            "base_dimension": 128,
             "batch_size": 16,
             "text_splitter": "default",
         }
@@ -121,8 +121,8 @@ def test_r2r_config_missing_required_key():
     invalid_data = {
         "app": {"max_file_size_in_mb": 128},
         "embedding": {
-            "search_model": "model",
-            "search_dimension": 128,
+            "base_model": "model",
+            "base_dimension": 128,
             "batch_size": 16,
             "text_splitter": "default",
         },

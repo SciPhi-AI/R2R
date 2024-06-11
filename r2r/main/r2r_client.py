@@ -60,8 +60,8 @@ class R2RClient:
 
     def ingest_files(
         self,
-        metadatas: Optional[list[dict]],
         files: list[str],
+        metadatas: Optional[list[dict]] = None,
         ids: Optional[list[str]] = None,
         user_ids: Optional[list[str]] = None,
     ) -> dict:
@@ -105,9 +105,9 @@ class R2RClient:
 
     def update_files(
         self,
-        metadatas: Optional[list[dict]],
         files: list[str],
         ids: list[str],
+        metadatas: Optional[list[dict]] = None,
     ) -> dict:
         url = f"{self.base_url}/update_files"
         files_to_upload = [
@@ -216,26 +216,30 @@ class R2RClient:
         search_limit: int = 10,
         rag_generation_config: Optional[dict] = None,
     ) -> Generator[str, None, None]:
+        async def run_async_generator():
+            async for chunk in self._stream_rag(
+                message=message,
+                search_filters=search_filters,
+                search_limit=search_limit,
+                rag_generation_config=rag_generation_config,
+            ):
+                yield chunk
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        async_gen = self._stream_rag(
-            message=message,
-            search_filters=search_filters,
-            search_limit=search_limit,
-            rag_generation_config=rag_generation_config,
-        )
-        for chunk in loop.run_until_complete(
-            self._iterate_async_gen(async_gen)
-        ):
-            yield chunk
 
-    async def _iterate_async_gen(
-        self, async_gen: AsyncGenerator[str, None]
-    ) -> list[str]:
-        chunks = []
-        async for chunk in async_gen:
-            chunks.append(chunk)
-        return chunks
+        # Run the async generator and yield each chunk synchronously
+        async_gen = run_async_generator()
+
+        try:
+            while True:
+                # Fetch the next chunk from the async generator
+                chunk = loop.run_until_complete(async_gen.__anext__())
+                yield chunk
+        except StopAsyncIteration:
+            pass
+        finally:
+            loop.close()
 
     def delete(
         self, keys: list[str], values: list[Union[bool, int, str]]

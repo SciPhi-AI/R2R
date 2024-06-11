@@ -1,8 +1,28 @@
 {
   "embedding": {
     "provider": "sentence-transformers",
-    "search_model": "all-MiniLM-L6-v2",
-    "dimension": 384,
+    "base_model": "all-MiniLM-L6-v2",
+    "base_dimension": 384,
     "batch_size": 32
+  },
+  "eval": {
+    "provider": "local",
+    "frequency": 0.0,
+    "llm":{
+      "provider": "litellm"
+    }
+  },
+  "ingestion":{
+    "selected_parsers": {
+      "csv": "default",
+      "docx": "default",
+      "html": "default",
+      "json": "default",
+      "md": "default",
+      "pdf": "default",
+      "pptx": "default",
+      "txt": "default",
+      "xlsx": "default"
+    }
   }
 }

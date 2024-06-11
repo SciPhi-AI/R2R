@@ -53,7 +53,7 @@ class R2RVectorSearchPipe(SearchPipe):
         query_vector = self.embedding_provider.get_embedding(
             message,
         )
-        search_generator = (
+        search_results = (
             self.vector_db_provider.hybrid_search(
                 query_vector=query_vector,
                 query_text=message,
@@ -68,7 +68,10 @@ class R2RVectorSearchPipe(SearchPipe):
             )
         )
 
-        for result in search_generator:
+        reranked_results = self.embedding_provider.rerank(
+            query=message, results=search_results
+        )
+        for result in reranked_results:
             result.metadata["associatedQuery"] = message
             results.append(result)
             yield result

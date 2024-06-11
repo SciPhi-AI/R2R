@@ -11,16 +11,16 @@ from r2r.embeddings import (
 def openai_provider():
     config = EmbeddingConfig(
         provider="openai",
-        search_model="text-embedding-3-small",
-        search_dimension=1536,
+        base_model="text-embedding-3-small",
+        base_dimension=1536,
     )
     return OpenAIEmbeddingProvider(config)
 
 
 def test_openai_initialization(openai_provider):
     assert isinstance(openai_provider, OpenAIEmbeddingProvider)
-    assert openai_provider.search_model == "text-embedding-3-small"
-    assert openai_provider.search_dimension == 1536
+    assert openai_provider.base_model == "text-embedding-3-small"
+    assert openai_provider.base_dimension == 1536
 
 
 def test_openai_invalid_provider_initialization():
@@ -68,8 +68,8 @@ def test_openai_tokenize_string(openai_provider):
 def sentence_transformer_provider():
     config = EmbeddingConfig(
         provider="sentence-transformers",
-        search_model="mixedbread-ai/mxbai-embed-large-v1",
-        search_dimension=512,
+        base_model="mixedbread-ai/mxbai-embed-large-v1",
+        base_dimension=512,
         rerank_model="jinaai/jina-reranker-v1-turbo-en",
         rerank_dimension=384,
     )

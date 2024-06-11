@@ -6,31 +6,38 @@ import uuid
 from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional
 
+from aiohttp import ClientError
+
 from r2r.core import (
     AsyncState,
-    EmbeddingProvider,
     Extraction,
     Fragment,
     FragmentType,
+    GenerationConfig,
+    KGExtraction,
     KVLoggingSingleton,
+    LLMProvider,
     LoggableAsyncPipe,
     PipeType,
+    PromptProvider,
     TextSplitter,
-    Vector,
     VectorEntry,
+    extract_entities,
+    extract_triples,
     generate_id_from_label,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class EmbeddingPipe(LoggableAsyncPipe):
+class KGPipe(LoggableAsyncPipe):
     class Input(LoggableAsyncPipe.Input):
         message: AsyncGenerator[Extraction, None]
 
     def __init__(
         self,
-        embedding_provider: EmbeddingProvider,
+        prompt_provider: PromptProvider,
+        llm_provider: LLMProvider,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[LoggableAsyncPipe.PipeConfig] = None,
@@ -44,7 +51,8 @@ class EmbeddingPipe(LoggableAsyncPipe):
             *args,
             **kwargs,
         )
-        self.embedding_provider = embedding_provider
+        self.prompt_provider = prompt_provider
+        self.llm_provider = llm_provider
 
     @abstractmethod
     async def fragment(
@@ -59,7 +67,9 @@ class EmbeddingPipe(LoggableAsyncPipe):
         pass
 
     @abstractmethod
-    async def embed(self, fragments: list[Fragment]) -> list[list[float]]:
+    async def extract_kg(
+        self, fragments: list[Fragment]
+    ) -> AsyncGenerator[Fragment, None]:
         pass
 
     @abstractmethod
@@ -74,16 +84,17 @@ class EmbeddingPipe(LoggableAsyncPipe):
         pass
 
 
-class R2REmbeddingPipe(EmbeddingPipe):
+class R2RKGPipe(KGPipe):
     """
     Embeds and stores documents using a specified embedding model and database.
     """
 
     def __init__(
         self,
-        embedding_provider: EmbeddingProvider,
+        llm_provider: LLMProvider,
+        prompt_provider: PromptProvider,
         text_splitter: TextSplitter,
-        embedding_batch_size: int = 1,
+        kg_batch_size: int = 1,
         id_prefix: str = "demo",
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
@@ -95,14 +106,15 @@ class R2REmbeddingPipe(EmbeddingPipe):
         Initializes the embedding pipe with necessary components and configurations.
         """
         super().__init__(
-            embedding_provider=embedding_provider,
+            prompt_provider=prompt_provider,
+            llm_provider=llm_provider,
             pipe_logger=pipe_logger,
             type=type,
             config=config
             or LoggableAsyncPipe.PipeConfig(name="default_embedding_pipe"),
         )
         self.text_splitter = text_splitter
-        self.embedding_batch_size = embedding_batch_size
+        self.kg_batch_size = kg_batch_size
         self.id_prefix = id_prefix
         self.pipe_run_info = None
 
@@ -134,20 +146,6 @@ class R2REmbeddingPipe(EmbeddingPipe):
                 document_id=extraction.document_id,
             )
             yield fragment
-            fragment_dict = fragment.dict()
-            await self.enqueue_log(
-                run_id=run_id,
-                key="fragment",
-                value=json.dumps(
-                    {
-                        "data": fragment_dict["data"],
-                        "document_id": str(fragment_dict["document_id"]),
-                        "extraction_id": str(fragment_dict["extraction_id"]),
-                        "fragment_id": str(fragment_dict["id"]),
-                    }
-                ),
-            )
-            iteration += 1
 
     async def transform_fragments(
         self, fragments: list[Fragment], metadatas: list[dict]
@@ -161,41 +159,75 @@ class R2REmbeddingPipe(EmbeddingPipe):
                 fragment.data = f"{prefix}\n{fragment.data}"
             yield fragment
 
-    async def embed(self, fragments: list[Fragment]) -> list[float]:
-        return await self.embedding_provider.async_get_embeddings(
-            [fragment.data for fragment in fragments],
-            EmbeddingProvider.PipeStage.BASE,
+    async def extract_kg(
+        self, fragment: Fragment, retries: int = 3, delay: int = 2
+    ) -> KGExtraction:
+        """
+        Extracts NER triples from a list of fragments with retries.
+        """
+        task_prompt = self.prompt_provider.get_prompt(
+            "ner_kg_extraction", inputs={"input_text": fragment.data}
         )
+        messages = self.prompt_provider._get_message_payload(
+            self.prompt_provider.get_prompt("default_system"), task_prompt
+        )
+        for attempt in range(retries):
+            try:
+                response = await self.llm_provider.aget_completion(
+                    messages, GenerationConfig(model="gpt-4o")
+                )
+                kg_extraction = response.choices[0].message.content
+
+                # Parsing JSON from the response
+                kg_json = json.loads(
+                    kg_extraction.split("```json")[1].split("```")[0]
+                )
+
+                entities_dict = kg_json.get("entities", {})
+                entities = extract_entities(entities_dict)
+
+                # Extract triples with detailed logging
+                triples = extract_triples(
+                    kg_json.get("triplets", []), entities_dict
+                )
+
+                # Create KG extraction object
+                return KGExtraction(entities=entities, triples=triples)
+            except (
+                ClientError,
+                json.JSONDecodeError,
+                KeyError,
+                IndexError,
+            ) as e:
+                logger.error(f"Error in extract_kg: {e}")
+                if attempt < retries - 1:
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(f"Failed after retries with {e}")
+                    # raise e  # Ensure the exception is raised after the final attempt
+
+        return KGExtraction(entities=[], triples=[])
 
     async def _process_batch(
         self, fragment_batch: list[Fragment]
-    ) -> list[VectorEntry]:
+    ) -> list[KGExtraction]:
         """
         Embeds a batch of fragments and yields vector entries.
         """
-        vectors = await self.embed(fragment_batch)
-        return [
-            VectorEntry(
-                id=fragment.id,
-                vector=Vector(data=raw_vector),
-                metadata={
-                    "document_id": fragment.document_id,
-                    "extraction_id": fragment.extraction_id,
-                    "text": fragment.data,
-                    **fragment.metadata,
-                },
-            )
-            for raw_vector, fragment in zip(vectors, fragment_batch)
+        tasks = [
+            asyncio.create_task(self.extract_kg(fragment))
+            for fragment in fragment_batch
         ]
+        return await asyncio.gather(*tasks)
 
     async def _run_logic(
         self,
-        input: EmbeddingPipe.Input,
+        input: KGPipe.Input,
         state: AsyncState,
         run_id: uuid.UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[VectorEntry, None]:
+    ) -> AsyncGenerator[KGExtraction, None]:
         """
         Executes the embedding pipe: chunking, transforming, embedding, and storing documents.
         """
@@ -213,7 +245,7 @@ class R2REmbeddingPipe(EmbeddingPipe):
                     extraction.document_id
                 ]
                 fragment_batch.append(fragment)
-                if len(fragment_batch) >= self.embedding_batch_size:
+                if len(fragment_batch) >= self.kg_batch_size:
                     # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
                     batch_tasks.append(
                         self._process_batch(fragment_batch.copy())
@@ -230,5 +262,5 @@ class R2REmbeddingPipe(EmbeddingPipe):
         # Process tasks as they complete
         for task in asyncio.as_completed(batch_tasks):
             batch_result = await task  # Wait for the next task to complete
-            for vector_entry in batch_result:
-                yield vector_entry
+            for kg_extraction in batch_result:
+                yield kg_extraction
