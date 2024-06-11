@@ -231,4 +231,5 @@ class R2REmbeddingPipe(EmbeddingPipe):
         for task in asyncio.as_completed(batch_tasks):
             batch_result = await task  # Wait for the next task to complete
             for vector_entry in batch_result:
+                print("yielding vector_entry =", vector_entry)
                 yield vector_entry

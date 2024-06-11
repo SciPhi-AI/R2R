@@ -173,6 +173,7 @@ class R2RKGPipe(KGPipe):
         )
         for attempt in range(retries):
             try:
+                print("attempting with messages = ", messages)
                 response = self.llm_provider.get_completion(
                     messages, GenerationConfig(model="gpt-4o")
                 )
@@ -214,6 +215,7 @@ class R2RKGPipe(KGPipe):
         """
         Embeds a batch of fragments and yields vector entries.
         """
+        print("_process_batch, fragment_batch = ", fragment_batch)
         kg_extractions = []
         for fragment in fragment_batch:
             kg_extraction = await self.extract_kg(fragment)
@@ -244,6 +246,7 @@ class R2RKGPipe(KGPipe):
                 extraction.metadata["chunk_order"] = fragment_info[
                     extraction.document_id
                 ]
+                print("fragment = ", fragment)
                 fragment_batch.append(fragment)
                 if len(fragment_batch) >= self.embedding_batch_size:
                     # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
@@ -263,4 +266,5 @@ class R2RKGPipe(KGPipe):
         for task in asyncio.as_completed(batch_tasks):
             batch_result = await task  # Wait for the next task to complete
             for kg_extraction in batch_result:
+                print("yielding kg_extraction = ", kg_extraction)
                 yield kg_extraction
