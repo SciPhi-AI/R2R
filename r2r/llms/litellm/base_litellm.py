@@ -22,9 +22,10 @@ class LiteLLM(LLMProvider):
         **kwargs,
     ) -> None:
         try:
-            from litellm import completion
+            from litellm import completion, acompletion
 
             self.litellm_completion = completion
+            self.litellm_acompletion = acompletion
         except ImportError:
             raise ImportError(
                 "Error, `litellm` is required to run a LiteLLM. Please install it using `pip install litellm`."
@@ -104,3 +105,37 @@ class LiteLLM(LLMProvider):
             "max_tokens": generation_config.max_tokens_to_sample,
         }
         return args
+
+
+    async def aget_completion(
+        self,
+        messages: list[dict],
+        generation_config: GenerationConfig,
+        **kwargs,
+    ) -> LLMChatCompletion:
+        if generation_config.stream:
+            raise ValueError(
+                "Stream must be set to False to use the `aget_completion` method."
+            )
+        return await self._aget_completion(messages, generation_config, **kwargs)
+
+    async def _aget_completion(
+        self,
+        messages: list[dict],
+        generation_config: GenerationConfig,
+        **kwargs,
+    ) -> Union[LLMChatCompletion, LLMChatCompletionChunk]:
+        """Asynchronously get a completion from the OpenAI API based on the provided messages."""
+
+        # Create a dictionary with the default arguments
+        args = self._get_base_args(generation_config)
+
+        args["messages"] = messages
+
+        # Conditionally add the 'functions' argument if it's not None
+        if generation_config.functions is not None:
+            args["functions"] = generation_config.functions
+
+        args = {**args, **kwargs}
+        # Create the chat completion
+        return await self.litellm_acompletion(**args)
