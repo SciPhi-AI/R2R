@@ -19,7 +19,7 @@
     "rerank_model": "None"
   },
   "kg": {
-    "provider": "None",
+    "provider": "neo4j",
     "batch_size": 1,
     "text_splitter": {
       "type": "recursive_character",

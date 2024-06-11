@@ -131,7 +131,9 @@ class AnalysisTypes(BaseModel):
             else None
         )
         std_dev = round(statistics.stdev(values) if len(values) > 1 else 0, 3)
-        variance = round(statistics.variance(values) if len(values) > 1 else 0, 3)
+        variance = round(
+            statistics.variance(values) if len(values) > 1 else 0, 3
+        )
 
         return {
             "Mean": mean,
