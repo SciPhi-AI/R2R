@@ -24,7 +24,7 @@ For a more complete view of R2R, check out our [documentation](https://r2r-docs.
 - **🔗 Graph RAG**: Automatically extract relationships and build knowledge graphs.
 - **🗂️ App Management**: Efficiently manage documents and users with rich observability and analytics.
 - **🌐 Client-Server**: RESTful API support out of the box.
-- **🧩 Configurable**: Provision your application using intuitive configuration files..
+- **🧩 Configurable**: Provision your application using intuitive configuration files.
 - **🔌 Extensible**: Develop your application further with easy builder + factory pattern.
 - **🖥️ Dashboard**: Use the [R2R Dashboard](https://github.com/SciPhi-AI/R2R-Dashboard), an open-source React+Next.js app for a user-friendly interaction with your pipelines.
 
