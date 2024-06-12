@@ -11,8 +11,5 @@
   },
   "providers": {
     "title": "Providers"
-  },
-  "development": {
-    "title": "Development"
   }
 }
