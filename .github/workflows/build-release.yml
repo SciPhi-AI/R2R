@@ -1,67 +1,43 @@
-name: Deploy Docker on Release
+name: Links
 
 on:
-  release:
-    types: [created]
-  workflow_dispatch:
-    inputs:
-      tag_name:
-        description: 'Release tag name'
-        required: true
-        default: 'latest' # Provide a default value if needed
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "00 18 * * *"
 
 jobs:
-  build-and-push-docker:
+  linkChecker:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4
-        
-      # Determine Tag Name based on trigger event
-      - name: Set Dynamic Tag Name
-        id: set_tag
+      - uses: actions/checkout@v2
+
+      - name: Link Checker
+        id: lychee
+        uses: lycheeverse/lychee-action@v1
+        continue-on-error: true
+        with:
+          args: "--output ./docs/lychee/out.md --config ./docs/.lycheerc"
+
+      - name: Get Lychee Exit Code
+        id: get-exit-code
+        run: echo "lychee_exit_code=$?" >> $GITHUB_ENV
+
+      - name: Create Custom Report
+        if: failure()
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "::set-output name=TAG_NAME::${{ github.event.inputs.tag_name }}"
-          else
-            echo "::set-output name=TAG_NAME::${{ github.event.release.tag_name }}"
-          fi
-          
-      # Setup gcloud
-      - name: Google Auth
-        uses: 'google-github-actions/auth@v2'
-        with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
-          
-      - name: Set up Cloud SDK
-        uses: 'google-github-actions/setup-gcloud@v2'
-        
-      - name: Configure SDK
-        run: 'gcloud auth configure-docker us-east1-docker.pkg.dev'      
+          echo "Lychee doesn't play nice with relative imports for .mdx files. Add a link to the .lycheeignore if needed!" > ./docs/lychee/custom_report.md
+          echo "" >> ./docs/lychee/custom_report.md
+          cat ./docs/lychee/out.md >> ./docs/lychee/custom_report.md
 
-      # Setup Docker
-      - name: Docker Auth
-        uses: docker/login-action@v1
+      - name: Create Issue From File
+        if: failure()
+        uses: peter-evans/create-issue-from-file@v4
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-          
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      # Publish images
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-            emrgntcmplxty/r2r:latest
-            emrgntcmplxty/r2r:${{ steps.set_tag.outputs.TAG_NAME }}
-            us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r:latest
-            us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r:${{ steps.set_tag.outputs.TAG_NAME }}
-          platforms: linux/amd64,linux/arm64
+          title: Link Checker Report
+          content-filepath: ./docs/lychee/custom_report.md
+          labels: report, automated issue
