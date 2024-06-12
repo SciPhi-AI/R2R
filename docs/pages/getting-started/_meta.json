@@ -1,6 +1,6 @@
 {
-  "quick-install": "Quick Install",
-  "r2r-demo": "R2R Demo",
+  "installation": "Installation",
+  "quickstart": "Quickstart",
   "app-api": {
     "title": "Application API",
     "theme": {
