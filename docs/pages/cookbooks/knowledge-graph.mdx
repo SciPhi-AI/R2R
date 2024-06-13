@@ -1,0 +1,293 @@
+import { Callout, FileTree } from 'nextra/components'
+
+## Building a Knowledge Graph with R2R
+
+This cookbook explains how to configure R2R to automatically construct a knowledge graph from ingested files. The constructed graph can be used later as an additional knowledge base for your RAG application.
+
+### Setup
+
+To enable R2R knowledge graph construction, specify a provider for `kg` in your `config.json`. The following code can be found in `r2r/examples/configs/neo4j_kg.json` and contains the necessary settings for RAG graph construction:
+
+```json filename="neo4j_kg.json" copy
+{
+  "kg": {
+    "provider": "neo4j",
+    "batch_size": 1,
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 2048,
+      "chunk_overlap": 0
+    }
+  }
+}
+```
+
+By selecting a provider, the default R2R `IngestionPipeline` will include functionality for simultaneous knowledge graph and embedding construction during ingestion. Setting `batch_size=1` means chunks will be processed one at a time, and setting `chunk_size=2048` defines the size of chunks used during extraction. The key logic controlling this workflow can be seen in the `kg_pipe.py` and `kg_storage.py` files, managed by the `R2RPipelineFactory` class.
+
+In addition to setting the provider, we must set valid environment variables to enable communication with the Neo4j database. For this cookbook, we assume the reader has already downloaded the desktop application [found here](https://neo4j.com/download) and has properly enabled the `APOC` library.
+
+```bash
+export NEO4J_USER=neo4j
+export NEO4J_PASSWORD=password
+export NEO4J_URL=bolt://localhost:7687
+export NEO4J_DATABASE=neo4j
+```
+
+<details>
+<summary>Relevant Factory Source Code</summary>
+
+```python filename="r2r_factory.py" copy
+class R2RPipelineFactory:
+  ...
+  def create_ingestion_pipeline(self, *args, **kwargs) -> IngestionPipeline:
+      """Factory method to create an ingestion pipeline."""
+      ingestion_pipeline = IngestionPipeline()
+
+      ingestion_pipeline.add_pipe(
+          pipe=self.pipes.parsing_pipe, parsing_pipe=True
+      )
+      # Add embedding pipes if provider is set
+      if self.config.embedding.provider:
+          ingestion_pipeline.add_pipe(
+              self.pipes.embedding_pipe, embedding_pipe=True
+          )
+          ingestion_pipeline.add_pipe(
+              self.pipes.vector_storage_pipe, embedding_pipe=True
+          )
+      # Add KG pipes if provider is set
+      if self.config.kg.provider:
+          ingestion_pipeline.add_pipe(self.pipes.kg_pipe, kg_pipe=True)
+          ingestion_pipeline.add_pipe(
+              self.pipes.kg_storage_pipe, kg_pipe=True
+          )
+
+      return ingestion_pipeline
+```
+</details>
+
+### Implementation
+
+We are now ready to implement our knowledge graph construction. By default, when running with the configuration above, triples will be extracted and stored to express our graph data. A triple consists of three components: a subject, a predicate, and an object.
+
+First, pass the selected configuration into the R2R constructor:
+
+```python filename="r2r/examples/scripts/build_yc_kg.py"
+def main(max_entries=50, delete=False):
+  # Load the R2R configuration and build the app
+  this_file_path = os.path.abspath(os.path.dirname(__file__))
+  config_path = os.path.join(this_file_path, "..", "configs", "neo4j_kg.json")
+  config = R2RConfig.from_json(config_path)
+  r2r = R2RAppBuilder(config).build()
+```
+
+Now that we have created a properly configured instance of R2R, we can move on to prepping the graph.
+
+In this cookbook, we will ingest startup data from the YCombinator company directory. The default prompt for knowledge graph construction, `ner_kg_extraction`, can be found in `prompts/local/defaults.jsonl`. It constructs the graph in a way that is agnostic to the input data. For this example, we will overwrite this prompt with one that contains specific entities and predicates relevant to startups. After doing so, we will be ready to start ingesting data:
+
+```python filename="r2r/examples/scripts/build_yc_kg.py"
+# Get the providers
+kg_provider = r2r.providers.kg
+prompt_provider = r2r.providers.prompt
+
+# Update the prompt for the NER KG extraction task
+ner_kg_extraction_with_spec = prompt_provider.get_prompt(
+    "ner_kg_extraction_with_spec"
+)
+
+# Newline-separated list of entity types, with optional subcategories
+entity_types = """organization
+subcategories: company, school, non-profit, other
+location
+subcategories: city, state, country, other
+person
+position
+date
+subcategories: year, month, day, batch (e.g. W24, S20), other
+quantity
+event
+subcategories: incorporation, funding_round, acquisition, launch, other
+industry
+media
+subcategories: email, website, twitter, linkedin, other
+product
+"""
+
+# Newline-separated list of predicates
+predicates = """
+# Founder / employee predicates
+EDUCATED_AT
+FOUNDER_OF
+ROLE_OF
+WORKED_AT
+# Company predicates
+FOUNDED_IN
+LOCATED_IN
+HAS_TEAM_SIZE
+REVENUE
+RAISED
+ACQUIRED_BY
+ANNOUNCED
+PARTICIPATED_IN
+# Product predicates
+USED_BY
+USES
+HAS_PRODUCT
+HAS_FEATURES
+HAS_OFFERS
+# Other
+INDUSTRY
+TECHNOLOGY
+GROUP_PARTNER
+ALIAS"""
+
+# Format the prompt to include the desired entity types and predicates
+ner_kg_extraction = ner_kg_extraction_with_spec.replace(
+    "{entity_types}", entity_types
+).replace("{predicates}", predicates)
+
+# Update the "ner_kg_extraction" prompt used in downstream pipes
+r2r.providers.prompt.update_prompt(
+    "ner_kg_extraction", json.dumps(ner_kg_extraction, ensure_ascii=False)
+)
+```
+
+Finally, we are ready to ingest data. The script includes code to scrape and ingest up to 1,000 companies from the YC directory. The relevant code for ingestion is shown below:
+
+```python filename="r2r/examples/scripts/build_yc_kg.py"
+i = 0
+# Ingest and clean the data for each company
+for company, url in url_map.items():
+    company_data = fetch_and_clean_yc_co_data(url)
+    if i >= max_entries:
+        break
+    # Wrap in a try block in case of network failure
+    try:
+        # Ingest as a text document
+        r2r.ingest_documents(
+            [
+                Document(
+                    id=generate_id_from_label(company),
+                    type="txt",
+                    data=company_data,
+                    metadata={},
+                )
+            ]
+        )
+    except:
+        continue
+    i += 1
+
+print_all_relationships(kg_provider)
+```
+
+Let's start by scraping one example to get an initial sense of the data quality produced by this technique.
+
+```bash
+python r2r/examples/scripts/build_yc_kg.py --max_entries=1
+```
+
+Running the command above will produce output like the following:
+
+```bash
+...
+company:Airbnb -[HAS]-> quantity:33,000 cities
+company:Airbnb -[HAS]-> quantity:192 countries
+company:Airbnb -[LOCATED_IN]-> location:city:Dublin
+company:Airbnb -[LOCATED_IN]-> location:city:London
+company:Airbnb -[LOCATED_IN]-> location:city:Barcelona
+company:Airbnb -[LOCATED_IN]-> location:city:Paris
+company:Airbnb -[LOCATED_IN]-> location:city:Milan
+company:Airbnb -[LOCATED_IN]-> location:city:Copenhagen
+company:Airbnb -[LOCATED_IN]-> location:city:Berlin
+company:Airbnb -[LOCATED_IN]-> location:city:Moscow
+company:Airbnb -[LOCATED_IN]-> location:city:São Paolo
+company:Airbnb -[LOCATED_IN]-> location:city:Sydney
+company:Airbnb -[LOCATED_IN]-> location:city:Singapore
+person:Brian Chesky -[ROLE_OF]-> position:CEO
+person:Brian Chesky -[FOUNDED]-> company:Airbnb
+position:CTO -[FOUNDED]-> company:Airbnb
+person:Brian Chesky -[LOCATED_IN]-> location:city:New York
+person:Brian Chesky -[EDUCATED_AT]-> school:Rhode Island School of Design
+person:Brian Chesky -[HAS]-> degree:Bachelor of Fine Arts in Industrial Design
+position:CTO -[ROLE_OF]-> position:CTO
+```
+
+Now, we are ready to run a larger ingestion:
+
+```bash
+poetry run python r2r/examples/scripts/build_yc_kg.py --delete --max_entries=50
+```
+
+
+After successful completion we will see a large printout showing the various connections that have been formed across our knowledge graph.
+
+Using the snippet that follows we can begin to explore the graph
+```python
+
+def execute_query(provider, query, params={}):
+    print(f"Executing query: {query}")
+    with provider.client.session(database=provider._database) as session:
+        result = session.run(query, params)
+        return [record.data() for record in result]
+
+```
+
+### Results
+
+Executing a few queries, we see outputs like the following:
+
+```bash
+## Locating all founders
+
+Executing query: 
+MATCH (p)-[:FOUNDED]->(c)
+WHERE p.id CONTAINS 'person:'
+RETURN p.id AS Founder, c.id AS Company
+ORDER BY c.id;
+
+results =  [{'Founder': 'person:Nathan Blecharczyk', 'Company': 'company:Airbnb'}, {'Founder': 'person:Brian Chesky', 'Company': 'company:Airbnb'}, {'Founder': 'person:Joanne Wang', 'Company': 'company:Airfront'}, {'Founder': 'person:Tommy Guo', 'Company': 'company:Airfront'}, {'Founder': 'person:Adam Tilton', 'Company': 'company:Aktive'}, {'Founder': 'person:Nicholas Charriere', 'Company': 'company:Axilla'}, {'Founder': 'person:Caitlin', 'Company': 'company:B2B marketing software startup'}, {'Founder': 'person:Timmy Galvin', 'Company': 'company:B2B marketing software startup'}, {'Founder': 'person:Pedro Pedruzzi', 'Company': 'company:BigoClub'}, {'Founder': 'person:Sam Lown', 'Company': 'company:Cabify'}, {'Founder': 'person:John Glasgow', 'Company': 'company:Campfire'}, {'Founder': 'person:Umur', 'Company': 'company:Citus Data'}, {'Founder': 'person:Umur Cubukcu', 'Company': 'company:Citus Data'}, {'Founder': 'person:Ozgun Erdogan', 'Company': 'company:Citus Data'}, {'Founder': 'person:Sourav', 'Company': 'company:ClinMD'}, {'Founder': 'person:Sidharth', 'Company': 'company:ClinMD'}, {'Founder': 'person:Michael', 'Company': 'company:Decipher'}, {'Founder': 'person:Rohan', 'Company': 'company:Decipher'}, {'Founder': 'person:Alex Liao', 'Company': 'company:Dragoneye'}, {'Founder': 'person:Adam', 'Company': 'company:Driver AI'}, {'Founder': 'person:Jimmy', 'Company': 'company:Driver AI'}, {'Founder': 'person:Daniel', 'Company': 'company:Driver AI'}, {'Founder': 'person:Peggy', 'Company': 'company:Ego'}, {'Founder': 'person:Vish', 'Company': 'company:Ego'}, {'Founder': 'person:Josh Strobel', 'Company': 'company:Envelope'}, {'Founder': 'person:Katelyn Strobel', 'Company': 'company:Envelope'}, {'Founder': 'person:Ben Reinhart', 'Company': 'company:Fam'}, {'Founder': 'person:Robert Cunningham', 'Company': 'company:Focal'}, {'Founder': 'person:Felix Wang', 'Company': 'company:Focal'}, {'Founder': 'person:Tom Blomfield', 'Company': 'company:GoCardless'}, {'Founder': 'person:Kris Pahuja', 'Company': 'company:Gyftgo'}, {'Founder': 'person:Sourav Choraria', 'Company': 'company:Infinity'}, {'Founder': 'person:Daniel Hensley', 'Company': 'company:Infinity AI'}, {'Founder': 'person:Vedant Agarwala', 'Company': 'company:Instano'}, {'Founder': 'person:Jason Kerkvliet', 'Company': 'company:LifestyleRx'}, {'Founder': 'person:Brendan Byrne', 'Company': 'company:LifestyleRx'}, {'Founder': 'person:Daniel Pfingstgraef', 'Company': 'company:LifestyleRx'}, {'Founder': 'person:Marcelo Canovas', 'Company': 'company:Liv Up'}, {'Founder': 'person:Daniel Hensley', 'Company': 'company:Magnetic Insight'}, {'Founder': 'person:Saba Fazeli', 'Company': 'company:Momentum Foods'}, {'Founder': 'person:Jonas Templestein', 'Company': 'company:Monzo Bank'}, {'Founder': 'person:Tom Blomfield', 'Company': 'company:Monzo Bank'}, {'Founder': 'person:Suchit Dubey', 'Company': 'company:Narrative'}, {'Founder': 'person:Akshit Khurana', 'Company': 'company:Narrative'}, {'Founder': 'person:Sarah Najmark', 'Company': 'company:Osium AI'}, {'Founder': 'person:Luisa Bouneder', 'Company': 'company:Osium AI'}, {'Founder': 'person:Gabriele Venturi', 'Company': 'company:PandasAI'}, {'Founder': 'person:Justin Wu', 'Company': 'company:ProSights'}, {'Founder': 'person:Aaron Guo', 'Company': 'company:ProSights'}, {'Founder': 'person:Howard Zhong', 'Company': 'company:ProSights'}, {'Founder': 'person:Gabriel Banks', 'Company': 'company:Quill AI'}, {'Founder': 'person:Kartik Donepudi', 'Company': 'company:Quill AI'}, {'Founder': 'person:Adam Tilton', 'Company': 'company:Rithmio'}, {'Founder': 'person:Joe Gebbia', 'Company': 'company:Samara'}, {'Founder': 'person:Owen Colegrove', 'Company': 'company:SciPhi'}, {'Founder': 'person:Benjamen Oladokun', 'Company': 'company:Shekel Mobility'}, {'Founder': 'person:Sanmi Olukanmi', 'Company': 'company:Shekel Mobility'}, {'Founder': 'person:Esty Scheiner', 'Company': 'company:Shiboleth'}, {'Founder': 'person:Bivu Dhungana', 'Company': 'company:Shiboleth'}, {'Founder': 'person:Jess', 'Company': 'company:Sola'}, {'Founder': 'person:Neil', 'Company': 'company:Sola'}, {'Founder': 'person:Umur Cubukcu', 'Company': 'company:Ubicloud'}, {'Founder': 'person:Ozgun Erdogan', 'Company': 'company:Ubicloud'}, {'Founder': 'person:Daniel Farina', 'Company': 'company:Ubicloud'}, {'Founder': 'person:Naveed Janmohamed', 'Company': 'company:Unriddle'}, {'Founder': 'person:Luis Felipe Franco', 'Company': 'company:Vendah'}, {'Founder': 'person:Marcelo Canovas', 'Company': 'company:Vendah'}, {'Founder': 'person:Ilana Nasser', 'Company': 'company:Vendah'}, {'Founder': 'person:Pedro Pedruzzi', 'Company': 'company:Vendah'}, {'Founder': 'person:Sam', 'Company': 'organization:company:Cabify'}, {'Founder': 'person:Ozgun', 'Company': 'organization:company:Citus Data'}, {'Founder': 'person:Robert', 'Company': 'organization:company:Focal'}, {'Founder': 'person:Felix', 'Company': 'organization:company:Focal'}, {'Founder': 'person:Sam', 'Company': 'organization:company:Invopop'}, {'Founder': 'person:Jonathan Tiret', 'Company': 'organization:company:Upstream'}, {'Founder': 'person:Brian Chesky', 'Company': 'person:Joe Gebbia'}, {'Founder': 'person:Brian Chesky', 'Company': 'person:Nathan Blecharczyk'}, {'Founder': 'person:Jonathan Tiret', 'Company': 'product:Dino Gaïa'}, {'Founder': 'person:Ohad', 'Company': 'product:Octo'}, {'Founder': 'person:Nadav', 'Company': 'product:Octo'}, {'Founder': 'person:Louis Lecat', 'Company': 'product:Upstream'}, {'Founder': 'person:Jonathan Tiret', 'Company': 'product:Upstream'}]
+```
+
+
+```bash
+## Locating 2-time founders
+
+Executing query: 
+MATCH (p)-[:FOUNDED]->(c)
+WHERE p.id CONTAINS 'person:' AND c.id CONTAINS 'company:'
+WITH p.id AS Person, COUNT(c) AS CompaniesCount
+WHERE CompaniesCount > 1
+RETURN Person, CompaniesCount
+ORDER BY CompaniesCount DESC;
+
+results =  [{'Person': 'person:Marcelo Canovas', 'CompaniesCount': 2}, {'Person': 'person:Pedro Pedruzzi', 'CompaniesCount': 2}, {'Person': 'person:Adam Tilton', 'CompaniesCount': 2}, {'Person': 'person:Daniel Hensley', 'CompaniesCount': 2}, {'Person': 'person:Sam', 'CompaniesCount': 2}, {'Person': 'person:Umur Cubukcu', 'CompaniesCount': 2}, {'Person': 'person:Ozgun Erdogan', 'CompaniesCount': 2}, {'Person': 'person:Tom Blomfield', 'CompaniesCount': 2}]
+```
+
+
+
+```bash
+### Locating companeis with AI products
+
+Executing query: 
+MATCH (c)-[:HAS_PRODUCT]->(p)
+WHERE c.id CONTAINS 'company:' AND (p.id CONTAINS 'AI' OR p.id CONTAINS 'artificial-intelligence')
+RETURN c.id AS Company, p.id AS Product
+ORDER BY c.id;
+
+results =  [{'Company': 'company:AgentsForce', 'Product': 'product:AI support agents'}, {'Company': 'company:Airfront', 'Product': 'product:AI-first email platform'}, {'Company': 'company:CodeParrot AI', 'Product': 'product:CodeParrot AI'}, {'Company': 'company:Focal', 'Product': 'product:AI video creation tool'}, {'Company': 'company:Focal', 'Product': 'product:AI movie studio'}, {'Company': 'company:Narrative', 'Product': 'product:AI-powered invoice audit, payments and analytics tool'}, {'Company': 'company:Osium AI', 'Product': 'product:AI-powered software'}, {'Company': 'company:Relari', 'Product': 'product:Testing and simulation stack for GenAI systems'}, {'Company': 'company:Relari', 'Product': 'product:Testing and Simulation Stack for GenAI Systems'}, {'Company': 'company:ego', 'Product': 'product:AI-native 3D simulation engine'}, {'Company': 'organization:company:Focal', 'Product': 'product:AI movie studio'}, {'Company': 'organization:company:ego', 'Product': 'product:AI-native simulation/game engine'}]
+```
+
+```bash
+## Locating multi-industry companies
+
+Executing query: 
+MATCH (c)-[:INDUSTRY]->(i)
+WHERE c.id CONTAINS 'company:' AND i.id CONTAINS 'industry:'
+WITH c.id AS Company, COUNT(i) AS IndustriesCount
+WHERE IndustriesCount > 1
+RETURN Company, IndustriesCount
+ORDER BY IndustriesCount DESC;
+
+results =  [{'Company': 'company:Coperniq', 'IndustriesCount': 7}, {'Company': 'company:ProSights', 'IndustriesCount': 6}, {'Company': 'organization:company:Shiboleth', 'IndustriesCount': 5}, {'Company': 'company:Infinity', 'IndustriesCount': 5}, {'Company': 'company:Airfront', 'IndustriesCount': 5}, {'Company': 'organization:company:Piramidal', 'IndustriesCount': 5}, {'Company': 'company:Decipher', 'IndustriesCount': 5}, {'Company': 'company:Choppy!', 'IndustriesCount': 5}, {'Company': 'organization:company:inBuild', 'IndustriesCount': 5}, {'Company': 'organization:company:Ubicloud', 'IndustriesCount': 5}, {'Company': 'company:Sola', 'IndustriesCount': 4}, {'Company': 'company:Dragoneye', 'IndustriesCount': 4}, {'Company': 'company:Quill AI', 'IndustriesCount': 4}, {'Company': 'organization:company:Upstream', 'IndustriesCount': 4}, {'Company': 'company:CodeParrot', 'IndustriesCount': 4}, {'Company': 'company:Narrative', 'IndustriesCount': 4}, {'Company': 'organization:company:Envelope', 'IndustriesCount': 4}, {'Company': 'company:PandasAI', 'IndustriesCount': 4}, {'Company': 'company:SciPhi', 'IndustriesCount': 4}, {'Company': 'company:LifestyleRx', 'IndustriesCount': 4}, {'Company': 'organization:company:Vendah', 'IndustriesCount': 3}, {'Company': 'company:Sola RPA', 'IndustriesCount': 3}, {'Company': 'organization:company:Wallbit', 'IndustriesCount': 3}, {'Company': 'company:Fazeshift', 'IndustriesCount': 3}, {'Company': 'organization:company:Invopop', 'IndustriesCount': 3}, {'Company': 'company:Flexport', 'IndustriesCount': 3}, {'Company': 'company:Quartzy', 'IndustriesCount': 3}, {'Company': 'company:Focal', 'IndustriesCount': 3}, {'Company': 'company:DeepNight', 'IndustriesCount': 2}, {'Company': 'organization:company:AgentsForce', 'IndustriesCount': 2}, {'Company': 'company:Campfire', 'IndustriesCount': 2}, {'Company': 'organization:company:Shekel Mobility', 'IndustriesCount': 2}]
+```
+

@@ -47,9 +47,9 @@ class R2RPromptProvider(PromptProvider):
     ) -> str:
         if prompt_name not in self.prompts:
             raise ValueError(f"Prompt '{prompt_name}' not found.")
-        if inputs is None:
-            inputs = {}
         prompt = self.prompts[prompt_name]
+        if inputs is None:
+            return prompt.template
         return prompt.format_prompt(inputs)
 
     def update_prompt(

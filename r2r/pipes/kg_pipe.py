@@ -68,7 +68,11 @@ class KGPipe(LoggableAsyncPipe):
 
     @abstractmethod
     async def extract_kg(
-        self, fragments: list[Fragment]
+        self,
+        fragments: list[Fragment],
+        kg_generation_config: GenerationConfig,
+        *args,
+        **kwargs,
     ) -> AsyncGenerator[Fragment, None]:
         pass
 
@@ -78,6 +82,9 @@ class KGPipe(LoggableAsyncPipe):
         input: AsyncGenerator[Extraction, None],
         state: AsyncState,
         run_id: uuid.UUID,
+        kg_generation_config: GenerationConfig = GenerationConfig(
+            model="gpt-4o"
+        ),
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorEntry, None]:
@@ -160,13 +167,17 @@ class R2RKGPipe(KGPipe):
             yield fragment
 
     async def extract_kg(
-        self, fragment: Fragment, retries: int = 3, delay: int = 2
+        self,
+        fragment: Fragment,
+        kg_generation_config: GenerationConfig,
+        retries: int = 3,
+        delay: int = 2,
     ) -> KGExtraction:
         """
         Extracts NER triples from a list of fragments with retries.
         """
         task_prompt = self.prompt_provider.get_prompt(
-            "ner_kg_extraction", inputs={"input_text": fragment.data}
+            "ner_kg_extraction", inputs={"input": fragment.data}
         )
         messages = self.prompt_provider._get_message_payload(
             self.prompt_provider.get_prompt("default_system"), task_prompt
@@ -174,8 +185,9 @@ class R2RKGPipe(KGPipe):
         for attempt in range(retries):
             try:
                 response = await self.llm_provider.aget_completion(
-                    messages, GenerationConfig(model="gpt-4o")
+                    messages, kg_generation_config
                 )
+
                 kg_extraction = response.choices[0].message.content
 
                 # Parsing JSON from the response
@@ -183,13 +195,10 @@ class R2RKGPipe(KGPipe):
                     kg_extraction.split("```json")[1].split("```")[0]
                 )
 
-                entities_dict = kg_json.get("entities", {})
-                entities = extract_entities(entities_dict)
-
+                llm_payload = kg_json.get("entities_and_triplets", {})
                 # Extract triples with detailed logging
-                triples = extract_triples(
-                    kg_json.get("triplets", []), entities_dict
-                )
+                entities = extract_entities(llm_payload)
+                triples = extract_triples(llm_payload, entities)
 
                 # Create KG extraction object
                 return KGExtraction(entities=entities, triples=triples)
@@ -209,13 +218,17 @@ class R2RKGPipe(KGPipe):
         return KGExtraction(entities=[], triples=[])
 
     async def _process_batch(
-        self, fragment_batch: list[Fragment]
+        self,
+        fragment_batch: list[Fragment],
+        kg_generation_config: GenerationConfig,
     ) -> list[KGExtraction]:
         """
         Embeds a batch of fragments and yields vector entries.
         """
         tasks = [
-            asyncio.create_task(self.extract_kg(fragment))
+            asyncio.create_task(
+                self.extract_kg(fragment, kg_generation_config)
+            )
             for fragment in fragment_batch
         ]
         return await asyncio.gather(*tasks)
@@ -225,6 +238,9 @@ class R2RKGPipe(KGPipe):
         input: KGPipe.Input,
         state: AsyncState,
         run_id: uuid.UUID,
+        kg_generation_config: GenerationConfig = GenerationConfig(
+            model="gpt-4o", temperature=0.0
+        ),
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[KGExtraction, None]:
@@ -248,7 +264,9 @@ class R2RKGPipe(KGPipe):
                 if len(fragment_batch) >= self.kg_batch_size:
                     # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
                     batch_tasks.append(
-                        self._process_batch(fragment_batch.copy())
+                        self._process_batch(
+                            fragment_batch.copy(), kg_generation_config
+                        )
                     )  # pass a copy if necessary
                     fragment_batch.clear()  # Clear the batch for new fragments
 

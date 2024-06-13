@@ -346,12 +346,13 @@ class R2RPipelineFactory:
         self.pipes = pipes
 
     def create_ingestion_pipeline(self, *args, **kwargs) -> IngestionPipeline:
+        """factory method to create an ingestion pipeline."""
         ingestion_pipeline = IngestionPipeline()
 
         ingestion_pipeline.add_pipe(
             pipe=self.pipes.parsing_pipe, parsing_pipe=True
         )
-
+        # Add embedding pipes if provider is set
         if self.config.embedding.provider != None:
             ingestion_pipeline.add_pipe(
                 self.pipes.embedding_pipe, embedding_pipe=True
@@ -359,7 +360,7 @@ class R2RPipelineFactory:
             ingestion_pipeline.add_pipe(
                 self.pipes.vector_storage_pipe, embedding_pipe=True
             )
-        # Add KG pipes if KG is enabled
+        # Add KG pipes provider is set
         if self.config.kg.provider != None:
             ingestion_pipeline.add_pipe(self.pipes.kg_pipe, kg_pipe=True)
             ingestion_pipeline.add_pipe(

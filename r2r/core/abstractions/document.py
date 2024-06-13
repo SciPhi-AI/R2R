@@ -1,12 +1,15 @@
 """Abstractions for documents and their extractions."""
 
 import json
+import logging
 import uuid
 from datetime import datetime
 from enum import Enum
 from typing import Optional, Union
 
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 DataType = Union[str, bytes]
 
@@ -115,20 +118,12 @@ class Entity(BaseModel):
     sub_category: Optional[str] = None
     value: str
 
-
-def extract_entities(entity_data: dict[str, str]) -> list[Entity]:
-    entities = []
-    for entity_key, entity_value in entity_data.items():
-        parts = entity_value.split(":")
-        if len(parts) == 2:
-            category, value = parts
-            sub_category = None
-        else:
-            category, sub_category, value = parts
-        entities.append(
-            Entity(category=category, sub_category=sub_category, value=value)
+    def __str__(self):
+        return (
+            f"{self.category}:{self.sub_category}:{self.value}"
+            if self.sub_category
+            else f"{self.category}:{self.value}"
         )
-    return entities
 
 
 class Triple(BaseModel):
@@ -139,36 +134,57 @@ class Triple(BaseModel):
     object: str
 
 
+def extract_entities(llm_payload: list[str]) -> dict[str, Entity]:
+    entities = {}
+    for entry in llm_payload:
+        try:
+            if "], " in entry:  # Check if the entry is an entity
+                entry_val = entry.split("], ")[0] + "]"
+                entry = entry.split("], ")[1]
+                colon_count = entry.count(":")
+
+                if colon_count == 1:
+                    category, value = entry.split(":")
+                    sub_category = None
+                elif colon_count == 2:
+                    category, sub_category, value = entry.split(":")
+                elif colon_count > 2:
+                    parts = entry.split(":", 2)
+                    category, sub_category, value = (
+                        parts[0],
+                        parts[1],
+                        parts[2],
+                    )
+                else:
+                    raise ValueError("Unexpected entry format")
+        except Exception as e:
+            logger.error(f"Error processing entity {entry}: {e}")
+            continue
+    return entities
+
+
 def extract_triples(
-    triplet_data: list[str], entities: dict[str, str]
+    llm_payload: list[str], entities: dict[str, Entity]
 ) -> list[Triple]:
     triples = []
-    for triplet in triplet_data:
-        parts = triplet.split(": ")
-        subject_key = parts[0]
-        predicate = parts[1]
-        object_key = parts[2]
-
-        subject = entities[subject_key]
-        if object_key in entities:
-            object = entities[object_key]
-        else:
-            for entities_key, entities_value in entities.items():
-                if entities_key in object_key:
-                    object_key = object_key.replace(
-                        entities_key, entities_value
-                    )
-
-            object = object_key
-
-        triples.append(
-            Triple(subject=subject, predicate=predicate, object=object)
-        )
+    for entry in llm_payload:
+        try:
+            if "], " not in entry:  # Check if the entry is an entity
+                subject, predicate, object = entry.split(" ")
+                subject = str(entities[subject])
+                if "[" in object and "]" in object:
+                    object = str(entities[object])
+                triples.append(
+                    Triple(subject=subject, predicate=predicate, object=object)
+                )
+        except Exception as e:
+            logger.error(f"Error processing triplet {entry}: {e}")
+            continue
     return triples
 
 
 class KGExtraction(BaseModel):
     """An extraction from a document that is part of a knowledge graph."""
 
-    entities: list[Entity]
+    entities: dict[str, Entity]
     triples: list[Triple]
