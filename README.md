@@ -320,7 +320,7 @@ The following demo offers a step-by-step guide on running the default R2R Retrie
 
    ### Client-Server Summary
 
-   By using the Client-Server model, you can extend the basic R2R demo to support more scalable and modular deployments. The server handles requests and performs heavy computations, while clients can communicate with the server to perform ingestion, search, RAG, and other operations, as shown in the examples above. For detailed setup and basic functionality, refer back to the [R2R Demo](#r2r-demo).
+   By using the Client-Server model, you can extend the basic R2R demo to support more scalable and modular deployments. The server handles requests and performs heavy computations, while clients can communicate with the server to perform ingestion, search, RAG, and other operations, as shown in the examples above. For detailed setup and basic functionality, refer back to the [R2R Demo](#quickstart).
 </details>
 
 # R2R Dashboard
@@ -335,7 +335,7 @@ We're here to help! Feel free to reach out for support on any of these channels:
 - [Github Issues](https://github.com/SciPhi-AI/R2R/issues) \(Bug reports and feature requests\)
 
 There are a number of helpful tutorials and cookbooks that can be found in the [R2R Docs](https://r2r-docs.sciphi.ai/):
-- [R2R Demo](https://r2r-docs.sciphi.ai/getting-started/r2r-demo): A basic demo script designed to get you started with an R2R RAG application. 
+- [R2R Demo](https://r2r-docs.sciphi.ai/getting-started/quickstart): A basic demo script designed to get you started with an R2R RAG application. 
 - [R2R Client-Server](https://r2r-docs.sciphi.ai/cookbooks/client-server): An extension of the basic `R2R Demo` with client-server interactions.
 - [Local RAG](https://r2r-docs.sciphi.ai/cookbooks/local-rag): A quick cookbook demonstration of how to run R2R with local LLMs.
 - [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): A brief introduction to running hybrid search with R2R.

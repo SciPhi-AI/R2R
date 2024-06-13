@@ -5,7 +5,7 @@ The Client-Server architecture in R2R allows for a flexible and scalable approac
 
 ### Setting Up the Server
 
-This document extends the [R2R Demo](/getting-started/r2r-demo) by demonstrating how to set up and use the R2R framework with a Client-Server architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations. The server API can be [viewed here](/getting-started/app-api).
+This document extends the [R2R Demo](/getting-started/quickstart) by demonstrating how to set up and use the R2R framework with a Client-Server architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations. The server API can be [viewed here](/getting-started/app-api).
 
 
 To set up the R2R server, follow these steps:
@@ -47,7 +47,7 @@ This command starts the R2R container with the following options:
 </details>
 
 **Local Installation**:
-   Ensure you have all necessary dependencies installed as described in the [R2R Demo](/getting-started/r2r-demo#setup). Then, use the following command to start the server:
+   Ensure you have all necessary dependencies installed as described in the [R2R Demo](/getting-started/quickstart). Then, use the following command to start the server:
    ```bash filename="bash" copy
    python -m r2r.examples.demo serve
    ```
@@ -85,4 +85,4 @@ The R2R framework includes a [python client](https://github.com/SciPhi-AI/R2R/bl
 
 ## Summary
 
-By using the Client-Server model, you can extend the basic R2R demo to support more scalable and modular deployments. The server handles requests and performs heavy computations, while clients can communicate with the server to perform ingestion, search, RAG, and other operations, as shown in the examples above. For detailed setup and basic functionality, refer back to the [R2R Demo](/getting-started/r2r-demo).
+By using the Client-Server model, you can extend the basic R2R demo to support more scalable and modular deployments. The server handles requests and performs heavy computations, while clients can communicate with the server to perform ingestion, search, RAG, and other operations, as shown in the examples above. For detailed setup and basic functionality, refer back to the [R2R Demo](/getting-started/quickstart).
