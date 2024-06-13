@@ -8,7 +8,7 @@
 
 <img src="./docs/pages/r2r.png" alt="Sciphi Framework">
 <h3 align="center">
-Build, deploy, observe, and optimize your RAG system.
+Build, deploy, observe, and optimize your RAG engine.
 </h3>
 
 # About

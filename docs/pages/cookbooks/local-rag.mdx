@@ -1,25 +1,28 @@
+import { Tabs } from 'nextra/components'
 import { Callout } from 'nextra/components'
 
 ## Building a Local RAG System with R2R
 
 ### Installation
 
+<Tabs items={['Docker', 'Pip']}>
+
+
+
+<Tabs.Tab>
+
 <Callout type="info" emoji="🐳">
    Docker makes it convenient to run R2R without managing your local environment.
 </Callout>
 
-<details>
-<summary>Docker</summary>
+First, download the latest R2R image from Dockerhub:
 
-To run R2R using Docker, you can use the following commands:
 
 ```bash filename="bash" copy
 docker pull emrgntcmplxty/r2r:latest
 ```
 
-This will pull the latest R2R Docker image.
-
-Then, run the container with:
+Then, run the service:
 
 ```bash filename="bash" copy
 docker run -d \
@@ -40,9 +43,18 @@ This command starts the R2R container with the following options:
 - `-e CONFIG_OPTION=local_ollama`: Selects the "local_ollama" configuration option.
 - `emrgntcmplxty/r2r:latest`: Specifies the Docker image to use.
 
-</details>
 
-We can start by using `pip` to install R2R with the local-embeddding dependencies:
+Lastly, install the R2R client using `pip`
+
+```bash filename="bash" copy
+pip install 'r2r'
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+We can install r2r with the necessary optional dependencies to run locally using `pip`
 
 ```bash filename="bash" copy
 pip install 'r2r[local-embedding]'
@@ -51,7 +63,6 @@ pip install 'r2r[local-embedding]'
 R2R supports  `Ollama`, a popular tool for Local LLM inference. Ollama is provided through a connection managed by the `litellm` library.
 
 Ollama must be installed independently. You can install Ollama by following the instructions on their [official website](https://ollama.com/) or by referring to their [GitHub README](https://github.com/ollama/ollama).
-
 
 ### Configuration
 
@@ -98,15 +109,10 @@ This chosen config modification above instructs R2R to use the `sentence-transfo
 
 A local vector database will be used to store the embeddings. The current default is a minimal sqlite implementation.
 
-### Server Standup
+</Tabs.Tab>
 
+</Tabs>
 
-```bash filename="bash" copy
-# cd $WORKDIR
-python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config local_ollama --pipeline_type qna
-```
-
-The server exposes a REST API for interacting with the R2R RAG pipeline and application. See the [API docs](/getting-started/app-api) for more details on the available endpoints.
 
 ## Ingesting and Embedding Documents
 

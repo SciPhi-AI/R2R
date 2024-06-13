@@ -177,7 +177,7 @@ class R2RKGPipe(KGPipe):
         Extracts NER triples from a list of fragments with retries.
         """
         task_prompt = self.prompt_provider.get_prompt(
-            "ner_kg_extraction", inputs={"input_text": fragment.data}
+            "ner_kg_extraction", inputs={"input": fragment.data}
         )
         messages = self.prompt_provider._get_message_payload(
             self.prompt_provider.get_prompt("default_system"), task_prompt
@@ -187,6 +187,7 @@ class R2RKGPipe(KGPipe):
                 response = await self.llm_provider.aget_completion(
                     messages, kg_generation_config
                 )
+
                 kg_extraction = response.choices[0].message.content
 
                 # Parsing JSON from the response
@@ -194,13 +195,10 @@ class R2RKGPipe(KGPipe):
                     kg_extraction.split("```json")[1].split("```")[0]
                 )
 
-                entities_dict = kg_json.get("entities", {})
-                entities = extract_entities(entities_dict)
-
+                llm_payload = kg_json.get("entities_and_triplets", {})
                 # Extract triples with detailed logging
-                triples = extract_triples(
-                    kg_json.get("triplets", []), entities_dict
-                )
+                entities = extract_entities(llm_payload)
+                triples = extract_triples(llm_payload, entities)
 
                 # Create KG extraction object
                 return KGExtraction(entities=entities, triples=triples)
@@ -241,7 +239,7 @@ class R2RKGPipe(KGPipe):
         state: AsyncState,
         run_id: uuid.UUID,
         kg_generation_config: GenerationConfig = GenerationConfig(
-            model="gpt-4o"
+            model="gpt-4o", temperature=0.0
         ),
         *args: Any,
         **kwargs: Any,

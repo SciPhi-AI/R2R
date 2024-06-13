@@ -1,3 +1,4 @@
+import json
 import os
 
 import fire
@@ -5,10 +6,6 @@ import requests
 from bs4 import BeautifulSoup, Comment
 
 from r2r import Document, R2RAppBuilder, R2RConfig, generate_id_from_label
-
-yc_extraction_notes = """
-Notes:\n  - For this specific task, you are working with company data from the YC directory. You should seek to extract as many details about the company as possible (name, founders, CEO/CTO/..., URLs, group partner, YC batch (S23, W24, ..), key tags (b2b, developer tools, artificial intelligence), emails, etc.\n\n### Response:\n
-"""
 
 
 def get_all_yc_co_directory_urls():
@@ -102,7 +99,11 @@ def print_all_relationships(provider):
 
 def main(max_entries=50, delete=False):
     # Load the R2R configuration and build the app
-    config = R2RConfig.from_json()
+    this_file_path = os.path.abspath(os.path.dirname(__file__))
+    config_path = os.path.join(
+        this_file_path, "..", "configs", "neo4j_kg.json"
+    )
+    config = R2RConfig.from_json(config_path)
     r2r = R2RAppBuilder(config).build()
 
     # Get the providers
@@ -110,39 +111,95 @@ def main(max_entries=50, delete=False):
     prompt_provider = r2r.providers.prompt
 
     # Update the prompt for the NER KG extraction task
-    ner_kg_prompt = prompt_provider.get_prompt("ner_kg_extraction")
-    yc_ner_kg_prompt = (
-        ner_kg_prompt.split("### Response:")[0] + yc_extraction_notes
+    ner_kg_extraction_with_spec = prompt_provider.get_prompt(
+        "ner_kg_extraction_with_spec"
+    )
+
+    # Newline separated list of entity types, with optional subcategories
+    entity_types = """organization
+subcategories: company, school, non-profit, other
+location
+subcategories: city, state, country, other
+person
+position
+date
+subcategories: year, month, day, batch (e.g. W24, S20), other
+quantity
+event
+subcategories: incorporation, funding_round, acquisition, launch, other
+industry
+media
+subcategories: email, website, twitter, linkedin, other
+product
+"""
+    # Newline separated list of predicates
+    predicates = """
+# Founder / employee predicates
+EDUCATED_AT
+FOUNDED
+ROLE_OF
+WORKED_AT
+# Company predicates
+FOUNDED_IN
+LOCATED_IN
+HAS_TEAM_SIZE
+REVENUE
+RAISED
+ACQUIRED_BY
+ANNOUNCED
+PARTICIPATED_IN
+# Product predicates
+USED_BY
+USES
+HAS_PRODUCT
+HAS_FEATURES
+HAS_OFFERS
+# Other
+INDUSTRY
+TECHNOLOGY
+GROUP_PARTNER
+ALIAS
+HAS
+CONTAINS
+"""
+
+    # Format the prompt to include the desired entity types and predicates
+    ner_kg_extraction = ner_kg_extraction_with_spec.replace(
+        "{entity_types}", entity_types
+    ).replace("{predicates}", predicates)
+
+    # Update the "ner_kg_extraction" prompt used in downstream pipes
+    r2r.providers.prompt.update_prompt(
+        "ner_kg_extraction", json.dumps(ner_kg_extraction, ensure_ascii=False)
     )
 
     # Optional - clear the graph if the delete flag is set
     if delete:
         delete_all_entries(kg_provider)
 
-    r2r.providers.prompt.update_prompt("ner_kg_extraction", yc_ner_kg_prompt)
-
     url_map = get_all_yc_co_directory_urls()
 
     i = 0
     # Ingest and clean the data for each company
     for company, url in url_map.items():
-        print(f"Ingesting company: {company}, from url: {url}")
-
         company_data = fetch_and_clean_yc_co_data(url)
-        i += 1
         if i >= max_entries:
             break
-        # Ingest as a text document
-        r2r.ingest_documents(
-            [
-                Document(
-                    id=generate_id_from_label(company),
-                    type="txt",
-                    data=company_data,
-                    metadata={},
-                )
-            ]
-        )
+        try:
+            # Ingest as a text document
+            r2r.ingest_documents(
+                [
+                    Document(
+                        id=generate_id_from_label(company),
+                        type="txt",
+                        data=company_data,
+                        metadata={},
+                    )
+                ]
+            )
+        except:
+            continue
+        i += 1
 
     print_all_relationships(kg_provider)
 
