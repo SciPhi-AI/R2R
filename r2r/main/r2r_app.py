@@ -482,139 +482,111 @@ class R2RApp(metaclass=AsyncSyncMeta):
         try:
             documents = []
             document_infos = []
-            skipped_files = []
-            processed_files = []
 
             for iteration, file in enumerate(files):
-                try:
-                    logger.info(f"Processing file: {file.filename}")
-                    if (
-                        file.size
-                        > self.config.app.get("max_file_size_in_mb", 32)
-                        * MB_CONVERSION_FACTOR
-                    ):
-                        logger.error(
-                            f"File size exceeds limit: {file.filename}"
-                        )
-                        raise HTTPException(
-                            status_code=413,
-                            detail="File size exceeds maximum allowed size.",
-                        )
-                    if not file.filename:
-                        logger.error("File name not provided.")
-                        raise HTTPException(
-                            status_code=400, detail="File name not provided."
-                        )
-
-                    file_extension = file.filename.split(".")[-1].lower()
-                    excluded_parsers = self.config.ingestion.get(
-                        "excluded_parsers", {}
-                    )
-                    if file_extension.upper() not in DocumentType.__members__:
-                        logger.error(
-                            f"'{file_extension}' is not a valid DocumentType"
-                        )
-                        raise HTTPException(
-                            status_code=415,
-                            detail=f"'{file_extension}' is not a valid DocumentType.",
-                        )
-                    if (
-                        DocumentType[file_extension.upper()]
-                        in excluded_parsers
-                    ):
-                        logger.info(
-                            f"'{file_extension}' is in the excluded parsers list. Skipping file."
-                        )
-                        skipped_files.append(file.filename)
-                        continue
-
-                    file_content = await file.read()
-                    logger.info(f"File read successfully: {file.filename}")
-
-                    document_id = (
-                        generate_id_from_label(file.filename)
-                        if document_ids is None
-                        else document_ids[iteration]
-                    )
-                    document_metadata = (
-                        metadatas[iteration] if metadatas else {}
-                    )
-                    document_title = (
-                        document_metadata.get("title", None) or file.filename
-                    )
-                    document_metadata["title"] = document_title
-
-                    user_id = user_ids[iteration] if user_ids else None
-                    if user_id:
-                        document_metadata["user_id"] = str(user_id)
-                    version = versions[iteration] if versions else "v0"
-                    now = datetime.now()
-
-                    documents.append(
-                        Document(
-                            id=document_id,
-                            type=DocumentType[file_extension.upper()],
-                            data=file_content,
-                            metadata=document_metadata,
-                            title=document_title,
-                            user_ids=user_id,
-                        )
-                    )
-                    document_infos.append(
-                        DocumentInfo(
-                            **{
-                                "document_id": document_id,
-                                "version": version,
-                                "size_in_bytes": len(file_content),
-                                "metadata": document_metadata.copy(),
-                                "title": document_title,
-                                "user_id": user_id,
-                                "created_at": now,
-                                "updated_at": now,
-                            }
-                        )
-                    )
-                    processed_files.append(file.filename)
-                except Exception as e:
+                logger.info(f"Processing file: {file.filename}")
+                if (
+                    file.size
+                    > self.config.app.get("max_file_size_in_mb", 32)
+                    * MB_CONVERSION_FACTOR
+                ):
                     logger.error(
-                        f"Skipping file '{file.filename}' due to error: {str(e)}"
+                        f"File size exceeds limit: {file.filename}"
                     )
-                    skipped_files.append(file.filename)
-                    continue
+                    raise HTTPException(
+                        status_code=413,
+                        detail="File size exceeds maximum allowed size.",
+                    )
+                if not file.filename:
+                    logger.error("File name not provided.")
+                    raise HTTPException(
+                        status_code=400, detail="File name not provided."
+                    )
 
-            # Filter out skipped documents
-            filtered_documents = [
-                doc for doc in documents if doc.title not in skipped_files
-            ]
-            filtered_document_infos = [
-                info
-                for info in document_infos
-                if info.title not in skipped_files
-            ]
+                file_extension = file.filename.split(".")[-1].lower()
+                excluded_parsers = self.config.ingestion.get(
+                    "excluded_parsers", {}
+                )
+                if file_extension.upper() not in DocumentType.__members__:
+                    logger.error(
+                        f"'{file_extension}' is not a valid DocumentType"
+                    )
+                    raise HTTPException(
+                        status_code=415,
+                        detail=f"'{file_extension}' is not a valid DocumentType.",
+                    )
+                if (
+                    DocumentType[file_extension.upper()]
+                    in excluded_parsers
+                ):
+                    logger.error(f"{file_extension} is explicitly excluded in the configuration file.")
+                    raise HTTPException(
+                        status_code=415,
+                        detail=f"{file_extension} is explicitly excluded in the configuration file.",
+                    )
+
+                file_content = await file.read()
+                logger.info(f"File read successfully: {file.filename}")
+
+                document_id = (
+                    generate_id_from_label(file.filename)
+                    if document_ids is None
+                    else document_ids[iteration]
+                )
+                document_metadata = (
+                    metadatas[iteration] if metadatas else {}
+                )
+                document_title = (
+                    document_metadata.get("title", None) or file.filename
+                )
+                document_metadata["title"] = document_title
+
+                user_id = user_ids[iteration] if user_ids else None
+                if user_id:
+                    document_metadata["user_id"] = str(user_id)
+                version = versions[iteration] if versions else "v0"
+                now = datetime.now()
+
+                documents.append(
+                    Document(
+                        id=document_id,
+                        type=DocumentType[file_extension.upper()],
+                        data=file_content,
+                        metadata=document_metadata,
+                        title=document_title,
+                        user_ids=user_id,
+                    )
+                )
+                document_infos.append(
+                    DocumentInfo(
+                        **{
+                            "document_id": document_id,
+                            "version": version,
+                            "size_in_bytes": len(file_content),
+                            "metadata": document_metadata.copy(),
+                            "title": document_title,
+                            "user_id": user_id,
+                            "created_at": now,
+                            "updated_at": now,
+                        }
+                    )
+                )
 
             # Run the pipeline asynchronously with filtered documents
             await self.ingestion_pipeline.run(
-                input=to_async_generator(filtered_documents),
+                input=to_async_generator(documents),
                 versions=versions,
                 run_manager=self.run_manager,
             )
 
             if not skip_document_info:
                 self.providers.vector_db.upsert_documents_info(
-                    filtered_document_infos
+                    document_infos
                 )
 
-            processed_files_messages = [
-                f"File '{file}' processed successfully."
-                for file in processed_files
-            ]
-            skipped_files_messages = [
-                f"File '{file}' skipped due to exclusion or error."
-                for file in skipped_files
-            ]
-
             return {
-                "results": (processed_files_messages + skipped_files_messages)
+                "results": f"File '{file}' processed successfully."
+                for file in document_infos
             }
         except Exception as e:
             raise e
@@ -676,6 +648,10 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     document_ids=ids_list,
                     user_ids=user_ids_list,
                 )
+            
+            except HTTPException as he:
+                raise HTTPException(he.status_code, he.detail) from he
+            
             except Exception as e:
                 logger.error(f"ingest_files() - \n\n{str(e)})")
                 await self.logging_connection.log(

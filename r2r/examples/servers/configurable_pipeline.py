@@ -45,7 +45,6 @@ class PipelineType(Enum):
 def r2r_app(
     config_name: str = "default",
     pipeline_type: PipelineType = PipelineType.QNA,
-    no_images: bool = False,
 ) -> FastAPI:
     config_name = os.getenv("CONFIG_OPTION") or config_name
 
