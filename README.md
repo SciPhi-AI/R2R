@@ -157,6 +157,9 @@ The following demo offers a step-by-step guide on running the default R2R Retrie
 <details>
 <summary><b>Basic RAG Functionality</b></summary>
 
+![search](https://github.com/SciPhi-AI/R2R/assets/34580718/6c21d8f8-7f4e-45b6-917a-39462b83d3ca)
+
+
 1. **Search Documents**
    Documents are stored by default in a local vector database. The vector database provider and settings can be specified via an input `config.json`. To perform a search query on the ingested user documents, use the following command:
 
