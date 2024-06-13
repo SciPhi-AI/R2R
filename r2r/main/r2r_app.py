@@ -521,7 +521,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 ):
                     logger.error(f"{file_extension} is explicitly excluded in the configuration file.")
                     raise HTTPException(
-                        status_code=415,
+                        status_code=403,
                         detail=f"{file_extension} is explicitly excluded in the configuration file.",
                     )
 
