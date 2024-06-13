@@ -5,24 +5,19 @@ import { Callout } from 'nextra/components'
 
 ### Installation
 
-<Tabs items={['Docker', 'Pip']}>
-
-
-
-<Tabs.Tab>
-
-<Callout type="info" emoji="🐳">
-   Docker makes it convenient to run R2R without managing your local environment.
-</Callout>
-
-First, download the latest R2R image from Dockerhub:
-
+We can install r2r with the necessary optional dependencies to run locally using `pip`
 
 ```bash filename="bash" copy
-docker pull emrgntcmplxty/r2r:latest
+pip install 'r2r[local-embedding]'
 ```
 
-Then, run the service:
+<Callout type="info" emoji="🐳">
+   Docker makes it convenient to run R2R without managing your local environment. Learn more [here](/getting-started/installation)
+</Callout>
+
+<details>
+<summary>Running with Docker</summary>
+Run your Docker container using the following command:
 
 ```bash filename="bash" copy
 docker run -d \
@@ -42,23 +37,7 @@ This command starts the R2R container with the following options:
 - `-e OLLAMA_API_BASE=http://host.docker.internal:11434`: Specifies the Ollama API base URL.
 - `-e CONFIG_OPTION=local_ollama`: Selects the "local_ollama" configuration option.
 - `emrgntcmplxty/r2r:latest`: Specifies the Docker image to use.
-
-
-Lastly, install the R2R client using `pip`
-
-```bash filename="bash" copy
-pip install 'r2r'
-```
-
-</Tabs.Tab>
-
-<Tabs.Tab>
-
-We can install r2r with the necessary optional dependencies to run locally using `pip`
-
-```bash filename="bash" copy
-pip install 'r2r[local-embedding]'
-```
+</details>
 
 R2R supports  `Ollama`, a popular tool for Local LLM inference. Ollama is provided through a connection managed by the `litellm` library.
 
@@ -88,16 +67,14 @@ To streamline this process, we've provided pre-configured local settings in the 
     }
   },
   "ingestion":{
-    "selected_parsers": {
-      "csv": "default",
-      "docx": "default",
-      "html": "default",
-      "json": "default",
-      "md": "default",
-      "pdf": "default",
-      "pptx": "default",
-      "txt": "default",
-      "xlsx": "default"
+    "excluded_parsers": {
+      "gif": "default",
+      "jpeg": "default",
+      "jpg": "default",
+      "png": "default",
+      "svg": "default",
+      "mp3": "default",
+      "mp4": "default"
     }
   }
 }
@@ -109,10 +86,6 @@ This chosen config modification above instructs R2R to use the `sentence-transfo
 
 A local vector database will be used to store the embeddings. The current default is a minimal sqlite implementation.
 
-</Tabs.Tab>
-
-</Tabs>
-
 
 ## Ingesting and Embedding Documents
 
@@ -121,7 +94,7 @@ With our environment set up and our server running in a separate process, we're 
 Run this command to ingest the document:
 
 ```bash filename="bash" copy
-python -m r2r.examples.demo ingest_as_files --no-images=true --client_server_mode
+python -m r2r.examples.demo ingest_as_files --no-media=true --client_server_mode
 ```
 
 The output should look something like this:

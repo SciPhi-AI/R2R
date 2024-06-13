@@ -482,6 +482,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         try:
             documents = []
             document_infos = []
+
             for iteration, file in enumerate(files):
                 logger.info(f"Processing file: {file.filename}")
                 if (
@@ -489,7 +490,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     > self.config.app.get("max_file_size_in_mb", 32)
                     * MB_CONVERSION_FACTOR
                 ):
-                    logger.error(f"File size exceeds limit: {file.filename}")
+                    logger.error(
+                        f"File size exceeds limit: {file.filename}"
+                    )
                     raise HTTPException(
                         status_code=413,
                         detail="File size exceeds maximum allowed size.",
@@ -501,6 +504,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     )
 
                 file_extension = file.filename.split(".")[-1].lower()
+                excluded_parsers = self.config.ingestion.get(
+                    "excluded_parsers", {}
+                )
                 if file_extension.upper() not in DocumentType.__members__:
                     logger.error(
                         f"'{file_extension}' is not a valid DocumentType"
@@ -508,6 +514,15 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     raise HTTPException(
                         status_code=415,
                         detail=f"'{file_extension}' is not a valid DocumentType.",
+                    )
+                if (
+                    DocumentType[file_extension.upper()]
+                    in excluded_parsers
+                ):
+                    logger.error(f"{file_extension} is explicitly excluded in the configuration file.")
+                    raise HTTPException(
+                        status_code=415,
+                        detail=f"{file_extension} is explicitly excluded in the configuration file.",
                     )
 
                 file_content = await file.read()
@@ -518,7 +533,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     if document_ids is None
                     else document_ids[iteration]
                 )
-                document_metadata = metadatas[iteration] if metadatas else {}
+                document_metadata = (
+                    metadatas[iteration] if metadatas else {}
+                )
                 document_title = (
                     document_metadata.get("title", None) or file.filename
                 )
@@ -540,7 +557,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         user_ids=user_id,
                     )
                 )
-                # Upsert document info
                 document_infos.append(
                     DocumentInfo(
                         **{
@@ -556,7 +572,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     )
                 )
 
-            # Run the pipeline asynchronously
+            # Run the pipeline asynchronously with filtered documents
             await self.ingestion_pipeline.run(
                 input=to_async_generator(documents),
                 versions=versions,
@@ -564,13 +580,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
             )
 
             if not skip_document_info:
-                self.providers.vector_db.upsert_documents_info(document_infos)
+                self.providers.vector_db.upsert_documents_info(
+                    document_infos
+                )
 
             return {
-                "results": [
-                    f"File '{file.filename}' processed successfully."
-                    for file in files
-                ]
+                "results": f"File '{file}' processed successfully."
+                for file in document_infos
             }
         except Exception as e:
             raise e
@@ -632,6 +648,10 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     document_ids=ids_list,
                     user_ids=user_ids_list,
                 )
+            
+            except HTTPException as he:
+                raise HTTPException(he.status_code, he.detail) from he
+            
             except Exception as e:
                 logger.error(f"ingest_files() - \n\n{str(e)})")
                 await self.logging_connection.log(
@@ -1223,27 +1243,27 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     analysis_type = analysis_config[0]
                     if analysis_type == "bar_chart":
                         extract_key = analysis_config[1]
-                        results[
-                            filter_key
-                        ] = AnalysisTypes.generate_bar_chart_data(
-                            filtered_logs[filter_key], extract_key
+                        results[filter_key] = (
+                            AnalysisTypes.generate_bar_chart_data(
+                                filtered_logs[filter_key], extract_key
+                            )
                         )
                     elif analysis_type == "basic_statistics":
                         extract_key = analysis_config[1]
-                        results[
-                            filter_key
-                        ] = AnalysisTypes.calculate_basic_statistics(
-                            filtered_logs[filter_key], extract_key
+                        results[filter_key] = (
+                            AnalysisTypes.calculate_basic_statistics(
+                                filtered_logs[filter_key], extract_key
+                            )
                         )
                     elif analysis_type == "percentile":
                         extract_key = analysis_config[1]
                         percentile = int(analysis_config[2])
-                        results[
-                            filter_key
-                        ] = AnalysisTypes.calculate_percentile(
-                            filtered_logs[filter_key],
-                            extract_key,
-                            percentile,
+                        results[filter_key] = (
+                            AnalysisTypes.calculate_percentile(
+                                filtered_logs[filter_key],
+                                extract_key,
+                                percentile,
+                            )
                         )
                     else:
                         logger.warning(
