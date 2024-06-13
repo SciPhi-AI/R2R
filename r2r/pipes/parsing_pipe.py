@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 class DocumentParsingPipe(LoggableAsyncPipe):
     def __init__(
         self,
-        selected_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
+        excluded_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
         override_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
@@ -56,7 +56,7 @@ class DocumentParsingPipe(LoggableAsyncPipe):
             *args,
             **kwargs,
         )
-        self.selected_parsers = selected_parsers or {}
+        self.excluded_parsers = excluded_parsers or {}
         self.override_parsers = override_parsers or {}
 
     @property
@@ -114,7 +114,7 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
 
     def __init__(
         self,
-        selected_parsers: dict[DocumentType, AsyncParser],
+        excluded_parsers: dict[DocumentType, AsyncParser],
         override_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
@@ -141,20 +141,16 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
         if not override_parsers:
             override_parsers = {}
 
-        for doc_type, parser_key in selected_parsers.items():
-            if doc_type in override_parsers:
-                self.parsers[doc_type] = override_parsers[doc_type][
-                    parser_key
-                ]()
-            elif doc_type in self.AVAILABLE_PARSERS:
-                self.parsers[doc_type] = self.AVAILABLE_PARSERS[doc_type][
-                    parser_key
-                ]()
-            else:
-                error_message = f"Parser for {doc_type} not found in `R2RDocumentParsingPipe`."
+        for doc_type, parser_info in self.AVAILABLE_PARSERS.items():
+            if (
+                doc_type not in excluded_parsers
+                and doc_type not in self.parsers
+            ):
+                self.parsers[doc_type] = parser_info["default"]()
 
-                logger.error(error_message)
-                raise ValueError(error_message)
+        # Apply overrides if specified
+        for doc_type, parser in override_parsers.items():
+            self.parsers[doc_type] = parser
 
     async def _parse(
         self,

@@ -13,16 +13,14 @@
     }
   },
   "ingestion":{
-    "selected_parsers": {
-      "csv": "default",
-      "docx": "default",
-      "html": "default",
-      "json": "default",
-      "md": "default",
-      "pdf": "default",
-      "pptx": "default",
-      "txt": "default",
-      "xlsx": "default"
+    "excluded_parsers": {
+      "gif": "default",
+      "jpeg": "default",
+      "jpg": "default",
+      "png": "default",
+      "svg": "default",
+      "mp3": "default",
+      "mp4": "default"
     }
   }
 }

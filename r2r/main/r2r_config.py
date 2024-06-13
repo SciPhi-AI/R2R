@@ -34,7 +34,7 @@ class R2RConfig:
             "batch_size",
             "text_splitter",
         ],
-        "ingestion": ["selected_parsers"],
+        "ingestion": ["excluded_parsers"],
         "completions": ["provider"],
         "logging": ["provider", "log_table"],
         "prompt": ["provider"],
@@ -65,9 +65,9 @@ class R2RConfig:
 
         self.app = self.app  # for type hinting
         self.ingestion = self.ingestion  # for type hinting
-        self.ingestion["selected_parsers"] = {
+        self.ingestion["excluded_parsers"] = {
             DocumentType(k): v
-            for k, v in self.ingestion["selected_parsers"].items()
+            for k, v in self.ingestion["excluded_parsers"].items()
         }
         self.embedding = EmbeddingConfig.create(**self.embedding)
         self.kg = KGConfig.create(**self.kg)

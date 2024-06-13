@@ -141,15 +141,16 @@ class R2RDemo:
         print(response)
 
     def ingest_as_files(
-        self, file_paths: Optional[list[str]] = None, no_images=False
+        self, file_paths: Optional[list[str]] = None, no_media=False
     ):
         file_paths = file_paths or self.default_files
 
-        if no_images:
+        if no_media:
+            excluded_types = ["jpeg", "jpg", "png", "svg", "mp3", "mp4"]
             file_paths = [
                 file_path
                 for file_path in file_paths
-                if file_path.split(".")[-1] != "png"
+                if file_path.split(".")[-1] not in excluded_types
             ]
 
         ids = [

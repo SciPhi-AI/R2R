@@ -25,8 +25,17 @@ def mock_file():
                 "batch_size": 16,
                 "text_splitter": "default",
             },
+            "kg": {
+                "provider": "None",
+                "batch_size": 1,
+                "text_splitter": {
+                    "type": "recursive_character",
+                    "chunk_size": 2048,
+                    "chunk_overlap": 0,
+                },
+            },
             "eval": {"llm": {"provider": "local"}},
-            "ingestion": {"selected_parsers": {}},
+            "ingestion": {"excluded_parsers": {}},
             "completions": {"provider": "lm_provider"},
             "logging": {
                 "provider": "local",
@@ -82,8 +91,17 @@ def test_r2r_config_deserialization(mock_file, mock_redis_client):
             "batch_size": 16,
             "text_splitter": "default",
         },
+        "kg": {
+            "provider": "None",
+            "batch_size": 1,
+            "text_splitter": {
+                "type": "recursive_character",
+                "chunk_size": 2048,
+                "chunk_overlap": 0,
+            },
+        },
         "eval": {"llm": {"provider": "local"}},
-        "ingestion": {"selected_parsers": {"pdf": "default"}},
+        "ingestion": {"excluded_parsers": {"pdf": "default"}},
         "completions": {"provider": "lm_provider"},
         "logging": {
             "provider": "local",
@@ -99,7 +117,7 @@ def test_r2r_config_deserialization(mock_file, mock_redis_client):
     mock_redis_client.get.return_value = json.dumps(config_data)
     config = R2RConfig.load_from_redis(mock_redis_client, "test_key")
     assert config.app["max_file_size_in_mb"] == 128
-    assert config.ingestion["selected_parsers"][DocumentType.PDF] == "default"
+    assert config.ingestion["excluded_parsers"][DocumentType.PDF] == "default"
 
 
 def test_r2r_config_missing_section():
@@ -126,8 +144,17 @@ def test_r2r_config_missing_required_key():
             "batch_size": 16,
             "text_splitter": "default",
         },
+        "kg": {
+            "provider": "None",
+            "batch_size": 1,
+            "text_splitter": {
+                "type": "recursive_character",
+                "chunk_size": 2048,
+                "chunk_overlap": 0,
+            },
+        },
         "eval": {"llm": {"provider": "local"}},
-        "ingestion": {"selected_parsers": {}},
+        "ingestion": {"excluded_parsers": {}},
         "completions": {"provider": "lm_provider"},
         "logging": {
             "provider": "local",

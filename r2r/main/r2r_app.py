@@ -550,7 +550,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     > self.config.app.get("max_file_size_in_mb", 32)
                     * MB_CONVERSION_FACTOR
                 ):
-                    logger.error(f"File size exceeds limit: {file.filename}")
+                    logger.error(
+                        f"File size exceeds limit: {file.filename}"
+                    )
                     raise HTTPException(
                         status_code=413,
                         detail="File size exceeds maximum allowed size.",
@@ -562,6 +564,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     )
 
                 file_extension = file.filename.split(".")[-1].lower()
+                excluded_parsers = self.config.ingestion.get(
+                    "excluded_parsers", {}
+                )
                 if file_extension.upper() not in DocumentType.__members__:
                     logger.error(
                         f"'{file_extension}' is not a valid DocumentType"
@@ -569,6 +574,15 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     raise HTTPException(
                         status_code=415,
                         detail=f"'{file_extension}' is not a valid DocumentType.",
+                    )
+                if (
+                    DocumentType[file_extension.upper()]
+                    in excluded_parsers
+                ):
+                    logger.error(f"{file_extension} is explicitly excluded in the configuration file.")
+                    raise HTTPException(
+                        status_code=415,
+                        detail=f"{file_extension} is explicitly excluded in the configuration file.",
                     )
 
                 document_id = (
@@ -614,7 +628,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         user_ids=user_id,
                     )
                 )
-                # Upsert document info
                 document_infos.append(
                     DocumentInfo(
                         **{
@@ -652,7 +665,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
             )
 
             if not skip_document_info:
-                self.providers.vector_db.upsert_documents_info(document_infos)
+                self.providers.vector_db.upsert_documents_info(
+                    document_infos
+                )
 
             return {
                 "processed_documents": [
@@ -726,7 +741,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
 
             except HTTPException as he:
-                raise he
+                raise HTTPException(he.status_code, he.detail) from he
 
             except Exception as e:
                 logger.error(f"ingest_files() - \n\n{str(e)})")
