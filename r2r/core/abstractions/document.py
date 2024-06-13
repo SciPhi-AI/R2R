@@ -146,9 +146,7 @@ def extract_entities(llm_payload: list[str]) -> dict[str, Entity]:
                 if colon_count == 1:
                     category, value = entry.split(":")
                     sub_category = None
-                elif colon_count == 2:
-                    category, sub_category, value = entry.split(":")
-                elif colon_count > 2:
+                elif colon_count >= 2:
                     parts = entry.split(":", 2)
                     category, sub_category, value = (
                         parts[0],
