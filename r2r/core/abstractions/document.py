@@ -157,6 +157,10 @@ def extract_entities(llm_payload: list[str]) -> dict[str, Entity]:
                     )
                 else:
                     raise ValueError("Unexpected entry format")
+
+                entities[entry_val] = Entity(
+                    category=category, sub_category=sub_category, value=value
+                )
         except Exception as e:
             logger.error(f"Error processing entity {entry}: {e}")
             continue

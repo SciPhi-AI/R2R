@@ -6,9 +6,9 @@ from typing import Any, Optional, Tuple
 
 from ..abstractions.llama_abstractions import (
     EntityNode,
+    LabelledNode,
     Relation,
     VectorStoreQuery,
-    LabelledNode,
 )
 from .base_provider import ProviderConfig
 
