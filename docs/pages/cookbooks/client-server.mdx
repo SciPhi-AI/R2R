@@ -11,21 +11,12 @@ This document extends the [R2R Demo](/getting-started/r2r-demo) by demonstrating
 To set up the R2R server, follow these steps:
 
 <Callout type="info" emoji="🐳">
-   Docker makes it convenient to run R2R without managing your local environment.
+   Docker makes it convenient to run R2R without managing your local environment. Learn more [here](/getting-started/installation)
 </Callout>
 
 <details>
-<summary>Docker Installation</summary>
-
-To run R2R using Docker, you can use the following commands:
-
-```bash filename="bash" copy
-docker pull emrgntcmplxty/r2r:latest
-```
-
-This will pull the latest R2R Docker image.
-
-Be sure to set an OpenAI API key in your environment and then run the container with:
+<summary>Running with Docker</summary>
+Run your Docker container using the following command:
 
 ```bash filename="bash" copy
 docker run -d \
@@ -56,6 +47,10 @@ This command starts the R2R container with the following options:
 ### Using the Client
 
 The R2R framework includes a [python client](https://github.com/SciPhi-AI/R2R/blob/main/r2r/main/r2r_client.py) and a [typescript client](https://github.com/SciPhi-AI/r2r-js/blob/main/src/r2rClient.ts). All of the demo commands can be run with the python client using the `--client_server_mode` parameter to run the demo in Client-Server mode. Note that these commands will only run successfully if the server is active at http://0.0.0.0:8000.
+
+<Callout type="warning" emoji="️⚠️">
+   Be sure to run client commands in a new terminal!
+</Callout>
 
 ### Example Commands
 

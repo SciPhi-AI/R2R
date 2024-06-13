@@ -1,48 +1,57 @@
+import { Tabs } from 'nextra/components'
+
 ## Quick Installation
-<details open>
-<summary><b>Installing with Pip</b>&nbsp;🐍 </summary>
 
-Install R2R using `pip` to get started with minimal setup. This method will get you set up with the default configuration:
+<Tabs items={['Installing with Pip 🐍', 'Installing with Docker 🐳']}>
+  <Tabs.Tab>
+  Install R2R using `pip` to get started with minimal setup. This method will get you set up with the default configuration:
 
-```bash
-# use the `'r2r[all]'` to download all required deps
-pip install r2r
+  ```bash
+  # use the `'r2r[all]'` to download all required deps
+  pip install r2r
 
-# setup env 
-export OPENAI_API_KEY=sk-...
-```
-</details>
+  # setup env 
+  export OPENAI_API_KEY=sk-...
+  ```
+  </Tabs.Tab>
 
-<details>
-<summary><b>Installing with Docker</b>&nbsp;🐳</summary>
+  <Tabs.Tab>
+  Docker makes it convenient to run R2R without managing your local environment.
 
-To run R2R using Docker, you can use the following commands:
+  You'll first need to pull the latest R2R Docker image.
 
-```bash filename="bash" copy
-docker pull emrgntcmplxty/r2r:latest
-```
+  If you plan to use hosted LLMs, such as OpenAI models, run:
+  ```bash filename="bash" copy
+  docker pull emrgntcmplxty/r2r:v2.0.15_slim
+  ```
 
-This will pull the latest R2R Docker image.
+  This downloads the most recent Docker image and doesn't include optional dependencies for local LLMs which are quite large.
 
-Be sure to set an OpenAI API key in your environment and then run the container with:
+  If you plan to run local LLMs, pull the Docker image using the command:
+  ```bash filename="bash" copy
+  docker pull emrgntcmplxty/r2r:latest
+  ```
 
-```bash filename="bash" copy
-docker run -d \
-  --name r2r \
-  --add-host=host.docker.internal:host-gateway \
-  -p 8000:8000 \
-  -e OPENAI_API_KEY=$OPENAI_API_KEY \
-  emrgntcmplxty/r2r:latest
-```
+  Be sure to set an OpenAI API key in your environment and then run the container with:
 
-This command starts the R2R container with the following options:
+  ```bash filename="bash" copy
+  docker run -d \
+    --name r2r \
+    --add-host=host.docker.internal:host-gateway \
+    -p 8000:8000 \
+    -e OPENAI_API_KEY=$OPENAI_API_KEY \
+    emrgntcmplxty/r2r:latest
+  ```
 
-- `--name r2r`: Assigns the name "r2r" to the container.
-- `--add-host=host.docker.internal:host-gateway`: Adds a host entry for the Docker host.
-- `-p 8000:8000`: Maps port 8000 of the container to port 8000 of the host.
-- `-e OPENAI_API_KEY=$OPENAI_API_KEY`: Pulls your OpenAI API key from your local enviornment for use in the container.
-- `emrgntcmplxty/r2r:latest`: Specifies the Docker image to use.
-</details>
+  This command starts the R2R container with the following options:
+
+  - `--name r2r`: Assigns the name "r2r" to the container.
+  - `--add-host=host.docker.internal:host-gateway`: Adds a host entry for the Docker host.
+  - `-p 8000:8000`: Maps port 8000 of the container to port 8000 of the host.
+  - `-e OPENAI_API_KEY=$OPENAI_API_KEY`: Pulls your OpenAI API key from your local enviornment for use in the container.
+  - `emrgntcmplxty/r2r:latest`: Specifies the Docker image to use.
+  </Tabs.Tab>
+</Tabs>
 
 ## Full Installation
 
