@@ -482,95 +482,139 @@ class R2RApp(metaclass=AsyncSyncMeta):
         try:
             documents = []
             document_infos = []
+            skipped_files = []
+            processed_files = []
+
             for iteration, file in enumerate(files):
-                logger.info(f"Processing file: {file.filename}")
-                if (
-                    file.size
-                    > self.config.app.get("max_file_size_in_mb", 32)
-                    * MB_CONVERSION_FACTOR
-                ):
-                    logger.error(f"File size exceeds limit: {file.filename}")
-                    raise HTTPException(
-                        status_code=413,
-                        detail="File size exceeds maximum allowed size.",
-                    )
-                if not file.filename:
-                    logger.error("File name not provided.")
-                    raise HTTPException(
-                        status_code=400, detail="File name not provided."
-                    )
+                try:
+                    logger.info(f"Processing file: {file.filename}")
+                    if (
+                        file.size
+                        > self.config.app.get("max_file_size_in_mb", 32)
+                        * MB_CONVERSION_FACTOR
+                    ):
+                        logger.error(
+                            f"File size exceeds limit: {file.filename}"
+                        )
+                        raise HTTPException(
+                            status_code=413,
+                            detail="File size exceeds maximum allowed size.",
+                        )
+                    if not file.filename:
+                        logger.error("File name not provided.")
+                        raise HTTPException(
+                            status_code=400, detail="File name not provided."
+                        )
 
-                file_extension = file.filename.split(".")[-1].lower()
-                if file_extension.upper() not in DocumentType.__members__:
+                    file_extension = file.filename.split(".")[-1].lower()
+                    excluded_parsers = self.config.ingestion.get(
+                        "excluded_parsers", {}
+                    )
+                    if file_extension.upper() not in DocumentType.__members__:
+                        logger.error(
+                            f"'{file_extension}' is not a valid DocumentType"
+                        )
+                        raise HTTPException(
+                            status_code=415,
+                            detail=f"'{file_extension}' is not a valid DocumentType.",
+                        )
+                    if (
+                        DocumentType[file_extension.upper()]
+                        in excluded_parsers
+                    ):
+                        logger.info(
+                            f"'{file_extension}' is in the excluded parsers list. Skipping file."
+                        )
+                        skipped_files.append(file.filename)
+                        continue
+
+                    file_content = await file.read()
+                    logger.info(f"File read successfully: {file.filename}")
+
+                    document_id = (
+                        generate_id_from_label(file.filename)
+                        if document_ids is None
+                        else document_ids[iteration]
+                    )
+                    document_metadata = (
+                        metadatas[iteration] if metadatas else {}
+                    )
+                    document_title = (
+                        document_metadata.get("title", None) or file.filename
+                    )
+                    document_metadata["title"] = document_title
+
+                    user_id = user_ids[iteration] if user_ids else None
+                    if user_id:
+                        document_metadata["user_id"] = str(user_id)
+                    version = versions[iteration] if versions else "v0"
+                    now = datetime.now()
+
+                    documents.append(
+                        Document(
+                            id=document_id,
+                            type=DocumentType[file_extension.upper()],
+                            data=file_content,
+                            metadata=document_metadata,
+                            title=document_title,
+                            user_ids=user_id,
+                        )
+                    )
+                    document_infos.append(
+                        DocumentInfo(
+                            **{
+                                "document_id": document_id,
+                                "version": version,
+                                "size_in_bytes": len(file_content),
+                                "metadata": document_metadata.copy(),
+                                "title": document_title,
+                                "user_id": user_id,
+                                "created_at": now,
+                                "updated_at": now,
+                            }
+                        )
+                    )
+                    processed_files.append(file.filename)
+                except Exception as e:
                     logger.error(
-                        f"'{file_extension}' is not a valid DocumentType"
+                        f"Skipping file '{file.filename}' due to error: {str(e)}"
                     )
-                    raise HTTPException(
-                        status_code=415,
-                        detail=f"'{file_extension}' is not a valid DocumentType.",
-                    )
+                    skipped_files.append(file.filename)
+                    continue
 
-                file_content = await file.read()
-                logger.info(f"File read successfully: {file.filename}")
+            # Filter out skipped documents
+            filtered_documents = [
+                doc for doc in documents if doc.title not in skipped_files
+            ]
+            filtered_document_infos = [
+                info
+                for info in document_infos
+                if info.title not in skipped_files
+            ]
 
-                document_id = (
-                    generate_id_from_label(file.filename)
-                    if document_ids is None
-                    else document_ids[iteration]
-                )
-                document_metadata = metadatas[iteration] if metadatas else {}
-                document_title = (
-                    document_metadata.get("title", None) or file.filename
-                )
-                document_metadata["title"] = document_title
-
-                user_id = user_ids[iteration] if user_ids else None
-                if user_id:
-                    document_metadata["user_id"] = str(user_id)
-                version = versions[iteration] if versions else "v0"
-                now = datetime.now()
-
-                documents.append(
-                    Document(
-                        id=document_id,
-                        type=DocumentType[file_extension.upper()],
-                        data=file_content,
-                        metadata=document_metadata,
-                        title=document_title,
-                        user_ids=user_id,
-                    )
-                )
-                # Upsert document info
-                document_infos.append(
-                    DocumentInfo(
-                        **{
-                            "document_id": document_id,
-                            "version": version,
-                            "size_in_bytes": len(file_content),
-                            "metadata": document_metadata.copy(),
-                            "title": document_title,
-                            "user_id": user_id,
-                            "created_at": now,
-                            "updated_at": now,
-                        }
-                    )
-                )
-
-            # Run the pipeline asynchronously
+            # Run the pipeline asynchronously with filtered documents
             await self.ingestion_pipeline.run(
-                input=to_async_generator(documents),
+                input=to_async_generator(filtered_documents),
                 versions=versions,
                 run_manager=self.run_manager,
             )
 
             if not skip_document_info:
-                self.providers.vector_db.upsert_documents_info(document_infos)
+                self.providers.vector_db.upsert_documents_info(
+                    filtered_document_infos
+                )
+
+            processed_files_messages = [
+                f"File '{file}' processed successfully."
+                for file in processed_files
+            ]
+            skipped_files_messages = [
+                f"File '{file}' skipped due to exclusion or error."
+                for file in skipped_files
+            ]
 
             return {
-                "results": [
-                    f"File '{file.filename}' processed successfully."
-                    for file in files
-                ]
+                "results": (processed_files_messages + skipped_files_messages)
             }
         except Exception as e:
             raise e
@@ -1223,27 +1267,27 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     analysis_type = analysis_config[0]
                     if analysis_type == "bar_chart":
                         extract_key = analysis_config[1]
-                        results[
-                            filter_key
-                        ] = AnalysisTypes.generate_bar_chart_data(
-                            filtered_logs[filter_key], extract_key
+                        results[filter_key] = (
+                            AnalysisTypes.generate_bar_chart_data(
+                                filtered_logs[filter_key], extract_key
+                            )
                         )
                     elif analysis_type == "basic_statistics":
                         extract_key = analysis_config[1]
-                        results[
-                            filter_key
-                        ] = AnalysisTypes.calculate_basic_statistics(
-                            filtered_logs[filter_key], extract_key
+                        results[filter_key] = (
+                            AnalysisTypes.calculate_basic_statistics(
+                                filtered_logs[filter_key], extract_key
+                            )
                         )
                     elif analysis_type == "percentile":
                         extract_key = analysis_config[1]
                         percentile = int(analysis_config[2])
-                        results[
-                            filter_key
-                        ] = AnalysisTypes.calculate_percentile(
-                            filtered_logs[filter_key],
-                            extract_key,
-                            percentile,
+                        results[filter_key] = (
+                            AnalysisTypes.calculate_percentile(
+                                filtered_logs[filter_key],
+                                extract_key,
+                                percentile,
+                            )
                         )
                     else:
                         logger.warning(

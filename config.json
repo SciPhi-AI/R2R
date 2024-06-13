@@ -35,22 +35,8 @@
     }
   },
   "ingestion":{
-    "selected_parsers": {
-      "csv": "default",
-      "docx": "default",
-      "html": "default",
-      "json": "default",
-      "md": "default",
-      "pdf": "default",
-      "pptx": "default",
-      "txt": "default",
-      "xlsx": "default",
-      "gif": "default",
-      "png": "default",
-      "jpg": "default",
-      "jpeg": "default",
-      "svg": "default",
-      "mp3": "default"
+    "excluded_parsers": {
+      "mp4": "default"
     }
   },
   "logging": {

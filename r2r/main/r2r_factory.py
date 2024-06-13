@@ -225,7 +225,7 @@ class R2RPipeFactory:
         return R2RPipes(
             parsing_pipe=parsing_pipe_override
             or self.create_parsing_pipe(
-                self.config.ingestion.get("selected_parsers"), *args, **kwargs
+                self.config.ingestion.get("excluded_parsers"), *args, **kwargs
             ),
             embedding_pipe=embedding_pipe_override
             or self.create_embedding_pipe(*args, **kwargs),
@@ -245,11 +245,11 @@ class R2RPipeFactory:
         )
 
     def create_parsing_pipe(
-        self, selected_parsers: Optional[dict] = None, *args, **kwargs
+        self, excluded_parsers: Optional[dict] = None, *args, **kwargs
     ) -> Any:
         from r2r.pipes import R2RDocumentParsingPipe
 
-        return R2RDocumentParsingPipe(selected_parsers=selected_parsers or {})
+        return R2RDocumentParsingPipe(excluded_parsers=excluded_parsers or {})
 
     def create_embedding_pipe(self, *args, **kwargs) -> Any:
         from r2r.core import RecursiveCharacterTextSplitter
