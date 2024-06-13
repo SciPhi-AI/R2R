@@ -2,8 +2,14 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
+from ..abstractions.llama_abstractions import (
+    EntityNode,
+    LabelledNode,
+    Relation,
+    VectorStoreQuery,
+)
 from .base_provider import ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -63,7 +69,12 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
+    def upsert_nodes(self, nodes: list[EntityNode]) -> None:
+        """Abstract method to add triplet."""
+        pass
+
+    @abstractmethod
+    def upsert_relations(self, relations: list[Relation]) -> None:
         """Abstract method to add triplet."""
         pass
 
@@ -78,8 +89,14 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    def query(
+    def structured_query(
         self, query: str, param_map: Optional[dict[str, Any]] = {}
     ) -> Any:
         """Abstract method to query the graph store with statement and parameters."""
         pass
+
+    @abstractmethod
+    def vector_query(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> Tuple[list[LabelledNode], list[float]]:
+        """Abstract method to query the graph store with a vector store query."""

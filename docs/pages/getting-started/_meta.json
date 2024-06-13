@@ -1,8 +1,8 @@
 {
   "installation": "Installation",
   "quickstart": "Quickstart",
-  "app-api": {
-    "title": "Application API",
+  "r2r-api": {
+    "title": "R2R API",
     "theme": {
       "layout": "raw"
     }
