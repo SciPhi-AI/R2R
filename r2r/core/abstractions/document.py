@@ -141,14 +141,22 @@ def extract_entities(llm_payload: list[str]) -> dict[str, Entity]:
             if "], " in entry:  # Check if the entry is an entity
                 entry_val = entry.split("], ")[0] + "]"
                 entry = entry.split("], ")[1]
-                if entry.count(":") == 1:
+                colon_count = entry.count(":")
+
+                if colon_count == 1:
                     category, value = entry.split(":")
                     sub_category = None
-                else:
+                elif colon_count == 2:
                     category, sub_category, value = entry.split(":")
-                entities[entry_val] = Entity(
-                    category=category, sub_category=sub_category, value=value
-                )
+                elif colon_count > 2:
+                    parts = entry.split(":", 2)
+                    category, sub_category, value = (
+                        parts[0],
+                        parts[1],
+                        parts[2],
+                    )
+                else:
+                    raise ValueError("Unexpected entry format")
         except Exception as e:
             logger.error(f"Error processing entity {entry}: {e}")
             continue

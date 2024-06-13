@@ -30,7 +30,7 @@ For a more complete view of R2R, check out our [documentation](https://r2r-docs.
 
 ## Table of Contents
 1. [Quick Install](#quick-install)
-2. [R2R Python SDK Demo](#r2r-demo)
+2. [R2R Python SDK Demo](#r2r-python-sdk-demo)
 3. [R2R Dashboard](#r2r-dashboard)
 4. [Community and Support](#community-and-support)
 5. [Contributing](#contributing)
@@ -340,6 +340,7 @@ There are a number of helpful tutorials and cookbooks that can be found in the [
 - [Local RAG](https://r2r-docs.sciphi.ai/cookbooks/local-rag): A quick cookbook demonstration of how to run R2R with local LLMs.
 - [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): A brief introduction to running hybrid search with R2R.
 - [Reranking](https://r2r-docs.sciphi.ai/cookbooks/rerank-search): A short guide on how to apply reranking to R2R results.
+- [GraphRAG](https://r2r-docs.sciphi.ai/cookbooks/knowledge-graph): A walkthrough of automatic knowledge graph generation with R2R.
 - [Dashboard](https://r2r-docs.sciphi.ai/cookbooks/dashboard): A how-to guide on connecting with the R2R Dashboard.
 - [SciPhi Cloud Docs](https://docs.sciphi.ai/): SciPhi Cloud documentation.
 
