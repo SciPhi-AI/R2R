@@ -11,6 +11,7 @@ from r2r.core import (
     LoggableAsyncPipe,
     PipeType,
 )
+from r2r.core.abstractions.llama_abstractions import EntityNode, Relation
 
 logger = logging.getLogger(__name__)
 
@@ -54,11 +55,27 @@ class R2RKGStoragePipe(LoggableAsyncPipe):
         Stores a batch of knowledge graph extractions in the graph database.
         """
         try:
+            nodes = []
+            relations = []
             for extraction in kg_extractions:
-                for triple in extraction.triples:
-                    self.kg_provider.upsert_triplet(
-                        triple.subject, triple.predicate, triple.object
+                for entity in extraction.entities.values():
+                    nodes.append(
+                        EntityNode(
+                            name=entity.value,
+                            label=entity.category,
+                            properties={"sub_category": entity.sub_category},
+                        )
                     )
+                for triple in extraction.triples:
+                    relations.append(
+                        Relation(
+                            source_id=triple.subject,
+                            target_id=triple.object,
+                            label=triple.predicate,
+                        )
+                    )
+            self.kg_provider.upsert_nodes(nodes)
+            self.kg_provider.upsert_relations(relations)
         except Exception as e:
             error_message = f"Failed to store knowledge graph extractions in the database: {e}"
             logger.error(error_message)
