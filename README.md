@@ -89,7 +89,7 @@ The following demo offers a step-by-step guide on running the default R2R Retrie
 ![ingest_as_files](https://github.com/SciPhi-AI/R2R/assets/34580718/b0780f26-8e90-4459-9537-e5871453d003)
 
 
-<details>
+<details open>
 <summary> <b>Interacting with your Documents</b></summary>
 
 1. **Ingesting Files**:
