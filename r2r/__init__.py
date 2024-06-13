@@ -1,7 +1,6 @@
 import logging
 
 from .core import *
-from .eval import *
 from .integrations import *
 from .main import *
 from .pipes import *

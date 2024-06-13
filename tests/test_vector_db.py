@@ -12,11 +12,7 @@ from r2r import (
     VectorEntry,
     generate_id_from_label,
 )
-from r2r.vector_dbs import (
-    PGVectorDB,
-    R2RLocalVectorDB,
-    MilvusVectorDB,
-)
+from r2r.providers.vector_dbs import PGVectorDB, R2RLocalVectorDB, MilvusVectorDB
 
 load_dotenv()
 
