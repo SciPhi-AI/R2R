@@ -1,7 +1,8 @@
 import asyncio
 import logging
 from functools import wraps
-from r2r.telemetry.events import FeatureUsageEvent, ErrorEvent
+
+from r2r.telemetry.events import ErrorEvent, FeatureUsageEvent
 from r2r.telemetry.posthog import telemetry_client
 
 logger = logging.getLogger(__name__)
