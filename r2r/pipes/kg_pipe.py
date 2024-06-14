@@ -188,8 +188,6 @@ class R2RKGPipe(KGPipe):
                     messages, kg_generation_config
                 )
 
-                print("response = ", response)
-
                 kg_extraction = response.choices[0].message.content
 
                 # Parsing JSON from the response
