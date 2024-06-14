@@ -236,20 +236,36 @@ python r2r/examples/scripts/build_yc_kg.py --max_entries=1
 Running the command above will produce output like the following:
 
 ```bash
-PERSON:Joe Gebbia -[FOUNDED]-> ORGANIZATION:COMPANY:Airbnb
-ORGANIZATION:COMPANY:Airbnb -[LOCATION]-> LOCATION:CITY:San Francisco
-ORGANIZATION:COMPANY:Airbnb -[HAS]-> QUANTITY:7M listings
-ORGANIZATION:COMPANY:Airbnb -[LOCATION]-> LOCATION:COUNTRY:191+ countries
-PERSON:Joe Gebbia -[WORKED_AT]-> ORGANIZATION:COMPANY:Airbnb
-PERSON:Joe Gebbia -[FOUNDED]-> ORGANIZATION:COMPANY:Samara
-ORGANIZATION:COMPANY:Samara -[PRODUCT]-> PRODUCT:fully customized, factory-made homes
-ORGANIZATION:COMPANY:Samara -[INDUSTRY]-> INDUSTRY:economic empowerment
-ORGANIZATION:COMPANY:Samara -[INDUSTRY]-> INDUSTRY:housing resources
-ORGANIZATION:COMPANY:Samara -[INDUSTRY]-> INDUSTRY:design
-ORGANIZATION:COMPANY:Airbnb -[FOUNDED]-> DATE:MONTH:August
-ORGANIZATION:COMPANY:Airbnb -[FOUNDED]-> DATE:YEAR:2008
-ORGANIZATION:COMPANY:Airbnb -[LOCATION]-> LOCATION:STATE:California
-ORGANIZATION:COMPANY:Airbnb -[HAS]-> QUANTITY:more than 33,000 cities
+Joe Gebbia -[FOUNDED]-> Airbnb
+Airbnb -[LOCATION]-> San Francisco
+Airbnb -[HAS]-> 7M listings
+Airbnb -[LOCATION]-> 191+ countries
+Joe Gebbia -[WORKED_AT]-> Airbnb
+Joe Gebbia -[FOUNDED]-> Samara
+Samara -[PRODUCT]-> fully customized, factory-made homes
+Airbnb -[FOUNDED]-> August
+Airbnb -[FOUNDED]-> 2008
+Airbnb -[LOCATION]-> California
+Airbnb -[HAS]-> 33,000 cities
+Airbnb -[HAS]-> 192 countries
+Airbnb -[LOCATION]-> Dublin
+Airbnb -[LOCATION]-> London
+Airbnb -[LOCATION]-> Barcelona
+Airbnb -[LOCATION]-> Paris
+Airbnb -[LOCATION]-> Milan
+Airbnb -[LOCATION]-> Copenhagen
+Airbnb -[LOCATION]-> Berlin
+Airbnb -[LOCATION]-> Moscow
+Airbnb -[LOCATION]-> São Paolo
+Airbnb -[LOCATION]-> Sydney
+Airbnb -[LOCATION]-> Singapore
+Airbnb -[EDUCATED_AT]-> Y Combinator
+Airbnb -[PARTICIPATED]-> W09
+Airbnb -[INDUSTRY]-> marketplace
+Airbnb -[INDUSTRY]-> travel
+Airbnb -[MEDIA]-> http://airbnb.com
+Brian Chesky -[WORKED_AT]-> Airbnb
+Brian Chesky -[POSITION]-> CEO
 ...
 ```
 
@@ -259,7 +275,7 @@ We are now ready to run a much larger ingestion.
 poetry run python r2r/examples/scripts/build_yc_kg.py --delete --max_entries=100
 ```
 
-### Results
+### Graph Visualization
 
 
 After successful completion we will see a large printout showing the various connections that have been formed across our knowledge graph. Indeed, there are more connections than we can readily understand. We use the Neo4j browser which ships with the desktop application to gain us some intuition around the constructed graph.
@@ -299,13 +315,13 @@ Executing a few queries, we see outputs like the following:
 ## Locating all founders
 
 Executing query: 
-MATCH (p)-[:FOUNDED]->(c)
-WHERE p.id CONTAINS 'PERSON:'
+MATCH (p:PERSON)-[:FOUNDED]->(c)
 RETURN p.id AS Founder, c.id AS Company
 ORDER BY c.id
 LIMIT 10;
 
-results =  [{'Founder': 'PERSON:Sidharth', 'Company': 'EVENT:second startup'}, {'Founder': 'PERSON:Sourav', 'Company': 'EVENT:second startup'}, {'Founder': 'PERSON:Stefan', 'Company': 'MEDIA:WEBSITE:https://github.com/dagworks-inc/hamilton'}, {'Founder': 'PERSON:Dawson Chen', 'Company': 'NON-PROFIT:Nonprofit to find employment for the homeless'}, {'Founder': 'PERSON:Joe Gebbia', 'Company': 'ORGANIZATION:COMPANY:Airbnb'}, {'Founder': 'PERSON:Brian Chesky', 'Company': 'ORGANIZATION:COMPANY:Airbnb'}, {'Founder': 'PERSON:Joanne Wang', 'Company': 'ORGANIZATION:COMPANY:Airfront'}, {'Founder': 'PERSON:Tommy Guo', 'Company': 'ORGANIZATION:COMPANY:Airfront'}, {'Founder': 'PERSON:Usman Gul', 'Company': 'ORGANIZATION:COMPANY:Airlift'}, {'Founder': 'PERSON:Adam Tilton', 'Company': 'ORGANIZATION:COMPANY:Aktive'}]
+Results:
+[{'Founder': 'Nathan Blecharczyk', 'Company': 'Airbnb'}, {'Founder': 'Brian Chesky', 'Company': 'Airbnb'}, {'Founder': 'Joe Gebbia', 'Company': 'Airbnb'}, {'Founder': 'Tommy Guo', 'Company': 'Airfront'}, {'Founder': 'Joanne Wang', 'Company': 'Airfront'}, {'Founder': 'Adam Tilton', 'Company': 'Aktive'}, {'Founder': 'Abraham Heifets', 'Company': 'Atomwise'}, {'Founder': 'Nicholas Charriere', 'Company': 'Axilla'}, {'Founder': 'Caitlin', 'Company': 'B2B marketing software'}, {'Founder': 'Timmy', 'Company': 'B2B marketing software'}]
 ```
 
 
@@ -313,42 +329,44 @@ results =  [{'Founder': 'PERSON:Sidharth', 'Company': 'EVENT:second startup'}, {
 ## Locating 2-time founders
 
 Executing query: 
-MATCH (p)-[:FOUNDED]->(c)
-WHERE p.id CONTAINS 'PERSON:' AND c.id CONTAINS 'COMPANY:'
+MATCH (p:PERSON)-[:FOUNDED]->(c:ORGANIZATION)
 WITH p.id AS Person, COUNT(c) AS CompaniesCount
-WHERE CompaniesCount > 1
 RETURN Person, CompaniesCount
-ORDER BY CompaniesCount DESC;
+ORDER BY CompaniesCount DESC
+LIMIT 10;
 
-results =  [{'Person': 'PERSON:Joe Gebbia', 'CompaniesCount': 2}, {'Person': 'PERSON:Ilana Nasser', 'CompaniesCount': 2}, {'Person': 'PERSON:Sourav Choraria', 'CompaniesCount': 2}, {'Person': 'PERSON:Kris Pahuja', 'CompaniesCount': 2}, {'Person': 'PERSON:Adam Tilton', 'CompaniesCount': 2}, {'Person': 'PERSON:Daniel Hensley', 'CompaniesCount': 2}, {'Person': 'PERSON:Sam', 'CompaniesCount': 2}, {'Person': 'PERSON:Jason Kerkvliet', 'CompaniesCount': 2}, {'Person': 'PERSON:Tom Blomfield', 'CompaniesCount': 2}, {'Person': 'PERSON:Usman Gul', 'CompaniesCount': 2}, {'Person': 'PERSON:Lucious', 'CompaniesCount': 2}]
+Results:
+[{'Person': 'Ilana Nasser', 'CompaniesCount': 3}, {'Person': 'Eric', 'CompaniesCount': 2}, {'Person': 'Kris Pahuja', 'CompaniesCount': 2}, {'Person': 'Sam', 'CompaniesCount': 2}, {'Person': 'Tom Blomfield', 'CompaniesCount': 2}, {'Person': 'Umur Cubukcu', 'CompaniesCount': 2}, {'Person': 'Jason', 'CompaniesCount': 2}, {'Person': 'Joe Gebbia', 'CompaniesCount': 2}, {'Person': 'Adam Tilton', 'CompaniesCount': 2}, {'Person': 'Alex', 'CompaniesCount': 2}]
 ```
-
-
 
 ```bash
 ### Locating companies with AI products
 
 Executing query: 
-MATCH (e)-[r:PRODUCT]->(t)
+MATCH (c:ORGANIZATION)-[r:PRODUCT]->(t)
 WHERE t.id CONTAINS 'AI'
-RETURN e.id AS Entity, t.id AS Product
-ORDER BY e.id;
+RETURN DISTINCT c.id AS Company, t.id AS Product
+ORDER BY c.id
+LIMIT 10;
 
-results =  [{'Entity': 'ORGANIZATION:COMPANY:AgentsForce', 'Product': 'PRODUCT:AI support agents'}, {'Entity': 'ORGANIZATION:COMPANY:Airfront', 'Product': 'PRODUCT:AI-first email platform'}, {'Entity': 'ORGANIZATION:COMPANY:Airfront', 'Product': 'PRODUCT:AI-first email platform with built-in automations'}, {'Entity': 'ORGANIZATION:COMPANY:Axflow', 'Product': 'PRODUCT:Tools for product teams building AI applications'}, {'Entity': 'ORGANIZATION:COMPANY:Axflow', 'Product': 'PRODUCT:AI app'}, {'Entity': 'ORGANIZATION:COMPANY:Clarum', 'Product': 'PRODUCT:AI-powered due diligence solutions'}, {'Entity': 'ORGANIZATION:COMPANY:Clarum', 'Product': 'PRODUCT:AI-powered due diligence'}, {'Entity': 'ORGANIZATION:COMPANY:Clerkie', 'Product': 'PRODUCT:AI tool'}, {'Entity': 'ORGANIZATION:COMPANY:Dawn', 'Product': 'PRODUCT:Analytics for AI products'}, {'Entity': 'ORGANIZATION:COMPANY:Decipher', 'Product': 'PRODUCT:Decipher AI'}, {'Entity': 'ORGANIZATION:COMPANY:Decipher', 'Product': 'PRODUCT:AI-powered user impact summaries'}, {'Entity': 'ORGANIZATION:COMPANY:EzDubs', 'Product': 'PRODUCT:AI dubbing'}, {'Entity': 'ORGANIZATION:COMPANY:EzDubs', 'Product': 'PRODUCT:Real-time AI dubbing'}, {'Entity': 'ORGANIZATION:COMPANY:EzDubs', 'Product': 'PRODUCT:AI video dubbing tool'}, {'Entity': 'ORGANIZATION:COMPANY:Flint', 'Product': 'PRODUCT:AI platform for K-12'}, {'Entity': 'ORGANIZATION:COMPANY:Focal', 'Product': 'PRODUCT:AI video creation tool'}, {'Entity': 'ORGANIZATION:COMPANY:Focal', 'Product': 'PRODUCT:AI movie studio'}, {'Entity': 'ORGANIZATION:COMPANY:Fynt', 'Product': 'PRODUCT:Fynt - The AI Financial Controller'}, {'Entity': 'ORGANIZATION:COMPANY:Fynt AI', 'Product': 'PRODUCT:Fynt - The AI Financial Controller'}, {'Entity': 'ORGANIZATION:COMPANY:Lightski', 'Product': 'PRODUCT:AI Data Scientist'}, {'Entity': 'ORGANIZATION:COMPANY:Lightski', 'Product': 'PRODUCT:Lightski AI Data Scientist'}, {'Entity': 'ORGANIZATION:COMPANY:Magic Hour', 'Product': 'PRODUCT:AI video generation'}, {'Entity': 'ORGANIZATION:COMPANY:MagnaPlay', 'Product': 'PRODUCT:AI-powered game translation'}, {'Entity': 'ORGANIZATION:COMPANY:Magnaplay', 'Product': 'PRODUCT:AI-powered game translation'}, {'Entity': 'ORGANIZATION:COMPANY:Narrative', 'Product': 'PRODUCT:AI-powered invoice audit, analytics and payments tool'}, {'Entity': 'ORGANIZATION:COMPANY:Octo', 'Product': 'PRODUCT:AI agents'}, {'Entity': 'ORGANIZATION:COMPANY:Osium AI', 'Product': 'PRODUCT:AI-powered software'}, {'Entity': 'ORGANIZATION:COMPANY:ProSights', 'Product': 'PRODUCT:AI-native operating system'}, {'Entity': 'ORGANIZATION:COMPANY:Raz', 'Product': 'PRODUCT:Next-generation AI forms'}, {'Entity': 'ORGANIZATION:COMPANY:Relari', 'Product': 'PRODUCT:Testing and simulation stack for GenAI systems'}, {'Entity': 'ORGANIZATION:COMPANY:Relari', 'Product': 'PRODUCT:Testing and Simulation Stack for GenAI Systems'}, {'Entity': 'ORGANIZATION:COMPANY:Relari.ai', 'Product': 'PRODUCT:GenAI applications'}, {'Entity': 'ORGANIZATION:COMPANY:Slicker', 'Product': 'PRODUCT:AI-powered payments platform'}, {'Entity': 'ORGANIZATION:COMPANY:Slicker', 'Product': 'PRODUCT:AI-powered modular payments infrastructure'}, {'Entity': 'ORGANIZATION:COMPANY:Spark', 'Product': 'PRODUCT:AI-powered planning and workflow solution'}, {'Entity': 'ORGANIZATION:COMPANY:TableFlow', 'Product': 'PRODUCT:AI-Powered Data Transformation'}, {'Entity': 'ORGANIZATION:COMPANY:Wild Moose', 'Product': 'PRODUCT:Gen AI'}, {'Entity': 'ORGANIZATION:COMPANY:ego', 'Product': 'PRODUCT:AI-native 3D simulation engine'}, {'Entity': 'ORGANIZATION:COMPANY:tl;dr ego', 'Product': 'PRODUCT:AI-native simulation engine'}, {'Entity': 'PRODUCT:Octo', 'Product': 'PRODUCT:AI agents'}, {'Entity': 'PRODUCT:Upstream', 'Product': 'MEDIA:EMAIL'}]
+Results:
+[{'Company': 'AgentsForce', 'Product': 'AI support agents'}, {'Company': 'Airfront', 'Product': 'AI-first email platform'}, {'Company': 'Airfront', 'Product': 'AI-first email platform with built-in automations'}, {'Company': 'Airfront', 'Product': 'AI automation platform'}, {'Company': 'Axflow', 'Product': 'AI app'}, {'Company': 'Clarum', 'Product': 'AI-powered due diligence solutions'}, {'Company': 'Clarum', 'Product': 'AI-powered due diligence'}, {'Company': 'CommodityAI', 'Product': 'AI-automation platform'}, {'Company': 'Dawn', 'Product': 'Analytics for AI products'}, {'Company': 'Decipher', 'Product': 'AI-powered user impact summaries'}]```
 ```
 
 ```bash
-## Locating AI founders with optional education info
+## Locating AI founders with optional info
 
 Executing query: 
-MATCH (p)-[:FOUNDED]->(c)-[:INDUSTRY]->(i)
-WHERE p.id CONTAINS 'PERSON:' AND i.id CONTAINS 'AI'
-WITH p, c, i
-OPTIONAL MATCH (p)-[:EDUCATED_AT]->(s)
-RETURN p.id AS Founder, c.id AS Company, i.id AS Industry, collect(s.id) AS Schools
+MATCH (p:PERSON)-[:FOUNDED]->(c:ORGANIZATION)-[:INDUSTRY]->(i:INDUSTRY)
+WHERE i.id CONTAINS 'saas'
+OPTIONAL MATCH (p)-[:EDUCATED_AT]->(s:ORGANIZATION)
+OPTIONAL MATCH (p)-[:WORKED_AT]->(r:ORGANIZATION)
+OPTIONAL MATCH (c)-[:PRODUCT]->(t:PRODUCT)
+RETURN p.id AS Founder, c.id AS Company, collect(DISTINCT i.id) AS Industries, collect(DISTINCT t.id) AS Products, collect(DISTINCT s.id) AS Schools, collect(DISTINCT r.id) AS Companies
 ORDER BY p.id
 LIMIT 10;
 
-results =  [{'Founder': 'PERSON:Jean-Michael Diei', 'Company': 'ORGANIZATION:COMPANY:PropRise', 'Industry': 'INDUSTRY:AI-driven automation', 'Schools': [], 'Honors': []}, {'Founder': 'PERSON:Pedro', 'Company': 'ORGANIZATION:COMPANY:Flint', 'Industry': 'INDUSTRY:AI tutoring for schools', 'Schools': ['ORGANIZATION:SCHOOL:Harvard'], 'Honors': []}]
+Results:
+[{'Founder': 'Abdullah Al Zandani', 'Company': 'Coperniq', 'Industries': ['saas'], 'Products': ['workflow software', 'Workflow software'], 'Schools': [], 'Companies': ['two solar companies', 'ADM']}, {'Founder': 'Akshit Khurana', 'Company': 'Narrative', 'Industries': ['saas'], 'Products': [], 'Schools': [], 'Companies': ['Ginger.io', 'Housecanary', 'Pytorch', 'Meta', 'SlideShare', 'Ambient AI', 'LinkedIn']}, {'Founder': 'Alan', 'Company': 'Health Harbor', 'Industries': ['saas'], 'Products': ['Automated billing for private medical practices', 'billing'], 'Schools': ['Yale'], 'Companies': ['Nuro', 'Meta']}, {'Founder': 'Daiyi Yang', 'Company': 'Empower', 'Industries': ['saas'], 'Products': ['Empower-Functions', 'LLMs'], 'Schools': [], 'Companies': ['Meta', 'Revinate']}, {'Founder': 'Dani Penev', 'Company': 'Slicker', 'Industries': ['saas'], 'Products': ['AI-powered payments platform', 'payments integration'], 'Schools': [], 'Companies': ['Thought Machine', 'Stripe']}, {'Founder': 'David Hua', 'Company': 'Meadow', 'Industries': ['saas'], 'Products': [], 'Schools': [], 'Companies': []}, {'Founder': 'Hansen Qian', 'Company': 'Lightski', 'Industries': ['saas'], 'Products': ['User-facing analytics', 'Lightski AI Data Scientist', 'embedded data analytics', 'analytics experience', 'AI Data Scientist', 'Lightski'], 'Schools': [], 'Companies': ['Affinity CRM']}, {'Founder': 'Ivan Valkov', 'Company': 'Slicker', 'Industries': ['saas'], 'Products': ['AI-powered payments platform', 'payments integration'], 'Schools': [], 'Companies': []}, {'Founder': 'Jacob', 'Company': 'IcePanel', 'Industries': ['saas'], 'Products': ['collaborative modelling tool', 'relationships', 'Dynamic flows', 'diagrams', 'IcePanel objects', 'C4 model', 'single source of truth', 'Levelled diagramming', 'software architecture', 'reusable objects', 'SaaS tool'], 'Schools': [], 'Companies': []}, {'Founder': 'Jean-Michael Diei', 'Company': 'PropRise', 'Industries': ['saas'], 'Products': ['Beacon', 'Beacon by PropRise'], 'Schools': [], 'Companies': []}]
 ```
 
