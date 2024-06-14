@@ -291,6 +291,7 @@ class R2RPipeFactory:
             is_separator_regex=False,
         )
         return R2RKGPipe(
+            kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
             vector_db_provider=self.providers.vector_db,
@@ -301,7 +302,10 @@ class R2RPipeFactory:
     def create_kg_storage_pipe(self, *args, **kwargs) -> Any:
         from r2r.pipes import R2RKGStoragePipe
 
-        return R2RKGStoragePipe(kg_provider=self.providers.kg)
+        return R2RKGStoragePipe(
+            kg_provider=self.providers.kg,
+            embedding_provider=self.providers.embedding,
+        )
 
     def create_vector_storage_pipe(self, *args, **kwargs) -> Any:
         from r2r.pipes import R2RVectorStoragePipe

@@ -13,6 +13,7 @@ from .abstractions.document import (
     extract_entities,
     extract_triples,
 )
+from .abstractions.llama_abstractions import VectorStoreQuery
 from .abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
 from .abstractions.prompt import Prompt
 from .abstractions.search import SearchRequest, SearchResult
@@ -147,6 +148,7 @@ __all__ = [
     "PromptConfig",
     "PromptProvider",
     "GenerationConfig",
+    "VectorStoreQuery",
     "LLMChatCompletion",
     "LLMChatCompletionChunk",
     "LLMConfig",

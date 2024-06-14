@@ -1,3 +1,4 @@
+import os
 from typing import Optional, Type
 
 from r2r import (
@@ -19,8 +20,36 @@ from .r2r_factory import R2RPipeFactory, R2RPipelineFactory, R2RProviderFactory
 
 
 class R2RAppBuilder:
-    def __init__(self, config: Optional[R2RConfig] = None):
-        self.config = config or R2RConfig.from_json()
+    current_file_path = os.path.dirname(__file__)
+
+    config_root = os.path.join(current_file_path, "..", "examples", "configs")
+    CONFIG_OPTIONS = {
+        "default": None,
+        "local_ollama": os.path.join(config_root, "local_ollama.json"),
+        "local_ollama_rerank": os.path.join(
+            config_root, "local_ollama_rerank.json"
+        ),
+        "pgvector": os.path.join(config_root, "pgvector.json"),
+        "neo4j_kg": os.path.join(config_root, "neo4j_kg.json"),
+    }
+
+    @staticmethod
+    def _get_config(config_name):
+        if config_name is None:
+            return R2RConfig.from_json()
+        if config_path := R2RAppBuilder.CONFIG_OPTIONS.get(config_name):
+            return R2RConfig.from_json(config_path)
+        raise ValueError(f"Invalid config name: {config_name}")
+
+    def __init__(
+        self,
+        config: Optional[R2RConfig] = None,
+        from_config: Optional[str] = None,
+    ):
+        if config and from_config:
+            raise ValueError("Cannot specify both config and config_name")
+
+        self.config = config or R2RAppBuilder._get_config(from_config)
         self.r2r_app_override: Optional[Type[R2RApp]] = None
         self.provider_factory_override: Optional[
             Type[R2RProviderFactory]
@@ -144,7 +173,7 @@ class R2RAppBuilder:
             llm_provider_override=self.llm_provider_override,
             prompt_provider_override=self.prompt_provider_override,
             *args,
-            **kwargs
+            **kwargs,
         )
 
         pipes = pipe_factory(self.config, providers).create_pipes(
@@ -156,7 +185,7 @@ class R2RAppBuilder:
             streaming_rag_pipe_override=self.streaming_rag_pipe_override,
             eval_pipe_override=self.eval_pipe_override,
             *args,
-            **kwargs
+            **kwargs,
         )
 
         pipelines = pipeline_factory(self.config, pipes).create_pipelines(
@@ -166,7 +195,7 @@ class R2RAppBuilder:
             streaming_rag_pipeline=self.streaming_rag_pipeline,
             eval_pipeline=self.eval_pipeline,
             *args,
-            **kwargs
+            **kwargs,
         )
 
         r2r_app = self.r2r_app_override or R2RApp

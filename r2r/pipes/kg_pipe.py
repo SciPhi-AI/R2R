@@ -15,6 +15,7 @@ from r2r.core import (
     FragmentType,
     GenerationConfig,
     KGExtraction,
+    KGProvider,
     KVLoggingSingleton,
     LLMProvider,
     LoggableAsyncPipe,
@@ -36,6 +37,7 @@ class KGPipe(LoggableAsyncPipe):
 
     def __init__(
         self,
+        kg_provider: KGProvider,
         prompt_provider: PromptProvider,
         llm_provider: LLMProvider,
         pipe_logger: Optional[KVLoggingSingleton] = None,
@@ -51,6 +53,7 @@ class KGPipe(LoggableAsyncPipe):
             *args,
             **kwargs,
         )
+        self.kg_provider = kg_provider
         self.prompt_provider = prompt_provider
         self.llm_provider = llm_provider
 
@@ -98,6 +101,7 @@ class R2RKGPipe(KGPipe):
 
     def __init__(
         self,
+        kg_provider: KGProvider,
         llm_provider: LLMProvider,
         prompt_provider: PromptProvider,
         text_splitter: TextSplitter,
@@ -113,6 +117,7 @@ class R2RKGPipe(KGPipe):
         Initializes the embedding pipe with necessary components and configurations.
         """
         super().__init__(
+            kg_provider=kg_provider,
             prompt_provider=prompt_provider,
             llm_provider=llm_provider,
             pipe_logger=pipe_logger,
@@ -177,7 +182,8 @@ class R2RKGPipe(KGPipe):
         Extracts NER triples from a list of fragments with retries.
         """
         task_prompt = self.prompt_provider.get_prompt(
-            "ner_kg_extraction", inputs={"input": fragment.data}
+            self.kg_provider.config.kg_extraction_prompt,
+            inputs={"input": fragment.data},
         )
         messages = self.prompt_provider._get_message_payload(
             self.prompt_provider.get_prompt("default_system"), task_prompt

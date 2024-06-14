@@ -5,6 +5,7 @@ from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
     AsyncState,
+    EmbeddingProvider,
     KGExtraction,
     KGProvider,
     KVLoggingSingleton,
@@ -23,6 +24,7 @@ class R2RKGStoragePipe(LoggableAsyncPipe):
     def __init__(
         self,
         kg_provider: KGProvider,
+        embedding_provider: Optional[EmbeddingProvider] = None,
         storage_batch_size: int = 1,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
@@ -45,6 +47,7 @@ class R2RKGStoragePipe(LoggableAsyncPipe):
             **kwargs,
         )
         self.kg_provider = kg_provider
+        self.embedding_provider = embedding_provider
         self.storage_batch_size = storage_batch_size
 
     async def store(
@@ -59,10 +62,16 @@ class R2RKGStoragePipe(LoggableAsyncPipe):
             relations = []
             for extraction in kg_extractions:
                 for entity in extraction.entities.values():
+                    embedding = None
+                    if self.embedding_provider:
+                        embedding = self.embedding_provider.get_embedding(
+                            "Entity:\n{entity.value}\nLabel:\n{entity.category}\nSubcategory:\n{entity.subcategory}"
+                        )
                     nodes.append(
                         EntityNode(
                             name=entity.value,
                             label=entity.category,
+                            embedding=embedding,
                             properties={"subcategory": entity.subcategory}
                             if entity.subcategory
                             else {},

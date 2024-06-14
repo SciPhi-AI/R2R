@@ -9,7 +9,12 @@ import { Callout, FileTree } from 'nextra/components';
 
 This cookbook explains how to configure R2R to automatically construct a knowledge graph from ingested files. The constructed graph will then be used in downstream RAG pipelines as an additional knowledge base in your R2R application.
 
+
 ### Setup
+
+<details>
+<summary>Optional - Explaining R2R Configuration</summary>
+
 
 To enable R2R knowledge graph construction, you must specify a provider for `kg` in your R2R `config.json`. The following code can be found in `r2r/examples/configs/neo4j_kg.json` and contains the necessary settings for RAG graph construction:
 
@@ -29,208 +34,272 @@ To enable R2R knowledge graph construction, you must specify a provider for `kg`
 
 After selecting a knowledge graph provider, the default R2R `IngestionPipeline` will simultaneously construct a knowledge graph and vector search engine during ingestion. Setting `batch_size=1` restricts the system such that one LLM call is processed at a time, and setting `chunk_size=1024` defines the size of chunks used during extraction. The key logic behind the knowledge graph pipeline is contained in the `kg_pipe.py` and `kg_storage.py` which are constructed by the `R2RPipelineFactory` class.
 
-We must set valid environment variables to enable communication with the Neo4j database. For this cookbook, we assume the reader has already downloaded the desktop application [found here](https://neo4j.com/download) and is running with version `>=5.13.0` and `APOC` installed.
+</details>
 
-```bash
+
+R2R uses Neo4j as the primary knowledge graph provider. Follow [these instructions](https://neo4j.com/docs/operations-manual/current/installation/) to setup a Neo4j database. Ensure that your Neo4j database is running with version `>=5.13.0` with `APOC` installed. After setup, set the relevant environment variables as shown (or modify them accordingly):
+
+```bash filename="User Terminal"
 export NEO4J_USER=neo4j
 export NEO4J_PASSWORD=password
 export NEO4J_URL=bolt://localhost:7687
 export NEO4J_DATABASE=neo4j
 ```
 
-As in other cookbooks, this configuration file can be loaded directly into an R2R server as shown below. However, for this demonstration this is not required.
+### Basic Example
 
-```bash filename="bash" copy
-# cd $WORKDIR
-# export NEO4J_...
-# export OPENAI_API_KEY=...
-python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config neo4j_kg.json
-```
+#### Construction
 
-<details>
-<summary>Relevant Factory Source Code</summary>
+We are now ready to construct an example knowledge graph. The snippet below builds R2R and ingests two sample documents
 
-```python filename="r2r_factory.py" copy
-class R2RPipelineFactory:
-  ...
-  def create_ingestion_pipeline(self, *args, **kwargs) -> IngestionPipeline:
-      """Factory method to create an ingestion pipeline."""
-      ingestion_pipeline = IngestionPipeline()
+```python filename="r2r/examples/scripts/basic_kg_cookbook.py"
+from r2r import R2RAppBuilder, Document
 
-      ingestion_pipeline.add_pipe(
-          pipe=self.pipes.parsing_pipe, parsing_pipe=True
-      )
-      # Add embedding pipes if provider is set
-      if self.config.embedding.provider:
-          ingestion_pipeline.add_pipe(
-              self.pipes.embedding_pipe, embedding_pipe=True
-          )
-          ingestion_pipeline.add_pipe(
-              self.pipes.vector_storage_pipe, embedding_pipe=True
-          )
-      # Add KG pipes if provider is set
-      if self.config.kg.provider:
-          ingestion_pipeline.add_pipe(self.pipes.kg_pipe, kg_pipe=True)
-          ingestion_pipeline.add_pipe(
-              self.pipes.kg_storage_pipe, kg_pipe=True
-          )
-
-      return ingestion_pipeline
-```
-</details>
-
-### Implementation
-
-We are now ready to construct an example knowledge graph. As configured, R2R will extract named entities and their relationships as documents and files are ingested. The snippet below will build an instance of the R2R with the correct settings:
-
-```python filename="r2r/examples/scripts/build_yc_kg.py"
-from r2r import R2RAppBuilder, R2RConfig
-
-# Load the R2R configuration and build the app
-this_file_path = os.path.abspath(os.path.dirname(__file__))
-config_path = os.path.join(this_file_path, "..", "configs", "neo4j_kg.json")
-config = R2RConfig.from_json(config_path)
-r2r = R2RAppBuilder(config).build()
-```
-
-We will be ingesting live startup data from the YCombinator company directory for this cookbook. For best results we will override the default prompt for knowledge graph construction, `ner_kg_extraction`, which can be found in `prompts/local/defaults.jsonl`. This default prompt constructs the graph in a way that is agnostic to the input data. Instead, we will overwrite this prompt with one that contains specific entities and predicates relevant to startups.
-
-```python filename="r2r/examples/scripts/build_yc_kg.py"
-from r2r import EntityType, Relation, format_entity_types, format_relations
-
-def update_kg_prompt(
-    prompt_provider,
-    entity_types,
-    relations,
-    kg_extraction_prompt_name="ner_kg_extraction",
-):
-    # Fetch the kg extraction prompt with blank entity types and relations
-    ner_kg_extraction_with_spec = prompt_provider.get_prompt(
-        "ner_kg_extraction_with_spec"
-    )
-
-    # Format the prompt to include the desired entity types and relations
-    ner_kg_extraction = ner_kg_extraction_with_spec.replace(
-        "{entity_types}", format_entity_types(entity_types)
-    ).replace("{relations}", format_relations(relations))
-
-    # Update the "ner_kg_extraction" prompt used in downstream KG construction
-    prompt_provider.update_prompt(
-        kg_extraction_prompt_name,
-        json.dumps(ner_kg_extraction, ensure_ascii=False),
-    )
-
-# Get the prompt provider
-prompt_provider = r2r.providers.prompt
-
-# Specify the entity types for the KG extraction prompt
-entity_types = [
-    EntityType(
-        "ORGANIZATION",
-        subcategories=["COMPANY", "SCHOOL", "NON-PROFIT", "OTHER"],
-    ),
-    EntityType(
-        "LOCATION", subcategories=["CITY", "STATE", "COUNTRY", "OTHER"]
-    ),
-    EntityType("PERSON"),
-    EntityType("POSITION"),
-    EntityType(
-        "DATE",
-        subcategories=[
-            "YEAR",
-            "MONTH",
-            "DAY",
-            "BATCH (E.G. W24, S20)",
-            "OTHER",
-        ],
-    ),
-    EntityType("QUANTITY"),
-    EntityType(
-        "EVENT",
-        subcategories=[
-            "INCORPORATION",
-            "FUNDING_ROUND",
-            "ACQUISITION",
-            "LAUNCH",
-            "OTHER",
-        ],
-    ),
-    EntityType("INDUSTRY"),
-    EntityType(
-        "MEDIA",
-        subcategories=["EMAIL", "WEBSITE", "TWITTER", "LINKEDIN", "OTHER"],
-    ),
-    EntityType("PRODUCT"),
-]
-
-# Specify the relations for the KG construction
-relations = [
-    # Founder Relations   
-    Relation("EDUCATED_AT"),
-    Relation("WORKED_AT"),
-    Relation("FOUNDED"),
-    # Company relations
-    Relation("RAISED"),
-    Relation("REVENUE"),
-    Relation("TEAM_SIZE"),
-    Relation("LOCATION"),
-    Relation("ACQUIRED_BY"),
-    Relation("ANNOUNCED"),
-    Relation("INDUSTRY"),
-    # Product relations
-    Relation("PRODUCT"),
-    Relation("FEATURES"),
-    Relation("USES"),
-    Relation("USED_BY"),
-    Relation("TECHNOLOGY"),
-    # Additional relations
-    Relation("HAS"),
-    Relation("AS_OF"),
-    Relation("PARTICIPATED"),
-    Relation("ASSOCIATED"),
-    Relation("GROUP_PARTNER"),
-    Relation("ALIAS"),
-]
-
-# Update the KG extraction prompt with the specified entity types and relations
-update_kg_prompt(prompt_provider, entity_types, relations)
-```
-
-Finally, we are ready to ingest data. The referenced cookbook script includes code to scrape and ingest up to 1,000 companies from the YC directory. The relevant code for ingestion is shown below:
-
-```python filename="r2r/examples/scripts/build_yc_kg.py"
-from r2r import Document
-
-i = 0
-# Ingest and clean the data for each company
-for company, url in url_map.items():
-    company_data = fetch_and_clean_yc_co_data(url) # defined above
-    if i >= max_entries:
-        break
-    # Wrap in a try block in case of network failure
-    try:
-        # Ingest as a text document
-        r2r.ingest_documents(
-            [
-                Document(
-                    id=generate_id_from_label(company),
-                    type="txt",
-                    data=company_data,
-                    metadata={},
-                )
-            ]
+if __name__ == "__main__":
+    r2r_app = R2RAppBuilder(from_config="neo4j_kg").build()
+    
+    r2r_app.ingest_documents([
+        Document(
+            type="txt",
+            data="John is a person that works at Google.",
+            metadata={},
+        ),
+        Document(
+            type="txt",
+            data="Paul is a person that works at Microsoft that knows John.",
+            metadata={},
         )
-    except:
-        continue
-    i += 1
-
-print_all_relationships(kg_provider)
+    ])
 ```
 
-Let's start by scraping one example to get an initial sense of the data quality produced by this technique.
+#### Navigation
+When running R2R with knowledge graphs enabled, ingested documents and files will automatically have named entities and relationships extracted and stored. Let's explicitly confirm that this was the case:
+
+```python filename="r2r/examples/scripts/basic_kg_cookbook.py"
+    # Get the KG provider
+    neo4j_kg = r2r_app.providers.kg
+
+    # The expected entities
+    entity_names = ["John", "Paul", "Google", "Microsoft"]
+
+    print("\nEntities:")
+    for entity in entity_names:
+        print(f"Locating {entity}:\n", neo4j_kg.get(properties={"name": entity}))
+
+    relationships = neo4j_kg.get_triplets(entity_names=entity_names)
+
+    print("\nRelationships:")
+    for triplet in relationships:
+        source, relation, target = triplet
+        print(f"{source} -[{relation.label}]-> {target} ")
+        
+```
+
+The code shown above will result in the following output:
 
 ```bash
-python r2r/examples/scripts/build_yc_kg.py --max_entries=1
+...
+r2r.pipes.parsing_pipe - INFO - Parsed document with id=80df8bad-e4b3-430a-9d39-fa59cee66430, title=None, user_id=None, metadata={'title': None} into 1 extractions in t=0.00 seconds. - 2024-06-14 11:01:14,635
+r2r.pipes.parsing_pipe - INFO - Parsed document with id=be7e65ee-1b02-452d-8ed5-4fcbe3998496, title=None, user_id=None, metadata={'title': None} into 1 extractions in t=0.00 seconds. - 2024-06-14 11:01:14,635
+r2r.pipes.embedding_pipe - INFO - Fragmented the input document ids into counts as shown: {UUID('80df8bad-e4b3-430a-9d39-fa59cee66430'): 1, UUID('be7e65ee-1b02-452d-8ed5-4fcbe3998496'): 1} - 2024-06-14 11:01:14,647
+r2r.pipes.kg_pipe - INFO - Fragmented the input document ids into counts as shown: {UUID('80df8bad-e4b3-430a-9d39-fa59cee66430'): 1, UUID('be7e65ee-1b02-452d-8ed5-4fcbe3998496'): 1} - 2024-06-14 11:01:14,647
+
+Entities:
+Locating John:
+ [EntityNode(label='person', embedding=None, properties={'name': 'John'}, name='John')]
+Locating Paul:
+ [EntityNode(label='person', embedding=None, properties={'name': 'Paul'}, name='Paul')]
+Locating Google:
+ [EntityNode(label='company', embedding=None, properties={'name': 'Google'}, name='Google')]
+Locating Microsoft:
+ [EntityNode(label='company', embedding=None, properties={'name': 'Microsoft'}, name='Microsoft')]
+
+Relationships:
+John -[HAS_EMPLOYER]-> Google 
+Paul -[KNOWS]-> John 
+Paul -[WORKS_AT]-> Microsoft 
+Paul -[KNOWS]-> John 
+John -[HAS_EMPLOYER]-> Google 
+Paul -[WORKS_AT]-> Microsoft 
+```
+
+
+By default, the knowledge graph construction occurs concurrently with document chunking and embedding. Moreover, extracted knowledge graph nodes include embeddings to allow for semantic search over the knowledge graph.
+
+Executing the following demonstrates both functionalities:
+
+```python filename="r2r/examples/scripts/basic_kg_cookbook.py"
+# Search the vector database
+search_results = r2r_app.search(query="Who is john")
+print('\nSearch Results:\n', search_results)
+
+# Semantic search over the knowledge graph
+from r2r.core import VectorStoreQuery
+node_result = neo4j_kg.vector_query(
+    VectorStoreQuery(
+        query_embedding=r2r_app.providers.embedding.get_embedding("A person"),
+    )
+)
+print('\nNode Result:', node_result)
+
+# Structured query
+structured_query = """
+MATCH (p1:person)-[:KNOWS]->(p2:person)
+RETURN p1.name AS Person1, p2.name AS Person2
+ORDER BY p1.name
+LIMIT 10;
+"""
+print("\nExecuting query:\n", structured_query)
+structured_result = neo4j_kg.structured_query(structured_query)
+print("Structured Results:\n", structured_result)
+```
+
+```bash
+Search Results:
+{
+    'results': [
+        {
+            'id': UUID('6661944c-cf52-51e3-904a-e0795ad78c2c'), 
+            'score': 0.684847530035599, 
+            'metadata': {
+                'document_id': '7d22aea3-abb5-4ccd-a64a-8321ec1c2296', 
+                'extraction_id': '4a993741-aceb-5736-816a-45bc12364390', 
+                'text': 'John is a person that works at Google.', 
+                'title': None, 
+                'version': 'v0', 
+                'chunk_order': 1, 
+                'associatedQuery': 'Who is john'
+            }
+        },
+        ...
+    ]
+}
+
+Node Result: ([EntityNode(label='person', embedding=None, properties={}, name='Paul')], [0.6374393105506897])
+
+Executing query:
+ 
+    MATCH (p1:person)-[:KNOWS]->(p2:person)
+    RETURN p1.name AS Person1, p2.name AS Person2
+    ORDER BY p1.name
+    LIMIT 10;
+    
+Structured Results:
+ [{'Person1': 'Paul', 'Person2': 'John'}]
+```
+
+#### Visualization
+
+We use the Neo4j browser to visualize the basic graph that has been produced by this process.
+
+<figure>
+  <img src="/simple_graph.png" alt="Simple Relationships"/>
+  <figcaption>Figure 1: Showing the simple graph that has been constructed.</figcaption>
+</figure>
+
+
+### Advanced Example
+
+#### Customize Entities and Relations
+
+We are now ready to move on to a more advanced example which showcases how R2R performs on a real-world dataset. For this example, we will be ingesting startup company information from the YC company directory. We will benefit from defining entity types and relations because we are ingesting documents from a specific domain, R2R is designed to handle this readily
+
+```python filename="r2r/examples/scripts/advanced_kg_cookbook.py"
+from r2r import (
+    Document,
+    EntityType,
+    R2RAppBuilder,
+    Relation,
+)
+
+...
+
+def main(max_entries=50, delete=False):
+    # Load the R2R configuration and build the app
+    r2r = R2RAppBuilder(from_config="neo4j_kg").build()
+
+    # Specify the entity types for the KG extraction prompt
+    entity_types = [
+        EntityType(
+            "ORGANIZATION",
+            subcategories=["COMPANY", "SCHOOL", "NON-PROFIT", "OTHER"],
+        ),
+        EntityType(
+            "LOCATION", 
+            subcategories=["CITY", "STATE", "COUNTRY", "OTHER"]
+        ),
+        EntityType("PERSON"),
+        EntityType("POSITION"),
+        EntityType(
+            "DATE",
+            subcategories=[
+                "YEAR",
+                "MONTH",
+                "DAY",
+                "BATCH (E.G. W24, S20)",
+                "OTHER",
+            ],
+        ),
+        EntityType("QUANTITY"),
+        EntityType(
+            "EVENT",
+            subcategories=[
+                "INCORPORATION",
+                "FUNDING_ROUND",
+                "ACQUISITION",
+                "LAUNCH",
+                "OTHER",
+            ],
+        ),
+        EntityType("INDUSTRY"),
+        EntityType(
+            "MEDIA",
+            subcategories=["EMAIL", "WEBSITE", "TWITTER", "LINKEDIN", "OTHER"],
+        ),
+        EntityType("PRODUCT"),
+    ]
+
+    # Specify the relations for the KG construction
+    relations = [
+        # Founder Relations
+        Relation("EDUCATED_AT"),
+        Relation("WORKED_AT"),
+        Relation("FOUNDED"),
+        # Company relations
+        Relation("RAISED"),
+        Relation("REVENUE"),
+        Relation("TEAM_SIZE"),
+        Relation("LOCATION"),
+        Relation("ACQUIRED_BY"),
+        Relation("ANNOUNCED"),
+        Relation("INDUSTRY"),
+        # Product relations
+        Relation("PRODUCT"),
+        Relation("FEATURES"),
+        Relation("USES"),
+        Relation("USED_BY"),
+        Relation("TECHNOLOGY"),
+        # Additional relations
+        Relation("HAS"),
+        Relation("AS_OF"),
+        Relation("PARTICIPATED"),
+        Relation("ASSOCIATED"),
+        Relation("GROUP_PARTNER"),
+        Relation("ALIAS"),
+    ]
+
+    # Get the prompt provider and KG provider
+    prompt_provider = r2r.providers.prompt
+    kg = r2r.providers.kg
+
+    # Update the KG extraction prompt with the specified entity types and relations
+    kg.update_extraction_prompt(prompt_provider, entity_types, relations)
+```
+
+Finally, we are ready to ingest data. The advanced cookbook script includes the necessary information to scrape and ingest up to 1,000 companies from the YC directory. We will begin by scraping a single entry:
+
+```bash copy
+python r2r/examples/scripts/advanced_kg_cookbook.py --max_entries=1 --delete
 ```
 
 Running the command above will produce output like the following:
@@ -269,47 +338,34 @@ Brian Chesky -[POSITION]-> CEO
 ...
 ```
 
-We are now ready to run a much larger ingestion.
-
-```bash
-poetry run python r2r/examples/scripts/build_yc_kg.py --delete --max_entries=100
-```
-
-### Graph Visualization
-
-
-After successful completion we will see a large printout showing the various connections that have been formed across our knowledge graph. Indeed, there are more connections than we can readily understand. We use the Neo4j browser which ships with the desktop application to gain us some intuition around the constructed graph.
+Once again, we can visualize the graph constructed with Neo4j, and this time we can note that the complexity is significantly greater.
 
 <br />
 
 <figure>
-  <img src="/graph.png" alt="Industry Relationships"/>
-  <figcaption>Figure 1: Graph showing industry relationships.</figcaption>
-</figure>
-
-<br />
-
-We can see a rich and nuanced structure has naturally emerged, with SaaS being the centralmost node.
-<figure>
-  <img src="/graph2.png" alt="Founder Relationships"/>
-  <figcaption>Figure 2: Graph showing founder relationships, focused on Owen Colegrove.</figcaption>
+  <img src="/airbnb_graph.png" alt="Airbnb Relationships"/>
+  <figcaption>Figure 2: Graph showing Airbnb relationships.</figcaption>
 </figure>
 
 
-Using the snippets that follow we can begin to explore the graph through targeted queries.
+#### Large Scale Ingestion
 
-```python
+Let's now run a much larger ingestion, executing the command below will result in several hundred calls to gpt-4o, so proceed with caution.
 
-def execute_query(provider, query, params={}):
-    print(f"Executing query: {query}")
-    with provider.client.session(database=provider._database) as session:
-        result = session.run(query, params)
-        return [record.data() for record in result]
-
+```bash copy
+poetry run python r2r/examples/scripts/advanced_kg_cookbook.py --delete --max_entries=100
 ```
 
 
-Executing a few queries, we see outputs like the following:
+After ingesting a few companies, we can already see significant structure building into our graph.
+
+<figure>
+  <img src="/sf_graph.png" alt="SF Relationships"/>
+  <figcaption>Figure 3: Graph showing relationships around SF.</figcaption>
+</figure>
+
+
+Once ingestion has completed we will proceed to using the structured query method of the knowledge graph.
 
 ```bash
 ## Locating all founders
