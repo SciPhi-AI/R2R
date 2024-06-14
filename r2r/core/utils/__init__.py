@@ -1,4 +1,8 @@
 from .base_utils import (
+    EntityType,
+    Relation,
+    format_entity_types,
+    format_relations,
     generate_id_from_label,
     generate_run_id,
     increment_version,
@@ -15,4 +19,8 @@ __all__ = [
     "generate_run_id",
     "generate_id_from_label",
     "increment_version",
+    "EntityType",
+    "Relation",
+    "format_entity_types",
+    "format_relations",
 ]

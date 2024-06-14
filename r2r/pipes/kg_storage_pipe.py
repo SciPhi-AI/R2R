@@ -63,7 +63,9 @@ class R2RKGStoragePipe(LoggableAsyncPipe):
                         EntityNode(
                             name=f"{entity.value}:{entity.category}",
                             label=entity.category,
-                            properties={"sub_category": entity.sub_category} if entity.sub_category else {}
+                            properties={"sub_category": entity.sub_category}
+                            if entity.sub_category
+                            else {},
                         )
                     )
                 for triple in extraction.triples:

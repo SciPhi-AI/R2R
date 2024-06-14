@@ -28,7 +28,6 @@ from r2r.core import (
     to_async_generator,
 )
 from r2r.pipes import R2REvalPipe
-from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from .r2r_abstractions import R2RPipelines, R2RProviders
 from .r2r_config import R2RConfig
@@ -259,7 +258,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         template: Optional[str] = None
         input_types: Optional[dict[str, str]] = None
 
-    @telemetry_event("UpdatePrompt")
     async def update_prompt_app(self, request: UpdatePromptRequest):
         """Update a prompt's template and/or input types."""
         try:
@@ -291,27 +289,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             )
 
         document_infos = []
-        skipped_documents = []
-        processed_documents = []
-        existing_document_ids = [
-            str(doc_info.document_id)
-            for doc_info in self.providers.vector_db.get_documents_info()
-        ]
-
         for iteration, document in enumerate(documents):
-            if (
-                version is not None
-                and str(document.id) in existing_document_ids
-            ):
-                logger.error(f"Document with ID {document.id} already exists.")
-                if len(documents) == 1:
-                    raise HTTPException(
-                        status_code=409,
-                        detail=f"Document with ID {document.id} already exists.",
-                    )
-                skipped_documents.append(document.title or str(document.id))
-                continue
-
             document_metadata = (
                 metadatas[iteration] if metadatas else document.metadata
             )
@@ -341,62 +319,24 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
             )
 
-            processed_documents.append(document.title or str(document.id))
-
-        if skipped_documents and len(skipped_documents) == len(documents):
-            logger.error("All provided documents already exist.")
-            raise HTTPException(
-                status_code=409,
-                detail="All provided documents already exist. Use the update endpoint to update these documents.",
-            )
-
-        if skipped_documents:
-            logger.warning(
-                f"Skipped ingestion for the following documents since they already exist: {', '.join(skipped_documents)}. Use the update endpoint to update these documents."
-            )
-
         await self.ingestion_pipeline.run(
-            input=to_async_generator(
-                [
-                    doc
-                    for doc in documents
-                    if str(doc.id) not in existing_document_ids
-                ]
-            ),
-            versions=[
-                info.version
-                for info in document_infos
-                if info.created_at == info.updated_at
-            ],
+            input=to_async_generator(documents),
+            versions=versions,
             run_manager=self.run_manager,
         )
 
         self.providers.vector_db.upsert_documents_info(document_infos)
-        return {
-            "processed_documents": [
-                f"Document '{title}' processed successfully."
-                for title in processed_documents
-            ],
-            "skipped_documents": [
-                f"Document '{title}' skipped since it already exists."
-                for title in skipped_documents
-            ],
-        }
+        return {"results": "Entries upserted successfully."}
 
     class IngestDocumentsRequest(BaseModel):
         documents: list[Document]
 
-    @telemetry_event("IngestDocuments")
     async def ingest_documents_app(self, request: IngestDocumentsRequest):
         async with manage_run(
             self.run_manager, "ingest_documents_app"
         ) as run_id:
             try:
                 return await self.aingest_documents(request.documents)
-
-            except HTTPException as he:
-                raise he
-
             except Exception as e:
                 await self.logging_connection.log(
                     log_id=run_id,
@@ -483,7 +423,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
     class UpdateDocumentsRequest(BaseModel):
         documents: list[Document]
 
-    @telemetry_event("UpdateDocuments")
     async def update_documents_app(self, request: UpdateDocumentsRequest):
         async with manage_run(
             self.run_manager, "update_documents_app"
@@ -506,7 +445,10 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 logger.error(
                     f"update_documents_app(documents={request.documents}) - \n\n{str(e)})"
                 )
-                raise HTTPException(status_code=500, detail=str(e)) from e
+                logger.error(
+                    f"update_documents_app(documents={request.documents}) - \n\n{str(e)})"
+                )
+                raise HTTPException(status_code=500, detail=str(e))
 
     @syncable
     async def aingest_files(
@@ -540,12 +482,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         try:
             documents = []
             document_infos = []
-            skipped_documents = []
-            processed_documents = []
-            existing_document_ids = [
-                str(doc_info.document_id)
-                for doc_info in self.providers.vector_db.get_documents_info()
-            ]
 
             for iteration, file in enumerate(files):
                 logger.info(f"Processing file: {file.filename}")
@@ -586,27 +522,14 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         detail=f"{file_extension} is explicitly excluded in the configuration file.",
                     )
 
+                file_content = await file.read()
+                logger.info(f"File read successfully: {file.filename}")
+
                 document_id = (
                     generate_id_from_label(file.filename)
                     if document_ids is None
                     else document_ids[iteration]
                 )
-                if (
-                    version is not None
-                    and str(document_id) in existing_document_ids
-                ):
-                    logger.error(f"File with ID {document_id} already exists.")
-                    if len(files) == 1:
-                        raise HTTPException(
-                            status_code=409,
-                            detail=f"File with ID {document_id} already exists.",
-                        )
-                    skipped_documents.append(file.filename)
-                    continue
-
-                file_content = await file.read()
-                logger.info(f"File read successfully: {file.filename}")
-
                 document_metadata = metadatas[iteration] if metadatas else {}
                 document_title = (
                     document_metadata.get("title", None) or file.filename
@@ -644,21 +567,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     )
                 )
 
-                processed_documents.append(file.filename)
-
-            if skipped_documents and len(skipped_documents) == len(files):
-                logger.error("All uploaded documents already exist.")
-                raise HTTPException(
-                    status_code=409,
-                    detail="All uploaded documents already exist. Use the update endpoint to update these documents.",
-                )
-
-            if skipped_documents:
-                logger.warning(
-                    f"Skipped ingestion for the following documents since they already exist: {', '.join(skipped_documents)}. Use the update endpoint to update these documents."
-                )
-
-            # Run the pipeline asynchronously
+            # Run the pipeline asynchronously with filtered documents
             await self.ingestion_pipeline.run(
                 input=to_async_generator(documents),
                 versions=versions,
@@ -669,14 +578,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 self.providers.vector_db.upsert_documents_info(document_infos)
 
             return {
-                "processed_documents": [
-                    f"File '{filename}' processed successfully."
-                    for filename in processed_documents
-                ],
-                "skipped_documents": [
-                    f"File '{filename}' skipped since it already exists."
-                    for filename in skipped_documents
-                ],
+                "results": f"File '{file}' processed successfully."
+                for file in document_infos
             }
         except Exception as e:
             raise e
@@ -685,7 +588,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
             for file in files:
                 file.file.close()
 
-    @telemetry_event("IngestFiles")
     async def ingest_files_app(
         self,
         files: list[UploadFile] = File(...),
@@ -854,7 +756,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         metadatas: Optional[str] = Form(None)
         ids: str = Form("")
 
-    @telemetry_event("UpdateFiles")
     async def update_files_app(
         self,
         files: list[UploadFile] = File(...),
@@ -944,7 +845,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         search_limit: int = 10
         do_hybrid_search: Optional[bool] = False
 
-    @telemetry_event("Search")
     async def search_app(self, request: SearchRequest):
         async with manage_run(self.run_manager, "search_app") as run_id:
             try:
@@ -1060,7 +960,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         rag_generation_config: Optional[str] = None
         streaming: Optional[bool] = None
 
-    @telemetry_event("RAG")
     async def rag_app(self, request: RAGRequest):
         async with manage_run(self.run_manager, "rag_app") as run_id:
             try:
@@ -1170,7 +1069,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         context: str
         completion: str
 
-    @telemetry_event("Evaluate")
     async def evaluate_app(self, request: EvalRequest):
         async with manage_run(self.run_manager, "evaluate_app") as run_id:
             try:
@@ -1212,7 +1110,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         keys: list[str]
         values: list[Union[bool, int, str]]
 
-    @telemetry_event("Delete")
     async def delete_app(self, request: DeleteRequest = Body(...)):
         try:
             return await self.adelete(request.keys, request.values)
@@ -1271,7 +1168,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
         return {"results": aggregated_logs}
 
-    @telemetry_event("Logs")
     async def logs_app(
         self,
         log_type_filter: Optional[str] = Query(None),
@@ -1340,27 +1236,27 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     analysis_type = analysis_config[0]
                     if analysis_type == "bar_chart":
                         extract_key = analysis_config[1]
-                        results[filter_key] = (
-                            AnalysisTypes.generate_bar_chart_data(
-                                filtered_logs[filter_key], extract_key
-                            )
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.generate_bar_chart_data(
+                            filtered_logs[filter_key], extract_key
                         )
                     elif analysis_type == "basic_statistics":
                         extract_key = analysis_config[1]
-                        results[filter_key] = (
-                            AnalysisTypes.calculate_basic_statistics(
-                                filtered_logs[filter_key], extract_key
-                            )
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.calculate_basic_statistics(
+                            filtered_logs[filter_key], extract_key
                         )
                     elif analysis_type == "percentile":
                         extract_key = analysis_config[1]
                         percentile = int(analysis_config[2])
-                        results[filter_key] = (
-                            AnalysisTypes.calculate_percentile(
-                                filtered_logs[filter_key],
-                                extract_key,
-                                percentile,
-                            )
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.calculate_percentile(
+                            filtered_logs[filter_key],
+                            extract_key,
+                            percentile,
                         )
                     else:
                         logger.warning(
@@ -1369,7 +1265,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
         return {"results": results}
 
-    @telemetry_event("Analytics")
     async def analytics_app(
         self,
         filter_criteria: FilterCriteria = Body(...),
@@ -1397,7 +1292,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
             }
         }
 
-    @telemetry_event("AppSettings")
     async def app_settings_app(self):
         """Return the config.json and all prompts."""
         try:
@@ -1412,7 +1306,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
             [str(ele) for ele in user_ids]
         )
 
-    @telemetry_event("UsersStats")
     async def users_stats_app(
         self, user_ids: Optional[list[uuid.UUID]] = Query(None)
     ):
@@ -1442,7 +1335,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
             ),
         )
 
-    @telemetry_event("DocumentsInfo")
     async def documents_info_app(
         self,
         document_ids: Optional[list[str]] = Query(None),
@@ -1463,7 +1355,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def adocument_chunks(self, document_id: str) -> list[str]:
         return self.providers.vector_db.get_document_chunks(document_id)
 
-    @telemetry_event("DocumentChunks")
     async def document_chunks_app(self, document_id: str):
         try:
             chunks = await self.adocument_chunks(document_id)
@@ -1474,7 +1365,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
             )
             raise HTTPException(status_code=500, detail=str(e)) from e
 
-    @telemetry_event("OpenAPI")
     def openapi_spec_app(self):
         from fastapi.openapi.utils import get_openapi
 

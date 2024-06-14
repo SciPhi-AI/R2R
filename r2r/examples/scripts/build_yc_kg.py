@@ -5,7 +5,39 @@ import fire
 import requests
 from bs4 import BeautifulSoup, Comment
 
-from r2r import Document, R2RAppBuilder, R2RConfig, generate_id_from_label
+from r2r import (
+    Document,
+    EntityType,
+    R2RAppBuilder,
+    R2RConfig,
+    Relation,
+    format_entity_types,
+    format_relations,
+    generate_id_from_label,
+)
+
+
+def update_kg_prompt(
+    prompt_provider,
+    entity_types,
+    relations,
+    kg_extraction_prompt_name="ner_kg_extraction",
+):
+    # Fetch the kg extraction prompt with blank entity types and relations
+    ner_kg_extraction_with_spec = prompt_provider.get_prompt(
+        "ner_kg_extraction_with_spec"
+    )
+
+    # Format the prompt to include the desired entity types and relations
+    ner_kg_extraction = ner_kg_extraction_with_spec.replace(
+        "{entity_types}", format_entity_types(entity_types)
+    ).replace("{relations}", format_relations(relations))
+
+    # Update the "ner_kg_extraction" prompt used in downstream KG construction
+    prompt_provider.update_prompt(
+        kg_extraction_prompt_name,
+        json.dumps(ner_kg_extraction, ensure_ascii=False),
+    )
 
 
 def get_all_yc_co_directory_urls():
@@ -87,13 +119,13 @@ def delete_all_entries(provider):
 def print_all_relationships(provider):
     rel_query = """
     MATCH (n1)-[r]->(n2)
-    RETURN n1.id AS subject, type(r) AS predicate, n2.id AS object;
+    RETURN n1.id AS subject, type(r) AS relation, n2.id AS object;
     """
     with provider.client.session(database=provider._database) as session:
         results = session.run(rel_query)
         for record in results:
             print(
-                f"{record['subject']} -[{record['predicate']}]-> {record['object']}"
+                f"{record['subject']} -[{record['relation']}]-> {record['object']}"
             )
 
 
@@ -110,68 +142,77 @@ def main(max_entries=50, delete=False):
     kg_provider = r2r.providers.kg
     prompt_provider = r2r.providers.prompt
 
-    # Update the prompt for the NER KG extraction task
-    ner_kg_extraction_with_spec = prompt_provider.get_prompt(
-        "ner_kg_extraction_with_spec"
-    )
+    # Specify the entity types for the KG extraction prompt
+    entity_types = [
+        EntityType(
+            "ORGANIZATION",
+            subcategories=["COMPANY", "SCHOOL", "NON-PROFIT", "OTHER"],
+        ),
+        EntityType(
+            "LOCATION", subcategories=["CITY", "STATE", "COUNTRY", "OTHER"]
+        ),
+        EntityType("PERSON"),
+        EntityType("POSITION"),
+        EntityType(
+            "DATE",
+            subcategories=[
+                "YEAR",
+                "MONTH",
+                "DAY",
+                "BATCH (E.G. W24, S20)",
+                "OTHER",
+            ],
+        ),
+        EntityType("QUANTITY"),
+        EntityType(
+            "EVENT",
+            subcategories=[
+                "INCORPORATION",
+                "FUNDING_ROUND",
+                "ACQUISITION",
+                "LAUNCH",
+                "OTHER",
+            ],
+        ),
+        EntityType("INDUSTRY"),
+        EntityType(
+            "MEDIA",
+            subcategories=["EMAIL", "WEBSITE", "TWITTER", "LINKEDIN", "OTHER"],
+        ),
+        EntityType("PRODUCT"),
+    ]
 
-    # Newline separated list of entity types, with optional subcategories
-    entity_types = """organization
-subcategories: company, school, non-profit, other
-location
-subcategories: city, state, country, other
-person
-position
-date
-subcategories: year, month, day, batch (e.g. W24, S20), other
-quantity
-event
-subcategories: incorporation, funding_round, acquisition, launch, other
-industry
-media
-subcategories: email, website, twitter, linkedin, other
-product
-"""
-    # Newline separated list of predicates
-    predicates = """
-# Founder / employee predicates
-EDUCATED_AT
-FOUNDED
-ROLE_OF
-WORKED_AT
-# Company predicates
-FOUNDED_IN
-LOCATED_IN
-HAS_TEAM_SIZE
-REVENUE
-RAISED
-ACQUIRED_BY
-ANNOUNCED
-PARTICIPATED_IN
-# Product predicates
-USED_BY
-USES
-HAS_PRODUCT
-HAS_FEATURES
-HAS_OFFERS
-# Other
-INDUSTRY
-TECHNOLOGY
-GROUP_PARTNER
-ALIAS
-HAS
-CONTAINS
-"""
+    # Specify the relations for the KG construction
+    relations = [
+        # Founder Relations
+        Relation("EDUCATED_AT"),
+        Relation("WORKED_AT"),
+        Relation("FOUNDED"),
+        # Company relations
+        Relation("RAISED"),
+        Relation("REVENUE"),
+        Relation("TEAM_SIZE"),
+        Relation("LOCATION"),
+        Relation("ACQUIRED_BY"),
+        Relation("ANNOUNCED"),
+        Relation("INDUSTRY"),
+        # Product relations
+        Relation("PRODUCT"),
+        Relation("FEATURES"),
+        Relation("USES"),
+        Relation("USED_BY"),
+        Relation("TECHNOLOGY"),
+        # Additional relations
+        Relation("HAS"),
+        Relation("AS_OF"),
+        Relation("PARTICIPATED"),
+        Relation("ASSOCIATED"),
+        Relation("GROUP_PARTNER"),
+        Relation("ALIAS"),
+    ]
 
-    # Format the prompt to include the desired entity types and predicates
-    ner_kg_extraction = ner_kg_extraction_with_spec.replace(
-        "{entity_types}", entity_types
-    ).replace("{predicates}", predicates)
-
-    # Update the "ner_kg_extraction" prompt used in downstream pipes
-    r2r.providers.prompt.update_prompt(
-        "ner_kg_extraction", json.dumps(ner_kg_extraction, ensure_ascii=False)
-    )
+    # Update the KG extraction prompt with the specified entity types and relations
+    update_kg_prompt(prompt_provider, entity_types, relations)
 
     # Optional - clear the graph if the delete flag is set
     if delete:
