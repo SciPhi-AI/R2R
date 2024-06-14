@@ -188,6 +188,8 @@ class R2RKGPipe(KGPipe):
                     messages, kg_generation_config
                 )
 
+                print("response = ", response)
+
                 kg_extraction = response.choices[0].message.content
 
                 # Parsing JSON from the response
@@ -201,7 +203,6 @@ class R2RKGPipe(KGPipe):
                 entities = extract_entities(llm_payload)
 
                 triples = extract_triples(llm_payload, entities)
-
                 # Create KG extraction object
                 return KGExtraction(entities=entities, triples=triples)
             except (

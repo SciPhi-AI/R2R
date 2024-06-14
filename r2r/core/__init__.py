@@ -66,8 +66,12 @@ from .providers.llm_provider import GenerationConfig, LLMConfig, LLMProvider
 from .providers.prompt_provider import PromptConfig, PromptProvider
 from .providers.vector_db_provider import VectorDBConfig, VectorDBProvider
 from .utils import (
+    EntityType,
     RecursiveCharacterTextSplitter,
+    Relation,
     TextSplitter,
+    format_entity_types,
+    format_relations,
     generate_id_from_label,
     generate_run_id,
     increment_version,
@@ -156,6 +160,10 @@ __all__ = [
     "TextSplitter",
     "RecursiveCharacterTextSplitter",
     "to_async_generator",
+    "EntityType",
+    "Relation",
+    "format_entity_types",
+    "format_relations",
     "increment_version",
     "run_pipeline",
     "generate_run_id",
