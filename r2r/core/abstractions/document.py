@@ -115,13 +115,13 @@ class Entity(BaseModel):
     """An entity extracted from a document."""
 
     category: str
-    sub_category: Optional[str] = None
+    subcategory: Optional[str] = None
     value: str
 
     def __str__(self):
         return (
-            f"{self.category}:{self.sub_category}:{self.value}"
-            if self.sub_category
+            f"{self.category}:{self.subcategory}:{self.value}"
+            if self.subcategory
             else f"{self.category}:{self.value}"
         )
 
@@ -132,7 +132,6 @@ class Triple(BaseModel):
     subject: str
     predicate: str
     object: str
-
 
 def extract_entities(llm_payload: list[str]) -> dict[str, Entity]:
     entities = {}
@@ -145,10 +144,10 @@ def extract_entities(llm_payload: list[str]) -> dict[str, Entity]:
 
                 if colon_count == 1:
                     category, value = entry.split(":")
-                    sub_category = None
+                    subcategory = None
                 elif colon_count >= 2:
                     parts = entry.split(":", 2)
-                    category, sub_category, value = (
+                    category, subcategory, value = (
                         parts[0],
                         parts[1],
                         parts[2],
@@ -157,13 +156,12 @@ def extract_entities(llm_payload: list[str]) -> dict[str, Entity]:
                     raise ValueError("Unexpected entry format")
 
                 entities[entry_val] = Entity(
-                    category=category, sub_category=sub_category, value=value
+                    category=category, subcategory=subcategory, value=value
                 )
         except Exception as e:
             logger.error(f"Error processing entity {entry}: {e}")
             continue
     return entities
-
 
 def extract_triples(
     llm_payload: list[str], entities: dict[str, Entity]
@@ -173,9 +171,9 @@ def extract_triples(
         try:
             if "], " not in entry:  # Check if the entry is an entity
                 subject, predicate, object = entry.split(" ")
-                subject = str(entities[subject])
+                subject = entities[subject].value  # Use entity.value
                 if "[" in object and "]" in object:
-                    object = str(entities[object])
+                    object = entities[object].value  # Use entity.value
                 triples.append(
                     Triple(subject=subject, predicate=predicate, object=object)
                 )

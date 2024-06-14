@@ -61,10 +61,10 @@ class R2RKGStoragePipe(LoggableAsyncPipe):
                 for entity in extraction.entities.values():
                     nodes.append(
                         EntityNode(
-                            name=f"{entity.value}:{entity.category}",
+                            name=entity.value,
                             label=entity.category,
-                            properties={"sub_category": entity.sub_category}
-                            if entity.sub_category
+                            properties={"subcategory": entity.subcategory}
+                            if entity.subcategory
                             else {},
                         )
                     )
