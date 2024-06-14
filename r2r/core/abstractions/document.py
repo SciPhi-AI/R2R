@@ -7,7 +7,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class DocumentType(Enum):
 class Document(BaseModel):
     """A document that has been stored in the system."""
 
-    id: uuid.UUID
+    id: uuid.UUID = Field(default_factory=uuid.uuid4)
     type: DocumentType
     data: DataType
     metadata: dict
@@ -133,6 +133,7 @@ class Triple(BaseModel):
     predicate: str
     object: str
 
+
 def extract_entities(llm_payload: list[str]) -> dict[str, Entity]:
     entities = {}
     for entry in llm_payload:
@@ -162,6 +163,7 @@ def extract_entities(llm_payload: list[str]) -> dict[str, Entity]:
             logger.error(f"Error processing entity {entry}: {e}")
             continue
     return entities
+
 
 def extract_triples(
     llm_payload: list[str], entities: dict[str, Entity]

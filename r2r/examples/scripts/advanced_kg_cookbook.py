@@ -1,43 +1,10 @@
-import json
 import os
 
 import fire
 import requests
 from bs4 import BeautifulSoup, Comment
 
-from r2r import (
-    Document,
-    EntityType,
-    R2RAppBuilder,
-    R2RConfig,
-    Relation,
-    format_entity_types,
-    format_relations,
-    generate_id_from_label,
-)
-
-
-def update_kg_prompt(
-    prompt_provider,
-    entity_types,
-    relations,
-    kg_extraction_prompt_name="ner_kg_extraction",
-):
-    # Fetch the kg extraction prompt with blank entity types and relations
-    ner_kg_extraction_with_spec = prompt_provider.get_prompt(
-        "ner_kg_extraction_with_spec"
-    )
-
-    # Format the prompt to include the desired entity types and relations
-    ner_kg_extraction = ner_kg_extraction_with_spec.replace(
-        "{entity_types}", format_entity_types(entity_types)
-    ).replace("{relations}", format_relations(relations))
-
-    # Update the "ner_kg_extraction" prompt used in downstream KG construction
-    prompt_provider.update_prompt(
-        kg_extraction_prompt_name,
-        json.dumps(ner_kg_extraction, ensure_ascii=False),
-    )
+from r2r import Document, EntityType, R2RAppBuilder, Relation
 
 
 def get_all_yc_co_directory_urls():
@@ -131,16 +98,7 @@ def print_all_relationships(provider):
 
 def main(max_entries=50, delete=False):
     # Load the R2R configuration and build the app
-    this_file_path = os.path.abspath(os.path.dirname(__file__))
-    config_path = os.path.join(
-        this_file_path, "..", "configs", "neo4j_kg.json"
-    )
-    config = R2RConfig.from_json(config_path)
-    r2r = R2RAppBuilder(config).build()
-
-    # Get the providers
-    kg_provider = r2r.providers.kg
-    prompt_provider = r2r.providers.prompt
+    r2r = R2RAppBuilder(from_config="neo4j_kg").build()
 
     # Specify the entity types for the KG extraction prompt
     entity_types = [
@@ -211,12 +169,16 @@ def main(max_entries=50, delete=False):
         Relation("ALIAS"),
     ]
 
+    # Get the prompt provider and KG provider
+    prompt_provider = r2r.providers.prompt
+    kg = r2r.providers.kg
+
     # Update the KG extraction prompt with the specified entity types and relations
-    update_kg_prompt(prompt_provider, entity_types, relations)
+    kg.update_extraction_prompt(prompt_provider, entity_types, relations)
 
     # Optional - clear the graph if the delete flag is set
     if delete:
-        delete_all_entries(kg_provider)
+        delete_all_entries(kg)
 
     url_map = get_all_yc_co_directory_urls()
 
@@ -231,7 +193,6 @@ def main(max_entries=50, delete=False):
             r2r.ingest_documents(
                 [
                     Document(
-                        id=generate_id_from_label(company),
                         type="txt",
                         data=company_data,
                         metadata={},
@@ -242,7 +203,7 @@ def main(max_entries=50, delete=False):
             continue
         i += 1
 
-    print_all_relationships(kg_provider)
+    print_all_relationships(kg)
 
 
 if __name__ == "__main__":

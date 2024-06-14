@@ -1,10 +1,19 @@
 # abstractions are taken from LlamaIndex
 # Neo4jKGProvider is almost entirely taken from LlamaIndex Neo4jPropertyGraphStore
 # https://github.com/run-llama/llama_index
+import json
 import os
 from typing import Any, Dict, List, Optional, Tuple
 
-from r2r.core import KGConfig, KGProvider
+from r2r.core import (
+    EntityType,
+    KGConfig,
+    KGProvider,
+    PromptProvider,
+    Relation,
+    format_entity_types,
+    format_relations,
+)
 from r2r.core.abstractions.llama_abstractions import (
     LIST_LIMIT,
     ChunkNode,
@@ -167,6 +176,7 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
         if refresh_schema:
             self.refresh_schema()
         self.neo4j = neo4j
+        self.config = config
 
     @property
     def client(self):
@@ -920,4 +930,27 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
                 "The relationships:",
                 "\n".join(formatted_rels),
             ]
+        )
+
+    def update_extraction_prompt(
+        self,
+        prompt_provider: PromptProvider,
+        entity_types: list[EntityType],
+        relations: list[Relation],
+    ):
+        # Fetch the kg extraction prompt with blank entity types and relations
+        # Note - Assumes that for given prompt there is a `_with_spec` that can have entities + relations specified
+        ner_kg_extraction_with_spec = prompt_provider.get_prompt(
+            f"{self.config.kg_extraction_prompt}_with_spec"
+        )
+
+        # Format the prompt to include the desired entity types and relations
+        ner_kg_extraction = ner_kg_extraction_with_spec.replace(
+            "{entity_types}", format_entity_types(entity_types)
+        ).replace("{relations}", format_relations(relations))
+
+        # Update the "ner_kg_extraction" prompt used in downstream KG construction
+        prompt_provider.update_prompt(
+            self.config.kg_extraction_prompt,
+            json.dumps(ner_kg_extraction, ensure_ascii=False),
         )

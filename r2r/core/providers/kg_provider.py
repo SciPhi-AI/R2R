@@ -20,6 +20,7 @@ class KGConfig(ProviderConfig):
 
     provider: Optional[str] = None
     batch_size: int = 1
+    kg_extraction_prompt: Optional[str] = "ner_kg_extraction"
 
     def validate(self) -> None:
         if not self.provider:
@@ -100,3 +101,14 @@ class KGProvider(ABC):
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> Tuple[list[LabelledNode], list[float]]:
         """Abstract method to query the graph store with a vector store query."""
+
+    # TODO - Type this method.
+    @abstractmethod
+    def update_extraction_prompt(
+        self,
+        prompt_provider: Any,
+        entity_types: list[Any],
+        relations: list[Relation],
+    ):
+        """Abstract method to update the KG extraction prompt."""
+        pass
