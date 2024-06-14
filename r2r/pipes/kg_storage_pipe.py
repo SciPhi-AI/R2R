@@ -72,9 +72,11 @@ class R2RKGStoragePipe(LoggableAsyncPipe):
                             name=entity.value,
                             label=entity.category,
                             embedding=embedding,
-                            properties={"subcategory": entity.subcategory}
-                            if entity.subcategory
-                            else {},
+                            properties=(
+                                {"subcategory": entity.subcategory}
+                                if entity.subcategory
+                                else {}
+                            ),
                         )
                     )
                 for triple in extraction.triples:

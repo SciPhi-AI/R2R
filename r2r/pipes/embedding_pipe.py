@@ -24,57 +24,7 @@ from r2r.core import (
 logger = logging.getLogger(__name__)
 
 
-class EmbeddingPipe(LoggableAsyncPipe):
-    class Input(LoggableAsyncPipe.Input):
-        message: AsyncGenerator[Extraction, None]
-
-    def __init__(
-        self,
-        embedding_provider: EmbeddingProvider,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
-        type: PipeType = PipeType.INGESTOR,
-        config: Optional[LoggableAsyncPipe.PipeConfig] = None,
-        *args,
-        **kwargs,
-    ):
-        super().__init__(
-            pipe_logger=pipe_logger,
-            type=type,
-            config=config,
-            *args,
-            **kwargs,
-        )
-        self.embedding_provider = embedding_provider
-
-    @abstractmethod
-    async def fragment(
-        self, extraction: Extraction
-    ) -> AsyncGenerator[Fragment, None]:
-        pass
-
-    @abstractmethod
-    async def transform_fragments(
-        self, fragments: list[Fragment], metadatas: list[dict]
-    ) -> AsyncGenerator[Fragment, None]:
-        pass
-
-    @abstractmethod
-    async def embed(self, fragments: list[Fragment]) -> list[list[float]]:
-        pass
-
-    @abstractmethod
-    async def _run_logic(
-        self,
-        input: AsyncGenerator[Extraction, None],
-        state: AsyncState,
-        run_id: uuid.UUID,
-        *args: Any,
-        **kwargs: Any,
-    ) -> AsyncGenerator[VectorEntry, None]:
-        pass
-
-
-class R2REmbeddingPipe(EmbeddingPipe):
+class R2REmbeddingPipe(LoggableAsyncPipe):
     """
     Embeds and stores documents using a specified embedding model and database.
     """
@@ -95,12 +45,12 @@ class R2REmbeddingPipe(EmbeddingPipe):
         Initializes the embedding pipe with necessary components and configurations.
         """
         super().__init__(
-            embedding_provider=embedding_provider,
             pipe_logger=pipe_logger,
             type=type,
             config=config
             or LoggableAsyncPipe.PipeConfig(name="default_embedding_pipe"),
         )
+        self.embedding_provider = embedding_provider
         self.text_splitter = text_splitter
         self.embedding_batch_size = embedding_batch_size
         self.id_prefix = id_prefix
@@ -190,7 +140,7 @@ class R2REmbeddingPipe(EmbeddingPipe):
 
     async def _run_logic(
         self,
-        input: EmbeddingPipe.Input,
+        input: LoggableAsyncPipe.Input,
         state: AsyncState,
         run_id: uuid.UUID,
         *args: Any,

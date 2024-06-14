@@ -21,6 +21,7 @@ class KGConfig(ProviderConfig):
     provider: Optional[str] = None
     batch_size: int = 1
     kg_extraction_prompt: Optional[str] = "ner_kg_extraction"
+    kg_agent_prompt: Optional[str] = "kg_agent"
 
     def validate(self) -> None:
         if not self.provider:
@@ -111,4 +112,15 @@ class KGProvider(ABC):
         relations: list[Relation],
     ):
         """Abstract method to update the KG extraction prompt."""
+        pass
+
+    # TODO - Type this method.
+    @abstractmethod
+    def update_agent_prompt(
+        self,
+        prompt_provider: Any,
+        entity_types: list[Any],
+        relations: list[Relation],
+    ):
+        """Abstract method to update the KG agent prompt."""
         pass

@@ -40,6 +40,7 @@ After selecting a knowledge graph provider, the default R2R `IngestionPipeline` 
 R2R uses Neo4j as the primary knowledge graph provider. Follow [these instructions](https://neo4j.com/docs/operations-manual/current/installation/) to setup a Neo4j database. Ensure that your Neo4j database is running with version `>=5.13.0` with `APOC` installed. After setup, set the relevant environment variables as shown (or modify them accordingly):
 
 ```bash filename="User Terminal"
+pip install r2r
 export NEO4J_USER=neo4j
 export NEO4J_PASSWORD=password
 export NEO4J_URL=bolt://localhost:7687
@@ -97,7 +98,7 @@ When running R2R with knowledge graphs enabled, ingested documents and files wil
 
 The code shown above will result in the following output:
 
-```bash
+```bash filename="Local Terminal"
 ...
 r2r.pipes.parsing_pipe - INFO - Parsed document with id=80df8bad-e4b3-430a-9d39-fa59cee66430, title=None, user_id=None, metadata={'title': None} into 1 extractions in t=0.00 seconds. - 2024-06-14 11:01:14,635
 r2r.pipes.parsing_pipe - INFO - Parsed document with id=be7e65ee-1b02-452d-8ed5-4fcbe3998496, title=None, user_id=None, metadata={'title': None} into 1 extractions in t=0.00 seconds. - 2024-06-14 11:01:14,635
@@ -154,7 +155,7 @@ structured_result = neo4j_kg.structured_query(structured_query)
 print("Structured Results:\n", structured_result)
 ```
 
-```bash
+```bash filename="Local Terminal"
 Search Results:
 {
     'results': [
@@ -208,15 +209,18 @@ We are now ready to move on to a more advanced example which showcases how R2R p
 from r2r import (
     Document,
     EntityType,
+    GenerationConfig,
+    Pipeline,
     R2RAppBuilder,
+    R2RKGAgentPipe,
     Relation,
+    run_pipeline,
 )
-
 ...
 
 def main(max_entries=50, delete=False):
     # Load the R2R configuration and build the app
-    r2r = R2RAppBuilder(from_config="neo4j_kg").build()
+    r2r_app = R2RAppBuilder(from_config="neo4j_kg").build()
 
     # Specify the entity types for the KG extraction prompt
     entity_types = [
@@ -289,8 +293,8 @@ def main(max_entries=50, delete=False):
     ]
 
     # Get the prompt provider and KG provider
-    prompt_provider = r2r.providers.prompt
-    kg = r2r.providers.kg
+    prompt_provider = r2r_app.providers.prompt
+    kg = r2r_app.providers.kg
 
     # Update the KG extraction prompt with the specified entity types and relations
     kg.update_extraction_prompt(prompt_provider, entity_types, relations)
@@ -304,7 +308,7 @@ python r2r/examples/scripts/advanced_kg_cookbook.py --max_entries=1 --delete
 
 Running the command above will produce output like the following:
 
-```bash
+```bash filename="Local Terminal"
 Joe Gebbia -[FOUNDED]-> Airbnb
 Airbnb -[LOCATION]-> San Francisco
 Airbnb -[HAS]-> 7M listings

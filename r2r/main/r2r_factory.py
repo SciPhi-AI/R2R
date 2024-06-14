@@ -324,16 +324,16 @@ class R2RPipeFactory:
 
     def create_rag_pipe(self, streaming: bool = False, *args, **kwargs) -> Any:
         if streaming:
-            from r2r.pipes import R2RStreamingRAGPipe
+            from r2r.pipes import R2RStreamingSearchRAGPipe
 
-            return R2RStreamingRAGPipe(
+            return R2RStreamingSearchRAGPipe(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
             )
         else:
-            from r2r.pipes import R2RRAGPipe
+            from r2r.pipes import R2RSearchRAGPipe
 
-            return R2RRAGPipe(
+            return R2RSearchRAGPipe(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
             )
