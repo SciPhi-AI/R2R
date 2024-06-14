@@ -430,3 +430,48 @@ Results:
 [{'Founder': 'Abdullah Al Zandani', 'Company': 'Coperniq', 'Industries': ['saas'], 'Products': ['workflow software', 'Workflow software'], 'Schools': [], 'Companies': ['two solar companies', 'ADM']}, {'Founder': 'Akshit Khurana', 'Company': 'Narrative', 'Industries': ['saas'], 'Products': [], 'Schools': [], 'Companies': ['Ginger.io', 'Housecanary', 'Pytorch', 'Meta', 'SlideShare', 'Ambient AI', 'LinkedIn']}, {'Founder': 'Alan', 'Company': 'Health Harbor', 'Industries': ['saas'], 'Products': ['Automated billing for private medical practices', 'billing'], 'Schools': ['Yale'], 'Companies': ['Nuro', 'Meta']}, {'Founder': 'Daiyi Yang', 'Company': 'Empower', 'Industries': ['saas'], 'Products': ['Empower-Functions', 'LLMs'], 'Schools': [], 'Companies': ['Meta', 'Revinate']}, {'Founder': 'Dani Penev', 'Company': 'Slicker', 'Industries': ['saas'], 'Products': ['AI-powered payments platform', 'payments integration'], 'Schools': [], 'Companies': ['Thought Machine', 'Stripe']}, {'Founder': 'David Hua', 'Company': 'Meadow', 'Industries': ['saas'], 'Products': [], 'Schools': [], 'Companies': []}, {'Founder': 'Hansen Qian', 'Company': 'Lightski', 'Industries': ['saas'], 'Products': ['User-facing analytics', 'Lightski AI Data Scientist', 'embedded data analytics', 'analytics experience', 'AI Data Scientist', 'Lightski'], 'Schools': [], 'Companies': ['Affinity CRM']}, {'Founder': 'Ivan Valkov', 'Company': 'Slicker', 'Industries': ['saas'], 'Products': ['AI-powered payments platform', 'payments integration'], 'Schools': [], 'Companies': []}, {'Founder': 'Jacob', 'Company': 'IcePanel', 'Industries': ['saas'], 'Products': ['collaborative modelling tool', 'relationships', 'Dynamic flows', 'diagrams', 'IcePanel objects', 'C4 model', 'single source of truth', 'Levelled diagramming', 'software architecture', 'reusable objects', 'SaaS tool'], 'Schools': [], 'Companies': []}, {'Founder': 'Jean-Michael Diei', 'Company': 'PropRise', 'Industries': ['saas'], 'Products': ['Beacon', 'Beacon by PropRise'], 'Schools': [], 'Companies': []}]
 ```
 
+### Knowledge Graph agents
+
+<Callout type="info" emoji="⚠️">
+   The KGAgent has not yet been fully integrated into R2R, the code below is a preview that runs on R2R's main branch.
+</Callout>
+
+
+Finally, we are in a position to automatically answer difficult to manage queries with a knowledge agent. The snippet below injects our custom schema into a generic few-shot prompt and uses gpt-4o to create a relevant query
+
+```python filename="r2r/examples/scripts/advanced_kg_cookbook.py"
+    kg_agent_pipe = R2RKGAgentPipe(
+        r2r_app.providers.kg, r2r_app.providers.llm, r2r_app.providers.prompt
+    )
+
+    # Define the pipeline
+    kg_pipe = Pipeline()
+    kg_pipe.add_pipe(kg_agent_pipe)
+
+    kg.update_agent_prompt(prompt_provider, entity_types, relations)
+
+    import asyncio
+
+    def restart_event_loop():
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        return loop
+
+    restart_event_loop()
+
+    agent_result = run_pipeline(
+        kg_pipe,
+        "Find up to 10 founders that worked at Google",
+        rag_generation_config=GenerationConfig(model="gpt-4o"),
+    )
+
+    print(agent_result)
+
+```
+
+
+```bash filename="User Terminal"
+[[{'Founder': 'Kris Pahuja', 'Organization': 'Piramidal'}, {'Founder': 'Kris Pahuja', 'Organization': 'Gyftgo'}, {'Founder': 'Ohad Navon', 'Organization': 'Octo'}, {'Founder': 'Edrei', 'Organization': 'Stellar Sleep'}, {'Founder': 'Pedro Saratscheff', 'Organization': 'Ruuf'}]]
+```

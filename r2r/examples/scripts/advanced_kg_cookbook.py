@@ -237,7 +237,7 @@ def main(max_entries=50, delete=False):
 
     agent_result = run_pipeline(
         kg_pipe,
-        "Find 10 founders",
+        "Find up to 10 founders that worked at Google",
         rag_generation_config=GenerationConfig(model="gpt-4o"),
     )
 
