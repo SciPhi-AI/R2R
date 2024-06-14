@@ -1,6 +1,8 @@
 import logging
 import os
+
 import posthog
+
 from r2r.telemetry.events import BaseTelemetryEvent
 
 logger = logging.getLogger(__name__)

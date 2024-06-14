@@ -33,6 +33,9 @@ CONFIG_OPTIONS = {
     "pgvector": os.path.join(
         current_file_path, "..", "configs", "pgvector.json"
     ),
+    "neo4j_kg": os.path.join(
+        current_file_path, "..", "configs", "neo4j_kg.json"
+    ),
 }
 
 

@@ -1,6 +1,8 @@
 import asyncio
 import uuid
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable, List, Optional
+
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from ..pipeline.base_pipeline import Pipeline
@@ -37,3 +39,31 @@ def increment_version(version: str) -> str:
     prefix = version[:-1]
     suffix = int(version[-1])
     return f"{prefix}{suffix + 1}"
+
+
+class EntityType:
+    def __init__(self, name: str, subcategories: Optional[List[str]] = None):
+        self.name = name
+        self.subcategories = subcategories
+
+
+class Relation:
+    def __init__(self, name: str):
+        self.name = name
+
+
+def format_entity_types(entity_types: List[EntityType]) -> str:
+    lines = []
+    for entity in entity_types:
+        lines.append(entity.name)
+        if entity.subcategories:
+            subcategories_str = ", ".join(entity.subcategories)
+            lines.append(f"subcategories: {subcategories_str}")
+    return "\n".join(lines)
+
+
+def format_relations(predicates: List[Relation]) -> str:
+    lines = []
+    for predicate in predicates:
+        lines.append(predicate.name)
+    return "\n".join(lines)
