@@ -11,5 +11,7 @@ module.exports = withNextra({
     INKEEP_API_KEY: process.env.INKEEP_API_KEY,
     INKEEP_INT_ID: process.env.INKEEP_INT_ID,
     INKEEP_ORG_ID: process.env.INKEEP_ORG_ID,
+    NEXT_PUBLIC_POSTHOG_KEY: 'phc_OPBbibOIErCGc4NDLQsOrMuYFTKDmRwXX6qxnTr6zpU',
+    NEXT_PUBLIC_POSTHOG_HOST: 'https://us.i.posthog.com'
   },
 });

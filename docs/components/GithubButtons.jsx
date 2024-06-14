@@ -14,7 +14,7 @@ const GithubButtons = () => {
   }, []);
 
   return (
-    <p style={{ textAlign: 'center' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
       <a
         className="github-button"
         href="https://github.com/SciPhi-AI/R2R"
@@ -42,7 +42,7 @@ const GithubButtons = () => {
       >
         Fork
       </a>
-    </p>
+    </div>
   );
 };
 
