@@ -28,6 +28,7 @@ from r2r.core import (
     to_async_generator,
 )
 from r2r.pipes import R2REvalPipe
+from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from .r2r_abstractions import R2RPipelines, R2RProviders
 from .r2r_config import R2RConfig
@@ -258,6 +259,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         template: Optional[str] = None
         input_types: Optional[dict[str, str]] = None
 
+    @telemetry_event("UpdatePrompt")
     async def update_prompt_app(self, request: UpdatePromptRequest):
         """Update a prompt's template and/or input types."""
         try:
@@ -384,6 +386,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     class IngestDocumentsRequest(BaseModel):
         documents: list[Document]
 
+    @telemetry_event("IngestDocuments")
     async def ingest_documents_app(self, request: IngestDocumentsRequest):
         async with manage_run(
             self.run_manager, "ingest_documents_app"
@@ -480,6 +483,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     class UpdateDocumentsRequest(BaseModel):
         documents: list[Document]
 
+    @telemetry_event("UpdateDocuments")
     async def update_documents_app(self, request: UpdateDocumentsRequest):
         async with manage_run(
             self.run_manager, "update_documents_app"
@@ -550,9 +554,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     > self.config.app.get("max_file_size_in_mb", 32)
                     * MB_CONVERSION_FACTOR
                 ):
-                    logger.error(
-                        f"File size exceeds limit: {file.filename}"
-                    )
+                    logger.error(f"File size exceeds limit: {file.filename}")
                     raise HTTPException(
                         status_code=413,
                         detail="File size exceeds maximum allowed size.",
@@ -575,11 +577,10 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         status_code=415,
                         detail=f"'{file_extension}' is not a valid DocumentType.",
                     )
-                if (
-                    DocumentType[file_extension.upper()]
-                    in excluded_parsers
-                ):
-                    logger.error(f"{file_extension} is explicitly excluded in the configuration file.")
+                if DocumentType[file_extension.upper()] in excluded_parsers:
+                    logger.error(
+                        f"{file_extension} is explicitly excluded in the configuration file."
+                    )
                     raise HTTPException(
                         status_code=415,
                         detail=f"{file_extension} is explicitly excluded in the configuration file.",
@@ -665,9 +666,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             )
 
             if not skip_document_info:
-                self.providers.vector_db.upsert_documents_info(
-                    document_infos
-                )
+                self.providers.vector_db.upsert_documents_info(document_infos)
 
             return {
                 "processed_documents": [
@@ -686,6 +685,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             for file in files:
                 file.file.close()
 
+    @telemetry_event("IngestFiles")
     async def ingest_files_app(
         self,
         files: list[UploadFile] = File(...),
@@ -854,6 +854,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         metadatas: Optional[str] = Form(None)
         ids: str = Form("")
 
+    @telemetry_event("UpdateFiles")
     async def update_files_app(
         self,
         files: list[UploadFile] = File(...),
@@ -943,6 +944,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         search_limit: int = 10
         do_hybrid_search: Optional[bool] = False
 
+    @telemetry_event("Search")
     async def search_app(self, request: SearchRequest):
         async with manage_run(self.run_manager, "search_app") as run_id:
             try:
@@ -1058,6 +1060,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         rag_generation_config: Optional[str] = None
         streaming: Optional[bool] = None
 
+    @telemetry_event("RAG")
     async def rag_app(self, request: RAGRequest):
         async with manage_run(self.run_manager, "rag_app") as run_id:
             try:
@@ -1167,6 +1170,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         context: str
         completion: str
 
+    @telemetry_event("Evaluate")
     async def evaluate_app(self, request: EvalRequest):
         async with manage_run(self.run_manager, "evaluate_app") as run_id:
             try:
@@ -1208,6 +1212,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         keys: list[str]
         values: list[Union[bool, int, str]]
 
+    @telemetry_event("Delete")
     async def delete_app(self, request: DeleteRequest = Body(...)):
         try:
             return await self.adelete(request.keys, request.values)
@@ -1266,6 +1271,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
         return {"results": aggregated_logs}
 
+    @telemetry_event("Logs")
     async def logs_app(
         self,
         log_type_filter: Optional[str] = Query(None),
@@ -1363,6 +1369,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
         return {"results": results}
 
+    @telemetry_event("Analytics")
     async def analytics_app(
         self,
         filter_criteria: FilterCriteria = Body(...),
@@ -1390,6 +1397,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             }
         }
 
+    @telemetry_event("AppSettings")
     async def app_settings_app(self):
         """Return the config.json and all prompts."""
         try:
@@ -1404,6 +1412,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             [str(ele) for ele in user_ids]
         )
 
+    @telemetry_event("UsersStats")
     async def users_stats_app(
         self, user_ids: Optional[list[uuid.UUID]] = Query(None)
     ):
@@ -1433,6 +1442,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             ),
         )
 
+    @telemetry_event("DocumentsInfo")
     async def documents_info_app(
         self,
         document_ids: Optional[list[str]] = Query(None),
@@ -1453,6 +1463,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def adocument_chunks(self, document_id: str) -> list[str]:
         return self.providers.vector_db.get_document_chunks(document_id)
 
+    @telemetry_event("DocumentChunks")
     async def document_chunks_app(self, document_id: str):
         try:
             chunks = await self.adocument_chunks(document_id)
@@ -1463,6 +1474,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             )
             raise HTTPException(status_code=500, detail=str(e)) from e
 
+    @telemetry_event("OpenAPI")
     def openapi_spec_app(self):
         from fastapi.openapi.utils import get_openapi
 

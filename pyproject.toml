@@ -62,6 +62,7 @@ ionic-api-sdk = {version = "0.9.3", optional = true}
 exa-py = {version = "^1.0.9", optional = true}
 dateutils = "^0.6.12"
 fsspec = "^2024.6.0"
+posthog = "^3.5.0"
 
 [tool.poetry.extras]
 all = ["tiktoken", "sentence-transformers"]
