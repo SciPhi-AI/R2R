@@ -70,5 +70,3 @@ if __name__ == "__main__":
             model="gpt-4o"
         ),  # LLM configuration for the RAG model
     )
-
-    print(f"Final Result:\n\n{result}")

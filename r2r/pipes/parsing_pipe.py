@@ -8,7 +8,7 @@ import logging
 import time
 import uuid
 from abc import abstractmethod
-from typing import AsyncGenerator, Iterator, Optional
+from typing import AsyncGenerator, Optional
 
 from r2r.core import (
     AsyncParser,
@@ -38,45 +38,7 @@ from r2r.core import (
 logger = logging.getLogger(__name__)
 
 
-class DocumentParsingPipe(LoggableAsyncPipe):
-    def __init__(
-        self,
-        excluded_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
-        override_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
-        type: PipeType = PipeType.INGESTOR,
-        config: Optional[LoggableAsyncPipe.PipeConfig] = None,
-        *args,
-        **kwargs,
-    ):
-        super().__init__(
-            pipe_logger=pipe_logger,
-            type=type,
-            config=config,
-            *args,
-            **kwargs,
-        )
-        self.excluded_parsers = excluded_parsers or {}
-        self.override_parsers = override_parsers or {}
-
-    @property
-    def supported_types(self) -> list[str]:
-        """
-        Lists the data types supported by the pipe.
-        """
-        return [entry_type for entry_type in DocumentType]
-
-    @abstractmethod
-    async def _parse(
-        self, document: Document, *args, **kwargs
-    ) -> Iterator[Extraction]:
-        """
-        Parse the document based on the type and yield `Extraction` objects.
-        """
-        pass
-
-
-class R2RDocumentParsingPipe(DocumentParsingPipe):
+class R2RDocumentParsingPipe(LoggableAsyncPipe):
     """
     Processes incoming documents into plaintext based on their data type.
     Supports TXT, JSON, HTML, and PDF formats.
@@ -151,6 +113,13 @@ class R2RDocumentParsingPipe(DocumentParsingPipe):
         # Apply overrides if specified
         for doc_type, parser in override_parsers.items():
             self.parsers[doc_type] = parser
+
+    @property
+    def supported_types(self) -> list[str]:
+        """
+        Lists the data types supported by the pipe.
+        """
+        return [entry_type for entry_type in DocumentType]
 
     async def _parse(
         self,

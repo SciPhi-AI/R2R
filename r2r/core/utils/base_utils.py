@@ -24,6 +24,7 @@ async def to_async_generator(
 
 
 def run_pipeline(pipeline: "Pipeline", input: Any, *args, **kwargs):
+
     if not isinstance(input, AsyncGenerator) and not isinstance(input, list):
         input = to_async_generator([input])
     elif not isinstance(input, AsyncGenerator):
@@ -52,13 +53,16 @@ class Relation:
         self.name = name
 
 
-def format_entity_types(entity_types: List[EntityType]) -> str:
+def format_entity_types(
+    entity_types: List[EntityType], ignore_subcats=False
+) -> str:
     lines = []
     for entity in entity_types:
         lines.append(entity.name)
         if entity.subcategories:
             subcategories_str = ", ".join(entity.subcategories)
-            lines.append(f"subcategories: {subcategories_str}")
+            if not ignore_subcats:
+                lines.append(f"subcategories: {subcategories_str}")
     return "\n".join(lines)
 
 

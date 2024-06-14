@@ -4,7 +4,16 @@ import fire
 import requests
 from bs4 import BeautifulSoup, Comment
 
-from r2r import Document, EntityType, R2RAppBuilder, Relation
+from r2r import (
+    Document,
+    EntityType,
+    GenerationConfig,
+    Pipeline,
+    R2RAppBuilder,
+    R2RKGAgentPipe,
+    Relation,
+    run_pipeline,
+)
 
 
 def get_all_yc_co_directory_urls():
@@ -98,7 +107,7 @@ def print_all_relationships(provider):
 
 def main(max_entries=50, delete=False):
     # Load the R2R configuration and build the app
-    r2r = R2RAppBuilder(from_config="neo4j_kg").build()
+    r2r_app = R2RAppBuilder(from_config="neo4j_kg").build()
 
     # Specify the entity types for the KG extraction prompt
     entity_types = [
@@ -170,8 +179,8 @@ def main(max_entries=50, delete=False):
     ]
 
     # Get the prompt provider and KG provider
-    prompt_provider = r2r.providers.prompt
-    kg = r2r.providers.kg
+    prompt_provider = r2r_app.providers.prompt
+    kg = r2r_app.providers.kg
 
     # Update the KG extraction prompt with the specified entity types and relations
     kg.update_extraction_prompt(prompt_provider, entity_types, relations)
@@ -190,7 +199,7 @@ def main(max_entries=50, delete=False):
             break
         try:
             # Ingest as a text document
-            r2r.ingest_documents(
+            r2r_app.ingest_documents(
                 [
                     Document(
                         type="txt",
@@ -204,6 +213,35 @@ def main(max_entries=50, delete=False):
         i += 1
 
     print_all_relationships(kg)
+
+    kg_agent_pipe = R2RKGAgentPipe(
+        r2r_app.providers.kg, r2r_app.providers.llm, r2r_app.providers.prompt
+    )
+
+    # Define the pipeline
+    kg_pipe = Pipeline()
+    kg_pipe.add_pipe(kg_agent_pipe)
+
+    kg.update_agent_prompt(prompt_provider, entity_types, relations)
+
+    import asyncio
+
+    def restart_event_loop():
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        return loop
+
+    restart_event_loop()
+
+    agent_result = run_pipeline(
+        kg_pipe,
+        "Find up to 10 founders that worked at Google",
+        rag_generation_config=GenerationConfig(model="gpt-4o"),
+    )
+
+    print(agent_result)
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ from typing import Any, AsyncGenerator, Optional
 from r2r.core import (
     AsyncState,
     GenerationConfig,
+    KVLoggingSingleton,
     LLMProvider,
     LoggableAsyncPipe,
     PipeType,
@@ -24,12 +25,14 @@ class GeneratorPipe(LoggableAsyncPipe):
         prompt_provider: PromptProvider,
         type: PipeType = PipeType.GENERATOR,
         config: Optional[Config] = None,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
             type=type,
             config=config or self.Config(),
+            pipe_logger=pipe_logger,
             *args,
             **kwargs,
         )
