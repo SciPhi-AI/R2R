@@ -84,7 +84,7 @@ This command starts the R2R container with the following options:
 
 # R2R Python SDK Demo
 
-The following demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline using the Python SDK. The demo ingests a list of provided provided documents and demonstrates search, RAG, and advanced functionality. The script at `r2r/examples/demo.py`, which powers the demo, can be configured and extended with sufficient developer familiarity.
+The following demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline using the Python SDK. The demo ingests a list of provided provided documents and demonstrates search, RAG, and advanced functionality. The script at `r2r/examples/quickstart.py`, which powers the demo, can be configured and extended with sufficient developer familiarity.
 
 ![ingest_as_files](https://github.com/SciPhi-AI/R2R/assets/34580718/b0780f26-8e90-4459-9537-e5871453d003)
 
