@@ -40,11 +40,12 @@ After selecting a knowledge graph provider, the default R2R `IngestionPipeline` 
 R2R uses Neo4j as the primary knowledge graph provider. Follow [these instructions](https://neo4j.com/docs/operations-manual/current/installation/) to setup a Neo4j database. Ensure that your Neo4j database is running with version `>=5.13.0` with `APOC` installed. After setup, set the relevant environment variables as shown (or modify them accordingly):
 
 ```bash filename="User Terminal"
-pip install r2r
+pip install `r2r[kg]`
 export NEO4J_USER=neo4j
 export NEO4J_PASSWORD=password
 export NEO4J_URL=bolt://localhost:7687
 export NEO4J_DATABASE=neo4j
+export OPENAI_API_KEY=...
 ```
 
 ### Basic Example
@@ -127,7 +128,14 @@ Paul -[WORKS_AT]-> Microsoft
 
 By default, the knowledge graph construction occurs concurrently with document chunking and embedding. Moreover, extracted knowledge graph nodes include embeddings to allow for semantic search over the knowledge graph.
 
-Executing the following demonstrates relevant functionalities:
+We can execute the script above by running the following
+
+```bash filename="User Terminal"
+python -m python -m r2r.examples.scripts.basic_kg_cookbook
+```
+
+
+The script will also run the code below which directly demonstrates the relevant functionalities:
 
 ```python filename="r2r/examples/scripts/basic_kg_cookbook.py"
 # Search the vector database
@@ -303,7 +311,7 @@ def main(max_entries=50, delete=False):
 Finally, we are ready to ingest data. The advanced cookbook script includes the necessary information to scrape and ingest up to 1,000 companies from the YC directory. We will begin by scraping a single entry:
 
 ```bash copy
-python r2r/examples/scripts/advanced_kg_cookbook.py --max_entries=1 --delete
+python -m r2r.examples.scripts.advanced_kg_cookbook --max_entries=1
 ```
 
 Running the command above will produce output like the following:

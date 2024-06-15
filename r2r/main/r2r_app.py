@@ -297,6 +297,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             str(doc_info.document_id)
             for doc_info in self.providers.vector_db.get_documents_info()
         ]
+        version = versions[iteration] if versions else "v0"
 
         for iteration, document in enumerate(documents):
             if (
