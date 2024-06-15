@@ -592,6 +592,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     if document_ids is None
                     else document_ids[iteration]
                 )
+                
+                version = versions[iteration] if versions else "v0"
                 if (
                     version is not None
                     and str(document_id) in existing_document_ids
