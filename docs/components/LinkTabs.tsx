@@ -25,7 +25,7 @@ export function LinkTabs({ items, children }) {
   };
 
   return (
-    <NextraTabs items={items} selectedIndex={String(activeTab)} onChange={handleTabClick}>
+    <NextraTabs items={items} selectedIndex={activeTab} onChange={handleTabClick}>
       {children}
     </NextraTabs>
   );
