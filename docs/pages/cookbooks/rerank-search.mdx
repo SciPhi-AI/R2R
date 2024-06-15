@@ -10,7 +10,10 @@ Currently, reranking is only supported when running with local embedding models.
 
 ### Running with Local Embedding and Reranking
 
-This guide assumes R2R is already installed and the basic local RAG cookbook [located here](/cookbooks/local-rag) has been completed. To run R2R with local embedding and reranking, override the default `config.json` with settings like those shown below:
+This guide assumes R2R is already installed and the basic local RAG cookbook [located here](/cookbooks/local-rag) has been completed. To run R2R with local embedding and reranking, override the default `config.json` with settings like those in the collapsible below.
+
+<details>
+<summary>reranking configuration</summary>
 
 ```json filename="local_ollama_rerank.json"
 {
@@ -30,28 +33,28 @@ This guide assumes R2R is already installed and the basic local RAG cookbook [lo
   }
 }
 ```
-
 These settings build upon those shown in `/examples/configs/local_ollama.json` and are provided by default in the config file located at `/examples/configs/local_ollama_rerank.json`.
+</details>
+
 
 ### Executing a Basic Search
 
 To execute a basic search, start by running the backend with the basic `local_ollama` config.
 
 ```bash filename="bash" copy
-# cd $WORKDIR
 python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config local_ollama
 ```
 
 If the target database is empty, quickly populate it with demo files, which include `.txt`, `.pdf`, `.html`, and `.png` examples, using the command shown below. The `client_server_mode` flag specifies communication with an R2R server with the default URL of `http://localhost:8000`. To replicate the exact results shown below, these commands must be run in order on a clean database.
 
 ```bash filename="bash" copy
-python -m r2r.examples.demo ingest_as_files --client_server_mode
+python -m r2r.examples.quickstart ingest_as_files --client_server_mode
 ```
 
 Once the files are populated, run a search with the following command:
 
 ```bash filename="bash" copy
-python -m r2r.examples.demo search --query="Who was Aristotle?" --client_server_mode
+python -m r2r.examples.quickstart search --query="Who was Aristotle?" --client_server_mode
 ```
 
 ```plaintext
@@ -88,7 +91,7 @@ python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 
 Now we can execute a search as shown:
 
 ```bash filename="bash" copy
-python -m r2r.examples.demo search --query="Who was Aristotle?" --client_server_mode
+python -m r2r.examples.quickstart search --query="Who was Aristotle?" --client_server_mode
 ```
 
 ```plaintext

@@ -6,13 +6,9 @@ from enum import Enum
 from fastapi import FastAPI
 
 from r2r import (
-    R2RApp,
     R2RAppBuilder,
     R2RConfig,
-    R2RPipeFactory,
     R2RPipeFactoryWithMultiSearch,
-    R2RPipelineFactory,
-    R2RProviderFactory,
     R2RWebSearchPipe,
     SerperClient,
 )
