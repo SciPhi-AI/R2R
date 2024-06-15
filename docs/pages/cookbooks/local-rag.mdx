@@ -5,39 +5,43 @@ import { Callout } from 'nextra/components'
 
 ### Installation
 
-We can install r2r with the necessary optional dependencies to run locally using `pip`
 
-```bash filename="bash" copy
-pip install 'r2r[local-embedding]'
-```
+<Tabs items={['Installing with Pip 🐍', 'Installing with Docker 🐳']}>
+  <Tabs.Tab>
+    Running local RAG requires an additional `local-embedding` dependency to support embedding creation.
+    ```bash
+      pip install 'r2r[local-embedding]'
 
-<Callout type="info" emoji="🐳">
-   Docker makes it convenient to run R2R without managing your local environment. Learn more [here](/getting-started/installation)
-</Callout>
+      # start the server, further commands must run in a separate termiinal
+      python -m r2r.examples.servers.configurable_pipeline --config=local_ollama
+    ```
+  </Tabs.Tab>
 
-<details>
-<summary>Running with Docker</summary>
-Run your Docker container using the following command:
+  <Tabs.Tab>
 
-```bash filename="bash" copy
-docker run -d \
-  --name r2r \
-  --add-host=host.docker.internal:host-gateway \
-  -p 8000:8000 \
-  -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
-  -e CONFIG_OPTION=local_ollama \
-  emrgntcmplxty/r2r:latest
-```
+    Run your Docker container using the following command:
 
-This command starts the R2R container with the following options:
+    ```bash filename="bash" copy
+    docker run -d \
+      --name r2r \
+      --add-host=host.docker.internal:host-gateway \
+      -p 8000:8000 \
+      -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
+      -e CONFIG_OPTION=local_ollama \
+      emrgntcmplxty/r2r:latest
+    ```
 
-- `--name r2r`: Assigns the name "r2r" to the container.
-- `--add-host=host.docker.internal:host-gateway`: Adds a host entry for the Docker host.
-- `-p 8000:8000`: Maps port 8000 of the container to port 8000 of the host.
-- `-e OLLAMA_API_BASE=http://host.docker.internal:11434`: Specifies the Ollama API base URL.
-- `-e CONFIG_OPTION=local_ollama`: Selects the "local_ollama" configuration option.
-- `emrgntcmplxty/r2r:latest`: Specifies the Docker image to use.
-</details>
+    This command starts the R2R container with the following options:
+
+    - `--name r2r`: Assigns the name "r2r" to the container.
+    - `--add-host=host.docker.internal:host-gateway`: Adds a host entry for the Docker host.
+    - `-p 8000:8000`: Maps port 8000 of the container to port 8000 of the host.
+    - `-e OLLAMA_API_BASE=http://host.docker.internal:11434`: Specifies the Ollama API base URL.
+    - `-e CONFIG_OPTION=local_ollama`: Selects the "local_ollama" configuration option.
+    - `emrgntcmplxty/r2r:latest`: Specifies the Docker image to use.
+
+  </Tabs.Tab>
+</Tabs>
 
 R2R supports  `Ollama`, a popular tool for Local LLM inference. Ollama is provided through a connection managed by the `litellm` library.
 
@@ -45,7 +49,11 @@ Ollama must be installed independently. You can install Ollama by following the 
 
 ### Configuration
 
-Let's move on to setting up the R2R pipeline. R2R relies on a `config.json` file for defining various settings, such as embedding models and chunk sizes. By default, the `config.json` found in the R2R GitHub repository's root directory is set up for cloud-based services.
+Let's move on to setting up the R2R pipeline. R2R relies on a `config.json` file for defining various settings, such as embedding models and chunk sizes. By default, the `config.json` found in the R2R GitHub repository's root directory is set up for cloud-based services. We must run with a separate configuration in order to support local settings, this is the `local_ollama` config we selected previously.
+
+
+<details>
+<summary>Local Configuration</summary>
 
 For setting up an on-premises RAG system, we need to adjust the configuration to use local resources. For this example, this only involves changing the embedding provider as our default LLM provider integrates seamlessly with Ollama.
 
@@ -85,16 +93,17 @@ You may also modify the configuration defaults for ingestion, logging, and your 
 This chosen config modification above instructs R2R to use the `sentence-transformers` library for embeddings with the `all-MiniLM-L6-v2` model, turns off evals, and sets the LLM provider to `ollama`. During ingestion, the default is to split documents into chunks of 512 characters with 20 characters of overlap between chunks. 
 
 A local vector database will be used to store the embeddings. The current default is a minimal sqlite implementation.
+</details>
 
 
 ## Ingesting and Embedding Documents
 
 With our environment set up and our server running in a separate process, we're ready to ingest a document! As an example, R2R includes a several files such as Aristotle's wikipedia page in `.txt` an assortment of Paul Graham's essays in `.html` and a few 10ks in `.pdf`. This file ships with the package and is included by default.
 
-Run this command to ingest the document:
+Run this command to ingest the document, skipping media as multi-modal RAG is not yet supported when running locally:
 
 ```bash filename="bash" copy
-python -m r2r.examples.demo ingest_as_files --no-media=true --client_server_mode
+python -m r2r.examples.quickstart ingest_as_files --no-media=true --client_server_mode
 ```
 
 The output should look something like this:
@@ -121,7 +130,7 @@ Here's what's happening under the hood:
 3. Each chunk is embedded using the `all-MiniLM-L6-v2` model from `sentence-transformers`.
 4. The chunks and embeddings are stored in the specified vector database, which defaults to a local SQLite database.
 
-With just one command, we've gone from a raw document to an embedded knowledge base we can query. In addition to the raw chunks, metadata such as user ID or document ID can be attached to enable easy filtering later. For more information on similar functionalities provided by the demo, refer to the [R2R Demo](/getting-started/quickstart).
+With just one command, we've gone from a raw document to an embedded knowledge base we can query. In addition to the raw chunks, metadata such as user ID or document ID can be attached to enable easy filtering later. For more information on similar functionalities provided by the demo, refer to the [R2R Quickstart](/getting-started/quickstart).
 
 ### Running Queries on the Local LLM
 
@@ -136,7 +145,7 @@ ollama serve llama2
 Then, to ask a question, run:
 
 ```bash filename="bash" copy
-python -m r2r.examples.demo rag \
+python -m r2r.examples.quickstart rag \
   --query="What contributions did Aristotle make to biology?" \
   --client_server_mode \
   --rag_generation_config='{"model": "ollama/llama2"}'
@@ -198,4 +207,4 @@ Together we've walked through the steps to get a local LLM application up and ru
 
 But we've only scratched the surface of what you can build with R2R! I encourage you to keep experimenting - try ingesting your own documents, customizing your pipeline, tweaking model parameters, and exploring R2R's evaluation capabilities.
 
-If you have any questions or want to learn more, [R2R's GitHub repo](https://github.com/SciPhi-ai/R2R), [R2R Discord](https://discord.gg/p6KqD2kjtB), and [docs](https://r2r-docs.sciphi.ai/) are great resources.
+If you have any questions or want to learn more, [R2R's GitHub repo](https://github.com/SciPhi-ai/R2R) and the [R2R Discord](https://discord.gg/p6KqD2kjtB) are great places to get started.

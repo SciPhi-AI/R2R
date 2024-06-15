@@ -24,7 +24,7 @@ If you have not completed the demo, or if your target database has been cleared,
 
 ```bash filename="bash" copy
 # export OPENAI_API_KEY=...
-python -m r2r.examples.demo ingest_as_files
+python -m r2r.examples.quickstart ingest_as_files
 ```
 
 ### Testing the Ingested Data
@@ -32,7 +32,7 @@ python -m r2r.examples.demo ingest_as_files
 We can readily test this ingested data by querying the following:
 
 ```bash filename="bash" copy
-python -m r2r.examples.demo search --query="What is on the terminal?"
+python -m r2r.examples.quickstart search --query="What is on the terminal?"
 ```
 
 This returns the following output:
@@ -66,7 +66,7 @@ Uploaded `mp3` files are supported by the `AudioParser`. While many additional t
 We can test this ingestion as follows:
 
 ```bash filename="bash" copy
-poetry run python -m r2r.examples.demo search --query="What does Fanny like?"
+poetry run python -m r2r.examples.quickstart search --query="What does Fanny like?"
 ```
 
 This returns the following output:

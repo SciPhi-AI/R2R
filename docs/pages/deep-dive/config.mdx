@@ -129,13 +129,9 @@ These documentation files provide in-depth guides on setting up and using each p
 To launch the default pipeline with your own config, you may run the following code:
 
 ```python copy
-...
+from r2r import R2RConfig, R2RAppBuilder
 
 config_path = PATH_TO_YOUR_CONFIG
 config = R2RConfig.from_json(config_path=config_path)
-
-providers = R2RProviderFactory(config).create_providers()
-pipes = R2RPipeFactory(config, providers).create_pipes()
-pipelines = R2RPipelineFactory(config, pipes).create_pipelines()
-r2r = R2RApp(config, providers, pipelines)
+app = R2RAppBuilder(config).build().app
 ```

@@ -159,7 +159,7 @@ class R2REmbeddingPipe(LoggableAsyncPipe):
                     fragment_info[extraction.document_id] += 1
                 else:
                     fragment_info[extraction.document_id] = 1
-                extraction.metadata["chunk_order"] = fragment_info[
+                fragment.metadata["chunk_order"] = fragment_info[
                     extraction.document_id
                 ]
                 fragment_batch.append(fragment)

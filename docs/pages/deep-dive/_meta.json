@@ -1,7 +1,7 @@
 {
   "configuring-your-pipeline": "Configuring Your Pipeline",
   "customizing-your-pipeline": "Customizing Your Pipeline",
-  "app": "R2R Application",
+  "builder": "R2R Builder",
   "config": "R2R Config",
   "ingestion": "Ingestion Pipeline",
   "search": "Search Pipeline",

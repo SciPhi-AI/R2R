@@ -1,52 +1,25 @@
 import { Callout } from 'nextra/components'
 
 ## R2R Client-Server Demo
-The Client-Server architecture in R2R allows for a flexible and scalable approach to handling Retrieval-Augmented Generation (RAG) tasks. By centralizing the server to process requests and distribute tasks among multiple clients, this architecture supports efficient and modular deployments.
 
 ### Setting Up the Server
 
-This document extends the [R2R Demo](/getting-started/quickstart) by demonstrating how to set up and use the R2R framework with a Client-Server architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations. The server API can be [viewed here](/getting-started/app-api).
+**This document extends the [R2R Quickstart](/getting-started/quickstart)** by demonstrating how to set up and use the R2R with a Client-Server architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations. The server API can be [viewed here](/getting-started/r2r-api).
 
-
-To set up the R2R server, follow these steps:
-
-<Callout type="info" emoji="🐳">
-   Docker makes it convenient to run R2R without managing your local environment. Learn more [here](/getting-started/installation)
+<Callout type="warning" emoji="🐳">
+If you are running with Docker, then you may skip the step below
 </Callout>
 
-<details>
-<summary>Running with Docker</summary>
-Run your Docker container using the following command:
-
-```bash filename="bash" copy
-docker run -d \
-  --name r2r \
-  --add-host=host.docker.internal:host-gateway \
-  -p 8000:8000 \
-  -e OPENAI_API_KEY=$OPENAI_API_KEY \
-  emrgntcmplxty/r2r:latest
-```
-
-This command starts the R2R container with the following options:
-
-- `--name r2r`: Assigns the name "r2r" to the container.
-- `--add-host=host.docker.internal:host-gateway`: Adds a host entry for the Docker host.
-- `-p 8000:8000`: Maps port 8000 of the container to port 8000 of the host.
-- `-e OPENAI_API_KEY=$OPENAI_API_KEY`: Pulls your OpenAI API key from your local enviornment for use in the container.
-- `emrgntcmplxty/r2r:latest`: Specifies the Docker image to use.
-
-</details>
-
-**Local Installation**:
-   Ensure you have all necessary dependencies installed as described in the [R2R Demo](/getting-started/quickstart). Then, use the following command to start the server:
+**Starting the Demo Server**:
+   Ensure you have all necessary dependencies installed as described in the [installation guide](/getting-started/installation). Then, use the following command to start the server:
    ```bash filename="bash" copy
-   python -m r2r.examples.demo serve
+   python -m r2r.examples.quickstart serve
    ```
    This command starts the R2R server on the default host `0.0.0.0` and port `8000`.
 
 ### Using the Client
 
-The R2R framework includes a [python client](https://github.com/SciPhi-AI/R2R/blob/main/r2r/main/r2r_client.py) and a [typescript client](https://github.com/SciPhi-AI/r2r-js/blob/main/src/r2rClient.ts). All of the demo commands can be run with the python client using the `--client_server_mode` parameter to run the demo in Client-Server mode. Note that these commands will only run successfully if the server is active at http://0.0.0.0:8000.
+The R2R framework includes a [python client](https://github.com/SciPhi-AI/R2R/blob/main/r2r/main/r2r_client.py) and a [typescript client](https://github.com/SciPhi-AI/r2r-js/blob/main/src/r2rClient.ts). All of the quickstart commands can be run with the python client using the `--client_server_mode` parameter to run the demo in Client-Server mode. Note that these commands will only run successfully if the server is active at http://0.0.0.0:8000.
 
 <Callout type="warning" emoji="️⚠️">
    Be sure to run client commands in a new terminal!
@@ -56,28 +29,28 @@ The R2R framework includes a [python client](https://github.com/SciPhi-AI/R2R/bl
 
 1. **Ingest Documents as Files**:
    ```bash filename="bash" copy
-   python -m r2r.examples.demo ingest_as_files --client_server_mode
+   python -m r2r.examples.quickstart ingest_as_files --client_server_mode
    ```
    This command will send the ingestion request to the server running at `http://localhost:8000`.
 
 2. **Perform a Search**:
    ```bash filename="bash" copy
-   python -m r2r.examples.demo search --query="Who was Aristotle?" --client_server_mode
+   python -m r2r.examples.quickstart search --query="Who was Aristotle?" --client_server_mode
    ```
    This command sends the search query to the server and retrieves the results.
 
 3. **Run a RAG Completion**:
    ```bash filename="bash" copy
-   python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?" --client_server_mode
+   python -m r2r.examples.quickstart rag --query="What was Uber's profit in 2020?" --client_server_mode
    ```
    This command sends the RAG query to the server and retrieves the generated response.
 
 4. **Run a RAG Stream**:
    ```bash filename="bash" copy
-   python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=true --client_server_mode
+   python -m r2r.examples.quickstart rag --query="What was Lyft's profit in 2020?" --streaming=true --client_server_mode
    ```
    This command streams the RAG query results from the server.
 
 ## Summary
 
-By using the Client-Server model, you can extend the basic R2R demo to support more scalable and modular deployments. The server handles requests and performs heavy computations, while clients can communicate with the server to perform ingestion, search, RAG, and other operations, as shown in the examples above. For detailed setup and basic functionality, refer back to the [R2R Demo](/getting-started/quickstart).
+By using the Client-Server model, you can extend the basic R2R quickstart to support more scalable and modular deployments. The server handles requests and performs heavy computations, while clients can communicate with the server to perform ingestion, search, RAG, and other operations, as shown in the examples above. For detailed setup and basic functionality, refer back to the [R2R Quickstart](/getting-started/quickstart).
