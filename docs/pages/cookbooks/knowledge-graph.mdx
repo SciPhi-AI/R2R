@@ -51,7 +51,7 @@ export NEO4J_DATABASE=neo4j
 
 #### Construction
 
-We are now ready to construct an example knowledge graph. The snippet below builds R2R and ingests two sample documents
+We are now ready to construct an example knowledge graph. The snippet below builds R2R and ingests two sample documents.
 
 ```python filename="r2r/examples/scripts/basic_kg_cookbook.py"
 from r2r import R2RAppBuilder, Document
@@ -74,7 +74,7 @@ if __name__ == "__main__":
 ```
 
 #### Navigation
-When running R2R with knowledge graphs enabled, ingested documents and files will automatically have named entities and relationships extracted and stored. Let's explicitly confirm that this was the case:
+When running R2R with knowledge graphs enabled, ingested documents and files will automatically have named entities and relationships extracted and stored. Let's explicitly confirm that executing the code above did so:
 
 ```python filename="r2r/examples/scripts/basic_kg_cookbook.py"
     # Get the KG provider
@@ -127,7 +127,7 @@ Paul -[WORKS_AT]-> Microsoft
 
 By default, the knowledge graph construction occurs concurrently with document chunking and embedding. Moreover, extracted knowledge graph nodes include embeddings to allow for semantic search over the knowledge graph.
 
-Executing the following demonstrates both functionalities:
+Executing the following demonstrates relevant functionalities:
 
 ```python filename="r2r/examples/scripts/basic_kg_cookbook.py"
 # Search the vector database
@@ -203,7 +203,7 @@ We use the Neo4j browser to visualize the basic graph that has been produced by 
 
 #### Customize Entities and Relations
 
-We are now ready to move on to a more advanced example which showcases how R2R performs on a real-world dataset. For this example, we will be ingesting startup company information from the YC company directory. We will benefit from defining entity types and relations because we are ingesting documents from a specific domain, R2R is designed to handle this readily
+We are now ready to move on to a more advanced example which showcases how R2R performs on a real-world dataset. For this example, we will be ingesting startup company information from the YC company directory. For this example, we will explicitly define entity types and relations to be extracted, R2R is designed to handle this readily and this results in improved results.
 
 ```python filename="r2r/examples/scripts/advanced_kg_cookbook.py"
 from r2r import (
