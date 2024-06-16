@@ -3,7 +3,6 @@ import os
 from typing import Any, Optional
 
 from r2r.core import (
-    DocumentType,
     EmbeddingConfig,
     EmbeddingProvider,
     EvalPipeline,
