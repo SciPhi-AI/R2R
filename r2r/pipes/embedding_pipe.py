@@ -150,7 +150,6 @@ class EmbeddingPipe(LoggableAsyncPipe):
         """
         vector_entry_queue = asyncio.Queue()
         fragment_batch = []
-        tasks = []
         active_tasks = 0
 
         fragment_info = {}
@@ -172,12 +171,11 @@ class EmbeddingPipe(LoggableAsyncPipe):
 
                 fragment_batch.append(fragment)
                 if len(fragment_batch) >= self.embedding_batch_size:
-                    task = asyncio.create_task(
+                    asyncio.create_task(
                         self._process_and_enqueue_batch(
                             fragment_batch.copy(), vector_entry_queue
                         )
                     )
-                    tasks.append(task)
                     active_tasks += 1
                     fragment_batch.clear()
 
@@ -186,12 +184,11 @@ class EmbeddingPipe(LoggableAsyncPipe):
         )
 
         if fragment_batch:
-            task = asyncio.create_task(
+            asyncio.create_task(
                 self._process_and_enqueue_batch(
                     fragment_batch.copy(), vector_entry_queue
                 )
             )
-            tasks.append(task)
             active_tasks += 1
 
         while active_tasks > 0:
@@ -200,10 +197,6 @@ class EmbeddingPipe(LoggableAsyncPipe):
                 active_tasks -= 1
             else:
                 yield vector_entry
-
-        # Ensure all created tasks are completed
-        if tasks:
-            await asyncio.gather(*tasks)
 
     async def _process_and_enqueue_batch(
         self, fragment_batch: List[Fragment], vector_entry_queue: asyncio.Queue
