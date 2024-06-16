@@ -293,14 +293,18 @@ class R2RApp(metaclass=AsyncSyncMeta):
         document_infos = []
         skipped_documents = []
         processed_documents = []
-        existing_document_ids = [
-            str(doc_info.document_id)
+
+        existing_document_info = {
+            doc_info.document_id: doc_info
             for doc_info in self.providers.vector_db.get_documents_info()
-        ]
+        }
 
         for iteration, document in enumerate(documents):
             version = versions[iteration] if versions else "v0"
-            if str(document.id) in existing_document_ids:
+            if (
+                document.id in existing_document_info
+                and existing_document_info[document.id].version == version
+            ):
                 logger.error(f"Document with ID {document.id} already exists.")
                 if len(documents) == 1:
                     raise HTTPException(
@@ -357,8 +361,15 @@ class R2RApp(metaclass=AsyncSyncMeta):
             input=to_async_generator(
                 [
                     doc
-                    for doc in documents
-                    if str(doc.id) not in existing_document_ids
+                    for it, doc in enumerate(documents)
+                    if (
+                        doc.id not in existing_document_info
+                        or (
+                            doc.id
+                            and existing_document_info[doc.id].version
+                            != versions[it]
+                        )
+                    )
                 ]
             ),
             versions=[
@@ -540,10 +551,10 @@ class R2RApp(metaclass=AsyncSyncMeta):
             document_infos = []
             skipped_documents = []
             processed_documents = []
-            existing_document_ids = [
-                str(doc_info.document_id)
+            existing_document_info = {
+                doc_info.document_id: doc_info
                 for doc_info in self.providers.vector_db.get_documents_info()
-            ]
+            }
 
             for iteration, file in enumerate(files):
                 logger.info(f"Processing file: {file.filename}")
@@ -591,8 +602,12 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
 
                 version = versions[iteration] if versions else "v0"
-                if str(document_id) in existing_document_ids:
+                if (
+                    document_id in existing_document_info
+                    and existing_document_info[document_id] == version
+                ):
                     logger.error(f"File with ID {document_id} already exists.")
+
                     if len(files) == 1:
                         raise HTTPException(
                             status_code=409,
@@ -819,7 +834,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 document_info.metadata["title"] = title
 
                 documents_info_modified.append(document_info)
-
             await self.aingest_files(
                 files,
                 [ele.metadata for ele in documents_info_modified],

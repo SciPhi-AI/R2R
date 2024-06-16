@@ -262,7 +262,11 @@ class IngestionPipeline(Pipeline):
 
             async def enqueue_documents():
                 async for document in await self.parsing_pipe.run(
-                    self.parsing_pipe.Input(message=input), state, run_manager
+                    self.parsing_pipe.Input(message=input),
+                    state,
+                    run_manager,
+                    *args,
+                    **kwargs,
                 ):
                     if self.embedding_pipeline:
                         await embedding_queue.put(document)
