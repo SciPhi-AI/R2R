@@ -151,6 +151,7 @@ class EmbeddingPipe(LoggableAsyncPipe):
         vector_entry_queue = asyncio.Queue()
         fragment_batch = []
         tasks = []
+        active_tasks = 0
 
         fragment_info = {}
         async for extraction in input.message:
@@ -177,6 +178,7 @@ class EmbeddingPipe(LoggableAsyncPipe):
                         )
                     )
                     tasks.append(task)
+                    active_tasks += 1
                     fragment_batch.clear()
 
         logger.info(
@@ -190,12 +192,14 @@ class EmbeddingPipe(LoggableAsyncPipe):
                 )
             )
             tasks.append(task)
+            active_tasks += 1
 
-        while True:
+        while active_tasks > 0:
             vector_entry = await vector_entry_queue.get()
             if vector_entry is None:  # Check for termination signal
-                break
-            yield vector_entry
+                active_tasks -= 1
+            else:
+                yield vector_entry
 
         # Ensure all created tasks are completed
         if tasks:
