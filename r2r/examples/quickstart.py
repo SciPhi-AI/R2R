@@ -30,6 +30,7 @@ class R2RQuickstart:
 
     def __init__(
         self,
+        config_name: Optional[str] = "default",
         config_path: Optional[str] = None,
         file_list: Optional[list[str]] = None,
         file_tuples: Optional[list[tuple]] = None,
@@ -37,6 +38,14 @@ class R2RQuickstart:
         client_server_mode: bool = False,
         base_url: Optional[str] = None,
     ):
+        if config_path and config_name:
+            raise ValueError("Cannot specify both config and config_name")
+        
+        if config_path:
+            config = R2RConfig.from_json(config_path)
+        else:
+            config = R2RConfig.from_json(R2RAppBuilder.CONFIG_OPTIONS[config_name])
+            
         if base_url and not client_server_mode:
             raise ValueError(
                 "base_url is provided but client_server_mode is not set to True"
@@ -49,7 +58,6 @@ class R2RQuickstart:
                 f"Running in client-server mode with base_url: {self.base_url}"
             )
         else:
-            config = R2RConfig.from_json(config_path=config_path)
             self.r2r = R2RAppBuilder(config).build()
             logger.info("Running locally")
 
