@@ -10,7 +10,6 @@ from r2r.core import (
     KGConfig,
     KGProvider,
     PromptProvider,
-    Relation,
     format_entity_types,
     format_relations,
 )

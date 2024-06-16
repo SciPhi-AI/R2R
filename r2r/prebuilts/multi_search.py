@@ -82,10 +82,12 @@ class MultiSearchPipe(LoggableAsyncPipe):
 
 
 class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
-    QUERY_GENERATION_TEMPLATE: dict = {  # TODO - Can we have stricter typing like so? `: {"template": str, "input_types": dict[str, str]} = {``
-        "template": "### Instruction:\n\nGiven the following query that follows to write a double newline separated list of up to {num_outputs} queries meant to help answer the original query. \nDO NOT generate any single query which is likely to require information from multiple distinct documents, \nEACH single query will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents. \nFOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, the two queries would be \n`What are the key themes of Great Gatsby?` and `What are the key themes of 1984?`.\nHere is the original user query to be transformed into answers:\n\n### Query:\n{message}\n\n### Response:\n",
-        "input_types": {"num_outputs": "int", "message": "str"},
-    }
+    QUERY_GENERATION_TEMPLATE: dict = (
+        {  # TODO - Can we have stricter typing like so? `: {"template": str, "input_types": dict[str, str]} = {``
+            "template": "### Instruction:\n\nGiven the following query that follows to write a double newline separated list of up to {num_outputs} queries meant to help answer the original query. \nDO NOT generate any single query which is likely to require information from multiple distinct documents, \nEACH single query will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents. \nFOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, the two queries would be \n`What are the key themes of Great Gatsby?` and `What are the key themes of 1984?`.\nHere is the original user query to be transformed into answers:\n\n### Query:\n{message}\n\n### Response:\n",
+            "input_types": {"num_outputs": "int", "message": "str"},
+        }
+    )
 
     def create_search_pipe(self, *args, **kwargs):
         """
@@ -113,7 +115,7 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
                 task_prompt=task_prompt_name,
             ),
         )
-        if kwargs.get("task_prompt_name") == None:
+        if kwargs.get("task_prompt_name") is None:
             # Add a prompt for transforming the user query
             self.providers.prompt.add_prompt(
                 name=task_prompt_name,

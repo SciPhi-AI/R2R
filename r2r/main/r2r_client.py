@@ -265,21 +265,6 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
-    def documents_info(
-        self,
-        document_ids: Optional[list[str]] = None,
-        user_ids: Optional[list[str]] = None,
-    ) -> dict:
-        url = f"{self.base_url}/documents_info"
-        params = {}
-        if document_ids is not None:
-            params["document_ids"] = ",".join(document_ids)
-        if user_ids is not None:
-            params["user_ids"] = ",".join(user_ids)
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        return response.json()
-
     def analytics(self, filter_criteria: dict, analysis_types: dict) -> dict:
         url = f"{self.base_url}/analytics"
         data = {
@@ -329,15 +314,6 @@ class R2RClient:
     def document_chunks(self, document_id: str) -> dict:
         url = f"{self.base_url}/document_chunks"
         params = {"document_id": document_id}
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        return response.json()
-
-    def users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
-        url = f"{self.base_url}/users_stats"
-        params = {}
-        if user_ids is not None:
-            params["user_ids"] = ",".join(user_ids)
         response = requests.get(url, params=params)
         response.raise_for_status()
         return response.json()
