@@ -300,10 +300,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
         for iteration, document in enumerate(documents):
             version = versions[iteration] if versions else "v0"
-            if (
-                version is not None
-                and str(document.id) in existing_document_ids
-            ):
+            if str(document.id) in existing_document_ids:
                 logger.error(f"Document with ID {document.id} already exists.")
                 if len(documents) == 1:
                     raise HTTPException(
@@ -594,10 +591,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
 
                 version = versions[iteration] if versions else "v0"
-                if (
-                    version is not None
-                    and str(document_id) in existing_document_ids
-                ):
+                if str(document_id) in existing_document_ids:
                     logger.error(f"File with ID {document_id} already exists.")
                     if len(files) == 1:
                         raise HTTPException(
