@@ -222,13 +222,6 @@ class R2RDemo:
                 ],
             )
         else:
-            print(
-                "ids = ",
-                [
-                    generate_id_from_label(old_file.split(os.path.sep)[-1])
-                    for old_file, new_file in file_tuples
-                ],
-            )
             response = self.r2r.update_files(
                 files=new_files,
                 metadatas=metadatas,

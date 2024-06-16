@@ -151,7 +151,7 @@ class R2RProviderFactory:
             from r2r.providers.kg import Neo4jKGProvider
 
             return Neo4jKGProvider(kg_config)
-        elif kg_config is None:
+        elif kg_config.provider is None:
             return None
         else:
             raise ValueError(
