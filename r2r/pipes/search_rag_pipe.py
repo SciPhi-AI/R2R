@@ -23,7 +23,6 @@ class SearchRAGPipe(GeneratorPipe):
         message: AsyncGenerator[SearchResult, None]
         query: list[str]
         raw_search_results: Optional[list[SearchResult]] = None
-        dummy: Optional[str] = None
 
     def __init__(
         self,
