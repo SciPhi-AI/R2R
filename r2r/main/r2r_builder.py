@@ -51,9 +51,9 @@ class R2RAppBuilder:
 
         self.config = config or R2RAppBuilder._get_config(from_config)
         self.r2r_app_override: Optional[Type[R2RApp]] = None
-        self.provider_factory_override: Optional[
-            Type[R2RProviderFactory]
-        ] = None
+        self.provider_factory_override: Optional[Type[R2RProviderFactory]] = (
+            None
+        )
         self.pipe_factory_override: Optional[R2RPipeFactory] = None
         self.pipeline_factory_override: Optional[R2RPipelineFactory] = None
 

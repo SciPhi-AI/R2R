@@ -297,9 +297,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
             str(doc_info.document_id)
             for doc_info in self.providers.vector_db.get_documents_info()
         ]
-        version = versions[iteration] if versions else "v0"
 
         for iteration, document in enumerate(documents):
+            version = versions[iteration] if versions else "v0"
             if (
                 version is not None
                 and str(document.id) in existing_document_ids
@@ -806,7 +806,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 if not document_info:
                     raise HTTPException(
                         status_code=404,
-                        detail=f"Document with id {id} not found.",
+                        detail=f"Document with id {ids[it]} not found.",
                     )
 
                 current_version = document_info.version
@@ -1343,27 +1343,27 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     analysis_type = analysis_config[0]
                     if analysis_type == "bar_chart":
                         extract_key = analysis_config[1]
-                        results[
-                            filter_key
-                        ] = AnalysisTypes.generate_bar_chart_data(
-                            filtered_logs[filter_key], extract_key
+                        results[filter_key] = (
+                            AnalysisTypes.generate_bar_chart_data(
+                                filtered_logs[filter_key], extract_key
+                            )
                         )
                     elif analysis_type == "basic_statistics":
                         extract_key = analysis_config[1]
-                        results[
-                            filter_key
-                        ] = AnalysisTypes.calculate_basic_statistics(
-                            filtered_logs[filter_key], extract_key
+                        results[filter_key] = (
+                            AnalysisTypes.calculate_basic_statistics(
+                                filtered_logs[filter_key], extract_key
+                            )
                         )
                     elif analysis_type == "percentile":
                         extract_key = analysis_config[1]
                         percentile = int(analysis_config[2])
-                        results[
-                            filter_key
-                        ] = AnalysisTypes.calculate_percentile(
-                            filtered_logs[filter_key],
-                            extract_key,
-                            percentile,
+                        results[filter_key] = (
+                            AnalysisTypes.calculate_percentile(
+                                filtered_logs[filter_key],
+                                extract_key,
+                                percentile,
+                            )
                         )
                     else:
                         logger.warning(
@@ -1378,7 +1378,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         filter_criteria: FilterCriteria = Body(...),
         analysis_types: AnalysisTypes = Body(...),
     ):
-        async with manage_run(self.run_manager, "analytics_app") as run_id:
+        async with manage_run(self.run_manager, "analytics_app"):
             try:
                 return await self.aanalytics(filter_criteria, analysis_types)
             except Exception as e:

@@ -82,7 +82,7 @@ class R2RProviderFactory:
             from r2r.providers.embeddings import DummyEmbeddingProvider
 
             embedding_provider = DummyEmbeddingProvider(embedding)
-        elif embedding.provider == None:
+        elif embedding is None:
             embedding_provider = None
         else:
             raise ValueError(
@@ -151,7 +151,7 @@ class R2RProviderFactory:
             from r2r.providers.kg import Neo4jKGProvider
 
             return Neo4jKGProvider(kg_config)
-        elif kg_config.provider == None:
+        elif kg_config is None:
             return None
         else:
             raise ValueError(
@@ -354,7 +354,7 @@ class R2RPipelineFactory:
             pipe=self.pipes.parsing_pipe, parsing_pipe=True
         )
         # Add embedding pipes if provider is set
-        if self.config.embedding.provider != None:
+        if self.config.embedding.provider is not None:
             ingestion_pipeline.add_pipe(
                 self.pipes.embedding_pipe, embedding_pipe=True
             )
@@ -362,7 +362,7 @@ class R2RPipelineFactory:
                 self.pipes.vector_storage_pipe, embedding_pipe=True
             )
         # Add KG pipes provider is set
-        if self.config.kg.provider != None:
+        if self.config.kg.provider is not None:
             ingestion_pipeline.add_pipe(self.pipes.kg_pipe, kg_pipe=True)
             ingestion_pipeline.add_pipe(
                 self.pipes.kg_storage_pipe, kg_pipe=True
