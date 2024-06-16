@@ -29,8 +29,8 @@ For a more complete view of R2R, check out our [documentation](https://r2r-docs.
 - **🖥️ Dashboard**: Use the [R2R Dashboard](https://github.com/SciPhi-AI/R2R-Dashboard), an open-source React+Next.js app for a user-friendly interaction with your pipelines.
 
 ## Table of Contents
-1. [Quick Install](#quick-install)
-2. [R2R Python SDK Demo](#r2r-python-sdk-demo)
+1. [Install](#install)
+2. [R2R Quickstart](#r2r-quickstart)
 3. [R2R Dashboard](#r2r-dashboard)
 4. [Community and Support](#community-and-support)
 5. [Contributing](#contributing)
@@ -82,9 +82,9 @@ This command starts the R2R container with the following options:
 </details>
 
 
-# R2R Python SDK Demo
+# R2R Quickstart
 
-The following demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline using the Python SDK. The demo ingests a list of provided provided documents and demonstrates search, RAG, and advanced functionality. The script at `r2r/examples/quickstart.py`, which powers the demo, can be configured and extended with sufficient developer familiarity.
+The following quickstart offers a step-by-step guide on running R2R locally as well as through the Python SDK. The guide ingests a list of provided provided documents and shows search, RAG, and advanced functionality. The script powering the quickstart can be found at `r2r/examples/quickstart.py`, and it can be configured and extended with sufficient developer familiarity.
 
 ![ingest_as_files](https://github.com/SciPhi-AI/R2R/assets/34580718/b0780f26-8e90-4459-9537-e5871453d003)
 
