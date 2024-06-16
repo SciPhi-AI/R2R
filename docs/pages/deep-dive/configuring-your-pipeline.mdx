@@ -55,7 +55,7 @@ You can serve R2R using local embeddings with rerank with the following command 
 
 # Serve the demo with the custom user settings
 export WORKDIR=YOUR_R2R_DIRECTORY
-python -m r2r.examples.servers.configurable_pipeline --config=local_ollama_rerank
+python -m r2r.examples.quickstart --config_name=local_ollama_rerank serve
 ```
 
 ## Language Model Provider
@@ -78,7 +78,7 @@ For more information, refer to [LLM Providers](/providers/llms).
 Any LLM supported by LiteLLM is immediately supported at runtime. For instance, to run with a local LLM, you may serve via Ollama and then pass the served model directly as a generation config JSON payload. See the example below:
 
 ```bash filename="bash" copy
-python -m r2r.examples.quickstart rag --rag_generation_config='{"model":"ollama/llama2"}' --query="Who was Aristotle?"
+python -m r2r.examples.quickstart rag --rag_generation_config='{"model":"ollama/llama2"}' --config_name=local_ollama --query="Who was Aristotle?"
 ```
 
 ## Logging Provider
@@ -93,19 +93,13 @@ For more information, refer to [Logging Providers](/providers/logging).
 
 ### Example: Postgres Configuration
 
-An example configuration specifying Postgres as a logging provider can be found in [`r2r/examples/data/example_postgres_logger_config.json`](https://github.com/SciPhi-AI/R2R/tree/main/r2r/examples/data/example_postgres_logger_config.json):
 
-```json
+```json filename="r2r/examples/configs/postgres_logging.json"
 {
   "logging": {
     "provider": "postgres",
-    "connection": {
-      "user": "pg_user",
-      "password": "pg_password",
-      "host": "your_pg_host",
-      "port": 5432,
-      "dbname": "postgres"
-    }
+    "log_table": "logs",
+    "log_info_table": "log_info"
   }
 }
 ```

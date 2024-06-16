@@ -29,7 +29,7 @@ These settings are provided by default in the config file located at `/examples/
 </details>
 
 <Callout>
-This demo assumes the Postgres `vector` extension enabling `pgvector` is already installed. If not, the demo will fail when attempting to run the server.
+This cookbook assumes the Postgres `vector` extension enabling `pgvector` is already installed. If not, the server will fail when attempting to run.
 </Callout>
 
 
@@ -40,21 +40,20 @@ export POSTGRES_HOST=MY_HOST
 export POSTGRES_PORT=MY_PORT
 export POSTGRES_DBNAME=MY_DB
 export OPENAI_API_KEY=MY_API_KEY
-python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000 --config pgvector
 ```
 
 ### Executing a basic search
 
-If the target database is empty, quickly populate it with demo files, which include `.txt`, `.pdf`, `.html`, and `.png` examples, using the command shown below. The `client_server_mode` flag specifies communication with an R2R server with the default URL of `http://localhost:8000`. To replicate the exact results shown below, these commands must be run in order on a clean database.
+If the target postgres database is empty, quickly populate it with sample files, which include `.txt`, `.pdf`, `.html`, and `.png` examples, using the command shown below. The `client_server_mode` flag specifies communication with an R2R server with the default URL of `http://localhost:8000`. To replicate the exact results shown below, these commands must be run in order on a clean database.
 
 ```bash filename="bash" copy
-python -m r2r.examples.quickstart ingest_as_files --client_server_mode
+python -m r2r.examples.quickstart ingest_as_files --config_name=pgvector
 ```
 
 Once the files are populated, run a search with the following command:
 
 ```bash filename="bash" copy
-python -m r2r.examples.quickstart search --query="What is a fierce nerd?" --client_server_mode
+python -m r2r.examples.quickstart search --query="What is a fierce nerd?" --config_name=pgvector
 ```
 
 ```plaintext
@@ -95,7 +94,7 @@ python -m r2r.examples.quickstart search --query="What is a fierce nerd?" --clie
 Executing a hybrid search is as simple as passing the correct flag to the REST application. To do so, run with the command below:
 
 ```python filename="bash" copy
-python -m r2r.examples.quickstart search --query="What is a fierce nerd?" --client_server_mode  --do_hybrid_search
+python -m r2r.examples.quickstart search --query="What is a fierce nerd?" --config_name=pgvector  --do_hybrid_search
 ```
 
 ```plaintext

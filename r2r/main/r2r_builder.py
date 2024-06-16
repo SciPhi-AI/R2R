@@ -31,6 +31,7 @@ class R2RAppBuilder:
         ),
         "pgvector": os.path.join(config_root, "pgvector.json"),
         "neo4j_kg": os.path.join(config_root, "neo4j_kg.json"),
+        "postgres_logging": os.path.join(config_root, "postgres_logging.json"),
     }
 
     @staticmethod

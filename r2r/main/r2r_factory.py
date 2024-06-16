@@ -99,7 +99,7 @@ class R2RProviderFactory:
                 llm_provider=llm_provider,
                 prompt_provider=prompt_provider,
             )
-        elif eval_config.provider == None:
+        elif eval_config.provider is None:
             eval_provider = None
         else:
             raise ValueError(

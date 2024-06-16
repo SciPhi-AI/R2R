@@ -36,6 +36,7 @@ import { LinkTabs } from '../../components/LinkTabs'
   docker pull emrgntcmplxty/r2r:latest
   ```
 
+  **Running with cloud providers**
   Be sure to set an OpenAI API key in your environment and then run the container with:
 
   ```bash filename="bash" copy
@@ -46,14 +47,31 @@ import { LinkTabs } from '../../components/LinkTabs'
     emrgntcmplxty/r2r:latest
   ```
 
+
   This command starts the R2R container with the following options:
 
   - `--name r2r`: Assigns the name "r2r" to the container.
   - `-p 8000:8000`: Maps port 8000 of the container to port 8000 of the host.
   - `-e OPENAI_API_KEY=$OPENAI_API_KEY`: Pulls your OpenAI API key from your local enviornment for use in the container.
   - `emrgntcmplxty/r2r:latest`: Specifies the Docker image to use.
+
+  **Running with local LLMs**
+
+  To run with Local LLMs, we must specify the `local_ollama` configuration and pass the additional API base for communication.
+
+  ```bash filename="bash" copy
+  docker run -d \
+    --name r2r \
+    --add-host=host.docker.internal:host-gateway \
+    -p 8000:8000 \
+    -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
+    -e CONFIG_OPTION=local_ollama \
+    emrgntcmplxty/r2r:latest
+  ```
+
   </LinkTabs.Tab>
 </LinkTabs>
+
 
 ## Full Installation
 

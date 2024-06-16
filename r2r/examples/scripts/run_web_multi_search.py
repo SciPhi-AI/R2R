@@ -1,3 +1,4 @@
+import fire
 from r2r import (
     GenerationConfig,
     R2RAppBuilder,
@@ -6,7 +7,7 @@ from r2r import (
     WebSearchPipe,
 )
 
-if __name__ == "__main__":
+def run_rag_pipeline(query="Who was Aristotle?"):
     # Initialize a web search pipe
     web_search_pipe = WebSearchPipe(serper_client=SerperClient())
 
@@ -42,8 +43,11 @@ if __name__ == "__main__":
 
     # Run the RAG pipeline through the R2R application
     result = r2r_app.rag(
-        "Who was Aristotle?",
+        query,
         rag_generation_config=GenerationConfig(model="gpt-4o"),
     )
 
     print(f"Final Result:\n\n{result}")
+
+if __name__ == "__main__":
+    fire.Fire(run_rag_pipeline)

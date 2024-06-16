@@ -2,19 +2,16 @@ import { Callout } from 'nextra/components'
 
 ## Running R2R with Multiple LLMs
 
-Leveraging multiple language models (LLMs) in R2R allows for a diverse and comprehensive approach to search and retrieval tasks. By incorporating multiple LLMs, you can benefit from the unique strengths and specializations of each model, leading to improved accuracy, relevance, and contextual understanding of the search results.
+**This document extends the [R2R Quickstart](/getting-started/quickstart)** by demonstrating how R2R supports multiple large language models (LLMs). Multi-LLM support in R2R allows for a diverse and comprehensive approach to search and retrieval tasks.
 
 <Callout type="info">
 LLMs are selected at runtime for maximum flexibility and ease of use. R2R supports any provider supported by [LiteLLM](https://litellm.vercel.app/) along with several other dedicated internal implementations.
 </Callout>
 
-### Running RAG with Multiple LLMs
-
-This guide assumes R2R is installed and the [quickstart located here](/getting-started/quickstart) has been completed.
 
 #### Default (OpenAI)
 
-If you have not completed the demo, or if your target database has been cleared, start by quickly populating it with the demo files. These example files include `.txt`, `.pdf`, `.html`, `.mp3`, and `.png` examples, and can be ingested using the command shown below. 
+If you have not completed the quickstart, or if your target database has been cleared, we will start by populating it with some sample files. The sample files include `.txt`, `.pdf`, `.html`, `.mp3`, and `.png` examples, and are ingested with the command shown below. 
 
 ```bash filename="bash" copy
 # export OPENAI_API_KEY=...
@@ -60,7 +57,7 @@ python -m r2r.examples.quickstart rag --query="Who was Aristotle?"
 
 #### gpt-4-turbo
 
-The default model in the demo is `gpt-3.5-turbo` as we can see from the response above. We can readily run with any OpenAI model at runtime by simply specifying the desired model in the input RAG generation. The command below runs with `gpt-4-turbo`:
+We can see from the output above that the quickstart defaults to `gpt-3.5-turbo`. We can readily run with any OpenAI model at runtime by simply specifying the desired model in the input RAG generation. The command below runs with `gpt-4-turbo`:
 
 ```bash filename="bash" copy
 python -m r2r.examples.quickstart rag --query="Who was Aristotle?" \
@@ -100,7 +97,8 @@ python -m r2r.examples.quickstart rag --query="Who was Aristotle?" \
 
 #### Anthropic
 
-To execute a RAG response using Anthropic as a provider, include a valid API key. After doing so, you can input any supported model such as `claude-3` (`claude-3-haiku-20240307`, `claude-3-opus-20240229`, `claude-3-sonnet-20240229`) or `claude-2`.
+To execute a RAG response using Anthropic as a provider, include a valid API key. After doing so, you can input any supported model such as `claude-3` (`claude-3-haiku-20240307`, `claude-3-opus-20240229`, `claude-3-sonnet-20240229`) or `claude-2`. Additionally, an OpenAI API key is required because OpenAI serves as the default embedding provider for R2R, which is used to generate search results for the RAG completion.
+
 
 ```bash filename="bash" copy
 # export OPENAI_API_KEY=...
@@ -142,7 +140,7 @@ python -m r2r.examples.quickstart rag --query="Who was Aristotle?" \
 
 #### Local (ollama)
 
-It is possible to run R2R with ollama as a model provider. See the [Local RAG](/cookbooks/local-rag) for a comprehensive walkthrough.
+It is possible to run R2R with ollama as an LLM provider and with local embedding models. See the [Local RAG](/cookbooks/local-rag) for a comprehensive walkthrough.
 
 ```bash filename="bash" copy
 python -m r2r.examples.quickstart rag --query="Who was Aristotle?" \
