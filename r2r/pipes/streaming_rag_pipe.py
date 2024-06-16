@@ -13,12 +13,12 @@ from r2r.core import (
 )
 
 from .abstractions.generator_pipe import GeneratorPipe
-from .search_rag_pipe import R2RSearchRAGPipe
+from .search_rag_pipe import SearchRAGPipe
 
 logger = logging.getLogger(__name__)
 
 
-class R2RStreamingSearchRAGPipe(R2RSearchRAGPipe):
+class StreamingSearchRAGPipe(SearchRAGPipe):
     SEARCH_STREAM_MARKER = "search"
     COMPLETION_STREAM_MARKER = "completion"
 
@@ -45,7 +45,7 @@ class R2RStreamingSearchRAGPipe(R2RSearchRAGPipe):
 
     async def _run_logic(
         self,
-        input: R2RSearchRAGPipe.Input,
+        input: SearchRAGPipe.Input,
         state: AsyncState,
         run_id: uuid.UUID,
         rag_generation_config: GenerationConfig,
@@ -70,7 +70,7 @@ class R2RStreamingSearchRAGPipe(R2RSearchRAGPipe):
         for chunk in self.llm_provider.get_completion_stream(
             messages=messages, generation_config=rag_generation_config
         ):
-            chunk = R2RStreamingSearchRAGPipe._process_chunk(chunk)
+            chunk = StreamingSearchRAGPipe._process_chunk(chunk)
             response += chunk
             yield chunk
 

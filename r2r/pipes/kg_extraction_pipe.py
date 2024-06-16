@@ -3,7 +3,6 @@ import copy
 import json
 import logging
 import uuid
-from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional
 
 from aiohttp import ClientError
@@ -22,7 +21,6 @@ from r2r.core import (
     PipeType,
     PromptProvider,
     TextSplitter,
-    VectorEntry,
     extract_entities,
     extract_triples,
     generate_id_from_label,
@@ -31,70 +29,7 @@ from r2r.core import (
 logger = logging.getLogger(__name__)
 
 
-class KGPipe(LoggableAsyncPipe):
-    class Input(LoggableAsyncPipe.Input):
-        message: AsyncGenerator[Extraction, None]
-
-    def __init__(
-        self,
-        kg_provider: KGProvider,
-        prompt_provider: PromptProvider,
-        llm_provider: LLMProvider,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
-        type: PipeType = PipeType.INGESTOR,
-        config: Optional[LoggableAsyncPipe.PipeConfig] = None,
-        *args,
-        **kwargs,
-    ):
-        super().__init__(
-            pipe_logger=pipe_logger,
-            type=type,
-            config=config,
-            *args,
-            **kwargs,
-        )
-        self.kg_provider = kg_provider
-        self.prompt_provider = prompt_provider
-        self.llm_provider = llm_provider
-
-    @abstractmethod
-    async def fragment(
-        self, extraction: Extraction
-    ) -> AsyncGenerator[Fragment, None]:
-        pass
-
-    @abstractmethod
-    async def transform_fragments(
-        self, fragments: list[Fragment], metadatas: list[dict]
-    ) -> AsyncGenerator[Fragment, None]:
-        pass
-
-    @abstractmethod
-    async def extract_kg(
-        self,
-        fragments: list[Fragment],
-        kg_generation_config: GenerationConfig,
-        *args,
-        **kwargs,
-    ) -> AsyncGenerator[Fragment, None]:
-        pass
-
-    @abstractmethod
-    async def _run_logic(
-        self,
-        input: AsyncGenerator[Extraction, None],
-        state: AsyncState,
-        run_id: uuid.UUID,
-        kg_generation_config: GenerationConfig = GenerationConfig(
-            model="gpt-4o"
-        ),
-        *args: Any,
-        **kwargs: Any,
-    ) -> AsyncGenerator[VectorEntry, None]:
-        pass
-
-
-class R2RKGPipe(KGPipe):
+class KGExtractionPipe(LoggableAsyncPipe):
     """
     Embeds and stores documents using a specified embedding model and database.
     """
@@ -117,14 +52,14 @@ class R2RKGPipe(KGPipe):
         Initializes the embedding pipe with necessary components and configurations.
         """
         super().__init__(
-            kg_provider=kg_provider,
-            prompt_provider=prompt_provider,
-            llm_provider=llm_provider,
             pipe_logger=pipe_logger,
             type=type,
             config=config
             or LoggableAsyncPipe.PipeConfig(name="default_embedding_pipe"),
         )
+        self.kg_provider = kg_provider
+        self.prompt_provider = prompt_provider
+        self.llm_provider = llm_provider
         self.text_splitter = text_splitter
         self.kg_batch_size = kg_batch_size
         self.id_prefix = id_prefix
@@ -242,7 +177,7 @@ class R2RKGPipe(KGPipe):
 
     async def _run_logic(
         self,
-        input: KGPipe.Input,
+        input: LoggableAsyncPipe.Input,
         state: AsyncState,
         run_id: uuid.UUID,
         kg_generation_config: GenerationConfig = GenerationConfig(

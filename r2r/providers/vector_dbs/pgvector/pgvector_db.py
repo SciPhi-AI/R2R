@@ -1,10 +1,11 @@
 import json
 import logging
 import os
+import time
 import uuid
 from typing import Optional, Union
 
-from sqlalchemy import text
+from sqlalchemy import exc, text
 
 from r2r.core import (
     DocumentInfo,
@@ -139,7 +140,7 @@ class PGVectorDB(VectorDBProvider):
                             text("SELECT pg_advisory_unlock(123456789)")
                         )
                 break  # Break the loop if successful
-            except sqlalchemy.exc.InternalError as e:
+            except exc.InternalError as e:
                 if "tuple concurrently updated" in str(e):
                     time.sleep(2**attempt)  # Exponential backoff
                 else:

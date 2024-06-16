@@ -1,6 +1,6 @@
 import asyncio
 import uuid
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional
 
 from ..logging.kv_logger import KVLoggingSingleton

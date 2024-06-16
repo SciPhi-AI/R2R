@@ -1,5 +1,7 @@
 import logging
 
+# Keep '*' imports for enhanced development velocity
+# corresponding flake8 error codes are F403, F405
 from .core import *
 from .integrations import *
 from .main import *
@@ -85,18 +87,18 @@ __all__ = [
     "generate_id_from_label",
     "R2RApp",
     # Pipes
-    "R2REmbeddingPipe",
-    "R2REvalPipe",
-    "R2RDocumentParsingPipe",
-    "R2RQueryTransformPipe",
-    "R2RSearchRAGPipe",
-    "R2RStreamingSearchRAGPipe",
-    "R2RVectorSearchPipe",
-    "R2RVectorStoragePipe",
+    "EmbeddingPipe",
+    "EvalPipe",
+    "ParsingPipe",
+    "QueryTransformPipe",
+    "SearchRAGPipe",
+    "StreamingSearchRAGPipe",
+    "VectorSearchPipe",
+    "VectorStoragePipe",
     "R2RPromptProvider",
-    "R2RWebSearchPipe",
+    "WebSearchPipe",
     "R2RAppBuilder",
-    "R2RKGAgentPipe",
+    "KGAgentPipe",
     # Prebuilts
     "MultiSearchPipe",
     "R2RPipeFactoryWithMultiSearch",

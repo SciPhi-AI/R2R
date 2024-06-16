@@ -18,7 +18,6 @@ from r2r import (
     R2RConfig,
     generate_id_from_label,
 )
-from r2r.core import AnalysisTypes, FilterCriteria
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -158,7 +157,6 @@ class R2RDemo:
             for file_path in file_paths
         ]
 
-        seeds = [file_path.split(os.path.sep)[-1] for file_path in file_paths]
         files = [
             UploadFile(
                 filename=file_path.split(os.path.sep)[-1],
@@ -224,13 +222,6 @@ class R2RDemo:
                 ],
             )
         else:
-            print(
-                "ids = ",
-                [
-                    generate_id_from_label(old_file.split(os.path.sep)[-1])
-                    for old_file, new_file in file_tuples
-                ],
-            )
             response = self.r2r.update_files(
                 files=new_files,
                 metadatas=metadatas,

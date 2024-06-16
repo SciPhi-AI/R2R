@@ -2,9 +2,7 @@ import json
 import logging
 import os
 from enum import Enum
-from typing import Any, Type
-
-from pydantic import BaseModel
+from typing import Any
 
 from ..core.abstractions.document import DocumentType
 from ..core.logging.kv_logger import LoggingConfig

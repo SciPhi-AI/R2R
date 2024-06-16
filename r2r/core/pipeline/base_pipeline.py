@@ -72,7 +72,7 @@ class Pipeline:
 
         self.state = state or AsyncState()
         current_input = input
-        async with manage_run(run_manager, self.pipeline_type) as run_id:
+        async with manage_run(run_manager, self.pipeline_type):
             await run_manager.log_run_info(
                 key="pipeline_type",
                 value=self.pipeline_type,
@@ -262,7 +262,11 @@ class IngestionPipeline(Pipeline):
 
             async def enqueue_documents():
                 async for document in await self.parsing_pipe.run(
-                    self.parsing_pipe.Input(message=input), state, run_manager
+                    self.parsing_pipe.Input(message=input),
+                    state,
+                    run_manager,
+                    *args,
+                    **kwargs,
                 ):
                     if self.embedding_pipeline:
                         await embedding_queue.put(document)

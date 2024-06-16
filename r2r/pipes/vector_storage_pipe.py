@@ -15,7 +15,7 @@ from r2r.core import (
 logger = logging.getLogger(__name__)
 
 
-class R2RVectorStoragePipe(LoggableAsyncPipe):
+class VectorStoragePipe(LoggableAsyncPipe):
     class Input(LoggableAsyncPipe.Input):
         message: AsyncGenerator[VectorEntry, None]
         do_upsert: bool = True

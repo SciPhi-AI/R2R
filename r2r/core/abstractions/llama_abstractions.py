@@ -2,7 +2,7 @@
 # https://github.com/run-llama/llama_index
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from enum import Enum, auto
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field, StrictFloat, StrictInt, StrictStr

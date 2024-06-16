@@ -131,7 +131,7 @@ By default, the knowledge graph construction occurs concurrently with document c
 We can execute the script above by running the following
 
 ```bash filename="User Terminal"
-python -m python -m r2r.examples.scripts.basic_kg_cookbook
+python -m r2r.examples.scripts.basic_kg_cookbook
 ```
 
 
@@ -220,7 +220,7 @@ from r2r import (
     GenerationConfig,
     Pipeline,
     R2RAppBuilder,
-    R2RKGAgentPipe,
+    KGAgentPipe,
     Relation,
     run_pipeline,
 )
@@ -448,7 +448,7 @@ Results:
 Finally, we are in a position to automatically answer difficult to manage queries with a knowledge agent. The snippet below injects our custom schema into a generic few-shot prompt and uses gpt-4o to create a relevant query
 
 ```python filename="r2r/examples/scripts/advanced_kg_cookbook.py"
-    kg_agent_pipe = R2RKGAgentPipe(
+    kg_agent_pipe = KGAgentPipe(
         r2r_app.providers.kg, r2r_app.providers.llm, r2r_app.providers.prompt
     )
 

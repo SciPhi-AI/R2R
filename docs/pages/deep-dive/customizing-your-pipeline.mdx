@@ -10,13 +10,13 @@ This example demonstrates how to override the default vector search module with 
 from r2r import (
     GenerationConfig,
     R2RAppBuilder,
-    R2RWebSearchPipe,
+    WebSearchPipe,
     SerperClient,
 )
 
 if __name__ == "__main__":
     # Initialize a web search pipe that uses Serper to scrape Google
-    web_search_pipe = R2RWebSearchPipe(serper_client=SerperClient())
+    web_search_pipe = WebSearchPipe(serper_client=SerperClient())
 
     # Build the R2R application with the custom search pipe
     r2r_app = R2RAppBuilder().with_search_pipe(web_search_pipe).build()
@@ -76,13 +76,13 @@ from r2r import (
     GenerationConfig,
     R2RAppBuilder,
     R2RPipeFactoryWithMultiSearch,
-    R2RWebSearchPipe,
+    WebSearchPipe,
     SerperClient,
 )
 
 if __name__ == "__main__":
     # Initialize a web search pipe
-    web_search_pipe = R2RWebSearchPipe(serper_client=SerperClient())
+    web_search_pipe = WebSearchPipe(serper_client=SerperClient())
 
     # Define a new synthetic query generation template
     synthetic_query_generation_template = {
@@ -222,10 +222,10 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
         multi_search_config = MultiSearchPipe.PipeConfig()
         task_prompt_name = kwargs.get("task_prompt_name") or f"{multi_search_config.name}_task_prompt"
 
-        query_transform_pipe = kwargs.get("multi_query_transform_pipe_override", None) or R2RQueryTransformPipe(
+        query_transform_pipe = kwargs.get("multi_query_transform_pipe_override", None) or QueryTransformPipe(
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
-            config=R2RQueryTransformPipe.QueryTransformConfig(
+            config=QueryTransformPipe.QueryTransformConfig(
                 name=multi_search_config.name,
                 task_prompt=task_prompt_name,
             ),

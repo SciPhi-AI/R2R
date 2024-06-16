@@ -5,8 +5,8 @@ from typing import Any, AsyncGenerator, Optional
 from r2r import (
     GenerationConfig,
     LoggableAsyncPipe,
+    QueryTransformPipe,
     R2RPipeFactory,
-    R2RQueryTransformPipe,
     SearchPipe,
     SearchResult,
 )
@@ -18,7 +18,7 @@ class MultiSearchPipe(LoggableAsyncPipe):
 
     def __init__(
         self,
-        query_transform_pipe: R2RQueryTransformPipe,
+        query_transform_pipe: QueryTransformPipe,
         inner_search_pipe: SearchPipe,
         config: Optional[PipeConfig] = None,
         *args,
@@ -94,7 +94,7 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
         A factory method to create a search pipe.
 
         Overrides include
-            multi_query_transform_pipe_override: R2RQueryTransformPipe
+            multi_query_transform_pipe_override: QueryTransformPipe
             multi_inner_search_pipe_override: SearchPipe
             search_task_template_override: {'template': str, 'input_types': dict[str, str]}
         """
@@ -107,15 +107,15 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
         # Initialize the new query transform pipe
         query_transform_pipe = kwargs.get(
             "multi_query_transform_pipe_override", None
-        ) or R2RQueryTransformPipe(
+        ) or QueryTransformPipe(
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
-            config=R2RQueryTransformPipe.QueryTransformConfig(
+            config=QueryTransformPipe.QueryTransformConfig(
                 name=multi_search_config.name,
                 task_prompt=task_prompt_name,
             ),
         )
-        if kwargs.get("task_prompt_name") == None:
+        if kwargs.get("task_prompt_name") is None:
             # Add a prompt for transforming the user query
             self.providers.prompt.add_prompt(
                 name=task_prompt_name,

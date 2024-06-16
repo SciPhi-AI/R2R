@@ -2,8 +2,6 @@ import asyncio
 import uuid
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable, List, Optional
 
-from pydantic import BaseModel
-
 if TYPE_CHECKING:
     from ..pipeline.base_pipeline import Pipeline
 
@@ -24,7 +22,6 @@ async def to_async_generator(
 
 
 def run_pipeline(pipeline: "Pipeline", input: Any, *args, **kwargs):
-
     if not isinstance(input, AsyncGenerator) and not isinstance(input, list):
         input = to_async_generator([input])
     elif not isinstance(input, AsyncGenerator):

@@ -18,12 +18,11 @@ from .abstractions.generator_pipe import GeneratorPipe
 logger = logging.getLogger(__name__)
 
 
-class R2RSearchRAGPipe(GeneratorPipe):
+class SearchRAGPipe(GeneratorPipe):
     class Input(AsyncPipe.Input):
         message: AsyncGenerator[SearchResult, None]
         query: list[str]
         raw_search_results: Optional[list[SearchResult]] = None
-        dummy: Optional[str] = None
 
     def __init__(
         self,

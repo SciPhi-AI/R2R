@@ -17,7 +17,7 @@ from .abstractions.search_pipe import SearchPipe
 logger = logging.getLogger(__name__)
 
 
-class R2RWebSearchPipe(SearchPipe):
+class WebSearchPipe(SearchPipe):
     def __init__(
         self,
         serper_client: SerperClient,
@@ -41,7 +41,6 @@ class R2RWebSearchPipe(SearchPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[SearchResult, None]:
-        search_filters_override = kwargs.get("search_filters", None)
         search_limit_override = kwargs.get("search_limit", None)
         await self.enqueue_log(
             run_id=run_id, key="search_query", value=message

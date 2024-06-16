@@ -126,7 +126,7 @@ Use the referenced examples and schema to help you construct an appropriate Cyph
 """
 
 
-class R2RKGAgentPipe(GeneratorPipe):
+class KGAgentPipe(GeneratorPipe):
     """
     Embeds and stores documents using a specified embedding model and database.
     """
@@ -171,7 +171,6 @@ class R2RKGAgentPipe(GeneratorPipe):
         *args: Any,
         **kwargs: Any,
     ):
-
         async for message in input.message:
             # TODO - Remove hard code
             formatted_prompt = self.prompt_provider.get_prompt(

@@ -37,7 +37,7 @@ To create a custom RAG pipeline, follow these steps:
 #### Example Custom RAG Pipeline with Query Transformation
 
 ```python copy
-from r2r import RAGPipeline, R2RConfig, R2RProviderFactory, R2RPipeFactory, R2RPipelineFactory, R2RQueryTransformPipe, GenerationConfig
+from r2r import RAGPipeline, R2RConfig, R2RProviderFactory, R2RPipeFactory, R2RPipelineFactory, QueryTransformPipe, GenerationConfig
 
 # Load configuration
 config = R2RConfig.from_json()
@@ -55,10 +55,10 @@ transform_prompt = {
 providers.prompt.add_prompt(**transform_prompt)
 
 # Initialize the new query transform pipe
-query_transform_pipe = R2RQueryTransformPipe(
+query_transform_pipe = QueryTransformPipe(
     llm_provider=providers.llm,
     prompt_provider=providers.prompt,
-    config=R2RQueryTransformPipe.QueryTransformConfig(
+    config=QueryTransformPipe.QueryTransformConfig(
         task_prompt=transform_prompt["name"]
     ),
 )

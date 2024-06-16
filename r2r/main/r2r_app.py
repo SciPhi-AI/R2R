@@ -27,7 +27,7 @@ from r2r.core import (
     manage_run,
     to_async_generator,
 )
-from r2r.pipes import R2REvalPipe
+from r2r.pipes import EvalPipe
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from .r2r_abstractions import R2RPipelines, R2RProviders
@@ -293,16 +293,17 @@ class R2RApp(metaclass=AsyncSyncMeta):
         document_infos = []
         skipped_documents = []
         processed_documents = []
-        existing_document_ids = [
-            str(doc_info.document_id)
+
+        existing_document_info = {
+            doc_info.document_id: doc_info
             for doc_info in self.providers.vector_db.get_documents_info()
-        ]
-        version = versions[iteration] if versions else "v0"
+        }
 
         for iteration, document in enumerate(documents):
+            version = versions[iteration] if versions else "v0"
             if (
-                version is not None
-                and str(document.id) in existing_document_ids
+                document.id in existing_document_info
+                and existing_document_info[document.id].version == version
             ):
                 logger.error(f"Document with ID {document.id} already exists.")
                 if len(documents) == 1:
@@ -360,8 +361,15 @@ class R2RApp(metaclass=AsyncSyncMeta):
             input=to_async_generator(
                 [
                     doc
-                    for doc in documents
-                    if str(doc.id) not in existing_document_ids
+                    for it, doc in enumerate(documents)
+                    if (
+                        doc.id not in existing_document_info
+                        or (
+                            doc.id
+                            and existing_document_info[doc.id].version
+                            != versions[it]
+                        )
+                    )
                 ]
             ),
             versions=[
@@ -543,10 +551,10 @@ class R2RApp(metaclass=AsyncSyncMeta):
             document_infos = []
             skipped_documents = []
             processed_documents = []
-            existing_document_ids = [
-                str(doc_info.document_id)
+            existing_document_info = {
+                doc_info.document_id: doc_info
                 for doc_info in self.providers.vector_db.get_documents_info()
-            ]
+            }
 
             for iteration, file in enumerate(files):
                 logger.info(f"Processing file: {file.filename}")
@@ -592,13 +600,14 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     if document_ids is None
                     else document_ids[iteration]
                 )
-                
+
                 version = versions[iteration] if versions else "v0"
                 if (
-                    version is not None
-                    and str(document_id) in existing_document_ids
+                    document_id in existing_document_info
+                    and existing_document_info[document_id] == version
                 ):
                     logger.error(f"File with ID {document_id} already exists.")
+
                     if len(files) == 1:
                         raise HTTPException(
                             status_code=409,
@@ -806,7 +815,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 if not document_info:
                     raise HTTPException(
                         status_code=404,
-                        detail=f"Document with id {id} not found.",
+                        detail=f"Document with id {ids[it]} not found.",
                     )
 
                 current_version = document_info.version
@@ -825,7 +834,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 document_info.metadata["title"] = title
 
                 documents_info_modified.append(document_info)
-
             await self.aingest_files(
                 files,
                 [ele.metadata for ele in documents_info_modified],
@@ -1156,7 +1164,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         *args: Any,
         **kwargs: Any,
     ):
-        eval_payload = R2REvalPipe.EvalPayload(
+        eval_payload = EvalPipe.EvalPayload(
             query=query,
             context=context,
             completion=completion,
@@ -1378,7 +1386,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         filter_criteria: FilterCriteria = Body(...),
         analysis_types: AnalysisTypes = Body(...),
     ):
-        async with manage_run(self.run_manager, "analytics_app") as run_id:
+        async with manage_run(self.run_manager, "analytics_app"):
             try:
                 return await self.aanalytics(filter_criteria, analysis_types)
             except Exception as e:
