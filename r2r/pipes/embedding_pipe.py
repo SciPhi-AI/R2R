@@ -3,7 +3,7 @@ import copy
 import json
 import logging
 import uuid
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, List, Optional
 
 from r2r.core import (
     AsyncState,
@@ -148,8 +148,9 @@ class EmbeddingPipe(LoggableAsyncPipe):
         """
         Executes the embedding pipe: chunking, transforming, embedding, and storing documents.
         """
-        batch_tasks = []
+        vector_entry_queue = asyncio.Queue()
         fragment_batch = []
+        tasks = []
 
         fragment_info = {}
         async for extraction in input.message:
@@ -157,27 +158,58 @@ class EmbeddingPipe(LoggableAsyncPipe):
                 if extraction.document_id in fragment_info:
                     fragment_info[extraction.document_id] += 1
                 else:
-                    fragment_info[extraction.document_id] = 1
+                    fragment_info[extraction.document_id] = 0  # Start with 0
                 fragment.metadata["chunk_order"] = fragment_info[
                     extraction.document_id
                 ]
+
+                # Ensure fragment ID is set correctly
+                if not fragment.id:
+                    fragment.id = generate_id_from_label(
+                        f"{extraction.id}-{fragment_info[extraction.document_id]}"
+                    )
+
                 fragment_batch.append(fragment)
                 if len(fragment_batch) >= self.embedding_batch_size:
-                    # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
-                    batch_tasks.append(
-                        self._process_batch(fragment_batch.copy())
-                    )  # pass a copy if necessary
-                    fragment_batch.clear()  # Clear the batch for new fragments
+                    task = asyncio.create_task(
+                        self._process_and_enqueue_batch(
+                            fragment_batch.copy(), vector_entry_queue
+                        )
+                    )
+                    tasks.append(task)
+                    fragment_batch.clear()
 
         logger.info(
             f"Fragmented the input document ids into counts as shown: {fragment_info}"
         )
 
-        if fragment_batch:  # Process any remaining fragments
-            batch_tasks.append(self._process_batch(fragment_batch.copy()))
+        if fragment_batch:
+            task = asyncio.create_task(
+                self._process_and_enqueue_batch(
+                    fragment_batch.copy(), vector_entry_queue
+                )
+            )
+            tasks.append(task)
 
-        # Process tasks as they complete
-        for task in asyncio.as_completed(batch_tasks):
-            batch_result = await task  # Wait for the next task to complete
+        while True:
+            vector_entry = await vector_entry_queue.get()
+            if vector_entry is None:  # Check for termination signal
+                break
+            yield vector_entry
+
+        # Ensure all created tasks are completed
+        if tasks:
+            await asyncio.gather(*tasks)
+
+    async def _process_and_enqueue_batch(
+        self, fragment_batch: List[Fragment], vector_entry_queue: asyncio.Queue
+    ):
+        try:
+            batch_result = await self._process_batch(fragment_batch)
             for vector_entry in batch_result:
-                yield vector_entry
+                await vector_entry_queue.put(vector_entry)
+        except Exception as e:
+            logger.error(f"Error processing batch: {e}")
+            raise e
+        finally:
+            await vector_entry_queue.put(None)  # Signal completion
