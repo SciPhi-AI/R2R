@@ -8,9 +8,9 @@ from r2r import (
     Document,
     EntityType,
     GenerationConfig,
+    KGAgentPipe,
     Pipeline,
     R2RAppBuilder,
-    R2RKGAgentPipe,
     Relation,
     run_pipeline,
 )
@@ -214,7 +214,7 @@ def main(max_entries=50, delete=False):
 
     print_all_relationships(kg)
 
-    kg_agent_pipe = R2RKGAgentPipe(
+    kg_agent_pipe = KGAgentPipe(
         r2r_app.providers.kg, r2r_app.providers.llm, r2r_app.providers.prompt
     )
 

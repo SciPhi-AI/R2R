@@ -7,7 +7,6 @@ import json
 import logging
 import time
 import uuid
-from abc import abstractmethod
 from typing import AsyncGenerator, Optional
 
 from r2r.core import (
@@ -38,7 +37,7 @@ from r2r.core import (
 logger = logging.getLogger(__name__)
 
 
-class R2RDocumentParsingPipe(LoggableAsyncPipe):
+class ParsingPipe(LoggableAsyncPipe):
     """
     Processes incoming documents into plaintext based on their data type.
     Supports TXT, JSON, HTML, and PDF formats.
@@ -85,7 +84,7 @@ class R2RDocumentParsingPipe(LoggableAsyncPipe):
         **kwargs,
     ):
         logger.info(
-            "Initializing a `R2RDocumentParsingPipe` to parse incoming documents."
+            "Initializing a `ParsingPipe` to parse incoming documents."
         )
         super().__init__(
             pipe_logger=pipe_logger,
@@ -128,7 +127,7 @@ class R2RDocumentParsingPipe(LoggableAsyncPipe):
     ) -> AsyncGenerator[Extraction, None]:
         if document.type not in self.parsers:
             logger.error(
-                f"Parser for {document.type} not found in `R2RDocumentParsingPipe`."
+                f"Parser for {document.type} not found in `ParsingPipe`."
             )
             return
         parser = self.parsers[document.type]

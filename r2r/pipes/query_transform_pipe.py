@@ -16,7 +16,7 @@ from .abstractions.generator_pipe import GeneratorPipe
 logger = logging.getLogger(__name__)
 
 
-class R2RQueryTransformPipe(GeneratorPipe):
+class QueryTransformPipe(GeneratorPipe):
     class QueryTransformConfig(GeneratorPipe.PipeConfig):
         name: str = "default_query_transform"
         system_prompt: str = "default_system"
@@ -34,12 +34,12 @@ class R2RQueryTransformPipe(GeneratorPipe):
         *args,
         **kwargs,
     ):
-        logger.info(f"Initalizing an `R2RQueryTransformPipe` pipe.")
+        logger.info(f"Initalizing an `QueryTransformPipe` pipe.")
         super().__init__(
             llm_provider=llm_provider,
             prompt_provider=prompt_provider,
             type=type,
-            config=config or R2RQueryTransformPipe.QueryTransformConfig(),
+            config=config or QueryTransformPipe.QueryTransformConfig(),
             *args,
             **kwargs,
         )

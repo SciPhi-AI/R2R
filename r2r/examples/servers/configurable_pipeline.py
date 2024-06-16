@@ -9,8 +9,8 @@ from r2r import (
     R2RAppBuilder,
     R2RConfig,
     R2RPipeFactoryWithMultiSearch,
-    R2RWebSearchPipe,
     SerperClient,
+    WebSearchPipe,
 )
 
 logger = logging.getLogger(__name__)
@@ -66,7 +66,7 @@ def r2r_app(
     if pipeline_type == PipelineType.QNA:
         return R2RAppBuilder(config).build().app
     elif pipeline_type == PipelineType.WEB:
-        web_search_pipe = R2RWebSearchPipe(
+        web_search_pipe = WebSearchPipe(
             serper_client=SerperClient()  # TODO - Develop a `WebSearchProvider` for configurability
         )
         return (

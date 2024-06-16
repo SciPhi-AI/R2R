@@ -5,8 +5,8 @@ from typing import Any, AsyncGenerator, Optional
 from r2r import (
     GenerationConfig,
     LoggableAsyncPipe,
+    QueryTransformPipe,
     R2RPipeFactory,
-    R2RQueryTransformPipe,
     SearchPipe,
     SearchResult,
 )
@@ -18,7 +18,7 @@ class MultiSearchPipe(LoggableAsyncPipe):
 
     def __init__(
         self,
-        query_transform_pipe: R2RQueryTransformPipe,
+        query_transform_pipe: QueryTransformPipe,
         inner_search_pipe: SearchPipe,
         config: Optional[PipeConfig] = None,
         *args,
@@ -82,19 +82,17 @@ class MultiSearchPipe(LoggableAsyncPipe):
 
 
 class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
-    QUERY_GENERATION_TEMPLATE: dict = (
-        {  # TODO - Can we have stricter typing like so? `: {"template": str, "input_types": dict[str, str]} = {``
-            "template": "### Instruction:\n\nGiven the following query that follows to write a double newline separated list of up to {num_outputs} queries meant to help answer the original query. \nDO NOT generate any single query which is likely to require information from multiple distinct documents, \nEACH single query will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents. \nFOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, the two queries would be \n`What are the key themes of Great Gatsby?` and `What are the key themes of 1984?`.\nHere is the original user query to be transformed into answers:\n\n### Query:\n{message}\n\n### Response:\n",
-            "input_types": {"num_outputs": "int", "message": "str"},
-        }
-    )
+    QUERY_GENERATION_TEMPLATE: dict = {  # TODO - Can we have stricter typing like so? `: {"template": str, "input_types": dict[str, str]} = {``
+        "template": "### Instruction:\n\nGiven the following query that follows to write a double newline separated list of up to {num_outputs} queries meant to help answer the original query. \nDO NOT generate any single query which is likely to require information from multiple distinct documents, \nEACH single query will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents. \nFOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, the two queries would be \n`What are the key themes of Great Gatsby?` and `What are the key themes of 1984?`.\nHere is the original user query to be transformed into answers:\n\n### Query:\n{message}\n\n### Response:\n",
+        "input_types": {"num_outputs": "int", "message": "str"},
+    }
 
     def create_search_pipe(self, *args, **kwargs):
         """
         A factory method to create a search pipe.
 
         Overrides include
-            multi_query_transform_pipe_override: R2RQueryTransformPipe
+            multi_query_transform_pipe_override: QueryTransformPipe
             multi_inner_search_pipe_override: SearchPipe
             search_task_template_override: {'template': str, 'input_types': dict[str, str]}
         """
@@ -107,10 +105,10 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
         # Initialize the new query transform pipe
         query_transform_pipe = kwargs.get(
             "multi_query_transform_pipe_override", None
-        ) or R2RQueryTransformPipe(
+        ) or QueryTransformPipe(
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
-            config=R2RQueryTransformPipe.QueryTransformConfig(
+            config=QueryTransformPipe.QueryTransformConfig(
                 name=multi_search_config.name,
                 task_prompt=task_prompt_name,
             ),

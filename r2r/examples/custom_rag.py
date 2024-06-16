@@ -3,11 +3,11 @@
 from r2r import (
     GenerationConfig,
     KVLoggingSingleton,
+    QueryTransformPipe,
     R2RConfig,
     R2RPipeFactory,
     R2RPipelineFactory,
     R2RProviderFactory,
-    R2RQueryTransformPipe,
     RAGPipeline,
     run_pipeline,
 )
@@ -30,10 +30,10 @@ if __name__ == "__main__":
     providers.prompt.add_prompt(**transform_prompt)
 
     # Initialize the new query transform pipe
-    query_transform_pipe = R2RQueryTransformPipe(
+    query_transform_pipe = QueryTransformPipe(
         llm_provider=providers.llm,
         prompt_provider=providers.prompt,
-        config=R2RQueryTransformPipe.QueryTransformConfig(
+        config=QueryTransformPipe.QueryTransformConfig(
             task_prompt=transform_prompt["name"]
         ),
     )
