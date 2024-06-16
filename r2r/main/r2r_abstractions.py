@@ -30,15 +30,15 @@ class R2RProviders(BaseModel):
 
 
 class R2RPipes(BaseModel):
-    parsing_pipe: LoggableAsyncPipe
-    embedding_pipe: LoggableAsyncPipe
-    vector_storage_pipe: LoggableAsyncPipe
-    search_pipe: LoggableAsyncPipe
-    rag_pipe: LoggableAsyncPipe
-    streaming_rag_pipe: LoggableAsyncPipe
-    eval_pipe: LoggableAsyncPipe
-    kg_pipe: LoggableAsyncPipe
-    kg_storage_pipe: LoggableAsyncPipe
+    parsing_pipe: Optional[LoggableAsyncPipe]
+    embedding_pipe: Optional[LoggableAsyncPipe]
+    vector_storage_pipe: Optional[LoggableAsyncPipe]
+    vector_search_pipe: Optional[LoggableAsyncPipe]
+    rag_pipe: Optional[LoggableAsyncPipe]
+    streaming_rag_pipe: Optional[LoggableAsyncPipe]
+    eval_pipe: Optional[LoggableAsyncPipe]
+    kg_pipe: Optional[LoggableAsyncPipe]
+    kg_storage_pipe: Optional[LoggableAsyncPipe]
 
     class Config:
         arbitrary_types_allowed = True

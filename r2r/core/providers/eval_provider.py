@@ -7,15 +7,19 @@ from .llm_provider import GenerationConfig, LLMConfig
 class EvalConfig(ProviderConfig):
     """A base eval config class"""
 
-    llm: LLMConfig
+    llm: Optional[LLMConfig] = None
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} not supported.")
+        if self.provider and not self.llm:
+            raise ValueError(
+                "EvalConfig must have a `llm` attribute when specifying a provider."
+            )
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["local"]
+        return [None, "local"]
 
 
 class EvalProvider(Provider):

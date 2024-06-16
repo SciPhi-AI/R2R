@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class R2RDemo:
+class R2RQuickstart:
     """A demo class for the R2R library."""
 
     DEMO_USER_ID = "063edaf8-3e63-4cb9-a4d6-a855f36376c3"
@@ -468,4 +468,4 @@ class R2RDemo:
 
 
 if __name__ == "__main__":
-    fire.Fire(R2RDemo)
+    fire.Fire(R2RQuickstart)

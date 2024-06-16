@@ -111,7 +111,7 @@ if __name__ == "__main__":
         R2RAppBuilder()
         .with_pipe_factory(R2RPipeFactoryWithMultiSearch)
         .build(
-            # override inputs consumed by `R2RPipeFactoryWithMultiSearch.create_search_pipe`
+            # override inputs consumed by `R2RPipeFactoryWithMultiSearch.create_vector_search_pipe`
             multi_inner_search_pipe_override=web_search_pipe,
             query_generation_template_override=synthetic_query_generation_template,
         )
@@ -197,7 +197,7 @@ The `R2RPipeFactory` is responsible for creating the pipes used in the `R2RApp`.
 - **create_parsing_pipe**: Creates the parsing pipe.
 - **create_embedding_pipe**: Creates the embedding pipe.
 - **create_vector_storage_pipe**: Creates the vector storage pipe.
-- **create_search_pipe**: Creates the search pipe.
+- **create_vector_search_pipe**: Creates the search pipe.
 - **create_rag_pipe**: Creates the RAG pipe.
 - **create_eval_pipe**: Creates the evaluation pipe.
 
@@ -214,11 +214,11 @@ The `R2RPipelineFactory` is responsible for creating the various pipelines used 
 
 ### Example - Custom Pipe Factory
 
-The `R2RPipeFactoryWithMultiSearch` class shown below demonstrates how to override the `create_search_pipe` method of the `R2RPipeFactory` to use a `MultiSearchPipe`.
+The `R2RPipeFactoryWithMultiSearch` class shown below demonstrates how to override the `create_vector_search_pipe` method of the `R2RPipeFactory` to use a `MultiSearchPipe`.
 
 ```python copy
 class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
-    def create_search_pipe(self, *args, **kwargs):
+    def create_vector_search_pipe(self, *args, **kwargs):
         multi_search_config = MultiSearchPipe.PipeConfig()
         task_prompt_name = kwargs.get("task_prompt_name") or f"{multi_search_config.name}_task_prompt"
 
@@ -237,7 +237,7 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
                 **(kwargs.get("query_generation_template_override") or self.QUERY_GENERATION_TEMPLATE),
             )
 
-        inner_search_pipe = kwargs.get("multi_inner_search_pipe_override", None) or super().create_search_pipe(*args, **kwargs)
+        inner_search_pipe = kwargs.get("multi_inner_search_pipe_override", None) or super().create_vector_search_pipe(*args, **kwargs)
         inner_search_pipe.config.name = multi_search_config.name
 
         return MultiSearchPipe(
