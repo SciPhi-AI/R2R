@@ -27,7 +27,7 @@ from r2r.core import (
     manage_run,
     to_async_generator,
 )
-from r2r.pipes import R2REvalPipe
+from r2r.pipes import EvalPipe
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from .r2r_abstractions import R2RPipelines, R2RProviders
@@ -592,7 +592,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     if document_ids is None
                     else document_ids[iteration]
                 )
-                
+
                 version = versions[iteration] if versions else "v0"
                 if (
                     version is not None
@@ -1156,7 +1156,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         *args: Any,
         **kwargs: Any,
     ):
-        eval_payload = R2REvalPipe.EvalPayload(
+        eval_payload = EvalPipe.EvalPayload(
             query=query,
             context=context,
             completion=completion,
@@ -1343,27 +1343,27 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     analysis_type = analysis_config[0]
                     if analysis_type == "bar_chart":
                         extract_key = analysis_config[1]
-                        results[filter_key] = (
-                            AnalysisTypes.generate_bar_chart_data(
-                                filtered_logs[filter_key], extract_key
-                            )
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.generate_bar_chart_data(
+                            filtered_logs[filter_key], extract_key
                         )
                     elif analysis_type == "basic_statistics":
                         extract_key = analysis_config[1]
-                        results[filter_key] = (
-                            AnalysisTypes.calculate_basic_statistics(
-                                filtered_logs[filter_key], extract_key
-                            )
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.calculate_basic_statistics(
+                            filtered_logs[filter_key], extract_key
                         )
                     elif analysis_type == "percentile":
                         extract_key = analysis_config[1]
                         percentile = int(analysis_config[2])
-                        results[filter_key] = (
-                            AnalysisTypes.calculate_percentile(
-                                filtered_logs[filter_key],
-                                extract_key,
-                                percentile,
-                            )
+                        results[
+                            filter_key
+                        ] = AnalysisTypes.calculate_percentile(
+                            filtered_logs[filter_key],
+                            extract_key,
+                            percentile,
                         )
                     else:
                         logger.warning(

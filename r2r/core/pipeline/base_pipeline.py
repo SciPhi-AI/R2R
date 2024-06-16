@@ -72,7 +72,7 @@ class Pipeline:
 
         self.state = state or AsyncState()
         current_input = input
-        async with manage_run(run_manager, self.pipeline_type) as run_id:
+        async with manage_run(run_manager, self.pipeline_type):
             await run_manager.log_run_info(
                 key="pipeline_type",
                 value=self.pipeline_type,

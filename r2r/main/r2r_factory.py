@@ -247,13 +247,13 @@ class R2RPipeFactory:
     def create_parsing_pipe(
         self, excluded_parsers: Optional[dict] = None, *args, **kwargs
     ) -> Any:
-        from r2r.pipes import R2RDocumentParsingPipe
+        from r2r.pipes import ParsingPipe
 
-        return R2RDocumentParsingPipe(excluded_parsers=excluded_parsers or {})
+        return ParsingPipe(excluded_parsers=excluded_parsers or {})
 
     def create_embedding_pipe(self, *args, **kwargs) -> Any:
         from r2r.core import RecursiveCharacterTextSplitter
-        from r2r.pipes import R2REmbeddingPipe
+        from r2r.pipes import EmbeddingPipe
 
         text_splitter_config = self.config.embedding.extra_fields.get(
             "text_splitter"
@@ -269,7 +269,7 @@ class R2RPipeFactory:
             length_function=len,
             is_separator_regex=False,
         )
-        return R2REmbeddingPipe(
+        return EmbeddingPipe(
             embedding_provider=self.providers.embedding,
             vector_db_provider=self.providers.vector_db,
             text_splitter=text_splitter,
@@ -278,7 +278,7 @@ class R2RPipeFactory:
 
     def create_kg_pipe(self, *args, **kwargs) -> Any:
         from r2r.core import RecursiveCharacterTextSplitter
-        from r2r.pipes import R2RKGPipe
+        from r2r.pipes import KGExtractionPipe
 
         text_splitter_config = self.config.kg.extra_fields.get("text_splitter")
         if not text_splitter_config:
@@ -290,7 +290,7 @@ class R2RPipeFactory:
             length_function=len,
             is_separator_regex=False,
         )
-        return R2RKGPipe(
+        return KGExtractionPipe(
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
@@ -300,48 +300,46 @@ class R2RPipeFactory:
         )
 
     def create_kg_storage_pipe(self, *args, **kwargs) -> Any:
-        from r2r.pipes import R2RKGStoragePipe
+        from r2r.pipes import KGStoragePipe
 
-        return R2RKGStoragePipe(
+        return KGStoragePipe(
             kg_provider=self.providers.kg,
             embedding_provider=self.providers.embedding,
         )
 
     def create_vector_storage_pipe(self, *args, **kwargs) -> Any:
-        from r2r.pipes import R2RVectorStoragePipe
+        from r2r.pipes import VectorStoragePipe
 
-        return R2RVectorStoragePipe(
-            vector_db_provider=self.providers.vector_db
-        )
+        return VectorStoragePipe(vector_db_provider=self.providers.vector_db)
 
     def create_search_pipe(self, *args, **kwargs) -> Any:
-        from r2r.pipes import R2RVectorSearchPipe
+        from r2r.pipes import VectorSearchPipe
 
-        return R2RVectorSearchPipe(
+        return VectorSearchPipe(
             vector_db_provider=self.providers.vector_db,
             embedding_provider=self.providers.embedding,
         )
 
     def create_rag_pipe(self, streaming: bool = False, *args, **kwargs) -> Any:
         if streaming:
-            from r2r.pipes import R2RStreamingSearchRAGPipe
+            from r2r.pipes import StreamingSearchRAGPipe
 
-            return R2RStreamingSearchRAGPipe(
+            return StreamingSearchRAGPipe(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
             )
         else:
-            from r2r.pipes import R2RSearchRAGPipe
+            from r2r.pipes import SearchRAGPipe
 
-            return R2RSearchRAGPipe(
+            return SearchRAGPipe(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
             )
 
     def create_eval_pipe(self, *args, **kwargs) -> Any:
-        from r2r.pipes import R2REvalPipe
+        from r2r.pipes import EvalPipe
 
-        return R2REvalPipe(eval_provider=self.providers.eval)
+        return EvalPipe(eval_provider=self.providers.eval)
 
 
 class R2RPipelineFactory:

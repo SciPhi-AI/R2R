@@ -2,13 +2,13 @@ from r2r import (
     GenerationConfig,
     R2RAppBuilder,
     R2RPipeFactoryWithMultiSearch,
-    R2RWebSearchPipe,
     SerperClient,
+    WebSearchPipe,
 )
 
 if __name__ == "__main__":
     # Initialize a web search pipe
-    web_search_pipe = R2RWebSearchPipe(serper_client=SerperClient())
+    web_search_pipe = WebSearchPipe(serper_client=SerperClient())
 
     # Define a new synthetic query generation template
     synthetic_query_generation_template = {

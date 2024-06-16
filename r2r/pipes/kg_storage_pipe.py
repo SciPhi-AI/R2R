@@ -17,7 +17,7 @@ from r2r.core.abstractions.llama_abstractions import EntityNode, Relation
 logger = logging.getLogger(__name__)
 
 
-class R2RKGStoragePipe(LoggableAsyncPipe):
+class KGStoragePipe(LoggableAsyncPipe):
     class Input(LoggableAsyncPipe.Input):
         message: AsyncGenerator[KGExtraction, None]
 

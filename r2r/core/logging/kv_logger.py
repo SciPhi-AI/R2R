@@ -1,14 +1,12 @@
 import json
 import logging
 import os
-import re
 import uuid
 from abc import abstractmethod
 from datetime import datetime
 from typing import Optional
 
 import asyncpg
-import numpy as np
 from pydantic import BaseModel
 
 from ..providers.base_provider import Provider, ProviderConfig

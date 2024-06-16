@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import uuid
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional

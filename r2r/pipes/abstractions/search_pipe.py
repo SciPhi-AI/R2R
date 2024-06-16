@@ -10,7 +10,6 @@ from r2r.core import (
     LoggableAsyncPipe,
     PipeType,
     SearchResult,
-    VectorDBProvider,
 )
 
 logger = logging.getLogger(__name__)

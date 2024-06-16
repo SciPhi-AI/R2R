@@ -4,8 +4,8 @@ from r2r import (
     R2RAppBuilder,
     R2RConfig,
     R2RPipeFactoryWithMultiSearch,
-    R2RWebSearchPipe,
     SerperClient,
+    WebSearchPipe,
 )
 
 if __name__ == "__main__":

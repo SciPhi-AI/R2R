@@ -3,7 +3,6 @@ import copy
 import json
 import logging
 import uuid
-from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
@@ -24,7 +23,7 @@ from r2r.core import (
 logger = logging.getLogger(__name__)
 
 
-class R2REmbeddingPipe(LoggableAsyncPipe):
+class EmbeddingPipe(LoggableAsyncPipe):
     """
     Embeds and stores documents using a specified embedding model and database.
     """

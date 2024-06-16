@@ -1,5 +1,4 @@
 import logging
-import random
 import uuid
 from typing import Any, AsyncGenerator, Optional
 
@@ -17,14 +16,14 @@ from r2r import (
 logger = logging.getLogger(__name__)
 
 
-class R2REvalPipe(LoggableAsyncPipe):
+class EvalPipe(LoggableAsyncPipe):
     class EvalPayload(BaseModel):
         query: str
         context: str
         completion: str
 
     class Input(LoggableAsyncPipe.Input):
-        message: AsyncGenerator["R2REvalPipe.EvalPayload", None]
+        message: AsyncGenerator["EvalPipe.EvalPayload", None]
 
     def __init__(
         self,

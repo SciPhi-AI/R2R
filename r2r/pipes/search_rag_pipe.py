@@ -18,7 +18,7 @@ from .abstractions.generator_pipe import GeneratorPipe
 logger = logging.getLogger(__name__)
 
 
-class R2RSearchRAGPipe(GeneratorPipe):
+class SearchRAGPipe(GeneratorPipe):
     class Input(AsyncPipe.Input):
         message: AsyncGenerator[SearchResult, None]
         query: list[str]

@@ -17,7 +17,7 @@ from .abstractions.search_pipe import SearchPipe
 logger = logging.getLogger(__name__)
 
 
-class R2RVectorSearchPipe(SearchPipe):
+class VectorSearchPipe(SearchPipe):
     def __init__(
         self,
         vector_db_provider: VectorDBProvider,
