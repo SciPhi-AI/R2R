@@ -1,6 +1,6 @@
 ## Default Configuration
 
-During the example pipeline creation, a default `config.json` is loaded and passed to the pipeline. It provides settings for the following services:
+During R2R instance construction, the default [`config.json`](https://github.com/SciPhi-AI/R2R/blob/main/config.json) is loaded and passed in. Custom user settings may be passed instead, in which case user settings overwrite the default settings where applicable. Settings for the following services are configurable:
 
 - R2R Application settings
 - Embedding settings
@@ -12,9 +12,9 @@ During the example pipeline creation, a default `config.json` is loaded and pass
 - Prompt provider
 - Logging
 
-The default values for the config are shown below:
+The **default values** for the config are shown below:
 
-```json
+```json filename="config.json"
 {
   "app": {
     "max_logs_per_request": 100,
@@ -35,14 +35,13 @@ The default values for the config are shown below:
     },
     "rerank_model": "None"
   },
-  "eval": {
-    "provider": "local",
-    "llm": {
-      "model": "gpt-4o",
-      "provider": "openai"
-    }
+  "kg": {
+    "provider": "None"
   },
-  "ingestion":{
+  "eval": {
+    "provider": "None"
+  },
+  "ingestion": {
     "excluded_parsers": {
       "mp4": "default"
     }
@@ -62,7 +61,7 @@ The default values for the config are shown below:
 }
 ```
 
-The available options for each section are:
+### Available Options
 
 - **app**:
   - `max_logs_per_request`: Maximum number of logs to retrieve.
@@ -73,7 +72,7 @@ The available options for each section are:
 
 - **embedding**:
   - `provider`: `"openai"`, `"sentence-transformers"`, or `"None"` (see [Embedding Providers](/providers/embeddings.md) for more info).
-  - `base_model`: Embedding model to use (e.g., `"text-embedding-3-small"` for OpenAI).
+  - `base_model`: Embedding model to use (e.g., `"text-embedding-3-small"` for OpenAI, `"all-MiniLM-L6-v2"` for Sentence Transformers).
   - `base_dimension`: Embedding dimension.
   - `batch_size`: Number of texts to embed in each batch.
   - `text_splitter`: Configuration for text splitting.
@@ -81,20 +80,22 @@ The available options for each section are:
     - `chunk_size`: Target chunk size in characters.
     - `chunk_overlap`: Number of overlapping characters between chunks.
   - `rerank_model`: Model used for re-ranking (optional).
+  - `rerank_dimension`: Dimension of the rerank model.
+  - `rerank_transformer_type`: Type of transformer used for reranking.
+
+- **kg**:
+  - `provider`: `"neo4j"` or `"None"`.
+  - `batch_size`: The number of samples to be batched to the LLM per call.
+  - `text_splitter`: Specifications for the text splitter which creates fragments for kg production, `type`, `chunk_size`, and `chunk_overlap`.
 
 - **eval**:
-  - `provider`: `"local"` or `"None"`
+  - `provider`: `"local"` or `"None"`.
   - `llm`: LLM configuration for evaluation.
     - `model`: Model to use (e.g., `"gpt-4o"`).
     - `provider`: Provider to use (e.g., `"openai"`).
 
-- **kg**
-  - `provider`: `"neo4j"` or `"None"`
-  - `batch_size`: The number of samples to be batched to the LLM per call.
-  - `text_splitter`: Specifications for the text splitter which creates fragments for kg production, `type`, `chunk_size`, and `chunk_overlap`.
-
 - **ingestion**:
-  - `excluded_parsers`: Specifies the parsers to exclude for different file types. Valid options include `csv`, `docx`, `html`, `json`, `md`, `pdf`, `pptx`, `txt`, `xlsx`, `.gif`, `.jpg`, `.jpeg`, `.svg`, `.mp3`, `.mp4`.
+  - `excluded_parsers`: Specifies the parsers to exclude for different file types. Valid options include `csv`, `docx`, `html`, `json`, `md`, `pdf`, `pptx`, `txt`, `xlsx`, `.gif`, `.jpg`, `.jpeg`, `.png`, `.svg`, `.mp3`, `.mp4`.
 
 - **logging**:
   - `provider`: `"local"`, `"postgres"`, `"redis"`.
@@ -108,6 +109,111 @@ The available options for each section are:
   - `provider`: `"local"`, `"pgvector"` (see [Vector Database Providers](/providers/vector-databases.md) for more info).
   - `collection_name`: Name of the collection to store vector embeddings.
 
+### Example Configurations
+
+Here are some example configurations to demonstrate different setups:
+
+
+#### Example 1: Local LLM Configuration
+
+```json filename="r2r/examples/config/local_ollama.json"
+{
+  "embedding": {
+    "provider": "sentence-transformers",
+    "base_model": "all-MiniLM-L6-v2",
+    "base_dimension": 384,
+    "batch_size": 32
+  },
+  "ingestion": {
+    "excluded_parsers": {
+      "gif": "default",
+      "jpeg": "default",
+      "jpg": "default",
+      "png": "default",
+      "svg": "default",
+      "mp3": "default",
+      "mp4": "default"
+    }
+  }
+}
+```
+
+#### Example 2: Sentence Transformers with Reranking
+
+```json filename="r2r/examples/config/local_ollama_rerank.json"
+{
+  "embedding": {
+    "provider": "sentence-transformers",
+    "base_model": "all-MiniLM-L6-v2",
+    "base_dimension": 384,
+    "rerank_model": "jinaai/jina-reranker-v1-turbo-en",
+    "rerank_dimension": 384,
+    "rerank_transformer_type": "CrossEncoder",
+    "batch_size": 32,
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 512,
+      "chunk_overlap": 20
+    }
+  },
+  "ingestion": {
+    "excluded_parsers": {
+      "gif": "default",
+      "jpeg": "default",
+      "jpg": "default",
+      "png": "default",
+      "svg": "default",
+      "mp3": "default",
+      "mp4": "default"
+    }
+  }
+}
+```
+
+
+
+#### Example 3: Vector Database Configuration
+
+```json filename="r2r/examples/config/pgvector.json"
+{
+  "vector_database": {
+    "provider": "pgvector",
+    "collection_name": "vecs"
+  }
+}
+```
+
+#### Example 4: Postgres Logging Configuration
+
+```json filename="r2r/examples/config/postgres_logging.json"
+{
+  "logging": {
+    "provider": "postgres",
+    "log_table": "logs",
+    "log_info_table": "log_info"
+  }
+}
+```
+
+
+#### Example 5: Knowledge Graph Configuration
+
+```json filename="r2r/examples/config/neo4j_kg.json"
+{
+  "kg": {
+    "provider": "neo4j",
+    "batch_size": 1,
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 1024,
+      "chunk_overlap": 0
+    }
+  }
+}
+```
+
+### Summary
+
 For more detailed information on configuring specific providers, please refer to the relevant documentation:
 
 - [LLM Providers](/providers/llms.md)
@@ -116,9 +222,9 @@ For more detailed information on configuring specific providers, please refer to
 
 These documentation files provide in-depth guides on setting up and using each provider, including any required environment variables and additional configuration options.
 
-To launch the default pipeline with your own config, you may run the following code:
+To launch the default pipeline with your own configuration, you may run the following code:
 
-```python copy
+```python
 from r2r import R2RConfig, R2RAppBuilder
 
 config_path = PATH_TO_YOUR_CONFIG

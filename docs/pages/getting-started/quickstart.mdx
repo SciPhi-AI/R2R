@@ -2,11 +2,36 @@ import { Callout } from 'nextra/components'
 
 ## Quickstart
 
-This guide offers a step-by-step walkthrough of the core features provided by R2R using the R2R Python SDK. The framework includes a REST API for document ingestion, RAG, evaluation, and supporting features like observability, analytics, and document management.
+This guide offers a step-by-step walkthrough of the core features provided by R2R using the R2R Python SDK. The framework includes methods as well as a REST API for document ingestion, RAG, evaluation, and supporting features like observability, analytics, and document management.
 
 ![R2R App Architecture](./r2r_demo_architecture.png)
 
-We will start by ingesting a list of assorted document types to showcase search, RAG, and more advanced functionalities. The script powering this quickstart, [`r2r/examples/quickstart.py`](https://github.com/SciPhi-AI/R2R/blob/main/r2r/examples/quickstart.py), can be easily customized to fit your specific use case.
+R2R supports configurable vector search and RAG right out of the box, as the example below shows:
+
+```python
+from r2r import Document, GenerationConfig, R2RAppBuilder
+
+r2r_app = R2RAppBuilder().build() # You may pass a custom configuration to `R2RAppBuilder`
+
+r2r_app.ingest_documents(
+    [
+        Document(
+            type="txt",
+            data="John is a person that works at Google.",
+            metadata={},
+        )
+    ]
+)
+
+rag_results = r2r_app.rag(
+    "Who is john", GenerationConfig(model="gpt-3.5-turbo", temperature=0.0)
+)
+print(f"RAG Results:\n{rag_results}")
+
+# RAG Results:
+# [ChatCompletion(id='chatcmpl-9b9QhikaH7aUY9AgTrhNkHcodNNyI', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessage(content='John is a person that works at Google. [1]', role='assistant', function_call=None, tool_calls=None))], created=1718641411, model='gpt-3.5-turbo-0125', object='chat.completion', system_fingerprint=None, usage=CompletionUsage(completion_tokens=12, prompt_tokens=162, total_tokens=174))]
+```
+This quickstart will continue on to show how to ingest a list of assorted documents and to to showcase search, RAG, and more advanced functionalities. The script powering this quickstart, [`r2r/examples/quickstart.py`](https://github.com/SciPhi-AI/R2R/blob/main/r2r/examples/quickstart.py), can be easily customized to fit your specific use case.
 
 ## Setup
 
@@ -16,16 +41,11 @@ We will start by ingesting a list of assorted document types to showcase search,
    If you would prefer to do the heavy lifting with Docker instead then refer to the [Docker installation instructions](/getting-started/installation?tab=Installing+with+Docker+%F0%9F%90%B3) and then proceed to the [client-server cookbook](/cookbooks/client-server).
 </Callout>
 
-
-## R2R Dashboard
-
-Developers can interact with R2R in several ways, including through our [open-source React+Next.js dashboard](https://github.com/SciPhi-AI/R2R-Dashboard). The dashboard is designed to give R2R developers an easy way to interface with their pipelines, reducing development and iteration time. Checkout the [Dashboard Cookbook](https://r2r-docs.sciphi.ai/cookbooks/dashboard) to get started!
-
 ## Interacting with your Documents
 
 <details open>
 <summary>Ingesting Files</summary>
-    To comprehensively demonstrate the RAG functionalities of the R2R framework, we must start by ingesting a realistic set of documents. Running the command below will parse, chunk, embed, and store a preset list of files. The included file types cover HTML, PDF, PNG, and TXT examples:
+    To comprehensively demonstrate the RAG functionalities of the R2R framework, we must start by ingesting a realistic set of documents. Running the command below will parse, chunk, embed, and store a prepared list of sample files. The included file types cover `html`, `pdf`, `png`, `mp3`, and `txt` examples:
 
     ```bash filename="bash" copy
     python -m r2r.examples.quickstart ingest_as_files
@@ -54,13 +74,12 @@ Developers can interact with R2R in several ways, including through our [open-so
     {'results': ["File 'aristotle.txt' processed successfully.", "File 'screen_shot.png' processed successfully.", "File 'pg_essay_1.html' processed successfully.", "File 'pg_essay_2.html' processed successfully.", "File 'pg_essay_3.html' processed successfully.", "File 'pg_essay_4.html' processed successfully.", "File 'pg_essay_5.html' processed successfully.", "File 'lyft_2021.pdf' processed successfully.", "File 'uber_2021.pdf' processed successfully."]}
     ```
 
-    **Note**
-
+    **Note:**
     Each ingested document derives a unique `document_id` from the input file path. As the document is parsed, chunked, and embedded, this association is maintained to allow for frictionless vector database management. Additionally, the demo submits a `user_id` during the document creation process which will be used to facilitate user-level document management.
 </details>
 
 <details>
-<summary>Document Info</summary>
+<summary>Document & User Info</summary>
     We can fetch associated document metadata after successfully ingesting the demo documents:
 
     ```bash filename="bash" copy
@@ -97,6 +116,7 @@ Developers can interact with R2R in several ways, including through our [open-so
     ]
     ```
 </details>
+
 
 ## Basic RAG Functionality
 
@@ -279,6 +299,9 @@ python -m r2r.examples.quickstart logs
 - [Knowledge Graphs](/cookbooks/knowledge-graph)
 - [Dashboard](/cookbooks/dashboard)
 
+## R2R Dashboard
+
+Developers can interact with R2R in several ways, including through our [open-source React+Next.js dashboard](https://github.com/SciPhi-AI/R2R-Dashboard). The dashboard is designed to give R2R developers an easy way to interface with their pipelines, reducing development and iteration time. Checkout the [Dashboard Cookbook](https://r2r-docs.sciphi.ai/cookbooks/dashboard) to get started!
 
 ## Next Steps
 This R2R quickstart guides you through the basics of setting up and using the R2R framework to run a Retrieval-Augmented Generation (RAG) pipeline, but this is just a start! [Checkout our cookbooks](../cookbooks/starter) for more advanced tutorials.

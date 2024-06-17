@@ -1,58 +1,32 @@
-## R2R Application Documentation
+## Building R2R
 
 ### Introduction
 
-R2R has support for uploading and ingesting files, search, RAG, as well as document management. Document management includes deletion based on filters and document updates. R2R also has advanced features, including hybrid search, reranking, advanced RAG techniques, multimodal RAG, knowledge graph RAG, and more.
+R2R has out-of-the-box support for multimodal RAG, hybrid search, knowledge graph-powered RAG, and application management.
 
-R2R API specifications are included [here](/getting-started/r2r-api).
+All of these functionalities can be called directly or through a client-server architecture via the R2R API ([specifications here](/getting-started/r2r-api)).
 
-### Building an instance of R2R
+### Building an Instance of R2R
 
-An instance of R2R is general created using the `R2RAppBuilder` class, which leverages the builder pattern to assemble various components based on the provided configuration and overrides.
+An instance of R2R is generally created using the `R2RAppBuilder` class, which leverages the builder pattern to assemble various components based on the provided configuration and overrides.
 
-```python copy
+```python
 from r2r import R2RConfig, R2RAppBuilder
 
-config = R2RConfig.from_json("path/to/my_config.json") # defaults to `config.json` in R2R main
-r2r_app = R2RAppBuilder(config).build()
+config = R2RConfig.from_json("path/to/my_config.json")
+r2r_app = R2RAppBuilder(config).build() # defaults to `config.json` when no config is passed
 ```
 
+In this example, the configuration is loaded from `my_config.json`. However, it is not necessary to pass a configuration file, and if none is provided then the framework defaults to the settings shown in the [`config.json`](https://github.com/SciPhi-AI/R2R/blob/main/config.json).
 
 ### Serving R2R
 
-R2R is designed such that every available function, e.g. `r2r_app.ingest_files(..)`, can be accessed via a RESTful API. The server can be launched with the `serve` method of your R2R instance, and the FastAPI application can be extracted for running via uuvicorn / gunicorn by calling `.app`.
+R2R is designed such that every available function, e.g., `r2r_app.ingest_files(..)`, can be accessed via a RESTful API. The server can be launched with the `serve` method of your R2R instance, and the FastAPI application can be extracted for running via `uvicorn` / `gunicorn` by calling `.app`.
 
-
-```python copy
+```python
 r2r_app.serve()
-# alternatively, access app directly via r2r_app.app
+# alternatively, access FastAPI app directly with r2r_app.app
 ```
-
-
-In this example, the configuration is loaded from a `config.json` file. The `R2RAppBuilder` creates the necessary providers, pipes, and pipelines based on the configuration.
-
-### Overriding Existing Endpoints
-
-Existing endpoints can be modified by creating a custom application which overrides the existing endpoints.
-
-```python copy
-async def my_aingest_files(
-    self,
-    files: list[UploadFile],
-    metadatas: Optional[list[dict]] = None,
-    document_ids: Optional[list[uuid.UUID]] = None,
-    user_ids: Optional[list[Optional[uuid.UUID]]] = None,
-    versions: Optional[list[str]] = None,
-    skip_document_info: bool = False,
-    *args: Any,
-    **kwargs: Any,
-):
-    # Implement your custom logic here
-    # Ensure it adheres to the expected signature and functionality
-
-r2r_app.aingest_files = my_aingest_files
-```
-
 
 ### Adding Custom Endpoints
 
@@ -60,7 +34,7 @@ You can add custom endpoints to the R2R application by modifying the `R2RApp` cl
 
 Here's an example of how to add a custom endpoint:
 
-```python copy
+```python
 from fastapi import FastAPI
 from r2r import R2RConfig, R2RAppBuilder
 
@@ -75,3 +49,191 @@ async def custom_endpoint():
 ```
 
 In this example, after creating the R2R application, a custom endpoint is added using the `@app.get("/custom_endpoint")` decorator. The `custom_endpoint` function defines the logic for handling requests to the `/custom_endpoint` route.
+
+### Overriding Method Logic
+
+Existing endpoint logic can readily be modified by associating a new method with the desired endpoint name. By default, R2R methods follow the `a__endpoint__name__` naming convention.
+
+```python
+async def my_aingest_files(
+    self,
+    files: list[UploadFile],
+    metadatas: Optional[list[dict]] = None,
+    document_ids: Optional[list[uuid.UUID]] = None,
+    user_ids: Optional[list[Optional[uuid.UUID]]] = None,
+    versions: Optional[list[str]] = None,
+    skip_document_info: bool = False,
+    *args: Any,
+    **kwargs: Any,
+):
+    # Implement your custom logic here
+    # Ensure it adheres to the expected signature and functionality
+    pass
+
+r2r_app.aingest_files = my_aingest_files
+```
+
+Certainly! Here's an additional section that walks through all the flags a developer can pass for the `R2RAppBuilder` class:
+
+## Configuring the R2RAppBuilder
+
+The `R2RAppBuilder` class provides a flexible way to configure your R2R application by allowing various overrides and customizations. Below is a detailed walkthrough of all the available flags and methods that can be used to customize the builder.
+
+### Configuration Options
+
+- **`config`**: An optional `R2RConfig` object to configure the application. If not provided, the default configuration is used.
+- **`from_config`**: An optional string to specify a predefined configuration name. This is mutually exclusive with `config`.
+
+### Initialization
+
+To initialize the `R2RAppBuilder`, you can pass either a `config` or a `from_config` parameter:
+
+```python
+builder = R2RAppBuilder(config=my_config)
+# or
+builder = R2RAppBuilder(from_config="default")
+```
+
+### Overriding the R2RApp Class
+
+You can override the default `R2RApp` class with your custom implementation:
+
+```python
+builder = builder.with_app(MyCustomR2RApp)
+```
+
+### Overriding Provider Factory
+
+You can specify a custom provider factory to create various providers:
+
+```python
+builder = builder.with_provider_factory(MyCustomProviderFactory)
+```
+
+### Overriding Pipe Factory
+
+You can specify a custom pipe factory to create various pipes:
+
+```python
+builder = builder.with_pipe_factory(MyCustomPipeFactory)
+```
+
+### Overriding Pipeline Factory
+
+You can specify a custom pipeline factory to create various pipelines:
+
+```python
+builder = builder.with_pipeline_factory(MyCustomPipelineFactory)
+```
+
+### Overriding Individual Providers
+
+You can override individual providers such as `VectorDBProvider`, `EmbeddingProvider`, `EvalProvider`, `LLMProvider`, and `PromptProvider`:
+
+```python
+builder = builder.with_vector_db_provider(my_vector_db_provider)
+builder = builder.with_embedding_provider(my_embedding_provider)
+builder = builder.with_eval_provider(my_eval_provider)
+builder = builder.with_llm_provider(my_llm_provider)
+builder = builder.with_prompt_provider(my_prompt_provider)
+```
+
+### Overriding Individual Pipes
+
+You can override individual pipes such as `parsing_pipe`, `embedding_pipe`, `vector_storage_pipe`, `search_pipe`, `rag_pipe`, `streaming_rag_pipe`, and `eval_pipe`:
+
+```python
+builder = builder.with_parsing_pipe(my_parsing_pipe)
+builder = builder.with_embedding_pipe(my_embedding_pipe)
+builder = builder.with_vector_storage_pipe(my_vector_storage_pipe)
+builder = builder.with_search_pipe(my_search_pipe)
+builder = builder.with_rag_pipe(my_rag_pipe)
+builder = builder.with_streaming_rag_pipe(my_streaming_rag_pipe)
+builder = builder.with_eval_pipe(my_eval_pipe)
+```
+
+### Overriding Pipelines
+
+You can override entire pipelines such as `IngestionPipeline`, `SearchPipeline`, `RAGPipeline`, `StreamingRAGPipeline`, and `EvalPipeline`:
+
+```python
+builder = builder.with_ingestion_pipeline(my_ingestion_pipeline)
+builder = builder.with_search_pipeline(my_search_pipeline)
+builder = builder.with_rag_pipeline(my_rag_pipeline)
+builder = builder.with_streaming_rag_pipeline(my_streaming_rag_pipeline)
+builder = builder.with_eval_pipeline(my_eval_pipeline)
+```
+
+### Building the R2RApp
+
+Once you have configured the builder with the necessary overrides, you can build the `R2RApp` instance:
+
+```python
+r2r_app = builder.build()
+```
+
+### Example Usage
+
+Here's an example of how to configure and build an `R2RApp` with various overrides:
+
+```python
+from r2r import (
+    R2RConfig,
+    R2RAppBuilder,
+    MyCustomR2RApp,
+    MyCustomProviderFactory,
+    MyCustomPipeFactory,
+    MyCustomPipelineFactory,
+    my_vector_db_provider,
+    my_embedding_provider,
+    my_eval_provider,
+    my_llm_provider,
+    my_prompt_provider,
+    my_parsing_pipe,
+    my_embedding_pipe,
+    my_vector_storage_pipe,
+    my_search_pipe,
+    my_rag_pipe,
+    my_streaming_rag_pipe,
+    my_eval_pipe,
+    my_ingestion_pipeline,
+    my_search_pipeline,
+    my_rag_pipeline,
+    my_streaming_rag_pipeline,
+    my_eval_pipeline
+)
+
+config = R2RConfig.from_json("path/to/my_config.json")
+builder = R2RAppBuilder(config=config)
+
+builder = (
+    builder.with_app(MyCustomR2RApp)
+    .with_provider_factory(MyCustomProviderFactory)
+    .with_pipe_factory(MyCustomPipeFactory)
+    .with_pipeline_factory(MyCustomPipelineFactory)
+    .with_vector_db_provider(my_vector_db_provider)
+    .with_embedding_provider(my_embedding_provider)
+    .with_eval_provider(my_eval_provider)
+    .with_llm_provider(my_llm_provider)
+    .with_prompt_provider(my_prompt_provider)
+    .with_parsing_pipe(my_parsing_pipe)
+    .with_embedding_pipe(my_embedding_pipe)
+    .with_vector_storage_pipe(my_vector_storage_pipe)
+    .with_search_pipe(my_search_pipe)
+    .with_rag_pipe(my_rag_pipe)
+    .with_streaming_rag_pipe(my_streaming_rag_pipe)
+    .with_eval_pipe(my_eval_pipe)
+    .with_ingestion_pipeline(my_ingestion_pipeline)
+    .with_search_pipeline(my_search_pipeline)
+    .with_rag_pipeline(my_rag_pipeline)
+    .with_streaming_rag_pipeline(my_streaming_rag_pipeline)
+    .with_eval_pipeline(my_eval_pipeline)
+)
+
+r2r_app = builder.build()
+```
+
+
+## Summary
+
+This comprehensive guide shows how to configure and build an `R2RApp` using the `R2RAppBuilder`, allowing you to customize various components and providers to fit your specific needs. By following these steps, you can effectively set up and customize an R2R application to suit your specific needs, leveraging the flexibility and power of the R2R framework.
