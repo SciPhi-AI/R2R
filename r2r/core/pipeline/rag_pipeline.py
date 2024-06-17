@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any, Optional
 
@@ -6,6 +7,7 @@ from ..abstractions.search import KGSearchSettings, VectorSearchSettings
 from ..logging.kv_logger import KVLoggingSingleton
 from ..logging.run_manager import RunManager, manage_run
 from ..pipes.base_pipe import AsyncPipe, AsyncState
+from ..utils import to_async_generator
 from .base_pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
@@ -22,8 +24,8 @@ class RAGPipeline(Pipeline):
         run_manager: Optional[RunManager] = None,
     ):
         super().__init__(pipe_logger, run_manager)
-        self.parsing_pipe = None
         self.search_pipeline = None
+        self.rag_pipeline = None
 
     async def run(
         self,
@@ -51,28 +53,55 @@ class RAGPipeline(Pipeline):
                     "search_pipeline must be set before running the RAG pipeline"
                 )
 
-            search_results = await self.search_pipeline.run(
-                input,
-                state,
-                streaming,
-                run_manager,
-                vector_search_settings=vector_search_settings,
-                kg_search_settings=kg_search_settings,
+            async def multi_query_generator(input):
+                tasks = []
+                async for query in input:
+                    task = asyncio.create_task(
+                        self.search_pipeline.run(
+                            to_async_generator([query]),
+                            state,
+                            streaming,
+                            run_manager,
+                            vector_search_settings=vector_search_settings,
+                            kg_search_settings=kg_search_settings,
+                            *args,
+                            **kwargs,
+                        )
+                    )
+                    tasks.append((query, task))
+
+                for query, task in tasks:
+                    yield (query, await task)
+
+            rag_results = await self.rag_pipeline.run(
+                input=multi_query_generator(
+                    input
+                ),  # to_async_generator([(input, search_results)]),
+                state=state,
+                streaming=streaming,
+                run_manager=run_manager,
+                rag_generation_config=rag_generation_config,
                 *args,
                 **kwargs,
             )
-            print("search_results = ", search_results)
-            return search_results
+            print("rag_results = ", rag_results)
 
     def add_pipe(
         self,
         pipe: AsyncPipe,
         add_upstream_outputs: Optional[list[dict[str, str]]] = None,
+        rag_pipe: bool = True,
         *args,
         **kwargs,
     ) -> None:
         logger.debug(f"Adding pipe {pipe.config.name} to the RAGPipeline")
-        return super().add_pipe(pipe, add_upstream_outputs, *args, **kwargs)
+        if not rag_pipe:
+            raise ValueError(
+                "Only pipes that are part of the RAG pipeline can be added to the RAG pipeline"
+            )
+        if not self.rag_pipeline:
+            self.rag_pipeline = Pipeline()
+        self.rag_pipeline.add_pipe(pipe, add_upstream_outputs, *args, **kwargs)
 
     def set_search_pipeline(
         self,

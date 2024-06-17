@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Optional, Tuple
 
 from r2r.core import (
     AggregateSearchResult,
@@ -20,8 +20,7 @@ logger = logging.getLogger(__name__)
 
 class SearchRAGPipe(GeneratorPipe):
     class Input(AsyncPipe.Input):
-        query: list[str]
-        message: AsyncGenerator[AggregateSearchResult, None]
+        message: AsyncGenerator[Tuple[str, AggregateSearchResult], None]
 
     def __init__(
         self,
@@ -53,8 +52,19 @@ class SearchRAGPipe(GeneratorPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[LLMChatCompletion, None]:
-        context = await self._collect_context(input)
-        messages = self._get_message_payload("\n".join(input.query), context)
+        context = ""
+        search_iteration = 1
+        total_results = 0
+        sel_query = None
+        async for query, search_results in input.message:
+            if search_iteration == 1:
+                sel_query = query
+            context_piece, total_results = await self._collect_context(
+                query, search_results, search_iteration, total_results
+            )
+            context += context_piece
+            search_iteration += 1
+        messages = self._get_message_payload(sel_query, context)
 
         response = self.llm_provider.get_completion(
             messages=messages, generation_config=rag_generation_config
@@ -80,18 +90,34 @@ class SearchRAGPipe(GeneratorPipe):
                 "content": self.prompt_provider.get_prompt(
                     self.config.task_prompt,
                     inputs={
-                        "query": "\n".join(query),
+                        "query": query,
                         "context": context,
                     },
                 ),
             },
         ]
 
-    async def _collect_context(self, input: Input) -> str:
-        iteration = 0
-        context = ""
-        async for result in input.message:
-            context += f"Result {iteration+1}:\n{result.metadata['text']}\n\n"
-            iteration += 1
-
-        return context
+    async def _collect_context(
+        self,
+        query: str,
+        results: AggregateSearchResult,
+        iteration: int,
+        total_results: int,
+    ) -> Tuple[str, int]:
+        context = f"Query:\n{query}\n\n"
+        context += f"Vector Search Results({iteration}):\n"
+        it = total_results + 1
+        for result in results.vector_search_results:
+            context += f"[{it}]: {result.metadata['text']}\n\n"
+            it += 1
+        total_results = (
+            it - 1
+        )  # Update total_results based on the last index used
+        context += f"Knowledge Graph Search Results({iteration}):\n"
+        for result in results.kg_search_results:
+            context += f"[{it}]: {result}\n\n"
+            it += 1
+        total_results = (
+            it - 1
+        )  # Update total_results based on the last index used
+        return context, total_results
