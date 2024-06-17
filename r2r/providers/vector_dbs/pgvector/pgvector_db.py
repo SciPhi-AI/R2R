@@ -61,11 +61,20 @@ class PGVectorDB(VectorDBProvider):
     def _create_document_info_table(self):
         with self.vx.Session() as sess:
             with sess.begin():
+                try:
+                    # Enable uuid-ossp extension
+                    sess.execute(
+                        text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
+                    )
+                except exc.ProgrammingError as e:
+                    logger.error(f"Error enabling uuid-ossp extension: {e}")
+                    raise
+
                 query = f"""
                 CREATE TABLE IF NOT EXISTS document_info_{self.config.collection_name} (
                     document_id UUID PRIMARY KEY,
                     title TEXT,
-                    user_id UUID,
+                    user_id UUID NULL,
                     version TEXT,
                     size_in_bytes INT,
                     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -277,7 +286,7 @@ class PGVectorDB(VectorDBProvider):
         query = text(
             f"""
             SELECT * FROM hybrid_search_{self.config.collection_name}(
-                cast(:query_text as TEXT), cast(:query_embedding as VECTOR), cast(:match_limit as INT), 
+                cast(:query_text as TEXT), cast(:query_embedding as VECTOR), cast(:match_limit as INT),
                 cast(:full_text_weight as FLOAT), cast(:semantic_weight as FLOAT), cast(:rrf_k as INT),
                 cast(:filter_condition as JSONB)
             )
@@ -363,9 +372,9 @@ class PGVectorDB(VectorDBProvider):
                     metadata = EXCLUDED.metadata;
             """
             )
-        with self.vx.Session() as sess:
-            sess.execute(query, db_entry)
-            sess.commit()
+            with self.vx.Session() as sess:
+                sess.execute(query, db_entry)
+                sess.commit()
 
     def delete_documents_info(self, document_ids: list[str]) -> None:
         placeholders = ", ".join(

@@ -25,7 +25,7 @@ class MultiSearchPipe(LoggableAsyncPipe):
         **kwargs,
     ):
         self.query_transform_pipe = query_transform_pipe
-        self.search_pipe = inner_search_pipe
+        self.vector_search_pipe = inner_search_pipe
         if (
             not query_transform_pipe.config.name
             == inner_search_pipe.config.name
@@ -72,8 +72,8 @@ class MultiSearchPipe(LoggableAsyncPipe):
             **kwargs,
         )
 
-        async for search_result in await self.search_pipe.run(
-            self.search_pipe.Input(message=query_generator),
+        async for search_result in await self.vector_search_pipe.run(
+            self.vector_search_pipe.Input(message=query_generator),
             state,
             *args,
             **kwargs,
@@ -89,7 +89,7 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
         }
     )
 
-    def create_search_pipe(self, *args, **kwargs):
+    def create_vector_search_pipe(self, *args, **kwargs):
         """
         A factory method to create a search pipe.
 
@@ -128,7 +128,7 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
         # Create search pipe override and pipes
         inner_search_pipe = kwargs.get(
             "multi_inner_search_pipe_override", None
-        ) or super().create_search_pipe(*args, **kwargs)
+        ) or super().create_vector_search_pipe(*args, **kwargs)
 
         # TODO - modify `create_..._pipe` to allow naming the pipe
         inner_search_pipe.config.name = multi_search_config.name

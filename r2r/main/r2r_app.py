@@ -401,7 +401,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
             self.run_manager, "ingest_documents_app"
         ) as run_id:
             try:
-                return await self.aingest_documents(request.documents)
+                results = await self.aingest_documents(request.documents)
+                return {"results": results}
 
             except HTTPException as he:
                 raise he
@@ -745,12 +746,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
 
                 # Call aingest_files with the correct order of arguments
-                return await self.aingest_files(
+                results = await self.aingest_files(
                     files=files,
                     metadatas=metadatas,
                     document_ids=ids_list,
                     user_ids=user_ids_list,
                 )
+                return {"results": results}
 
             except HTTPException as he:
                 raise HTTPException(he.status_code, he.detail) from he
@@ -1215,6 +1217,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
         **kwargs: Any,
     ):
         ids = self.providers.vector_db.delete_by_metadata(keys, values)
+        if len(ids) == 0:
+            raise ValueError("No entries found for deletion.")
         self.providers.vector_db.delete_documents_info(ids)
 
         return {"results": "Entries deleted successfully."}

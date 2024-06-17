@@ -64,6 +64,9 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         self.logging_path = config.logging_path or os.getenv(
             "LOCAL_DB_PATH", "local.sqlite"
         )
+        logger.info(
+            f"Initializing LocalKVLoggingProvider with config: {config}"
+        )
         if not self.logging_path:
             raise ValueError(
                 "Please set the environment variable LOCAL_DB_PATH."
@@ -216,6 +219,9 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
         self.log_info_table = config.log_info_table
         self.config = config
         self.conn = None
+        logger.info(
+            f"Initializing PostgresKVLoggingProvider with config: {config}"
+        )
         if not os.getenv("POSTGRES_DBNAME"):
             raise ValueError(
                 "Please set the environment variable POSTGRES_DBNAME."
@@ -363,6 +369,10 @@ class RedisLoggingConfig(LoggingConfig):
 
 class RedisKVLoggingProvider(KVLoggingProvider):
     def __init__(self, config: RedisLoggingConfig):
+        logger.info(
+            f"Initializing RedisKVLoggingProvider with config: {config}"
+        )
+
         if not all(
             [
                 os.getenv("REDIS_CLUSTER_IP"),

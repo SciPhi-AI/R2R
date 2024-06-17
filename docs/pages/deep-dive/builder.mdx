@@ -2,35 +2,56 @@
 
 ### Introduction
 
-R2R comes complete with a FastAPI-powered REST API which provides endpoints for various operations related to the Retrieval-Augmented Generation (RAG) pipeline. These features support uploading and ingesting files, performing searches, generating RAG completions, as well as document management. Document management includes deletion based on filters and document updates. Lastly, the application includes end to end observability of the default R2R pipeline.
+R2R has support for uploading and ingesting files, search, RAG, as well as document management. Document management includes deletion based on filters and document updates. R2R also has advanced features, including hybrid search, reranking, advanced RAG techniques, multimodal RAG, knowledge graph RAG, and more.
 
 R2R API specifications are included [here](/getting-started/r2r-api).
 
-### Application Creation and Launching
+### Building an instance of R2R
 
-The R2R application is created using the `R2RAppBuilder` class, which leverages factories and the builder pattern to assemble various components based on the provided configuration. Here's an example of how the application is typically created in the R2R workflow:
+An instance of R2R is general created using the `R2RAppBuilder` class, which leverages the builder pattern to assemble various components based on the provided configuration and overrides.
 
 ```python copy
 from r2r import R2RConfig, R2RAppBuilder
 
-config = R2RConfig.from_json("path/to/config.json")
-app = R2RAppBuilder(config).build().app
+config = R2RConfig.from_json("path/to/my_config.json") # defaults to `config.json` in R2R main
+r2r_app = R2RAppBuilder(config).build()
 ```
 
-In this example, the configuration is loaded from a `config.json` file. The `R2RAppBuilder` creates the necessary providers, pipes, and pipelines based on the configuration, and the FastAPI application is set up with the necessary endpoints and middleware.
 
-To launch the application, you can use a web server such as Uvicorn:
+### Serving R2R
 
-```bash filename="bash" copy
-uvicorn path.to.your.module:app --host 0.0.0.0 --port 8000
+R2R is designed such that every available function, e.g. `r2r_app.ingest_files(..)`, can be accessed via a RESTful API. The server can be launched with the `serve` method of your R2R instance, and the FastAPI application can be extracted for running via uuvicorn / gunicorn by calling `.app`.
+
+
+```python copy
+r2r_app.serve()
+# alternatively, access app directly via r2r_app.app
 ```
 
-In this example, Uvicorn runs the FastAPI application specified by the `app` variable. The application will be accessible at `http://localhost:8000`.
+
+In this example, the configuration is loaded from a `config.json` file. The `R2RAppBuilder` creates the necessary providers, pipes, and pipelines based on the configuration.
 
 ### Overriding Existing Endpoints
 
 Existing endpoints can be modified by creating a custom application which overrides the existing endpoints.
 
+```python copy
+async def my_aingest_files(
+    self,
+    files: list[UploadFile],
+    metadatas: Optional[list[dict]] = None,
+    document_ids: Optional[list[uuid.UUID]] = None,
+    user_ids: Optional[list[Optional[uuid.UUID]]] = None,
+    versions: Optional[list[str]] = None,
+    skip_document_info: bool = False,
+    *args: Any,
+    **kwargs: Any,
+):
+    # Implement your custom logic here
+    # Ensure it adheres to the expected signature and functionality
+
+r2r_app.aingest_files = my_aingest_files
+```
 
 
 ### Adding Custom Endpoints
@@ -54,78 +75,3 @@ async def custom_endpoint():
 ```
 
 In this example, after creating the R2R application, a custom endpoint is added using the `@app.get("/custom_endpoint")` decorator. The `custom_endpoint` function defines the logic for handling requests to the `/custom_endpoint` route.
-
-### API Endpoints
-
-Refer to the [documentation here](/getting-started/r2r-api).
-
-
-### Custom Pipelines
-
-#### Ingestion Pipeline
-
-The ingestion pipeline is responsible for parsing, embedding, and storing documents in a vector database. Here’s a concise overview of the key features:
-
-- **Parsing**: Supports multiple data formats like CSV, DOCX, HTML, JSON, Markdown, PDF, PPTX, TXT, XLSX, and various image formats.
-- **Embedding**: Converts parsed documents into embeddings using specified models.
-- **Vector Storage**: Stores embeddings in a vector database.
-
-You can create a custom ingestion pipeline by implementing your own logic and adding it to the pipeline. Here’s an example of a custom ingestion pipeline:
-
-```python copy
-class CustomIngestionPipeline(IngestionPipeline):
-    def __init__(self, pipes):
-        super().__init__()
-        self.add_pipe(pipes.custom_parsing_pipe)
-        self.add_pipe(pipes.custom_embedding_pipe)
-        self.add_pipe(pipes.custom_vector_storage_pipe)
-```
-
-#### RAG Pipeline
-
-The RAG pipeline handles search and retrieval of documents, followed by generating answers using an LLM. There are two types of RAG pipelines: regular and streaming.
-
-- **Regular RAG Pipeline**: Performs the search and retrieval in a single step and generates a complete response.
-- **Streaming RAG Pipeline**: Streams the search results and LLM response in chunks.
-
-Here’s an example of creating a custom RAG pipeline:
-
-```python copy
-class CustomRAGPipeline(RAGPipeline):
-    def __init__(self, pipes, streaming=False):
-       
-
- super().__init__()
-        search_pipe = pipes.custom_search_pipe
-        rag_pipe = pipes.custom_streaming_rag_pipe if streaming else pipes.custom_rag_pipe
-
-        self.add_pipe(search_pipe)
-        self.add_pipe(
-            rag_pipe,
-            add_upstream_outputs=[
-                {
-                    "prev_pipe_name": search_pipe.config.name,
-                    "prev_output_field": "search_results",
-                    "input_field": "raw_search_results",
-                },
-                {
-                    "prev_pipe_name": search_pipe.config.name,
-                    "prev_output_field": "search_queries",
-                    "input_field": "query",
-                },
-            ],
-        )
-```
-
-#### Evaluation Pipeline
-
-The evaluation pipeline assesses the quality of generated completions. Here’s an example of creating a custom evaluation pipeline:
-
-```python copy
-class CustomEvalPipeline(EvalPipeline):
-    def __init__(self, pipes):
-        super().__init__()
-        self.add_pipe(pipes.custom_eval_pipe)
-```
-
-This documentation provides a comprehensive overview of the R2R application, including configuration, application creation, custom pipelines, and using the R2RClient. For more detailed information, refer to the relevant sections in the documentation.

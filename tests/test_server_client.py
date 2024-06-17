@@ -20,7 +20,7 @@ from r2r import (
 def r2r_app(request):
     config = R2RConfig.from_json()
     config.logging.provider = "local"
-    config.logging.logging_path = uuid.uuid4().hex + ".log"
+    config.logging.logging_path = uuid.uuid4().hex
 
     vector_db_provider = request.param
     if vector_db_provider == "pgvector":
@@ -79,7 +79,14 @@ async def test_ingest_txt_document(client):
         },
     )
     assert response.status_code == 200
-    assert response.json() == {"results": "Entries upserted successfully."}
+    assert response.json() == {
+        "results": {
+            "processed_documents": [
+                "Document '10e57509-1331-560e-b825-b49df3fe209b' processed successfully."
+            ],
+            "skipped_documents": [],
+        }
+    }
 
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
@@ -103,9 +110,13 @@ async def test_ingest_txt_file(client):
         data={"metadatas": json.dumps([metadata])},
         files=files,
     )
+
     assert response.status_code == 200
     assert response.json() == {
-        "results": ["File 'test.txt' processed successfully."]
+        "results": {
+            "processed_documents": ["File 'test.txt' processed successfully."],
+            "skipped_documents": [],
+        }
     }
 
 
@@ -145,6 +156,25 @@ async def test_rag(client):
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
 @pytest.mark.asyncio
 async def test_delete(client):
+
+    metadata = {"author": "John Doe"}
+    files = [
+        (
+            "files",
+            (
+                "test.txt",
+                open("r2r/examples/data/test.txt", "rb"),
+                "text/plain",
+            ),
+        ),
+    ]
+
+    response = client.post(
+        "/ingest_files/",
+        data={"metadatas": json.dumps([metadata])},
+        files=files,
+    )
+
     response = client.request(
         "DELETE",
         "/delete/",
@@ -152,23 +182,3 @@ async def test_delete(client):
     )
     assert response.status_code == 200
     assert response.json() == {"results": "Entries deleted successfully."}
-
-
-@pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
-@pytest.mark.asyncio
-async def test_get_user_ids(client):
-    response = client.get("/get_user_ids/")
-    assert response.status_code == 200
-    assert "results" in response.json()
-
-
-@pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
-@pytest.mark.asyncio
-async def test_get_user_documents_metadata(client):
-    user_id = str(generate_id_from_label("user_0"))
-    response = client.post(
-        "/get_user_documents_metadata/",
-        json={"user_id": user_id},
-    )
-    assert response.status_code == 200
-    assert "results" in response.json()

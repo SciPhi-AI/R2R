@@ -329,10 +329,8 @@ class Collection:
         Returns:
             Collection: The deleted collection.
         """
-        from sqlalchemy.schema import DropTable
-
         with self.client.Session() as sess:
-            sess.execute(DropTable(self.table, if_exists=True))
+            sess.execute(text(f"DROP TABLE IF EXISTS {self.name} CASCADE"))
             sess.commit()
 
         return self

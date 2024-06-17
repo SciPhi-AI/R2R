@@ -11,9 +11,9 @@ We will start by ingesting a list of assorted document types to showcase search,
 ## Setup
 
 <Callout type="info" emoji="🐳">
-   The quickstart guide which follows below assumes that you have installed R2R locally via `pip install r2r`. 
-   
-   If you would prefer to do the heavy lifting with Docker instead then refer to the [installation instructions](/getting-started/installation?tab=Installing+with+Docker+%F0%9F%90%B3) and then proceed to the [client-server cookbook](/cookbooks/client-server).
+   The quickstart guide which follows below assumes that you have installed R2R locally via `pip install r2r`.
+
+   If you would prefer to do the heavy lifting with Docker instead then refer to the [Docker installation instructions](/getting-started/installation?tab=Installing+with+Docker+%F0%9F%90%B3) and then proceed to the [client-server cookbook](/cookbooks/client-server).
 </Callout>
 
 
@@ -71,13 +71,13 @@ Developers can interact with R2R in several ways, including through our [open-so
     ```ansi
     [
         DocumentInfo(
-            document_id=UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'), 
-            version='v0', 
-            size_in_bytes=73353, 
-            metadata={'title': 'aristotle.txt', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'}, 
+            document_id=UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'),
+            version='v0',
+            size_in_bytes=73353,
+            metadata={'title': 'aristotle.txt', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'},
             title='aristotle.txt'
-        ), 
-        ... 
+        ),
+        ...
     ]
     ```
 
@@ -89,11 +89,11 @@ Developers can interact with R2R in several ways, including through our [open-so
     ```plaintext
     [
         UserStats(
-            user_id=UUID('063edaf8-3e63-4cb9-a4d6-a855f36376c3'), 
+            user_id=UUID('063edaf8-3e63-4cb9-a4d6-a855f36376c3'),
             num_files=9,
-            total_size_in_bytes=4809510, 
+            total_size_in_bytes=4809510,
             document_ids=[UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'), ...]
-        ), 
+        ),
     ]
     ```
 </details>
@@ -114,17 +114,17 @@ The basic RAG functionality of the R2R framework allows you to search ingested d
 
     ```plaintext
     {
-        'id': UUID('93c44e73-8e95-50c2-84af-6a42f070b552'), 
-        'score': 0.7739712385010018, 
-        'metadata': 
+        'id': UUID('93c44e73-8e95-50c2-84af-6a42f070b552'),
+        'score': 0.7739712385010018,
+        'metadata':
         {
-            'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd', 
-            'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484', 
+            'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd',
+            'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484',
             'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began
 
-    the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 
+    the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.',
             'title': 'aristotle.txt',
-            'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 
+            'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3',
             'associatedQuery': 'Who was Aristotle?'
         }
     },
@@ -146,23 +146,23 @@ python -m r2r.examples.quickstart rag --query="What was Ubers profit in 2020?"
 ...
 {'results': [
     ChatCompletion(
-        id='chatcmpl-9RCB5xUbDuI1f0vPw3RUO7BWQImBN', 
+        id='chatcmpl-9RCB5xUbDuI1f0vPw3RUO7BWQImBN',
         choices=[
             Choice(
-                finish_reason='stop', 
-                index=0, 
-                logprobs=None, 
+                finish_reason='stop',
+                index=0,
+                logprobs=None,
                 message=ChatCompletionMessage(
-                    content="Uber's profit in 2020 was a net loss of $6,768 million [10].", 
-                    role='assistant', 
-                    function_call=None, 
+                    content="Uber's profit in 2020 was a net loss of $6,768 million [10].",
+                    role='assistant',
+                    function_call=None,
                     tool_calls=None)
                 )
-            ], 
-        created=1716268695, 
-        model='gpt-3.5-turbo-0125', 
-        object='chat.completion', 
-        system_fingerprint=None, 
+            ],
+        created=1716268695,
+        model='gpt-3.5-turbo-0125',
+        object='chat.completion',
+        system_fingerprint=None,
         usage=CompletionUsage(completion_tokens=20, prompt_tokens=1470, total_tokens=1490)
     )
 ]}
@@ -183,7 +183,7 @@ python -m r2r.examples.quickstart rag --query="What was Lyfts profit in 2020?" -
 r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.json - 2024-05-20 22:27:31,890
 ...
 <search>["{\"id\":\"808c47c5-ebef-504a-a230-aa9ddcfbd87 .... </search>
-<completion>Lyft reported a net loss of $1,752,857,000 in 2020 according to [2]. Therefore, Lyft did not make a profit in 2020.</completion>                                                      
+<completion>Lyft reported a net loss of $1,752,857,000 in 2020 according to [2]. Therefore, Lyft did not make a profit in 2020.</completion>
 ```
 </details>
 
@@ -249,59 +249,6 @@ Afterwards, we may confirm complete user documentation through the `documents_in
 
 ## Advanced Features
 
-<details open>
-<summary>Multi-Modal Support</summary>
-An `.png` image of a desktop screen was included as part of the files processed during the demo ingestion. By default, the `ImageParser` uses an OpenAI vision model (gpt-4o) to transcribe the image and embed that transcription. We can then search these results directly, as evidenced below:
-
-```bash filename="bash" copy
-python -m r2r.examples.quickstart search --query="What is shown on the user screen?"
-```
-
-**Demo Output:**
-
-```ansi
-{'id': UUID('a2a6044b-3643-5c8b-99a2-19f3d5169cd4'), 'score': 0.4199612099317459, 'metadata': {'document_id': 'dd8ed784-4826-523b-9c24-93409cea93f7', 'extraction_id': 'f20b8ff5-a555-5caa-a996-98b58a9bcd16', 'text': '1. **Top Menu and Tabs:**\n   - At the very top of the window, the title bar of the VSCode application shows the project directory name `R2R-DEV-2`.\n   - Below the title bar, there are several tabs, indicating open files:\n     - `config.json`\n     - `dry_run.py`\n     - `test.pptx`\n     - `parsing.py` (active tab)\n     - `test.txt`\n     - `test.html`', 'title': 'screen_shot.png', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'image_type': 'png', 'query': 'What is shown on the user screen?'}}
-{'id': UUID('053db868-5acc-5e81-b68a-653aff566d9a'), 'score': 0.39689371815723873, 'metadata': {'document_id': 'dd8ed784-4826-523b-9c24-93409cea93f7', 'extraction_id': 'f20b8ff5-a555-5caa-a996-98b58a9bcd16', 'text': '2. **Sidebar (File Explorer):**\n   - On the left side, there is a vertical sidebar showing the file explorer with the structure of the project directory `R2R-DEV-2`.\n   - The file explorer tree expands to show various files and directories, including:\n     - `examples`\n     - `data`\n     - A file `test.txt`\n     - A file `uber_2021.pdf`\n     - A directory `servers` containing a file `__init__.py`\n     - A directory `integrations` containing various files including `llms`', 'title': 'screen_shot.png', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'image_type': 'png', 'query': 'What is shown on the user screen?'}}
-{'id': UUID('5c57cd4c-a7d2-5003-b59d-3637b545a32c'), 'score': 0.34990526831895197, 'metadata': {'document_id': '8d78f34d-f795-5c82-a90f-18b8cc3a883c', 'extraction_id': '8c11b793-b744-5f73-bb76-23cb45c36538', 'text': 'users with a contextual, intuitive interface, continually evolve features and functionality, and deliver safety andtrust.\nWe intend to continue to inv\nest in new platform offerings that we believe will further strengthen our platform and existing offerings.We\n believe  that  all  of  these  synergies  serve  the  customer  experience,  enabling  us  to  attract  new  platform  users  and  to  deepen  engagement  with  existingplatform', 'title': 'uber_2021.pdf', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 'query': 'What is shown on the user screen?'}}
-```
-</details>
-
-<details>
-<summary>LLM-Powered Evaluation</summary>
-The R2R framework can evaluate the relevance and accuracy of generated responses using LLM-powered evaluation. Run the following command to perform an evaluation:
-
-```bash filename="bash" copy
-python -m r2r.examples.quickstart evaluate
-```
-
-**Demo Output:**
-
-```ansi
-{'results': [{'query_context_relevancy': 0.5, 'answer_grounding': 1.0}]}
-```
-
-This output is consistent with the default query, context, and answer, shown below.
-
-```plaintext
-> Query
-    What is the meaning of life?
-> Context
-    Search Results:
-        1. The meaning of life is 42.
-        2. The car is red.
-        3. The meaning of life is to help others.
-        4. The car is blue.
-        5. The meaning of life is to learn and grow.
-        6. The car is green.
-        7. The meaning of life is to make a difference.
-        8. The car is yellow.
-        9. The meaning of life is to enjoy the journey.
-        10. The car is black.
-> Completion
-    The meaning of life is to help others, learn and grow, and to make a difference.
-```
-</details>
-
 <details>
 <summary>Logging</summary>
 Pipes naturally integrate with your selected logging provider. R2R pipelines for ingestion, search, and RAG create comprehensive logs that allow for total observability.
@@ -316,12 +263,22 @@ python -m r2r.examples.quickstart logs
 ...
 {'results': [
     {
-        'run_id': UUID('9b70a494-c5c9-4485-b7a5-675f0eacb4a0'), 
-        'run_type': 'ingestion', 
+        'run_id': UUID('9b70a494-c5c9-4485-b7a5-675f0eacb4a0'),
+        'run_type': 'ingestion',
         'entries': [
             {'key': 'extraction', 'value': '{"data": "\\n\\nA Project of One\'s Ow ....
 ```
 </details>
+
+- [Client-Server Architecture](/cookbooks/client-server)
+- [Multiple LLM Providers](/cookbooks/multiple-llms)
+- [Local RAG](/cookbooks/local-rag)
+- [Hybrid Search](/cookbooks/hybrid-search)
+- [Search w/ Reranking](/cookbooks/rerank-search)
+- [Multimodal RAG](/cookbooks/multimodal-rag)
+- [Knowledge Graphs](/cookbooks/knowledge-graph)
+- [Dashboard](/cookbooks/dashboard)
+
 
 ## Next Steps
 This R2R quickstart guides you through the basics of setting up and using the R2R framework to run a Retrieval-Augmented Generation (RAG) pipeline, but this is just a start! [Checkout our cookbooks](../cookbooks/starter) for more advanced tutorials.

@@ -24,14 +24,12 @@ class KGConfig(ProviderConfig):
     kg_agent_prompt: Optional[str] = "kg_agent"
 
     def validate(self) -> None:
-        if not self.provider:
-            raise ValueError("Provider must be set.")
-        if self.provider and self.provider not in self.supported_providers:
+        if self.provider not in self.supported_providers:
             raise ValueError(f"Provider '{self.provider}' is not supported.")
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["None", "neo4j"]
+        return [None, "neo4j"]
 
 
 class KGProvider(ABC):

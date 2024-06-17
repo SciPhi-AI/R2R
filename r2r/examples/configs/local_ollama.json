@@ -6,11 +6,7 @@
     "batch_size": 32
   },
   "eval": {
-    "provider": "local",
-    "frequency": 0.0,
-    "llm":{
-      "provider": "litellm"
-    }
+    "provider": "None"
   },
   "ingestion":{
     "excluded_parsers": {

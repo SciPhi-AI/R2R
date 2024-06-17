@@ -6,7 +6,7 @@ The R2R framework uses factories along with a builder pattern to create the `R2R
 
 This example demonstrates how to override the default vector search module with a custom web search module by leveraging the `R2RAppBuilder`.
 
-```python copy
+```python filename="r2r/examples/scripts/run_web_search.py" copy
 from r2r import (
     GenerationConfig,
     R2RAppBuilder,
@@ -31,37 +31,44 @@ if __name__ == "__main__":
     print(result)
 ```
 
+The file above can be executed by calling the example script from the terminal, after setting a valid [Serper API key](https://serper.dev/).
+
+```bash
+export SERPER_API_KEY=...
+python -m r2r.examples.scripts.run_web_search --query="Who is Aristotle?
+```
+
 Example output:
 ```bash filename="bash" copy
 [
     ChatCompletion(
-        id='chatcmpl-9V8I0uzunubIn4rg4c56gG5Z33yFU', 
+        id='chatcmpl-9V8I0uzunubIn4rg4c56gG5Z33yFU',
         choices=[
             Choice(
-                finish_reason='stop', 
-                index=0, 
-                logprobs=None, 
+                finish_reason='stop',
+                index=0,
+                logprobs=None,
                 message=ChatCompletionMessage(
-                    content='Aristotle was an ancient Greek philosopher and scientist who is considered one of the 
-                    greatest intellectual figures in Western history [1]. He was a polymath whose writings covered 
-                    a broad range of subjects, including natural sciences, philosophy, and linguistics [2]. Along 
-                    with Socrates and Plato, Aristotle laid much of the groundwork for Western philosophy [4]. He 
-                    made significant contributions to various fields such as logic, criticism, rhetoric, physics, 
-                    biology, and psychology [6]. Aristotle was also known for systemizing deductive logic and writing 
-                    on physical sciences [8]. He was born in 384 BC in Stagira, a Greek seaport, and was the son of 
-                    Nichomachus, the court physician to the Macedonian royal family [7][9]. Additionally, Aristotle 
-                    was a student of Plato and the teacher of Alexander the Great, which further solidified his lasting 
+                    content='Aristotle was an ancient Greek philosopher and scientist who is considered one of the
+                    greatest intellectual figures in Western history [1]. He was a polymath whose writings covered
+                    a broad range of subjects, including natural sciences, philosophy, and linguistics [2]. Along
+                    with Socrates and Plato, Aristotle laid much of the groundwork for Western philosophy [4]. He
+                    made significant contributions to various fields such as logic, criticism, rhetoric, physics,
+                    biology, and psychology [6]. Aristotle was also known for systemizing deductive logic and writing
+                    on physical sciences [8]. He was born in 384 BC in Stagira, a Greek seaport, and was the son of
+                    Nichomachus, the court physician to the Macedonian royal family [7][9]. Additionally, Aristotle
+                    was a student of Plato and the teacher of Alexander the Great, which further solidified his lasting
                     impact on Western philosophy [13].',
-                    role='assistant', 
-                    function_call=None, 
+                    role='assistant',
+                    function_call=None,
                     tool_calls=None
                 )
             )
-        ], 
-        created=1717207060, 
+        ],
+        created=1717207060,
         model='gpt-4o-2024-05-13',
-        object='chat.completion', 
-        system_fingerprint='fp_319be4768e', 
+        object='chat.completion',
+        system_fingerprint='fp_319be4768e',
         usage=CompletionUsage(completion_tokens=180, prompt_tokens=742, total_tokens=922)
     )
 ]
@@ -71,7 +78,7 @@ Example output:
 
 In this more advanced example, we use a factory override to customize the pipeline further by including a query transformation pipe and a multi-search pipe.
 
-```python copy
+```python filename="r2r/examples/scripts/run_web_multi_search.py" copy
 from r2r import (
     GenerationConfig,
     R2RAppBuilder,
@@ -101,7 +108,7 @@ if __name__ == "__main__":
             ### Response:
             """,
         "input_types": {
-            "num_outputs": "int", 
+            "num_outputs": "int",
             "message": "str"
         },
     }
@@ -111,7 +118,7 @@ if __name__ == "__main__":
         R2RAppBuilder()
         .with_pipe_factory(R2RPipeFactoryWithMultiSearch)
         .build(
-            # override inputs consumed by `R2RPipeFactoryWithMultiSearch.create_search_pipe`
+            # override inputs consumed by `R2RPipeFactoryWithMultiSearch.create_vector_search_pipe`
             multi_inner_search_pipe_override=web_search_pipe,
             query_generation_template_override=synthetic_query_generation_template,
         )
@@ -124,6 +131,12 @@ if __name__ == "__main__":
     )
 
     print(f"Final Result:\n\n{result}")
+```
+
+
+```bash
+export SERPER_API_KEY=...
+python -m r2r.examples.scripts.run_web_multi_search --query="Who is Aristotle?
 ```
 
 Example output:
@@ -197,7 +210,7 @@ The `R2RPipeFactory` is responsible for creating the pipes used in the `R2RApp`.
 - **create_parsing_pipe**: Creates the parsing pipe.
 - **create_embedding_pipe**: Creates the embedding pipe.
 - **create_vector_storage_pipe**: Creates the vector storage pipe.
-- **create_search_pipe**: Creates the search pipe.
+- **create_vector_search_pipe**: Creates the search pipe.
 - **create_rag_pipe**: Creates the RAG pipe.
 - **create_eval_pipe**: Creates the evaluation pipe.
 
@@ -214,11 +227,11 @@ The `R2RPipelineFactory` is responsible for creating the various pipelines used 
 
 ### Example - Custom Pipe Factory
 
-The `R2RPipeFactoryWithMultiSearch` class shown below demonstrates how to override the `create_search_pipe` method of the `R2RPipeFactory` to use a `MultiSearchPipe`.
+The `R2RPipeFactoryWithMultiSearch` class shown below demonstrates how to override the `create_vector_search_pipe` method of the `R2RPipeFactory` to use a `MultiSearchPipe`.
 
 ```python copy
 class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
-    def create_search_pipe(self, *args, **kwargs):
+    def create_vector_search_pipe(self, *args, **kwargs):
         multi_search_config = MultiSearchPipe.PipeConfig()
         task_prompt_name = kwargs.get("task_prompt_name") or f"{multi_search_config.name}_task_prompt"
 
@@ -237,7 +250,7 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
                 **(kwargs.get("query_generation_template_override") or self.QUERY_GENERATION_TEMPLATE),
             )
 
-        inner_search_pipe = kwargs.get("multi_inner_search_pipe_override", None) or super().create_search_pipe(*args, **kwargs)
+        inner_search_pipe = kwargs.get("multi_inner_search_pipe_override", None) or super().create_vector_search_pipe(*args, **kwargs)
         inner_search_pipe.config.name = multi_search_config.name
 
         return MultiSearchPipe(

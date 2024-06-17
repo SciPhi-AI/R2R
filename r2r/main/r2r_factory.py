@@ -78,10 +78,6 @@ class R2RProviderFactory:
             embedding_provider = SentenceTransformerEmbeddingProvider(
                 embedding
             )
-        elif embedding.provider == "dummy":
-            from r2r.providers.embeddings import DummyEmbeddingProvider
-
-            embedding_provider = DummyEmbeddingProvider(embedding)
         elif embedding is None:
             embedding_provider = None
         else:
@@ -103,7 +99,7 @@ class R2RProviderFactory:
                 llm_provider=llm_provider,
                 prompt_provider=prompt_provider,
             )
-        elif eval_config.provider == "none":
+        elif eval_config.provider is None:
             eval_provider = None
         else:
             raise ValueError(
@@ -233,8 +229,8 @@ class R2RPipeFactory:
             or self.create_kg_storage_pipe(*args, **kwargs),
             vector_storage_pipe=vector_storage_pipe_override
             or self.create_vector_storage_pipe(*args, **kwargs),
-            search_pipe=search_pipe_override
-            or self.create_search_pipe(*args, **kwargs),
+            vector_search_pipe=search_pipe_override
+            or self.create_vector_search_pipe(*args, **kwargs),
             rag_pipe=rag_pipe_override
             or self.create_rag_pipe(*args, **kwargs),
             streaming_rag_pipe=streaming_rag_pipe_override
@@ -251,6 +247,9 @@ class R2RPipeFactory:
         return ParsingPipe(excluded_parsers=excluded_parsers or {})
 
     def create_embedding_pipe(self, *args, **kwargs) -> Any:
+        if self.config.embedding.provider is None:
+            return None
+
         from r2r.core import RecursiveCharacterTextSplitter
         from r2r.pipes import EmbeddingPipe
 
@@ -275,7 +274,29 @@ class R2RPipeFactory:
             embedding_batch_size=self.config.embedding.batch_size,
         )
 
+    def create_vector_storage_pipe(self, *args, **kwargs) -> Any:
+        if self.config.embedding.provider is None:
+            return None
+
+        from r2r.pipes import VectorStoragePipe
+
+        return VectorStoragePipe(vector_db_provider=self.providers.vector_db)
+
+    def create_vector_search_pipe(self, *args, **kwargs) -> Any:
+        if self.config.embedding.provider is None:
+            return None
+
+        from r2r.pipes import VectorSearchPipe
+
+        return VectorSearchPipe(
+            vector_db_provider=self.providers.vector_db,
+            embedding_provider=self.providers.embedding,
+        )
+
     def create_kg_pipe(self, *args, **kwargs) -> Any:
+        if self.config.kg.provider is None:
+            return None
+
         from r2r.core import RecursiveCharacterTextSplitter
         from r2r.pipes import KGExtractionPipe
 
@@ -299,23 +320,13 @@ class R2RPipeFactory:
         )
 
     def create_kg_storage_pipe(self, *args, **kwargs) -> Any:
+        if self.config.kg.provider is None:
+            return None
+
         from r2r.pipes import KGStoragePipe
 
         return KGStoragePipe(
             kg_provider=self.providers.kg,
-            embedding_provider=self.providers.embedding,
-        )
-
-    def create_vector_storage_pipe(self, *args, **kwargs) -> Any:
-        from r2r.pipes import VectorStoragePipe
-
-        return VectorStoragePipe(vector_db_provider=self.providers.vector_db)
-
-    def create_search_pipe(self, *args, **kwargs) -> Any:
-        from r2r.pipes import VectorSearchPipe
-
-        return VectorSearchPipe(
-            vector_db_provider=self.providers.vector_db,
             embedding_provider=self.providers.embedding,
         )
 
@@ -372,29 +383,29 @@ class R2RPipelineFactory:
 
     def create_search_pipeline(self, *args, **kwargs) -> SearchPipeline:
         search_pipeline = SearchPipeline()
-        search_pipeline.add_pipe(self.pipes.search_pipe)
+        search_pipeline.add_pipe(self.pipes.vector_search_pipe)
         return search_pipeline
 
     def create_rag_pipeline(
         self, streaming: bool = False, *args, **kwargs
     ) -> RAGPipeline:
-        search_pipe = self.pipes.search_pipe
+        vector_search_pipe = self.pipes.vector_search_pipe
         rag_pipe = (
             self.pipes.streaming_rag_pipe if streaming else self.pipes.rag_pipe
         )
 
         rag_pipeline = RAGPipeline()
-        rag_pipeline.add_pipe(search_pipe)
+        rag_pipeline.add_pipe(vector_search_pipe)
         rag_pipeline.add_pipe(
             rag_pipe,
             add_upstream_outputs=[
                 {
-                    "prev_pipe_name": search_pipe.config.name,
+                    "prev_pipe_name": vector_search_pipe.config.name,
                     "prev_output_field": "search_results",
                     "input_field": "raw_search_results",
                 },
                 {
-                    "prev_pipe_name": search_pipe.config.name,
+                    "prev_pipe_name": vector_search_pipe.config.name,
                     "prev_output_field": "search_queries",
                     "input_field": "query",
                 },

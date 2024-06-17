@@ -58,7 +58,12 @@ class R2RConfig:
 
         # Validate and set the configuration
         for section, keys in R2RConfig.REQUIRED_KEYS.items():
-            self._validate_config_section(default_config, section, keys)
+            # Check the keys when provider is set
+            if (
+                "provider" in default_config[section]
+                and default_config[section]["provider"] != "None"
+            ):
+                self._validate_config_section(default_config, section, keys)
             setattr(self, section, default_config[section])
 
         self.app = self.app  # for type hinting
@@ -69,9 +74,9 @@ class R2RConfig:
         }
         self.embedding = EmbeddingConfig.create(**self.embedding)
         self.kg = KGConfig.create(**self.kg)
-        eval_llm = self.eval.pop("llm")
+        eval_llm = self.eval.pop("llm", None)
         self.eval = EvalConfig.create(
-            **self.eval, llm=LLMConfig.create(**eval_llm)
+            **self.eval, llm=LLMConfig.create(**eval_llm) if eval_llm else None
         )
         self.completions = LLMConfig.create(**self.completions)
         self.logging = LoggingConfig.create(**self.logging)

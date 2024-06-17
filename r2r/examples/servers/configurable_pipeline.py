@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 from enum import Enum
+from typing import Optional
 
 from fastapi import FastAPI
 
@@ -18,22 +19,6 @@ logger = logging.getLogger(__name__)
 current_file_path = os.path.dirname(__file__)
 configs_path = os.path.join(current_file_path, "..", "..", "..")
 
-CONFIG_OPTIONS = {
-    "default": None,
-    "local_ollama": os.path.join(
-        current_file_path, "..", "configs", "local_ollama.json"
-    ),
-    "local_ollama_rerank": os.path.join(
-        current_file_path, "..", "configs", "local_ollama_rerank.json"
-    ),
-    "pgvector": os.path.join(
-        current_file_path, "..", "configs", "pgvector.json"
-    ),
-    "neo4j_kg": os.path.join(
-        current_file_path, "..", "configs", "neo4j_kg.json"
-    ),
-}
-
 
 class PipelineType(Enum):
     QNA = "qna"
@@ -42,18 +27,20 @@ class PipelineType(Enum):
 
 
 def r2r_app(
-    config_name: str = "default",
+    config_name: Optional[str] = "default",
     pipeline_type: PipelineType = PipelineType.QNA,
+    config_path: Optional[str] = None,
 ) -> FastAPI:
-    config_name = os.getenv("CONFIG_OPTION") or config_name
+    if config_path and config_name:
+        raise ValueError("Cannot specify both config and config_name")
 
-    if config_path := CONFIG_OPTIONS.get(config_name):
-        logger.info(f"Using config path: {config_path}")
+    if config_path:
         config = R2RConfig.from_json(config_path)
     else:
-        default_config_path = os.path.join(configs_path, "config.json")
-        logger.info(f"Using default config path: {default_config_path}")
-        config = R2RConfig.from_json(default_config_path)
+        config_name = os.getenv("CONFIG_OPTION") or config_name
+        if config_name not in R2RAppBuilder.CONFIG_OPTIONS:
+            raise ValueError(f"Invalid config name: {config_name}")
+        config = R2RConfig.from_json(R2RAppBuilder.CONFIG_OPTIONS[config_name])
 
     if (
         config.embedding.provider == "openai"
@@ -103,7 +90,7 @@ if __name__ == "__main__":
         "--config",
         type=str,
         default="default",
-        choices=CONFIG_OPTIONS.keys(),
+        choices=R2RAppBuilder.CONFIG_OPTIONS.keys(),
         help="Configuration option for the pipe",
     )
     parser.add_argument(

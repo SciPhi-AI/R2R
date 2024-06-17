@@ -1,5 +1,5 @@
 from .openai.openai_base import OpenAIEmbeddingProvider
-from .setence_transformer.sentence_transformer_base import (
+from .sentence_transformer.sentence_transformer_base import (
     SentenceTransformerEmbeddingProvider,
 )
 

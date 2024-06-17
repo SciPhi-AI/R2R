@@ -247,7 +247,14 @@ class IngestionPipeline(Pipeline):
         *args: Any,
         **kwargs: Any,
     ):
+        self.state = state or AsyncState()
+
         async with manage_run(run_manager, self.pipeline_type):
+            await run_manager.log_run_info(
+                key="pipeline_type",
+                value=self.pipeline_type,
+                is_info_log=True,
+            )
             if self.parsing_pipe is None:
                 raise ValueError(
                     "parsing_pipeline must be set before running the ingestion pipeline"

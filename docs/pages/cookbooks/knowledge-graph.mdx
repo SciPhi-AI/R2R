@@ -37,7 +37,7 @@ After selecting a knowledge graph provider, the default R2R `IngestionPipeline` 
 </details>
 
 
-R2R uses Neo4j as the primary knowledge graph provider. Follow [these instructions](https://neo4j.com/docs/operations-manual/current/installation/) to setup a Neo4j database. Ensure that your Neo4j database is running with version `>=5.13.0` with `APOC` installed. After setup, set the relevant environment variables as shown (or modify them accordingly):
+R2R uses Neo4j as the primary knowledge graph provider. Follow [these instructions](https://neo4j.com/docs/operations-manual/current/installation/) if you would lke to setup a Neo4j database locally. Ensure that your Neo4j database is running with version `>=5.13.0` with `APOC` installed. After setup, set the relevant environment variables as shown (or modify them accordingly):
 
 ```bash filename="User Terminal"
 pip install 'r2r[kg]'
@@ -52,14 +52,22 @@ export OPENAI_API_KEY=...
 
 #### Construction
 
-We are now ready to construct an example knowledge graph. The snippet below builds R2R and ingests two sample documents.
+We are now ready to construct an example knowledge graph. Execute the script below to ingest two sample documents and perform automatic knowledge graph construction.
 
-```python filename="r2r/examples/scripts/basic_kg_cookbook.py"
+
+```bash filename="User Terminal" copy
+python -m r2r.examples.scripts.basic_kg_cookbook
+```
+
+The script executed above is straightforward in its construction. It builds an R2R from the Neo4j configuration file and runs ingest_documents on two simple hypothetical documents containing information about John, Paul, Google, and Microsoft. Let's look at the code relevant to building the knowledge graph:
+
+
+```python filename="r2r/examples/scripts/basic_kg_cookbook.py" copy
 from r2r import R2RAppBuilder, Document
 
 if __name__ == "__main__":
     r2r_app = R2RAppBuilder(from_config="neo4j_kg").build()
-    
+
     r2r_app.ingest_documents([
         Document(
             type="txt",
@@ -75,9 +83,9 @@ if __name__ == "__main__":
 ```
 
 #### Navigation
-When running R2R with knowledge graphs enabled, ingested documents and files will automatically have named entities and relationships extracted and stored. Let's explicitly confirm that executing the code above did so:
+When running R2R with knowledge graphs enabled, ingested documents and files will automatically have named entities and relationships extracted and stored. The basic cookbook script we executed at the start included code to help us inspect the graph that was built:
 
-```python filename="r2r/examples/scripts/basic_kg_cookbook.py"
+```python filename="r2r/examples/scripts/basic_kg_cookbook.py" copy
     # Get the KG provider
     neo4j_kg = r2r_app.providers.kg
 
@@ -94,10 +102,10 @@ When running R2R with knowledge graphs enabled, ingested documents and files wil
     for triplet in relationships:
         source, relation, target = triplet
         print(f"{source} -[{relation.label}]-> {target} ")
-        
+
 ```
 
-The code shown above will result in the following output:
+When executed it results in the following output:
 
 ```bash filename="Local Terminal"
 ...
@@ -117,39 +125,28 @@ Locating Microsoft:
  [EntityNode(label='company', embedding=None, properties={'name': 'Microsoft'}, name='Microsoft')]
 
 Relationships:
-John -[HAS_EMPLOYER]-> Google 
-Paul -[KNOWS]-> John 
-Paul -[WORKS_AT]-> Microsoft 
-Paul -[KNOWS]-> John 
-John -[HAS_EMPLOYER]-> Google 
-Paul -[WORKS_AT]-> Microsoft 
+John -[HAS_EMPLOYER]-> Google
+Paul -[KNOWS]-> John
+Paul -[WORKS_AT]-> Microsoft
 ```
 
 
 By default, the knowledge graph construction occurs concurrently with document chunking and embedding. Moreover, extracted knowledge graph nodes include embeddings to allow for semantic search over the knowledge graph.
 
-We can execute the script above by running the following
 
-```bash filename="User Terminal"
-python -m r2r.examples.scripts.basic_kg_cookbook
-```
-
-
-The script will also run the code below which directly demonstrates the relevant functionalities:
-
-```python filename="r2r/examples/scripts/basic_kg_cookbook.py"
+```python filename="r2r/examples/scripts/basic_kg_cookbook.py" copy
 # Search the vector database
-search_results = r2r_app.search(query="Who is john")
-print('\nSearch Results:\n', search_results)
+vector_search_results = r2r_app.search(query="Who is john")
+print('\nVector Search Results:\n', vector_search_results)
 
 # Semantic search over the knowledge graph
 from r2r.core import VectorStoreQuery
-node_result = neo4j_kg.vector_query(
+node_search_result = neo4j_kg.vector_query(
     VectorStoreQuery(
         query_embedding=r2r_app.providers.embedding.get_embedding("A person"),
     )
 )
-print('\nNode Result:', node_result)
+print('\nNode Search Result:', node_search_result)
 
 # Structured query
 structured_query = """
@@ -160,23 +157,23 @@ LIMIT 10;
 """
 print("\nExecuting query:\n", structured_query)
 structured_result = neo4j_kg.structured_query(structured_query)
-print("Structured Results:\n", structured_result)
+print("Structured Query Results:\n", structured_result)
 ```
 
 ```bash filename="Local Terminal"
-Search Results:
+Vector Search Results:
 {
     'results': [
         {
-            'id': UUID('6661944c-cf52-51e3-904a-e0795ad78c2c'), 
-            'score': 0.684847530035599, 
+            'id': UUID('6661944c-cf52-51e3-904a-e0795ad78c2c'),
+            'score': 0.684847530035599,
             'metadata': {
-                'document_id': '7d22aea3-abb5-4ccd-a64a-8321ec1c2296', 
-                'extraction_id': '4a993741-aceb-5736-816a-45bc12364390', 
-                'text': 'John is a person that works at Google.', 
-                'title': None, 
-                'version': 'v0', 
-                'chunk_order': 1, 
+                'document_id': '7d22aea3-abb5-4ccd-a64a-8321ec1c2296',
+                'extraction_id': '4a993741-aceb-5736-816a-45bc12364390',
+                'text': 'John is a person that works at Google.',
+                'title': None,
+                'version': 'v0',
+                'chunk_order': 1,
                 'associatedQuery': 'Who is john'
             }
         },
@@ -184,16 +181,16 @@ Search Results:
     ]
 }
 
-Node Result: ([EntityNode(label='person', embedding=None, properties={}, name='Paul')], [0.6374393105506897])
+Node Search Result: ([EntityNode(label='person', embedding=None, properties={}, name='Paul')], [0.6374393105506897])
 
 Executing query:
- 
+
     MATCH (p1:person)-[:KNOWS]->(p2:person)
     RETURN p1.name AS Person1, p2.name AS Person2
     ORDER BY p1.name
     LIMIT 10;
-    
-Structured Results:
+
+Structured Query Results:
  [{'Person1': 'Paul', 'Person2': 'John'}]
 ```
 
@@ -237,7 +234,7 @@ def main(max_entries=50, delete=False):
             subcategories=["COMPANY", "SCHOOL", "NON-PROFIT", "OTHER"],
         ),
         EntityType(
-            "LOCATION", 
+            "LOCATION",
             subcategories=["CITY", "STATE", "COUNTRY", "OTHER"]
         ),
         EntityType("PERSON"),
@@ -382,7 +379,7 @@ Once ingestion has completed we will proceed to using the structured query metho
 ```bash
 ## Locating all founders
 
-Executing query: 
+Executing query:
 MATCH (p:PERSON)-[:FOUNDED]->(c)
 RETURN p.id AS Founder, c.id AS Company
 ORDER BY c.id
@@ -396,7 +393,7 @@ Results:
 ```bash
 ## Locating 2-time founders
 
-Executing query: 
+Executing query:
 MATCH (p:PERSON)-[:FOUNDED]->(c:ORGANIZATION)
 WITH p.id AS Person, COUNT(c) AS CompaniesCount
 RETURN Person, CompaniesCount
@@ -410,7 +407,7 @@ Results:
 ```bash
 ### Locating companies with AI products
 
-Executing query: 
+Executing query:
 MATCH (c:ORGANIZATION)-[r:PRODUCT]->(t)
 WHERE t.id CONTAINS 'AI'
 RETURN DISTINCT c.id AS Company, t.id AS Product
@@ -424,7 +421,7 @@ Results:
 ```bash
 ## Locating AI founders with optional info
 
-Executing query: 
+Executing query:
 MATCH (p:PERSON)-[:FOUNDED]->(c:ORGANIZATION)-[:INDUSTRY]->(i:INDUSTRY)
 WHERE i.id CONTAINS 'saas'
 OPTIONAL MATCH (p)-[:EDUCATED_AT]->(s:ORGANIZATION)

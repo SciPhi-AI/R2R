@@ -58,7 +58,7 @@ terms[E]	In equations[F]
 
 S a M
 
-S a P	
+S a P
 What is today called Aristotelian logic with its types of syllogism (methods of logical argument),[32] Aristotle himself would have labelled "analytics". The term "logic" he reserved to mean dialectics.
 
 Metaphysics

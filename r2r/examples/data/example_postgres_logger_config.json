@@ -1,5 +1,0 @@
-{
-  "logging": {
-    "provider": "postgres"
-  }
-}
