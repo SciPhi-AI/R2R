@@ -90,7 +90,7 @@ if __name__ == "__main__":
         "--config",
         type=str,
         default="default",
-        choices=CONFIG_OPTIONS.keys(),
+        choices=R2RAppBuilder.CONFIG_OPTIONS.keys(),
         help="Configuration option for the pipe",
     )
     parser.add_argument(

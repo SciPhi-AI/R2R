@@ -11,8 +11,8 @@ We will start by ingesting a list of assorted document types to showcase search,
 ## Setup
 
 <Callout type="info" emoji="🐳">
-   The quickstart guide which follows below assumes that you have installed R2R locally via `pip install r2r`. 
-   
+   The quickstart guide which follows below assumes that you have installed R2R locally via `pip install r2r`.
+
    If you would prefer to do the heavy lifting with Docker instead then refer to the [Docker installation instructions](/getting-started/installation?tab=Installing+with+Docker+%F0%9F%90%B3) and then proceed to the [client-server cookbook](/cookbooks/client-server).
 </Callout>
 
@@ -71,13 +71,13 @@ Developers can interact with R2R in several ways, including through our [open-so
     ```ansi
     [
         DocumentInfo(
-            document_id=UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'), 
-            version='v0', 
-            size_in_bytes=73353, 
-            metadata={'title': 'aristotle.txt', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'}, 
+            document_id=UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'),
+            version='v0',
+            size_in_bytes=73353,
+            metadata={'title': 'aristotle.txt', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'},
             title='aristotle.txt'
-        ), 
-        ... 
+        ),
+        ...
     ]
     ```
 
@@ -89,11 +89,11 @@ Developers can interact with R2R in several ways, including through our [open-so
     ```plaintext
     [
         UserStats(
-            user_id=UUID('063edaf8-3e63-4cb9-a4d6-a855f36376c3'), 
+            user_id=UUID('063edaf8-3e63-4cb9-a4d6-a855f36376c3'),
             num_files=9,
-            total_size_in_bytes=4809510, 
+            total_size_in_bytes=4809510,
             document_ids=[UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'), ...]
-        ), 
+        ),
     ]
     ```
 </details>
@@ -114,17 +114,17 @@ The basic RAG functionality of the R2R framework allows you to search ingested d
 
     ```plaintext
     {
-        'id': UUID('93c44e73-8e95-50c2-84af-6a42f070b552'), 
-        'score': 0.7739712385010018, 
-        'metadata': 
+        'id': UUID('93c44e73-8e95-50c2-84af-6a42f070b552'),
+        'score': 0.7739712385010018,
+        'metadata':
         {
-            'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd', 
-            'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484', 
+            'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd',
+            'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484',
             'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began
 
-    the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 
+    the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.',
             'title': 'aristotle.txt',
-            'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 
+            'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3',
             'associatedQuery': 'Who was Aristotle?'
         }
     },
@@ -146,23 +146,23 @@ python -m r2r.examples.quickstart rag --query="What was Ubers profit in 2020?"
 ...
 {'results': [
     ChatCompletion(
-        id='chatcmpl-9RCB5xUbDuI1f0vPw3RUO7BWQImBN', 
+        id='chatcmpl-9RCB5xUbDuI1f0vPw3RUO7BWQImBN',
         choices=[
             Choice(
-                finish_reason='stop', 
-                index=0, 
-                logprobs=None, 
+                finish_reason='stop',
+                index=0,
+                logprobs=None,
                 message=ChatCompletionMessage(
-                    content="Uber's profit in 2020 was a net loss of $6,768 million [10].", 
-                    role='assistant', 
-                    function_call=None, 
+                    content="Uber's profit in 2020 was a net loss of $6,768 million [10].",
+                    role='assistant',
+                    function_call=None,
                     tool_calls=None)
                 )
-            ], 
-        created=1716268695, 
-        model='gpt-3.5-turbo-0125', 
-        object='chat.completion', 
-        system_fingerprint=None, 
+            ],
+        created=1716268695,
+        model='gpt-3.5-turbo-0125',
+        object='chat.completion',
+        system_fingerprint=None,
         usage=CompletionUsage(completion_tokens=20, prompt_tokens=1470, total_tokens=1490)
     )
 ]}
@@ -183,7 +183,7 @@ python -m r2r.examples.quickstart rag --query="What was Lyfts profit in 2020?" -
 r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.json - 2024-05-20 22:27:31,890
 ...
 <search>["{\"id\":\"808c47c5-ebef-504a-a230-aa9ddcfbd87 .... </search>
-<completion>Lyft reported a net loss of $1,752,857,000 in 2020 according to [2]. Therefore, Lyft did not make a profit in 2020.</completion>                                                      
+<completion>Lyft reported a net loss of $1,752,857,000 in 2020 according to [2]. Therefore, Lyft did not make a profit in 2020.</completion>
 ```
 </details>
 
@@ -263,8 +263,8 @@ python -m r2r.examples.quickstart logs
 ...
 {'results': [
     {
-        'run_id': UUID('9b70a494-c5c9-4485-b7a5-675f0eacb4a0'), 
-        'run_type': 'ingestion', 
+        'run_id': UUID('9b70a494-c5c9-4485-b7a5-675f0eacb4a0'),
+        'run_type': 'ingestion',
         'entries': [
             {'key': 'extraction', 'value': '{"data": "\\n\\nA Project of One\'s Ow ....
 ```

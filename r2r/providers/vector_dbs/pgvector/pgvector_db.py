@@ -277,7 +277,7 @@ class PGVectorDB(VectorDBProvider):
         query = text(
             f"""
             SELECT * FROM hybrid_search_{self.config.collection_name}(
-                cast(:query_text as TEXT), cast(:query_embedding as VECTOR), cast(:match_limit as INT), 
+                cast(:query_text as TEXT), cast(:query_embedding as VECTOR), cast(:match_limit as INT),
                 cast(:full_text_weight as FLOAT), cast(:semantic_weight as FLOAT), cast(:rrf_k as INT),
                 cast(:filter_condition as JSONB)
             )

@@ -12,30 +12,30 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      
+
       - name: Google Auth
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
-      
+
       - name: Set up Cloud SDK
         uses: 'google-github-actions/setup-gcloud@v2'
-      
+
       - name: Configure SDK
         run: 'gcloud auth configure-docker us-east1-docker.pkg.dev'
-      
+
       - name: Docker Auth
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-      
+
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
@@ -46,7 +46,7 @@ jobs:
             emrgntcmplxty/r2r:main
             us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r:main
           platforms: linux/amd64,linux/arm64
-      
+
       - name: Trigger Dependent Repositories
         if: success()
         run: |
