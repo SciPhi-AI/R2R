@@ -5,13 +5,13 @@ from typing import Any, AsyncGenerator, Optional
 from r2r.core import (
     AsyncPipe,
     AsyncState,
-    GenerationConfig,
     LLMChatCompletion,
     LLMProvider,
     PipeType,
     PromptProvider,
     VectorSearchResult,
 )
+from r2r.core.abstractions.llm import GenerationConfig
 
 from .abstractions.generator_pipe import GeneratorPipe
 

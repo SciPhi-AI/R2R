@@ -14,9 +14,21 @@ from .abstractions.document import (
     extract_triples,
 )
 from .abstractions.llama_abstractions import VectorStoreQuery
-from .abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
+from .abstractions.llm import (
+    GenerationConfig,
+    LLMChatCompletion,
+    LLMChatCompletionChunk,
+)
 from .abstractions.prompt import Prompt
-from .abstractions.search import VectorSearchRequest, VectorSearchResult
+from .abstractions.search import (
+    AggregateSearchResult,
+    KGSearchRequest,
+    KGSearchResult,
+    KGSearchSettings,
+    VectorSearchRequest,
+    VectorSearchResult,
+    VectorSearchSettings,
+)
 from .abstractions.user import UserStats
 from .abstractions.vector import Vector, VectorEntry, VectorType
 from .logging.kv_logger import (
@@ -63,7 +75,7 @@ from .pipes.loggable_pipe import LoggableAsyncPipe
 from .providers.embedding_provider import EmbeddingConfig, EmbeddingProvider
 from .providers.eval_provider import EvalConfig, EvalProvider
 from .providers.kg_provider import KGConfig, KGProvider
-from .providers.llm_provider import GenerationConfig, LLMConfig, LLMProvider
+from .providers.llm_provider import LLMConfig, LLMProvider
 from .providers.prompt_provider import PromptConfig, PromptProvider
 from .providers.vector_db_provider import VectorDBConfig, VectorDBProvider
 from .utils import (
@@ -101,6 +113,11 @@ __all__ = [
     "Vector",
     "VectorSearchRequest",
     "VectorSearchResult",
+    "VectorSearchSettings",
+    "KGSearchRequest",
+    "KGSearchResult",
+    "KGSearchSettings",
+    "AggregateSearchResult",
     "AsyncPipe",
     "PipeType",
     "AsyncState",

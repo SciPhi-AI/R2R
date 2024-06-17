@@ -3,7 +3,9 @@
 import uuid
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from .llm import GenerationConfig
 
 
 class VectorSearchRequest(BaseModel):
@@ -63,3 +65,16 @@ class AggregateSearchResult(BaseModel):
             ],
             "kg_search_results": self.kg_search_results,
         }
+
+
+class VectorSearchSettings(BaseModel):
+    search_filters: Optional[dict[str, Any]] = Field(default_factory=dict)
+    search_limit: int = 10
+    do_hybrid_search: bool = False
+
+
+class KGSearchSettings(BaseModel):
+    use_kg: bool = False
+    agent_generation_config: Optional[GenerationConfig] = Field(
+        default_factory=GenerationConfig
+    )

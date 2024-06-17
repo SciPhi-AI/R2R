@@ -4,8 +4,8 @@ from typing import Any, Optional
 
 from r2r.core import (
     AsyncState,
-    GenerationConfig,
     KGProvider,
+    KGSearchSettings,
     KVLoggingSingleton,
     LLMProvider,
     PipeType,
@@ -58,7 +58,7 @@ class KGAgentSearchPipe(GeneratorPipe):
         input: GeneratorPipe.Input,
         state: AsyncState,
         run_id: uuid.UUID,
-        rag_generation_config: GenerationConfig,
+        kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,
     ):
@@ -70,7 +70,8 @@ class KGAgentSearchPipe(GeneratorPipe):
             messages = self._get_message_payload(formatted_prompt)
 
             result = self.llm_provider.get_completion(
-                messages=messages, generation_config=rag_generation_config
+                messages=messages,
+                generation_config=kg_search_settings.agent_generation_config,
             )
 
             extraction = result.choices[0].message.content

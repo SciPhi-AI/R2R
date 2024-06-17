@@ -7,13 +7,13 @@ from bs4 import BeautifulSoup, Comment
 from r2r import (
     Document,
     EntityType,
-    GenerationConfig,
     KGAgentSearchPipe,
     Pipeline,
     R2RAppBuilder,
     Relation,
     run_pipeline,
 )
+from r2r.core.abstractions.llm import GenerationConfig
 
 
 def get_all_yc_co_directory_urls():

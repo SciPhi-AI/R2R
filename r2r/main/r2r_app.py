@@ -10,7 +10,6 @@ from typing import Any, Optional, Union
 from fastapi import Body, FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
 
 from r2r.core import (
     AnalysisTypes,
@@ -18,7 +17,6 @@ from r2r.core import (
     DocumentInfo,
     DocumentType,
     FilterCriteria,
-    GenerationConfig,
     KVLoggingSingleton,
     LogProcessor,
     RunManager,
@@ -27,10 +25,23 @@ from r2r.core import (
     manage_run,
     to_async_generator,
 )
+from r2r.core.abstractions.llm import GenerationConfig
 from r2r.pipes import EvalPipe
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
-from .r2r_abstractions import R2RPipelines, R2RProviders
+from .r2r_abstractions import (
+    DeleteRequest,
+    EvalRequest,
+    IngestDocumentsRequest,
+    KGSearchSettings,
+    R2RPipelines,
+    R2RProviders,
+    RAGRequest,
+    SearchRequest,
+    UpdateDocumentsRequest,
+    UpdatePromptRequest,
+    VectorSearchSettings,
+)
 from .r2r_config import R2RConfig
 
 MB_CONVERSION_FACTOR = 1024 * 1024
@@ -256,11 +267,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         self.providers.prompt.add_prompt(name, template, input_types)
         return {"results": f"Prompt '{name}' added successfully."}
 
-    class UpdatePromptRequest(BaseModel):
-        name: str
-        template: Optional[str] = None
-        input_types: Optional[dict[str, str]] = None
-
     @telemetry_event("UpdatePrompt")
     async def update_prompt_app(self, request: UpdatePromptRequest):
         """Update a prompt's template and/or input types."""
@@ -394,9 +400,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
             ],
         }
 
-    class IngestDocumentsRequest(BaseModel):
-        documents: list[Document]
-
     @telemetry_event("IngestDocuments")
     async def ingest_documents_app(self, request: IngestDocumentsRequest):
         async with manage_run(
@@ -491,9 +494,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
         self.providers.vector_db.upsert_documents_info(document_infos_modified)
         return {"results": "Documents updated."}
-
-    class UpdateDocumentsRequest(BaseModel):
-        documents: list[Document]
 
     @telemetry_event("UpdateDocuments")
     async def update_documents_app(self, request: UpdateDocumentsRequest):
@@ -864,11 +864,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
             for file in files:
                 file.file.close()
 
-    class UpdateFilesRequest(BaseModel):
-        files: list[UploadFile] = File(...)
-        metadatas: Optional[str] = Form(None)
-        ids: str = Form("")
-
     @telemetry_event("UpdateFiles")
     async def update_files_app(
         self,
@@ -922,9 +917,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def asearch(
         self,
         query: str,
-        search_filters: Optional[dict] = None,
-        search_limit: int = 10,
-        do_hybrid_search: bool = False,
+        vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
+        kg_search_settings: KGSearchSettings = KGSearchSettings(),
         *args: Any,
         **kwargs: Any,
     ):
@@ -932,13 +926,11 @@ class R2RApp(metaclass=AsyncSyncMeta):
         async with manage_run(self.run_manager, "search_app") as run_id:
             t0 = time.time()
 
-            search_filters = search_filters or {}
             results = await self.search_pipeline.run(
                 input=to_async_generator([query]),
-                search_filters=search_filters,
-                search_limit=search_limit,
+                vector_settings=vector_search_settings,
+                kg_settings=kg_search_settings,
                 run_manager=self.run_manager,
-                do_hybrid_search=do_hybrid_search,
             )
 
             t1 = time.time()
@@ -953,27 +945,12 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
             return {"results": results.dict()}
 
-    class VectorSearchRequest(BaseModel):
-        query: str
-        search_filters: Optional[str] = None
-        search_limit: int = 10
-        do_hybrid_search: Optional[bool] = False
-
     @telemetry_event("Search")
-    async def search_app(self, request: VectorSearchRequest):
+    async def search_app(self, request: SearchRequest):
         async with manage_run(self.run_manager, "search_app") as run_id:
             try:
-                search_filters = (
-                    {}
-                    if request.search_filters is None
-                    or request.search_filters == "null"
-                    else json.loads(request.search_filters)
-                )
                 return await self.asearch(
-                    request.query,
-                    search_filters,
-                    request.search_limit,
-                    request.do_hybrid_search,
+                    request.query, request.vector_settings, request.kg_settings
                 )
             except Exception as e:
                 # TODO - Make this more modular
@@ -1067,13 +1044,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 raise HTTPException(
                     status_code=500, detail="Internal Server Error"
                 )
-
-    class RAGRequest(BaseModel):
-        message: str
-        search_filters: Optional[str] = None
-        search_limit: int = 10
-        rag_generation_config: Optional[str] = None
-        streaming: Optional[bool] = None
 
     @telemetry_event("RAG")
     async def rag_app(self, request: RAGRequest):
@@ -1180,11 +1150,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         )
         return {"results": result}
 
-    class EvalRequest(BaseModel):
-        query: str
-        context: str
-        completion: str
-
     @telemetry_event("Evaluate")
     async def evaluate_app(self, request: EvalRequest):
         async with manage_run(self.run_manager, "evaluate_app") as run_id:
@@ -1224,10 +1189,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         self.providers.vector_db.delete_documents_info(ids)
 
         return {"results": "Entries deleted successfully."}
-
-    class DeleteRequest(BaseModel):
-        keys: list[str]
-        values: list[Union[bool, int, str]]
 
     @telemetry_event("Delete")
     async def delete_app(self, request: DeleteRequest = Body(...)):
