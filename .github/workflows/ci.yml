@@ -61,4 +61,4 @@ jobs:
           poetry install
 
       - name: Run tests
-        run: poetry run pytest tests/ -k "not redis"  # Exclude tests that require Redis
+        run: poetry run pytest tests/ -k "not redis and not sentence_transformer"  # Exclude tests that require Redis and SentenceTransformerEmbeddingProvider
