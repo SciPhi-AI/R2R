@@ -7,6 +7,7 @@ from r2r.core import (
     EmbeddingProvider,
     EvalPipeline,
     EvalProvider,
+    GenerationConfig,
     IngestionPipeline,
     KGProvider,
     KGSearchSettings,
@@ -81,10 +82,9 @@ class SearchRequest(BaseModel):
 
 class RAGRequest(BaseModel):
     message: str
-    search_filters: Optional[str] = None
-    search_limit: int = 10
-    rag_generation_config: Optional[str] = None
-    streaming: Optional[bool] = None
+    vector_settings: VectorSearchSettings
+    kg_settings: KGSearchSettings
+    rag_generation_config: Optional[GenerationConfig] = None
 
 
 class EvalRequest(BaseModel):
