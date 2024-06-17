@@ -10,7 +10,7 @@ from r2r.core import (
     LLMProvider,
     PipeType,
     PromptProvider,
-    SearchResult,
+    VectorSearchResult,
 )
 
 from .abstractions.generator_pipe import GeneratorPipe
@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 
 class SearchRAGPipe(GeneratorPipe):
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[SearchResult, None]
+        message: AsyncGenerator[VectorSearchResult, None]
         query: list[str]
-        raw_search_results: Optional[list[SearchResult]] = None
+        raw_search_results: Optional[list[VectorSearchResult]] = None
 
     def __init__(
         self,

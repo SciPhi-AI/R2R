@@ -142,6 +142,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         self,
         config: R2RConfig,
         providers: R2RProviders,
+        pipes: R2RPipelines,
         pipelines: R2RPipelines,
         run_manager: Optional[RunManager] = None,
         do_apply_cors: bool = True,
@@ -150,6 +151,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     ):
         self.config = config
         self.providers = providers
+        self.pipes = pipes
         self.logging_connection = KVLoggingSingleton()
         self.ingestion_pipeline = pipelines.ingestion_pipeline
         self.search_pipeline = pipelines.search_pipeline
@@ -949,16 +951,16 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 is_info_log=False,
             )
 
-            return {"results": [result.dict() for result in results]}
+            return {"results": results.dict()}
 
-    class SearchRequest(BaseModel):
+    class VectorSearchRequest(BaseModel):
         query: str
         search_filters: Optional[str] = None
         search_limit: int = 10
         do_hybrid_search: Optional[bool] = False
 
     @telemetry_event("Search")
-    async def search_app(self, request: SearchRequest):
+    async def search_app(self, request: VectorSearchRequest):
         async with manage_run(self.run_manager, "search_app") as run_id:
             try:
                 search_filters = (

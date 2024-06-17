@@ -3,7 +3,7 @@ import os
 
 from openai import AsyncOpenAI, AuthenticationError, OpenAI
 
-from r2r.core import EmbeddingConfig, EmbeddingProvider, SearchResult
+from r2r.core import EmbeddingConfig, EmbeddingProvider, VectorSearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -180,7 +180,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     def rerank(
         self,
         query: str,
-        results: list[SearchResult],
+        results: list[VectorSearchResult],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
     ):

@@ -217,7 +217,7 @@ from r2r import (
     GenerationConfig,
     Pipeline,
     R2RAppBuilder,
-    KGAgentPipe,
+    KGAgentSearchPipe,
     Relation,
     run_pipeline,
 )
@@ -445,13 +445,13 @@ Results:
 Finally, we are in a position to automatically answer difficult to manage queries with a knowledge agent. The snippet below injects our custom schema into a generic few-shot prompt and uses gpt-4o to create a relevant query
 
 ```python filename="r2r/examples/scripts/advanced_kg_cookbook.py"
-    kg_agent_pipe = KGAgentPipe(
+    kg_agent_search_pipe = KGAgentSearchPipe(
         r2r_app.providers.kg, r2r_app.providers.llm, r2r_app.providers.prompt
     )
 
     # Define the pipeline
     kg_pipe = Pipeline()
-    kg_pipe.add_pipe(kg_agent_pipe)
+    kg_pipe.add_pipe(kg_agent_search_pipe)
 
     kg.update_agent_prompt(prompt_provider, entity_types, relations)
 

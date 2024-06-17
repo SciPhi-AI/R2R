@@ -2,7 +2,7 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Optional
 
-from ..abstractions.search import SearchResult
+from ..abstractions.search import VectorSearchResult
 from .base_provider import Provider, ProviderConfig
 
 
@@ -65,7 +65,7 @@ class EmbeddingProvider(Provider):
     def rerank(
         self,
         query: str,
-        results: list[SearchResult],
+        results: list[VectorSearchResult],
         stage: PipeStage = PipeStage.RERANK,
         limit: int = 10,
     ):

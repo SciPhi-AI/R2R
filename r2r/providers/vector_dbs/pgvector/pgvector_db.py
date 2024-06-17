@@ -9,11 +9,11 @@ from sqlalchemy import exc, text
 
 from r2r.core import (
     DocumentInfo,
-    SearchResult,
     UserStats,
     VectorDBConfig,
     VectorDBProvider,
     VectorEntry,
+    VectorSearchResult,
 )
 from r2r.vecs.client import Client
 from r2r.vecs.collection import Collection
@@ -238,7 +238,7 @@ class PGVectorDB(VectorDBProvider):
         limit: int = 10,
         *args,
         **kwargs,
-    ) -> list[SearchResult]:
+    ) -> list[VectorSearchResult]:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `search`."
@@ -249,7 +249,7 @@ class PGVectorDB(VectorDBProvider):
         }
 
         return [
-            SearchResult(id=ele[0], score=float(1 - ele[1]), metadata=ele[2])  # type: ignore
+            VectorSearchResult(id=ele[0], score=float(1 - ele[1]), metadata=ele[2])  # type: ignore
             for ele in self.collection.query(
                 data=query_vector,
                 limit=limit,
@@ -272,7 +272,7 @@ class PGVectorDB(VectorDBProvider):
         rrf_k: int = 20,  # typical value is ~2x the number of results you want
         *args,
         **kwargs,
-    ) -> list[SearchResult]:
+    ) -> list[VectorSearchResult]:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `hybrid_search`."
@@ -306,7 +306,7 @@ class PGVectorDB(VectorDBProvider):
         with self.vx.Session() as session:
             result = session.execute(query, params).fetchall()
         return [
-            SearchResult(id=row[0], score=1.0, metadata=row[-1])
+            VectorSearchResult(id=row[0], score=1.0, metadata=row[-1])
             for row in result
         ]
 

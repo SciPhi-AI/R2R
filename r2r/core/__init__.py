@@ -16,7 +16,7 @@ from .abstractions.document import (
 from .abstractions.llama_abstractions import VectorStoreQuery
 from .abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
 from .abstractions.prompt import Prompt
-from .abstractions.search import SearchRequest, SearchResult
+from .abstractions.search import VectorSearchRequest, VectorSearchResult
 from .abstractions.user import UserStats
 from .abstractions.vector import Vector, VectorEntry, VectorType
 from .logging.kv_logger import (
@@ -99,8 +99,8 @@ __all__ = [
     "VectorEntry",
     "VectorType",
     "Vector",
-    "SearchRequest",
-    "SearchResult",
+    "VectorSearchRequest",
+    "VectorSearchResult",
     "AsyncPipe",
     "PipeType",
     "AsyncState",

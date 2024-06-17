@@ -9,7 +9,7 @@ from r2r.core import (
     KVLoggingSingleton,
     LoggableAsyncPipe,
     PipeType,
-    SearchResult,
+    VectorSearchResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class SearchPipe(LoggableAsyncPipe):
         limit: int = 10,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[SearchResult, None]:
+    ) -> AsyncGenerator[VectorSearchResult, None]:
         pass
 
     @abstractmethod
@@ -59,5 +59,5 @@ class SearchPipe(LoggableAsyncPipe):
         run_id: uuid.UUID,
         *args: Any,
         **kwargs,
-    ) -> AsyncGenerator[SearchResult, None]:
+    ) -> AsyncGenerator[VectorSearchResult, None]:
         pass

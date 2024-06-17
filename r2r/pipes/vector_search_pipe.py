@@ -8,8 +8,8 @@ from r2r.core import (
     AsyncState,
     EmbeddingProvider,
     PipeType,
-    SearchResult,
     VectorDBProvider,
+    VectorSearchResult,
 )
 
 from .abstractions.search_pipe import SearchPipe
@@ -43,7 +43,7 @@ class VectorSearchPipe(SearchPipe):
         do_hybrid_search: bool,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[SearchResult, None]:
+    ) -> AsyncGenerator[VectorSearchResult, None]:
         search_filters_override = kwargs.get("search_filters", None)
         search_limit_override = kwargs.get("search_limit", None)
         search_limit = search_limit_override or self.config.search_limit
@@ -89,7 +89,7 @@ class VectorSearchPipe(SearchPipe):
         do_hybrid_search: bool = False,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[SearchResult, None]:
+    ) -> AsyncGenerator[VectorSearchResult, None]:
         search_queries = []
         search_results = []
         async for search_request in input.message:
