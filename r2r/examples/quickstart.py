@@ -40,12 +40,14 @@ class R2RQuickstart:
     ):
         if config_path and config_name:
             raise ValueError("Cannot specify both config and config_name")
-        
+
         if config_path:
             config = R2RConfig.from_json(config_path)
         else:
-            config = R2RConfig.from_json(R2RAppBuilder.CONFIG_OPTIONS[config_name])
-            
+            config = R2RConfig.from_json(
+                R2RAppBuilder.CONFIG_OPTIONS[config_name]
+            )
+
         if base_url and not client_server_mode:
             raise ValueError(
                 "base_url is provided but client_server_mode is not set to True"

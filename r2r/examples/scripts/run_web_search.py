@@ -1,5 +1,7 @@
 import fire
+
 from r2r import GenerationConfig, R2RAppBuilder, SerperClient, WebSearchPipe
+
 
 def run_rag_pipeline(query="Who was Aristotle?"):
     # Create search pipe override and pipes
@@ -16,6 +18,7 @@ def run_rag_pipeline(query="Who was Aristotle?"):
     )
 
     print(f"Final Result:\n\n{result}")
+
 
 if __name__ == "__main__":
     fire.Fire(run_rag_pipeline)
