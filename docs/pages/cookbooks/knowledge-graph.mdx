@@ -67,7 +67,7 @@ from r2r import R2RAppBuilder, Document
 
 if __name__ == "__main__":
     r2r_app = R2RAppBuilder(from_config="neo4j_kg").build()
-    
+
     r2r_app.ingest_documents([
         Document(
             type="txt",
@@ -102,7 +102,7 @@ When running R2R with knowledge graphs enabled, ingested documents and files wil
     for triplet in relationships:
         source, relation, target = triplet
         print(f"{source} -[{relation.label}]-> {target} ")
-        
+
 ```
 
 When executed it results in the following output:
@@ -125,9 +125,9 @@ Locating Microsoft:
  [EntityNode(label='company', embedding=None, properties={'name': 'Microsoft'}, name='Microsoft')]
 
 Relationships:
-John -[HAS_EMPLOYER]-> Google 
-Paul -[KNOWS]-> John 
-Paul -[WORKS_AT]-> Microsoft 
+John -[HAS_EMPLOYER]-> Google
+Paul -[KNOWS]-> John
+Paul -[WORKS_AT]-> Microsoft
 ```
 
 
@@ -165,15 +165,15 @@ Vector Search Results:
 {
     'results': [
         {
-            'id': UUID('6661944c-cf52-51e3-904a-e0795ad78c2c'), 
-            'score': 0.684847530035599, 
+            'id': UUID('6661944c-cf52-51e3-904a-e0795ad78c2c'),
+            'score': 0.684847530035599,
             'metadata': {
-                'document_id': '7d22aea3-abb5-4ccd-a64a-8321ec1c2296', 
-                'extraction_id': '4a993741-aceb-5736-816a-45bc12364390', 
-                'text': 'John is a person that works at Google.', 
-                'title': None, 
-                'version': 'v0', 
-                'chunk_order': 1, 
+                'document_id': '7d22aea3-abb5-4ccd-a64a-8321ec1c2296',
+                'extraction_id': '4a993741-aceb-5736-816a-45bc12364390',
+                'text': 'John is a person that works at Google.',
+                'title': None,
+                'version': 'v0',
+                'chunk_order': 1,
                 'associatedQuery': 'Who is john'
             }
         },
@@ -184,12 +184,12 @@ Vector Search Results:
 Node Search Result: ([EntityNode(label='person', embedding=None, properties={}, name='Paul')], [0.6374393105506897])
 
 Executing query:
- 
+
     MATCH (p1:person)-[:KNOWS]->(p2:person)
     RETURN p1.name AS Person1, p2.name AS Person2
     ORDER BY p1.name
     LIMIT 10;
-    
+
 Structured Query Results:
  [{'Person1': 'Paul', 'Person2': 'John'}]
 ```
@@ -234,7 +234,7 @@ def main(max_entries=50, delete=False):
             subcategories=["COMPANY", "SCHOOL", "NON-PROFIT", "OTHER"],
         ),
         EntityType(
-            "LOCATION", 
+            "LOCATION",
             subcategories=["CITY", "STATE", "COUNTRY", "OTHER"]
         ),
         EntityType("PERSON"),
@@ -379,7 +379,7 @@ Once ingestion has completed we will proceed to using the structured query metho
 ```bash
 ## Locating all founders
 
-Executing query: 
+Executing query:
 MATCH (p:PERSON)-[:FOUNDED]->(c)
 RETURN p.id AS Founder, c.id AS Company
 ORDER BY c.id
@@ -393,7 +393,7 @@ Results:
 ```bash
 ## Locating 2-time founders
 
-Executing query: 
+Executing query:
 MATCH (p:PERSON)-[:FOUNDED]->(c:ORGANIZATION)
 WITH p.id AS Person, COUNT(c) AS CompaniesCount
 RETURN Person, CompaniesCount
@@ -407,7 +407,7 @@ Results:
 ```bash
 ### Locating companies with AI products
 
-Executing query: 
+Executing query:
 MATCH (c:ORGANIZATION)-[r:PRODUCT]->(t)
 WHERE t.id CONTAINS 'AI'
 RETURN DISTINCT c.id AS Company, t.id AS Product
@@ -421,7 +421,7 @@ Results:
 ```bash
 ## Locating AI founders with optional info
 
-Executing query: 
+Executing query:
 MATCH (p:PERSON)-[:FOUNDED]->(c:ORGANIZATION)-[:INDUSTRY]->(i:INDUSTRY)
 WHERE i.id CONTAINS 'saas'
 OPTIONAL MATCH (p)-[:EDUCATED_AT]->(s:ORGANIZATION)

@@ -29,3 +29,4 @@ repos:
         entry: poetry run flake8
         language: system
         types: [python]
+        args: ["--config=.flake8"]

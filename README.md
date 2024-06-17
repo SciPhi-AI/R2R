@@ -45,7 +45,7 @@ For a more complete view of R2R, check out our [documentation](https://r2r-docs.
 # use the `'r2r[all]'` to download all required deps
 pip install r2r
 
-# setup env 
+# setup env
 export OPENAI_API_KEY=sk-...
 ```
 </details>
@@ -125,13 +125,13 @@ The following quickstart offers a step-by-step guide on running R2R locally as w
    ```plaintext
    [
       DocumentInfo(
-         document_id=UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'), 
-         version='v0', 
-         size_in_bytes=73353, 
-         metadata={'title': 'aristotle.txt', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'}, 
+         document_id=UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'),
+         version='v0',
+         size_in_bytes=73353,
+         metadata={'title': 'aristotle.txt', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'},
          title='aristotle.txt'
-      ), 
-      ... 
+      ),
+      ...
    ]
    ```
 
@@ -144,11 +144,11 @@ The following quickstart offers a step-by-step guide on running R2R locally as w
    ```plaintext
    [
       UserStats(
-         user_id=UUID('063edaf8-3e63-4cb9-a4d6-a855f36376c3'), 
+         user_id=UUID('063edaf8-3e63-4cb9-a4d6-a855f36376c3'),
          num_files=9,
-         total_size_in_bytes=4809510, 
+         total_size_in_bytes=4809510,
          document_ids=[UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'), ...]
-      ), 
+      ),
    ]
    ```
 </details>
@@ -171,17 +171,17 @@ The following quickstart offers a step-by-step guide on running R2R locally as w
 
    ```plaintext
    {
-      'id': UUID('93c44e73-8e95-50c2-84af-6a42f070b552'), 
-      'score': 0.7739712385010018, 
-      'metadata': 
+      'id': UUID('93c44e73-8e95-50c2-84af-6a42f070b552'),
+      'score': 0.7739712385010018,
+      'metadata':
       {
-         'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd', 
-         'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484', 
+         'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd',
+         'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484',
          'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began
 
-   the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 
+   the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.',
          'title': 'aristotle.txt',
-         'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 
+         'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3',
          'associatedQuery': 'Who was Aristotle?'
       }
    },
@@ -200,30 +200,30 @@ The following quickstart offers a step-by-step guide on running R2R locally as w
    ```plaintext
    ...
    Time taken to run RAG: 2.29 seconds
-   {'results': 
+   {'results':
       [
          ChatCompletion(
-            id='chatcmpl-9RCB5xUbDuI1f0vPw3RUO7BWQImBN', 
+            id='chatcmpl-9RCB5xUbDuI1f0vPw3RUO7BWQImBN',
             choices=[
                Choice(
-                  finish_reason='stop', 
-                  index=0, 
-                  logprobs=None, 
+                  finish_reason='stop',
+                  index=0,
+                  logprobs=None,
                   message=ChatCompletionMessage(
-                     content="Uber's profit in 2020 was a net loss of $6,768 million [10].", 
-                     role='assistant', 
-                     function_call=None, 
+                     content="Uber's profit in 2020 was a net loss of $6,768 million [10].",
+                     role='assistant',
+                     function_call=None,
                      tool_calls=None
                      )
                   )
-               ], 
-            created=1716268695, 
-            model='gpt-3.5-turbo-0125', 
-            object='chat.completion', 
-            system_fingerprint=None, 
+               ],
+            created=1716268695,
+            model='gpt-3.5-turbo-0125',
+            object='chat.completion',
+            system_fingerprint=None,
             usage=CompletionUsage(
-               completion_tokens=20, 
-               prompt_tokens=1470, 
+               completion_tokens=20,
+               prompt_tokens=1470,
                total_tokens=1490
                )
             )
@@ -244,7 +244,7 @@ The following quickstart offers a step-by-step guide on running R2R locally as w
    r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.json - 2024-05-20 22:27:31,890
    ...
    <search>["{\"id\":\"808c47c5-ebef-504a-a230-aa9ddcfbd87 .... </search>
-   <completion>Lyft reported a net loss of $1,752,857,000 in 2020 according to [2]. Therefore, Lyft did not make a profit in 2020.</completion>                                                      
+   <completion>Lyft reported a net loss of $1,752,857,000 in 2020 according to [2]. Therefore, Lyft did not make a profit in 2020.</completion>
    Time taken to stream RAG response: 2.79 seconds
    ```
 
@@ -335,7 +335,7 @@ We're here to help! Feel free to reach out for support on any of these channels:
 - [Github Issues](https://github.com/SciPhi-AI/R2R/issues) \(Bug reports and feature requests\)
 
 There are a number of helpful tutorials and cookbooks that can be found in the [R2R Docs](https://r2r-docs.sciphi.ai/):
-- [R2R Quickstart](https://r2r-docs.sciphi.ai/getting-started/quickstart): A basic demo script designed to get you started with an R2R RAG application. 
+- [R2R Quickstart](https://r2r-docs.sciphi.ai/getting-started/quickstart): A basic demo script designed to get you started with an R2R RAG application.
 - [R2R Client-Server](https://r2r-docs.sciphi.ai/cookbooks/client-server): An extension of the basic `R2R Quickstart` with client-server interactions.
 - [Local RAG](https://r2r-docs.sciphi.ai/cookbooks/local-rag): A quick cookbook demonstration of how to run R2R with local LLMs.
 - [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): A brief introduction to running hybrid search with R2R.
@@ -356,4 +356,3 @@ These are the most helpful things for us:
 <a href="https://github.com/SciPhi-AI/R2R/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=SciPhi-AI/R2R" />
 </a>
-

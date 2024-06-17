@@ -1818,7 +1818,7 @@ class KonlpyTextSplitter(TextSplitter):
         except ImportError:
             raise ImportError(
                 """
-                Konlpy is not installed, please install it with 
+                Konlpy is not installed, please install it with
                 `pip install konlpy`
                 """
             )

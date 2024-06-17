@@ -93,7 +93,7 @@ To streamline this process, we've provided pre-configured local settings in the 
 
 You may also modify the configuration defaults for ingestion, logging, and your vector database provider in a similar manner. More information on these settings are included in this coookbook and throughout the documentation.
 
-This chosen config modification above instructs R2R to use the `sentence-transformers` library for embeddings with the `all-MiniLM-L6-v2` model, turns off evals, and sets the LLM provider to `ollama`. During ingestion, the default is to split documents into chunks of 512 characters with 20 characters of overlap between chunks. 
+This chosen config modification above instructs R2R to use the `sentence-transformers` library for embeddings with the `all-MiniLM-L6-v2` model, turns off evals, and sets the LLM provider to `ollama`. During ingestion, the default is to split documents into chunks of 512 characters with 20 characters of overlap between chunks.
 
 A local vector database will be used to store the embeddings. The current default is a minimal sqlite implementation.
 </details>
@@ -113,15 +113,15 @@ The output should look something like this:
 
 ```
 ...
-{'results': 
+{'results':
   [
-    "File 'aristotle.txt' processed successfully.", 
-    "File 'pg_essay_1.html' processed successfully.", 
-    "File 'pg_essay_2.html' processed successfully.", 
-    "File 'pg_essay_3.html' processed successfully.", 
-    "File 'pg_essay_4.html' processed successfully.", 
-    "File 'pg_essay_5.html' processed successfully.", 
-    "File 'lyft_2021.pdf' processed successfully.", 
+    "File 'aristotle.txt' processed successfully.",
+    "File 'pg_essay_1.html' processed successfully.",
+    "File 'pg_essay_2.html' processed successfully.",
+    "File 'pg_essay_3.html' processed successfully.",
+    "File 'pg_essay_4.html' processed successfully.",
+    "File 'pg_essay_5.html' processed successfully.",
+    "File 'lyft_2021.pdf' processed successfully.",
     "File 'uber_2021.pdf' processed successfully."
   ]
 }
@@ -167,9 +167,9 @@ This command tells R2R to use the specified model to generate a completion for t
 After a brief wait, you should see the LLM's response, perhaps something like:
 
 > ### Aristotle's Contributions to Biology
-> 
+>
 > Aristotle's work has had a significant impact on the field of biology, earning him the title "father of biology." His contributions to the field include:
-> 
+>
 > 1. **Systematic observation and classification of living things**: Aristotle was one of the first people to study biology systematically, laying the foundation for modern taxonomy.
 > 2. **Development of the concept of evolution**: Aristotle recognized that living things change over time and proposed a mechanism for these changes (the "great chain of being"). While his ideas about evolution were not entirely correct, they were an important precursor to the modern theory of evolution.
 > 3. **Influence on medieval scholarship**: Aristotle's work profoundly impacted medieval scholarship, shaping the field of biology for centuries after his death.
