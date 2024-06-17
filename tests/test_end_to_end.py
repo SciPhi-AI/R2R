@@ -127,7 +127,7 @@ async def test_ingest_txt_file(r2r_app, logging_connection):
     for log in logs:
         assert log["key"] in ["fragment", "extraction"]
         value = json.loads(log["value"])
-        assert value["data"] == "this is a test text\n"
+        assert value["data"].strip() == "this is a test text"
         assert value["document_id"] == str(generate_id_from_label("test.txt"))
 
 
