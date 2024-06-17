@@ -63,13 +63,10 @@ from .parsers import (
     TextParser,
     XLSXParser,
 )
-from .pipeline.base_pipeline import (
-    EvalPipeline,
-    IngestionPipeline,
-    Pipeline,
-    RAGPipeline,
-    SearchPipeline,
-)
+from .pipeline.base_pipeline import EvalPipeline, Pipeline
+from .pipeline.ingestion_pipeline import IngestionPipeline
+from .pipeline.rag_pipeline import RAGPipeline
+from .pipeline.search_pipeline import SearchPipeline
 from .pipes.base_pipe import AsyncPipe, AsyncState, PipeType
 from .pipes.loggable_pipe import LoggableAsyncPipe
 from .providers.embedding_provider import EmbeddingConfig, EmbeddingProvider

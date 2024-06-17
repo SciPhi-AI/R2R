@@ -3,13 +3,13 @@ import uuid
 from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
+    AggregateSearchResult,
     AsyncPipe,
     AsyncState,
     LLMChatCompletion,
     LLMProvider,
     PipeType,
     PromptProvider,
-    VectorSearchResult,
 )
 from r2r.core.abstractions.llm import GenerationConfig
 
@@ -20,9 +20,8 @@ logger = logging.getLogger(__name__)
 
 class SearchRAGPipe(GeneratorPipe):
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[VectorSearchResult, None]
         query: list[str]
-        raw_search_results: Optional[list[VectorSearchResult]] = None
+        message: AsyncGenerator[AggregateSearchResult, None]
 
     def __init__(
         self,

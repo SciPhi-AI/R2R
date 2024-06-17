@@ -973,9 +973,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def arag(
         self,
         message: str,
-        rag_generation_config: GenerationConfig,
-        search_filters: Optional[dict[str, str]] = None,
-        search_limit: int = 10,
+        vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
+        kg_search_settings: KGSearchSettings = KGSearchSettings(),
+        rag_generation_config: GenerationConfig = GenerationConfig(),
         *args,
         **kwargs,
     ):
@@ -1002,10 +1002,10 @@ class R2RApp(metaclass=AsyncSyncMeta):
                             ) in await self.streaming_rag_pipeline.run(
                                 input=to_async_generator([message]),
                                 streaming=True,
-                                search_filters=search_filters,
-                                search_limit=search_limit,
-                                rag_generation_config=rag_generation_config,
                                 run_manager=self.run_manager,
+                                vector_settings=vector_search_settings,
+                                kg_settings=kg_search_settings,
+                                rag_generation_config=rag_generation_config,
                                 *args,
                                 **kwargs,
                             ):
@@ -1017,10 +1017,10 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     results = await self.rag_pipeline.run(
                         input=to_async_generator([message]),
                         streaming=False,
-                        search_filters=search_filters,
-                        search_limit=search_limit,
-                        rag_generation_config=rag_generation_config,
                         run_manager=self.run_manager,
+                        vector_settings=vector_search_settings,
+                        kg_settings=kg_search_settings,
+                        rag_generation_config=rag_generation_config,
                     )
 
                     t1 = time.time()
@@ -1049,51 +1049,12 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def rag_app(self, request: RAGRequest):
         async with manage_run(self.run_manager, "rag_app") as run_id:
             try:
-                # Parse search filters
-                search_filters = None
-                if request.search_filters and request.search_filters != "null":
-                    try:
-                        search_filters = json.loads(request.search_filters)
-                    except json.JSONDecodeError as jde:
-                        logger.error(
-                            f"Error parsing search filters: {str(jde)}"
-                        )
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Error parsing search filters: {str(jde)}",
-                        )
-
-                # Parse RAG generation config
-                rag_generation_config = GenerationConfig(
-                    model="gpt-3.5-turbo", stream=request.streaming
-                )
-                if (
-                    request.rag_generation_config
-                    and request.rag_generation_config != "null"
-                ):
-                    try:
-                        parsed_config = json.loads(
-                            request.rag_generation_config
-                        )
-                        rag_generation_config = GenerationConfig(
-                            **parsed_config,
-                            stream=request.streaming,
-                        )
-                    except json.JSONDecodeError as jde:
-                        logger.error(
-                            f"Error parsing RAG generation config: {str(jde)}"
-                        )
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Error parsing RAG generation config: {str(jde)}",
-                        ) from jde
-
                 # Call the async RAG method
                 response = await self.arag(
                     request.message,
-                    rag_generation_config,
-                    search_filters,
-                    request.search_limit,
+                    request.vector_settings,
+                    request.kg_settings,
+                    request.rag_generation_config,
                 )
 
                 if request.streaming:
@@ -1126,7 +1087,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     value=str(e),
                     is_info_log=False,
                 )
-                raise HTTPException(status_code=500, detail=str(e))
+                raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable
     async def aevaluate(

@@ -397,9 +397,6 @@ class R2RPipelineFactory:
         return ingestion_pipeline
 
     def create_search_pipeline(self, *args, **kwargs) -> SearchPipeline:
-        # search_pipeline = SearchPipeline()
-        # search_pipeline.add_pipe(self.pipes.vector_search_pipe)
-        # return search_pipeline
         """factory method to create an ingestion pipeline."""
         search_pipeline = SearchPipeline()
 
@@ -421,30 +418,19 @@ class R2RPipelineFactory:
         return search_pipeline
 
     def create_rag_pipeline(
-        self, streaming: bool = False, *args, **kwargs
+        self,
+        search_pipeline: SearchPipeline,
+        streaming: bool = False,
+        *args,
+        **kwargs,
     ) -> RAGPipeline:
-        vector_search_pipe = self.pipes.vector_search_pipe
         rag_pipe = (
             self.pipes.streaming_rag_pipe if streaming else self.pipes.rag_pipe
         )
 
         rag_pipeline = RAGPipeline()
-        rag_pipeline.add_pipe(vector_search_pipe)
-        rag_pipeline.add_pipe(
-            rag_pipe,
-            add_upstream_outputs=[
-                {
-                    "prev_pipe_name": vector_search_pipe.config.name,
-                    "prev_output_field": "search_results",
-                    "input_field": "raw_search_results",
-                },
-                {
-                    "prev_pipe_name": vector_search_pipe.config.name,
-                    "prev_output_field": "search_queries",
-                    "input_field": "query",
-                },
-            ],
-        )
+        rag_pipeline.set_search_pipeline(search_pipeline)
+        rag_pipeline.add_pipe(rag_pipe)
         return rag_pipeline
 
     def create_eval_pipeline(self, *args, **kwargs) -> EvalPipeline:
@@ -466,16 +452,27 @@ class R2RPipelineFactory:
             self.configure_logging()
         except Exception as e:
             logger.warn(f"Error configuring logging: {e}")
-
+        search_pipeline = search_pipeline or self.create_search_pipeline(
+            *args, **kwargs
+        )
         return R2RPipelines(
             ingestion_pipeline=ingestion_pipeline
             or self.create_ingestion_pipeline(*args, **kwargs),
-            search_pipeline=search_pipeline
-            or self.create_search_pipeline(*args, **kwargs),
+            search_pipeline=search_pipeline,
             rag_pipeline=rag_pipeline
-            or self.create_rag_pipeline(streaming=False, *args, **kwargs),
+            or self.create_rag_pipeline(
+                search_pipeline=search_pipeline,
+                streaming=False,
+                *args,
+                **kwargs,
+            ),
             streaming_rag_pipeline=streaming_rag_pipeline
-            or self.create_rag_pipeline(streaming=True, *args, **kwargs),
+            or self.create_rag_pipeline(
+                search_pipeline=search_pipeline,
+                streaming=True,
+                *args,
+                **kwargs,
+            ),
             eval_pipeline=eval_pipeline
             or self.create_eval_pipeline(*args, **kwargs),
         )
