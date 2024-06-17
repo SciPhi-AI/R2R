@@ -34,7 +34,7 @@ The **R2RVectorStoragePipe** stores the generated embeddings in a vector databas
 ### Knowledge Graph Pipes
 When the knowledge graph provider settings are non-null, the pipeline includes pipes for generating and storing knowledge graph data.
 
-- **KGAgentPipe**: Generates Cypher queries to interact with a Neo4j knowledge graph.
+- **KGAgentSearchPipe**: Generates Cypher queries to interact with a Neo4j knowledge graph.
 - **KGStoragePipe**: Stores the generated knowledge graph data in the specified knowledge graph database.
 
 
@@ -72,7 +72,7 @@ custom_ingestion_pipeline = CustomIngestionPipeline()
 pipelines = R2RPipelineFactory(config, pipes).create_pipelines(
     ingestion_pipeline = custom_ingestion_pipeline
 )
-r2r = R2RApp(config, providers, pipelines)
+r2r = R2RApp(config=config, providers=providers, pipes=pipes, pipelines=pipelines)
 ```
 
 ### Conclusion

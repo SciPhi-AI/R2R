@@ -8,7 +8,7 @@ from r2r import (
     Document,
     EntityType,
     GenerationConfig,
-    KGAgentPipe,
+    KGAgentSearchPipe,
     Pipeline,
     R2RAppBuilder,
     Relation,
@@ -214,13 +214,13 @@ def main(max_entries=50, delete=False):
 
     print_all_relationships(kg)
 
-    kg_agent_pipe = KGAgentPipe(
+    kg_agent_search_pipe = KGAgentSearchPipe(
         r2r_app.providers.kg, r2r_app.providers.llm, r2r_app.providers.prompt
     )
 
     # Define the pipeline
     kg_pipe = Pipeline()
-    kg_pipe.add_pipe(kg_agent_pipe)
+    kg_pipe.add_pipe(kg_agent_search_pipe)
 
     kg.update_agent_prompt(prompt_provider, entity_types, relations)
 

@@ -8,7 +8,7 @@ from r2r import (
     QueryTransformPipe,
     R2RPipeFactory,
     SearchPipe,
-    SearchResult,
+    VectorSearchResult,
 )
 
 
@@ -55,7 +55,7 @@ class MultiSearchPipe(LoggableAsyncPipe):
         query_transform_generation_config: Optional[GenerationConfig] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[SearchResult, None]:
+    ) -> AsyncGenerator[VectorSearchResult, None]:
         query_transform_generation_config = (
             query_transform_generation_config
             or copy(kwargs.get("rag_generation_config", None))

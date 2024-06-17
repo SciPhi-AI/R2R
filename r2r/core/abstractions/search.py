@@ -1,12 +1,12 @@
 """Abstractions for search functionality."""
 
 import uuid
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
 
-class SearchRequest(BaseModel):
+class VectorSearchRequest(BaseModel):
     """Request for a search operation."""
 
     query: str
@@ -14,7 +14,7 @@ class SearchRequest(BaseModel):
     filters: Optional[dict[str, Any]] = None
 
 
-class SearchResult(BaseModel):
+class VectorSearchResult(BaseModel):
     """Result of a search operation."""
 
     id: uuid.UUID
@@ -22,14 +22,44 @@ class SearchResult(BaseModel):
     metadata: dict[str, Any]
 
     def __str__(self) -> str:
-        return f"SearchResult(id={self.id}, score={self.score}, metadata={self.metadata})"
+        return f"VectorSearchResult(id={self.id}, score={self.score}, metadata={self.metadata})"
 
     def __repr__(self) -> str:
-        return f"SearchResult(id={self.id}, score={self.score}, metadata={self.metadata})"
+        return f"VectorSearchResult(id={self.id}, score={self.score}, metadata={self.metadata})"
 
     def dict(self) -> dict:
         return {
             "id": self.id,
             "score": self.score,
             "metadata": self.metadata,
+        }
+
+
+class KGSearchRequest(BaseModel):
+    """Request for a knowledge graph search operation."""
+
+    query: str
+
+
+KGSearchResult = List[List[Dict[str, Any]]]
+
+
+class AggregateSearchResult(BaseModel):
+    """Result of an aggregate search operation."""
+
+    vector_search_results: Optional[List[VectorSearchResult]]
+    kg_search_results: Optional[KGSearchResult] = None
+
+    def __str__(self) -> str:
+        return f"AggregateSearchResult(vector_search_results={self.vector_search_results}, kg_search_results={self.kg_search_results})"
+
+    def __repr__(self) -> str:
+        return f"AggregateSearchResult(vector_search_results={self.vector_search_results}, kg_search_results={self.kg_search_results})"
+
+    def dict(self) -> dict:
+        return {
+            "vector_search_results": [
+                result.dict() for result in self.vector_search_results
+            ],
+            "kg_search_results": self.kg_search_results,
         }

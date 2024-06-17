@@ -200,4 +200,4 @@ class R2RAppBuilder:
         )
 
         r2r_app = self.r2r_app_override or R2RApp
-        return r2r_app(self.config, providers, pipelines)
+        return r2r_app(self.config, providers, pipes, pipelines)

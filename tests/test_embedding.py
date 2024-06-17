@@ -1,6 +1,6 @@
 import pytest
 
-from r2r import EmbeddingConfig, SearchResult, generate_id_from_label
+from r2r import EmbeddingConfig, VectorSearchResult, generate_id_from_label
 from r2r.providers.embeddings import (
     OpenAIEmbeddingProvider,
     SentenceTransformerEmbeddingProvider,
@@ -106,12 +106,12 @@ def test_sentence_transformer_get_embeddings(sentence_transformer_provider):
 
 def test_sentence_transformer_rerank(sentence_transformer_provider):
     results = [
-        SearchResult(
+        VectorSearchResult(
             id=generate_id_from_label("x"),
             score=0.9,
             metadata={"text": "doc1"},
         ),
-        SearchResult(
+        VectorSearchResult(
             id=generate_id_from_label("y"),
             score=0.8,
             metadata={"text": "doc2"},
