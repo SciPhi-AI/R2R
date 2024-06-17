@@ -68,7 +68,7 @@ def test_ingest_txt_file(client):
     user_id = str(generate_id_from_label("user_1"))
     metadatas = [{"author": "John Doe", "user_id": user_id}]
     files = ["r2r/examples/data/test.txt"]
-    response = client.ingest_files(metadatas, files)
+    response = client.ingest_files(metadatas=metadatas, files=files)
     assert response == {
         "results": [
             "File 'r2r/examples/data/test.txt' processed successfully."

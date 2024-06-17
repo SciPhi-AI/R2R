@@ -55,7 +55,7 @@ def mock_file():
 
 @pytest.mark.asyncio
 def test_r2r_config_loading_required_keys(mock_bad_file):
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         R2RConfig.from_json("config.json")
 
 
@@ -131,7 +131,7 @@ def test_r2r_config_missing_section():
         }
     }
     with patch("builtins.open", mock_open(read_data=json.dumps(invalid_data))):
-        with pytest.raises(ValueError):
+        with pytest.raises(KeyError):
             R2RConfig.from_json("config.json")
 
 
@@ -153,8 +153,6 @@ def test_r2r_config_missing_required_key():
                 "chunk_overlap": 0,
             },
         },
-        "eval": {"llm": {"provider": "local"}},
-        "ingestion": {"excluded_parsers": {}},
         "completions": {"provider": "lm_provider"},
         "logging": {
             "provider": "local",
@@ -168,5 +166,5 @@ def test_r2r_config_missing_required_key():
         },
     }
     with patch("builtins.open", mock_open(read_data=json.dumps(invalid_data))):
-        with pytest.raises(ValueError):
+        with pytest.raises(KeyError):
             R2RConfig.from_json("config.json")

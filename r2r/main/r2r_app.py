@@ -745,12 +745,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
 
                 # Call aingest_files with the correct order of arguments
-                return await self.aingest_files(
+                results = self.aingest_files(
                     files=files,
                     metadatas=metadatas,
                     document_ids=ids_list,
                     user_ids=user_ids_list,
                 )
+                return {"results": results}
 
             except HTTPException as he:
                 raise HTTPException(he.status_code, he.detail) from he

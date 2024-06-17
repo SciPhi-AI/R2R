@@ -63,10 +63,14 @@ class DocumentInfo(BaseModel):
     def convert_to_db_entry(self):
         """Prepare the document info for database entry, extracting certain fields from metadata."""
         now = datetime.now()
+        metadata = self.metadata
+        metadata["user_id"] = (
+            str(metadata["user_id"]) if "user_id" in metadata else None
+        )
         return {
             "document_id": str(self.document_id),
             "title": self.title or "N/A",
-            "user_id": str(self.user_id),
+            "user_id": metadata["user_id"],
             "version": self.version,
             "size_in_bytes": self.size_in_bytes,
             "metadata": json.dumps(self.metadata),
