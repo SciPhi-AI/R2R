@@ -1018,8 +1018,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         input=to_async_generator([message]),
                         streaming=False,
                         run_manager=self.run_manager,
-                        vector_settings=vector_search_settings,
-                        kg_settings=kg_search_settings,
+                        vector_search_settings=vector_search_settings,
+                        kg_search_settings=kg_search_settings,
                         rag_generation_config=rag_generation_config,
                     )
 

@@ -43,7 +43,13 @@ class SearchPipeline(Pipeline):
         **kwargs: Any,
     ):
         self.state = state or AsyncState()
-
+        do_vector_search = (
+            self.vector_search_pipeline is not None
+            and vector_search_settings.use_vector_search
+        )
+        do_kg = (
+            self.kg_search_pipeline is not None and kg_search_settings.use_kg
+        )
         async with manage_run(run_manager, self.pipeline_type):
             await run_manager.log_run_info(
                 key="pipeline_type",
@@ -56,9 +62,9 @@ class SearchPipeline(Pipeline):
 
             async def enqueue_requests():
                 async for message in input:
-                    if self.vector_search_pipeline:
+                    if do_vector_search:
                         await vector_search_queue.put(message)
-                    if self.kg_search_pipeline:
+                    if do_kg:
                         await kg_queue.put(message)
 
                 await vector_search_queue.put(None)
@@ -68,7 +74,7 @@ class SearchPipeline(Pipeline):
             enqueue_task = asyncio.create_task(enqueue_requests())
 
             # Start the embedding and KG pipelines in parallel
-            if self.vector_search_pipeline:
+            if do_vector_search:
                 vector_search_task = asyncio.create_task(
                     self.vector_search_pipeline.run(
                         dequeue_requests(vector_search_queue),
@@ -79,7 +85,7 @@ class SearchPipeline(Pipeline):
                     )
                 )
 
-            if self.kg_search_pipeline:
+            if do_kg:
                 kg_task = asyncio.create_task(
                     self.kg_search_pipeline.run(
                         dequeue_requests(kg_queue),
@@ -93,9 +99,9 @@ class SearchPipeline(Pipeline):
         await enqueue_task
 
         vector_search_results = (
-            await vector_search_task if self.vector_search_pipeline else None
+            await vector_search_task if do_vector_search else None
         )
-        kg_results = await kg_task if self.kg_search_pipeline else None
+        kg_results = await kg_task if do_kg else None
 
         return AggregateSearchResult(
             vector_search_results=vector_search_results,

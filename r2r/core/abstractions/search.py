@@ -68,6 +68,7 @@ class AggregateSearchResult(BaseModel):
 
 
 class VectorSearchSettings(BaseModel):
+    use_vector_search: bool = True
     search_filters: Optional[dict[str, Any]] = Field(default_factory=dict)
     search_limit: int = 10
     do_hybrid_search: bool = False
