@@ -46,6 +46,7 @@ class VectorSearchPipe(SearchPipe):
     ) -> AsyncGenerator[SearchResult, None]:
         search_filters_override = kwargs.get("search_filters", None)
         search_limit_override = kwargs.get("search_limit", None)
+        search_limit = search_limit_override or self.config.search_limit
         await self.enqueue_log(
             run_id=run_id, key="search_query", value=message
         )
@@ -58,18 +59,17 @@ class VectorSearchPipe(SearchPipe):
                 query_vector=query_vector,
                 query_text=message,
                 filters=search_filters_override or self.config.search_filters,
-                limit=search_limit_override or self.config.search_limit,
+                limit=search_limit,
             )
             if do_hybrid_search
             else self.vector_db_provider.search(
                 query_vector=query_vector,
                 filters=search_filters_override or self.config.search_filters,
-                limit=search_limit_override or self.config.search_limit,
+                limit=search_limit,
             )
         )
-
         reranked_results = self.embedding_provider.rerank(
-            query=message, results=search_results
+            query=message, results=search_results, limit=search_limit
         )
         for result in reranked_results:
             result.metadata["associatedQuery"] = message

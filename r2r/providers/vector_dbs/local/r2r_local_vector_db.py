@@ -243,7 +243,6 @@ class R2RLocalVectorDB(VectorDBProvider):
         cursor = self._get_cursor(conn)
         for document_info in documents_info:
             db_entry = document_info.convert_to_db_entry()
-
             cursor.execute(
                 f"""
                 INSERT INTO document_info_{self.config.collection_name} (document_id, title, user_id, version, size_in_bytes, metadata, created_at, updated_at)
@@ -298,9 +297,9 @@ class R2RLocalVectorDB(VectorDBProvider):
             conditions.append(f"document_id IN ({placeholders})")
             params.extend(filter_document_ids)
         if filter_user_ids:
-            placeholders = ", ".join("?" for _ in filter_document_ids)
+            placeholders = ", ".join("?" for _ in filter_user_ids)
             conditions.append(f"user_id IN ({placeholders})")
-            params.extend(filter_document_ids)
+            params.extend(filter_user_ids)
 
         if conditions:
             query += " WHERE " + " AND ".join(conditions)

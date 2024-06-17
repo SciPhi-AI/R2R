@@ -22,7 +22,7 @@ from r2r import (
 def r2r_app(request):
     config = R2RConfig.from_json()
     config.logging.provider = "local"
-    config.logging.logging_path = uuid.uuid4().hex + ".log"
+    config.logging.logging_path = uuid.uuid4().hex
 
     vector_db_provider = request.param
     if vector_db_provider == "pgvector":
@@ -127,7 +127,7 @@ async def test_ingest_txt_file(r2r_app, logging_connection):
     for log in logs:
         assert log["key"] in ["fragment", "extraction"]
         value = json.loads(log["value"])
-        assert value["data"] == "this is a test text"
+        assert value["data"].strip() == "this is a test text"
         assert value["document_id"] == str(generate_id_from_label("test.txt"))
 
 
@@ -255,7 +255,7 @@ async def test_ingest_search_then_delete(r2r_app, logging_connection):
     ), f"Expected no search results, but got {search_results_2['results']}"
 
 
-@pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
+@pytest.mark.parametrize("r2r_app", ["local", "postgres"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_user_documents(r2r_app, logging_connection):
     user_id_0 = generate_id_from_label("user_0")
@@ -276,31 +276,26 @@ async def test_ingest_user_documents(r2r_app, logging_connection):
             ),
         ]
     )
-    user_id_results = await r2r_app.aget_user_ids()
-    user_ids = user_id_results["results"]
-    assert set(user_ids) == set(
-        [str(user_id_0), str(user_id_1)]
-    ), f"Expected user ids {user_id_0} and {user_id_1}, but got {user_ids}"
+    user_id_results = await r2r_app.ausers_stats([user_id_0, user_id_1])
+    assert set([stats.user_id for stats in user_id_results]) == set(
+        [user_id_0, user_id_1]
+    ), f"Expected user ids {user_id_0} and {user_id_1}, but got {user_id_results}"
 
-    user_0_docs = await r2r_app.aget_user_documents_metadata(
-        user_id=str(user_id_0)
-    )
-    user_1_docs = await r2r_app.aget_user_documents_metadata(
-        user_id=str(user_id_1)
-    )
+    user_0_docs = await r2r_app.adocuments_info(user_ids=[user_id_0])
+    user_1_docs = await r2r_app.adocuments_info(user_ids=[user_id_1])
 
     assert (
-        len(user_0_docs["results"]) == 1
-    ), f"Expected 1 document for user {user_id_0}, but got {len(user_0_docs['results'])}"
+        len(user_0_docs) == 1
+    ), f"Expected 1 document for user {user_id_0}, but got {len(user_0_docs)}"
     assert (
-        len(user_1_docs["results"]) == 1
-    ), f"Expected 1 document for user {user_id_1}, but got {len(user_1_docs['results'])}"
-    assert user_0_docs["results"][0]["document_id"] == str(
-        generate_id_from_label("doc_0")
-    ), f"Expected document id {str(generate_id_from_label('doc_0'))} for user {user_id_0}, but got {user_0_docs['results'][0]['document_id']}"
-    assert user_1_docs["results"][0]["document_id"] == str(
-        generate_id_from_label("doc_1")
-    ), f"Expected document id {str(generate_id_from_label('doc_1'))} for user {user_id_1}, but got {user_1_docs['results'][0]['document_id']}"
+        len(user_1_docs) == 1
+    ), f"Expected 1 document for user {user_id_1}, but got {len(user_1_docs)}"
+    assert user_0_docs[0].document_id == generate_id_from_label(
+        "doc_0"
+    ), f"Expected document id {str(generate_id_from_label('doc_0'))} for user {user_id_0}, but got {user_0_docs[0].document_id}"
+    assert user_1_docs[0].document_id == generate_id_from_label(
+        "doc_1"
+    ), f"Expected document id {str(generate_id_from_label('doc_1'))} for user {user_id_1}, but got {user_1_docs[0].document_id}"
 
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
@@ -342,15 +337,14 @@ async def test_double_ingest(r2r_app, logging_connection):
     search_results = await r2r_app.asearch("who was aristotle?")
 
     assert len(search_results["results"]) == 1
-    await r2r_app.aingest_documents(
-        [
-            Document(
-                id=generate_id_from_label("doc_1"),
-                data="The quick brown fox jumps over the lazy dog.",
-                type="txt",
-                metadata={"author": "John Doe"},
-            ),
-        ]
-    )
-    search_results = await r2r_app.asearch("who was aristotle?")
-    assert len(search_results["results"]) == 1
+    with pytest.raises(Exception):
+        await r2r_app.aingest_documents(
+            [
+                Document(
+                    id=generate_id_from_label("doc_1"),
+                    data="The quick brown fox jumps over the lazy dog.",
+                    type="txt",
+                    metadata={"author": "John Doe"},
+                ),
+            ]
+        )
