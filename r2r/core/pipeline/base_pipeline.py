@@ -30,11 +30,13 @@ class Pipeline:
         self,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         run_manager: Optional[RunManager] = None,
+        log_run_info: bool = True,
     ):
         self.pipes: list[AsyncPipe] = []
         self.upstream_outputs: list[list[dict[str, str]]] = []
         self.pipe_logger = pipe_logger or KVLoggingSingleton()
         self.run_manager = run_manager or RunManager(self.pipe_logger)
+        self.log_run_info = log_run_info
         self.futures = {}
         self.level = 0
 
@@ -73,11 +75,12 @@ class Pipeline:
         self.state = state or AsyncState()
         current_input = input
         async with manage_run(run_manager, self.pipeline_type):
-            await run_manager.log_run_info(
-                key="pipeline_type",
-                value=self.pipeline_type,
-                is_info_log=True,
-            )
+            if self.log_run_info:
+                await run_manager.log_run_info(
+                    key="pipeline_type",
+                    value=self.pipeline_type,
+                    is_info_log=True,
+                )
             try:
                 for pipe_num in range(len(self.pipes)):
                     config_name = self.pipes[pipe_num].config.name
@@ -345,13 +348,13 @@ class IngestionPipeline(Pipeline):
             self.parsing_pipe = pipe
         elif kg_pipe:
             if not self.kg_pipeline:
-                self.kg_pipeline = Pipeline()
+                self.kg_pipeline = Pipeline(log_run_info=False)
             self.kg_pipeline.add_pipe(
                 pipe, add_upstream_outputs, *args, **kwargs
             )
         elif embedding_pipe:
             if not self.embedding_pipeline:
-                self.embedding_pipeline = Pipeline()
+                self.embedding_pipeline = Pipeline(log_run_info=False)
             self.embedding_pipeline.add_pipe(
                 pipe, add_upstream_outputs, *args, **kwargs
             )
