@@ -5,6 +5,7 @@ The Ingestion Pipeline processes incoming documents and converts them into struc
 - **Multi-format Support**: Handles TXT, JSON, HTML, PDF, DOCX, PPTX, XLSX, CSV, Markdown, images, audio, and movies.
 - **Customizable**: Supports the addition of custom parsers for specific data types.
 - **Asynchronous Processing**: Efficiently manages data handling with asynchronous operations.
+- **Vector search and knowledge graphs: Support for ingesting both knowledge graphs and/or embeddings and vector search.
 
 ### Key Parsers
 
@@ -23,12 +24,19 @@ The Ingestion Pipeline processes incoming documents and converts them into struc
 
 ### Vector Storage Pipe
 
-The **VectorStoragePipe** stores the generated embeddings in a vector database. It handles batch storage operations efficiently using asynchronous processing.
+The **R2RVectorStoragePipe** stores the generated embeddings in a vector database. It handles batch storage operations efficiently using asynchronous processing.
 
 #### Storage Logic
 
 - **Batch Processing**: Collects vector entries and stores them in batches.
 - **Upsert and Copy Operations**: Supports upsert and copy operations for vector entries.
+
+### Knowledge Graph Pipes
+When the knowledge graph provider settings are non-null, the pipeline includes pipes for generating and storing knowledge graph data.
+
+- **KGAgentPipe**: Generates Cypher queries to interact with a Neo4j knowledge graph.
+- **KGStoragePipe**: Stores the generated knowledge graph data in the specified knowledge graph database.
+
 
 ### Custom Ingestion Pipeline
 
