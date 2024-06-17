@@ -12,12 +12,12 @@ from r2r import (
     AnalysisTypes,
     Document,
     FilterCriteria,
-    GenerationConfig,
     R2RAppBuilder,
     R2RClient,
     R2RConfig,
     generate_id_from_label,
 )
+from r2r.core.abstractions.llm import GenerationConfig
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

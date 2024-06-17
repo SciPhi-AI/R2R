@@ -1,7 +1,8 @@
 from typing import Optional, Union
 
+from ..abstractions.llm import GenerationConfig
 from .base_provider import Provider, ProviderConfig
-from .llm_provider import GenerationConfig, LLMConfig
+from .llm_provider import LLMConfig
 
 
 class EvalConfig(ProviderConfig):

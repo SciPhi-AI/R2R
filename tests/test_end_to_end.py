@@ -7,7 +7,6 @@ from fastapi.datastructures import UploadFile
 
 from r2r import (
     Document,
-    GenerationConfig,
     KVLoggingSingleton,
     R2RApp,
     R2RConfig,
@@ -16,6 +15,7 @@ from r2r import (
     R2RProviderFactory,
     generate_id_from_label,
 )
+from r2r.core.abstractions.llm import GenerationConfig
 
 
 @pytest.fixture(scope="function")

@@ -1,19 +1,22 @@
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel
 
 from r2r.core import (
+    Document,
     EmbeddingProvider,
     EvalPipeline,
     EvalProvider,
     IngestionPipeline,
     KGProvider,
+    KGSearchSettings,
     LLMProvider,
     LoggableAsyncPipe,
     PromptProvider,
     RAGPipeline,
     SearchPipeline,
     VectorDBProvider,
+    VectorSearchSettings,
 )
 
 
@@ -54,3 +57,42 @@ class R2RPipelines(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+
+class UpdatePromptRequest(BaseModel):
+    name: str
+    template: Optional[str] = None
+    input_types: Optional[dict[str, str]] = None
+
+
+class IngestDocumentsRequest(BaseModel):
+    documents: list[Document]
+
+
+class UpdateDocumentsRequest(BaseModel):
+    documents: list[Document]
+
+
+class SearchRequest(BaseModel):
+    query: str
+    vector_settings: VectorSearchSettings
+    kg_settings: KGSearchSettings
+
+
+class RAGRequest(BaseModel):
+    message: str
+    search_filters: Optional[str] = None
+    search_limit: int = 10
+    rag_generation_config: Optional[str] = None
+    streaming: Optional[bool] = None
+
+
+class EvalRequest(BaseModel):
+    query: str
+    context: str
+    completion: str
+
+
+class DeleteRequest(BaseModel):
+    keys: list[str]
+    values: list[Union[bool, int, str]]

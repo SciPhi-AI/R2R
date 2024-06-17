@@ -3,13 +3,13 @@ from copy import copy
 from typing import Any, AsyncGenerator, Optional
 
 from r2r import (
-    GenerationConfig,
     LoggableAsyncPipe,
     QueryTransformPipe,
     R2RPipeFactory,
     SearchPipe,
     VectorSearchResult,
 )
+from r2r.core.abstractions.llm import GenerationConfig
 
 
 class MultiSearchPipe(LoggableAsyncPipe):

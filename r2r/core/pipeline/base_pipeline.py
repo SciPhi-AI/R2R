@@ -6,7 +6,11 @@ from asyncio import Queue
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional
 
-from ..abstractions.search import AggregateSearchResult
+from ..abstractions.search import (
+    AggregateSearchResult,
+    KGSearchSettings,
+    VectorSearchSettings,
+)
 from ..logging.kv_logger import KVLoggingSingleton
 from ..logging.run_manager import RunManager, manage_run
 from ..pipes.base_pipe import AsyncPipe, AsyncState
@@ -381,6 +385,10 @@ class SearchPipeline(Pipeline):
         input: Any,
         state: Optional[AsyncState] = None,
         streaming: bool = False,
+        vector_search_settings: Optional[
+            VectorSearchSettings
+        ] = VectorSearchSettings(),
+        kg_search_settings: Optional[KGSearchSettings] = KGSearchSettings(),
         run_manager: Optional[RunManager] = None,
         *args: Any,
         **kwargs: Any,
@@ -426,10 +434,9 @@ class SearchPipeline(Pipeline):
                         state,
                         streaming,
                         run_manager,
+                        vector_search_settings=vector_search_settings,
                     )
                 )
-
-            from ..providers.llm_provider import GenerationConfig
 
             if self.kg_search_pipeline:
                 kg_task = asyncio.create_task(
@@ -438,7 +445,7 @@ class SearchPipeline(Pipeline):
                         state,
                         streaming,
                         run_manager,
-                        rag_generation_config=GenerationConfig(model="gpt-4o"),
+                        kg_search_settings=kg_search_settings,
                     )
                 )
 

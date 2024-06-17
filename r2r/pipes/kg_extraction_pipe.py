@@ -12,7 +12,6 @@ from r2r.core import (
     Extraction,
     Fragment,
     FragmentType,
-    GenerationConfig,
     KGExtraction,
     KGProvider,
     KVLoggingSingleton,
@@ -25,6 +24,7 @@ from r2r.core import (
     extract_triples,
     generate_id_from_label,
 )
+from r2r.core.abstractions.llm import GenerationConfig
 
 logger = logging.getLogger(__name__)
 

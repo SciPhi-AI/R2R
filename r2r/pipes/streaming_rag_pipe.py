@@ -5,12 +5,12 @@ from typing import Any, AsyncGenerator, Generator, Optional
 
 from r2r.core import (
     AsyncState,
-    GenerationConfig,
     LLMChatCompletionChunk,
     LLMProvider,
     PipeType,
     PromptProvider,
 )
+from r2r.core.abstractions.llm import GenerationConfig
 
 from .abstractions.generator_pipe import GeneratorPipe
 from .search_rag_pipe import SearchRAGPipe

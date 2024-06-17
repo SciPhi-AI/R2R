@@ -7,7 +7,9 @@ import httpx
 import nest_asyncio
 import requests
 
-from r2r.core import DocumentType
+from r2r.core import DocumentType, KGSearchSettings, VectorSearchSettings
+
+from .r2r_abstractions import SearchRequest
 
 nest_asyncio.apply()
 
@@ -126,23 +128,22 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
-    def search(
+    async def search(
         self,
         query: str,
-        search_filters: Optional[dict] = None,
-        search_limit: int = 10,
-        do_hybrid_search: bool = False,
+        vector_settings: VectorSearchSettings,
+        kg_settings: KGSearchSettings,
     ) -> dict:
-        url = f"{self.base_url}/search"
-        data = {
-            "query": query,
-            "search_filters": json.dumps(search_filters or {}),
-            "search_limit": search_limit,
-            "do_hybrid_search": do_hybrid_search,
-        }
-        response = requests.post(url, json=data)
-        response.raise_for_status()
-        return response.json()
+        url = f"{self.base_url}/search_app"
+        search_request = SearchRequest(
+            query=query,
+            vector_settings=vector_settings,
+            kg_settings=kg_settings,
+        )
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=search_request.dict())
+            response.raise_for_status()
+            return response.json()
 
     def rag(
         self,
