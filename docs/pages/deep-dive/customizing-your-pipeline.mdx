@@ -6,7 +6,7 @@ The R2R framework uses factories along with a builder pattern to create the `R2R
 
 This example demonstrates how to override the default vector search module with a custom web search module by leveraging the `R2RAppBuilder`.
 
-```python copy
+```python filename="r2r/examples/scripts/run_web_search.py" copy
 from r2r import (
     GenerationConfig,
     R2RAppBuilder,
@@ -29,6 +29,13 @@ if __name__ == "__main__":
 
     # Print the final result
     print(result)
+```
+
+The file above can be executed by calling the example script from the terminal, after setting a valid [Serper API key](https://serper.dev/).
+
+```bash
+export SERPER_API_KEY=...
+python -m r2r.examples.scripts.run_web_search --query="Who is Aristotle?
 ```
 
 Example output:
@@ -71,7 +78,7 @@ Example output:
 
 In this more advanced example, we use a factory override to customize the pipeline further by including a query transformation pipe and a multi-search pipe.
 
-```python copy
+```python filename="r2r/examples/scripts/run_web_multi_search.py" copy
 from r2r import (
     GenerationConfig,
     R2RAppBuilder,
@@ -124,6 +131,12 @@ if __name__ == "__main__":
     )
 
     print(f"Final Result:\n\n{result}")
+```
+
+
+```bash
+export SERPER_API_KEY=...
+python -m r2r.examples.scripts.run_web_multi_search --query="Who is Aristotle?
 ```
 
 Example output:

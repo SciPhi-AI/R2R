@@ -5,19 +5,22 @@ import { Callout } from 'nextra/components'
 
 ### Installation
 
+**This document extends the [R2R Quickstart](/getting-started/quickstart)** by demonstrating how R2R can be ran with a local large language model (LLM).
 
 <Tabs items={['Installing with Pip 🐍', 'Installing with Docker 🐳']}>
   <Tabs.Tab>
-    Running local RAG requires an additional `local-embedding` dependency to support embedding creation.
-    ```bash
+    Running R2R with local RAG requires an additional `local-embedding` dependency to support local embedding creation:
+    ```bash copy
       pip install 'r2r[local-embedding]'
-
-      # start the server, further commands must run in a separate termiinal
-      python -m r2r.examples.servers.configurable_pipeline --config=local_ollama
     ```
   </Tabs.Tab>
 
   <Tabs.Tab>
+
+    <Callout>
+    When running with Docker, `--client_server_mode` must be appended to all the commands shown below, and the flag `--config_name=local_ollama` will no longer have any impact. For more information on the client-server architecture, read the [relevant cookbook here](/cookbooks/client-server).
+    </Callout>
+
 
     Run your Docker container using the following command:
 
@@ -43,7 +46,7 @@ import { Callout } from 'nextra/components'
   </Tabs.Tab>
 </Tabs>
 
-R2R supports  `Ollama`, a popular tool for Local LLM inference. Ollama is provided through a connection managed by the `litellm` library.
+By default R2R supports `Ollama`, a popular tool for Local LLM inference, and it will be used in the cookbook that follows.
 
 Ollama must be installed independently. You can install Ollama by following the instructions on their [official website](https://ollama.com/) or by referring to their [GitHub README](https://github.com/ollama/ollama).
 
@@ -103,7 +106,7 @@ With our environment set up and our server running in a separate process, we're 
 Run this command to ingest the document, skipping media as multi-modal RAG is not yet supported when running locally:
 
 ```bash filename="bash" copy
-python -m r2r.examples.quickstart ingest_as_files --no-media=true --client_server_mode
+python -m r2r.examples.quickstart ingest_as_files --no-media=true --config_name=local_ollama
 ```
 
 The output should look something like this:
@@ -130,7 +133,7 @@ Here's what's happening under the hood:
 3. Each chunk is embedded using the `all-MiniLM-L6-v2` model from `sentence-transformers`.
 4. The chunks and embeddings are stored in the specified vector database, which defaults to a local SQLite database.
 
-With just one command, we've gone from a raw document to an embedded knowledge base we can query. In addition to the raw chunks, metadata such as user ID or document ID can be attached to enable easy filtering later. For more information on similar functionalities provided by the demo, refer to the [R2R Quickstart](/getting-started/quickstart).
+With just one command, we've gone from a raw document to an embedded knowledge base we can query. In addition to the raw chunks, metadata such as user ID or document ID can be attached to enable easy filtering later. For more information on similar functionalities provided by the quickstart script, refer to the [R2R Quickstart](/getting-started/quickstart).
 
 ### Running Queries on the Local LLM
 
@@ -142,12 +145,17 @@ To query our knowledge base using Ollama, first ensure that you have started the
 ollama serve llama2
 ```
 
+<Callout type="warning" emoji="️⚠️">
+   Be sure to run client commands in a new terminal after starting the ollama server!
+</Callout>
+
+
 Then, to ask a question, run:
 
 ```bash filename="bash" copy
 python -m r2r.examples.quickstart rag \
   --query="What contributions did Aristotle make to biology?" \
-  --client_server_mode \
+  --config_name=local_ollama \
   --rag_generation_config='{"model": "ollama/llama2"}'
 ```
 
