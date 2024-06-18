@@ -66,8 +66,8 @@ class R2RQuickstart:
         root_path = os.path.dirname(os.path.abspath(__file__))
         self.user_id = user_id
         self.default_files = file_list or [
-            os.path.join(root_path, "data", "got.txt"),
             os.path.join(root_path, "data", "aristotle.txt"),
+            os.path.join(root_path, "data", "got.txt"),
             os.path.join(root_path, "data", "screen_shot.png"),
             os.path.join(root_path, "data", "pg_essay_1.html"),
             os.path.join(root_path, "data", "pg_essay_2.html"),
@@ -100,7 +100,7 @@ class R2RQuickstart:
                 Document(
                     id=generate_id_from_label(file_path),
                     user_id=self.user_id,
-                    title=file_path.split(os.path.sep)[-1],
+                    title=file_path,
                     data=data,
                     type=file_path.split(".")[-1],
                     metadata={},
@@ -162,14 +162,11 @@ class R2RQuickstart:
                 if file_path.split(".")[-1] not in excluded_types
             ]
 
-        ids = [
-            generate_id_from_label(file_path.split(os.path.sep)[-1])
-            for file_path in file_paths
-        ]
+        ids = [generate_id_from_label(file_path) for file_path in file_paths]
 
         files = [
             UploadFile(
-                filename=file_path.split(os.path.sep)[-1],
+                filename=file_path,
                 file=open(file_path, "rb"),
             )
             for file_path in file_paths
@@ -184,6 +181,12 @@ class R2RQuickstart:
 
         user_ids = [self.user_id for _ in file_paths]
         t0 = time.time()
+
+        print(
+            f"File paths: {file_paths}\n"
+            f"IDs: {ids}\n"
+            f"User IDs: {user_ids}\n"
+        )
 
         if hasattr(self, "client"):
             response = self.client.ingest_files(
@@ -202,7 +205,7 @@ class R2RQuickstart:
 
         new_files = [
             UploadFile(
-                filename=new_file.split(os.path.sep)[-1],
+                filename=new_file,
                 file=open(new_file, "rb"),
             )
             for old_file, new_file in file_tuples
@@ -215,7 +218,7 @@ class R2RQuickstart:
 
         metadatas = [
             {
-                "title": old_file.split(os.path.sep)[-1],
+                "title": old_file,
                 "user_id": self.user_id,
             }
             for old_file, new_file in file_tuples
@@ -227,7 +230,7 @@ class R2RQuickstart:
                 metadatas=metadatas,
                 files=[new for old, new in file_tuples],
                 ids=[
-                    generate_id_from_label(old_file.split(os.path.sep)[-1])
+                    generate_id_from_label(old_file)
                     for old_file, new_file in file_tuples
                 ],
             )
@@ -236,7 +239,7 @@ class R2RQuickstart:
                 files=new_files,
                 metadatas=metadatas,
                 ids=[
-                    generate_id_from_label(old_file.split(os.path.sep)[-1])
+                    generate_id_from_label(old_file)
                     for old_file, new_file in file_tuples
                 ],
             )
@@ -261,8 +264,7 @@ class R2RQuickstart:
 
         t1 = time.time()
         print(f"Time taken to search: {t1-t0:.2f} seconds")
-        for result in results["results"]:
-            print(result)
+        print("Results:", results)
 
     def rag(
         self,
