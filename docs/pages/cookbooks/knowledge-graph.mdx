@@ -72,12 +72,14 @@ if __name__ == "__main__":
         Document(
             type="txt",
             data="John is a person that works at Google.",
-            metadata={},
+            # Metadata is optional
+            metadata={"title":"KG Document 1", "user_id":"063edaf8-3e63-4cb9-a4d6-a855f36376c3"},
         ),
         Document(
             type="txt",
             data="Paul is a person that works at Microsoft that knows John.",
-            metadata={},
+            # Metadata is optional
+            metadata={"title":"KG Document 2", "user_id":"063edaf8-3e63-4cb9-a4d6-a855f36376c3"},
         )
     ])
 ```
