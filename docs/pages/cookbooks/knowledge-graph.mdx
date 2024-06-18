@@ -68,20 +68,28 @@ from r2r import R2RAppBuilder, Document
 if __name__ == "__main__":
     r2r_app = R2RAppBuilder(from_config="neo4j_kg").build()
 
-    r2r_app.ingest_documents([
-        Document(
-            type="txt",
-            data="John is a person that works at Google.",
-            # Metadata is optional
-            metadata={"title":"KG Document 1", "user_id":"063edaf8-3e63-4cb9-a4d6-a855f36376c3"},
-        ),
-        Document(
-            type="txt",
-            data="Paul is a person that works at Microsoft that knows John.",
-            # Metadata is optional
-            metadata={"title":"KG Document 2", "user_id":"063edaf8-3e63-4cb9-a4d6-a855f36376c3"},
-        )
-    ])
+    r2r_app.ingest_documents(
+        [
+            Document(
+                type="txt",
+                data="John is a person that works at Google.",
+                # Metadata is optional
+                metadata={
+                    "title": "KG Document 1",
+                    "user_id": "063edaf8-3e63-4cb9-a4d6-a855f36376c3",
+                },
+            ),
+            Document(
+                type="txt",
+                data="Paul is a person that works at Microsoft that knows John.",
+                # Metadata is optional
+                metadata={
+                    "title": "KG Document 2",
+                    "user_id": "063edaf8-3e63-4cb9-a4d6-a855f36376c3",
+                },
+            ),
+        ]
+    )
 ```
 
 #### Navigation
