@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import time
-import uuid
 from typing import Optional, Union
 
 from sqlalchemy import exc, text
