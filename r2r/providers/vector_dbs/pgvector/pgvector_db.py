@@ -493,7 +493,7 @@ class PGVectorDB(VectorDBProvider):
                 user_id=row[0],
                 num_files=row[1],
                 total_size_in_bytes=row[2],
-                document_ids=[uuid.UUID(doc_id) for doc_id in row[3]],
+                document_ids=row[3],
             )
             for row in results
         ]

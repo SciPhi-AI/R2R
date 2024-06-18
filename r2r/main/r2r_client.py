@@ -9,7 +9,7 @@ import requests
 
 from r2r.core import DocumentType, KGSearchSettings, VectorSearchSettings
 
-from .r2r_abstractions import SearchRequest
+from .r2r_abstractions import GenerationConfig, R2RRAGRequest, R2RSearchRequest
 
 nest_asyncio.apply()
 
@@ -130,16 +130,9 @@ class R2RClient:
 
     def search(
         self,
-        query: str,
-        vector_search_settings: VectorSearchSettings,
-        kg_search_settings: KGSearchSettings,
+        search_request: R2RSearchRequest,
     ) -> dict:
         url = f"{self.base_url}/search"
-        search_request = SearchRequest(
-            query=query,
-            vector_settings=vector_search_settings,
-            kg_settings=kg_search_settings,
-        )
         response = requests.post(url, json=search_request.dict())
         response.raise_for_status()
         return response.json()
@@ -147,16 +140,22 @@ class R2RClient:
     def rag(
         self,
         message: str,
-        search_filters: Optional[dict] = None,
-        search_limit: int = 10,
-        rag_generation_config: Optional[dict] = None,
+        vector_search_settings: VectorSearchSettings,
+        kg_search_settings: KGSearchSettings,
         streaming: bool = False,
+        rag_generation_config: Optional[GenerationConfig] = None,
     ) -> Union[dict, Generator[str, None, None]]:
+        rag_request = R2RRAGRequest(
+            message=message,
+            vector_settings=vector_search_settings,
+            kg_settings=kg_search_settings,
+        )
+
         if streaming:
             return self._stream_rag_sync(
                 message=message,
-                search_filters=search_filters,
-                search_limit=search_limit,
+                vector_search_settings=vector_search_settings,
+                kg_search_settings=kg_search_settings,
                 rag_generation_config=rag_generation_config,
             )
         else:
@@ -212,15 +211,15 @@ class R2RClient:
     def _stream_rag_sync(
         self,
         message: str,
-        search_filters: Optional[dict] = None,
-        search_limit: int = 10,
-        rag_generation_config: Optional[dict] = None,
+        vector_search_settings: VectorSearchSettings,
+        kg_search_settings: KGSearchSettings,
+        rag_generation_config: Optional[GenerationConfig] = None,
     ) -> Generator[str, None, None]:
         async def run_async_generator():
             async for chunk in self._stream_rag(
                 message=message,
-                search_filters=search_filters,
-                search_limit=search_limit,
+                vector_search_settings=vector_search_settings,
+                kg_search_settings=kg_search_settings,
                 rag_generation_config=rag_generation_config,
             ):
                 yield chunk

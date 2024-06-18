@@ -60,39 +60,40 @@ class R2RPipelines(BaseModel):
         arbitrary_types_allowed = True
 
 
-class UpdatePromptRequest(BaseModel):
+class R2RUpdatePromptRequest(BaseModel):
     name: str
     template: Optional[str] = None
     input_types: Optional[dict[str, str]] = None
 
 
-class IngestDocumentsRequest(BaseModel):
+class R2RIngestDocumentsRequest(BaseModel):
     documents: list[Document]
 
 
-class UpdateDocumentsRequest(BaseModel):
+class R2RUpdateDocumentsRequest(BaseModel):
     documents: list[Document]
 
 
-class SearchRequest(BaseModel):
+class R2RSearchRequest(BaseModel):
     query: str
     vector_settings: VectorSearchSettings
     kg_settings: KGSearchSettings
 
 
-class RAGRequest(BaseModel):
+class R2RRAGRequest(BaseModel):
     message: str
     vector_settings: VectorSearchSettings
     kg_settings: KGSearchSettings
+    streaming: bool = False
     rag_generation_config: Optional[GenerationConfig] = None
 
 
-class EvalRequest(BaseModel):
+class R2REvalRequest(BaseModel):
     query: str
     context: str
     completion: str
 
 
-class DeleteRequest(BaseModel):
+class R2RDeleteRequest(BaseModel):
     keys: list[str]
     values: list[Union[bool, int, str]]

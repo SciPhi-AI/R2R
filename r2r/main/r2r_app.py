@@ -30,16 +30,16 @@ from r2r.pipes import EvalPipe
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from .r2r_abstractions import (
-    DeleteRequest,
-    EvalRequest,
-    IngestDocumentsRequest,
     KGSearchSettings,
+    R2RDeleteRequest,
+    R2REvalRequest,
+    R2RIngestDocumentsRequest,
     R2RPipelines,
     R2RProviders,
-    RAGRequest,
-    SearchRequest,
-    UpdateDocumentsRequest,
-    UpdatePromptRequest,
+    R2RRAGRequest,
+    R2RSearchRequest,
+    R2RUpdateDocumentsRequest,
+    R2RUpdatePromptRequest,
     VectorSearchSettings,
 )
 from .r2r_config import R2RConfig
@@ -268,7 +268,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         return {"results": f"Prompt '{name}' added successfully."}
 
     @telemetry_event("UpdatePrompt")
-    async def update_prompt_app(self, request: UpdatePromptRequest):
+    async def update_prompt_app(self, request: R2RUpdatePromptRequest):
         """Update a prompt's template and/or input types."""
         try:
             return await self.aupsert_prompt(
@@ -401,7 +401,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         }
 
     @telemetry_event("IngestDocuments")
-    async def ingest_documents_app(self, request: IngestDocumentsRequest):
+    async def ingest_documents_app(self, request: R2RIngestDocumentsRequest):
         async with manage_run(
             self.run_manager, "ingest_documents_app"
         ) as run_id:
@@ -496,7 +496,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         return {"results": "Documents updated."}
 
     @telemetry_event("UpdateDocuments")
-    async def update_documents_app(self, request: UpdateDocumentsRequest):
+    async def update_documents_app(self, request: R2RUpdateDocumentsRequest):
         async with manage_run(
             self.run_manager, "update_documents_app"
         ) as run_id:
@@ -946,7 +946,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             return {"results": results.dict()}
 
     @telemetry_event("Search")
-    async def search_app(self, request: SearchRequest):
+    async def search_app(self, request: R2RSearchRequest):
         async with manage_run(self.run_manager, "search_app") as run_id:
             try:
                 return await self.asearch(
@@ -1046,7 +1046,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
 
     @telemetry_event("RAG")
-    async def rag_app(self, request: RAGRequest):
+    async def rag_app(self, request: R2RRAGRequest):
         async with manage_run(self.run_manager, "rag_app") as run_id:
             try:
                 # Call the async RAG method
@@ -1054,7 +1054,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     request.message,
                     request.vector_settings,
                     request.kg_settings,
-                    request.rag_generation_config,
+                    request.rag_generation_config
+                    or GenerationConfig(model="gpt-4o"),
                 )
 
                 if request.streaming:
@@ -1112,7 +1113,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         return {"results": result}
 
     @telemetry_event("Evaluate")
-    async def evaluate_app(self, request: EvalRequest):
+    async def evaluate_app(self, request: R2REvalRequest):
         async with manage_run(self.run_manager, "evaluate_app") as run_id:
             try:
                 return await self.aevaluate(
@@ -1152,7 +1153,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         return {"results": "Entries deleted successfully."}
 
     @telemetry_event("Delete")
-    async def delete_app(self, request: DeleteRequest = Body(...)):
+    async def delete_app(self, request: R2RDeleteRequest = Body(...)):
         try:
             return await self.adelete(request.keys, request.values)
         except Exception as e:

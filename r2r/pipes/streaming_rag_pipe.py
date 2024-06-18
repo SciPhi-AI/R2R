@@ -55,27 +55,26 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
         iteration = 0
         context = ""
         # dump the search results and construct the context
-        print('input = ', input)
         async for query, search_results in input.message:
             yield f"<{self.SEARCH_STREAM_MARKER}>"
             if search_results.vector_search_results:
+                context += "Vector Search Results:\n"
                 for result in search_results.vector_search_results:
                     if iteration >= 1:
                         yield ","
                     yield json.dumps(result.json())
-                    context += f"Result {iteration+1}:\n{result.metadata['text']}\n\n"
+                    context += f"{iteration+1}:\n{result.metadata['text']}\n\n"
                     iteration += 1
 
-            if search_results.kg_search_results:
-                for result in search_results.kg_search_results:
-                    if iteration >= 1:
-                        yield ","
-                    yield json.dumps(result.json())
-                    context += f"Result {iteration+1}:\n{result.metadata['text']}\n\n"
-                    iteration += 1
+            # if search_results.kg_search_results:
+            #     for result in search_results.kg_search_results:
+            #         if iteration >= 1:
+            #             yield ","
+            #         yield json.dumps(result.json())
+            #         context += f"Result {iteration+1}:\n{result.metadata['text']}\n\n"
+            #         iteration += 1
 
             yield f"</{self.SEARCH_STREAM_MARKER}>"
-
 
             messages = self._get_message_payload(query, context)
             yield f"<{self.COMPLETION_STREAM_MARKER}>"

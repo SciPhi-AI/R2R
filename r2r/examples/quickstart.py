@@ -16,6 +16,7 @@ from r2r import (
     R2RAppBuilder,
     R2RClient,
     R2RConfig,
+    R2RSearchRequest,
     VectorSearchSettings,
     generate_id_from_label,
 )
@@ -265,7 +266,7 @@ class R2RQuickstart:
                 item.split("=") for item in search_filters.split(",")
             )
 
-        vector_settings = VectorSearchSettings(
+        vector_search_settings = VectorSearchSettings(
             use_vector_search=use_vector_search,
             search_filters=search_filters_dict,
             search_limit=search_limit,
@@ -278,7 +279,7 @@ class R2RQuickstart:
                 item.split("=") for item in agent_generation_config.split(",")
             )
 
-        kg_settings = KGSearchSettings(
+        kg_search_settings = KGSearchSettings(
             use_kg=use_kg,
             agent_generation_config=(
                 GenerationConfig(**agent_gen_config)
@@ -287,18 +288,20 @@ class R2RQuickstart:
             ),
         )
 
+        search_request = R2RSearchRequest(
+            query=query,
+            vector_settings=vector_search_settings,
+            kg_settings=kg_search_settings,
+        )
+
         t0 = time.time()
         if hasattr(self, "client"):
-            results = self.client.search(
-                query,
-                vector_search_settings=vector_settings,
-                kg_search_settings=kg_settings,
-            )
+            results = self.client.search(search_request)
         else:
             results = self.r2r.search(
-                query=query,
-                vector_search_settings=vector_settings,
-                kg_search_settings=kg_settings,
+                search_request.query,
+                search_request.vector_settings,
+                search_request.kg_settings,
             )
 
         if "vector_search_results" in results["results"]:
