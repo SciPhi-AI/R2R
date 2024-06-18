@@ -60,7 +60,8 @@ class RAGPipeline(Pipeline):
                         self.search_pipeline.run(
                             to_async_generator([query]),
                             state,
-                            streaming,
+                            # streaming,
+                            False,
                             run_manager,
                             vector_search_settings=vector_search_settings,
                             kg_search_settings=kg_search_settings,
