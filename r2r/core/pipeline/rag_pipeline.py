@@ -74,9 +74,7 @@ class RAGPipeline(Pipeline):
                     yield (query, await task)
 
             rag_results = await self.rag_pipeline.run(
-                input=multi_query_generator(
-                    input
-                ),  # to_async_generator([(input, search_results)]),
+                input=multi_query_generator(input),
                 state=state,
                 streaming=streaming,
                 run_manager=run_manager,
@@ -84,7 +82,7 @@ class RAGPipeline(Pipeline):
                 *args,
                 **kwargs,
             )
-            print("rag_results = ", rag_results)
+            return rag_results
 
     def add_pipe(
         self,

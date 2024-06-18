@@ -12,9 +12,11 @@ from r2r import (
     AnalysisTypes,
     Document,
     FilterCriteria,
+    KGSearchSettings,
     R2RAppBuilder,
     R2RClient,
     R2RConfig,
+    VectorSearchSettings,
     generate_id_from_label,
 )
 from r2r.core.abstractions.llm import GenerationConfig
@@ -247,24 +249,69 @@ class R2RQuickstart:
         print(f"Time taken to update files: {t1-t0:.2f} seconds")
         print(response)
 
-    def search(self, query: str, do_hybrid_search: bool = False):
+    def search(
+        self,
+        query: str,
+        use_vector_search: bool = True,
+        search_filters: Optional[str] = None,
+        search_limit: int = 10,
+        do_hybrid_search: bool = False,
+        use_kg: bool = False,
+        agent_generation_config: Optional[str] = None,
+    ):
+        search_filters_dict = {}
+        if search_filters:
+            search_filters_dict = dict(
+                item.split("=") for item in search_filters.split(",")
+            )
+
+        vector_settings = VectorSearchSettings(
+            use_vector_search=use_vector_search,
+            search_filters=search_filters_dict,
+            search_limit=search_limit,
+            do_hybrid_search=do_hybrid_search,
+        )
+
+        agent_gen_config = {}
+        if agent_generation_config:
+            agent_gen_config = dict(
+                item.split("=") for item in agent_generation_config.split(",")
+            )
+
+        kg_settings = KGSearchSettings(
+            use_kg=use_kg,
+            agent_generation_config=(
+                GenerationConfig(**agent_gen_config)
+                if agent_generation_config
+                else GenerationConfig(model="gpt-4o")
+            ),
+        )
+
         t0 = time.time()
         if hasattr(self, "client"):
             results = self.client.search(
                 query,
-                search_filters={"user_id": self.user_id},
-                do_hybrid_search=do_hybrid_search,
+                vector_search_settings=vector_settings,
+                kg_search_settings=kg_settings,
             )
         else:
             results = self.r2r.search(
-                query,
-                search_filters={"user_id": self.user_id},
-                do_hybrid_search=do_hybrid_search,
+                query=query,
+                vector_search_settings=vector_settings,
+                kg_search_settings=kg_settings,
+            )
+
+        if "vector_search_results" in results["results"]:
+            print("Vector search results:")
+            for result in results["results"]["vector_search_results"]:
+                print(result)
+        if "kg_search_results" in results["results"]:
+            print(
+                "KG search results:", results["results"]["kg_search_results"]
             )
 
         t1 = time.time()
         print(f"Time taken to search: {t1-t0:.2f} seconds")
-        print("Results:", results)
 
     def rag(
         self,

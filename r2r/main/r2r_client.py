@@ -128,22 +128,21 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
-    async def search(
+    def search(
         self,
         query: str,
-        vector_settings: VectorSearchSettings,
-        kg_settings: KGSearchSettings,
+        vector_search_settings: VectorSearchSettings,
+        kg_search_settings: KGSearchSettings,
     ) -> dict:
-        url = f"{self.base_url}/search_app"
+        url = f"{self.base_url}/search"
         search_request = SearchRequest(
             query=query,
-            vector_settings=vector_settings,
-            kg_settings=kg_settings,
+            vector_settings=vector_search_settings,
+            kg_settings=kg_search_settings,
         )
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=search_request.dict())
-            response.raise_for_status()
-            return response.json()
+        response = requests.post(url, json=search_request.dict())
+        response.raise_for_status()
+        return response.json()
 
     def rag(
         self,

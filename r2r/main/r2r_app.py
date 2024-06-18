@@ -928,8 +928,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
             results = await self.search_pipeline.run(
                 input=to_async_generator([query]),
-                vector_settings=vector_search_settings,
-                kg_settings=kg_search_settings,
+                vector_search_settings=vector_search_settings,
+                kg_search_settings=kg_search_settings,
                 run_manager=self.run_manager,
             )
 
