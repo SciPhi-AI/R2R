@@ -8,9 +8,9 @@ import httpx
 import nest_asyncio
 import requests
 
-from r2r.core import KGSearchSettings, VectorSearchSettings
-from r2r.main.r2r_abstractions import (
-    GenerationConfig,
+from r2r.core import GenerationConfig, KGSearchSettings, VectorSearchSettings
+
+from ..abstractions import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
@@ -29,8 +29,9 @@ nest_asyncio.apply()
 
 
 class R2RClient:
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str, prefix: str = "/v1"):
         self.base_url = base_url
+        self.prefix = prefix
 
     def update_prompt(
         self,
@@ -38,7 +39,7 @@ class R2RClient:
         template: Optional[str] = None,
         input_types: Optional[dict] = None,
     ) -> dict:
-        url = f"{self.base_url}/update_prompt"
+        url = f"{self.base_url}{self.prefix}/update_prompt"
         request = R2RUpdatePromptRequest(
             name=name, template=template, input_types=input_types
         )
@@ -49,7 +50,7 @@ class R2RClient:
     def ingest_documents(
         self, documents: list[dict], versions: Optional[list[str]] = None
     ) -> dict:
-        url = f"{self.base_url}/ingest_documents"
+        url = f"{self.base_url}{self.prefix}/ingest_documents"
         request = R2RIngestDocumentsRequest(
             documents=documents, versions=versions
         )
@@ -66,7 +67,7 @@ class R2RClient:
         versions: Optional[list[str]] = None,
         skip_document_info: Optional[bool] = False,
     ) -> dict:
-        url = f"{self.base_url}/ingest_files"
+        url = f"{self.base_url}{self.prefix}/ingest_files"
         files_to_upload = [
             ("files", (file, open(file, "rb"), "application/octet-stream"))
             for file in file_paths
@@ -98,7 +99,7 @@ class R2RClient:
         versions: Optional[list[str]] = None,
         metadatas: Optional[list[dict]] = None,
     ) -> dict:
-        url = f"{self.base_url}/update_documents"
+        url = f"{self.base_url}{self.prefix}/update_documents"
         request = R2RUpdateDocumentsRequest(
             documents=documents, versions=versions, metadatas=metadatas
         )
@@ -112,7 +113,7 @@ class R2RClient:
         document_ids: list[str],
         metadatas: Optional[list[dict]] = None,
     ) -> dict:
-        url = f"{self.base_url}/update_files"
+        url = f"{self.base_url}{self.prefix}/update_files"
         files_to_upload = [
             ("files", (file, open(file, "rb"), "application/octet-stream"))
             for file in files
@@ -150,7 +151,7 @@ class R2RClient:
                 agent_generation_config=kg_agent_generation_config,
             ),
         )
-        url = f"{self.base_url}/search"
+        url = f"{self.base_url}{self.prefix}/search"
         response = requests.post(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
@@ -185,7 +186,7 @@ class R2RClient:
             return self._stream_rag_sync(request)
         else:
             try:
-                url = f"{self.base_url}/rag"
+                url = f"{self.base_url}{self.prefix}/rag"
                 response = requests.post(url, json=json.loads(request.json()))
                 response.raise_for_status()
                 return response.json()
@@ -195,7 +196,7 @@ class R2RClient:
     async def _stream_rag(
         self, rag_request: R2RRAGRequest
     ) -> AsyncGenerator[str, None]:
-        url = f"{self.base_url}/rag"
+        url = f"{self.base_url}{self.prefix}/rag"
         async with httpx.AsyncClient() as client:
             async with client.stream(
                 "POST", url, json=json.loads(rag_request.json())
@@ -230,14 +231,14 @@ class R2RClient:
     def delete(
         self, keys: list[str], values: list[Union[bool, int, str]]
     ) -> dict:
-        url = f"{self.base_url}/delete"
+        url = f"{self.base_url}{self.prefix}/delete"
         request = R2RDeleteRequest(keys=keys, values=values)
         response = requests.delete(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
 
     def logs(self, log_type_filter: Optional[str] = None) -> dict:
-        url = f"{self.base_url}/logs"
+        url = f"{self.base_url}{self.prefix}/logs"
         params = {}
         if log_type_filter:
             params["log_type_filter"] = log_type_filter
@@ -246,13 +247,13 @@ class R2RClient:
         return response.json()
 
     def app_settings(self) -> dict:
-        url = f"{self.base_url}/app_settings"
+        url = f"{self.base_url}{self.prefix}/app_settings"
         response = requests.get(url)
         response.raise_for_status()
         return response.json()
 
     def analytics(self, filter_criteria: dict, analysis_types: dict) -> dict:
-        url = f"{self.base_url}/analytics"
+        url = f"{self.base_url}{self.prefix}/analytics"
         request = R2RAnalyticsRequest(
             filter_criteria=filter_criteria, analysis_types=analysis_types
         )
@@ -261,7 +262,7 @@ class R2RClient:
         return response.json()
 
     def users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
-        url = f"{self.base_url}/users_stats"
+        url = f"{self.base_url}{self.prefix}/users_stats"
         request = R2RUsersStatsRequest(
             user_ids=[uuid.UUID(uid) for uid in user_ids] if user_ids else None
         )
@@ -274,7 +275,7 @@ class R2RClient:
         document_ids: Optional[list[str]] = None,
         user_ids: Optional[list[str]] = None,
     ) -> dict:
-        url = f"{self.base_url}/documents_info"
+        url = f"{self.base_url}{self.prefix}/documents_info"
         request = R2RDocumentsInfoRequest(
             document_ids=(
                 [uuid.UUID(did) for did in document_ids]
@@ -290,7 +291,7 @@ class R2RClient:
         return response.json()
 
     def document_chunks(self, document_id: str) -> dict:
-        url = f"{self.base_url}/document_chunks"
+        url = f"{self.base_url}{self.prefix}/document_chunks"
         request = R2RDocumentChunksRequest(document_id=document_id)
         response = requests.post(url, json=json.loads(request.json()))
         response.raise_for_status()

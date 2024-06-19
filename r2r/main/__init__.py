@@ -1,4 +1,4 @@
-from .r2r_abstractions import (
+from .abstractions import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
@@ -15,11 +15,17 @@ from .r2r_abstractions import (
     R2RUpdatePromptRequest,
     R2RUsersStatsRequest,
 )
-from .r2r_app import R2RApp
-from .r2r_builder import R2RAppBuilder
-from .r2r_client import R2RClient
-from .r2r_config import R2RConfig
-from .r2r_factory import R2RPipeFactory, R2RPipelineFactory, R2RProviderFactory
+from .api.client import R2RClient
+
+# from .r2r_app import R2RApp
+from .app import R2RApp
+from .assembly.builder import R2RAppBuilder
+from .assembly.config import R2RConfig
+from .assembly.factory import (
+    R2RPipeFactory,
+    R2RPipelineFactory,
+    R2RProviderFactory,
+)
 
 __all__ = [
     "R2RPipelines",
