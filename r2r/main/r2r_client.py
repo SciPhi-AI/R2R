@@ -101,7 +101,9 @@ class R2RClient:
         metadatas: Optional[list[dict]] = None,
     ) -> dict:
         url = f"{self.base_url}/update_documents"
-        request = R2RUpdateDocumentsRequest(documents=documents, versions=None)
+        request = R2RUpdateDocumentsRequest(
+            documents=documents, versions=versions, metadatas=metadatas
+        )
         response = requests.post(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
