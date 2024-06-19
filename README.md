@@ -38,6 +38,9 @@ For a more complete view of R2R, check out our [documentation](https://r2r-docs.
 
 # Quick Install:
 
+> [!NOTE]
+> Windows users are advised to use Docker to run R2R.
+
 <details open>
 <summary><b>Installing with Pip</b>&nbsp;🐍 </summary>
 
@@ -48,12 +51,6 @@ pip install r2r
 # setup env
 export OPENAI_API_KEY=sk-...
 ```
-
-> [!IMPORTANT]  
-> Windows users are advised to use Docker to run R2R.
-
-</details>
-
 <details>
 <summary><b>Installing with Docker</b>&nbsp;🐳</summary>
 
@@ -85,9 +82,7 @@ This command starts the R2R container with the following options:
 - `emrgntcmplxty/r2r:latest`: Specifies the Docker image to use.
 </details>
 
-
 # R2R Quickstart
-
 The following quickstart offers a step-by-step guide on running R2R locally as well as through the Python SDK. The guide ingests a list of provided provided documents and shows search, RAG, and advanced functionality. The script powering the quickstart can be found at `r2r/examples/quickstart.py`, and it can be configured and extended with sufficient developer familiarity.
 
 ![ingest_as_files](https://github.com/SciPhi-AI/R2R/assets/34580718/b0780f26-8e90-4459-9537-e5871453d003)
