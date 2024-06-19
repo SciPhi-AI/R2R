@@ -7,6 +7,7 @@ from r2r.core import AsyncSyncMeta, KVLoggingSingleton, RunManager, syncable
 from .abstractions import R2RPipelines, R2RProviders
 from .assembly.config import R2RConfig
 from .services.ingestion_service import IngestionService
+from .services.management_service import ManagementService
 from .services.retrieval_service import RetrievalService
 
 
@@ -34,16 +35,21 @@ class R2RApp(metaclass=AsyncSyncMeta):
         self.retrieval_service = RetrievalService(
             config, providers, pipelines, run_manager, logging_connection
         )
+        self.management_service = ManagementService(
+            config, providers, pipelines, run_manager, logging_connection
+        )
 
         self._setup_routes()
         self._apply_cors()
 
     def _setup_routes(self):
-        from .api.routes import ingestion, retrieval
+        from .api.routes import ingestion, management, retrieval
 
         self.app.include_router(ingestion.router, prefix="/v1")
         self.app.include_router(retrieval.router, prefix="/v1")
+        self.app.include_router(management.router, prefix="/v1")
 
+    # Ingestion routes
     @syncable
     async def aingest_documents(self, *args, **kwargs):
         return await self.ingestion_service.ingest_documents(*args, **kwargs)
@@ -60,6 +66,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def aupdate_files(self, *args, **kwargs):
         return await self.ingestion_service.update_files(*args, **kwargs)
 
+    # Retrieval routes
     @syncable
     async def asearch(self, *args, **kwargs):
         return await self.retrieval_service.search(*args, **kwargs)
@@ -71,6 +78,43 @@ class R2RApp(metaclass=AsyncSyncMeta):
     @syncable
     async def aevaluate(self, *args, **kwargs):
         return await self.retrieval_service.evaluate(*args, **kwargs)
+
+    # Management routes
+    @syncable
+    async def aupdate_prompt(self, *args, **kwargs):
+        return await self.management_service.update_prompt(*args, **kwargs)
+
+    @syncable
+    async def alogs(self, *args, **kwargs):
+        return await self.management_service.alogs(*args, **kwargs)
+
+    @syncable
+    async def aanalytics(self, *args, **kwargs):
+        return await self.management_service.aanalytics(*args, **kwargs)
+
+    @syncable
+    async def aapp_settings(self, *args, **kwargs):
+        return await self.management_service.aapp_settings(*args, **kwargs)
+
+    @syncable
+    async def ausers_stats(self, *args, **kwargs):
+        return await self.management_service.ausers_stats(*args, **kwargs)
+
+    @syncable
+    async def adelete(self, *args, **kwargs):
+        return await self.management_service.delete(*args, **kwargs)
+
+    @syncable
+    async def adocuments_info(self, *args, **kwargs):
+        return await self.management_service.adocuments_info(*args, **kwargs)
+
+    @syncable
+    async def adocument_chunks(self, *args, **kwargs):
+        return await self.management_service.document_chunks(*args, **kwargs)
+
+    @syncable
+    async def aopenapi_spec(self, *args, **kwargs):
+        return await self.management_service.openapi_spec(*args, **kwargs)
 
     def _apply_cors(self):
         from fastapi.middleware.cors import CORSMiddleware

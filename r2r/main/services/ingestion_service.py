@@ -25,25 +25,25 @@ from ..abstractions import (
     R2RProviders,
     R2RUpdateFilesRequest,
 )
+from ..assembly.config import R2RConfig
+from .base import Service
 
 logger = logging.getLogger(__name__)
 MB_CONVERSION_FACTOR = 1024 * 1024
 
 
-class IngestionService:
+class IngestionService(Service):
     def __init__(
         self,
-        config,
+        config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
         run_manager: RunManager,
         logging_connection: KVLoggingSingleton,
     ):
-        self.config = config
-        self.providers = providers
-        self.pipelines = pipelines
-        self.run_manager = run_manager
-        self.logging_connection = logging_connection
+        super().__init__(
+            config, providers, pipelines, run_manager, logging_connection
+        )
 
     @telemetry_event("IngestDocuments")
     async def ingest_documents(

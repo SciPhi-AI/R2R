@@ -16,8 +16,6 @@ from .abstractions import (
     R2RUsersStatsRequest,
 )
 from .api.client import R2RClient
-
-# from .r2r_app import R2RApp
 from .app import R2RApp
 from .assembly.builder import R2RAppBuilder
 from .assembly.config import R2RConfig
