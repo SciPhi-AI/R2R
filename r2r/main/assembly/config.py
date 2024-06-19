@@ -4,14 +4,14 @@ import os
 from enum import Enum
 from typing import Any
 
-from ..core.abstractions.document import DocumentType
-from ..core.logging.kv_logger import LoggingConfig
-from ..core.providers.embedding_provider import EmbeddingConfig
-from ..core.providers.eval_provider import EvalConfig
-from ..core.providers.kg_provider import KGConfig
-from ..core.providers.llm_provider import LLMConfig
-from ..core.providers.prompt_provider import PromptConfig
-from ..core.providers.vector_db_provider import ProviderConfig, VectorDBConfig
+from ...core.abstractions.document import DocumentType
+from ...core.logging.kv_logger import LoggingConfig
+from ...core.providers.embedding_provider import EmbeddingConfig
+from ...core.providers.eval_provider import EvalConfig
+from ...core.providers.kg_provider import KGConfig
+from ...core.providers.llm_provider import LLMConfig
+from ...core.providers.prompt_provider import PromptConfig
+from ...core.providers.vector_db_provider import ProviderConfig, VectorDBConfig
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +96,9 @@ class R2RConfig:
         if config_path is None:
             # Get the root directory of the project
             file_dir = os.path.dirname(os.path.abspath(__file__))
-            config_path = os.path.join(file_dir, "..", "..", "config.json")
+            config_path = os.path.join(
+                file_dir, "..", "..", "..", "config.json"
+            )
 
         # Load configuration from JSON file
         with open(config_path) as f:
@@ -132,7 +134,9 @@ class R2RConfig:
     def load_default_config(cls) -> dict:
         # Get the root directory of the project
         file_dir = os.path.dirname(os.path.abspath(__file__))
-        default_config_path = os.path.join(file_dir, "..", "..", "config.json")
+        default_config_path = os.path.join(
+            file_dir, "..", "..", "..", "config.json"
+        )
         # Load default configuration from JSON file
         with open(default_config_path) as f:
             return json.load(f)
