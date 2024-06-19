@@ -111,10 +111,15 @@ async def test_ingest_txt_file(client):
         ),
     ]
 
+    request = R2RIngestFilesRequest(
+        metadatas=[metadata],
+    )
+
     response = client.post(
         "/ingest_files/",
         # must use data instead of json when sending files
-        data={"metadatas": json.dumps([metadata])},
+        # data={"metadatas": json.dumps([metadata])},
+        data={k: json.dumps(v) for k, v in json.loads(request.json()).items()},
         files=files,
     )
 
@@ -146,14 +151,14 @@ async def test_search(client):
 @pytest.mark.asyncio
 async def test_rag(client):
     query = "who was aristotle?"
-    rag_request = R2RRAGRequest(
+    request = R2RRAGRequest(
         query=query,
         vector_settings=VectorSearchSettings(),
         kg_settings=KGSearchSettings(),
         rag_generation_config=None,
     )
 
-    response = client.post("/rag/", json=rag_request.dict())
+    response = client.post("/rag/", json=json.loads(request.json()))
     assert response.status_code == 200
     assert "results" in response.json()
 
