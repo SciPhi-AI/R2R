@@ -1,5 +1,6 @@
 """Abstractions for documents and their extractions."""
 
+import base64
 import json
 import logging
 import uuid
@@ -7,6 +8,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Union
 
+from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -43,8 +45,46 @@ class Document(BaseModel):
     data: DataType
     metadata: dict
 
-    title: Optional[str] = None
-    user_id: Optional[uuid.UUID] = None
+    def encode_data(self):
+        if isinstance(self.data, bytes):
+            self.data = base64.b64encode(self.data).decode("utf-8")
+        self.id = str(self.id)
+        for key, value in self.metadata.items():
+            if isinstance(value, uuid.UUID):
+                self.metadata[key] = str(value)
+
+    def decode_data(self):
+        if isinstance(self.data, str):
+            try:
+                self.data = base64.b64decode(self.data.encode("utf-8"))
+            except Exception as e:
+                raise HTTPException(
+                    status_code=400, detail=f"Failed to decode data: {e}"
+                )
+        self.id = uuid.UUID(self.id)
+        for key, value in self.metadata.items():
+            try:
+                self.metadata[key] = uuid.UUID(value)
+            except ValueError:
+                pass
+
+    # title: Optional[str] = None
+    # user_id: Optional[uuid.UUID] = None
+
+    # class Config:
+    #     json_encoders = {
+    #         uuid.UUID: lambda v: str(v),
+    #         bytes: lambda v: base64.b64encode(v).decode("utf-8"),
+    #     }
+
+    # def decode_data(self):
+    #     if isinstance(self.data, str):
+    #         try:
+    #             self.data = base64.b64decode(self.data.encode("utf-8"))
+    #         except Exception as e:
+    #             raise HTTPException(
+    #                 status_code=400, detail=f"Failed to decode data: {e}"
+    #             )
 
 
 class DocumentInfo(BaseModel):
@@ -55,7 +95,6 @@ class DocumentInfo(BaseModel):
     size_in_bytes: int
     metadata: dict
 
-    title: Optional[str] = None
     user_id: Optional[uuid.UUID] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -69,7 +108,7 @@ class DocumentInfo(BaseModel):
         )
         return {
             "document_id": str(self.document_id),
-            "title": self.title or "N/A",
+            "title": metadata.get("title", "N/A"),
             "user_id": metadata["user_id"],
             "version": self.version,
             "size_in_bytes": self.size_in_bytes,

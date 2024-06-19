@@ -32,6 +32,8 @@ from r2r.telemetry.telemetry_decorator import telemetry_event
 from .r2r_abstractions import (
     KGSearchSettings,
     R2RDeleteRequest,
+    R2RDocumentChunksRequest,
+    R2RDocumentsInfoRequest,
     R2REvalRequest,
     R2RIngestDocumentsRequest,
     R2RPipelines,
@@ -40,6 +42,7 @@ from .r2r_abstractions import (
     R2RSearchRequest,
     R2RUpdateDocumentsRequest,
     R2RUpdatePromptRequest,
+    R2RUsersStatsRequest,
     VectorSearchSettings,
 )
 from .r2r_config import R2RConfig
@@ -172,6 +175,30 @@ class R2RApp(metaclass=AsyncSyncMeta):
         self.run_manager = run_manager or RunManager(self.logging_connection)
         self.app = FastAPI()
 
+        from fastapi import Request
+        from fastapi.exceptions import RequestValidationError
+        from fastapi.responses import JSONResponse
+
+        @self.app.exception_handler(RequestValidationError)
+        async def validation_exception_handler(
+            request: Request, exc: RequestValidationError
+        ):
+            logger.error(f"Validation error for request: {request.url}")
+            logger.error(f"Validation error details: {exc.errors()}")
+            return JSONResponse(
+                status_code=422,
+                content={"detail": exc.errors(), "body": exc.body},
+            )
+
+        @self.app.exception_handler(HTTPException)
+        async def http_exception_handler(request: Request, exc: HTTPException):
+            logger.error(f"HTTP exception for request: {request.url}")
+            logger.error(f"HTTP exception details: {exc.detail}")
+            return JSONResponse(
+                status_code=exc.status_code,
+                content={"detail": exc.detail},
+            )
+
         self._setup_routes()
         if do_apply_cors:
             self._apply_cors()
@@ -260,18 +287,18 @@ class R2RApp(metaclass=AsyncSyncMeta):
         )
 
     @syncable
-    async def aupsert_prompt(
+    async def aupdate_prompt(
         self, name: str, template: str, input_types: dict
     ):
         """Upsert a prompt into the system."""
-        self.providers.prompt.add_prompt(name, template, input_types)
+        self.providers.prompt.update_prompt(name, template, input_types)
         return {"results": f"Prompt '{name}' added successfully."}
 
     @telemetry_event("UpdatePrompt")
     async def update_prompt_app(self, request: R2RUpdatePromptRequest):
         """Update a prompt's template and/or input types."""
         try:
-            return await self.aupsert_prompt(
+            return await self.aupdate_prompt(
                 request.name, request.template, request.input_types
             )
         except Exception as e:
@@ -284,15 +311,10 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def aingest_documents(
         self,
         documents: list[Document],
-        metadatas: Optional[list[dict]] = None,
         versions: Optional[list[str]] = None,
         *args: Any,
         **kwargs: Any,
     ):
-        if metadatas and len(metadatas) != len(documents):
-            raise ValueError(
-                "Number of metadata entries does not match number of documents."
-            )
         if len(documents) == 0:
             raise HTTPException(
                 status_code=400, detail="No documents provided for ingestion."
@@ -319,20 +341,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         status_code=409,
                         detail=f"Document with ID {document.id} already exists.",
                     )
-                skipped_documents.append(document.title or str(document.id))
+                skipped_documents.append(
+                    document.metadata.get("title", None) or str(document.id)
+                )
                 continue
 
-            document_metadata = (
-                metadatas[iteration] if metadatas else document.metadata
-            )
-            document_title = (
-                document_metadata.get("title", None) or document.title
-            )
-            document_metadata["title"] = document_title
-
-            if document.user_id:
-                document_metadata["user_id"] = str(document.user_id)
-            document.metadata = document_metadata
+            document_title = document.metadata.pop("title", None)
+            document_user_id = document.metadata.pop("user_id", None)
 
             now = datetime.now()
             version = versions[iteration] if versions else "v0"
@@ -342,16 +357,16 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         "document_id": document.id,
                         "version": version,
                         "size_in_bytes": len(document.data),
-                        "metadata": document_metadata.copy(),
+                        "metadata": document.metadata.copy(),
                         "title": document_title,
-                        "user_id": document.user_id,
+                        "user_id": document_user_id,
                         "created_at": now,
                         "updated_at": now,
                     }
                 )
             )
 
-            processed_documents.append(document.title or str(document.id))
+            processed_documents.append(document_title or str(document.id))
 
         if skipped_documents and len(skipped_documents) == len(documents):
             logger.error("All provided documents already exist.")
@@ -406,7 +421,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
             self.run_manager, "ingest_documents_app"
         ) as run_id:
             try:
-                results = await self.aingest_documents(request.documents)
+                results = await self.aingest_documents(
+                    request.documents, request.versions
+                )
                 return {"results": results}
 
             except HTTPException as he:
@@ -464,12 +481,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
             document_metadata = (
                 metadatas[iteration] if metadatas else doc.metadata
             )
-            document_metadata["title"] = (
-                document_metadata.get("title", None) or doc.title
-            )
-            document_metadata["user_id"] = (
-                str(doc.user_id) if doc.user_id else None
-            )
+            document_metadata["title"] = document_metadata.get(
+                "title", None
+            ) or document_metadata.get("title", None)
             document_infos_modified.append(
                 DocumentInfo(
                     **{
@@ -478,7 +492,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         "size_in_bytes": len(doc.data),
                         "metadata": document_metadata.copy(),
                         "title": document_metadata["title"],
-                        "user_id": doc.user_id,
+                        "user_id": document_metadata.get("user_id", None),
                         "created_at": document_info.created_at,
                         "updated_at": datetime.now(),
                     }
@@ -501,7 +515,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
             self.run_manager, "update_documents_app"
         ) as run_id:
             try:
-                return await self.aupdate_documents(request.documents)
+                return await self.aupdate_documents(
+                    request.documents, request.versions, request.metadatas
+                )
             except Exception as e:
                 await self.logging_connection.log(
                     log_id=run_id,
@@ -701,28 +717,33 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 file.file.close()
 
     @telemetry_event("IngestFiles")
+    # Cannot use `request = R2RIngestFilesRequest` here because of the file upload
     async def ingest_files_app(
         self,
         files: list[UploadFile] = File(...),
-        metadatas: Optional[str] = Form(None),
-        ids: Optional[str] = Form(None),
-        user_ids: Optional[str] = Form(None),
+        metadatas: Optional[dict] = Form(None),
+        document_ids: Optional[list[str]] = Form(None),
+        user_ids: Optional[list[str]] = Form(None),
+        versions: Optional[list[str]] = Form(None),
+        skip_document_info: Optional[bool] = Form(False),
     ):
         """Ingest files into the system."""
         async with manage_run(self.run_manager, "ingest_files_app") as run_id:
             try:
-                if ids and ids != "null":
-                    ids_list = json.loads(ids)
-                    if len(ids_list) != 0:
+                if document_ids and document_ids != "null":
+                    document_ids_list = json.loads(document_ids)
+                    if len(document_ids_list) != 0:
                         try:
-                            ids_list = [uuid.UUID(id) for id in ids_list]
+                            document_ids_list = [
+                                uuid.UUID(id) for id in document_ids_list
+                            ]
                         except ValueError as e:
                             raise HTTPException(
                                 status_code=400,
                                 detail="Invalid UUID provided.",
                             ) from e
                 else:
-                    ids_list = None
+                    document_ids_list = None
 
                 if user_ids and user_ids != "null":
                     user_ids_list = json.loads(user_ids)
@@ -751,8 +772,10 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 results = await self.aingest_files(
                     files=files,
                     metadatas=metadatas,
-                    document_ids=ids_list,
+                    document_ids=document_ids_list,
                     user_ids=user_ids_list,
+                    versions=versions,
+                    skip_document_info=skip_document_info,
                 )
                 return {"results": results}
 
@@ -780,7 +803,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def aupdate_files(
         self,
         files: list[UploadFile],
-        ids: list[uuid.UUID],
+        document_ids: list[uuid.UUID],
         metadatas: Optional[list[dict]] = None,
         *args: Any,
         **kwargs: Any,
@@ -792,7 +815,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
         try:
             # Parse ids if provided
-            if len(ids) != len(files):
+            if len(document_ids) != len(files):
                 raise HTTPException(
                     status_code=400,
                     detail="Number of ids does not match number of files.",
@@ -808,7 +831,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
             # Get the current document info
             old_versions = []
             new_versions = []
-            documents_info = await self.adocuments_info(document_ids=ids)
+            documents_info = await self.adocuments_info(
+                document_ids=document_ids
+            )
             documents_info_modified = []
             if len(documents_info) != len(files):
                 raise HTTPException(
@@ -819,7 +844,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 if not document_info:
                     raise HTTPException(
                         status_code=404,
-                        detail=f"Document with id {ids[it]} not found.",
+                        detail=f"Document with id {document_ids[it]} not found.",
                     )
 
                 current_version = document_info.version
@@ -841,13 +866,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
             await self.aingest_files(
                 files,
                 [ele.metadata for ele in documents_info_modified],
-                ids,
+                document_ids,
                 versions=new_versions,
                 skip_document_info=True,
             )
 
             # Delete the old version
-            for id, old_version in zip(ids, old_versions):
+            for id, old_version in zip(document_ids, old_versions):
                 await self.adelete(
                     ["document_id", "version"], [str(id), old_version]
                 )
@@ -869,7 +894,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         self,
         files: list[UploadFile] = File(...),
         metadatas: Optional[str] = Form(None),
-        ids: Optional[str] = Form(None),
+        document_ids: Optional[str] = Form(None),
     ):
         async with manage_run(self.run_manager, "update_files_app") as run_id:
             try:
@@ -881,7 +906,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
 
                 # Parse ids if provided
-                ids_list = json.loads(ids)
+                ids_list = json.loads(document_ids)
                 if ids_list:
                     ids_list = [uuid.UUID(id) for id in ids_list]
                 if len(ids_list) != len(files):
@@ -895,7 +920,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         detail="Number of metadata entries does not match number of files.",
                     )
                 return await self.aupdate_files(
-                    files=files, metadatas=metadatas, ids=ids_list
+                    files=files, metadatas=metadatas, document_ids=ids_list
                 )
             except Exception as e:
                 await self.logging_connection.log(
@@ -1353,15 +1378,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
         )
 
     @telemetry_event("UsersStats")
-    async def users_stats_app(
-        self, user_ids: Optional[list[uuid.UUID]] = Query(None)
-    ):
+    async def users_stats_app(self, request: R2RUsersStatsRequest):
         try:
-            users_stats = await self.ausers_stats(user_ids)
+            users_stats = await self.ausers_stats(request.user_ids)
             return {"results": users_stats}
         except Exception as e:
             logger.error(
-                f"users_stats_app(user_ids={user_ids}) - \n\n{str(e)})"
+                f"users_stats_app(user_ids={request.user_ids}) - \n\n{str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -1383,19 +1406,15 @@ class R2RApp(metaclass=AsyncSyncMeta):
         )
 
     @telemetry_event("DocumentsInfo")
-    async def documents_info_app(
-        self,
-        document_ids: Optional[list[str]] = Query(None),
-        user_ids: Optional[list[str]] = Query(None),
-    ):
+    async def documents_info_app(self, request: R2RDocumentsInfoRequest):
         try:
             documents_info = await self.adocuments_info(
-                document_id=document_ids, user_id=user_ids
+                document_id=request.document_ids, user_id=request.user_ids
             )
             return {"results": documents_info}
         except Exception as e:
             logger.error(
-                f"documents_info_app(document_ids={document_ids}, user_ids={user_ids}) - \n\n{str(e)})"
+                f"documents_info_app(document_ids={request.document_ids}, user_ids={request.user_ids}) - \n\n{str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -1404,13 +1423,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
         return self.providers.vector_db.get_document_chunks(document_id)
 
     @telemetry_event("DocumentChunks")
-    async def document_chunks_app(self, document_id: str):
+    async def document_chunks_app(self, request: R2RDocumentChunksRequest):
         try:
-            chunks = await self.adocument_chunks(document_id)
+            chunks = await self.adocument_chunks(request.document_id)
             return {"results": chunks}
         except Exception as e:
             logger.error(
-                f"get_document_chunks_app(document_id={document_id}) - \n\n{str(e)})"
+                f"get_document_chunks_app(document_id={request.document_id}) - \n\n{str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e)) from e
 

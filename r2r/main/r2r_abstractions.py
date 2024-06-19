@@ -1,3 +1,4 @@
+import uuid
 from typing import Optional, Union
 
 from pydantic import BaseModel
@@ -63,15 +64,31 @@ class R2RPipelines(BaseModel):
 class R2RUpdatePromptRequest(BaseModel):
     name: str
     template: Optional[str] = None
-    input_types: Optional[dict[str, str]] = None
+    input_types: Optional[dict[str, str]] = {}
 
 
 class R2RIngestDocumentsRequest(BaseModel):
     documents: list[Document]
+    versions: Optional[list[str]] = None
 
 
 class R2RUpdateDocumentsRequest(BaseModel):
     documents: list[Document]
+    versions: Optional[list[str]] = None
+    metadatas: Optional[list[dict]] = None
+
+
+class R2RIngestFilesRequest(BaseModel):
+    metadatas: Optional[dict] = None
+    document_ids: Optional[list[str]] = None
+    user_ids: Optional[list[str]] = None
+    versions: Optional[list[str]] = None
+    skip_document_info: Optional[bool] = False
+
+
+class R2RUpdateFilesRequest(BaseModel):
+    metadatas: Optional[str] = None
+    document_ids: Optional[str] = None
 
 
 class R2RSearchRequest(BaseModel):
@@ -97,3 +114,21 @@ class R2REvalRequest(BaseModel):
 class R2RDeleteRequest(BaseModel):
     keys: list[str]
     values: list[Union[bool, int, str]]
+
+
+class R2RAnalyticsRequest(BaseModel):
+    filter_criteria: dict[str, str]
+    analysis_types: dict[str, str]
+
+
+class R2RUsersStatsRequest(BaseModel):
+    user_ids: Optional[list[uuid.UUID]]
+
+
+class R2RDocumentsInfoRequest(BaseModel):
+    document_ids: Optional[list[uuid.UUID]]
+    user_ids: Optional[list[uuid.UUID]]
+
+
+class R2RDocumentChunksRequest(BaseModel):
+    document_id: uuid.UUID

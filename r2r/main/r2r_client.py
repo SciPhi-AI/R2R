@@ -3,25 +3,29 @@ import json
 import uuid
 from typing import AsyncGenerator, Generator, Optional, Union
 
+import fire
 import httpx
 import nest_asyncio
 import requests
 
-from r2r.core import DocumentType, KGSearchSettings, VectorSearchSettings
-
-from .r2r_abstractions import GenerationConfig, R2RRAGRequest, R2RSearchRequest
+from r2r.core import KGSearchSettings, VectorSearchSettings
+from r2r.main.r2r_abstractions import (
+    GenerationConfig,
+    R2RAnalyticsRequest,
+    R2RDeleteRequest,
+    R2RDocumentChunksRequest,
+    R2RDocumentsInfoRequest,
+    R2RIngestDocumentsRequest,
+    R2RIngestFilesRequest,
+    R2RRAGRequest,
+    R2RSearchRequest,
+    R2RUpdateDocumentsRequest,
+    R2RUpdateFilesRequest,
+    R2RUpdatePromptRequest,
+    R2RUsersStatsRequest,
+)
 
 nest_asyncio.apply()
-
-
-def default_serializer(obj):
-    if isinstance(obj, uuid.UUID):
-        return str(obj)
-    if isinstance(obj, DocumentType):
-        return obj.value
-    if isinstance(obj, bytes):
-        raise TypeError("Bytes serialization is not yet supported.")
-    raise TypeError(f"Type {type(obj)} not serializable.")
 
 
 class R2RClient:
@@ -30,78 +34,67 @@ class R2RClient:
 
     def update_prompt(
         self,
-        name: str,
+        name: str = "default_system",
         template: Optional[str] = None,
         input_types: Optional[dict] = None,
     ) -> dict:
         url = f"{self.base_url}/update_prompt"
-        data = {
-            "name": name,
-            "template": template,
-            "input_types": input_types,
-        }
-        response = requests.post(
-            url,
-            data=json.dumps(data, default=default_serializer),
-            headers={"Content-Type": "application/json"},
+        request = R2RUpdatePromptRequest(
+            name=name, template=template, input_types=input_types
         )
+        response = requests.post(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
 
-    def ingest_documents(self, documents: list[dict]) -> dict:
+    def ingest_documents(
+        self, documents: list[dict], versions: Optional[list[str]] = None
+    ) -> dict:
         url = f"{self.base_url}/ingest_documents"
-        data = {"documents": documents}
-        serialized_data = json.dumps(data, default=default_serializer)
-        response = requests.post(
-            url,
-            data=serialized_data,
-            headers={"Content-Type": "application/json"},
+        request = R2RIngestDocumentsRequest(
+            documents=documents, versions=versions
         )
+        response = requests.post(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
 
     def ingest_files(
         self,
-        files: list[str],
+        file_paths: list[str],
         metadatas: Optional[list[dict]] = None,
-        ids: Optional[list[str]] = None,
-        user_ids: Optional[list[str]] = None,
+        document_ids: Optional[list[Union[uuid.UUID, str]]] = None,
+        user_ids: Optional[list[Union[uuid.UUID, str]]] = None,
+        versions: Optional[list[str]] = None,
+        skip_document_info: Optional[bool] = False,
     ) -> dict:
         url = f"{self.base_url}/ingest_files"
         files_to_upload = [
             ("files", (file, open(file, "rb"), "application/octet-stream"))
-            for file in files
+            for file in file_paths
         ]
-        data = {
-            "metadatas": (
-                None
-                if metadatas is None
-                else json.dumps(metadatas, default=default_serializer)
+        request = R2RIngestFilesRequest(
+            metadatas=metadatas,
+            document_ids=(
+                [str(ele) for ele in document_ids] if document_ids else None
             ),
-            "document_ids": (
-                None
-                if ids is None
-                else json.dumps(ids, default=default_serializer)
-            ),
-            "user_ids": (
-                None
-                if user_ids is None
-                else json.dumps(user_ids, default=default_serializer)
-            ),
-        }
-        response = requests.post(url, files=files_to_upload, data=data)
+            user_ids=[str(ele) for ele in user_ids] if user_ids else None,
+            versions=versions,
+            skip_document_info=skip_document_info,
+        )
+        response = requests.post(
+            url, data=request.json(), files=files_to_upload
+        )
         response.raise_for_status()
         return response.json()
 
-    def update_documents(self, documents: list[dict]) -> dict:
+    def update_documents(
+        self,
+        documents: list[dict],
+        versions: Optional[list[str]] = None,
+        metadatas: Optional[list[dict]] = None,
+    ) -> dict:
         url = f"{self.base_url}/update_documents"
-        data = {"documents": documents}
-        serialized_data = json.dumps(data, default=default_serializer)
-        response = requests.post(
-            url,
-            data=serialized_data,
-            headers={"Content-Type": "application/json"},
-        )
+        request = R2RUpdateDocumentsRequest(documents=documents, versions=None)
+        response = requests.post(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
 
@@ -116,15 +109,13 @@ class R2RClient:
             ("files", (file, open(file, "rb"), "application/octet-stream"))
             for file in files
         ]
-        data = {
-            "metadatas": (
-                None
-                if metadatas is None
-                else json.dumps(metadatas, default=default_serializer)
-            ),
-            "ids": json.dumps(ids, default=default_serializer),
-        }
-        response = requests.post(url, files=files_to_upload, data=data)
+        request = R2RUpdateFilesRequest(
+            metadatas=metadatas,
+            document_ids=ids,
+        )
+        response = requests.post(
+            url, files=files_to_upload, json=json.loads(request.json())
+        )
         response.raise_for_status()
         return response.json()
 
@@ -133,7 +124,7 @@ class R2RClient:
         search_request: R2RSearchRequest,
     ) -> dict:
         url = f"{self.base_url}/search"
-        response = requests.post(url, json=search_request.dict())
+        response = requests.post(url, json=json.loads(search_request.json()))
         response.raise_for_status()
         return response.json()
 
@@ -157,7 +148,9 @@ class R2RClient:
         else:
             try:
                 url = f"{self.base_url}/rag"
-                response = requests.post(url, json=rag_request.dict())
+                response = requests.post(
+                    url, json=json.loads(rag_request.json())
+                )
                 response.raise_for_status()
                 return response.json()
             except requests.exceptions.RequestException as e:
@@ -169,7 +162,7 @@ class R2RClient:
         url = f"{self.base_url}/rag"
         async with httpx.AsyncClient() as client:
             async with client.stream(
-                "POST", url, json=rag_request.dict()
+                "POST", url, json=json.loads(rag_request.json())
             ) as response:
                 response.raise_for_status()
                 async for chunk in response.aiter_text():
@@ -202,8 +195,8 @@ class R2RClient:
         self, keys: list[str], values: list[Union[bool, int, str]]
     ) -> dict:
         url = f"{self.base_url}/delete"
-        data = {"keys": keys, "values": values}
-        response = requests.request("DELETE", url, json=data)
+        request = R2RDeleteRequest(keys=keys, values=values)
+        response = requests.delete(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
 
@@ -224,53 +217,50 @@ class R2RClient:
 
     def analytics(self, filter_criteria: dict, analysis_types: dict) -> dict:
         url = f"{self.base_url}/analytics"
-        data = {
-            "filter_criteria": filter_criteria,
-            "analysis_types": analysis_types,
-        }
-
-        try:
-            response = requests.post(url, json=data)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            if e.response is None:
-                raise requests.exceptions.RequestException(
-                    f"Error occurred while calling analytics API. {str(e)}"
-                ) from e
-            status_code = e.response.status_code
-            error_message = e.response.text
-            raise requests.exceptions.RequestException(
-                f"Error occurred while calling analytics API. Status Code: {status_code}, Error Message: {error_message}"
-            ) from e
+        request = R2RAnalyticsRequest(
+            filter_criteria=filter_criteria, analysis_types=analysis_types
+        )
+        response = requests.post(url, json=json.loads(request.json()))
+        response.raise_for_status()
+        return response.json()
 
     def users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
         url = f"{self.base_url}/users_stats"
-        params = {}
-        if user_ids is not None:
-            params["user_ids"] = ",".join(user_ids)
-        response = requests.get(url, params=params)
+        request = R2RUsersStatsRequest(
+            user_ids=[uuid.UUID(uid) for uid in user_ids] if user_ids else None
+        )
+        response = requests.get(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
 
     def documents_info(
         self,
-        document_ids: Optional[str] = None,
-        user_ids: Optional[str] = None,
+        document_ids: Optional[list[str]] = None,
+        user_ids: Optional[list[str]] = None,
     ) -> dict:
         url = f"{self.base_url}/documents_info"
-        params = {}
-        params["document_ids"] = (
-            json.dumps(document_ids) if document_ids else None
+        request = R2RDocumentsInfoRequest(
+            document_ids=(
+                [uuid.UUID(did) for did in document_ids]
+                if document_ids
+                else None
+            ),
+            user_ids=(
+                [uuid.UUID(uid) for uid in user_ids] if user_ids else None
+            ),
         )
-        params["user_ids"] = json.dumps(user_ids) if user_ids else None
-        response = requests.get(url, params=params)
+        response = requests.get(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
 
     def document_chunks(self, document_id: str) -> dict:
         url = f"{self.base_url}/document_chunks"
-        params = {"document_id": document_id}
-        response = requests.get(url, params=params)
+        request = R2RDocumentChunksRequest(document_id=document_id)
+        response = requests.post(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
+
+
+if __name__ == "__main__":
+    client = R2RClient(base_url="http://localhost:8000")
+    fire.Fire(client)
