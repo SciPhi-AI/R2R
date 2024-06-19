@@ -11,7 +11,15 @@ from .services.management_service import ManagementService
 from .services.retrieval_service import RetrievalService
 
 
+# class R2RApp(metaclass=AsyncSyncMeta):
 class R2RApp(metaclass=AsyncSyncMeta):
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(R2RApp, cls).__new__(cls)
+        return cls._instance
+
     def __init__(
         self,
         config: R2RConfig,
@@ -45,6 +53,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     def _setup_routes(self):
         from .api.routes import ingestion, management, retrieval
 
+        # Ensure the R2RApp instance is initialized once
         self.app.include_router(ingestion.router, prefix="/v1")
         self.app.include_router(retrieval.router, prefix="/v1")
         self.app.include_router(management.router, prefix="/v1")

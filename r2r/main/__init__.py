@@ -24,6 +24,7 @@ from .assembly.factory import (
     R2RPipelineFactory,
     R2RProviderFactory,
 )
+from .dependencies import get_r2r_app
 
 __all__ = [
     "R2RPipelines",
@@ -48,4 +49,5 @@ __all__ = [
     "R2RPipelineFactory",
     "R2RProviderFactory",
     "R2RAppBuilder",
+    "get_r2r_app",
 ]

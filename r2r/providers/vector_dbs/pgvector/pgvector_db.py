@@ -429,11 +429,15 @@ class PGVectorDB(VectorDBProvider):
             SELECT document_id, title, user_id, version, size_in_bytes, created_at, updated_at, metadata
             FROM document_info_{self.config.collection_name}
         """
+        print("query = ", query)
+
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
 
         with self.vx.Session() as sess:
             results = sess.execute(text(query), params).fetchall()
+            print("results = ", results)
+
             return [
                 DocumentInfo(
                     document_id=row[0],

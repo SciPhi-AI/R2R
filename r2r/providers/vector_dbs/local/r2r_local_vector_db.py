@@ -292,9 +292,12 @@ class R2RLocalVectorDB(VectorDBProvider):
         SELECT document_id, title, user_id, version, size_in_bytes, created_at, updated_at, metadata
         FROM document_info_{self.config.collection_name}
         """
+        print("query = ", query)
+
         conditions = []
         params = []
 
+        print("filter_document_ids = ", filter_document_ids)
         if filter_document_ids:
             placeholders = ", ".join("?" for _ in filter_document_ids)
             conditions.append(f"document_id IN ({placeholders})")
@@ -306,10 +309,12 @@ class R2RLocalVectorDB(VectorDBProvider):
 
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
-
+        print("query = ", query)
+        print("executing the query now...")
         cursor.execute(query, params)
         results = cursor.fetchall()
         conn.close()
+        print("results = ", results)
 
         document_infos = []
         for row in results:
@@ -329,6 +334,7 @@ class R2RLocalVectorDB(VectorDBProvider):
             )
             document_infos.append(document_info)
 
+        print("document_infos = ", document_infos)
         return document_infos
 
     def get_document_chunks(self, document_id: str) -> list[str]:

@@ -43,7 +43,6 @@ def r2r_app(request):
         r2r = R2RApp(
             config=config,
             providers=providers,
-            pipes=pipes,
             pipelines=pipelines,
         )
 
