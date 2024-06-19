@@ -35,7 +35,7 @@ class SearchPipeline(Pipeline):
         self,
         input: Any,
         state: Optional[AsyncState] = None,
-        streaming: bool = False,
+        stream: bool = False,
         run_manager: Optional[RunManager] = None,
         log_run_info: bool = True,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
@@ -81,7 +81,7 @@ class SearchPipeline(Pipeline):
                     self._vector_search_pipeline.run(
                         dequeue_requests(vector_search_queue),
                         state,
-                        streaming,
+                        stream,
                         run_manager,
                         log_run_info=False,
                         vector_search_settings=vector_search_settings,
@@ -93,7 +93,7 @@ class SearchPipeline(Pipeline):
                     self._kg_search_pipeline.run(
                         dequeue_requests(kg_queue),
                         state,
-                        streaming,
+                        stream,
                         run_manager,
                         log_run_info=False,
                         kg_search_settings=kg_search_settings,

@@ -1,7 +1,7 @@
 import asyncio
 import json
 import uuid
-from typing import AsyncGenerator, Generator, Optional, Union
+from typing import Any, AsyncGenerator, Generator, Optional, Union
 
 import fire
 import httpx
@@ -129,36 +129,64 @@ class R2RClient:
 
     def search(
         self,
-        search_request: R2RSearchRequest,
+        query: str,
+        use_vector_search: bool = True,
+        search_filters: Optional[dict[str, Any]] = {},
+        search_limit: int = 10,
+        do_hybrid_search: bool = False,
+        use_kg: bool = False,
+        kg_agent_generation_config: Optional[GenerationConfig] = None,
     ) -> dict:
+        request = R2RSearchRequest(
+            query=query,
+            vector_settings=VectorSearchSettings(
+                use_vector_search=use_vector_search,
+                search_filters=search_filters,
+                search_limit=search_limit,
+                do_hybrid_search=do_hybrid_search,
+            ),
+            kg_settings=KGSearchSettings(
+                use_kg=use_kg,
+                agent_generation_config=kg_agent_generation_config,
+            ),
+        )
         url = f"{self.base_url}/search"
-        response = requests.post(url, json=json.loads(search_request.json()))
+        response = requests.post(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
 
     def rag(
         self,
-        message: str,
-        vector_search_settings: VectorSearchSettings,
-        kg_search_settings: KGSearchSettings,
-        streaming: bool = False,
+        query: str,
+        use_vector_search: bool = True,
+        search_filters: Optional[dict[str, Any]] = {},
+        search_limit: int = 10,
+        do_hybrid_search: bool = False,
+        use_kg: bool = False,
+        kg_agent_generation_config: Optional[GenerationConfig] = None,
         rag_generation_config: Optional[GenerationConfig] = None,
-    ) -> Union[dict, Generator[str, None, None]]:
-        rag_request = R2RRAGRequest(
-            message=message,
-            vector_settings=vector_search_settings,
-            kg_settings=kg_search_settings,
+    ) -> dict:
+        request = R2RRAGRequest(
+            query=query,
+            vector_settings=VectorSearchSettings(
+                use_vector_search=use_vector_search,
+                search_filters=search_filters,
+                search_limit=search_limit,
+                do_hybrid_search=do_hybrid_search,
+            ),
+            kg_settings=KGSearchSettings(
+                use_kg=use_kg,
+                agent_generation_config=kg_agent_generation_config,
+            ),
             rag_generation_config=rag_generation_config,
         )
 
-        if streaming:
-            return self._stream_rag_sync(rag_request)
+        if rag_generation_config.stream:
+            return self._stream_rag_sync(request)
         else:
             try:
                 url = f"{self.base_url}/rag"
-                response = requests.post(
-                    url, json=json.loads(rag_request.json())
-                )
+                response = requests.post(url, json=json.loads(request.json()))
                 response.raise_for_status()
                 return response.json()
             except requests.exceptions.RequestException as e:

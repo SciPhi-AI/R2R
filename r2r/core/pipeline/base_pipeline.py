@@ -54,7 +54,7 @@ class Pipeline:
         self,
         input: Any,
         state: Optional[AsyncState] = None,
-        streaming: bool = False,
+        stream: bool = False,
         run_manager: Optional[RunManager] = None,
         log_run_info: bool = True,
         *args: Any,
@@ -92,7 +92,7 @@ class Pipeline:
                         **kwargs,
                     )
                     self.futures[config_name].set_result(current_input)
-                if not streaming:
+                if not stream:
                     final_result = await self._consume_all(current_input)
                     return final_result
                 else:
@@ -204,13 +204,13 @@ class EvalPipeline(Pipeline):
         self,
         input: Any,
         state: Optional[AsyncState] = None,
-        streaming: bool = False,
+        stream: bool = False,
         run_manager: Optional[RunManager] = None,
         *args: Any,
         **kwargs: Any,
     ):
         return await super().run(
-            input, state, streaming, run_manager, *args, **kwargs
+            input, state, stream, run_manager, *args, **kwargs
         )
 
     def add_pipe(

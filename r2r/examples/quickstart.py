@@ -16,7 +16,6 @@ from r2r import (
     R2RAppBuilder,
     R2RClient,
     R2RConfig,
-    R2RSearchRequest,
     VectorSearchSettings,
     generate_id_from_label,
 )
@@ -256,54 +255,43 @@ class R2RQuickstart:
         self,
         query: str,
         use_vector_search: bool = True,
-        search_filters: Optional[str] = None,
+        search_filters: Optional[dict] = None,
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg: bool = False,
-        agent_generation_config: Optional[str] = None,
+        kg_agent_generation_config: Optional[dict] = None,
     ):
-        search_filters_dict = {}
-        if search_filters:
-            search_filters_dict = dict(
-                item.split("=") for item in search_filters.split(",")
-            )
 
-        vector_search_settings = VectorSearchSettings(
-            use_vector_search=use_vector_search,
-            search_filters=search_filters_dict,
-            search_limit=search_limit,
-            do_hybrid_search=do_hybrid_search,
-        )
-
-        agent_gen_config = {}
-        if agent_generation_config:
-            agent_gen_config = dict(
-                item.split("=") for item in agent_generation_config.split(",")
-            )
-
-        kg_search_settings = KGSearchSettings(
-            use_kg=use_kg,
-            agent_generation_config=(
-                GenerationConfig(**agent_gen_config)
-                if agent_generation_config
-                else GenerationConfig(model="gpt-4o")
-            ),
-        )
-
-        search_request = R2RSearchRequest(
-            query=query,
-            vector_settings=vector_search_settings,
-            kg_settings=kg_search_settings,
+        kg_agent_generation_config = (
+            GenerationConfig(**kg_agent_generation_config)
+            if kg_agent_generation_config
+            else GenerationConfig(model="gpt-4o")
         )
 
         t0 = time.time()
         if hasattr(self, "client"):
-            results = self.client.search(search_request)
+            results = self.client.search(
+                query,
+                use_vector_search,
+                search_filters,
+                search_limit,
+                do_hybrid_search,
+                use_kg,
+                kg_agent_generation_config,
+            )
         else:
             results = self.r2r_app.search(
-                search_request.query,
-                search_request.vector_settings,
-                search_request.kg_settings,
+                query,
+                VectorSearchSettings(
+                    use_vector_search=use_vector_search,
+                    search_filters=search_filters,
+                    search_limit=search_limit,
+                    do_hybrid_search=do_hybrid_search,
+                ),
+                KGSearchSettings(
+                    use_kg=use_kg,
+                    agent_generation_config=kg_agent_generation_config,
+                ),
             )
 
         if "vector_search_results" in results["results"]:
@@ -324,28 +312,45 @@ class R2RQuickstart:
     def rag(
         self,
         query: str,
-        rag_generation_config: Optional[dict] = None,
-        streaming: bool = False,
+        use_vector_search: bool = True,
+        search_filters: Optional[dict] = None,
+        search_limit: int = 10,
+        do_hybrid_search: bool = False,
+        use_kg: bool = False,
+        kg_agent_generation_config: Optional[dict] = None,
+        stream: bool = False,
+        rag_generation_config: Optional[GenerationConfig] = None,
     ):
         t0 = time.time()
+
+        kg_agent_generation_config = (
+            GenerationConfig(**kg_agent_generation_config)
+            if kg_agent_generation_config
+            else GenerationConfig(model="gpt-4o")
+        )
+
+        rag_generation_config = (
+            GenerationConfig(**rag_generation_config, stream=stream)
+            if rag_generation_config
+            else GenerationConfig(model="gpt-4o", stream=stream)
+        )
+
         if hasattr(self, "client"):
-            if not streaming:
-                response = self.client.rag(
-                    query,
-                    search_filters={"user_id": self.user_id},
-                    rag_generation_config=rag_generation_config,
-                    streaming=streaming,
-                )
+            response = self.client.rag(
+                query,
+                use_vector_search,
+                search_filters,
+                search_limit,
+                do_hybrid_search,
+                use_kg,
+                kg_agent_generation_config,
+                rag_generation_config,
+            )
+            if not stream:
                 t1 = time.time()
                 print(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
                 print(response)
             else:
-                response = self.client.rag(
-                    query,
-                    search_filters={"user_id": self.user_id},
-                    rag_generation_config=rag_generation_config,
-                    streaming=streaming,
-                )
                 for chunk in response:
                     print(chunk, end="", flush=True)
                 t1 = time.time()
@@ -353,20 +358,23 @@ class R2RQuickstart:
                     f"\nTime taken to stream RAG response: {t1-t0:.2f} seconds"
                 )
         else:
-            rag_generation_config = (
-                GenerationConfig(**rag_generation_config, streaming=streaming)
-                if rag_generation_config
-                else GenerationConfig(
-                    **{"stream": streaming, "model": "gpt-3.5-turbo"}
-                )
-            )
             response = self.r2r_app.rag(
                 query,
                 search_filters={"user_id": self.user_id},
+                vector_search_settings=VectorSearchSettings(
+                    use_vector_search=use_vector_search,
+                    search_filters=search_filters,
+                    search_limit=search_limit,
+                    do_hybrid_search=do_hybrid_search,
+                ),
+                kg_search_settings=KGSearchSettings(
+                    use_kg=use_kg,
+                    agent_generation_config=kg_agent_generation_config,
+                ),
                 rag_generation_config=rag_generation_config,
             )
 
-            if not streaming:
+            if not stream:
                 t1 = time.time()
                 print(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
                 print(response)

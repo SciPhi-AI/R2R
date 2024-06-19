@@ -237,7 +237,7 @@ class R2RPipeFactory:
             rag_pipe=rag_pipe_override
             or self.create_rag_pipe(*args, **kwargs),
             streaming_rag_pipe=streaming_rag_pipe_override
-            or self.create_rag_pipe(streaming=True, *args, **kwargs),
+            or self.create_rag_pipe(stream=True, *args, **kwargs),
             eval_pipe=eval_pipe_override
             or self.create_eval_pipe(*args, **kwargs),
         )
@@ -345,8 +345,8 @@ class R2RPipeFactory:
             prompt_provider=self.providers.prompt,
         )
 
-    def create_rag_pipe(self, streaming: bool = False, *args, **kwargs) -> Any:
-        if streaming:
+    def create_rag_pipe(self, stream: bool = False, *args, **kwargs) -> Any:
+        if stream:
             from r2r.pipes import StreamingSearchRAGPipe
 
             return StreamingSearchRAGPipe(
@@ -420,12 +420,12 @@ class R2RPipelineFactory:
     def create_rag_pipeline(
         self,
         search_pipeline: SearchPipeline,
-        streaming: bool = False,
+        stream: bool = False,
         *args,
         **kwargs,
     ) -> RAGPipeline:
         rag_pipe = (
-            self.pipes.streaming_rag_pipe if streaming else self.pipes.rag_pipe
+            self.pipes.streaming_rag_pipe if stream else self.pipes.rag_pipe
         )
 
         rag_pipeline = RAGPipeline()
@@ -462,14 +462,14 @@ class R2RPipelineFactory:
             rag_pipeline=rag_pipeline
             or self.create_rag_pipeline(
                 search_pipeline=search_pipeline,
-                streaming=False,
+                stream=False,
                 *args,
                 **kwargs,
             ),
             streaming_rag_pipeline=streaming_rag_pipeline
             or self.create_rag_pipeline(
                 search_pipeline=search_pipeline,
-                streaming=True,
+                stream=True,
                 *args,
                 **kwargs,
             ),

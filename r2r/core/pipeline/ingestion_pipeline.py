@@ -30,7 +30,7 @@ class IngestionPipeline(Pipeline):
         self,
         input: Any,
         state: Optional[AsyncState] = None,
-        streaming: bool = False,
+        stream: bool = False,
         run_manager: Optional[RunManager] = None,
         log_run_info: bool = True,
         *args: Any,
@@ -81,7 +81,7 @@ class IngestionPipeline(Pipeline):
                     self.embedding_pipeline.run(
                         dequeue_requests(embedding_queue),
                         state,
-                        streaming,
+                        stream,
                         run_manager,
                         log_run_info=False,  # Do not log run info since we have already done so
                         *args,
@@ -94,7 +94,7 @@ class IngestionPipeline(Pipeline):
                     self.kg_pipeline.run(
                         dequeue_requests(kg_queue),
                         state,
-                        streaming,
+                        stream,
                         run_manager,
                         log_run_info=False,  # Do not log run info since we have already done so
                         *args,

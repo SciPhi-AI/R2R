@@ -31,7 +31,6 @@ class RAGPipeline(Pipeline):
         self,
         input: Any,
         state: Optional[AsyncState] = None,
-        streaming: bool = False,
         run_manager: Optional[RunManager] = None,
         log_run_info=True,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
@@ -61,7 +60,7 @@ class RAGPipeline(Pipeline):
                         self._search_pipeline.run(
                             to_async_generator([query]),
                             state=state,
-                            streaming=False,  # hardcode streaming to False, since we are aggregating searches and then streaming the RAG
+                            stream=False,  # do not stream the search results
                             run_manager=run_manager,
                             log_run_info=False,  # do not log the run info as it is already logged above
                             vector_search_settings=vector_search_settings,
@@ -78,7 +77,7 @@ class RAGPipeline(Pipeline):
             rag_results = await self._rag_pipeline.run(
                 input=multi_query_generator(input),
                 state=state,
-                streaming=streaming,
+                stream=rag_generation_config.stream,
                 run_manager=run_manager,
                 log_run_info=False,
                 rag_generation_config=rag_generation_config,

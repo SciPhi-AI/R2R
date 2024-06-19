@@ -100,10 +100,9 @@ class R2RSearchRequest(BaseModel):
 
 
 class R2RRAGRequest(BaseModel):
-    message: str
+    query: str
     vector_settings: VectorSearchSettings
     kg_settings: KGSearchSettings
-    streaming: bool = False
     rag_generation_config: Optional[GenerationConfig] = None
 
 

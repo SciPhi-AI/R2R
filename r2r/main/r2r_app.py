@@ -1009,7 +1009,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     @syncable
     async def arag(
         self,
-        message: str,
+        query: str,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         rag_generation_config: GenerationConfig = GenerationConfig(),
@@ -1019,7 +1019,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         async with manage_run(self.run_manager, "rag_app") as run_id:
             try:
                 t0 = time.time()
-
                 if rag_generation_config.stream:
                     t1 = time.time()
                     latency = f"{t1-t0:.2f}"
@@ -1032,13 +1031,12 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     )
 
                     async def stream_response():
-                        # We must re-enter the manage_run context for the streaming pipeline
+                        # We must re-enter the manage_run context for the stream pipeline
                         async with manage_run(self.run_manager, "arag"):
                             async for (
                                 chunk
                             ) in await self.streaming_rag_pipeline.run(
-                                input=to_async_generator([message]),
-                                streaming=True,
+                                input=to_async_generator([query]),
                                 run_manager=self.run_manager,
                                 vector_settings=vector_search_settings,
                                 kg_settings=kg_search_settings,
@@ -1052,8 +1050,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
                 if not rag_generation_config.stream:
                     results = await self.rag_pipeline.run(
-                        input=to_async_generator([message]),
-                        streaming=False,
+                        input=to_async_generator([query]),
                         run_manager=self.run_manager,
                         vector_search_settings=vector_search_settings,
                         kg_search_settings=kg_search_settings,
@@ -1084,18 +1081,19 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     @telemetry_event("RAG")
     async def rag_app(self, request: R2RRAGRequest):
+        print("in rag app with request = ", request)
         async with manage_run(self.run_manager, "rag_app") as run_id:
             try:
                 # Call the async RAG method
                 response = await self.arag(
-                    request.message,
+                    request.query,
                     request.vector_settings,
                     request.kg_settings,
                     request.rag_generation_config
                     or GenerationConfig(model="gpt-4o"),
                 )
 
-                if request.streaming:
+                if request.rag_generation_config.stream:
                     return StreamingResponse(
                         response, media_type="application/json"
                     )
