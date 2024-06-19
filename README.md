@@ -48,6 +48,10 @@ pip install r2r
 # setup env
 export OPENAI_API_KEY=sk-...
 ```
+
+> [!IMPORTANT]  
+> Windows users are advised to use Docker to run R2R.
+
 </details>
 
 <details>
