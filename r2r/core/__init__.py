@@ -14,9 +14,21 @@ from .abstractions.document import (
     extract_triples,
 )
 from .abstractions.llama_abstractions import VectorStoreQuery
-from .abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
+from .abstractions.llm import (
+    GenerationConfig,
+    LLMChatCompletion,
+    LLMChatCompletionChunk,
+)
 from .abstractions.prompt import Prompt
-from .abstractions.search import SearchRequest, SearchResult
+from .abstractions.search import (
+    AggregateSearchResult,
+    KGSearchRequest,
+    KGSearchResult,
+    KGSearchSettings,
+    VectorSearchRequest,
+    VectorSearchResult,
+    VectorSearchSettings,
+)
 from .abstractions.user import UserStats
 from .abstractions.vector import Vector, VectorEntry, VectorType
 from .logging.kv_logger import (
@@ -51,19 +63,16 @@ from .parsers import (
     TextParser,
     XLSXParser,
 )
-from .pipeline.base_pipeline import (
-    EvalPipeline,
-    IngestionPipeline,
-    Pipeline,
-    RAGPipeline,
-    SearchPipeline,
-)
+from .pipeline.base_pipeline import EvalPipeline, Pipeline
+from .pipeline.ingestion_pipeline import IngestionPipeline
+from .pipeline.rag_pipeline import RAGPipeline
+from .pipeline.search_pipeline import SearchPipeline
 from .pipes.base_pipe import AsyncPipe, AsyncState, PipeType
 from .pipes.loggable_pipe import LoggableAsyncPipe
 from .providers.embedding_provider import EmbeddingConfig, EmbeddingProvider
 from .providers.eval_provider import EvalConfig, EvalProvider
 from .providers.kg_provider import KGConfig, KGProvider
-from .providers.llm_provider import GenerationConfig, LLMConfig, LLMProvider
+from .providers.llm_provider import LLMConfig, LLMProvider
 from .providers.prompt_provider import PromptConfig, PromptProvider
 from .providers.vector_db_provider import VectorDBConfig, VectorDBProvider
 from .utils import (
@@ -99,8 +108,13 @@ __all__ = [
     "VectorEntry",
     "VectorType",
     "Vector",
-    "SearchRequest",
-    "SearchResult",
+    "VectorSearchRequest",
+    "VectorSearchResult",
+    "VectorSearchSettings",
+    "KGSearchRequest",
+    "KGSearchResult",
+    "KGSearchSettings",
+    "AggregateSearchResult",
     "AsyncPipe",
     "PipeType",
     "AsyncState",

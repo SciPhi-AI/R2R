@@ -13,7 +13,7 @@ Build, deploy, observe, and optimize your RAG engine.
 
 # About
 
-R2R (Rag to Riches) is the ultimate open-source framework for building and deploying high-quality Retrieval-Augmented Generation (RAG) systems. Designed to bridge the gap between local LLM experimentation and scalable, production-ready applications, R2R provides a comprehensive, feature-rich environment for developers.
+R2R (Rag to Riches) is the ultimate open-source answer engine for building and deploying high-quality Retrieval-Augmented Generation (RAG) systems. Designed to bridge the gap between local LLM experimentation and scalable, production-ready applications, R2R provides a comprehensive, feature-rich environment for developers.
 
 For a more complete view of R2R, check out our [documentation](https://r2r-docs.sciphi.ai/).
 

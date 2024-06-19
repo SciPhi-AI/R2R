@@ -1,9 +1,5 @@
-from r2r import (
-    GenerationConfig,
-    R2RAppBuilder,
-    R2RConfig,
-    R2RPipeFactoryWithMultiSearch,
-)
+from r2r import R2RAppBuilder, R2RConfig, R2RPipeFactoryWithMultiSearch
+from r2r.core.abstractions.llm import GenerationConfig
 
 if __name__ == "__main__":
     # Load the configuration file

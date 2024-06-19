@@ -1,6 +1,6 @@
 import logging
 
-from r2r.core import EmbeddingConfig, EmbeddingProvider, SearchResult
+from r2r.core import EmbeddingConfig, EmbeddingProvider, VectorSearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -123,10 +123,10 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
     def rerank(
         self,
         query: str,
-        results: list[SearchResult],
+        results: list[VectorSearchResult],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
-    ) -> list[SearchResult]:
+    ) -> list[VectorSearchResult]:
         if stage != EmbeddingProvider.PipeStage.RERANK:
             raise ValueError("`rerank` only supports `RERANK` stage.")
         if not self.do_rerank:

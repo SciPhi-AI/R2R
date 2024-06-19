@@ -2,12 +2,12 @@ import logging
 from typing import Any, Generator, Union
 
 from r2r.core import (
-    GenerationConfig,
     LLMChatCompletion,
     LLMChatCompletionChunk,
     LLMConfig,
     LLMProvider,
 )
+from r2r.core.abstractions.llm import GenerationConfig
 
 logger = logging.getLogger(__name__)
 

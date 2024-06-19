@@ -7,11 +7,11 @@ from typing import Optional, Union
 
 from r2r.core import (
     DocumentInfo,
-    SearchResult,
     UserStats,
     VectorDBConfig,
     VectorDBProvider,
     VectorEntry,
+    VectorSearchResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class R2RLocalVectorDB(VectorDBProvider):
     def __init__(self, config: VectorDBConfig) -> None:
+
         super().__init__(config)
         if config.provider != "local":
             raise ValueError(
@@ -132,7 +133,7 @@ class R2RLocalVectorDB(VectorDBProvider):
         limit: int = 10,
         *args,
         **kwargs,
-    ) -> list[SearchResult]:
+    ) -> list[VectorSearchResult]:
         if self.config.collection_name is None:
             raise ValueError(
                 "Collection name is not set. Please call `initialize_collection` first."
@@ -148,7 +149,9 @@ class R2RLocalVectorDB(VectorDBProvider):
                 # Local cosine similarity calculation
                 score = self._cosine_similarity(query_vector, vector)
                 results.append(
-                    SearchResult(id=id, score=score, metadata=json_metadata)
+                    VectorSearchResult(
+                        id=id, score=score, metadata=json_metadata
+                    )
                 )
         results.sort(key=lambda x: x.score, reverse=True)
         conn.close()
@@ -166,7 +169,7 @@ class R2RLocalVectorDB(VectorDBProvider):
         rrf_k: int = 20,  # typical value is ~2x the number of results you want
         *args,
         **kwargs,
-    ) -> list[SearchResult]:
+    ) -> list[VectorSearchResult]:
         raise NotImplementedError(
             "Hybrid search is not supported in R2RLocalVectorDB."
         )

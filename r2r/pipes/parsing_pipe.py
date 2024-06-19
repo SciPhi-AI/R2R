@@ -83,9 +83,6 @@ class ParsingPipe(LoggableAsyncPipe):
         *args,
         **kwargs,
     ):
-        logger.info(
-            "Initializing a `ParsingPipe` to parse incoming documents."
-        )
         super().__init__(
             pipe_logger=pipe_logger,
             type=type,
@@ -175,8 +172,8 @@ class ParsingPipe(LoggableAsyncPipe):
                 ),
             )
             iteration += 1
-        logger.info(
-            f"Parsed document with id={document.id}, title={document.title}, user_id={document.user_id}, metadata={document.metadata} into {iteration} extractions in t={time.time()-t0:.2f} seconds."
+        logger.debug(
+            f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, user_id={document.metadata.get('user_id', None)}, metadata={document.metadata} into {iteration} extractions in t={time.time()-t0:.2f} seconds."
         )
 
     async def _run_logic(

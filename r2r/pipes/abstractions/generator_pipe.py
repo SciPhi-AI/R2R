@@ -4,13 +4,13 @@ from typing import Any, AsyncGenerator, Optional
 
 from r2r.core import (
     AsyncState,
-    GenerationConfig,
     KVLoggingSingleton,
     LLMProvider,
     LoggableAsyncPipe,
     PipeType,
     PromptProvider,
 )
+from r2r.core.abstractions.llm import GenerationConfig
 
 
 class GeneratorPipe(LoggableAsyncPipe):
