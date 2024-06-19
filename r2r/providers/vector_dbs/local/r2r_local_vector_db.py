@@ -292,9 +292,11 @@ class R2RLocalVectorDB(VectorDBProvider):
         SELECT document_id, title, user_id, version, size_in_bytes, created_at, updated_at, metadata
         FROM document_info_{self.config.collection_name}
         """
+
         conditions = []
         params = []
 
+        print("filter_document_ids = ", filter_document_ids)
         if filter_document_ids:
             placeholders = ", ".join("?" for _ in filter_document_ids)
             conditions.append(f"document_id IN ({placeholders})")
@@ -306,7 +308,6 @@ class R2RLocalVectorDB(VectorDBProvider):
 
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
-
         cursor.execute(query, params)
         results = cursor.fetchall()
         conn.close()

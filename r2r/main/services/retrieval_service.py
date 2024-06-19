@@ -43,16 +43,16 @@ class RetrievalService(Service):
     async def search(
         self,
         query: str,
-        vector_settings: VectorSearchSettings,
-        kg_settings: KGSearchSettings,
+        vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
+        kg_search_settings: KGSearchSettings = KGSearchSettings(),
     ):
         async with manage_run(self.run_manager, "search_app") as run_id:
             t0 = time.time()
 
             results = await self.pipelines.search_pipeline.run(
                 input=to_async_generator([query]),
-                vector_search_settings=vector_settings,
-                kg_search_settings=kg_settings,
+                vector_search_settings=vector_search_settings,
+                kg_search_settings=kg_search_settings,
                 run_manager=self.run_manager,
             )
 
@@ -72,9 +72,9 @@ class RetrievalService(Service):
     async def rag(
         self,
         query: str,
-        vector_settings: VectorSearchSettings,
-        kg_settings: KGSearchSettings,
         rag_generation_config: GenerationConfig,
+        vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
+        kg_search_settings: KGSearchSettings = KGSearchSettings(),
     ):
         async with manage_run(self.run_manager, "rag_app") as run_id:
             try:
@@ -94,22 +94,22 @@ class RetrievalService(Service):
                         async with manage_run(self.run_manager, "arag"):
                             async for (
                                 chunk
-                            ) in await self.streaming_rag_pipeline.run(
+                            ) in await self.pipelines.streaming_rag_pipeline.run(
                                 input=to_async_generator([query]),
                                 run_manager=self.run_manager,
-                                vector_settings=vector_settings,
-                                kg_settings=kg_settings,
+                                vector_search_settings=vector_search_settings,
+                                kg_search_settings=kg_search_settings,
                                 rag_generation_config=rag_generation_config,
                             ):
                                 yield chunk
 
                     return stream_response()
 
-                results = await self.rag_pipeline.run(
+                results = await self.pipelines.rag_pipeline.run(
                     input=to_async_generator([query]),
                     run_manager=self.run_manager,
-                    vector_search_settings=vector_settings,
-                    kg_search_settings=kg_settings,
+                    vector_search_settings=vector_search_settings,
+                    kg_search_settings=kg_search_settings,
                     rag_generation_config=rag_generation_config,
                 )
 

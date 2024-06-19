@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from fastapi import HTTPException
 
@@ -13,14 +13,7 @@ from r2r.core import (
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import (
-    R2RDeleteRequest,
-    R2RDocumentChunksRequest,
-    R2RPipelines,
-    R2RProviders,
-    R2RUpdatePromptRequest,
-    R2RUsersStatsRequest,
-)
+from ..abstractions import R2RPipelines, R2RProviders
 from ..assembly.config import R2RConfig
 from .base import Service
 
@@ -41,11 +34,14 @@ class ManagementService(Service):
         )
 
     @telemetry_event("UpdatePrompt")
-    async def update_prompt(self, request: R2RUpdatePromptRequest):
-        self.providers.prompt.update_prompt(
-            request.name, request.template, request.input_types
-        )
-        return {"results": f"Prompt '{request.name}' added successfully."}
+    async def update_prompt(
+        self,
+        name: str,
+        template: Optional[str] = None,
+        input_types: Optional[dict[str, str]] = {},
+    ):
+        self.providers.prompt.update_prompt(name, template, input_types)
+        return {"results": f"Prompt '{name}' added successfully."}
 
     @telemetry_event("Logs")
     async def alogs(
@@ -199,10 +195,10 @@ class ManagementService(Service):
         )
 
     @telemetry_event("Delete")
-    async def delete(self, request: R2RDeleteRequest):
-        ids = self.providers.vector_db.delete_by_metadata(
-            request.keys, request.values
-        )
+    async def delete(
+        self, keys: list[str], values: list[Union[bool, int, str]]
+    ):
+        ids = self.providers.vector_db.delete_by_metadata(keys, values)
         if not ids:
             raise HTTPException(
                 status_code=404, detail="No entries found for deletion."
@@ -228,15 +224,13 @@ class ManagementService(Service):
         )
 
     @telemetry_event("DocumentChunks")
-    async def document_chunks(self, request: R2RDocumentChunksRequest):
-        return self.providers.vector_db.get_document_chunks(
-            request.document_id
-        )
+    async def document_chunks(self, document_id: uuid.UUID):
+        return self.providers.vector_db.get_document_chunks(document_id)
 
     @telemetry_event("UsersStats")
-    async def users_stats(self, request: R2RUsersStatsRequest):
+    async def users_stats(self, user_ids: Optional[list[uuid.UUID]]):
         return self.providers.vector_db.get_users_stats(
-            [str(ele) for ele in request.user_ids]
+            [str(ele) for ele in user_ids]
         )
 
     @telemetry_event("AppSettings")

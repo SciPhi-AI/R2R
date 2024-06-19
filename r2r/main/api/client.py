@@ -140,13 +140,13 @@ class R2RClient:
     ) -> dict:
         request = R2RSearchRequest(
             query=query,
-            vector_settings=VectorSearchSettings(
+            vector_search_settings=VectorSearchSettings(
                 use_vector_search=use_vector_search,
                 search_filters=search_filters,
                 search_limit=search_limit,
                 do_hybrid_search=do_hybrid_search,
             ),
-            kg_settings=KGSearchSettings(
+            kg_search_settings=KGSearchSettings(
                 use_kg=use_kg,
                 agent_generation_config=kg_agent_generation_config,
             ),
@@ -169,13 +169,13 @@ class R2RClient:
     ) -> dict:
         request = R2RRAGRequest(
             query=query,
-            vector_settings=VectorSearchSettings(
+            vector_search_settings=VectorSearchSettings(
                 use_vector_search=use_vector_search,
                 search_filters=search_filters,
                 search_limit=search_limit,
                 do_hybrid_search=do_hybrid_search,
             ),
-            kg_settings=KGSearchSettings(
+            kg_search_settings=KGSearchSettings(
                 use_kg=use_kg,
                 agent_generation_config=kg_agent_generation_config,
             ),
