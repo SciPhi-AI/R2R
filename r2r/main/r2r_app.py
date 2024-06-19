@@ -186,30 +186,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
         self.run_manager = run_manager or RunManager(self.logging_connection)
         self.app = FastAPI()
 
-        from fastapi import Request
-        from fastapi.exceptions import RequestValidationError
-        from fastapi.responses import JSONResponse
-
-        @self.app.exception_handler(RequestValidationError)
-        async def validation_exception_handler(
-            request: Request, exc: RequestValidationError
-        ):
-            logger.error(f"Validation error for request: {request.url}")
-            logger.error(f"Validation error details: {exc.errors()}")
-            return JSONResponse(
-                status_code=422,
-                content={"detail": exc.errors(), "body": exc.body},
-            )
-
-        @self.app.exception_handler(HTTPException)
-        async def http_exception_handler(request: Request, exc: HTTPException):
-            logger.error(f"HTTP exception for request: {request.url}")
-            logger.error(f"HTTP exception details: {exc.detail}")
-            return JSONResponse(
-                status_code=exc.status_code,
-                content={"detail": exc.detail},
-            )
-
         self._setup_routes()
         if do_apply_cors:
             self._apply_cors()
@@ -1098,7 +1074,10 @@ class R2RApp(metaclass=AsyncSyncMeta):
                     or GenerationConfig(model="gpt-4o"),
                 )
 
-                if request.rag_generation_config.stream:
+                if (
+                    request.rag_generation_config
+                    and request.rag_generation_config.stream
+                ):
                     return StreamingResponse(
                         response, media_type="application/json"
                     )
