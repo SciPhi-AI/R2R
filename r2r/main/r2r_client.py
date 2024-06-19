@@ -80,8 +80,6 @@ class R2RClient:
             versions=versions,
             skip_document_info=skip_document_info,
         )
-        request_dict = json.loads(request.json())
-        print("request_dict = ", request_dict)
         response = requests.post(
             url,
             # must use data instead of json when sending files

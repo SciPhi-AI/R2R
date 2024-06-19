@@ -203,7 +203,7 @@ async def test_ingest_search_txt_file(r2r_app, logging_connection):
 
     ## test stream
     response = await r2r_app.arag(
-        message="Who was aristotle?",
+        query="Who was aristotle?",
         rag_generation_config=GenerationConfig(
             **{"model": "gpt-3.5-turbo", "stream": True}
         ),

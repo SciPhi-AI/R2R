@@ -89,8 +89,8 @@ class R2RIngestFilesRequest(BaseModel):
 
 
 class R2RUpdateFilesRequest(BaseModel):
-    metadatas: Optional[str] = None
-    document_ids: Optional[str] = None
+    metadatas: Optional[list[dict]] = None
+    document_ids: Optional[uuid.UUID] = None
 
 
 class R2RSearchRequest(BaseModel):

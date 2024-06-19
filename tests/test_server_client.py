@@ -113,7 +113,8 @@ async def test_ingest_txt_file(client):
 
     response = client.post(
         "/ingest_files/",
-        json={"metadatas": json.dumps([metadata])},
+        # must use data instead of json when sending files
+        data={"metadatas": json.dumps([metadata])},
         files=files,
     )
 
@@ -146,7 +147,7 @@ async def test_search(client):
 async def test_rag(client):
     query = "who was aristotle?"
     rag_request = R2RRAGRequest(
-        message=query,
+        query=query,
         vector_settings=VectorSearchSettings(),
         kg_settings=KGSearchSettings(),
         rag_generation_config=None,
@@ -178,7 +179,7 @@ async def test_delete(client):
 
     response = client.post(
         "/ingest_files/",
-        data=request.json(),  # {"metadatas": [metadata]},
+        data={k: json.dumps(v) for k, v in json.loads(request.json()).items()},
         files=files,
     )
 

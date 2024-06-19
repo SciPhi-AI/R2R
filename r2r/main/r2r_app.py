@@ -51,6 +51,7 @@ from .r2r_abstractions import (
     R2RRAGRequest,
     R2RSearchRequest,
     R2RUpdateDocumentsRequest,
+    R2RUpdateFilesRequest,
     R2RUpdatePromptRequest,
     R2RUsersStatsRequest,
     VectorSearchSettings,
@@ -727,7 +728,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
             for file in files:
                 file.file.close()
 
-    def parse_form_data(
+    def parse_ingest_files_form_data(
         metadatas: Optional[str] = Form(None),
         document_ids: str = Form(...),
         user_ids: str = Form(...),
@@ -773,7 +774,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
     async def ingest_files_app(
         self,
         files: list[UploadFile] = File(...),
-        request: R2RIngestFilesRequest = Depends(parse_form_data),
+        request: R2RIngestFilesRequest = Depends(parse_ingest_files_form_data),
     ):
         """Ingest files into the system."""
         async with manage_run(self.run_manager, "ingest_files_app") as run_id:
@@ -901,38 +902,42 @@ class R2RApp(metaclass=AsyncSyncMeta):
             for file in files:
                 file.file.close()
 
+    def parse_update_files_form_data(
+        metadatas: Optional[str] = Form(None),
+        document_ids: str = Form(...),
+    ) -> R2RUpdateFilesRequest:
+        try:
+            # Parse the form data
+            request_data = {
+                "metadatas": (
+                    json.loads(metadatas)
+                    if metadatas and metadatas != "null"
+                    else None
+                ),
+                "document_ids": (
+                    [uuid.UUID(doc_id) for doc_id in json.loads(document_ids)]
+                    if document_ids and document_ids != "null"
+                    else None
+                ),
+            }
+            return R2RIngestFilesRequest(**request_data)
+        except Exception as e:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid form data: {e}"
+            )
+
     @telemetry_event("UpdateFiles")
     async def update_files_app(
         self,
         files: list[UploadFile] = File(...),
-        metadatas: Optional[str] = Form(None),
-        document_ids: Optional[str] = Form(None),
+        request: R2RUpdateFilesRequest = Depends(parse_update_files_form_data),
     ):
         async with manage_run(self.run_manager, "update_files_app") as run_id:
             try:
-                # Parse metadatas if provided
-                metadatas = (
-                    json.loads(metadatas)
-                    if metadatas and metadatas != "null"
-                    else None
-                )
-
-                # Parse ids if provided
-                ids_list = json.loads(document_ids)
-                if ids_list:
-                    ids_list = [uuid.UUID(id) for id in ids_list]
-                if len(ids_list) != len(files):
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Number of ids does not match number of files.",
-                    )
-                if metadatas and len(metadatas) != len(files):
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Number of metadata entries does not match number of files.",
-                    )
                 return await self.aupdate_files(
-                    files=files, metadatas=metadatas, document_ids=ids_list
+                    files=files,
+                    metadatas=request.metadatas,
+                    document_ids=request.document_ids,
                 )
             except Exception as e:
                 await self.logging_connection.log(
