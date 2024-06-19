@@ -27,7 +27,7 @@ from .base import Service
 logger = logging.getLogger(__name__)
 
 
-class IngestionService(Service):
+class ManagementSErvice(Service):
     def __init__(
         self,
         config: R2RConfig,
