@@ -503,10 +503,6 @@ class KVLoggingSingleton:
     def configure(
         cls, logging_config: Optional[LoggingConfig] = LoggingConfig()
     ):
-        logger.info(
-            f"Initializing KVLoggingSingleton with config: {logging_config}"
-        )
-
         if not cls._is_configured:
             cls._config = logging_config
             cls._is_configured = True

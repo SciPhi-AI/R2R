@@ -212,7 +212,7 @@ class KGExtractionPipe(LoggableAsyncPipe):
                     )  # pass a copy if necessary
                     fragment_batch.clear()  # Clear the batch for new fragments
 
-        logger.info(
+        logger.debug(
             f"Fragmented the input document ids into counts as shown: {fragment_info}"
         )
 

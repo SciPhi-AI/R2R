@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class R2RLocalVectorDB(VectorDBProvider):
     def __init__(self, config: VectorDBConfig) -> None:
+
         super().__init__(config)
         if config.provider != "local":
             raise ValueError(

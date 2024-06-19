@@ -21,9 +21,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     }
 
     def __init__(self, config: EmbeddingConfig):
-        logger.info(
-            "Initializing `OpenAIEmbeddingProvider` to provide embeddings."
-        )
         super().__init__(config)
         provider = config.provider
         if not provider:

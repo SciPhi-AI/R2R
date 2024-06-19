@@ -80,9 +80,17 @@ class R2RClient:
             versions=versions,
             skip_document_info=skip_document_info,
         )
+        request_dict = json.loads(request.json())
+        print("request_dict = ", request_dict)
         response = requests.post(
-            url, data=request.json(), files=files_to_upload
+            url,
+            # must use data instead of json when sending files
+            data={
+                k: json.dumps(v) for k, v in json.loads(request.json()).items()
+            },
+            files=files_to_upload,
         )
+
         response.raise_for_status()
         return response.json()
 
@@ -101,7 +109,7 @@ class R2RClient:
     def update_files(
         self,
         files: list[str],
-        ids: list[str],
+        document_ids: list[str],
         metadatas: Optional[list[dict]] = None,
     ) -> dict:
         url = f"{self.base_url}/update_files"
@@ -111,10 +119,10 @@ class R2RClient:
         ]
         request = R2RUpdateFilesRequest(
             metadatas=metadatas,
-            document_ids=ids,
+            document_ids=document_ids,
         )
         response = requests.post(
-            url, files=files_to_upload, json=json.loads(request.json())
+            url, files=files_to_upload, data=request.json()
         )
         response.raise_for_status()
         return response.json()

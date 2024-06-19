@@ -63,14 +63,14 @@ class R2RQuickstart:
                 f"Running in client-server mode with base_url: {self.base_url}"
             )
         else:
-            self.r2r = R2RAppBuilder(config).build()
+            self.r2r_app = R2RAppBuilder(config).build()
             logger.info("Running locally")
 
         root_path = os.path.dirname(os.path.abspath(__file__))
         self.user_id = user_id
         self.default_files = file_list or [
-            # os.path.join(root_path, "data", "aristotle.txt"),
-            os.path.join(root_path, "data", "got.txt"),
+            os.path.join(root_path, "data", "aristotle.txt"),
+            # os.path.join(root_path, "data", "got.txt"),
             # os.path.join(root_path, "data", "screen_shot.png"),
             # os.path.join(root_path, "data", "pg_essay_1.html"),
             # os.path.join(root_path, "data", "pg_essay_2.html"),
@@ -114,7 +114,7 @@ class R2RQuickstart:
             documents_dicts = [doc.dict() for doc in documents]
             response = self.client.ingest_documents(documents_dicts)
         else:
-            response = self.r2r.ingest_documents(documents)
+            response = self.r2r_app.ingest_documents(documents)
 
         t1 = time.time()
         print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
@@ -146,7 +146,7 @@ class R2RQuickstart:
             documents_dicts = [doc.dict() for doc in documents]
             response = self.client.update_documents(documents_dicts)
         else:
-            response = self.r2r.update_documents(documents)
+            response = self.r2r_app.update_documents(documents)
 
         t1 = time.time()
         print(f"Time taken to update documents: {t1-t0:.2f} seconds")
@@ -165,7 +165,10 @@ class R2RQuickstart:
                 if file_path.split(".")[-1] not in excluded_types
             ]
 
-        ids = [generate_id_from_label(file_path) for file_path in file_paths]
+        ids = [
+            generate_id_from_label(file_path.split(os.path.sep)[-1])
+            for file_path in file_paths
+        ]
 
         files = [
             UploadFile(
@@ -180,16 +183,8 @@ class R2RQuickstart:
             file.size = file.file.tell()
             file.file.seek(0)
 
-        metadatas = [{} for _ in file_paths]
-
         user_ids = [self.user_id for _ in file_paths]
         t0 = time.time()
-
-        print(
-            f"File paths: {file_paths}\n"
-            f"IDs: {ids}\n"
-            f"User IDs: {user_ids}\n"
-        )
 
         if hasattr(self, "client"):
             response = self.client.ingest_files(
@@ -199,7 +194,8 @@ class R2RQuickstart:
                 user_ids=user_ids,
             )
         else:
-            response = self.r2r.ingest_files(
+            metadatas = [{} for _ in file_paths]
+            response = self.r2r_app.ingest_files(
                 files=files,
                 metadatas=metadatas,
                 document_ids=ids,
@@ -238,16 +234,16 @@ class R2RQuickstart:
             response = self.client.update_files(
                 metadatas=metadatas,
                 files=[new for old, new in file_tuples],
-                ids=[
+                document_ids=[
                     generate_id_from_label(old_file)
                     for old_file, new_file in file_tuples
                 ],
             )
         else:
-            response = self.r2r.update_files(
+            response = self.r2r_app.update_files(
                 files=new_files,
                 metadatas=metadatas,
-                ids=[
+                document_ids=[
                     generate_id_from_label(old_file)
                     for old_file, new_file in file_tuples
                 ],
@@ -304,7 +300,7 @@ class R2RQuickstart:
         if hasattr(self, "client"):
             results = self.client.search(search_request)
         else:
-            results = self.r2r.search(
+            results = self.r2r_app.search(
                 search_request.query,
                 search_request.vector_settings,
                 search_request.kg_settings,
@@ -314,7 +310,10 @@ class R2RQuickstart:
             print("Vector search results:")
             for result in results["results"]["vector_search_results"]:
                 print(result)
-        if "kg_search_results" in results["results"]:
+        if (
+            "kg_search_results" in results["results"]
+            and results["results"]["kg_search_results"]
+        ):
             print(
                 "KG search results:", results["results"]["kg_search_results"]
             )
@@ -361,7 +360,7 @@ class R2RQuickstart:
                     **{"stream": streaming, "model": "gpt-3.5-turbo"}
                 )
             )
-            response = self.r2r.rag(
+            response = self.r2r_app.rag(
                 query,
                 search_filters={"user_id": self.user_id},
                 rag_generation_config=rag_generation_config,
@@ -416,7 +415,7 @@ class R2RQuickstart:
                 completion=completion,
             )
         else:
-            response = self.r2r.evaluate(
+            response = self.r2r_app.evaluate(
                 query=query,
                 context=context,
                 completion=completion,
@@ -444,7 +443,7 @@ class R2RQuickstart:
         if hasattr(self, "client"):
             response = self.client.delete(keys, values)
         else:
-            response = self.r2r.delete(keys, values)
+            response = self.r2r_app.delete(keys, values)
             t1 = time.time()
         print(f"Time taken to delete: {t1-t0:.2f} seconds")
         print(response)
@@ -455,7 +454,7 @@ class R2RQuickstart:
             response = self.client.logs(log_type_filter)
         else:
             t0 = time.time()
-            response = self.r2r.logs(log_type_filter)
+            response = self.r2r_app.logs(log_type_filter)
         t1 = time.time()
         print(f"Time taken to get logs: {t1-t0:.2f} seconds")
         print(response)
@@ -470,17 +469,18 @@ class R2RQuickstart:
             response = self.client.documents_info(document_ids, user_ids)
         else:
             t0 = time.time()
-            response = self.r2r.documents_info(document_ids, user_ids)
+            response = self.r2r_app.documents_info(document_ids, user_ids)
         t1 = time.time()
         print(f"Time taken to get document info: {t1-t0:.2f} seconds")
-        print(response)
+        for document in response:
+            print(document)
 
     def document_chunks(self, document_id: str):
         t0 = time.time()
         if hasattr(self, "client"):
             response = self.client.document_chunks(document_id)
         else:
-            response = self.r2r.document_chunks(document_id)
+            response = self.r2r_app.document_chunks(document_id)
         t1 = time.time()
         print(f"Time taken to get document chunks: {t1-t0:.2f} seconds")
         print(response)
@@ -491,7 +491,7 @@ class R2RQuickstart:
             response = self.client.app_settings()
         else:
             t0 = time.time()
-            response = self.r2r.app_settings()
+            response = self.r2r_app.app_settings()
         t1 = time.time()
         print(f"Time taken to get app data: {t1-t0:.2f} seconds")
         print(response)
@@ -503,10 +503,11 @@ class R2RQuickstart:
             response = self.client.users_stats(user_ids)
         else:
             t0 = time.time()
-            response = self.r2r.users_stats(user_ids)
+            response = self.r2r_app.users_stats(user_ids)
         t1 = time.time()
         print(f"Time taken to get user stats: {t1-t0:.2f} seconds")
-        print(response)
+        for user in response:
+            print(user)
 
     def analytics(
         self,
@@ -523,7 +524,7 @@ class R2RQuickstart:
                 analysis_types=analysis_types.model_dump(),
             )
         else:
-            response = self.r2r.analytics(
+            response = self.r2r_app.analytics(
                 filter_criteria=filter_criteria, analysis_types=analysis_types
             )
 
@@ -532,7 +533,7 @@ class R2RQuickstart:
         print(response)
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
-        self.r2r.serve(host, port)
+        self.r2r_app.serve(host, port)
 
 
 if __name__ == "__main__":

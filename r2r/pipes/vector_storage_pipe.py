@@ -33,10 +33,6 @@ class VectorStoragePipe(LoggableAsyncPipe):
         """
         Initializes the async vector storage pipe with necessary components and configurations.
         """
-        logger.info(
-            f"Initalizing an `AsyncVectorStoragePipe` to store embeddings in a vector database."
-        )
-
         super().__init__(
             pipe_logger=pipe_logger,
             type=type,

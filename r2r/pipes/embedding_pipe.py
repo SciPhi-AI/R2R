@@ -179,7 +179,7 @@ class EmbeddingPipe(LoggableAsyncPipe):
                     active_tasks += 1
                     fragment_batch.clear()
 
-        logger.info(
+        logger.debug(
             f"Fragmented the input document ids into counts as shown: {fragment_info}"
         )
 

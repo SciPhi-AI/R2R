@@ -10,6 +10,7 @@ from r2r import (
     KVLoggingSingleton,
     R2RApp,
     R2RConfig,
+    R2RIngestFilesRequest,
     R2RPipeFactory,
     R2RPipelineFactory,
     R2RProviderFactory,
@@ -112,7 +113,7 @@ async def test_ingest_txt_file(client):
 
     response = client.post(
         "/ingest_files/",
-        data={"metadatas": json.dumps([metadata])},
+        json={"metadatas": json.dumps([metadata])},
         files=files,
     )
 
@@ -171,13 +172,17 @@ async def test_delete(client):
             ),
         ),
     ]
+    request = R2RIngestFilesRequest(
+        metadatas=[metadata],
+    )
 
     response = client.post(
         "/ingest_files/",
-        data={"metadatas": json.dumps([metadata])},
+        data=request.json(),  # {"metadatas": [metadata]},
         files=files,
     )
 
+    print("response = ", response)
     response = client.request(
         "DELETE",
         "/delete/",

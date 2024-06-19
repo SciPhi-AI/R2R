@@ -1,9 +1,12 @@
+import logging
 from abc import abstractmethod
 from enum import Enum
 from typing import Optional
 
 from ..abstractions.search import VectorSearchResult
 from .base_provider import Provider, ProviderConfig
+
+logger = logging.getLogger(__name__)
 
 
 class EmbeddingConfig(ProviderConfig):
@@ -38,6 +41,7 @@ class EmbeddingProvider(Provider):
             raise ValueError(
                 "EmbeddingProvider must be initialized with a `EmbeddingConfig`."
             )
+        logger.info(f"Initializing EmbeddingProvider with config {config}.")
 
         super().__init__(config)
 

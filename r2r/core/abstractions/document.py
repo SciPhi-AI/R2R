@@ -68,24 +68,6 @@ class Document(BaseModel):
             except ValueError:
                 pass
 
-    # title: Optional[str] = None
-    # user_id: Optional[uuid.UUID] = None
-
-    # class Config:
-    #     json_encoders = {
-    #         uuid.UUID: lambda v: str(v),
-    #         bytes: lambda v: base64.b64encode(v).decode("utf-8"),
-    #     }
-
-    # def decode_data(self):
-    #     if isinstance(self.data, str):
-    #         try:
-    #             self.data = base64.b64decode(self.data.encode("utf-8"))
-    #         except Exception as e:
-    #             raise HTTPException(
-    #                 status_code=400, detail=f"Failed to decode data: {e}"
-    #             )
-
 
 class DocumentInfo(BaseModel):
     """Base class for document information handling."""

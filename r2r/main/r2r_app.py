@@ -7,7 +7,15 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional, Union
 
-from fastapi import Body, FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    UploadFile,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
@@ -31,11 +39,13 @@ from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from .r2r_abstractions import (
     KGSearchSettings,
+    R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
     R2RDocumentsInfoRequest,
     R2REvalRequest,
     R2RIngestDocumentsRequest,
+    R2RIngestFilesRequest,
     R2RPipelines,
     R2RProviders,
     R2RRAGRequest,
@@ -346,8 +356,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 )
                 continue
 
-            document_title = document.metadata.pop("title", None)
-            document_user_id = document.metadata.pop("user_id", None)
+            document_title = document.metadata.get("title", None)
+            document_user_id = document.metadata.get("user_id", None)
 
             now = datetime.now()
             version = versions[iteration] if versions else "v0"
@@ -541,8 +551,8 @@ class R2RApp(metaclass=AsyncSyncMeta):
         self,
         files: list[UploadFile],
         metadatas: Optional[list[dict]] = None,
-        document_ids: Optional[list[uuid.UUID]] = None,
-        user_ids: Optional[list[Optional[uuid.UUID]]] = None,
+        document_ids: Optional[list[str]] = None,
+        user_ids: Optional[list[Optional[str]]] = None,
         versions: Optional[list[str]] = None,
         skip_document_info: bool = False,
         *args: Any,
@@ -613,9 +623,16 @@ class R2RApp(metaclass=AsyncSyncMeta):
                         status_code=415,
                         detail=f"{file_extension} is explicitly excluded in the configuration file.",
                     )
+                document_metadata = metadatas[iteration] if metadatas else {}
 
+                document_title = (
+                    document_metadata.get("title", None)
+                    or file.filename.split(os.path.sep)[-1]
+                )
+
+                document_metadata["title"] = document_title
                 document_id = (
-                    generate_id_from_label(file.filename)
+                    generate_id_from_label(document_title)
                     if document_ids is None
                     else document_ids[iteration]
                 )
@@ -637,12 +654,6 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
                 file_content = await file.read()
                 logger.info(f"File read successfully: {file.filename}")
-
-                document_metadata = metadatas[iteration] if metadatas else {}
-                document_title = (
-                    document_metadata.get("title", None) or file.filename
-                )
-                document_metadata["title"] = document_title
 
                 user_id = user_ids[iteration] if user_ids else None
                 if user_id:
@@ -716,66 +727,66 @@ class R2RApp(metaclass=AsyncSyncMeta):
             for file in files:
                 file.file.close()
 
+    def parse_form_data(
+        metadatas: Optional[str] = Form(None),
+        document_ids: str = Form(...),
+        user_ids: str = Form(...),
+        versions: Optional[str] = Form(None),
+        skip_document_info: bool = Form(False),
+    ) -> R2RIngestFilesRequest:
+        try:
+            # Parse the form data
+            request_data = {
+                "metadatas": (
+                    json.loads(metadatas)
+                    if metadatas and metadatas != "null"
+                    else None
+                ),
+                "document_ids": (
+                    [uuid.UUID(doc_id) for doc_id in json.loads(document_ids)]
+                    if document_ids and document_ids != "null"
+                    else None
+                ),
+                "user_ids": (
+                    [
+                        uuid.UUID(user_id) if user_id else None
+                        for user_id in json.loads(user_ids)
+                    ]
+                    if user_ids and user_ids != "null"
+                    else None
+                ),
+                "versions": (
+                    json.loads(versions)
+                    if versions and versions != "null"
+                    else None
+                ),
+                "skip_document_info": skip_document_info,
+            }
+            return R2RIngestFilesRequest(**request_data)
+        except Exception as e:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid form data: {e}"
+            )
+
     @telemetry_event("IngestFiles")
     # Cannot use `request = R2RIngestFilesRequest` here because of the file upload
     async def ingest_files_app(
         self,
         files: list[UploadFile] = File(...),
-        metadatas: Optional[dict] = Form(None),
-        document_ids: Optional[list[str]] = Form(None),
-        user_ids: Optional[list[str]] = Form(None),
-        versions: Optional[list[str]] = Form(None),
-        skip_document_info: Optional[bool] = Form(False),
+        request: R2RIngestFilesRequest = Depends(parse_form_data),
     ):
         """Ingest files into the system."""
         async with manage_run(self.run_manager, "ingest_files_app") as run_id:
             try:
-                if document_ids and document_ids != "null":
-                    document_ids_list = json.loads(document_ids)
-                    if len(document_ids_list) != 0:
-                        try:
-                            document_ids_list = [
-                                uuid.UUID(id) for id in document_ids_list
-                            ]
-                        except ValueError as e:
-                            raise HTTPException(
-                                status_code=400,
-                                detail="Invalid UUID provided.",
-                            ) from e
-                else:
-                    document_ids_list = None
-
-                if user_ids and user_ids != "null":
-                    user_ids_list = json.loads(user_ids)
-                    if len(user_ids_list) != 0:
-                        try:
-                            user_ids_list = [
-                                uuid.UUID(id) if id else None
-                                for id in user_ids_list
-                            ]
-                        except ValueError as e:
-                            raise HTTPException(
-                                status_code=400,
-                                detail="Invalid UUID provided.",
-                            ) from e
-                else:
-                    user_ids_list = None
-
-                # Parse metadatas if provided
-                metadatas = (
-                    json.loads(metadatas)
-                    if metadatas and metadatas != "null"
-                    else None
-                )
 
                 # Call aingest_files with the correct order of arguments
                 results = await self.aingest_files(
                     files=files,
-                    metadatas=metadatas,
-                    document_ids=document_ids_list,
-                    user_ids=user_ids_list,
-                    versions=versions,
-                    skip_document_info=skip_document_info,
+                    metadatas=request.metadatas,
+                    document_ids=request.document_ids,
+                    user_ids=request.user_ids,
+                    versions=request.versions,
+                    skip_document_info=request.skip_document_info,
                 )
                 return {"results": results}
 
@@ -859,8 +870,9 @@ class R2RApp(metaclass=AsyncSyncMeta):
                 document_info.updated_at = datetime.now()
 
                 title = files[it].filename.split(os.path.sep)[-1]
-                document_info.title = title
-                document_info.metadata["title"] = title
+                document_info.metadata["title"] = (
+                    document_info.metadata.get("title", None) or title
+                )
 
                 documents_info_modified.append(document_info)
             await self.aingest_files(
@@ -1178,7 +1190,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         return {"results": "Entries deleted successfully."}
 
     @telemetry_event("Delete")
-    async def delete_app(self, request: R2RDeleteRequest = Body(...)):
+    async def delete_app(self, request: R2RDeleteRequest):
         try:
             return await self.adelete(request.keys, request.values)
         except Exception as e:
@@ -1337,16 +1349,14 @@ class R2RApp(metaclass=AsyncSyncMeta):
     @telemetry_event("Analytics")
     async def analytics_app(
         self,
-        filter_criteria: FilterCriteria = Body(...),
-        analysis_types: AnalysisTypes = Body(...),
+        request: R2RAnalyticsRequest,
     ):
         async with manage_run(self.run_manager, "analytics_app"):
             try:
-                return await self.aanalytics(filter_criteria, analysis_types)
-            except Exception as e:
-                await self.run_manager.log_run_info(
-                    "error", str(e), is_info_log=False
+                return await self.aanalytics(
+                    request.filter_criteria, request.analysis_types
                 )
+            except Exception as e:
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
     @syncable

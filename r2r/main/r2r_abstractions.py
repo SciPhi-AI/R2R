@@ -4,10 +4,12 @@ from typing import Optional, Union
 from pydantic import BaseModel
 
 from r2r.core import (
+    AnalysisTypes,
     Document,
     EmbeddingProvider,
     EvalPipeline,
     EvalProvider,
+    FilterCriteria,
     GenerationConfig,
     IngestionPipeline,
     KGProvider,
@@ -79,9 +81,9 @@ class R2RUpdateDocumentsRequest(BaseModel):
 
 
 class R2RIngestFilesRequest(BaseModel):
-    metadatas: Optional[dict] = None
-    document_ids: Optional[list[str]] = None
-    user_ids: Optional[list[str]] = None
+    metadatas: Optional[list[dict]] = None
+    document_ids: Optional[list[uuid.UUID]] = None
+    user_ids: Optional[list[Optional[uuid.UUID]]] = None
     versions: Optional[list[str]] = None
     skip_document_info: Optional[bool] = False
 
@@ -117,8 +119,8 @@ class R2RDeleteRequest(BaseModel):
 
 
 class R2RAnalyticsRequest(BaseModel):
-    filter_criteria: dict[str, str]
-    analysis_types: dict[str, str]
+    filter_criteria: FilterCriteria
+    analysis_types: AnalysisTypes
 
 
 class R2RUsersStatsRequest(BaseModel):

@@ -24,8 +24,8 @@ class RAGPipeline(Pipeline):
         run_manager: Optional[RunManager] = None,
     ):
         super().__init__(pipe_logger, run_manager)
-        self.search_pipeline = None
-        self.rag_pipeline = None
+        self._search_pipeline = None
+        self._rag_pipeline = None
 
     async def run(
         self,
@@ -33,6 +33,7 @@ class RAGPipeline(Pipeline):
         state: Optional[AsyncState] = None,
         streaming: bool = False,
         run_manager: Optional[RunManager] = None,
+        log_run_info=True,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         rag_generation_config: GenerationConfig = GenerationConfig(),
@@ -40,29 +41,29 @@ class RAGPipeline(Pipeline):
         **kwargs: Any,
     ):
         self.state = state or AsyncState()
-
         async with manage_run(run_manager, self.pipeline_type):
-            await run_manager.log_run_info(
-                key="pipeline_type",
-                value=self.pipeline_type,
-                is_info_log=True,
-            )
+            if log_run_info:
+                await run_manager.log_run_info(
+                    key="pipeline_type",
+                    value=self.pipeline_type,
+                    is_info_log=True,
+                )
 
-            if not self.search_pipeline:
+            if not self._search_pipeline:
                 raise ValueError(
-                    "search_pipeline must be set before running the RAG pipeline"
+                    "_search_pipeline must be set before running the RAG pipeline"
                 )
 
             async def multi_query_generator(input):
                 tasks = []
                 async for query in input:
                     task = asyncio.create_task(
-                        self.search_pipeline.run(
+                        self._search_pipeline.run(
                             to_async_generator([query]),
-                            state,
-                            # streaming,
-                            False,
-                            run_manager,
+                            state=state,
+                            streaming=False,  # hardcode streaming to False, since we are aggregating searches and then streaming the RAG
+                            run_manager=run_manager,
+                            log_run_info=False,  # do not log the run info as it is already logged above
                             vector_search_settings=vector_search_settings,
                             kg_search_settings=kg_search_settings,
                             *args,
@@ -74,11 +75,12 @@ class RAGPipeline(Pipeline):
                 for query, task in tasks:
                     yield (query, await task)
 
-            rag_results = await self.rag_pipeline.run(
+            rag_results = await self._rag_pipeline.run(
                 input=multi_query_generator(input),
                 state=state,
                 streaming=streaming,
                 run_manager=run_manager,
+                log_run_info=False,
                 rag_generation_config=rag_generation_config,
                 *args,
                 **kwargs,
@@ -98,15 +100,17 @@ class RAGPipeline(Pipeline):
             raise ValueError(
                 "Only pipes that are part of the RAG pipeline can be added to the RAG pipeline"
             )
-        if not self.rag_pipeline:
-            self.rag_pipeline = Pipeline()
-        self.rag_pipeline.add_pipe(pipe, add_upstream_outputs, *args, **kwargs)
+        if not self._rag_pipeline:
+            self._rag_pipeline = Pipeline()
+        self._rag_pipeline.add_pipe(
+            pipe, add_upstream_outputs, *args, **kwargs
+        )
 
     def set_search_pipeline(
         self,
-        search_pipeline: Pipeline,
+        _search_pipeline: Pipeline,
         *args,
         **kwargs,
     ) -> None:
         logger.debug(f"Setting search pipeline for the RAGPipeline")
-        self.search_pipeline = search_pipeline
+        self._search_pipeline = _search_pipeline

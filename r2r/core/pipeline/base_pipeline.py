@@ -29,13 +29,11 @@ class Pipeline:
         self,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         run_manager: Optional[RunManager] = None,
-        log_run_info: bool = True,
     ):
         self.pipes: list[AsyncPipe] = []
         self.upstream_outputs: list[list[dict[str, str]]] = []
         self.pipe_logger = pipe_logger or KVLoggingSingleton()
         self.run_manager = run_manager or RunManager(self.pipe_logger)
-        self.log_run_info = log_run_info
         self.futures = {}
         self.level = 0
 
@@ -58,6 +56,7 @@ class Pipeline:
         state: Optional[AsyncState] = None,
         streaming: bool = False,
         run_manager: Optional[RunManager] = None,
+        log_run_info: bool = True,
         *args: Any,
         **kwargs: Any,
     ):
@@ -74,7 +73,7 @@ class Pipeline:
         self.state = state or AsyncState()
         current_input = input
         async with manage_run(run_manager, self.pipeline_type):
-            if self.log_run_info:
+            if log_run_info:
                 await run_manager.log_run_info(
                     key="pipeline_type",
                     value=self.pipeline_type,

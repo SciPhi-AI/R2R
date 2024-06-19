@@ -27,9 +27,9 @@ class SearchPipeline(Pipeline):
         run_manager: Optional[RunManager] = None,
     ):
         super().__init__(pipe_logger, run_manager)
-        self.parsing_pipe = None
-        self.vector_search_pipeline = None
-        self.kg_search_pipeline = None
+        self._parsing_pipe = None
+        self._vector_search_pipeline = None
+        self._kg_search_pipeline = None
 
     async def run(
         self,
@@ -37,6 +37,7 @@ class SearchPipeline(Pipeline):
         state: Optional[AsyncState] = None,
         streaming: bool = False,
         run_manager: Optional[RunManager] = None,
+        log_run_info: bool = True,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         *args: Any,
@@ -44,18 +45,19 @@ class SearchPipeline(Pipeline):
     ):
         self.state = state or AsyncState()
         do_vector_search = (
-            self.vector_search_pipeline is not None
+            self._vector_search_pipeline is not None
             and vector_search_settings.use_vector_search
         )
         do_kg = (
-            self.kg_search_pipeline is not None and kg_search_settings.use_kg
+            self._kg_search_pipeline is not None and kg_search_settings.use_kg
         )
         async with manage_run(run_manager, self.pipeline_type):
-            await run_manager.log_run_info(
-                key="pipeline_type",
-                value=self.pipeline_type,
-                is_info_log=True,
-            )
+            if log_run_info:
+                await run_manager.log_run_info(
+                    key="pipeline_type",
+                    value=self.pipeline_type,
+                    is_info_log=True,
+                )
 
             vector_search_queue = Queue()
             kg_queue = Queue()
@@ -76,22 +78,24 @@ class SearchPipeline(Pipeline):
             # Start the embedding and KG pipelines in parallel
             if do_vector_search:
                 vector_search_task = asyncio.create_task(
-                    self.vector_search_pipeline.run(
+                    self._vector_search_pipeline.run(
                         dequeue_requests(vector_search_queue),
                         state,
                         streaming,
                         run_manager,
+                        log_run_info=False,
                         vector_search_settings=vector_search_settings,
                     )
                 )
 
             if do_kg:
                 kg_task = asyncio.create_task(
-                    self.kg_search_pipeline.run(
+                    self._kg_search_pipeline.run(
                         dequeue_requests(kg_queue),
                         state,
                         streaming,
                         run_manager,
+                        log_run_info=False,
                         kg_search_settings=kg_search_settings,
                     )
                 )
@@ -120,15 +124,15 @@ class SearchPipeline(Pipeline):
         logger.debug(f"Adding pipe {pipe.config.name} to the SearchPipeline")
 
         if kg_pipe:
-            if not self.kg_search_pipeline:
-                self.kg_search_pipeline = Pipeline()
-            self.kg_search_pipeline.add_pipe(
+            if not self._kg_search_pipeline:
+                self._kg_search_pipeline = Pipeline()
+            self._kg_search_pipeline.add_pipe(
                 pipe, add_upstream_outputs, *args, **kwargs
             )
         elif vector_search_pipe:
-            if not self.vector_search_pipeline:
-                self.vector_search_pipeline = Pipeline()
-            self.vector_search_pipeline.add_pipe(
+            if not self._vector_search_pipeline:
+                self._vector_search_pipeline = Pipeline()
+            self._vector_search_pipeline.add_pipe(
                 pipe, add_upstream_outputs, *args, **kwargs
             )
         else:
