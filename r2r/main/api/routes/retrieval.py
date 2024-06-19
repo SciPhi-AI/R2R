@@ -15,10 +15,12 @@ router = APIRouter()
 
 @router.post("/search")
 async def search_app(request: R2RSearchRequest, r2r=Depends(get_r2r_app)):
-    async with manage_run(r2r.run_manager, "ingest_documents_app") as run_id:
+    async with manage_run(r2r.run_manager, "search_app") as run_id:
         try:
             return await r2r.asearch(
-                request.query, request.vector_settings, request.kg_settings
+                request.query,
+                request.vector_search_settings,
+                request.kg_search_settings,
             )
         except Exception as e:
             await r2r.logging_connection.log(
@@ -38,12 +40,12 @@ async def search_app(request: R2RSearchRequest, r2r=Depends(get_r2r_app)):
 
 @router.post("/rag")
 async def rag_app(request: R2RRAGRequest, r2r=Depends(get_r2r_app)):
-    async with manage_run(r2r.run_manager, "ingest_documents_app") as run_id:
+    async with manage_run(r2r.run_manager, "rag_app") as run_id:
         try:
             response = await r2r.arag(
                 request.query,
-                request.vector_settings,
-                request.kg_settings,
+                request.vector_search_settings,
+                request.kg_search_settings,
                 request.rag_generation_config
                 or GenerationConfig(model="gpt-4o"),
             )
@@ -75,7 +77,7 @@ async def rag_app(request: R2RRAGRequest, r2r=Depends(get_r2r_app)):
 
 @router.post("/evaluate")
 async def evaluate_app(request: R2REvalRequest, r2r=Depends(get_r2r_app)):
-    async with manage_run(r2r.run_manager, "ingest_documents_app") as run_id:
+    async with manage_run(r2r.run_manager, "evaluate_app") as run_id:
 
         try:
             return await r2r.aevaluate(
