@@ -1,3 +1,4 @@
+from .abstractions.async_sync_meta import AsyncSyncMeta, syncable
 from .abstractions.document import (
     DataType,
     Document,
@@ -100,6 +101,8 @@ __all__ = [
     "PostgresLoggingConfig",
     "PostgresKVLoggingProvider",
     "RedisLoggingConfig",
+    "AsyncSyncMeta",
+    "syncable",
     "RedisKVLoggingProvider",
     "KVLoggingSingleton",
     "RunManager",

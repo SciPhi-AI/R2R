@@ -20,8 +20,8 @@ from r2r.core import (
     VectorDBProvider,
 )
 
-from .r2r_abstractions import R2RPipelines, R2RPipes, R2RProviders
-from .r2r_config import R2RConfig
+from ..abstractions import R2RPipelines, R2RPipes, R2RProviders
+from .config import R2RConfig
 
 logger = logging.getLogger(__name__)
 
