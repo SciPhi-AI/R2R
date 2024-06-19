@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Union
 
 from ..abstractions.document import DocumentInfo
-from ..abstractions.search import SearchResult
+from ..abstractions.search import VectorSearchResult
 from ..abstractions.vector import VectorEntry
 from .base_provider import Provider, ProviderConfig
 
@@ -58,7 +58,7 @@ class VectorDBProvider(Provider, ABC):
         limit: int = 10,
         *args,
         **kwargs,
-    ) -> list[SearchResult]:
+    ) -> list[VectorSearchResult]:
         pass
 
     @abstractmethod
@@ -74,7 +74,7 @@ class VectorDBProvider(Provider, ABC):
         rrf_k: int = 20,  # typical value is ~2x the number of results you want
         *args,
         **kwargs,
-    ) -> list[SearchResult]:
+    ) -> list[VectorSearchResult]:
         pass
 
     @abstractmethod

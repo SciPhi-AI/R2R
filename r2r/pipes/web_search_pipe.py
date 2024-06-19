@@ -7,7 +7,7 @@ from r2r.core import (
     AsyncPipe,
     AsyncState,
     PipeType,
-    SearchResult,
+    VectorSearchResult,
     generate_id_from_label,
 )
 from r2r.integrations import SerperClient
@@ -40,7 +40,7 @@ class WebSearchPipe(SearchPipe):
         run_id: uuid.UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[SearchResult, None]:
+    ) -> AsyncGenerator[VectorSearchResult, None]:
         search_limit_override = kwargs.get("search_limit", None)
         await self.enqueue_log(
             run_id=run_id, key="search_query", value=message
@@ -56,7 +56,7 @@ class WebSearchPipe(SearchPipe):
             if result.get("snippet") is None:
                 continue
             result["text"] = result.pop("snippet")
-            search_result = SearchResult(
+            search_result = VectorSearchResult(
                 id=generate_id_from_label(str(result)),
                 score=result.get(
                     "score", 0
@@ -79,7 +79,7 @@ class WebSearchPipe(SearchPipe):
         run_id: uuid.UUID,
         *args: Any,
         **kwargs,
-    ) -> AsyncGenerator[SearchResult, None]:
+    ) -> AsyncGenerator[VectorSearchResult, None]:
         search_queries = []
         search_results = []
         async for search_request in input.message:

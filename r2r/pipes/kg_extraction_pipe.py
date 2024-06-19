@@ -12,7 +12,6 @@ from r2r.core import (
     Extraction,
     Fragment,
     FragmentType,
-    GenerationConfig,
     KGExtraction,
     KGProvider,
     KVLoggingSingleton,
@@ -25,6 +24,7 @@ from r2r.core import (
     extract_triples,
     generate_id_from_label,
 )
+from r2r.core.abstractions.llm import GenerationConfig
 
 logger = logging.getLogger(__name__)
 
@@ -212,7 +212,7 @@ class KGExtractionPipe(LoggableAsyncPipe):
                     )  # pass a copy if necessary
                     fragment_batch.clear()  # Clear the batch for new fragments
 
-        logger.info(
+        logger.debug(
             f"Fragmented the input document ids into counts as shown: {fragment_info}"
         )
 

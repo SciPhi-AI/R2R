@@ -5,12 +5,12 @@ from typing import Any, AsyncGenerator, Generator, Optional
 
 from r2r.core import (
     AsyncState,
-    GenerationConfig,
     LLMChatCompletionChunk,
     LLMProvider,
     PipeType,
     PromptProvider,
 )
+from r2r.core.abstractions.llm import GenerationConfig
 
 from .abstractions.generator_pipe import GeneratorPipe
 from .search_rag_pipe import SearchRAGPipe
@@ -55,32 +55,44 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
         iteration = 0
         context = ""
         # dump the search results and construct the context
-        yield f"<{self.SEARCH_STREAM_MARKER}>"
-        for result in input.raw_search_results:
-            if iteration >= 1:
-                yield ","
-            yield json.dumps(result.json())
-            context += f"Result {iteration+1}:\n{result.metadata['text']}\n\n"
-            iteration += 1
-        yield f"</{self.SEARCH_STREAM_MARKER}>"
+        async for query, search_results in input.message:
+            yield f"<{self.SEARCH_STREAM_MARKER}>"
+            if search_results.vector_search_results:
+                context += "Vector Search Results:\n"
+                for result in search_results.vector_search_results:
+                    if iteration >= 1:
+                        yield ","
+                    yield json.dumps(result.json())
+                    context += f"{iteration+1}:\n{result.metadata['text']}\n\n"
+                    iteration += 1
 
-        messages = self._get_message_payload(str(input.query), context)
-        yield f"<{self.COMPLETION_STREAM_MARKER}>"
-        response = ""
-        for chunk in self.llm_provider.get_completion_stream(
-            messages=messages, generation_config=rag_generation_config
-        ):
-            chunk = StreamingSearchRAGPipe._process_chunk(chunk)
-            response += chunk
-            yield chunk
+            # if search_results.kg_search_results:
+            #     for result in search_results.kg_search_results:
+            #         if iteration >= 1:
+            #             yield ","
+            #         yield json.dumps(result.json())
+            #         context += f"Result {iteration+1}:\n{result.metadata['text']}\n\n"
+            #         iteration += 1
 
-        yield f"</{self.COMPLETION_STREAM_MARKER}>"
+            yield f"</{self.SEARCH_STREAM_MARKER}>"
 
-        await self.enqueue_log(
-            run_id=run_id,
-            key="llm_response",
-            value=response,
-        )
+            messages = self._get_message_payload(query, context)
+            yield f"<{self.COMPLETION_STREAM_MARKER}>"
+            response = ""
+            for chunk in self.llm_provider.get_completion_stream(
+                messages=messages, generation_config=rag_generation_config
+            ):
+                chunk = StreamingSearchRAGPipe._process_chunk(chunk)
+                response += chunk
+                yield chunk
+
+            yield f"</{self.COMPLETION_STREAM_MARKER}>"
+
+            await self.enqueue_log(
+                run_id=run_id,
+                key="llm_response",
+                value=response,
+            )
 
     async def _yield_chunks(
         self,

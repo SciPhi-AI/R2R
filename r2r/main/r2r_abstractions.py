@@ -1,19 +1,26 @@
-from typing import Optional
+import uuid
+from typing import Optional, Union
 
 from pydantic import BaseModel
 
 from r2r.core import (
+    AnalysisTypes,
+    Document,
     EmbeddingProvider,
     EvalPipeline,
     EvalProvider,
+    FilterCriteria,
+    GenerationConfig,
     IngestionPipeline,
     KGProvider,
+    KGSearchSettings,
     LLMProvider,
     LoggableAsyncPipe,
     PromptProvider,
     RAGPipeline,
     SearchPipeline,
     VectorDBProvider,
+    VectorSearchSettings,
 )
 
 
@@ -39,6 +46,7 @@ class R2RPipes(BaseModel):
     eval_pipe: Optional[LoggableAsyncPipe]
     kg_pipe: Optional[LoggableAsyncPipe]
     kg_storage_pipe: Optional[LoggableAsyncPipe]
+    kg_agent_search_pipe: Optional[LoggableAsyncPipe]
 
     class Config:
         arbitrary_types_allowed = True
@@ -53,3 +61,75 @@ class R2RPipelines(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+
+class R2RUpdatePromptRequest(BaseModel):
+    name: str
+    template: Optional[str] = None
+    input_types: Optional[dict[str, str]] = {}
+
+
+class R2RIngestDocumentsRequest(BaseModel):
+    documents: list[Document]
+    versions: Optional[list[str]] = None
+
+
+class R2RUpdateDocumentsRequest(BaseModel):
+    documents: list[Document]
+    versions: Optional[list[str]] = None
+    metadatas: Optional[list[dict]] = None
+
+
+class R2RIngestFilesRequest(BaseModel):
+    metadatas: Optional[list[dict]] = None
+    document_ids: Optional[list[uuid.UUID]] = None
+    user_ids: Optional[list[Optional[uuid.UUID]]] = None
+    versions: Optional[list[str]] = None
+    skip_document_info: Optional[bool] = False
+
+
+class R2RUpdateFilesRequest(BaseModel):
+    metadatas: Optional[list[dict]] = None
+    document_ids: Optional[uuid.UUID] = None
+
+
+class R2RSearchRequest(BaseModel):
+    query: str
+    vector_settings: VectorSearchSettings
+    kg_settings: KGSearchSettings
+
+
+class R2RRAGRequest(BaseModel):
+    query: str
+    vector_settings: VectorSearchSettings
+    kg_settings: KGSearchSettings
+    rag_generation_config: Optional[GenerationConfig] = None
+
+
+class R2REvalRequest(BaseModel):
+    query: str
+    context: str
+    completion: str
+
+
+class R2RDeleteRequest(BaseModel):
+    keys: list[str]
+    values: list[Union[bool, int, str]]
+
+
+class R2RAnalyticsRequest(BaseModel):
+    filter_criteria: FilterCriteria
+    analysis_types: AnalysisTypes
+
+
+class R2RUsersStatsRequest(BaseModel):
+    user_ids: Optional[list[uuid.UUID]]
+
+
+class R2RDocumentsInfoRequest(BaseModel):
+    document_ids: Optional[list[uuid.UUID]]
+    user_ids: Optional[list[uuid.UUID]]
+
+
+class R2RDocumentChunksRequest(BaseModel):
+    document_id: uuid.UUID

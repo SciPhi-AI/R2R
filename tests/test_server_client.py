@@ -6,12 +6,17 @@ import pytest
 from fastapi.testclient import TestClient
 
 from r2r import (
+    KGSearchSettings,
     KVLoggingSingleton,
     R2RApp,
     R2RConfig,
+    R2RIngestFilesRequest,
     R2RPipeFactory,
     R2RPipelineFactory,
     R2RProviderFactory,
+    R2RRAGRequest,
+    R2RSearchRequest,
+    VectorSearchSettings,
     generate_id_from_label,
 )
 
@@ -40,6 +45,7 @@ def r2r_app(request):
         r2r = R2RApp(
             config=config,
             providers=providers,
+            pipes=pipes,
             pipelines=pipelines,
         )
 
@@ -107,6 +113,7 @@ async def test_ingest_txt_file(client):
 
     response = client.post(
         "/ingest_files/",
+        # must use data instead of json when sending files
         data={"metadatas": json.dumps([metadata])},
         files=files,
     )
@@ -124,14 +131,13 @@ async def test_ingest_txt_file(client):
 @pytest.mark.asyncio
 async def test_search(client):
     query = "who was aristotle?"
-    response = client.post(
-        "/search/",
-        json={
-            "query": query,
-            "search_filters": "{}",
-            "search_limit": "10",
-        },
+    search_request = R2RSearchRequest(
+        query=query,
+        vector_settings=VectorSearchSettings(),
+        kg_settings=KGSearchSettings(),
     )
+
+    response = client.post("/search/", json=search_request.dict())
     assert response.status_code == 200
     assert "results" in response.json()
 
@@ -140,15 +146,14 @@ async def test_search(client):
 @pytest.mark.asyncio
 async def test_rag(client):
     query = "who was aristotle?"
-    response = client.post(
-        "/rag/",
-        json={
-            "message": query,
-            "search_filters": "{}",
-            "search_limit": "10",
-            "streaming": "false",
-        },
+    rag_request = R2RRAGRequest(
+        query=query,
+        vector_settings=VectorSearchSettings(),
+        kg_settings=KGSearchSettings(),
+        rag_generation_config=None,
     )
+
+    response = client.post("/rag/", json=rag_request.dict())
     assert response.status_code == 200
     assert "results" in response.json()
 
@@ -168,13 +173,17 @@ async def test_delete(client):
             ),
         ),
     ]
+    request = R2RIngestFilesRequest(
+        metadatas=[metadata],
+    )
 
     response = client.post(
         "/ingest_files/",
-        data={"metadatas": json.dumps([metadata])},
+        data={k: json.dumps(v) for k, v in json.loads(request.json()).items()},
         files=files,
     )
 
+    print("response = ", response)
     response = client.request(
         "DELETE",
         "/delete/",

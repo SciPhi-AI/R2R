@@ -1,6 +1,7 @@
 import fire
 
-from r2r import GenerationConfig, R2RAppBuilder, SerperClient, WebSearchPipe
+from r2r import R2RAppBuilder, SerperClient, WebSearchPipe
+from r2r.core.abstractions.llm import GenerationConfig
 
 
 def run_rag_pipeline(query="Who was Aristotle?"):
