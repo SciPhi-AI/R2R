@@ -6,14 +6,15 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-purple.svg" alt="License: MIT"></a>
 </p>
 
-<img src="./docs/pages/r2r.png" alt="Sciphi Framework">
+<img src="./docs/pages/r2r.png" alt="R2R Answer Engine">
 <h3 align="center">
 Build, deploy, observe, and optimize your RAG engine.
 </h3>
 
 # About
 
-R2R (Rag to Riches) is the ultimate open-source answer engine for building and deploying high-quality Retrieval-Augmented Generation (RAG) systems. Designed to bridge the gap between local LLM experimentation and scalable, production-ready applications, R2R provides a comprehensive, feature-rich environment for developers.
+R2R (RAG to Riches) is the ultimate open-source AI powered answer engine. Designed to bridge the gap between local LLM experimentation and scalable, production-ready applications, R2R provides a comprehensive, feature-rich starting point for developers.
+
 
 For a more complete view of R2R, check out our [documentation](https://r2r-docs.sciphi.ai/).
 
@@ -92,7 +93,7 @@ The following quickstart offers a step-by-step guide on running R2R locally as w
 <summary> <b>Interacting with your Documents</b></summary>
 
 1. **Ingesting Files**:
-   To comprehensively demonstrate the RAG functionalities of the R2R framework, we must start by ingesting a realistic set of documents. Running the command below will parse, chunk, embed, and store a preset list of files. The included file types cover HTML, PDF, PNG, and TXT examples:
+   To comprehensively demonstrate the RAG functionalities of the R2R engine, we must start by ingesting a realistic set of documents. Running the command below will parse, chunk, embed, and store a preset list of files. The included file types cover HTML, PDF, PNG, and TXT examples:
 
    ```bash
    python -m r2r.examples.quickstart ingest_as_files
@@ -279,7 +280,7 @@ The following quickstart offers a step-by-step guide on running R2R locally as w
 
 <details>
    <summary> <b>R2R in Client-Server Mode</b></summary>
-   The R2R framework extends to support interactions with a client-server architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations.
+   The R2R answer engine supports interactions with a native client-server architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations.
 
    ### Launch the Server
 

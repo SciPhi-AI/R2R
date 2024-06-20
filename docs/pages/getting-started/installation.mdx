@@ -8,11 +8,16 @@ import { LinkTabs } from '../../components/LinkTabs'
   Install R2R using `pip` to get started with minimal setup.
 
   ```bash
-  # use the `'r2r[all]'` to download all required deps
+  # use `'r2r[all]'` to download all required deps
   pip install r2r
 
   # setup env
   export OPENAI_API_KEY=sk-...
+  export POSTGRES_USER=YOUR_POSTGRES_USER
+  export POSTGRES_PASSWORD=YOUR_POSTGRES_PASSWORD
+  export POSTGRES_HOST=YOUR_POSTGRES_HOST
+  export POSTGRES_PORT=YOUR_POSTGRES_PORT
+  export POSTGRES_DBNAME=YOUR_POSTGRES_DBNAME
   ```
 
   <Callout type="info" emoji="🖥️">
@@ -80,7 +85,7 @@ import { LinkTabs } from '../../components/LinkTabs'
 
 ## Full Installation
 
-Full installation is largely meant to be used by developers who wish to extend the R2R framework.
+Full installation is largely meant to be used by developers who wish to extend R2R.
 
 <details>
 <summary>1.&nbsp;<b>Install Poetry</b>: Ensure Poetry is installed.</summary>

@@ -1,6 +1,4 @@
 import logging
-import uuid
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -8,6 +6,8 @@ from ...abstractions import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
+    R2RDocumentsInfoRequest,
+    R2RLogsRequest,
     R2RUpdatePromptRequest,
     R2RUsersStatsRequest,
 )
@@ -34,19 +34,18 @@ async def update_prompt_app(
 
 @router.get("/logs")
 async def get_logs_app(
-    log_type_filter: Optional[str] = None,
-    max_runs_requested: int = 100,
+    request: R2RLogsRequest,
     r2r=Depends(get_r2r_app),
 ):
     try:
         results = await r2r.alogs(
-            log_type_filter=log_type_filter,
-            max_runs_requested=max_runs_requested,
+            log_type_filter=request.log_type_filter,
+            max_runs_requested=request.max_runs_requested,
         )
         return {"results": results}
     except Exception as e:
         logger.error(
-            f"get_logs_app(log_type_filter={log_type_filter}, max_runs_requested={max_runs_requested}) - \n\n{str(e)})"
+            f"get_logs_app(log_type_filter={request.log_type_filter}, max_runs_requested={request.max_runs_requested}) - \n\n{str(e)})"
         )
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -63,16 +62,6 @@ async def get_analytics_app(
         return {"results": results}
     except Exception as e:
         logger.error(f"get_analytics_app(request={request}) - \n\n{str(e)})")
-        raise HTTPException(status_code=500, detail=str(e)) from e
-
-
-@router.get("/app_settings")
-async def get_app_settings_app(r2r=Depends(get_r2r_app)):
-    try:
-        results = await r2r.aapp_settings()
-        return {"results": results}
-    except Exception as e:
-        logger.error(f"get_app_settings_app() - \n\n{str(e)})")
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
@@ -100,18 +89,17 @@ async def delete_app(request: R2RDeleteRequest, r2r=Depends(get_r2r_app)):
 
 @router.get("/documents_info")
 async def get_documents_info_app(
-    document_ids: Optional[List[uuid.UUID]] = None,
-    user_ids: Optional[List[uuid.UUID]] = None,
+    request: R2RDocumentsInfoRequest,
     r2r=Depends(get_r2r_app),
 ):
     try:
         results = await r2r.adocuments_info(
-            document_ids=document_ids, user_ids=user_ids
+            document_ids=request.document_ids, user_ids=request.user_ids
         )
         return {"results": results}
     except Exception as e:
         logger.error(
-            f"get_documents_info_app(document_ids={document_ids}, user_ids={user_ids}) - \n\n{str(e)})"
+            f"get_documents_info_app(document_ids={request.document_ids}, user_ids={request.user_ids}) - \n\n{str(e)})"
         )
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -127,6 +115,16 @@ async def get_document_chunks_app(
         logger.error(
             f"get_document_chunks_app(request={request}) - \n\n{str(e)})"
         )
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.get("/app_settings")
+async def get_app_settings_app(r2r=Depends(get_r2r_app)):
+    try:
+        results = await r2r.aapp_settings()
+        return {"results": results}
+    except Exception as e:
+        logger.error(f"get_app_settings_app() - \n\n{str(e)})")
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 

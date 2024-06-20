@@ -17,7 +17,7 @@ config = R2RConfig.from_json("path/to/my_config.json")
 r2r_app = R2RAppBuilder(config).build() # defaults to `config.json` when no config is passed
 ```
 
-In this example, the configuration is loaded from `my_config.json`. However, it is not necessary to pass a configuration file, and if none is provided then the framework defaults to the settings shown in the [`config.json`](https://github.com/SciPhi-AI/R2R/blob/main/config.json).
+In this example, the configuration is loaded from `my_config.json`. However, it is not necessary to pass a configuration file, and if none is provided then the engine defaults to the settings shown in the [`config.json`](https://github.com/SciPhi-AI/R2R/blob/main/config.json).
 
 ### Serving R2R
 
@@ -236,4 +236,4 @@ r2r_app = builder.build()
 
 ## Summary
 
-This comprehensive guide shows how to configure and build an `R2RApp` using the `R2RAppBuilder`, allowing you to customize various components and providers to fit your specific needs. By following these steps, you can effectively set up and customize an R2R application to suit your specific needs, leveraging the flexibility and power of the R2R framework.
+This comprehensive guide shows how to configure and build an `R2RApp` using the `R2RAppBuilder`, allowing you to customize various components and providers to fit your specific needs. By following these steps, you can effectively set up and customize an R2R application to suit your specific needs, leveraging the flexibility and power of the R2R answer engine.

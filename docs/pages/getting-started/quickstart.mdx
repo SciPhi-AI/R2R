@@ -2,7 +2,7 @@ import { Callout } from 'nextra/components'
 
 ## Quickstart
 
-This guide offers a step-by-step walkthrough of the core features provided by R2R using the R2R Python SDK. The framework includes methods as well as a REST API for document ingestion, RAG, evaluation, and supporting features like observability, analytics, and document management.
+This guide offers a step-by-step walkthrough of the core features provided by R2R using the R2R Python SDK. The engine includes methods as well as a REST API for document ingestion, RAG, evaluation, and supporting features like observability, analytics, and document management.
 
 ![R2R App Architecture](./r2r_demo_architecture.png)
 
@@ -45,7 +45,7 @@ This quickstart will continue on to show how to ingest a list of assorted docume
 
 <details open>
 <summary>Ingesting Files</summary>
-    To comprehensively demonstrate the RAG functionalities of the R2R framework, we must start by ingesting a realistic set of documents. Running the command below will parse, chunk, embed, and store a prepared list of sample files. The included file types cover `html`, `pdf`, `png`, `mp3`, and `txt` examples:
+    To comprehensively demonstrate the RAG functionalities of R2R, we must start by ingesting a realistic set of documents. Running the command below will parse, chunk, embed, and store a prepared list of sample files. The included file types cover `html`, `pdf`, `png`, `mp3`, and `txt` examples:
 
     ```bash filename="bash" copy
     python -m r2r.examples.quickstart ingest_as_files
@@ -54,10 +54,10 @@ This quickstart will continue on to show how to ingest a list of assorted docume
     **Demo Output:**
 
     ```ansi
-    r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.json - 2024-05-20 22:08:48,025
-    r2r.core.providers.llm_provider - INFO - Initializing LLM provider with config: extra_fields={} provider='litellm' - 2024-05-20 22:08:48,562
-    r2r.core.providers.vector_db_provider - INFO - Initializing VectorDBProvider with config extra_fields={} provider='local' collection_name='demo_vecs'. - 2024-05-20 22:08:48,765
-    r2r.providers.embeddings.openai.openai_base - INFO - Initializing `OpenAIEmbeddingProvider` to provide embeddings. - 2024-05-20 22:08:48,774
+    r2r.core.providers.vector_db_provider - INFO - Initializing VectorDBProvider with config extra_fields={} provider='pgvector' collection_name='demo_vecs'. - 2024-06-19 15:38:13,151
+    r2r.core.providers.embedding_provider - INFO - Initializing EmbeddingProvider with config extra_fields={'text_splitter': {'type': 'recursive_character', 'chunk_size': 512, 'chunk_overlap': 20}} provider='openai' base_model='text-embedding-3-small' base_dimension=512 rerank_model=None rerank_dimension=None rerank_transformer_type=None batch_size=128. - 2024-06-19 15:38:14,440
+    r2r.core.providers.llm_provider - INFO - Initializing LLM provider with config: extra_fields={} provider='litellm' - 2024-06-19 15:38:15,002
+    r2r.main.services.ingestion_service - INFO - Processing file: /SciPhi/demo/R2R-kg/r2r/examples/data/aristotle.txt - 2024-06-19 15:38:15,307
     ...
     r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'pg_essay_1.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=4a4fb848-fc03-5487-a7e5-33c9fdfb73cc in t=0.00 seconds. - 2024-05-21 08:39:59,003
     r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'lyft_2021.pdf', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=c5abc0b7-b9e5-54d9-b3d3-fdb14af4d065 in t=3.47 seconds. - 2024-05-21 08:40:02,477
@@ -120,7 +120,7 @@ This quickstart will continue on to show how to ingest a list of assorted docume
 
 ## Basic RAG Functionality
 
-The basic RAG functionality of the R2R framework allows you to search ingested documents and generate responses using Retrieval-Augmented Generation (RAG). These steps will guide you through performing a search query, generating a RAG response, and streaming RAG results.
+The basic RAG functionality of R2R allows you to search ingested documents and generate responses using Retrieval-Augmented Generation (RAG). These steps will guide you through performing a search query, generating a RAG response, and streaming RAG results.
 
 <details open>
 <summary>Search Documents</summary>
@@ -304,4 +304,4 @@ python -m r2r.examples.quickstart logs
 Developers can interact with R2R in several ways, including through our [open-source React+Next.js dashboard](https://github.com/SciPhi-AI/R2R-Dashboard). The dashboard is designed to give R2R developers an easy way to interface with their pipelines, reducing development and iteration time. Checkout the [Dashboard Cookbook](https://r2r-docs.sciphi.ai/cookbooks/dashboard) to get started!
 
 ## Next Steps
-This R2R quickstart guides you through the basics of setting up and using the R2R framework to run a Retrieval-Augmented Generation (RAG) pipeline, but this is just a start! [Checkout our cookbooks](../cookbooks/starter) for more advanced tutorials.
+This R2R quickstart guides you through the basics of setting up and using R2R to run a Retrieval-Augmented Generation (RAG) pipeline, but this is just a start! [Checkout our cookbooks](../cookbooks/starter) for more advanced tutorials.

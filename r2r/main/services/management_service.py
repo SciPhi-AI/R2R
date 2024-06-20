@@ -177,7 +177,6 @@ class ManagementService(Service):
 
     @telemetry_event("AppSettings")
     async def aapp_settings(self, *args: Any, **kwargs: Any):
-        # config_data = self.config.app  # Assuming this holds your config.json data
         prompts = self.providers.prompt.get_all_prompts()
         return {
             "results": {
@@ -243,16 +242,4 @@ class ManagementService(Service):
                     name: prompt.dict() for name, prompt in prompts.items()
                 },
             }
-        }
-
-    @telemetry_event("OpenAPISpec")
-    def openapi_spec(self):
-        from fastapi.openapi.utils import get_openapi
-
-        return {
-            "results": get_openapi(
-                title="R2R Application API",
-                version="1.0.0",
-                routes=self.app.routes,
-            )
         }
