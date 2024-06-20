@@ -123,7 +123,13 @@ class R2RApp(metaclass=AsyncSyncMeta):
 
     @syncable
     async def aopenapi_spec(self, *args, **kwargs):
-        return await self.management_service.openapi_spec(*args, **kwargs)
+        from fastapi.openapi.utils import get_openapi
+
+        return get_openapi(
+            title="R2R Application API",
+            version="1.0.0",
+            routes=self.app.routes,
+        )
 
     def _apply_cors(self):
         from fastapi.middleware.cors import CORSMiddleware

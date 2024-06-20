@@ -8,7 +8,6 @@ r2r_app_instance = None
 
 
 def get_r2r_config(config_name: Optional[str] = None) -> R2RConfig:
-    print("calling get_r2r_config...")
     if config_name:
         config_path = R2RAppBuilder.CONFIG_OPTIONS.get(config_name)
         if not config_path:
