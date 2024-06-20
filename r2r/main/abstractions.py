@@ -133,3 +133,8 @@ class R2RDocumentsInfoRequest(BaseModel):
 
 class R2RDocumentChunksRequest(BaseModel):
     document_id: uuid.UUID
+
+
+class R2RLogsRequest(BaseModel):
+    log_type_filter: Optional[str] = (None,)
+    max_runs_requested: int = 100

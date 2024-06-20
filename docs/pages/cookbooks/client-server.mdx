@@ -20,21 +20,9 @@ If you are running with Docker, then you may skip the step below
 
    ```bash filename="User Terminal"
 
-   r2r.core.providers.vector_db_provider - INFO - Initializing VectorDBProvider with config extra_fields={} provider='local' collection_name='demo_vecs'. - 2024-06-16 14:55:59,291
-   r2r.providers.embeddings.openai.openai_base - INFO - Initializing `OpenAIEmbeddingProvider` to provide embeddings. - 2024-06-16 14:55:59,295
-   Python-dotenv could not parse statement starting at line 14
-   Python-dotenv could not parse statement starting at line 14
-   Python-dotenv could not parse statement starting at line 14
-   r2r.core.providers.llm_provider - INFO - Initializing LLM provider with config: extra_fields={} provider='litellm' - 2024-06-16 14:55:59,860
-   r2r.pipes.parsing_pipe - INFO - Initializing a `ParsingPipe` to parse incoming documents. - 2024-06-16 14:55:59,860
-   r2r.core.pipes.base_pipe - INFO - Initialized pipe default_document_parsing_pipe of type PipeType.INGESTOR - 2024-06-16 14:55:59,860
-   r2r.core.pipes.base_pipe - INFO - Initialized pipe default_embedding_pipe of type PipeType.INGESTOR - 2024-06-16 14:56:00,105
-   r2r.pipes.vector_storage_pipe - INFO - Initalizing an `AsyncVectorStoragePipe` to store embeddings in a vector database. - 2024-06-16 14:56:00,105
-   r2r.core.pipes.base_pipe - INFO - Initialized pipe default_loggable_pipe of type PipeType.INGESTOR - 2024-06-16 14:56:00,105
-   r2r.core.pipes.base_pipe - INFO - Initialized pipe default_vector_search of type PipeType.SEARCH - 2024-06-16 14:56:00,105
-   r2r.core.pipes.base_pipe - INFO - Initialized pipe default_rag_pipe of type PipeType.GENERATOR - 2024-06-16 14:56:00,105
-   r2r.core.pipes.base_pipe - INFO - Initialized pipe default_streaming_rag_pipe of type PipeType.GENERATOR - 2024-06-16 14:56:00,105
-   r2r.core.pipes.base_pipe - INFO - Initialized pipe default_eval_pipe of type PipeType.EVAL - 2024-06-16 14:56:00,105
+r2r.core.providers.vector_db_provider - INFO - Initializing VectorDBProvider with config extra_fields={} provider='pgvector' collection_name='123_demo_vecs_123'. - 2024-06-19 16:02:34,612
+r2r.core.providers.embedding_provider - INFO - Initializing EmbeddingProvider with config extra_fields={'text_splitter': {'type': 'recursive_character', 'chunk_size': 512, 'chunk_overlap': 20}} provider='openai' base_model='text-embedding-3-small' base_dimension=512 rerank_model=None rerank_dimension=None rerank_transformer_type=None batch_size=128. - 2024-06-19 16:02:35,512
+r2r.core.providers.llm_provider - INFO - Initializing LLM provider with config: extra_fields={} provider='litellm' - 2024-06-19 16:02:36,009
    INFO:     Started server process [55001]
    INFO:     Waiting for application startup.
    INFO:     Application startup complete.
@@ -42,7 +30,7 @@ If you are running with Docker, then you may skip the step below
    ```
 ### Using the Client
 
-The R2R framework includes a [python client](https://github.com/SciPhi-AI/R2R/blob/main/r2r/main/r2r_client.py) and a [typescript client](https://github.com/SciPhi-AI/r2r-js/blob/main/src/r2rClient.ts). All of the quickstart commands can be run with the python client using the `--client_server_mode` parameter to run the demo in Client-Server mode. Note that these commands will only run successfully if the server is active at http://0.0.0.0:8000.
+The R2R engine includes a [python client](https://github.com/SciPhi-AI/R2R/blob/main/r2r/main/r2r_client.py) and a [typescript client](https://github.com/SciPhi-AI/r2r-js/blob/main/src/r2rClient.ts). All of the quickstart commands can be run with the python client using the `--client_server_mode` parameter to run the demo in Client-Server mode. Note that these commands will only run successfully if the server is active at http://0.0.0.0:8000.
 
 <Callout type="warning" emoji="️⚠️">
    Be sure to run client commands in a new terminal!
