@@ -64,7 +64,7 @@ class RetrievalService(Service):
             ):
                 raise HTTPException(
                     status_code=400,
-                    detail="Knowledge Graph search is not enabled in the configuration.",
+                    detail="Vector search is not enabled in the configuration.",
                 )
 
             results = await self.pipelines.search_pipeline.run(
