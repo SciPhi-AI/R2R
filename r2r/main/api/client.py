@@ -17,6 +17,7 @@ from ..abstractions import (
     R2RDocumentsOverviewRequest,
     R2RIngestDocumentsRequest,
     R2RIngestFilesRequest,
+    R2RLogsRequest,
     R2RRAGRequest,
     R2RSearchRequest,
     R2RUpdateDocumentsRequest,
@@ -250,7 +251,8 @@ class R2RClient:
         params = {}
         if log_type_filter:
             params["log_type_filter"] = log_type_filter
-        response = requests.get(url, params=params)
+        request = R2RLogsRequest(log_type_filter=log_type_filter)
+        response = requests.get(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
 
