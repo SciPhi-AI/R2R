@@ -31,14 +31,14 @@
   },
   "logging": {
     "provider": "local",
-    "log_table": "logs_000",
-    "log_info_table": "log_info_000"
+    "log_table": "logs",
+    "log_info_table": "log_info"
   },
   "prompt": {
     "provider": "local"
   },
   "vector_database": {
     "provider": "pgvector",
-    "collection_name": "demo_vecs_000_000_000_000_000_000_000_000_000"
+    "collection_name": "demo_vecs"
   }
 }

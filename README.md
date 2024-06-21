@@ -12,8 +12,7 @@ The ultimate open source AI powered answer engine
 </h3>
 
 # About
-
-R2R (RAG to Riches)  was designed to bridge the gap between local LLM experimentation and scalable, production-ready Retrieval-Augmented Generation (RAG). R2R provides a comprehensive and SOTA RAG system for developers, built around a [RESTful API](https://r2r-docs.sciphi.ai/api-reference/introduction) for ease of use.
+R2R (RAG to Riches)  bridges local LLM experiments with production-ready Retrieval-Augmented Generation (RAG). It offers developers a cutting-edge, comprehensive RAG system with a RESTful API for seamless integration.
 
 For a more complete view of R2R, check out the [full documentation](https://r2r-docs.sciphi.ai/).
 
@@ -25,7 +24,7 @@ For a more complete view of R2R, check out the [full documentation](https://r2r-
 - **🌐 Client-Server**: RESTful API support out of the box.
 - **🧩 Configurable**: Provision your application using intuitive configuration files.
 - **🔌 Extensible**: Develop your application further with easy builder + factory pattern.
-- **🖥️ Dashboard**: Use the [R2R Dashboard](https://github.com/SciPhi-AI/R2R-Dashboard), an open-source React+Next.js app for a user-friendly interaction with your pipelines.
+- **🖥️ Dashboard**: Use the [R2R Dashboard](https://github.com/SciPhi-AI/R2R-Dashboard), an open-source React+Next.js app for a user-friendly interaction with R2R.
 
 ## Table of Contents
 1. [Install](#install)
@@ -118,7 +117,7 @@ The following quickstart offers a step-by-step guide on running R2R locally as w
    ```
 </details>
 
-<details>
+<details open>
 <summary><b>Search and RAG Operations</b></summary>
 
 1. **Search Documents**:
