@@ -184,26 +184,22 @@ class R2RLocalVectorDB(VectorDBProvider):
             raise ValueError(
                 "Collection name is not set. Please call `initialize_collection` first."
             )
-
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
         cursor.execute(f'SELECT * FROM "{self.config.collection_name}"')
-        deleted_ids = set([])
+        deleted_ids = set()
         for id, _, metadata in cursor.fetchall():
             metadata_json = json.loads(metadata)
-            is_valid = True
             for metadata_field, metadata_value in zip(
                 metadata_fields, metadata_values
             ):
-                if metadata_json.get(metadata_field) != metadata_value:
-                    is_valid = False
+                if metadata_json.get(metadata_field) == metadata_value:
+                    cursor.execute(
+                        f'DELETE FROM "{self.config.collection_name}" WHERE id = ?',
+                        (id,),
+                    )
+                    deleted_ids.add(metadata_json.get("document_id", None))
                     break
-            if is_valid:
-                cursor.execute(
-                    f'DELETE FROM "{self.config.collection_name}" WHERE id = ?',
-                    (id,),
-                )
-                deleted_ids.add(metadata_json.get("document_id", None))
         conn.commit()
         conn.close()
         return list(deleted_ids)
