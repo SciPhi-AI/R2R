@@ -154,11 +154,14 @@ Interact with R2R using our [open-source React+Next.js dashboard](https://github
 - [Github Issues](https://github.com/SciPhi-AI/R2R/issues): Report bugs and request features
 
 Explore our [R2R Docs](https://r2r-docs.sciphi.ai/) for tutorials and cookbooks on various R2R features and integrations, including:
-- [Client-Server](/cookbooks/client-server)
-- [Local RAG](/cookbooks/local-rag)
-- [Hybrid Search](/cookbooks/hybrid-search)
-- [Reranking](/cookbooks/rerank-search)
-- [GraphRAG](https://r2r-docs.sciphi.ai/cookbooks/knowledge-graph)
+- [Client-Server](https://r2r-docs.sciphi.ai/cookbooks/client-server)
+- [Multiple LLMs](https://r2r-docs.sciphi.ai/cookbooks/multiple-llms)
+- [Knowledge Graph RAG](https://r2r-docs.sciphi.ai/cookbooks/knowledge-graph)
+- [Multimodal RAG](https://r2r-docs.sciphi.ai/cookbooks/multimodal)
+- [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search)
+- [Local RAG](https://r2r-docs.sciphi.ai/cookbooks/local-rag)
+- [Reranking](https://r2r-docs.sciphi.ai/cookbooks/rerank-search)
+- [Dashboard](https://r2r-docs.sciphi.ai/cookbooks/dashboard)
 
 # Contributing
 
