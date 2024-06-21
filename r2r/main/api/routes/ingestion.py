@@ -58,7 +58,7 @@ async def update_documents_app(
 ):
     async with manage_run(r2r.run_manager, "update_documents_app") as run_id:
         try:
-            return await r2r.aingest_documents(
+            return await r2r.aupdate_documents(
                 request.documents, request.versions, request.metadatas
             )
         except Exception as e:
@@ -131,7 +131,7 @@ async def update_files_app(
 ):
     async with manage_run(r2r.run_manager, "update_files_app") as run_id:
         try:
-            return await r2r.aingest_files(
+            return await r2r.aupdate_files(
                 files=files,
                 metadatas=request.metadatas,
                 document_ids=request.document_ids,

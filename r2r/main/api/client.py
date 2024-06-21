@@ -123,6 +123,7 @@ class R2RClient:
             ("files", (file, open(file, "rb"), "application/octet-stream"))
             for file in files
         ]
+
         request = R2RUpdateFilesRequest(
             metadatas=metadatas,
             document_ids=document_ids,

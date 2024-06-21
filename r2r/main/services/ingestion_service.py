@@ -226,6 +226,7 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ):
+
         if metadatas and len(metadatas) != len(files):
             raise ValueError(
                 "Number of metadata entries does not match number of files."
@@ -462,6 +463,7 @@ class IngestionService(Service):
                 )
 
                 documents_overview_modified.append(document_info)
+
             await self.ingest_files(
                 files,
                 [ele.metadata for ele in documents_overview_modified],
