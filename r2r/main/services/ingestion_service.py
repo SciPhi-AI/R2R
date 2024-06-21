@@ -219,8 +219,8 @@ class IngestionService(Service):
         self,
         files: List[UploadFile],
         metadatas: Optional[List[dict]] = None,
-        document_ids: Optional[List[str]] = None,
-        user_ids: Optional[List[Optional[str]]] = None,
+        document_ids: Optional[List[uuid.UUID]] = None,
+        user_ids: Optional[List[Optional[uuid.UUID]]] = None,
         versions: Optional[List[str]] = None,
         skip_document_info: bool = False,
         *args: Any,
@@ -234,10 +234,18 @@ class IngestionService(Service):
             raise ValueError(
                 "Number of document id entries does not match number of files."
             )
+        elif document_ids and not all(
+            isinstance(doc_id, uuid.UUID) for doc_id in document_ids
+        ):
+            raise ValueError("All document IDs must be of type UUID.")
         if user_ids and len(user_ids) != len(files):
             raise ValueError(
                 "Number of user_ids entries does not match number of files."
             )
+        elif user_ids and not all(
+            isinstance(user_id, uuid.UUID) for user_id in user_ids
+        ):
+            raise ValueError("All user IDs must be of type UUID.")
         if len(files) == 0:
             raise HTTPException(
                 status_code=400, detail="No files provided for ingestion."
@@ -252,7 +260,6 @@ class IngestionService(Service):
                 doc_info.document_id: doc_info
                 for doc_info in self.providers.vector_db.get_documents_overview()
             }
-
             for iteration, file in enumerate(files):
                 logger.info(f"Processing file: {file.filename}")
                 if (
@@ -305,9 +312,9 @@ class IngestionService(Service):
                 )
 
                 version = versions[iteration] if versions else "v0"
-                if (
-                    document_id in existing_document_info
-                    and existing_document_info[document_id] == version
+                if document_id in existing_document_info and (
+                    versions is None
+                    or existing_document_info[document_id] == version
                 ):
                     logger.error(f"File with ID {document_id} already exists.")
                     if len(files) == 1:

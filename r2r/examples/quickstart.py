@@ -32,7 +32,7 @@ class R2RQuickstart:
         "063edaf8-3e63-4cb9-a4d6-a855f36376c3",
         "45c3f5a8-bcbe-43b1-9b20-51c07fd79f14",
         "c6c23d85-6217-4caa-b391-91ec0021a000",
-        "bd94aa4c-d065-4fcd-b09d-36d93db9e111",
+        None,
     ]
 
     def __init__(
@@ -70,20 +70,23 @@ class R2RQuickstart:
             logger.info("Running locally")
 
         root_path = os.path.dirname(os.path.abspath(__file__))
-        self.user_ids = [uuid.UUID(user_id) for user_id in self.USER_IDS]
+        self.user_ids = [
+            uuid.UUID(user_id) if user_id else None
+            for user_id in self.USER_IDS
+        ]
         self.default_files = file_list or [
             os.path.join(root_path, "data", "aristotle.txt"),
             os.path.join(root_path, "data", "got.txt"),
-            os.path.join(root_path, "data", "screen_shot.png"),
+            # os.path.join(root_path, "data", "screen_shot.png"),
             os.path.join(root_path, "data", "pg_essay_1.html"),
             os.path.join(root_path, "data", "pg_essay_2.html"),
             os.path.join(root_path, "data", "pg_essay_3.html"),
             os.path.join(root_path, "data", "pg_essay_4.html"),
             os.path.join(root_path, "data", "pg_essay_5.html"),
-            os.path.join(root_path, "data", "lyft_2021.pdf"),
-            os.path.join(root_path, "data", "uber_2021.pdf"),
-            os.path.join(root_path, "data", "sample.mp3"),
-            os.path.join(root_path, "data", "sample2.mp3"),
+            # os.path.join(root_path, "data", "lyft_2021.pdf"),
+            # os.path.join(root_path, "data", "uber_2021.pdf"),
+            # os.path.join(root_path, "data", "sample.mp3"),
+            # os.path.join(root_path, "data", "sample2.mp3"),
         ]
 
         self.file_tuples = file_tuples or [
@@ -103,12 +106,15 @@ class R2RQuickstart:
                 data = f.read()
             documents.append(
                 Document(
-                    id=generate_id_from_label(file_path),
-                    user_id=self.user_ids[index % len(self.user_ids)],
-                    title=file_path,
+                    id=generate_id_from_label(
+                        file_path.split(os.path.sep)[-1]
+                    ),
                     data=data,
                     type=file_path.split(".")[-1],
-                    metadata={},
+                    metadata={
+                        "user_id": self.user_ids[index % len(self.user_ids)],
+                        "title": file_path.split(os.path.sep)[-1],
+                    },
                 )
             )
 
@@ -116,6 +122,10 @@ class R2RQuickstart:
             documents_dicts = [doc.dict() for doc in documents]
             response = self.client.ingest_documents(documents_dicts)
         else:
+            print(
+                "calling ingest_documents iwth documents = ",
+                [document.metadata for document in documents],
+            )
             response = self.r2r_app.ingest_documents(documents)
 
         t1 = time.time()
@@ -133,12 +143,13 @@ class R2RQuickstart:
 
             documents.append(
                 Document(
-                    id=generate_id_from_label(old_file),
-                    user_id=self.user_ids[index % len(self.user_ids)],
-                    title=old_file.split(os.path.sep)[-1],
+                    id=generate_id_from_label(old_file.split(os.path.sep)[-1]),
                     data=data,
                     type=new_file.split(".")[-1],
-                    metadata={},
+                    metadata={
+                        "user_id": self.user_ids[index % len(self.user_ids)],
+                        "title": new_file.split(os.path.sep)[-1],
+                    },
                 )
             )
 
@@ -261,7 +272,7 @@ class R2RQuickstart:
         search_filters: Optional[dict] = None,
         search_limit: int = 10,
         do_hybrid_search: bool = False,
-        use_kg: bool = False,
+        use_kg_search: bool = False,
         kg_agent_generation_config: Optional[dict] = None,
     ):
 
@@ -279,7 +290,7 @@ class R2RQuickstart:
                 search_filters,
                 search_limit,
                 do_hybrid_search,
-                use_kg,
+                use_kg_search,
                 kg_agent_generation_config,
             )
         else:
@@ -292,7 +303,7 @@ class R2RQuickstart:
                     do_hybrid_search=do_hybrid_search,
                 ),
                 KGSearchSettings(
-                    use_kg=use_kg,
+                    use_kg_search=use_kg_search,
                     agent_generation_config=kg_agent_generation_config,
                 ),
             )
@@ -319,7 +330,7 @@ class R2RQuickstart:
         search_filters: Optional[dict] = None,
         search_limit: int = 10,
         do_hybrid_search: bool = False,
-        use_kg: bool = False,
+        use_kg_search: bool = False,
         kg_agent_generation_config: Optional[dict] = None,
         stream: bool = False,
         rag_generation_config: Optional[GenerationConfig] = None,
@@ -345,7 +356,7 @@ class R2RQuickstart:
                 search_filters=search_filters,
                 search_limit=search_limit,
                 do_hybrid_search=do_hybrid_search,
-                use_kg=use_kg,
+                use_kg_search=use_kg_search,
                 kg_agent_generation_config=kg_agent_generation_config,
                 rag_generation_config=rag_generation_config,
             )
@@ -370,7 +381,7 @@ class R2RQuickstart:
                     do_hybrid_search=do_hybrid_search,
                 ),
                 kg_search_settings=KGSearchSettings(
-                    use_kg=use_kg,
+                    use_kg_search=use_kg_search,
                     agent_generation_config=kg_agent_generation_config,
                 ),
                 rag_generation_config=rag_generation_config,

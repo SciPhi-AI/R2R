@@ -358,6 +358,11 @@ class PGVectorDB(VectorDBProvider):
     ) -> None:
         for document_info in documents_overview:
             db_entry = document_info.convert_to_db_entry()
+
+            # Convert 'None' string to None type for user_id
+            if db_entry["user_id"] == "None":
+                db_entry["user_id"] = None
+
             query = text(
                 f"""
                 INSERT INTO document_info_{self.config.collection_name} (document_id, title, user_id, version, created_at, updated_at, size_in_bytes, metadata)
