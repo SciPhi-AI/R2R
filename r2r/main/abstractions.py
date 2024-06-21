@@ -86,7 +86,7 @@ class R2RUpdateDocumentsRequest(BaseModel):
 class R2RIngestFilesRequest(BaseModel):
     metadatas: Optional[list[dict]] = None
     document_ids: Optional[list[uuid.UUID]] = None
-    user_ids: Optional[list[Optional[uuid.UUID]]] = None
+    user_ids: Optional[list[Union[uuid.UUID, None]]] = None
     versions: Optional[list[str]] = None
     skip_document_info: Optional[bool] = False
 

@@ -77,7 +77,11 @@ class R2RClient:
             document_ids=(
                 [str(ele) for ele in document_ids] if document_ids else None
             ),
-            user_ids=[str(ele) for ele in user_ids] if user_ids else None,
+            user_ids=(
+                [(str(ele) if ele else None) for ele in user_ids]
+                if user_ids
+                else None
+            ),
             versions=versions,
             skip_document_info=skip_document_info,
         )
