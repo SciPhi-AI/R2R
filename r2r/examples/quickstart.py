@@ -221,7 +221,7 @@ class R2RQuickstart:
 
     def update_as_files(self, file_tuples: Optional[list[tuple]] = None):
         file_tuples = file_tuples or self.file_tuples
-
+        print("we are in update as files...")
         new_files = [
             UploadFile(
                 filename=new_file,

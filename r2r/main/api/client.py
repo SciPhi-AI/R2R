@@ -123,10 +123,14 @@ class R2RClient:
             ("files", (file, open(file, "rb"), "application/octet-stream"))
             for file in files
         ]
+
+        print("metadatas = ", metadatas)
+        print("document_ids = ", document_ids)
         request = R2RUpdateFilesRequest(
             metadatas=metadatas,
             document_ids=document_ids,
         )
+        print("calling url = ", url)
         response = requests.post(
             url,
             files=files_to_upload,
