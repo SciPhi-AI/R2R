@@ -13,9 +13,9 @@ The ultimate open source AI powered answer engine
 
 # About
 
-R2R (RAG to Riches)  was designed to bridge the gap between local LLM experimentation and scalable, production-ready Retrieval-Augmented Generation (RAG). R2R provides a comprehensive and SOTA RAG system for developers, built around a [RESTful API](/api-reference/introduction) for ease of use.
+R2R (RAG to Riches)  was designed to bridge the gap between local LLM experimentation and scalable, production-ready Retrieval-Augmented Generation (RAG). R2R provides a comprehensive and SOTA RAG system for developers, built around a [RESTful API](https://r2r-docs.sciphi.ai/api-reference/introduction) for ease of use.
 
-For a more complete view of R2R, check out our [documentation](https://r2r-docs.sciphi.ai/).
+For a more complete view of R2R, check out the [full documentation](https://r2r-docs.sciphi.ai/).
 
 ## Key Features
 - **📁 Multimodal Support**: Ingest files ranging from `.txt`, `.pdf`, `.json` to `.png`, `.mp3`, and more.
@@ -64,21 +64,31 @@ To run R2R using Docker:
 docker pull emrgntcmplxty/r2r:latest
 
 docker run -d \
-  --name r2r \
-  -p 8000:8000 \
-  -e OPENAI_API_KEY=$OPENAI_API_KEY \
-  emrgntcmplxty/r2r:latest
+   --name r2r \
+   -p 8000:8000 \
+   -e POSTGRES_USER=$YOUR_POSTGRES_USER \
+   -e POSTGRES_PASSWORD=$YOUR_POSTGRES_PASSWORD \
+   -e POSTGRES_HOST=$YOUR_POSTGRES_HOST \
+   -e POSTGRES_PORT=$YOUR_POSTGRES_PORT \
+   -e POSTGRES_DBNAME=$YOUR_POSTGRES_DBNAME \
+   -e OPENAI_API_KEY=$YOUR_OPENAI_API_KEY \
+   emrgntcmplxty/r2r:latest
 ```
 
 For local LLMs:
 
 ```bash
 docker run -d \
-  --name r2r \
-  --add-host=host.docker.internal:host-gateway \
-  -p 8000:8000 \
-  -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
-  -e CONFIG_OPTION=local_ollama \
+   --name r2r \
+   --add-host=host.docker.internal:host-gateway \
+   -p 8000:8000 \
+   -e POSTGRES_USER=$YOUR_POSTGRES_USER \
+   -e POSTGRES_PASSWORD=$YOUR_POSTGRES_PASSWORD \
+   -e POSTGRES_HOST=$YOUR_POSTGRES_HOST \
+   -e POSTGRES_PORT=$YOUR_POSTGRES_PORT \
+   -e POSTGRES_DBNAME=$YOUR_POSTGRES_DBNAME \
+   -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
+   -e CONFIG_OPTION=local_ollama \
   emrgntcmplxty/r2r:latest
 ```
 </details>
