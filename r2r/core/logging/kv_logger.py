@@ -64,9 +64,6 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         self.logging_path = config.logging_path or os.getenv(
             "LOCAL_DB_PATH", "local.sqlite"
         )
-        logger.info(
-            f"Initializing LocalKVLoggingProvider with config: {config}"
-        )
         if not self.logging_path:
             raise ValueError(
                 "Please set the environment variable LOCAL_DB_PATH."
@@ -219,9 +216,6 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
         self.log_info_table = config.log_info_table
         self.config = config
         self.conn = None
-        logger.info(
-            f"Initializing PostgresKVLoggingProvider with config: {config}"
-        )
         if not os.getenv("POSTGRES_DBNAME"):
             raise ValueError(
                 "Please set the environment variable POSTGRES_DBNAME."
@@ -526,8 +520,9 @@ class KVLoggingSingleton:
         try:
             async with cls.get_instance() as provider:
                 await provider.log(log_id, key, value, is_info_log=is_info_log)
+
         except Exception as e:
-            logger.error(f"Error logging data: {e}")
+            logger.error(f"Error logging data {(log_id, key, value)}: {e}")
 
     @classmethod
     async def get_run_info(

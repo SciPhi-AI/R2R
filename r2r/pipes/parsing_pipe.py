@@ -3,7 +3,6 @@ This module contains the `DocumentParsingPipe` class, which is responsible for p
 """
 
 import asyncio
-import json
 import logging
 import time
 import uuid
@@ -83,9 +82,6 @@ class ParsingPipe(LoggableAsyncPipe):
         *args,
         **kwargs,
     ):
-        logger.info(
-            "Initializing a `ParsingPipe` to parse incoming documents."
-        )
         super().__init__(
             pipe_logger=pipe_logger,
             type=type,
@@ -124,6 +120,7 @@ class ParsingPipe(LoggableAsyncPipe):
         self,
         document: Document,
         run_id: uuid.UUID,
+        version: str,
     ) -> AsyncGenerator[Extraction, None]:
         if document.type not in self.parsers:
             logger.error(
@@ -152,8 +149,9 @@ class ParsingPipe(LoggableAsyncPipe):
         iteration = 0
         async for text in texts:
             extraction_id = generate_id_from_label(
-                f"{document.id}-{iteration}"
+                f"{document.id}-{iteration}-{version}"
             )
+            document.metadata["version"] = version
             extraction = Extraction(
                 id=extraction_id,
                 data=text,
@@ -162,21 +160,22 @@ class ParsingPipe(LoggableAsyncPipe):
                 type=extraction_type,
             )
             yield extraction
-            extraction_dict = extraction.dict()
-            await self.enqueue_log(
-                run_id=run_id,
-                key="extraction",
-                value=json.dumps(
-                    {
-                        "data": extraction_dict["data"],
-                        "document_id": str(extraction_dict["document_id"]),
-                        "extraction_id": str(extraction_dict["id"]),
-                    }
-                ),
-            )
+            # TODO - Add settings to enable extraction logging
+            # extraction_dict = extraction.dict()
+            # await self.enqueue_log(
+            #     run_id=run_id,
+            #     key="extraction",
+            #     value=json.dumps(
+            #         {
+            #             "data": extraction_dict["data"],
+            #             "document_id": str(extraction_dict["document_id"]),
+            #             "extraction_id": str(extraction_dict["id"]),
+            #         }
+            #     ),
+            # )
             iteration += 1
-        logger.info(
-            f"Parsed document with id={document.id}, title={document.title}, user_id={document.user_id}, metadata={document.metadata} into {iteration} extractions in t={time.time()-t0:.2f} seconds."
+        logger.debug(
+            f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, user_id={document.metadata.get('user_id', None)}, metadata={document.metadata} into {iteration} extractions in t={time.time()-t0:.2f} seconds."
         )
 
     async def _run_logic(
@@ -207,7 +206,6 @@ class ParsingPipe(LoggableAsyncPipe):
         self, document: Document, version: str, run_id: uuid.UUID
     ) -> AsyncGenerator[Extraction, None]:
         extractions = []
-        async for extraction in self._parse(document, run_id):
-            extraction.metadata["version"] = version
+        async for extraction in self._parse(document, run_id, version):
             extractions.append(extraction)
         return extractions

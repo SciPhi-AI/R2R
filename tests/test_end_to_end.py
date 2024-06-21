@@ -7,15 +7,16 @@ from fastapi.datastructures import UploadFile
 
 from r2r import (
     Document,
-    GenerationConfig,
     KVLoggingSingleton,
     R2RApp,
     R2RConfig,
     R2RPipeFactory,
     R2RPipelineFactory,
     R2RProviderFactory,
+    VectorSearchSettings,
     generate_id_from_label,
 )
+from r2r.core.abstractions.llm import GenerationConfig
 
 
 @pytest.fixture(scope="function")
@@ -179,24 +180,29 @@ async def test_ingest_search_txt_file(r2r_app, logging_connection):
         )
 
     search_results = await r2r_app.asearch("who was aristotle?")
-    assert len(search_results["results"]) == 10
+    assert len(search_results["results"]["vector_search_results"]) == 10
     assert (
         "was an Ancient Greek philosopher and polymath"
-        in search_results["results"][0]["metadata"]["text"]
+        in search_results["results"]["vector_search_results"][0]["metadata"][
+            "text"
+        ]
     )
 
     search_results = await r2r_app.asearch(
-        "who was aristotle?", search_limit=20
+        "who was aristotle?",
+        vector_search_settings=VectorSearchSettings(search_limit=20),
     )
-    assert len(search_results["results"]) == 20
+    assert len(search_results["results"]["vector_search_results"]) == 20
     assert (
         "was an Ancient Greek philosopher and polymath"
-        in search_results["results"][0]["metadata"]["text"]
+        in search_results["results"]["vector_search_results"][0]["metadata"][
+            "text"
+        ]
     )
 
-    ## test streaming
+    ## test stream
     response = await r2r_app.arag(
-        message="Who was aristotle?",
+        query="Who was aristotle?",
         rag_generation_config=GenerationConfig(
             **{"model": "gpt-3.5-turbo", "stream": True}
         ),
@@ -231,10 +237,12 @@ async def test_ingest_search_then_delete(r2r_app, logging_connection):
 
     # Verify that the search results are not empty
     assert (
-        len(search_results["results"]) > 0
+        len(search_results["results"]["vector_search_results"]) > 0
     ), "Expected search results, but got none"
     assert (
-        search_results["results"][0]["metadata"]["text"]
+        search_results["results"]["vector_search_results"][0]["metadata"][
+            "text"
+        ]
         == "The quick brown fox jumps over the lazy dog."
     )
 
@@ -251,11 +259,11 @@ async def test_ingest_search_then_delete(r2r_app, logging_connection):
 
     # Verify that the search results are empty
     assert (
-        len(search_results_2["results"]) == 0
+        len(search_results_2["results"]["vector_search_results"]) == 0
     ), f"Expected no search results, but got {search_results_2['results']}"
 
 
-@pytest.mark.parametrize("r2r_app", ["local", "postgres"], indirect=True)
+@pytest.mark.parametrize("r2r_app", ["local", "pgvector"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_user_documents(r2r_app, logging_connection):
     user_id_0 = generate_id_from_label("user_0")
@@ -263,26 +271,26 @@ async def test_ingest_user_documents(r2r_app, logging_connection):
     await r2r_app.aingest_documents(
         [
             Document(
-                id=generate_id_from_label("doc_0"),
+                id=generate_id_from_label("doc_01"),
                 data="The quick brown fox jumps over the lazy dog.",
                 type="txt",
                 metadata={"author": "John Doe", "user_id": user_id_0},
             ),
             Document(
-                id=generate_id_from_label("doc_1"),
+                id=generate_id_from_label("doc_11"),
                 data="The lazy dog jumps over the quick brown fox.",
                 type="txt",
                 metadata={"author": "John Doe", "user_id": user_id_1},
             ),
         ]
     )
-    user_id_results = await r2r_app.ausers_stats([user_id_0, user_id_1])
+    user_id_results = await r2r_app.ausers_overview([user_id_0, user_id_1])
     assert set([stats.user_id for stats in user_id_results]) == set(
         [user_id_0, user_id_1]
     ), f"Expected user ids {user_id_0} and {user_id_1}, but got {user_id_results}"
 
-    user_0_docs = await r2r_app.adocuments_info(user_ids=[user_id_0])
-    user_1_docs = await r2r_app.adocuments_info(user_ids=[user_id_1])
+    user_0_docs = await r2r_app.adocuments_overview(user_ids=[user_id_0])
+    user_1_docs = await r2r_app.adocuments_overview(user_ids=[user_id_1])
 
     assert (
         len(user_0_docs) == 1
@@ -291,10 +299,10 @@ async def test_ingest_user_documents(r2r_app, logging_connection):
         len(user_1_docs) == 1
     ), f"Expected 1 document for user {user_id_1}, but got {len(user_1_docs)}"
     assert user_0_docs[0].document_id == generate_id_from_label(
-        "doc_0"
+        "doc_01"
     ), f"Expected document id {str(generate_id_from_label('doc_0'))} for user {user_id_0}, but got {user_0_docs[0].document_id}"
     assert user_1_docs[0].document_id == generate_id_from_label(
-        "doc_1"
+        "doc_11"
     ), f"Expected document id {str(generate_id_from_label('doc_1'))} for user {user_id_1}, but got {user_1_docs[0].document_id}"
 
 
@@ -313,12 +321,12 @@ async def test_delete_by_id(r2r_app, logging_connection):
     )
     search_results = await r2r_app.asearch("who was aristotle?")
 
-    assert len(search_results["results"]) > 0
+    assert len(search_results["results"]["vector_search_results"]) > 0
     await r2r_app.adelete(
         ["document_id"], [str(generate_id_from_label("doc_1"))]
     )
     search_results = await r2r_app.asearch("who was aristotle?")
-    assert len(search_results["results"]) == 0
+    assert len(search_results["results"]["vector_search_results"]) == 0
 
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
@@ -336,7 +344,7 @@ async def test_double_ingest(r2r_app, logging_connection):
     )
     search_results = await r2r_app.asearch("who was aristotle?")
 
-    assert len(search_results["results"]) == 1
+    assert len(search_results["results"]["vector_search_results"]) == 1
     with pytest.raises(Exception):
         await r2r_app.aingest_documents(
             [

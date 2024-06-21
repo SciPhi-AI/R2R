@@ -89,7 +89,9 @@ class AsyncPipe(ABC):
         self._run_info = None
         self._type = type
 
-        logger.info(f"Initialized pipe {self.config.name} of type {self.type}")
+        logger.debug(
+            f"Initialized pipe {self.config.name} of type {self.type}"
+        )
 
     @property
     def config(self) -> PipeConfig:

@@ -3,13 +3,13 @@ from copy import copy
 from typing import Any, AsyncGenerator, Optional
 
 from r2r import (
-    GenerationConfig,
     LoggableAsyncPipe,
     QueryTransformPipe,
     R2RPipeFactory,
     SearchPipe,
-    SearchResult,
+    VectorSearchResult,
 )
+from r2r.core.abstractions.llm import GenerationConfig
 
 
 class MultiSearchPipe(LoggableAsyncPipe):
@@ -55,7 +55,7 @@ class MultiSearchPipe(LoggableAsyncPipe):
         query_transform_generation_config: Optional[GenerationConfig] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[SearchResult, None]:
+    ) -> AsyncGenerator[VectorSearchResult, None]:
         query_transform_generation_config = (
             query_transform_generation_config
             or copy(kwargs.get("rag_generation_config", None))

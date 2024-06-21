@@ -1,6 +1,6 @@
 ## Customizing R2R
 
-The R2R framework uses factories along with a builder pattern to create an instance of the `R2RApp`. This approach allows for seamless customization and overriding of default components. The examples below demonstrate how to override the default search pipe in the basic R2R application and how to then extend it further with more complex customizations.
+R2R uses factories along with a builder pattern to create an instance of the `R2RApp`. This approach allows for seamless customization and overriding of default components. The examples below demonstrate how to override the default search pipe in the basic R2R application and how to then extend it further with more complex customizations.
 
 ### Example: Custom RAG Pipeline with Web Search
 
@@ -187,7 +187,7 @@ The `R2RAppBuilder` class is demonstrated in the examples above and utilizes fac
 
 ### R2R Factories
 
-The R2R framework includes a set of factories that allow for the creation and customization of various components required to build and run an `R2RApp`. These factories are integral to the R2R framework, providing flexibility and extensibility in how components are instantiated and configured.
+R2R includes a set of factories that allow for the creation and customization of various components required to build and run an `R2RApp`. These factories are integral to R2R, providing flexibility and extensibility in how components are instantiated and configured.
 
 #### R2RProviderFactory
 
@@ -275,4 +275,4 @@ r2r_app = (
 
 ### Conclusion
 
-By using factories and the builder pattern, the R2R framework enables easy customization and extension of pipelines. You can seamlessly override default components with your own implementations to fit specific needs.
+By using factories and the builder pattern, R2R enables easy customization and extension of pipelines. You can seamlessly override default components with your own implementations to fit specific needs.

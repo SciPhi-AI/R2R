@@ -1,7 +1,7 @@
 from .abstractions.search_pipe import SearchPipe
 from .embedding_pipe import EmbeddingPipe
 from .eval_pipe import EvalPipe
-from .kg_agent_pipe import KGAgentPipe
+from .kg_agent_search_pipe import KGAgentSearchPipe
 from .kg_extraction_pipe import KGExtractionPipe
 from .kg_storage_pipe import KGStoragePipe
 from .parsing_pipe import ParsingPipe
@@ -24,6 +24,6 @@ __all__ = [
     "VectorSearchPipe",
     "VectorStoragePipe",
     "WebSearchPipe",
-    "KGAgentPipe",
+    "KGAgentSearchPipe",
     "KGStoragePipe",
 ]

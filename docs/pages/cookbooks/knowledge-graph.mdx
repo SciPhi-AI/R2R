@@ -68,18 +68,28 @@ from r2r import R2RAppBuilder, Document
 if __name__ == "__main__":
     r2r_app = R2RAppBuilder(from_config="neo4j_kg").build()
 
-    r2r_app.ingest_documents([
-        Document(
-            type="txt",
-            data="John is a person that works at Google.",
-            metadata={},
-        ),
-        Document(
-            type="txt",
-            data="Paul is a person that works at Microsoft that knows John.",
-            metadata={},
-        )
-    ])
+    r2r_app.ingest_documents(
+        [
+            Document(
+                type="txt",
+                data="John is a person that works at Google.",
+                # Metadata is optional
+                metadata={
+                    "title": "KG Document 1",
+                    "user_id": "063edaf8-3e63-4cb9-a4d6-a855f36376c3",
+                },
+            ),
+            Document(
+                type="txt",
+                data="Paul is a person that works at Microsoft that knows John.",
+                # Metadata is optional
+                metadata={
+                    "title": "KG Document 2",
+                    "user_id": "063edaf8-3e63-4cb9-a4d6-a855f36376c3",
+                },
+            ),
+        ]
+    )
 ```
 
 #### Navigation
@@ -217,7 +227,7 @@ from r2r import (
     GenerationConfig,
     Pipeline,
     R2RAppBuilder,
-    KGAgentPipe,
+    KGAgentSearchPipe,
     Relation,
     run_pipeline,
 )
@@ -445,13 +455,13 @@ Results:
 Finally, we are in a position to automatically answer difficult to manage queries with a knowledge agent. The snippet below injects our custom schema into a generic few-shot prompt and uses gpt-4o to create a relevant query
 
 ```python filename="r2r/examples/scripts/advanced_kg_cookbook.py"
-    kg_agent_pipe = KGAgentPipe(
+    kg_agent_search_pipe = KGAgentSearchPipe(
         r2r_app.providers.kg, r2r_app.providers.llm, r2r_app.providers.prompt
     )
 
     # Define the pipeline
     kg_pipe = Pipeline()
-    kg_pipe.add_pipe(kg_agent_pipe)
+    kg_pipe.add_pipe(kg_agent_search_pipe)
 
     kg.update_agent_prompt(prompt_provider, entity_types, relations)
 

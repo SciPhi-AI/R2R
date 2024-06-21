@@ -2,18 +2,17 @@ import json
 import logging
 import os
 import time
-import uuid
 from typing import Optional, Union
 
 from sqlalchemy import exc, text
 
 from r2r.core import (
     DocumentInfo,
-    SearchResult,
     UserStats,
     VectorDBConfig,
     VectorDBProvider,
     VectorEntry,
+    VectorSearchResult,
 )
 from r2r.vecs.client import Client
 from r2r.vecs.collection import Collection
@@ -238,7 +237,7 @@ class PGVectorDB(VectorDBProvider):
         limit: int = 10,
         *args,
         **kwargs,
-    ) -> list[SearchResult]:
+    ) -> list[VectorSearchResult]:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `search`."
@@ -249,7 +248,7 @@ class PGVectorDB(VectorDBProvider):
         }
 
         return [
-            SearchResult(id=ele[0], score=float(1 - ele[1]), metadata=ele[2])  # type: ignore
+            VectorSearchResult(id=ele[0], score=float(1 - ele[1]), metadata=ele[2])  # type: ignore
             for ele in self.collection.query(
                 data=query_vector,
                 limit=limit,
@@ -272,7 +271,7 @@ class PGVectorDB(VectorDBProvider):
         rrf_k: int = 20,  # typical value is ~2x the number of results you want
         *args,
         **kwargs,
-    ) -> list[SearchResult]:
+    ) -> list[VectorSearchResult]:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `hybrid_search`."
@@ -306,7 +305,7 @@ class PGVectorDB(VectorDBProvider):
         with self.vx.Session() as session:
             result = session.execute(query, params).fetchall()
         return [
-            SearchResult(id=row[0], score=1.0, metadata=row[-1])
+            VectorSearchResult(id=row[0], score=1.0, metadata=row[-1])
             for row in result
         ]
 
@@ -354,11 +353,16 @@ class PGVectorDB(VectorDBProvider):
             results[key] for key in results if key != tuple(metadata_fields)
         ]
 
-    def upsert_documents_info(
-        self, documents_info: list[DocumentInfo]
+    def upsert_documents_overview(
+        self, documents_overview: list[DocumentInfo]
     ) -> None:
-        for document_info in documents_info:
+        for document_info in documents_overview:
             db_entry = document_info.convert_to_db_entry()
+
+            # Convert 'None' string to None type for user_id
+            if db_entry["user_id"] == "None":
+                db_entry["user_id"] = None
+
             query = text(
                 f"""
                 INSERT INTO document_info_{self.config.collection_name} (document_id, title, user_id, version, created_at, updated_at, size_in_bytes, metadata)
@@ -376,7 +380,7 @@ class PGVectorDB(VectorDBProvider):
                 sess.execute(query, db_entry)
                 sess.commit()
 
-    def delete_documents_info(self, document_ids: list[str]) -> None:
+    def delete_documents_overview(self, document_ids: list[str]) -> None:
         placeholders = ", ".join(
             f":doc_id_{i}" for i in range(len(document_ids))
         )
@@ -395,7 +399,7 @@ class PGVectorDB(VectorDBProvider):
                 sess.execute(query, params)
             sess.commit()
 
-    def get_documents_info(
+    def get_documents_overview(
         self,
         filter_document_ids: Optional[list[str]] = None,
         filter_user_ids: Optional[list[str]] = None,
@@ -469,7 +473,7 @@ class PGVectorDB(VectorDBProvider):
             results = sess.execute(query, params).fetchall()
             return [result[0] for result in results]
 
-    def get_users_stats(self, user_ids: Optional[list[str]] = None):
+    def get_users_overview(self, user_ids: Optional[list[str]] = None):
         user_ids_condition = ""
         params = {}
         if user_ids:
@@ -493,7 +497,7 @@ class PGVectorDB(VectorDBProvider):
                 user_id=row[0],
                 num_files=row[1],
                 total_size_in_bytes=row[2],
-                document_ids=[uuid.UUID(doc_id) for doc_id in row[3]],
+                document_ids=row[3],
             )
             for row in results
         ]

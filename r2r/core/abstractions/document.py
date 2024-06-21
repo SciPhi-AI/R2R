@@ -1,5 +1,6 @@
 """Abstractions for documents and their extractions."""
 
+import base64
 import json
 import logging
 import uuid
@@ -36,15 +37,29 @@ class DocumentType(Enum):
 
 
 class Document(BaseModel):
-    """A document that has been stored in the system."""
-
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     type: DocumentType
-    data: DataType
+    data: Union[str, bytes]
     metadata: dict
 
-    title: Optional[str] = None
-    user_id: Optional[uuid.UUID] = None
+    def __init__(self, *args, **kwargs):
+        data = kwargs.get("data")
+        if data and isinstance(data, str):
+            try:
+                # Try to decode if it's already base64 encoded
+                kwargs["data"] = base64.b64decode(data)
+            except:
+                # If it's not base64, encode it to bytes
+                kwargs["data"] = data.encode("utf-8")
+
+        super().__init__(*args, **kwargs)
+
+    class Config:
+        arbitrary_types_allowed = True
+        json_encoders = {
+            uuid.UUID: str,
+            bytes: lambda v: base64.b64encode(v).decode("utf-8"),
+        }
 
 
 class DocumentInfo(BaseModel):
@@ -55,7 +70,6 @@ class DocumentInfo(BaseModel):
     size_in_bytes: int
     metadata: dict
 
-    title: Optional[str] = None
     user_id: Optional[uuid.UUID] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -69,7 +83,7 @@ class DocumentInfo(BaseModel):
         )
         return {
             "document_id": str(self.document_id),
-            "title": self.title or "N/A",
+            "title": metadata.get("title", "N/A"),
             "user_id": metadata["user_id"],
             "version": self.version,
             "size_in_bytes": self.size_in_bytes,

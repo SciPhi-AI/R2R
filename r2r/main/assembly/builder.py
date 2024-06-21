@@ -14,15 +14,16 @@ from r2r import (
     VectorDBProvider,
 )
 
-from .r2r_app import R2RApp
-from .r2r_config import R2RConfig
-from .r2r_factory import R2RPipeFactory, R2RPipelineFactory, R2RProviderFactory
+from ..app import R2RApp
+from .config import R2RConfig
+from .factory import R2RPipeFactory, R2RPipelineFactory, R2RProviderFactory
 
 
 class R2RAppBuilder:
     current_file_path = os.path.dirname(__file__)
-
-    config_root = os.path.join(current_file_path, "..", "examples", "configs")
+    config_root = os.path.join(
+        current_file_path, "..", "..", "examples", "configs"
+    )
     CONFIG_OPTIONS = {
         "default": None,
         "local_ollama": os.path.join(config_root, "local_ollama.json"),
@@ -49,7 +50,6 @@ class R2RAppBuilder:
     ):
         if config and from_config:
             raise ValueError("Cannot specify both config and config_name")
-
         self.config = config or R2RAppBuilder._get_config(from_config)
         self.r2r_app_override: Optional[Type[R2RApp]] = None
         self.provider_factory_override: Optional[Type[R2RProviderFactory]] = (
@@ -57,13 +57,11 @@ class R2RAppBuilder:
         )
         self.pipe_factory_override: Optional[R2RPipeFactory] = None
         self.pipeline_factory_override: Optional[R2RPipelineFactory] = None
-
         self.vector_db_provider_override: Optional[VectorDBProvider] = None
         self.embedding_provider_override: Optional[EmbeddingProvider] = None
         self.eval_provider_override: Optional[EvalProvider] = None
         self.llm_provider_override: Optional[LLMProvider] = None
         self.prompt_provider_override: Optional[PromptProvider] = None
-
         self.parsing_pipe_override: Optional[LoggableAsyncPipe] = None
         self.embedding_pipe_override: Optional[LoggableAsyncPipe] = None
         self.vector_storage_pipe_override: Optional[LoggableAsyncPipe] = None
@@ -71,7 +69,6 @@ class R2RAppBuilder:
         self.rag_pipe_override: Optional[LoggableAsyncPipe] = None
         self.streaming_rag_pipe_override: Optional[LoggableAsyncPipe] = None
         self.eval_pipe_override: Optional[LoggableAsyncPipe] = None
-
         self.ingestion_pipeline: Optional[IngestionPipeline] = None
         self.search_pipeline: Optional[SearchPipeline] = None
         self.rag_pipeline: Optional[RAGPipeline] = None

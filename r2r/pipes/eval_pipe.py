@@ -7,11 +7,11 @@ from pydantic import BaseModel
 from r2r import (
     AsyncState,
     EvalProvider,
-    GenerationConfig,
     LLMChatCompletion,
     LoggableAsyncPipe,
     PipeType,
 )
+from r2r.core.abstractions.llm import GenerationConfig
 
 logger = logging.getLogger(__name__)
 

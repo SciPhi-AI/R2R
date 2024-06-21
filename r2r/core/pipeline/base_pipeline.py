@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-from asyncio import Queue
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional
 
@@ -55,8 +54,9 @@ class Pipeline:
         self,
         input: Any,
         state: Optional[AsyncState] = None,
-        streaming: bool = False,
+        stream: bool = False,
         run_manager: Optional[RunManager] = None,
+        log_run_info: bool = True,
         *args: Any,
         **kwargs: Any,
     ):
@@ -73,11 +73,12 @@ class Pipeline:
         self.state = state or AsyncState()
         current_input = input
         async with manage_run(run_manager, self.pipeline_type):
-            await run_manager.log_run_info(
-                key="pipeline_type",
-                value=self.pipeline_type,
-                is_info_log=True,
-            )
+            if log_run_info:
+                await run_manager.log_run_info(
+                    key="pipeline_type",
+                    value=self.pipeline_type,
+                    is_info_log=True,
+                )
             try:
                 for pipe_num in range(len(self.pipes)):
                     config_name = self.pipes[pipe_num].config.name
@@ -91,7 +92,7 @@ class Pipeline:
                         **kwargs,
                     )
                     self.futures[config_name].set_result(current_input)
-                if not streaming:
+                if not stream:
                     final_result = await self._consume_all(current_input)
                     return final_result
                 else:
@@ -203,13 +204,13 @@ class EvalPipeline(Pipeline):
         self,
         input: Any,
         state: Optional[AsyncState] = None,
-        streaming: bool = False,
+        stream: bool = False,
         run_manager: Optional[RunManager] = None,
         *args: Any,
         **kwargs: Any,
     ):
         return await super().run(
-            input, state, streaming, run_manager, *args, **kwargs
+            input, state, stream, run_manager, *args, **kwargs
         )
 
     def add_pipe(
@@ -223,195 +224,10 @@ class EvalPipeline(Pipeline):
         return super().add_pipe(pipe, add_upstream_outputs, *args, **kwargs)
 
 
-class IngestionPipeline(Pipeline):
-    """A pipeline for ingestion."""
-
-    pipeline_type: str = "ingestion"
-
-    def __init__(
-        self,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
-        run_manager: Optional[RunManager] = None,
-    ):
-        super().__init__(pipe_logger, run_manager)
-        self.parsing_pipe = None
-        self.embedding_pipeline = None
-        self.kg_pipeline = None
-
-    async def run(
-        self,
-        input: Any,
-        state: Optional[AsyncState] = None,
-        streaming: bool = False,
-        run_manager: Optional[RunManager] = None,
-        *args: Any,
-        **kwargs: Any,
-    ):
-        self.state = state or AsyncState()
-
-        async with manage_run(run_manager, self.pipeline_type):
-            await run_manager.log_run_info(
-                key="pipeline_type",
-                value=self.pipeline_type,
-                is_info_log=True,
-            )
-            if self.parsing_pipe is None:
-                raise ValueError(
-                    "parsing_pipeline must be set before running the ingestion pipeline"
-                )
-            if self.embedding_pipeline is None and self.kg_pipeline is None:
-                raise ValueError(
-                    "At least one of embedding_pipeline or kg_pipeline must be set before running the ingestion pipeline"
-                )
-            # Use queues to duplicate the documents for each pipeline
-            embedding_queue = Queue()
-            kg_queue = Queue()
-
-            async def enqueue_documents():
-                async for document in await self.parsing_pipe.run(
-                    self.parsing_pipe.Input(message=input),
-                    state,
-                    run_manager,
-                    *args,
-                    **kwargs,
-                ):
-                    if self.embedding_pipeline:
-                        await embedding_queue.put(document)
-                    if self.kg_pipeline:
-                        await kg_queue.put(document)
-                await embedding_queue.put(None)
-                await kg_queue.put(None)
-
-            # Create an async generator to dequeue documents
-            async def dequeue_documents(queue: Queue) -> AsyncGenerator:
-                while True:
-                    document = await queue.get()
-                    if document is None:
-                        break
-                    yield document
-
-            # Start the document enqueuing process
-            enqueue_task = asyncio.create_task(enqueue_documents())
-
-            # Start the embedding and KG pipelines in parallel
-            if self.embedding_pipeline:
-                embedding_task = asyncio.create_task(
-                    self.embedding_pipeline.run(
-                        dequeue_documents(embedding_queue),
-                        state,
-                        streaming,
-                        run_manager,
-                        *args,
-                        **kwargs,
-                    )
-                )
-
-            if self.kg_pipeline:
-                kg_task = asyncio.create_task(
-                    self.kg_pipeline.run(
-                        dequeue_documents(kg_queue),
-                        state,
-                        streaming,
-                        run_manager,
-                        *args,
-                        **kwargs,
-                    )
-                )
-
-            # Wait for the enqueueing task to complete
-            await enqueue_task
-
-            # Wait for the embedding and KG tasks to complete
-            if self.embedding_pipeline:
-                await embedding_task
-            if self.kg_pipeline:
-                await kg_task
-
-    def add_pipe(
-        self,
-        pipe: AsyncPipe,
-        add_upstream_outputs: Optional[list[dict[str, str]]] = None,
-        parsing_pipe: bool = False,
-        kg_pipe: bool = False,
-        embedding_pipe: bool = False,
-        *args,
-        **kwargs,
-    ) -> None:
-        logger.debug(
-            f"Adding pipe {pipe.config.name} to the IngestionPipeline"
-        )
-
-        if parsing_pipe:
-            self.parsing_pipe = pipe
-        elif kg_pipe:
-            if not self.kg_pipeline:
-                self.kg_pipeline = Pipeline()
-            self.kg_pipeline.add_pipe(
-                pipe, add_upstream_outputs, *args, **kwargs
-            )
-        elif embedding_pipe:
-            if not self.embedding_pipeline:
-                self.embedding_pipeline = Pipeline()
-            self.embedding_pipeline.add_pipe(
-                pipe, add_upstream_outputs, *args, **kwargs
-            )
-        else:
-            raise ValueError("Pipe must be a parsing, embedding, or KG pipe")
-
-
-class RAGPipeline(Pipeline):
-    """A pipeline for RAG."""
-
-    pipeline_type: str = "rag"
-
-    async def run(
-        self,
-        input: Any,
-        state: Optional[AsyncState] = None,
-        streaming: bool = False,
-        run_manager: Optional[RunManager] = None,
-        *args: Any,
-        **kwargs: Any,
-    ):
-        return await super().run(
-            input, state, streaming, run_manager, *args, **kwargs
-        )
-
-    def add_pipe(
-        self,
-        pipe: AsyncPipe,
-        add_upstream_outputs: Optional[list[dict[str, str]]] = None,
-        *args,
-        **kwargs,
-    ) -> None:
-        logger.debug(f"Adding pipe {pipe.config.name} to the RAGPipeline")
-        return super().add_pipe(pipe, add_upstream_outputs, *args, **kwargs)
-
-
-class SearchPipeline(Pipeline):
-    """A pipeline for search."""
-
-    pipeline_type: str = "search"
-
-    async def run(
-        self,
-        input: Any,
-        state: Optional[AsyncState] = None,
-        streaming: bool = False,
-        run_manager: Optional[RunManager] = None,
-        *args: Any,
-        **kwargs: Any,
-    ):
-        return await super().run(
-            input, state, streaming, run_manager, *args, **kwargs
-        )
-
-    def add_pipe(
-        self,
-        pipe: AsyncPipe,
-        add_upstream_outputs: Optional[list[dict[str, str]]] = None,
-        *args,
-        **kwargs,
-    ) -> None:
-        logger.debug(f"Adding pipe {pipe.config.name} to the SearchPipeline")
-        return super().add_pipe(pipe, add_upstream_outputs, *args, **kwargs)
+async def dequeue_requests(queue: asyncio.Queue) -> AsyncGenerator:
+    """Create an async generator to dequeue requests."""
+    while True:
+        request = await queue.get()
+        if request is None:
+            break
+        yield request

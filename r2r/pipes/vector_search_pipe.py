@@ -8,8 +8,9 @@ from r2r.core import (
     AsyncState,
     EmbeddingProvider,
     PipeType,
-    SearchResult,
     VectorDBProvider,
+    VectorSearchResult,
+    VectorSearchSettings,
 )
 
 from .abstractions.search_pipe import SearchPipe
@@ -40,15 +41,18 @@ class VectorSearchPipe(SearchPipe):
         self,
         message: str,
         run_id: uuid.UUID,
-        do_hybrid_search: bool,
+        vector_search_settings: VectorSearchSettings,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[SearchResult, None]:
-        search_filters_override = kwargs.get("search_filters", None)
-        search_limit_override = kwargs.get("search_limit", None)
-        search_limit = search_limit_override or self.config.search_limit
+    ) -> AsyncGenerator[VectorSearchResult, None]:
         await self.enqueue_log(
             run_id=run_id, key="search_query", value=message
+        )
+        search_filters = (
+            vector_search_settings.search_filters or self.config.search_filters
+        )
+        search_limit = (
+            vector_search_settings.search_limit or self.config.search_limit
         )
         results = []
         query_vector = self.embedding_provider.get_embedding(
@@ -58,13 +62,13 @@ class VectorSearchPipe(SearchPipe):
             self.vector_db_provider.hybrid_search(
                 query_vector=query_vector,
                 query_text=message,
-                filters=search_filters_override or self.config.search_filters,
+                filters=search_filters,
                 limit=search_limit,
             )
-            if do_hybrid_search
+            if vector_search_settings.do_hybrid_search
             else self.vector_db_provider.search(
                 query_vector=query_vector,
-                filters=search_filters_override or self.config.search_filters,
+                filters=search_filters,
                 limit=search_limit,
             )
         )
@@ -86,10 +90,10 @@ class VectorSearchPipe(SearchPipe):
         input: AsyncPipe.Input,
         state: AsyncState,
         run_id: uuid.UUID,
-        do_hybrid_search: bool = False,
+        vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[SearchResult, None]:
+    ) -> AsyncGenerator[VectorSearchResult, None]:
         search_queries = []
         search_results = []
         async for search_request in input.message:
@@ -97,7 +101,7 @@ class VectorSearchPipe(SearchPipe):
             async for result in self.search(
                 message=search_request,
                 run_id=run_id,
-                do_hybrid_search=do_hybrid_search,
+                vector_search_settings=vector_search_settings,
                 *args,
                 **kwargs,
             ):

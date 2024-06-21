@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Union
 
 from ..abstractions.document import DocumentInfo
-from ..abstractions.search import SearchResult
+from ..abstractions.search import VectorSearchResult
 from ..abstractions.vector import VectorEntry
 from .base_provider import Provider, ProviderConfig
 
@@ -58,7 +58,7 @@ class VectorDBProvider(Provider, ABC):
         limit: int = 10,
         *args,
         **kwargs,
-    ) -> list[SearchResult]:
+    ) -> list[VectorSearchResult]:
         pass
 
     @abstractmethod
@@ -74,7 +74,7 @@ class VectorDBProvider(Provider, ABC):
         rrf_k: int = 20,  # typical value is ~2x the number of results you want
         *args,
         **kwargs,
-    ) -> list[SearchResult]:
+    ) -> list[VectorSearchResult]:
         pass
 
     @abstractmethod
@@ -115,11 +115,13 @@ class VectorDBProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def upsert_documents_info(self, document_infs: list[DocumentInfo]) -> None:
+    def upsert_documents_overview(
+        self, document_infs: list[DocumentInfo]
+    ) -> None:
         pass
 
     @abstractmethod
-    def get_documents_info(
+    def get_documents_overview(
         self,
         filter_document_ids: Optional[list[str]] = None,
         filter_user_ids: Optional[list[str]] = None,
@@ -131,9 +133,9 @@ class VectorDBProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def delete_documents_info(self, document_ids: list[str]) -> dict:
+    def delete_documents_overview(self, document_ids: list[str]) -> dict:
         pass
 
     @abstractmethod
-    def get_users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
+    def get_users_overview(self, user_ids: Optional[list[str]] = None) -> dict:
         pass
