@@ -17,11 +17,12 @@ router = APIRouter()
 async def search_app(request: R2RSearchRequest, r2r=Depends(get_r2r_app)):
     async with manage_run(r2r.run_manager, "search_app") as run_id:
         try:
-            return await r2r.asearch(
+            results = await r2r.asearch(
                 query=request.query,
                 vector_search_settings=request.vector_search_settings,
                 kg_search_settings=request.kg_search_settings,
             )
+            return {"results": results}
         except Exception as e:
             await r2r.logging_connection.log(
                 log_id=run_id,
@@ -80,11 +81,12 @@ async def evaluate_app(request: R2REvalRequest, r2r=Depends(get_r2r_app)):
     async with manage_run(r2r.run_manager, "evaluate_app") as run_id:
 
         try:
-            return await r2r.aevaluate(
+            results = await r2r.aevaluate(
                 query=request.query,
                 context=request.context,
                 completion=request.completion,
             )
+            return {"results": results}
         except Exception as e:
             await r2r.logging_connection.log(
                 log_id=run_id,

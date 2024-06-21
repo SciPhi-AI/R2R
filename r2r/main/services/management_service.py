@@ -41,7 +41,7 @@ class ManagementService(Service):
         input_types: Optional[dict[str, str]] = {},
     ):
         self.providers.prompt.update_prompt(name, template, input_types)
-        return {"results": f"Prompt '{name}' added successfully."}
+        return f"Prompt '{name}' added successfully."
 
     @telemetry_event("Logs")
     async def alogs(
@@ -70,7 +70,7 @@ class ManagementService(Service):
         )
         run_ids = [run.run_id for run in run_info]
         if len(run_ids) == 0:
-            return {"results": []}
+            return []
         logs = await self.logging_connection.get_logs(run_ids)
         # Aggregate logs by run_id and include run_type
         aggregated_logs = []
@@ -90,7 +90,7 @@ class ManagementService(Service):
                 }
             )
 
-        return {"results": aggregated_logs}
+        return aggregated_logs
 
     @telemetry_event("Analytics")
     async def aanalytics(
@@ -103,12 +103,9 @@ class ManagementService(Service):
 
         if not run_ids:
             return {
-                "results": {
-                    "analytics_data": "No logs found.",
-                    "filtered_logs": {},
-                }
+                "analytics_data": "No logs found.",
+                "filtered_logs": {},
             }
-
         logs = await self.logging_connection.get_logs(run_ids=run_ids)
 
         filters = {}
@@ -173,7 +170,7 @@ class ManagementService(Service):
                             f"Unknown analysis type for filter key '{filter_key}': {analysis_type}"
                         )
 
-        return {"results": results}
+        return results
 
     @telemetry_event("AppSettings")
     async def aapp_settings(self, *args: Any, **kwargs: Any):
@@ -207,7 +204,7 @@ class ManagementService(Service):
                 status_code=404, detail="No entries found for deletion."
             )
         self.providers.vector_db.delete_documents_overview(ids)
-        return {"results": f"Documents {ids} deleted successfully."}
+        return f"Documents {ids} deleted successfully."
 
     @telemetry_event("DocumentsOverview")
     async def adocuments_overview(
@@ -240,10 +237,8 @@ class ManagementService(Service):
     async def app_settings(self):
         prompts = self.providers.prompt.get_all_prompts()
         return {
-            "results": {
-                "config": self.config.to_json(),
-                "prompts": {
-                    name: prompt.dict() for name, prompt in prompts.items()
-                },
-            }
+            "config": self.config.to_json(),
+            "prompts": {
+                name: prompt.dict() for name, prompt in prompts.items()
+            },
         }

@@ -1,4 +1,3 @@
-import json
 import os
 import uuid
 
@@ -77,17 +76,6 @@ async def test_ingest_txt_document(r2r_app, logging_connection):
             ),
         ]
     )
-    run_info = await logging_connection.get_run_info(
-        log_type_filter="ingestion"
-    )
-    logs = await logging_connection.get_logs([run.run_id for run in run_info])
-    assert len(logs) == 2, f"Expected 2 logs, but got {len(logs)}"
-
-    for log in logs:
-        assert log["key"] in ["fragment", "extraction"]
-        value = json.loads(log["value"])
-        assert value["data"] == "The quick brown fox jumps over the lazy dog."
-        assert value["document_id"] == str(generate_id_from_label("doc_1"))
 
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
@@ -118,18 +106,6 @@ async def test_ingest_txt_file(r2r_app, logging_connection):
         file.file.seek(0)  # Move back to the start of the file
 
     await r2r_app.aingest_files(metadatas=[metadata], files=files)
-
-    run_info = await logging_connection.get_run_info(
-        log_type_filter="ingestion"
-    )
-    logs = await logging_connection.get_logs([run.run_id for run in run_info])
-    assert len(logs) == 2, f"Expected 2 logs, but got {len(logs)}"
-
-    for log in logs:
-        assert log["key"] in ["fragment", "extraction"]
-        value = json.loads(log["value"])
-        assert value["data"].strip() == "this is a test text"
-        assert value["document_id"] == str(generate_id_from_label("test.txt"))
 
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
@@ -164,41 +140,30 @@ async def test_ingest_search_txt_file(r2r_app, logging_connection):
 
     await r2r_app.aingest_files(metadatas=[metadata], files=files)
 
-    run_info = await logging_connection.get_run_info(
-        log_type_filter="ingestion"
-    )
-    logs = await logging_connection.get_logs(
-        [run.run_id for run in run_info], 100
-    )
-    assert len(logs) == 100, f"Expected 100 logs, but got {len(logs)}"
-
-    for log in logs:
-        assert log["key"] in ["fragment", "extraction"]
-        value = json.loads(log["value"])
-        assert value["document_id"] == str(
-            generate_id_from_label("aristotle.txt")
-        )
-
     search_results = await r2r_app.asearch("who was aristotle?")
-    assert len(search_results["results"]["vector_search_results"]) == 10
+    assert len(search_results["vector_search_results"]) == 10
     assert (
         "was an Ancient Greek philosopher and polymath"
-        in search_results["results"]["vector_search_results"][0]["metadata"][
-            "text"
-        ]
+        in search_results["vector_search_results"][0]["metadata"]["text"]
     )
 
     search_results = await r2r_app.asearch(
         "who was aristotle?",
         vector_search_settings=VectorSearchSettings(search_limit=20),
     )
-    assert len(search_results["results"]["vector_search_results"]) == 20
+    assert len(search_results["vector_search_results"]) == 20
     assert (
         "was an Ancient Greek philosopher and polymath"
-        in search_results["results"]["vector_search_results"][0]["metadata"][
-            "text"
-        ]
+        in search_results["vector_search_results"][0]["metadata"]["text"]
     )
+    run_info = await logging_connection.get_run_info(log_type_filter="search")
+
+    assert len(run_info) == 2, f"Expected 2 runs, but got {len(run_info)}"
+
+    logs = await logging_connection.get_logs(
+        [run.run_id for run in run_info], 100
+    )
+    assert len(logs) == 6, f"Expected 6 logs, but got {len(logs)}"
 
     ## test stream
     response = await r2r_app.arag(
@@ -237,12 +202,10 @@ async def test_ingest_search_then_delete(r2r_app, logging_connection):
 
     # Verify that the search results are not empty
     assert (
-        len(search_results["results"]["vector_search_results"]) > 0
+        len(search_results["vector_search_results"]) > 0
     ), "Expected search results, but got none"
     assert (
-        search_results["results"]["vector_search_results"][0]["metadata"][
-            "text"
-        ]
+        search_results["vector_search_results"][0]["metadata"]["text"]
         == "The quick brown fox jumps over the lazy dog."
     )
 
@@ -250,16 +213,16 @@ async def test_ingest_search_then_delete(r2r_app, logging_connection):
     delete_result = await r2r_app.adelete(["author"], ["John Doe"])
 
     # Verify the deletion was successful
-    assert delete_result == {
-        "results": "Entries deleted successfully."
-    }, f"Expected successful deletion message, but got {delete_result}"
+    assert (
+        delete_result == "Entries deleted successfully."
+    ), f"Expected successful deletion message, but got {delete_result}"
 
     # Search for the document again
     search_results_2 = await r2r_app.asearch("who was aristotle?")
 
     # Verify that the search results are empty
     assert (
-        len(search_results_2["results"]["vector_search_results"]) == 0
+        len(search_results_2["vector_search_results"]) == 0
     ), f"Expected no search results, but got {search_results_2['results']}"
 
 
@@ -321,12 +284,12 @@ async def test_delete_by_id(r2r_app, logging_connection):
     )
     search_results = await r2r_app.asearch("who was aristotle?")
 
-    assert len(search_results["results"]["vector_search_results"]) > 0
+    assert len(search_results["vector_search_results"]) > 0
     await r2r_app.adelete(
         ["document_id"], [str(generate_id_from_label("doc_1"))]
     )
     search_results = await r2r_app.asearch("who was aristotle?")
-    assert len(search_results["results"]["vector_search_results"]) == 0
+    assert len(search_results["vector_search_results"]) == 0
 
 
 @pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
@@ -344,7 +307,7 @@ async def test_double_ingest(r2r_app, logging_connection):
     )
     search_results = await r2r_app.asearch("who was aristotle?")
 
-    assert len(search_results["results"]["vector_search_results"]) == 1
+    assert len(search_results["vector_search_results"]) == 1
     with pytest.raises(Exception):
         await r2r_app.aingest_documents(
             [

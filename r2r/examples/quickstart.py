@@ -120,7 +120,9 @@ class R2RQuickstart:
 
         if hasattr(self, "client"):
             documents_dicts = [doc.dict() for doc in documents]
-            response = self.client.ingest_documents(documents_dicts)
+            response = self.client.ingest_documents(
+                documents_dicts, monitor=True
+            )
         else:
             print(
                 "calling ingest_documents iwth documents = ",
@@ -155,7 +157,9 @@ class R2RQuickstart:
 
         if hasattr(self, "client"):
             documents_dicts = [doc.dict() for doc in documents]
-            response = self.client.update_documents(documents_dicts)
+            response = self.client.update_documents(
+                documents_dicts, monitor=True
+            )
         else:
             response = self.r2r_app.update_documents(documents)
 
@@ -206,6 +210,7 @@ class R2RQuickstart:
                 file_paths=file_paths,
                 document_ids=ids,
                 user_ids=user_ids,
+                monitor=True,
             )
         else:
             metadatas = [{} for _ in file_paths]
@@ -251,6 +256,7 @@ class R2RQuickstart:
                     generate_id_from_label(old_file)
                     for old_file, new_file in file_tuples
                 ],
+                monitor=True,
             )
         else:
             response = self.r2r_app.update_files(
@@ -307,17 +313,16 @@ class R2RQuickstart:
                 ),
             )
 
-        if "vector_search_results" in results["results"]:
+        if isinstance(results, dict) and "results" in results:
+            results = results["results"]
+
+        print("results = ", results)
+        if "vector_search_results" in results:
             print("Vector search results:")
-            for result in results["results"]["vector_search_results"]:
+            for result in results["vector_search_results"]:
                 print(result)
-        if (
-            "kg_search_results" in results["results"]
-            and results["results"]["kg_search_results"]
-        ):
-            print(
-                "KG search results:", results["results"]["kg_search_results"]
-            )
+        if "kg_search_results" in results and results["kg_search_results"]:
+            print("KG search results:", results["kg_search_results"])
 
         t1 = time.time()
         print(f"Time taken to search: {t1-t0:.2f} seconds")
@@ -486,15 +491,17 @@ class R2RQuickstart:
     ):
         t0 = time.time()
         if hasattr(self, "client"):
-            response = self.client.documents_overview(document_ids, user_ids)
-            for document in response["results"]:
-                print(document)
+            results = self.client.documents_overview(document_ids, user_ids)
 
         else:
             t0 = time.time()
-            response = self.r2r_app.documents_overview(document_ids, user_ids)
-            for document in response:
-                print(document)
+            results = self.r2r_app.documents_overview(document_ids, user_ids)
+
+        if isinstance(results, dict) and "results" in results:
+            results = results["results"]
+
+        for document in results:
+            print(document)
 
         t1 = time.time()
         print(f"Time taken to get document info: {t1-t0:.2f} seconds")
@@ -506,13 +513,17 @@ class R2RQuickstart:
         doc_uuid = uuid.UUID(document_id)
 
         if hasattr(self, "client"):
-            response = self.client.document_chunks(doc_uuid)
-            for chunk in response["results"]:
-                print(chunk)
+            results = self.client.document_chunks(doc_uuid)
         else:
-            response = self.r2r_app.document_chunks(doc_uuid)
-            for chunk in response:
+            results = self.r2r_app.document_chunks(doc_uuid)
+            for chunk in results:
                 print(chunk)
+
+        if isinstance(results, dict) and "results" in results:
+            results = results["results"]
+
+        for document in results:
+            print(document)
 
         t1 = time.time()
         print(f"Time taken to get document chunks: {t1-t0:.2f} seconds")
@@ -529,7 +540,9 @@ class R2RQuickstart:
         print(response)
 
     def users_overview(self, user_ids: Optional[list[uuid.UUID]] = None):
-        user_ids = user_ids or self.user_ids
+        user_ids = user_ids or [
+            ele for ele in self.user_ids if ele is not None
+        ]
         t0 = time.time()
         if hasattr(self, "client"):
             response = self.client.users_overview(user_ids)
