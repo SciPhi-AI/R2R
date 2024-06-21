@@ -32,6 +32,7 @@ async def update_prompt_app(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
+@router.post("/logs")
 @router.get("/logs")
 async def get_logs_app(
     request: R2RLogsRequest,
@@ -89,6 +90,7 @@ async def delete_app(request: R2RDeleteRequest, r2r=Depends(get_r2r_app)):
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
+@router.post("/documents_overview")
 @router.get("/documents_overview")
 async def get_documents_overview_app(
     request: R2RDocumentsOverviewRequest,
@@ -106,6 +108,7 @@ async def get_documents_overview_app(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
+@router.post("/document_chunks")
 @router.get("/document_chunks")
 async def get_document_chunks_app(
     request: R2RDocumentChunksRequest, r2r=Depends(get_r2r_app)
