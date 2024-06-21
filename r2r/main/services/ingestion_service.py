@@ -312,10 +312,6 @@ class IngestionService(Service):
                     else document_ids[iteration]
                 )
 
-                print(" None = ", None)
-                print("existing_document_info = ", existing_document_info)
-                print("versions = ", versions)
-
                 version = versions[iteration] if versions else "v0"
                 if document_id in existing_document_info and (
                     versions is None
@@ -443,8 +439,6 @@ class IngestionService(Service):
                     status_code=404,
                     detail="One or more documents was not found.",
                 )
-            print("in ingestion service.....")
-            print("documents_overview = ", documents_overview)
             for it, document_info in enumerate(documents_overview):
                 if not document_info:
                     raise HTTPException(
@@ -469,10 +463,6 @@ class IngestionService(Service):
                 )
 
                 documents_overview_modified.append(document_info)
-            print("new_versions = ", new_versions)
-            print("new_versions = ", new_versions)
-            print("new_versions = ", new_versions)
-            print("new_versions = ", new_versions)
 
             await self.ingest_files(
                 files,
