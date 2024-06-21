@@ -51,6 +51,7 @@ async def get_logs_app(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
+@router.post("/analytics")
 @router.get("/analytics")
 async def get_analytics_app(
     request: R2RAnalyticsRequest, r2r=Depends(get_r2r_app)
