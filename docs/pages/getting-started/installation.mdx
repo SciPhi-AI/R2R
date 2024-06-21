@@ -153,17 +153,10 @@ export VERTEX_API_KEY=...
 <details>
 <summary>VectorDB Providers</summary>
 
-#### R2R Local VectorDB
-
-R2R default selection - a simple SQLite-powered vector DB, optimal for lightweight workloads:
-
-```bash filename="bash" copy
-export LOCAL_DB_PATH=local.sqlite
-```
 
 #### pgvector
 
-Better for larger scale workloads that benefit from relational data:
+The default (and currently only) vector database for R2R. Allows for larger scale workloads and benefits from relational properties:
 
 ```bash filename="bash" copy
 export POSTGRES_USER=your_user

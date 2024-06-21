@@ -18,9 +18,9 @@ async def search_app(request: R2RSearchRequest, r2r=Depends(get_r2r_app)):
     async with manage_run(r2r.run_manager, "search_app") as run_id:
         try:
             return await r2r.asearch(
-                request.query,
-                request.vector_search_settings,
-                request.kg_search_settings,
+                query=request.query,
+                vector_search_settings=request.vector_search_settings,
+                kg_search_settings=request.kg_search_settings,
             )
         except Exception as e:
             await r2r.logging_connection.log(
@@ -43,10 +43,10 @@ async def rag_app(request: R2RRAGRequest, r2r=Depends(get_r2r_app)):
     async with manage_run(r2r.run_manager, "rag_app") as run_id:
         try:
             response = await r2r.arag(
-                request.query,
-                request.vector_search_settings,
-                request.kg_search_settings,
-                request.rag_generation_config
+                query=request.query,
+                vector_search_settings=request.vector_search_settings,
+                kg_search_settings=request.kg_search_settings,
+                rag_generation_config=request.rag_generation_config
                 or GenerationConfig(model="gpt-4o"),
             )
 
@@ -81,7 +81,9 @@ async def evaluate_app(request: R2REvalRequest, r2r=Depends(get_r2r_app)):
 
         try:
             return await r2r.aevaluate(
-                request.query, request.context, request.completion
+                query=request.query,
+                context=request.context,
+                completion=request.completion,
             )
         except Exception as e:
             await r2r.logging_connection.log(

@@ -187,9 +187,11 @@ class ManagementService(Service):
             }
         }
 
-    @telemetry_event("UsersStats")
-    async def ausers_stats(self, user_ids: Optional[list[uuid.UUID]] = None):
-        return self.providers.vector_db.get_users_stats(
+    @telemetry_event("UsersOverview")
+    async def ausers_overview(
+        self, user_ids: Optional[list[uuid.UUID]] = None
+    ):
+        return self.providers.vector_db.get_users_overview(
             [str(ele) for ele in user_ids]
         )
 
@@ -197,23 +199,27 @@ class ManagementService(Service):
     async def delete(
         self, keys: list[str], values: list[Union[bool, int, str]]
     ):
+        metadata = ", ".join(
+            f"{key}={value}" for key, value in zip(keys, values)
+        )
+        logger.info(f"Deleting entries with metadata: {metadata}")
         ids = self.providers.vector_db.delete_by_metadata(keys, values)
         if not ids:
             raise HTTPException(
                 status_code=404, detail="No entries found for deletion."
             )
-        self.providers.vector_db.delete_documents_info(ids)
-        return {"results": "Entries deleted successfully."}
+        self.providers.vector_db.delete_documents_overview(ids)
+        return {"results": f"Documents {ids} deleted successfully."}
 
-    @telemetry_event("DocumentsInfo")
-    async def adocuments_info(
+    @telemetry_event("DocumentsOverview")
+    async def adocuments_overview(
         self,
         document_ids: Optional[list[uuid.UUID]] = None,
         user_ids: Optional[list[uuid.UUID]] = None,
         *args: Any,
         **kwargs: Any,
     ):
-        return self.providers.vector_db.get_documents_info(
+        return self.providers.vector_db.get_documents_overview(
             filter_document_ids=(
                 [str(ele) for ele in document_ids] if document_ids else None
             ),
@@ -224,11 +230,11 @@ class ManagementService(Service):
 
     @telemetry_event("DocumentChunks")
     async def document_chunks(self, document_id: uuid.UUID):
-        return self.providers.vector_db.get_document_chunks(document_id)
+        return self.providers.vector_db.get_document_chunks(str(document_id))
 
-    @telemetry_event("UsersStats")
-    async def users_stats(self, user_ids: Optional[list[uuid.UUID]]):
-        return self.providers.vector_db.get_users_stats(
+    @telemetry_event("UsersOverview")
+    async def users_overview(self, user_ids: Optional[list[uuid.UUID]]):
+        return self.providers.vector_db.get_users_overview(
             [str(ele) for ele in user_ids]
         )
 

@@ -118,7 +118,7 @@ The following quickstart offers a step-by-step guide on running R2R locally as w
    To verify the successful ingestion of the demo documents, you can fetch the metadata for the uploaded documents associated with the default demo user ID:
 
    ```bash
-   python -m r2r.examples.quickstart documents_info
+   python -m r2r.examples.quickstart documents_overview
    ```
 
    **Demo Output:**
@@ -138,7 +138,7 @@ The following quickstart offers a step-by-step guide on running R2R locally as w
 
 
    ```bash
-   python -m r2r.examples.quickstart users_stats
+   python -m r2r.examples.quickstart users_overview
    ```
 
 

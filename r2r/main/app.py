@@ -106,16 +106,18 @@ class R2RApp(metaclass=AsyncSyncMeta):
         return await self.management_service.aapp_settings(*args, **kwargs)
 
     @syncable
-    async def ausers_stats(self, *args, **kwargs):
-        return await self.management_service.ausers_stats(*args, **kwargs)
+    async def ausers_overview(self, *args, **kwargs):
+        return await self.management_service.ausers_overview(*args, **kwargs)
 
     @syncable
     async def adelete(self, *args, **kwargs):
         return await self.management_service.delete(*args, **kwargs)
 
     @syncable
-    async def adocuments_info(self, *args, **kwargs):
-        return await self.management_service.adocuments_info(*args, **kwargs)
+    async def adocuments_overview(self, *args, **kwargs):
+        return await self.management_service.adocuments_overview(
+            *args, **kwargs
+        )
 
     @syncable
     async def adocument_chunks(self, *args, **kwargs):

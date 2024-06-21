@@ -8,7 +8,6 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Union
 
-from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -38,35 +37,29 @@ class DocumentType(Enum):
 
 
 class Document(BaseModel):
-    """A document that has been stored in the system."""
-
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     type: DocumentType
-    data: DataType
+    data: Union[str, bytes]
     metadata: dict
 
-    def encode_data(self):
-        if isinstance(self.data, bytes):
-            self.data = base64.b64encode(self.data).decode("utf-8")
-        self.id = str(self.id)
-        for key, value in self.metadata.items():
-            if isinstance(value, uuid.UUID):
-                self.metadata[key] = str(value)
+    def __init__(self, *args, **kwargs):
+        data = kwargs.get("data")
+        if data and isinstance(data, str):
+            try:
+                # Try to decode if it's already base64 encoded
+                kwargs["data"] = base64.b64decode(data)
+            except:
+                # If it's not base64, encode it to bytes
+                kwargs["data"] = data.encode("utf-8")
 
-    def decode_data(self):
-        if isinstance(self.data, str):
-            try:
-                self.data = base64.b64decode(self.data.encode("utf-8"))
-            except Exception as e:
-                raise HTTPException(
-                    status_code=400, detail=f"Failed to decode data: {e}"
-                )
-        self.id = uuid.UUID(self.id)
-        for key, value in self.metadata.items():
-            try:
-                self.metadata[key] = uuid.UUID(value)
-            except ValueError:
-                pass
+        super().__init__(*args, **kwargs)
+
+    class Config:
+        arbitrary_types_allowed = True
+        json_encoders = {
+            uuid.UUID: str,
+            bytes: lambda v: base64.b64encode(v).decode("utf-8"),
+        }
 
 
 class DocumentInfo(BaseModel):
