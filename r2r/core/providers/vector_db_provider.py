@@ -115,11 +115,13 @@ class VectorDBProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def upsert_documents_info(self, document_infs: list[DocumentInfo]) -> None:
+    def upsert_documents_overview(
+        self, document_infs: list[DocumentInfo]
+    ) -> None:
         pass
 
     @abstractmethod
-    def get_documents_info(
+    def get_documents_overview(
         self,
         filter_document_ids: Optional[list[str]] = None,
         filter_user_ids: Optional[list[str]] = None,
@@ -131,9 +133,9 @@ class VectorDBProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def delete_documents_info(self, document_ids: list[str]) -> dict:
+    def delete_documents_overview(self, document_ids: list[str]) -> dict:
         pass
 
     @abstractmethod
-    def get_users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
+    def get_users_overview(self, user_ids: Optional[list[str]] = None) -> dict:
         pass

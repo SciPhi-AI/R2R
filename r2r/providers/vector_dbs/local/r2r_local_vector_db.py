@@ -239,12 +239,12 @@ class R2RLocalVectorDB(VectorDBProvider):
         conn.close()
         return [json.loads(r) for r in results]
 
-    def upsert_documents_info(
-        self, documents_info: list[DocumentInfo]
+    def upsert_documents_overview(
+        self, documents_overview: list[DocumentInfo]
     ) -> None:
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
-        for document_info in documents_info:
+        for document_info in documents_overview:
             db_entry = document_info.convert_to_db_entry()
             cursor.execute(
                 f"""
@@ -263,7 +263,7 @@ class R2RLocalVectorDB(VectorDBProvider):
         conn.commit()
         conn.close()
 
-    def delete_documents_info(self, document_ids: list[str]) -> None:
+    def delete_documents_overview(self, document_ids: list[str]) -> None:
         conn = self._get_conn()
         cursor = self._get_cursor(conn)
 
@@ -281,7 +281,7 @@ class R2RLocalVectorDB(VectorDBProvider):
         conn.commit()
         conn.close()
 
-    def get_documents_info(
+    def get_documents_overview(
         self,
         filter_document_ids: Optional[list[str]] = None,
         filter_user_ids: Optional[list[str]] = None,
@@ -296,7 +296,6 @@ class R2RLocalVectorDB(VectorDBProvider):
         conditions = []
         params = []
 
-        print("filter_document_ids = ", filter_document_ids)
         if filter_document_ids:
             placeholders = ", ".join("?" for _ in filter_document_ids)
             conditions.append(f"document_id IN ({placeholders})")
@@ -351,7 +350,7 @@ class R2RLocalVectorDB(VectorDBProvider):
         conn.close()
         return [json.loads(result[0]) for result in results]
 
-    def get_users_stats(self, user_ids: Optional[list[str]] = None):
+    def get_users_overview(self, user_ids: Optional[list[str]] = None):
         user_ids_condition = ""
         params = []
         if user_ids:

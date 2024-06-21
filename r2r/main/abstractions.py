@@ -73,6 +73,9 @@ class R2RIngestDocumentsRequest(BaseModel):
     documents: list[Document]
     versions: Optional[list[str]] = None
 
+    class Config:
+        arbitrary_types_allowed = True
+
 
 class R2RUpdateDocumentsRequest(BaseModel):
     documents: list[Document]
@@ -122,11 +125,11 @@ class R2RAnalyticsRequest(BaseModel):
     analysis_types: AnalysisTypes
 
 
-class R2RUsersStatsRequest(BaseModel):
+class R2RUsersOverviewRequest(BaseModel):
     user_ids: Optional[list[uuid.UUID]]
 
 
-class R2RDocumentsInfoRequest(BaseModel):
+class R2RDocumentsOverviewRequest(BaseModel):
     document_ids: Optional[list[uuid.UUID]]
     user_ids: Optional[list[uuid.UUID]]
 

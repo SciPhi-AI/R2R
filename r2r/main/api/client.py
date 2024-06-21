@@ -14,7 +14,7 @@ from ..abstractions import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
-    R2RDocumentsInfoRequest,
+    R2RDocumentsOverviewRequest,
     R2RIngestDocumentsRequest,
     R2RIngestFilesRequest,
     R2RRAGRequest,
@@ -22,7 +22,7 @@ from ..abstractions import (
     R2RUpdateDocumentsRequest,
     R2RUpdateFilesRequest,
     R2RUpdatePromptRequest,
-    R2RUsersStatsRequest,
+    R2RUsersOverviewRequest,
 )
 
 nest_asyncio.apply()
@@ -49,11 +49,11 @@ class R2RClient:
 
     def ingest_documents(
         self, documents: list[dict], versions: Optional[list[str]] = None
-    ) -> dict:
-        url = f"{self.base_url}{self.prefix}/ingest_documents"
+    ):
         request = R2RIngestDocumentsRequest(
             documents=documents, versions=versions
         )
+        url = f"{self.base_url}{self.prefix}/ingest_documents"
         response = requests.post(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
@@ -261,22 +261,22 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
-    def users_stats(self, user_ids: Optional[list[str]] = None) -> dict:
-        url = f"{self.base_url}{self.prefix}/users_stats"
-        request = R2RUsersStatsRequest(
+    def users_overview(self, user_ids: Optional[list[str]] = None) -> dict:
+        url = f"{self.base_url}{self.prefix}/users_overview"
+        request = R2RUsersOverviewRequest(
             user_ids=[uuid.UUID(uid) for uid in user_ids] if user_ids else None
         )
         response = requests.get(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
 
-    def documents_info(
+    def documents_overview(
         self,
         document_ids: Optional[list[str]] = None,
         user_ids: Optional[list[str]] = None,
     ) -> dict:
-        url = f"{self.base_url}{self.prefix}/documents_info"
-        request = R2RDocumentsInfoRequest(
+        url = f"{self.base_url}{self.prefix}/documents_overview"
+        request = R2RDocumentsOverviewRequest(
             document_ids=(
                 [uuid.UUID(did) for did in document_ids]
                 if document_ids

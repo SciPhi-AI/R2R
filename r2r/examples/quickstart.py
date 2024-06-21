@@ -28,7 +28,12 @@ logger.setLevel(logging.DEBUG)
 class R2RQuickstart:
     """A demo class for the R2R library."""
 
-    DEMO_USER_ID = "063edaf8-3e63-4cb9-a4d6-a855f36376c3"
+    USER_IDS = [
+        "063edaf8-3e63-4cb9-a4d6-a855f36376c3",
+        "45c3f5a8-bcbe-43b1-9b20-51c07fd79f14",
+        "c6c23d85-6217-4caa-b391-91ec0021a000",
+        "bd94aa4c-d065-4fcd-b09d-36d93db9e111",
+    ]
 
     def __init__(
         self,
@@ -36,7 +41,6 @@ class R2RQuickstart:
         config_path: Optional[str] = None,
         file_list: Optional[list[str]] = None,
         file_tuples: Optional[list[tuple]] = None,
-        user_id: uuid.UUID = DEMO_USER_ID,
         client_server_mode: bool = False,
         base_url: Optional[str] = None,
     ):
@@ -66,7 +70,7 @@ class R2RQuickstart:
             logger.info("Running locally")
 
         root_path = os.path.dirname(os.path.abspath(__file__))
-        self.user_id = user_id
+        self.user_ids = [uuid.UUID(user_id) for user_id in self.USER_IDS]
         self.default_files = file_list or [
             os.path.join(root_path, "data", "aristotle.txt"),
             os.path.join(root_path, "data", "got.txt"),
@@ -90,18 +94,17 @@ class R2RQuickstart:
         ]
 
     def ingest_as_documents(self, file_paths: Optional[list[str]] = None):
-        # An alternative demo which shows how to directly ingest processed documents.
         file_paths = file_paths or self.default_files
         documents = []
         t0 = time.time()
 
-        for file_path in file_paths:
+        for index, file_path in enumerate(file_paths):
             with open(file_path, "rb") as f:
                 data = f.read()
             documents.append(
                 Document(
                     id=generate_id_from_label(file_path),
-                    user_id=self.user_id,
+                    user_id=self.user_ids[index % len(self.user_ids)],
                     title=file_path,
                     data=data,
                     type=file_path.split(".")[-1],
@@ -124,17 +127,15 @@ class R2RQuickstart:
         documents = []
         t0 = time.time()
 
-        for old_file, new_file in file_tuples:
+        for index, (old_file, new_file) in enumerate(file_tuples):
             with open(new_file, "rb") as f:
                 data = f.read()
 
             documents.append(
                 Document(
                     id=generate_id_from_label(old_file),
-                    user_id=self.user_id,
-                    title=old_file.split(os.path.sep)[
-                        -1
-                    ],  # preserve the old title
+                    user_id=self.user_ids[index % len(self.user_ids)],
+                    title=old_file.split(os.path.sep)[-1],
                     data=data,
                     type=new_file.split(".")[-1],
                     metadata={},
@@ -182,7 +183,10 @@ class R2RQuickstart:
             file.size = file.file.tell()
             file.file.seek(0)
 
-        user_ids = [self.user_id for _ in file_paths]
+        user_ids = [
+            self.user_ids[index % len(self.user_ids)]
+            for index in range(len(file_paths))
+        ]
         t0 = time.time()
 
         if hasattr(self, "client"):
@@ -223,9 +227,9 @@ class R2RQuickstart:
         metadatas = [
             {
                 "title": old_file,
-                "user_id": self.user_id,
+                "user_id": self.user_ids[index % len(self.user_ids)],
             }
-            for old_file, new_file in file_tuples
+            for index, (old_file, new_file) in enumerate(file_tuples)
         ]
         t0 = time.time()
 
@@ -241,9 +245,8 @@ class R2RQuickstart:
         else:
             response = self.r2r_app.update_files(
                 files=new_files,
-                metadatas=metadatas,
                 document_ids=[
-                    generate_id_from_label(old_file)
+                    generate_id_from_label(old_file.split(os.path.sep)[-1])
                     for old_file, new_file in file_tuples
                 ],
             )
@@ -337,14 +340,14 @@ class R2RQuickstart:
 
         if hasattr(self, "client"):
             response = self.client.rag(
-                query,
-                use_vector_search,
-                search_filters,
-                search_limit,
-                do_hybrid_search,
-                use_kg,
-                kg_agent_generation_config,
-                rag_generation_config,
+                query=query,
+                use_vector_search=use_vector_search,
+                search_filters=search_filters,
+                search_limit=search_limit,
+                do_hybrid_search=do_hybrid_search,
+                use_kg=use_kg,
+                kg_agent_generation_config=kg_agent_generation_config,
+                rag_generation_config=rag_generation_config,
             )
             if not stream:
                 t1 = time.time()
@@ -360,7 +363,6 @@ class R2RQuickstart:
         else:
             response = self.r2r_app.rag(
                 query,
-                search_filters={"user_id": self.user_id},
                 vector_search_settings=VectorSearchSettings(
                     use_vector_search=use_vector_search,
                     search_filters=search_filters,
@@ -467,31 +469,43 @@ class R2RQuickstart:
         print(f"Time taken to get logs: {t1-t0:.2f} seconds")
         print(response)
 
-    def documents_info(
+    def documents_overview(
         self,
         document_ids: Optional[list[str]] = None,
         user_ids: Optional[list[str]] = None,
     ):
         t0 = time.time()
         if hasattr(self, "client"):
-            response = self.client.documents_info(document_ids, user_ids)
+            response = self.client.documents_overview(document_ids, user_ids)
+            for document in response["results"]:
+                print(document)
+
         else:
             t0 = time.time()
-            response = self.r2r_app.documents_info(document_ids, user_ids)
+            response = self.r2r_app.documents_overview(document_ids, user_ids)
+            for document in response:
+                print(document)
+
         t1 = time.time()
         print(f"Time taken to get document info: {t1-t0:.2f} seconds")
-        for document in response:
-            print(document)
 
     def document_chunks(self, document_id: str):
         t0 = time.time()
+
+        # Convert the string to UUID
+        doc_uuid = uuid.UUID(document_id)
+
         if hasattr(self, "client"):
-            response = self.client.document_chunks(document_id)
+            response = self.client.document_chunks(doc_uuid)
+            for chunk in response["results"]:
+                print(chunk)
         else:
-            response = self.r2r_app.document_chunks(document_id)
+            response = self.r2r_app.document_chunks(doc_uuid)
+            for chunk in response:
+                print(chunk)
+
         t1 = time.time()
         print(f"Time taken to get document chunks: {t1-t0:.2f} seconds")
-        print(response)
 
     def app_settings(self):
         t0 = time.time()
@@ -504,14 +518,14 @@ class R2RQuickstart:
         print(f"Time taken to get app data: {t1-t0:.2f} seconds")
         print(response)
 
-    def users_stats(self, user_ids: Optional[list[uuid.UUID]] = None):
-        user_ids = user_ids or [self.user_id]
+    def users_overview(self, user_ids: Optional[list[uuid.UUID]] = None):
+        user_ids = user_ids or self.user_ids
         t0 = time.time()
         if hasattr(self, "client"):
-            response = self.client.users_stats(user_ids)
+            response = self.client.users_overview(user_ids)
         else:
             t0 = time.time()
-            response = self.r2r_app.users_stats(user_ids)
+            response = self.r2r_app.users_overview(user_ids)
         t1 = time.time()
         print(f"Time taken to get user stats: {t1-t0:.2f} seconds")
         for user in response:
