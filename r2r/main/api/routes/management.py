@@ -50,7 +50,7 @@ async def get_logs_app(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.post("/analytics")
+@router.get("/analytics")
 async def get_analytics_app(
     request: R2RAnalyticsRequest, r2r=Depends(get_r2r_app)
 ):
@@ -65,7 +65,7 @@ async def get_analytics_app(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.post("/users_overview")
+@router.get("/users_overview")
 async def get_users_overview_app(
     request: R2RUsersOverviewRequest, r2r=Depends(get_r2r_app)
 ):
@@ -106,12 +106,12 @@ async def get_documents_overview_app(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.post("/document_chunks")
+@router.get("/document_chunks")
 async def get_document_chunks_app(
     request: R2RDocumentChunksRequest, r2r=Depends(get_r2r_app)
 ):
     try:
-        results = await r2r.document_chunks(request)
+        results = await r2r.adocument_chunks(request.document_id)
         return {"results": results}
     except Exception as e:
         logger.error(
