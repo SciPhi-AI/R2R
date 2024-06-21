@@ -179,12 +179,10 @@ class ManagementService(Service):
     async def aapp_settings(self, *args: Any, **kwargs: Any):
         prompts = self.providers.prompt.get_all_prompts()
         return {
-            "results": {
-                "config": self.config.to_json(),
-                "prompts": {
-                    name: prompt.dict() for name, prompt in prompts.items()
-                },
-            }
+            "config": self.config.to_json(),
+            "prompts": {
+                name: prompt.dict() for name, prompt in prompts.items()
+            },
         }
 
     @telemetry_event("UsersOverview")
