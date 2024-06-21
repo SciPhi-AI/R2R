@@ -465,7 +465,7 @@ class R2RQuickstart:
             response = self.client.delete(keys, values)
         else:
             response = self.r2r_app.delete(keys, values)
-            t1 = time.time()
+        t1 = time.time()
         print(f"Time taken to delete: {t1-t0:.2f} seconds")
         print(response)
 

@@ -49,6 +49,24 @@ class RetrievalService(Service):
         async with manage_run(self.run_manager, "search_app") as run_id:
             t0 = time.time()
 
+            if (
+                kg_search_settings.use_kg_search
+                and self.config.kg.provider is None
+            ):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Knowledge Graph search is not enabled in the configuration.",
+                )
+
+            if (
+                vector_search_settings.use_vector_search
+                and self.config.vector_database.provider is None
+            ):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Vector search is not enabled in the configuration.",
+                )
+
             results = await self.pipelines.search_pipeline.run(
                 input=to_async_generator([query]),
                 vector_search_settings=vector_search_settings,

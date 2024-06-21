@@ -17,6 +17,7 @@ from ..abstractions import (
     R2RDocumentsOverviewRequest,
     R2RIngestDocumentsRequest,
     R2RIngestFilesRequest,
+    R2RLogsRequest,
     R2RRAGRequest,
     R2RSearchRequest,
     R2RUpdateDocumentsRequest,
@@ -77,7 +78,11 @@ class R2RClient:
             document_ids=(
                 [str(ele) for ele in document_ids] if document_ids else None
             ),
-            user_ids=[str(ele) for ele in user_ids] if user_ids else None,
+            user_ids=(
+                [(str(ele) if ele else None) for ele in user_ids]
+                if user_ids
+                else None
+            ),
             versions=versions,
             skip_document_info=skip_document_info,
         )
@@ -123,7 +128,11 @@ class R2RClient:
             document_ids=document_ids,
         )
         response = requests.post(
-            url, files=files_to_upload, data=request.json()
+            url,
+            files=files_to_upload,
+            data={
+                k: json.dumps(v) for k, v in json.loads(request.json()).items()
+            },
         )
         response.raise_for_status()
         return response.json()
@@ -242,7 +251,8 @@ class R2RClient:
         params = {}
         if log_type_filter:
             params["log_type_filter"] = log_type_filter
-        response = requests.get(url, params=params)
+        request = R2RLogsRequest(log_type_filter=log_type_filter)
+        response = requests.get(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
 
