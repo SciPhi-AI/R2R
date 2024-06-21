@@ -1,5 +1,5 @@
-import { Tabs } from 'nextra/components'
-import { Callout } from 'nextra/components'
+import { Tabs } from "nextra/components";
+import { Callout } from "nextra/components";
 
 ## Building a Local RAG System with R2R
 
@@ -54,7 +54,6 @@ Ollama must be installed independently. You can install Ollama by following the 
 
 Let's move on to setting up the R2R pipeline. R2R relies on a `config.json` file for defining various settings, such as embedding models and chunk sizes. By default, the `config.json` found in the R2R GitHub repository's root directory is set up for cloud-based services. We must run with a separate configuration in order to support local settings, this is the `local_ollama` config we selected previously.
 
-
 <details>
 <summary>Local Configuration</summary>
 
@@ -73,11 +72,11 @@ To streamline this process, we've provided pre-configured local settings in the 
   "eval": {
     "provider": "local",
     "frequency": 0.0,
-    "llm":{
+    "llm": {
       "provider": "litellm"
     }
   },
-  "ingestion":{
+  "ingestion": {
     "excluded_parsers": {
       "gif": "default",
       "jpeg": "default",
@@ -96,8 +95,8 @@ You may also modify the configuration defaults for ingestion, logging, and your 
 This chosen config modification above instructs R2R to use the `sentence-transformers` library for embeddings with the `all-MiniLM-L6-v2` model, turns off evals, and sets the LLM provider to `ollama`. During ingestion, the default is to split documents into chunks of 512 characters with 20 characters of overlap between chunks.
 
 A local vector database will be used to store the embeddings. The current default is a minimal sqlite implementation.
-</details>
 
+</details>
 
 ## Ingesting and Embedding Documents
 
@@ -128,6 +127,7 @@ The output should look something like this:
 ```
 
 Here's what's happening under the hood:
+
 1. R2R loads and processes the document.
 2. It splits the text into chunks of 512 characters each, with 20 characters overlapping between chunks.
 3. Each chunk is embedded using the `all-MiniLM-L6-v2` model from `sentence-transformers`.
@@ -142,13 +142,13 @@ Time for the fun part—asking questions!
 To query our knowledge base using Ollama, first ensure that you have started the Ollama server with this command in the terminal:
 
 ```bash filename="bash" copy
-ollama serve llama2
+ollama serve
 ```
 
 <Callout type="warning" emoji="️⚠️">
-   Be sure to run client commands in a new terminal after starting the ollama server!
+  Be sure to run client commands in a new terminal after starting the ollama
+  server!
 </Callout>
-
 
 Then, to ask a question, run:
 
@@ -160,6 +160,7 @@ python -m r2r.examples.quickstart rag \
 ```
 
 This command tells R2R to use the specified model to generate a completion for the given query. R2R will:
+
 1. Embed the query using `all-MiniLM-L6-v2`.
 2. Find the chunks most similar to the query embedding.
 3. Pass the query and relevant chunks to the LLM to generate a response.
@@ -182,25 +183,31 @@ How cool is that? With R2R, we've built a simple Q&A system backed by a local LL
 R2R provides flexibility in customizing various aspects of the RAG pipeline to suit your needs. This can be done through the `config.json` file. Some key configuration options include:
 
 #### Vector Database Provider
+
 R2R supports multiple vector database providers:
+
 - `local`: A SQLite-based local vector database
 - `pgvector`: Integration with pgvector extension for Postgres
 
 Set the `provider` field under `vector_database` in `config.json` to specify your provider.
 
 #### Embedding Provider
+
 R2R supports OpenAI and local inference embedding providers:
+
 - `openai`: OpenAI models like `text-embedding-3-small`
 - `sentence-transformers`: HuggingFace models like `all-MiniLM-L6-v2`
 
 Configure the `embedding` section to set your desired embedding model, dimension, and batch size.
 
 #### Language Model Provider
+
 - `openai`: Models like `gpt-3.5-turbo`
 - `litellm` (default): Integrates with many providers (OpenAI, Anthropic, Vertex AI, etc.)
 - `ollama`: A specifically supported provider, with the connection managed by `litellm`
 
 #### Logging Provider
+
 R2R supports logging to Postgres, SQLite (local), and Redis. The logs capture pipeline execution information.
 
 Check out the [full R2R configuration docs](/deep-dive/config) for more details on all available options.
@@ -208,6 +215,7 @@ Check out the [full R2R configuration docs](/deep-dive/config) for more details 
 ### Next Steps
 
 Together we've walked through the steps to get a local LLM application up and running with R2R:
+
 1. Installing dependencies
 2. Configuring the R2R pipeline
 3. Ingesting and embedding documents
