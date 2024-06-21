@@ -243,7 +243,7 @@ class IngestionService(Service):
                 "Number of user_ids entries does not match number of files."
             )
         elif user_ids and not all(
-            isinstance(user_id, uuid.UUID) for user_id in user_ids
+            (isinstance(user_id, uuid.UUID) for user_id in user_ids if user_id)
         ):
             raise ValueError("All user IDs must be of type UUID.")
         if len(files) == 0:
