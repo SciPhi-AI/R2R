@@ -212,7 +212,7 @@ class IngestionService(Service):
             document_infos_modified
         )
         document_ids = ",".join([str(doc.id) for doc in documents])
-        return {"results": f"Document(s) {document_ids} updated."}
+        return f"Document(s) {document_ids} updated."
 
     @telemetry_event("IngestFiles")
     async def ingest_files(
@@ -480,9 +480,7 @@ class IngestionService(Service):
                 documents_overview_modified
             )
             document_ids = ",".join([str(doc_id) for doc_id in document_ids])
-            return {
-                "results": f"Document(s) with IDs {document_ids} updated successfully."
-            }
+            return f"Document(s) with IDs {document_ids} updated successfully."
         except Exception as e:
             logger.error(f"update_files(files={files}) - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e)) from e
@@ -585,4 +583,4 @@ class IngestionService(Service):
                 status_code=404, detail="No entries found for deletion."
             )
         self.providers.vector_db.delete_documents_overview(ids)
-        return {"results": "Entries deleted successfully."}
+        return "Entries deleted successfully."

@@ -84,7 +84,7 @@ class RetrievalService(Service):
                 is_info_log=False,
             )
 
-            return {"results": results.dict()}
+            return results.dict()
 
     @telemetry_event("RAG")
     async def rag(
@@ -172,4 +172,4 @@ class RetrievalService(Service):
             run_manager=self.run_manager,
             eval_generation_config=eval_generation_config,
         )
-        return {"results": result}
+        return result

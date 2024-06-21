@@ -1,5 +1,8 @@
 import asyncio
+import functools
 import json
+import threading
+import time
 import uuid
 from typing import Any, AsyncGenerator, Generator, Optional, Union
 
@@ -29,6 +32,43 @@ from ..abstractions import (
 nest_asyncio.apply()
 
 
+def monitor_request(func):
+    @functools.wraps(func)
+    def wrapper(*args, monitor=False, **kwargs):
+        if not monitor:
+            return func(*args, **kwargs)
+
+        result = None
+        exception = None
+
+        def run_func():
+            nonlocal result, exception
+            try:
+                result = func(*args, **kwargs)
+            except Exception as e:
+                exception = e
+
+        thread = threading.Thread(target=run_func)
+        thread.start()
+
+        dots = [".", "..", "..."]
+        i = 0
+        while thread.is_alive():
+            print(f"\rRequesting{dots[i % 3]}", end="", flush=True)
+            i += 1
+            time.sleep(0.5)
+
+        thread.join()
+
+        print("\r", end="", flush=True)
+
+        if exception:
+            raise exception
+        return result
+
+    return wrapper
+
+
 class R2RClient:
     def __init__(self, base_url: str, prefix: str = "/v1"):
         self.base_url = base_url
@@ -48,6 +88,7 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
+    @monitor_request
     def ingest_documents(
         self, documents: list[dict], versions: Optional[list[str]] = None
     ):
@@ -59,6 +100,7 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
+    @monitor_request
     def ingest_files(
         self,
         file_paths: list[str],
@@ -98,6 +140,7 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
+    @monitor_request
     def update_documents(
         self,
         documents: list[dict],
@@ -112,6 +155,7 @@ class R2RClient:
         response.raise_for_status()
         return response.json()
 
+    @monitor_request
     def update_files(
         self,
         files: list[str],
