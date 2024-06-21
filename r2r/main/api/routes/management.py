@@ -82,7 +82,7 @@ async def get_users_overview_app(
 @router.delete("/delete")
 async def delete_app(request: R2RDeleteRequest, r2r=Depends(get_r2r_app)):
     try:
-        results = await r2r.delete(request)
+        results = await r2r.adelete(keys=request.keys, values=request.values)
         return {"results": results}
     except Exception as e:
         logger.error(f"delete_app(request={request}) - \n\n{str(e)})")

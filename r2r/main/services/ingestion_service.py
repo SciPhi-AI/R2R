@@ -409,6 +409,7 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ):
+        print("files = ", files)
         if not files:
             raise HTTPException(
                 status_code=400, detail="No files provided for update."

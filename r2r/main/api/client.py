@@ -127,7 +127,11 @@ class R2RClient:
             document_ids=document_ids,
         )
         response = requests.post(
-            url, files=files_to_upload, data=request.json()
+            url,
+            files=files_to_upload,
+            data={
+                k: json.dumps(v) for k, v in json.loads(request.json()).items()
+            },
         )
         response.raise_for_status()
         return response.json()
