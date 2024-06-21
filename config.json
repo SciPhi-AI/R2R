@@ -38,7 +38,7 @@
     "provider": "local"
   },
   "vector_database": {
-    "provider": "local",
-    "collection_name": "demo_vecs_xyz_123_abc_456_789_111_000"
+    "provider": "pgvector",
+    "collection_name": "demo_vecs"
   }
 }
