@@ -257,15 +257,15 @@ class R2RClient:
         request = R2RAnalyticsRequest(
             filter_criteria=filter_criteria, analysis_types=analysis_types
         )
-        response = requests.post(url, json=json.loads(request.json()))
+        response = requests.get(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
 
-    def users_overview(self, user_ids: Optional[list[str]] = None) -> dict:
+    def users_overview(
+        self, user_ids: Optional[list[uuid.UUID]] = None
+    ) -> dict:
         url = f"{self.base_url}{self.prefix}/users_overview"
-        request = R2RUsersOverviewRequest(
-            user_ids=[uuid.UUID(uid) for uid in user_ids] if user_ids else None
-        )
+        request = R2RUsersOverviewRequest(user_ids=user_ids)
         response = requests.get(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
@@ -293,7 +293,7 @@ class R2RClient:
     def document_chunks(self, document_id: str) -> dict:
         url = f"{self.base_url}{self.prefix}/document_chunks"
         request = R2RDocumentChunksRequest(document_id=document_id)
-        response = requests.post(url, json=json.loads(request.json()))
+        response = requests.get(url, json=json.loads(request.json()))
         response.raise_for_status()
         return response.json()
 
