@@ -80,7 +80,7 @@ test_instance_2() {
   fi
 
   # Start the Ollama service
-  ollama serve llama2 &
+  ollama serve &
 
   # Wait for Ollama service to start
   sleep 10
