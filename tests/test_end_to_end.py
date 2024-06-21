@@ -284,13 +284,13 @@ async def test_ingest_user_documents(r2r_app, logging_connection):
             ),
         ]
     )
-    user_id_results = await r2r_app.ausers_stats([user_id_0, user_id_1])
+    user_id_results = await r2r_app.ausers_overview([user_id_0, user_id_1])
     assert set([stats.user_id for stats in user_id_results]) == set(
         [user_id_0, user_id_1]
     ), f"Expected user ids {user_id_0} and {user_id_1}, but got {user_id_results}"
 
-    user_0_docs = await r2r_app.adocuments_info(user_ids=[user_id_0])
-    user_1_docs = await r2r_app.adocuments_info(user_ids=[user_id_1])
+    user_0_docs = await r2r_app.adocuments_overview(user_ids=[user_id_0])
+    user_1_docs = await r2r_app.adocuments_overview(user_ids=[user_id_1])
 
     assert (
         len(user_0_docs) == 1

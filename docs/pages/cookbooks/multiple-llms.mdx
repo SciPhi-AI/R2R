@@ -8,15 +8,15 @@ import { Callout } from 'nextra/components'
 LLMs are selected at runtime for maximum flexibility and ease of use. R2R supports any provider supported by [LiteLLM](https://litellm.vercel.app/) along with several other dedicated internal implementations.
 </Callout>
 
-
-#### Default (OpenAI)
-
 If you have not completed the quickstart, or if your target database has been cleared, we will start by populating it with some sample files. The sample files include `.txt`, `.pdf`, `.html`, `.mp3`, and `.png` examples, and are ingested with the command shown below.
 
 ```bash filename="bash" copy
 # export OPENAI_API_KEY=...
 python -m r2r.examples.quickstart ingest_as_files
 ```
+
+#### Default (OpenAI)
+
 
 To execute a RAG response with the default R2R settings, start by running the following:
 

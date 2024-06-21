@@ -353,10 +353,10 @@ class PGVectorDB(VectorDBProvider):
             results[key] for key in results if key != tuple(metadata_fields)
         ]
 
-    def upsert_documents_info(
-        self, documents_info: list[DocumentInfo]
+    def upsert_documents_overview(
+        self, documents_overview: list[DocumentInfo]
     ) -> None:
-        for document_info in documents_info:
+        for document_info in documents_overview:
             db_entry = document_info.convert_to_db_entry()
             query = text(
                 f"""
@@ -375,7 +375,7 @@ class PGVectorDB(VectorDBProvider):
                 sess.execute(query, db_entry)
                 sess.commit()
 
-    def delete_documents_info(self, document_ids: list[str]) -> None:
+    def delete_documents_overview(self, document_ids: list[str]) -> None:
         placeholders = ", ".join(
             f":doc_id_{i}" for i in range(len(document_ids))
         )
@@ -394,7 +394,7 @@ class PGVectorDB(VectorDBProvider):
                 sess.execute(query, params)
             sess.commit()
 
-    def get_documents_info(
+    def get_documents_overview(
         self,
         filter_document_ids: Optional[list[str]] = None,
         filter_user_ids: Optional[list[str]] = None,
@@ -468,7 +468,7 @@ class PGVectorDB(VectorDBProvider):
             results = sess.execute(query, params).fetchall()
             return [result[0] for result in results]
 
-    def get_users_stats(self, user_ids: Optional[list[str]] = None):
+    def get_users_overview(self, user_ids: Optional[list[str]] = None):
         user_ids_condition = ""
         params = {}
         if user_ids:

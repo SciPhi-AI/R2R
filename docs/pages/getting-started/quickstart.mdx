@@ -83,7 +83,7 @@ This quickstart will continue on to show how to ingest a list of assorted docume
     We can fetch associated document metadata after successfully ingesting the demo documents:
 
     ```bash filename="bash" copy
-    python -m r2r.examples.quickstart documents_info
+    python -m r2r.examples.quickstart documents_overview
     ```
     **Demo Output:**
 
@@ -101,7 +101,7 @@ This quickstart will continue on to show how to ingest a list of assorted docume
     ```
 
     ```bash filename="bash" copy
-    python -m r2r.examples.quickstart users_stats
+    python -m r2r.examples.quickstart users_overview
     ```
 
 
@@ -225,7 +225,7 @@ python -m r2r.examples.quickstart update_as_files
 To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the associated document ID with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
 
 ```bash filename="bash" copy
-python -m r2r.examples.quickstart delete --keys="['document_id']" --values="['c9bdbac7-0ea3-5c9e-b590-018bd09b127b']"
+python -m r2r.examples.quickstart delete --keys="['document_id']" --values="['4a4fb848-fc03-5487-a7e5-33c9fdfb73cc']"
 ```
 By default the delete method will perform an AND operation over all given metadata keys and values.
 
@@ -257,7 +257,7 @@ To delete all documents associated with a given user, run the delete command on 
 python -m r2r.examples.quickstart delete --keys="['user_id']" --values="['063edaf8-3e63-4cb9-a4d6-a855f36376c3']"
 ```
 
-Afterwards, we may confirm complete user documentation through the `documents_info` endpoint.
+Afterwards, we may confirm complete user documentation through the `documents_overview` endpoint.
 
 **Demo Output:**
 

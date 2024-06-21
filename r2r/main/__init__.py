@@ -2,7 +2,7 @@ from .abstractions import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
-    R2RDocumentsInfoRequest,
+    R2RDocumentsOverviewRequest,
     R2REvalRequest,
     R2RIngestDocumentsRequest,
     R2RIngestFilesRequest,
@@ -13,7 +13,7 @@ from .abstractions import (
     R2RUpdateDocumentsRequest,
     R2RUpdateFilesRequest,
     R2RUpdatePromptRequest,
-    R2RUsersStatsRequest,
+    R2RUsersOverviewRequest,
 )
 from .api.client import R2RClient
 from .app import R2RApp
@@ -39,8 +39,8 @@ __all__ = [
     "R2REvalRequest",
     "R2RDeleteRequest",
     "R2RAnalyticsRequest",
-    "R2RUsersStatsRequest",
-    "R2RDocumentsInfoRequest",
+    "R2RUsersOverviewRequest",
+    "R2RDocumentsOverviewRequest",
     "R2RDocumentChunksRequest",
     "R2RApp",
     "R2RConfig",

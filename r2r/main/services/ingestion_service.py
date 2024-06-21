@@ -3,7 +3,7 @@ import logging
 import os
 import uuid
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from fastapi import Form, HTTPException, UploadFile
 
@@ -64,7 +64,7 @@ class IngestionService(Service):
 
         existing_document_info = {
             doc_info.document_id: doc_info
-            for doc_info in self.providers.vector_db.get_documents_info()
+            for doc_info in self.providers.vector_db.get_documents_overview()
         }
 
         for iteration, document in enumerate(documents):
@@ -125,8 +125,11 @@ class IngestionService(Service):
                     if doc.id not in existing_document_info
                     or (
                         doc.id
-                        and existing_document_info[doc.id].version
-                        != versions[it]
+                        and (
+                            versions
+                            and existing_document_info[doc.id].version
+                            != versions[it]
+                        )
                     )
                 ]
             ),
@@ -138,7 +141,7 @@ class IngestionService(Service):
             run_manager=self.run_manager,
         )
 
-        self.providers.vector_db.upsert_documents_info(document_infos)
+        self.providers.vector_db.upsert_documents_overview(document_infos)
         return {
             "processed_documents": [
                 f"Document '{title}' processed successfully."
@@ -167,12 +170,12 @@ class IngestionService(Service):
         new_versions = []
         document_infos_modified = []
 
-        documents_info = await self.adocuments_info(
+        documents_overview = await self._documents_overview(
             document_ids=[doc.id for doc in documents]
         )
 
         for iteration, doc in enumerate(documents):
-            document_info = documents_info[iteration]
+            document_info = documents_overview[iteration]
             current_version = document_info.version
             old_versions.append(current_version)
             new_versions.append(increment_version(current_version))
@@ -201,12 +204,15 @@ class IngestionService(Service):
         await self.ingest_documents(documents, versions=new_versions)
 
         for doc, old_version in zip(documents, old_versions):
-            await self.adelete(
+            await self._delete(
                 ["document_id", "version"], [str(doc.id), old_version]
             )
 
-        self.providers.vector_db.upsert_documents_info(document_infos_modified)
-        return {"results": "Documents updated."}
+        self.providers.vector_db.upsert_documents_overview(
+            document_infos_modified
+        )
+        document_ids = ",".join([str(doc.id) for doc in documents])
+        return {"results": f"Document(s) {document_ids} updated."}
 
     @telemetry_event("IngestFiles")
     async def ingest_files(
@@ -244,7 +250,7 @@ class IngestionService(Service):
             processed_documents = []
             existing_document_info = {
                 doc_info.document_id: doc_info
-                for doc_info in self.providers.vector_db.get_documents_info()
+                for doc_info in self.providers.vector_db.get_documents_overview()
             }
 
             for iteration, file in enumerate(files):
@@ -367,7 +373,9 @@ class IngestionService(Service):
             )
 
             if not skip_document_info:
-                self.providers.vector_db.upsert_documents_info(document_infos)
+                self.providers.vector_db.upsert_documents_overview(
+                    document_infos
+                )
 
             return {
                 "processed_documents": [
@@ -414,16 +422,16 @@ class IngestionService(Service):
 
             old_versions = []
             new_versions = []
-            documents_info = await self.adocuments_info(
+            documents_overview = await self._documents_overview(
                 document_ids=document_ids
             )
-            documents_info_modified = []
-            if len(documents_info) != len(files):
+            documents_overview_modified = []
+            if len(documents_overview) != len(files):
                 raise HTTPException(
                     status_code=404,
                     detail="One or more documents was not found.",
                 )
-            for it, document_info in enumerate(documents_info):
+            for it, document_info in enumerate(documents_overview):
                 if not document_info:
                     raise HTTPException(
                         status_code=404,
@@ -446,25 +454,26 @@ class IngestionService(Service):
                     document_info.metadata.get("title", None) or title
                 )
 
-                documents_info_modified.append(document_info)
+                documents_overview_modified.append(document_info)
             await self.ingest_files(
                 files,
-                [ele.metadata for ele in documents_info_modified],
+                [ele.metadata for ele in documents_overview_modified],
                 document_ids,
                 versions=new_versions,
-                skip_document_info=True,
             )
 
             for id, old_version in zip(document_ids, old_versions):
-                await self.adelete(
+                await self._delete(
                     ["document_id", "version"], [str(id), old_version]
                 )
 
-            self.providers.vector_db.upsert_documents_info(
-                documents_info_modified
+            self.providers.vector_db.upsert_documents_overview(
+                documents_overview_modified
             )
-
-            return {"results": "Files updated successfully."}
+            document_ids = ",".join([str(doc_id) for doc_id in document_ids])
+            return {
+                "results": f"Document(s) with IDs {document_ids} updated successfully."
+            }
         except Exception as e:
             logger.error(f"update_files(files={files}) - \n\n{str(e)})")
             raise HTTPException(status_code=500, detail=str(e)) from e
@@ -472,13 +481,13 @@ class IngestionService(Service):
             for file in files:
                 file.file.close()
 
+    @staticmethod
     def parse_ingest_files_form_data(
-        self,
         metadatas: Optional[str] = Form(None),
-        document_ids: str = Form(...),
-        user_ids: str = Form(...),
+        document_ids: str = Form(None),
+        user_ids: str = Form(None),
         versions: Optional[str] = Form(None),
-        skip_document_info: bool = Form(False),
+        skip_document_info: bool = Form(None),
     ) -> R2RIngestFilesRequest:
         try:
             request_data = {
@@ -513,8 +522,8 @@ class IngestionService(Service):
                 status_code=400, detail=f"Invalid form data: {e}"
             )
 
+    @staticmethod
     def parse_update_files_form_data(
-        self,
         metadatas: Optional[str] = Form(None),
         document_ids: str = Form(...),
     ) -> R2RUpdateFilesRequest:
@@ -536,3 +545,35 @@ class IngestionService(Service):
             raise HTTPException(
                 status_code=400, detail=f"Invalid form data: {e}"
             )
+
+    # TODO - Move to mgmt service for document info, delete, post orchestration buildout
+    async def _documents_overview(
+        self,
+        document_ids: Optional[list[uuid.UUID]] = None,
+        user_ids: Optional[list[uuid.UUID]] = None,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        return self.providers.vector_db.get_documents_overview(
+            filter_document_ids=(
+                [str(ele) for ele in document_ids] if document_ids else None
+            ),
+            filter_user_ids=(
+                [str(ele) for ele in user_ids] if user_ids else None
+            ),
+        )
+
+    async def _delete(
+        self, keys: list[str], values: list[Union[bool, int, str]]
+    ):
+        logger.info(
+            f"Deleting documents which match on these keys and values: ({keys}, {values})"
+        )
+
+        ids = self.providers.vector_db.delete_by_metadata(keys, values)
+        if not ids:
+            raise HTTPException(
+                status_code=404, detail="No entries found for deletion."
+            )
+        self.providers.vector_db.delete_documents_overview(ids)
+        return {"results": "Entries deleted successfully."}

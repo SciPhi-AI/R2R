@@ -31,8 +31,8 @@
   },
   "logging": {
     "provider": "local",
-    "log_table": "logs",
-    "log_info_table": "log_info"
+    "log_table": "logs_000",
+    "log_info_table": "log_info_000"
   },
   "prompt": {
     "provider": "local"

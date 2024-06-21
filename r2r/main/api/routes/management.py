@@ -6,10 +6,10 @@ from ...abstractions import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
-    R2RDocumentsInfoRequest,
+    R2RDocumentsOverviewRequest,
     R2RLogsRequest,
     R2RUpdatePromptRequest,
-    R2RUsersStatsRequest,
+    R2RUsersOverviewRequest,
 )
 from ...dependencies import get_r2r_app
 
@@ -65,15 +65,17 @@ async def get_analytics_app(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.post("/users_stats")
-async def get_users_stats_app(
-    request: R2RUsersStatsRequest, r2r=Depends(get_r2r_app)
+@router.post("/users_overview")
+async def get_users_overview_app(
+    request: R2RUsersOverviewRequest, r2r=Depends(get_r2r_app)
 ):
     try:
-        results = await r2r.ausers_stats(user_ids=request.user_ids)
+        results = await r2r.ausers_overview(user_ids=request.user_ids)
         return {"results": results}
     except Exception as e:
-        logger.error(f"get_users_stats_app(request={request}) - \n\n{str(e)})")
+        logger.error(
+            f"get_users_overview_app(request={request}) - \n\n{str(e)})"
+        )
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
@@ -87,19 +89,19 @@ async def delete_app(request: R2RDeleteRequest, r2r=Depends(get_r2r_app)):
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/documents_info")
-async def get_documents_info_app(
-    request: R2RDocumentsInfoRequest,
+@router.get("/documents_overview")
+async def get_documents_overview_app(
+    request: R2RDocumentsOverviewRequest,
     r2r=Depends(get_r2r_app),
 ):
     try:
-        results = await r2r.adocuments_info(
+        results = await r2r.adocuments_overview(
             document_ids=request.document_ids, user_ids=request.user_ids
         )
         return {"results": results}
     except Exception as e:
         logger.error(
-            f"get_documents_info_app(document_ids={request.document_ids}, user_ids={request.user_ids}) - \n\n{str(e)})"
+            f"get_documents_overview_app(document_ids={request.document_ids}, user_ids={request.user_ids}) - \n\n{str(e)})"
         )
         raise HTTPException(status_code=500, detail=str(e)) from e
 

@@ -1,6 +1,5 @@
 import asyncio
 import copy
-import json
 import logging
 import uuid
 from typing import Any, AsyncGenerator, List, Optional
@@ -83,19 +82,20 @@ class EmbeddingPipe(LoggableAsyncPipe):
                 document_id=extraction.document_id,
             )
             yield fragment
-            fragment_dict = fragment.dict()
-            await self.enqueue_log(
-                run_id=run_id,
-                key="fragment",
-                value=json.dumps(
-                    {
-                        "data": fragment_dict["data"],
-                        "document_id": str(fragment_dict["document_id"]),
-                        "extraction_id": str(fragment_dict["extraction_id"]),
-                        "fragment_id": str(fragment_dict["id"]),
-                    }
-                ),
-            )
+            # TODO - Add settings to enable fragment logging
+            # fragment_dict = fragment.dict()
+            # await self.enqueue_log(
+            #     run_id=run_id,
+            #     key="fragment",
+            #     value=json.dumps(
+            #         {
+            #             "data": fragment_dict["data"],
+            #             "document_id": str(fragment_dict["document_id"]),
+            #             "extraction_id": str(fragment_dict["extraction_id"]),
+            #             "fragment_id": str(fragment_dict["id"]),
+            #         }
+            #     ),
+            # )
             iteration += 1
 
     async def transform_fragments(
@@ -163,10 +163,12 @@ class EmbeddingPipe(LoggableAsyncPipe):
                     extraction.document_id
                 ]
 
+                version = fragment.metadata.get("version", "v0")
+
                 # Ensure fragment ID is set correctly
                 if not fragment.id:
                     fragment.id = generate_id_from_label(
-                        f"{extraction.id}-{fragment_info[extraction.document_id]}"
+                        f"{extraction.id}-{fragment_info[extraction.document_id]}-{version}"
                     )
 
                 fragment_batch.append(fragment)
