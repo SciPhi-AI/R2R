@@ -1,0 +1,98 @@
+import { Callout, FileTree } from 'nextra/components'
+
+## Multimodal RAG with R2R
+
+<Callout type="info" emoji="⚠️">
+Multimodal RAG features in R2R are still under development.
+</Callout>
+
+R2R supports ingesting images, audio, and videos. These multimodal features are implemented in the `ImageParser`, `AudioParser`, and `MovieParser`, which can be found in [`parser_impls.py`](https://github.com/SciPhi-AI/R2R/blob/main/r2r/core/parsers/parser_impls.py). Currently, these features are powered by OpenAI multimodal models, but work is ongoing to expand support to other cloud providers and to include Local LLM support.
+
+### Processing Different Modalities
+
+- **Audio Files**: Transcribed using `whisper-1`, with the resulting transcription chunked and embedded using the default pipeline settings.
+- **Image Files**: Described using `gpt-4o`, with the descriptions also chunked and embedded similarly.
+- **Video Files**: Both the transcripts and various frame slices are processed in the same manner, with each being chunked and embedded using the default pipeline settings.
+
+## Ingesting an Image with R2R
+
+Uploaded `png`, `jpg`, and `svg` files are supported by the `ImageParser`. While many additional types of images may be supported, we currently only include those which have been explicitly tested. One of the files ingested by the quickstart, `screen_shot.png` demonstrates this functionality.
+
+### Ingesting Quickstart Files
+
+If you have not completed the quickstart, or if your target database has been cleared, start by quickly populating it with the sample files. These example files include `.txt`, `.pdf`, `.html`, `.mp3`, and `.png` examples, and can be ingested using the command shown below:
+
+```bash filename="bash" copy
+# export OPENAI_API_KEY=...
+python -m r2r.examples.quickstart ingest_as_files
+```
+
+### Testing the Ingested Data
+
+We can readily test this ingested data by querying the following:
+
+```bash filename="bash" copy
+python -m r2r.examples.quickstart search --query="What is on the terminal?"
+```
+
+This returns the following output:
+
+```plaintext
+{
+    {
+        'text': 'The color scheme implies a dark theme with syntax highlighting enabled, making keywords, strings, and other elements easily distinguishable. The editor also includes typical coding environment features like line numbers, and it shows details of the operating system (Mac) and Python environment in the bottom corners.',
+        'title': 'screen_shot.png',
+        ...
+    },
+    {
+        'text': '**Left Sidebar:**\n- **Explorer Tab**: This section displays the file directory of the current project.\n  - The directory is named "R2R-DEV-2".\n  - It contains several folders and files:\n    - Folders:\n      - **r2r**\n      - **examples**\n      - **data**\n      - **servers** (contains a file named `__init__.py`)\n      - **integrations** (contains a file named `llms`)\n      - **main**\n        - **pipes** (contains subfolders and files, one of which is focused on, "default")',
+        'title': 'screen_shot.png',
+        ...
+    },
+    {
+        'text': '- This section defines a dictionary `AVAILABLE_PARSERS` mapping various document types (such as CSV, DOCX, HTML, JSON, etc.) to their respective parser classes.\n  \nThe editor's interface shows that three other tabs are opened alongside `parsing.py`: `config.json`, `dry_run.py`, and `test.pptx`.\n\n**Top Bar and Status Bar:**\n- The top bar contains typical window controls for maximizing, minimizing, and closing the window.',
+        'title': 'screen_shot.png',
+        ...
+    },
+}
+```
+
+We see that the top results for this search are rich text snippets that correspond to the LLM-based translation of the input `screen_shot.png`, which shows a developer coding.
+
+## Ingesting Audio Files with R2R
+
+Uploaded `mp3` files are supported by the `AudioParser`. While many additional types of audio files may be supported, we currently only include those which have been explicitly tested. Two of the files ingested by the quickstart exemplify this functionality. One of these files was taken from the Blizzard 2013 dataset and contains the phrase: "My dear Fanny, you feel these things a great deal too much. I am most happy that you like the chain."
+
+We can test this ingestion as follows:
+
+```bash filename="bash" copy
+poetry run python -m r2r.examples.quickstart search --query="What does Fanny like?"
+```
+
+This returns the following output:
+
+```plaintext
+{
+    {
+        'text': 'My dear Fanny, you feel these things a great deal too much. I am most happy that you like the chain.',
+        'title': 'sample2.mp3',
+        ...
+    },
+}
+```
+
+This shows that the `.mp3` file was transcribed and ingested correctly and is accessible via search.
+
+
+## Ingesting Movie Files with R2R
+
+Movie files are also supported by R2R, though this feature is still experimental. In the coming week(s) we will add more information here that illustrates how to use these features.
+
+
+### Summary
+
+R2R's multimodal RAG capabilities allow for the ingestion and processing of diverse data types, including images, audio, and video files. These features leverage advanced models like `whisper-1` for audio transcription and `gpt-4o` for image descriptions, ensuring that each modality is effectively chunked and embedded for optimal search and retrieval.
+
+Through the demo files, users can experience how different types of data are ingested and queried within the R2R answer engine. The examples provided demonstrate the seamless handling of `.png` images and `.mp3` audio files, showcasing the rich, contextually relevant search results that R2R can generate.
+
+While the support for movie files is still experimental, R2R is continuously evolving to include more robust features and support for additional data types. Your feedback is invaluable in this development process, and we encourage you to explore these capabilities and share your experiences.

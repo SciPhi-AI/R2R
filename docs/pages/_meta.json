@@ -3,19 +3,13 @@
   "getting-started": {
     "title": "Getting Started"
   },
-  "core-features": {
-    "title": "Core Features"
+  "cookbooks": {
+    "title": "Cookbooks"
   },
-  "integrations": {
-    "title": "Integrations"
+  "deep-dive": {
+    "title": "Deep Dive"
   },
-  "examples": {
-    "title": "Examples"
-  },  
-  "startups-enterprise": {
-    "title": "Startups & Enterprise"
-  },
-  "knowledge-base": {
-    "title": "Knowledge Base"
+  "providers": {
+    "title": "Providers"
   }
 }

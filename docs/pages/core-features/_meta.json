@@ -1,9 +1,0 @@
-{
-  "ingestion": "Ingestion Pipeline",
-  "embedding": "Embedding Pipeline",
-  "rag": "Rag Pipeline",
-  "eval": "Evaluation Pipeline",
-  "config": "Config setup",
-  "app": "Application",
-  "factory": "Factory"
-}

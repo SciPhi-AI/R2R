@@ -1,32 +1,40 @@
-# Build, deploy and optimize RAG systems
+import GithubButtons from '../components/GithubButtons';
+
+# Welcome to R2R
 
 ![r2r](./r2r.png)
-R2R, short for from `RAG to Riches`, is a Python framework designed for the rapid development production-ready Retrieval-Augmented Generation (RAG) systems.
 
-## Why did we build this framework?
+<GithubButtons />
 
-R2R was conceived to bridge the gap between ad-hoc RAG implementations and robust, production-ready and scaleable solutions.
+R2R (RAG to Riches) is the ultimate open-source AI powered answer engine. Designed to bridge the gap between local LLM experimentation and scalable, production-ready applications, R2R provides a comprehensive, feature-rich starting point for developers.
 
 ## Key Features
 
-- **🚀 Rapid Deployment**: Facilitates a smooth setup and development of production-ready RAG systems.
-- **⚖️ Flexible Standarization**: `Ingestion`, `Embedding`, `RAG`, and `Evaluation` with proper `Observability`.
-- **🧩 Easy to modify**: Provides a structure that can be extended to deploy your own custom pipelines.
-- **📦 Versioning**: Ensures your work remains reproducible and traceable through version control.
-- **🔌 Extensibility**: Enables a quick and robust integration with various VectorDBs, LLMs and Embeddings Models.
-- **🤖 OSS Driven**: Built for and by the OSS community, to help startups and enterprises to quickly build with RAG.
-- **📝 Cloud Solution**: Serverless cloud deployment available through [SciPhi](https://app.sciphi.ai).
+- **📁 Multimodal Support**: Ingest files ranging from `.txt`, `.pdf`, `.json` to `.png`, `.mp3`, and more.
+- **🔍 Hybrid Search**: Combine semantic and keyword search with reciprocal rank fusion for enhanced relevancy.
+- **🔗 Graph RAG**: Automatically extract relationships and build knowledge graphs.
+- **🗂️ App Management**: Efficiently manage documents and users with rich observability and analytics.
+- **🌐 Client-Server**: RESTful API support out of the box.
+- **🧩 Configurable**: Provision your application using intuitive configuration files.
+- **🔌 Extensible**: Develop your application further with easy builder + factory pattern.
+- **🖥️ Dashboard**: Use the [R2R Dashboard](https://github.com/SciPhi-AI/R2R-Dashboard), an open-source React+Next.js app for a user-friendly interaction with your pipelines.
 
+## Quickstart
+The [R2R Quickstart](/getting-started/quickstart) provides a step-by-step guide to get up and running with R2R in minutes. The guide demonstrates R2R's Retrieval-Augmented Generation (RAG) system by ingesting sample documents and then showcasing features for search, RAG, logging, analytics, and document management.
 ## Getting Started
 
-To get started with R2R, we recommend setting up the framework and following an initial example.
+To get started with R2R, we recommend starting with the quickstart and then moving on to specific cookbooks.
 
 - [Quick Install](/getting-started/quick-install): Quick setup using `pip`.
-- [Full Install](/getting-started/full-install): A more detailed step-by-step setup aimed at complete environment configuration.
-- [Basic example](/examples/basic-example): A basic example to get you started with R2R with a RAG pipeline in a server and a client to interact with it.
+- [R2R Quickstart](/getting-started/quickstart): T quickstart designed to get you familiarized with R2R.
+- [Client-Server](/cookbooks/client-server): An extension of the basic `R2R Quickstart` with client-server interactions.
+- [Local RAG](/cookbooks/local-rag): A quick cookbook demonstration of how to run R2R with local LLMs.
+- [Hybrid Search](/cookbooks/hybrid-search): A brief introduction to running hybrid search with R2R.
+- [Reranking](/cookbooks/rerank-search): A short guide on how to apply reranking to R2R results.
+- [GraphRAG](https://r2r-docs.sciphi.ai/cookbooks/knowledge-graph): A walkthrough of automatic knowledge graph generation with R2R.
+- [Dashboard](https://r2r-docs.sciphi.ai/cookbooks/dashboard): A how-to guide on connecting with the R2R Dashboard.
+- [SciPhi Cloud Docs](https://docs.sciphi.ai/): SciPhi Cloud documentation.
 
 ## Community
 
-[Joining our Discord server](https://discord.gg/p6KqD2kjtB) is the fastest way to get support and connect with both the R2R team and other developers in the community.
-Whether you're encountering issues, looking for advice on best practices, or just want to share your experiences, we're here to help.
-Don't hesitate to ask questions and engage with us; we're keen to support each other in building amazing RAG systems.
+[Join our Discord server](https://discord.gg/p6KqD2kjtB) to get support and connect with both the R2R team and other developers in the community. Whether you're encountering issues, looking for advice on best practices, or just want to share your experiences, we're here to help.

@@ -1,0 +1,85 @@
+# LLM Provider Configuration Guide
+
+R2R supports multiple Language Model (LLM) providers, allowing users to easily switch between different models and providers based on their requirements. The framework provides an abstract base class `LLMProvider` that defines a common interface for interacting with LLMs, ensuring consistency and flexibility.
+
+## Supported LLM Providers
+
+R2R currently supports the following LLM providers:
+
+- OpenAI
+- LiteLLM (default)
+  - OpenAI
+  - Anthropic
+  - Vertex AI
+  - HuggingFace
+  - Azure OpenAI
+  - Ollama
+  - Together AI
+  - Openrouter
+
+
+## Toggling Between LLM Providers
+
+R2R uses a factory pattern to create instances of LLM providers based on the provided configuration. The `E2EPipelineFactory` class is responsible for creating the appropriate LLM provider instance using the `get_llm` method.
+
+To toggle between different LLM providers, you need to update the `completions` section of the configuration file (`config.json`). For example:
+
+```json
+"completions": {
+    "provider": "litellm",
+}
+```
+
+By changing the `provider` value to `"openai"` or `"litellm"`, you can switch between the supported LLM providers.
+
+
+## LiteLLM Provider (Default)
+
+The `LiteLLM` class is the default implementation of the `LLMProvider` that integrates with various LLM providers through the LiteLLM library. LiteLLM provides a unified interface to interact with different LLMs using a consistent API.
+
+Key features of the `LiteLLM` implementation:
+
+- Supports multiple LLM providers, including OpenAI, Anthropic, Vertex AI, HuggingFace, Azure OpenAI, Ollama, Together AI, and Openrouter.
+- Allows switching between different LLMs by setting the appropriate environment variables and specifying the desired model.
+- Provides automatic prompt template translation for certain providers (e.g., Together AI's Llama2 variants).
+- Supports registering custom prompt templates for specific models.
+
+To use the LiteLLM provider with a specific LLM provider, you need to set the appropriate environment variables. Here are some examples:
+
+- OpenAI:
+  - Set the `OPENAI_API_KEY` environment variable with your OpenAI API key.
+- Anthropic:
+  - Set the `ANTHROPIC_API_KEY` environment variable with your Anthropic API key.
+- Together AI:
+  - Set the `TOGETHERAI_API_KEY` environment variable with your Together AI API key.
+- Ollama:
+  - Ensure that your Ollama server is running and accessible.
+
+Refer to the LiteLLM documentation for detailed instructions on setting up each provider.
+
+## OpenAI Provider
+
+The `OpenAILLM` class is an implementation of the `LLMProvider` that integrates with the OpenAI API for generating completions.
+
+Key features of the `OpenAILLM` implementation:
+
+- Initializes the OpenAI client using the provided API key.
+- Supports both non-streaming and streaming completions.
+- Allows passing additional arguments to the OpenAI API.
+
+To use the OpenAI provider, you need to set the `OPENAI_API_KEY` environment variable with your OpenAI API key.
+
+
+## Configuring Remote LLM Providers
+
+To configure a specific LLM provider, you need to set the appropriate environment variables and update the `completions` section of the configuration file (`config.json`).
+
+### OpenAI
+
+- Set the `OPENAI_API_KEY` environment variable with your OpenAI API key.
+
+### LiteLLM
+
+- Set the appropriate environment variables for the desired LLM provider, as mentioned in the previous section.
+
+Make sure to update the `completions` section of the configuration file (`config.json`) with the desired provider and any additional provider-specific settings.

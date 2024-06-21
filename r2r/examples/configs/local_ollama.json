@@ -1,0 +1,22 @@
+{
+  "embedding": {
+    "provider": "sentence-transformers",
+    "base_model": "all-MiniLM-L6-v2",
+    "base_dimension": 384,
+    "batch_size": 32
+  },
+  "eval": {
+    "provider": "None"
+  },
+  "ingestion":{
+    "excluded_parsers": {
+      "gif": "default",
+      "jpeg": "default",
+      "jpg": "default",
+      "png": "default",
+      "svg": "default",
+      "mp3": "default",
+      "mp4": "default"
+    }
+  }
+}

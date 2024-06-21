@@ -1,0 +1,143 @@
+import { Callout, FileTree } from 'nextra/components'
+
+## Running Hybrid Search with R2R
+
+Hybrid search combines full-text and semantic search to deliver more comprehensive and relevant results. This technique leverages the strengths of traditional keyword-based searching and modern vector embeddings' contextual understanding. In R2R, hybrid search is implemented using SQL functions and vector operations, enabling efficient and accurate searches over large datasets.
+
+### Running with Postgres + pgvector
+
+This guide assumes R2R is already installed and the basic quickstart [located here](/getting-started/quickstart) has been completed.
+
+
+<details>
+<summary>pgvector configuration</summary>
+
+
+By default, R2R ships with hybrid search enabled when using PostgreSQL and pgvector as the vector database provider. To run R2R with Postgres, override the default `config.json` with settings like those shown below:
+
+```json filename="pgvector.json"
+{
+  "vector_database": {
+    "provider": "pgvector",
+    "collection_name": "vecs"
+  }
+}
+```
+
+These settings are provided by default in the config file located at `/examples/configs/pgvector.json`. In addition to selecting Postgres as a provider, set the following five Postgres-related environment variables to launch the R2R application with these settings. Execute the bash command shown below with the correct information:
+
+</details>
+
+<Callout>
+This cookbook assumes the Postgres `vector` extension enabling `pgvector` is already installed. If not, the server will fail when attempting to run.
+</Callout>
+
+
+```bash filename="bash" copy
+export POSTGRES_USER=MY_USER
+export POSTGRES_PASSWORD=MY_PASSWORD
+export POSTGRES_HOST=MY_HOST
+export POSTGRES_PORT=MY_PORT
+export POSTGRES_DBNAME=MY_DB
+export OPENAI_API_KEY=MY_API_KEY
+```
+
+### Executing a basic search
+
+If the target postgres database is empty, quickly populate it with sample files, which include `.txt`, `.pdf`, `.html`, and `.png` examples, using the command shown below. The `client_server_mode` flag specifies communication with an R2R server with the default URL of `http://localhost:8000`. To replicate the exact results shown below, these commands must be run in order on a clean database.
+
+```bash filename="bash" copy
+python -m r2r.examples.quickstart ingest_as_files --config_name=pgvector
+```
+
+Once the files are populated, run a search with the following command:
+
+```bash filename="bash" copy
+python -m r2r.examples.quickstart search --query="What is a fierce nerd?" --config_name=pgvector
+```
+
+```plaintext
+{
+  'id': '316a6231-0b7a-50e6-9efb-dfd5e5e28188',
+  'score': 0.833503176778746,
+  'metadata': {
+    'text': 'Fierce Nerds',
+    'title': '/Users/ocolegrove/SciPhi/demo/R2R/r2r/examples/data/pg_essay_2.html',
+    'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3',
+    'version': 'v0',
+    'document_id': 'fab36a79-1d7a-5377-ba40-0c8d3e0a90d2',
+    'extraction_id': '2c06a97b-91a9-53c0-bb3d-9831325fcffb',
+    'associatedQuery': 'What is a fierce nerd?'
+  }
+},
+{
+  ...
+  'text': 'to be fierce.\n[1]There's also a natural connection between nerdiness and\nindependent-mindedness. It's hard to be \nindependent-minded without\nbeing somewhat socially awkward, because conventional beliefs are\nso often mistaken, or at least arbitrary. No one who was both\nindependent-minded and ambitious would want to waste the effort it\ntakes to fit in. And the independent-mindedness of the fierce nerds\nwill obviously be of the aggressive \nrather than the passive type:'
+},
+{
+  ...
+  'text': 'in taking the results personally.Fierce nerds also tend to be somewhat overconfident, especially\nwhen young. It might seem like it would be a disadvantage to be\nmistaken about one's abilities, but empirically it isn't. Up to a\npoint, confidence is a self-fulfilling prophecy.Another quality you find in most fierce nerds is intelligence. Not\nall nerds are smart, but the fierce ones are always at least\nmoderately so. If they weren't, they wouldn't have the confidence\nto be fierce.'
+}
+{
+  ...
+  'text': 'situations. In fact some nerds are quite fierce.The fierce nerds are a small but interesting group. They are as a\nrule extremely competitive — more competitive, I'd say, than highly\ncompetitive non-nerds. Competition is more personal for them. Partly\nperhaps because they're not emotionally mature enough to distance\nthemselves from it, but also because there's less randomness in the\nkinds of competition they engage in, and they are thus more justified'
+},
+{
+  ...
+  'text': 'To be a nerd is to be socially awkward, and there are two\ndistinct ways to do that: to be playing the same game as everyone\nelse, but badly, and to be playing a different game. The smart nerds\nare the latter type.[2]\nThe same qualities that make fierce nerds so effective can\nalso make them very annoying. Fierce nerds would do well to remember\nthis, and (a) try to keep a lid on it, and (b) seek out organizations\nand types of work where getting the right answer matters more than'
+}
+```
+
+
+### Executing a hybrid search
+
+Executing a hybrid search is as simple as passing the correct flag to the REST application. To do so, run with the command below:
+
+```python filename="bash" copy
+python -m r2r.examples.quickstart search --query="What is a fierce nerd?" --config_name=pgvector  --do_hybrid_search
+```
+
+```plaintext
+{
+  ...
+  'text': 'in taking the results personally.Fierce nerds also tend to be somewhat overconfident, especially\nwhen young. It might seem like it would be a disadvantage to be\nmistaken about one's abilities, but empirically it isn't. Up to a\npoint, confidence is a self-fullfilling prophecy.Another quality you find in most fierce nerds is intelligence. Not\nall nerds are smart, but the fierce ones are always at least\nmoderately so. If they weren't, they wouldn't have the confidence\nto be fierce.'
+},
+{
+  ...
+  'text': 'over a certain size without being fierce, so now that nerds can win\nat business, fierce nerds will increasingly monopolize the really\nbig successes.The bad news is that if it's not exercised, your fierceness will\nturn to bitterness, and you will become an intellectual playground\nbully: the grumpy sysadmin, the forum troll, the \nhater, the shooter\ndown of new ideas.How do you avoid this fate? Work on ambitious projects. If you\nsucceed, it will bring you a kind of satisfaction that neutralizes'
+},
+{
+  ...
+  'text': 'nerds have traditionally solved. As the world progresses, the number\nof things you can win at by getting the right answer increases.\nRecently getting rich became \none of them: 7 of the 8 richest people\nin America are now fierce nerds.Indeed, being a fierce nerd is probably even more helpful in business\nthan in nerds' original territory of scholarship. Fierceness seems\noptional there. Darwin for example doesn't seem to have been\nespecially fierce. Whereas it's impossible to be the CEO of a company'
+},
+{
+  ...
+  'text': 'To be a nerd is to be socially awkward, and there are two\ndistinct ways to do that: to be playing the same game as everyone\nelse, but badly, and to be playing a different game. The smart nerds\nare the latter type.[2]\nThe same qualities that make fierce nerds so effective can\nalso make them very annoying. Fierce nerds would do well to remember\nthis, and (a) try to keep a lid on it, and (b) seek out organizations\nand types of work where getting the right answer matters more than'
+},
+{
+  ...
+  'text': 'Fierce Nerds'
+}
+```
+
+### Summary
+
+The qualitative difference between the outputs of the basic search and the hybrid search lies in the depth and relevance of the results. The basic search primarily returns keyword-based matches, which can sometimes introduce biases, such as the up-weighting of specific terms like 'Fierce Nerds'. Hybrid search, on the other hand, integrates both keyword and semantic understanding, resulting in more contextually accurate and comprehensive results. This approach leverages the strengths of empirical keyword techniques refined over decades and the nuanced understanding provided by modern semantic methods, making it particularly powerful for complex queries.
+
+
+### Extra - Explanation of the Hybrid Search Implementation
+The hybrid search algorithm R2R implements in PostgreSQL combines the results of traditional keyword searches and semantic searches using Reciprocal Rank Fusion (RRF). The process starts with two separate searches: a full-text search using ts_rank and websearch_to_tsquery, and a semantic search based on vector embeddings. Each document is ranked within its respective search method.
+
+1. **Full-Text Search**:
+   - Documents are ranked based on the relevance of their text to the query using PostgreSQL's full-text search capabilities.
+   - This involves creating a ranking index (`rank_ix`) for documents that match the search query text.
+
+2. **Semantic Search**:
+   - Documents are ranked based on their vector similarity to the query vector.
+   - A ranking index (`rank_ix`) is created based on the distance between document vectors and the query vector.
+
+3. **Combining Results with RRF**:
+   - The algorithm merges the results of the full-text and semantic searches.
+   - Using RRF, each document's final score is calculated by combining its reciprocal rank positions from both search methods.
+   - The formula used is: `COALESCE(1.0 / (rrf_k + full_text.rank_ix), 0.0) * full_text_weight + COALESCE(1.0 / (rrf_k + semantic.rank_ix), 0.0) * semantic_weight`.
+   - This combined score ensures that the final results are influenced by both the keyword relevance and the semantic similarity, providing a balanced and comprehensive search outcome.

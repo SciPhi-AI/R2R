@@ -1,0 +1,492 @@
+import { Callout, FileTree } from 'nextra/components';
+
+
+## Knowledge Graphs with R2R
+
+<Callout type="info" emoji="⚠️">
+   Knowledge graph features in R2R are still under development.
+</Callout>
+
+This cookbook explains how to configure R2R to automatically construct a knowledge graph from ingested files. The constructed graph will then be used in downstream RAG pipelines as an additional knowledge base in your R2R application.
+
+
+### Setup
+
+<details>
+<summary>Optional - Explaining R2R Configuration</summary>
+
+
+To enable R2R knowledge graph construction, you must specify a provider for `kg` in your R2R `config.json`. The following code can be found in `r2r/examples/configs/neo4j_kg.json` and contains the necessary settings for RAG graph construction:
+
+```json filename="neo4j_kg.json" copy
+{
+  "kg": {
+    "provider": "neo4j",
+    "batch_size": 1,
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 1024,
+      "chunk_overlap": 0
+    }
+  }
+}
+```
+
+After selecting a knowledge graph provider, the default R2R `IngestionPipeline` will simultaneously construct a knowledge graph and vector search engine during ingestion. Setting `batch_size=1` restricts the system such that one LLM call is processed at a time, and setting `chunk_size=1024` defines the size of chunks used during extraction. The key logic behind the knowledge graph pipeline is contained in the `kg_pipe.py` and `kg_storage.py` which are constructed by the `R2RPipelineFactory` class.
+
+</details>
+
+
+R2R uses Neo4j as the primary knowledge graph provider. Follow [these instructions](https://neo4j.com/docs/operations-manual/current/installation/) if you would lke to setup a Neo4j database locally. Ensure that your Neo4j database is running with version `>=5.13.0` with `APOC` installed. After setup, set the relevant environment variables as shown (or modify them accordingly):
+
+```bash filename="User Terminal"
+pip install 'r2r[kg]'
+export NEO4J_USER=neo4j
+export NEO4J_PASSWORD=password
+export NEO4J_URL=bolt://localhost:7687
+export NEO4J_DATABASE=neo4j
+export OPENAI_API_KEY=...
+```
+
+### Basic Example
+
+#### Construction
+
+We are now ready to construct an example knowledge graph. Execute the script below to ingest two sample documents and perform automatic knowledge graph construction.
+
+
+```bash filename="User Terminal" copy
+python -m r2r.examples.scripts.basic_kg_cookbook
+```
+
+The script executed above is straightforward in its construction. It builds an R2R from the Neo4j configuration file and runs ingest_documents on two simple hypothetical documents containing information about John, Paul, Google, and Microsoft. Let's look at the code relevant to building the knowledge graph:
+
+
+```python filename="r2r/examples/scripts/basic_kg_cookbook.py" copy
+from r2r import R2RAppBuilder, Document
+
+if __name__ == "__main__":
+    r2r_app = R2RAppBuilder(from_config="neo4j_kg").build()
+
+    r2r_app.ingest_documents(
+        [
+            Document(
+                type="txt",
+                data="John is a person that works at Google.",
+                # Metadata is optional
+                metadata={
+                    "title": "KG Document 1",
+                    "user_id": "063edaf8-3e63-4cb9-a4d6-a855f36376c3",
+                },
+            ),
+            Document(
+                type="txt",
+                data="Paul is a person that works at Microsoft that knows John.",
+                # Metadata is optional
+                metadata={
+                    "title": "KG Document 2",
+                    "user_id": "063edaf8-3e63-4cb9-a4d6-a855f36376c3",
+                },
+            ),
+        ]
+    )
+```
+
+#### Navigation
+When running R2R with knowledge graphs enabled, ingested documents and files will automatically have named entities and relationships extracted and stored. The basic cookbook script we executed at the start included code to help us inspect the graph that was built:
+
+```python filename="r2r/examples/scripts/basic_kg_cookbook.py" copy
+    # Get the KG provider
+    neo4j_kg = r2r_app.providers.kg
+
+    # The expected entities
+    entity_names = ["John", "Paul", "Google", "Microsoft"]
+
+    print("\nEntities:")
+    for entity in entity_names:
+        print(f"Locating {entity}:\n", neo4j_kg.get(properties={"name": entity}))
+
+    relationships = neo4j_kg.get_triplets(entity_names=entity_names)
+
+    print("\nRelationships:")
+    for triplet in relationships:
+        source, relation, target = triplet
+        print(f"{source} -[{relation.label}]-> {target} ")
+
+```
+
+When executed it results in the following output:
+
+```bash filename="Local Terminal"
+...
+r2r.pipes.parsing_pipe - INFO - Parsed document with id=80df8bad-e4b3-430a-9d39-fa59cee66430, title=None, user_id=None, metadata={'title': None} into 1 extractions in t=0.00 seconds. - 2024-06-14 11:01:14,635
+r2r.pipes.parsing_pipe - INFO - Parsed document with id=be7e65ee-1b02-452d-8ed5-4fcbe3998496, title=None, user_id=None, metadata={'title': None} into 1 extractions in t=0.00 seconds. - 2024-06-14 11:01:14,635
+r2r.pipes.embedding_pipe - INFO - Fragmented the input document ids into counts as shown: {UUID('80df8bad-e4b3-430a-9d39-fa59cee66430'): 1, UUID('be7e65ee-1b02-452d-8ed5-4fcbe3998496'): 1} - 2024-06-14 11:01:14,647
+r2r.pipes.kg_pipe - INFO - Fragmented the input document ids into counts as shown: {UUID('80df8bad-e4b3-430a-9d39-fa59cee66430'): 1, UUID('be7e65ee-1b02-452d-8ed5-4fcbe3998496'): 1} - 2024-06-14 11:01:14,647
+
+Entities:
+Locating John:
+ [EntityNode(label='person', embedding=None, properties={'name': 'John'}, name='John')]
+Locating Paul:
+ [EntityNode(label='person', embedding=None, properties={'name': 'Paul'}, name='Paul')]
+Locating Google:
+ [EntityNode(label='company', embedding=None, properties={'name': 'Google'}, name='Google')]
+Locating Microsoft:
+ [EntityNode(label='company', embedding=None, properties={'name': 'Microsoft'}, name='Microsoft')]
+
+Relationships:
+John -[HAS_EMPLOYER]-> Google
+Paul -[KNOWS]-> John
+Paul -[WORKS_AT]-> Microsoft
+```
+
+
+By default, the knowledge graph construction occurs concurrently with document chunking and embedding. Moreover, extracted knowledge graph nodes include embeddings to allow for semantic search over the knowledge graph.
+
+
+```python filename="r2r/examples/scripts/basic_kg_cookbook.py" copy
+# Search the vector database
+vector_search_results = r2r_app.search(query="Who is john")
+print('\nVector Search Results:\n', vector_search_results)
+
+# Semantic search over the knowledge graph
+from r2r.core import VectorStoreQuery
+node_search_result = neo4j_kg.vector_query(
+    VectorStoreQuery(
+        query_embedding=r2r_app.providers.embedding.get_embedding("A person"),
+    )
+)
+print('\nNode Search Result:', node_search_result)
+
+# Structured query
+structured_query = """
+MATCH (p1:person)-[:KNOWS]->(p2:person)
+RETURN p1.name AS Person1, p2.name AS Person2
+ORDER BY p1.name
+LIMIT 10;
+"""
+print("\nExecuting query:\n", structured_query)
+structured_result = neo4j_kg.structured_query(structured_query)
+print("Structured Query Results:\n", structured_result)
+```
+
+```bash filename="Local Terminal"
+Vector Search Results:
+{
+    'results': [
+        {
+            'id': UUID('6661944c-cf52-51e3-904a-e0795ad78c2c'),
+            'score': 0.684847530035599,
+            'metadata': {
+                'document_id': '7d22aea3-abb5-4ccd-a64a-8321ec1c2296',
+                'extraction_id': '4a993741-aceb-5736-816a-45bc12364390',
+                'text': 'John is a person that works at Google.',
+                'title': None,
+                'version': 'v0',
+                'chunk_order': 1,
+                'associatedQuery': 'Who is john'
+            }
+        },
+        ...
+    ]
+}
+
+Node Search Result: ([EntityNode(label='person', embedding=None, properties={}, name='Paul')], [0.6374393105506897])
+
+Executing query:
+
+    MATCH (p1:person)-[:KNOWS]->(p2:person)
+    RETURN p1.name AS Person1, p2.name AS Person2
+    ORDER BY p1.name
+    LIMIT 10;
+
+Structured Query Results:
+ [{'Person1': 'Paul', 'Person2': 'John'}]
+```
+
+#### Visualization
+
+We use the Neo4j browser to visualize the basic graph that has been produced by this process.
+
+<figure>
+  <img src="/simple_graph.png" alt="Simple Relationships"/>
+  <figcaption>Figure 1: Showing the simple graph that has been constructed.</figcaption>
+</figure>
+
+
+### Advanced Example
+
+#### Customize Entities and Relations
+
+We are now ready to move on to a more advanced example which showcases how R2R performs on a real-world dataset. For this example, we will be ingesting startup company information from the YC company directory. For this example, we will explicitly define entity types and relations to be extracted, R2R is designed to handle this readily and this results in improved results.
+
+```python filename="r2r/examples/scripts/advanced_kg_cookbook.py"
+from r2r import (
+    Document,
+    EntityType,
+    GenerationConfig,
+    Pipeline,
+    R2RAppBuilder,
+    KGAgentSearchPipe,
+    Relation,
+    run_pipeline,
+)
+...
+
+def main(max_entries=50, delete=False):
+    # Load the R2R configuration and build the app
+    r2r_app = R2RAppBuilder(from_config="neo4j_kg").build()
+
+    # Specify the entity types for the KG extraction prompt
+    entity_types = [
+        EntityType(
+            "ORGANIZATION",
+            subcategories=["COMPANY", "SCHOOL", "NON-PROFIT", "OTHER"],
+        ),
+        EntityType(
+            "LOCATION",
+            subcategories=["CITY", "STATE", "COUNTRY", "OTHER"]
+        ),
+        EntityType("PERSON"),
+        EntityType("POSITION"),
+        EntityType(
+            "DATE",
+            subcategories=[
+                "YEAR",
+                "MONTH",
+                "DAY",
+                "BATCH (E.G. W24, S20)",
+                "OTHER",
+            ],
+        ),
+        EntityType("QUANTITY"),
+        EntityType(
+            "EVENT",
+            subcategories=[
+                "INCORPORATION",
+                "FUNDING_ROUND",
+                "ACQUISITION",
+                "LAUNCH",
+                "OTHER",
+            ],
+        ),
+        EntityType("INDUSTRY"),
+        EntityType(
+            "MEDIA",
+            subcategories=["EMAIL", "WEBSITE", "TWITTER", "LINKEDIN", "OTHER"],
+        ),
+        EntityType("PRODUCT"),
+    ]
+
+    # Specify the relations for the KG construction
+    relations = [
+        # Founder Relations
+        Relation("EDUCATED_AT"),
+        Relation("WORKED_AT"),
+        Relation("FOUNDED"),
+        # Company relations
+        Relation("RAISED"),
+        Relation("REVENUE"),
+        Relation("TEAM_SIZE"),
+        Relation("LOCATION"),
+        Relation("ACQUIRED_BY"),
+        Relation("ANNOUNCED"),
+        Relation("INDUSTRY"),
+        # Product relations
+        Relation("PRODUCT"),
+        Relation("FEATURES"),
+        Relation("USES"),
+        Relation("USED_BY"),
+        Relation("TECHNOLOGY"),
+        # Additional relations
+        Relation("HAS"),
+        Relation("AS_OF"),
+        Relation("PARTICIPATED"),
+        Relation("ASSOCIATED"),
+        Relation("GROUP_PARTNER"),
+        Relation("ALIAS"),
+    ]
+
+    # Get the prompt provider and KG provider
+    prompt_provider = r2r_app.providers.prompt
+    kg = r2r_app.providers.kg
+
+    # Update the KG extraction prompt with the specified entity types and relations
+    kg.update_extraction_prompt(prompt_provider, entity_types, relations)
+```
+
+Finally, we are ready to ingest data. The advanced cookbook script includes the necessary information to scrape and ingest up to 1,000 companies from the YC directory. We will begin by scraping a single entry:
+
+```bash copy
+python -m r2r.examples.scripts.advanced_kg_cookbook --max_entries=1
+```
+
+Running the command above will produce output like the following:
+
+```bash filename="Local Terminal"
+Joe Gebbia -[FOUNDED]-> Airbnb
+Airbnb -[LOCATION]-> San Francisco
+Airbnb -[HAS]-> 7M listings
+Airbnb -[LOCATION]-> 191+ countries
+Joe Gebbia -[WORKED_AT]-> Airbnb
+Joe Gebbia -[FOUNDED]-> Samara
+Samara -[PRODUCT]-> fully customized, factory-made homes
+Airbnb -[FOUNDED]-> August
+Airbnb -[FOUNDED]-> 2008
+Airbnb -[LOCATION]-> California
+Airbnb -[HAS]-> 33,000 cities
+Airbnb -[HAS]-> 192 countries
+Airbnb -[LOCATION]-> Dublin
+Airbnb -[LOCATION]-> London
+Airbnb -[LOCATION]-> Barcelona
+Airbnb -[LOCATION]-> Paris
+Airbnb -[LOCATION]-> Milan
+Airbnb -[LOCATION]-> Copenhagen
+Airbnb -[LOCATION]-> Berlin
+Airbnb -[LOCATION]-> Moscow
+Airbnb -[LOCATION]-> São Paolo
+Airbnb -[LOCATION]-> Sydney
+Airbnb -[LOCATION]-> Singapore
+Airbnb -[EDUCATED_AT]-> Y Combinator
+Airbnb -[PARTICIPATED]-> W09
+Airbnb -[INDUSTRY]-> marketplace
+Airbnb -[INDUSTRY]-> travel
+Airbnb -[MEDIA]-> http://airbnb.com
+Brian Chesky -[WORKED_AT]-> Airbnb
+Brian Chesky -[POSITION]-> CEO
+...
+```
+
+Once again, we can visualize the graph constructed with Neo4j, and this time we can note that the complexity is significantly greater.
+
+<br />
+
+<figure>
+  <img src="/airbnb_graph.png" alt="Airbnb Relationships"/>
+  <figcaption>Figure 2: Graph showing Airbnb relationships.</figcaption>
+</figure>
+
+
+#### Large Scale Ingestion
+
+Let's now run a much larger ingestion, executing the command below will result in several hundred calls to gpt-4o, so proceed with caution.
+
+```bash copy
+poetry run python r2r/examples/scripts/advanced_kg_cookbook.py --delete --max_entries=100
+```
+
+
+After ingesting a few companies, we can already see significant structure building into our graph.
+
+<figure>
+  <img src="/sf_graph.png" alt="SF Relationships"/>
+  <figcaption>Figure 3: Graph showing relationships around SF.</figcaption>
+</figure>
+
+
+Once ingestion has completed we will proceed to using the structured query method of the knowledge graph.
+
+```bash
+## Locating all founders
+
+Executing query:
+MATCH (p:PERSON)-[:FOUNDED]->(c)
+RETURN p.id AS Founder, c.id AS Company
+ORDER BY c.id
+LIMIT 10;
+
+Results:
+[{'Founder': 'Nathan Blecharczyk', 'Company': 'Airbnb'}, {'Founder': 'Brian Chesky', 'Company': 'Airbnb'}, {'Founder': 'Joe Gebbia', 'Company': 'Airbnb'}, {'Founder': 'Tommy Guo', 'Company': 'Airfront'}, {'Founder': 'Joanne Wang', 'Company': 'Airfront'}, {'Founder': 'Adam Tilton', 'Company': 'Aktive'}, {'Founder': 'Abraham Heifets', 'Company': 'Atomwise'}, {'Founder': 'Nicholas Charriere', 'Company': 'Axilla'}, {'Founder': 'Caitlin', 'Company': 'B2B marketing software'}, {'Founder': 'Timmy', 'Company': 'B2B marketing software'}]
+```
+
+
+```bash
+## Locating 2-time founders
+
+Executing query:
+MATCH (p:PERSON)-[:FOUNDED]->(c:ORGANIZATION)
+WITH p.id AS Person, COUNT(c) AS CompaniesCount
+RETURN Person, CompaniesCount
+ORDER BY CompaniesCount DESC
+LIMIT 10;
+
+Results:
+[{'Person': 'Ilana Nasser', 'CompaniesCount': 3}, {'Person': 'Eric', 'CompaniesCount': 2}, {'Person': 'Kris Pahuja', 'CompaniesCount': 2}, {'Person': 'Sam', 'CompaniesCount': 2}, {'Person': 'Tom Blomfield', 'CompaniesCount': 2}, {'Person': 'Umur Cubukcu', 'CompaniesCount': 2}, {'Person': 'Jason', 'CompaniesCount': 2}, {'Person': 'Joe Gebbia', 'CompaniesCount': 2}, {'Person': 'Adam Tilton', 'CompaniesCount': 2}, {'Person': 'Alex', 'CompaniesCount': 2}]
+```
+
+```bash
+### Locating companies with AI products
+
+Executing query:
+MATCH (c:ORGANIZATION)-[r:PRODUCT]->(t)
+WHERE t.id CONTAINS 'AI'
+RETURN DISTINCT c.id AS Company, t.id AS Product
+ORDER BY c.id
+LIMIT 10;
+
+Results:
+[{'Company': 'AgentsForce', 'Product': 'AI support agents'}, {'Company': 'Airfront', 'Product': 'AI-first email platform'}, {'Company': 'Airfront', 'Product': 'AI-first email platform with built-in automations'}, {'Company': 'Airfront', 'Product': 'AI automation platform'}, {'Company': 'Axflow', 'Product': 'AI app'}, {'Company': 'Clarum', 'Product': 'AI-powered due diligence solutions'}, {'Company': 'Clarum', 'Product': 'AI-powered due diligence'}, {'Company': 'CommodityAI', 'Product': 'AI-automation platform'}, {'Company': 'Dawn', 'Product': 'Analytics for AI products'}, {'Company': 'Decipher', 'Product': 'AI-powered user impact summaries'}]```
+```
+
+```bash
+## Locating AI founders with optional info
+
+Executing query:
+MATCH (p:PERSON)-[:FOUNDED]->(c:ORGANIZATION)-[:INDUSTRY]->(i:INDUSTRY)
+WHERE i.id CONTAINS 'saas'
+OPTIONAL MATCH (p)-[:EDUCATED_AT]->(s:ORGANIZATION)
+OPTIONAL MATCH (p)-[:WORKED_AT]->(r:ORGANIZATION)
+OPTIONAL MATCH (c)-[:PRODUCT]->(t:PRODUCT)
+RETURN p.id AS Founder, c.id AS Company, collect(DISTINCT i.id) AS Industries, collect(DISTINCT t.id) AS Products, collect(DISTINCT s.id) AS Schools, collect(DISTINCT r.id) AS Companies
+ORDER BY p.id
+LIMIT 10;
+
+Results:
+[{'Founder': 'Abdullah Al Zandani', 'Company': 'Coperniq', 'Industries': ['saas'], 'Products': ['workflow software', 'Workflow software'], 'Schools': [], 'Companies': ['two solar companies', 'ADM']}, {'Founder': 'Akshit Khurana', 'Company': 'Narrative', 'Industries': ['saas'], 'Products': [], 'Schools': [], 'Companies': ['Ginger.io', 'Housecanary', 'Pytorch', 'Meta', 'SlideShare', 'Ambient AI', 'LinkedIn']}, {'Founder': 'Alan', 'Company': 'Health Harbor', 'Industries': ['saas'], 'Products': ['Automated billing for private medical practices', 'billing'], 'Schools': ['Yale'], 'Companies': ['Nuro', 'Meta']}, {'Founder': 'Daiyi Yang', 'Company': 'Empower', 'Industries': ['saas'], 'Products': ['Empower-Functions', 'LLMs'], 'Schools': [], 'Companies': ['Meta', 'Revinate']}, {'Founder': 'Dani Penev', 'Company': 'Slicker', 'Industries': ['saas'], 'Products': ['AI-powered payments platform', 'payments integration'], 'Schools': [], 'Companies': ['Thought Machine', 'Stripe']}, {'Founder': 'David Hua', 'Company': 'Meadow', 'Industries': ['saas'], 'Products': [], 'Schools': [], 'Companies': []}, {'Founder': 'Hansen Qian', 'Company': 'Lightski', 'Industries': ['saas'], 'Products': ['User-facing analytics', 'Lightski AI Data Scientist', 'embedded data analytics', 'analytics experience', 'AI Data Scientist', 'Lightski'], 'Schools': [], 'Companies': ['Affinity CRM']}, {'Founder': 'Ivan Valkov', 'Company': 'Slicker', 'Industries': ['saas'], 'Products': ['AI-powered payments platform', 'payments integration'], 'Schools': [], 'Companies': []}, {'Founder': 'Jacob', 'Company': 'IcePanel', 'Industries': ['saas'], 'Products': ['collaborative modelling tool', 'relationships', 'Dynamic flows', 'diagrams', 'IcePanel objects', 'C4 model', 'single source of truth', 'Levelled diagramming', 'software architecture', 'reusable objects', 'SaaS tool'], 'Schools': [], 'Companies': []}, {'Founder': 'Jean-Michael Diei', 'Company': 'PropRise', 'Industries': ['saas'], 'Products': ['Beacon', 'Beacon by PropRise'], 'Schools': [], 'Companies': []}]
+```
+
+### Knowledge Graph agents
+
+<Callout type="info" emoji="⚠️">
+   The KGAgent has not yet been fully integrated into R2R, the code below is a preview that runs on R2R's main branch.
+</Callout>
+
+
+Finally, we are in a position to automatically answer difficult to manage queries with a knowledge agent. The snippet below injects our custom schema into a generic few-shot prompt and uses gpt-4o to create a relevant query
+
+```python filename="r2r/examples/scripts/advanced_kg_cookbook.py"
+    kg_agent_search_pipe = KGAgentSearchPipe(
+        r2r_app.providers.kg, r2r_app.providers.llm, r2r_app.providers.prompt
+    )
+
+    # Define the pipeline
+    kg_pipe = Pipeline()
+    kg_pipe.add_pipe(kg_agent_search_pipe)
+
+    kg.update_agent_prompt(prompt_provider, entity_types, relations)
+
+    import asyncio
+
+    def restart_event_loop():
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        return loop
+
+    restart_event_loop()
+
+    agent_result = run_pipeline(
+        kg_pipe,
+        "Find up to 10 founders that worked at Google",
+        rag_generation_config=GenerationConfig(model="gpt-4o"),
+    )
+
+    print(agent_result)
+
+```
+
+
+```bash filename="User Terminal"
+[[{'Founder': 'Kris Pahuja', 'Organization': 'Piramidal'}, {'Founder': 'Kris Pahuja', 'Organization': 'Gyftgo'}, {'Founder': 'Ohad Navon', 'Organization': 'Octo'}, {'Founder': 'Edrei', 'Organization': 'Stellar Sleep'}, {'Founder': 'Pedro Saratscheff', 'Organization': 'Ruuf'}]]
+```

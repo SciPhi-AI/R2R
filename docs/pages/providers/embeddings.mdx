@@ -1,0 +1,38 @@
+# Embedding Model Configuration Guide
+
+R2R aims to be provider agnostic and ships with built-in support for the following providers:
+
+- OpenAI
+- SentenceTransformers (local)
+
+The R2R team is actively working to increase the scope of these offerings in time, in accordance to the priority in which new providers are requested.
+
+## Available Models
+
+Anything supported by OpenAI, such as:
+
+### `text-embedding-3-small`
+
+- **Use case**: Suitable for general-purpose embedding tasks with efficient processing. Ideal for applications where speed and cost are critical.
+- **Dimensions**: `1536` - Indicates the size of the embedding vector.
+- **Recommended batch size**: `32` - Optimal number of items to process in a single request for balancing performance and throughput.
+- **Pricing**: Approximately 62,500 pages per dollar. High efficiency and cost-effective for large-scale applications.
+- **More**: [Embeddings Guide](https://platform.openai.com/docs/guides/embeddings)
+
+### `text-embedding-3-large`
+
+- **Use case**: Ideal for tasks requiring high-quality embeddings, such as semantic search or complex text similarity. Best for when the quality of the embedding is paramount.
+- **Dimensions**: `4096`
+- **Recommended batch size**: `16`
+- **Pricing**: Approximately 9,615 pages per dollar. Offers superior performance at a higher cost.
+- **More**: [Embeddings Guide](https://platform.openai.com/docs/guides/embeddings)
+
+### `text-embedding-ada-002`
+
+- **Use case**: A balanced option for tasks needing a compromise between quality and efficiency. Suitable for a wide range of applications.
+- **Dimensions**: `2048`
+- **Recommended batch size**: `24`
+- **Pricing**: Approximately 12,500 pages per dollar. Balances cost and performance effectively.
+- **More**: [Embeddings Guide](https://platform.openai.com/docs/guides/embeddings)
+
+Lastly, the `sentence_transformer` package from HuggingFace is also supported as a provider. For example, one such popular model is [`mixedbread-ai/mxbai-embed-large-v1`](https://huggingface.co/mixedbread-ai/mxbai-embed-large-v1).

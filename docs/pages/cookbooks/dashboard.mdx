@@ -1,0 +1,108 @@
+import { Callout } from 'nextra/components'
+import Image from 'next/image'
+
+## R2R Dashboard
+
+Developers can interact with R2R in several ways, including through our [open-source React+Next.js dashboard](https://github.com/SciPhi-AI/R2R-Dashboard). The dashboard is designed to give R2R developers an easy way to interface with their pipelines, reducing development and iteration time.
+
+### Clone the R2R Dashboard and Install Dependencies
+
+#### Install PNPM
+
+PNPM is a fast, disk space-efficient package manager that helps you manage your project dependencies. To install PNPM, visit the [official PNPM installation page](https://pnpm.io/installation) for the latest instructions, or follow the instructions outlined below:
+
+<details>
+<summary>PNPM Installation</summary>
+
+For Unix-based systems (Linux, macOS):
+
+```bash copy
+curl -fsSL https://get.pnpm.io/install.sh | sh -
+```
+
+For Windows:
+
+```powershell copy
+iwr https://get.pnpm.io/install.ps1 -useb | iex
+```
+
+After installing PNPM, you may need to add it to your system's PATH. Follow the instructions provided on the PNPM installation page to ensure it's properly set up.
+
+</details>
+
+### Installing and Running the R2R Dashboard
+
+1. **Clone the project repository and navigate to the project directory:**
+
+    ```bash copy
+    git clone git@github.com:SciPhi-AI/R2R-Dashboard.git
+    cd R2R-Dashboard
+    ```
+
+2. **Install the project dependencies using PNPM:**
+
+    ```bash copy
+    pnpm install
+    ```
+
+3. **Build and start the application for production:**
+
+    ```bash copy
+    pnpm build
+    pnpm start
+    ```
+
+This will build the application on port 3000. After `pnpm start` runs successfully, the dashboard can be viewed at [http://localhost:3000](http://localhost:3000).
+
+### Deploying and Watching R2R Applications
+
+Now that your R2R dashboard is running, you can add deployed R2R applications for monitoring. You're now ready to link to your locally deployed R2R applications. More information about deploying a local R2R application server can be found in the [Client-Server Cookbook](./client-server).
+
+<Image src="/watch.png" width={1024} height={1024} alt="R2R Dashboard Overview" />
+
+### Documents
+
+The documents page provides an overview of the uploaded documents and their associated metadata. It also provides a place to upload new documents as well as update and delete existing documents.
+
+<Image src="/oss_dashboard_documents.png" width={1024} height={1024} alt="Documents Page" />
+
+### Playground
+
+The playground allows streaming RAG responses with different models and other configurable settings.
+
+<Image src="/chat-interface.png" width={1024} height={1024} alt="Playground Interface" />
+
+### Analytics
+
+The analytics page gives insight into aggregate statistics around latencies and metrics, and provides a histogram detailing distributions.
+
+<Image src="/oss_dashboard_analytics.png" width={1024} height={1024} alt="Analytics Interface" />
+
+### Logs
+
+The Logs page enables tracking of user queries, search results, and LLM responses.
+
+<Image src="/logs.png" width={1024} height={1024} alt="Logs Page" />
+
+### Developing with the R2R Dashboard
+
+If you'd like to develop the R2R dashboard, you can do so by starting a development server:
+
+1. **Start the development server:**
+
+    ```bash copy
+    pnpm dev
+    ```
+
+2. **Pre-commit checks (optional but recommended):**
+
+    Ensure your code is properly formatted and free of linting issues before committing:
+
+    ```bash copy
+    pnpm format
+    pnpm lint
+    ```
+
+By following these steps, you can set up the R2R Dashboard on your local machine and start interacting with your pipelines efficiently. For more detailed information, refer to the [project's repository](https://github.com/SciPhi-AI/R2R-Dashboard).
+
+We hope this tool proves useful in working with the R2R answer engine, and we look forward to improving this dashboard to meet your specific needs.

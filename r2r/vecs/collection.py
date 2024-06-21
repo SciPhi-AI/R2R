@@ -35,6 +35,7 @@ from sqlalchemy import (
     and_,
     cast,
     delete,
+    distinct,
     func,
     or_,
     select,
@@ -42,8 +43,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects import postgresql
 
-from r2r.vecs.adapter import Adapter, AdapterContext, NoOp
-from r2r.vecs.exc import (
+from .adapter import Adapter, AdapterContext, NoOp
+from .exc import (
     ArgError,
     CollectionAlreadyExists,
     CollectionNotFound,
@@ -183,6 +184,8 @@ class Collection:
             dimension (int): The dimension of the vectors in the collection.
             client (Client): The client to use for interacting with the database.
         """
+        from r2r.vecs.adapter import Adapter
+
         self.client = client
         self.name = name
         self.dimension = dimension
@@ -326,13 +329,43 @@ class Collection:
         Returns:
             Collection: The deleted collection.
         """
-        from sqlalchemy.schema import DropTable
-
         with self.client.Session() as sess:
-            sess.execute(DropTable(self.table, if_exists=True))
+            sess.execute(text(f"DROP TABLE IF EXISTS {self.name} CASCADE"))
             sess.commit()
 
         return self
+
+    def get_unique_metadata_values(
+        self,
+        field: str,
+        filter_field: Optional[str] = None,
+        filter_value: Optional[MetadataValues] = None,
+    ) -> List[MetadataValues]:
+        """
+        Fetches all unique metadata values of a specific field, optionally filtered by another metadata field.
+        Args:
+            field (str): The metadata field for which to fetch unique values.
+            filter_field (Optional[str], optional): The metadata field to filter on. Defaults to None.
+            filter_value (Optional[MetadataValues], optional): The value to filter the metadata field with. Defaults to None.
+        Returns:
+            List[MetadataValues]: A list of unique metadata values for the specified field.
+        """
+        with self.client.Session() as sess:
+            with sess.begin():
+                stmt = select(
+                    distinct(self.table.c.metadata[field].astext)
+                ).where(self.table.c.metadata[field] != None)
+
+                if filter_field is not None and filter_value is not None:
+                    stmt = stmt.where(
+                        self.table.c.metadata[filter_field].astext
+                        == str(filter_value)
+                    )
+
+                result = sess.execute(stmt)
+                unique_values = result.scalars().all()
+
+        return unique_values
 
     def copy(
         self,
@@ -466,7 +499,7 @@ class Collection:
     def delete(
         self,
         ids: Optional[Iterable[str]] = None,
-        filters: Optional[Metadata] = None,
+        filters: Optional[Dict[str, Any]] = None,
     ) -> List[str]:
         """
         Deletes vectors from the collection by matching filters or ids.
@@ -476,7 +509,7 @@ class Collection:
             filters (Optional[Dict], optional): Filters to apply to the search. Defaults to None.
 
         Returns:
-            List[str]: A list of the identifiers of the deleted vectors.
+            List[str]: A list of the document IDs of the deleted vectors.
         """
         if ids is None and filters is None:
             raise ArgError("Either ids or filters must be provided.")
@@ -489,28 +522,47 @@ class Collection:
 
         ids = ids or []
         filters = filters or {}
-        del_ids = []
+        del_document_ids = set([])
 
         with self.client.Session() as sess:
             with sess.begin():
                 if ids:
                     for id_chunk in flu(ids).chunk(12):
-                        stmt = (
+                        stmt = select(self.table.c.metadata).where(
+                            self.table.c.id.in_(id_chunk)
+                        )
+                        results = sess.execute(stmt).fetchall()
+                        for result in results:
+                            metadata_json = result[0]
+                            document_id = metadata_json.get("document_id")
+                            if document_id:
+                                del_document_ids.add(document_id)
+
+                        delete_stmt = (
                             delete(self.table)
                             .where(self.table.c.id.in_(id_chunk))
                             .returning(self.table.c.id)
                         )
-                        del_ids.extend(sess.execute(stmt).scalars() or [])
+                        sess.execute(delete_stmt)
 
                 if filters:
                     meta_filter = build_filters(self.table.c.metadata, filters)
-                    stmt = (
-                        delete(self.table).where(meta_filter).returning(self.table.c.id)  # type: ignore
-                    )
-                    result = sess.execute(stmt).scalars()
-                    del_ids.extend(result.fetchall())
+                    stmt = select(self.table.c.metadata).where(meta_filter)
+                    results = sess.execute(stmt).fetchall()
+                    for result in results:
+                        metadata_json = result[0]
+                        document_id = metadata_json.get("document_id")
+                        if document_id:
+                            del_document_ids.add(document_id)
 
-        return del_ids
+                    delete_stmt = (
+                        delete(self.table)
+                        .where(meta_filter)
+                        .returning(self.table.c.id)
+                    )
+                    sess.execute(delete_stmt)
+
+        return list(del_document_ids)
 
     def __getitem__(self, items):
         """
@@ -917,8 +969,6 @@ class Collection:
 
 def build_filters(json_col: Column, filters: Dict):
     """
-    PRIVATE
-
     Builds filters for SQL query based on provided dictionary.
 
     Args:
@@ -931,38 +981,18 @@ def build_filters(json_col: Column, filters: Dict):
     Returns:
         The filter clause for the SQL query.
     """
-
     if not isinstance(filters, dict):
         raise FilterError("filters must be a dict")
 
-    if len(filters) > 1:
-        raise FilterError("max 1 entry per filter")
+    filter_clauses = []
 
     for key, value in filters.items():
         if not isinstance(key, str):
             raise FilterError("*filters* keys must be strings")
 
-        if key in ("$and", "$or"):
-            if not isinstance(value, list):
-                raise FilterError(
-                    "$and/$or filters must have associated list of conditions"
-                )
-
-            if key == "$and":
-                return and_(
-                    *[build_filters(json_col, subcond) for subcond in value]
-                )
-
-            if key == "$or":
-                return or_(
-                    *[build_filters(json_col, subcond) for subcond in value]
-                )
-
-            raise Unreachable()
-
         if isinstance(value, dict):
             if len(value) > 1:
-                raise FilterError("only one operator permitted")
+                raise FilterError("only one operator permitted per key")
             for operator, clause in value.items():
                 if operator not in (
                     "$eq",
@@ -975,55 +1005,60 @@ def build_filters(json_col: Column, filters: Dict):
                 ):
                     raise FilterError("unknown operator")
 
-                # equality of singular values can take advantage of the metadata index
-                # using containment operator. Containment can not be used to test equality
-                # of lists or dicts so we restrict to single values with a __len__ check.
                 if operator == "$eq" and not hasattr(clause, "__len__"):
                     contains_value = cast({key: clause}, postgresql.JSONB)
-                    return json_col.op("@>")(contains_value)
-
-                if operator == "$in":
+                    filter_clauses.append(json_col.op("@>")(contains_value))
+                elif operator == "$in":
                     if not isinstance(clause, list):
                         raise FilterError(
                             "argument to $in filter must be a list"
                         )
-
                     for elem in clause:
                         if not isinstance(elem, (int, str, float)):
                             raise FilterError(
-                                "argument to $in filter must be a list or scalars"
+                                "argument to $in filter must be a list of scalars"
                             )
-
-                    # cast the array of scalars to a postgres array of jsonb so we can
-                    # directly compare json types in the query
                     contains_value = [
                         cast(elem, postgresql.JSONB) for elem in clause
                     ]
-                    return json_col.op("->")(key).in_(contains_value)
-
-                matches_value = cast(clause, postgresql.JSONB)
-
-                # handles non-singular values
-                if operator == "$eq":
-                    return json_col.op("->")(key) == matches_value
-
-                elif operator == "$ne":
-                    return json_col.op("->")(key) != matches_value
-
-                elif operator == "$lt":
-                    return json_col.op("->")(key) < matches_value
-
-                elif operator == "$lte":
-                    return json_col.op("->")(key) <= matches_value
-
-                elif operator == "$gt":
-                    return json_col.op("->")(key) > matches_value
-
-                elif operator == "$gte":
-                    return json_col.op("->")(key) >= matches_value
-
+                    filter_clauses.append(
+                        json_col.op("->")(key).in_(contains_value)
+                    )
                 else:
-                    raise Unreachable()
+                    matches_value = cast(clause, postgresql.JSONB)
+                    if operator == "$eq":
+                        filter_clauses.append(
+                            json_col.op("->")(key) == matches_value
+                        )
+                    elif operator == "$ne":
+                        filter_clauses.append(
+                            json_col.op("->")(key) != matches_value
+                        )
+                    elif operator == "$lt":
+                        filter_clauses.append(
+                            json_col.op("->")(key) < matches_value
+                        )
+                    elif operator == "$lte":
+                        filter_clauses.append(
+                            json_col.op("->")(key) <= matches_value
+                        )
+                    elif operator == "$gt":
+                        filter_clauses.append(
+                            json_col.op("->")(key) > matches_value
+                        )
+                    elif operator == "$gte":
+                        filter_clauses.append(
+                            json_col.op("->")(key) >= matches_value
+                        )
+                    else:
+                        raise Unreachable()
+        else:
+            raise FilterError("Filter value must be a dict with an operator")
+
+    if len(filter_clauses) == 1:
+        return filter_clauses[0]
+    else:
+        return and_(*filter_clauses)
 
 
 def build_table(name: str, meta: MetaData, dimension: int) -> Table:

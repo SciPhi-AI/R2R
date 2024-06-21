@@ -384,8 +384,8 @@ class BaseDocumentTransformer(ABC):
         # )
 
 
-def _make_spacy_pipeline_for_splitting(
-    pipeline: str, *, max_length: int = 1_000_000
+def _make_spacy_pipe_for_splitting(
+    pipe: str, *, max_length: int = 1_000_000
 ) -> Any:  # avoid importing spacy
     try:
         import spacy
@@ -393,13 +393,13 @@ def _make_spacy_pipeline_for_splitting(
         raise ImportError(
             "Spacy is not installed, please install it with `pip install spacy`."
         )
-    if pipeline == "sentencizer":
+    if pipe == "sentencizer":
         from spacy.lang.en import English
 
         sentencizer = English()
         sentencizer.add_pipe("sentencizer")
     else:
-        sentencizer = spacy.load(pipeline, exclude=["ner", "tagger"])
+        sentencizer = spacy.load(pipe, exclude=["ner", "tagger"])
         sentencizer.max_length = max_length
     return sentencizer
 
@@ -1132,7 +1132,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             )
 
         self.model = model
-        self._model = SentenceTransformer(self.model)
+        self._model = SentenceTransformer(self.model, trust_remote_code=True)
         self.tokenizer = self._model.tokenizer
         self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
 
@@ -1776,20 +1776,20 @@ class SpacyTextSplitter(TextSplitter):
     Per default, Spacy's `en_core_web_sm` model is used and
     its default max_length is 1000000 (it is the length of maximum character
     this model takes which can be increased for large files). For a faster, but
-    potentially less accurate splitting, you can use `pipeline='sentencizer'`.
+    potentially less accurate splitting, you can use `pipe='sentencizer'`.
     """
 
     def __init__(
         self,
         separator: str = "\n\n",
-        pipeline: str = "en_core_web_sm",
+        pipe: str = "en_core_web_sm",
         max_length: int = 1_000_000,
         **kwargs: Any,
     ) -> None:
         """Initialize the spacy text splitter."""
         super().__init__(**kwargs)
-        self._tokenizer = _make_spacy_pipeline_for_splitting(
-            pipeline, max_length=max_length
+        self._tokenizer = _make_spacy_pipe_for_splitting(
+            pipe, max_length=max_length
         )
         self._separator = separator
 
@@ -1818,7 +1818,7 @@ class KonlpyTextSplitter(TextSplitter):
         except ImportError:
             raise ImportError(
                 """
-                Konlpy is not installed, please install it with 
+                Konlpy is not installed, please install it with
                 `pip install konlpy`
                 """
             )

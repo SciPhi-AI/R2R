@@ -1,20 +1,29 @@
-# Use a slimmer base image if possible
-FROM python:3.9
+FROM python:3.10-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc g++ musl-dev curl libffi-dev gfortran libopenblas-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install Poetry and keyring together to reduce layers
-RUN pip install poetry keyring
-
-# Copy only files necessary for installing dependencies to leverage Docker cache
+# Copy the pyproject.toml and poetry.lock files for installing dependencies
 COPY pyproject.toml poetry.lock* /app/
 
-# Disable virtualenv creation by Poetry, install dependencies
-RUN poetry install -E parsing -E eval --no-interaction --no-ansi -vvv
+# Install Poetry and configure it to create a virtual environment
+RUN pip install --no-cache-dir poetry \
+    && poetry config virtualenvs.create true \
+    && poetry install -E local-embedding --no-dev --no-interaction --no-ansi \
+    && rm -rf ~/.cache/pip
 
 # Copy the rest of the application code
 COPY . /app
 
+# Install gunicorn and uvicorn
+RUN poetry run pip install --no-cache-dir gunicorn uvicorn
+
+# Expose the port
 EXPOSE 8000
 
-CMD ["uvicorn", "r2r.examples.basic.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "8"]
+# Set the command to run the application with Gunicorn
+CMD ["poetry", "run", "gunicorn", "r2r.examples.servers.configurable_pipeline:r2r_app", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "8", "--timeout", "0", "--worker-class", "uvicorn.workers.UvicornWorker"]

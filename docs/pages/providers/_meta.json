@@ -1,0 +1,5 @@
+{
+  "llms": "LLMs",
+  "vector-databases": "Vector Databases",
+  "embeddings": "Embeddings"
+}

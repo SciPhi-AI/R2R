@@ -1,0 +1,11 @@
+{
+    "starter": "Starter",
+    "client-server": "Client-Server",
+    "multiple-llms": "Multiple LLMs",
+    "local-rag": "Local RAG",
+    "hybrid-search": "Hybrid Search",
+    "rerank-search": "Search w/ Reranking",
+    "multimodal-rag": "Multimodal RAG",
+    "knowledge-graph": "Knowledge Graph",
+    "dashboard": "Dashboard"
+}

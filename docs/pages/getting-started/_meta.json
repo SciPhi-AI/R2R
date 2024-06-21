@@ -1,4 +1,10 @@
 {
-  "quick-install": "Quick Install",
-  "full-install": "Full Install"
+  "installation": "Installation",
+  "quickstart": "Quickstart",
+  "r2r-api": {
+    "title": "R2R API",
+    "theme": {
+      "layout": "raw"
+    }
+  }
 }

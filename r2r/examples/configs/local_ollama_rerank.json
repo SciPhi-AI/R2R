@@ -1,0 +1,27 @@
+{
+  "embedding": {
+    "provider": "sentence-transformers",
+    "base_model": "all-MiniLM-L6-v2",
+    "base_dimension": 384,
+    "rerank_model": "jinaai/jina-reranker-v1-turbo-en",
+    "rerank_dimension": 384,
+    "rerank_transformer_type": "CrossEncoder",
+    "batch_size": 32,
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 512,
+      "chunk_overlap": 20
+    }
+  },
+  "ingestion":{
+    "excluded_parsers": {
+      "gif": "default",
+      "jpeg": "default",
+      "jpg": "default",
+      "png": "default",
+      "svg": "default",
+      "mp3": "default",
+      "mp4": "default"
+    }
+  }
+}

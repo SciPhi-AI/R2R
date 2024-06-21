@@ -13,18 +13,19 @@ const config: DocsThemeConfig = {
       <span>SciPhi</span>
     </>
   ),
-  logoLink: "https://github.com/SciPhi-AI/R2R",
+  logoLink: "https://r2r-docs.sciphi.ai/",
   head: (
     <>
       <link rel="icon" type="image/png" href="/favicon.ico" />
       <meta property="og:title" content="R2R Documentation" />
       <meta
         property="og:description"
-        content="The official documentation for the Rag2Riches (R2R) framework."
+        content="The official documentation for the RAG to Riches (R2R) AI powered answer engine."
       />
       <meta property="og:image" content="/r2r_mini.jpg" />
     </>
   ),
+  darkMode: true,
   project: {
     link: "https://github.com/SciPhi-AI/R2R",
   },

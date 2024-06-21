@@ -1,0 +1,9 @@
+{
+  "builder": "Building R2R",
+  "config": "Configuring R2R",
+  "customizing": "Customizing R2R",
+  "ingestion": "Ingestion Pipeline",
+  "search": "Search Pipeline",
+  "rag": "RAG Pipeline",
+  "telemetry": "Telemetry"
+}

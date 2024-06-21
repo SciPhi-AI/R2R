@@ -6,10 +6,12 @@ workspace/
 uploads/
 env/
 **/__pycache__
-
+dump/*
 .next
 node_modules
 
 
-**/*.sqlite
-**/*.sqlite3
+**/*.sqlite*
+**/*.sqlite3*
+
+r2r/examples/data/*

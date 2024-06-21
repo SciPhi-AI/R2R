@@ -71,24 +71,25 @@ class SerperClient:
     # TODO - Add explicit typing for the return value
     def get_raw(self, query: str, limit: int = 10) -> list:
         connection = http.client.HTTPSConnection(self.api_base)
-        payload = json.dumps({"q": query, "num": limit})
+        payload = json.dumps({"q": query, "num_outputs": limit})
         connection.request("POST", "/search", payload, self.headers)
         response = connection.getresponse()
         data = response.read()
         json_data = json.loads(data.decode("utf-8"))
         return SerperClient._extract_results(json_data)
 
-    def construct_context(self, results: list) -> str:
+    @staticmethod
+    def construct_context(results: list) -> str:
         # Organize results by type
         organized_results = {}
         for result in results:
-            result_type = result.pop(
+            result_type = result.metadata.pop(
                 "type", "Unknown"
             )  # Pop the type and use as key
             if result_type not in organized_results:
-                organized_results[result_type] = [result]
+                organized_results[result_type] = [result.metadata]
             else:
-                organized_results[result_type].append(result)
+                organized_results[result_type].append(result.metadata)
 
         context = ""
         # Iterate over each result type
