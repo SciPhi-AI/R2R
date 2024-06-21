@@ -135,7 +135,7 @@ class R2RClient:
         search_filters: Optional[dict[str, Any]] = {},
         search_limit: int = 10,
         do_hybrid_search: bool = False,
-        use_kg: bool = False,
+        use_kg_search: bool = False,
         kg_agent_generation_config: Optional[GenerationConfig] = None,
     ) -> dict:
         request = R2RSearchRequest(
@@ -147,7 +147,7 @@ class R2RClient:
                 do_hybrid_search=do_hybrid_search,
             ),
             kg_search_settings=KGSearchSettings(
-                use_kg=use_kg,
+                use_kg_search=use_kg_search,
                 agent_generation_config=kg_agent_generation_config,
             ),
         )
@@ -163,7 +163,7 @@ class R2RClient:
         search_filters: Optional[dict[str, Any]] = {},
         search_limit: int = 10,
         do_hybrid_search: bool = False,
-        use_kg: bool = False,
+        use_kg_search: bool = False,
         kg_agent_generation_config: Optional[GenerationConfig] = None,
         rag_generation_config: Optional[GenerationConfig] = None,
     ) -> dict:
@@ -176,7 +176,7 @@ class R2RClient:
                 do_hybrid_search=do_hybrid_search,
             ),
             kg_search_settings=KGSearchSettings(
-                use_kg=use_kg,
+                use_kg_search=use_kg_search,
                 agent_generation_config=kg_agent_generation_config,
             ),
             rag_generation_config=rag_generation_config,

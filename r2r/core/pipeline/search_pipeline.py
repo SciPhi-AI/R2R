@@ -49,7 +49,8 @@ class SearchPipeline(Pipeline):
             and vector_search_settings.use_vector_search
         )
         do_kg = (
-            self._kg_search_pipeline is not None and kg_search_settings.use_kg
+            self._kg_search_pipeline is not None
+            and kg_search_settings.use_kg_search
         )
         async with manage_run(run_manager, self.pipeline_type):
             if log_run_info:
