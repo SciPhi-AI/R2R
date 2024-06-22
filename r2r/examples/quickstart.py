@@ -253,7 +253,7 @@ class R2RQuickstart:
                 metadatas=metadatas,
                 files=[new for old, new in file_tuples],
                 document_ids=[
-                    generate_id_from_label(old_file)
+                    generate_id_from_label(old_file.split(os.path.sep)[-1])
                     for old_file, new_file in file_tuples
                 ],
                 monitor=True,
