@@ -40,8 +40,8 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
                 "OllamaEmbeddingProvider only supports search stage."
             )
 
-        embedding = ollama.embeddings(prompt=text, model=self.base_model)
-        return embedding
+        response = ollama.embeddings(prompt=text, model=self.base_model)
+        return response["embedding"]
 
     async def async_get_embedding(
         self,
@@ -73,11 +73,10 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
                 "OllamaEmbeddingProvider only supports search stage."
             )
         # Use asyncio.gather to run all embedding tasks concurrently
-        results = await asyncio.gather(
+        responses = await asyncio.gather(
             *[self.async_get_embedding(text, stage) for text in texts]
         )
-        print("embeddings = ", results)
-        return results
+        return responses
 
     def rerank(
         self,

@@ -18,6 +18,6 @@
   },
   "vector_database": {
     "provider": "pgvector",
-    "collection_name": "demo_vecs"
+    "collection_name": "demo_00_000_00_000_000_vecs"
   }
 }
