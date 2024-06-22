@@ -20,7 +20,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
 
         if provider != "ollama":
             raise ValueError(
-                "OllamaEmbeddingProvider must be initialized with provider `openai`."
+                "OllamaEmbeddingProvider must be initialized with provider `ollama`."
             )
 
         if config.rerank_model:
