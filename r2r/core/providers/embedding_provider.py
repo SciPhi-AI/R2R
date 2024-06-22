@@ -26,7 +26,7 @@ class EmbeddingConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return [None, "openai", "sentence-transformers"]
+        return [None, "openai", "ollama", "sentence-transformers"]
 
 
 class EmbeddingProvider(Provider):
