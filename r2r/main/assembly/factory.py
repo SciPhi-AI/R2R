@@ -70,6 +70,11 @@ class R2RProviderFactory:
             from r2r.providers.embeddings import OpenAIEmbeddingProvider
 
             embedding_provider = OpenAIEmbeddingProvider(embedding)
+        elif embedding.provider == "ollama":
+            from r2r.providers.embeddings import OllamaEmbeddingProvider
+
+            embedding_provider = OllamaEmbeddingProvider(embedding)
+
         elif embedding.provider == "sentence-transformers":
             from r2r.providers.embeddings import (
                 SentenceTransformerEmbeddingProvider,

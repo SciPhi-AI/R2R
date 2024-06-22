@@ -11,10 +11,7 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock* /app/
 
 # Install Poetry and configure it to create a virtual environment
-RUN pip install --no-cache-dir poetry \
-    && poetry config virtualenvs.create true \
-    && poetry install -E local-embedding --no-dev --no-interaction --no-ansi \
-    && rm -rf ~/.cache/pip
+RUN pip install poetry && poetry install --no-dev
 
 # Copy the rest of the application code
 COPY . /app
