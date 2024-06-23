@@ -54,13 +54,6 @@ class Document(BaseModel):
 
         super().__init__(*args, **kwargs)
 
-    class Config:
-        arbitrary_types_allowed = True
-        json_encoders = {
-            uuid.UUID: str,
-            bytes: lambda v: base64.b64encode(v).decode("utf-8"),
-        }
-
 
 class DocumentInfo(BaseModel):
     """Base class for document information handling."""
@@ -71,6 +64,7 @@ class DocumentInfo(BaseModel):
     metadata: dict
 
     user_id: Optional[uuid.UUID] = None
+    title: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -81,6 +75,7 @@ class DocumentInfo(BaseModel):
         metadata["user_id"] = (
             str(metadata["user_id"]) if "user_id" in metadata else None
         )
+        metadata["title"] = metadata.get("title", "N/A")
         return {
             "document_id": str(self.document_id),
             "title": metadata.get("title", "N/A"),

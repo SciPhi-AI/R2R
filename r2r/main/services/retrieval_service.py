@@ -1,5 +1,6 @@
 import logging
 import time
+import uuid
 from typing import Optional
 
 from fastapi import HTTPException
@@ -67,6 +68,11 @@ class RetrievalService(Service):
                     detail="Vector search is not enabled in the configuration.",
                 )
 
+            # TODO - Remove these transforms once we have a better way to handle this
+            for filter, value in vector_search_settings.search_filters.items():
+                if isinstance(value, uuid.UUID):
+                    vector_search_settings.search_filters[filter] = str(value)
+
             results = await self.pipelines.search_pipeline.run(
                 input=to_async_generator([query]),
                 vector_search_settings=vector_search_settings,
@@ -97,6 +103,17 @@ class RetrievalService(Service):
         async with manage_run(self.run_manager, "rag_app") as run_id:
             try:
                 t0 = time.time()
+
+                # TODO - Remove these transforms once we have a better way to handle this
+                for (
+                    filter,
+                    value,
+                ) in vector_search_settings.search_filters.items():
+                    if isinstance(value, uuid.UUID):
+                        vector_search_settings.search_filters[filter] = str(
+                            value
+                        )
+
                 if rag_generation_config.stream:
                     t1 = time.time()
                     latency = f"{t1-t0:.2f}"

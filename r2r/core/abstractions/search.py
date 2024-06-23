@@ -73,6 +73,12 @@ class VectorSearchSettings(BaseModel):
     search_limit: int = 10
     do_hybrid_search: bool = False
 
+    class Config:
+        arbitrary_types_allowed = True
+        json_encoders = {
+            uuid.UUID: str,
+        }
+
 
 class KGSearchSettings(BaseModel):
     use_kg_search: bool = False
