@@ -187,7 +187,7 @@ class ManagementService(Service):
         self, user_ids: Optional[list[uuid.UUID]] = None
     ):
         return self.providers.vector_db.get_users_overview(
-            [str(ele) for ele in user_ids]
+            [str(ele) for ele in user_ids] if user_ids else None
         )
 
     @telemetry_event("Delete")
@@ -197,6 +197,7 @@ class ManagementService(Service):
         metadata = ", ".join(
             f"{key}={value}" for key, value in zip(keys, values)
         )
+        values = [str(value) for value in values]
         logger.info(f"Deleting entries with metadata: {metadata}")
         ids = self.providers.vector_db.delete_by_metadata(keys, values)
         if not ids:
