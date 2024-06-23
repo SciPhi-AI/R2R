@@ -52,6 +52,14 @@ class R2RProviderFactory:
         if not self.config.embedding.base_dimension:
             raise ValueError("Search dimension not found in embedding config")
 
+        print(
+            "initialization of collection with config = ",
+            self.config.embedding,
+        )
+        print(
+            "initialization of collection with self.config.embedding.base_dimension = ",
+            self.config.embedding.base_dimension,
+        )
         vector_db_provider.initialize_collection(
             self.config.embedding.base_dimension
         )

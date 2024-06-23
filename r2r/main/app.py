@@ -27,6 +27,7 @@ class R2RApp(metaclass=AsyncSyncMeta):
         pipelines: R2RPipelines,
         run_manager: Optional[RunManager] = None,
     ):
+        print("R2RApp.__init__, config = ", config)
         logging_connection = KVLoggingSingleton()
         run_manager = run_manager or RunManager(logging_connection)
 
