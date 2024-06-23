@@ -200,7 +200,6 @@ class ManagementService(Service):
         values = [str(value) for value in values]
         logger.info(f"Deleting entries with metadata: {metadata}")
         ids = self.providers.vector_db.delete_by_metadata(keys, values)
-        print("ids = ", ids)
         if not ids:
             raise HTTPException(
                 status_code=404, detail="No entries found for deletion."
