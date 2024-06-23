@@ -9,9 +9,9 @@ from fastapi import FastAPI
 from r2r import (
     R2RAppBuilder,
     R2RConfig,
-    R2RPipeFactoryWithMultiSearch,
     SerperClient,
     WebSearchPipe,
+    get_r2r_app,
 )
 
 logger = logging.getLogger(__name__)
@@ -50,24 +50,24 @@ def r2r_app(
             "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
         )
 
+    builder = None
     if pipeline_type == PipelineType.QNA:
-        return R2RAppBuilder(config).build().app
+        builder = R2RAppBuilder(config)
     elif pipeline_type == PipelineType.WEB:
         web_search_pipe = WebSearchPipe(
             serper_client=SerperClient()  # TODO - Develop a `WebSearchProvider` for configurability
         )
-        return (
-            R2RAppBuilder(config).with_search_pipe(web_search_pipe).build().app
-        )
-    elif pipeline_type == PipelineType.HYDE:
-        return (
-            R2RAppBuilder(config)
-            .with_pipe_factory(R2RPipeFactoryWithMultiSearch)
-            .build(
-                task_prompt_name="hyde",
-            )
-            .app
-        )
+        builder = R2RAppBuilder(config).with_search_pipe(web_search_pipe)
+    # elif pipeline_type == PipelineType.HYDE:
+    #     builder =  (
+    #         R2RAppBuilder(config)
+    #         .with_pipe_factory(R2RPipeFactoryWithMultiSearch)
+    #         .build(
+    #             task_prompt_name="hyde",
+    #         )
+    #         .app
+    #     )
+    return get_r2r_app(builder).app
 
 
 if __name__ == "__main__":
