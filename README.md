@@ -112,8 +112,7 @@ docker run -d \
 # R2R Quickstart
 The following quickstart offers a step-by-step guide on running R2R locally as well as through the Python SDK. The guide ingests a list of provided provided documents and shows search, RAG, and advanced functionality. The script powering the quickstart can be found at `r2r/examples/quickstart.py`, and it can be configured and extended with sufficient developer familiarity.
 
-![quickstart](https://github.com/SciPhi-AI/R2R/assets/quickstart.gif)
-
+![quickstart](https://github.com/SciPhi-AI/R2R/blob/main/assets/quickstart.gif)
 
 <details open>
 <summary><b>Document Ingestion and Management</b></summary>
