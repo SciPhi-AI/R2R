@@ -96,7 +96,7 @@ class R2RQuickstart:
             )
         ]
 
-    def ingest_as_documents(self, file_paths: Optional[list[str]] = None):
+    def ingest_documents(self, file_paths: Optional[list[str]] = None):
         file_paths = file_paths or self.default_files
         documents = []
         t0 = time.time()
@@ -134,7 +134,7 @@ class R2RQuickstart:
         print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
         print(response)
 
-    def update_as_documents(self, file_tuples: Optional[list[tuple]] = None):
+    def update_documents(self, file_tuples: Optional[list[tuple]] = None):
         file_tuples = file_tuples or self.file_tuples
         documents = []
         t0 = time.time()
@@ -167,7 +167,7 @@ class R2RQuickstart:
         print(f"Time taken to update documents: {t1-t0:.2f} seconds")
         print(response)
 
-    def ingest_as_files(
+    def ingest_files(
         self, file_paths: Optional[list[str]] = None, no_media=False
     ):
         file_paths = file_paths or self.default_files
@@ -224,7 +224,7 @@ class R2RQuickstart:
         print(f"Time taken to ingest files: {t1-t0:.2f} seconds")
         print(response)
 
-    def update_as_files(self, file_tuples: Optional[list[tuple]] = None):
+    def update_files(self, file_tuples: Optional[list[tuple]] = None):
         file_tuples = file_tuples or self.file_tuples
         new_files = [
             UploadFile(
