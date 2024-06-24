@@ -12,7 +12,7 @@ The ultimate open source AI powered answer engine
 </h3>
 
 # About
-R2R (RAG to Riches)  bridges local LLM experiments with production-ready Retrieval-Augmented Generation (RAG). It offers developers a cutting-edge, comprehensive RAG system with a RESTful API for seamless integration.
+R2R was designed to bridge the gap between local LLM experimentation and scalable, production-ready Retrieval-Augmented Generation (RAG). R2R provides a comprehensive and SOTA RAG system for developers, built around a RESTful API for ease of use.
 
 For a more complete view of R2R, check out the [full documentation](https://r2r-docs.sciphi.ai/).
 
