@@ -76,7 +76,7 @@ class KGAgentSearchPipe(GeneratorPipe):
 
             extraction = result.choices[0].message.content
             query = extraction.split("```cypher")[1].split("```")[0]
-            yield self.kg_provider.structured_query(query)
+            yield (query, self.kg_provider.structured_query(query))
 
     def _get_message_payload(self, message: str) -> dict:
         return [

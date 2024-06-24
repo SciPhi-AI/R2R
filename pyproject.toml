@@ -58,8 +58,6 @@ litellm = "^1.35.18"
 openai = "^1.11.1"
 
 # integrations
-ionic-api-sdk = {version = "0.9.3", optional = true}
-exa-py = {version = "^1.0.9", optional = true}
 dateutils = "^0.6.12"
 fsspec = "^2024.6.0"
 posthog = "^3.5.0"
@@ -70,12 +68,11 @@ pytest-cov = "^5.0.0"
 codecov = "^2.1.13"
 
 [tool.poetry.extras]
+all = ["tiktoken", "sentence-transformers", "neo4j", "moviepy", "opencv-python"]
 kg = ["neo4j"]
-all = ["tiktoken", "sentence-transformers"]
-exa = ["exa-py"]
-ionic = ["ionic-api-sdk"]
 local-embedding = ["sentence-transformers"]
 ingest-movies = ["moviepy", "opencv-python"]
+
 [tool.poetry.group.dev.dependencies]
 black = "^24.3.0"
 flake8 = "6.1.0"

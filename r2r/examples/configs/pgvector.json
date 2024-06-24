@@ -1,6 +1,0 @@
-{
-  "vector_database": {
-    "provider": "pgvector",
-    "collection_name": "vecs"
-  }
-}

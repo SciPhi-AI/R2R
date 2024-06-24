@@ -115,10 +115,14 @@ class SearchRAGPipe(GeneratorPipe):
                 it - 1
             )  # Update total_results based on the last index used
         if results.kg_search_results:
-            context += f"Knowledge Graph Search Results({iteration}):\n"
-            for result in results.kg_search_results:
-                context += f"[{it}]: {result}\n\n"
-                it += 1
+            context += f"Knowledge Graph ({iteration}):\n"
+            it = total_results + 1
+            for query, search_results in results.kg_search_results:  # [1]:
+                context += f"Query: {query}\n\n"
+                context += f"Results:\n"
+                for search_result in search_results:
+                    context += f"[{it}]: {search_result}\n\n"
+                    it += 1
             total_results = (
                 it - 1
             )  # Update total_results based on the last index used

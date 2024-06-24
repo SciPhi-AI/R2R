@@ -114,7 +114,7 @@ class KGProvider(ABC):
 
     # TODO - Type this method.
     @abstractmethod
-    def update_agent_prompt(
+    def update_kg_agent_prompt(
         self,
         prompt_provider: Any,
         entity_types: list[Any],
