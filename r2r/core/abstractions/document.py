@@ -52,6 +52,17 @@ class Document(BaseModel):
                 # If it's not base64, encode it to bytes
                 kwargs["data"] = data.encode("utf-8")
 
+        # Generate UUID based on the hash of the data
+        if "id" not in kwargs:
+            if isinstance(kwargs["data"], bytes):
+                data_hash = uuid.uuid5(
+                    uuid.NAMESPACE_DNS, kwargs["data"].decode("utf-8")
+                )
+            else:
+                data_hash = uuid.uuid5(uuid.NAMESPACE_DNS, kwargs["data"])
+
+            kwargs["id"] = data_hash  # Set the id based on the data hash
+
         super().__init__(*args, **kwargs)
 
 

@@ -1,7 +1,7 @@
 """Abstractions for search functionality."""
 
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
@@ -43,7 +43,8 @@ class KGSearchRequest(BaseModel):
     query: str
 
 
-KGSearchResult = List[List[Dict[str, Any]]]
+# [query, ...]
+KGSearchResult = List[Tuple[str, List[Dict[str, Any]]]]
 
 
 class AggregateSearchResult(BaseModel):
@@ -60,9 +61,11 @@ class AggregateSearchResult(BaseModel):
 
     def dict(self) -> dict:
         return {
-            "vector_search_results": [
-                result.dict() for result in self.vector_search_results
-            ],
+            "vector_search_results": (
+                [result.dict() for result in self.vector_search_results]
+                if self.vector_search_results
+                else None
+            ),
             "kg_search_results": self.kg_search_results,
         }
 
