@@ -169,15 +169,21 @@ Interact with R2R using our [open-source React+Next.js dashboard](https://github
 - [Discord](https://discord.gg/p6KqD2kjtB): Chat live with maintainers and community members
 - [Github Issues](https://github.com/SciPhi-AI/R2R/issues): Report bugs and request features
 
-Explore our [R2R Docs](https://r2r-docs.sciphi.ai/) for tutorials and cookbooks on various R2R features and integrations, including:
-- [Client-Server](https://r2r-docs.sciphi.ai/cookbooks/client-server)
-- [Multiple LLMs](https://r2r-docs.sciphi.ai/cookbooks/multiple-llms)
-- [Knowledge Graph RAG](https://r2r-docs.sciphi.ai/cookbooks/knowledge-graph)
-- [Multimodal RAG](https://r2r-docs.sciphi.ai/cookbooks/multimodal)
-- [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search)
-- [Local RAG](https://r2r-docs.sciphi.ai/cookbooks/local-rag)
-- [Reranking](https://r2r-docs.sciphi.ai/cookbooks/rerank-search)
-- [Dashboard](https://r2r-docs.sciphi.ai/cookbooks/dashboard)
+**Explore our [R2R Docs](https://r2r-docs.sciphi.ai/) for tutorials and cookbooks on various R2R features and integrations, including:**
+
+### RAG Cookbooks
+- [Multiple LLMs](https://r2r-docs.sciphi.ai/cookbooks/multiple-llms): A simple cookbook showing how R2R supports multiple LLMs.
+- [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): A brief introduction to running hybrid search with R2R.
+- [Multimodal RAG](https://r2r-docs.sciphi.ai/cookbooks/multimodal): A cookbook on multimodal RAG with R2R.
+- [Knowledge Graphs](https://r2r-docs.sciphi.ai/cookbooks/knowledge-graph): A walkthrough of automatic knowledge graph generation with R2R.
+- [Local RAG](https://r2r-docs.sciphi.ai/cookbooks/local-rag): A quick cookbook demonstration of how to run R2R with local LLMs.
+- [Reranking](https://r2r-docs.sciphi.ai/cookbooks/rerank-search): A short guide on how to apply reranking to R2R results.
+
+### App Features
+- [Client-Server](https://r2r-docs.sciphi.ai/cookbooks/client-server): An extension of the basic `R2R Quickstart` with client-server interactions.
+- [Document Management](https://r2r-docs.sciphi.ai/cookbooks/document-management): A cookbook showing how to manage your documents with R2R.
+- [Analytics & Observability](https://r2r-docs.sciphi.ai/cookbooks/observablity): A cookbook showing R2Rs end to end logging and analytics.
+- [Dashboard](https://r2r-docs.sciphi.ai/cookbooks/dashboard): A how-to guide on connecting with the R2R Dashboard.
 
 # Contributing
 
