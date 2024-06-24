@@ -18,6 +18,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+@router.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
+
 @router.post("/update_prompt")
 async def update_prompt_app(
     request: R2RUpdatePromptRequest, r2r=Depends(get_r2r_app)
