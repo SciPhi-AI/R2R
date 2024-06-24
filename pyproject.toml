@@ -66,6 +66,8 @@ posthog = "^3.5.0"
 neo4j = {version = "^5.21.0", optional = true}
 sqlalchemy = "^2.0.30"
 ollama = "^0.2.1"
+pytest-cov = "^5.0.0"
+codecov = "^2.1.13"
 
 [tool.poetry.extras]
 kg = ["neo4j"]
@@ -95,3 +97,9 @@ exclude = 'playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*'
 [[tool.mypy.overrides]]
 module = "yaml"
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "--cov=r2r --cov-report=term-missing --cov-report=xml"
+testpaths = [
+    "tests",
+]

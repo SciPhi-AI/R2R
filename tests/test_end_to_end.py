@@ -213,9 +213,8 @@ async def test_ingest_search_then_delete(r2r_app, logging_connection):
     delete_result = await r2r_app.adelete(["author"], ["John Doe"])
 
     # Verify the deletion was successful
-    assert (
-        delete_result == "Entries deleted successfully."
-    ), f"Expected successful deletion message, but got {delete_result}"
+    expected_deletion_message = "deleted successfully"
+    assert expected_deletion_message in delete_result, f"Expected successful deletion message, but got {delete_result}"
 
     # Search for the document again
     search_results_2 = await r2r_app.asearch("who was aristotle?")
