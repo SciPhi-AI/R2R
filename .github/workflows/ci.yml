@@ -36,6 +36,7 @@ jobs:
 
   pytest:
     runs-on: ubuntu-latest
+    timpout-minutes: 10
 
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
