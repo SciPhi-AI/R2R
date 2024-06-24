@@ -196,7 +196,7 @@ class R2RClient:
             query=query,
             vector_search_settings=VectorSearchSettings(
                 use_vector_search=use_vector_search,
-                search_filters=search_filters,
+                search_filters=search_filters or {},
                 search_limit=search_limit,
                 do_hybrid_search=do_hybrid_search,
             ),
@@ -225,7 +225,7 @@ class R2RClient:
             query=query,
             vector_search_settings=VectorSearchSettings(
                 use_vector_search=use_vector_search,
-                search_filters=search_filters,
+                search_filters=search_filters or {},
                 search_limit=search_limit,
                 do_hybrid_search=do_hybrid_search,
             ),

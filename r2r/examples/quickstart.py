@@ -305,7 +305,7 @@ class R2RQuickstart:
                 query,
                 VectorSearchSettings(
                     use_vector_search=use_vector_search,
-                    search_filters=search_filters,
+                    search_filters=search_filters or {},
                     search_limit=search_limit,
                     do_hybrid_search=do_hybrid_search,
                 ),
@@ -359,7 +359,7 @@ class R2RQuickstart:
             response = self.client.rag(
                 query=query,
                 use_vector_search=use_vector_search,
-                search_filters=search_filters,
+                search_filters=search_filters or {},
                 search_limit=search_limit,
                 do_hybrid_search=do_hybrid_search,
                 use_kg_search=use_kg_search,
@@ -382,7 +382,7 @@ class R2RQuickstart:
                 query,
                 vector_search_settings=VectorSearchSettings(
                     use_vector_search=use_vector_search,
-                    search_filters=search_filters,
+                    search_filters=search_filters or {},
                     search_limit=search_limit,
                     do_hybrid_search=do_hybrid_search,
                 ),
