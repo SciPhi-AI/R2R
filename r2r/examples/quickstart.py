@@ -37,7 +37,7 @@ class R2RQuickstart:
 
     def __init__(
         self,
-        config_name: Optional[str] = "default",
+        config_name: Optional[str] = None,
         config_path: Optional[str] = None,
         file_list: Optional[list[str]] = None,
         file_tuples: Optional[list[tuple]] = None,
@@ -46,6 +46,8 @@ class R2RQuickstart:
     ):
         if config_path and config_name:
             raise ValueError("Cannot specify both config and config_name")
+        if not config_name and not config_path:
+            config_name = "default"
 
         if config_path:
             config = R2RConfig.from_json(config_path)
