@@ -71,7 +71,8 @@ export POSTGRES_DBNAME=YOUR_POSTGRES_DBNAME
 # Optional on first pull. Advised when fetching the latest updates.
 docker pull emrgntcmplxty/r2r:latest
 
-# Runs the image. If you set up the environment you don't need to modify anything. Otherwise, add your values on the right side of the -e commands.
+# Runs the image. If you set up the environment you don't need to modify anything.
+# Otherwise, add your values on the right side of the -e commands.
 # For Windows, remove the "\" from your command.
 docker run -d \
    --name r2r \
