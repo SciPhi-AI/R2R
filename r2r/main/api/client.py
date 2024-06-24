@@ -74,6 +74,12 @@ class R2RClient:
         self.base_url = base_url
         self.prefix = prefix
 
+    def health(self) -> dict:
+        url = f"{self.base_url}{self.prefix}/health"
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+
     def update_prompt(
         self,
         name: str = "default_system",
