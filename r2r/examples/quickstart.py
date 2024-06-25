@@ -18,6 +18,7 @@ from r2r import (
     R2RConfig,
     VectorSearchSettings,
     generate_id_from_label,
+    get_r2r_app,
 )
 from r2r.core.abstractions.llm import GenerationConfig
 
@@ -68,7 +69,7 @@ class R2RQuickstart:
                 f"Running in client-server mode with base_url: {self.base_url}"
             )
         else:
-            self.r2r_app = R2RAppBuilder(config).build()
+            self.r2r_app = get_r2r_app(R2RAppBuilder(config))
             logger.info("Running locally")
 
         root_path = os.path.dirname(os.path.abspath(__file__))
@@ -314,7 +315,6 @@ class R2RQuickstart:
         if isinstance(results, dict) and "results" in results:
             results = results["results"]
 
-        print("results = ", results)
         if "vector_search_results" in results:
             print("Vector search results:")
             for result in results["vector_search_results"]:
