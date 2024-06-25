@@ -65,6 +65,13 @@ class Document(BaseModel):
 
         super().__init__(*args, **kwargs)
 
+    class Config:
+        arbitrary_types_allowed = True
+        json_encoders = {
+            uuid.UUID: str,
+            bytes: lambda v: base64.b64encode(v).decode("utf-8"),
+        }
+
 
 class DocumentInfo(BaseModel):
     """Base class for document information handling."""

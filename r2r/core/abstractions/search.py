@@ -64,9 +64,9 @@ class AggregateSearchResult(BaseModel):
             "vector_search_results": (
                 [result.dict() for result in self.vector_search_results]
                 if self.vector_search_results
-                else None
+                else []
             ),
-            "kg_search_results": self.kg_search_results,
+            "kg_search_results": self.kg_search_results or [],
         }
 
 

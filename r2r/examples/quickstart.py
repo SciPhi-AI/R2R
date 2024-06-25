@@ -126,10 +126,6 @@ class R2RQuickstart:
                 documents_dicts, monitor=True
             )
         else:
-            print(
-                "calling ingest_documents iwth documents = ",
-                [document.metadata for document in documents],
-            )
             response = self.r2r_app.ingest_documents(documents)
 
         t1 = time.time()

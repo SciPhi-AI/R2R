@@ -11,6 +11,7 @@ from r2r import (
     R2RAppBuilder,
     Relation,
     VectorSearchSettings,
+    generate_id_from_label,
 )
 from r2r.core.abstractions.llm import GenerationConfig
 
@@ -193,23 +194,23 @@ def main(max_entries=50, delete=False):
     i = 0
     # Ingest and clean the data for each company
     for company, url in url_map.items():
-        if i > 120:
-            company_data = fetch_and_clean_yc_co_data(url)
-            if i >= max_entries:
-                break
-            try:
-                # Ingest as a text document
-                r2r_app.ingest_documents(
-                    [
-                        Document(
-                            type="txt",
-                            data=company_data,
-                            metadata={},
-                        )
-                    ]
-                )
-            except:
-                continue
+        company_data = fetch_and_clean_yc_co_data(url)
+        if i >= max_entries:
+            break
+        try:
+            # Ingest as a text document
+            r2r_app.ingest_documents(
+                [
+                    Document(
+                        id=generate_id_from_label(company),
+                        type="txt",
+                        data=company_data,
+                        metadata={"title": company},
+                    )
+                ]
+            )
+        except:
+            continue
         i += 1
 
     print_all_relationships(kg)

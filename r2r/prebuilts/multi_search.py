@@ -133,10 +133,9 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
             ),
         )
         # Create search pipe override and pipes
-        inner_search_pipe = (
-            kwargs.get("multi_inner_search_pipe_override", None)
-            or super().create_pipes().vector_search_pipe
-        )
+        inner_search_pipe = kwargs.get(
+            "multi_inner_search_pipe_override", None
+        ) or super().create_vector_search_pipe(*args, **kwargs)
 
         # TODO - modify `create_..._pipe` to allow naming the pipe
         inner_search_pipe.config.name = multi_search_config.name
