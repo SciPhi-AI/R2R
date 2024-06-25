@@ -547,10 +547,15 @@ class R2RQuickstart:
         else:
             t0 = time.time()
             response = self.r2r_app.users_overview(user_ids)
-        t1 = time.time()
-        print(f"Time taken to get user stats: {t1-t0:.2f} seconds")
+
+        if isinstance(response, dict) and "results" in response:
+            response = response["results"]
+
         for user in response:
             print(user)
+
+        t1 = time.time()
+        print(f"Time taken to get user stats: {t1-t0:.2f} seconds")
 
     def analytics(
         self,
