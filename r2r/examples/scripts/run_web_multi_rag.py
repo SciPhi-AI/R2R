@@ -15,6 +15,7 @@ def run_rag_pipeline(query="Who was Aristotle?"):
 
     # Define a new synthetic query generation template
     synthetic_query_generation_template = {
+        "name": "synthetic_query_generation_template",
         "template": """
             ### Instruction:
             Given the following query, write a double newline separated list of up to {num_outputs} advanced queries meant to help answer the original query.

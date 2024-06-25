@@ -193,22 +193,23 @@ def main(max_entries=50, delete=False):
     i = 0
     # Ingest and clean the data for each company
     for company, url in url_map.items():
-        company_data = fetch_and_clean_yc_co_data(url)
-        if i >= max_entries:
-            break
-        try:
-            # Ingest as a text document
-            r2r_app.ingest_documents(
-                [
-                    Document(
-                        type="txt",
-                        data=company_data,
-                        metadata={},
-                    )
-                ]
-            )
-        except:
-            continue
+        if i > 120:
+            company_data = fetch_and_clean_yc_co_data(url)
+            if i >= max_entries:
+                break
+            try:
+                # Ingest as a text document
+                r2r_app.ingest_documents(
+                    [
+                        Document(
+                            type="txt",
+                            data=company_data,
+                            metadata={},
+                        )
+                    ]
+                )
+            except:
+                continue
         i += 1
 
     print_all_relationships(kg)
