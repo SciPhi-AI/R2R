@@ -39,6 +39,8 @@ class ManagementService(Service):
         name: str,
         template: Optional[str] = None,
         input_types: Optional[dict[str, str]] = {},
+        *args,
+        **kwargs,
     ):
         self.providers.prompt.update_prompt(name, template, input_types)
         return f"Prompt '{name}' added successfully."
@@ -97,6 +99,8 @@ class ManagementService(Service):
         self,
         filter_criteria: FilterCriteria,
         analysis_types: AnalysisTypes,
+        *args,
+        **kwargs,
     ):
         run_info = await self.logging_connection.get_run_info(limit=100)
         run_ids = [info.run_id for info in run_info]
@@ -184,7 +188,10 @@ class ManagementService(Service):
 
     @telemetry_event("UsersOverview")
     async def ausers_overview(
-        self, user_ids: Optional[list[uuid.UUID]] = None
+        self,
+        user_ids: Optional[list[uuid.UUID]] = None,
+        *args,
+        **kwargs,
     ):
         return self.providers.vector_db.get_users_overview(
             [str(ele) for ele in user_ids] if user_ids else None
@@ -192,7 +199,11 @@ class ManagementService(Service):
 
     @telemetry_event("Delete")
     async def delete(
-        self, keys: list[str], values: list[Union[bool, int, str]]
+        self,
+        keys: list[str],
+        values: list[Union[bool, int, str]],
+        *args,
+        **kwargs,
     ):
         metadata = ", ".join(
             f"{key}={value}" for key, value in zip(keys, values)
@@ -225,17 +236,31 @@ class ManagementService(Service):
         )
 
     @telemetry_event("DocumentChunks")
-    async def document_chunks(self, document_id: uuid.UUID):
+    async def document_chunks(
+        self,
+        document_id: uuid.UUID,
+        *args,
+        **kwargs,
+    ):
         return self.providers.vector_db.get_document_chunks(str(document_id))
 
     @telemetry_event("UsersOverview")
-    async def users_overview(self, user_ids: Optional[list[uuid.UUID]]):
+    async def users_overview(
+        self,
+        user_ids: Optional[list[uuid.UUID]],
+        *args,
+        **kwargs,
+    ):
         return self.providers.vector_db.get_users_overview(
             [str(ele) for ele in user_ids]
         )
 
     @telemetry_event("AppSettings")
-    async def app_settings(self):
+    async def app_settings(
+        self,
+        *args,
+        **kwargs,
+    ):
         prompts = self.providers.prompt.get_all_prompts()
         return {
             "config": self.config.to_json(),

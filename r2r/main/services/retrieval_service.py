@@ -46,6 +46,8 @@ class RetrievalService(Service):
         query: str,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
+        *args,
+        **kwargs,
     ):
         async with manage_run(self.run_manager, "search_app") as run_id:
             t0 = time.time()
@@ -78,6 +80,8 @@ class RetrievalService(Service):
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
                 run_manager=self.run_manager,
+                *args,
+                **kwargs,
             )
 
             t1 = time.time()
@@ -99,6 +103,8 @@ class RetrievalService(Service):
         rag_generation_config: GenerationConfig,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
+        *args,
+        **kwargs,
     ):
         async with manage_run(self.run_manager, "rag_app") as run_id:
             try:
@@ -146,6 +152,8 @@ class RetrievalService(Service):
                     vector_search_settings=vector_search_settings,
                     kg_search_settings=kg_search_settings,
                     rag_generation_config=rag_generation_config,
+                    *args,
+                    **kwargs,
                 )
 
                 t1 = time.time()
@@ -178,6 +186,8 @@ class RetrievalService(Service):
         context: str,
         completion: str,
         eval_generation_config: Optional[GenerationConfig],
+        *args,
+        **kwargs,
     ):
         eval_payload = EvalPipe.EvalPayload(
             query=query,

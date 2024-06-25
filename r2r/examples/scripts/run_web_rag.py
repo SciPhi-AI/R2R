@@ -10,7 +10,7 @@ def run_rag_pipeline(query="Who was Aristotle?"):
         serper_client=SerperClient()  # TODO - Develop a `WebSearchProvider` for configurability
     )
 
-    r2r_app = R2RAppBuilder().with_search_pipe(web_search_pipe).build()
+    r2r_app = R2RAppBuilder().with_vector_search_pipe(web_search_pipe).build()
 
     # Run the RAG pipeline through the R2R application
     result = r2r_app.rag(
