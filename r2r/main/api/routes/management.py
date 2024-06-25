@@ -72,6 +72,7 @@ async def get_analytics_app(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
+@router.post("/users_overview")
 @router.get("/users_overview")
 async def get_users_overview_app(
     request: R2RUsersOverviewRequest, r2r=Depends(get_r2r_app)
