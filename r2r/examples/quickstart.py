@@ -69,7 +69,7 @@ class R2RQuickstart:
                 f"Running in client-server mode with base_url: {self.base_url}"
             )
         else:
-            self.r2r_app = get_r2r_app(R2RAppBuilder(config))
+            self.r2r_app = get_r2r_app(app_builder=R2RAppBuilder(config))
             logger.info("Running locally")
 
         root_path = os.path.dirname(os.path.abspath(__file__))
