@@ -94,15 +94,32 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
         A factory method to create a search pipe.
 
         Overrides include
+            task_prompt_name: str
             multi_query_transform_pipe_override: QueryTransformPipe
             multi_inner_search_pipe_override: SearchPipe
-            search_task_template_override: {'template': str, 'input_types': dict[str, str]}
+            query_generation_template_override: {'template': str, 'input_types': dict[str, str]}
         """
         multi_search_config = MultiSearchPipe.PipeConfig()
+        if kwargs.get("task_prompt_name") and kwargs.get(
+            "query_generation_template_override"
+        ):
+            raise ValueError(
+                "Cannot provide both `task_prompt_name` and `query_generation_template_override`"
+            )
         task_prompt_name = (
             kwargs.get("task_prompt_name")
             or f"{multi_search_config.name}_task_prompt"
         )
+        if kwargs.get("query_generation_template_override"):
+            # Add a prompt for transforming the user query
+            template = kwargs.get("query_generation_template_override")
+            self.providers.prompt.add_prompt(
+                **(
+                    kwargs.get("query_generation_template_override")
+                    or self.QUERY_GENERATION_TEMPLATE
+                ),
+            )
+            task_prompt_name = template["name"]
 
         # Initialize the new query transform pipe
         query_transform_pipe = kwargs.get(
@@ -115,16 +132,6 @@ class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):
                 task_prompt=task_prompt_name,
             ),
         )
-        if kwargs.get("task_prompt_name") is None:
-            # Add a prompt for transforming the user query
-            self.providers.prompt.add_prompt(
-                name=task_prompt_name,
-                **(
-                    kwargs.get("query_generation_template_override")
-                    or self.QUERY_GENERATION_TEMPLATE
-                ),
-            )
-
         # Create search pipe override and pipes
         inner_search_pipe = kwargs.get(
             "multi_inner_search_pipe_override", None

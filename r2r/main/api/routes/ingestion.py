@@ -49,7 +49,7 @@ async def ingest_documents_app(
             logger.error(
                 f"ingest_documents_app(documents={request.documents}) - \n\n{str(e)})"
             )
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/update_documents")

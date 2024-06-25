@@ -10,6 +10,8 @@ dump/*
 .next
 node_modules
 
+coverage.xml
+.coverage
 
 **/*.sqlite*
 **/*.sqlite3*

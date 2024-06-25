@@ -954,7 +954,7 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
             json.dumps(ner_kg_extraction, ensure_ascii=False),
         )
 
-    def update_agent_prompt(
+    def update_kg_agent_prompt(
         self,
         prompt_provider: PromptProvider,
         entity_types: list[EntityType],

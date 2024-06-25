@@ -109,7 +109,7 @@ class IngestionService(Service):
             logger.error("All provided documents already exist.")
             raise HTTPException(
                 status_code=409,
-                detail="All provided documents already exist. Use the update endpoint to update these documents.",
+                detail="All provided documents already exist. Use the `update_documents` endpoint instead to update these documents.",
             )
 
         if skipped_documents:
@@ -366,7 +366,7 @@ class IngestionService(Service):
                 logger.error("All uploaded documents already exist.")
                 raise HTTPException(
                     status_code=409,
-                    detail="All uploaded documents already exist. Use the update endpoint to update these documents.",
+                    detail="All uploaded documents already exist. Use the `update_files` endpoint instead to update these documents.",
                 )
 
             if skipped_documents:

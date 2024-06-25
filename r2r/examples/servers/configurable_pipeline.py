@@ -57,7 +57,9 @@ def r2r_app(
         web_search_pipe = WebSearchPipe(
             serper_client=SerperClient()  # TODO - Develop a `WebSearchProvider` for configurability
         )
-        builder = R2RAppBuilder(config).with_search_pipe(web_search_pipe)
+        builder = R2RAppBuilder(config).with_vector_search_pipe(
+            web_search_pipe
+        )
     # elif pipeline_type == PipelineType.HYDE:
     #     builder =  (
     #         R2RAppBuilder(config)

@@ -37,7 +37,7 @@ class R2RQuickstart:
 
     def __init__(
         self,
-        config_name: Optional[str] = "default",
+        config_name: Optional[str] = None,
         config_path: Optional[str] = None,
         file_list: Optional[list[str]] = None,
         file_tuples: Optional[list[tuple]] = None,
@@ -46,6 +46,8 @@ class R2RQuickstart:
     ):
         if config_path and config_name:
             raise ValueError("Cannot specify both config and config_name")
+        if not config_name and not config_path:
+            config_name = "default"
 
         if config_path:
             config = R2RConfig.from_json(config_path)
@@ -124,10 +126,6 @@ class R2RQuickstart:
                 documents_dicts, monitor=True
             )
         else:
-            print(
-                "calling ingest_documents iwth documents = ",
-                [document.metadata for document in documents],
-            )
             response = self.r2r_app.ingest_documents(documents)
 
         t1 = time.time()
@@ -303,7 +301,7 @@ class R2RQuickstart:
                 query,
                 VectorSearchSettings(
                     use_vector_search=use_vector_search,
-                    search_filters=search_filters,
+                    search_filters=search_filters or {},
                     search_limit=search_limit,
                     do_hybrid_search=do_hybrid_search,
                 ),
@@ -357,7 +355,7 @@ class R2RQuickstart:
             response = self.client.rag(
                 query=query,
                 use_vector_search=use_vector_search,
-                search_filters=search_filters,
+                search_filters=search_filters or {},
                 search_limit=search_limit,
                 do_hybrid_search=do_hybrid_search,
                 use_kg_search=use_kg_search,
@@ -380,7 +378,7 @@ class R2RQuickstart:
                 query,
                 vector_search_settings=VectorSearchSettings(
                     use_vector_search=use_vector_search,
-                    search_filters=search_filters,
+                    search_filters=search_filters or {},
                     search_limit=search_limit,
                     do_hybrid_search=do_hybrid_search,
                 ),

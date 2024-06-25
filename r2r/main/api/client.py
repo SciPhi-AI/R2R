@@ -74,6 +74,12 @@ class R2RClient:
         self.base_url = base_url
         self.prefix = prefix
 
+    def health(self) -> dict:
+        url = f"{self.base_url}{self.prefix}/health"
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+
     def update_prompt(
         self,
         name: str = "default_system",
@@ -196,7 +202,7 @@ class R2RClient:
             query=query,
             vector_search_settings=VectorSearchSettings(
                 use_vector_search=use_vector_search,
-                search_filters=search_filters,
+                search_filters=search_filters or {},
                 search_limit=search_limit,
                 do_hybrid_search=do_hybrid_search,
             ),
@@ -225,7 +231,7 @@ class R2RClient:
             query=query,
             vector_search_settings=VectorSearchSettings(
                 use_vector_search=use_vector_search,
-                search_filters=search_filters,
+                search_filters=search_filters or {},
                 search_limit=search_limit,
                 do_hybrid_search=do_hybrid_search,
             ),

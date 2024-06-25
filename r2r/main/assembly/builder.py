@@ -123,8 +123,8 @@ class R2RAppBuilder:
         self.vector_storage_pipe_override = pipe
         return self
 
-    def with_search_pipe(self, pipe: LoggableAsyncPipe):
-        self.search_pipe_override = pipe
+    def with_vector_search_pipe(self, pipe: LoggableAsyncPipe):
+        self.vector_search_pipe_override = pipe
         return self
 
     def with_rag_pipe(self, pipe: LoggableAsyncPipe):
@@ -143,7 +143,7 @@ class R2RAppBuilder:
         self.ingestion_pipeline = pipeline
         return self
 
-    def with_search_pipeline(self, pipeline: SearchPipeline):
+    def with_vector_search_pipeline(self, pipeline: SearchPipeline):
         self.search_pipeline = pipeline
         return self
 
