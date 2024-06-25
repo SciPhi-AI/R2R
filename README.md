@@ -8,7 +8,7 @@
 
 <img src="./docs/pages/r2r.png" alt="R2R Answer Engine">
 <h3 align="center">
-The ultimate open source AI powered answer engine
+The ultimate open source RAG answer engine
 </h3>
 
 # About
