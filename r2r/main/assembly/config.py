@@ -59,8 +59,10 @@ class R2RConfig:
         # Validate and set the configuration
         for section, keys in R2RConfig.REQUIRED_KEYS.items():
             # Check the keys when provider is set
+            # TODO - Clean up robust null checks
             if "provider" in default_config[section] and (
-                default_config[section]["provider"] != "None"
+                default_config[section]["provider"] is not None
+                and default_config[section]["provider"] != "None"
                 and default_config[section]["provider"] != "null"
             ):
                 self._validate_config_section(default_config, section, keys)
