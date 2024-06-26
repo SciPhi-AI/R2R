@@ -110,6 +110,10 @@ docker run -d \
 ```
 </details>
 
+# Updates
+Star R2R on GitHub by clicking "Star" in the upper right hand corner of the page to be instantly notified of new releases.
+
+
 # R2R Quickstart
 The following quickstart offers a step-by-step guide on running R2R locally as well as through the Python SDK. The guide ingests a list of provided provided documents and shows search, RAG, and advanced functionality. The script powering the quickstart can be found at `r2r/examples/quickstart.py`, and it can be configured and extended with sufficient developer familiarity.
 
