@@ -68,8 +68,8 @@ export POSTGRES_HOST=YOUR_POSTGRES_HOST
 export POSTGRES_PORT=YOUR_POSTGRES_PORT
 export POSTGRES_DBNAME=YOUR_POSTGRES_DBNAME
 
-# Optional on first pull. Advised when fetching the latest updates.
-docker pull emrgntcmplxty/r2r:latest
+# Optional on first pull. Advised when fetching the main updates.
+docker pull emrgntcmplxty/r2r:main
 
 # Runs the image. If you set up the environment you don't need to modify anything.
 # Otherwise, add your values on the right side of the -e commands.
@@ -83,7 +83,7 @@ docker run -d \
    -e POSTGRES_PORT=$POSTGRES_PORT \
    -e POSTGRES_DBNAME=$POSTGRES_DBNAME \
    -e OPENAI_API_KEY=$OPENAI_API_KEY \
-   emrgntcmplxty/r2r:latest
+   emrgntcmplxty/r2r:main
 ```
 
 **Important:** The Docker image of r2r operates in server and client mode, with the server being the Docker container and the client being your PC. This means you need to append `--client_server_mode` to all your queries.
@@ -106,7 +106,7 @@ docker run -d \
    -e POSTGRES_DBNAME=$POSTGRES_DBNAME \
    -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
    -e CONFIG_OPTION=local_ollama \
-  emrgntcmplxty/r2r:latest
+  emrgntcmplxty/r2r:main
 ```
 </details>
 
