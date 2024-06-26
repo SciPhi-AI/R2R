@@ -56,7 +56,7 @@ class Document(BaseModel):
         if "id" not in kwargs:
             if isinstance(kwargs["data"], bytes):
                 data_hash = uuid.uuid5(
-                    uuid.NAMESPACE_DNS, kwargs["data"].decode("utf-8")
+                    uuid.NAMESPACE_DNS, str(kwargs["data"])  # .decode("utf-8")
                 )
             else:
                 data_hash = uuid.uuid5(uuid.NAMESPACE_DNS, kwargs["data"])

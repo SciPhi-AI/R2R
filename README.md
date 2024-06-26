@@ -124,17 +124,17 @@ The following quickstart offers a step-by-step guide on running R2R locally as w
 
 1. **Ingest Files**:
    ```bash
-   python -m r2r.examples.quickstart ingest_files
+   python -m r2r.examples.walkthrough ingest_files
    ```
 
 2. **View Document Info**:
    ```bash
-   python -m r2r.examples.quickstart documents_overview
+   python -m r2r.examples.walkthrough documents_overview
    ```
 
 3. **View User Overview**:
    ```bash
-   python -m r2r.examples.quickstart users_overview
+   python -m r2r.examples.walkthrough users_overview
    ```
 </details>
 
@@ -143,22 +143,22 @@ The following quickstart offers a step-by-step guide on running R2R locally as w
 
 1. **Search Documents**:
    ```bash
-   python -m r2r.examples.quickstart search --query="Who was Aristotle?"
+   python -m r2r.examples.walkthrough search --query="Who was Aristotle?"
    ```
 
 2. **RAG Completion**:
    ```bash
-   python -m r2r.examples.quickstart rag --query="What was Uber's profit in 2020?"
+   python -m r2r.examples.walkthrough rag --query="What was Uber's profit in 2020?"
    ```
 
 3. **Streaming RAG**:
    ```bash
-   python -m r2r.examples.quickstart rag --query="What was Lyft's profit in 2020?" --streaming=true
+   python -m r2r.examples.walkthrough rag --query="What was Lyft's profit in 2020?" --streaming=true
    ```
 
 4. **Hybrid Search RAG**:
    ```bash
-   python -m r2r.examples.quickstart rag --query="Who is John Snow?" --do_hybrid_search
+   python -m r2r.examples.walkthrough rag --query="Who is John Snow?" --do_hybrid_search
    ```
 </details>
 
