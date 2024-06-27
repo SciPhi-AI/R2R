@@ -328,18 +328,25 @@ class PGVectorDB(VectorDBProvider):
         pass
 
     def delete_by_metadata(
-        self, metadata_fields: str, metadata_values: Union[bool, int, str]
+        self,
+        metadata_fields: list[str],
+        metadata_values: list[Union[bool, int, str]],
     ) -> list[str]:
         super().delete_by_metadata(metadata_fields, metadata_values)
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `delete_by_metadata`."
             )
-        return self.collection.delete(
-            filters={
-                k: {"$eq": v} for k, v in zip(metadata_fields, metadata_values)
-            }
-        )
+
+        # Construct a filter that matches documents where ANY of the field-value pairs match
+        filters = {}
+        for field, value in zip(metadata_fields, metadata_values):
+            if field not in filters:
+                filters[field] = {"$in": [value]}
+            else:
+                filters[field]["$in"].append(value)
+
+        return self.collection.delete(filters=filters)
 
     def get_metadatas(
         self,
