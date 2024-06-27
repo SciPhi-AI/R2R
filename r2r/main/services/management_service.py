@@ -4,7 +4,7 @@ from typing import Any, Optional, Union
 
 from fastapi import HTTPException
 
-from r2r.core import (
+from r2r.base import (
     AnalysisTypes,
     FilterCriteria,
     KVLoggingSingleton,

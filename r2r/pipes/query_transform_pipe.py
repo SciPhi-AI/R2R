@@ -2,14 +2,14 @@ import logging
 import uuid
 from typing import Any, AsyncGenerator, Optional
 
-from r2r.core import (
+from r2r.base import (
     AsyncPipe,
     AsyncState,
     LLMProvider,
     PipeType,
     PromptProvider,
 )
-from r2r.core.abstractions.llm import GenerationConfig
+from r2r.base.abstractions.llm import GenerationConfig
 
 from .abstractions.generator_pipe import GeneratorPipe
 

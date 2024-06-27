@@ -3,7 +3,7 @@ import uuid
 from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional, Union
 
-from r2r.core import (
+from r2r.base import (
     AsyncPipe,
     AsyncState,
     KVLoggingSingleton,

@@ -6,13 +6,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 
-from r2r import (
-    R2RAppBuilder,
-    R2RConfig,
-    SerperClient,
-    WebSearchPipe,
-    get_r2r_app,
-)
+from r2r import R2RBuilder, R2RConfig, SerperClient, WebSearchPipe
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +20,7 @@ class PipelineType(Enum):
     HYDE = "hyde"
 
 
-def r2r_app(
+def app(
     config_name: Optional[str] = "default",
     pipeline_type: PipelineType = PipelineType.QNA,
     config_path: Optional[str] = None,
@@ -38,9 +32,9 @@ def r2r_app(
         config = R2RConfig.from_json(config_path)
     else:
         config_name = os.getenv("CONFIG_OPTION") or config_name
-        if config_name not in R2RAppBuilder.CONFIG_OPTIONS:
+        if config_name not in R2RBuilder.CONFIG_OPTIONS:
             raise ValueError(f"Invalid config name: {config_name}")
-        config = R2RConfig.from_json(R2RAppBuilder.CONFIG_OPTIONS[config_name])
+        config = R2RConfig.from_json(R2RBuilder.CONFIG_OPTIONS[config_name])
 
     if (
         config.embedding.provider == "openai"
@@ -52,24 +46,22 @@ def r2r_app(
 
     builder = None
     if pipeline_type == PipelineType.QNA:
-        builder = R2RAppBuilder(config)
+        builder = R2RBuilder(config)
     elif pipeline_type == PipelineType.WEB:
         web_search_pipe = WebSearchPipe(
             serper_client=SerperClient()  # TODO - Develop a `WebSearchProvider` for configurability
         )
-        builder = R2RAppBuilder(config).with_vector_search_pipe(
-            web_search_pipe
-        )
+        builder = R2RBuilder(config).with_vector_search_pipe(web_search_pipe)
     # elif pipeline_type == PipelineType.HYDE:
     #     builder =  (
-    #         R2RAppBuilder(config)
+    #         R2RBuilder(config)
     #         .with_pipe_factory(R2RPipeFactoryWithMultiSearch)
     #         .build(
     #             task_prompt_name="hyde",
     #         )
     #         .app
     #     )
-    return get_r2r_app(builder).app
+    return builder.build().app
 
 
 if __name__ == "__main__":
@@ -92,7 +84,7 @@ if __name__ == "__main__":
         "--config",
         type=str,
         default="default",
-        choices=R2RAppBuilder.CONFIG_OPTIONS.keys(),
+        choices=R2RBuilder.CONFIG_OPTIONS.keys(),
         help="Configuration option for the pipe",
     )
     parser.add_argument(
@@ -112,7 +104,7 @@ if __name__ == "__main__":
 
     logger.info(f"Environment CONFIG_OPTION: {config_name}")
 
-    app = r2r_app(config_name, PipelineType(pipeline_type))
+    app = app(config_name, PipelineType(pipeline_type))
 
     import uvicorn
 

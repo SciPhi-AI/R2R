@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Any, Optional
 
-from r2r.core import (
+from r2r.base import (
     EmbeddingConfig,
     EmbeddingProvider,
     EvalPipeline,
@@ -38,10 +38,6 @@ class R2RProviderFactory:
             from r2r.providers.vector_dbs import PGVectorDB
 
             vector_db_provider = PGVectorDB(vector_db_config)
-        elif vector_db_config.provider == "local":
-            from r2r.providers.vector_dbs import R2RLocalVectorDB
-
-            vector_db_provider = R2RLocalVectorDB(vector_db_config)
         else:
             raise ValueError(
                 f"Vector database provider {vector_db_config.provider} not supported"
@@ -258,7 +254,7 @@ class R2RPipeFactory:
         if self.config.embedding.provider is None:
             return None
 
-        from r2r.core import RecursiveCharacterTextSplitter
+        from r2r.base import RecursiveCharacterTextSplitter
         from r2r.pipes import EmbeddingPipe
 
         text_splitter_config = self.config.embedding.extra_fields.get(
@@ -305,7 +301,7 @@ class R2RPipeFactory:
         if self.config.kg.provider is None:
             return None
 
-        from r2r.core import RecursiveCharacterTextSplitter
+        from r2r.base import RecursiveCharacterTextSplitter
         from r2r.pipes import KGExtractionPipe
 
         text_splitter_config = self.config.kg.extra_fields.get("text_splitter")

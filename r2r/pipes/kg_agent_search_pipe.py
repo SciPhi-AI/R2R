@@ -2,7 +2,7 @@ import logging
 import uuid
 from typing import Any, Optional
 
-from r2r.core import (
+from r2r.base import (
     AsyncState,
     KGProvider,
     KGSearchSettings,

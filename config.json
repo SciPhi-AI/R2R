@@ -38,7 +38,6 @@
     "provider": "local"
   },
   "vector_database": {
-    "provider": "pgvector",
-    "collection_name": "demo_vecs"
+    "provider": "pgvector"
   }
 }

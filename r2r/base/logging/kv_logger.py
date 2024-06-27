@@ -215,7 +215,7 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
         self.config = config
-        self.conn = None
+        self.pool = None
         if not os.getenv("POSTGRES_DBNAME"):
             raise ValueError(
                 "Please set the environment variable POSTGRES_DBNAME."
@@ -238,35 +238,38 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
             )
 
     async def init(self):
-        self.conn = await asyncpg.connect(
+        self.pool = await asyncpg.create_pool(
             database=os.getenv("POSTGRES_DBNAME"),
             user=os.getenv("POSTGRES_USER"),
             password=os.getenv("POSTGRES_PASSWORD"),
             host=os.getenv("POSTGRES_HOST"),
             port=os.getenv("POSTGRES_PORT"),
+            statement_cache_size=0,  # Disable statement caching
         )
-        await self.conn.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {self.log_table} (
-                timestamp TIMESTAMPTZ,
-                log_id UUID,
-                key TEXT,
-                value TEXT
+        async with self.pool.acquire() as conn:
+
+            await conn.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS {self.log_table} (
+                    timestamp TIMESTAMPTZ,
+                    log_id UUID,
+                    key TEXT,
+                    value TEXT
+                )
+                """
             )
+            await conn.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS {self.log_info_table} (
+                    timestamp TIMESTAMPTZ,
+                    log_id UUID UNIQUE,
+                    log_type TEXT
+                )
             """
-        )
-        await self.conn.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {self.log_info_table} (
-                timestamp TIMESTAMPTZ,
-                log_id UUID UNIQUE,
-                log_type TEXT
             )
-        """
-        )
 
     async def __aenter__(self):
-        if self.conn is None:
+        if self.pool is None:
             await self.init()
         return self
 
@@ -274,9 +277,9 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
         await self.close()
 
     async def close(self):
-        if self.conn:
-            await self.conn.close()
-            self.conn = None
+        if self.pool:
+            await self.pool.close()
+            self.pool = None
 
     async def log(
         self,
@@ -292,18 +295,20 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
                 raise ValueError(
                     "Info log key must contain the string `type`."
                 )
-            await self.conn.execute(
-                f"INSERT INTO {collection} (timestamp, log_id, log_type) VALUES (NOW(), $1, $2)",
-                log_id,
-                value,
-            )
+            async with self.pool.acquire() as conn:
+                await self.pool.execute(
+                    f"INSERT INTO {collection} (timestamp, log_id, log_type) VALUES (NOW(), $1, $2)",
+                    log_id,
+                    value,
+                )
         else:
-            await self.conn.execute(
-                f"INSERT INTO {collection} (timestamp, log_id, key, value) VALUES (NOW(), $1, $2, $3)",
-                log_id,
-                key,
-                value,
-            )
+            async with self.pool.acquire() as conn:
+                await conn.execute(
+                    f"INSERT INTO {collection} (timestamp, log_id, key, value) VALUES (NOW(), $1, $2, $3)",
+                    log_id,
+                    key,
+                    value,
+                )
 
     async def get_run_info(
         self, limit: int = 10, log_type_filter: Optional[str] = None
@@ -318,11 +323,13 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
             query += " WHERE " + " AND ".join(conditions)
         query += " ORDER BY timestamp DESC LIMIT $2"
         params.append(limit)
-        rows = await self.conn.fetch(query, *params)
-        return [
-            RunInfo(run_id=row["log_id"], log_type=row["log_type"])
-            for row in rows
-        ]
+        async with self.pool.acquire() as conn:
+
+            rows = await conn.fetch(query, *params)
+            return [
+                RunInfo(run_id=row["log_id"], log_type=row["log_type"])
+                for row in rows
+            ]
 
     async def get_logs(
         self, run_ids: list[uuid.UUID], limit_per_run: int = 10
@@ -341,8 +348,9 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
         ORDER BY sub.timestamp DESC
         """
         params = [str(run_id) for run_id in run_ids] + [limit_per_run]
-        rows = await self.conn.fetch(query, *params)
-        return [{key: row[key] for key in row.keys()} for row in rows]
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(query, *params)
+            return [{key: row[key] for key in row.keys()} for row in rows]
 
 
 class RedisLoggingConfig(LoggingConfig):

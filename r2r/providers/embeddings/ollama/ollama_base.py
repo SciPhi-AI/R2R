@@ -3,7 +3,7 @@ import logging
 import ollama
 from ollama import AsyncClient
 
-from r2r.core import EmbeddingConfig, EmbeddingProvider, VectorSearchResult
+from r2r.base import EmbeddingConfig, EmbeddingProvider, VectorSearchResult
 
 logger = logging.getLogger(__name__)
 

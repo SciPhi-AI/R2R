@@ -4,7 +4,7 @@ import logging
 import uuid
 from typing import Any, AsyncGenerator, List, Optional
 
-from r2r.core import (
+from r2r.base import (
     AsyncState,
     EmbeddingProvider,
     Extraction,

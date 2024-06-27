@@ -11,9 +11,9 @@ import httpx
 import nest_asyncio
 import requests
 
-from r2r.core import GenerationConfig, KGSearchSettings, VectorSearchSettings
+from r2r.base import GenerationConfig, KGSearchSettings, VectorSearchSettings
 
-from ..abstractions import (
+from .requests import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,

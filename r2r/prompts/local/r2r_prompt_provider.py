@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Any, Optional
 
-from r2r.core import Prompt, PromptProvider
+from r2r.base import Prompt, PromptProvider
 
 logger = logging.getLogger(__name__)
 

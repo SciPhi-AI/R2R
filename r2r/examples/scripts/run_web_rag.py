@@ -1,7 +1,7 @@
 import fire
 
-from r2r import R2RAppBuilder, SerperClient, WebSearchPipe
-from r2r.core.abstractions.llm import GenerationConfig
+from r2r import R2RBuilder, SerperClient, WebSearchPipe
+from r2r.base.abstractions.llm import GenerationConfig
 
 
 def run_rag_pipeline(query="Who was Aristotle?"):
@@ -10,10 +10,10 @@ def run_rag_pipeline(query="Who was Aristotle?"):
         serper_client=SerperClient()  # TODO - Develop a `WebSearchProvider` for configurability
     )
 
-    r2r_app = R2RAppBuilder().with_vector_search_pipe(web_search_pipe).build()
+    app = R2RBuilder().with_vector_search_pipe(web_search_pipe).build()
 
     # Run the RAG pipeline through the R2R application
-    result = r2r_app.rag(
+    result = app.rag(
         query,
         rag_generation_config=GenerationConfig(model="gpt-4o"),
     )

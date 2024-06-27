@@ -2,7 +2,7 @@ import uuid
 from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional
 
-from r2r.core import (
+from r2r.base import (
     AsyncState,
     KVLoggingSingleton,
     LLMProvider,
@@ -10,7 +10,7 @@ from r2r.core import (
     PipeType,
     PromptProvider,
 )
-from r2r.core.abstractions.llm import GenerationConfig
+from r2r.base.abstractions.llm import GenerationConfig
 
 
 class GeneratorPipe(LoggableAsyncPipe):

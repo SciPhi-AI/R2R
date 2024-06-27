@@ -26,4 +26,4 @@ RUN poetry run pip install --no-cache-dir gunicorn uvicorn
 EXPOSE 8000
 
 # Set the command to run the application with Gunicorn
-CMD ["poetry", "run", "gunicorn", "r2r.examples.servers.configurable_pipeline:r2r_app", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "8", "--timeout", "0", "--worker-class", "uvicorn.workers.UvicornWorker"]
+CMD ["poetry", "run", "gunicorn", "r2r.examples.servers.configurable_pipeline:app", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "8", "--timeout", "0", "--worker-class", "uvicorn.workers.UvicornWorker"]

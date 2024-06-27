@@ -5,7 +5,7 @@ import json
 import os
 from typing import Any, Dict, List, Optional, Tuple
 
-from r2r.core import (
+from r2r.base import (
     EntityType,
     KGConfig,
     KGProvider,
@@ -13,7 +13,7 @@ from r2r.core import (
     format_entity_types,
     format_relations,
 )
-from r2r.core.abstractions.llama_abstractions import (
+from r2r.base.abstractions.llama_abstractions import (
     LIST_LIMIT,
     ChunkNode,
     EntityNode,
