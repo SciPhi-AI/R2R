@@ -35,20 +35,6 @@ def setup_routes(app, engine):
             )
             raise HTTPException(status_code=500, detail=str(e)) from e
 
-<<<<<<< HEAD
-@router.post("/update_prompt")
-async def update_prompt_app(
-    request: R2RUpdatePromptRequest, r2r=Depends(get_r2r_app)
-):
-    try:
-        results = await r2r.aupdate_prompt(
-            request.name, request.template, request.input_types
-        )
-        return {"results": results}
-    except Exception as e:
-        logger.error(f"update_prompt_app(request={request}) - \n\n{str(e)})")
-        raise HTTPException(status_code=500, detail=str(e)) from e
-=======
     @router.post("/logs")
     @router.get("/logs")
     async def get_logs_app(request: R2RLogsRequest):
@@ -63,7 +49,6 @@ async def update_prompt_app(
                 f"get_logs_app(log_type_filter={request.log_type_filter}, max_runs_requested={request.max_runs_requested}) - \n\n{str(e)})"
             )
             raise HTTPException(status_code=500, detail=str(e)) from e
->>>>>>> origin/dev
 
     @router.post("/analytics")
     @router.get("/analytics")
