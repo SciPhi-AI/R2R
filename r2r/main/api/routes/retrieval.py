@@ -58,7 +58,8 @@ def setup_routes(app, engine):
                         response, media_type="application/json"
                     )
                 else:
-                    return {"results": response}
+                    # unpack the list of one response
+                    return {"results": response[0]}
             except Exception as e:
                 await engine.logging_connection.log(
                     log_id=run_id,

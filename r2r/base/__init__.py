@@ -19,6 +19,7 @@ from .abstractions.llm import (
     GenerationConfig,
     LLMChatCompletion,
     LLMChatCompletionChunk,
+    RAGCompletion,
 )
 from .abstractions.prompt import Prompt
 from .abstractions.search import (
@@ -165,6 +166,7 @@ __all__ = [
     "PromptConfig",
     "PromptProvider",
     "GenerationConfig",
+    "RAGCompletion",
     "VectorStoreQuery",
     "LLMChatCompletion",
     "LLMChatCompletionChunk",

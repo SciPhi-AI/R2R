@@ -1,12 +1,28 @@
 """Abstractions for the LLM model."""
 
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from pydantic import BaseModel
 
+if TYPE_CHECKING:
+    from .search import AggregateSearchResult
+
 LLMChatCompletion = ChatCompletion
 LLMChatCompletionChunk = ChatCompletionChunk
+
+
+class RAGCompletion:
+    completion: LLMChatCompletion
+    search_results: "AggregateSearchResult"
+
+    def __init__(
+        self,
+        completion: LLMChatCompletion,
+        search_results: "AggregateSearchResult",
+    ):
+        self.completion = completion
+        self.search_results = search_results
 
 
 class GenerationConfig(BaseModel):
