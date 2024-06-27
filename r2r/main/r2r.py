@@ -18,13 +18,22 @@ class R2R:
         *args,
         **kwargs
     ):
+
         if engine and app:
             self.engine = engine
             self.app = app
-        elif config or from_config:
-            from assembly.builder import R2RBuilder
+        elif (config or from_config) or (
+            config is None and from_config is None
+        ):
+            from .assembly.builder import R2RBuilder
 
-            builder = R2RBuilder(config=config, from_config=from_config)
+            # Handle the case where 'from_config' is None and 'config' is None
+            if not config and not from_config:
+                from_config = "default"
+            builder = R2RBuilder(
+                config=config,
+                from_config=from_config,
+            )
             built = builder.build()
             self.engine = built.engine
             self.app = built.app

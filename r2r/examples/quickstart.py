@@ -9,6 +9,7 @@ import fire
 from fastapi.datastructures import UploadFile
 
 from r2r import (
+    R2R,
     AnalysisTypes,
     Document,
     FilterCriteria,
@@ -67,7 +68,7 @@ class R2RQuickstart:
                 f"Running in client-server mode with base_url: {self.base_url}"
             )
         else:
-            self.app = R2RBuilder(config).build()
+            self.app = R2R(config=config)
             logger.info("Running locally")
 
         root_path = os.path.dirname(os.path.abspath(__file__))

@@ -24,8 +24,10 @@ from .assembly.factory import (
     R2RProviderFactory,
 )
 from .engine import R2REngine
+from .r2r import R2R
 
 __all__ = [
+    "R2R",
     "R2RPipelines",
     "R2RProviders",
     "R2RUpdatePromptRequest",
