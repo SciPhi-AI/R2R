@@ -3,14 +3,14 @@ import logging
 import uuid
 from typing import Any, AsyncGenerator, Generator, Optional
 
-from r2r.core import (
+from r2r.base import (
     AsyncState,
     LLMChatCompletionChunk,
     LLMProvider,
     PipeType,
     PromptProvider,
 )
-from r2r.core.abstractions.llm import GenerationConfig
+from r2r.base.abstractions.llm import GenerationConfig
 
 from .abstractions.generator_pipe import GeneratorPipe
 from .search_rag_pipe import SearchRAGPipe

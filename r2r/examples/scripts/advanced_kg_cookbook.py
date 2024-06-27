@@ -8,12 +8,12 @@ from r2r import (
     Document,
     EntityType,
     KGSearchSettings,
-    R2RAppBuilder,
+    R2RBuilder,
     Relation,
     VectorSearchSettings,
     generate_id_from_label,
 )
-from r2r.core.abstractions.llm import GenerationConfig
+from r2r.base.abstractions.llm import GenerationConfig
 
 
 def get_all_yc_co_directory_urls():
@@ -107,7 +107,7 @@ def print_all_relationships(provider):
 
 def main(max_entries=50, delete=False):
     # Load the R2R configuration and build the app
-    r2r_app = R2RAppBuilder(from_config="neo4j_kg").build()
+    app = R2RBuilder(from_config="neo4j_kg").build()
 
     # Specify the entity types for the KG extraction prompt
     entity_types = [
@@ -179,8 +179,8 @@ def main(max_entries=50, delete=False):
     ]
 
     # Get the prompt provider and KG provider
-    prompt_provider = r2r_app.providers.prompt
-    kg = r2r_app.providers.kg
+    prompt_provider = app.providers.prompt
+    kg = app.providers.kg
 
     # Update the KG extraction prompt with the specified entity types and relations
     kg.update_extraction_prompt(prompt_provider, entity_types, relations)
@@ -199,7 +199,7 @@ def main(max_entries=50, delete=False):
             break
         try:
             # Ingest as a text document
-            r2r_app.ingest_documents(
+            app.ingest_documents(
                 [
                     Document(
                         id=generate_id_from_label(company),
@@ -220,7 +220,7 @@ def main(max_entries=50, delete=False):
     # after updating the prompt with the specified entity types and relations
     kg.update_kg_agent_prompt(prompt_provider, entity_types, relations)
 
-    result = r2r_app.search(
+    result = app.search(
         query="Find up to 10 founders that worked at Google",
         kg_search_settings=KGSearchSettings(use_kg_search=True),
         vector_search_settings=VectorSearchSettings(use_vector_search=False),
@@ -228,7 +228,7 @@ def main(max_entries=50, delete=False):
 
     print("Search Result:\n", result["kg_search_results"])
 
-    result = r2r_app.rag(
+    result = app.rag(
         query="Find up to 10 founders that worked at Google",
         kg_search_settings=KGSearchSettings(use_kg_search=True),
         vector_search_settings=VectorSearchSettings(use_vector_search=False),

@@ -1,9 +1,9 @@
-from r2r import Document, R2RAppBuilder
+from r2r import Document, R2RBuilder
 
 if __name__ == "__main__":
-    r2r_app = R2RAppBuilder(from_config="neo4j_kg").build()
+    app = R2RBuilder(from_config="neo4j_kg").build()
 
-    r2r_app.ingest_documents(
+    app.ingest_documents(
         [
             Document(
                 type="txt",
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     )
 
     # Get the KG provider
-    neo4j_kg = r2r_app.providers.kg
+    neo4j_kg = app.providers.kg
 
     # The expected entities
     entity_names = ["John", "Paul", "Google", "Microsoft"]
@@ -46,17 +46,15 @@ if __name__ == "__main__":
         print(f"{source} -[{relation.label}]-> {target} ")
 
     # Search the vector database
-    search_results = r2r_app.search(query="Who is john")
+    search_results = app.search(query="Who is john")
     print("\nSearch Results:\n", search_results)
 
     # Semantic search over the knowledge graph
-    from r2r.core import VectorStoreQuery
+    from r2r.base import VectorStoreQuery
 
     node_result = neo4j_kg.vector_query(
         VectorStoreQuery(
-            query_embedding=r2r_app.providers.embedding.get_embedding(
-                "A person"
-            ),
+            query_embedding=app.providers.embedding.get_embedding("A person"),
         )
     )
     print("\nNode Result:", node_result)

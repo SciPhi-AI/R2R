@@ -8,7 +8,7 @@ import time
 import uuid
 from typing import AsyncGenerator, Optional
 
-from r2r.core import (
+from r2r.base import (
     AsyncParser,
     AsyncState,
     AudioParser,

@@ -2,7 +2,7 @@ from fractions import Fraction
 from typing import Union
 
 from r2r import EvalConfig, EvalProvider, LLMProvider, PromptProvider
-from r2r.core.abstractions.llm import GenerationConfig
+from r2r.base.abstractions.llm import GenerationConfig
 
 
 class LLMEvalProvider(EvalProvider):

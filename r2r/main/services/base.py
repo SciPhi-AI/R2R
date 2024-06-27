@@ -1,6 +1,6 @@
 from abc import ABC
 
-from r2r.core import KVLoggingSingleton, RunManager
+from r2r.base import KVLoggingSingleton, RunManager
 
 from ..abstractions import R2RPipelines, R2RProviders
 from ..assembly.config import R2RConfig

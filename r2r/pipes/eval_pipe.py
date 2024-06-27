@@ -11,7 +11,7 @@ from r2r import (
     LoggableAsyncPipe,
     PipeType,
 )
-from r2r.core.abstractions.llm import GenerationConfig
+from r2r.base.abstractions.llm import GenerationConfig
 
 logger = logging.getLogger(__name__)
 

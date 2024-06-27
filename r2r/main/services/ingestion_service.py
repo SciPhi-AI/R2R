@@ -7,7 +7,7 @@ from typing import Any, List, Optional, Union
 
 from fastapi import Form, HTTPException, UploadFile
 
-from r2r.core import (
+from r2r.base import (
     Document,
     DocumentInfo,
     DocumentType,
@@ -19,12 +19,8 @@ from r2r.core import (
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import (
-    R2RIngestFilesRequest,
-    R2RPipelines,
-    R2RProviders,
-    R2RUpdateFilesRequest,
-)
+from ..abstractions import R2RPipelines, R2RProviders
+from ..api.requests import R2RIngestFilesRequest, R2RUpdateFilesRequest
 from ..assembly.config import R2RConfig
 from .base import Service
 

@@ -30,7 +30,7 @@
     }
   },
   "logging": {
-    "provider": "postgres",
+    "provider": "local",
     "log_table": "logs",
     "log_info_table": "log_info"
   },

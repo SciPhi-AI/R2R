@@ -3,7 +3,7 @@ import logging
 import uuid
 from typing import Any, AsyncGenerator, Optional
 
-from r2r.core import (
+from r2r.base import (
     AsyncState,
     EmbeddingProvider,
     KGExtraction,
@@ -12,7 +12,7 @@ from r2r.core import (
     LoggableAsyncPipe,
     PipeType,
 )
-from r2r.core.abstractions.llama_abstractions import EntityNode, Relation
+from r2r.base.abstractions.llama_abstractions import EntityNode, Relation
 
 logger = logging.getLogger(__name__)
 

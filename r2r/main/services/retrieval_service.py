@@ -5,22 +5,18 @@ from typing import Optional
 
 from fastapi import HTTPException
 
-from r2r.core import (
+from r2r.base import (
     KVLoggingSingleton,
     RunManager,
     manage_run,
     to_async_generator,
 )
-from r2r.core.abstractions.llm import GenerationConfig
+from r2r.base.abstractions.llm import GenerationConfig
+from r2r.base.abstractions.search import KGSearchSettings, VectorSearchSettings
 from r2r.pipes import EvalPipe
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import (
-    KGSearchSettings,
-    R2RPipelines,
-    R2RProviders,
-    VectorSearchSettings,
-)
+from ..abstractions import R2RPipelines, R2RProviders
 from ..assembly.config import R2RConfig
 from .base import Service
 

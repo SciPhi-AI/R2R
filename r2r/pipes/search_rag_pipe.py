@@ -2,7 +2,7 @@ import logging
 import uuid
 from typing import Any, AsyncGenerator, Optional, Tuple
 
-from r2r.core import (
+from r2r.base import (
     AggregateSearchResult,
     AsyncPipe,
     AsyncState,
@@ -11,7 +11,7 @@ from r2r.core import (
     PipeType,
     PromptProvider,
 )
-from r2r.core.abstractions.llm import GenerationConfig
+from r2r.base.abstractions.llm import GenerationConfig
 
 from .abstractions.generator_pipe import GeneratorPipe
 

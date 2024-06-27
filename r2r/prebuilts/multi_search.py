@@ -9,7 +9,7 @@ from r2r import (
     SearchPipe,
     VectorSearchResult,
 )
-from r2r.core.abstractions.llm import GenerationConfig
+from r2r.base.abstractions.llm import GenerationConfig
 
 
 class MultiSearchPipe(LoggableAsyncPipe):

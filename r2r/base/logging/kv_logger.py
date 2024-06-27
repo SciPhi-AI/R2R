@@ -269,7 +269,7 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
             )
 
     async def __aenter__(self):
-        if self.poor is None:
+        if self.pool is None:
             await self.init()
         return self
 
@@ -277,9 +277,9 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
         await self.close()
 
     async def close(self):
-        if self.conn:
-            await self.conn.close()
-            self.conn = None
+        if self.pool:
+            await self.pool.close()
+            self.pool = None
 
     async def log(
         self,

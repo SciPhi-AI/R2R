@@ -7,7 +7,7 @@ from typing import Any, AsyncGenerator, Optional
 
 from aiohttp import ClientError
 
-from r2r.core import (
+from r2r.base import (
     AsyncState,
     Extraction,
     Fragment,
@@ -24,7 +24,7 @@ from r2r.core import (
     extract_triples,
     generate_id_from_label,
 )
-from r2r.core.abstractions.llm import GenerationConfig
+from r2r.base.abstractions.llm import GenerationConfig
 
 logger = logging.getLogger(__name__)
 

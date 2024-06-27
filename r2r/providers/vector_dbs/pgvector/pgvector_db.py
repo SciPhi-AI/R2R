@@ -6,7 +6,7 @@ from typing import Literal, Optional, Union
 
 from sqlalchemy import exc, text
 
-from r2r.core import (
+from r2r.base import (
     DocumentInfo,
     UserStats,
     VectorDBConfig,
@@ -29,24 +29,24 @@ class PGVectorDB(VectorDBProvider):
             raise ValueError(
                 f"Error, PGVectorDB requires the vecs library. Please run `pip install vecs`."
             )
-        user = os.getenv("POSTGRES_USER") or self.config.extra_fields.get(
-            "user", None
+        user = self.config.extra_fields.get("user", None) or os.getenv(
+            "POSTGRES_USER"
         )
-        password = os.getenv(
+        password = self.config.extra_fields.get("password", None) or os.getenv(
             "POSTGRES_PASSWORD"
-        ) or self.config.extra_fields.get("password", None)
+        )
         host = os.getenv("POSTGRES_HOST") or self.config.extra_fields.get(
             "host", None
         )
-        port = os.getenv("POSTGRES_PORT") or self.config.extra_fields.get(
-            "port", None
+        port = self.config.extra_fields.get("port", None) or os.getenv(
+            "POSTGRES_PORT"
         )
         db_name = os.getenv("POSTGRES_DBNAME") or self.config.extra_fields.get(
             "db_name", None
         )
-        collection = os.getenv(
-            "POSTGRES_VECS_COLLECTION"
-        ) or self.config.extra_fields.get("vecs_collection", None)
+        collection = self.config.extra_fields.get(
+            "vecs_collection", None
+        ) or os.getenv("POSTGRES_VECS_COLLECTION")
 
         if not all([user, password, host, port, db_name, collection]):
             raise ValueError(
