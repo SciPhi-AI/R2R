@@ -1,0 +1,51 @@
+networks:
+  r2r-network:
+    driver: bridge
+
+services:
+  r2r:
+    image: emrgntcmplxty/r2r:main
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
+    depends_on:
+      - postgres
+    networks:
+      - r2r-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  r2r-dashboard:
+    image: emrgntcmplxty/r2r-dashboard:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - r2r
+    networks:
+      - r2r-network
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DBNAME:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - r2r-network
+
+volumes:
+  postgres_data:
