@@ -50,7 +50,7 @@ class PGVectorDB(VectorDBProvider):
 
         if not all([user, password, host, port, db_name, collection]):
             raise ValueError(
-                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, and POSTGRES_DBNAME, POSTGRES_VECS_COLLECTION environment variables."
+                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, and POSTGRES_DBNAME, POSTGRES_VECS_COLLECTION environment variables to use pgvector database."
             )
         try:
             DB_CONNECTION = (

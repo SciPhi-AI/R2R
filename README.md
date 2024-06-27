@@ -51,6 +51,7 @@ export POSTGRES_PASSWORD=YOUR_POSTGRES_PASSWORD
 export POSTGRES_HOST=YOUR_POSTGRES_HOST
 export POSTGRES_PORT=YOUR_POSTGRES_PORT
 export POSTGRES_DBNAME=YOUR_POSTGRES_DBNAME
+export POSTGRES_VECS_COLLECTION=demo_vecs_collection # can be replaced with existing collection
 ```
 <details>
 <summary><b>Installing with Docker</b>&nbsp;🐳</summary>
@@ -67,6 +68,8 @@ export POSTGRES_PASSWORD=YOUR_POSTGRES_PASSWORD
 export POSTGRES_HOST=YOUR_POSTGRES_HOST
 export POSTGRES_PORT=YOUR_POSTGRES_PORT
 export POSTGRES_DBNAME=YOUR_POSTGRES_DBNAME
+export POSTGRES_VECS_COLLECTION=demo_vecs_collection # can replace with existing collection or uniq. name
+
 
 # Optional on first pull. Advised when fetching the main updates.
 docker pull emrgntcmplxty/r2r:main
@@ -82,6 +85,7 @@ docker run -d \
    -e POSTGRES_HOST=$POSTGRES_HOST \
    -e POSTGRES_PORT=$POSTGRES_PORT \
    -e POSTGRES_DBNAME=$POSTGRES_DBNAME \
+   -e POSTGRES_VECS_COLLECTION=$POSTGRES_VECS_COLLECTION \
    -e OPENAI_API_KEY=$OPENAI_API_KEY \
    emrgntcmplxty/r2r:main
 ```
@@ -104,6 +108,7 @@ docker run -d \
    -e POSTGRES_HOST=$POSTGRES_HOST \
    -e POSTGRES_PORT=$POSTGRES_PORT \
    -e POSTGRES_DBNAME=$POSTGRES_DBNAME \
+   -e POSTGRES_VECS_COLLECTION=$POSTGRES_VECS_COLLECTION \
    -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
    -e CONFIG_OPTION=local_ollama \
   emrgntcmplxty/r2r:main
