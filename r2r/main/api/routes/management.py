@@ -28,7 +28,7 @@ async def update_prompt_app(
     request: R2RUpdatePromptRequest, r2r=Depends(get_r2r_app)
 ):
     try:
-        results = await r2r.update_prompt(
+        results = await r2r.aupdate_prompt(
             request.name, request.template, request.input_types
         )
         return {"results": results}
