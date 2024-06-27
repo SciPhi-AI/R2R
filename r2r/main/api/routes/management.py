@@ -1,7 +1,8 @@
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException
 
+from ...engine import R2REngine
 from ..requests import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
@@ -15,7 +16,7 @@ from ..requests import (
 logger = logging.getLogger(__name__)
 
 
-def setup_routes(app, engine):
+def setup_routes(app: FastAPI, engine: R2REngine):
     router = APIRouter()
 
     @router.get("/health")

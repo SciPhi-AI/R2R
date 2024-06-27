@@ -1,16 +1,22 @@
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 
-from r2r.base import GenerationConfig, manage_run
+from r2r.base import (
+    GenerationConfig,
+    KGSearchSettings,
+    VectorSearchSettings,
+    manage_run,
+)
 
+from ...engine import R2REngine
 from ..requests import R2REvalRequest, R2RRAGRequest, R2RSearchRequest
 
 logger = logging.getLogger(__name__)
 
 
-def setup_routes(app, engine):
+def setup_routes(app: FastAPI, engine: R2REngine):
     router = APIRouter()
 
     @router.post("/search")
@@ -19,8 +25,10 @@ def setup_routes(app, engine):
             try:
                 results = await engine.asearch(
                     query=request.query,
-                    vector_search_settings=request.vector_search_settings,
-                    kg_search_settings=request.kg_search_settings,
+                    vector_search_settings=request.vector_search_settings
+                    or VectorSearchSettings(),
+                    kg_search_settings=request.kg_search_settings
+                    or KGSearchSettings(),
                 )
                 return {"results": results}
             except Exception as e:
@@ -44,8 +52,10 @@ def setup_routes(app, engine):
             try:
                 response = await engine.arag(
                     query=request.query,
-                    vector_search_settings=request.vector_search_settings,
-                    kg_search_settings=request.kg_search_settings,
+                    vector_search_settings=request.vector_search_settings
+                    or VectorSearchSettings(),
+                    kg_search_settings=request.kg_search_settings
+                    or KGSearchSettings(),
                     rag_generation_config=request.rag_generation_config
                     or GenerationConfig(model="gpt-4o"),
                 )

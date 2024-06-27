@@ -48,14 +48,14 @@ class R2RUpdateFilesRequest(BaseModel):
 
 class R2RSearchRequest(BaseModel):
     query: str
-    vector_search_settings: VectorSearchSettings
-    kg_search_settings: KGSearchSettings
+    vector_search_settings: Optional[VectorSearchSettings] = None
+    kg_search_settings: Optional[KGSearchSettings] = None
 
 
 class R2RRAGRequest(BaseModel):
     query: str
-    vector_search_settings: VectorSearchSettings
-    kg_search_settings: KGSearchSettings
+    vector_search_settings: Optional[VectorSearchSettings] = None
+    kg_search_settings: Optional[KGSearchSettings] = None
     rag_generation_config: Optional[GenerationConfig] = None
 
 
