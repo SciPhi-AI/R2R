@@ -40,7 +40,6 @@ class R2RQuickstart:
         self,
         config_name: Optional[str] = None,
         config_path: Optional[str] = None,
-        file_list: Optional[list[str]] = None,
         file_tuples: Optional[list[tuple]] = None,
         client_server_mode: bool = False,
         base_url: Optional[str] = None,
@@ -77,7 +76,7 @@ class R2RQuickstart:
             uuid.UUID(user_id) if user_id else None
             for user_id in self.USER_IDS
         ]
-        self.default_files = file_list or [
+        self.default_files = [
             os.path.join(root_path, "data", "aristotle.txt"),
             os.path.join(root_path, "data", "got.txt"),
             os.path.join(root_path, "data", "screen_shot.png"),
@@ -99,8 +98,10 @@ class R2RQuickstart:
             )
         ]
 
-    def ingest_documents(self, file_paths: Optional[list[str]] = None):
-        file_paths = file_paths or self.default_files
+    def ingest_documents(self, file_paths: Optional[str] = None):
+        file_paths = (
+            file_paths.split(",") if file_paths else self.default_files
+        )
         documents = []
         t0 = time.time()
 
@@ -166,10 +167,14 @@ class R2RQuickstart:
         print(f"Time taken to update documents: {t1-t0:.2f} seconds")
         print(response)
 
-    def ingest_files(
-        self, file_paths: Optional[list[str]] = None, no_media=False
-    ):
-        file_paths = file_paths or self.default_files
+    # ingests a single file
+    def ingest(self, file_paths: Optional[str] = None):
+        self.ingest_files(file_paths or self.default_files[0])
+
+    def ingest_files(self, file_paths: Optional[str] = None, no_media=False):
+        file_paths = (
+            file_paths.split(",") if file_paths else self.default_files
+        )
 
         if no_media:
             excluded_types = ["jpeg", "jpg", "png", "svg", "mp3", "mp4"]

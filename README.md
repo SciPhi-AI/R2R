@@ -6,7 +6,7 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-purple.svg" alt="License: MIT"></a>
 </p>
 
-<img src="./docs/pages/r2r.png" alt="R2R Answer Engine">
+<img src="./assets/r2r.png" alt="R2R Answer Engine">
 <h3 align="center">
 The ultimate open source RAG answer engine
 </h3>
@@ -153,7 +153,7 @@ The following quickstart offers a step-by-step guide on running R2R locally as w
 
 3. **Streaming RAG**:
    ```bash
-   python -m r2r.examples.quickstart rag --query="What was Lyft's profit in 2020?" --streaming=true
+   python -m r2r.examples.quickstart rag --query="What was Lyft's profit in 2020?" --stream=true
    ```
 
 4. **Hybrid Search RAG**:
