@@ -6,7 +6,6 @@ from .engine import R2REngine
 class R2RApp:
     def __init__(self, engine: R2REngine):
         self.engine = engine
-        self.app = FastAPI()
         self._setup_routes()
         self._apply_cors()
 
@@ -22,11 +21,17 @@ class R2RApp:
     def _setup_routes(self):
         from .api.routes import ingestion, management, retrieval
 
-        # Pass the engine instance to the route functions
-        ingestion.setup_routes(self.app, self.engine)
-        retrieval.setup_routes(self.app, self.engine)
-        management.setup_routes(self.app, self.engine)
-        self.app.get("/openapi_spec")(self.openapi_spec)
+        self.app = FastAPI()
+
+        # Create routers with the engine
+        ingestion_router = ingestion.create_ingestion_router(self.engine)
+        management_router = management.create_management_router(self.engine)
+        retrieval_router = retrieval.create_retrieval_router(self.engine)
+
+        # Include routers in the app
+        self.app.include_router(ingestion_router, prefix="/v1")
+        self.app.include_router(management_router, prefix="/v1")
+        self.app.include_router(retrieval_router, prefix="/v1")
 
     def _apply_cors(self):
         from fastapi.middleware.cors import CORSMiddleware
