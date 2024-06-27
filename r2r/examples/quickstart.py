@@ -370,7 +370,9 @@ class R2RQuickstart:
             if not stream:
                 t1 = time.time()
                 print(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
-                print(response)
+                print("Search Results:\n{response.search_results}")
+                print("Completion:\n{response.completion}")
+
             else:
                 for chunk in response:
                     print(chunk, end="", flush=True)
@@ -396,8 +398,12 @@ class R2RQuickstart:
 
             if not stream:
                 t1 = time.time()
+                # unpack the list of one response
+                response = response[0]
                 print(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
-                print(response)
+                print(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
+                print(f"Search Results:\n{response.search_results}")
+                print(f"Completion:\n{response.completion}")
             else:
 
                 async def _stream_response():

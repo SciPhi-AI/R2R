@@ -6,12 +6,11 @@ from r2r.base import (
     AggregateSearchResult,
     AsyncPipe,
     AsyncState,
-    LLMChatCompletion,
     LLMProvider,
     PipeType,
     PromptProvider,
 )
-from r2r.base.abstractions.llm import GenerationConfig
+from r2r.base.abstractions.llm import GenerationConfig, RAGCompletion
 
 from .abstractions.generator_pipe import GeneratorPipe
 
@@ -51,10 +50,11 @@ class SearchRAGPipe(GeneratorPipe):
         rag_generation_config: GenerationConfig,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[LLMChatCompletion, None]:
+    ) -> AsyncGenerator[RAGCompletion, None]:
         context = ""
         search_iteration = 1
         total_results = 0
+        # must select a query if there are multiple
         sel_query = None
         async for query, search_results in input.message:
             if search_iteration == 1:
@@ -64,12 +64,13 @@ class SearchRAGPipe(GeneratorPipe):
             )
             context += context_piece
             search_iteration += 1
+
         messages = self._get_message_payload(sel_query, context)
 
         response = self.llm_provider.get_completion(
             messages=messages, generation_config=rag_generation_config
         )
-        yield response
+        yield RAGCompletion(completion=response, search_results=search_results)
 
         await self.enqueue_log(
             run_id=run_id,
