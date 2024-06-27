@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import time
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 from sqlalchemy import exc, text
 
@@ -331,6 +331,7 @@ class PGVectorDB(VectorDBProvider):
         self,
         metadata_fields: list[str],
         metadata_values: list[Union[bool, int, str]],
+        logic: Literal["AND", "OR"] = "AND",
     ) -> list[str]:
         super().delete_by_metadata(metadata_fields, metadata_values)
         if self.collection is None:
@@ -338,13 +339,29 @@ class PGVectorDB(VectorDBProvider):
                 "Please call `initialize_collection` before attempting to run `delete_by_metadata`."
             )
 
-        # Construct a filter that matches documents where ANY of the field-value pairs match
-        filters = {}
-        for field, value in zip(metadata_fields, metadata_values):
-            if field not in filters:
-                filters[field] = {"$in": [value]}
-            else:
-                filters[field]["$in"].append(value)
+        if len(metadata_fields) != len(metadata_values):
+            raise ValueError(
+                "The number of metadata fields must match the number of metadata values."
+            )
+
+        if logic not in ["AND", "OR"]:
+            raise ValueError("Logic must be either 'AND' or 'OR'.")
+
+        # Construct the conditions
+        conditions = [
+            {field: {"$eq": value}}
+            for field, value in zip(metadata_fields, metadata_values)
+        ]
+
+        # Apply the appropriate logic
+        if logic == "AND":
+            filters = (
+                {"$and": conditions} if len(conditions) > 1 else conditions[0]
+            )
+        else:  # OR
+            filters = (
+                {"$or": conditions} if len(conditions) > 1 else conditions[0]
+            )
 
         return self.collection.delete(filters=filters)
 
