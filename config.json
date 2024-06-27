@@ -30,7 +30,7 @@
     }
   },
   "logging": {
-    "provider": "local",
+    "provider": "postgres",
     "log_table": "logs",
     "log_info_table": "log_info"
   },
@@ -38,7 +38,6 @@
     "provider": "local"
   },
   "vector_database": {
-    "provider": "pgvector",
-    "collection_name": "demo_vecs"
+    "provider": "pgvector"
   }
 }

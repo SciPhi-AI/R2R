@@ -27,13 +27,9 @@ def r2r_app(request):
     vector_db_provider = request.param
     if vector_db_provider == "pgvector":
         config.vector_database.provider = "pgvector"
-        config.vector_database.collection_name = config.logging.logging_path
-    elif vector_db_provider == "local":
-        config.vector_database.provider = "local"
-        config.vector_database.extra_fields["db_path"] = (
+        config.vector_database.extra_fields["vecs_collection"] = (
             config.logging.logging_path
         )
-
     try:
         providers = R2RProviderFactory(config).create_providers()
         pipes = R2RPipeFactory(config, providers).create_pipes()
@@ -63,7 +59,7 @@ def logging_connection():
     return KVLoggingSingleton()
 
 
-@pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
+@pytest.mark.parametrize("r2r_app", ["pgvector"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_txt_document(r2r_app, logging_connection):
     await r2r_app.aingest_documents(
@@ -78,7 +74,7 @@ async def test_ingest_txt_document(r2r_app, logging_connection):
     )
 
 
-@pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
+@pytest.mark.parametrize("r2r_app", ["pgvector"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_txt_file(r2r_app, logging_connection):
     # Prepare the test data
@@ -108,7 +104,7 @@ async def test_ingest_txt_file(r2r_app, logging_connection):
     await r2r_app.aingest_files(metadatas=[metadata], files=files)
 
 
-@pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
+@pytest.mark.parametrize("r2r_app", ["pgvector"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_search_txt_file(r2r_app, logging_connection):
     # Prepare the test data
@@ -182,7 +178,7 @@ async def test_ingest_search_txt_file(r2r_app, logging_connection):
     assert "Ancient" in collector
 
 
-@pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
+@pytest.mark.parametrize("r2r_app", ["pgvector"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_search_then_delete(r2r_app, logging_connection):
     # Ingest a document
@@ -271,7 +267,7 @@ async def test_ingest_user_documents(r2r_app, logging_connection):
     ), f"Expected document id {str(generate_id_from_label('doc_1'))} for user {user_id_1}, but got {user_1_docs[0].document_id}"
 
 
-@pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
+@pytest.mark.parametrize("r2r_app", ["pgvector"], indirect=True)
 @pytest.mark.asyncio
 async def test_delete_by_id(r2r_app, logging_connection):
     await r2r_app.aingest_documents(
@@ -294,7 +290,7 @@ async def test_delete_by_id(r2r_app, logging_connection):
     assert len(search_results["vector_search_results"]) == 0
 
 
-@pytest.mark.parametrize("r2r_app", ["pgvector", "local"], indirect=True)
+@pytest.mark.parametrize("r2r_app", ["pgvector"], indirect=True)
 @pytest.mark.asyncio
 async def test_double_ingest(r2r_app, logging_connection):
     await r2r_app.aingest_documents(

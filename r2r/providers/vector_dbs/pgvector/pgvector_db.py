@@ -29,14 +29,28 @@ class PGVectorDB(VectorDBProvider):
             raise ValueError(
                 f"Error, PGVectorDB requires the vecs library. Please run `pip install vecs`."
             )
-        user = os.getenv("POSTGRES_USER")
-        password = os.getenv("POSTGRES_PASSWORD")
-        host = os.getenv("POSTGRES_HOST")
-        port = os.getenv("POSTGRES_PORT")
-        db_name = os.getenv("POSTGRES_DBNAME")
-        if not all([user, password, host, port, db_name]):
+        user = os.getenv("POSTGRES_USER") or self.config.extra_fields.get(
+            "user", None
+        )
+        password = os.getenv(
+            "POSTGRES_PASSWORD"
+        ) or self.config.extra_fields.get("password", None)
+        host = os.getenv("POSTGRES_HOST") or self.config.extra_fields.get(
+            "host", None
+        )
+        port = os.getenv("POSTGRES_PORT") or self.config.extra_fields.get(
+            "port", None
+        )
+        db_name = os.getenv("POSTGRES_DBNAME") or self.config.extra_fields.get(
+            "db_name", None
+        )
+        collection = os.getenv(
+            "POSTGRES_VECS_COLLECTION"
+        ) or self.config.extra_fields.get("vecs_collection", None)
+
+        if not all([user, password, host, port, db_name, collection]):
             raise ValueError(
-                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, and POSTGRES_DBNAME environment variables."
+                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, and POSTGRES_DBNAME, POSTGRES_VECS_COLLECTION environment variables to use pgvector database."
             )
         try:
             DB_CONNECTION = (
@@ -47,12 +61,13 @@ class PGVectorDB(VectorDBProvider):
             raise ValueError(
                 f"Error {e} occurred while attempting to connect to the pgvector provider with {DB_CONNECTION}."
             )
+        self.collection_name = collection
         self.collection: Optional[Collection] = None
         self.config: VectorDBConfig = config
 
     def initialize_collection(self, dimension: int) -> None:
         self.collection = self.vx.get_or_create_collection(
-            name=self.config.collection_name, dimension=dimension
+            name=self.collection_name, dimension=dimension
         )
         self._create_document_info_table()
         self._create_hybrid_search_function()
@@ -70,7 +85,7 @@ class PGVectorDB(VectorDBProvider):
                     raise
 
                 query = f"""
-                CREATE TABLE IF NOT EXISTS document_info_{self.config.collection_name} (
+                CREATE TABLE IF NOT EXISTS document_info_{self.collection_name} (
                     document_id UUID PRIMARY KEY,
                     title TEXT,
                     user_id UUID NULL,
@@ -86,7 +101,7 @@ class PGVectorDB(VectorDBProvider):
 
     def _create_hybrid_search_function(self):
         hybrid_search_function = f"""
-        CREATE OR REPLACE FUNCTION hybrid_search_{self.config.collection_name}(
+        CREATE OR REPLACE FUNCTION hybrid_search_{self.collection_name}(
             query_text TEXT,
             query_embedding VECTOR(512),
             match_limit INT,
@@ -95,14 +110,14 @@ class PGVectorDB(VectorDBProvider):
             rrf_k INT = 50,
             filter_condition JSONB = NULL
         )
-        RETURNS SETOF vecs."{self.config.collection_name}"
+        RETURNS SETOF vecs."{self.collection_name}"
         LANGUAGE sql
         AS $$
         WITH full_text AS (
             SELECT
                 id,
                 ROW_NUMBER() OVER (ORDER BY ts_rank(to_tsvector('english', metadata->>'text'), websearch_to_tsquery(query_text)) DESC) AS rank_ix
-            FROM vecs."{self.config.collection_name}"
+            FROM vecs."{self.collection_name}"
             WHERE to_tsvector('english', metadata->>'text') @@ websearch_to_tsquery(query_text)
             AND (filter_condition IS NULL OR (metadata @> filter_condition))
             ORDER BY rank_ix
@@ -112,19 +127,19 @@ class PGVectorDB(VectorDBProvider):
             SELECT
                 id,
                 ROW_NUMBER() OVER (ORDER BY vec <#> query_embedding) AS rank_ix
-            FROM vecs."{self.config.collection_name}"
+            FROM vecs."{self.collection_name}"
             WHERE filter_condition IS NULL OR (metadata @> filter_condition)
             ORDER BY rank_ix
             LIMIT LEAST(match_limit, 30) * 2
         )
         SELECT
-            vecs."{self.config.collection_name}".*
+            vecs."{self.collection_name}".*
         FROM
             full_text
             FULL OUTER JOIN semantic
                 ON full_text.id = semantic.id
-            JOIN vecs."{self.config.collection_name}"
-                ON vecs."{self.config.collection_name}".id = COALESCE(full_text.id, semantic.id)
+            JOIN vecs."{self.collection_name}"
+                ON vecs."{self.collection_name}".id = COALESCE(full_text.id, semantic.id)
         ORDER BY
             COALESCE(1.0 / (rrf_k + full_text.rank_ix), 0.0) * full_text_weight +
             COALESCE(1.0 / (rrf_k + semantic.rank_ix), 0.0) * semantic_weight
@@ -284,7 +299,7 @@ class PGVectorDB(VectorDBProvider):
 
         query = text(
             f"""
-            SELECT * FROM hybrid_search_{self.config.collection_name}(
+            SELECT * FROM hybrid_search_{self.collection_name}(
                 cast(:query_text as TEXT), cast(:query_embedding as VECTOR), cast(:match_limit as INT),
                 cast(:full_text_weight as FLOAT), cast(:semantic_weight as FLOAT), cast(:rrf_k as INT),
                 cast(:filter_condition as JSONB)
@@ -365,7 +380,7 @@ class PGVectorDB(VectorDBProvider):
 
             query = text(
                 f"""
-                INSERT INTO document_info_{self.config.collection_name} (document_id, title, user_id, version, created_at, updated_at, size_in_bytes, metadata)
+                INSERT INTO document_info_{self.collection_name} (document_id, title, user_id, version, created_at, updated_at, size_in_bytes, metadata)
                 VALUES (:document_id, :title, :user_id, :version, :created_at, :updated_at, :size_in_bytes, :metadata)
                 ON CONFLICT (document_id) DO UPDATE SET
                     title = EXCLUDED.title,
@@ -386,7 +401,7 @@ class PGVectorDB(VectorDBProvider):
         )
         query = text(
             f"""
-            DELETE FROM document_info_{self.config.collection_name} WHERE document_id IN ({placeholders});
+            DELETE FROM document_info_{self.collection_name} WHERE document_id IN ({placeholders});
             """
         )
         params = {
@@ -432,7 +447,7 @@ class PGVectorDB(VectorDBProvider):
 
         query = f"""
             SELECT document_id, title, user_id, version, size_in_bytes, created_at, updated_at, metadata
-            FROM document_info_{self.config.collection_name}
+            FROM document_info_{self.collection_name}
         """
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
@@ -484,7 +499,7 @@ class PGVectorDB(VectorDBProvider):
 
         query = f"""
             SELECT user_id, COUNT(document_id) AS num_files, SUM(size_in_bytes) AS total_size_in_bytes, ARRAY_AGG(document_id) AS document_ids
-            FROM document_info_{self.config.collection_name}
+            FROM document_info_{self.collection_name}
             {user_ids_condition}
             GROUP BY user_id
         """

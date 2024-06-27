@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 class VectorDBConfig(ProviderConfig):
     provider: str
-    collection_name: str
 
     def __post_init__(self):
         self.validate()

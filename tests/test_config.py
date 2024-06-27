@@ -43,10 +43,7 @@ def mock_file():
                 "log_info_table": "log_info",
             },
             "prompt": {"provider": "prompt_provider"},
-            "vector_database": {
-                "provider": "vector_db",
-                "collection_name": "vectors",
-            },
+            "vector_database": {"provider": "vector_db"},
         }
     )
     with patch("builtins.open", mock_open(read_data=mock_data)) as m:
@@ -109,10 +106,7 @@ def test_r2r_config_deserialization(mock_file, mock_redis_client):
             "log_info_table": "log_info",
         },
         "prompt": {"provider": "prompt_provider"},
-        "vector_database": {
-            "provider": "vector_db",
-            "collection_name": "vectors",
-        },
+        "vector_database": {"provider": "vector_db"},
     }
     mock_redis_client.get.return_value = json.dumps(config_data)
     config = R2RConfig.load_from_redis(mock_redis_client, "test_key")
@@ -160,10 +154,7 @@ def test_r2r_config_missing_required_key():
             "log_info_table": "log_info",
         },
         "prompt": {"provider": "prompt_provider"},
-        "vector_database": {
-            "provider": "vector_db",
-            "collection_name": "vectors",
-        },
+        "vector_database": {"provider": "vector_db"},
     }
     with patch("builtins.open", mock_open(read_data=json.dumps(invalid_data))):
         with pytest.raises(KeyError):
