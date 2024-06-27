@@ -15,20 +15,27 @@ def telemetry_event(event_name):
             user_id = kwargs.get("user_id", "unknown_user")
             try:
                 result = await func(*args, **kwargs)
-                telemetry_client.capture(
-                    FeatureUsageEvent(user_id=user_id, feature=event_name)
-                )
+                try:
+                    telemetry_client.capture(
+                        FeatureUsageEvent(user_id=user_id, feature=event_name)
+                    )
+                except Exception as e:
+                    logger.error(f"Error in telemetry event logging: {str(e)}")
                 return result
             except Exception as e:
                 # Log the exception
                 logger.error(f"Error in {event_name}: {str(e)}")
-                telemetry_client.capture(
-                    ErrorEvent(
-                        user_id=user_id,
-                        endpoint=event_name,
-                        error_message=str(e),
+                try:
+                    telemetry_client.capture(
+                        ErrorEvent(
+                            user_id=user_id,
+                            endpoint=event_name,
+                            error_message=str(e),
+                        )
                     )
-                )
+                except Exception as e:
+                    logger.error(f"Error in telemetry event logging: {str(e)}")
+
                 raise
 
         @wraps(func)

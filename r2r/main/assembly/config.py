@@ -36,7 +36,7 @@ class R2RConfig:
         "completions": ["provider"],
         "logging": ["provider", "log_table"],
         "prompt": ["provider"],
-        "vector_database": ["provider", "collection_name"],
+        "vector_database": ["provider"],
     }
     app: dict[str, Any]
     embedding: EmbeddingConfig
