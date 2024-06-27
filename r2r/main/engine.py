@@ -1,7 +1,5 @@
 from typing import Optional
 
-from fastapi import FastAPI
-
 from r2r.base import AsyncSyncMeta, KVLoggingSingleton, RunManager, syncable
 
 from .abstractions import R2RPipelines, R2RProviders
@@ -27,7 +25,6 @@ class R2REngine(metaclass=AsyncSyncMeta):
         self.pipelines = pipelines
         self.logging_connection = KVLoggingSingleton()
         self.run_manager = run_manager
-        self.app = FastAPI()
 
         self.ingestion_service = IngestionService(
             config, providers, pipelines, run_manager, logging_connection
