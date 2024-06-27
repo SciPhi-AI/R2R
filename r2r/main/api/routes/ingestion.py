@@ -1,9 +1,17 @@
 import logging
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import (
+    APIRouter,
+    Depends,
+    FastAPI,
+    File,
+    HTTPException,
+    UploadFile,
+)
 
 from r2r.base import manage_run
 
+from ...engine import R2REngine
 from ...services.ingestion_service import IngestionService
 from ..requests import (
     R2RIngestDocumentsRequest,
@@ -15,7 +23,7 @@ from ..requests import (
 logger = logging.getLogger(__name__)
 
 
-def setup_routes(app, engine):
+def setup_routes(app: FastAPI, engine: R2REngine):
     router = APIRouter()
 
     @router.post("/ingest_documents")
