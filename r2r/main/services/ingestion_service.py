@@ -77,7 +77,11 @@ class IngestionService(Service):
                         message=f"Document with ID {document.id} already exists.",
                     )
                 skipped_documents.append(
-                    document.metadata.get("title", None) or str(document.id)
+                    (
+                        str(document.id),
+                        document.metadata.get("title", None)
+                        or str(document.id),
+                    )
                 )
                 continue
 
@@ -111,7 +115,7 @@ class IngestionService(Service):
 
         if skipped_documents:
             logger.warning(
-                f"Skipped ingestion for the following documents since they already exist: {', '.join(skipped_documents)}. Use the update endpoint to update these documents."
+                f"Skipped ingestion for the following documents since they already exist: {', '.join([ele[1] for ele in skipped_documents])}. Use the update endpoint to update these documents."
             )
 
         await self.pipelines.ingestion_pipeline.run(
@@ -138,7 +142,16 @@ class IngestionService(Service):
             run_manager=self.run_manager,
         )
 
-        self.providers.vector_db.upsert_documents_overview(document_infos)
+        skipped_ids = [ele[0] for ele in skipped_documents]
+        documents_to_upsert = [
+            document_info
+            for document_info in document_infos
+            if document_info.document_id not in skipped_ids
+        ]
+        if len(documents_to_upsert) > 0:
+            self.providers.vector_db.upsert_documents_overview(
+                documents_to_upsert
+            )
         return {
             "processed_documents": [
                 f"Document '{title}' processed successfully."
@@ -146,7 +159,7 @@ class IngestionService(Service):
             ],
             "skipped_documents": [
                 f"Document '{title}' skipped since it already exists."
-                for title in skipped_documents
+                for _, title in skipped_documents
             ],
         }
 
@@ -219,26 +232,31 @@ class IngestionService(Service):
         document_ids: Optional[List[uuid.UUID]] = None,
         user_ids: Optional[List[Optional[uuid.UUID]]] = None,
         versions: Optional[List[str]] = None,
-        skip_document_info: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
 
         if metadatas and len(metadatas) != len(files):
-            raise ValueError(
-                "Number of metadata entries does not match number of files."
+            raise R2RException(
+                status_code=400,
+                message="Number of metadata entries does not match number of files.",
             )
         if document_ids and len(document_ids) != len(files):
-            raise ValueError(
-                "Number of document id entries does not match number of files."
+            raise R2RException(
+                status_code=400,
+                message="Number of document id entries does not match number of files.",
             )
         elif document_ids and not all(
             isinstance(doc_id, uuid.UUID) for doc_id in document_ids
         ):
-            raise ValueError("All document IDs must be of type UUID.")
+            raise R2RException(
+                status_code=400,
+                message="All document IDs must be of type UUID.",
+            )
         if user_ids and len(user_ids) != len(files):
-            raise ValueError(
-                "Number of user_ids entries does not match number of files."
+            raise R2RException(
+                status_code=400,
+                message="Number of user_ids entries does not match number of files.",
             )
         elif user_ids and not all(
             (isinstance(user_id, uuid.UUID) for user_id in user_ids if user_id)
@@ -320,7 +338,7 @@ class IngestionService(Service):
                             status_code=409,
                             message=f"File with ID {document_id} already exists.",
                         )
-                    skipped_documents.append(file.filename)
+                    skipped_documents.append((document_id, file.filename))
                     continue
 
                 file_content = await file.read()
@@ -368,7 +386,7 @@ class IngestionService(Service):
 
             if skipped_documents:
                 logger.warning(
-                    f"Skipped ingestion for the following documents since they already exist: {', '.join(skipped_documents)}. Use the update endpoint to update these documents."
+                    f"Skipped ingestion for the following documents since they already exist: {', '.join([ele[1] for ele in skipped_documents])}. Use the update endpoint to update these documents."
                 )
 
             await self.pipelines.ingestion_pipeline.run(
@@ -377,9 +395,15 @@ class IngestionService(Service):
                 run_manager=self.run_manager,
             )
 
-            if not skip_document_info:
+            skipped_ids = [ele[0] for ele in skipped_documents]
+            documents_to_upsert = [
+                document_info
+                for document_info in document_infos
+                if document_info.document_id not in skipped_ids
+            ]
+            if len(documents_to_upsert) > 0:
                 self.providers.vector_db.upsert_documents_overview(
-                    document_infos
+                    documents_to_upsert
                 )
 
             return {
@@ -389,7 +413,7 @@ class IngestionService(Service):
                 ],
                 "skipped_documents": [
                     f"File '{filename}' skipped since it already exists."
-                    for filename in skipped_documents
+                    for _, filename in skipped_documents
                 ],
             }
         except Exception as e:
@@ -491,7 +515,6 @@ class IngestionService(Service):
         document_ids: str = Form(None),
         user_ids: str = Form(None),
         versions: Optional[str] = Form(None),
-        skip_document_info: bool = Form(None),
     ) -> R2RIngestFilesRequest:
         try:
             request_data = {
@@ -518,7 +541,6 @@ class IngestionService(Service):
                     if versions and versions != "null"
                     else None
                 ),
-                "skip_document_info": skip_document_info,
             }
             return R2RIngestFilesRequest(**request_data)
         except Exception as e:

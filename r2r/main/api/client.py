@@ -149,7 +149,6 @@ class R2RClient:
         document_ids: Optional[list[Union[uuid.UUID, str]]] = None,
         user_ids: Optional[list[Union[uuid.UUID, str]]] = None,
         versions: Optional[list[str]] = None,
-        skip_document_info: Optional[bool] = False,
     ) -> dict:
         files_to_upload = [
             ("files", (file, open(file, "rb"), "application/octet-stream"))
@@ -166,7 +165,6 @@ class R2RClient:
                 else None
             ),
             versions=versions,
-            skip_document_info=skip_document_info,
         )
         try:
             return self._make_request(
