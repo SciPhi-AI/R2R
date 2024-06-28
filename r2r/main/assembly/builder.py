@@ -4,13 +4,17 @@ from typing import Optional, Type
 from r2r.base import (
     AsyncPipe,
     EmbeddingProvider,
-    EvalPipeline,
     EvalProvider,
     LLMProvider,
     PromptProvider,
     VectorDBProvider,
 )
-from r2r.pipelines import IngestionPipeline, RAGPipeline, SearchPipeline
+from r2r.pipelines import (
+    EvalPipeline,
+    IngestionPipeline,
+    RAGPipeline,
+    SearchPipeline,
+)
 
 from ..app import R2RApp
 from ..engine import R2REngine

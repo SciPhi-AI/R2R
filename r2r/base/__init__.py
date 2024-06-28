@@ -49,6 +49,7 @@ from .logging.log_processor import (
     LogProcessor,
 )
 from .logging.run_manager import RunManager, manage_run
+from .parsers import AsyncParser
 from .pipeline.base_pipeline import Pipeline
 from .pipes.base_pipe import AsyncPipe, AsyncState, PipeType
 from .providers.embedding_provider import EmbeddingConfig, EmbeddingProvider
@@ -73,6 +74,7 @@ from .utils import (
 
 __all__ = [
     # Logging
+    "AsyncParser",
     "AnalysisTypes",
     "LogAnalytics",
     "LogAnalyticsConfig",

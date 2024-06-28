@@ -5,14 +5,18 @@ from pydantic import BaseModel
 from r2r.base import (
     AsyncPipe,
     EmbeddingProvider,
-    EvalPipeline,
     EvalProvider,
     KGProvider,
     LLMProvider,
     PromptProvider,
     VectorDBProvider,
 )
-from r2r.pipelines import IngestionPipeline, RAGPipeline, SearchPipeline
+from r2r.pipelines import (
+    EvalPipeline,
+    IngestionPipeline,
+    RAGPipeline,
+    SearchPipeline,
+)
 
 
 class R2RProviders(BaseModel):

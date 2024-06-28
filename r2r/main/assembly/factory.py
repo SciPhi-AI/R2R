@@ -6,7 +6,6 @@ from r2r.base import (
     AsyncPipe,
     EmbeddingConfig,
     EmbeddingProvider,
-    EvalPipeline,
     EvalProvider,
     KGProvider,
     KVLoggingSingleton,
@@ -16,7 +15,12 @@ from r2r.base import (
     VectorDBConfig,
     VectorDBProvider,
 )
-from r2r.pipelines import IngestionPipeline, RAGPipeline, SearchPipeline
+from r2r.pipelines import (
+    EvalPipeline,
+    IngestionPipeline,
+    RAGPipeline,
+    SearchPipeline,
+)
 
 from ..abstractions import R2RPipelines, R2RPipes, R2RProviders
 from .config import R2RConfig
