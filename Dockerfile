@@ -16,11 +16,11 @@ RUN pip install poetry && poetry install --no-dev
 # Copy the rest of the application code
 COPY . /app
 
-# Install gunicorn and uvicorn
-RUN poetry run pip install --no-cache-dir gunicorn uvicorn
+# Install additional dependencies if needed
+RUN poetry run pip install --no-cache-dir fire
 
 # Expose the port
 EXPOSE 8000
 
-# Set the command to run the application with Gunicorn
-CMD ["poetry", "run", "gunicorn", "r2r.examples.servers.configurable_pipeline:app", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "8", "--timeout", "0", "--worker-class", "uvicorn.workers.UvicornWorker"]
+# Set the command to run quickstart.py
+CMD poetry run python -m r2r.examples.quickstart serve --config_name=${CONFIG_OPTION:-default}
