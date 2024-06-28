@@ -371,7 +371,6 @@ class R2RQuickstart:
                 response = response["results"]
                 t1 = time.time()
                 print(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
-                print("response = ", response)
                 print(f"Search Results:\n{response['search_results']}")
                 print(f"Completion:\n{response['completion']}")
 
