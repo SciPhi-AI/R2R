@@ -77,7 +77,11 @@ class IngestionService(Service):
                         message=f"Document with ID {document.id} already exists.",
                     )
                 skipped_documents.append(
-                    document.metadata.get("title", None) or str(document.id)
+                    (
+                        str(document.id),
+                        document.metadata.get("title", None)
+                        or str(document.id),
+                    )
                 )
                 continue
 
@@ -111,7 +115,7 @@ class IngestionService(Service):
 
         if skipped_documents:
             logger.warning(
-                f"Skipped ingestion for the following documents since they already exist: {', '.join(skipped_documents)}. Use the update endpoint to update these documents."
+                f"Skipped ingestion for the following documents since they already exist: {', '.join([ele[1] for ele in skipped_documents])}. Use the update endpoint to update these documents."
             )
 
         await self.pipelines.ingestion_pipeline.run(
@@ -138,7 +142,16 @@ class IngestionService(Service):
             run_manager=self.run_manager,
         )
 
-        self.providers.vector_db.upsert_documents_overview(document_infos)
+        skipped_ids = [ele[0] for ele in skipped_documents]
+        documents_to_upsert = [
+            document_info
+            for document_info in document_infos
+            if document_info.document_id not in skipped_ids
+        ]
+        if len(documents_to_upsert) > 0:
+            self.providers.vector_db.upsert_documents_overview(
+                documents_to_upsert
+            )
         return {
             "processed_documents": [
                 f"Document '{title}' processed successfully."
@@ -146,7 +159,7 @@ class IngestionService(Service):
             ],
             "skipped_documents": [
                 f"Document '{title}' skipped since it already exists."
-                for title in skipped_documents
+                for _, title in skipped_documents
             ],
         }
 
@@ -219,7 +232,6 @@ class IngestionService(Service):
         document_ids: Optional[List[uuid.UUID]] = None,
         user_ids: Optional[List[Optional[uuid.UUID]]] = None,
         versions: Optional[List[str]] = None,
-        skip_document_info: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -377,17 +389,16 @@ class IngestionService(Service):
                 run_manager=self.run_manager,
             )
 
-            if not skip_document_info:
-                skipped_ids = [ele[0] for ele in skipped_documents]
-                documents_to_upsert = [
-                    document_info
-                    for document_info in document_infos
-                    if document_info.document_id not in skipped_ids
-                ]
-                if len(documents_to_upsert) > 0:
-                    self.providers.vector_db.upsert_documents_overview(
-                        documents_to_upsert
-                    )
+            skipped_ids = [ele[0] for ele in skipped_documents]
+            documents_to_upsert = [
+                document_info
+                for document_info in document_infos
+                if document_info.document_id not in skipped_ids
+            ]
+            if len(documents_to_upsert) > 0:
+                self.providers.vector_db.upsert_documents_overview(
+                    documents_to_upsert
+                )
 
             return {
                 "processed_documents": [
@@ -498,7 +509,6 @@ class IngestionService(Service):
         document_ids: str = Form(None),
         user_ids: str = Form(None),
         versions: Optional[str] = Form(None),
-        skip_document_info: bool = Form(None),
     ) -> R2RIngestFilesRequest:
         try:
             request_data = {
@@ -525,7 +535,6 @@ class IngestionService(Service):
                     if versions and versions != "null"
                     else None
                 ),
-                "skip_document_info": skip_document_info,
             }
             return R2RIngestFilesRequest(**request_data)
         except Exception as e:

@@ -45,7 +45,6 @@ class IngestionRouter(BaseRouter):
                 document_ids=request.document_ids,
                 user_ids=request.user_ids,
                 versions=request.versions,
-                skip_document_info=request.skip_document_info,
             )
 
         @self.router.post("/update_files")

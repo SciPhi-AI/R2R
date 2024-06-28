@@ -361,7 +361,10 @@ class PGVectorDB(VectorDBProvider):
         metadata_values: list[Union[bool, int, str]],
         logic: Literal["AND", "OR"] = "AND",
     ) -> list[str]:
-        super().delete_by_metadata(metadata_fields, metadata_values)
+        if logic == "OR":
+            raise ValueError(
+                "OR logic is still being tested before official support for `delete_by_metadata` in pgvector."
+            )
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `delete_by_metadata`."
@@ -372,25 +375,21 @@ class PGVectorDB(VectorDBProvider):
                 "The number of metadata fields must match the number of metadata values."
             )
 
-        if logic not in ["AND", "OR"]:
-            raise ValueError("Logic must be either 'AND' or 'OR'.")
-
-        # Construct the conditions
-        conditions = [
-            {field: {"$eq": value}}
-            for field, value in zip(metadata_fields, metadata_values)
-        ]
-
-        # Apply the appropriate logic
+        # Construct the filter
         if logic == "AND":
-            filters = (
-                {"$and": conditions} if len(conditions) > 1 else conditions[0]
-            )
-        else:  # OR
-            filters = (
-                {"$or": conditions} if len(conditions) > 1 else conditions[0]
-            )
+            filters = {
+                k: {"$eq": v} for k, v in zip(metadata_fields, metadata_values)
+            }
+        else:  # OR logic
+            # TODO - Test 'or' logic and remove check above
+            filters = {
+                "$or": [
+                    {k: {"$eq": v}}
+                    for k, v in zip(metadata_fields, metadata_values)
+                ]
+            }
 
+        print(f"Deleting with filters: {filters}")
         return self.collection.delete(filters=filters)
 
     def get_metadatas(
