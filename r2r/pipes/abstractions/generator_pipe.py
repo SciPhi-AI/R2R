@@ -6,15 +6,15 @@ from r2r.base import (
     AsyncState,
     KVLoggingSingleton,
     LLMProvider,
-    LoggableAsyncPipe,
     PipeType,
     PromptProvider,
 )
 from r2r.base.abstractions.llm import GenerationConfig
+from r2r.base.pipes.base_pipe import AsyncPipe
 
 
-class GeneratorPipe(LoggableAsyncPipe):
-    class Config(LoggableAsyncPipe.PipeConfig):
+class GeneratorPipe(AsyncPipe):
+    class Config(AsyncPipe.PipeConfig):
         name: str
         task_prompt: str
         system_prompt: str = "default_system"
@@ -42,7 +42,7 @@ class GeneratorPipe(LoggableAsyncPipe):
     @abstractmethod
     async def _run_logic(
         self,
-        input: LoggableAsyncPipe.Input,
+        input: AsyncPipe.Input,
         state: AsyncState,
         run_id: uuid.UUID,
         rag_generation_config: GenerationConfig,

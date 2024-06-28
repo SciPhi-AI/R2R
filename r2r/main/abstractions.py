@@ -9,12 +9,12 @@ from r2r.base import (
     IngestionPipeline,
     KGProvider,
     LLMProvider,
-    LoggableAsyncPipe,
     PromptProvider,
     RAGPipeline,
     SearchPipeline,
     VectorDBProvider,
 )
+from r2r.base.pipes.base_pipe import AsyncPipe
 
 
 class R2RProviders(BaseModel):
@@ -30,16 +30,16 @@ class R2RProviders(BaseModel):
 
 
 class R2RPipes(BaseModel):
-    parsing_pipe: Optional[LoggableAsyncPipe]
-    embedding_pipe: Optional[LoggableAsyncPipe]
-    vector_storage_pipe: Optional[LoggableAsyncPipe]
-    vector_search_pipe: Optional[LoggableAsyncPipe]
-    rag_pipe: Optional[LoggableAsyncPipe]
-    streaming_rag_pipe: Optional[LoggableAsyncPipe]
-    eval_pipe: Optional[LoggableAsyncPipe]
-    kg_pipe: Optional[LoggableAsyncPipe]
-    kg_storage_pipe: Optional[LoggableAsyncPipe]
-    kg_agent_search_pipe: Optional[LoggableAsyncPipe]
+    parsing_pipe: Optional[AsyncPipe]
+    embedding_pipe: Optional[AsyncPipe]
+    vector_storage_pipe: Optional[AsyncPipe]
+    vector_search_pipe: Optional[AsyncPipe]
+    rag_pipe: Optional[AsyncPipe]
+    streaming_rag_pipe: Optional[AsyncPipe]
+    eval_pipe: Optional[AsyncPipe]
+    kg_pipe: Optional[AsyncPipe]
+    kg_storage_pipe: Optional[AsyncPipe]
+    kg_agent_search_pipe: Optional[AsyncPipe]
 
     class Config:
         arbitrary_types_allowed = True

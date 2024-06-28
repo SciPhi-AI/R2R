@@ -4,40 +4,34 @@ from typing import Any, AsyncGenerator, Optional
 
 from pydantic import BaseModel
 
-from r2r import (
-    AsyncState,
-    EvalProvider,
-    LLMChatCompletion,
-    LoggableAsyncPipe,
-    PipeType,
-)
+from r2r import AsyncState, EvalProvider, LLMChatCompletion, PipeType
 from r2r.base.abstractions.llm import GenerationConfig
+from r2r.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
 
 
-class EvalPipe(LoggableAsyncPipe):
+class EvalPipe(AsyncPipe):
     class EvalPayload(BaseModel):
         query: str
         context: str
         completion: str
 
-    class Input(LoggableAsyncPipe.Input):
+    class Input(AsyncPipe.Input):
         message: AsyncGenerator["EvalPipe.EvalPayload", None]
 
     def __init__(
         self,
         eval_provider: EvalProvider,
         type: PipeType = PipeType.EVAL,
-        config: Optional[LoggableAsyncPipe.PipeConfig] = None,
+        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
         self.eval_provider = eval_provider
         super().__init__(
             type=type,
-            config=config
-            or LoggableAsyncPipe.PipeConfig(name="default_eval_pipe"),
+            config=config or AsyncPipe.PipeConfig(name="default_eval_pipe"),
             *args,
             **kwargs,
         )

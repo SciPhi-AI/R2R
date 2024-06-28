@@ -7,7 +7,6 @@ from r2r.base import (
     AsyncPipe,
     AsyncState,
     KVLoggingSingleton,
-    LoggableAsyncPipe,
     PipeType,
     VectorSearchResult,
 )
@@ -15,8 +14,8 @@ from r2r.base import (
 logger = logging.getLogger(__name__)
 
 
-class SearchPipe(LoggableAsyncPipe):
-    class SearchConfig(LoggableAsyncPipe.PipeConfig):
+class SearchPipe(AsyncPipe):
+    class SearchConfig(AsyncPipe.PipeConfig):
         name: str = "default_vector_search"
         search_filters: dict = {}
         search_limit: int = 10

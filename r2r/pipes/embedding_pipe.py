@@ -11,18 +11,18 @@ from r2r.base import (
     Fragment,
     FragmentType,
     KVLoggingSingleton,
-    LoggableAsyncPipe,
     PipeType,
     TextSplitter,
     Vector,
     VectorEntry,
     generate_id_from_label,
 )
+from r2r.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
 
 
-class EmbeddingPipe(LoggableAsyncPipe):
+class EmbeddingPipe(AsyncPipe):
     """
     Embeds and stores documents using a specified embedding model and database.
     """
@@ -35,7 +35,7 @@ class EmbeddingPipe(LoggableAsyncPipe):
         id_prefix: str = "demo",
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
-        config: Optional[LoggableAsyncPipe.PipeConfig] = None,
+        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
@@ -46,7 +46,7 @@ class EmbeddingPipe(LoggableAsyncPipe):
             pipe_logger=pipe_logger,
             type=type,
             config=config
-            or LoggableAsyncPipe.PipeConfig(name="default_embedding_pipe"),
+            or AsyncPipe.PipeConfig(name="default_embedding_pipe"),
         )
         self.embedding_provider = embedding_provider
         self.text_splitter = text_splitter
@@ -139,7 +139,7 @@ class EmbeddingPipe(LoggableAsyncPipe):
 
     async def _run_logic(
         self,
-        input: LoggableAsyncPipe.Input,
+        input: AsyncPipe.Input,
         state: AsyncState,
         run_id: uuid.UUID,
         *args: Any,

@@ -7,12 +7,12 @@ from r2r import (
     EvalProvider,
     IngestionPipeline,
     LLMProvider,
-    LoggableAsyncPipe,
     PromptProvider,
     RAGPipeline,
     SearchPipeline,
     VectorDBProvider,
 )
+from r2r.base.pipes.base_pipe import AsyncPipe
 
 from ..app import R2RApp
 from ..engine import R2REngine
@@ -63,13 +63,13 @@ class R2RBuilder:
         self.eval_provider_override: Optional[EvalProvider] = None
         self.llm_provider_override: Optional[LLMProvider] = None
         self.prompt_provider_override: Optional[PromptProvider] = None
-        self.parsing_pipe_override: Optional[LoggableAsyncPipe] = None
-        self.embedding_pipe_override: Optional[LoggableAsyncPipe] = None
-        self.vector_storage_pipe_override: Optional[LoggableAsyncPipe] = None
-        self.search_pipe_override: Optional[LoggableAsyncPipe] = None
-        self.rag_pipe_override: Optional[LoggableAsyncPipe] = None
-        self.streaming_rag_pipe_override: Optional[LoggableAsyncPipe] = None
-        self.eval_pipe_override: Optional[LoggableAsyncPipe] = None
+        self.parsing_pipe_override: Optional[AsyncPipe] = None
+        self.embedding_pipe_override: Optional[AsyncPipe] = None
+        self.vector_storage_pipe_override: Optional[AsyncPipe] = None
+        self.search_pipe_override: Optional[AsyncPipe] = None
+        self.rag_pipe_override: Optional[AsyncPipe] = None
+        self.streaming_rag_pipe_override: Optional[AsyncPipe] = None
+        self.eval_pipe_override: Optional[AsyncPipe] = None
         self.ingestion_pipeline: Optional[IngestionPipeline] = None
         self.search_pipeline: Optional[SearchPipeline] = None
         self.rag_pipeline: Optional[RAGPipeline] = None
@@ -112,31 +112,31 @@ class R2RBuilder:
         self.prompt_provider_override = provider
         return self
 
-    def with_parsing_pipe(self, pipe: LoggableAsyncPipe):
+    def with_parsing_pipe(self, pipe: AsyncPipe):
         self.parsing_pipe_override = pipe
         return self
 
-    def with_embedding_pipe(self, pipe: LoggableAsyncPipe):
+    def with_embedding_pipe(self, pipe: AsyncPipe):
         self.embedding_pipe_override = pipe
         return self
 
-    def with_vector_storage_pipe(self, pipe: LoggableAsyncPipe):
+    def with_vector_storage_pipe(self, pipe: AsyncPipe):
         self.vector_storage_pipe_override = pipe
         return self
 
-    def with_vector_search_pipe(self, pipe: LoggableAsyncPipe):
+    def with_vector_search_pipe(self, pipe: AsyncPipe):
         self.vector_search_pipe_override = pipe
         return self
 
-    def with_rag_pipe(self, pipe: LoggableAsyncPipe):
+    def with_rag_pipe(self, pipe: AsyncPipe):
         self.rag_pipe_override = pipe
         return self
 
-    def with_streaming_rag_pipe(self, pipe: LoggableAsyncPipe):
+    def with_streaming_rag_pipe(self, pipe: AsyncPipe):
         self.streaming_rag_pipe_override = pipe
         return self
 
-    def with_eval_pipe(self, pipe: LoggableAsyncPipe):
+    def with_eval_pipe(self, pipe: AsyncPipe):
         self.eval_pipe_override = pipe
         return self
 
