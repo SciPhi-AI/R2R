@@ -5,13 +5,13 @@ from typing import Any, Optional
 
 from r2r.base.logging.kv_logger import KVLoggingSingleton
 from r2r.base.logging.run_manager import RunManager, manage_run
-from r2r.base.pipeline.base_pipeline import Pipeline, dequeue_requests
+from r2r.base.pipeline.base_pipeline import AsyncPipeline, dequeue_requests
 from r2r.base.pipes.base_pipe import AsyncPipe, AsyncState
 
 logger = logging.getLogger(__name__)
 
 
-class IngestionPipeline(Pipeline):
+class IngestionPipeline(AsyncPipeline):
     """A pipeline for ingestion."""
 
     pipeline_type: str = "ingestion"
@@ -128,13 +128,13 @@ class IngestionPipeline(Pipeline):
             self.parsing_pipe = pipe
         elif kg_pipe:
             if not self.kg_pipeline:
-                self.kg_pipeline = Pipeline()
+                self.kg_pipeline = AsyncPipeline()
             self.kg_pipeline.add_pipe(
                 pipe, add_upstream_outputs, *args, **kwargs
             )
         elif embedding_pipe:
             if not self.embedding_pipeline:
-                self.embedding_pipeline = Pipeline()
+                self.embedding_pipeline = AsyncPipeline()
             self.embedding_pipeline.add_pipe(
                 pipe, add_upstream_outputs, *args, **kwargs
             )

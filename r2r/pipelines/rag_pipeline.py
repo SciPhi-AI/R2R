@@ -6,14 +6,14 @@ from ..base.abstractions.llm import GenerationConfig
 from ..base.abstractions.search import KGSearchSettings, VectorSearchSettings
 from ..base.logging.kv_logger import KVLoggingSingleton
 from ..base.logging.run_manager import RunManager, manage_run
-from ..base.pipeline.base_pipeline import Pipeline
+from ..base.pipeline.base_pipeline import AsyncPipeline
 from ..base.pipes.base_pipe import AsyncPipe, AsyncState
 from ..base.utils import to_async_generator
 
 logger = logging.getLogger(__name__)
 
 
-class RAGPipeline(Pipeline):
+class RAGPipeline(AsyncPipeline):
     """A pipeline for RAG."""
 
     pipeline_type: str = "rag"
@@ -100,14 +100,14 @@ class RAGPipeline(Pipeline):
                 "Only pipes that are part of the RAG pipeline can be added to the RAG pipeline"
             )
         if not self._rag_pipeline:
-            self._rag_pipeline = Pipeline()
+            self._rag_pipeline = AsyncPipeline()
         self._rag_pipeline.add_pipe(
             pipe, add_upstream_outputs, *args, **kwargs
         )
 
     def set_search_pipeline(
         self,
-        _search_pipeline: Pipeline,
+        _search_pipeline: AsyncPipeline,
         *args,
         **kwargs,
     ) -> None:

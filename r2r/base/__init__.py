@@ -50,7 +50,7 @@ from .logging.log_processor import (
 )
 from .logging.run_manager import RunManager, manage_run
 from .parsers import AsyncParser
-from .pipeline.base_pipeline import Pipeline
+from .pipeline.base_pipeline import AsyncPipeline
 from .pipes.base_pipe import AsyncPipe, AsyncState, PipeType
 from .providers.embedding_provider import EmbeddingConfig, EmbeddingProvider
 from .providers.eval_provider import EvalConfig, EvalProvider
@@ -121,7 +121,7 @@ __all__ = [
     "KGExtraction",
     "UserStats",
     # Pipelines
-    "Pipeline",
+    "AsyncPipeline",
     # Providers
     "EmbeddingConfig",
     "EmbeddingProvider",
