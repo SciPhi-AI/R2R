@@ -275,6 +275,7 @@ class R2RClient:
             ),
             rag_generation_config=rag_generation_config,
         )
+        print("request = ", request)
 
         if rag_generation_config.stream:
             return self._stream_rag_sync(request)

@@ -2,6 +2,7 @@ import functools
 import logging
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 
 from r2r.base import manage_run
 from r2r.main.abstractions import R2RException
@@ -22,6 +23,9 @@ class BaseRouter:
             ) as run_id:
                 try:
                     results = await func(*args, **kwargs)
+                    if isinstance(results, StreamingResponse):
+                        return results
+
                     return {"results": results}
                 except R2RException as re:
                     raise HTTPException(

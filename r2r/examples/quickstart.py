@@ -368,10 +368,12 @@ class R2RQuickstart:
                 rag_generation_config=rag_generation_config,
             )
             if not stream:
+                response = response["results"]
                 t1 = time.time()
                 print(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
-                print("Search Results:\n{response.search_results}")
-                print("Completion:\n{response.completion}")
+                print("response = ", response)
+                print(f"Search Results:\n{response['search_results']}")
+                print(f"Completion:\n{response['completion']}")
 
             else:
                 for chunk in response:
