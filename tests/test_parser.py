@@ -3,18 +3,17 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from r2r.parsers.media.docx_parser import DOCXParser
+from r2r.parsers.media.pdf_parser import PDFParser
+from r2r.parsers.media.ppt_parser import PPTParser
+from r2r.parsers.structured.csv_parser import CSVParser
+from r2r.parsers.structured.json_parser import JSONParser
+from r2r.parsers.structured.xlsx_parser import XLSXParser
+from r2r.parsers.text.html_parser import HTMLParser
+
 # Import your parser classes here
-from r2r import (
-    CSVParser,
-    DOCXParser,
-    HTMLParser,
-    JSONParser,
-    MarkdownParser,
-    PDFParser,
-    PPTParser,
-    TextParser,
-    XLSXParser,
-)
+from r2r.parsers.text.md_parser import MDParser
+from r2r.parsers.text.text_parser import TextParser
 
 
 @pytest.mark.asyncio
@@ -104,7 +103,7 @@ async def test_xlsx_parser(mock_load_workbook):
 
 @pytest.mark.asyncio
 async def test_markdown_parser():
-    parser = MarkdownParser()
+    parser = MDParser()
     data = "# Header\nContent"
     async for result in parser.ingest(data):
         assert result.strip() == "Header\nContent"

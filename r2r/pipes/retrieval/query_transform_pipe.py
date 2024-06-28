@@ -11,7 +11,7 @@ from r2r.base import (
 )
 from r2r.base.abstractions.llm import GenerationConfig
 
-from .abstractions.generator_pipe import GeneratorPipe
+from ..abstractions.generator_pipe import GeneratorPipe
 
 logger = logging.getLogger(__name__)
 

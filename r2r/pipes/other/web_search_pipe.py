@@ -12,7 +12,7 @@ from r2r.base import (
 )
 from r2r.integrations import SerperClient
 
-from .abstractions.search_pipe import SearchPipe
+from ..abstractions.search_pipe import SearchPipe
 
 logger = logging.getLogger(__name__)
 
