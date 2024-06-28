@@ -16,7 +16,6 @@ from r2r.base import (
     KGProvider,
     KVLoggingSingleton,
     LLMProvider,
-    LoggableAsyncPipe,
     PipeType,
     PromptProvider,
     TextSplitter,
@@ -25,11 +24,12 @@ from r2r.base import (
     generate_id_from_label,
 )
 from r2r.base.abstractions.llm import GenerationConfig
+from r2r.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
 
 
-class KGExtractionPipe(LoggableAsyncPipe):
+class KGExtractionPipe(AsyncPipe):
     """
     Embeds and stores documents using a specified embedding model and database.
     """
@@ -44,7 +44,7 @@ class KGExtractionPipe(LoggableAsyncPipe):
         id_prefix: str = "demo",
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
-        config: Optional[LoggableAsyncPipe.PipeConfig] = None,
+        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
@@ -55,7 +55,7 @@ class KGExtractionPipe(LoggableAsyncPipe):
             pipe_logger=pipe_logger,
             type=type,
             config=config
-            or LoggableAsyncPipe.PipeConfig(name="default_embedding_pipe"),
+            or AsyncPipe.PipeConfig(name="default_embedding_pipe"),
         )
         self.kg_provider = kg_provider
         self.prompt_provider = prompt_provider
@@ -177,7 +177,7 @@ class KGExtractionPipe(LoggableAsyncPipe):
 
     async def _run_logic(
         self,
-        input: LoggableAsyncPipe.Input,
+        input: AsyncPipe.Input,
         state: AsyncState,
         run_id: uuid.UUID,
         kg_generation_config: GenerationConfig = GenerationConfig(

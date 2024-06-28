@@ -71,7 +71,6 @@ from .pipeline.ingestion_pipeline import IngestionPipeline
 from .pipeline.rag_pipeline import RAGPipeline
 from .pipeline.search_pipeline import SearchPipeline
 from .pipes.base_pipe import AsyncPipe, AsyncState, PipeType
-from .pipes.loggable_pipe import LoggableAsyncPipe
 from .providers.embedding_provider import EmbeddingConfig, EmbeddingProvider
 from .providers.eval_provider import EvalConfig, EvalProvider
 from .providers.kg_provider import KGConfig, KGProvider
@@ -123,7 +122,7 @@ __all__ = [
     "AsyncPipe",
     "PipeType",
     "AsyncState",
-    "LoggableAsyncPipe",
+    "AsyncPipe",
     "Prompt",
     "DataType",
     "DocumentType",

@@ -22,7 +22,6 @@ from r2r.base import (
     ImageParser,
     JSONParser,
     KVLoggingSingleton,
-    LoggableAsyncPipe,
     MarkdownParser,
     MovieParser,
     PDFParser,
@@ -32,17 +31,18 @@ from r2r.base import (
     XLSXParser,
     generate_id_from_label,
 )
+from r2r.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
 
 
-class ParsingPipe(LoggableAsyncPipe):
+class ParsingPipe(AsyncPipe):
     """
     Processes incoming documents into plaintext based on their data type.
     Supports TXT, JSON, HTML, and PDF formats.
     """
 
-    class Input(LoggableAsyncPipe.Input):
+    class Input(AsyncPipe.Input):
         message: AsyncGenerator[Document, None]
 
     AVAILABLE_PARSERS = {
@@ -78,7 +78,7 @@ class ParsingPipe(LoggableAsyncPipe):
         override_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
-        config: Optional[LoggableAsyncPipe.PipeConfig] = None,
+        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):
@@ -86,9 +86,7 @@ class ParsingPipe(LoggableAsyncPipe):
             pipe_logger=pipe_logger,
             type=type,
             config=config
-            or LoggableAsyncPipe.PipeConfig(
-                name="default_document_parsing_pipe"
-            ),
+            or AsyncPipe.PipeConfig(name="default_document_parsing_pipe"),
             *args,
             **kwargs,
         )

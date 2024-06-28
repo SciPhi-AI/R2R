@@ -3,17 +3,17 @@ from copy import copy
 from typing import Any, AsyncGenerator, Optional
 
 from r2r import (
-    LoggableAsyncPipe,
     QueryTransformPipe,
     R2RPipeFactory,
     SearchPipe,
     VectorSearchResult,
 )
 from r2r.base.abstractions.llm import GenerationConfig
+from r2r.base.pipes.base_pipe import AsyncPipe
 
 
-class MultiSearchPipe(LoggableAsyncPipe):
-    class PipeConfig(LoggableAsyncPipe.PipeConfig):
+class MultiSearchPipe(AsyncPipe):
+    class PipeConfig(AsyncPipe.PipeConfig):
         name: str = "multi_search_pipe"
 
     def __init__(

@@ -9,16 +9,16 @@ from r2r.base import (
     KGExtraction,
     KGProvider,
     KVLoggingSingleton,
-    LoggableAsyncPipe,
     PipeType,
 )
 from r2r.base.abstractions.llama_abstractions import EntityNode, Relation
+from r2r.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
 
 
-class KGStoragePipe(LoggableAsyncPipe):
-    class Input(LoggableAsyncPipe.Input):
+class KGStoragePipe(AsyncPipe):
+    class Input(AsyncPipe.Input):
         message: AsyncGenerator[KGExtraction, None]
 
     def __init__(
@@ -28,7 +28,7 @@ class KGStoragePipe(LoggableAsyncPipe):
         storage_batch_size: int = 1,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
-        config: Optional[LoggableAsyncPipe.PipeConfig] = None,
+        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):

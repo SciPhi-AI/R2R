@@ -6,17 +6,17 @@ from typing import Any, AsyncGenerator, Optional
 from r2r.base import (
     AsyncState,
     KVLoggingSingleton,
-    LoggableAsyncPipe,
     PipeType,
     VectorDBProvider,
     VectorEntry,
 )
+from r2r.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
 
 
-class VectorStoragePipe(LoggableAsyncPipe):
-    class Input(LoggableAsyncPipe.Input):
+class VectorStoragePipe(AsyncPipe):
+    class Input(AsyncPipe.Input):
         message: AsyncGenerator[VectorEntry, None]
         do_upsert: bool = True
 
@@ -26,7 +26,7 @@ class VectorStoragePipe(LoggableAsyncPipe):
         storage_batch_size: int = 128,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
-        config: Optional[LoggableAsyncPipe.PipeConfig] = None,
+        config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
     ):

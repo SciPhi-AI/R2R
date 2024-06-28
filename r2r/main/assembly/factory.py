@@ -12,13 +12,13 @@ from r2r.base import (
     KVLoggingSingleton,
     LLMConfig,
     LLMProvider,
-    LoggableAsyncPipe,
     PromptProvider,
     RAGPipeline,
     SearchPipeline,
     VectorDBConfig,
     VectorDBProvider,
 )
+from r2r.base.pipes.base_pipe import AsyncPipe
 
 from ..abstractions import R2RPipelines, R2RPipes, R2RProviders
 from .config import R2RConfig
@@ -206,16 +206,16 @@ class R2RPipeFactory:
 
     def create_pipes(
         self,
-        parsing_pipe_override: Optional[LoggableAsyncPipe] = None,
-        embedding_pipe_override: Optional[LoggableAsyncPipe] = None,
-        kg_pipe_override: Optional[LoggableAsyncPipe] = None,
-        kg_storage_pipe_override: Optional[LoggableAsyncPipe] = None,
-        kg_agent_pipe_override: Optional[LoggableAsyncPipe] = None,
-        vector_storage_pipe_override: Optional[LoggableAsyncPipe] = None,
-        search_pipe_override: Optional[LoggableAsyncPipe] = None,
-        rag_pipe_override: Optional[LoggableAsyncPipe] = None,
-        streaming_rag_pipe_override: Optional[LoggableAsyncPipe] = None,
-        eval_pipe_override: Optional[LoggableAsyncPipe] = None,
+        parsing_pipe_override: Optional[AsyncPipe] = None,
+        embedding_pipe_override: Optional[AsyncPipe] = None,
+        kg_pipe_override: Optional[AsyncPipe] = None,
+        kg_storage_pipe_override: Optional[AsyncPipe] = None,
+        kg_agent_pipe_override: Optional[AsyncPipe] = None,
+        vector_storage_pipe_override: Optional[AsyncPipe] = None,
+        search_pipe_override: Optional[AsyncPipe] = None,
+        rag_pipe_override: Optional[AsyncPipe] = None,
+        streaming_rag_pipe_override: Optional[AsyncPipe] = None,
+        eval_pipe_override: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
     ) -> R2RPipes:
