@@ -3,22 +3,20 @@ import os
 from typing import Any, Optional
 
 from r2r.base import (
+    AsyncPipe,
     EmbeddingConfig,
     EmbeddingProvider,
     EvalPipeline,
     EvalProvider,
-    IngestionPipeline,
     KGProvider,
     KVLoggingSingleton,
     LLMConfig,
     LLMProvider,
     PromptProvider,
-    RAGPipeline,
-    SearchPipeline,
     VectorDBConfig,
     VectorDBProvider,
 )
-from r2r.base.pipes.base_pipe import AsyncPipe
+from r2r.pipelines import IngestionPipeline, RAGPipeline, SearchPipeline
 
 from ..abstractions import R2RPipelines, R2RPipes, R2RProviders
 from .config import R2RConfig

@@ -13,7 +13,7 @@ from r2r.base import (
     VectorSearchSettings,
 )
 
-from .abstractions.search_pipe import SearchPipe
+from ..abstractions.search_pipe import SearchPipe
 
 logger = logging.getLogger(__name__)
 

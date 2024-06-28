@@ -5,9 +5,9 @@ import logging
 from .base import *
 from .integrations import *
 from .main import *
-from .pipeline import *
+from .parsers import *
+from .pipelines import *
 from .pipes import *
-from .prebuilts import *
 from .prompts import *
 
 logger = logging.getLogger("r2r")
@@ -61,7 +61,7 @@ __all__ = [
     "DOCXParser",
     "HTMLParser",
     "JSONParser",
-    "MarkdownParser",
+    "MDParser",
     "PDFParser",
     "PPTParser",
     "TextParser",

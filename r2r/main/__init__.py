@@ -1,4 +1,4 @@
-from .abstractions import R2RException, R2RPipelines, R2RProviders
+from .abstractions import R2RPipelines, R2RProviders
 from .api.client import R2RClient
 from .api.requests import (
     R2RAnalyticsRequest,
@@ -27,9 +27,9 @@ from .engine import R2REngine
 from .r2r import R2R
 
 __all__ = [
+    "R2R",
     "R2RPipelines",
     "R2RProviders",
-    "R2RException",
     "R2RUpdatePromptRequest",
     "R2RIngestDocumentsRequest",
     "R2RUpdateDocumentsRequest",
@@ -43,6 +43,7 @@ __all__ = [
     "R2RUsersOverviewRequest",
     "R2RDocumentsOverviewRequest",
     "R2RDocumentChunksRequest",
+    "R2REngine",
     "R2RConfig",
     "R2RClient",
     "R2RPipeFactory",
@@ -50,6 +51,4 @@ __all__ = [
     "R2RProviderFactory",
     "R2RBuilder",
     "R2RApp",
-    "R2REngine",
-    "R2R",
 ]

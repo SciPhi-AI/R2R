@@ -11,27 +11,27 @@ from typing import AsyncGenerator, Optional
 from r2r.base import (
     AsyncParser,
     AsyncState,
-    AudioParser,
-    CSVParser,
     Document,
     DocumentType,
-    DOCXParser,
     Extraction,
     ExtractionType,
-    HTMLParser,
-    ImageParser,
-    JSONParser,
     KVLoggingSingleton,
-    MarkdownParser,
-    MovieParser,
-    PDFParser,
     PipeType,
-    PPTParser,
-    TextParser,
-    XLSXParser,
     generate_id_from_label,
 )
 from r2r.base.pipes.base_pipe import AsyncPipe
+from r2r.parsers.media.audio_parser import AudioParser
+from r2r.parsers.media.docx_parser import DOCXParser
+from r2r.parsers.media.img_parser import ImageParser
+from r2r.parsers.media.movie_parser import MovieParser
+from r2r.parsers.media.pdf_parser import PDFParser
+from r2r.parsers.media.ppt_parser import PPTParser
+from r2r.parsers.structured.csv_parser import CSVParser
+from r2r.parsers.structured.json_parser import JSONParser
+from r2r.parsers.structured.xlsx_parser import XLSXParser
+from r2r.parsers.text.html_parser import HTMLParser
+from r2r.parsers.text.md_parser import MDParser
+from r2r.parsers.text.text_parser import TextParser
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class ParsingPipe(AsyncPipe):
         DocumentType.DOCX: {"default": DOCXParser},
         DocumentType.HTML: {"default": HTMLParser},
         DocumentType.JSON: {"default": JSONParser},
-        DocumentType.MD: {"default": MarkdownParser},
+        DocumentType.MD: {"default": MDParser},
         DocumentType.PDF: {"default": PDFParser},
         DocumentType.PPTX: {"default": PPTParser},
         DocumentType.TXT: {"default": TextParser},
