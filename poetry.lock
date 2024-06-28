@@ -1980,13 +1980,13 @@ httpx = ">=0.27.0,<0.28.0"
 
 [[package]]
 name = "openai"
-version = "1.35.6"
+version = "1.35.7"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.35.6-py3-none-any.whl", hash = "sha256:c2bfa599445a2d6010adc7954476c2dc64e1aa8dad02ef29e0f31b9a887c1d02"},
-    {file = "openai-1.35.6.tar.gz", hash = "sha256:c5958617048a2d777d2b96050fd69ae6721bdffbf59967698694223cc092abd9"},
+    {file = "openai-1.35.7-py3-none-any.whl", hash = "sha256:3d1e0b0aac9b0db69a972d36dc7efa7563f8e8d65550b27a48f2a0c2ec207e80"},
+    {file = "openai-1.35.7.tar.gz", hash = "sha256:009bfa1504c9c7ef64d87be55936d142325656bbc6d98c68b669d6472e4beb09"},
 ]
 
 [package.dependencies]
@@ -3536,13 +3536,13 @@ telegram = ["requests"]
 
 [[package]]
 name = "transformers"
-version = "4.42.1"
+version = "4.42.2"
 description = "State-of-the-art Machine Learning for JAX, PyTorch and TensorFlow"
 optional = true
 python-versions = ">=3.8.0"
 files = [
-    {file = "transformers-4.42.1-py3-none-any.whl", hash = "sha256:d7392acf1e35a108e8abd2e3ea8f6ffc1d34dcb6c0275d6297ec337ae5de99b6"},
-    {file = "transformers-4.42.1.tar.gz", hash = "sha256:89adfb6b6634f684a85bae1d53cc243a43e30479392b3c873be743af61556f4f"},
+    {file = "transformers-4.42.2-py3-none-any.whl", hash = "sha256:dfaa543c5907ade528b6f9dff0ee15dba5be4938a35e465caa5734bad0d77446"},
+    {file = "transformers-4.42.2.tar.gz", hash = "sha256:dbbb0bbfadcd7ca6ec0ec2cef1d12f62a0778fc2d376cd663c6fd0b9dba75ab8"},
 ]
 
 [package.dependencies]
