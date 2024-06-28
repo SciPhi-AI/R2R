@@ -3,15 +3,15 @@ import logging
 from asyncio import Queue
 from typing import Any, Optional
 
-from ..abstractions.search import (
+from ..base.abstractions.search import (
     AggregateSearchResult,
     KGSearchSettings,
     VectorSearchSettings,
 )
-from ..logging.kv_logger import KVLoggingSingleton
-from ..logging.run_manager import RunManager, manage_run
-from ..pipes.base_pipe import AsyncPipe, AsyncState
-from .base_pipeline import Pipeline, dequeue_requests
+from ..base.logging.kv_logger import KVLoggingSingleton
+from ..base.logging.run_manager import RunManager, manage_run
+from ..base.pipeline.base_pipeline import Pipeline, dequeue_requests
+from ..base.pipes.base_pipe import AsyncPipe, AsyncState
 
 logger = logging.getLogger(__name__)
 

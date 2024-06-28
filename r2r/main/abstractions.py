@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
@@ -54,3 +54,12 @@ class R2RPipelines(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+
+class R2RException(Exception):
+    def __init__(
+        self, message: str, status_code: int, detail: Optional[Any] = None
+    ):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(self.message)

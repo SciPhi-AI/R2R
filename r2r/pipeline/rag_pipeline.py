@@ -2,13 +2,13 @@ import asyncio
 import logging
 from typing import Any, Optional
 
-from ..abstractions.llm import GenerationConfig
-from ..abstractions.search import KGSearchSettings, VectorSearchSettings
-from ..logging.kv_logger import KVLoggingSingleton
-from ..logging.run_manager import RunManager, manage_run
-from ..pipes.base_pipe import AsyncPipe, AsyncState
-from ..utils import to_async_generator
-from .base_pipeline import Pipeline
+from ..base.abstractions.llm import GenerationConfig
+from ..base.abstractions.search import KGSearchSettings, VectorSearchSettings
+from ..base.logging.kv_logger import KVLoggingSingleton
+from ..base.logging.run_manager import RunManager, manage_run
+from ..base.pipeline.base_pipeline import Pipeline
+from ..base.pipes.base_pipe import AsyncPipe, AsyncState
+from ..base.utils import to_async_generator
 
 logger = logging.getLogger(__name__)
 

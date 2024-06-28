@@ -5,6 +5,7 @@ import logging
 from .base import *
 from .integrations import *
 from .main import *
+from .pipeline import *
 from .pipes import *
 from .prebuilts import *
 from .prompts import *
