@@ -3,10 +3,10 @@ import logging
 from asyncio import Queue
 from typing import Any, Optional
 
-from ..logging.kv_logger import KVLoggingSingleton
-from ..logging.run_manager import RunManager, manage_run
-from ..pipes.base_pipe import AsyncPipe, AsyncState
-from .base_pipeline import Pipeline, dequeue_requests
+from r2r.base.logging.kv_logger import KVLoggingSingleton
+from r2r.base.logging.run_manager import RunManager, manage_run
+from r2r.base.pipeline.base_pipeline import Pipeline, dequeue_requests
+from r2r.base.pipes.base_pipe import AsyncPipe, AsyncState
 
 logger = logging.getLogger(__name__)
 

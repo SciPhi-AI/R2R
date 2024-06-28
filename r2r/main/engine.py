@@ -1,6 +1,7 @@
 from typing import Optional
 
-from r2r.base import AsyncSyncMeta, KVLoggingSingleton, RunManager, syncable
+from r2r.base import KVLoggingSingleton, RunManager
+from r2r.base.abstractions.base import AsyncSyncMeta, syncable
 
 from .abstractions import R2RPipelines, R2RProviders
 from .assembly.config import R2RConfig

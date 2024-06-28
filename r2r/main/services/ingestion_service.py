@@ -12,12 +12,12 @@ from r2r.base import (
     DocumentInfo,
     DocumentType,
     KVLoggingSingleton,
-    R2RException,
     RunManager,
     generate_id_from_label,
     increment_version,
     to_async_generator,
 )
+from r2r.main.abstractions import R2RException
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RPipelines, R2RProviders

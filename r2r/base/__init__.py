@@ -1,4 +1,7 @@
-from .abstractions.async_sync_meta import AsyncSyncMeta, syncable
+from ..pipeline.ingestion_pipeline import IngestionPipeline
+from ..pipeline.rag_pipeline import RAGPipeline
+from ..pipeline.search_pipeline import SearchPipeline
+from .abstractions.base import AsyncSyncMeta, UserStats, syncable
 from .abstractions.document import (
     DataType,
     Document,
@@ -14,7 +17,6 @@ from .abstractions.document import (
     extract_entities,
     extract_triples,
 )
-from .abstractions.error import R2RException
 from .abstractions.llama_abstractions import VectorStoreQuery
 from .abstractions.llm import (
     GenerationConfig,
@@ -32,7 +34,6 @@ from .abstractions.search import (
     VectorSearchResult,
     VectorSearchSettings,
 )
-from .abstractions.user import UserStats
 from .abstractions.vector import Vector, VectorEntry, VectorType
 from .logging.kv_logger import (
     KVLoggingSingleton,
@@ -67,9 +68,6 @@ from .parsers import (
     XLSXParser,
 )
 from .pipeline.base_pipeline import EvalPipeline, Pipeline
-from .pipeline.ingestion_pipeline import IngestionPipeline
-from .pipeline.rag_pipeline import RAGPipeline
-from .pipeline.search_pipeline import SearchPipeline
 from .pipes.base_pipe import AsyncPipe, AsyncState, PipeType
 from .providers.embedding_provider import EmbeddingConfig, EmbeddingProvider
 from .providers.eval_provider import EvalConfig, EvalProvider
@@ -189,5 +187,4 @@ __all__ = [
     "run_pipeline",
     "generate_run_id",
     "generate_id_from_label",
-    "R2RException",
 ]
