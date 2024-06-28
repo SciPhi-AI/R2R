@@ -20,7 +20,7 @@ class PipelineTypes(Enum):
     OTHER = "other"
 
 
-class Pipeline:
+class AsyncPipeline:
     """Pipeline class for running a sequence of pipes."""
 
     pipeline_type: str = "other"
@@ -195,7 +195,7 @@ class Pipeline:
         return sorted_outputs
 
 
-class EvalPipeline(Pipeline):
+class EvalPipeline(AsyncPipeline):
     """A pipeline for evaluation."""
 
     pipeline_type: str = "eval"

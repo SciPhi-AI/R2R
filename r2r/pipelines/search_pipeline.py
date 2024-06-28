@@ -10,13 +10,13 @@ from ..base.abstractions.search import (
 )
 from ..base.logging.kv_logger import KVLoggingSingleton
 from ..base.logging.run_manager import RunManager, manage_run
-from ..base.pipeline.base_pipeline import Pipeline, dequeue_requests
+from ..base.pipeline.base_pipeline import AsyncPipeline, dequeue_requests
 from ..base.pipes.base_pipe import AsyncPipe, AsyncState
 
 logger = logging.getLogger(__name__)
 
 
-class SearchPipeline(Pipeline):
+class SearchPipeline(AsyncPipeline):
     """A pipeline for search."""
 
     pipeline_type: str = "search"
@@ -126,13 +126,13 @@ class SearchPipeline(Pipeline):
 
         if kg_pipe:
             if not self._kg_search_pipeline:
-                self._kg_search_pipeline = Pipeline()
+                self._kg_search_pipeline = AsyncPipeline()
             self._kg_search_pipeline.add_pipe(
                 pipe, add_upstream_outputs, *args, **kwargs
             )
         elif vector_search_pipe:
             if not self._vector_search_pipeline:
-                self._vector_search_pipeline = Pipeline()
+                self._vector_search_pipeline = AsyncPipeline()
             self._vector_search_pipeline.add_pipe(
                 pipe, add_upstream_outputs, *args, **kwargs
             )
