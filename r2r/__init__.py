@@ -29,6 +29,7 @@ logger.addHandler(ch)
 logger.propagate = False
 
 __all__ = [
+    "R2RException",
     "LoggingConfig",
     "LocalKVLoggingProvider",
     "PostgresLoggingConfig",
