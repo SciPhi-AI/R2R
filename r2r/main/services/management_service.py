@@ -2,13 +2,12 @@ import logging
 import uuid
 from typing import Any, Optional, Union
 
-from fastapi import HTTPException
-
 from r2r.base import (
     AnalysisTypes,
     FilterCriteria,
     KVLoggingSingleton,
     LogProcessor,
+    R2RException,
     RunManager,
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event
@@ -54,16 +53,16 @@ class ManagementService(Service):
         **kwargs: Any,
     ):
         if self.logging_connection is None:
-            raise HTTPException(
-                status_code=404, detail="Logging provider not found."
+            raise R2RException(
+                status_code=404, message="Logging provider not found."
             )
         if (
             self.config.app.get("max_logs_per_request", 100)
             > max_runs_requested
         ):
-            raise HTTPException(
+            raise R2RException(
                 status_code=400,
-                detail="Max runs requested exceeds the limit.",
+                message="Max runs requested exceeds the limit.",
             )
 
         run_info = await self.logging_connection.get_run_info(
@@ -212,8 +211,8 @@ class ManagementService(Service):
         logger.info(f"Deleting entries with metadata: {metadata}")
         ids = self.providers.vector_db.delete_by_metadata(keys, values)
         if not ids:
-            raise HTTPException(
-                status_code=404, detail="No entries found for deletion."
+            raise R2RException(
+                status_code=404, message="No entries found for deletion."
             )
         self.providers.vector_db.delete_documents_overview(ids)
         return f"Documents {ids} deleted successfully."

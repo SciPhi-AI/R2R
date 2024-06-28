@@ -14,6 +14,7 @@ from .abstractions.document import (
     extract_entities,
     extract_triples,
 )
+from .abstractions.error import R2RException
 from .abstractions.llama_abstractions import VectorStoreQuery
 from .abstractions.llm import (
     GenerationConfig,
@@ -189,4 +190,5 @@ __all__ = [
     "run_pipeline",
     "generate_run_id",
     "generate_id_from_label",
+    "R2RException",
 ]
