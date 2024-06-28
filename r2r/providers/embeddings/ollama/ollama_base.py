@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import random
-from typing import Any, Dict, List
 
 import ollama
 from ollama import AsyncClient
@@ -44,7 +43,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             await self.execute_task_with_backoff(task)
             self.request_queue.task_done()
 
-    async def execute_task_with_backoff(self, task: Dict[str, Any]):
+    async def execute_task_with_backoff(self, task: dict[str, Any]):
         retries = 0
         backoff = self.initial_backoff
         while retries < self.max_retries:
@@ -73,7 +72,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-    ) -> List[float]:
+    ) -> list[float]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OllamaEmbeddingProvider only supports search stage."
@@ -86,7 +85,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-    ) -> List[float]:
+    ) -> list[float]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OllamaEmbeddingProvider only supports search stage."
@@ -98,16 +97,16 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
 
     def get_embeddings(
         self,
-        texts: List[str],
+        texts: list[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         return [self.get_embedding(text, stage) for text in texts]
 
     async def async_get_embeddings(
         self,
-        texts: List[str],
+        texts: list[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OllamaEmbeddingProvider only supports search stage."
@@ -131,15 +130,15 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
     def rerank(
         self,
         query: str,
-        results: List[VectorSearchResult],
+        results: list[VectorSearchResult],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
-    ) -> List[VectorSearchResult]:
+    ) -> list[VectorSearchResult]:
         return results[:limit]
 
     def tokenize_string(
         self, text: str, model: str, stage: EmbeddingProvider.PipeStage
-    ) -> List[int]:
+    ) -> list[int]:
         """Tokenizes the input string."""
         raise NotImplementedError(
             "Tokenization is not supported by OllamaEmbeddingProvider."
