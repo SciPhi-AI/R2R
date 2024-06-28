@@ -106,17 +106,51 @@ class MilvusVectorDB(VectorDBProvider):
                 metric_type="COSINE",
             )
 
-            # create a collection
+            # create vector collection
             self.client.create_collection(
                 collection_name=self.config.collection_name,
                 schema=schema,
                 index_params=index_params,
                 consistency_level=0,
             )
-
         except Exception as e:
             raise ValueError(
                 f"Error {e} occurred while attempting to creat collection {self.config.collection_name}."
+            )
+
+        # TODO: 解决不插入vector的问题
+        try:
+            # create schema, with dynamic field available
+            schema_doc = self.client.create_schema(
+                auto_id=False,
+                enable_dynamic_field=True,
+            )
+
+            # add fields to schema
+            schema.add_field(
+                field_name="document_id",
+                datatype=DataType.VARCHAR,
+                is_primary=True,
+                max_length=36,
+            )
+
+            # prepare index parameters
+            index_params_doc = self.client.prepare_index_params()
+            index_params_doc.add_index(
+                index_type="AUTOINDEX",
+                field_name="document_id",
+            )
+
+            # create vector collection
+            self.client.create_collection(
+                collection_name=f"document_info_{self.config.collection_name}",
+                schema=schema_doc,
+                index_params=index_params_doc,
+                consistency_level=0,
+            )
+        except Exception as e:
+            raise ValueError(
+                f"Error {e} occurred while attempting to creat collection document_info_{self.config.collection_name}."
             )
 
     def copy(self, entry: VectorEntry, commit: bool = True) -> None:
@@ -330,7 +364,7 @@ class MilvusVectorDB(VectorDBProvider):
     #       Need to adjust the storing collection
     def upsert_documents_info(self, document_infs: list[DocumentInfo]) -> None:
         if not self.client.has_collection(
-            collection_name=self.config.collection_name
+            collection_name=f"document_info_{self.config.collection_name}"
         ):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `upsert`."
@@ -345,7 +379,7 @@ class MilvusVectorDB(VectorDBProvider):
         try:
             # Can change to insert if upsert not working
             self.client.upsert(
-                collection_name=self.config.collection_name, data=document_data
+                collection_name=f"document_info_{self.config.collection_name}", data=document_data
             )
         except Exception as e:
             raise ValueError(
@@ -370,7 +404,7 @@ class MilvusVectorDB(VectorDBProvider):
         query_expr = ' and '.join(filter_expressions) if filter_expressions else ''
 
         results = self.client.query(
-            collection_name=self.config.collection_name,
+            collection_name=f"document_info_{self.config.collection_name}",
             filter=query_expr,
             output_fields=["document_id", "title", "user_id",
                            "version", "size_in_bytes", "created_at",
@@ -396,7 +430,7 @@ class MilvusVectorDB(VectorDBProvider):
     # TODO: Need future discussion of implementation
     def get_document_chunks(self, document_id: str) -> list[dict]:
         if not self.client.has_collection(
-                collection_name=self.config.collection_name
+                collection_name=f"document_info_{self.config.collection_name}"
         ):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `query`."
@@ -405,7 +439,7 @@ class MilvusVectorDB(VectorDBProvider):
         filter = f'document_id == "{document_id}"'
 
         results = self.client.query(
-            collection_name=self.config.collection_name,
+            collection_name=f"document_info_{self.config.collection_name}",
             filter=filter,
             output_fields=["metadata"],
         )
@@ -418,7 +452,7 @@ class MilvusVectorDB(VectorDBProvider):
 
     def delete_documents_info(self, document_ids: list[str]) -> None:
         if not self.client.has_collection(
-                collection_name=self.config.collection_name
+                collection_name=f"document_info_{self.config.collection_name}"
         ):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `delete`."
@@ -429,7 +463,7 @@ class MilvusVectorDB(VectorDBProvider):
 
             try:
                 self.client.delete(
-                    collection_name=self.config.collection_name,
+                    collection_name=f"document_info_{self.config.collection_name}",
                     filter=filter_expression,
                 )
 
@@ -448,7 +482,7 @@ class MilvusVectorDB(VectorDBProvider):
         # Query Milvus
         try:
             results = self.client.query(
-                collection_name=self.config.collection_name,
+                collection_name=f"document_info_{self.config.collection_name}",
                 expr=filter_expression,
                 output_fields=["user_id", "document_id", "size_in_bytes"]
             )
@@ -502,46 +536,4 @@ class MilvusVectorDB(VectorDBProvider):
         *args,
         **kwargs,
     ) -> list[SearchResult]:
-        if not self.client.has_collection(
-                collection_name=self.config.collection_name
-        ):
-            raise ValueError(
-                "Please call `initialize_collection` before attempting to run `hybrid search`."
-            )
-
-        # Construct Milvus search parameters
-        search_params = {
-            "anns_field": "vector",
-            "topk": limit,
-        }
-
-        if filters:
-            filter_expressions = []
-            for key, value in filters.items():
-                filter_expressions.append(self.build_filter(key, value))
-            expr = ' and '.join(filter_expressions)
-        else:
-            expr = ''
-
-        # Execute search
-        results = self.client.search(
-            collection_name=self.config.collection_name,
-            data=[query_vector],
-            anns_field="embedding",
-            param=search_params,
-            limit=limit,
-            filter=expr,
-            output_fields=["metadata"]
-        )[0]
-
-        # Process results
-        search_results = [
-            SearchResult(
-                id=result['id'],
-                score=result['distance'],
-                metadata=json.loads(result['entities']['metadata'])
-            )
-            for result in results
-        ]
-
-        return search_results
+        pass
