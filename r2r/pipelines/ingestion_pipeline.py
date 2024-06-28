@@ -104,11 +104,13 @@ class IngestionPipeline(AsyncPipeline):
             # Wait for the enqueueing task to complete
             await enqueue_task
 
+            results = {}
             # Wait for the embedding and KG tasks to complete
             if self.embedding_pipeline:
-                await embedding_task
+                results["embedding_pipeline_output"] = await embedding_task
             if self.kg_pipeline:
-                await kg_task
+                results["kg_pipeline_output"] = await kg_task
+            return results
 
     def add_pipe(
         self,
