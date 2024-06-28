@@ -61,7 +61,7 @@ def app(
     #         )
     #         .app
     #     )
-    return builder.build().app
+    return builder.build()
 
 
 if __name__ == "__main__":
