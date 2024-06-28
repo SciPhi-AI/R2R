@@ -368,7 +368,7 @@ class IngestionService(Service):
 
             if skipped_documents:
                 logger.warning(
-                    f"Skipped ingestion for the following documents since they already exist: {', '.join(skipped_documents)}. Use the update endpoint to update these documents."
+                    f"Skipped ingestion for the following documents since they already exist: {', '.join([ele[1] for ele in skipped_documents])}. Use the update endpoint to update these documents."
                 )
 
             await self.pipelines.ingestion_pipeline.run(
