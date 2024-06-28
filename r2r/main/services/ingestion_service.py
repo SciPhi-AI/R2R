@@ -237,20 +237,26 @@ class IngestionService(Service):
     ):
 
         if metadatas and len(metadatas) != len(files):
-            raise ValueError(
-                "Number of metadata entries does not match number of files."
+            raise R2RException(
+                status_code=400,
+                message="Number of metadata entries does not match number of files.",
             )
         if document_ids and len(document_ids) != len(files):
-            raise ValueError(
-                "Number of document id entries does not match number of files."
+            raise R2RException(
+                status_code=400,
+                message="Number of document id entries does not match number of files.",
             )
         elif document_ids and not all(
             isinstance(doc_id, uuid.UUID) for doc_id in document_ids
         ):
-            raise ValueError("All document IDs must be of type UUID.")
+            raise R2RException(
+                status_code=400,
+                message="All document IDs must be of type UUID.",
+            )
         if user_ids and len(user_ids) != len(files):
-            raise ValueError(
-                "Number of user_ids entries does not match number of files."
+            raise R2RException(
+                status_code=400,
+                message="Number of user_ids entries does not match number of files.",
             )
         elif user_ids and not all(
             (isinstance(user_id, uuid.UUID) for user_id in user_ids if user_id)
