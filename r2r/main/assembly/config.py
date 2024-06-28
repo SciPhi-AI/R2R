@@ -70,10 +70,9 @@ class R2RConfig:
 
         self.app = self.app  # for type hinting
         self.ingestion = self.ingestion  # for type hinting
-        self.ingestion["excluded_parsers"] = {
-            DocumentType(k): v
-            for k, v in self.ingestion["excluded_parsers"].items()
-        }
+        self.ingestion["excluded_parsers"] = [
+            DocumentType(k) for k in self.ingestion["excluded_parsers"]
+        ]
         self.embedding = EmbeddingConfig.create(**self.embedding)
         self.kg = KGConfig.create(**self.kg)
         eval_llm = self.eval.pop("llm", None)

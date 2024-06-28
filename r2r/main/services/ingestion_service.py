@@ -18,6 +18,7 @@ from r2r.base import (
     to_async_generator,
 )
 from r2r.main.abstractions import R2RException
+from r2r.pipes.ingestion.parsing_pipe import DocumentProcessingError
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RPipelines, R2RProviders
@@ -57,7 +58,7 @@ class IngestionService(Service):
 
         document_infos = []
         skipped_documents = []
-        processed_documents = []
+        processed_documents = {}
 
         existing_document_info = {
             doc_info.document_id: doc_info
@@ -104,7 +105,9 @@ class IngestionService(Service):
                 )
             )
 
-            processed_documents.append(document_title or str(document.id))
+            processed_documents[document.id] = document_title or str(
+                document.id
+            )
 
         if skipped_documents and len(skipped_documents) == len(documents):
             logger.error("All provided documents already exist.")
@@ -118,7 +121,7 @@ class IngestionService(Service):
                 f"Skipped ingestion for the following documents since they already exist: {', '.join([ele[1] for ele in skipped_documents])}. Use the update endpoint to update these documents."
             )
 
-        await self.pipelines.ingestion_pipeline.run(
+        ingestion_results = await self.pipelines.ingestion_pipeline.run(
             input=to_async_generator(
                 [
                     doc
@@ -143,6 +146,21 @@ class IngestionService(Service):
         )
 
         skipped_ids = [ele[0] for ele in skipped_documents]
+        failed_ids = []
+
+        results = {}
+        # TODO - Are we concerned that we neglect `kg_pipeline_output` ?
+        if ingestion_results["embedding_pipeline_output"]:
+            results = {
+                k: v for k, v in ingestion_results["embedding_pipeline_output"]
+            }
+            for _, error in results.items():
+                if isinstance(error, DocumentProcessingError):
+                    logger.error(
+                        f"Error processing document with ID {error.document_id}: {error.error_message}"
+                    )
+                    failed_ids.append(error.document_id)
+
         documents_to_upsert = [
             document_info
             for document_info in document_infos
@@ -154,8 +172,13 @@ class IngestionService(Service):
             )
         return {
             "processed_documents": [
-                f"Document '{title}' processed successfully."
-                for title in processed_documents
+                f"Document '{processed_documents[document_id]}' processed successfully."
+                for document_id in processed_documents.keys()
+                if document_id not in failed_ids
+            ],
+            "failed_documents": [
+                f"Document '{processed_documents[document_id]}': {results[document_id]}"
+                for document_id in failed_ids
             ],
             "skipped_documents": [
                 f"Document '{title}' skipped since it already exists."
@@ -271,7 +294,7 @@ class IngestionService(Service):
             documents = []
             document_infos = []
             skipped_documents = []
-            processed_documents = []
+            processed_documents = {}
             existing_document_info = {
                 doc_info.document_id: doc_info
                 for doc_info in self.providers.vector_db.get_documents_overview()
@@ -295,9 +318,6 @@ class IngestionService(Service):
                     )
 
                 file_extension = file.filename.split(".")[-1].lower()
-                excluded_parsers = self.config.ingestion.get(
-                    "excluded_parsers", {}
-                )
                 if file_extension.upper() not in DocumentType.__members__:
                     logger.error(
                         f"'{file_extension}' is not a valid DocumentType"
@@ -305,14 +325,6 @@ class IngestionService(Service):
                     raise R2RException(
                         status_code=415,
                         message=f"'{file_extension}' is not a valid DocumentType.",
-                    )
-                if DocumentType[file_extension.upper()] in excluded_parsers:
-                    logger.error(
-                        f"{file_extension} is explicitly excluded in the configuration file."
-                    )
-                    raise R2RException(
-                        status_code=415,
-                        message=f"{file_extension} is explicitly excluded in the configuration file.",
                     )
                 document_metadata = metadatas[iteration] if metadatas else {}
 
@@ -375,7 +387,7 @@ class IngestionService(Service):
                     )
                 )
 
-                processed_documents.append(file.filename)
+                processed_documents[document_id] = document_title
 
             if skipped_documents and len(skipped_documents) == len(files):
                 logger.error("All uploaded documents already exist.")
@@ -389,17 +401,33 @@ class IngestionService(Service):
                     f"Skipped ingestion for the following documents since they already exist: {', '.join([ele[1] for ele in skipped_documents])}. Use the update endpoint to update these documents."
                 )
 
-            await self.pipelines.ingestion_pipeline.run(
+            ingestion_results = await self.pipelines.ingestion_pipeline.run(
                 input=to_async_generator(documents),
                 versions=versions,
                 run_manager=self.run_manager,
             )
 
             skipped_ids = [ele[0] for ele in skipped_documents]
+            failed_ids = []
+
+            results = {}
+            if ingestion_results["embedding_pipeline_output"]:
+                results = {
+                    k: v
+                    for k, v in ingestion_results["embedding_pipeline_output"]
+                }
+                for _, error in results.items():
+                    if isinstance(error, DocumentProcessingError):
+                        logger.error(
+                            f"Error processing document with ID {error.document_id}: {error.error_message}"
+                        )
+                        failed_ids.append(error.document_id)
+
             documents_to_upsert = [
                 document_info
                 for document_info in document_infos
                 if document_info.document_id not in skipped_ids
+                and document_info.document_id not in failed_ids
             ]
             if len(documents_to_upsert) > 0:
                 self.providers.vector_db.upsert_documents_overview(
@@ -408,14 +436,20 @@ class IngestionService(Service):
 
             return {
                 "processed_documents": [
-                    f"File '{filename}' processed successfully."
-                    for filename in processed_documents
+                    f"File '{processed_documents[document_id]}' processed successfully."
+                    for document_id in processed_documents.keys()
+                    if document_id not in failed_ids
+                ],
+                "failed_documents": [
+                    f"File '{processed_documents[document_id]}': {results[document_id]}"
+                    for document_id in failed_ids
                 ],
                 "skipped_documents": [
                     f"File '{filename}' skipped since it already exists."
                     for _, filename in skipped_documents
                 ],
             }
+
         except Exception as e:
             raise e
         finally:
