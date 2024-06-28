@@ -320,7 +320,7 @@ class IngestionService(Service):
                             status_code=409,
                             message=f"File with ID {document_id} already exists.",
                         )
-                    skipped_documents.append(file.filename)
+                    skipped_documents.append((document_id, file.filename))
                     continue
 
                 file_content = await file.read()
@@ -378,9 +378,16 @@ class IngestionService(Service):
             )
 
             if not skip_document_info:
-                self.providers.vector_db.upsert_documents_overview(
-                    document_infos
-                )
+                skipped_ids = [ele[0] for ele in skipped_documents]
+                documents_to_upsert = [
+                    document_info
+                    for document_info in document_infos
+                    if document_info.document_id not in skipped_ids
+                ]
+                if len(documents_to_upsert) > 0:
+                    self.providers.vector_db.upsert_documents_overview(
+                        documents_to_upsert
+                    )
 
             return {
                 "processed_documents": [
@@ -389,7 +396,7 @@ class IngestionService(Service):
                 ],
                 "skipped_documents": [
                     f"File '{filename}' skipped since it already exists."
-                    for filename in skipped_documents
+                    for _, filename in skipped_documents
                 ],
             }
         except Exception as e:

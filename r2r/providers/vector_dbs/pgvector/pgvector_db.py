@@ -32,21 +32,49 @@ class PGVectorDB(VectorDBProvider):
         user = self.config.extra_fields.get("user", None) or os.getenv(
             "POSTGRES_USER"
         )
+        if not user:
+            raise ValueError(
+                "Error, please set a valid POSTGRES_USER environment variable or set a 'user' in the 'vector_database' settings of your `config.json`."
+            )
         password = self.config.extra_fields.get("password", None) or os.getenv(
             "POSTGRES_PASSWORD"
         )
-        host = os.getenv("POSTGRES_HOST") or self.config.extra_fields.get(
-            "host", None
+        if not password:
+            raise ValueError(
+                "Error, please set a valid POSTGRES_PASSWORD environment variable or set a 'password' in the 'vector_database' settings of your `config.json`."
+            )
+
+        host = self.config.extra_fields.get("host", None) or os.getenv(
+            "POSTGRES_HOST"
         )
+        if not host:
+            raise ValueError(
+                "Error, please set a valid POSTGRES_HOST environment variable or set a 'host' in the 'vector_database' settings of your `config.json`."
+            )
+
         port = self.config.extra_fields.get("port", None) or os.getenv(
             "POSTGRES_PORT"
         )
-        db_name = os.getenv("POSTGRES_DBNAME") or self.config.extra_fields.get(
-            "db_name", None
+        if not port:
+            raise ValueError(
+                "Error, please set a valid POSTGRES_PORT environment variable or set a 'port' in the 'vector_database' settings of your `config.json`."
+            )
+
+        db_name = self.config.extra_fields.get("db_name", None) or os.getenv(
+            "POSTGRES_DBNAME"
         )
+        if not db_name:
+            raise ValueError(
+                "Error, please set a valid POSTGRES_DBNAME environment variable or set a 'db_name' in the 'vector_database' settings of your `config.json`."
+            )
+
         collection = self.config.extra_fields.get(
             "vecs_collection", None
         ) or os.getenv("POSTGRES_VECS_COLLECTION")
+        if not collection:
+            raise ValueError(
+                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'collection' in the 'vector_database' settings of your `config.json`."
+            )
 
         if not all([user, password, host, port, db_name, collection]):
             raise ValueError(
