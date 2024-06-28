@@ -3,24 +3,19 @@ import time
 import uuid
 from typing import Optional
 
-from fastapi import HTTPException
-
-from r2r.core import (
+from r2r.base import (
     KVLoggingSingleton,
     RunManager,
     manage_run,
     to_async_generator,
 )
-from r2r.core.abstractions.llm import GenerationConfig
+from r2r.base.abstractions.llm import GenerationConfig
+from r2r.base.abstractions.search import KGSearchSettings, VectorSearchSettings
+from r2r.main.abstractions import R2RException
 from r2r.pipes import EvalPipe
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import (
-    KGSearchSettings,
-    R2RPipelines,
-    R2RProviders,
-    VectorSearchSettings,
-)
+from ..abstractions import R2RPipelines, R2RProviders
 from ..assembly.config import R2RConfig
 from .base import Service
 
@@ -56,18 +51,18 @@ class RetrievalService(Service):
                 kg_search_settings.use_kg_search
                 and self.config.kg.provider is None
             ):
-                raise HTTPException(
+                raise R2RException(
                     status_code=400,
-                    detail="Knowledge Graph search is not enabled in the configuration.",
+                    message="Knowledge Graph search is not enabled in the configuration.",
                 )
 
             if (
                 vector_search_settings.use_vector_search
                 and self.config.vector_database.provider is None
             ):
-                raise HTTPException(
+                raise R2RException(
                     status_code=400,
-                    detail="Vector search is not enabled in the configuration.",
+                    message="Vector search is not enabled in the configuration.",
                 )
 
             # TODO - Remove these transforms once we have a better way to handle this
@@ -171,12 +166,12 @@ class RetrievalService(Service):
             except Exception as e:
                 logger.error(f"Pipeline error: {str(e)}")
                 if "NoneType" in str(e):
-                    raise HTTPException(
+                    raise R2RException(
                         status_code=502,
-                        detail="Ollama server not reachable or returned an invalid response",
+                        message="Ollama server not reachable or returned an invalid response",
                     )
-                raise HTTPException(
-                    status_code=500, detail="Internal Server Error"
+                raise R2RException(
+                    status_code=500, message="Internal Server Error"
                 )
 
     @telemetry_event("Evaluate")

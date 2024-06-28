@@ -2,22 +2,24 @@ import logging
 import os
 from typing import Any, Optional
 
-from r2r.core import (
+from r2r.base import (
+    AsyncPipe,
     EmbeddingConfig,
     EmbeddingProvider,
-    EvalPipeline,
     EvalProvider,
-    IngestionPipeline,
     KGProvider,
     KVLoggingSingleton,
     LLMConfig,
     LLMProvider,
-    LoggableAsyncPipe,
     PromptProvider,
-    RAGPipeline,
-    SearchPipeline,
     VectorDBConfig,
     VectorDBProvider,
+)
+from r2r.pipelines import (
+    EvalPipeline,
+    IngestionPipeline,
+    RAGPipeline,
+    SearchPipeline,
 )
 
 from ..abstractions import R2RPipelines, R2RPipes, R2RProviders
@@ -38,10 +40,6 @@ class R2RProviderFactory:
             from r2r.providers.vector_dbs import PGVectorDB
 
             vector_db_provider = PGVectorDB(vector_db_config)
-        elif vector_db_config.provider == "local":
-            from r2r.providers.vector_dbs import R2RLocalVectorDB
-
-            vector_db_provider = R2RLocalVectorDB(vector_db_config)
         else:
             raise ValueError(
                 f"Vector database provider {vector_db_config.provider} not supported"
@@ -210,16 +208,16 @@ class R2RPipeFactory:
 
     def create_pipes(
         self,
-        parsing_pipe_override: Optional[LoggableAsyncPipe] = None,
-        embedding_pipe_override: Optional[LoggableAsyncPipe] = None,
-        kg_pipe_override: Optional[LoggableAsyncPipe] = None,
-        kg_storage_pipe_override: Optional[LoggableAsyncPipe] = None,
-        kg_agent_pipe_override: Optional[LoggableAsyncPipe] = None,
-        vector_storage_pipe_override: Optional[LoggableAsyncPipe] = None,
-        search_pipe_override: Optional[LoggableAsyncPipe] = None,
-        rag_pipe_override: Optional[LoggableAsyncPipe] = None,
-        streaming_rag_pipe_override: Optional[LoggableAsyncPipe] = None,
-        eval_pipe_override: Optional[LoggableAsyncPipe] = None,
+        parsing_pipe_override: Optional[AsyncPipe] = None,
+        embedding_pipe_override: Optional[AsyncPipe] = None,
+        kg_pipe_override: Optional[AsyncPipe] = None,
+        kg_storage_pipe_override: Optional[AsyncPipe] = None,
+        kg_agent_pipe_override: Optional[AsyncPipe] = None,
+        vector_storage_pipe_override: Optional[AsyncPipe] = None,
+        search_pipe_override: Optional[AsyncPipe] = None,
+        rag_pipe_override: Optional[AsyncPipe] = None,
+        streaming_rag_pipe_override: Optional[AsyncPipe] = None,
+        eval_pipe_override: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
     ) -> R2RPipes:
@@ -258,7 +256,7 @@ class R2RPipeFactory:
         if self.config.embedding.provider is None:
             return None
 
-        from r2r.core import RecursiveCharacterTextSplitter
+        from r2r.base import RecursiveCharacterTextSplitter
         from r2r.pipes import EmbeddingPipe
 
         text_splitter_config = self.config.embedding.extra_fields.get(
@@ -305,7 +303,7 @@ class R2RPipeFactory:
         if self.config.kg.provider is None:
             return None
 
-        from r2r.core import RecursiveCharacterTextSplitter
+        from r2r.base import RecursiveCharacterTextSplitter
         from r2r.pipes import KGExtractionPipe
 
         text_splitter_config = self.config.kg.extra_fields.get("text_splitter")

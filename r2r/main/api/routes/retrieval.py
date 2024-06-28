@@ -1,52 +1,39 @@
-import logging
-
-from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from r2r.core import GenerationConfig, manage_run
+from r2r.base import GenerationConfig, KGSearchSettings, VectorSearchSettings
 
-from ...abstractions import R2REvalRequest, R2RRAGRequest, R2RSearchRequest
-from ...dependencies import get_r2r_app
-
-logger = logging.getLogger(__name__)
-
-router = APIRouter()
+from ...engine import R2REngine
+from ..requests import R2REvalRequest, R2RRAGRequest, R2RSearchRequest
+from .base_router import BaseRouter
 
 
-@router.post("/search")
-async def search_app(request: R2RSearchRequest, r2r=Depends(get_r2r_app)):
-    async with manage_run(r2r.run_manager, "search_app") as run_id:
-        try:
-            results = await r2r.asearch(
+class RetrievalRouter(BaseRouter):
+    def __init__(self, engine: R2REngine):
+        super().__init__(engine)
+        self.setup_routes()
+
+    def setup_routes(self):
+        @self.router.post("/search")
+        @self.base_endpoint
+        async def search_app(request: R2RSearchRequest):
+            results = await self.engine.asearch(
                 query=request.query,
-                vector_search_settings=request.vector_search_settings,
-                kg_search_settings=request.kg_search_settings,
+                vector_search_settings=request.vector_search_settings
+                or VectorSearchSettings(),
+                kg_search_settings=request.kg_search_settings
+                or KGSearchSettings(),
             )
-            return {"results": results}
-        except Exception as e:
-            await r2r.logging_connection.log(
-                log_id=run_id,
-                key="pipeline_type",
-                value=r2r.pipelines.search_pipeline.pipeline_type,
-                is_info_log=True,
-            )
-            await r2r.logging_connection.log(
-                log_id=run_id,
-                key="error",
-                value=str(e),
-                is_info_log=False,
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+            return results
 
-
-@router.post("/rag")
-async def rag_app(request: R2RRAGRequest, r2r=Depends(get_r2r_app)):
-    async with manage_run(r2r.run_manager, "rag_app") as run_id:
-        try:
-            response = await r2r.arag(
+        @self.router.post("/rag")
+        @self.base_endpoint
+        async def rag_app(request: R2RRAGRequest):
+            response = await self.engine.arag(
                 query=request.query,
-                vector_search_settings=request.vector_search_settings,
-                kg_search_settings=request.kg_search_settings,
+                vector_search_settings=request.vector_search_settings
+                or VectorSearchSettings(),
+                kg_search_settings=request.kg_search_settings
+                or KGSearchSettings(),
                 rag_generation_config=request.rag_generation_config
                 or GenerationConfig(model="gpt-4o"),
             )
@@ -59,45 +46,18 @@ async def rag_app(request: R2RRAGRequest, r2r=Depends(get_r2r_app)):
                     response, media_type="application/json"
                 )
             else:
-                return {"results": response}
-        except Exception as e:
-            await r2r.logging_connection.log(
-                log_id=run_id,
-                key="pipeline_type",
-                value=r2r.pipelines.rag_pipeline.pipeline_type,
-                is_info_log=True,
-            )
-            await r2r.logging_connection.log(
-                log_id=run_id,
-                key="error",
-                value=str(e),
-                is_info_log=False,
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+                return response[0]
 
-
-@router.post("/evaluate")
-async def evaluate_app(request: R2REvalRequest, r2r=Depends(get_r2r_app)):
-    async with manage_run(r2r.run_manager, "evaluate_app") as run_id:
-
-        try:
-            results = await r2r.aevaluate(
+        @self.router.post("/evaluate")
+        @self.base_endpoint
+        async def evaluate_app(request: R2REvalRequest):
+            results = await self.engine.aevaluate(
                 query=request.query,
                 context=request.context,
                 completion=request.completion,
             )
-            return {"results": results}
-        except Exception as e:
-            await r2r.logging_connection.log(
-                log_id=run_id,
-                key="pipeline_type",
-                value=r2r.pipelines.rag_pipeline.pipeline_type,
-                is_info_log=True,
-            )
-            await r2r.logging_connection.log(
-                log_id=run_id,
-                key="error",
-                value=str(e),
-                is_info_log=False,
-            )
-            raise HTTPException(status_code=500, detail=str(e))
+            return results
+
+
+def create_retrieval_router(engine: R2REngine):
+    return RetrievalRouter(engine).router

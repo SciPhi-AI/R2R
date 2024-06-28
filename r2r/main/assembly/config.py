@@ -4,14 +4,14 @@ import os
 from enum import Enum
 from typing import Any
 
-from ...core.abstractions.document import DocumentType
-from ...core.logging.kv_logger import LoggingConfig
-from ...core.providers.embedding_provider import EmbeddingConfig
-from ...core.providers.eval_provider import EvalConfig
-from ...core.providers.kg_provider import KGConfig
-from ...core.providers.llm_provider import LLMConfig
-from ...core.providers.prompt_provider import PromptConfig
-from ...core.providers.vector_db_provider import ProviderConfig, VectorDBConfig
+from ...base.abstractions.document import DocumentType
+from ...base.logging.kv_logger import LoggingConfig
+from ...base.providers.embedding_provider import EmbeddingConfig
+from ...base.providers.eval_provider import EvalConfig
+from ...base.providers.kg_provider import KGConfig
+from ...base.providers.llm_provider import LLMConfig
+from ...base.providers.prompt_provider import PromptConfig
+from ...base.providers.vector_db_provider import ProviderConfig, VectorDBConfig
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class R2RConfig:
         "completions": ["provider"],
         "logging": ["provider", "log_table"],
         "prompt": ["provider"],
-        "vector_database": ["provider", "collection_name"],
+        "vector_database": ["provider"],
     }
     app: dict[str, Any]
     embedding: EmbeddingConfig

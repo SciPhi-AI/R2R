@@ -11,9 +11,9 @@ import httpx
 import nest_asyncio
 import requests
 
-from r2r.core import GenerationConfig, KGSearchSettings, VectorSearchSettings
+from r2r.base import GenerationConfig, KGSearchSettings, VectorSearchSettings
 
-from ..abstractions import (
+from .requests import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
@@ -30,6 +30,40 @@ from ..abstractions import (
 )
 
 nest_asyncio.apply()
+
+
+class R2RHTTPError(Exception):
+    def __init__(self, status_code, error_type, message):
+        self.status_code = status_code
+        self.error_type = error_type
+        self.message = message
+        super().__init__(f"[{status_code}] {error_type}: {message}")
+
+
+def handle_request_error(response):
+    if response.status_code >= 400:
+        try:
+            error_content = response.json()
+            if isinstance(error_content, dict) and "detail" in error_content:
+                detail = error_content["detail"]
+                if isinstance(detail, dict):
+                    message = detail.get("message", str(response.text))
+                    error_type = detail.get("error_type", "UnknownError")
+                else:
+                    message = str(detail)
+                    error_type = "HTTPException"
+            else:
+                message = str(error_content)
+                error_type = "UnknownError"
+        except json.JSONDecodeError:
+            message = response.text
+            error_type = "UnknownError"
+
+        raise R2RHTTPError(
+            status_code=response.status_code,
+            error_type=error_type,
+            message=message,
+        )
 
 
 def monitor_request(func):
@@ -74,11 +108,14 @@ class R2RClient:
         self.base_url = base_url
         self.prefix = prefix
 
-    def health(self) -> dict:
-        url = f"{self.base_url}{self.prefix}/health"
-        response = requests.get(url)
-        response.raise_for_status()
+    def _make_request(self, method, endpoint, **kwargs):
+        url = f"{self.base_url}{self.prefix}/{endpoint}"
+        response = requests.request(method, url, **kwargs)
+        handle_request_error(response)
         return response.json()
+
+    def health(self) -> dict:
+        return self._make_request("GET", "health")
 
     def update_prompt(
         self,
@@ -86,13 +123,12 @@ class R2RClient:
         template: Optional[str] = None,
         input_types: Optional[dict] = None,
     ) -> dict:
-        url = f"{self.base_url}{self.prefix}/update_prompt"
         request = R2RUpdatePromptRequest(
             name=name, template=template, input_types=input_types
         )
-        response = requests.post(url, json=json.loads(request.json()))
-        response.raise_for_status()
-        return response.json()
+        return self._make_request(
+            "POST", "update_prompt", json=json.loads(request.json())
+        )
 
     @monitor_request
     def ingest_documents(
@@ -101,10 +137,9 @@ class R2RClient:
         request = R2RIngestDocumentsRequest(
             documents=documents, versions=versions
         )
-        url = f"{self.base_url}{self.prefix}/ingest_documents"
-        response = requests.post(url, json=json.loads(request.json()))
-        response.raise_for_status()
-        return response.json()
+        return self._make_request(
+            "POST", "ingest_documents", json=json.loads(request.json())
+        )
 
     @monitor_request
     def ingest_files(
@@ -116,7 +151,6 @@ class R2RClient:
         versions: Optional[list[str]] = None,
         skip_document_info: Optional[bool] = False,
     ) -> dict:
-        url = f"{self.base_url}{self.prefix}/ingest_files"
         files_to_upload = [
             ("files", (file, open(file, "rb"), "application/octet-stream"))
             for file in file_paths
@@ -134,17 +168,19 @@ class R2RClient:
             versions=versions,
             skip_document_info=skip_document_info,
         )
-        response = requests.post(
-            url,
-            # must use data instead of json when sending files
-            data={
-                k: json.dumps(v) for k, v in json.loads(request.json()).items()
-            },
-            files=files_to_upload,
-        )
-
-        response.raise_for_status()
-        return response.json()
+        try:
+            return self._make_request(
+                "POST",
+                "ingest_files",
+                data={
+                    k: json.dumps(v)
+                    for k, v in json.loads(request.json()).items()
+                },
+                files=files_to_upload,
+            )
+        finally:
+            for _, file_tuple in files_to_upload:
+                file_tuple[1].close()
 
     @monitor_request
     def update_documents(
@@ -153,13 +189,12 @@ class R2RClient:
         versions: Optional[list[str]] = None,
         metadatas: Optional[list[dict]] = None,
     ) -> dict:
-        url = f"{self.base_url}{self.prefix}/update_documents"
         request = R2RUpdateDocumentsRequest(
             documents=documents, versions=versions, metadatas=metadatas
         )
-        response = requests.post(url, json=json.loads(request.json()))
-        response.raise_for_status()
-        return response.json()
+        return self._make_request(
+            "POST", "update_documents", json=json.loads(request.json())
+        )
 
     @monitor_request
     def update_files(
@@ -168,25 +203,27 @@ class R2RClient:
         document_ids: list[str],
         metadatas: Optional[list[dict]] = None,
     ) -> dict:
-        url = f"{self.base_url}{self.prefix}/update_files"
         files_to_upload = [
             ("files", (file, open(file, "rb"), "application/octet-stream"))
             for file in files
         ]
-
         request = R2RUpdateFilesRequest(
             metadatas=metadatas,
             document_ids=document_ids,
         )
-        response = requests.post(
-            url,
-            files=files_to_upload,
-            data={
-                k: json.dumps(v) for k, v in json.loads(request.json()).items()
-            },
-        )
-        response.raise_for_status()
-        return response.json()
+        try:
+            return self._make_request(
+                "POST",
+                "update_files",
+                data={
+                    k: json.dumps(v)
+                    for k, v in json.loads(request.json()).items()
+                },
+                files=files_to_upload,
+            )
+        finally:
+            for _, file_tuple in files_to_upload:
+                file_tuple[1].close()
 
     def search(
         self,
@@ -211,10 +248,9 @@ class R2RClient:
                 agent_generation_config=kg_agent_generation_config,
             ),
         )
-        url = f"{self.base_url}{self.prefix}/search"
-        response = requests.post(url, json=json.loads(request.json()))
-        response.raise_for_status()
-        return response.json()
+        return self._make_request(
+            "POST", "search", json=json.loads(request.json())
+        )
 
     def rag(
         self,
@@ -245,13 +281,9 @@ class R2RClient:
         if rag_generation_config.stream:
             return self._stream_rag_sync(request)
         else:
-            try:
-                url = f"{self.base_url}{self.prefix}/rag"
-                response = requests.post(url, json=json.loads(request.json()))
-                response.raise_for_status()
-                return response.json()
-            except requests.exceptions.RequestException as e:
-                raise e
+            return self._make_request(
+                "POST", "rag", json=json.loads(request.json())
+            )
 
     async def _stream_rag(
         self, rag_request: R2RRAGRequest
@@ -261,7 +293,7 @@ class R2RClient:
             async with client.stream(
                 "POST", url, json=json.loads(rag_request.json())
             ) as response:
-                response.raise_for_status()
+                handle_request_error(response)
                 async for chunk in response.aiter_text():
                     yield chunk
 
@@ -275,12 +307,10 @@ class R2RClient:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        # Run the async generator and yield each chunk synchronously
         async_gen = run_async_generator()
 
         try:
             while True:
-                # Fetch the next chunk from the async generator
                 chunk = loop.run_until_complete(async_gen.__anext__())
                 yield chunk
         except StopAsyncIteration:
@@ -291,52 +321,41 @@ class R2RClient:
     def delete(
         self, keys: list[str], values: list[Union[bool, int, str]]
     ) -> dict:
-        url = f"{self.base_url}{self.prefix}/delete"
         request = R2RDeleteRequest(keys=keys, values=values)
-        response = requests.delete(url, json=json.loads(request.json()))
-        response.raise_for_status()
-        return response.json()
+        return self._make_request(
+            "DELETE", "delete", json=json.loads(request.json())
+        )
 
     def logs(self, log_type_filter: Optional[str] = None) -> dict:
-        url = f"{self.base_url}{self.prefix}/logs"
-        params = {}
-        if log_type_filter:
-            params["log_type_filter"] = log_type_filter
         request = R2RLogsRequest(log_type_filter=log_type_filter)
-        response = requests.get(url, json=json.loads(request.json()))
-        response.raise_for_status()
-        return response.json()
+        return self._make_request(
+            "GET", "logs", json=json.loads(request.json())
+        )
 
     def app_settings(self) -> dict:
-        url = f"{self.base_url}{self.prefix}/app_settings"
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.json()
+        return self._make_request("GET", "app_settings")
 
     def analytics(self, filter_criteria: dict, analysis_types: dict) -> dict:
-        url = f"{self.base_url}{self.prefix}/analytics"
         request = R2RAnalyticsRequest(
             filter_criteria=filter_criteria, analysis_types=analysis_types
         )
-        response = requests.get(url, json=json.loads(request.json()))
-        response.raise_for_status()
-        return response.json()
+        return self._make_request(
+            "GET", "analytics", json=json.loads(request.json())
+        )
 
     def users_overview(
         self, user_ids: Optional[list[uuid.UUID]] = None
     ) -> dict:
-        url = f"{self.base_url}{self.prefix}/users_overview"
         request = R2RUsersOverviewRequest(user_ids=user_ids)
-        response = requests.get(url, json=json.loads(request.json()))
-        response.raise_for_status()
-        return response.json()
+        return self._make_request(
+            "GET", "users_overview", json=json.loads(request.json())
+        )
 
     def documents_overview(
         self,
         document_ids: Optional[list[str]] = None,
         user_ids: Optional[list[str]] = None,
     ) -> dict:
-        url = f"{self.base_url}{self.prefix}/documents_overview"
         request = R2RDocumentsOverviewRequest(
             document_ids=(
                 [uuid.UUID(did) for did in document_ids]
@@ -347,16 +366,15 @@ class R2RClient:
                 [uuid.UUID(uid) for uid in user_ids] if user_ids else None
             ),
         )
-        response = requests.get(url, json=json.loads(request.json()))
-        response.raise_for_status()
-        return response.json()
+        return self._make_request(
+            "GET", "documents_overview", json=json.loads(request.json())
+        )
 
     def document_chunks(self, document_id: str) -> dict:
-        url = f"{self.base_url}{self.prefix}/document_chunks"
         request = R2RDocumentChunksRequest(document_id=document_id)
-        response = requests.get(url, json=json.loads(request.json()))
-        response.raise_for_status()
-        return response.json()
+        return self._make_request(
+            "GET", "document_chunks", json=json.loads(request.json())
+        )
 
 
 if __name__ == "__main__":

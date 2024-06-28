@@ -5,9 +5,9 @@ import uuid
 from datetime import datetime
 from typing import Any, List, Optional, Union
 
-from fastapi import Form, HTTPException, UploadFile
+from fastapi import Form, UploadFile
 
-from r2r.core import (
+from r2r.base import (
     Document,
     DocumentInfo,
     DocumentType,
@@ -17,14 +17,11 @@ from r2r.core import (
     increment_version,
     to_async_generator,
 )
+from r2r.main.abstractions import R2RException
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import (
-    R2RIngestFilesRequest,
-    R2RPipelines,
-    R2RProviders,
-    R2RUpdateFilesRequest,
-)
+from ..abstractions import R2RPipelines, R2RProviders
+from ..api.requests import R2RIngestFilesRequest, R2RUpdateFilesRequest
 from ..assembly.config import R2RConfig
 from .base import Service
 
@@ -54,8 +51,8 @@ class IngestionService(Service):
         **kwargs: Any,
     ):
         if len(documents) == 0:
-            raise HTTPException(
-                status_code=400, detail="No documents provided for ingestion."
+            raise R2RException(
+                status_code=400, message="No documents provided for ingestion."
             )
 
         document_infos = []
@@ -75,9 +72,9 @@ class IngestionService(Service):
             ):
                 logger.error(f"Document with ID {document.id} already exists.")
                 if len(documents) == 1:
-                    raise HTTPException(
+                    raise R2RException(
                         status_code=409,
-                        detail=f"Document with ID {document.id} already exists.",
+                        message=f"Document with ID {document.id} already exists.",
                     )
                 skipped_documents.append(
                     document.metadata.get("title", None) or str(document.id)
@@ -107,9 +104,9 @@ class IngestionService(Service):
 
         if skipped_documents and len(skipped_documents) == len(documents):
             logger.error("All provided documents already exist.")
-            raise HTTPException(
+            raise R2RException(
                 status_code=409,
-                detail="All provided documents already exist. Use the `update_documents` endpoint instead to update these documents.",
+                message="All provided documents already exist. Use the `update_documents` endpoint instead to update these documents.",
             )
 
         if skipped_documents:
@@ -162,8 +159,8 @@ class IngestionService(Service):
         **kwargs: Any,
     ):
         if len(documents) == 0:
-            raise HTTPException(
-                status_code=400, detail="No documents provided for update."
+            raise R2RException(
+                status_code=400, message="No documents provided for update."
             )
 
         old_versions = []
@@ -248,8 +245,8 @@ class IngestionService(Service):
         ):
             raise ValueError("All user IDs must be of type UUID.")
         if len(files) == 0:
-            raise HTTPException(
-                status_code=400, detail="No files provided for ingestion."
+            raise R2RException(
+                status_code=400, message="No files provided for ingestion."
             )
 
         try:
@@ -269,14 +266,14 @@ class IngestionService(Service):
                     * MB_CONVERSION_FACTOR
                 ):
                     logger.error(f"File size exceeds limit: {file.filename}")
-                    raise HTTPException(
+                    raise R2RException(
                         status_code=413,
-                        detail="File size exceeds maximum allowed size.",
+                        message="File size exceeds maximum allowed size.",
                     )
                 if not file.filename:
                     logger.error("File name not provided.")
-                    raise HTTPException(
-                        status_code=400, detail="File name not provided."
+                    raise R2RException(
+                        status_code=400, message="File name not provided."
                     )
 
                 file_extension = file.filename.split(".")[-1].lower()
@@ -287,17 +284,17 @@ class IngestionService(Service):
                     logger.error(
                         f"'{file_extension}' is not a valid DocumentType"
                     )
-                    raise HTTPException(
+                    raise R2RException(
                         status_code=415,
-                        detail=f"'{file_extension}' is not a valid DocumentType.",
+                        message=f"'{file_extension}' is not a valid DocumentType.",
                     )
                 if DocumentType[file_extension.upper()] in excluded_parsers:
                     logger.error(
                         f"{file_extension} is explicitly excluded in the configuration file."
                     )
-                    raise HTTPException(
+                    raise R2RException(
                         status_code=415,
-                        detail=f"{file_extension} is explicitly excluded in the configuration file.",
+                        message=f"{file_extension} is explicitly excluded in the configuration file.",
                     )
                 document_metadata = metadatas[iteration] if metadatas else {}
 
@@ -319,9 +316,9 @@ class IngestionService(Service):
                 ):
                     logger.error(f"File with ID {document_id} already exists.")
                     if len(files) == 1:
-                        raise HTTPException(
+                        raise R2RException(
                             status_code=409,
-                            detail=f"File with ID {document_id} already exists.",
+                            message=f"File with ID {document_id} already exists.",
                         )
                     skipped_documents.append(file.filename)
                     continue
@@ -364,9 +361,9 @@ class IngestionService(Service):
 
             if skipped_documents and len(skipped_documents) == len(files):
                 logger.error("All uploaded documents already exist.")
-                raise HTTPException(
+                raise R2RException(
                     status_code=409,
-                    detail="All uploaded documents already exist. Use the `update_files` endpoint instead to update these documents.",
+                    message="All uploaded documents already exist. Use the `update_files` endpoint instead to update these documents.",
                 )
 
             if skipped_documents:
@@ -411,21 +408,21 @@ class IngestionService(Service):
         **kwargs: Any,
     ):
         if not files:
-            raise HTTPException(
-                status_code=400, detail="No files provided for update."
+            raise R2RException(
+                status_code=400, message="No files provided for update."
             )
 
         try:
             if len(document_ids) != len(files):
-                raise HTTPException(
+                raise R2RException(
                     status_code=400,
-                    detail="Number of ids does not match number of files.",
+                    message="Number of ids does not match number of files.",
                 )
 
             if metadatas and len(metadatas) != len(files):
-                raise HTTPException(
+                raise R2RException(
                     status_code=400,
-                    detail="Number of metadata entries does not match number of files.",
+                    message="Number of metadata entries does not match number of files.",
                 )
 
             old_versions = []
@@ -435,15 +432,15 @@ class IngestionService(Service):
             )
             documents_overview_modified = []
             if len(documents_overview) != len(files):
-                raise HTTPException(
+                raise R2RException(
                     status_code=404,
-                    detail="One or more documents was not found.",
+                    message="One or more documents was not found.",
                 )
             for it, document_info in enumerate(documents_overview):
                 if not document_info:
-                    raise HTTPException(
+                    raise R2RException(
                         status_code=404,
-                        detail=f"Document with id {document_ids[it]} not found.",
+                        message=f"Document with id {document_ids[it]} not found.",
                     )
 
                 current_version = document_info.version
@@ -483,7 +480,7 @@ class IngestionService(Service):
             return f"Document(s) with IDs {document_ids} updated successfully."
         except Exception as e:
             logger.error(f"update_files(files={files}) - \n\n{str(e)})")
-            raise HTTPException(status_code=500, detail=str(e)) from e
+            raise R2RException(status_code=500, message=str(e)) from e
         finally:
             for file in files:
                 file.file.close()
@@ -525,8 +522,8 @@ class IngestionService(Service):
             }
             return R2RIngestFilesRequest(**request_data)
         except Exception as e:
-            raise HTTPException(
-                status_code=400, detail=f"Invalid form data: {e}"
+            raise R2RException(
+                status_code=400, message=f"Invalid form data: {e}"
             )
 
     @staticmethod
@@ -549,8 +546,8 @@ class IngestionService(Service):
             }
             return R2RUpdateFilesRequest(**request_data)
         except Exception as e:
-            raise HTTPException(
-                status_code=400, detail=f"Invalid form data: {e}"
+            raise R2RException(
+                status_code=400, message=f"Invalid form data: {e}"
             )
 
     # TODO - Move to mgmt service for document info, delete, post orchestration buildout
@@ -579,8 +576,8 @@ class IngestionService(Service):
 
         ids = self.providers.vector_db.delete_by_metadata(keys, values)
         if not ids:
-            raise HTTPException(
-                status_code=404, detail="No entries found for deletion."
+            raise R2RException(
+                status_code=404, message="No entries found for deletion."
             )
         self.providers.vector_db.delete_documents_overview(ids)
         return "Entries deleted successfully."

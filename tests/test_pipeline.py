@@ -16,7 +16,12 @@ class MultiplierPipe(AsyncPipe):
         self.delay = delay
 
     async def _run_logic(
-        self, input: AsyncGenerator[Any, None], state
+        self,
+        input: AsyncGenerator[Any, None],
+        state,
+        run_id=None,
+        *args,
+        **kwargs,
     ) -> AsyncGenerator[Any, None]:
         async for item in input.message:
             if self.delay > 0:
@@ -40,7 +45,12 @@ class FanOutPipe(AsyncPipe):
         self.delay = delay
 
     async def _run_logic(
-        self, input: AsyncGenerator[Any, None], state
+        self,
+        input: AsyncGenerator[Any, None],
+        state,
+        run_id=None,
+        *args,
+        **kwargs,
     ) -> AsyncGenerator[Any, None]:
         inputs = []
         async for item in input.message:
@@ -60,7 +70,12 @@ class FanInPipe(AsyncPipe):
         self.delay = delay
 
     async def _run_logic(
-        self, input: AsyncGenerator[Any, None], state
+        self,
+        input: AsyncGenerator[Any, None],
+        state,
+        run_id=None,
+        *args,
+        **kwargs,
     ) -> AsyncGenerator[Any, None]:
         total_sum = 0
         async for batch in input.message:

@@ -2,11 +2,12 @@ import logging
 
 # Keep '*' imports for enhanced development velocity
 # corresponding flake8 error codes are F403, F405
-from .core import *
+from .base import *
 from .integrations import *
 from .main import *
+from .parsers import *
+from .pipelines import *
 from .pipes import *
-from .prebuilts import *
 from .prompts import *
 
 logger = logging.getLogger("r2r")
@@ -29,6 +30,7 @@ logger.addHandler(ch)
 logger.propagate = False
 
 __all__ = [
+    "R2RException",
     "LoggingConfig",
     "LocalKVLoggingProvider",
     "PostgresLoggingConfig",
@@ -59,7 +61,7 @@ __all__ = [
     "DOCXParser",
     "HTMLParser",
     "JSONParser",
-    "MarkdownParser",
+    "MDParser",
     "PDFParser",
     "PPTParser",
     "TextParser",
@@ -85,7 +87,7 @@ __all__ = [
     "RecursiveCharacterTextSplitter",
     "generate_run_id",
     "generate_id_from_label",
-    "R2RApp",
+    "R2REngine",
     # Pipes
     "EmbeddingPipe",
     "EvalPipe",
@@ -97,7 +99,8 @@ __all__ = [
     "VectorStoragePipe",
     "R2RPromptProvider",
     "WebSearchPipe",
-    "R2RAppBuilder",
+    "R2RBuilder",
+    "R2R",
     "KGAgentSearchPipe",
     # Prebuilts
     "MultiSearchPipe",

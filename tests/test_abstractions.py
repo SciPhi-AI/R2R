@@ -39,7 +39,7 @@ async def test_async_state_delete():
 
 # Test AsyncPipe by creating a mock subclass
 class MockAsyncPipe(AsyncPipe):
-    async def _run_logic(self, input, state):
+    async def _run_logic(self, input, state, run_id, *args, **kwargs):
         yield "processed"
 
 
