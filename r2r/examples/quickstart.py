@@ -292,7 +292,6 @@ class R2RQuickstart:
         use_kg_search: bool = False,
         kg_agent_generation_config: Optional[dict] = None,
     ):
-
         kg_agent_generation_config = (
             GenerationConfig(**kg_agent_generation_config)
             if kg_agent_generation_config
