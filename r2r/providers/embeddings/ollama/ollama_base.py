@@ -4,8 +4,7 @@ import os
 import random
 from typing import Any
 
-import ollama
-from ollama import AsyncClient
+from ollama import AsyncClient, Client
 
 from r2r.base import EmbeddingConfig, EmbeddingProvider, VectorSearchResult
 
@@ -29,7 +28,6 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
                 "OllamaEmbeddingProvider does not support separate reranking."
             )
 
-        print("making an ollama client....")
         self.base_model = config.base_model
         self.base_dimension = config.base_dimension
         # TODO - Clean this up!
@@ -37,7 +35,8 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         logger.info(
             f"Using Ollama API base URL: {self.base_url or 'http://127.0.0.1:11434'}"
         )
-        self.client = AsyncClient(host=self.base_url)
+        self.client = Client(host=self.base_url)
+        self.aclient = AsyncClient(host=self.base_url)
 
         self.request_queue = asyncio.Queue()
         self.max_retries = 5
@@ -59,7 +58,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             try:
                 async with self.semaphore:
                     response = await asyncio.wait_for(
-                        self.client.embeddings(
+                        self.aclient.embeddings(
                             prompt=task["text"], model=self.base_model
                         ),
                         timeout=30,
@@ -87,7 +86,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
                 "OllamaEmbeddingProvider only supports search stage."
             )
 
-        response = ollama.embeddings(prompt=text, model=self.base_model)
+        response = self.client.embeddings(prompt=text, model=self.base_model)
         return response["embedding"]
 
     async def async_get_embedding(
