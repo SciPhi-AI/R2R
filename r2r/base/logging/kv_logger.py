@@ -247,7 +247,6 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
             statement_cache_size=0,  # Disable statement caching
         )
         async with self.pool.acquire() as conn:
-
             await conn.execute(
                 f"""
                 CREATE TABLE IF NOT EXISTS {self.log_table} (
@@ -324,7 +323,6 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
         query += " ORDER BY timestamp DESC LIMIT $2"
         params.append(limit)
         async with self.pool.acquire() as conn:
-
             rows = await conn.fetch(query, *params)
             return [
                 RunInfo(run_id=row["log_id"], log_type=row["log_type"])

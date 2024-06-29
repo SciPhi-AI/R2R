@@ -1,7 +1,10 @@
 import fire
 
-from r2r import R2RBuilder, R2RConfig, R2RPipeFactoryWithMultiSearch
+from r2r import R2RBuilder, R2RConfig
 from r2r.base.abstractions.llm import GenerationConfig
+from r2r.pipes.retrieval.R2RPipeFactoryWithMultiSearch import (
+    R2RPipeFactoryWithMultiSearch,
+)
 
 
 def main(task_prompt_name="hyde", query="Who was aristotle?"):

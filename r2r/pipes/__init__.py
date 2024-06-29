@@ -7,6 +7,7 @@ from .ingestion.vector_storage_pipe import VectorStoragePipe
 from .other.eval_pipe import EvalPipe
 from .other.web_search_pipe import WebSearchPipe
 from .retrieval.kg_agent_search_pipe import KGAgentSearchPipe
+from .retrieval.multi_search import MultiSearchPipe
 from .retrieval.query_transform_pipe import QueryTransformPipe
 from .retrieval.search_rag_pipe import SearchRAGPipe
 from .retrieval.streaming_rag_pipe import StreamingSearchRAGPipe
@@ -26,4 +27,5 @@ __all__ = [
     "WebSearchPipe",
     "KGAgentSearchPipe",
     "KGStoragePipe",
+    "MultiSearchPipe",
 ]
