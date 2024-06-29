@@ -10,17 +10,19 @@ WORKDIR /app
 # Copy the pyproject.toml and poetry.lock files for installing dependencies
 COPY pyproject.toml poetry.lock* /app/
 
-# Install Poetry and configure it to create a virtual environment
-RUN pip install poetry && poetry install --no-dev
+# Install Poetry and dependencies
+RUN pip install poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --no-dev
 
 # Copy the rest of the application code
 COPY . /app
 
-# Install additional dependencies if needed
-RUN poetry run pip install --no-cache-dir fire
+# Install gunicorn and uvicorn
+RUN pip install --no-cache-dir gunicorn uvicorn
 
 # Expose the port
 EXPOSE 8000
 
-# Set the command to run quickstart.py
-CMD poetry run python -m r2r.examples.quickstart serve --config_name=${CONFIG_OPTION:-default}
+# Run the application using Poetry
+CMD ["poetry", "run", "uvicorn", "r2r.examples.quickstart_entry:app", "--host", "0.0.0.0", "--port", "8000"]
