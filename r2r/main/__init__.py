@@ -23,6 +23,7 @@ from .assembly.factory import (
     R2RPipelineFactory,
     R2RProviderFactory,
 )
+from .assembly.factory_extensions import R2RPipeFactoryWithMultiSearch
 from .engine import R2REngine
 from .r2r import R2R
 
@@ -49,6 +50,7 @@ __all__ = [
     "R2RPipeFactory",
     "R2RPipelineFactory",
     "R2RProviderFactory",
+    "R2RPipeFactoryWithMultiSearch",
     "R2RBuilder",
     "R2RApp",
 ]
