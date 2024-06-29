@@ -595,7 +595,7 @@ class R2RQuickstart:
         self.app.serve(host, port)
 
     def get_app(self):
-        return self.app.app
+        return self.app.app.app
 
 
 if __name__ == "__main__":
