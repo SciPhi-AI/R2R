@@ -11,16 +11,19 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock* /app/
 
 # Install Poetry and configure it to create a virtual environment
-RUN pip install poetry && poetry install --no-dev
+RUN pip install poetry && poetry config virtualenvs.create false && poetry install --no-dev
 
 # Copy the rest of the application code
 COPY . /app
 
-# Install additional dependencies if needed
-RUN poetry run pip install --no-cache-dir fire
+# Install additional dependencies
+RUN poetry run pip install --no-cache-dir uvicorn fastapi
 
 # Expose the port
 EXPOSE 8000
 
-# Set the command to run quickstart.py
-CMD poetry run python -m r2r.examples.quickstart serve --config_name=${CONFIG_OPTION:-default}
+# Set environment variable to indicate Docker environment
+ENV DOCKER_ENV=true
+
+# Set the command to run the application
+CMD ["poetry", "run", "python", "-m", "r2r.examples.quickstart", "serve"]

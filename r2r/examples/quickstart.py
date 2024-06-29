@@ -6,6 +6,8 @@ import uuid
 from typing import Optional
 
 import fire
+import uvicorn
+from fastapi import FastAPI
 from fastapi.datastructures import UploadFile
 
 from r2r import (
@@ -85,10 +87,10 @@ class R2RQuickstart:
             os.path.join(root_path, "data", "pg_essay_3.html"),
             os.path.join(root_path, "data", "pg_essay_4.html"),
             os.path.join(root_path, "data", "pg_essay_5.html"),
-            os.path.join(root_path, "data", "lyft_2021.pdf"),
-            os.path.join(root_path, "data", "uber_2021.pdf"),
-            os.path.join(root_path, "data", "sample.mp3"),
-            os.path.join(root_path, "data", "sample2.mp3"),
+            # os.path.join(root_path, "data", "lyft_2021.pdf"),
+            # os.path.join(root_path, "data", "uber_2021.pdf"),
+            # os.path.join(root_path, "data", "sample.mp3"),
+            # os.path.join(root_path, "data", "sample2.mp3"),
         ]
 
         self.file_tuples = file_tuples or [
@@ -97,6 +99,12 @@ class R2RQuickstart:
                 os.path.join(root_path, "data", "aristotle_v2.txt"),
             )
         ]
+    
+    def create_app(self) -> FastAPI:
+        if hasattr(self, 'app'):
+            return FastAPI().mount("/", self.app.app)
+        else:
+            raise ValueError("R2R app not initialized. Make sure you're not in client-server mode.")
 
     def ingest_documents(self, file_paths: Optional[str] = None):
         file_paths = (
@@ -593,8 +601,23 @@ class R2RQuickstart:
         print(response)
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
-        self.app.serve(host, port)
+        if hasattr(self, 'app'):
+            app = self.create_app()
+            uvicorn.run(app, host=host, port=port)
+        else:
+            raise ValueError("R2R app not initialized. Make sure you're not in client-server mode.")
 
 
 if __name__ == "__main__":
-    fire.Fire(R2RQuickstart)
+    import os
+    
+    config_name = os.getenv("CONFIG_OPTION", "default")
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "8000"))
+    
+    quickstart = R2RQuickstart(config_name=config_name)
+    
+    if os.getenv("DOCKER_ENV") == "true":
+        quickstart.serve(host, port)
+    else:
+        fire.Fire(quickstart)
