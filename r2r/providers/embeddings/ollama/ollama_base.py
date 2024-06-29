@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import random
 from typing import Any
 
@@ -28,9 +29,16 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
                 "OllamaEmbeddingProvider does not support separate reranking."
             )
 
+        print("making an ollama client....")
         self.base_model = config.base_model
         self.base_dimension = config.base_dimension
-        self.client = AsyncClient()
+        # TODO - Clean this up!
+        self.base_url = os.getenv("OLLAMA_API_BASE")
+        logger.info(
+            f"Using Ollama API base URL: {self.base_url or 'http://127.0.0.1:11434'}"
+        )
+        self.client = AsyncClient(host=self.base_url)
+
         self.request_queue = asyncio.Queue()
         self.max_retries = 5
         self.initial_backoff = 1
