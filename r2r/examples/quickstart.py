@@ -594,6 +594,9 @@ class R2RQuickstart:
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         self.app.serve(host, port)
 
+    def get_app(self):
+        return self.app
+
 
 if __name__ == "__main__":
     fire.Fire(R2RQuickstart)
