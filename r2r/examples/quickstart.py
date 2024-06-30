@@ -398,8 +398,6 @@ class R2RQuickstart:
 
             if not stream:
                 t1 = time.time()
-                # unpack the list of one response
-                response = response[0]
                 print(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
                 print(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
                 print(f"Search Results:\n{response.search_results}")

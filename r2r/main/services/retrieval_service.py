@@ -161,7 +161,16 @@ class RetrievalService(Service):
                     is_info_log=False,
                 )
 
-                return results
+                if len(results) == 0:
+                    raise R2RException(
+                        status_code=404, message="No results found"
+                    )
+                if len(results) > 1:
+                    logger.warning(
+                        f"Multiple results found for query: {query}"
+                    )
+                # unpack the first result
+                return results[0]
 
             except Exception as e:
                 logger.error(f"Pipeline error: {str(e)}")

@@ -51,7 +51,7 @@ class RetrievalRouter(BaseRouter):
                     stream_generator(), media_type="application/json"
                 )
             else:
-                return response[0]
+                return response
 
         @self.router.post("/evaluate")
         @self.base_endpoint
