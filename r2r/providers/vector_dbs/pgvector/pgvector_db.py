@@ -557,7 +557,6 @@ class PGVectorDB(VectorDBProvider):
 
         with self.vx.Session() as sess:
             results = sess.execute(text(query), params).fetchall()
-
         return [
             UserStats(
                 user_id=row[0],
@@ -566,4 +565,5 @@ class PGVectorDB(VectorDBProvider):
                 document_ids=row[3],
             )
             for row in results
+            if row[0] is not None
         ]
