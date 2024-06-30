@@ -53,6 +53,8 @@ export POSTGRES_PORT=YOUR_POSTGRES_PORT
 export POSTGRES_DBNAME=YOUR_POSTGRES_DBNAME
 export POSTGRES_VECS_COLLECTION=demo_vecs
 ```
+</details>
+
 <details>
 <summary><b>Installing with Docker</b>&nbsp;🐳</summary>
 
@@ -204,6 +206,20 @@ Completion:
                 'message': {
                     'content': "Aristotle (384–322 BC) was an Ancient Greek philosopher and polymath whose writings covered a broad range of subjects including the natural sciences,
                     ...
+```
+
+
+
+## Stream a RAG Response
+
+
+```bash
+python -m r2r.examples.quickstart rag --query="who was aristotle?" --client-server-mode --stream
+```
+
+```plaintext
+<search>"{\"id\":\"004ae2e3-c042-50f2-8c03-d4c282651fba\",\"score\":0.7803140675 ...</search>
+<completion>Aristotle was an Ancient Greek philosopher and polymath who lived from 384 to 322 BC [1]. He was born in Stagira, Chalcidi....</completion>
 ```
 
 # Hello r2r
