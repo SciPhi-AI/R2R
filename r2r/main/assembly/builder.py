@@ -42,8 +42,8 @@ class R2RBuilder:
     def _get_config(config_name):
         if config_name is None:
             return R2RConfig.from_json()
-        if config_path := R2RBuilder.CONFIG_OPTIONS.get(config_name):
-            return R2RConfig.from_json(config_path)
+        if config_name in R2RBuilder.CONFIG_OPTIONS:
+            return R2RConfig.from_json(R2RBuilder.CONFIG_OPTIONS[config_name])
         raise ValueError(f"Invalid config name: {config_name}")
 
     def __init__(
