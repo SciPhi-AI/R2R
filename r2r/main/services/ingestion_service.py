@@ -143,6 +143,8 @@ class IngestionService(Service):
                 if info.created_at == info.updated_at
             ],
             run_manager=self.run_manager,
+            *args,
+            **kwargs,
         )
 
         skipped_ids = [ele[0] for ele in skipped_documents]
@@ -234,7 +236,9 @@ class IngestionService(Service):
                 )
             )
 
-        await self.ingest_documents(documents, versions=new_versions)
+        await self.ingest_documents(
+            documents, versions=new_versions, *args, **kwargs
+        )
 
         for doc, old_version in zip(documents, old_versions):
             await self._delete(
@@ -404,6 +408,8 @@ class IngestionService(Service):
                 input=to_async_generator(documents),
                 versions=versions,
                 run_manager=self.run_manager,
+                *args,
+                **kwargs,
             )
 
             skipped_ids = [ele[0] for ele in skipped_documents]
@@ -523,6 +529,8 @@ class IngestionService(Service):
                 [ele.metadata for ele in documents_overview_modified],
                 document_ids,
                 versions=new_versions,
+                *args,
+                **kwargs,
             )
 
             for id, old_version in zip(document_ids, old_versions):
