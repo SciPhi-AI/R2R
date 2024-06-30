@@ -44,13 +44,14 @@ For a more complete view of R2R, check out the [full documentation](https://r2r-
 ```bash
 pip install r2r
 
-# setup env
+# setup env, can freely replace `demo_vecs`
 export OPENAI_API_KEY=sk-...
 export POSTGRES_USER=YOUR_POSTGRES_USER
 export POSTGRES_PASSWORD=YOUR_POSTGRES_PASSWORD
 export POSTGRES_HOST=YOUR_POSTGRES_HOST
 export POSTGRES_PORT=YOUR_POSTGRES_PORT
 export POSTGRES_DBNAME=YOUR_POSTGRES_DBNAME
+export POSTGRES_VECS_COLLECTION=demo_vecs
 ```
 <details>
 <summary><b>Installing with Docker</b>&nbsp;🐳</summary>
@@ -61,12 +62,14 @@ To run R2R using Docker:
 
 ```bash
 # Setting up the environment. The right side is where you should put the value of your variable.
+# Note - you can freely replace `demo_vecs`
 export OPENAI_API_KEY=sk-...
 export POSTGRES_USER=YOUR_POSTGRES_USER
 export POSTGRES_PASSWORD=YOUR_POSTGRES_PASSWORD
 export POSTGRES_HOST=YOUR_POSTGRES_HOST
 export POSTGRES_PORT=YOUR_POSTGRES_PORT
 export POSTGRES_DBNAME=YOUR_POSTGRES_DBNAME
+export POSTGRES_VECS_COLLECTION=demo_vecs
 
 # Optional on first pull. Advised when fetching the main updates.
 docker pull emrgntcmplxty/r2r:main
@@ -115,54 +118,136 @@ Star R2R on GitHub by clicking "Star" in the upper right hand corner of the page
 
 
 # R2R Quickstart
-The following quickstart offers a step-by-step guide on running R2R locally as well as through the Python SDK. The guide ingests a list of provided provided documents and shows search, RAG, and advanced functionality. The script powering the quickstart can be found at `r2r/examples/quickstart.py`, and it can be configured and extended with sufficient developer familiarity.
 
-![quickstart](https://github.com/SciPhi-AI/R2R/blob/main/assets/quickstart.gif)
-
+## Start the R2R server
 <details open>
-<summary><b>Document Ingestion and Management</b></summary>
+<summary><b>Serving with Python</b>&nbsp;🐍 </summary>
 
-1. **Ingest Files**:
-   ```bash
-   python -m r2r.examples.quickstart ingest_files
-   ```
+```bash
+python -m r2r.examples.quickstart serve --port=8000
+```
 
-2. **View Document Info**:
-   ```bash
-   python -m r2r.examples.quickstart documents_overview
-   ```
+```plaintext Terminal Output
+2024-06-26 16:54:46,998 - INFO - r2r.core.providers.vector_db_provider - Initializing VectorDBProvider with config extra_fields={} provider='pgvector' collection_name='demo_vecs'.
+2024-06-26 16:54:48,054 - INFO - r2r.core.providers.embedding_provider - Initializing EmbeddingProvider with config extra_fields={'text_splitter': {'type': 'recursive_character', 'chunk_size': 512, 'chunk_overlap': 20}} provider='openai' base_model='text-embedding-3-small' base_dimension=512 rerank_model=None rerank_dimension=None rerank_transformer_type=None batch_size=128.
+2024-06-26 16:54:48,639 - INFO - r2r.core.providers.llm_provider - Initializing LLM provider with config: extra_fields={} provider='litellm'
+```
 
-3. **View User Overview**:
-   ```bash
-   python -m r2r.examples.quickstart users_overview
-   ```
 </details>
 
-<details open>
-<summary><b>Search and RAG Operations</b></summary>
+<details>
+<summary><b>Serving with Docker</b>&nbsp;🐳</summary>
 
-1. **Search Documents**:
-   ```bash
-   python -m r2r.examples.quickstart search --query="Who was Aristotle?"
-   ```
+Successfully completing the installation steps above results in an R2R application being served over port `8000`.
 
-2. **RAG Completion**:
-   ```bash
-   python -m r2r.examples.quickstart rag --query="What was Uber's profit in 2020?"
-   ```
-
-3. **Streaming RAG**:
-   ```bash
-   python -m r2r.examples.quickstart rag --query="What was Lyft's profit in 2020?" --stream=true
-   ```
-
-4. **Hybrid Search RAG**:
-   ```bash
-   python -m r2r.examples.quickstart rag --query="Who is John Snow?" --do_hybrid_search
-   ```
 </details>
 
-For more detailed examples and advanced features, please refer to our [Quickstart Guide](https://r2r-docs.sciphi.ai/quickstart).
+## Ingest a file
+
+```bash
+python -m r2r.examples.quickstart ingest --client-server-mode
+# can be called with additional argument,
+# e.g. `python -m r2r...  --client-server-mode /path/to/your_file`
+```
+
+```plaintext
+{'results': {'processed_documents': ["File '.../aristotle.txt' processed successfully."], 'skipped_documents': []}}
+```
+
+
+## Perform a search
+
+
+```bash
+python -m r2r.examples.quickstart search --query="who was aristotle?" --client-server-mode
+```
+
+```plaintext
+{'results': {'vector_search_results': [
+    {
+        'id': '7ed3a01c-88dc-5a58-a68b-6e5d9f292df2',
+        'score': 0.780314067545999,
+        'metadata': {
+            'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.',
+            'title': 'aristotle.txt',
+            'version': 'v0',
+            'chunk_order': 0,
+            'document_id': 'c9bdbac7-0ea3-5c9e-b590-018bd09b127b',
+            'extraction_id': '472d6921-b4cd-5514-bf62-90b05c9102cb',
+            ...
+```
+
+## Perform RAG
+
+
+```bash
+python -m r2r.examples.quickstart rag --query="who was aristotle?" --client-server-mode
+```
+
+```plaintext
+
+Search Results:
+{'vector_search_results': [
+    {'id': '7ed3a01c-88dc-5a58-a68b-6e5d9f292df2',
+    'score': 0.7802911996841491,
+    'metadata': {'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic schoo
+    ...
+Completion:
+{'results': [
+    {
+        'id': 'chatcmpl-9eXL6sKWlUkP3f6QBnXvEiKkWKBK4',
+        'choices': [
+            {
+                'finish_reason': 'stop',
+                'index': 0,
+                'logprobs': None,
+                'message': {
+                    'content': "Aristotle (384–322 BC) was an Ancient Greek philosopher and polymath whose writings covered a broad range of subjects including the natural sciences,
+                    ...
+```
+
+# Hello r2r
+
+Building with R2R is easy - see the `hello_r2r` example below:
+
+```python
+
+from r2r import Document, GenerationConfig, R2R
+
+app = R2R() # You may pass a custom configuration to `R2R`
+
+app.ingest_documents(
+    [
+        Document(
+            type="txt",
+            data="John is a person that works at Google.",
+            metadata={},
+        )
+    ]
+)
+
+rag_results = app.rag(
+    "Who is john", GenerationConfig(model="gpt-3.5-turbo", temperature=0.0)
+)
+print(f"Search Results:\n{response['search_results']}")
+print(f"Completion:\n{response['completion']}")
+
+# RAG Results:
+
+# Search Results:
+# {'vector_search_results': [
+#     {'id': '7ed3a01c-88dc-5a58-a68b-6e5d9f292df2',
+#     'score': 0.7802911996841491,
+#     'metadata': {'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic schoo
+#     ...
+# Completion:
+# {'results': [
+#     {
+#         'id': 'chatcmpl-9eXL6sKWlUkP3f6QBnXvEiKkWKBK4',
+#         'choices': [
+# ...
+```
+
 
 # R2R Dashboard
 
