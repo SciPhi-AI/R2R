@@ -208,6 +208,20 @@ Completion:
                     ...
 ```
 
+
+
+## Stream a RAG Response
+
+
+```bash
+python -m r2r.examples.quickstart rag --query="who was aristotle?" --client-server-mode --stream
+```
+
+```plaintext
+<search>"{\"id\":\"004ae2e3-c042-50f2-8c03-d4c282651fba\",\"score\":0.7803140675 ...</search>
+<completion>Aristotle was an Ancient Greek philosopher and polymath who lived from 384 to 322 BC [1]. He was born in Stagira, Chalcidi....</completion>
+```
+
 # Hello r2r
 
 Building with R2R is easy - see the `hello_r2r` example below:
