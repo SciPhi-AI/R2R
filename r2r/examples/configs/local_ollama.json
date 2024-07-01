@@ -1,28 +1,22 @@
 {
   "embedding": {
-    "provider": "sentence-transformers",
-    "base_model": "all-MiniLM-L6-v2",
-    "base_dimension": 384,
+    "provider": "ollama",
+    "base_model": "mxbai-embed-large",
+    "base_dimension": 1024,
     "batch_size": 32
   },
-  "eval": {
-    "provider": "local",
-    "frequency": 0.0,
-    "llm":{
-      "provider": "litellm"
-    }
-  },
   "ingestion":{
-    "selected_parsers": {
-      "csv": "default",
-      "docx": "default",
-      "html": "default",
-      "json": "default",
-      "md": "default",
-      "pdf": "default",
-      "pptx": "default",
-      "txt": "default",
-      "xlsx": "default"
-    }
+    "excluded_parsers": [
+      "gif",
+      "jpeg",
+      "jpg",
+      "png",
+      "svg",
+      "mp3",
+      "mp4"
+    ]
+  },
+  "vector_database": {
+    "provider": "pgvector"
   }
 }

@@ -2,18 +2,19 @@ import uuid
 from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional
 
-from r2r.core import (
+from r2r.base import (
     AsyncState,
-    GenerationConfig,
+    KVLoggingSingleton,
     LLMProvider,
-    LoggableAsyncPipe,
     PipeType,
     PromptProvider,
 )
+from r2r.base.abstractions.llm import GenerationConfig
+from r2r.base.pipes.base_pipe import AsyncPipe
 
 
-class GeneratorPipe(LoggableAsyncPipe):
-    class Config(LoggableAsyncPipe.PipeConfig):
+class GeneratorPipe(AsyncPipe):
+    class Config(AsyncPipe.PipeConfig):
         name: str
         task_prompt: str
         system_prompt: str = "default_system"
@@ -24,12 +25,14 @@ class GeneratorPipe(LoggableAsyncPipe):
         prompt_provider: PromptProvider,
         type: PipeType = PipeType.GENERATOR,
         config: Optional[Config] = None,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
             type=type,
             config=config or self.Config(),
+            pipe_logger=pipe_logger,
             *args,
             **kwargs,
         )
@@ -39,7 +42,7 @@ class GeneratorPipe(LoggableAsyncPipe):
     @abstractmethod
     async def _run_logic(
         self,
-        input: LoggableAsyncPipe.Input,
+        input: AsyncPipe.Input,
         state: AsyncState,
         run_id: uuid.UUID,
         rag_generation_config: GenerationConfig,

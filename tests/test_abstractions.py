@@ -6,10 +6,10 @@ from r2r import (
     AsyncPipe,
     AsyncState,
     Prompt,
-    SearchRequest,
-    SearchResult,
     Vector,
     VectorEntry,
+    VectorSearchRequest,
+    VectorSearchResult,
     VectorType,
     generate_id_from_label,
 )
@@ -39,7 +39,7 @@ async def test_async_state_delete():
 
 # Test AsyncPipe by creating a mock subclass
 class MockAsyncPipe(AsyncPipe):
-    async def _run_logic(self, input, state):
+    async def _run_logic(self, input, state, run_id, *args, **kwargs):
         yield "processed"
 
 
@@ -83,7 +83,7 @@ def test_prompt_invalid_input_type():
 
 
 def test_search_request_with_optional_filters():
-    request = SearchRequest(
+    request = VectorSearchRequest(
         query="test", limit=10, filters={"category": "books"}
     )
     assert request.query == "test"
@@ -92,7 +92,7 @@ def test_search_request_with_optional_filters():
 
 
 def test_search_result_to_string():
-    result = SearchResult(
+    result = VectorSearchResult(
         id=generate_id_from_label("1"),
         score=9.5,
         metadata={"author": "John Doe"},
@@ -100,19 +100,19 @@ def test_search_result_to_string():
     result_str = str(result)
     assert (
         result_str
-        == f"SearchResult(id={str(generate_id_from_label('1'))}, score=9.5, metadata={{'author': 'John Doe'}})"
+        == f"VectorSearchResult(id={str(generate_id_from_label('1'))}, score=9.5, metadata={{'author': 'John Doe'}})"
     )
 
 
 def test_search_result_repr():
-    result = SearchResult(
+    result = VectorSearchResult(
         id=generate_id_from_label("1"),
         score=9.5,
         metadata={"author": "John Doe"},
     )
     assert (
         repr(result)
-        == f"SearchResult(id={str(generate_id_from_label('1'))}, score=9.5, metadata={{'author': 'John Doe'}})"
+        == f"VectorSearchResult(id={str(generate_id_from_label('1'))}, score=9.5, metadata={{'author': 'John Doe'}})"
     )
 
 

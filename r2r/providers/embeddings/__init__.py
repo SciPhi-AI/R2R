@@ -1,11 +1,11 @@
-from .dummy.provider import DummyEmbeddingProvider
+from .ollama.ollama_base import OllamaEmbeddingProvider
 from .openai.openai_base import OpenAIEmbeddingProvider
-from .setence_transformer.sentence_transformer_base import (
+from .sentence_transformer.sentence_transformer_base import (
     SentenceTransformerEmbeddingProvider,
 )
 
 __all__ = [
-    "DummyEmbeddingProvider",
+    "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",
     "SentenceTransformerEmbeddingProvider",
 ]

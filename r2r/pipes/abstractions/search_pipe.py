@@ -3,21 +3,19 @@ import uuid
 from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional, Union
 
-from r2r.core import (
+from r2r.base import (
     AsyncPipe,
     AsyncState,
     KVLoggingSingleton,
-    LoggableAsyncPipe,
     PipeType,
-    SearchResult,
-    VectorDBProvider,
+    VectorSearchResult,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class SearchPipe(LoggableAsyncPipe):
-    class SearchConfig(LoggableAsyncPipe.PipeConfig):
+class SearchPipe(AsyncPipe):
+    class SearchConfig(AsyncPipe.PipeConfig):
         name: str = "default_vector_search"
         search_filters: dict = {}
         search_limit: int = 10
@@ -49,7 +47,7 @@ class SearchPipe(LoggableAsyncPipe):
         limit: int = 10,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[SearchResult, None]:
+    ) -> AsyncGenerator[VectorSearchResult, None]:
         pass
 
     @abstractmethod
@@ -60,5 +58,5 @@ class SearchPipe(LoggableAsyncPipe):
         run_id: uuid.UUID,
         *args: Any,
         **kwargs,
-    ) -> AsyncGenerator[SearchResult, None]:
+    ) -> AsyncGenerator[VectorSearchResult, None]:
         pass

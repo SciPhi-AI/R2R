@@ -1,6 +1,0 @@
-{
-  "llms": "LLMs",
-  "vector-databases": "Vector Databases",
-  "embeddings": "Embeddings",
-  "evals": "Evals"
-}

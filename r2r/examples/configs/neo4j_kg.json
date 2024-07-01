@@ -1,0 +1,11 @@
+{
+    "kg": {
+        "provider": "neo4j",
+        "batch_size": 1,
+        "text_splitter": {
+            "type": "recursive_character",
+            "chunk_size": 1024,
+            "chunk_overlap": 0
+        }
+    }
+}

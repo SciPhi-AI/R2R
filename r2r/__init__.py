@@ -1,10 +1,13 @@
 import logging
 
-from .core import *
+# Keep '*' imports for enhanced development velocity
+# corresponding flake8 error codes are F403, F405
+from .base import *
 from .integrations import *
 from .main import *
+from .parsers import *
+from .pipelines import *
 from .pipes import *
-from .prebuilts import *
 from .prompts import *
 
 logger = logging.getLogger("r2r")
@@ -16,7 +19,7 @@ ch.setLevel(logging.INFO)
 
 # Create a formatter and set it for the handler
 formatter = logging.Formatter(
-    "%(name)s - %(levelname)s - %(message)s - %(asctime)s"
+    "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
 )
 ch.setFormatter(formatter)
 
@@ -27,6 +30,7 @@ logger.addHandler(ch)
 logger.propagate = False
 
 __all__ = [
+    "R2RException",
     "LoggingConfig",
     "LocalKVLoggingProvider",
     "PostgresLoggingConfig",
@@ -37,8 +41,8 @@ __all__ = [
     "VectorEntry",
     "VectorType",
     "Vector",
-    "SearchRequest",
-    "SearchResult",
+    "VectorSearchRequest",
+    "VectorSearchResult",
     "AsyncPipe",
     "PipeType",
     "AsyncState",
@@ -57,12 +61,12 @@ __all__ = [
     "DOCXParser",
     "HTMLParser",
     "JSONParser",
-    "MarkdownParser",
+    "MDParser",
     "PDFParser",
     "PPTParser",
     "TextParser",
     "XLSXParser",
-    "Pipeline",
+    "AsyncPipeline",
     # Providers
     "EmbeddingConfig",
     "EmbeddingProvider",
@@ -83,19 +87,21 @@ __all__ = [
     "RecursiveCharacterTextSplitter",
     "generate_run_id",
     "generate_id_from_label",
-    "R2RApp",
+    "R2REngine",
     # Pipes
-    "R2REmbeddingPipe",
-    "R2REvalPipe",
-    "R2RDocumentParsingPipe",
-    "R2RQueryTransformPipe",
-    "R2RRAGPipe",
-    "R2RStreamingRAGPipe",
-    "R2RVectorSearchPipe",
-    "R2RVectorStoragePipe",
+    "EmbeddingPipe",
+    "EvalPipe",
+    "ParsingPipe",
+    "QueryTransformPipe",
+    "SearchRAGPipe",
+    "StreamingSearchRAGPipe",
+    "VectorSearchPipe",
+    "VectorStoragePipe",
     "R2RPromptProvider",
-    "R2RWebSearchPipe",
-    "R2RAppBuilder",
+    "WebSearchPipe",
+    "R2RBuilder",
+    "R2R",
+    "KGAgentSearchPipe",
     # Prebuilts
     "MultiSearchPipe",
     "R2RPipeFactoryWithMultiSearch",

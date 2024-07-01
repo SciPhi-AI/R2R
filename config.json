@@ -19,39 +19,15 @@
     "rerank_model": "None"
   },
   "kg": {
-    "provider": "None",
-    "batch_size": 1,
-    "text_splitter": {
-      "type": "recursive_character",
-      "chunk_size": 2048,
-      "chunk_overlap": 0
-    }
+    "provider": "None"
   },
   "eval": {
-    "provider": "local",
-    "llm":{
-      "model": "gpt-4o",
-      "provider": "openai"
-    }
+    "provider": "None"
   },
   "ingestion":{
-    "selected_parsers": {
-      "csv": "default",
-      "docx": "default",
-      "html": "default",
-      "json": "default",
-      "md": "default",
-      "pdf": "default",
-      "pptx": "default",
-      "txt": "default",
-      "xlsx": "default",
-      "gif": "default",
-      "png": "default",
-      "jpg": "default",
-      "jpeg": "default",
-      "svg": "default",
-      "mp3": "default"
-    }
+    "excluded_parsers": [
+      "mp4"
+    ]
   },
   "logging": {
     "provider": "local",
@@ -62,7 +38,6 @@
     "provider": "local"
   },
   "vector_database": {
-    "provider": "local",
-    "collection_name": "demo_vecs"
+    "provider": "pgvector"
   }
 }

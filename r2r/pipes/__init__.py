@@ -1,27 +1,31 @@
 from .abstractions.search_pipe import SearchPipe
-from .embedding_pipe import R2REmbeddingPipe
-from .eval_pipe import R2REvalPipe
-from .kg_pipe import R2RKGPipe
-from .kg_storage_pipe import R2RKGStoragePipe
-from .parsing_pipe import R2RDocumentParsingPipe
-from .query_transform_pipe import R2RQueryTransformPipe
-from .rag_pipe import R2RRAGPipe
-from .streaming_rag_pipe import R2RStreamingRAGPipe
-from .vector_search_pipe import R2RVectorSearchPipe
-from .vector_storage_pipe import R2RVectorStoragePipe
-from .web_search_pipe import R2RWebSearchPipe
+from .ingestion.embedding_pipe import EmbeddingPipe
+from .ingestion.kg_extraction_pipe import KGExtractionPipe
+from .ingestion.kg_storage_pipe import KGStoragePipe
+from .ingestion.parsing_pipe import ParsingPipe
+from .ingestion.vector_storage_pipe import VectorStoragePipe
+from .other.eval_pipe import EvalPipe
+from .other.web_search_pipe import WebSearchPipe
+from .retrieval.kg_agent_search_pipe import KGAgentSearchPipe
+from .retrieval.multi_search import MultiSearchPipe
+from .retrieval.query_transform_pipe import QueryTransformPipe
+from .retrieval.search_rag_pipe import SearchRAGPipe
+from .retrieval.streaming_rag_pipe import StreamingSearchRAGPipe
+from .retrieval.vector_search_pipe import VectorSearchPipe
 
 __all__ = [
     "SearchPipe",
-    "R2REmbeddingPipe",
-    "R2REvalPipe",
-    "R2RDocumentParsingPipe",
-    "R2RQueryTransformPipe",
-    "R2RRAGPipe",
-    "R2RStreamingRAGPipe",
-    "R2RVectorSearchPipe",
-    "R2RVectorStoragePipe",
-    "R2RWebSearchPipe",
-    "R2RKGPipe",
-    "R2RKGStoragePipe",
+    "EmbeddingPipe",
+    "EvalPipe",
+    "KGExtractionPipe",
+    "ParsingPipe",
+    "QueryTransformPipe",
+    "SearchRAGPipe",
+    "StreamingSearchRAGPipe",
+    "VectorSearchPipe",
+    "VectorStoragePipe",
+    "WebSearchPipe",
+    "KGAgentSearchPipe",
+    "KGStoragePipe",
+    "MultiSearchPipe",
 ]

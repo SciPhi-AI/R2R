@@ -25,8 +25,17 @@ def mock_file():
                 "batch_size": 16,
                 "text_splitter": "default",
             },
+            "kg": {
+                "provider": "None",
+                "batch_size": 1,
+                "text_splitter": {
+                    "type": "recursive_character",
+                    "chunk_size": 2048,
+                    "chunk_overlap": 0,
+                },
+            },
             "eval": {"llm": {"provider": "local"}},
-            "ingestion": {"selected_parsers": {}},
+            "ingestion": {"excluded_parsers": {}},
             "completions": {"provider": "lm_provider"},
             "logging": {
                 "provider": "local",
@@ -34,10 +43,7 @@ def mock_file():
                 "log_info_table": "log_info",
             },
             "prompt": {"provider": "prompt_provider"},
-            "vector_database": {
-                "provider": "vector_db",
-                "collection_name": "vectors",
-            },
+            "vector_database": {"provider": "vector_db"},
         }
     )
     with patch("builtins.open", mock_open(read_data=mock_data)) as m:
@@ -46,7 +52,7 @@ def mock_file():
 
 @pytest.mark.asyncio
 def test_r2r_config_loading_required_keys(mock_bad_file):
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         R2RConfig.from_json("config.json")
 
 
@@ -82,8 +88,17 @@ def test_r2r_config_deserialization(mock_file, mock_redis_client):
             "batch_size": 16,
             "text_splitter": "default",
         },
+        "kg": {
+            "provider": "None",
+            "batch_size": 1,
+            "text_splitter": {
+                "type": "recursive_character",
+                "chunk_size": 2048,
+                "chunk_overlap": 0,
+            },
+        },
         "eval": {"llm": {"provider": "local"}},
-        "ingestion": {"selected_parsers": {"pdf": "default"}},
+        "ingestion": {"excluded_parsers": ["pdf"]},
         "completions": {"provider": "lm_provider"},
         "logging": {
             "provider": "local",
@@ -91,15 +106,12 @@ def test_r2r_config_deserialization(mock_file, mock_redis_client):
             "log_info_table": "log_info",
         },
         "prompt": {"provider": "prompt_provider"},
-        "vector_database": {
-            "provider": "vector_db",
-            "collection_name": "vectors",
-        },
+        "vector_database": {"provider": "vector_db"},
     }
     mock_redis_client.get.return_value = json.dumps(config_data)
     config = R2RConfig.load_from_redis(mock_redis_client, "test_key")
     assert config.app["max_file_size_in_mb"] == 128
-    assert config.ingestion["selected_parsers"][DocumentType.PDF] == "default"
+    assert DocumentType.PDF in config.ingestion["excluded_parsers"]
 
 
 def test_r2r_config_missing_section():
@@ -113,7 +125,7 @@ def test_r2r_config_missing_section():
         }
     }
     with patch("builtins.open", mock_open(read_data=json.dumps(invalid_data))):
-        with pytest.raises(ValueError):
+        with pytest.raises(KeyError):
             R2RConfig.from_json("config.json")
 
 
@@ -126,8 +138,15 @@ def test_r2r_config_missing_required_key():
             "batch_size": 16,
             "text_splitter": "default",
         },
-        "eval": {"llm": {"provider": "local"}},
-        "ingestion": {"selected_parsers": {}},
+        "kg": {
+            "provider": "None",
+            "batch_size": 1,
+            "text_splitter": {
+                "type": "recursive_character",
+                "chunk_size": 2048,
+                "chunk_overlap": 0,
+            },
+        },
         "completions": {"provider": "lm_provider"},
         "logging": {
             "provider": "local",
@@ -135,11 +154,8 @@ def test_r2r_config_missing_required_key():
             "log_info_table": "log_info",
         },
         "prompt": {"provider": "prompt_provider"},
-        "vector_database": {
-            "provider": "vector_db",
-            "collection_name": "vectors",
-        },
+        "vector_database": {"provider": "vector_db"},
     }
     with patch("builtins.open", mock_open(read_data=json.dumps(invalid_data))):
-        with pytest.raises(ValueError):
+        with pytest.raises(KeyError):
             R2RConfig.from_json("config.json")

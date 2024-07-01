@@ -6,15 +6,15 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-purple.svg" alt="License: MIT"></a>
 </p>
 
-<img src="./docs/pages/r2r.png" alt="Sciphi Framework">
+<img src="./assets/r2r.png" alt="R2R Answer Engine">
 <h3 align="center">
-Build, deploy, observe, and optimize your RAG system.
+The ultimate open source RAG answer engine
 </h3>
 
 # About
+R2R was designed to bridge the gap between local LLM experimentation and scalable, production-ready Retrieval-Augmented Generation (RAG). R2R provides a comprehensive and SOTA RAG system for developers, built around a RESTful API for ease of use.
 
-R2R (Rag to Riches) is the ultimate open-source framework for building and deploying high-quality Retrieval-Augmented Generation (RAG) systems. Designed to bridge the gap between local LLM experimentation and scalable, production-ready applications, R2R provides a comprehensive, feature-rich environment for developers.
-
+For a more complete view of R2R, check out the [full documentation](https://r2r-docs.sciphi.ai/).
 
 ## Key Features
 - **📁 Multimodal Support**: Ingest files ranging from `.txt`, `.pdf`, `.json` to `.png`, `.mp3`, and more.
@@ -22,332 +22,272 @@ R2R (Rag to Riches) is the ultimate open-source framework for building and deplo
 - **🔗 Graph RAG**: Automatically extract relationships and build knowledge graphs.
 - **🗂️ App Management**: Efficiently manage documents and users with rich observability and analytics.
 - **🌐 Client-Server**: RESTful API support out of the box.
-- **🧩 Configurable**: Provision your application using intuitive configuration files..
+- **🧩 Configurable**: Provision your application using intuitive configuration files.
 - **🔌 Extensible**: Develop your application further with easy builder + factory pattern.
-
-R2R ships with a fully configurable and customizable REST API that includes user-level and document-level management as well as advanced RAG features. This framework ensures adequate performance and feature support for most RAG use cases, making it an ideal solution for developers looking to create observable user-facing RAG applications.
-
+- **🖥️ Dashboard**: Use the [R2R Dashboard](https://github.com/SciPhi-AI/R2R-Dashboard), an open-source React+Next.js app for a user-friendly interaction with R2R.
 
 ## Table of Contents
-1. [Quick Install](#quick-install)
-2. [Links](#links)
-3. [R2R Demo](#r2r-demo)
-4. [R2R Client-Server Demo](#r2r-client-server-demo)
-5. [Core Abstractions](#core-abstractions)
-6. [Summary](#summary)
+1. [Install](#install)
+2. [R2R Quickstart](#r2r-quickstart)
+3. [R2R Dashboard](#r2r-dashboard)
+4. [Community and Support](#community-and-support)
+5. [Contributing](#contributing)
 
+# Install
 
-# Quick Install:
+> [!NOTE]
+> Windows users are advised to use Docker to run R2R.
+
+<details open>
+<summary><b>Installing with Pip</b>&nbsp;🐍 </summary>
 
 ```bash
-# use the `'r2r[all]'` to download all required deps
 pip install r2r
 
-# setup env 
+# setup env, can freely replace `demo_vecs`
 export OPENAI_API_KEY=sk-...
+export POSTGRES_USER=YOUR_POSTGRES_USER
+export POSTGRES_PASSWORD=YOUR_POSTGRES_PASSWORD
+export POSTGRES_HOST=YOUR_POSTGRES_HOST
+export POSTGRES_PORT=YOUR_POSTGRES_PORT
+export POSTGRES_DBNAME=YOUR_POSTGRES_DBNAME
+export POSTGRES_VECS_COLLECTION=demo_vecs
 ```
+</details>
 
-## Serving R2R RAG backend
+<details>
+<summary><b>Installing with Docker</b>&nbsp;🐳</summary>
 
-### With local installation
+Note: The R2R client must still be installed, even when running with Docker. Download the Python client with `pip install r2r`.
+
+To run R2R using Docker:
 
 ```bash
-python -m r2r.examples.servers.configurable_pipeline --host 0.0.0.0 --port 8000
+# Setting up the environment. The right side is where you should put the value of your variable.
+# Note - you can freely replace `demo_vecs`
+export OPENAI_API_KEY=sk-...
+export POSTGRES_USER=YOUR_POSTGRES_USER
+export POSTGRES_PASSWORD=YOUR_POSTGRES_PASSWORD
+export POSTGRES_HOST=YOUR_POSTGRES_HOST
+export POSTGRES_PORT=YOUR_POSTGRES_PORT
+export POSTGRES_DBNAME=YOUR_POSTGRES_DBNAME
+export POSTGRES_VECS_COLLECTION=demo_vecs
+
+# Optional on first pull. Advised when fetching the main updates.
+docker pull emrgntcmplxty/r2r:main
+
+# Runs the image. If you set up the environment you don't need to modify anything.
+# Otherwise, add your values on the right side of the -e commands.
+# For Windows, remove the "\" from your command.
+docker run -d \
+   --name r2r \
+   -p 8000:8000 \
+   -e POSTGRES_USER=$POSTGRES_USER \
+   -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+   -e POSTGRES_HOST=$POSTGRES_HOST \
+   -e POSTGRES_PORT=$POSTGRES_PORT \
+   -e POSTGRES_DBNAME=$POSTGRES_DBNAME \
+   -e OPENAI_API_KEY=$OPENAI_API_KEY \
+   emrgntcmplxty/r2r:main
 ```
-### With Docker
+
+**Important:** The Docker image of r2r operates in server and client mode, with the server being the Docker container and the client being your PC. This means you need to append `--client_server_mode` to all your queries.
+
+Additionally, your PC (acting as the client) needs to have Python, Pip, and the dependencies listed in the r2r folder of the repository. Therefore, you need to have the repository cloned on your computer and run `pip install r2r` in the root folder of the cloned repository.
+
+You have the option to run the client inside the terminal of the Docker container (to have everything in one place), but the use of `pip install r2r` and `--client_server_mode` is necessary.
+
+For local LLMs:
 
 ```bash
-docker pull emrgntcmplxty/r2r:latest
-docker run -d --name r2r -p 8000:8000 emrgntcmplxty/r2r:latest -e OPENAI_API_KEY=...
+docker run -d \
+   --name r2r \
+   --add-host=host.docker.internal:host-gateway \
+   -p 8000:8000 \
+   -e POSTGRES_USER=$POSTGRES_USER \
+   -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+   -e POSTGRES_HOST=$POSTGRES_HOST \
+   -e POSTGRES_PORT=$POSTGRES_PORT \
+   -e POSTGRES_DBNAME=$POSTGRES_DBNAME \
+   -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
+   -e CONFIG_OPTION=local_ollama \
+  emrgntcmplxty/r2r:main
 ```
+</details>
 
-## Links
-
-[Join the Discord server](https://discord.gg/p6KqD2kjtB)
-
-[R2R Docs Quickstart](https://r2r-docs.sciphi.ai/getting-started/quick-install)
-
-### Docs
-- [R2R Demo](https://r2r-docs.sciphi.ai/getting-started/r2r-demo): A basic demo script designed to get you started with an R2R RAG application. 
-- [R2R Client-Server](https://r2r-docs.sciphi.ai/cookbooks/client-server): An extension of the basic `R2R Demo` with client-server interactions.
-- [Local RAG](https://r2r-docs.sciphi.ai/cookbooks/local-rag): A quick cookbook demonstration of how to run R2R with local LLMs.
-- [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): A brief introduction to running hybrid search with R2R.
-- [Reranking](https://r2r-docs.sciphi.ai/cookbooks/rerank-search): A short guide on how to apply reranking to R2R results.
-- [Dashboard](https://r2r-docs.sciphi.ai/cookbooks/dashboard): A how-to guide on connecting with the R2R Dashboard.
-- [SciPhi Cloud Docs](https://docs.sciphi.ai/): SciPhi Cloud documentation.
+# Updates
+Star R2R on GitHub by clicking "Star" in the upper right hand corner of the page to be instantly notified of new releases.
 
 
-# R2R Demo
+# R2R Quickstart
 
-The R2R demo offers a step-by-step guide on running the default R2R Retrieval-Augmented Generation (RAG) pipeline. The demo ingests a list of provided provided documents and demonstrates search, RAG, and advanced functionality. The script at `r2r/examples/demo.py`, which powers the demo, can be configured and extended with sufficient developer familiarity.
-
-## Ingest Demo Files
-
-To comprehensively demonstrate the RAG functionalities of the R2R framework, we must start by ingesting a realistic set of documents. Running the command below will parse, chunk, embed, and store a preset list of files. The included file types cover HTML, PDF, PNG, and TXT examples:
+## Start the R2R server
+<details open>
+<summary><b>Serving with Python</b>&nbsp;🐍 </summary>
 
 ```bash
-python -m r2r.examples.demo ingest_as_files
+python -m r2r.examples.quickstart serve --port=8000
 ```
 
-**Demo Output:**
+```plaintext Terminal Output
+2024-06-26 16:54:46,998 - INFO - r2r.core.providers.vector_db_provider - Initializing VectorDBProvider with config extra_fields={} provider='pgvector' collection_name='demo_vecs'.
+2024-06-26 16:54:48,054 - INFO - r2r.core.providers.embedding_provider - Initializing EmbeddingProvider with config extra_fields={'text_splitter': {'type': 'recursive_character', 'chunk_size': 512, 'chunk_overlap': 20}} provider='openai' base_model='text-embedding-3-small' base_dimension=512 rerank_model=None rerank_dimension=None rerank_transformer_type=None batch_size=128.
+2024-06-26 16:54:48,639 - INFO - r2r.core.providers.llm_provider - Initializing LLM provider with config: extra_fields={} provider='litellm'
+```
+
+</details>
+
+<details>
+<summary><b>Serving with Docker</b>&nbsp;🐳</summary>
+
+Successfully completing the installation steps above results in an R2R application being served over port `8000`.
+
+</details>
+
+## Ingest a file
+
+```bash
+python -m r2r.examples.quickstart ingest --client-server-mode
+# can be called with additional argument,
+# e.g. `python -m r2r...  --client-server-mode /path/to/your_file`
+```
 
 ```plaintext
-...
-r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.json - 2024-05-20 22:08:48,025
-r2r.core.providers.llm_provider - INFO - Initializing LLM provider with config: extra_fields={} provider='litellm' - 2024-05-20 22:08:48,562
-r2r.core.providers.vector_db_provider - INFO - Initializing VectorDBProvider with config extra_fields={} provider='local' collection_name='demo_vecs'. - 2024-05-20 22:08:48,765
-r2r.providers.embeddings.openai.openai_base - INFO - Initializing `OpenAIEmbeddingProvider` to provide embeddings. - 2024-05-20 22:08:48,774
-...
-r2r.pipes.parsing_pipe - INFO - Parsed document with metadata={'title': 'pg_essay_5.html', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'} and id=ef66e5dd-2130-5fd5-9bdd-aa7eff59fda5 in t=0.00 seconds. - 2024-05-21 08:40:32,317
-r2r.pipes.embedding_pipe - INFO - Fragmented the input document ids into counts as shown: {UUID('4a4fb848-fc03-5487-a7e5-33c9fdfb73cc'): 31, UUID('c5abc0b7-b9e5-54d9-b3d3-fdb14af4d065'): 2094, UUID('f0c63aff-af59-50c9-81fc-2fe55004c771'): 17, UUID('c996e617-88a4-5c65-ab1e-948344b18d27'): 3108, UUID('1a9d4d3b-bbe9-53b9-8149-67806bdf60f2'): 18, UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'): 233, UUID('b722f1ec-b90e-5ed8-b7c8-c768e8b323cb'): 5, UUID('74f1506a-9a37-59d7-b288-5ef3683dca8f'): 10, UUID('ef66e5dd-2130-5fd5-9bdd-aa7eff59fda5'): 11} - 2024-06-04 13:34:40,885
-{'results': ["File 'aristotle.txt' processed successfully.", "File 'screen_shot.png' processed successfully.", "File 'pg_essay_1.html' processed successfully.", "File 'pg_essay_2.html' processed successfully.", "File 'pg_essay_3.html' processed successfully.", "File 'pg_essay_4.html' processed successfully.", "File 'pg_essay_5.html' processed successfully.", "File 'lyft_2021.pdf' processed successfully.", "File 'uber_2021.pdf' processed successfully.", "File sample.mp3 processed successfully.", "File sample2.mp3 processed successfully."]}
-...
+{'results': {'processed_documents': ["File '.../aristotle.txt' processed successfully."], 'skipped_documents': []}}
 ```
 
-### Confirm User Data
 
-To verify the successful ingestion of the demo documents, you can fetch the metadata for the uploaded documents associated with the default demo user ID:
-
-```bash
-python -m r2r.examples.demo documents_info
-```
-
-**Demo Output:**
-
-```plaintext
-[
-    DocumentInfo(
-        document_id=UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'), 
-        version='v0', 
-        size_in_bytes=73353, 
-        metadata={'title': 'aristotle.txt', 'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3'}, 
-        title='aristotle.txt'
-    ), 
-    ... 
-]
-```
+## Perform a search
 
 
 ```bash
-python -m r2r.examples.demo users_stats
+python -m r2r.examples.quickstart search --query="who was aristotle?" --client-server-mode
 ```
-
 
 ```plaintext
-[
-    UserStats(
-        user_id=UUID('063edaf8-3e63-4cb9-a4d6-a855f36376c3'), 
-        num_files=9,
-        total_size_in_bytes=4809510, 
-        document_ids=[UUID('c9bdbac7-0ea3-5c9e-b590-018bd09b127b'), ...]
-    ), 
-]
-```
-
-## Search Demo Documents
-
-Documents are stored by default in a local vector database. The vector database provider and settings can be specified via an input `config.json`. To perform a search query on the ingested user documents, use the following command:
-
-```bash
-python -m r2r.examples.demo search --query="Who was Aristotle?"
-```
-
-**Demo Output:**
-
-```plaintext
-{
-    'id': UUID('93c44e73-8e95-50c2-84af-6a42f070b552'), 
-    'score': 0.7739712385010018, 
-    'metadata': 
+{'results': {'vector_search_results': [
     {
-        'document_id': '15255e98-e245-5b58-a57f-6c51babf72dd', 
-        'extraction_id': '5c61f9b9-b468-5fd7-8eb1-5d797a15c484', 
-        'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began
-
-the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.', 
-        'title': 'aristotle.txt',
-        'user_id': '063edaf8-3e63-4cb9-a4d6-a855f36376c3', 
-        'associatedQuery': 'Who was Aristotle?'
-    }
-},
-...
+        'id': '7ed3a01c-88dc-5a58-a68b-6e5d9f292df2',
+        'score': 0.780314067545999,
+        'metadata': {
+            'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic school of philosophy in the Lyceum in Athens, he began the wider Aristotelian tradition that followed, which set the groundwork for the development of modern science.',
+            'title': 'aristotle.txt',
+            'version': 'v0',
+            'chunk_order': 0,
+            'document_id': 'c9bdbac7-0ea3-5c9e-b590-018bd09b127b',
+            'extraction_id': '472d6921-b4cd-5514-bf62-90b05c9102cb',
+            ...
 ```
 
-## RAG Demo
+## Perform RAG
 
-### Completion Response
-
-To generate a response for a query using RAG, execute the following command:
 
 ```bash
-python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?"
+python -m r2r.examples.quickstart rag --query="who was aristotle?" --client-server-mode
 ```
-
-**Demo Output:**
 
 ```plaintext
-...
-Time taken to run RAG: 2.29 seconds
-{'results': 
-   [
-      ChatCompletion(
-         id='chatcmpl-9RCB5xUbDuI1f0vPw3RUO7BWQImBN', 
-         choices=[
-            Choice(
-               finish_reason='stop', 
-               index=0, 
-               logprobs=None, 
-               message=ChatCompletionMessage(
-                  content="Uber's profit in 2020 was a net loss of $6,768 million [10].", 
-                  role='assistant', 
-                  function_call=None, 
-                  tool_calls=None
-                  )
-               )
-            ], 
-         created=1716268695, 
-         model='gpt-3.5-turbo-0125', 
-         object='chat.completion', 
-         system_fingerprint=None, 
-         usage=CompletionUsage(
-            completion_tokens=20, 
-            prompt_tokens=1470, 
-            total_tokens=1490
-            )
-         )
-   ]
-}
+
+Search Results:
+{'vector_search_results': [
+    {'id': '7ed3a01c-88dc-5a58-a68b-6e5d9f292df2',
+    'score': 0.7802911996841491,
+    'metadata': {'text': 'Aristotle[A] (Greek: Ἀριστοτέλης Aristotélēs, pronounced [aristotélɛːs]; 384–322 BC) was an Ancient Greek philosopher and polymath. His writings cover a broad range of subjects spanning the natural sciences, philosophy, linguistics, economics, politics, psychology, and the arts. As the founder of the Peripatetic schoo
+    ...
+Completion:
+{'results': [
+    {
+        'id': 'chatcmpl-9eXL6sKWlUkP3f6QBnXvEiKkWKBK4',
+        'choices': [
+            {
+                'finish_reason': 'stop',
+                'index': 0,
+                'logprobs': None,
+                'message': {
+                    'content': "Aristotle (384–322 BC) was an Ancient Greek philosopher and polymath whose writings covered a broad range of subjects including the natural sciences,
+                    ...
 ```
 
-### Streaming Response
 
-For streaming results from a RAG query, use the following command:
+
+## Stream a RAG Response
+
 
 ```bash
-python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=true
+python -m r2r.examples.quickstart rag --query="who was aristotle?" --client-server-mode --stream
 ```
-
-**Demo Output:**
 
 ```plaintext
-r2r.main.r2r_config - INFO - Loading configuration from <YOUR_WORKDIR>/config.json - 2024-05-20 22:27:31,890
-...
-<search>["{\"id\":\"808c47c5-ebef-504a-a230-aa9ddcfbd87 .... </search>
-<completion>Lyft reported a net loss of $1,752,857,000 in 2020 according to [2]. Therefore, Lyft did not make a profit in 2020.</completion>                                                      
-Time taken to stream RAG response: 2.79 seconds
+<search>"{\"id\":\"004ae2e3-c042-50f2-8c03-d4c282651fba\",\"score\":0.7803140675 ...</search>
+<completion>Aristotle was an Ancient Greek philosopher and polymath who lived from 384 to 322 BC [1]. He was born in Stagira, Chalcidi....</completion>
 ```
 
-## Document Management Demo
+# Hello r2r
 
-### Update Document 
+Building with R2R is easy - see the `hello_r2r` example below:
 
-To update document(s) we may use the `update_as_files` or `update_as_documents` endpoints. Running the demo with `update_as_files` overwrites the data associated with 'aristotle.txt' with new data corresponding to 'aristotle_v2.txt' and increments the file version.
+```python
 
-```bash
-python -m r2r.examples.demo update_as_files
+from r2r import Document, GenerationConfig, R2R
+
+app = R2R() # You may pass a custom configuration to `R2R`
+
+app.ingest_documents(
+    [
+        Document(
+            type="txt",
+            data="John is a person that works at Google.",
+            metadata={},
+        )
+    ]
+)
+
+rag_results = app.rag(
+    "Who is john", GenerationConfig(model="gpt-3.5-turbo", temperature=0.0)
+)
+print(f"Search Results:\n{rag_results.search_results}")
+print(f"Completion:\n{rag_results.completion}")
+
+# RAG Results:
+# Search Results:
+# AggregateSearchResult(vector_search_results=[VectorSearchResult(id=2d71e689-0a0e-5491-a50b-4ecb9494c832, score=0.6848798582029441, metadata={'text': 'John is a person that works at Google.', 'version': 'v0', 'chunk_order': 0, 'document_id': 'ed76b6ee-dd80-5172-9263-919d493b439a', 'extraction_id': '1ba494d7-cb2f-5f0e-9f64-76c31da11381', 'associatedQuery': 'Who is john'})], kg_search_results=None)
+# Completion:
+# ChatCompletion(id='chatcmpl-9g0HnjGjyWDLADe7E2EvLWa35cMkB', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessage(content='John is a person that works at Google [1].', role='assistant', function_call=None, tool_calls=None))], created=1719797903, model='gpt-3.5-turbo-0125', object='chat.completion', service_tier=None, system_fingerprint=None, usage=CompletionUsage(completion_tokens=11, prompt_tokens=145, total_tokens=156))
 ```
-
-### Document Deletion
-
-To delete a document by its ID, or any other metadata field, use the delete command. For example, to delete all chunks corresponding to the uploaded file `aristotle.txt`, we can call delete on the metadata field `document_id` with the value `15255e98-e245-5b58-a57f-6c51babf72dd`:
-
-```bash
-python -m r2r.examples.demo delete --keys="['document_id']" --values="['c9bdbac7-0ea3-5c9e-b590-018bd09b127b']"
-```
-
-### User Deletion
-
-To delete all documents associated with a given user, run the delete command on the `user_id`:
-
-```bash
-# run the following command with care, as it will erase all ingested user data for `063edaf8-3e63-4cb9-a4d6-a855f36376c3`
-python -m r2r.examples.demo delete --keys="['user_id']" --values="['063edaf8-3e63-4cb9-a4d6-a855f36376c3']"
-```
-
-## R2R Client-Server Demo
-
-This section extends the previous demo by showing how to set up and use the R2R framework with a Client-Server architecture. The R2R server can be stood up to handle requests, while the client can communicate with the server to perform various operations.
-
-### Launch the Server
-
-Use the following command to start the server:
-
-```bash
-python -m r2r.examples.demo serve
-```
-
-This command starts the R2R server on the default host `0.0.0.0` and port `8000`.
-
-### Example Commands
-
-1. **Ingest Documents as Files**:
-   ```bash
-   python -m r2r.examples.demo ingest_as_files --client_server_mode
-   ```
-   This command will send the ingestion request to the server running at `http://localhost:8000`.
-
-2. **Perform a Search**:
-   ```bash
-   python -m r2r.examples.demo search --query="Who was Aristotle?" --client_server_mode
-   ```
-   This command sends the search query to the server and retrieves the results.
-
-3. **Run a RAG Completion**:
-   ```bash
-   python -m r2r.examples.demo rag --query="What was Uber's profit in 2020?" --client_server_mode
-   ```
-   This command sends the RAG query to the server and retrieves the generated response.
-
-4. **Run a RAG Stream**:
-   ```bash
-   python -m r2r.examples.demo rag --query="What was Lyft's profit in 2020?" --streaming=true --client_server_mode
-   ```
-   This command streams the RAG query results from the server.
-
-### Client-Server Summary
-
-By using the Client-Server model, you can extend the basic R2R demo to support more scalable and modular deployments. The server handles requests and performs heavy computations, while clients can communicate with the server to perform ingestion, search, RAG, and other operations, as shown in the examples above. For detailed setup and basic functionality, refer back to the [R2R Demo](#r2r-demo).
-
 
 # R2R Dashboard
 
-R2R ships with an open-source React+Next.js dashboard to facilitate managing and interacting with deployed pipelines. You can download the dashboard [here](https://github.com/SciPhi-AI/R2R-Dashboard).
+Interact with R2R using our [open-source React+Next.js dashboard](https://github.com/SciPhi-AI/R2R-Dashboard). Check out the [Dashboard Cookbook](https://r2r-docs.sciphi.ai/cookbooks/dashboard) to get started!
 
-# Core Abstractions
+# Community and Support
 
-The framework revolves around three core abstractions: Providers, Pipes, and Pipelines.
+- [Discord](https://discord.gg/p6KqD2kjtB): Chat live with maintainers and community members
+- [Github Issues](https://github.com/SciPhi-AI/R2R/issues): Report bugs and request features
 
-## Providers
+**Explore our [R2R Docs](https://r2r-docs.sciphi.ai/) for tutorials and cookbooks on various R2R features and integrations, including:**
 
-Providers supply the necessary resources and capabilities to the pipes and pipelines. Key provider types include:
+### RAG Cookbooks
+- [Multiple LLMs](https://r2r-docs.sciphi.ai/cookbooks/multiple-llms): A simple cookbook showing how R2R supports multiple LLMs.
+- [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): A brief introduction to running hybrid search with R2R.
+- [Multimodal RAG](https://r2r-docs.sciphi.ai/cookbooks/multimodal): A cookbook on multimodal RAG with R2R.
+- [Knowledge Graphs](https://r2r-docs.sciphi.ai/cookbooks/knowledge-graph): A walkthrough of automatic knowledge graph generation with R2R.
+- [Local RAG](https://r2r-docs.sciphi.ai/cookbooks/local-rag): A quick cookbook demonstration of how to run R2R with local LLMs.
+- [Reranking](https://r2r-docs.sciphi.ai/cookbooks/rerank-search): A short guide on how to apply reranking to R2R results.
 
-- **Vector Database Provider**: Manages the storage and retrieval of vector embeddings. Examples include PGVector, and SQLite.
-- **Embedding Provider**: Converts text into vector embeddings. Supported providers include OpenAI, SentenceTransformers, and DummyEmbeddingProvider.
-- **LLM Provider**: Interfaces with large language models for text generation. Supported providers include OpenAI, and LiteLLM.
-- **Prompt Provider**: Manages prompts for various tasks.
-- **Eval Provider**: Evaluates the quality of generated responses.
+### App Features
+- [Client-Server](https://r2r-docs.sciphi.ai/cookbooks/client-server): An extension of the basic `R2R Quickstart` with client-server interactions.
+- [Document Management](https://r2r-docs.sciphi.ai/cookbooks/document-management): A cookbook showing how to manage your documents with R2R.
+- [Analytics & Observability](https://r2r-docs.sciphi.ai/cookbooks/observablity): A cookbook showing R2Rs end to end logging and analytics.
+- [Dashboard](https://r2r-docs.sciphi.ai/cookbooks/dashboard): A how-to guide on connecting with the R2R Dashboard.
 
-## Pipes
+# Contributing
 
-Pipes represent individual steps in the data processing workflow. Each pipe performs a specific task, such as parsing, embedding, searching, or generating text. Pipes are designed to be composable and reusable within different pipelines.
+We welcome contributions of all sizes! Here's how you can help:
 
-- **Parsing Pipe**: Extracts and structures data from various formats.
-- **Embedding Pipe**: Generates embeddings from text and stores them in a vector database.
-- **Vector Storage Pipe**: Handles the storage of embeddings in a vector database.
-- **Search Pipe**: Performs vector-based searches.
-- **RAG Pipe**: Integrates search results with language generation to produce responses.
-- **Streaming RAG Pipe**: Extends RAG functionality to support streaming responses.
-- **Eval Pipe**: Evaluates the quality of generated responses.
+- Open a PR for new features, improvements, or better documentation.
+- Submit a [feature request](https://github.com/SciPhi-AI/R2R/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=) or [bug report](https://github.com/SciPhi-AI/R2R/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=)
 
-## Pipelines
-
-Pipelines are composed of multiple pipes arranged in a sequence. They manage the flow of data through the pipes, ensuring that each step is executed in the correct order. R2R supports several types of pipelines:
-
-- **Ingestion Pipeline**: Prepares and ingests documents, converting them into embeddings.
-- **Embedding Pipeline**: Manages the transformation of text into vector embeddings.
-- **RAG Pipeline**: Combines search and language generation to produce detailed responses.
-- **Eval Pipeline**: Evaluates the quality of generated responses using LLM-powered evaluations.
-
-# Summary
-
-R2R (RAG to Riches) is a comprehensive framework designed to streamline the development, deployment, and optimization of Retrieval-Augmented Generation (RAG) systems. With its robust core abstractions—Providers, Pipes, and Pipelines—R2R offers a modular and flexible approach to building high-quality RAG pipelines.
+### Our Contributors
+<a href="https://github.com/SciPhi-AI/R2R/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=SciPhi-AI/R2R" />
+</a>

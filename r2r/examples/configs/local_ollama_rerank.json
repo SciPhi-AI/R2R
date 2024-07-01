@@ -12,5 +12,16 @@
       "chunk_size": 512,
       "chunk_overlap": 20
     }
+  },
+  "ingestion":{
+    "excluded_parsers": [
+      "gif",
+      "jpeg",
+      "jpg",
+      "png",
+      "svg",
+      "mp3",
+      "mp4"
+    ]
   }
 }
