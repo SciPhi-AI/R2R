@@ -88,6 +88,7 @@ def ingest(obj, file_paths, user_ids, no_media, all_sample_files):
     """Ingest files into R2R."""
     file_paths = list(file_paths)
     if not file_paths:
+        # TODO - Relocate this logic for the quickstart / tutorial
         root_path = os.path.dirname(os.path.abspath(__file__))
         if not all_sample_files:
             file_paths = [
@@ -132,7 +133,8 @@ def ingest(obj, file_paths, user_ids, no_media, all_sample_files):
                     root_path, "..", "examples", "data", "sample2.mp3"
                 ),
             ]
-            if not user_ids:
+            if not user_ids and all_sample_files:  # tutorial mode
+                # TODO - Relocate this logic for the quickstart / tutorial
                 user_ids = [
                     "063edaf8-3e63-4cb9-a4d6-a855f36376c3",
                     "45c3f5a8-bcbe-43b1-9b20-51c07fd79f14",
