@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 DataType = Union[str, bytes]
 
 
-class DocumentType(Enum):
+class DocumentType(str, Enum):
     """Types of documents that can be stored."""
 
     CSV = "csv"

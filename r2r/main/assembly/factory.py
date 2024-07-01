@@ -246,11 +246,11 @@ class R2RPipeFactory:
         )
 
     def create_parsing_pipe(
-        self, excluded_parsers: Optional[dict] = None, *args, **kwargs
+        self, excluded_parsers: Optional[list] = None, *args, **kwargs
     ) -> Any:
         from r2r.pipes import ParsingPipe
 
-        return ParsingPipe(excluded_parsers=excluded_parsers or {})
+        return ParsingPipe(excluded_parsers=excluded_parsers or [])
 
     def create_embedding_pipe(self, *args, **kwargs) -> Any:
         if self.config.embedding.provider is None:

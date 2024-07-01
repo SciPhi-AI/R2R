@@ -18,7 +18,6 @@ class R2R:
         *args,
         **kwargs
     ):
-
         if engine and app:
             self.engine = engine
             self.app = app

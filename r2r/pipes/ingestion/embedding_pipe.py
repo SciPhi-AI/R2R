@@ -2,7 +2,7 @@ import asyncio
 import copy
 import logging
 import uuid
-from typing import Any, AsyncGenerator, List, Optional
+from typing import Any, AsyncGenerator, List, Optional, Union
 
 from r2r.base import (
     AsyncState,
@@ -19,6 +19,8 @@ from r2r.base import (
 )
 from r2r.base.pipes.base_pipe import AsyncPipe
 
+from .parsing_pipe import DocumentProcessingError
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,6 +28,11 @@ class EmbeddingPipe(AsyncPipe):
     """
     Embeds and stores documents using a specified embedding model and database.
     """
+
+    class Input(AsyncPipe.Input):
+        message: AsyncGenerator[
+            Union[Extraction, DocumentProcessingError], None
+        ]
 
     def __init__(
         self,
@@ -139,12 +146,12 @@ class EmbeddingPipe(AsyncPipe):
 
     async def _run_logic(
         self,
-        input: AsyncPipe.Input,
+        input: Input,
         state: AsyncState,
         run_id: uuid.UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[VectorEntry, None]:
+    ) -> AsyncGenerator[Union[DocumentProcessingError, VectorEntry], None]:
         """
         Executes the embedding pipe: chunking, transforming, embedding, and storing documents.
         """
@@ -154,6 +161,10 @@ class EmbeddingPipe(AsyncPipe):
 
         fragment_info = {}
         async for extraction in input.message:
+            if isinstance(extraction, DocumentProcessingError):
+                yield extraction
+                continue
+
             async for fragment in self.fragment(extraction, run_id):
                 if extraction.document_id in fragment_info:
                     fragment_info[extraction.document_id] += 1

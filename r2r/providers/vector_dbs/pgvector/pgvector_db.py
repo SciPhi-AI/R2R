@@ -32,25 +32,53 @@ class PGVectorDB(VectorDBProvider):
         user = self.config.extra_fields.get("user", None) or os.getenv(
             "POSTGRES_USER"
         )
+        if not user:
+            raise ValueError(
+                "Error, please set a valid POSTGRES_USER environment variable or set a 'user' in the 'vector_database' settings of your `config.json`."
+            )
         password = self.config.extra_fields.get("password", None) or os.getenv(
             "POSTGRES_PASSWORD"
         )
-        host = os.getenv("POSTGRES_HOST") or self.config.extra_fields.get(
-            "host", None
+        if not password:
+            raise ValueError(
+                "Error, please set a valid POSTGRES_PASSWORD environment variable or set a 'password' in the 'vector_database' settings of your `config.json`."
+            )
+
+        host = self.config.extra_fields.get("host", None) or os.getenv(
+            "POSTGRES_HOST"
         )
+        if not host:
+            raise ValueError(
+                "Error, please set a valid POSTGRES_HOST environment variable or set a 'host' in the 'vector_database' settings of your `config.json`."
+            )
+
         port = self.config.extra_fields.get("port", None) or os.getenv(
             "POSTGRES_PORT"
         )
-        db_name = os.getenv("POSTGRES_DBNAME") or self.config.extra_fields.get(
-            "db_name", None
+        if not port:
+            raise ValueError(
+                "Error, please set a valid POSTGRES_PORT environment variable or set a 'port' in the 'vector_database' settings of your `config.json`."
+            )
+
+        db_name = self.config.extra_fields.get("db_name", None) or os.getenv(
+            "POSTGRES_DBNAME"
         )
+        if not db_name:
+            raise ValueError(
+                "Error, please set a valid POSTGRES_DBNAME environment variable or set a 'db_name' in the 'vector_database' settings of your `config.json`."
+            )
+
         collection = self.config.extra_fields.get(
             "vecs_collection", None
         ) or os.getenv("POSTGRES_VECS_COLLECTION")
+        if not collection:
+            raise ValueError(
+                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'collection' in the 'vector_database' settings of your `config.json`."
+            )
 
         if not all([user, password, host, port, db_name, collection]):
             raise ValueError(
-                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, and POSTGRES_DBNAME, POSTGRES_VECS_COLLECTION environment variables to use pgvector database."
+                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DBNAME, and POSTGRES_VECS_COLLECTION environment variables to use pgvector database."
             )
         try:
             DB_CONNECTION = (
@@ -333,7 +361,10 @@ class PGVectorDB(VectorDBProvider):
         metadata_values: list[Union[bool, int, str]],
         logic: Literal["AND", "OR"] = "AND",
     ) -> list[str]:
-        super().delete_by_metadata(metadata_fields, metadata_values)
+        if logic == "OR":
+            raise ValueError(
+                "OR logic is still being tested before official support for `delete_by_metadata` in pgvector."
+            )
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `delete_by_metadata`."
@@ -344,25 +375,21 @@ class PGVectorDB(VectorDBProvider):
                 "The number of metadata fields must match the number of metadata values."
             )
 
-        if logic not in ["AND", "OR"]:
-            raise ValueError("Logic must be either 'AND' or 'OR'.")
-
-        # Construct the conditions
-        conditions = [
-            {field: {"$eq": value}}
-            for field, value in zip(metadata_fields, metadata_values)
-        ]
-
-        # Apply the appropriate logic
+        # Construct the filter
         if logic == "AND":
-            filters = (
-                {"$and": conditions} if len(conditions) > 1 else conditions[0]
-            )
-        else:  # OR
-            filters = (
-                {"$or": conditions} if len(conditions) > 1 else conditions[0]
-            )
+            filters = {
+                k: {"$eq": v} for k, v in zip(metadata_fields, metadata_values)
+            }
+        else:  # OR logic
+            # TODO - Test 'or' logic and remove check above
+            filters = {
+                "$or": [
+                    {k: {"$eq": v}}
+                    for k, v in zip(metadata_fields, metadata_values)
+                ]
+            }
 
+        print(f"Deleting with filters: {filters}")
         return self.collection.delete(filters=filters)
 
     def get_metadatas(
@@ -530,7 +557,6 @@ class PGVectorDB(VectorDBProvider):
 
         with self.vx.Session() as sess:
             results = sess.execute(text(query), params).fetchall()
-
         return [
             UserStats(
                 user_id=row[0],
@@ -539,4 +565,5 @@ class PGVectorDB(VectorDBProvider):
                 document_ids=row[3],
             )
             for row in results
+            if row[0] is not None
         ]

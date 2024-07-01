@@ -14,14 +14,14 @@
     }
   },
   "ingestion":{
-    "excluded_parsers": {
-      "gif": "default",
-      "jpeg": "default",
-      "jpg": "default",
-      "png": "default",
-      "svg": "default",
-      "mp3": "default",
-      "mp4": "default"
-    }
+    "excluded_parsers": [
+      "gif",
+      "jpeg",
+      "jpg",
+      "png",
+      "svg",
+      "mp3",
+      "mp4"
+    ]
   }
 }

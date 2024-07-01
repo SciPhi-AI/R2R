@@ -23,8 +23,6 @@ def telemetry_event(event_name):
                     logger.error(f"Error in telemetry event logging: {str(e)}")
                 return result
             except Exception as e:
-                # Log the exception
-                logger.error(f"Error in {event_name}: {str(e)}")
                 try:
                     telemetry_client.capture(
                         ErrorEvent(

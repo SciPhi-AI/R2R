@@ -42,11 +42,16 @@ class RetrievalRouter(BaseRouter):
                 request.rag_generation_config
                 and request.rag_generation_config.stream
             ):
+
+                async def stream_generator():
+                    async for chunk in response:
+                        yield chunk
+
                 return StreamingResponse(
-                    response, media_type="application/json"
+                    stream_generator(), media_type="application/json"
                 )
             else:
-                return response[0]
+                return response
 
         @self.router.post("/evaluate")
         @self.base_endpoint

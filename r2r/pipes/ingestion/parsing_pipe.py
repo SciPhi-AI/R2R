@@ -6,7 +6,7 @@ import asyncio
 import logging
 import time
 import uuid
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator, Optional, Union
 
 from r2r.base import (
     AsyncParser,
@@ -36,6 +36,13 @@ from r2r.parsers.text.text_parser import TextParser
 logger = logging.getLogger(__name__)
 
 
+class DocumentProcessingError(Exception):
+    def __init__(self, document_id, error_message):
+        self.document_id = document_id
+        self.error_message = error_message
+        super().__init__(f"Error {error_message}")
+
+
 class ParsingPipe(AsyncPipe):
     """
     Processes incoming documents into plaintext based on their data type.
@@ -46,22 +53,22 @@ class ParsingPipe(AsyncPipe):
         message: AsyncGenerator[Document, None]
 
     AVAILABLE_PARSERS = {
-        DocumentType.CSV: {"default": CSVParser},
-        DocumentType.DOCX: {"default": DOCXParser},
-        DocumentType.HTML: {"default": HTMLParser},
-        DocumentType.JSON: {"default": JSONParser},
-        DocumentType.MD: {"default": MDParser},
-        DocumentType.PDF: {"default": PDFParser},
-        DocumentType.PPTX: {"default": PPTParser},
-        DocumentType.TXT: {"default": TextParser},
-        DocumentType.XLSX: {"default": XLSXParser},
-        DocumentType.GIF: {"default": ImageParser},
-        DocumentType.JPEG: {"default": ImageParser},
-        DocumentType.JPG: {"default": ImageParser},
-        DocumentType.PNG: {"default": ImageParser},
-        DocumentType.SVG: {"default": ImageParser},
-        DocumentType.MP3: {"default": AudioParser},
-        DocumentType.MP4: {"default": MovieParser},
+        DocumentType.CSV: CSVParser,
+        DocumentType.DOCX: DOCXParser,
+        DocumentType.HTML: HTMLParser,
+        DocumentType.JSON: JSONParser,
+        DocumentType.MD: MDParser,
+        DocumentType.PDF: PDFParser,
+        DocumentType.PPTX: PPTParser,
+        DocumentType.TXT: TextParser,
+        DocumentType.XLSX: XLSXParser,
+        DocumentType.GIF: ImageParser,
+        DocumentType.JPEG: ImageParser,
+        DocumentType.JPG: ImageParser,
+        DocumentType.PNG: ImageParser,
+        DocumentType.SVG: ImageParser,
+        DocumentType.MP3: AudioParser,
+        DocumentType.MP4: MovieParser,
     }
 
     IMAGE_TYPES = {
@@ -74,7 +81,7 @@ class ParsingPipe(AsyncPipe):
 
     def __init__(
         self,
-        excluded_parsers: dict[DocumentType, AsyncParser],
+        excluded_parsers: list[DocumentType],
         override_parsers: Optional[dict[DocumentType, AsyncParser]] = None,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
@@ -96,16 +103,16 @@ class ParsingPipe(AsyncPipe):
         if not override_parsers:
             override_parsers = {}
 
+        # Apply overrides if specified
+        for doc_type, parser in override_parsers.items():
+            self.parsers[doc_type] = parser
+
         for doc_type, parser_info in self.AVAILABLE_PARSERS.items():
             if (
                 doc_type not in excluded_parsers
                 and doc_type not in self.parsers
             ):
-                self.parsers[doc_type] = parser_info["default"]()
-
-        # Apply overrides if specified
-        for doc_type, parser in override_parsers.items():
-            self.parsers[doc_type] = parser
+                self.parsers[doc_type] = parser_info()
 
     @property
     def supported_types(self) -> list[str]:
@@ -119,10 +126,11 @@ class ParsingPipe(AsyncPipe):
         document: Document,
         run_id: uuid.UUID,
         version: str,
-    ) -> AsyncGenerator[Extraction, None]:
+    ) -> AsyncGenerator[Union[DocumentProcessingError, Extraction], None]:
         if document.type not in self.parsers:
-            logger.error(
-                f"Parser for {document.type} not found in `ParsingPipe`."
+            yield DocumentProcessingError(
+                document_id=document.id,
+                error_message=f"Parser for {document.type} not found in `ParsingPipe`.",
             )
             return
         parser = self.parsers[document.type]

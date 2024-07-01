@@ -11,6 +11,7 @@ import logging
 import time
 from typing import TYPE_CHECKING, List, Optional
 
+import sqlalchemy
 from deprecated import deprecated
 from sqlalchemy import MetaData, create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -117,6 +118,10 @@ class Client:
                 )
             ).scalar_one()
         except sqlalchemy.exc.InternalError as e:
+            logger.error(f"Failed with internal alchemy error: {str(e)}")
+
+            import psycopg2
+
             if isinstance(e.orig, psycopg2.errors.InFailedSqlTransaction):
                 sess.rollback()
                 self.vector_version = sess.execute(

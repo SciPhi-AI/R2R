@@ -38,7 +38,6 @@ class R2RIngestFilesRequest(BaseModel):
     document_ids: Optional[list[uuid.UUID]] = None
     user_ids: Optional[list[Optional[uuid.UUID]]] = None
     versions: Optional[list[str]] = None
-    skip_document_info: Optional[bool] = False
 
 
 class R2RUpdateFilesRequest(BaseModel):

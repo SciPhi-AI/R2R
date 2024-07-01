@@ -41,7 +41,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - r2r-network
-  
+
   nginx:
     image: nginx:alpine
     ports:

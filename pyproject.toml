@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "r2r"
-version = "0.2.39"
+version = "0.2.50"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
@@ -83,6 +83,9 @@ pytest-asyncio = "^0.23.6"
 pytest-dependency = "^0.6.0"
 pytest-mock = "^3.14.0"
 pytest-cov = "^5.0.0"
+
+[tool.poetry.scripts]
+r2r = "r2r.cli.cli:main"
 
 [tool.black]
 line-length = 79

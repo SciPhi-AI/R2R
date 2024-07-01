@@ -284,7 +284,6 @@ class R2RQuickstart:
         use_kg_search: bool = False,
         kg_agent_generation_config: Optional[dict] = None,
     ):
-
         kg_agent_generation_config = (
             GenerationConfig(**kg_agent_generation_config)
             if kg_agent_generation_config
@@ -368,10 +367,11 @@ class R2RQuickstart:
                 rag_generation_config=rag_generation_config,
             )
             if not stream:
+                response = response["results"]
                 t1 = time.time()
                 print(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
-                print("Search Results:\n{response.search_results}")
-                print("Completion:\n{response.completion}")
+                print(f"Search Results:\n{response['search_results']}")
+                print(f"Completion:\n{response['completion']}")
 
             else:
                 for chunk in response:
@@ -398,8 +398,6 @@ class R2RQuickstart:
 
             if not stream:
                 t1 = time.time()
-                # unpack the list of one response
-                response = response[0]
                 print(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
                 print(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
                 print(f"Search Results:\n{response.search_results}")
@@ -593,6 +591,9 @@ class R2RQuickstart:
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         self.app.serve(host, port)
+
+    def get_app(self):
+        return self.app.app.app
 
 
 if __name__ == "__main__":
