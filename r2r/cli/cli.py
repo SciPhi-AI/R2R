@@ -87,7 +87,7 @@ def ingest(obj, file_paths, no_media):
     file_paths = list(file_paths)
     if not file_paths:
         root_path = os.path.dirname(os.path.abspath(__file__))
-        file_paths = [os.path.join(root_path, "data", "aristotle.txt")]
+        file_paths = [os.path.join(root_path, "..", "examples", "data", "aristotle.txt")]
 
     if no_media:
         excluded_types = ["jpeg", "jpg", "png", "svg", "mp3", "mp4"]
