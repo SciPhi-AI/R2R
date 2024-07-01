@@ -302,6 +302,7 @@ class IngestionService(Service):
                 doc_info.document_id: doc_info
                 for doc_info in self.providers.vector_db.get_documents_overview()
             }
+            print("files = ", files)
             for iteration, file in enumerate(files):
                 logger.info(f"Processing file: {file.filename}")
                 if (

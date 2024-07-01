@@ -80,14 +80,65 @@ def serve(obj, host, port):
 
 @cli.command()
 @click.argument("file_paths", nargs=-1)
+@click.option("--user-ids", multiple=True, help="User IDs for ingestion")
 @click.option("--no-media", is_flag=True, help="Exclude media files")
+@click.option("--all-sample-files", is_flag=True, help="Use all sample files?")
 @click.pass_obj
-def ingest(obj, file_paths, no_media):
+def ingest(obj, file_paths, user_ids, no_media, all_sample_files):
     """Ingest files into R2R."""
     file_paths = list(file_paths)
     if not file_paths:
         root_path = os.path.dirname(os.path.abspath(__file__))
-        file_paths = [os.path.join(root_path, "..", "examples", "data", "aristotle.txt")]
+        if not all_sample_files:
+            file_paths = [
+                os.path.join(
+                    root_path, "..", "examples", "data", "aristotle.txt"
+                )
+            ]
+        else:
+            file_paths = [
+                os.path.join(
+                    root_path, "..", "examples", "data", "aristotle.txt"
+                ),
+                os.path.join(root_path, "..", "examples", "data", "got.txt"),
+                os.path.join(
+                    root_path, "..", "examples", "data", "screen_shot.png"
+                ),
+                os.path.join(
+                    root_path, "..", "examples", "data", "pg_essay_1.html"
+                ),
+                os.path.join(
+                    root_path, "..", "examples", "data", "pg_essay_2.html"
+                ),
+                os.path.join(
+                    root_path, "..", "examples", "data", "pg_essay_3.html"
+                ),
+                os.path.join(
+                    root_path, "..", "examples", "data", "pg_essay_4.html"
+                ),
+                os.path.join(
+                    root_path, "..", "examples", "data", "pg_essay_5.html"
+                ),
+                os.path.join(
+                    root_path, "..", "examples", "data", "lyft_2021.pdf"
+                ),
+                os.path.join(
+                    root_path, "..", "examples", "data", "uber_2021.pdf"
+                ),
+                os.path.join(
+                    root_path, "..", "examples", "data", "sample.mp3"
+                ),
+                os.path.join(
+                    root_path, "..", "examples", "data", "sample2.mp3"
+                ),
+            ]
+            if not user_ids:
+                user_ids = [
+                    "063edaf8-3e63-4cb9-a4d6-a855f36376c3",
+                    "45c3f5a8-bcbe-43b1-9b20-51c07fd79f14",
+                    "c6c23d85-6217-4caa-b391-91ec0021a000",
+                    None,
+                ] * 3
 
     if no_media:
         excluded_types = ["jpeg", "jpg", "png", "svg", "mp3", "mp4"]
@@ -122,7 +173,7 @@ def ingest(obj, file_paths, no_media):
             metadatas=None,
             file_paths=file_paths,
             document_ids=ids,
-            user_ids=None,
+            user_ids=user_ids if user_ids else None,
             monitor=True,
         )
     else:
@@ -131,7 +182,7 @@ def ingest(obj, file_paths, no_media):
             files=files,
             metadatas=metadatas,
             document_ids=ids,
-            user_ids=None,
+            user_ids=user_ids if user_ids else None,
         )
     t1 = time.time()
     click.echo(f"Time taken to ingest files: {t1-t0:.2f} seconds")
@@ -439,8 +490,12 @@ def app_settings(obj):
 
 
 @cli.command()
-@click.option("--filters", type=JSON, help="Filter criteria for analytics as JSON")
-@click.option("--analysis-types", type=JSON, help="Types of analysis to perform as JSON")
+@click.option(
+    "--filters", type=JSON, help="Filter criteria for analytics as JSON"
+)
+@click.option(
+    "--analysis-types", type=JSON, help="Types of analysis to perform as JSON"
+)
 @click.pass_obj
 def analytics(obj, filters, analysis_types):
     """Perform analytics on R2R data."""
@@ -468,7 +523,6 @@ def users_overview(obj, user_ids=None):
     """Get an overview of users."""
     t0 = time.time()
     user_ids = list(user_ids) if user_ids and user_ids != () else None
-    print("user_ids = ", user_ids)
     if isinstance(obj, R2RClient):
         response = obj.users_overview(
             list(user_ids) if user_ids and user_ids != () else None
@@ -479,6 +533,8 @@ def users_overview(obj, user_ids=None):
         )
     t1 = time.time()
     click.echo(f"Time taken to get user stats: {t1-t0:.2f} seconds")
+    if isinstance(response, dict) and "results" in response:
+        response = response["results"]
     for user in response:
         click.echo(user)
 
