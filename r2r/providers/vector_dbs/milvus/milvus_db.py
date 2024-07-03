@@ -4,28 +4,23 @@ import os
 import uuid
 from typing import Optional, Union, List
 
-from r2r.core import (
+from pymilvus import DataType
+
+from r2r.base import (
+    DocumentInfo,
     VectorDBConfig,
     VectorDBProvider,
     VectorEntry,
-    SearchResult,
+    VectorSearchResult,
+    UserStats,
 )
-from r2r.core.abstractions.document import DocumentInfo
-
-from pymilvus import DataType
-
-from r2r.core.abstractions.user import UserStats
 
 logger = logging.getLogger(__name__)
 
 GET_ALL_LIMIT = 1000
-# Set up test with:
-os.environ["MILVUS_URI_KEY"] = "./milvus_lite_demo1.db"
-# os.environ["MILVUS_URI_KEY"] = "http://10.100.30.11:19530"
-# os.environ["OPENAI_API_KEY"] =
+# Set up with: "MILVUS_URI_KEY"
 
 # Local Docker pass all tests, but lite version fail on get_metadatas() without filters
-# Fix this issue soon
 
 
 class MilvusVectorDB(VectorDBProvider):
@@ -78,6 +73,7 @@ class MilvusVectorDB(VectorDBProvider):
         Returns:
             None
         """
+        # Store vector
         try:
             # create schema, with dynamic field available
             schema = self.client.create_schema(
@@ -108,7 +104,9 @@ class MilvusVectorDB(VectorDBProvider):
 
             # create vector collection
             self.client.create_collection(
-                collection_name=self.config.collection_name,
+                collection_name=self.config.extra_fields.get(
+                    "collection_name"
+                ),
                 schema=schema,
                 index_params=index_params,
                 consistency_level=0,
@@ -118,7 +116,7 @@ class MilvusVectorDB(VectorDBProvider):
                 f"Error {e} occurred while attempting to creat collection {self.config.collection_name}."
             )
 
-        # TODO: 解决不插入vector的问题
+        # Store document info
         try:
             # create schema, with dynamic field available
             schema_doc = self.client.create_schema(
@@ -134,11 +132,16 @@ class MilvusVectorDB(VectorDBProvider):
                 max_length=36,
             )
 
-            # prepare index parameters
+            # dummy vector
+            schema.add_field(
+                field_name="vector",
+                datatype=DataType.FLOAT_VECTOR,
+                dim=1,
+            )
             index_params_doc = self.client.prepare_index_params()
             index_params_doc.add_index(
                 index_type="AUTOINDEX",
-                field_name="document_id",
+                field_name="vector",
             )
 
             # create vector collection
@@ -171,7 +174,7 @@ class MilvusVectorDB(VectorDBProvider):
             None
         """
         if not self.client.has_collection(
-            collection_name=self.config.collection_name
+            collection_name=self.config.extra_fields.get("collection_name")
         ):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `upsert`."
@@ -182,7 +185,10 @@ class MilvusVectorDB(VectorDBProvider):
         try:
             # Can change to insert if upsert not working
             self.client.upsert(
-                collection_name=self.config.collection_name, data=data
+                collection_name=self.config.extra_fields.get(
+                    "collection_name"
+                ),
+                data=data,
             )
         except Exception as e:
             raise ValueError(
@@ -196,7 +202,7 @@ class MilvusVectorDB(VectorDBProvider):
         limit: int = 10,
         *args,
         **kwargs,
-    ) -> list[SearchResult]:
+    ) -> list[VectorSearchResult]:
         """
         Perform a vector search operation.
 
@@ -215,12 +221,12 @@ class MilvusVectorDB(VectorDBProvider):
             for key, value in filters.items():
                 filter_expression = self.build_filter(key, value)
                 filter_expressions.append(filter_expression)
-            filter_expression = ' and '.join(filter_expressions)
+            filter_expression = " and ".join(filter_expressions)
         else:
-            filter_expression = ''
+            filter_expression = ""
 
         results = self.client.search(
-            collection_name=self.config.collection_name,
+            collection_name=self.config.extra_fields.get("collection_name"),
             data=[query_vector],
             filter=filter_expression,
             limit=limit,
@@ -230,7 +236,7 @@ class MilvusVectorDB(VectorDBProvider):
         )[0]
 
         return [
-            SearchResult(
+            VectorSearchResult(
                 id=result["id"],
                 score=float(result["distance"]),
                 metadata=result["entity"]["metadata"] or {},
@@ -262,7 +268,7 @@ class MilvusVectorDB(VectorDBProvider):
         """
         super().delete_by_metadata(metadata_fields, metadata_values)
         if not self.client.has_collection(
-            collection_name=self.config.collection_name
+            collection_name=self.config.extra_fields.get("collection_name")
         ):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `filtered_deletion`."
@@ -278,7 +284,9 @@ class MilvusVectorDB(VectorDBProvider):
         try:
             for i in range(len(filter_expressions)):
                 res = self.client.delete(
-                    collection_name=self.config.collection_name,
+                    collection_name=self.config.extra_fields.get(
+                        "collection_name"
+                    ),
                     filter=filter_expressions[i],
                 )
                 for id_ in res:
@@ -312,7 +320,7 @@ class MilvusVectorDB(VectorDBProvider):
             list[str]: A list of unique values of the specified metadata field.
         """
         if not self.client.has_collection(
-            collection_name=self.config.collection_name
+            collection_name=self.config.extra_fields.get("collection_name")
         ):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `filtered_deletion`."
@@ -320,27 +328,31 @@ class MilvusVectorDB(VectorDBProvider):
 
         # Build filter condition based on value type
         if filter_field is not None and filter_value is not None:
-            if filter_field == 'id':
+            if filter_field == "id":
                 filter_expression = f'{filter_field} == "{filter_value}"'
             else:
-                filter_expression = self.build_filter(filter_field, filter_value)
+                filter_expression = self.build_filter(
+                    filter_field, filter_value
+                )
         else:
             filter_expression = ""
 
         unique_values = []
         if not filter_expression:
             results = self.client.query(
-                collection_name=self.config.collection_name,
+                collection_name=self.config.extra_fields.get(
+                    "collection_name"
+                ),
                 filter=filter_expression,
                 consistency_level=0,
-                output_fields=['metadata'],
+                output_fields=["metadata"],
                 limit=GET_ALL_LIMIT,
             )
         else:
             results = self.client.query(
                 collection_name=self.config.collection_name,
                 filter=filter_expression,
-                output_fields=['metadata'],
+                output_fields=["metadata"],
             )
 
         for result in results:
@@ -360,12 +372,14 @@ class MilvusVectorDB(VectorDBProvider):
 
         return filter_expression
 
-    # TODO: Need future discussion of implementation
-    #       Need to adjust the storing collection
-    def upsert_documents_info(self, document_infs: list[DocumentInfo]) -> None:
-        if not self.client.has_collection(
-            collection_name=f"document_info_{self.config.collection_name}"
-        ):
+    # TODO: Need to test the following
+    def upsert_documents_overview(
+        self, document_infs: list[DocumentInfo]
+    ) -> None:
+        collection_name = (
+            f"document_info_{self.config.extra_fields.get('collection_name')}"
+        )
+        if not self.client.has_collection(collection_name=collection_name):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `upsert`."
             )
@@ -374,19 +388,21 @@ class MilvusVectorDB(VectorDBProvider):
 
         for document_inf in document_infs:
             data = document_inf.convert_to_db_entry()
+            # dummy
+            data["vector"] = [1.0]
             document_data.append(data)
 
         try:
             # Can change to insert if upsert not working
             self.client.upsert(
-                collection_name=f"document_info_{self.config.collection_name}", data=document_data
+                collection_name=collection_name, data=document_data
             )
         except Exception as e:
             raise ValueError(
                 f"Upsert data failure cause exception {e} occurs."
             )
 
-    def get_documents_info(
+    def get_documents_overview(
         self,
         filter_document_ids: Optional[list[str]] = None,
         filter_user_ids: Optional[list[str]] = None,
@@ -401,14 +417,23 @@ class MilvusVectorDB(VectorDBProvider):
             for id_ in filter_user_ids:
                 filter_expressions.append(f'user_id in "{id_}"')
 
-        query_expr = ' and '.join(filter_expressions) if filter_expressions else ''
+        query_expr = (
+            " and ".join(filter_expressions) if filter_expressions else ""
+        )
 
         results = self.client.query(
-            collection_name=f"document_info_{self.config.collection_name}",
+            collection_name=f"document_info_{self.config.extra_fields.get("collection_name")}",
             filter=query_expr,
-            output_fields=["document_id", "title", "user_id",
-                           "version", "size_in_bytes", "created_at",
-                           "updated_at", "metadata"],
+            output_fields=[
+                "document_id",
+                "title",
+                "user_id",
+                "version",
+                "size_in_bytes",
+                "created_at",
+                "updated_at",
+                "metadata",
+            ],
         )
 
         document_infos = []
@@ -416,7 +441,11 @@ class MilvusVectorDB(VectorDBProvider):
             document_info = DocumentInfo(
                 document_id=uuid.UUID(row["document_id"]),
                 title=row["title"],
-                user_id=uuid.UUID(row["user_id"]) if row["user_id"] != "None" else None,
+                user_id=(
+                    uuid.UUID(row["user_id"])
+                    if row["user_id"] != "None"
+                    else None
+                ),
                 version=row["version"],
                 size_in_bytes=row["size_in_bytes"],
                 created_at=row["created_at"],
@@ -427,35 +456,39 @@ class MilvusVectorDB(VectorDBProvider):
 
         return document_infos
 
-    # TODO: Need future discussion of implementation
     def get_document_chunks(self, document_id: str) -> list[dict]:
-        if not self.client.has_collection(
-                collection_name=f"document_info_{self.config.collection_name}"
-        ):
+        collection_name = (
+            f"document_info_{self.config.extra_fields.get('collection_name')}"
+        )
+
+        if not self.client.has_collection(collection_name=collection_name):
             raise ValueError(
-                "Please call `initialize_collection` before attempting to run `query`."
+                "Please call `initialize_collection` before attempting to run `get_document_chunks`."
             )
 
-        filter = f'document_id == "{document_id}"'
+        filter_condition = f'document_id == "{document_id}"'
 
         results = self.client.query(
-            collection_name=f"document_info_{self.config.collection_name}",
-            filter=filter,
+            collection_name=collection_name,
+            filter=filter_condition,
             output_fields=["metadata"],
         )
 
         # TODO: Need to check the metadata chunk key name
-        document_chunks = [json.loads(result["metadata"])["chunk"] for result in results]
+        document_chunks = [
+            json.loads(result["metadata"]) for result in results
+        ]
         document_chunks.sort(key=lambda x: x["chunk_order"])
 
         return document_chunks
 
-    def delete_documents_info(self, document_ids: list[str]) -> None:
-        if not self.client.has_collection(
-                collection_name=f"document_info_{self.config.collection_name}"
-        ):
+    def delete_documents_overview(self, document_ids: list[str]) -> None:
+        collection_name = (
+            f"document_info_{self.config.extra_fields.get('collection_name')}"
+        )
+        if not self.client.has_collection(collection_name=collection_name):
             raise ValueError(
-                "Please call `initialize_collection` before attempting to run `delete`."
+                "Please call `initialize_collection` before attempting to run `delete_documents_overview`."
             )
 
         for document_id in document_ids:
@@ -463,46 +496,48 @@ class MilvusVectorDB(VectorDBProvider):
 
             try:
                 self.client.delete(
-                    collection_name=f"document_info_{self.config.collection_name}",
+                    collection_name=collection_name,
                     filter=filter_expression,
                 )
 
             except Exception as e:
                 raise ValueError(
-                    f"Error {e} occurs in deletion of key value pair {self.config.collection_name}."
+                    f"Error {e} occurs in deletion of key value pair {collection_name}."
                 )
 
-    def get_users_stats(self, user_ids: Optional[list[str]] = None) -> list[UserStats]:
+    def get_users_overview(
+        self, user_ids: Optional[list[str]] = None
+    ) -> list[UserStats]:
         # Construct filter expression
         filter_expression = ""
         if user_ids:
-            user_ids_condition = ', '.join([f'"{str(user_id)}"' for user_id in user_ids])
+            user_ids_condition = ", ".join(
+                [f'"{str(user_id)}"' for user_id in user_ids]
+            )
             filter_expression = f"user_id in [{user_ids_condition}]"
 
         # Query Milvus
         try:
             results = self.client.query(
-                collection_name=f"document_info_{self.config.collection_name}",
+                collection_name=f"document_info_{self.config.extra_fields.get("collection_name")}",
                 expr=filter_expression,
-                output_fields=["user_id", "document_id", "size_in_bytes"]
+                output_fields=["user_id", "document_id", "size_in_bytes"],
             )
         except Exception as e:
-            raise ValueError(
-                f"Error {e} occurs while query users stats."
-            )
+            raise ValueError(f"Error {e} occurs while query users stats.")
 
         # Process results
         user_stats = {}
         for result in results:
             user_id = result["user_id"]
-            document_id = result["document_id"]
+            document_id = uuid.UUID(result["document_id"])
             size_in_bytes = result["size_in_bytes"]
 
             if user_id not in user_stats:
                 user_stats[user_id] = {
                     "num_files": 0,
                     "total_size_in_bytes": 0,
-                    "document_ids": []
+                    "document_ids": [],
                 }
 
             user_stats[user_id]["num_files"] += 1
@@ -515,14 +550,14 @@ class MilvusVectorDB(VectorDBProvider):
                 user_id=user_id,
                 num_files=stats["num_files"],
                 total_size_in_bytes=stats["total_size_in_bytes"],
-                document_ids=stats["document_ids"]
+                document_ids=stats["document_ids"],
             )
             for user_id, stats in user_stats.items()
         ]
 
         return user_stats_list
 
-    # TODO: Need future discussion of implementation
+    # TODO: Not support yet, soon will be updated
     def hybrid_search(
         self,
         query_text: str,
@@ -535,5 +570,5 @@ class MilvusVectorDB(VectorDBProvider):
         rrf_k: int = 20,  # typical value is ~2x the number of results you want
         *args,
         **kwargs,
-    ) -> list[SearchResult]:
+    ) -> list[VectorSearchResult]:
         pass
