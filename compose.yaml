@@ -9,13 +9,15 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
       - POSTGRES_VECS_COLLECTION=${POSTGRES_VECS_COLLECTION:-vecs}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OLLAMA_API_BASE=${OLLAMA_API_BASE:-}
+      - CONFIG_OPTION=${CONFIG_OPTION:-}
     depends_on:
       - postgres
     networks:

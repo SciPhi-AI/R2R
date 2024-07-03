@@ -38,7 +38,7 @@ For a more complete view of R2R, check out the [full documentation](https://r2r-
 > [!NOTE]
 > Windows users are advised to use Docker to run R2R.
 
-<details open>
+<details>
 <summary><b>Installing with Pip</b>&nbsp;🐍 </summary>
 
 ```bash
@@ -55,64 +55,36 @@ export POSTGRES_VECS_COLLECTION=demo_vecs
 ```
 </details>
 
-<details>
+<details open>
 <summary><b>Installing with Docker</b>&nbsp;🐳</summary>
+Docker allows users to get started with R2R seamlessly—providing R2R, the R2R Dashboard, and a pgvector database all in one place.
 
-Note: The R2R client must still be installed, even when running with Docker. Download the Python client with `pip install r2r`.
-
-To run R2R using Docker:
-
+First, clone the R2R repository:
 ```bash
-# Setting up the environment. The right side is where you should put the value of your variable.
-# Note - you can freely replace `demo_vecs`
+git clone https://github.com/SciPhi-AI/R2R.git
+cd R2R
+```
+
+Then, run the following command to start all containers:
+
+For hosted LLMs (e.g., OpenAI):
+```bash
+# Be sure to set an OpenAI API key
 export OPENAI_API_KEY=sk-...
-export POSTGRES_USER=YOUR_POSTGRES_USER
-export POSTGRES_PASSWORD=YOUR_POSTGRES_PASSWORD
-export POSTGRES_HOST=YOUR_POSTGRES_HOST
-export POSTGRES_PORT=YOUR_POSTGRES_PORT
-export POSTGRES_DBNAME=YOUR_POSTGRES_DBNAME
-export POSTGRES_VECS_COLLECTION=demo_vecs
-
-# Optional on first pull. Advised when fetching the main updates.
-docker pull emrgntcmplxty/r2r:main
-
-# Runs the image. If you set up the environment you don't need to modify anything.
-# Otherwise, add your values on the right side of the -e commands.
-# For Windows, remove the "\" from your command.
-docker run -d \
-   --name r2r \
-   -p 8000:8000 \
-   -e POSTGRES_USER=$POSTGRES_USER \
-   -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
-   -e POSTGRES_HOST=$POSTGRES_HOST \
-   -e POSTGRES_PORT=$POSTGRES_PORT \
-   -e POSTGRES_DBNAME=$POSTGRES_DBNAME \
-   -e OPENAI_API_KEY=$OPENAI_API_KEY \
-   emrgntcmplxty/r2r:main
+docker-compose up -d
 ```
 
-**Important:** The Docker image of r2r operates in server and client mode, with the server being the Docker container and the client being your PC. This means you need to append `--client_server_mode` to all your queries.
-
-Additionally, your PC (acting as the client) needs to have Python, Pip, and the dependencies listed in the r2r folder of the repository. Therefore, you need to have the repository cloned on your computer and run `pip install r2r` in the root folder of the cloned repository.
-
-You have the option to run the client inside the terminal of the Docker container (to have everything in one place), but the use of `pip install r2r` and `--client_server_mode` is necessary.
-
-For local LLMs:
-
+For local LLMs (e.g., Ollama):
 ```bash
-docker run -d \
-   --name r2r \
-   --add-host=host.docker.internal:host-gateway \
-   -p 8000:8000 \
-   -e POSTGRES_USER=$POSTGRES_USER \
-   -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
-   -e POSTGRES_HOST=$POSTGRES_HOST \
-   -e POSTGRES_PORT=$POSTGRES_PORT \
-   -e POSTGRES_DBNAME=$POSTGRES_DBNAME \
-   -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
-   -e CONFIG_OPTION=local_ollama \
-  emrgntcmplxty/r2r:main
+OLLAMA_API_BASE=http://host.docker.internal:11434 CONFIG_OPTION=local_ollama docker-compose up -d
 ```
+
+Note: You can override the pgvector collection by setting an environment variable when calling `docker-compose`. This is useful when switching between different sized embeddings:
+```bash
+POSTGRES_VECS_COLLECTION=new_vecs docker-compose up -d
+```
+
+The R2R client must still be installed when using Docker. Install it with `pip install r2r`.
 </details>
 
 # Updates
@@ -123,10 +95,10 @@ Star R2R on GitHub by clicking "Star" in the upper right hand corner of the page
 
 ## Start the R2R server
 <details open>
-<summary><b>Serving with Python</b>&nbsp;🐍 </summary>
+<summary><b>Serving the R2R CLI</b>&nbsp;✈️ </summary>
 
 ```bash
-python -m r2r.examples.quickstart serve --port=8000
+r2r serve --port=8000
 ```
 
 ```plaintext Terminal Output
@@ -147,9 +119,9 @@ Successfully completing the installation steps above results in an R2R applicati
 ## Ingest a file
 
 ```bash
-python -m r2r.examples.quickstart ingest --client-server-mode
+r2r ingest
 # can be called with additional argument,
-# e.g. `python -m r2r...  --client-server-mode /path/to/your_file`
+# e.g. `r2r ingest /path/to/your_file_1 /path/to/your_file_2 ...`
 ```
 
 ```plaintext
@@ -161,7 +133,7 @@ python -m r2r.examples.quickstart ingest --client-server-mode
 
 
 ```bash
-python -m r2r.examples.quickstart search --query="who was aristotle?" --client-server-mode
+r2r search --query="who was aristotle?" --do-hybrid-search
 ```
 
 ```plaintext
@@ -183,7 +155,7 @@ python -m r2r.examples.quickstart search --query="who was aristotle?" --client-s
 
 
 ```bash
-python -m r2r.examples.quickstart rag --query="who was aristotle?" --client-server-mode
+r2r rag --query="who was aristotle?" --do-hybrid-search
 ```
 
 ```plaintext
@@ -214,7 +186,7 @@ Completion:
 
 
 ```bash
-python -m r2r.examples.quickstart rag --query="who was aristotle?" --client-server-mode --stream
+r2r rag --query="who was aristotle?" --stream --do-hybrid-search
 ```
 
 ```plaintext
