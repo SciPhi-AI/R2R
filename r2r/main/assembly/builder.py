@@ -68,7 +68,7 @@ class R2RBuilder:
         self.parsing_pipe_override: Optional[AsyncPipe] = None
         self.embedding_pipe_override: Optional[AsyncPipe] = None
         self.vector_storage_pipe_override: Optional[AsyncPipe] = None
-        self.search_pipe_override: Optional[AsyncPipe] = None
+        self.vector_search_pipe_override: Optional[AsyncPipe] = None
         self.rag_pipe_override: Optional[AsyncPipe] = None
         self.streaming_rag_pipe_override: Optional[AsyncPipe] = None
         self.eval_pipe_override: Optional[AsyncPipe] = None
@@ -181,7 +181,7 @@ class R2RBuilder:
             parsing_pipe_override=self.parsing_pipe_override,
             embedding_pipe_override=self.embedding_pipe_override,
             vector_storage_pipe_override=self.vector_storage_pipe_override,
-            search_pipe_override=self.search_pipe_override,
+            vector_search_pipe_override=self.vector_search_pipe_override,
             rag_pipe_override=self.rag_pipe_override,
             streaming_rag_pipe_override=self.streaming_rag_pipe_override,
             eval_pipe_override=self.eval_pipe_override,

@@ -214,7 +214,7 @@ class R2RPipeFactory:
         kg_storage_pipe_override: Optional[AsyncPipe] = None,
         kg_agent_pipe_override: Optional[AsyncPipe] = None,
         vector_storage_pipe_override: Optional[AsyncPipe] = None,
-        search_pipe_override: Optional[AsyncPipe] = None,
+        vector_search_pipe_override: Optional[AsyncPipe] = None,
         rag_pipe_override: Optional[AsyncPipe] = None,
         streaming_rag_pipe_override: Optional[AsyncPipe] = None,
         eval_pipe_override: Optional[AsyncPipe] = None,
@@ -235,7 +235,7 @@ class R2RPipeFactory:
             or self.create_kg_agent_pipe(*args, **kwargs),
             vector_storage_pipe=vector_storage_pipe_override
             or self.create_vector_storage_pipe(*args, **kwargs),
-            vector_search_pipe=search_pipe_override
+            vector_search_pipe=vector_search_pipe_override
             or self.create_vector_search_pipe(*args, **kwargs),
             rag_pipe=rag_pipe_override
             or self.create_rag_pipe(*args, **kwargs),
