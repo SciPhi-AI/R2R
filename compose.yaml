@@ -8,31 +8,47 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - PYTHONUNBUFFERED=1
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
+      - POSTGRES_VECS_COLLECTION=${POSTGRES_VECS_COLLECTION:-vecs}
     depends_on:
       - postgres
     networks:
       - r2r-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/health"]
       interval: 10s
       timeout: 5s
       retries: 5
-
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.r2r.rule=PathPrefix(`/api`)"
+      - "traefik.http.services.r2r.loadbalancer.server.port=8000"
+      - "traefik.http.middlewares.r2r-strip-prefix.stripprefix.prefixes=/api"
+      - "traefik.http.middlewares.r2r-add-v1.addprefix.prefix=/v1"
+      - "traefik.http.routers.r2r.middlewares=r2r-strip-prefix,r2r-add-v1,r2r-headers"
+      - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Origin=*"
+      - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Methods=GET,POST,OPTIONS"
+      - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Headers=DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+      - "traefik.http.middlewares.r2r-headers.headers.customresponseheaders.Access-Control-Expose-Headers=Content-Length,Content-Range"
 
   r2r-dashboard:
     image: emrgntcmplxty/r2r-dashboard:latest
-    ports:
-      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://traefik:80/api
     depends_on:
       - r2r
     networks:
       - r2r-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=PathPrefix(`/`)"
+      - "traefik.http.services.dashboard.loadbalancer.server.port=3000"
 
   postgres:
     image: pgvector/pgvector:pg16
@@ -40,10 +56,25 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DBNAME:-postgres}
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - r2r-network
+
+  traefik:
+    image: traefik:v2.9
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--accesslog=true"
+      - "--accesslog.filepath=/var/log/traefik/access.log"
+    ports:
+      - "80:80"
+      - "8080:8080"  # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - r2r-network
 
