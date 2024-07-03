@@ -36,7 +36,7 @@ asyncpg = "^0.29.0"
 redis = "^5.0.4"
 
 # ingestion
-bs4 = "^0.0.2"
+beautifulsoup4 = "^4.12.3"
 openpyxl = "^3.1.2"
 markdown = "^3.6"
 pypdf = "^4.2.0"
