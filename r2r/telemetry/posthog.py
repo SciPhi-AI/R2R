@@ -25,6 +25,7 @@ class PosthogClient:
                 "Initializing anonymized telemetry. To disable, set TELEMETRY_ENABLED=false in your environment."
             )
             posthog.project_api_key = api_key
+            posthog.disable_geoip = False
         else:
             posthog.disabled = True
 
