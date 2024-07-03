@@ -18,7 +18,8 @@ def run_rag_pipeline(query="Who was Aristotle?"):
         rag_generation_config=GenerationConfig(model="gpt-4o"),
     )
 
-    print(f"Final Result:\n\n{result}")
+    print(f"Search Results:\n\n{result.search_results}")
+    print(f"RAG Results:\n\n{result.completion}")
 
 
 if __name__ == "__main__":

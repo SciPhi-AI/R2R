@@ -2,9 +2,7 @@ import fire
 
 from r2r import R2RBuilder, R2RConfig
 from r2r.base.abstractions.llm import GenerationConfig
-from r2r.pipes.retrieval.R2RPipeFactoryWithMultiSearch import (
-    R2RPipeFactoryWithMultiSearch,
-)
+from r2r.main.assembly.factory_extensions import R2RPipeFactoryWithMultiSearch
 
 
 def main(task_prompt_name="hyde", query="Who was aristotle?"):
@@ -27,7 +25,8 @@ def main(task_prompt_name="hyde", query="Who was aristotle?"):
         rag_generation_config=GenerationConfig(model="gpt-3.5-turbo"),
     )
 
-    print(f"Final Result:\n\n{result}")
+    print(f"Search Results:\n\n{result.search_results}")
+    print(f"RAG Results:\n\n{result.completion}")
 
 
 if __name__ == "__main__":
