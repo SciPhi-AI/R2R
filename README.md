@@ -83,6 +83,8 @@ Note: You can override the pgvector collection by setting an environment variabl
 ```bash
 POSTGRES_VECS_COLLECTION=new_vecs docker-compose up -d
 ```
+
+The R2R client must still be installed when using Docker. Install it with `pip install r2r`.
 </details>
 
 # Updates
@@ -93,10 +95,10 @@ Star R2R on GitHub by clicking "Star" in the upper right hand corner of the page
 
 ## Start the R2R server
 <details open>
-<summary><b>Serving with Python</b>&nbsp;🐍 </summary>
+<summary><b>Serving the R2R CLI</b>&nbsp;✈️ </summary>
 
 ```bash
-python -m r2r.examples.quickstart serve --port=8000
+r2r serve --port=8000
 ```
 
 ```plaintext Terminal Output
@@ -117,9 +119,9 @@ Successfully completing the installation steps above results in an R2R applicati
 ## Ingest a file
 
 ```bash
-python -m r2r.examples.quickstart ingest --client-server-mode
+r2r ingest
 # can be called with additional argument,
-# e.g. `python -m r2r...  --client-server-mode /path/to/your_file`
+# e.g. `r2r ingest /path/to/your_file_1 /path/to/your_file_2 ...`
 ```
 
 ```plaintext
@@ -131,7 +133,7 @@ python -m r2r.examples.quickstart ingest --client-server-mode
 
 
 ```bash
-python -m r2r.examples.quickstart search --query="who was aristotle?" --client-server-mode
+r2r search --query="who was aristotle?" --do-hybrid-search
 ```
 
 ```plaintext
@@ -153,7 +155,7 @@ python -m r2r.examples.quickstart search --query="who was aristotle?" --client-s
 
 
 ```bash
-python -m r2r.examples.quickstart rag --query="who was aristotle?" --client-server-mode
+r2r rag --query="who was aristotle?" --do-hybrid-search
 ```
 
 ```plaintext
@@ -184,7 +186,7 @@ Completion:
 
 
 ```bash
-python -m r2r.examples.quickstart rag --query="who was aristotle?" --client-server-mode --stream
+r2r rag --query="who was aristotle?" --stream --do-hybrid-search
 ```
 
 ```plaintext
