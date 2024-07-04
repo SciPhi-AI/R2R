@@ -35,7 +35,7 @@ class RetrievalRouter(BaseRouter):
                 kg_search_settings=request.kg_search_settings
                 or KGSearchSettings(),
                 rag_generation_config=request.rag_generation_config
-                or ,
+                or GenerationConfig(),
             )
 
             if (
