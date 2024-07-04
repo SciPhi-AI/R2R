@@ -54,7 +54,6 @@
     "provider": "local"
   },
   "vector_database": {
-    "provider": "pgvector",
-    "collection": "vector_database"
+    "provider": "pgvector"
   }
 }
