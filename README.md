@@ -63,6 +63,8 @@ First, clone the R2R repository:
 ```bash
 git clone https://github.com/SciPhi-AI/R2R.git
 cd R2R
+# for R2R CLI and Python client
+pip install . 
 ```
 
 Then, run the following command to start all containers:
@@ -71,20 +73,29 @@ For hosted LLMs (e.g., OpenAI):
 ```bash
 # Be sure to set an OpenAI API key
 export OPENAI_API_KEY=sk-...
+export CONFIG_OPTION=default
 docker-compose up -d
 ```
 
 For local LLMs (e.g., Ollama):
 ```bash
-OLLAMA_API_BASE=http://host.docker.internal:11434 CONFIG_OPTION=local_ollama docker-compose up -d
+export OLLAMA_API_BASE=http://host.docker.internal:11434
+export CONFIG_OPTION=local_ollama
+docker-compose up -d
 ```
 
-Note: You can override the pgvector collection by setting an environment variable when calling `docker-compose`. This is useful when switching between different sized embeddings:
+Note: Settings relating to Postgres+pgvector can be overriden by setting the appropriate environment variables before calling `docker-compose`. 
 ```bash
-POSTGRES_VECS_COLLECTION=new_vecs docker-compose up -d
+export POSTGRES_USER=$YOUR_POSTGRES_USER
+export POSTGRES_PASSWORD=$YOUR_POSTGRES_PASSWORD
+export POSTGRES_HOST=$YOUR_POSTGRES_HOST
+export POSTGRES_PORT=$YOUR_POSTGRES_PORT
+export POSTGRES_DBNAME=$YOUR_POSTGRES_DBNAME
+export POSTGRES_VECS_COLLECTION=$MY_VECS_COLLECTION
+docker-compose up -d
 ```
+The `POSTGRES_VECS_COLLECTION` defines the collection where all R2R related tables reside. This collection should be changed when selecting a new embedding model.
 
-The R2R client must still be installed when using Docker. Install it with `pip install r2r`.
 </details>
 
 # Updates
@@ -92,6 +103,13 @@ Star R2R on GitHub by clicking "Star" in the upper right hand corner of the page
 
 
 # R2R Quickstart
+
+## Demo Video
+<div align="center">
+  <a href="https://youtu.be/oZzfi_AUNqo">
+    <img src="https://img.youtube.com/vi/oZzfi_AUNqo/0.jpg" alt="Watch the video">
+  </a>
+</div>
 
 ## Start the R2R server
 <details open>
