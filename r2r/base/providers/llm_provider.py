@@ -25,9 +25,6 @@ class LLMConfig(ProviderConfig):
         if self.provider and self.provider not in self.supported_providers:
             raise ValueError(f"Provider '{self.provider}' is not supported.")
         
-        if not self.generation_config:
-            raise ValueError("Generation config must be set.")
-
     @property
     def supported_providers(self) -> list[str]:
         return ["litellm", "openai"]
