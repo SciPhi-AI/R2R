@@ -50,9 +50,9 @@ class R2RQuickstart:
             config_name = "default"
 
         if config_path:
-            config = R2RConfig.from_json(config_path)
+            self.config = R2RConfig.from_json(config_path)
         else:
-            config = R2RConfig.from_json(
+            self.config = R2RConfig.from_json(
                 R2RBuilder.CONFIG_OPTIONS[config_name]
             )
 
@@ -68,7 +68,7 @@ class R2RQuickstart:
                 f"Running in client-server mode with base_url: {self.base_url}"
             )
         else:
-            self.app = R2R(config=config)
+            self.app = R2R(config=self.config)
             logger.info("Running locally")
 
         root_path = os.path.dirname(os.path.abspath(__file__))
@@ -354,7 +354,6 @@ class R2RQuickstart:
             if rag_generation_config
             else GenerationConfig(stream=stream)
         )
-
         if hasattr(self, "client"):
             response = self.client.rag(
                 query=query,
@@ -589,8 +588,8 @@ class R2RQuickstart:
         print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
         print(response)
 
-    def serve(self, host: str = "0.0.0.0", port: int = 8000):
-        self.app.serve(host, port)
+    def serve(self, host: str = "0.0.0.0", port: int = 8000, reload: bool = False):
+        self.app.serve(host, port, reload)
 
     def get_app(self):
         return self.app.app.app
