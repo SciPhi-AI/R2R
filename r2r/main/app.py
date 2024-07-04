@@ -45,6 +45,7 @@ class R2RApp:
             allow_headers=["*"],
         )
 
-    def serve(self, host: str = "0.0.0.0", port: int = 8000, reload = False):
+    def serve(self, host: str = "0.0.0.0", port: int = 8000):
         import uvicorn
+
         uvicorn.run(self.app, host=host, port=port)

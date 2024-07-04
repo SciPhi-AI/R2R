@@ -72,11 +72,10 @@ def cli(ctx, config_path, config_name, client_server_mode, base_url):
 @cli.command()
 @click.option("--host", default="0.0.0.0", help="Host to run the server on")
 @click.option("--port", default=8000, help="Port to run the server on")
-@click.option("--reload", default=False, help="Reload the server on change")
 @click.pass_obj
-def serve(obj, host, port, reload):
+def serve(obj, host, port):
     """Start the R2R server."""
-    obj.serve(host, port, reload)
+    obj.serve(host, port)
 
 
 @cli.command()

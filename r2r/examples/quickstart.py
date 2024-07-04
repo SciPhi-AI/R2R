@@ -588,8 +588,8 @@ class R2RQuickstart:
         print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
         print(response)
 
-    def serve(self, host: str = "0.0.0.0", port: int = 8000, reload: bool = False):
-        self.app.serve(host, port, reload)
+    def serve(self, host: str = "0.0.0.0", port: int = 8000):
+        self.app.serve(host, port)
 
     def get_app(self):
         return self.app.app.app
