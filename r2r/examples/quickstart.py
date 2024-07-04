@@ -50,9 +50,9 @@ class R2RQuickstart:
             config_name = "default"
 
         if config_path:
-            config = R2RConfig.from_json(config_path)
+            self.config = R2RConfig.from_json(config_path)
         else:
-            config = R2RConfig.from_json(
+            self.config = R2RConfig.from_json(
                 R2RBuilder.CONFIG_OPTIONS[config_name]
             )
 
@@ -68,7 +68,7 @@ class R2RQuickstart:
                 f"Running in client-server mode with base_url: {self.base_url}"
             )
         else:
-            self.app = R2R(config=config)
+            self.app = R2R(config=self.config)
             logger.info("Running locally")
 
         root_path = os.path.dirname(os.path.abspath(__file__))
@@ -287,7 +287,7 @@ class R2RQuickstart:
         kg_agent_generation_config = (
             GenerationConfig(**kg_agent_generation_config)
             if kg_agent_generation_config
-            else GenerationConfig(model="gpt-4o")
+            else self.config.completions.generation_config
         )
 
         t0 = time.time()
@@ -346,15 +346,14 @@ class R2RQuickstart:
         kg_agent_generation_config = (
             GenerationConfig(**kg_agent_generation_config)
             if kg_agent_generation_config
-            else GenerationConfig(model="gpt-4o")
+            else self.config.completions.generation_config
         )
 
         rag_generation_config = (
             GenerationConfig(**rag_generation_config, stream=stream)
             if rag_generation_config
-            else GenerationConfig(model="gpt-4o", stream=stream)
+            else self.config.completions.generation_config
         )
-
         if hasattr(self, "client"):
             response = self.client.rag(
                 query=query,
@@ -589,8 +588,8 @@ class R2RQuickstart:
         print(f"Time taken to get analytics: {t1-t0:.2f} seconds")
         print(response)
 
-    def serve(self, host: str = "0.0.0.0", port: int = 8000):
-        self.app.serve(host, port)
+    def serve(self, host: str = "0.0.0.0", port: int = 8000, reload: bool = False):
+        self.app.serve(host, port, reload)
 
     def get_app(self):
         return self.app.app.app
