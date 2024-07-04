@@ -50,9 +50,9 @@ class R2RQuickstart:
             config_name = "default"
 
         if config_path:
-            self.config = R2RConfig.from_json(config_path)
+            config = R2RConfig.from_json(config_path)
         else:
-            self.config = R2RConfig.from_json(
+            config = R2RConfig.from_json(
                 R2RBuilder.CONFIG_OPTIONS[config_name]
             )
 
@@ -68,7 +68,7 @@ class R2RQuickstart:
                 f"Running in client-server mode with base_url: {self.base_url}"
             )
         else:
-            self.app = R2R(config=self.config)
+            self.app = R2R(config=config)
             logger.info("Running locally")
 
         root_path = os.path.dirname(os.path.abspath(__file__))
