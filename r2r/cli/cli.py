@@ -16,6 +16,7 @@ from r2r import (
 )
 from r2r.base import (
     AnalysisTypes,
+    Document,
     FilterCriteria,
     KGSearchSettings,
     VectorSearchSettings,
@@ -62,6 +63,9 @@ def cli(ctx, config_path, config_name, client_server_mode, base_url):
         config = R2RConfig.from_json(config_path)
     else:
         config = R2RConfig.from_json(R2RBuilder.CONFIG_OPTIONS[config_name])
+
+    print("config.embedding = ", config.embedding)
+
     if client_server_mode and ctx.invoked_subcommand != "serve":
         ctx.obj = R2RClient(base_url)
     else:
@@ -80,74 +84,10 @@ def serve(obj, host, port):
 @cli.command()
 @click.argument("file_paths", nargs=-1)
 @click.option("--user-ids", multiple=True, help="User IDs for ingestion")
-@click.option("--no-media", is_flag=True, help="Exclude media files")
-@click.option("--all-sample-files", is_flag=True, help="Use all sample files?")
 @click.pass_obj
-def ingest(obj, file_paths, user_ids, no_media, all_sample_files):
+def ingest_files(obj, file_paths, user_ids):
     """Ingest files into R2R."""
     file_paths = list(file_paths)
-    if not file_paths:
-        # TODO - Relocate this logic for the quickstart / tutorial
-        root_path = os.path.dirname(os.path.abspath(__file__))
-        if not all_sample_files:
-            file_paths = [
-                os.path.join(
-                    root_path, "..", "examples", "data", "aristotle.txt"
-                )
-            ]
-        else:
-            file_paths = [
-                os.path.join(
-                    root_path, "..", "examples", "data", "aristotle.txt"
-                ),
-                os.path.join(root_path, "..", "examples", "data", "got.txt"),
-                os.path.join(
-                    root_path, "..", "examples", "data", "screen_shot.png"
-                ),
-                os.path.join(
-                    root_path, "..", "examples", "data", "pg_essay_1.html"
-                ),
-                os.path.join(
-                    root_path, "..", "examples", "data", "pg_essay_2.html"
-                ),
-                os.path.join(
-                    root_path, "..", "examples", "data", "pg_essay_3.html"
-                ),
-                os.path.join(
-                    root_path, "..", "examples", "data", "pg_essay_4.html"
-                ),
-                os.path.join(
-                    root_path, "..", "examples", "data", "pg_essay_5.html"
-                ),
-                os.path.join(
-                    root_path, "..", "examples", "data", "lyft_2021.pdf"
-                ),
-                os.path.join(
-                    root_path, "..", "examples", "data", "uber_2021.pdf"
-                ),
-                os.path.join(
-                    root_path, "..", "examples", "data", "sample.mp3"
-                ),
-                os.path.join(
-                    root_path, "..", "examples", "data", "sample2.mp3"
-                ),
-            ]
-            if not user_ids and all_sample_files:  # tutorial mode
-                # TODO - Relocate this logic for the quickstart / tutorial
-                user_ids = [
-                    "063edaf8-3e63-4cb9-a4d6-a855f36376c3",
-                    "45c3f5a8-bcbe-43b1-9b20-51c07fd79f14",
-                    "c6c23d85-6217-4caa-b391-91ec0021a000",
-                    None,
-                ] * 3
-
-    if no_media:
-        excluded_types = ["jpeg", "jpg", "png", "svg", "mp3", "mp4"]
-        file_paths = [
-            file_path
-            for file_path in file_paths
-            if file_path.split(".")[-1] not in excluded_types
-        ]
 
     ids = [
         generate_id_from_label(file_path.split(os.path.sep)[-1])
@@ -191,52 +131,38 @@ def ingest(obj, file_paths, user_ids, no_media, all_sample_files):
 
 
 @cli.command()
-@click.argument("file_tuples", nargs=-1)
+@click.argument("document-id")
+@click.argument("new-file-path")
 @click.pass_obj
-def update_documents(obj, file_tuples):
-    """Update existing documents in R2R."""
-    new_files = [
-        UploadFile(
-            filename=new_file,
-            file=open(new_file, "rb"),
-        )
-        for old_file, new_file in file_tuples
-    ]
-
-    for file in new_files:
-        file.file.seek(0, 2)
-        file.size = file.file.tell()
-        file.file.seek(0)
-
-    metadatas = [
-        {
-            "title": old_file,
-        }
-        for old_file, new_file in file_tuples
-    ]
+def update_files(obj, document_id, new_file_path):
+    """Update a file in R2R."""
     t0 = time.time()
 
-    if isinstance(obj, R2RClient):
-        response = obj.update_files(
-            metadatas=metadatas,
-            files=[new for old, new in file_tuples],
-            document_ids=[
-                generate_id_from_label(old_file.split(os.path.sep)[-1])
-                for old_file, new_file in file_tuples
-            ],
-            monitor=True,
+    try:
+        with open(new_file_path, "rb") as f:
+            data = f.read()
+
+        new_document = Document(
+            id=document_id,
+            data=data,
+            type=new_file_path.split(".")[-1],
+            metadata={
+                "title": new_file_path.split(os.path.sep)[-1],
+            },
         )
-    else:
-        response = obj.update_files(
-            files=new_files,
-            document_ids=[
-                generate_id_from_label(old_file.split(os.path.sep)[-1])
-                for old_file, new_file in file_tuples
-            ],
-        )
-    t1 = time.time()
-    click.echo(f"Time taken to update files: {t1-t0:.2f} seconds")
-    click.echo(response)
+
+        if isinstance(obj, R2RClient):
+            response = obj.update_documents([new_document])
+        else:
+            response = obj.update_documents([new_document])
+
+        t1 = time.time()
+        click.echo(f"Time taken to update file: {t1-t0:.2f} seconds")
+        click.echo(response)
+    except FileNotFoundError:
+        click.echo(f"Error: File not found - {new_file_path}")
+    except Exception as e:
+        click.echo(f"Error updating file: {str(e)}")
 
 
 @cli.command()
@@ -326,8 +252,8 @@ def search(
 @click.option(
     "--use-kg-search", is_flag=True, help="Use knowledge graph search"
 )
-@click.option("--kg-agent-model", default=None, help="Model for KG agent")
-@click.option("--rag-model", default=None, help="Model to use for RAG")
+@click.option("--kg-agent-model", default="gpt-4o", help="Model for KG agent")
+@click.option("--rag-model", default="gpt-4o", help="Model to use for RAG")
 @click.option("--stream", is_flag=True, help="Stream the RAG response")
 @click.pass_obj
 def rag(
@@ -400,54 +326,6 @@ def rag(
             click.echo(
                 f"\nTime taken to stream RAG response: {t1-t0:.2f} seconds"
             )
-
-
-@cli.command()
-@click.option("--query", help="The query to evaluate")
-@click.option("--context", help="The context for evaluation")
-@click.option("--completion", help="The completion to evaluate")
-@click.option(
-    "--eval-model", default="gpt-3.5-turbo", help="Model for evaluation"
-)
-@click.pass_obj
-def evaluate(obj, query, context, completion, eval_model):
-    """Evaluate a RAG response."""
-    if not query:
-        query = "What is the meaning of life?"
-    if not context:
-        context = """Search Results:
-        1. The meaning of life is 42.
-        2. The car is red.
-        3. The meaning of life is to help others.
-        4. The car is blue.
-        5. The meaning of life is to learn and grow.
-        6. The car is green.
-        7. The meaning of life is to make a difference.
-        8. The car is yellow.
-        9. The meaning of life is to enjoy the journey.
-        10. The car is black.
-        """
-    if not completion:
-        completion = "The meaning of life is to help others, learn and grow, and to make a difference."
-
-    t0 = time.time()
-    if isinstance(obj, R2RClient):
-        response = obj.evaluate(
-            query=query,
-            context=context,
-            completion=completion,
-        )
-    else:
-        response = obj.evaluate(
-            query=query,
-            context=context,
-            completion=completion,
-            eval_generation_config=GenerationConfig(model=eval_model),
-        )
-
-    t1 = time.time()
-    click.echo(f"Time taken to evaluate: {t1-t0:.2f} seconds")
-    click.echo(response)
 
 
 @cli.command()
@@ -582,6 +460,34 @@ def document_chunks(obj, document_id):
         results = results["results"]
     for chunk in results:
         click.echo(chunk)
+
+
+@cli.command()
+@click.pass_obj
+def ingest_sample_file(obj):
+    from r2r.examples.scripts.sample_data_ingester import SampleDataIngestor
+
+    """Ingest the first sample file into R2R."""
+    t0 = time.time()
+    sample_ingestor = SampleDataIngestor()
+    response = sample_ingestor.ingest_sample_file()
+    t1 = time.time()
+    click.echo(f"Time taken to ingest sample file: {t1-t0:.2f} seconds")
+    click.echo(response)
+
+
+@cli.command()
+@click.pass_obj
+def ingest_sample_files(obj):
+    """Ingest all sample files into R2R."""
+    from r2r.examples.scripts.sample_data_ingester import SampleDataIngestor
+
+    t0 = time.time()
+    sample_ingestor = SampleDataIngestor()
+    response = sample_ingestor.ingest_sample_files()
+    t1 = time.time()
+    click.echo(f"Time taken to ingest all sample files: {t1-t0:.2f} seconds")
+    click.echo(response)
 
 
 def main():
