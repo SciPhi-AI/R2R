@@ -12,9 +12,10 @@ RUN pip install --no-cache-dir poetry
 # Copy the dependencies files
 COPY pyproject.toml poetry.lock* ./
 
-# Install the dependencies
+# Install the dependencies, including gunicorn and uvicorn
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-dev --no-root
+    && poetry install --no-dev --no-root \
+    && pip install --no-cache-dir gunicorn uvicorn
 
 # Create the final image
 FROM python:3.10-slim
@@ -28,9 +29,6 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy the application and config
 COPY r2r /app/r2r
 COPY config.json /app/config.json
-
-# Install gunicorn and uvicorn
-RUN pip install --no-cache-dir gunicorn uvicorn
 
 # Expose the port
 EXPOSE 8000
