@@ -5,6 +5,7 @@ import time
 from typing import Literal, Optional, Union
 
 from sqlalchemy import exc, text
+from sqlalchemy.engine.url import make_url
 
 from r2r.base import (
     DocumentInfo,
@@ -29,69 +30,90 @@ class PGVectorDB(VectorDBProvider):
             raise ValueError(
                 f"Error, PGVectorDB requires the vecs library. Please run `pip install vecs`."
             )
-        user = self.config.extra_fields.get("user", None) or os.getenv(
-            "POSTGRES_USER"
-        )
-        if not user:
-            raise ValueError(
-                "Error, please set a valid POSTGRES_USER environment variable or set a 'user' in the 'vector_database' settings of your `config.json`."
-            )
-        password = self.config.extra_fields.get("password", None) or os.getenv(
-            "POSTGRES_PASSWORD"
-        )
-        if not password:
-            raise ValueError(
-                "Error, please set a valid POSTGRES_PASSWORD environment variable or set a 'password' in the 'vector_database' settings of your `config.json`."
-            )
 
-        host = self.config.extra_fields.get("host", None) or os.getenv(
-            "POSTGRES_HOST"
-        )
-        if not host:
-            raise ValueError(
-                "Error, please set a valid POSTGRES_HOST environment variable or set a 'host' in the 'vector_database' settings of your `config.json`."
-            )
+        # Check if a complete Postgres URI is provided
+        postgres_uri = self.config.extra_fields.get(
+            "postgres_uri"
+        ) or os.getenv("POSTGRES_URI")
 
-        port = self.config.extra_fields.get("port", None) or os.getenv(
-            "POSTGRES_PORT"
-        )
-        if not port:
-            raise ValueError(
-                "Error, please set a valid POSTGRES_PORT environment variable or set a 'port' in the 'vector_database' settings of your `config.json`."
+        if postgres_uri:
+            # Log loudly that Postgres URI is being used
+            logger.warning("=" * 50)
+            logger.warning(
+                "ATTENTION: Using provided Postgres URI for connection"
             )
+            logger.warning("=" * 50)
 
-        db_name = self.config.extra_fields.get("db_name", None) or os.getenv(
-            "POSTGRES_DBNAME"
-        )
-        if not db_name:
-            raise ValueError(
-                "Error, please set a valid POSTGRES_DBNAME environment variable or set a 'db_name' in the 'vector_database' settings of your `config.json`."
-            )
+            # Validate and use the provided URI
+            try:
+                parsed_uri = make_url(postgres_uri)
+                if not all([parsed_uri.username, parsed_uri.database]):
+                    raise ValueError(
+                        "The provided Postgres URI is missing required components."
+                    )
+                DB_CONNECTION = postgres_uri
 
-        collection = self.config.extra_fields.get(
-            "vecs_collection", None
-        ) or os.getenv("POSTGRES_VECS_COLLECTION")
-        if not collection:
-            raise ValueError(
-                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'collection' in the 'vector_database' settings of your `config.json`."
+                # Log the sanitized URI (without password)
+                sanitized_uri = parsed_uri.set(password="*****")
+                logger.info(f"Connecting using URI: {sanitized_uri}")
+            except Exception as e:
+                raise ValueError(f"Invalid Postgres URI provided: {e}")
+        else:
+            # Fall back to existing logic for individual connection parameters
+            user = self.config.extra_fields.get("user", None) or os.getenv(
+                "POSTGRES_USER"
             )
+            password = self.config.extra_fields.get(
+                "password", None
+            ) or os.getenv("POSTGRES_PASSWORD")
+            host = self.config.extra_fields.get("host", None) or os.getenv(
+                "POSTGRES_HOST"
+            )
+            port = self.config.extra_fields.get("port", None) or os.getenv(
+                "POSTGRES_PORT"
+            )
+            db_name = self.config.extra_fields.get(
+                "db_name", None
+            ) or os.getenv("POSTGRES_DBNAME")
 
-        if not all([user, password, host, port, db_name, collection]):
-            raise ValueError(
-                "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DBNAME, and POSTGRES_VECS_COLLECTION environment variables to use pgvector database."
-            )
+            if not all([user, password, host, db_name]):
+                raise ValueError(
+                    "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_DBNAME environment variables or provide them in the config."
+                )
+
+            # Check if it's a Unix socket connection
+            if host.startswith("/") and not port:
+                DB_CONNECTION = (
+                    f"postgresql://{user}:{password}@/{db_name}?host={host}"
+                )
+                logger.info("Using Unix socket connection")
+            else:
+                DB_CONNECTION = (
+                    f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
+                )
+                logger.info("Using TCP connection")
+
+        # The rest of the initialization remains the same
         try:
-            DB_CONNECTION = (
-                f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
-            )
             self.vx: Client = r2r.vecs.create_client(DB_CONNECTION)
         except Exception as e:
             raise ValueError(
                 f"Error {e} occurred while attempting to connect to the pgvector provider with {DB_CONNECTION}."
             )
-        self.collection_name = collection
+
+        self.collection_name = self.config.extra_fields.get(
+            "vecs_collection"
+        ) or os.getenv("POSTGRES_VECS_COLLECTION")
+        if not self.collection_name:
+            raise ValueError(
+                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'vecs_collection' in the 'vector_database' settings of your `config.json`."
+            )
+
         self.collection: Optional[Collection] = None
-        self.config: VectorDBConfig = config
+
+        logger.info(
+            f"Successfully initialized PGVectorDB with collection: {self.collection_name}"
+        )
 
     def initialize_collection(self, dimension: int) -> None:
         self.collection = self.vx.get_or_create_collection(
