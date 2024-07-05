@@ -74,7 +74,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
                     f"Embedding generation failed for text: {task['text'][:50]}... Error: {str(e)}"
                 )
                 raise EmbeddingFailedException(
-                    f"Failed to generate embedding. Error: {str(e)}"
+                    f"Failed to generate atleast one embedding. Error: {str(e)}"
                 ) from e
 
     def get_embedding(
@@ -125,9 +125,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             logger.error(f"Embedding generation failed: {str(e)}")
             raise
         finally:
-            print("joining.....")
             await self.request_queue.join()
-            print("cancelling..")
             # Check if any result is an exception and raise it
             for result in results:
                 if isinstance(result, Exception):

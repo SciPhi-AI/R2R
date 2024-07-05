@@ -1,8 +1,7 @@
-import asyncio
 import copy
 import logging
 import uuid
-from typing import Any, AsyncGenerator, List, Optional, Union
+from typing import Any, AsyncGenerator, Optional, Union
 
 from r2r.base import (
     AsyncState,
@@ -12,21 +11,15 @@ from r2r.base import (
     FragmentType,
     KVLoggingSingleton,
     PipeType,
+    R2RDocumentProcessingError,
     TextSplitter,
     Vector,
     VectorEntry,
     generate_id_from_label,
 )
-from r2r.base.abstractions.exception import R2RDocumentProcessingError
 from r2r.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
-
-
-class EmbeddingError(Exception):
-    """Exception raised when embedding fails."""
-
-    pass
 
 
 class EmbeddingPipe(AsyncPipe):
@@ -51,9 +44,6 @@ class EmbeddingPipe(AsyncPipe):
         *args,
         **kwargs,
     ):
-        """
-        Initializes the embedding pipe with necessary components and configurations.
-        """
         super().__init__(
             pipe_logger=pipe_logger,
             type=type,
@@ -69,9 +59,6 @@ class EmbeddingPipe(AsyncPipe):
     async def fragment(
         self, extraction: Extraction, run_id: uuid.UUID
     ) -> AsyncGenerator[Fragment, None]:
-        """
-        Splits text into manageable chunks for embedding.
-        """
         if not isinstance(extraction, Extraction):
             raise ValueError(
                 f"Expected an Extraction, but received {type(extraction)}."
@@ -96,39 +83,15 @@ class EmbeddingPipe(AsyncPipe):
             yield fragment
             iteration += 1
 
-    async def transform_fragments(
-        self, fragments: list[Fragment], metadatas: list[dict]
-    ) -> AsyncGenerator[Fragment, None]:
-        """
-        Transforms text chunks based on their metadata, e.g., adding prefixes.
-        """
-        async for fragment, metadata in zip(fragments, metadatas):
-            if "chunk_prefix" in metadata:
-                prefix = metadata.pop("chunk_prefix")
-                fragment.data = f"{prefix}\n{fragment.data}"
-            yield fragment
-
     async def embed(self, fragments: list[Fragment]) -> list[float]:
-        try:
-            return await self.embedding_provider.async_get_embeddings(
-                [fragment.data for fragment in fragments],
-                EmbeddingProvider.PipeStage.BASE,
-            )
-        except Exception as e:
-            logger.error(f"Embedding failed: {str(e)}")
-            # TODO - This doesn't yield all documents in the batch
-            # ensure all documents are yielded
-            document_id = fragments[0].document_id
-            raise R2RDocumentProcessingError(
-                document_id, f"Failed to generate embeddings: {str(e)}"
-            )
+        return await self.embedding_provider.async_get_embeddings(
+            [fragment.data for fragment in fragments],
+            EmbeddingProvider.PipeStage.BASE,
+        )
 
     async def _process_batch(
         self, fragment_batch: list[Fragment]
     ) -> list[VectorEntry]:
-        """
-        Embeds a batch of fragments and yields vector entries.
-        """
         vectors = await self.embed(fragment_batch)
         return [
             VectorEntry(
@@ -144,22 +107,6 @@ class EmbeddingPipe(AsyncPipe):
             for raw_vector, fragment in zip(vectors, fragment_batch)
         ]
 
-    async def _process_and_enqueue_batch(
-        self, fragment_batch: List[Fragment], vector_entry_queue: asyncio.Queue
-    ):
-        try:
-            batch_result = await self._process_batch(fragment_batch)
-            for vector_entry in batch_result:
-                await vector_entry_queue.put(vector_entry)
-        except R2RDocumentProcessingError as e:
-            logger.error(f"Embedding error in batch: {e}")
-            await vector_entry_queue.put(e)
-        except Exception as e:
-            logger.error(f"Unexpected error processing batch: {e}")
-            await vector_entry_queue.put(e)
-        finally:
-            await vector_entry_queue.put(None)  # Signal completion
-
     async def _run_logic(
         self,
         input: Input,
@@ -167,34 +114,24 @@ class EmbeddingPipe(AsyncPipe):
         run_id: uuid.UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[
-        Union[R2RDocumentProcessingError, VectorEntry, Exception], None
-    ]:
-        """
-        Executes the embedding pipe: chunking, transforming, embedding, and storing documents.
-        """
-        vector_entry_queue = asyncio.Queue()
-        fragment_batch = []
-        active_tasks = 0
-
+    ) -> AsyncGenerator[Union[R2RDocumentProcessingError, VectorEntry], None]:
         fragment_info = {}
         async for extraction in input.message:
             if isinstance(extraction, R2RDocumentProcessingError):
                 yield extraction
                 continue
 
+            fragment_batch = []
             async for fragment in self.fragment(extraction, run_id):
                 if extraction.document_id in fragment_info:
                     fragment_info[extraction.document_id] += 1
                 else:
-                    fragment_info[extraction.document_id] = 0  # Start with 0
+                    fragment_info[extraction.document_id] = 0
                 fragment.metadata["chunk_order"] = fragment_info[
                     extraction.document_id
                 ]
 
                 version = fragment.metadata.get("version", "v0")
-
-                # Ensure fragment ID is set correctly
                 if not fragment.id:
                     fragment.id = generate_id_from_label(
                         f"{extraction.id}-{fragment_info[extraction.document_id]}-{version}"
@@ -202,74 +139,30 @@ class EmbeddingPipe(AsyncPipe):
 
                 fragment_batch.append(fragment)
                 if len(fragment_batch) >= self.embedding_batch_size:
-                    asyncio.create_task(
-                        self._process_and_enqueue_batch(
-                            fragment_batch.copy(), vector_entry_queue
+                    try:
+                        batch_result = await self._process_batch(
+                            fragment_batch
                         )
-                    )
-                    active_tasks += 1
+                        for vector_entry in batch_result:
+                            yield vector_entry
+                    except Exception as e:
+                        logger.error(f"Error processing batch: {e}")
+                        yield R2RDocumentProcessingError(
+                            str(e), extraction.document_id
+                        )
                     fragment_batch.clear()
+
+            if fragment_batch:
+                try:
+                    batch_result = await self._process_batch(fragment_batch)
+                    for vector_entry in batch_result:
+                        yield vector_entry
+                except Exception as e:
+                    logger.error(f"Error processing batch: {e}")
+                    yield R2RDocumentProcessingError(
+                        str(e), extraction.document_id
+                    )
 
         logger.debug(
             f"Fragmented the input document ids into counts as shown: {fragment_info}"
         )
-
-        if fragment_batch:
-            asyncio.create_task(
-                self._process_and_enqueue_batch(
-                    fragment_batch.copy(), vector_entry_queue
-                )
-            )
-            active_tasks += 1
-
-        while active_tasks > 0:
-            vector_entry = await vector_entry_queue.get()
-            if vector_entry is None:  # Check for termination signal
-                active_tasks -= 1
-            elif isinstance(vector_entry, Exception):
-                yield vector_entry  # Propagate the exception
-                active_tasks -= 1
-            else:
-                yield vector_entry
-
-    def get_embedding(
-        self,
-        text: str,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-    ) -> List[float]:
-        return self.embedding_provider.get_embedding(text, stage)
-
-    def get_embeddings(
-        self,
-        texts: List[str],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-    ) -> List[List[float]]:
-        return self.embedding_provider.get_embeddings(texts, stage)
-
-    async def async_get_embedding(
-        self,
-        text: str,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-    ) -> List[float]:
-        return await self.embedding_provider.async_get_embedding(text, stage)
-
-    async def async_get_embeddings(
-        self,
-        texts: List[str],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-    ) -> List[List[float]]:
-        return await self.embedding_provider.async_get_embeddings(texts, stage)
-
-    def rerank(
-        self,
-        query: str,
-        results: List[VectorEntry],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
-        limit: int = 10,
-    ) -> List[VectorEntry]:
-        return self.embedding_provider.rerank(query, results, stage, limit)
-
-    def tokenize_string(
-        self, text: str, model: str, stage: EmbeddingProvider.PipeStage
-    ) -> List[int]:
-        return self.embedding_provider.tokenize_string(text, model, stage)

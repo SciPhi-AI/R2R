@@ -411,7 +411,6 @@ class PGVectorDB(VectorDBProvider):
                 ]
             }
 
-        print(f"Deleting with filters: {filters}")
         return self.collection.delete(filters=filters)
 
     def get_metadatas(
