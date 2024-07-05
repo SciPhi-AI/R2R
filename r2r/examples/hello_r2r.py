@@ -1,6 +1,6 @@
 from r2r import R2R, Document, GenerationConfig
 
-app = R2R()  # You may pass a custom configuration to `R2R`
+app = R2R()  # You may pass a custom configuration to `R2R` with config=...
 
 app.ingest_documents(
     [
