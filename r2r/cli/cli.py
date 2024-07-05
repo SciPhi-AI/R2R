@@ -62,11 +62,10 @@ def cli(ctx, config_path, config_name, client_server_mode, base_url):
         config = R2RConfig.from_json(config_path)
     else:
         config = R2RConfig.from_json(R2RBuilder.CONFIG_OPTIONS[config_name])
-
     if client_server_mode and ctx.invoked_subcommand != "serve":
         ctx.obj = R2RClient(base_url)
     else:
-        ctx.obj = R2R(config)
+        ctx.obj = R2R(config=config)
 
 
 @cli.command()
