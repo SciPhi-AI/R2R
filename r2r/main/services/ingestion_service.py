@@ -17,8 +17,10 @@ from r2r.base import (
     increment_version,
     to_async_generator,
 )
-from r2r.main.abstractions import R2RException
-from r2r.pipes.ingestion.parsing_pipe import DocumentProcessingError
+from r2r.base.abstractions.exception import (
+    R2RDocumentProcessingError,
+    R2RException,
+)
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RPipelines, R2RProviders
@@ -157,9 +159,9 @@ class IngestionService(Service):
                 k: v for k, v in ingestion_results["embedding_pipeline_output"]
             }
             for _, error in results.items():
-                if isinstance(error, DocumentProcessingError):
+                if isinstance(error, R2RDocumentProcessingError):
                     logger.error(
-                        f"Error processing document with ID {error.document_id}: {error.error_message}"
+                        f"Error processing document with ID {error.document_id}: {error.message}"
                     )
                     failed_ids.append(error.document_id)
 
@@ -412,7 +414,7 @@ class IngestionService(Service):
                 *args,
                 **kwargs,
             )
-
+            print("ingestion_results = ", ingestion_results)
             skipped_ids = [ele[0] for ele in skipped_documents]
             failed_ids = []
 
@@ -423,9 +425,9 @@ class IngestionService(Service):
                     for k, v in ingestion_results["embedding_pipeline_output"]
                 }
                 for _, error in results.items():
-                    if isinstance(error, DocumentProcessingError):
+                    if isinstance(error, R2RDocumentProcessingError):
                         logger.error(
-                            f"Error processing document with ID {error.document_id}: {error.error_message}"
+                            f"Error processing document with ID {error.document_id}: {error.message}"
                         )
                         failed_ids.append(error.document_id)
 

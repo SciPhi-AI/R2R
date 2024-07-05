@@ -9,9 +9,9 @@ from r2r.base import (
     manage_run,
     to_async_generator,
 )
+from r2r.base.abstractions.exception import R2RException
 from r2r.base.abstractions.llm import GenerationConfig
 from r2r.base.abstractions.search import KGSearchSettings, VectorSearchSettings
-from r2r.main.abstractions import R2RException
 from r2r.pipes import EvalPipe
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
