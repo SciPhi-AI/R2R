@@ -4,7 +4,23 @@
     "max_file_size_in_mb": 32
   },
   "completions": {
-    "provider": "litellm"
+    "provider": "litellm",
+    "generation_config": {
+      "model": "gpt-3.5-turbo",
+      "temperature": 0.1,
+      "top_p": 1.0,
+      "top_k": 100,
+      "max_tokens_to_sample": 1024,
+      "stream": false,
+      "functions": null,
+      "skip_special_tokens": false,
+      "stop_token": null,
+      "num_beams": 1,
+      "do_sample": true,
+      "generate_with_chat": false,
+      "add_generation_kwargs": {},
+      "api_base": null
+    }
   },
   "embedding": {
     "provider": "openai",

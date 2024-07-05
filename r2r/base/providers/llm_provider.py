@@ -16,6 +16,7 @@ class LLMConfig(ProviderConfig):
     """A base LLM config class"""
 
     provider: Optional[str] = None
+    generation_config: Optional[GenerationConfig] = None
 
     def validate(self) -> None:
         if not self.provider:
@@ -23,7 +24,7 @@ class LLMConfig(ProviderConfig):
 
         if self.provider and self.provider not in self.supported_providers:
             raise ValueError(f"Provider '{self.provider}' is not supported.")
-
+        
     @property
     def supported_providers(self) -> list[str]:
         return ["litellm", "openai"]

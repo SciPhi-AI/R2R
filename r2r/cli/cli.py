@@ -327,8 +327,8 @@ def search(
 @click.option(
     "--use-kg-search", is_flag=True, help="Use knowledge graph search"
 )
-@click.option("--kg-agent-model", default="gpt-4o", help="Model for KG agent")
-@click.option("--rag-model", default="gpt-4o", help="Model to use for RAG")
+@click.option("--kg-agent-model", default=None, help="Model for KG agent")
+@click.option("--rag-model", default=None, help="Model to use for RAG")
 @click.option("--stream", is_flag=True, help="Stream the RAG response")
 @click.pass_obj
 def rag(

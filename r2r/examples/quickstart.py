@@ -287,7 +287,7 @@ class R2RQuickstart:
         kg_agent_generation_config = (
             GenerationConfig(**kg_agent_generation_config)
             if kg_agent_generation_config
-            else GenerationConfig(model="gpt-4o")
+            else GenerationConfig()
         )
 
         t0 = time.time()
@@ -346,15 +346,14 @@ class R2RQuickstart:
         kg_agent_generation_config = (
             GenerationConfig(**kg_agent_generation_config)
             if kg_agent_generation_config
-            else GenerationConfig(model="gpt-4o")
+            else GenerationConfig()
         )
 
         rag_generation_config = (
             GenerationConfig(**rag_generation_config, stream=stream)
             if rag_generation_config
-            else GenerationConfig(model="gpt-4o", stream=stream)
+            else GenerationConfig(stream=stream)
         )
-
         if hasattr(self, "client"):
             response = self.client.rag(
                 query=query,
