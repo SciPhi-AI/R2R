@@ -73,7 +73,7 @@ class PGVectorDB(VectorDBProvider):
         ) or os.getenv("POSTGRES_VECS_COLLECTION")
         if not collection:
             raise ValueError(
-                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'collection' in the 'vector_database' settings of your `config.json`."
+                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'vecs_collection' in the 'vector_database' settings of your `config.json`."
             )
 
         if not all([user, password, host, port, db_name, collection]):
