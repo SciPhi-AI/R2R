@@ -431,12 +431,15 @@ class IngestionService(Service):
                         )
                         failed_ids.append(error.document_id)
 
+            print("failed_ids = ", failed_ids)
+            print("skipped_ids = ", skipped_ids)
             documents_to_upsert = [
                 document_info
                 for document_info in document_infos
                 if document_info.document_id not in skipped_ids
                 and document_info.document_id not in failed_ids
             ]
+            print("documents_to_upsert = ", documents_to_upsert)
             if len(documents_to_upsert) > 0:
                 self.providers.vector_db.upsert_documents_overview(
                     documents_to_upsert

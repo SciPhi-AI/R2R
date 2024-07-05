@@ -86,7 +86,6 @@ class VectorStoragePipe(AsyncPipe):
         document_counts = {}
         async for msg in input.message:
             if isinstance(msg, R2RDocumentProcessingError):
-                print("yielding error = ", msg)
                 yield (msg.document_id, msg)
                 continue
 

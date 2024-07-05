@@ -11,6 +11,6 @@ class R2RException(Exception):
 
 
 class R2RDocumentProcessingError(R2RException):
-    def __init__(self, document_id, error_message):
+    def __init__(self, error_message, document_id):
         self.document_id = document_id
         super().__init__(error_message, 400, {"document_id": document_id})
