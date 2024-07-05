@@ -75,7 +75,9 @@ class R2RConfig:
             DocumentType(k) for k in self.ingestion["excluded_parsers"]
         ]
         # override GenerationConfig defaults
-        GenerationConfig.set_default(**self.completions.get("generation_config", {}))
+        GenerationConfig.set_default(
+            **self.completions.get("generation_config", {})
+        )
         self.embedding = EmbeddingConfig.create(**self.embedding)
         self.kg = KGConfig.create(**self.kg)
         eval_llm = self.eval.pop("llm", None)
