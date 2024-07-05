@@ -1,19 +1,14 @@
 import asyncio
 import logging
 import os
-from typing import Any, List
+import random
+from typing import Any
 
 from ollama import AsyncClient, Client
 
 from r2r.base import EmbeddingConfig, EmbeddingProvider, VectorSearchResult
 
 logger = logging.getLogger(__name__)
-
-
-class EmbeddingFailedException(Exception):
-    """Exception raised when embedding generation fails."""
-
-    pass
 
 
 class OllamaEmbeddingProvider(EmbeddingProvider):
@@ -43,6 +38,9 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self.aclient = AsyncClient(host=self.base_url)
 
         self.request_queue = asyncio.Queue()
+        self.max_retries = 1
+        self.initial_backoff = 1
+        self.max_backoff = 60
         self.concurrency_limit = 10
         self.semaphore = asyncio.Semaphore(self.concurrency_limit)
 
@@ -57,51 +55,62 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             finally:
                 self.request_queue.task_done()
 
-    async def execute_task_with_backoff(
-        self, task: dict[str, Any]
-    ) -> List[float]:
-        async with self.semaphore:
+    async def execute_task_with_backoff(self, task: dict[str, Any]):
+        retries = 0
+        backoff = self.initial_backoff
+        while retries < self.max_retries:
             try:
-                response = await asyncio.wait_for(
-                    self.aclient.embeddings(
-                        prompt=task["text"], model=self.base_model
-                    ),
-                    timeout=30,
-                )
+                async with self.semaphore:
+                    response = await asyncio.wait_for(
+                        self.aclient.embeddings(
+                            prompt=task["text"], model=self.base_model
+                        ),
+                        timeout=30,
+                    )
                 return response["embedding"]
             except Exception as e:
-                logger.error(
-                    f"Embedding generation failed for text: {task['text'][:50]}... Error: {str(e)}"
+                logger.warning(
+                    f"Request failed (attempt {retries + 1}): {str(e)}"
                 )
-                raise EmbeddingFailedException(
-                    f"Failed to generate atleast one embedding. Error: {str(e)}"
-                ) from e
+                retries += 1
+                if retries == self.max_retries:
+                    raise Exception(
+                        f"Max retries reached. Last error: {str(e)}"
+                    )
+                await asyncio.sleep(backoff + random.uniform(0, 1))
+                backoff = min(backoff * 2, self.max_backoff)
 
     def get_embedding(
         self,
         text: str,
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-    ) -> List[float]:
+    ) -> list[float]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OllamaEmbeddingProvider only supports search stage."
             )
 
-        response = self.client.embeddings(prompt=text, model=self.base_model)
-        return response["embedding"]
+        try:
+            response = self.client.embeddings(
+                prompt=text, model=self.base_model
+            )
+            return response["embedding"]
+        except Exception as e:
+            logger.error(f"Error getting embedding: {str(e)}")
+            raise
 
     def get_embeddings(
         self,
-        texts: List[str],
+        texts: list[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         return [self.get_embedding(text, stage) for text in texts]
 
     async def async_get_embeddings(
         self,
-        texts: List[str],
+        texts: list[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OllamaEmbeddingProvider only supports search stage."
@@ -117,35 +126,31 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         try:
             results = await asyncio.gather(*futures, return_exceptions=True)
             # Check if any result is an exception and raise it
-            for result in results:
-                if isinstance(result, Exception):
-                    raise result
+            exceptions = set([r for r in results if isinstance(r, Exception)])
+            if exceptions:
+                raise Exception(
+                    f"Embedding generation failed for one or more embeddings."
+                )
             return results
         except Exception as e:
             logger.error(f"Embedding generation failed: {str(e)}")
             raise
         finally:
             await self.request_queue.join()
-            # Check if any result is an exception and raise it
-            for result in results:
-                if isinstance(result, Exception):
-                    logger.error(f"Embedding generation failed: {str(result)}")
-                    raise result
-
             queue_processor.cancel()
 
     def rerank(
         self,
         query: str,
-        results: List[VectorSearchResult],
+        results: list[VectorSearchResult],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
-    ) -> List[VectorSearchResult]:
+    ) -> list[VectorSearchResult]:
         return results[:limit]
 
     def tokenize_string(
         self, text: str, model: str, stage: EmbeddingProvider.PipeStage
-    ) -> List[int]:
+    ) -> list[int]:
         raise NotImplementedError(
             "Tokenization is not supported by OllamaEmbeddingProvider."
         )

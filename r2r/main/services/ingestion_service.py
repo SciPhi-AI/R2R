@@ -12,14 +12,12 @@ from r2r.base import (
     DocumentInfo,
     DocumentType,
     KVLoggingSingleton,
+    R2RDocumentProcessingError,
+    R2RException,
     RunManager,
     generate_id_from_label,
     increment_version,
     to_async_generator,
-)
-from r2r.base.abstractions.exception import (
-    R2RDocumentProcessingError,
-    R2RException,
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
@@ -309,7 +307,6 @@ class IngestionService(Service):
                 doc_info.document_id: doc_info
                 for doc_info in self.providers.vector_db.get_documents_overview()
             }
-            print("files = ", files)
             for iteration, file in enumerate(files):
                 logger.info(f"Processing file: {file.filename}")
                 if (
@@ -419,7 +416,6 @@ class IngestionService(Service):
                 *args,
                 **kwargs,
             )
-            print("ingestion_results = ", ingestion_results)
             skipped_ids = [ele[0] for ele in skipped_documents]
             failed_ids = []
 
@@ -435,16 +431,12 @@ class IngestionService(Service):
                             f"Error processing document with ID {error.document_id}: {error.message}"
                         )
                         failed_ids.append(error.document_id)
-
-            print("failed_ids = ", failed_ids)
-            print("skipped_ids = ", skipped_ids)
             documents_to_upsert = [
                 document_info
                 for document_info in document_infos
                 if document_info.document_id not in skipped_ids
                 and document_info.document_id not in failed_ids
             ]
-            print("documents_to_upsert = ", documents_to_upsert)
             if len(documents_to_upsert) > 0:
                 self.providers.vector_db.upsert_documents_overview(
                     documents_to_upsert
