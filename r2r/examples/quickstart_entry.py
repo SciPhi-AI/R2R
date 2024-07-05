@@ -59,9 +59,7 @@ def r2r_app(
 
 logging.basicConfig(level=logging.INFO)
 
-config_option = os.getenv("CONFIG_OPTION", "default")
-if config_option == "":
-    config_option = "default"
+config_option = os.getenv("CONFIG_OPTION", "default").strip() or "default"
 config_path = os.getenv("CONFIG_PATH")
 client_server_mode = os.getenv("CLIENT_SERVER_MODE", "false").lower() == "true"
 base_url = os.getenv("BASE_URL")

@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.10-slim AS builder
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -7,22 +7,31 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Copy the pyproject.toml and poetry.lock files for installing dependencies
-COPY pyproject.toml poetry.lock* /app/
+RUN pip install --no-cache-dir poetry
 
-# Install Poetry and dependencies
-RUN pip install poetry && \
-    poetry config virtualenvs.create false && \
-    poetry install --no-dev
+# Copy the dependencies files
+COPY pyproject.toml poetry.lock* ./
 
-# Copy the rest of the application code
-COPY . /app
+# Install the dependencies, including gunicorn and uvicorn
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-dev --no-root \
+    && pip install --no-cache-dir gunicorn uvicorn
 
-# Install gunicorn and uvicorn
-RUN pip install --no-cache-dir gunicorn uvicorn
+# Create the final image
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Copy the installed packages from the builder
+COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy the application and config
+COPY r2r /app/r2r
+COPY config.json /app/config.json
 
 # Expose the port
 EXPOSE 8000
 
-# Run the application using Poetry
-CMD ["poetry", "run", "uvicorn", "r2r.examples.quickstart_entry:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application
+CMD ["uvicorn", "r2r.examples.quickstart_entry:app", "--host", "0.0.0.0", "--port", "8000"]
