@@ -82,7 +82,33 @@ class EmbeddingPipe(AsyncPipe):
                 document_id=extraction.document_id,
             )
             yield fragment
+            # TODO - Add settings to enable intelligent ingestion logging
+            # fragment_dict = fragment.dict()
+            # await self.enqueue_log(
+            #     run_id=run_id,
+            #     key="fragment",
+            #     value=json.dumps(
+            #         {
+            #             "data": fragment_dict["data"],
+            #             "document_id": str(fragment_dict["document_id"]),
+            #             "extraction_id": str(fragment_dict["extraction_id"]),
+            #             "fragment_id": str(fragment_dict["id"]),
+            #         }
+            #     ),
+            # )
             iteration += 1
+
+    async def transform_fragments(
+        self, fragments: list[Fragment]
+    ) -> AsyncGenerator[Fragment, None]:
+        """
+        Transforms text chunks based on their metadata, e.g., adding prefixes.
+        """
+        async for fragment in fragments:
+            if "chunk_prefix" in fragment.metadata:
+                prefix = fragment.metadata.pop("chunk_prefix")
+                fragment.data = f"{prefix}\n{fragment.data}"
+            yield fragment
 
     async def embed(self, fragments: list[Fragment]) -> list[float]:
         return await self.embedding_provider.async_get_embeddings(
@@ -147,7 +173,9 @@ class EmbeddingPipe(AsyncPipe):
                 continue
 
             fragment_batch = []
-            async for fragment in self.fragment(extraction, run_id):
+            async for fragment in self.transform_fragments(
+                self.fragment(extraction, run_id)
+            ):
                 if extraction.document_id in fragment_info:
                     fragment_info[extraction.document_id] += 1
                 else:

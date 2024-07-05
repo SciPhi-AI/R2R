@@ -137,12 +137,6 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             raise
         finally:
             await self.request_queue.join()
-            # Check if any result is an exception and raise it
-            for result in results:
-                if isinstance(result, Exception):
-                    logger.error(f"Embedding generation failed: {str(result)}")
-                    raise result
-
             queue_processor.cancel()
 
     def rerank(
