@@ -29,7 +29,6 @@ class R2R:
             # Handle the case where 'from_config' is None and 'config' is None
             if not config and not from_config:
                 from_config = "default"
-            print("config.vector_database = ", config.vector_database)
             builder = R2RBuilder(
                 config=config,
                 from_config=from_config,
