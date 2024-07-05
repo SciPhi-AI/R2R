@@ -192,6 +192,7 @@ class IngestionService(Service):
     async def update_documents(
         self,
         documents: List[Document],
+        versions: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
         *args: Any,
         **kwargs: Any,
@@ -213,7 +214,11 @@ class IngestionService(Service):
             document_info = documents_overview[iteration]
             current_version = document_info.version
             old_versions.append(current_version)
-            new_versions.append(increment_version(current_version))
+            new_versions.append(
+                versions[iteration]
+                if versions
+                else increment_version(current_version)
+            )
 
             document_metadata = (
                 metadatas[iteration] if metadatas else doc.metadata
