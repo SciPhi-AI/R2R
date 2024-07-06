@@ -91,12 +91,15 @@ class IngestionService(Service):
             if (
                 document.id in existing_document_info
                 and existing_document_info[document.id].version == version
+                and existing_document_info[document.id].status == "success"
             ):
-                logger.error(f"Document with ID {document.id} already exists.")
+                logger.error(
+                    f"Document with ID {document.id} was already successfully processed."
+                )
                 if len(documents) == 1:
                     raise R2RException(
                         status_code=409,
-                        message=f"Document with ID {document.id} already exists.",
+                        message=f"Document with ID {document.id} was already successfully processed.",
                     )
                 skipped_documents.append(
                     (
@@ -118,6 +121,7 @@ class IngestionService(Service):
                     user_id=document.metadata.get("user_id", None),
                     created_at=now,
                     updated_at=now,
+                    status="processing",  # Set initial status to `processing`
                 )
             )
 
@@ -131,6 +135,9 @@ class IngestionService(Service):
                 status_code=409,
                 message="All provided documents already exist. Use the `update_documents` endpoint instead to update these documents.",
             )
+
+        # Insert pending document infos
+        self.providers.vector_db.upsert_documents_overview(document_infos)
 
         ingestion_results = await self.pipelines.ingestion_pipeline.run(
             input=to_async_generator(
@@ -285,32 +292,41 @@ class IngestionService(Service):
 
     def _process_ingestion_results(
         self,
-        ingestion_results,
-        document_infos,
-        skipped_documents,
-        processed_documents,
+        ingestion_results: dict,
+        document_infos: List[DocumentInfo],
+        skipped_documents: List[tuple[str, str]],
+        processed_documents: dict,
     ):
         skipped_ids = [ele[0] for ele in skipped_documents]
         failed_ids = []
+        successful_ids = []
 
         results = {}
         if ingestion_results["embedding_pipeline_output"]:
             results = {
                 k: v for k, v in ingestion_results["embedding_pipeline_output"]
             }
-            for _, error in results.items():
+            for doc_id, error in results.items():
                 if isinstance(error, R2RDocumentProcessingError):
                     logger.error(
                         f"Error processing document with ID {error.document_id}: {error.message}"
                     )
                     failed_ids.append(error.document_id)
+                elif isinstance(error, Exception):
+                    logger.error(f"Error processing document: {error}")
+                    failed_ids.append(doc_id)
+                else:
+                    successful_ids.append(doc_id)
 
-        documents_to_upsert = [
-            document_info
-            for document_info in document_infos
-            if document_info.document_id not in skipped_ids
-            and document_info.document_id not in failed_ids
-        ]
+        documents_to_upsert = []
+        for document_info in document_infos:
+            if document_info.document_id not in skipped_ids:
+                if document_info.document_id in failed_ids:
+                    document_info.status = "failure"
+                elif document_info.document_id in successful_ids:
+                    document_info.status = "success"
+                documents_to_upsert.append(document_info)
+
         if documents_to_upsert:
             self.providers.vector_db.upsert_documents_overview(
                 documents_to_upsert
@@ -319,8 +335,7 @@ class IngestionService(Service):
         return {
             "processed_documents": [
                 f"Document '{processed_documents[document_id]}' processed successfully."
-                for document_id in processed_documents.keys()
-                if document_id not in failed_ids
+                for document_id in successful_ids
             ],
             "failed_documents": [
                 f"Document '{processed_documents[document_id]}': {results[document_id]}"
