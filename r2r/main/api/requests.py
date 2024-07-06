@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 from r2r.base import (
     AnalysisTypes,
-    Document,
     FilterCriteria,
     GenerationConfig,
     KGSearchSettings,
@@ -19,24 +18,9 @@ class R2RUpdatePromptRequest(BaseModel):
     input_types: Optional[dict[str, str]] = {}
 
 
-class R2RIngestDocumentsRequest(BaseModel):
-    documents: list[Document]
-    versions: Optional[list[str]] = None
-
-    class Config:
-        arbitrary_types_allowed = True
-
-
-class R2RUpdateDocumentsRequest(BaseModel):
-    documents: list[Document]
-    versions: Optional[list[str]] = None
-    metadatas: Optional[list[dict]] = None
-
-
 class R2RIngestFilesRequest(BaseModel):
-    metadatas: Optional[list[dict]] = None
     document_ids: Optional[list[uuid.UUID]] = None
-    user_ids: Optional[list[Optional[uuid.UUID]]] = None
+    metadatas: Optional[list[dict]] = None
     versions: Optional[list[str]] = None
 
 

@@ -1,26 +1,11 @@
 import json
-import os
 import time
 import uuid
 
 import click
-from fastapi.datastructures import UploadFile
 
-from r2r import (
-    R2R,
-    GenerationConfig,
-    R2RBuilder,
-    R2RClient,
-    R2RConfig,
-    generate_id_from_label,
-)
-from r2r.base import (
-    AnalysisTypes,
-    Document,
-    FilterCriteria,
-    KGSearchSettings,
-    VectorSearchSettings,
-)
+from r2r import GenerationConfig
+from r2r.main.execution import R2RExecutionWrapper
 
 
 class JsonParamType(click.ParamType):
@@ -59,17 +44,11 @@ def cli(ctx, config_path, config_name, client_server_mode, base_url):
             "Cannot specify both config_path and config_name"
         )
 
-    if config_path:
-        config = R2RConfig.from_json(config_path)
-    else:
-        config = R2RConfig.from_json(R2RBuilder.CONFIG_OPTIONS[config_name])
-
-    print("config.embedding = ", config.embedding)
-
-    if client_server_mode and ctx.invoked_subcommand != "serve":
-        ctx.obj = R2RClient(base_url)
-    else:
-        ctx.obj = R2R(config=config)
+    ctx.obj = R2RExecutionWrapper(
+        config_path,
+        client_server_mode if ctx.invoked_subcommand != "serve" else False,
+        base_url,
+    )
 
 
 @cli.command()
@@ -82,87 +61,60 @@ def serve(obj, host, port):
 
 
 @cli.command()
-@click.argument("file_paths", nargs=-1)
-@click.option("--user-ids", multiple=True, help="User IDs for ingestion")
+@click.argument("file-paths", nargs=-1)
+@click.option(
+    "--document-ids", multiple=True, help="Document IDs for ingestion"
+)
+@click.option("--metadatas", multiple=True, help="Metadatas for ingestion")
+@click.option(
+    "--versions",
+    multiple=True,
+    help="Starting version for ingested files (e.g. `v1`)",
+)
 @click.pass_obj
-def ingest_files(obj, file_paths, user_ids):
+def ingest_files(obj, file_paths, document_ids, metadatas, versions):
     """Ingest files into R2R."""
-    file_paths = list(file_paths)
-
-    ids = [
-        generate_id_from_label(file_path.split(os.path.sep)[-1])
-        for file_path in file_paths
-    ]
-
-    files = [
-        UploadFile(
-            filename=file_path,
-            file=open(file_path, "rb"),
-        )
-        for file_path in file_paths
-    ]
-
-    for file in files:
-        file.file.seek(0, 2)
-        file.size = file.file.tell()
-        file.file.seek(0)
+    print("ingesting files....")
 
     t0 = time.time()
 
-    if isinstance(obj, R2RClient):
-        response = obj.ingest_files(
-            metadatas=None,
-            file_paths=file_paths,
-            document_ids=ids,
-            user_ids=user_ids if user_ids else None,
-            monitor=True,
-        )
-    else:
-        metadatas = [{} for _ in file_paths]
-        response = obj.ingest_files(
-            files=files,
-            metadatas=metadatas,
-            document_ids=ids,
-            user_ids=user_ids if user_ids else None,
-        )
+    # Default to None if empty tuples are provided
+    document_ids = None if not document_ids else list(document_ids)
+    metadatas = None if not metadatas else list(metadatas)
+    versions = None if not versions else list(versions)
+
+    response = obj.ingest_files(
+        list(file_paths), document_ids, metadatas, versions
+    )
     t1 = time.time()
     click.echo(f"Time taken to ingest files: {t1-t0:.2f} seconds")
     click.echo(response)
 
 
 @cli.command()
-@click.argument("document-id")
-@click.argument("new-file-path")
+@click.argument("file-paths", nargs=-1)
+@click.option(
+    "--document-ids", multiple=True, help="Document IDs for ingestion"
+)
+@click.option("--metadatas", multiple=True, help="Metadatas for ingestion")
 @click.pass_obj
-def update_files(obj, document_id, new_file_path):
-    """Update a file in R2R."""
+def update_files(obj, file_paths, document_ids, metadatas):
+    """Ingest files into R2R."""
+    print("ingesting files....")
+    print(f"file_paths={file_paths}")
+    print(f"document_ids={document_ids}")
+
     t0 = time.time()
 
-    try:
-        with open(new_file_path, "rb") as f:
-            data = f.read()
+    # Default to None if empty tuples are provided
+    metadatas = None if not metadatas else list(metadatas)
 
-        new_document = Document(
-            id=document_id,
-            data=data,
-            type=new_file_path.split(".")[-1],
-            metadata={
-                "title": new_file_path.split(os.path.sep)[-1],
-            },
-        )
-
-        if isinstance(obj, R2RClient):
-            response = obj.update_documents([new_document])
-        else:
-            response = obj.update_documents([new_document])
-
-        t1 = time.time()
-        click.echo(f"Time taken to update file: {t1-t0:.2f} seconds")
-        click.echo(response)
-    except FileNotFoundError:
-        click.echo(f"Error: File not found - {new_file_path}")
-    except Exception as e:
-        click.echo(f"Error updating file: {str(e)}")
+    response = obj.update_files(
+        list(file_paths), list(document_ids), metadatas
+    )
+    t1 = time.time()
+    click.echo(f"Time taken to ingest files: {t1-t0:.2f} seconds")
+    click.echo(response)
 
 
 @cli.command()
@@ -198,30 +150,16 @@ def search(
     kg_agent_generation_config = GenerationConfig(model=kg_agent_model)
 
     t0 = time.time()
-    if isinstance(obj, R2RClient):
-        results = obj.search(
-            query,
-            use_vector_search,
-            search_filters,
-            search_limit,
-            do_hybrid_search,
-            use_kg_search,
-            kg_agent_generation_config,
-        )
-    else:
-        results = obj.search(
-            query,
-            VectorSearchSettings(
-                use_vector_search=use_vector_search,
-                search_filters=search_filters or {},
-                search_limit=search_limit,
-                do_hybrid_search=do_hybrid_search,
-            ),
-            KGSearchSettings(
-                use_kg_search=use_kg_search,
-                agent_generation_config=kg_agent_generation_config,
-            ),
-        )
+
+    results = obj.search(
+        query,
+        use_vector_search,
+        search_filters,
+        search_limit,
+        do_hybrid_search,
+        use_kg_search,
+        kg_agent_generation_config.dict(),
+    )
 
     if isinstance(results, dict) and "results" in results:
         results = results["results"]
@@ -238,7 +176,7 @@ def search(
 
 
 @cli.command()
-@click.option("--query", prompt="Enter your RAG query", help="The RAG query")
+@click.option("--query", prompt="Enter your query", help="The query for RAG")
 @click.option(
     "--use-vector-search", is_flag=True, default=True, help="Use vector search"
 )
@@ -253,8 +191,8 @@ def search(
     "--use-kg-search", is_flag=True, help="Use knowledge graph search"
 )
 @click.option("--kg-agent-model", default="gpt-4o", help="Model for KG agent")
-@click.option("--rag-model", default="gpt-4o", help="Model to use for RAG")
 @click.option("--stream", is_flag=True, help="Stream the RAG response")
+@click.option("--rag-model", default="gpt-4o", help="Model for RAG")
 @click.pass_obj
 def rag(
     obj,
@@ -265,96 +203,130 @@ def rag(
     do_hybrid_search,
     use_kg_search,
     kg_agent_model,
-    rag_model,
     stream,
+    rag_model,
 ):
     """Perform a RAG query."""
-    t0 = time.time()
-
     kg_agent_generation_config = GenerationConfig(model=kg_agent_model)
     rag_generation_config = GenerationConfig(model=rag_model, stream=stream)
 
-    if isinstance(obj, R2RClient):
-        response = obj.rag(
-            query=query,
-            use_vector_search=use_vector_search,
-            search_filters=search_filters or {},
-            search_limit=search_limit,
-            do_hybrid_search=do_hybrid_search,
-            use_kg_search=use_kg_search,
-            kg_agent_generation_config=kg_agent_generation_config,
-            rag_generation_config=rag_generation_config,
-        )
-        if not stream:
-            response = response["results"]
-            t1 = time.time()
-            click.echo(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
-            click.echo(f"Search Results:\n{response['search_results']}")
-            click.echo(f"Completion:\n{response['completion']}")
-        else:
-            for chunk in response:
-                click.echo(chunk, nl=False)
-            t1 = time.time()
-            click.echo(
-                f"\nTime taken to stream RAG response: {t1-t0:.2f} seconds"
-            )
-    else:
-        response = obj.rag(
-            query,
-            vector_search_settings=VectorSearchSettings(
-                use_vector_search=use_vector_search,
-                search_filters=search_filters or {},
-                search_limit=search_limit,
-                do_hybrid_search=do_hybrid_search,
-            ),
-            kg_search_settings=KGSearchSettings(
-                use_kg_search=use_kg_search,
-                agent_generation_config=kg_agent_generation_config,
-            ),
-            rag_generation_config=rag_generation_config,
-        )
+    t0 = time.time()
 
-        if not stream:
-            t1 = time.time()
-            click.echo(f"Time taken to get RAG response: {t1-t0:.2f} seconds")
-            click.echo(f"Search Results:\n{response.search_results}")
-            click.echo(f"Completion:\n{response.completion}")
-        else:
-            for chunk in response:
-                click.echo(chunk, nl=False)
-            t1 = time.time()
-            click.echo(
-                f"\nTime taken to stream RAG response: {t1-t0:.2f} seconds"
-            )
+    response = obj.rag(
+        query,
+        use_vector_search,
+        search_filters,
+        search_limit,
+        do_hybrid_search,
+        use_kg_search,
+        kg_agent_generation_config.dict(),
+        stream,
+        rag_generation_config.dict(),
+    )
+
+    if stream:
+        for chunk in response:
+            click.echo(chunk, nl=False)
+        click.echo()
+    else:
+        print("response = ", response)
+        click.echo(f"Search Results:\n{response['search_results']}")
+        click.echo(f"Completion:\n{response['completion']}")
+
+    t1 = time.time()
+    click.echo(f"Time taken for RAG: {t1-t0:.2f} seconds")
+
+
+@cli.command()
+@click.option(
+    "--query", prompt="Enter the query", help="The query to evaluate"
+)
+@click.option(
+    "--context", prompt="Enter the context", help="The context for evaluation"
+)
+@click.option(
+    "--completion",
+    prompt="Enter the completion",
+    help="The completion to evaluate",
+)
+@click.option(
+    "--eval-model", default="gpt-3.5-turbo", help="Model for evaluation"
+)
+@click.pass_obj
+def evaluate(obj, query, context, completion, eval_model):
+    """Evaluate a query, context, and completion."""
+    eval_generation_config = GenerationConfig(model=eval_model)
+
+    t0 = time.time()
+    response = obj.evaluate(
+        query, context, completion, eval_generation_config.dict()
+    )
+    t1 = time.time()
+
+    click.echo(response)
+    click.echo(f"Time taken for evaluation: {t1-t0:.2f} seconds")
 
 
 @cli.command()
 @click.option("--keys", multiple=True, help="Keys for deletion")
 @click.option("--values", multiple=True, help="Values for deletion")
-@click.option("--version", help="Version for deletion")
 @click.pass_obj
-def delete(obj, keys, values, version):
-    """Delete documents from R2R."""
-    if version:
-        keys = list(keys) + ["version"]
-        values = list(values) + [version]
+def delete(obj, keys, values):
+    """Delete documents based on keys and values."""
+    if len(keys) != len(values):
+        raise click.UsageError("Number of keys must match number of values")
+
     t0 = time.time()
-    response = obj.delete(keys, values)
+    response = obj.delete(list(keys), list(values))
     t1 = time.time()
-    click.echo(f"Time taken to delete: {t1-t0:.2f} seconds")
+
     click.echo(response)
+    click.echo(f"Time taken for deletion: {t1-t0:.2f} seconds")
 
 
 @cli.command()
-@click.option("--log-type-filter", help="Filter for specific log types")
+@click.option("--log-type-filter", help="Filter for log types")
 @click.pass_obj
 def logs(obj, log_type_filter):
-    """Retrieve logs from R2R."""
+    """Retrieve logs with optional type filter."""
     t0 = time.time()
     response = obj.logs(log_type_filter)
     t1 = time.time()
-    click.echo(f"Time taken to get logs: {t1-t0:.2f} seconds")
+
     click.echo(response)
+    click.echo(f"Time taken to retrieve logs: {t1-t0:.2f} seconds")
+
+
+@cli.command()
+@click.option("--document-ids", multiple=True, help="Document IDs to overview")
+@click.option("--user-ids", multiple=True, help="User IDs to overview")
+@click.pass_obj
+def documents_overview(obj, document_ids, user_ids):
+    """Get an overview of documents."""
+    document_ids = list(document_ids) if document_ids else None
+    user_ids = list(user_ids) if user_ids else None
+
+    t0 = time.time()
+    response = obj.documents_overview(document_ids, user_ids)
+    t1 = time.time()
+
+    for document in response:
+        click.echo(document)
+    click.echo(f"Time taken to get document overview: {t1-t0:.2f} seconds")
+
+
+@cli.command()
+@click.argument("document_id")
+@click.pass_obj
+def document_chunks(obj, document_id):
+    """Get chunks of a specific document."""
+    t0 = time.time()
+    response = obj.document_chunks(document_id)
+    t1 = time.time()
+
+    for chunk in response:
+        click.echo(chunk)
+    click.echo(f"Time taken to get document chunks: {t1-t0:.2f} seconds")
 
 
 @cli.command()
@@ -364,127 +336,82 @@ def app_settings(obj):
     t0 = time.time()
     response = obj.app_settings()
     t1 = time.time()
-    click.echo(f"Time taken to get app data: {t1-t0:.2f} seconds")
-    click.echo(response)
 
-
-@cli.command()
-@click.option(
-    "--filters", type=JSON, help="Filter criteria for analytics as JSON"
-)
-@click.option(
-    "--analysis-types", type=JSON, help="Types of analysis to perform as JSON"
-)
-@click.pass_obj
-def analytics(obj, filters, analysis_types):
-    """Perform analytics on R2R data."""
-    t0 = time.time()
-    filter_criteria = FilterCriteria(filters=filters)
-    analysis_types = AnalysisTypes(analysis_types=analysis_types)
-    if isinstance(obj, R2RClient):
-        response = obj.analytics(
-            filter_criteria=filter_criteria.model_dump(),
-            analysis_types=analysis_types.model_dump(),
-        )
-    else:
-        response = obj.analytics(
-            filter_criteria=filter_criteria, analysis_types=analysis_types
-        )
-    t1 = time.time()
-    click.echo(f"Time taken to get analytics: {t1-t0:.2f} seconds")
     click.echo(response)
+    click.echo(f"Time taken to get app settings: {t1-t0:.2f} seconds")
 
 
 @cli.command()
 @click.option("--user-ids", multiple=True, help="User IDs to overview")
 @click.pass_obj
-def users_overview(obj, user_ids=None):
+def users_overview(obj, user_ids):
     """Get an overview of users."""
+    user_ids = (
+        [uuid.UUID(user_id) for user_id in user_ids] if user_ids else None
+    )
+
     t0 = time.time()
-    user_ids = list(user_ids) if user_ids and user_ids != () else None
-    if isinstance(obj, R2RClient):
-        response = obj.users_overview(
-            list(user_ids) if user_ids and user_ids != () else None
-        )
-    else:
-        response = obj.users_overview(
-            list(user_ids) if user_ids and user_ids != () else None
-        )
+    response = obj.users_overview(user_ids)
     t1 = time.time()
-    click.echo(f"Time taken to get user stats: {t1-t0:.2f} seconds")
-    if isinstance(response, dict) and "results" in response:
-        response = response["results"]
+
     for user in response:
         click.echo(user)
+    click.echo(f"Time taken to get users overview: {t1-t0:.2f} seconds")
 
 
 @cli.command()
-@click.option("--document-ids", multiple=True, help="Document IDs to overview")
-@click.option("--user-ids", multiple=True, help="User IDs to filter documents")
+@click.option(
+    "--filters", type=JsonParamType(), help="Filters for analytics as JSON"
+)
+@click.option(
+    "--analysis-types", type=JsonParamType(), help="Analysis types as JSON"
+)
 @click.pass_obj
-def documents_overview(obj, document_ids=None, user_ids=None):
-    """Get an overview of documents."""
+def analytics(obj, filters, analysis_types):
+    """Retrieve analytics data."""
     t0 = time.time()
-    if isinstance(obj, R2RClient):
-        results = obj.documents_overview(
-            list(document_ids) if document_ids else None,
-            list(user_ids) if user_ids else None,
-        )
-    else:
-        results = obj.documents_overview(
-            list(document_ids) if document_ids else None,
-            list(user_ids) if user_ids else None,
-        )
+    response = obj.analytics(filters, analysis_types)
     t1 = time.time()
-    click.echo(f"Time taken to get document info: {t1-t0:.2f} seconds")
-    if isinstance(results, dict) and "results" in results:
-        results = results["results"]
-    for document in results:
-        click.echo(document)
+
+    click.echo(response)
+    click.echo(f"Time taken to get analytics: {t1-t0:.2f} seconds")
 
 
 @cli.command()
-@click.argument("document-id")
+@click.option(
+    "--no-media",
+    is_flag=True,
+    default=True,
+    help="Exclude media files from ingestion",
+)
 @click.pass_obj
-def document_chunks(obj, document_id):
-    """Retrieve chunks of a specific document."""
-    t0 = time.time()
-    doc_uuid = uuid.UUID(document_id)
-    if isinstance(obj, R2RClient):
-        results = obj.document_chunks(doc_uuid)
-    else:
-        results = obj.document_chunks(doc_uuid)
-    t1 = time.time()
-    click.echo(f"Time taken to get document chunks: {t1-t0:.2f} seconds")
-    if isinstance(results, dict) and "results" in results:
-        results = results["results"]
-    for chunk in results:
-        click.echo(chunk)
-
-
-@cli.command()
-@click.pass_obj
-def ingest_sample_file(obj):
+def ingest_sample_file(obj, no_media):
     from r2r.examples.scripts.sample_data_ingester import SampleDataIngestor
 
     """Ingest the first sample file into R2R."""
     t0 = time.time()
     sample_ingestor = SampleDataIngestor()
-    response = sample_ingestor.ingest_sample_file()
+    response = sample_ingestor.ingest_sample_file(no_media=no_media)
     t1 = time.time()
     click.echo(f"Time taken to ingest sample file: {t1-t0:.2f} seconds")
     click.echo(response)
 
 
 @cli.command()
+@click.option(
+    "--no-media",
+    is_flag=True,
+    default=True,
+    help="Exclude media files from ingestion",
+)
 @click.pass_obj
-def ingest_sample_files(obj):
+def ingest_sample_files(obj, no_media):
     """Ingest all sample files into R2R."""
     from r2r.examples.scripts.sample_data_ingester import SampleDataIngestor
 
     t0 = time.time()
     sample_ingestor = SampleDataIngestor()
-    response = sample_ingestor.ingest_sample_files()
+    response = sample_ingestor.ingest_sample_files(no_media=no_media)
     t1 = time.time()
     click.echo(f"Time taken to ingest all sample files: {t1-t0:.2f} seconds")
     click.echo(response)
