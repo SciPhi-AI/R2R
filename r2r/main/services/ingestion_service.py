@@ -12,13 +12,13 @@ from r2r.base import (
     DocumentInfo,
     DocumentType,
     KVLoggingSingleton,
+    R2RDocumentProcessingError,
+    R2RException,
     RunManager,
     generate_id_from_label,
     increment_version,
     to_async_generator,
 )
-from r2r.main.abstractions import R2RException
-from r2r.pipes.ingestion.parsing_pipe import DocumentProcessingError
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RPipelines, R2RProviders
@@ -157,9 +157,9 @@ class IngestionService(Service):
                 k: v for k, v in ingestion_results["embedding_pipeline_output"]
             }
             for _, error in results.items():
-                if isinstance(error, DocumentProcessingError):
+                if isinstance(error, R2RDocumentProcessingError):
                     logger.error(
-                        f"Error processing document with ID {error.document_id}: {error.error_message}"
+                        f"Error processing document with ID {error.document_id}: {error.message}"
                     )
                     failed_ids.append(error.document_id)
 
@@ -262,7 +262,6 @@ class IngestionService(Service):
         files: List[UploadFile],
         metadatas: Optional[List[dict]] = None,
         document_ids: Optional[List[uuid.UUID]] = None,
-        user_ids: Optional[List[Optional[uuid.UUID]]] = None,
         versions: Optional[List[str]] = None,
         *args: Any,
         **kwargs: Any,
@@ -284,15 +283,6 @@ class IngestionService(Service):
                 status_code=400,
                 message="All document IDs must be of type UUID.",
             )
-        if user_ids and len(user_ids) != len(files):
-            raise R2RException(
-                status_code=400,
-                message="Number of user_ids entries does not match number of files.",
-            )
-        elif user_ids and not all(
-            (isinstance(user_id, uuid.UUID) for user_id in user_ids if user_id)
-        ):
-            raise ValueError("All user IDs must be of type UUID.")
         if len(files) == 0:
             raise R2RException(
                 status_code=400, message="No files provided for ingestion."
@@ -307,7 +297,6 @@ class IngestionService(Service):
                 doc_info.document_id: doc_info
                 for doc_info in self.providers.vector_db.get_documents_overview()
             }
-            print("files = ", files)
             for iteration, file in enumerate(files):
                 logger.info(f"Processing file: {file.filename}")
                 if (
@@ -365,9 +354,6 @@ class IngestionService(Service):
                 file_content = await file.read()
                 logger.info(f"File read successfully: {file.filename}")
 
-                user_id = user_ids[iteration] if user_ids else None
-                if user_id:
-                    document_metadata["user_id"] = str(user_id)
                 version = versions[iteration] if versions else "v0"
                 now = datetime.now()
 
@@ -377,8 +363,6 @@ class IngestionService(Service):
                         type=DocumentType[file_extension.upper()],
                         data=file_content,
                         metadata=document_metadata,
-                        title=document_title,
-                        user_ids=user_id,
                     )
                 )
                 document_infos.append(
@@ -389,7 +373,7 @@ class IngestionService(Service):
                             "size_in_bytes": len(file_content),
                             "metadata": document_metadata.copy(),
                             "title": document_title,
-                            "user_id": user_id,
+                            "user_id": document_metadata.get("user_id", None),
                             "created_at": now,
                             "updated_at": now,
                         }
@@ -417,7 +401,6 @@ class IngestionService(Service):
                 *args,
                 **kwargs,
             )
-
             skipped_ids = [ele[0] for ele in skipped_documents]
             failed_ids = []
 
@@ -428,12 +411,11 @@ class IngestionService(Service):
                     for k, v in ingestion_results["embedding_pipeline_output"]
                 }
                 for _, error in results.items():
-                    if isinstance(error, DocumentProcessingError):
+                    if isinstance(error, R2RDocumentProcessingError):
                         logger.error(
-                            f"Error processing document with ID {error.document_id}: {error.error_message}"
+                            f"Error processing document with ID {error.document_id}: {error.message}"
                         )
                         failed_ids.append(error.document_id)
-
             documents_to_upsert = [
                 document_info
                 for document_info in document_infos
@@ -506,6 +488,7 @@ class IngestionService(Service):
                     message="One or more documents was not found.",
                 )
             for it, document_info in enumerate(documents_overview):
+
                 if not document_info:
                     raise R2RException(
                         status_code=404,
@@ -543,7 +526,6 @@ class IngestionService(Service):
                 await self._delete(
                     ["document_id", "version"], [str(id), old_version]
                 )
-
             self.providers.vector_db.upsert_documents_overview(
                 documents_overview_modified
             )
@@ -560,39 +542,50 @@ class IngestionService(Service):
     def parse_ingest_files_form_data(
         metadatas: Optional[str] = Form(None),
         document_ids: str = Form(None),
-        user_ids: str = Form(None),
         versions: Optional[str] = Form(None),
     ) -> R2RIngestFilesRequest:
         try:
+            parsed_metadatas = (
+                json.loads(metadatas)
+                if metadatas and metadatas != "null"
+                else None
+            )
+            if parsed_metadatas is not None and not isinstance(
+                parsed_metadatas, list
+            ):
+                raise ValueError("metadatas must be a list of dictionaries")
+
+            parsed_document_ids = (
+                json.loads(document_ids)
+                if document_ids and document_ids != "null"
+                else None
+            )
+            if parsed_document_ids is not None:
+                parsed_document_ids = [
+                    uuid.UUID(doc_id) for doc_id in parsed_document_ids
+                ]
+
+            parsed_versions = (
+                json.loads(versions)
+                if versions and versions != "null"
+                else None
+            )
+
             request_data = {
-                "metadatas": (
-                    json.loads(metadatas)
-                    if metadatas and metadatas != "null"
-                    else None
-                ),
-                "document_ids": (
-                    [uuid.UUID(doc_id) for doc_id in json.loads(document_ids)]
-                    if document_ids and document_ids != "null"
-                    else None
-                ),
-                "user_ids": (
-                    [
-                        uuid.UUID(user_id) if user_id else None
-                        for user_id in json.loads(user_ids)
-                    ]
-                    if user_ids and user_ids != "null"
-                    else None
-                ),
-                "versions": (
-                    json.loads(versions)
-                    if versions and versions != "null"
-                    else None
-                ),
+                "metadatas": parsed_metadatas,
+                "document_ids": parsed_document_ids,
+                "versions": parsed_versions,
             }
             return R2RIngestFilesRequest(**request_data)
+        except json.JSONDecodeError as e:
+            raise R2RException(
+                status_code=400, message=f"Invalid JSON in form data: {e}"
+            )
+        except ValueError as e:
+            raise R2RException(status_code=400, message=str(e))
         except Exception as e:
             raise R2RException(
-                status_code=400, message=f"Invalid form data: {e}"
+                status_code=400, message=f"Error processing form data: {e}"
             )
 
     @staticmethod
@@ -601,22 +594,40 @@ class IngestionService(Service):
         document_ids: str = Form(...),
     ) -> R2RUpdateFilesRequest:
         try:
+            parsed_metadatas = (
+                json.loads(metadatas)
+                if metadatas and metadatas != "null"
+                else None
+            )
+            if parsed_metadatas is not None and not isinstance(
+                parsed_metadatas, list
+            ):
+                raise ValueError("metadatas must be a list of dictionaries")
+
+            if not document_ids or document_ids == "null":
+                raise ValueError("document_ids is required and cannot be null")
+
+            parsed_document_ids = json.loads(document_ids)
+            if not isinstance(parsed_document_ids, list):
+                raise ValueError("document_ids must be a list")
+            parsed_document_ids = [
+                uuid.UUID(doc_id) for doc_id in parsed_document_ids
+            ]
+
             request_data = {
-                "metadatas": (
-                    json.loads(metadatas)
-                    if metadatas and metadatas != "null"
-                    else None
-                ),
-                "document_ids": (
-                    [uuid.UUID(doc_id) for doc_id in json.loads(document_ids)]
-                    if document_ids and document_ids != "null"
-                    else None
-                ),
+                "metadatas": parsed_metadatas,
+                "document_ids": parsed_document_ids,
             }
             return R2RUpdateFilesRequest(**request_data)
+        except json.JSONDecodeError as e:
+            raise R2RException(
+                status_code=400, message=f"Invalid JSON in form data: {e}"
+            )
+        except ValueError as e:
+            raise R2RException(status_code=400, message=str(e))
         except Exception as e:
             raise R2RException(
-                status_code=400, message=f"Invalid form data: {e}"
+                status_code=400, message=f"Error processing form data: {e}"
             )
 
     # TODO - Move to mgmt service for document info, delete, post orchestration buildout

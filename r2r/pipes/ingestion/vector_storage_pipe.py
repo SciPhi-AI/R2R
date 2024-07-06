@@ -12,7 +12,7 @@ from r2r.base import (
 )
 from r2r.base.pipes.base_pipe import AsyncPipe
 
-from .parsing_pipe import DocumentProcessingError
+from ...base.abstractions.exception import R2RDocumentProcessingError
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class VectorStoragePipe(AsyncPipe):
     class Input(AsyncPipe.Input):
         message: AsyncGenerator[
-            Union[DocumentProcessingError, VectorEntry], None
+            Union[R2RDocumentProcessingError, VectorEntry], None
         ]
         do_upsert: bool = True
 
@@ -76,7 +76,7 @@ class VectorStoragePipe(AsyncPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[
-        Tuple[uuid.UUID, Union[str, DocumentProcessingError]], None
+        Tuple[uuid.UUID, Union[str, R2RDocumentProcessingError]], None
     ]:
         """
         Executes the async vector storage pipe: storing embeddings in the vector database.
@@ -84,8 +84,10 @@ class VectorStoragePipe(AsyncPipe):
         batch_tasks = []
         vector_batch = []
         document_counts = {}
+        i = 0
         async for msg in input.message:
-            if isinstance(msg, DocumentProcessingError):
+            i += 1
+            if isinstance(msg, R2RDocumentProcessingError):
                 yield (msg.document_id, msg)
                 continue
 

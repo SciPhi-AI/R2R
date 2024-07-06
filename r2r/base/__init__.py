@@ -14,6 +14,7 @@ from .abstractions.document import (
     extract_entities,
     extract_triples,
 )
+from .abstractions.exception import R2RDocumentProcessingError, R2RException
 from .abstractions.llama_abstractions import VectorStoreQuery
 from .abstractions.llm import (
     GenerationConfig,
@@ -117,6 +118,8 @@ __all__ = [
     "extract_entities",
     "Entity",
     "extract_triples",
+    "R2RException",
+    "R2RDocumentProcessingError",
     "Triple",
     "KGExtraction",
     "UserStats",

@@ -6,7 +6,7 @@ from typing import Optional
 from fastapi import FastAPI
 
 from r2r import R2RBuilder, R2RConfig
-from r2r.examples.quickstart import R2RQuickstart
+from r2r.main.execution import R2RExecutionWrapper
 
 logger = logging.getLogger(__name__)
 current_file_path = os.path.dirname(__file__)
@@ -47,7 +47,7 @@ def r2r_app(
             "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
         )
 
-    quickstart = R2RQuickstart(
+    quickstart = R2RExecutionWrapper(
         config_name=config_option,
         config_path=config_path,
         client_server_mode=client_server_mode,

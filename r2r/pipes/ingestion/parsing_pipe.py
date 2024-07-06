@@ -19,6 +19,7 @@ from r2r.base import (
     PipeType,
     generate_id_from_label,
 )
+from r2r.base.abstractions.exception import R2RDocumentProcessingError
 from r2r.base.pipes.base_pipe import AsyncPipe
 from r2r.parsers.media.audio_parser import AudioParser
 from r2r.parsers.media.docx_parser import DOCXParser
@@ -34,13 +35,6 @@ from r2r.parsers.text.md_parser import MDParser
 from r2r.parsers.text.text_parser import TextParser
 
 logger = logging.getLogger(__name__)
-
-
-class DocumentProcessingError(Exception):
-    def __init__(self, document_id, error_message):
-        self.document_id = document_id
-        self.error_message = error_message
-        super().__init__(f"Error {error_message}")
 
 
 class ParsingPipe(AsyncPipe):
@@ -126,9 +120,9 @@ class ParsingPipe(AsyncPipe):
         document: Document,
         run_id: uuid.UUID,
         version: str,
-    ) -> AsyncGenerator[Union[DocumentProcessingError, Extraction], None]:
+    ) -> AsyncGenerator[Union[R2RDocumentProcessingError, Extraction], None]:
         if document.type not in self.parsers:
-            yield DocumentProcessingError(
+            yield R2RDocumentProcessingError(
                 document_id=document.id,
                 error_message=f"Parser for {document.type} not found in `ParsingPipe`.",
             )

@@ -4,8 +4,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from r2r.base import manage_run
-from r2r.main.abstractions import R2RException
+from r2r.base import R2RException, manage_run
 
 logger = logging.getLogger(__name__)
 

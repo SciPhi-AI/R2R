@@ -30,7 +30,6 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
 
         self.base_model = config.base_model
         self.base_dimension = config.base_dimension
-        # TODO - Clean this up!
         self.base_url = os.getenv("OLLAMA_API_BASE")
         logger.info(
             f"Using Ollama API base URL: {self.base_url or 'http://127.0.0.1:11434'}"
@@ -39,7 +38,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self.aclient = AsyncClient(host=self.base_url)
 
         self.request_queue = asyncio.Queue()
-        self.max_retries = 5
+        self.max_retries = 2
         self.initial_backoff = 1
         self.max_backoff = 60
         self.concurrency_limit = 10
@@ -48,8 +47,13 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
     async def process_queue(self):
         while True:
             task = await self.request_queue.get()
-            await self.execute_task_with_backoff(task)
-            self.request_queue.task_done()
+            try:
+                result = await self.execute_task_with_backoff(task)
+                task["future"].set_result(result)
+            except Exception as e:
+                task["future"].set_exception(e)
+            finally:
+                self.request_queue.task_done()
 
     async def execute_task_with_backoff(self, task: dict[str, Any]):
         retries = 0
@@ -63,16 +67,16 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
                         ),
                         timeout=30,
                     )
-                task["future"].set_result(response["embedding"])
-                return
+                return response["embedding"]
             except Exception as e:
                 logger.warning(
                     f"Request failed (attempt {retries + 1}): {str(e)}"
                 )
                 retries += 1
                 if retries == self.max_retries:
-                    task["future"].set_exception(e)
-                    return
+                    raise Exception(
+                        f"Max retries reached. Last error: {str(e)}"
+                    )
                 await asyncio.sleep(backoff + random.uniform(0, 1))
                 backoff = min(backoff * 2, self.max_backoff)
 
@@ -86,22 +90,14 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
                 "OllamaEmbeddingProvider only supports search stage."
             )
 
-        response = self.client.embeddings(prompt=text, model=self.base_model)
-        return response["embedding"]
-
-    async def async_get_embedding(
-        self,
-        text: str,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-    ) -> list[float]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
-            raise ValueError(
-                "OllamaEmbeddingProvider only supports search stage."
+        try:
+            response = self.client.embeddings(
+                prompt=text, model=self.base_model
             )
-
-        future = asyncio.Future()
-        await self.request_queue.put({"text": text, "future": future})
-        return await future
+            return response["embedding"]
+        except Exception as e:
+            logger.error(f"Error getting embedding: {str(e)}")
+            raise
 
     def get_embeddings(
         self,
@@ -127,13 +123,21 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             await self.request_queue.put({"text": text, "future": future})
             futures.append(future)
 
-        results = await asyncio.gather(*futures, return_exceptions=True)
-        await self.request_queue.join()
-        queue_processor.cancel()
-
-        return [
-            result for result in results if not isinstance(result, Exception)
-        ]
+        try:
+            results = await asyncio.gather(*futures, return_exceptions=True)
+            # Check if any result is an exception and raise it
+            exceptions = set([r for r in results if isinstance(r, Exception)])
+            if exceptions:
+                raise Exception(
+                    f"Embedding generation failed for one or more embeddings."
+                )
+            return results
+        except Exception as e:
+            logger.error(f"Embedding generation failed: {str(e)}")
+            raise
+        finally:
+            await self.request_queue.join()
+            queue_processor.cancel()
 
     def rerank(
         self,
@@ -147,7 +151,6 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
     def tokenize_string(
         self, text: str, model: str, stage: EmbeddingProvider.PipeStage
     ) -> list[int]:
-        """Tokenizes the input string."""
         raise NotImplementedError(
             "Tokenization is not supported by OllamaEmbeddingProvider."
         )
