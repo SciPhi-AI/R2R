@@ -322,6 +322,26 @@ class R2RExecutionWrapper:
                 filter_criteria=filter_criteria, analysis_types=analysis_types
             )
 
+    def ingest_sample_file(no_media: bool = True):
+        from r2r.examples.scripts.sample_data_ingestor import (
+            SampleDataIngestor,
+        )
+
+        """Ingest the first sample file into R2R."""
+        sample_ingestor = SampleDataIngestor()
+        response = sample_ingestor.ingest_sample_file(no_media=no_media)
+        return response["results"]
+
+    def ingest_sample_files(no_media: bool = True):
+        from r2r.examples.scripts.sample_data_ingestor import (
+            SampleDataIngestor,
+        )
+
+        """Ingest the first sample file into R2R."""
+        sample_ingestor = SampleDataIngestor()
+        response = sample_ingestor.ingest_sample_files(no_media=no_media)
+        return response["results"]
+
     def get_app(self):
         if self.client_server_mode:
             return self.app.app.app

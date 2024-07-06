@@ -233,36 +233,6 @@ def rag(
 
 
 @cli.command()
-@click.option(
-    "--query", prompt="Enter the query", help="The query to evaluate"
-)
-@click.option(
-    "--context", prompt="Enter the context", help="The context for evaluation"
-)
-@click.option(
-    "--completion",
-    prompt="Enter the completion",
-    help="The completion to evaluate",
-)
-@click.option(
-    "--eval-model", default="gpt-3.5-turbo", help="Model for evaluation"
-)
-@click.pass_obj
-def evaluate(obj, query, context, completion, eval_model):
-    """Evaluate a query, context, and completion."""
-    eval_generation_config = GenerationConfig(model=eval_model)
-
-    t0 = time.time()
-    response = obj.evaluate(
-        query, context, completion, eval_generation_config.dict()
-    )
-    t1 = time.time()
-
-    click.echo(response)
-    click.echo(f"Time taken for evaluation: {t1-t0:.2f} seconds")
-
-
-@cli.command()
 @click.option("--keys", multiple=True, help="Keys for deletion")
 @click.option("--values", multiple=True, help="Values for deletion")
 @click.pass_obj
@@ -389,6 +359,26 @@ def ingest_sample_file(obj, no_media):
     response = sample_ingestor.ingest_sample_file(no_media=no_media)
     t1 = time.time()
     click.echo(f"Time taken to ingest sample file: {t1-t0:.2f} seconds")
+    click.echo(response)
+
+
+@cli.command()
+@click.option(
+    "--no-media",
+    is_flag=True,
+    default=True,
+    help="Exclude media files from ingestion",
+)
+@click.pass_obj
+def ingest_sample_files(obj, no_media):
+    """Ingest all sample files into R2R."""
+    from r2r.examples.scripts.sample_data_ingestor import SampleDataIngestor
+
+    t0 = time.time()
+    sample_ingestor = SampleDataIngestor()
+    response = sample_ingestor.ingest_sample_files(no_media=no_media)
+    t1 = time.time()
+    click.echo(f"Time taken to ingest all sample files: {t1-t0:.2f} seconds")
     click.echo(response)
 
 
