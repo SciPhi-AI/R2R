@@ -390,21 +390,27 @@ def ingest_sample_file(obj):
     """Ingest the first sample file into R2R."""
     t0 = time.time()
     sample_ingestor = SampleDataIngestor()
-    response = sample_ingestor.ingest_sample_file()
+    response = sample_ingestor.ingest_sample_file(no_media=no_media)
     t1 = time.time()
     click.echo(f"Time taken to ingest sample file: {t1-t0:.2f} seconds")
     click.echo(response)
 
 
 @cli.command()
+@click.option(
+    "--no-media",
+    is_flag=True,
+    default=True,
+    help="Exclude media files from ingestion",
+)
 @click.pass_obj
-def ingest_sample_files(obj):
+def ingest_sample_files(obj, no_media):
     """Ingest all sample files into R2R."""
     from r2r.examples.scripts.sample_data_ingester import SampleDataIngestor
 
     t0 = time.time()
     sample_ingestor = SampleDataIngestor()
-    response = sample_ingestor.ingest_sample_files()
+    response = sample_ingestor.ingest_sample_files(no_media=no_media)
     t1 = time.time()
     click.echo(f"Time taken to ingest all sample files: {t1-t0:.2f} seconds")
     click.echo(response)
