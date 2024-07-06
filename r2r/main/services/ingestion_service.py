@@ -512,9 +512,6 @@ class IngestionService(Service):
                 )
 
                 documents_overview_modified.append(document_info)
-            print(
-                "documents_overview_modified = ", documents_overview_modified
-            )
 
             await self.ingest_files(
                 files,
@@ -529,9 +526,6 @@ class IngestionService(Service):
                 await self._delete(
                     ["document_id", "version"], [str(id), old_version]
                 )
-            print(
-                "documents_overview_modified = ", documents_overview_modified
-            )
             self.providers.vector_db.upsert_documents_overview(
                 documents_overview_modified
             )

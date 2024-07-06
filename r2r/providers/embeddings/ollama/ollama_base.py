@@ -38,7 +38,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self.aclient = AsyncClient(host=self.base_url)
 
         self.request_queue = asyncio.Queue()
-        self.max_retries = 1
+        self.max_retries = 2
         self.initial_backoff = 1
         self.max_backoff = 60
         self.concurrency_limit = 10

@@ -84,7 +84,9 @@ class VectorStoragePipe(AsyncPipe):
         batch_tasks = []
         vector_batch = []
         document_counts = {}
+        i = 0
         async for msg in input.message:
+            i += 1
             if isinstance(msg, R2RDocumentProcessingError):
                 yield (msg.document_id, msg)
                 continue

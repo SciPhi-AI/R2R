@@ -26,7 +26,7 @@ JSON = JsonParamType()
     "--config-path", default=None, help="Path to the configuration file"
 )
 @click.option(
-    "--config-name", default="default", help="Name of the configuration to use"
+    "--config-name", default=None, help="Name of the configuration to use"
 )
 @click.option(
     "--client-server-mode", default=True, help="Run in client-server mode"
@@ -39,13 +39,14 @@ JSON = JsonParamType()
 @click.pass_context
 def cli(ctx, config_path, config_name, client_server_mode, base_url):
     """R2R CLI for all core operations."""
-    if config_path and config_name != "default":
+    if config_path and config_name:
         raise click.UsageError(
             "Cannot specify both config_path and config_name"
         )
 
     ctx.obj = R2RExecutionWrapper(
         config_path,
+        config_name,
         client_server_mode if ctx.invoked_subcommand != "serve" else False,
         base_url,
     )
@@ -74,7 +75,6 @@ def serve(obj, host, port):
 @click.pass_obj
 def ingest_files(obj, file_paths, document_ids, metadatas, versions):
     """Ingest files into R2R."""
-    print("ingesting files....")
 
     t0 = time.time()
 
@@ -100,10 +100,6 @@ def ingest_files(obj, file_paths, document_ids, metadatas, versions):
 @click.pass_obj
 def update_files(obj, file_paths, document_ids, metadatas):
     """Ingest files into R2R."""
-    print("ingesting files....")
-    print(f"file_paths={file_paths}")
-    print(f"document_ids={document_ids}")
-
     t0 = time.time()
 
     # Default to None if empty tuples are provided
@@ -229,7 +225,6 @@ def rag(
             click.echo(chunk, nl=False)
         click.echo()
     else:
-        print("response = ", response)
         click.echo(f"Search Results:\n{response['search_results']}")
         click.echo(f"Completion:\n{response['completion']}")
 
@@ -386,7 +381,7 @@ def analytics(obj, filters, analysis_types):
 )
 @click.pass_obj
 def ingest_sample_file(obj, no_media):
-    from r2r.examples.scripts.sample_data_ingester import SampleDataIngestor
+    from r2r.examples.scripts.sample_data_ingestor import SampleDataIngestor
 
     """Ingest the first sample file into R2R."""
     t0 = time.time()
@@ -407,7 +402,7 @@ def ingest_sample_file(obj, no_media):
 @click.pass_obj
 def ingest_sample_files(obj, no_media):
     """Ingest all sample files into R2R."""
-    from r2r.examples.scripts.sample_data_ingester import SampleDataIngestor
+    from r2r.examples.scripts.sample_data_ingestor import SampleDataIngestor
 
     t0 = time.time()
     sample_ingestor = SampleDataIngestor()

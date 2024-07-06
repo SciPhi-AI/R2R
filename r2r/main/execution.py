@@ -11,6 +11,7 @@ from r2r import (
     AnalysisTypes,
     FilterCriteria,
     KGSearchSettings,
+    R2RBuilder,
     R2RClient,
     R2RConfig,
     VectorSearchSettings,
@@ -24,10 +25,14 @@ class R2RExecutionWrapper:
 
     def __init__(
         self,
-        config_path=None,
+        config_path: Optional[str] = None,
+        config_name: Optional[str] = "default",
         client_server_mode=True,
         base_url="http://localhost:8000",
     ):
+        if config_path and config_name:
+            raise Exception("Cannot specify both config_path and config_name")
+
         self.client_server_mode = client_server_mode
         if client_server_mode:
             self.client = R2RClient(base_url)
@@ -35,15 +40,18 @@ class R2RExecutionWrapper:
             config = (
                 R2RConfig.from_json(config_path)
                 if config_path
-                else R2RConfig.from_json()
+                else R2RConfig.from_json(
+                    R2RBuilder.CONFIG_OPTIONS[config_name or "default"]
+                )
             )
+
             self.app = R2R(config=config)
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         if not self.client_server_mode:
             self.app.serve(host, port)
         else:
-            print(
+            raise Exception(
                 "Serve method is only available when `client_server_mode=False`."
             )
 
@@ -318,10 +326,9 @@ class R2RExecutionWrapper:
         if self.client_server_mode:
             return self.app.app.app
         else:
-            print(
+            raise Exception(
                 "`get_app` method is only available when running with `client_server_mode=False`."
             )
-            return None
 
 
 if __name__ == "__main__":

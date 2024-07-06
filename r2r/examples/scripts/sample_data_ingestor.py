@@ -1,4 +1,5 @@
 import os
+import time
 import uuid
 from typing import List, Optional, Union
 
@@ -38,18 +39,18 @@ class SampleDataIngestor:
         )
 
         return [
-            os.path.join(examples_dir, "data", "aristotle.txt"),
-            os.path.join(examples_dir, "data", "got.txt"),
-            # os.path.join(examples_dir, "data", "screen_shot.png"),
-            os.path.join(examples_dir, "data", "pg_essay_1.html"),
-            os.path.join(examples_dir, "data", "pg_essay_2.html"),
-            os.path.join(examples_dir, "data", "pg_essay_3.html"),
-            os.path.join(examples_dir, "data", "pg_essay_4.html"),
-            os.path.join(examples_dir, "data", "pg_essay_5.html"),
+            # os.path.join(examples_dir, "data", "aristotle.txt"),
+            # os.path.join(examples_dir, "data", "got.txt"),
+            # # os.path.join(examples_dir, "data", "screen_shot.png"),
+            # os.path.join(examples_dir, "data", "pg_essay_1.html"),
+            # os.path.join(examples_dir, "data", "pg_essay_2.html"),
+            # os.path.join(examples_dir, "data", "pg_essay_3.html"),
+            # os.path.join(examples_dir, "data", "pg_essay_4.html"),
+            # os.path.join(examples_dir, "data", "pg_essay_5.html"),
             os.path.join(examples_dir, "data", "lyft_2021.pdf"),
             # os.path.join(examples_dir, "data", "uber_2021.pdf"),
-            os.path.join(examples_dir, "data", "sample.mp3"),
-            os.path.join(examples_dir, "data", "sample2.mp3"),
+            # os.path.join(examples_dir, "data", "sample.mp3"),
+            # os.path.join(examples_dir, "data", "sample2.mp3"),
         ]
 
     def ingest_files(
@@ -96,6 +97,7 @@ class SampleDataIngestor:
                     file.close()
 
     def ingest_sample_files(self, no_media: bool = True):
+        t0 = time.time()
         sample_files = self.get_sample_files()
         user_ids = [
             uuid.UUID(user_id) if user_id else None
@@ -106,8 +108,10 @@ class SampleDataIngestor:
 
         print("Sample files ingested successfully.")
         print(response)
+        print(f"Time taken: {time.time() - t0:.2f} seconds")
 
     def ingest_sample_file(self, no_media: bool = True):
+        t0 = time.time()
         sample_files = self.get_sample_files()
         user_id = uuid.UUID(self.USER_IDS[0])
 
@@ -115,6 +119,7 @@ class SampleDataIngestor:
 
         print("First sample file ingested successfully.")
         print(response)
+        print(f"Time taken: {time.time() - t0:.2f} seconds")
 
 
 if __name__ == "__main__":
