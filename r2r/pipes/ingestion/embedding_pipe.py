@@ -45,6 +45,9 @@ class EmbeddingPipe(AsyncPipe):
         *args,
         **kwargs,
     ):
+        """
+        Initializes the embedding pipe with necessary components and configurations.
+        """
         super().__init__(
             pipe_logger=pipe_logger,
             type=type,
@@ -60,6 +63,9 @@ class EmbeddingPipe(AsyncPipe):
     async def fragment(
         self, extraction: Extraction, run_id: uuid.UUID
     ) -> AsyncGenerator[Fragment, None]:
+        """
+        Splits text into manageable chunks for embedding.
+        """
         if not isinstance(extraction, Extraction):
             raise ValueError(
                 f"Expected an Extraction, but received {type(extraction)}."
@@ -82,31 +88,17 @@ class EmbeddingPipe(AsyncPipe):
                 document_id=extraction.document_id,
             )
             yield fragment
-            # TODO - Add settings to enable intelligent ingestion logging
-            # fragment_dict = fragment.dict()
-            # await self.enqueue_log(
-            #     run_id=run_id,
-            #     key="fragment",
-            #     value=json.dumps(
-            #         {
-            #             "data": fragment_dict["data"],
-            #             "document_id": str(fragment_dict["document_id"]),
-            #             "extraction_id": str(fragment_dict["extraction_id"]),
-            #             "fragment_id": str(fragment_dict["id"]),
-            #         }
-            #     ),
-            # )
             iteration += 1
 
     async def transform_fragments(
-        self, fragments: list[Fragment]
+        self, fragments: list[Fragment], metadatas: list[dict]
     ) -> AsyncGenerator[Fragment, None]:
         """
         Transforms text chunks based on their metadata, e.g., adding prefixes.
         """
-        async for fragment in fragments:
-            if "chunk_prefix" in fragment.metadata:
-                prefix = fragment.metadata.pop("chunk_prefix")
+        async for fragment, metadata in zip(fragments, metadatas):
+            if "chunk_prefix" in metadata:
+                prefix = metadata.pop("chunk_prefix")
                 fragment.data = f"{prefix}\n{fragment.data}"
             yield fragment
 
@@ -119,6 +111,9 @@ class EmbeddingPipe(AsyncPipe):
     async def _process_batch(
         self, fragment_batch: list[Fragment]
     ) -> list[VectorEntry]:
+        """
+        Embeds a batch of fragments and yields vector entries.
+        """
         vectors = await self.embed(fragment_batch)
         return [
             VectorEntry(
@@ -172,19 +167,18 @@ class EmbeddingPipe(AsyncPipe):
                 yield extraction
                 continue
 
-            fragment_batch = []
-            async for fragment in self.transform_fragments(
-                self.fragment(extraction, run_id)
-            ):
+            async for fragment in self.fragment(extraction, run_id):
                 if extraction.document_id in fragment_info:
                     fragment_info[extraction.document_id] += 1
                 else:
-                    fragment_info[extraction.document_id] = 0
+                    fragment_info[extraction.document_id] = 0  # Start with 0
                 fragment.metadata["chunk_order"] = fragment_info[
                     extraction.document_id
                 ]
 
                 version = fragment.metadata.get("version", "v0")
+
+                # Ensure fragment ID is set correctly
                 if not fragment.id:
                     fragment.id = generate_id_from_label(
                         f"{extraction.id}-{fragment_info[extraction.document_id]}-{version}"
@@ -192,29 +186,13 @@ class EmbeddingPipe(AsyncPipe):
 
                 fragment_batch.append(fragment)
                 if len(fragment_batch) >= self.embedding_batch_size:
-                    try:
-                        batch_result = await self._process_batch(
-                            fragment_batch
+                    asyncio.create_task(
+                        self._process_and_enqueue_batch(
+                            fragment_batch.copy(), vector_entry_queue
                         )
-                        for vector_entry in batch_result:
-                            yield vector_entry
-                    except Exception as e:
-                        logger.error(f"Error processing batch: {e}")
-                        yield R2RDocumentProcessingError(
-                            str(e), extraction.document_id
-                        )
-                    fragment_batch.clear()
-
-            if fragment_batch:
-                try:
-                    batch_result = await self._process_batch(fragment_batch)
-                    for vector_entry in batch_result:
-                        yield vector_entry
-                except Exception as e:
-                    logger.error(f"Error processing batch: {e}")
-                    yield R2RDocumentProcessingError(
-                        str(e), extraction.document_id
                     )
+                    active_tasks += 1
+                    fragment_batch.clear()
 
         logger.debug(
             f"Fragmented the input document ids into counts as shown: {fragment_info}"
