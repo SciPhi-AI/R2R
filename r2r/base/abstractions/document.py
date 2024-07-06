@@ -52,6 +52,10 @@ class Document(BaseModel):
                 # If it's not base64, encode it to bytes
                 kwargs["data"] = data.encode("utf-8")
 
+        doc_type = kwargs.get("type")
+        if isinstance(doc_type, str):
+            kwargs["type"] = DocumentType(doc_type)
+
         # Generate UUID based on the hash of the data
         if "id" not in kwargs:
             if isinstance(kwargs["data"], bytes):
@@ -73,6 +77,16 @@ class Document(BaseModel):
         }
 
 
+class DocumentStatus(str, Enum):
+    """Status of document processing."""
+
+    PROCESSING = "processing"
+    # TODO - Extend support for `partial-failure`
+    # PARTIAL_FAILURE = "partial-failure"
+    FAILURE = "failure"
+    SUCCESS = "success"
+
+
 class DocumentInfo(BaseModel):
     """Base class for document information handling."""
 
@@ -80,6 +94,7 @@ class DocumentInfo(BaseModel):
     version: str
     size_in_bytes: int
     metadata: dict
+    status: DocumentStatus = DocumentStatus.PROCESSING
 
     user_id: Optional[uuid.UUID] = None
     title: Optional[str] = None
@@ -103,6 +118,7 @@ class DocumentInfo(BaseModel):
             "metadata": json.dumps(self.metadata),
             "created_at": self.created_at or now,
             "updated_at": self.updated_at or now,
+            "status": self.status,
         }
 
 

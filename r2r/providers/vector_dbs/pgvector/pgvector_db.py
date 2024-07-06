@@ -134,7 +134,8 @@ class PGVectorDB(VectorDBProvider):
                     logger.error(f"Error enabling uuid-ossp extension: {e}")
                     raise
 
-                query = f"""
+                # Create the table if it doesn't exist
+                create_table_query = f"""
                 CREATE TABLE IF NOT EXISTS document_info_{self.collection_name} (
                     document_id UUID PRIMARY KEY,
                     title TEXT,
@@ -143,10 +144,29 @@ class PGVectorDB(VectorDBProvider):
                     size_in_bytes INT,
                     created_at TIMESTAMPTZ DEFAULT NOW(),
                     updated_at TIMESTAMPTZ DEFAULT NOW(),
-                    metadata JSONB
+                    metadata JSONB,
+                    status TEXT
                 );
                 """
-                sess.execute(text(query))
+                sess.execute(text(create_table_query))
+
+                # Add the new column if it doesn't exist
+                add_column_query = f"""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1
+                        FROM information_schema.columns
+                        WHERE table_name = 'document_info_{self.collection_name}'
+                        AND column_name = 'status'
+                    ) THEN
+                        ALTER TABLE document_info_{self.collection_name}
+                        ADD COLUMN status TEXT DEFAULT 'processing';
+                    END IF;
+                END $$;
+                """
+                sess.execute(text(add_column_query))
+
                 sess.commit()
 
     def _create_hybrid_search_function(self):
@@ -452,15 +472,16 @@ class PGVectorDB(VectorDBProvider):
 
             query = text(
                 f"""
-                INSERT INTO document_info_{self.collection_name} (document_id, title, user_id, version, created_at, updated_at, size_in_bytes, metadata)
-                VALUES (:document_id, :title, :user_id, :version, :created_at, :updated_at, :size_in_bytes, :metadata)
+                INSERT INTO document_info_{self.collection_name} (document_id, title, user_id, version, created_at, updated_at, size_in_bytes, metadata, status)
+                VALUES (:document_id, :title, :user_id, :version, :created_at, :updated_at, :size_in_bytes, :metadata, :status)
                 ON CONFLICT (document_id) DO UPDATE SET
                     title = EXCLUDED.title,
                     user_id = EXCLUDED.user_id,
                     version = EXCLUDED.version,
                     updated_at = EXCLUDED.updated_at,
                     size_in_bytes = EXCLUDED.size_in_bytes,
-                    metadata = EXCLUDED.metadata;
+                    metadata = EXCLUDED.metadata,
+                    status = EXCLUDED.status;
             """
             )
             with self.vx.Session() as sess:
@@ -518,7 +539,7 @@ class PGVectorDB(VectorDBProvider):
             )
 
         query = f"""
-            SELECT document_id, title, user_id, version, size_in_bytes, created_at, updated_at, metadata
+            SELECT document_id, title, user_id, version, size_in_bytes, created_at, updated_at, metadata, status
             FROM document_info_{self.collection_name}
         """
         if conditions:
@@ -536,6 +557,7 @@ class PGVectorDB(VectorDBProvider):
                     created_at=row[5],
                     updated_at=row[6],
                     metadata=row[7],
+                    status=row[8],
                 )
                 for row in results
             ]

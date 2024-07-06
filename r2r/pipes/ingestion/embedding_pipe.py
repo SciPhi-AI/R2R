@@ -140,7 +140,8 @@ class EmbeddingPipe(AsyncPipe):
             logger.error(f"Error processing batch: {e}")
             await vector_entry_queue.put(
                 R2RDocumentProcessingError(
-                    str(e), fragment_batch[0].document_id
+                    error_message=str(e),
+                    document_id=fragment_batch[0].document_id,
                 )
             )
         finally:
