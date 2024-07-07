@@ -14,14 +14,12 @@ from r2r.base import (
     VectorSearchSettings,
     generate_id_from_label,
 )
-
-from r2r.main import (
-    R2R,
-    R2RBuilder,
-    R2RClient,
-    R2RConfig,
-)
 from r2r.base.abstractions.llm import GenerationConfig
+
+from .api.client import R2RClient
+from .assembly.builder import R2RBuilder
+from .assembly.config import R2RConfig
+from .r2r import R2R
 
 
 class R2RExecutionWrapper:
