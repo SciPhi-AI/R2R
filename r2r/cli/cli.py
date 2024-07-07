@@ -351,15 +351,12 @@ def analytics(obj, filters, analysis_types):
 )
 @click.pass_obj
 def ingest_sample_file(obj, no_media):
-    from r2r.examples.scripts.sample_data_ingestor import SampleDataIngestor
-
-    """Ingest the first sample file into R2R."""
     t0 = time.time()
-    sample_ingestor = SampleDataIngestor()
-    response = sample_ingestor.ingest_sample_file(no_media=no_media)
+    response = obj.ingest_sample_file(no_media=no_media)
     t1 = time.time()
-    click.echo(f"Time taken to ingest sample file: {t1-t0:.2f} seconds")
+
     click.echo(response)
+    click.echo(f"Time taken to ingest sample: {t1-t0:.2f} seconds")
 
 
 @cli.command()
@@ -372,34 +369,12 @@ def ingest_sample_file(obj, no_media):
 @click.pass_obj
 def ingest_sample_files(obj, no_media):
     """Ingest all sample files into R2R."""
-    from r2r.examples.scripts.sample_data_ingestor import SampleDataIngestor
-
     t0 = time.time()
-    sample_ingestor = SampleDataIngestor()
-    response = sample_ingestor.ingest_sample_files(no_media=no_media)
+    response = obj.ingest_sample_files(no_media=no_media)
     t1 = time.time()
-    click.echo(f"Time taken to ingest all sample files: {t1-t0:.2f} seconds")
+
     click.echo(response)
-
-
-@cli.command()
-@click.option(
-    "--no-media",
-    is_flag=True,
-    default=True,
-    help="Exclude media files from ingestion",
-)
-@click.pass_obj
-def ingest_sample_files(obj, no_media):
-    """Ingest all sample files into R2R."""
-    from r2r.examples.scripts.sample_data_ingestor import SampleDataIngestor
-
-    t0 = time.time()
-    sample_ingestor = SampleDataIngestor()
-    response = sample_ingestor.ingest_sample_files(no_media=no_media)
-    t1 = time.time()
-    click.echo(f"Time taken to ingest all sample files: {t1-t0:.2f} seconds")
-    click.echo(response)
+    click.echo(f"Time taken to ingest sample files: {t1-t0:.2f} seconds")
 
 
 def main():
