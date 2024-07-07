@@ -7,16 +7,19 @@ from typing import Optional
 
 from fastapi import UploadFile
 
-from r2r import (
-    R2R,
+from r2r.base import (
     AnalysisTypes,
     FilterCriteria,
     KGSearchSettings,
+    VectorSearchSettings,
+    generate_id_from_label,
+)
+
+from r2r.main import (
+    R2R,
     R2RBuilder,
     R2RClient,
     R2RConfig,
-    VectorSearchSettings,
-    generate_id_from_label,
 )
 from r2r.base.abstractions.llm import GenerationConfig
 
