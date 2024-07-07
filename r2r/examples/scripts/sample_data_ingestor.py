@@ -68,6 +68,7 @@ class SampleDataIngestor:
 
         print("Sample files ingested successfully.")
         print(response)
+        return response
 
     def ingest_sample_file(self, no_media: bool = True):
         sample_files = self.get_sample_files()
@@ -79,6 +80,7 @@ class SampleDataIngestor:
 
         print("First sample file ingested successfully.")
         print(response)
+        return response
 
 
 if __name__ == "__main__":

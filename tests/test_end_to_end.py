@@ -24,14 +24,17 @@ def app(request):
     config.logging.provider = "local"
     config.logging.logging_path = uuid.uuid4().hex
 
-    config.vector_database.provider = "pgvector"
-    config.vector_database.extra_fields["vecs_collection"] = (
-        config.logging.logging_path
-    )
+    vector_db_provider = request.param
+    if vector_db_provider == "pgvector":
+        config.vector_database.provider = "pgvector"
+        config.vector_database.extra_fields["vecs_collection"] = (
+            config.logging.logging_path
+        )
     try:
         providers = R2RProviderFactory(config).create_providers()
         pipes = R2RPipeFactory(config, providers).create_pipes()
         pipelines = R2RPipelineFactory(config, pipes).create_pipelines()
+
         r2r = R2REngine(
             config=config,
             providers=providers,
