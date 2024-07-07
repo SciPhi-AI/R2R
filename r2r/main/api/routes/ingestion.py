@@ -40,7 +40,3 @@ class IngestionRouter(BaseRouter):
                 metadatas=request.metadatas,
                 document_ids=request.document_ids,
             )
-
-
-def create_ingestion_router(engine: R2REngine):
-    return IngestionRouter(engine).router

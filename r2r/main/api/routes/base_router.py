@@ -69,3 +69,7 @@ class BaseRouter:
                     ) from e
 
         return wrapper
+
+    @classmethod
+    def build_router(cls, engine):
+        return cls(engine).router

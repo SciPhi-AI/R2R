@@ -16,6 +16,7 @@ from r2r.base import (
     RunManager,
     generate_id_from_label,
     increment_version,
+    manage_run,
     to_async_generator,
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event
@@ -153,7 +154,7 @@ class IngestionService(Service):
             **kwargs,
         )
 
-        return self._process_ingestion_results(
+        return await self._process_ingestion_results(
             ingestion_results,
             document_infos,
             skipped_documents,
@@ -283,13 +284,13 @@ class IngestionService(Service):
                     ["document_id", "version"], [str(doc_id), old_version]
                 )
 
-            return f"Documents updated: {ingestion_results['processed_documents']}\nFailed updates: {ingestion_results['failed_documents']}"
+            return ingestion_results
 
         finally:
             for file in files:
                 file.file.close()
 
-    def _process_ingestion_results(
+    async def _process_ingestion_results(
         self,
         ingestion_results: dict,
         document_infos: list[DocumentInfo],
@@ -331,7 +332,7 @@ class IngestionService(Service):
                 documents_to_upsert
             )
 
-        return {
+        results = {
             "processed_documents": [
                 f"Document '{processed_documents[document_id]}' processed successfully."
                 for document_id in successful_ids
@@ -345,6 +346,20 @@ class IngestionService(Service):
                 for _, filename in skipped_documents
             ],
         }
+
+        # TODO - Clean up logging for document parse results
+        run_ids = list(self.run_manager.run_info.keys())
+        if run_ids:
+            run_id = run_ids[0]
+            for key in results:
+                if key in ["processed_documents", "failed_documents"]:
+                    for value in results[key]:
+                        await self.logging_connection.log(
+                            log_id=run_id,
+                            key="document_parse_result",
+                            value=value,
+                        )
+        return results
 
     @staticmethod
     def parse_ingest_files_form_data(
