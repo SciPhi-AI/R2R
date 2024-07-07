@@ -106,8 +106,6 @@ class R2RExecutionWrapper:
         document_ids: Optional[list[str]] = None,
         versions: Optional[list[str]] = None,
     ):
-        print("calling ingest files...")
-        print("self.client_server_mode = ", self.client_server_mode)
         if isinstance(file_paths, str):
             file_paths = list(file_paths.split(","))
         if isinstance(metadatas, str):
