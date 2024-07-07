@@ -219,7 +219,6 @@ def rag(
         stream,
         rag_generation_config.dict(),
     )
-
     if stream:
         for chunk in response:
             click.echo(chunk, nl=False)
