@@ -26,7 +26,6 @@ class RAGCompletion:
 
 
 class GenerationConfig(BaseModel):
-
     _defaults: ClassVar[dict] = {
         "model": "gpt-4o",
         "temperature": 0.1,

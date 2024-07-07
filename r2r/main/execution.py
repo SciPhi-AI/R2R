@@ -14,14 +14,12 @@ from r2r.base import (
     VectorSearchSettings,
     generate_id_from_label,
 )
-
-from r2r.main import (
-    R2R,
-    R2RBuilder,
-    R2RClient,
-    R2RConfig,
-)
 from r2r.base.abstractions.llm import GenerationConfig
+
+from .api.client import R2RClient
+from .assembly.builder import R2RBuilder
+from .assembly.config import R2RConfig
+from .r2r import R2R
 
 
 class R2RExecutionWrapper:
@@ -162,6 +160,13 @@ class R2RExecutionWrapper:
         document_ids: list[str],
         metadatas: Optional[list[dict]] = None,
     ):
+        if isinstance(file_paths, str):
+            file_paths = list(file_paths.split(","))
+        if isinstance(metadatas, str):
+            metadatas = self._parse_metadata_string(metadatas)
+        if isinstance(document_ids, str):
+            document_ids = list(document_ids.split(","))
+
         if self.client_server_mode:
             return self.client.update_files(
                 file_paths=file_paths,
@@ -251,7 +256,7 @@ class R2RExecutionWrapper:
 
         rag_generation_config = GenerationConfig(**rag_config)
 
-        if hasattr(self, "client"):
+        if self.client_server_mode:
             response = self.client.rag(
                 query=query,
                 use_vector_search=use_vector_search,
@@ -264,6 +269,7 @@ class R2RExecutionWrapper:
             )
             if not stream:
                 response = response["results"]
+                return response
             else:
                 return response
         else:
