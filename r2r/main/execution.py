@@ -1,3 +1,4 @@
+import ast
 import asyncio
 import json
 import os
@@ -27,15 +28,18 @@ class R2RExecutionWrapper:
         self,
         config_path: Optional[str] = None,
         config_name: Optional[str] = "default",
-        client_server_mode=True,
+        client_server_mode: bool = True,
         base_url="http://localhost:8000",
     ):
         if config_path and config_name:
             raise Exception("Cannot specify both config_path and config_name")
-
+        # handle fire CLI
+        if isinstance(client_server_mode, str):
+            client_server_mode = client_server_mode == "True"
         self.client_server_mode = client_server_mode
-        if client_server_mode:
+        if self.client_server_mode:
             self.client = R2RClient(base_url)
+            self.app = None
         else:
             config = (
                 R2RConfig.from_json(config_path)
@@ -44,8 +48,8 @@ class R2RExecutionWrapper:
                     R2RBuilder.CONFIG_OPTIONS[config_name or "default"]
                 )
             )
-
             self.app = R2R(config=config)
+            self.client = None
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         if not self.client_server_mode:
@@ -55,6 +59,46 @@ class R2RExecutionWrapper:
                 "Serve method is only available when `client_server_mode=False`."
             )
 
+    def _parse_metadata_string(metadata_string: str) -> list[dict]:
+        """
+        Convert a string representation of metadata into a list of dictionaries.
+
+        The input string can be in one of two formats:
+        1. JSON array of objects: '[{"key": "value"}, {"key2": "value2"}]'
+        2. Python-like list of dictionaries: "[{'key': 'value'}, {'key2': 'value2'}]"
+
+        Args:
+        metadata_string (str): The string representation of metadata.
+
+        Returns:
+        list[dict]: A list of dictionaries representing the metadata.
+
+        Raises:
+        ValueError: If the string cannot be parsed into a list of dictionaries.
+        """
+        if not metadata_string:
+            return []
+
+        try:
+            # First, try to parse as JSON
+            return json.loads(metadata_string)
+        except json.JSONDecodeError:
+            try:
+                # If JSON parsing fails, try to evaluate as a Python literal
+                result = ast.literal_eval(metadata_string)
+                if not isinstance(result, list) or not all(
+                    isinstance(item, dict) for item in result
+                ):
+                    raise ValueError(
+                        "The string does not represent a list of dictionaries"
+                    )
+                return result
+            except (ValueError, SyntaxError):
+                raise ValueError(
+                    "Unable to parse the metadata string. "
+                    "Please ensure it's a valid JSON array or Python list of dictionaries."
+                )
+
     def ingest_files(
         self,
         file_paths: list[str],
@@ -62,7 +106,16 @@ class R2RExecutionWrapper:
         document_ids: Optional[list[str]] = None,
         versions: Optional[list[str]] = None,
     ):
-        file_paths = list(file_paths)
+        print("calling ingest files...")
+        print("self.client_server_mode = ", self.client_server_mode)
+        if isinstance(file_paths, str):
+            file_paths = list(file_paths.split(","))
+        if isinstance(metadatas, str):
+            metadatas = self._parse_metadata_string(metadatas)
+        if isinstance(document_ids, str):
+            document_ids = list(document_ids.split(","))
+        if isinstance(versions, str):
+            versions = list(versions.split(","))
 
         document_ids = (
             [
@@ -85,12 +138,6 @@ class R2RExecutionWrapper:
             file.file.seek(0, 2)
             file.size = file.file.tell()
             file.file.seek(0)
-
-        metadatas = (
-            [json.loads(metadata) for metadata in metadatas]
-            if metadatas
-            else None
-        )
 
         if self.client_server_mode:
             return self.client.ingest_files(
@@ -322,25 +369,25 @@ class R2RExecutionWrapper:
                 filter_criteria=filter_criteria, analysis_types=analysis_types
             )
 
-    def ingest_sample_file(no_media: bool = True):
+    def ingest_sample_file(self, no_media: bool = True):
         from r2r.examples.scripts.sample_data_ingestor import (
             SampleDataIngestor,
         )
 
         """Ingest the first sample file into R2R."""
-        sample_ingestor = SampleDataIngestor()
+        sample_ingestor = SampleDataIngestor(self)
         response = sample_ingestor.ingest_sample_file(no_media=no_media)
-        return response["results"]
+        return response
 
-    def ingest_sample_files(no_media: bool = True):
+    def ingest_sample_files(self, no_media: bool = True):
         from r2r.examples.scripts.sample_data_ingestor import (
             SampleDataIngestor,
         )
 
         """Ingest the first sample file into R2R."""
-        sample_ingestor = SampleDataIngestor()
+        sample_ingestor = SampleDataIngestor(self)
         response = sample_ingestor.ingest_sample_files(no_media=no_media)
-        return response["results"]
+        return response
 
     def get_app(self):
         if self.client_server_mode:

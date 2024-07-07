@@ -2,7 +2,7 @@ import json
 import logging
 import uuid
 from datetime import datetime
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 
 from fastapi import Form, UploadFile
 
@@ -67,8 +67,8 @@ class IngestionService(Service):
     @telemetry_event("IngestDocuments")
     async def ingest_documents(
         self,
-        documents: List[Document],
-        versions: Optional[List[str]] = None,
+        documents: list[Document],
+        versions: Optional[list[str]] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -103,7 +103,7 @@ class IngestionService(Service):
                     )
                 skipped_documents.append(
                     (
-                        str(document.id),
+                        document.id,
                         document.metadata.get("title", None)
                         or str(document.id),
                     )
@@ -138,7 +138,6 @@ class IngestionService(Service):
 
         # Insert pending document infos
         self.providers.vector_db.upsert_documents_overview(document_infos)
-
         ingestion_results = await self.pipelines.ingestion_pipeline.run(
             input=to_async_generator(
                 [
@@ -164,10 +163,10 @@ class IngestionService(Service):
     @telemetry_event("IngestFiles")
     async def ingest_files(
         self,
-        files: List[UploadFile],
-        metadatas: Optional[List[dict]] = None,
-        document_ids: Optional[List[uuid.UUID]] = None,
-        versions: Optional[List[str]] = None,
+        files: list[UploadFile],
+        metadatas: Optional[list[dict]] = None,
+        document_ids: Optional[list[uuid.UUID]] = None,
+        versions: Optional[list[str]] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -217,9 +216,9 @@ class IngestionService(Service):
     @telemetry_event("UpdateFiles")
     async def update_files(
         self,
-        files: List[UploadFile],
-        document_ids: List[uuid.UUID],
-        metadatas: Optional[List[dict]] = None,
+        files: list[UploadFile],
+        document_ids: list[uuid.UUID],
+        metadatas: Optional[list[dict]] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -293,8 +292,8 @@ class IngestionService(Service):
     def _process_ingestion_results(
         self,
         ingestion_results: dict,
-        document_infos: List[DocumentInfo],
-        skipped_documents: List[tuple[str, str]],
+        document_infos: list[DocumentInfo],
+        skipped_documents: list[tuple[str, str]],
         processed_documents: dict,
     ):
         skipped_ids = [ele[0] for ele in skipped_documents]
