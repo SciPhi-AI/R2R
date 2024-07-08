@@ -55,7 +55,7 @@ from .parsers import AsyncParser
 from .pipeline.base_pipeline import AsyncPipeline
 from .pipes.base_pipe import AsyncPipe, AsyncState, PipeType
 from .providers.auth import AuthConfig, AuthProvider
-from .providers.database import DatabaseConfig, DatabaseProvider
+from .providers.database import DatabaseConfig, DatabaseProvider, VectorDatabaseProvider, RelationalDatabaseProvider
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
 from .providers.eval import EvalConfig, EvalProvider
 from .providers.kg import KGConfig, KGProvider
@@ -145,6 +145,8 @@ __all__ = [
     "AuthProvider",
     "DatabaseConfig",
     "DatabaseProvider",
+    "VectorDatabaseProvider",
+    "RelationalDatabaseProvider",
     "KGProvider",
     "KGConfig",
     # Other

@@ -12,8 +12,6 @@ class UserCreate(UserBase):
 
 class User(BaseModel):
     email: EmailStr
-    password: str
-
     id: UUID = Field(default_factory=uuid4)
     hashed_password: str
     is_active: bool = True

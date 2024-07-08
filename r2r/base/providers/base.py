@@ -42,7 +42,7 @@ class ProviderConfig(BaseModel, ABC):
 class Provider(ABC):
     """A base provider class to provide a common interface for all providers."""
 
-    def __init__(self, config: Optional[ProviderConfig] = None):
+    def __init__(self, config: Optional[ProviderConfig] = None, *args, **kwargs):
         if config:
             config.validate()
         self.config = config
