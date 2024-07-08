@@ -4,7 +4,7 @@ networks:
 
 services:
   r2r:
-    image: emrgntcmplxty/r2r:main
+    image: r2r:test
     ports:
       - "8000:8000"
     environment:
@@ -18,7 +18,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OLLAMA_API_BASE=${OLLAMA_API_BASE:-}
       - CONFIG_OPTION=${CONFIG_OPTION:-}
-      - CLIENT_MODE=${CLIENT_MODE:-true}
+      - CLIENT_MODE=${CLIENT_MODE:-false}
     depends_on:
       - postgres
     networks:
