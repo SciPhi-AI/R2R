@@ -34,23 +34,29 @@ class R2RExecutionWrapper:
     ):
         if config_path and config_name:
             raise Exception("Cannot specify both config_path and config_name")
-        # handle fire CLI
+
+        # Handle fire CLI
         if isinstance(client_server_mode, str):
-            client_server_mode = client_server_mode == "True"
+            client_server_mode = client_server_mode.lower() == "true"
         self.client_server_mode = client_server_mode
+        self.base_url = base_url
+
+        config = (
+            R2RConfig.from_json(config_path)
+            if config_path
+            else R2RConfig.from_json(
+                R2RBuilder.CONFIG_OPTIONS[config_name or "default"]
+            )
+        )
+
+        self.r2r = R2R(config=config)
+
         if self.client_server_mode:
             self.client = R2RClient(base_url)
             self.app = None
         else:
-            config = (
-                R2RConfig.from_json(config_path)
-                if config_path
-                else R2RConfig.from_json(
-                    R2RBuilder.CONFIG_OPTIONS[config_name or "default"]
-                )
-            )
-            self.app = R2R(config=config)
             self.client = None
+            self.app = self.r2r
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         if not self.client_server_mode:
@@ -147,7 +153,7 @@ class R2RExecutionWrapper:
                 monitor=True,
             )["results"]
         else:
-            return self.app.ingest_files(
+            return self.r2r.ingest_files(
                 files=files,
                 document_ids=document_ids,
                 metadatas=metadatas,
@@ -182,7 +188,7 @@ class R2RExecutionWrapper:
                 )
                 for file_path in file_paths
             ]
-            return self.app.update_files(
+            return self.r2r.update_files(
                 files=files, document_ids=document_ids, metadatas=metadatas
             )
 
@@ -213,7 +219,7 @@ class R2RExecutionWrapper:
                 kg_agent_generation_config,
             )["results"]
         else:
-            return self.app.search(
+            return self.r2r.search(
                 query,
                 VectorSearchSettings(
                     use_vector_search=use_vector_search,
@@ -321,7 +327,7 @@ class R2RExecutionWrapper:
                 "results"
             ]
         else:
-            return self.app.documents_overview(document_ids, user_ids)
+            return self.r2r.documents_overview(document_ids, user_ids)
 
     def delete(
         self,
@@ -331,32 +337,32 @@ class R2RExecutionWrapper:
         if self.client_server_mode:
             return self.client.delete(keys, values)["results"]
         else:
-            return self.app.delete(keys, values)
+            return self.r2r.delete(keys, values)
 
     def logs(self, log_type_filter: Optional[str] = None):
         if self.client_server_mode:
             return self.client.logs(log_type_filter)["results"]
         else:
-            return self.app.logs(log_type_filter)
+            return self.r2r.logs(log_type_filter)
 
     def document_chunks(self, document_id: str):
         doc_uuid = uuid.UUID(document_id)
         if self.client_server_mode:
             return self.client.document_chunks(doc_uuid)["results"]
         else:
-            return self.app.document_chunks(doc_uuid)
+            return self.r2r.document_chunks(doc_uuid)
 
     def app_settings(self):
         if self.client_server_mode:
             return self.client.app_settings()
         else:
-            return self.app.app_settings()
+            return self.r2r.app_settings()
 
     def users_overview(self, user_ids: Optional[list[uuid.UUID]] = None):
         if self.client_server_mode:
             return self.client.users_overview(user_ids)["results"]
         else:
-            return self.app.users_overview(user_ids)
+            return self.r2r.users_overview(user_ids)
 
     def analytics(
         self,
@@ -372,7 +378,7 @@ class R2RExecutionWrapper:
                 analysis_types=analysis_types.model_dump(),
             )["results"]
         else:
-            return self.app.analytics(
+            return self.r2r.analytics(
                 filter_criteria=filter_criteria, analysis_types=analysis_types
             )
 
@@ -398,7 +404,7 @@ class R2RExecutionWrapper:
 
     def get_app(self):
         if self.client_server_mode:
-            return self.app.app.app
+            return self.r2r.app.app
         else:
             raise Exception(
                 "`get_app` method is only available when running with `client_server_mode=False`."
