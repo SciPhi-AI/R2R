@@ -64,7 +64,7 @@ First, clone the R2R repository:
 git clone https://github.com/SciPhi-AI/R2R.git
 cd R2R
 # for R2R CLI and Python client
-pip install . 
+pip install .
 ```
 
 Then, run the following command to start all containers:
@@ -84,7 +84,7 @@ export CONFIG_OPTION=local_ollama
 docker-compose up -d
 ```
 
-Note: Settings relating to Postgres+pgvector can be overriden by setting the appropriate environment variables before calling `docker-compose`. 
+Note: Settings relating to Postgres+pgvector can be overriden by setting the appropriate environment variables before calling `docker-compose`.
 ```bash
 export POSTGRES_USER=$YOUR_POSTGRES_USER
 export POSTGRES_PASSWORD=$YOUR_POSTGRES_PASSWORD
