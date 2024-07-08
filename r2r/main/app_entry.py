@@ -47,14 +47,14 @@ def r2r_app(
             "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
         )
 
-    quickstart = R2RExecutionWrapper(
+    wrapper = R2RExecutionWrapper(
         config_name=config_option,
         config_path=config_path,
         client_mode=client_mode,
         base_url=base_url,
     )
 
-    return quickstart.get_app()
+    return wrapper.get_app()
 
 
 logging.basicConfig(level=logging.INFO)
