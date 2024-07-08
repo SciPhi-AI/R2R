@@ -133,14 +133,11 @@ class R2RClient:
     @monitor_request
     def ingest_files(
         self,
-        file_paths: Union[str, list[str]],
+        file_paths: list[str],
         metadatas: Optional[list[dict]] = None,
         document_ids: Optional[list[Union[uuid.UUID, str]]] = None,
         versions: Optional[list[str]] = None,
     ) -> dict:
-        if isinstance(file_paths, str):
-            file_paths = [file_paths]
-
         all_file_paths = []
 
         for path in file_paths:
@@ -160,15 +157,8 @@ class R2RClient:
                     open(file, "rb"),
                     "application/octet-stream",
                 ),
-            )(
-                "files",
-                (
-                    os.path.basename(file),
-                    open(file, "rb"),
-                    "application/octet-stream",
-                ),
             )
-            for file in file_paths
+            for file in all_file_paths
         ]
         request = R2RIngestFilesRequest(
             metadatas=metadatas,
