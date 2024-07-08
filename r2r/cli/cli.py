@@ -28,16 +28,14 @@ JSON = JsonParamType()
 @click.option(
     "--config-name", default=None, help="Name of the configuration to use"
 )
-@click.option(
-    "--client-server-mode", default=True, help="Run in client-server mode"
-)
+@click.option("--client-mode", default=True, help="Run in client mode")
 @click.option(
     "--base-url",
     default="http://localhost:8000",
-    help="Base URL for client-server mode",
+    help="Base URL for client mode",
 )
 @click.pass_context
-def cli(ctx, config_path, config_name, client_server_mode, base_url):
+def cli(ctx, config_path, config_name, client_mode, base_url):
     """R2R CLI for all core operations."""
     if config_path and config_name:
         raise click.UsageError(
@@ -47,7 +45,7 @@ def cli(ctx, config_path, config_name, client_server_mode, base_url):
     ctx.obj = R2RExecutionWrapper(
         config_path,
         config_name,
-        client_server_mode if ctx.invoked_subcommand != "serve" else False,
+        client_mode if ctx.invoked_subcommand != "serve" else False,
         base_url,
     )
 
@@ -87,7 +85,7 @@ def ingest_files(obj, file_paths, document_ids, metadatas, versions):
         list(file_paths), document_ids, metadatas, versions
     )
     t1 = time.time()
-    click.echo(f"Time taken to ingest files: {t1-t0:.2f} seconds")
+    click.echo(f"Time taken to ingest files: {t1 - t0:.2f} seconds")
     click.echo(response)
 
 
@@ -109,7 +107,7 @@ def update_files(obj, file_paths, document_ids, metadatas):
         list(file_paths), list(document_ids), metadatas
     )
     t1 = time.time()
-    click.echo(f"Time taken to ingest files: {t1-t0:.2f} seconds")
+    click.echo(f"Time taken to ingest files: {t1 - t0:.2f} seconds")
     click.echo(response)
 
 
@@ -168,7 +166,7 @@ def search(
         click.echo("KG search results:", results["kg_search_results"])
 
     t1 = time.time()
-    click.echo(f"Time taken to search: {t1-t0:.2f} seconds")
+    click.echo(f"Time taken to search: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -228,7 +226,7 @@ def rag(
         click.echo(f"Completion:\n{response['completion']}")
 
     t1 = time.time()
-    click.echo(f"Time taken for RAG: {t1-t0:.2f} seconds")
+    click.echo(f"Time taken for RAG: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -245,7 +243,7 @@ def delete(obj, keys, values):
     t1 = time.time()
 
     click.echo(response)
-    click.echo(f"Time taken for deletion: {t1-t0:.2f} seconds")
+    click.echo(f"Time taken for deletion: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -258,7 +256,7 @@ def logs(obj, log_type_filter):
     t1 = time.time()
 
     click.echo(response)
-    click.echo(f"Time taken to retrieve logs: {t1-t0:.2f} seconds")
+    click.echo(f"Time taken to retrieve logs: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -276,7 +274,7 @@ def documents_overview(obj, document_ids, user_ids):
 
     for document in response:
         click.echo(document)
-    click.echo(f"Time taken to get document overview: {t1-t0:.2f} seconds")
+    click.echo(f"Time taken to get document overview: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -290,7 +288,7 @@ def document_chunks(obj, document_id):
 
     for chunk in response:
         click.echo(chunk)
-    click.echo(f"Time taken to get document chunks: {t1-t0:.2f} seconds")
+    click.echo(f"Time taken to get document chunks: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -302,7 +300,7 @@ def app_settings(obj):
     t1 = time.time()
 
     click.echo(response)
-    click.echo(f"Time taken to get app settings: {t1-t0:.2f} seconds")
+    click.echo(f"Time taken to get app settings: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -320,7 +318,7 @@ def users_overview(obj, user_ids):
 
     for user in response:
         click.echo(user)
-    click.echo(f"Time taken to get users overview: {t1-t0:.2f} seconds")
+    click.echo(f"Time taken to get users overview: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -338,7 +336,7 @@ def analytics(obj, filters, analysis_types):
     t1 = time.time()
 
     click.echo(response)
-    click.echo(f"Time taken to get analytics: {t1-t0:.2f} seconds")
+    click.echo(f"Time taken to get analytics: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -355,7 +353,7 @@ def ingest_sample_file(obj, no_media):
     t1 = time.time()
 
     click.echo(response)
-    click.echo(f"Time taken to ingest sample: {t1-t0:.2f} seconds")
+    click.echo(f"Time taken to ingest sample: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -373,7 +371,7 @@ def ingest_sample_files(obj, no_media):
     t1 = time.time()
 
     click.echo(response)
-    click.echo(f"Time taken to ingest sample files: {t1-t0:.2f} seconds")
+    click.echo(f"Time taken to ingest sample files: {t1 - t0:.2f} seconds")
 
 
 def main():

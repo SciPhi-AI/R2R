@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import json
+import os
 import threading
 import time
 import uuid
@@ -137,9 +138,27 @@ class R2RClient:
         document_ids: Optional[list[Union[uuid.UUID, str]]] = None,
         versions: Optional[list[str]] = None,
     ) -> dict:
+        all_file_paths = []
+
+        for path in file_paths:
+            if os.path.isdir(path):
+                for root, _, files in os.walk(path):
+                    all_file_paths.extend(
+                        os.path.join(root, file) for file in files
+                    )
+            else:
+                all_file_paths.append(path)
+
         files_to_upload = [
-            ("files", (file, open(file, "rb"), "application/octet-stream"))
-            for file in file_paths
+            (
+                "files",
+                (
+                    os.path.basename(file),
+                    open(file, "rb"),
+                    "application/octet-stream",
+                ),
+            )
+            for file in all_file_paths
         ]
         request = R2RIngestFilesRequest(
             metadatas=metadatas,

@@ -22,7 +22,7 @@ class PipelineType(Enum):
 def r2r_app(
     config_option: Optional[str] = "default",
     config_path: Optional[str] = None,
-    client_server_mode: bool = False,
+    client_mode: bool = False,
     base_url: Optional[str] = None,
     pipeline_type: PipelineType = PipelineType.QNA,
 ) -> FastAPI:
@@ -47,21 +47,21 @@ def r2r_app(
             "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
         )
 
-    quickstart = R2RExecutionWrapper(
+    wrapper = R2RExecutionWrapper(
         config_name=config_option,
         config_path=config_path,
-        client_server_mode=client_server_mode,
+        client_mode=client_mode,
         base_url=base_url,
     )
 
-    return quickstart.get_app()
+    return wrapper.get_app()
 
 
 logging.basicConfig(level=logging.INFO)
 
 config_option = os.getenv("CONFIG_OPTION", "default").strip() or "default"
 config_path = os.getenv("CONFIG_PATH")
-client_server_mode = os.getenv("CLIENT_SERVER_MODE", "false").lower() == "true"
+client_mode = os.getenv("CLIENT_MODE", "false").lower() == "true"
 base_url = os.getenv("BASE_URL")
 host = os.getenv("HOST", "0.0.0.0")
 port = int(os.getenv("PORT", "8000"))
@@ -69,14 +69,14 @@ pipeline_type = os.getenv("PIPELINE_TYPE", "qna")
 
 logger.info(f"Environment CONFIG_OPTION: {config_option}")
 logger.info(f"Environment CONFIG_PATH: {config_path}")
-logger.info(f"Environment CLIENT_SERVER_MODE: {client_server_mode}")
+logger.info(f"Environment CLIENT_MODE: {client_mode}")
 logger.info(f"Environment BASE_URL: {base_url}")
 logger.info(f"Environment PIPELINE_TYPE: {pipeline_type}")
 
 app = r2r_app(
     config_option=config_option,
     config_path=config_path,
-    client_server_mode=client_server_mode,
+    client_mode=client_mode,
     base_url=base_url,
     pipeline_type=PipelineType(pipeline_type),
 )
