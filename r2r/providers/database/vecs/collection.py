@@ -184,7 +184,7 @@ class Collection:
             dimension (int): The dimension of the vectors in the collection.
             client (Client): The client to use for interacting with the database.
         """
-        from r2r.vecs.adapter import Adapter
+        from r2r.providers.database.vecs.adapter import Adapter
 
         self.client = client
         self.name = name

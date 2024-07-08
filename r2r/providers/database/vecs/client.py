@@ -21,7 +21,7 @@ from .adapter import Adapter
 from .exc import CollectionNotFound
 
 if TYPE_CHECKING:
-    from r2r.vecs.collection import Collection
+    from r2r.providers.database.vecs.collection import Collection
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +168,7 @@ class Client:
         Raises:
             CollectionAlreadyExists: If a collection with the same name already exists
         """
-        from r2r.vecs.collection import Collection
+        from r2r.providers.database.vecs.collection import Collection
 
         adapter_dimension = adapter.exported_dimension if adapter else None
 
@@ -196,7 +196,7 @@ class Client:
         Raises:
             CollectionAlreadyExists: If a collection with the same name already exists
         """
-        from r2r.vecs.collection import Collection
+        from r2r.providers.database.vecs.collection import Collection
 
         return Collection(name, dimension, self)._create()
 
@@ -214,7 +214,7 @@ class Client:
         Raises:
             CollectionNotFound: If no collection with the given name exists.
         """
-        from r2r.vecs.collection import Collection
+        from r2r.providers.database.vecs.collection import Collection
 
         query = text(
             f"""
@@ -255,7 +255,7 @@ class Client:
         Returns:
             list[Collection]: A list of all collections.
         """
-        from r2r.vecs.collection import Collection
+        from r2r.providers.database.vecs.collection import Collection
 
         return Collection._list_collections(self)
 
@@ -271,7 +271,7 @@ class Client:
         Returns:
             None
         """
-        from r2r.vecs.collection import Collection
+        from r2r.providers.database.vecs.collection import Collection
 
         Collection(name, -1, self)._drop()
         return

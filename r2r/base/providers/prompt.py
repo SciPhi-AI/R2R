@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 import logging
 from abc import abstractmethod
 from typing import Any, Optional
@@ -8,13 +10,15 @@ logger = logging.getLogger(__name__)
 
 
 class PromptConfig(ProviderConfig):
+    # TODO - Replace this with a database
+    file_path: Path = os.path.join(os.path.dirname(__file__), "..", "..", "providers", "prompts", "defaults.jsonl")
     def validate(self) -> None:
         pass
 
     @property
     def supported_providers(self) -> list[str]:
         # Return a list of supported prompt providers
-        return ["default_prompt_provider"]
+        return ["r2r"]
 
 
 class PromptProvider(Provider):

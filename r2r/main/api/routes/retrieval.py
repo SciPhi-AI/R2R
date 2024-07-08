@@ -24,7 +24,7 @@ class RetrievalRouter(BaseRouter):
             request: R2RSearchRequest,
             auth_user=(
                 Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.enabled
+                if self.engine.config.auth.get("enabled")
                 else None
             ),
         ):
@@ -43,7 +43,7 @@ class RetrievalRouter(BaseRouter):
             request: R2RRAGRequest,
             auth_user=(
                 Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.enabled
+                if self.engine.config.auth.get("enabled")
                 else None
             ),
         ):
@@ -78,7 +78,7 @@ class RetrievalRouter(BaseRouter):
             request: R2REvalRequest,
             auth_user=(
                 Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.enabled
+                if self.engine.config.auth.get("enabled")
                 else None
             ),
         ):

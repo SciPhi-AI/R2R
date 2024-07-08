@@ -24,7 +24,7 @@ class IngestionRouter(BaseRouter):
             ),
             auth_user=(
                 Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.enabled
+                if self.engine.config.auth.get("enabled")
                 else None
             ),
         ):
@@ -44,7 +44,7 @@ class IngestionRouter(BaseRouter):
             ),
             auth_user=(
                 Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.enabled
+                if self.engine.config.auth.get("enabled")
                 else None
             ),
         ):

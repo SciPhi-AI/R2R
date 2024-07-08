@@ -12,6 +12,7 @@ from r2r.base import (
     KGProvider,
     KVLoggingSingleton,
     LLMConfig,
+    PromptConfig,
     LLMProvider,
     PromptProvider,
 )
@@ -132,13 +133,13 @@ class R2RProviderFactory:
         return llm_provider
 
     def create_prompt_provider(
-        self, prompt_config, *args, **kwargs
+        self, prompt_config: PromptConfig, *args, **kwargs
     ) -> PromptProvider:
         prompt_provider = None
-        if prompt_config.provider == "local":
+        if prompt_config.provider == "r2r":
             from r2r.providers import R2RPromptProvider
 
-            prompt_provider = R2RPromptProvider()
+            prompt_provider = R2RPromptProvider(prompt_config)
         else:
             raise ValueError(
                 f"Prompt provider {prompt_config.provider} not supported"
@@ -147,7 +148,7 @@ class R2RProviderFactory:
 
     def create_kg_provider(self, kg_config, *args, **kwargs):
         if kg_config.provider == "neo4j":
-            from .kg import Neo4jKGProvider
+            from r2r.providers import Neo4jKGProvider
 
             return Neo4jKGProvider(kg_config)
         elif kg_config.provider is None:

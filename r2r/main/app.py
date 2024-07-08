@@ -44,7 +44,7 @@ class R2RApp:
         self.app.include_router(management_router, prefix="/v1")
         self.app.include_router(retrieval_router, prefix="/v1")
 
-        if self.use_auth:
+        if self.engine.config.auth.get("enabled"):
             from .api.routes import auth
 
             auth_router = auth.AuthRouter.build_router(

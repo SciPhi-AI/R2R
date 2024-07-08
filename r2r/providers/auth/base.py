@@ -9,19 +9,17 @@ from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from r2r.base import User, UserCreate, TokenData
+from r2r.base import User, UserCreate, TokenData, AuthProvider, AuthConfig
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-class R2RAuthProvider:
+class R2RAuthProvider(AuthProvider):
     def __init__(
-        self, db_session: Session, secret_key: str, token_lifetime: int = 30
+        self, config: AuthConfig
     ):
-        self.db_session = db_session
-        self.secret_key = secret_key
-        self.token_lifetime = token_lifetime
+        self.config = AuthConfig
 
     def get_password_hash(self, password: str) -> str:
         return bcrypt.hashpw(

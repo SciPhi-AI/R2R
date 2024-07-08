@@ -3,15 +3,15 @@ import logging
 import os
 from typing import Any, Optional
 
-from r2r.base import Prompt, PromptProvider
+from r2r.base import Prompt, PromptProvider, PromptConfig
 
 logger = logging.getLogger(__name__)
 
 
 class R2RPromptProvider(PromptProvider):
-    def __init__(self, file_path: Optional[str] = None):
+    def __init__(self, config: PromptConfig):
         self.prompts: dict[str, Prompt] = {}
-        self._load_prompts_from_jsonl(file_path=file_path)
+        self._load_prompts_from_jsonl(file_path=config.file_path)
 
     def _load_prompts_from_jsonl(self, file_path: Optional[str] = None):
         if not file_path:

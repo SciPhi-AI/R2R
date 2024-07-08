@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 class R2RConfig:
     REQUIRED_KEYS: dict[str, list] = {
         "app": ["max_file_size_in_mb"],
+        "auth": ["provider", "enabled"],
         "embedding": [
             "provider",
             "base_model",
@@ -130,10 +131,6 @@ class R2RConfig:
                 f"Configuration not found in Redis with key '{key}'"
             )
         config_data = json.loads(config_data)
-        # config_data["ingestion"]["selected_parsers"] = {
-        #     DocumentType(k): v
-        #     for k, v in config_data["ingestion"]["selected_parsers"].items()
-        # }
         return cls(config_data)
 
     @classmethod

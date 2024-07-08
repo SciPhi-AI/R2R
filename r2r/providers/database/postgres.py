@@ -15,8 +15,8 @@ from r2r.base import (
     VectorEntry,
     VectorSearchResult,
 )
-from r2r.vecs.client import Client
-from r2r.vecs.collection import Collection
+from r2r.providers.database.vecs.client import Client
+from r2r.providers.database.vecs.collection import Collection
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class PostgresDBProvider(DatabaseProvider):
     def __init__(self, config: DatabaseConfig) -> None:
         super().__init__(config)
         try:
-            import r2r.vecs
+            import r2r.providers.database.vecs
         except ImportError:
             raise ValueError(
                 f"Error, PostgresDBProvider requires the vecs library. Please run `pip install vecs`."
@@ -95,7 +95,7 @@ class PostgresDBProvider(DatabaseProvider):
 
         # The rest of the initialization remains the same
         try:
-            self.vx: Client = r2r.vecs.create_client(DB_CONNECTION)
+            self.vx: Client = r2r.providers.database.vecs.create_client(DB_CONNECTION)
         except Exception as e:
             raise ValueError(
                 f"Error {e} occurred while attempting to connect to the Postgres provider with {DB_CONNECTION}."
