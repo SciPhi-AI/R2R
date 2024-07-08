@@ -29,16 +29,16 @@ class R2RExecutionWrapper:
         self,
         config_path: Optional[str] = None,
         config_name: Optional[str] = "default",
-        client_server_mode: bool = True,
+        client_mode: bool = True,
         base_url="http://localhost:8000",
     ):
         if config_path and config_name:
             raise Exception("Cannot specify both config_path and config_name")
 
         # Handle fire CLI
-        if isinstance(client_server_mode, str):
-            client_server_mode = client_server_mode.lower() == "true"
-        self.client_server_mode = client_server_mode
+        if isinstance(client_mode, str):
+            client_mode = client_mode.lower() == "true"
+        self.client_mode = client_mode
         self.base_url = base_url
 
         config = (
@@ -49,20 +49,19 @@ class R2RExecutionWrapper:
             )
         )
 
-        self.app = R2R(config=config)
-
-        if self.client_server_mode:
+        if self.client_mode:
             self.client = R2RClient(base_url)
             self.app = None
         else:
+            self.app = R2R(config=config)
             self.client = None
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
-        if not self.client_server_mode:
+        if not self.client_mode:
             self.app.serve(host, port)
         else:
             raise Exception(
-                "Serve method is only available when `client_server_mode=False`."
+                "Serve method is only available when `client_mode=False`."
             )
 
     def _parse_metadata_string(metadata_string: str) -> list[dict]:
@@ -143,7 +142,7 @@ class R2RExecutionWrapper:
             file.size = file.file.tell()
             file.file.seek(0)
 
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.ingest_files(
                 file_paths=file_paths,
                 document_ids=document_ids,
@@ -172,7 +171,7 @@ class R2RExecutionWrapper:
         if isinstance(document_ids, str):
             document_ids = list(document_ids.split(","))
 
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.update_files(
                 file_paths=file_paths,
                 document_ids=document_ids,
@@ -207,7 +206,7 @@ class R2RExecutionWrapper:
             else GenerationConfig()
         )
 
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.search(
                 query,
                 use_vector_search,
@@ -261,7 +260,7 @@ class R2RExecutionWrapper:
 
         rag_generation_config = GenerationConfig(**rag_config)
 
-        if self.client_server_mode:
+        if self.client_mode:
             response = self.client.rag(
                 query=query,
                 use_vector_search=use_vector_search,
@@ -321,7 +320,7 @@ class R2RExecutionWrapper:
         document_ids: Optional[list[str]] = None,
         user_ids: Optional[list[str]] = None,
     ):
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.documents_overview(document_ids, user_ids)[
                 "results"
             ]
@@ -333,32 +332,32 @@ class R2RExecutionWrapper:
         keys: list[str],
         values: list[str],
     ):
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.delete(keys, values)["results"]
         else:
             return self.app.delete(keys, values)
 
     def logs(self, log_type_filter: Optional[str] = None):
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.logs(log_type_filter)["results"]
         else:
             return self.app.logs(log_type_filter)
 
     def document_chunks(self, document_id: str):
         doc_uuid = uuid.UUID(document_id)
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.document_chunks(doc_uuid)["results"]
         else:
             return self.app.document_chunks(doc_uuid)
 
     def app_settings(self):
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.app_settings()
         else:
             return self.app.app_settings()
 
     def users_overview(self, user_ids: Optional[list[uuid.UUID]] = None):
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.users_overview(user_ids)["results"]
         else:
             return self.app.users_overview(user_ids)
@@ -371,7 +370,7 @@ class R2RExecutionWrapper:
         filter_criteria = FilterCriteria(filters=filters)
         analysis_types = AnalysisTypes(analysis_types=analysis_types)
 
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.analytics(
                 filter_criteria=filter_criteria.model_dump(),
                 analysis_types=analysis_types.model_dump(),
@@ -402,11 +401,11 @@ class R2RExecutionWrapper:
         return response
 
     def get_app(self):
-        if self.client_server_mode:
+        if self.client_mode:
             return self.app.app.app
         else:
             raise Exception(
-                "`get_app` method is only available when running with `client_server_mode=False`."
+                "`get_app` method is only available when running with `client_mode=False`."
             )
 
 

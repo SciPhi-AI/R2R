@@ -254,7 +254,7 @@ def test_document_chunks(wrapper):
 
 
 def main():
-    wrapper = R2RExecutionWrapper(client_server_mode=False)
+    wrapper = R2RExecutionWrapper(client_mode=False)
 
     # Test ingestion
     test_ingestion_success(wrapper)
