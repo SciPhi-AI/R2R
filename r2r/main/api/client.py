@@ -153,7 +153,14 @@ class R2RClient:
                 all_file_paths.append(path)
 
         files_to_upload = [
-            ("files", (file, open(file, "rb"), "application/octet-stream"))(
+            (
+                "files",
+                (
+                    os.path.basename(file),
+                    open(file, "rb"),
+                    "application/octet-stream",
+                ),
+            )(
                 "files",
                 (
                     os.path.basename(file),
