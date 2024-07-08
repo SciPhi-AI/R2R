@@ -20,8 +20,7 @@ class ManagementRouter(BaseRouter):
     def __init__(
         self, engine: R2REngine, auth_handler: Optional[AuthHandler] = None
     ):
-        super().__init__(engine)
-        self.auth_handler = auth_handler
+        super().__init__(engine, auth_handler)
         self.setup_routes()
 
     def setup_routes(self):
