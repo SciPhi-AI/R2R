@@ -4,8 +4,14 @@ from r2r.base import Token, TokenData, User, UserCreate
 
 from ...engine import R2REngine
 from .base_router import BaseRouter
+from pydantic import BaseModel
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+class UserResponse(BaseModel):
+    results: User
+
 
 class AuthRouter(BaseRouter):
     def __init__(self, engine: R2REngine):
@@ -13,11 +19,11 @@ class AuthRouter(BaseRouter):
         self.setup_routes()
 
     def setup_routes(self):
-        @self.router.post("/register", response_model=User)
+        @self.router.post("/register", response_model=UserResponse)
         @self.base_endpoint
         async def register(user: UserCreate):
             return await self.engine.aregister_user(user)
-
+        
         @self.router.post("/verify_email/{verification_code}")
         @self.base_endpoint
         async def verify_email(verification_code: str):

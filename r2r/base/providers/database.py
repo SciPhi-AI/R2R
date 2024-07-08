@@ -1,14 +1,15 @@
+import uuid
 import logging
 from abc import ABC, abstractmethod
 from typing import Optional, Union
-
+from datetime import datetime
+from ..abstractions.user import User, UserCreate, UserResponse
 from ..abstractions.document import DocumentInfo
 from ..abstractions.search import VectorSearchResult
 from ..abstractions.vector import VectorEntry
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
-
 
 class DatabaseConfig(ProviderConfig):
     provider: str
@@ -27,18 +28,9 @@ class DatabaseConfig(ProviderConfig):
     def supported_providers(self) -> list[str]:
         return ["postgres"]
 
-
-class DatabaseProvider(Provider, ABC):
-    def __init__(self, config: DatabaseConfig):
-        if not isinstance(config, DatabaseConfig):
-            raise ValueError(
-                "DatabaseProvider must be initialized with a `DatabaseConfig`."
-            )
-        logger.info(f"Initializing DatabaseProvider with config {config}.")
-        super().__init__(config)
-
+class VectorDatabaseProvider(Provider, ABC):
     @abstractmethod
-    def initialize_collection(self, dimension: int) -> None:
+    def _initialize_vector_db(self, dimension: int) -> None:
         pass
 
     @abstractmethod
@@ -67,10 +59,9 @@ class DatabaseProvider(Provider, ABC):
         query_vector: list[float],
         limit: int = 10,
         filters: Optional[dict[str, Union[bool, int, str]]] = None,
-        # Hybrid search parameters
         full_text_weight: float = 1.0,
         semantic_weight: float = 1.0,
-        rrf_k: int = 20,  # typical value is ~2x the number of results you want
+        rrf_k: int = 20,
         *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
@@ -78,6 +69,23 @@ class DatabaseProvider(Provider, ABC):
 
     @abstractmethod
     def create_index(self, index_type, column_name, index_options):
+        pass
+
+    @abstractmethod
+    def delete_by_metadata(
+        self,
+        metadata_fields: list[str],
+        metadata_values: list[Union[bool, int, str]],
+    ) -> list[str]:
+        pass
+
+    @abstractmethod
+    def get_metadatas(
+        self,
+        metadata_fields: list[str],
+        filter_field: Optional[str] = None,
+        filter_value: Optional[str] = None,
+    ) -> list[str]:
         pass
 
     def upsert_entries(
@@ -92,25 +100,9 @@ class DatabaseProvider(Provider, ABC):
         for entry in entries:
             self.copy(entry, commit=commit)
 
+class RelationalDatabaseProvider(Provider, ABC):
     @abstractmethod
-    def delete_by_metadata(
-        self,
-        metadata_fields: list[str],
-        metadata_values: list[Union[bool, int, str]],
-    ) -> list[str]:
-        if len(metadata_fields) != len(metadata_values):
-            raise ValueError(
-                "The number of metadata fields and values must be equal."
-            )
-        pass
-
-    @abstractmethod
-    def get_metadatas(
-        self,
-        metadata_fields: list[str],
-        filter_field: Optional[str] = None,
-        filter_value: Optional[str] = None,
-    ) -> list[str]:
+    def _initialize_relational_db(self) -> None:
         pass
 
     @abstractmethod
@@ -138,3 +130,69 @@ class DatabaseProvider(Provider, ABC):
     @abstractmethod
     def get_users_overview(self, user_ids: Optional[list[str]] = None) -> dict:
         pass
+
+    @abstractmethod
+    def create_user(self, user: UserCreate) -> User:
+        pass
+
+    @abstractmethod
+    def get_user_by_email(self, email: str) -> Optional[User]:
+        pass
+
+    @abstractmethod
+    def store_verification_code(self, user_id: uuid.UUID, verification_code: str, expiry: datetime):
+        pass
+
+    @abstractmethod
+    def get_user_id_by_verification_code(self, verification_code: str) -> Optional[uuid.UUID]:
+        pass
+
+    @abstractmethod
+    def mark_user_as_verified(self, user_id: uuid.UUID):
+        pass
+
+    @abstractmethod
+    def remove_verification_code(self, verification_code: str):
+        pass
+
+    @abstractmethod
+    def get_user_by_id(self, user_id: uuid.UUID) -> Optional[User]:
+        pass
+
+    @abstractmethod
+    def update_user(self, user: User) -> User:
+        pass
+
+    @abstractmethod
+    def delete_user(self, user_id: uuid.UUID):
+        pass
+
+    @abstractmethod
+    def get_all_users(self) -> list[UserResponse]:
+        pass
+
+
+class DatabaseProvider(Provider):
+
+    def __init__(self, config: DatabaseConfig):
+        if not isinstance(config, DatabaseConfig):
+            raise ValueError(
+                "DatabaseProvider must be initialized with a `DatabaseConfig`."
+            )
+        logger.info(f"Initializing DatabaseProvider with config {config}.")
+        super().__init__(config)
+        self.vector: VectorDatabaseProvider = self._initialize_vector_db()
+        self.relational: RelationalDatabaseProvider = self._initialize_relational_db()
+
+    @abstractmethod
+    def _initialize_vector_db(self) -> VectorDatabaseProvider:
+        pass
+
+    @abstractmethod
+    def _initialize_relational_db(self) -> RelationalDatabaseProvider:
+        pass
+
+# Example usage:
+# db_provider = DatabaseProvider(config)
+# db_provider.vector.search(...)
+# db_provider.relational.get_documents_overview(...)
