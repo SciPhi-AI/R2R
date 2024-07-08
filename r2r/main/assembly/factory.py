@@ -4,6 +4,8 @@ from typing import Any, Optional
 
 from r2r.base import (
     AsyncPipe,
+    AuthConfig,
+    AuthProvider,
     DatabaseConfig,
     DatabaseProvider,
     EmbeddingConfig,
@@ -33,23 +35,39 @@ class R2RProviderFactory:
     def __init__(self, config: R2RConfig):
         self.config = config
 
-    def create_database_provider(
-        self, vector_db_config: DatabaseConfig, *args, **kwargs
-    ) -> DatabaseProvider:
-        database_provider: Optional[DatabaseProvider] = None
-        if vector_db_config.provider == "postgres":
-            from r2r.providers import PostgresDBProvider
+    def create_auth_provider(
+            self, auth_config: AuthConfig, *args, **kwargs
+    ) -> AuthProvider:
+        auth_provider: Optional[AuthProvider] = None
+        if auth_config.provider == "r2r":
+            from r2r.providers import R2RAuthProvider
 
-            database_provider = PostgresDBProvider(vector_db_config)
+            auth_provider = R2RAuthProvider(auth_config)
+        elif auth_config.provider is None:
+            auth_provider = None
         else:
             raise ValueError(
-                f"Vector database provider {vector_db_config.provider} not supported"
+                f"Auth provider {auth_config.provider} not supported."
+            )
+        return auth_provider
+
+    def create_database_provider(
+        self, db_config: DatabaseConfig, *args, **kwargs
+    ) -> DatabaseProvider:
+        database_provider: Optional[DatabaseProvider] = None
+        if db_config.provider == "postgres":
+            from r2r.providers import PostgresDBProvider
+
+            database_provider = PostgresDBProvider(db_config)
+        else:
+            raise ValueError(
+                f"Database provider {db_config.provider} not supported"
             )
         if not database_provider:
-            raise ValueError("Vector database provider not found")
+            raise ValueError("Database provider not found")
 
         if not self.config.embedding.base_dimension:
-            raise ValueError("Search dimension not found in embedding config")
+            raise ValueError("Embedding config must have a base dimension to initialize database.")
 
         database_provider.initialize_collection(
             self.config.embedding.base_dimension
@@ -158,6 +176,7 @@ class R2RProviderFactory:
 
     def create_providers(
         self,
+        auth_provider_override: Optional[AuthProvider] = None,
         database_provider_override: Optional[DatabaseProvider] = None,
         embedding_provider_override: Optional[EmbeddingProvider] = None,
         eval_provider_override: Optional[EvalProvider] = None,
@@ -172,7 +191,9 @@ class R2RProviderFactory:
             or self.create_prompt_provider(self.config.prompt, *args, **kwargs)
         )
         return R2RProviders(
-            vector_db=database_provider_override
+            auth=auth_provider_override
+            or self.create_auth_provider(self.config.auth, *args, **kwargs),
+            database=database_provider_override
             or self.create_database_provider(
                 self.config.database, *args, **kwargs
             ),
@@ -274,7 +295,7 @@ class R2RPipeFactory:
         )
         return EmbeddingPipe(
             embedding_provider=self.providers.embedding,
-            database_provider=self.providers.vector_db,
+            database_provider=self.providers.database,
             text_splitter=text_splitter,
             embedding_batch_size=self.config.embedding.batch_size,
         )
@@ -285,7 +306,7 @@ class R2RPipeFactory:
 
         from r2r.pipes import VectorStoragePipe
 
-        return VectorStoragePipe(database_provider=self.providers.vector_db)
+        return VectorStoragePipe(database_provider=self.providers.database)
 
     def create_vector_search_pipe(self, *args, **kwargs) -> Any:
         if self.config.embedding.provider is None:
@@ -294,7 +315,7 @@ class R2RPipeFactory:
         from r2r.pipes import VectorSearchPipe
 
         return VectorSearchPipe(
-            database_provider=self.providers.vector_db,
+            database_provider=self.providers.database,
             embedding_provider=self.providers.embedding,
         )
 
@@ -319,7 +340,7 @@ class R2RPipeFactory:
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
-            database_provider=self.providers.vector_db,
+            database_provider=self.providers.database,
             text_splitter=text_splitter,
             kg_batch_size=self.config.kg.batch_size,
         )

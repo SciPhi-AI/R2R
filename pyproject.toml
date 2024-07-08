@@ -18,7 +18,7 @@ python = ">=3.9,<3.13"
 # Required dependencies
 
 # python
-pydantic = "^2.6.3"
+pydantic = {extras = ["email"], version = "^2.8.2"}
 python-multipart = "^0.0.9"
 
 # infrastructure

@@ -34,7 +34,7 @@ def ingestion_service(mock_vector_db, mock_embedding_model):
     config = MagicMock()
     config.app.get.return_value = 32  # Default max file size
     providers = Mock(spec=R2RProviders)
-    providers.vector_db = mock_vector_db
+    providers.database = mock_vector_db
     providers.embedding_model = mock_embedding_model
     pipelines = Mock(spec=R2RPipelines)
     pipelines.ingestion_pipeline = AsyncMock()

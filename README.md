@@ -120,7 +120,7 @@ r2r serve --port=8000
 ```
 
 ```plaintext Terminal Output
-2024-06-26 16:54:46,998 - INFO - r2r.core.providers.vector_db_provider - Initializing DatabaseProvider with config extra_fields={} provider='pgvector' collection_name='demo_vecs'.
+2024-06-26 16:54:46,998 - INFO - r2r.core.providers.database_provider - Initializing DatabaseProvider with config extra_fields={} provider='pgvector' collection_name='demo_vecs'.
 2024-06-26 16:54:48,054 - INFO - r2r.core.providers.embedding_provider - Initializing EmbeddingProvider with config extra_fields={'text_splitter': {'type': 'recursive_character', 'chunk_size': 512, 'chunk_overlap': 20}} provider='openai' base_model='text-embedding-3-small' base_dimension=512 rerank_model=None rerank_dimension=None rerank_transformer_type=None batch_size=128.
 2024-06-26 16:54:48,639 - INFO - r2r.core.providers.llm_provider - Initializing LLM provider with config: extra_fields={} provider='litellm'
 ```

@@ -5,8 +5,8 @@ from typing import Optional
 
 import bcrypt
 import jwt
-from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, Security
+from fastapi.security import OAuth2PasswordBearer, HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 # Assume these are imported from your existing modules
@@ -15,7 +15,7 @@ from .base import Provider, ProviderConfig
 
 
 class AuthConfig(ProviderConfig):
-    secret_key: str
+    enabled: bool = True
     token_lifetime: int = 30
 
     @property
@@ -24,11 +24,11 @@ class AuthConfig(ProviderConfig):
 
     def validate(self) -> None:
         super().validate()
-        if not self.secret_key:
-            raise ValueError("Secret key is required")
 
 
 class AuthProvider(Provider, ABC):
+    security = HTTPBearer()
+
     def __init__(self, config: AuthConfig):
         if not isinstance(config, AuthConfig):
             raise ValueError(
@@ -73,3 +73,7 @@ class AuthProvider(Provider, ABC):
     @abstractmethod
     def login(self, email: str, password: str):
         pass
+
+    def auth_wrapper(self, auth: HTTPAuthorizationCredentials = Security(security)):
+        return self.decode_token(auth.credentials)
+

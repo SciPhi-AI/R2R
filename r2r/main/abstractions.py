@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from r2r.base import (
     AsyncPipe,
+    AuthProvider,
     DatabaseProvider,
     EmbeddingProvider,
     EvalProvider,
@@ -20,7 +21,8 @@ from r2r.pipelines import (
 
 
 class R2RProviders(BaseModel):
-    vector_db: Optional[DatabaseProvider]
+    auth: Optional[AuthProvider]
+    database: Optional[DatabaseProvider]
     embedding: Optional[EmbeddingProvider]
     llm: Optional[LLMProvider]
     prompt: Optional[PromptProvider]
