@@ -95,7 +95,9 @@ class PostgresDBProvider(DatabaseProvider):
 
         # The rest of the initialization remains the same
         try:
-            self.vx: Client = r2r.providers.database.vecs.create_client(DB_CONNECTION)
+            self.vx: Client = r2r.providers.database.vecs.create_client(
+                DB_CONNECTION
+            )
         except Exception as e:
             raise ValueError(
                 f"Error {e} occurred while attempting to connect to the Postgres provider with {DB_CONNECTION}."

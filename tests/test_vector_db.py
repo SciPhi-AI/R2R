@@ -10,6 +10,7 @@ from r2r import (
     VectorEntry,
     generate_id_from_label,
 )
+
 from .database import PostgresDBProvider
 
 load_dotenv()

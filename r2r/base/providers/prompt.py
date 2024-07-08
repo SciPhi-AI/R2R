@@ -1,7 +1,7 @@
-import os
-from pathlib import Path
 import logging
+import os
 from abc import abstractmethod
+from pathlib import Path
 from typing import Any, Optional
 
 from .base import Provider, ProviderConfig
@@ -11,7 +11,15 @@ logger = logging.getLogger(__name__)
 
 class PromptConfig(ProviderConfig):
     # TODO - Replace this with a database
-    file_path: Path = os.path.join(os.path.dirname(__file__), "..", "..", "providers", "prompts", "defaults.jsonl")
+    file_path: Path = os.path.join(
+        os.path.dirname(__file__),
+        "..",
+        "..",
+        "providers",
+        "prompts",
+        "defaults.jsonl",
+    )
+
     def validate(self) -> None:
         pass
 

@@ -1,4 +1,3 @@
-
 from fastapi import Depends, File, UploadFile
 
 from ...engine import R2REngine
@@ -8,9 +7,7 @@ from .base_router import BaseRouter
 
 
 class IngestionRouter(BaseRouter):
-    def __init__(
-        self, engine: R2REngine
-    ):
+    def __init__(self, engine: R2REngine):
         super().__init__(engine)
         self.setup_routes()
 

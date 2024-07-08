@@ -1,6 +1,8 @@
+from r2r.base import Token, TokenData, User, UserCreate
+
 from ...engine import R2REngine
 from .base_router import BaseRouter
-from r2r.base import User, UserCreate, Token, TokenData
+
 
 # Add these methods to your existing AuthRouter class
 class AuthRouter(BaseRouter):

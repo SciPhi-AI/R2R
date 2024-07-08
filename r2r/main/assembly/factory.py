@@ -12,8 +12,8 @@ from r2r.base import (
     KGProvider,
     KVLoggingSingleton,
     LLMConfig,
-    PromptConfig,
     LLMProvider,
+    PromptConfig,
     PromptProvider,
 )
 from r2r.pipelines import (
@@ -75,9 +75,7 @@ class R2RProviderFactory:
             embedding_provider = OllamaEmbeddingProvider(embedding)
 
         elif embedding.provider == "sentence-transformers":
-            from r2r.providers import (
-                SentenceTransformerEmbeddingProvider,
-            )
+            from r2r.providers import SentenceTransformerEmbeddingProvider
 
             embedding_provider = SentenceTransformerEmbeddingProvider(
                 embedding

@@ -29,15 +29,11 @@ class R2RApp:
         self.app = FastAPI()
 
         # Create routers with the engine
-        ingestion_router = ingestion.IngestionRouter.build_router(
-            self.engine
-        )
+        ingestion_router = ingestion.IngestionRouter.build_router(self.engine)
         management_router = management.ManagementRouter.build_router(
             self.engine
         )
-        retrieval_router = retrieval.RetrievalRouter.build_router(
-            self.engine
-        )
+        retrieval_router = retrieval.RetrievalRouter.build_router(self.engine)
 
         # Include routers in the app
         self.app.include_router(ingestion_router, prefix="/v1")
@@ -47,9 +43,7 @@ class R2RApp:
         if self.engine.config.auth.get("enabled"):
             from .api.routes import auth
 
-            auth_router = auth.AuthRouter.build_router(
-                self.engine
-            )
+            auth_router = auth.AuthRouter.build_router(self.engine)
             self.app.include_router(auth_router, prefix="/v1")
 
     def _apply_cors(self):

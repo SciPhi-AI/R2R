@@ -1,17 +1,18 @@
+import uuid
 from abc import ABC, abstractmethod
-from typing import Optional
-from pydantic import BaseModel
-from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
 from datetime import datetime, timedelta
+from typing import Optional
+
 import bcrypt
 import jwt
-import uuid
-
-from .base import Provider, ProviderConfig
+from fastapi import Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
 
 # Assume these are imported from your existing modules
-from ..abstractions.user import User, UserCreate, Token, TokenData
+from ..abstractions.user import Token, TokenData, User, UserCreate
+from .base import Provider, ProviderConfig
+
 
 class AuthConfig(ProviderConfig):
     secret_key: str
@@ -26,10 +27,13 @@ class AuthConfig(ProviderConfig):
         if not self.secret_key:
             raise ValueError("Secret key is required")
 
+
 class AuthProvider(Provider, ABC):
     def __init__(self, config: AuthConfig):
         if not isinstance(config, AuthConfig):
-            raise ValueError("AuthProvider must be initialized with an AuthConfig")
+            raise ValueError(
+                "AuthProvider must be initialized with an AuthConfig"
+            )
         super().__init__(config)
 
     @abstractmethod
@@ -37,7 +41,9 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
+    def verify_password(
+        self, plain_password: str, hashed_password: str
+    ) -> bool:
         pass
 
     @abstractmethod

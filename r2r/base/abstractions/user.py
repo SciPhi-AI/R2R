@@ -1,12 +1,14 @@
-from uuid import uuid4, UUID
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+from uuid import UUID, uuid4
+
 from pydantic import BaseModel
 from sqlalchemy import Boolean, Column, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
+
 
 class User(Base):
     __tablename__ = "users"
@@ -36,4 +38,3 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None
-

@@ -7,7 +7,6 @@ from fastapi.responses import StreamingResponse
 
 from r2r.base import R2RException, manage_run
 
-
 logger = logging.getLogger(__name__)
 
 

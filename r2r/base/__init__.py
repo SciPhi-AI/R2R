@@ -32,7 +32,7 @@ from .abstractions.search import (
     VectorSearchResult,
     VectorSearchSettings,
 )
-from .abstractions.user import User, UserCreate, Token, TokenData
+from .abstractions.user import Token, TokenData, User, UserCreate
 from .abstractions.vector import Vector, VectorEntry, VectorType
 from .logging.kv_logger import (
     KVLoggingSingleton,
@@ -141,7 +141,7 @@ __all__ = [
     "LLMChatCompletionChunk",
     "LLMConfig",
     "LLMProvider",
-    "AuthConfig", 
+    "AuthConfig",
     "AuthProvider",
     "DatabaseConfig",
     "DatabaseProvider",
