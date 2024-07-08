@@ -1,21 +1,35 @@
+from typing import Optional
+
+from fastapi import Depends
 from fastapi.responses import StreamingResponse
 
 from r2r.base import GenerationConfig, KGSearchSettings, VectorSearchSettings
 
+from ...auth.base import AuthHandler
 from ...engine import R2REngine
 from ..requests import R2REvalRequest, R2RRAGRequest, R2RSearchRequest
 from .base_router import BaseRouter
 
 
 class RetrievalRouter(BaseRouter):
-    def __init__(self, engine: R2REngine):
+    def __init__(
+        self, engine: R2REngine, auth_handler: Optional[AuthHandler] = None
+    ):
         super().__init__(engine)
+        self.auth_handler = auth_handler
         self.setup_routes()
 
     def setup_routes(self):
         @self.router.post("/search")
         @self.base_endpoint
-        async def search_app(request: R2RSearchRequest):
+        async def search_app(
+            request: R2RSearchRequest,
+            auth_user=(
+                Depends(self.auth_handler.auth_wrapper)
+                if self.auth_handler
+                else None
+            ),
+        ):
             results = await self.engine.asearch(
                 query=request.query,
                 vector_search_settings=request.vector_search_settings
@@ -27,7 +41,14 @@ class RetrievalRouter(BaseRouter):
 
         @self.router.post("/rag")
         @self.base_endpoint
-        async def rag_app(request: R2RRAGRequest):
+        async def rag_app(
+            request: R2RRAGRequest,
+            auth_user=(
+                Depends(self.auth_handler.auth_wrapper)
+                if self.auth_handler
+                else None
+            ),
+        ):
             response = await self.engine.arag(
                 query=request.query,
                 vector_search_settings=request.vector_search_settings
@@ -55,14 +76,17 @@ class RetrievalRouter(BaseRouter):
 
         @self.router.post("/evaluate")
         @self.base_endpoint
-        async def evaluate_app(request: R2REvalRequest):
+        async def evaluate_app(
+            request: R2REvalRequest,
+            auth_user=(
+                Depends(self.auth_handler.auth_wrapper)
+                if self.auth_handler
+                else None
+            ),
+        ):
             results = await self.engine.aevaluate(
                 query=request.query,
                 context=request.context,
                 completion=request.completion,
             )
             return results
-
-
-def create_retrieval_router(engine: R2REngine):
-    return RetrievalRouter(engine).router

@@ -1,10 +1,13 @@
 import functools
 import logging
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
 from r2r.base import R2RException, manage_run
+
+from ...auth.base import AuthHandler
 
 logger = logging.getLogger(__name__)
 
@@ -71,5 +74,5 @@ class BaseRouter:
         return wrapper
 
     @classmethod
-    def build_router(cls, engine):
-        return cls(engine).router
+    def build_router(cls, engine, auth_handler: Optional[AuthHandler] = None):
+        return cls(engine, auth_handler).router
