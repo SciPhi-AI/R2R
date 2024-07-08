@@ -151,7 +151,7 @@ class R2RExecutionWrapper:
                 monitor=True,
             )["results"]
         else:
-            return self.r2r.ingest_files(
+            return self.app.ingest_files(
                 files=files,
                 document_ids=document_ids,
                 metadatas=metadatas,
@@ -186,7 +186,7 @@ class R2RExecutionWrapper:
                 )
                 for file_path in file_paths
             ]
-            return self.r2r.update_files(
+            return self.app.update_files(
                 files=files, document_ids=document_ids, metadatas=metadatas
             )
 
@@ -217,7 +217,7 @@ class R2RExecutionWrapper:
                 kg_agent_generation_config,
             )["results"]
         else:
-            return self.r2r.search(
+            return self.app.search(
                 query,
                 VectorSearchSettings(
                     use_vector_search=use_vector_search,
@@ -325,7 +325,7 @@ class R2RExecutionWrapper:
                 "results"
             ]
         else:
-            return self.r2r.documents_overview(document_ids, user_ids)
+            return self.app.documents_overview(document_ids, user_ids)
 
     def delete(
         self,
@@ -335,32 +335,32 @@ class R2RExecutionWrapper:
         if self.client_mode:
             return self.client.delete(keys, values)["results"]
         else:
-            return self.r2r.delete(keys, values)
+            return self.app.delete(keys, values)
 
     def logs(self, log_type_filter: Optional[str] = None):
         if self.client_mode:
             return self.client.logs(log_type_filter)["results"]
         else:
-            return self.r2r.logs(log_type_filter)
+            return self.app.logs(log_type_filter)
 
     def document_chunks(self, document_id: str):
         doc_uuid = uuid.UUID(document_id)
         if self.client_mode:
             return self.client.document_chunks(doc_uuid)["results"]
         else:
-            return self.r2r.document_chunks(doc_uuid)
+            return self.app.document_chunks(doc_uuid)
 
     def app_settings(self):
         if self.client_mode:
             return self.client.app_settings()
         else:
-            return self.r2r.app_settings()
+            return self.app.app_settings()
 
     def users_overview(self, user_ids: Optional[list[uuid.UUID]] = None):
         if self.client_mode:
             return self.client.users_overview(user_ids)["results"]
         else:
-            return self.r2r.users_overview(user_ids)
+            return self.app.users_overview(user_ids)
 
     def analytics(
         self,
@@ -376,7 +376,7 @@ class R2RExecutionWrapper:
                 analysis_types=analysis_types.model_dump(),
             )["results"]
         else:
-            return self.r2r.analytics(
+            return self.app.analytics(
                 filter_criteria=filter_criteria, analysis_types=analysis_types
             )
 
