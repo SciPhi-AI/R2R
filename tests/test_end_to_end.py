@@ -34,15 +34,6 @@ def app(request):
         providers = R2RProviderFactory(config).create_providers()
         pipes = R2RPipeFactory(config, providers).create_pipes()
         pipelines = R2RPipelineFactory(config, pipes).create_pipelines()
-<<<<<<< HEAD
-
-        r2r = R2REngine(
-            config=config,
-            providers=providers,
-            pipelines=pipelines,
-        )
-=======
->>>>>>> 1ac3829 (leave test e2e untouched)
 
         r2r = R2REngine(
             config=config,
@@ -322,12 +313,4 @@ async def test_double_ingest(app, logging_connection):
                     metadata={"author": "John Doe"},
                 ),
             ]
-<<<<<<< HEAD
-<<<<<<< HEAD
         )
-=======
-        )
->>>>>>> 1ac3829 (leave test e2e untouched)
-=======
-        )
->>>>>>> 8bb861f (first pass auth)
