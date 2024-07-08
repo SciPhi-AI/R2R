@@ -323,7 +323,11 @@ async def test_double_ingest(app, logging_connection):
                 ),
             ]
 <<<<<<< HEAD
+<<<<<<< HEAD
         )
 =======
         )
 >>>>>>> 1ac3829 (leave test e2e untouched)
+=======
+        )
+>>>>>>> 8bb861f (first pass auth)

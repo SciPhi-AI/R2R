@@ -4,7 +4,7 @@ from .engine import R2REngine
 
 
 class R2RApp:
-    def __init__(self, engine: R2REngine):
+    def __init__(self, engine: R2REngine, use_auth: bool = False):
         self.engine = engine
         self._setup_routes()
         self._apply_cors()
