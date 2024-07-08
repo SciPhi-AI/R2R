@@ -28,13 +28,11 @@ JSON = JsonParamType()
 @click.option(
     "--config-name", default=None, help="Name of the configuration to use"
 )
-@click.option(
-    "--client-server-mode", default=True, help="Run in client-server mode"
-)
+@click.option("--client-mode", default=True, help="Run in client mode")
 @click.option(
     "--base-url",
     default="http://localhost:8000",
-    help="Base URL for client-server mode",
+    help="Base URL for client mode",
 )
 @click.pass_context
 def cli(ctx, config_path, config_name, client_mode, base_url):
