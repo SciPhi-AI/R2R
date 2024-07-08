@@ -10,7 +10,7 @@ from ..abstractions.llama_abstractions import (
     Relation,
     VectorStoreQuery,
 )
-from .base_provider import ProviderConfig
+from .base import ProviderConfig
 
 logger = logging.getLogger(__name__)
 

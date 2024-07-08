@@ -59,7 +59,7 @@ class RetrievalService(Service):
 
             if (
                 vector_search_settings.use_vector_search
-                and self.config.vector_database.provider is None
+                and self.config.database.provider is None
             ):
                 raise R2RException(
                     status_code=400,

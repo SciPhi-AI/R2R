@@ -7,7 +7,7 @@ from typing import Optional
 from r2r.base.abstractions.llm import GenerationConfig
 
 from ..abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
-from .base_provider import Provider, ProviderConfig
+from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 

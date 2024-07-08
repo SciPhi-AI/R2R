@@ -7,15 +7,12 @@ from fastapi.responses import StreamingResponse
 
 from r2r.base import R2RException, manage_run
 
-from ...auth.base import AuthHandler
-
 logger = logging.getLogger(__name__)
 
 
 class BaseRouter:
-    def __init__(self, engine, auth_handler: Optional[AuthHandler] = None):
+    def __init__(self, engine):
         self.engine = engine
-        self.auth_handler = auth_handler
         self.router = APIRouter()
 
     def base_endpoint(self, func):
@@ -75,5 +72,5 @@ class BaseRouter:
         return wrapper
 
     @classmethod
-    def build_router(cls, engine, auth_handler: Optional[AuthHandler] = None):
-        return cls(engine, auth_handler).router
+    def build_router(cls, engine):
+        return cls(engine).router

@@ -3,11 +3,11 @@ from typing import Optional, Type
 
 from r2r.base import (
     AsyncPipe,
+    DatabaseProvider,
     EmbeddingProvider,
     EvalProvider,
     LLMProvider,
     PromptProvider,
-    VectorDBProvider,
 )
 from r2r.pipelines import (
     EvalPipeline,
@@ -60,7 +60,7 @@ class R2RBuilder:
         )
         self.pipe_factory_override: Optional[R2RPipeFactory] = None
         self.pipeline_factory_override: Optional[R2RPipelineFactory] = None
-        self.vector_db_provider_override: Optional[VectorDBProvider] = None
+        self.database_provider_override: Optional[DatabaseProvider] = None
         self.embedding_provider_override: Optional[EmbeddingProvider] = None
         self.eval_provider_override: Optional[EvalProvider] = None
         self.llm_provider_override: Optional[LLMProvider] = None
@@ -94,8 +94,8 @@ class R2RBuilder:
         self.pipeline_factory_override = factory
         return self
 
-    def with_vector_db_provider(self, provider: VectorDBProvider):
-        self.vector_db_provider_override = provider
+    def with_database_provider(self, provider: DatabaseProvider):
+        self.database_provider_override = provider
         return self
 
     def with_embedding_provider(self, provider: EmbeddingProvider):
@@ -168,7 +168,7 @@ class R2RBuilder:
         pipeline_factory = self.pipeline_factory_override or R2RPipelineFactory
 
         providers = provider_factory(self.config).create_providers(
-            vector_db_provider_override=self.vector_db_provider_override,
+            database_provider_override=self.database_provider_override,
             embedding_provider_override=self.embedding_provider_override,
             eval_provider_override=self.eval_provider_override,
             llm_provider_override=self.llm_provider_override,

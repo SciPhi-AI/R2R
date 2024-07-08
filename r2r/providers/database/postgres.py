@@ -8,27 +8,27 @@ from sqlalchemy import exc, text
 from sqlalchemy.engine.url import make_url
 
 from r2r.base import (
+    DatabaseConfig,
+    DatabaseProvider,
     DocumentInfo,
     UserStats,
-    VectorDBConfig,
-    VectorDBProvider,
     VectorEntry,
     VectorSearchResult,
 )
-from r2r.vecs.client import Client
-from r2r.vecs.collection import Collection
+from r2r.providers.database.vecs.client import Client
+from r2r.providers.database.vecs.collection import Collection
 
 logger = logging.getLogger(__name__)
 
 
-class PGVectorDB(VectorDBProvider):
-    def __init__(self, config: VectorDBConfig) -> None:
+class PostgresDBProvider(DatabaseProvider):
+    def __init__(self, config: DatabaseConfig) -> None:
         super().__init__(config)
         try:
-            import r2r.vecs
+            import r2r.providers.database.vecs
         except ImportError:
             raise ValueError(
-                f"Error, PGVectorDB requires the vecs library. Please run `pip install vecs`."
+                f"Error, PostgresDBProvider requires the vecs library. Please run `pip install vecs`."
             )
 
         # Check if a complete Postgres URI is provided
@@ -95,10 +95,12 @@ class PGVectorDB(VectorDBProvider):
 
         # The rest of the initialization remains the same
         try:
-            self.vx: Client = r2r.vecs.create_client(DB_CONNECTION)
+            self.vx: Client = r2r.providers.database.vecs.create_client(
+                DB_CONNECTION
+            )
         except Exception as e:
             raise ValueError(
-                f"Error {e} occurred while attempting to connect to the pgvector provider with {DB_CONNECTION}."
+                f"Error {e} occurred while attempting to connect to the Postgres provider with {DB_CONNECTION}."
             )
 
         self.collection_name = self.config.extra_fields.get(
@@ -106,13 +108,13 @@ class PGVectorDB(VectorDBProvider):
         ) or os.getenv("POSTGRES_VECS_COLLECTION")
         if not self.collection_name:
             raise ValueError(
-                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'vecs_collection' in the 'vector_database' settings of your `config.json`."
+                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'vecs_collection' in the 'database' settings of your `config.json`."
             )
 
         self.collection: Optional[Collection] = None
 
         logger.info(
-            f"Successfully initialized PGVectorDB with collection: {self.collection_name}"
+            f"Successfully initialized PostgresDBProvider with collection: {self.collection_name}"
         )
 
     def initialize_collection(self, dimension: int) -> None:

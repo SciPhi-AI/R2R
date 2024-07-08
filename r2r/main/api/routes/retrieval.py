@@ -5,17 +5,14 @@ from fastapi.responses import StreamingResponse
 
 from r2r.base import GenerationConfig, KGSearchSettings, VectorSearchSettings
 
-from ...auth.base import AuthHandler
 from ...engine import R2REngine
 from ..requests import R2REvalRequest, R2RRAGRequest, R2RSearchRequest
 from .base_router import BaseRouter
 
 
 class RetrievalRouter(BaseRouter):
-    def __init__(
-        self, engine: R2REngine, auth_handler: Optional[AuthHandler] = None
-    ):
-        super().__init__(engine, auth_handler)
+    def __init__(self, engine: R2REngine):
+        super().__init__(engine)
         self.setup_routes()
 
     def setup_routes(self):
@@ -24,8 +21,8 @@ class RetrievalRouter(BaseRouter):
         async def search_app(
             request: R2RSearchRequest,
             auth_user=(
-                Depends(self.auth_handler.auth_wrapper)
-                if self.auth_handler
+                Depends(self.engine.auth_provider.auth_wrapper)
+                if self.engine.config.auth.get("enabled")
                 else None
             ),
         ):
@@ -43,8 +40,8 @@ class RetrievalRouter(BaseRouter):
         async def rag_app(
             request: R2RRAGRequest,
             auth_user=(
-                Depends(self.auth_handler.auth_wrapper)
-                if self.auth_handler
+                Depends(self.engine.auth_provider.auth_wrapper)
+                if self.engine.config.auth.get("enabled")
                 else None
             ),
         ):
@@ -78,8 +75,8 @@ class RetrievalRouter(BaseRouter):
         async def evaluate_app(
             request: R2REvalRequest,
             auth_user=(
-                Depends(self.auth_handler.auth_wrapper)
-                if self.auth_handler
+                Depends(self.engine.auth_provider.auth_wrapper)
+                if self.engine.config.auth.get("enabled")
                 else None
             ),
         ):

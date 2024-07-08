@@ -4,13 +4,14 @@ import pytest
 from dotenv import load_dotenv
 
 from r2r import (
+    DatabaseConfig,
+    DatabaseProvider,
     Vector,
-    VectorDBConfig,
-    VectorDBProvider,
     VectorEntry,
     generate_id_from_label,
 )
-from r2r.providers.vector_dbs import PGVectorDB
+
+from .database import PostgresDBProvider
 
 load_dotenv()
 
@@ -32,16 +33,16 @@ sample_entries = [
 ]
 
 
-# Fixture for PGVectorDB
+# Fixture for PostgresDBProvider
 @pytest.fixture
 def pg_vector_db():
     random_collection_name = (
         f"test_collection_{random.randint(0, 1_000_000_000)}"
     )
-    config = VectorDBConfig.create(
-        provider="pgvector", vecs_collection=random_collection_name
+    config = DatabaseConfig.create(
+        provider="postgres", vecs_collection=random_collection_name
     )
-    db = PGVectorDB(config)
+    db = PostgresDBProvider(config)
     db.initialize_collection(dimension=dimension)
     yield db
     # Teardown
@@ -65,7 +66,7 @@ def test_get_metadatas(request, db_fixture):
 @pytest.mark.parametrize("db_fixture", ["pg_vector_db"])
 def test_db_initialization(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
-    assert isinstance(db, VectorDBProvider)
+    assert isinstance(db, DatabaseProvider)
 
 
 @pytest.mark.parametrize("db_fixture", ["pg_vector_db"])

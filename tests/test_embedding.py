@@ -1,7 +1,8 @@
 import pytest
 
 from r2r import EmbeddingConfig, VectorSearchResult, generate_id_from_label
-from r2r.providers.embeddings import (
+
+from .embeddings import (
     OpenAIEmbeddingProvider,
     SentenceTransformerEmbeddingProvider,
 )
