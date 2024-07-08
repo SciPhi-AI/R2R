@@ -55,10 +55,15 @@ class R2RProviderFactory:
         self, db_config: DatabaseConfig, *args, **kwargs
     ) -> DatabaseProvider:
         database_provider: Optional[DatabaseProvider] = None
+        if not self.config.embedding.base_dimension:
+            raise ValueError("Embedding config must have a base dimension to initialize database.")
+
+        vector_db_dimension = self.config.embedding.base_dimension
+        print('db_config.provider = ', db_config.provider)
         if db_config.provider == "postgres":
             from r2r.providers import PostgresDBProvider
 
-            database_provider = PostgresDBProvider(db_config)
+            database_provider = PostgresDBProvider(db_config, vector_db_dimension)
         else:
             raise ValueError(
                 f"Database provider {db_config.provider} not supported"
@@ -66,12 +71,7 @@ class R2RProviderFactory:
         if not database_provider:
             raise ValueError("Database provider not found")
 
-        if not self.config.embedding.base_dimension:
-            raise ValueError("Embedding config must have a base dimension to initialize database.")
 
-        database_provider.initialize_collection(
-            self.config.embedding.base_dimension
-        )
         return database_provider
 
     def create_embedding_provider(
