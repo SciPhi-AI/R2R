@@ -21,8 +21,8 @@ class RetrievalRouter(BaseRouter):
         async def search_app(
             request: R2RSearchRequest,
             auth_user=(
-                Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.get("enabled")
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.config.auth.enabled
                 else None
             ),
         ):
@@ -40,8 +40,8 @@ class RetrievalRouter(BaseRouter):
         async def rag_app(
             request: R2RRAGRequest,
             auth_user=(
-                Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.get("enabled")
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.config.auth.enabled
                 else None
             ),
         ):
@@ -75,8 +75,8 @@ class RetrievalRouter(BaseRouter):
         async def evaluate_app(
             request: R2REvalRequest,
             auth_user=(
-                Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.get("enabled")
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.config.auth.enabled
                 else None
             ),
         ):

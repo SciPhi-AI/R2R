@@ -6,6 +6,7 @@ from typing import Any
 
 from ...base.abstractions.document import DocumentType
 from ...base.abstractions.llm import GenerationConfig
+from ...base.providers.auth import AuthConfig
 from ...base.logging.kv_logger import LoggingConfig
 from ...base.providers.database import DatabaseConfig, ProviderConfig
 from ...base.providers.embedding import EmbeddingConfig
@@ -41,7 +42,9 @@ class R2RConfig:
         "database": ["provider"],
     }
     app: dict[str, Any]
+    auth: AuthConfig
     embedding: EmbeddingConfig
+    kg: KGConfig
     completions: LLMConfig
     logging: LoggingConfig
     prompt: PromptConfig
@@ -71,6 +74,7 @@ class R2RConfig:
             setattr(self, section, default_config[section])
 
         self.app = self.app  # for type hinting
+        self.auth = AuthConfig.create(**self.auth)
         self.ingestion = self.ingestion  # for type hinting
         self.ingestion["excluded_parsers"] = [
             DocumentType(k) for k in self.ingestion["excluded_parsers"]

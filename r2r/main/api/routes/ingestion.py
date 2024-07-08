@@ -20,8 +20,8 @@ class IngestionRouter(BaseRouter):
                 IngestionService.parse_ingest_files_form_data
             ),
             auth_user=(
-                Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.get("enabled")
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.config.auth.enabled
                 else None
             ),
         ):
@@ -40,8 +40,8 @@ class IngestionRouter(BaseRouter):
                 IngestionService.parse_update_files_form_data
             ),
             auth_user=(
-                Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.get("enabled")
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.config.auth.enabled
                 else None
             ),
         ):

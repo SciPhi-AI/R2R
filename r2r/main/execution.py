@@ -397,7 +397,7 @@ class R2RExecutionWrapper:
         return response
 
     def get_app(self):
-        if self.client_server_mode:
+        if not self.client_server_mode:
             return self.app.app.app
         else:
             raise Exception(

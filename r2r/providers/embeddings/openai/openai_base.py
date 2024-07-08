@@ -22,13 +22,12 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
 
     def __init__(self, config: EmbeddingConfig):
         super().__init__(config)
-        provider = config.provider
-        if not provider:
+        if not config.provider:
             raise ValueError(
                 "Must set provider in order to initialize OpenAIEmbeddingProvider."
             )
 
-        if provider != "openai":
+        if config.provider != "openai":
             raise ValueError(
                 "OpenAIEmbeddingProvider must be initialized with provider `openai`."
             )

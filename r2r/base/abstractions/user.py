@@ -2,39 +2,43 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
-from sqlalchemy import Boolean, Column, DateTime, String
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.declarative import declarative_base
+from pydantic import BaseModel, EmailStr, Field
 
-Base = declarative_base()
+class UserBase(BaseModel):
+    email: EmailStr
 
-
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    is_active = Column(Boolean, default=True)
-    is_verified = Column(Boolean, default=False)
-    verification_code = Column(String, nullable=True)
-    verification_code_expiry = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-
-
-class UserCreate(BaseModel):
-    email: str
+class UserCreate(UserBase):
     password: str
 
+class User(BaseModel):
+    email: EmailStr
+    password: str
+
+    id: UUID = Field(default_factory=uuid4)
+    hashed_password: str
+    is_active: bool = True
+    is_verified: bool = False
+    verification_code: Optional[str] = None
+    verification_code_expiry: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        orm_mode = True
+
+class UserResponse(UserBase):
+    id: UUID
+    is_active: bool
+    is_verified: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
 
 class Token(BaseModel):
     access_token: str
     token_type: str
-
 
 class TokenData(BaseModel):
     email: Optional[str] = None

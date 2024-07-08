@@ -84,7 +84,7 @@ class IngestionService(Service):
 
         existing_document_info = {
             doc_info.document_id: doc_info
-            for doc_info in self.providers.vector_db.get_documents_overview()
+            for doc_info in self.providers.database.get_documents_overview()
         }
 
         for iteration, document in enumerate(documents):
@@ -138,7 +138,7 @@ class IngestionService(Service):
             )
 
         # Insert pending document infos
-        self.providers.vector_db.upsert_documents_overview(document_infos)
+        self.providers.database.upsert_documents_overview(document_infos)
         ingestion_results = await self.pipelines.ingestion_pipeline.run(
             input=to_async_generator(
                 [
@@ -328,7 +328,7 @@ class IngestionService(Service):
                 documents_to_upsert.append(document_info)
 
         if documents_to_upsert:
-            self.providers.vector_db.upsert_documents_overview(
+            self.providers.database.upsert_documents_overview(
                 documents_to_upsert
             )
 
@@ -461,7 +461,7 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ):
-        return self.providers.vector_db.get_documents_overview(
+        return self.providers.database.get_documents_overview(
             filter_document_ids=(
                 [str(ele) for ele in document_ids] if document_ids else None
             ),
@@ -477,10 +477,10 @@ class IngestionService(Service):
             f"Deleting documents which match on these keys and values: ({keys}, {values})"
         )
 
-        ids = self.providers.vector_db.delete_by_metadata(keys, values)
+        ids = self.providers.database.delete_by_metadata(keys, values)
         if not ids:
             raise R2RException(
                 status_code=404, message="No entries found for deletion."
             )
-        self.providers.vector_db.delete_documents_overview(ids)
+        self.providers.database.delete_documents_overview(ids)
         return "Entries deleted successfully."

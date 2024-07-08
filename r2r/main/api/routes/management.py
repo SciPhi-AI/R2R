@@ -28,8 +28,8 @@ class ManagementRouter(BaseRouter):
         async def update_prompt_app(
             request: R2RUpdatePromptRequest,
             auth_user=(
-                Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.get("enabled")
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.config.auth.enabled
                 else None
             ),
         ):
@@ -43,8 +43,8 @@ class ManagementRouter(BaseRouter):
         async def get_logs_app(
             request: R2RLogsRequest,
             auth_user=(
-                Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.get("enabled")
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.config.auth.enabled
                 else None
             ),
         ):
@@ -59,8 +59,8 @@ class ManagementRouter(BaseRouter):
         async def get_analytics_app(
             request: R2RAnalyticsRequest,
             auth_user=(
-                Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.get("enabled")
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.config.auth.enabled
                 else None
             ),
         ):
@@ -75,8 +75,8 @@ class ManagementRouter(BaseRouter):
         async def get_users_overview_app(
             request: R2RUsersOverviewRequest,
             auth_user=(
-                Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.get("enabled")
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.config.auth.enabled
                 else None
             ),
         ):
@@ -87,8 +87,8 @@ class ManagementRouter(BaseRouter):
         async def delete_app(
             request: R2RDeleteRequest,
             auth_user=(
-                Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.get("enabled")
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.config.auth.enabled
                 else None
             ),
         ):
@@ -102,8 +102,8 @@ class ManagementRouter(BaseRouter):
         async def get_documents_overview_app(
             request: R2RDocumentsOverviewRequest,
             auth_user=(
-                Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.get("enabled")
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.config.auth.enabled
                 else None
             ),
         ):
@@ -117,8 +117,8 @@ class ManagementRouter(BaseRouter):
         async def get_document_chunks_app(
             request: R2RDocumentChunksRequest,
             auth_user=(
-                Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.get("enabled")
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.config.auth.enabled
                 else None
             ),
         ):
@@ -128,8 +128,8 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def get_app_settings_app(
             auth_user=(
-                Depends(self.engine.auth_provider.auth_wrapper)
-                if self.engine.config.auth.get("enabled")
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.config.auth.enabled
                 else None
             ),
         ):
