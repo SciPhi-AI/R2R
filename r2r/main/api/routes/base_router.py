@@ -13,8 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 class BaseRouter:
-    def __init__(self, engine):
+    def __init__(self, engine, auth_handler: Optional[AuthHandler] = None):
         self.engine = engine
+        self.auth_handler = auth_handler
         self.router = APIRouter()
 
     def base_endpoint(self, func):

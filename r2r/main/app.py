@@ -43,25 +43,12 @@ class R2RApp:
         self.app.include_router(retrieval_router, prefix="/v1")
 
         if self.use_auth:
-            # Add login and register endpoints only if authentication is enabled
-            @self.app.post("/register")
-            def register(auth_details: dict):
-                # Implement user registration logic here
-                return {"message": "User registered successfully"}
+            from .api.routes import auth
 
-            @self.app.post("/login")
-            def login(auth_details: dict):
-                if (
-                    auth_details["username"] == "admin"
-                    and auth_details["password"] == "admin"
-                ):
-                    token = self.auth_handler.encode_token(
-                        auth_details["username"]
-                    )
-                    return {"token": token}
-                raise HTTPException(
-                    status_code=401, detail="Invalid username and/or password"
-                )
+            auth_router = auth.AuthRouter.build_router(
+                self.engine, self.auth_handler
+            )
+            self.app.include_router(auth_router, prefix="/v1")
 
     def _apply_cors(self):
         from fastapi.middleware.cors import CORSMiddleware
