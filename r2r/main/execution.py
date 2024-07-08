@@ -3,7 +3,7 @@ import asyncio
 import json
 import os
 import uuid
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import UploadFile
 
@@ -108,7 +108,7 @@ class R2RExecutionWrapper:
         self,
         file_paths: list[str],
         metadatas: Optional[list[dict]] = None,
-        document_ids: Optional[list[str]] = None,
+        document_ids: Optional[list[Union[uuid.UUID, str]]] = None,
         versions: Optional[list[str]] = None,
     ):
         if isinstance(file_paths, str):
@@ -120,21 +120,28 @@ class R2RExecutionWrapper:
         if isinstance(versions, str):
             versions = list(versions.split(","))
 
-        document_ids = (
-            [
-                generate_id_from_label(file_path.split(os.path.sep)[-1])
-                for file_path in file_paths
+        all_file_paths = []
+        for path in file_paths:
+            if os.path.isdir(path):
+                for root, _, files in os.walk(path):
+                    all_file_paths.extend(
+                        os.path.join(root, file) for file in files
+                    )
+            else:
+                all_file_paths.append(path)
+
+        if not document_ids:
+            document_ids = [
+                generate_id_from_label(os.path.basename(file_path))
+                for file_path in all_file_paths
             ]
-            if not document_ids
-            else document_ids
-        )
 
         files = [
             UploadFile(
-                filename=file_path,
+                filename=os.path.basename(file_path),
                 file=open(file_path, "rb"),
             )
-            for file_path in file_paths
+            for file_path in all_file_paths
         ]
 
         for file in files:
@@ -142,21 +149,25 @@ class R2RExecutionWrapper:
             file.size = file.file.tell()
             file.file.seek(0)
 
-        if self.client_mode:
-            return self.client.ingest_files(
-                file_paths=file_paths,
-                document_ids=document_ids,
-                metadatas=metadatas,
-                versions=versions,
-                monitor=True,
-            )["results"]
-        else:
-            return self.app.ingest_files(
-                files=files,
-                document_ids=document_ids,
-                metadatas=metadatas,
-                versions=versions,
-            )
+        try:
+            if self.client_mode:
+                return self.client.ingest_files(
+                    file_paths=all_file_paths,
+                    document_ids=document_ids,
+                    metadatas=metadatas,
+                    versions=versions,
+                    monitor=True,
+                )["results"]
+            else:
+                return self.app.ingest_files(
+                    files=files,
+                    document_ids=document_ids,
+                    metadatas=metadatas,
+                    versions=versions,
+                )
+        finally:
+            for file in files:
+                file.file.close()
 
     def update_files(
         self,
