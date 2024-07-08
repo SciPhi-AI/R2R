@@ -53,7 +53,7 @@
   "prompt": {
     "provider": "local"
   },
-  "vector_database": {
-    "provider": "pgvector"
+  "database": {
+    "provider": "postgres"
   }
 }

@@ -4,12 +4,12 @@ import jwt
 import pytest
 from fastapi import HTTPException
 
-from r2r.main.auth.base import AuthHandler
+from r2r.providers import R2RAuthProvider
 
 
 @pytest.fixture
 def auth_handler():
-    return AuthHandler(secret="test_secret", token_lifetime=30)
+    return R2RAuthProvider(secret="test_secret", token_lifetime=30)
 
 
 def test_password_hashing_and_verification(auth_handler):
@@ -53,7 +53,7 @@ def test_invalid_token(auth_handler):
 
 
 def test_generate_secret_key():
-    secret_key = AuthHandler.generate_secret_key()
+    secret_key = R2RAuthProvider.generate_secret_key()
     assert isinstance(secret_key, str)
     assert len(secret_key) > 0
 
@@ -93,13 +93,13 @@ def test_env_variable_usage(monkeypatch):
     monkeypatch.setenv("R2R_SECRET_KEY", "env_secret")
     monkeypatch.setenv("R2R_TOKEN_LIFETIME", "60")
 
-    auth_handler = AuthHandler()
+    auth_handler = R2RAuthProvider()
     assert auth_handler.secret == "env_secret"
     assert auth_handler.lifetime == 60  # Changed from '60' to 60
 
 
 # Test fallback to generated secret if not provided
 def test_fallback_to_generated_secret():
-    auth_handler = AuthHandler()
+    auth_handler = R2RAuthProvider()
     assert isinstance(auth_handler.secret, str)
     assert len(auth_handler.secret) > 0

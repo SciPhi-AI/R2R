@@ -7,12 +7,12 @@ from typing import Any
 from ...base.abstractions.document import DocumentType
 from ...base.abstractions.llm import GenerationConfig
 from ...base.logging.kv_logger import LoggingConfig
-from ...base.providers.embedding_provider import EmbeddingConfig
-from ...base.providers.eval_provider import EvalConfig
-from ...base.providers.kg_provider import KGConfig
-from ...base.providers.llm_provider import LLMConfig
-from ...base.providers.prompt_provider import PromptConfig
-from ...base.providers.vector_db_provider import ProviderConfig, VectorDBConfig
+from ...base.providers.database import DatabaseConfig, ProviderConfig
+from ...base.providers.embedding import EmbeddingConfig
+from ...base.providers.eval import EvalConfig
+from ...base.providers.kg import KGConfig
+from ...base.providers.llm import LLMConfig
+from ...base.providers.prompt import PromptConfig
 
 logger = logging.getLogger(__name__)
 
@@ -37,14 +37,14 @@ class R2RConfig:
         "completions": ["provider"],
         "logging": ["provider", "log_table"],
         "prompt": ["provider"],
-        "vector_database": ["provider"],
+        "database": ["provider"],
     }
     app: dict[str, Any]
     embedding: EmbeddingConfig
     completions: LLMConfig
     logging: LoggingConfig
     prompt: PromptConfig
-    vector_database: VectorDBConfig
+    database: DatabaseConfig
 
     def __init__(self, config_data: dict[str, Any]):
         # Load the default configuration
@@ -87,7 +87,7 @@ class R2RConfig:
         self.completions = LLMConfig.create(**self.completions)
         self.logging = LoggingConfig.create(**self.logging)
         self.prompt = PromptConfig.create(**self.prompt)
-        self.vector_database = VectorDBConfig.create(**self.vector_database)
+        self.database = DatabaseConfig.create(**self.database)
 
     def _validate_config_section(
         self, config_data: dict[str, Any], section: str, keys: list

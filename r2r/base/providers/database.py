@@ -5,12 +5,12 @@ from typing import Optional, Union
 from ..abstractions.document import DocumentInfo
 from ..abstractions.search import VectorSearchResult
 from ..abstractions.vector import VectorEntry
-from .base_provider import Provider, ProviderConfig
+from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 
 
-class VectorDBConfig(ProviderConfig):
+class DatabaseConfig(ProviderConfig):
     provider: str
 
     def __post_init__(self):
@@ -25,16 +25,16 @@ class VectorDBConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["local", "pgvector"]
+        return ["postgres"]
 
 
-class VectorDBProvider(Provider, ABC):
-    def __init__(self, config: VectorDBConfig):
-        if not isinstance(config, VectorDBConfig):
+class DatabaseProvider(Provider, ABC):
+    def __init__(self, config: DatabaseConfig):
+        if not isinstance(config, DatabaseConfig):
             raise ValueError(
-                "VectorDBProvider must be initialized with a `VectorDBConfig`."
+                "DatabaseProvider must be initialized with a `DatabaseConfig`."
             )
-        logger.info(f"Initializing VectorDBProvider with config {config}.")
+        logger.info(f"Initializing DatabaseProvider with config {config}.")
         super().__init__(config)
 
     @abstractmethod

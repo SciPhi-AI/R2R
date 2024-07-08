@@ -24,10 +24,10 @@ def app(request):
     config.logging.provider = "local"
     config.logging.logging_path = uuid.uuid4().hex
 
-    vector_db_provider = request.param
-    if vector_db_provider == "pgvector":
-        config.vector_database.provider = "pgvector"
-        config.vector_database.extra_fields["vecs_collection"] = (
+    database_provider = request.param
+    if database_provider == "postgres":
+        config.database.provider = "postgres"
+        config.database.extra_fields["vecs_collection"] = (
             config.logging.logging_path
         )
     try:
@@ -59,7 +59,7 @@ def logging_connection():
     return KVLoggingSingleton()
 
 
-@pytest.mark.parametrize("app", ["pgvector"], indirect=True)
+@pytest.mark.parametrize("app", ["postgres"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_txt_document(app, logging_connection):
     await app.aingest_documents(
@@ -74,7 +74,7 @@ async def test_ingest_txt_document(app, logging_connection):
     )
 
 
-@pytest.mark.parametrize("app", ["pgvector"], indirect=True)
+@pytest.mark.parametrize("app", ["postgres"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_txt_file(app, logging_connection):
     # Prepare the test data
@@ -104,7 +104,7 @@ async def test_ingest_txt_file(app, logging_connection):
     await app.aingest_files(metadatas=[metadata], files=files)
 
 
-@pytest.mark.parametrize("app", ["pgvector"], indirect=True)
+@pytest.mark.parametrize("app", ["postgres"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_search_txt_file(app, logging_connection):
     # Prepare the test data
@@ -178,7 +178,7 @@ async def test_ingest_search_txt_file(app, logging_connection):
     assert "Ancient" in collector
 
 
-@pytest.mark.parametrize("app", ["pgvector"], indirect=True)
+@pytest.mark.parametrize("app", ["postgres"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_search_then_delete(app, logging_connection):
     # Ingest a document
@@ -223,7 +223,7 @@ async def test_ingest_search_then_delete(app, logging_connection):
     ), f"Expected no search results, but got {search_results_2['results']}"
 
 
-@pytest.mark.parametrize("app", ["local", "pgvector"], indirect=True)
+@pytest.mark.parametrize("app", ["local", "postgres"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_user_documents(app, logging_connection):
     user_id_0 = generate_id_from_label("user_0")
@@ -266,7 +266,7 @@ async def test_ingest_user_documents(app, logging_connection):
     ), f"Expected document id {str(generate_id_from_label('doc_1'))} for user {user_id_1}, but got {user_1_docs[0].document_id}"
 
 
-@pytest.mark.parametrize("app", ["pgvector"], indirect=True)
+@pytest.mark.parametrize("app", ["postgres"], indirect=True)
 @pytest.mark.asyncio
 async def test_delete_by_id(app, logging_connection):
     await app.aingest_documents(
@@ -287,7 +287,7 @@ async def test_delete_by_id(app, logging_connection):
     assert len(search_results["vector_search_results"]) == 0
 
 
-@pytest.mark.parametrize("app", ["pgvector"], indirect=True)
+@pytest.mark.parametrize("app", ["postgres"], indirect=True)
 @pytest.mark.asyncio
 async def test_double_ingest(app, logging_connection):
     await app.aingest_documents(

@@ -2,7 +2,7 @@ import logging
 from abc import abstractmethod
 from typing import Any, Optional
 
-from .base_provider import Provider, ProviderConfig
+from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 

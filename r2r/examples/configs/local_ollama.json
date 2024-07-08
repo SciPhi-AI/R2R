@@ -16,7 +16,7 @@
       "mp4"
     ]
   },
-  "vector_database": {
-    "provider": "pgvector"
+  "database": {
+    "provider": "postgres"
   }
 }

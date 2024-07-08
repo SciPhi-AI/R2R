@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Optional
 
 from ..abstractions.search import VectorSearchResult
-from .base_provider import Provider, ProviderConfig
+from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 

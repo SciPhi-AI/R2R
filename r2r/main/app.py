@@ -1,14 +1,11 @@
 from fastapi import FastAPI, HTTPException
 
-from .auth.base import AuthHandler
 from .engine import R2REngine
 
 
 class R2RApp:
-    def __init__(self, engine: R2REngine, use_auth: bool = True):
+    def __init__(self, engine: R2REngine):
         self.engine = engine
-        self.use_auth = use_auth
-        self.auth_handler = AuthHandler() if use_auth else None
         self._setup_routes()
         self._apply_cors()
 
@@ -21,6 +18,11 @@ class R2RApp:
             routes=self.app.routes,
         )
 
+    def serve(self, host: str = "0.0.0.0", port: int = 8000):
+        import uvicorn
+
+        uvicorn.run(self.app, host=host, port=port)
+
     def _setup_routes(self):
         from .api.routes import ingestion, management, retrieval
 
@@ -28,13 +30,13 @@ class R2RApp:
 
         # Create routers with the engine
         ingestion_router = ingestion.IngestionRouter.build_router(
-            self.engine, self.auth_handler
+            self.engine
         )
         management_router = management.ManagementRouter.build_router(
-            self.engine, self.auth_handler
+            self.engine
         )
         retrieval_router = retrieval.RetrievalRouter.build_router(
-            self.engine, self.auth_handler
+            self.engine
         )
 
         # Include routers in the app
@@ -46,7 +48,7 @@ class R2RApp:
             from .api.routes import auth
 
             auth_router = auth.AuthRouter.build_router(
-                self.engine, self.auth_handler
+                self.engine
             )
             self.app.include_router(auth_router, prefix="/v1")
 
@@ -61,8 +63,3 @@ class R2RApp:
             allow_methods=["*"],
             allow_headers=["*"],
         )
-
-    def serve(self, host: str = "0.0.0.0", port: int = 8000):
-        import uvicorn
-
-        uvicorn.run(self.app, host=host, port=port)

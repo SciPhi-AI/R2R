@@ -9,7 +9,7 @@ from typing import Optional
 import asyncpg
 from pydantic import BaseModel
 
-from ..providers.base_provider import Provider, ProviderConfig
+from ..providers.base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 
