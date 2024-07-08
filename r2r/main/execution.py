@@ -60,7 +60,7 @@ class R2RExecutionWrapper:
         if not self.client_mode:
             self.app.serve(host, port)
         else:
-            raise Exception(
+            raise ValueError(
                 "Serve method is only available when `client_mode=False`."
             )
 
@@ -87,7 +87,7 @@ class R2RExecutionWrapper:
         try:
             # First, try to parse as JSON
             return json.loads(metadata_string)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
             try:
                 # If JSON parsing fails, try to evaluate as a Python literal
                 result = ast.literal_eval(metadata_string)
@@ -96,13 +96,13 @@ class R2RExecutionWrapper:
                 ):
                     raise ValueError(
                         "The string does not represent a list of dictionaries"
-                    )
+                    ) from e
                 return result
-            except (ValueError, SyntaxError):
+            except (ValueError, SyntaxError) as exc:
                 raise ValueError(
                     "Unable to parse the metadata string. "
                     "Please ensure it's a valid JSON array or Python list of dictionaries."
-                )
+                ) from exc
 
     def ingest_files(
         self,
@@ -387,8 +387,7 @@ class R2RExecutionWrapper:
 
         """Ingest the first sample file into R2R."""
         sample_ingestor = SampleDataIngestor(self)
-        response = sample_ingestor.ingest_sample_file(no_media=no_media)
-        return response
+        return sample_ingestor.ingest_sample_file(no_media=no_media)
 
     def ingest_sample_files(self, no_media: bool = True):
         from r2r.examples.scripts.sample_data_ingestor import (
@@ -397,8 +396,7 @@ class R2RExecutionWrapper:
 
         """Ingest the first sample file into R2R."""
         sample_ingestor = SampleDataIngestor(self)
-        response = sample_ingestor.ingest_sample_files(no_media=no_media)
-        return response
+        return sample_ingestor.ingest_sample_files(no_media=no_media)
 
     def get_app(self):
         if not self.client_mode:
