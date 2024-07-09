@@ -207,7 +207,6 @@ def rag(
     rag_generation_config = {"stream": stream}
     if rag_model:
         rag_generation_config["model"] = rag_model
-    print("rag_generation_config = ", rag_generation_config)
     t0 = time.time()
 
     response = obj.rag(
