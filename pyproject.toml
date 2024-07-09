@@ -99,6 +99,7 @@ module = "yaml"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 addopts = "--cov=r2r --cov-report=term-missing --cov-report=xml"
 testpaths = [
     "tests",

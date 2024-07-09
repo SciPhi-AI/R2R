@@ -1,3 +1,4 @@
+import asyncio
 import os
 import uuid
 
@@ -16,6 +17,18 @@ from r2r import (
     generate_id_from_label,
 )
 from r2r.base.abstractions.llm import GenerationConfig
+
+
+@pytest.fixture(scope="session", autouse=True)
+def event_loop_policy():
+    asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+
+
+@pytest.fixture(scope="function")
+def event_loop():
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest.fixture(scope="function")
