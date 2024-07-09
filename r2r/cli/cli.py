@@ -4,7 +4,6 @@ import uuid
 
 import click
 
-from r2r import GenerationConfig
 from r2r.main.execution import R2RExecutionWrapper
 
 
