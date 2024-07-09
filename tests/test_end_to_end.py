@@ -228,42 +228,52 @@ async def test_ingest_search_then_delete(app, logging_connection):
 async def test_ingest_user_documents(app, logging_connection):
     user_id_0 = generate_id_from_label("user_0")
     user_id_1 = generate_id_from_label("user_1")
-    await app.aingest_documents(
-        [
-            Document(
-                id=generate_id_from_label("doc_01"),
-                data="The quick brown fox jumps over the lazy dog.",
-                type="txt",
-                metadata={"author": "John Doe", "user_id": user_id_0},
-            ),
-            Document(
-                id=generate_id_from_label("doc_11"),
-                data="The lazy dog jumps over the quick brown fox.",
-                type="txt",
-                metadata={"author": "John Doe", "user_id": user_id_1},
-            ),
-        ]
-    )
-    user_id_results = await app.ausers_overview([user_id_0, user_id_1])
-    assert set([stats.user_id for stats in user_id_results]) == set(
-        [user_id_0, user_id_1]
-    ), f"Expected user ids {user_id_0} and {user_id_1}, but got {user_id_results}"
 
-    user_0_docs = await app.adocuments_overview(user_ids=[user_id_0])
-    user_1_docs = await app.adocuments_overview(user_ids=[user_id_1])
+    try:
+        await app.aingest_documents(
+            [
+                Document(
+                    id=generate_id_from_label("doc_01"),
+                    data="The quick brown fox jumps over the lazy dog.",
+                    type="txt",
+                    metadata={"author": "John Doe", "user_id": user_id_0},
+                ),
+                Document(
+                    id=generate_id_from_label("doc_11"),
+                    data="The lazy dog jumps over the quick brown fox.",
+                    type="txt",
+                    metadata={"author": "John Doe", "user_id": user_id_1},
+                ),
+            ]
+        )
+        user_id_results = await app.ausers_overview([user_id_0, user_id_1])
+        assert set([stats.user_id for stats in user_id_results]) == set(
+            [user_id_0, user_id_1]
+        ), f"Expected user ids {user_id_0} and {user_id_1}, but got {user_id_results}"
 
-    assert (
-        len(user_0_docs) == 1
-    ), f"Expected 1 document for user {user_id_0}, but got {len(user_0_docs)}"
-    assert (
-        len(user_1_docs) == 1
-    ), f"Expected 1 document for user {user_id_1}, but got {len(user_1_docs)}"
-    assert user_0_docs[0].document_id == generate_id_from_label(
-        "doc_01"
-    ), f"Expected document id {str(generate_id_from_label('doc_0'))} for user {user_id_0}, but got {user_0_docs[0].document_id}"
-    assert user_1_docs[0].document_id == generate_id_from_label(
-        "doc_11"
-    ), f"Expected document id {str(generate_id_from_label('doc_1'))} for user {user_id_1}, but got {user_1_docs[0].document_id}"
+        user_0_docs = await app.adocuments_overview(user_ids=[user_id_0])
+        user_1_docs = await app.adocuments_overview(user_ids=[user_id_1])
+
+        assert (
+            len(user_0_docs) == 1
+        ), f"Expected 1 document for user {user_id_0}, but got {len(user_0_docs)}"
+        assert (
+            len(user_1_docs) == 1
+        ), f"Expected 1 document for user {user_id_1}, but got {len(user_1_docs)}"
+        assert user_0_docs[0].document_id == generate_id_from_label(
+            "doc_01"
+        ), f"Expected document id {str(generate_id_from_label('doc_0'))} for user {user_id_0}, but got {user_0_docs[0].document_id}"
+        assert user_1_docs[0].document_id == generate_id_from_label(
+            "doc_11"
+        ), f"Expected document id {str(generate_id_from_label('doc_1'))} for user {user_id_1}, but got {user_1_docs[0].document_id}"
+    finally:
+        await app.adelete(
+            ["document_id", "document_id"],
+            [
+                str(generate_id_from_label("doc_01")),
+                str(generate_id_from_label("doc_11")),
+            ],
+        )
 
 
 @pytest.mark.parametrize("app", ["pgvector"], indirect=True)
