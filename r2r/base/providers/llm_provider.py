@@ -16,6 +16,7 @@ class LLMConfig(ProviderConfig):
     """A base LLM config class"""
 
     provider: Optional[str] = None
+    generation_config: Optional[GenerationConfig] = None
 
     def validate(self) -> None:
         if not self.provider:

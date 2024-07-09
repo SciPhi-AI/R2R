@@ -4,14 +4,15 @@ import uuid
 from typing import Optional
 
 from r2r.base import (
+    GenerationConfig,
+    KGSearchSettings,
     KVLoggingSingleton,
+    R2RException,
     RunManager,
+    VectorSearchSettings,
     manage_run,
     to_async_generator,
 )
-from r2r.base.abstractions.llm import GenerationConfig
-from r2r.base.abstractions.search import KGSearchSettings, VectorSearchSettings
-from r2r.main.abstractions import R2RException
 from r2r.pipes import EvalPipe
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
@@ -80,7 +81,7 @@ class RetrievalService(Service):
             )
 
             t1 = time.time()
-            latency = f"{t1-t0:.2f}"
+            latency = f"{t1 - t0:.2f}"
 
             await self.logging_connection.log(
                 log_id=run_id,
@@ -117,7 +118,7 @@ class RetrievalService(Service):
 
                 if rag_generation_config.stream:
                     t1 = time.time()
-                    latency = f"{t1-t0:.2f}"
+                    latency = f"{t1 - t0:.2f}"
 
                     await self.logging_connection.log(
                         log_id=run_id,
@@ -152,7 +153,7 @@ class RetrievalService(Service):
                 )
 
                 t1 = time.time()
-                latency = f"{t1-t0:.2f}"
+                latency = f"{t1 - t0:.2f}"
 
                 await self.logging_connection.log(
                     log_id=run_id,

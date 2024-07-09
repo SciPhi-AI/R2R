@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any
 
 from ...base.abstractions.document import DocumentType
+from ...base.abstractions.llm import GenerationConfig
 from ...base.logging.kv_logger import LoggingConfig
 from ...base.providers.embedding_provider import EmbeddingConfig
 from ...base.providers.eval_provider import EvalConfig
@@ -73,6 +74,10 @@ class R2RConfig:
         self.ingestion["excluded_parsers"] = [
             DocumentType(k) for k in self.ingestion["excluded_parsers"]
         ]
+        # override GenerationConfig defaults
+        GenerationConfig.set_default(
+            **self.completions.get("generation_config", {})
+        )
         self.embedding = EmbeddingConfig.create(**self.embedding)
         self.kg = KGConfig.create(**self.kg)
         eval_llm = self.eval.pop("llm", None)

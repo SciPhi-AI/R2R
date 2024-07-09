@@ -95,14 +95,14 @@ class KGExtractionPipe(AsyncPipe):
             yield fragment
 
     async def transform_fragments(
-        self, fragments: list[Fragment], metadatas: list[dict]
+        self, fragments: list[Fragment]
     ) -> AsyncGenerator[Fragment, None]:
         """
         Transforms text chunks based on their metadata, e.g., adding prefixes.
         """
-        async for fragment, metadata in zip(fragments, metadatas):
-            if "chunk_prefix" in metadata:
-                prefix = metadata.pop("chunk_prefix")
+        async for fragment in fragments:
+            if "chunk_prefix" in fragment.metadata:
+                prefix = fragment.metadata.pop("chunk_prefix")
                 fragment.data = f"{prefix}\n{fragment.data}"
             yield fragment
 
@@ -194,7 +194,9 @@ class KGExtractionPipe(AsyncPipe):
 
         fragment_info = {}
         async for extraction in input.message:
-            async for fragment in self.fragment(extraction, run_id):
+            async for fragment in self.transform_fragments(
+                self.fragment(extraction, run_id)
+            ):
                 if extraction.document_id in fragment_info:
                     fragment_info[extraction.document_id] += 1
                 else:

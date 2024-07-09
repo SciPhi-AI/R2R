@@ -7,9 +7,9 @@ from r2r.base import (
     FilterCriteria,
     KVLoggingSingleton,
     LogProcessor,
+    R2RException,
     RunManager,
 )
-from r2r.main.abstractions import R2RException
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RPipelines, R2RProviders

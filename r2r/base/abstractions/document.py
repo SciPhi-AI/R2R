@@ -52,6 +52,10 @@ class Document(BaseModel):
                 # If it's not base64, encode it to bytes
                 kwargs["data"] = data.encode("utf-8")
 
+        doc_type = kwargs.get("type")
+        if isinstance(doc_type, str):
+            kwargs["type"] = DocumentType(doc_type)
+
         # Generate UUID based on the hash of the data
         if "id" not in kwargs:
             if isinstance(kwargs["data"], bytes):
@@ -73,6 +77,16 @@ class Document(BaseModel):
         }
 
 
+class DocumentStatus(str, Enum):
+    """Status of document processing."""
+
+    PROCESSING = "processing"
+    # TODO - Extend support for `partial-failure`
+    # PARTIAL_FAILURE = "partial-failure"
+    FAILURE = "failure"
+    SUCCESS = "success"
+
+
 class DocumentInfo(BaseModel):
     """Base class for document information handling."""
 
@@ -80,6 +94,7 @@ class DocumentInfo(BaseModel):
     version: str
     size_in_bytes: int
     metadata: dict
+    status: DocumentStatus = DocumentStatus.PROCESSING
 
     user_id: Optional[uuid.UUID] = None
     title: Optional[str] = None
@@ -90,19 +105,20 @@ class DocumentInfo(BaseModel):
         """Prepare the document info for database entry, extracting certain fields from metadata."""
         now = datetime.now()
         metadata = self.metadata
-        metadata["user_id"] = (
-            str(metadata["user_id"]) if "user_id" in metadata else None
-        )
+        if "user_id" in metadata:
+            metadata["user_id"] = str(metadata["user_id"])
+
         metadata["title"] = metadata.get("title", "N/A")
         return {
             "document_id": str(self.document_id),
             "title": metadata.get("title", "N/A"),
-            "user_id": metadata["user_id"],
+            "user_id": metadata.get("user_id", None),
             "version": self.version,
             "size_in_bytes": self.size_in_bytes,
             "metadata": json.dumps(self.metadata),
             "created_at": self.created_at or now,
             "updated_at": self.updated_at or now,
+            "status": self.status,
         }
 
 

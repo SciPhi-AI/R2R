@@ -6,11 +6,9 @@ from .api.requests import (
     R2RDocumentChunksRequest,
     R2RDocumentsOverviewRequest,
     R2REvalRequest,
-    R2RIngestDocumentsRequest,
     R2RIngestFilesRequest,
     R2RRAGRequest,
     R2RSearchRequest,
-    R2RUpdateDocumentsRequest,
     R2RUpdateFilesRequest,
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
@@ -25,6 +23,7 @@ from .assembly.factory import (
 )
 from .assembly.factory_extensions import R2RPipeFactoryWithMultiSearch
 from .engine import R2REngine
+from .execution import R2RExecutionWrapper
 from .r2r import R2R
 
 __all__ = [
@@ -32,8 +31,6 @@ __all__ = [
     "R2RPipelines",
     "R2RProviders",
     "R2RUpdatePromptRequest",
-    "R2RIngestDocumentsRequest",
-    "R2RUpdateDocumentsRequest",
     "R2RIngestFilesRequest",
     "R2RUpdateFilesRequest",
     "R2RSearchRequest",
@@ -45,6 +42,7 @@ __all__ = [
     "R2RDocumentsOverviewRequest",
     "R2RDocumentChunksRequest",
     "R2REngine",
+    "R2RExecutionWrapper",
     "R2RConfig",
     "R2RClient",
     "R2RPipeFactory",

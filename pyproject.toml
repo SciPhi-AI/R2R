@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "r2r"
-version = "0.2.51"
+version = "0.2.52"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
@@ -99,7 +99,12 @@ module = "yaml"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 addopts = "--cov=r2r --cov-report=term-missing --cov-report=xml"
 testpaths = [
     "tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::pytest.PytestUnraisableExceptionWarning",
 ]

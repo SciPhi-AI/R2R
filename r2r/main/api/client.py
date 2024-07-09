@@ -1,9 +1,11 @@
 import asyncio
 import functools
 import json
+import os
 import threading
 import time
 import uuid
+from contextlib import ExitStack
 from typing import Any, AsyncGenerator, Generator, Optional, Union
 
 import fire
@@ -11,19 +13,15 @@ import httpx
 import nest_asyncio
 import requests
 
-from r2r.base import GenerationConfig, KGSearchSettings, VectorSearchSettings
-
 from .requests import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
     R2RDocumentsOverviewRequest,
-    R2RIngestDocumentsRequest,
     R2RIngestFilesRequest,
     R2RLogsRequest,
     R2RRAGRequest,
     R2RSearchRequest,
-    R2RUpdateDocumentsRequest,
     R2RUpdateFilesRequest,
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
@@ -131,38 +129,39 @@ class R2RClient:
         )
 
     @monitor_request
-    def ingest_documents(
-        self, documents: list[dict], versions: Optional[list[str]] = None
-    ):
-        request = R2RIngestDocumentsRequest(
-            documents=documents, versions=versions
-        )
-        return self._make_request(
-            "POST", "ingest_documents", json=json.loads(request.json())
-        )
-
-    @monitor_request
     def ingest_files(
         self,
         file_paths: list[str],
         metadatas: Optional[list[dict]] = None,
         document_ids: Optional[list[Union[uuid.UUID, str]]] = None,
-        user_ids: Optional[list[Union[uuid.UUID, str]]] = None,
         versions: Optional[list[str]] = None,
     ) -> dict:
+        all_file_paths = []
+
+        for path in file_paths:
+            if os.path.isdir(path):
+                for root, _, files in os.walk(path):
+                    all_file_paths.extend(
+                        os.path.join(root, file) for file in files
+                    )
+            else:
+                all_file_paths.append(path)
+
         files_to_upload = [
-            ("files", (file, open(file, "rb"), "application/octet-stream"))
-            for file in file_paths
+            (
+                "files",
+                (
+                    os.path.basename(file),
+                    open(file, "rb"),
+                    "application/octet-stream",
+                ),
+            )
+            for file in all_file_paths
         ]
         request = R2RIngestFilesRequest(
             metadatas=metadatas,
             document_ids=(
                 [str(ele) for ele in document_ids] if document_ids else None
-            ),
-            user_ids=(
-                [(str(ele) if ele else None) for ele in user_ids]
-                if user_ids
-                else None
             ),
             versions=versions,
         )
@@ -181,35 +180,17 @@ class R2RClient:
                 file_tuple[1].close()
 
     @monitor_request
-    def update_documents(
-        self,
-        documents: list[dict],
-        versions: Optional[list[str]] = None,
-        metadatas: Optional[list[dict]] = None,
-    ) -> dict:
-        request = R2RUpdateDocumentsRequest(
-            documents=documents, versions=versions, metadatas=metadatas
-        )
-        return self._make_request(
-            "POST", "update_documents", json=json.loads(request.json())
-        )
-
-    @monitor_request
     def update_files(
         self,
-        files: list[str],
+        file_paths: list[str],
         document_ids: list[str],
         metadatas: Optional[list[dict]] = None,
     ) -> dict:
-        files_to_upload = [
-            ("files", (file, open(file, "rb"), "application/octet-stream"))
-            for file in files
-        ]
         request = R2RUpdateFilesRequest(
             metadatas=metadatas,
             document_ids=document_ids,
         )
-        try:
+        with ExitStack() as stack:
             return self._make_request(
                 "POST",
                 "update_files",
@@ -217,11 +198,18 @@ class R2RClient:
                     k: json.dumps(v)
                     for k, v in json.loads(request.json()).items()
                 },
-                files=files_to_upload,
+                files=[
+                    (
+                        "files",
+                        (
+                            path.split("/")[-1],
+                            stack.enter_context(open(path, "rb")),
+                            "application/octet-stream",
+                        ),
+                    )
+                    for path in file_paths
+                ],
             )
-        finally:
-            for _, file_tuple in files_to_upload:
-                file_tuple[1].close()
 
     def search(
         self,
@@ -231,20 +219,20 @@ class R2RClient:
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
-        kg_agent_generation_config: Optional[GenerationConfig] = None,
+        kg_agent_generation_config: Optional[dict] = None,
     ) -> dict:
         request = R2RSearchRequest(
             query=query,
-            vector_search_settings=VectorSearchSettings(
-                use_vector_search=use_vector_search,
-                search_filters=search_filters or {},
-                search_limit=search_limit,
-                do_hybrid_search=do_hybrid_search,
-            ),
-            kg_search_settings=KGSearchSettings(
-                use_kg_search=use_kg_search,
-                agent_generation_config=kg_agent_generation_config,
-            ),
+            vector_search_settings={
+                "use_vector_search": use_vector_search,
+                "search_filters": search_filters or {},
+                "search_limit": search_limit,
+                "do_hybrid_search": do_hybrid_search,
+            },
+            kg_search_settings={
+                "use_kg_search": use_kg_search,
+                "agent_generation_config": kg_agent_generation_config,
+            },
         )
         return self._make_request(
             "POST", "search", json=json.loads(request.json())
@@ -258,25 +246,27 @@ class R2RClient:
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
-        kg_agent_generation_config: Optional[GenerationConfig] = None,
-        rag_generation_config: Optional[GenerationConfig] = None,
+        kg_agent_generation_config: Optional[dict] = None,
+        rag_generation_config: Optional[dict] = None,
     ) -> dict:
         request = R2RRAGRequest(
             query=query,
-            vector_search_settings=VectorSearchSettings(
-                use_vector_search=use_vector_search,
-                search_filters=search_filters or {},
-                search_limit=search_limit,
-                do_hybrid_search=do_hybrid_search,
-            ),
-            kg_search_settings=KGSearchSettings(
-                use_kg_search=use_kg_search,
-                agent_generation_config=kg_agent_generation_config,
-            ),
+            vector_search_settings={
+                "use_vector_search": use_vector_search,
+                "search_filters": search_filters or {},
+                "search_limit": search_limit,
+                "do_hybrid_search": do_hybrid_search,
+            },
+            kg_search_settings={
+                "use_kg_search": use_kg_search,
+                "agent_generation_config": kg_agent_generation_config,
+            },
             rag_generation_config=rag_generation_config,
         )
 
-        if rag_generation_config.stream:
+        if rag_generation_config and rag_generation_config.get(
+            "stream", False
+        ):
             return self._stream_rag_sync(request)
         else:
             return self._make_request(
