@@ -254,23 +254,6 @@ class R2RExecutionWrapper:
         stream: bool = False,
         rag_generation_config: Optional[dict] = None,
     ):
-        # kg_agent_generation_config = (
-        #     GenerationConfig(**kg_agent_generation_config)
-        #     if kg_agent_generation_config
-        #     else GenerationConfig(model="gpt-4o")
-        # )
-
-        # # Create a copy of rag_generation_config to avoid modifying the original
-        # rag_config = (
-        #     rag_generation_config.copy() if rag_generation_config else {}
-        # )
-
-        # # Override the 'stream' setting in rag_config with the function parameter
-        # rag_config["stream"] = stream
-        # rag_config["model"] = rag_config.get("model", "gpt-4o")
-
-        # rag_generation_config = GenerationConfig(**rag_config)
-
         if self.client_mode:
             response = self.client.rag(
                 query=query,
