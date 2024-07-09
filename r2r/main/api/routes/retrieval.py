@@ -16,6 +16,13 @@ class RetrievalRouter(BaseRouter):
         @self.router.post("/search")
         @self.base_endpoint
         async def search_app(request: R2RSearchRequest):
+            if "agent_generation_config" in request.kg_search_settings:
+                request.kg_search_settings[
+                    "agent_generation_config"
+                ] = GenerationConfig(
+                    **request.kg_search_settings["agent_generation_config"]
+                )
+
             results = await self.engine.asearch(
                 query=request.query,
                 vector_search_settings=VectorSearchSettings(
