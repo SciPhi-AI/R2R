@@ -350,7 +350,6 @@ def analytics(obj, filters, analysis_types):
 @cli.command()
 @click.option(
     "--no-media",
-    is_flag=True,
     default=True,
     help="Exclude media files from ingestion",
 )
@@ -367,7 +366,6 @@ def ingest_sample_file(obj, no_media):
 @cli.command()
 @click.option(
     "--no-media",
-    is_flag=True,
     default=True,
     help="Exclude media files from ingestion",
 )
