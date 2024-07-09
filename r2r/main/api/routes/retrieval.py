@@ -18,29 +18,43 @@ class RetrievalRouter(BaseRouter):
         async def search_app(request: R2RSearchRequest):
             results = await self.engine.asearch(
                 query=request.query,
-                vector_search_settings=request.vector_search_settings
-                or VectorSearchSettings(),
-                kg_search_settings=request.kg_search_settings
-                or KGSearchSettings(),
+                vector_search_settings=VectorSearchSettings(
+                    **(request.vector_search_settings or {})
+                ),
+                kg_search_settings=KGSearchSettings(
+                    **(request.kg_search_settings or {})
+                ),
             )
             return results
 
         @self.router.post("/rag")
         @self.base_endpoint
         async def rag_app(request: R2RRAGRequest):
+            if "agent_generation_config" in request.kg_search_settings:
+                request.kg_search_settings[
+                    "agent_generation_config"
+                ] = GenerationConfig(
+                    **request.kg_search_settings["agent_generation_config"]
+                )
             response = await self.engine.arag(
                 query=request.query,
-                vector_search_settings=request.vector_search_settings
-                or VectorSearchSettings(),
-                kg_search_settings=request.kg_search_settings
-                or KGSearchSettings(),
-                rag_generation_config=request.rag_generation_config
-                or GenerationConfig(),
+                vector_search_settings=VectorSearchSettings(
+                    **(request.vector_search_settings or {})
+                ),
+                kg_search_settings=KGSearchSettings(
+                    **(request.kg_search_settings or {})
+                ),
+                rag_generation_config=GenerationConfig(
+                    **(request.rag_generation_config or {})
+                ),
             )
-
+            print(
+                "request.rag_generation_config = ",
+                request.rag_generation_config,
+            )
             if (
                 request.rag_generation_config
-                and request.rag_generation_config.stream
+                and request.rag_generation_config.get("stream", False)
             ):
 
                 async def stream_generator():

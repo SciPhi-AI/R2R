@@ -31,15 +31,15 @@ class R2RUpdateFilesRequest(BaseModel):
 
 class R2RSearchRequest(BaseModel):
     query: str
-    vector_search_settings: Optional[VectorSearchSettings] = None
-    kg_search_settings: Optional[KGSearchSettings] = None
+    vector_search_settings: Optional[dict] = None
+    kg_search_settings: Optional[dict] = None
 
 
 class R2RRAGRequest(BaseModel):
     query: str
-    vector_search_settings: Optional[VectorSearchSettings] = None
-    kg_search_settings: Optional[KGSearchSettings] = None
-    rag_generation_config: Optional[GenerationConfig] = None
+    vector_search_settings: Optional[dict] = None
+    kg_search_settings: Optional[dict] = None
+    rag_generation_config: Optional[dict] = None
 
 
 class R2REvalRequest(BaseModel):

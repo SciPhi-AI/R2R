@@ -184,9 +184,9 @@ def search(
 @click.option(
     "--use-kg-search", is_flag=True, help="Use knowledge graph search"
 )
-@click.option("--kg-agent-model", default="gpt-4o", help="Model for KG agent")
+@click.option("--kg-agent-model", default=None, help="Model for KG agent")
 @click.option("--stream", is_flag=True, help="Stream the RAG response")
-@click.option("--rag-model", default="gpt-4o", help="Model for RAG")
+@click.option("--rag-model", default=None, help="Model for RAG")
 @click.pass_obj
 def rag(
     obj,
@@ -201,9 +201,13 @@ def rag(
     rag_model,
 ):
     """Perform a RAG query."""
-    kg_agent_generation_config = GenerationConfig(model=kg_agent_model)
-    rag_generation_config = GenerationConfig(model=rag_model, stream=stream)
-
+    kg_agent_generation_config = {}
+    if kg_agent_model:
+        kg_agent_generation_config = {"model": kg_agent_model}
+    rag_generation_config = {"stream": stream}
+    if rag_model:
+        rag_generation_config["model"] = rag_model
+    print("rag_generation_config = ", rag_generation_config)
     t0 = time.time()
 
     response = obj.rag(
@@ -213,9 +217,9 @@ def rag(
         search_limit,
         do_hybrid_search,
         use_kg_search,
-        kg_agent_generation_config.dict(),
+        kg_agent_generation_config,
         stream,
-        rag_generation_config.dict(),
+        rag_generation_config,
     )
     if stream:
         for chunk in response:
