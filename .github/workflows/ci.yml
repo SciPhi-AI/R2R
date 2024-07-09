@@ -36,7 +36,7 @@ jobs:
 
   pytest:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15  # Increased timeout to accommodate Ollama setup
 
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -54,7 +54,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'  # Specify your Python version here
+          python-version: '3.9'
 
       - name: Install dependencies
         run: |
@@ -62,8 +62,22 @@ jobs:
           pip install poetry
           poetry install
 
+      - name: Install Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sudo -E sh
+
+      - name: Start Ollama server
+        run: |
+          ollama serve &
+          sleep 5
+          curl -i http://localhost:11434
+
+      - name: Pull Ollama model
+        run: |
+          ollama pull llama2
+
       - name: Run tests
-        run: poetry run pytest tests/ -k "not redis and not sentence_transformer"  # Exclude tests that require Redis and SentenceTransformerEmbeddingProvider
+        run: poetry run pytest tests/ -k "not redis and not sentence_transformer"
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1

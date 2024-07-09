@@ -42,12 +42,12 @@ def ingestion_service(mock_vector_db, mock_embedding_model):
         "embedding_pipeline_output": []
     }
     run_manager = Mock()
-    logging_connection = Mock()
+    run_manager.run_info = {"mock_run_id": {}}
+    logging_connection = AsyncMock()
 
-    service = IngestionService(
+    return IngestionService(
         config, providers, pipelines, run_manager, logging_connection
     )
-    return service
 
 
 @pytest.mark.asyncio
@@ -321,7 +321,7 @@ async def test_process_ingestion_results_error_handling(ingestion_service):
         ]
     }
 
-    result = ingestion_service._process_ingestion_results(
+    result = await ingestion_service._process_ingestion_results(
         ingestion_results,
         document_infos,
         [],
