@@ -65,9 +65,6 @@ class SampleDataIngestor:
                 for it in range(len(sample_files))
             ],
         )
-
-        print("Sample files ingested successfully.")
-        print(response)
         return response
 
     def ingest_sample_file(self, no_media: bool = True):
@@ -77,9 +74,6 @@ class SampleDataIngestor:
         response = self.executor.ingest_files(
             [sample_files[0]], [{"user_id": user_id}]
         )
-
-        print("First sample file ingested successfully.")
-        print(response)
         return response
 
 

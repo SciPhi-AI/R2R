@@ -128,7 +128,7 @@ def update_files(obj, file_paths, document_ids, metadatas):
 @click.option(
     "--use-kg-search", is_flag=True, help="Use knowledge graph search"
 )
-@click.option("--kg-agent-model", default="gpt-4o", help="Model for KG agent")
+@click.option("--kg-agent-model", default=None, help="Model for KG agent")
 @click.pass_obj
 def search(
     obj,
@@ -141,7 +141,9 @@ def search(
     kg_agent_model,
 ):
     """Perform a search query."""
-    kg_agent_generation_config = GenerationConfig(model=kg_agent_model)
+    kg_agent_generation_config = {}
+    if kg_agent_model:
+        kg_agent_generation_config["model"] = kg_agent_model
 
     t0 = time.time()
 
@@ -152,7 +154,7 @@ def search(
         search_limit,
         do_hybrid_search,
         use_kg_search,
-        kg_agent_generation_config.dict(),
+        kg_agent_generation_config,
     )
 
     if isinstance(results, dict) and "results" in results:
