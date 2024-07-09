@@ -48,10 +48,6 @@ class RetrievalRouter(BaseRouter):
                     **(request.rag_generation_config or {})
                 ),
             )
-            print(
-                "request.rag_generation_config = ",
-                request.rag_generation_config,
-            )
             if (
                 request.rag_generation_config
                 and request.rag_generation_config.get("stream", False)
