@@ -226,8 +226,12 @@ def rag(
             click.echo(chunk, nl=False)
         click.echo()
     else:
-        click.echo(f"Search Results:\n{response['search_results']}")
-        click.echo(f"Completion:\n{response['completion']}")
+        if obj.client_mode:
+            click.echo(f"Search Results:\n{response['search_results']}")
+            click.echo(f"Completion:\n{response['completion']}")
+        else:
+            click.echo(f"Search Results:\n{response.search_results}")
+            click.echo(f"Completion:\n{response.completion}")
 
     t1 = time.time()
     click.echo(f"Time taken for RAG: {t1 - t0:.2f} seconds")

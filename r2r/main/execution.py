@@ -286,7 +286,7 @@ class R2RExecutionWrapper:
                 ),
             )
             if not stream:
-                return response["results"]
+                return response
             else:
 
                 async def async_generator():
