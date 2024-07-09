@@ -104,3 +104,7 @@ addopts = "--cov=r2r --cov-report=term-missing --cov-report=xml"
 testpaths = [
     "tests",
 ]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::pytest.PytestUnraisableExceptionWarning",
+]
