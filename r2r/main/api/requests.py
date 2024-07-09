@@ -3,13 +3,7 @@ from typing import Optional, Union
 
 from pydantic import BaseModel
 
-from r2r.base import (
-    AnalysisTypes,
-    FilterCriteria,
-    GenerationConfig,
-    KGSearchSettings,
-    VectorSearchSettings,
-)
+from r2r.base import AnalysisTypes, FilterCriteria
 
 
 class R2RUpdatePromptRequest(BaseModel):

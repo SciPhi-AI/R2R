@@ -10,11 +10,11 @@ from fastapi import UploadFile
 from r2r.base import (
     AnalysisTypes,
     FilterCriteria,
+    GenerationConfig,
     KGSearchSettings,
     VectorSearchSettings,
     generate_id_from_label,
 )
-from r2r.base.abstractions.llm import GenerationConfig
 
 from .api.client import R2RClient
 from .assembly.builder import R2RBuilder
@@ -211,12 +211,6 @@ class R2RExecutionWrapper:
         use_kg_search: bool = False,
         kg_agent_generation_config: Optional[dict] = None,
     ):
-        kg_agent_generation_config = (
-            GenerationConfig(**kg_agent_generation_config)
-            if kg_agent_generation_config
-            else GenerationConfig()
-        )
-
         if self.client_mode:
             return self.client.search(
                 query,
@@ -238,7 +232,9 @@ class R2RExecutionWrapper:
                 ),
                 KGSearchSettings(
                     use_kg_search=use_kg_search,
-                    agent_generation_config=kg_agent_generation_config,
+                    agent_generation_config=GenerationConfig(
+                        **(kg_agent_generation_config or {})
+                    ),
                 ),
             )
 
@@ -281,12 +277,16 @@ class R2RExecutionWrapper:
                 ),
                 kg_search_settings=KGSearchSettings(
                     use_kg_search=use_kg_search,
-                    agent_generation_config=kg_agent_generation_config,
+                    agent_generation_config=GenerationConfig(
+                        **(kg_agent_generation_config or {})
+                    ),
                 ),
-                rag_generation_config=rag_generation_config,
+                rag_generation_config=GenerationConfig(
+                    **(rag_generation_config or {})
+                ),
             )
             if not stream:
-                return response["results"]
+                return response
             else:
 
                 async def async_generator():

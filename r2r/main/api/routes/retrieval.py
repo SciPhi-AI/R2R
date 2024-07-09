@@ -17,10 +17,10 @@ class RetrievalRouter(BaseRouter):
         @self.base_endpoint
         async def search_app(request: R2RSearchRequest):
             if "agent_generation_config" in request.kg_search_settings:
-                request.kg_search_settings[
-                    "agent_generation_config"
-                ] = GenerationConfig(
-                    **request.kg_search_settings["agent_generation_config"]
+                request.kg_search_settings["agent_generation_config"] = (
+                    GenerationConfig(
+                        **request.kg_search_settings["agent_generation_config"]
+                    )
                 )
 
             results = await self.engine.asearch(
@@ -38,10 +38,15 @@ class RetrievalRouter(BaseRouter):
         @self.base_endpoint
         async def rag_app(request: R2RRAGRequest):
             if "agent_generation_config" in request.kg_search_settings:
-                request.kg_search_settings[
-                    "agent_generation_config"
-                ] = GenerationConfig(
-                    **request.kg_search_settings["agent_generation_config"]
+                request.kg_search_settings["agent_generation_config"] = (
+                    GenerationConfig(
+                        **(
+                            request.kg_search_settings[
+                                "agent_generation_config"
+                            ]
+                            or {}
+                        )
+                    )
                 )
             response = await self.engine.arag(
                 query=request.query,
