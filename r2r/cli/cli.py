@@ -1,8 +1,10 @@
 import json
+import os
 import time
 import uuid
 
 import click
+import requests
 
 from r2r.main.execution import R2RExecutionWrapper
 
@@ -52,10 +54,28 @@ def cli(ctx, config_path, config_name, client_mode, base_url):
 @cli.command()
 @click.option("--host", default="0.0.0.0", help="Host to run the server on")
 @click.option("--port", default=8000, help="Port to run the server on")
+@click.option("--docker", is_flag=True, help="Run using Docker")
 @click.pass_obj
-def serve(obj, host, port):
+def serve(obj, host, port, docker):
     """Start the R2R server."""
-    obj.serve(host, port)
+    if docker:
+        if not os.path.exists("compose.yaml"):
+            click.echo("compose.yaml not found. Downloading from GitHub...")
+            url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/compose.yaml"
+            response = requests.get(url)
+            if response.status_code == 200:
+                with open("compose.yaml", "w") as f:
+                    f.write(response.text)
+                click.echo("compose.yaml downloaded successfully.")
+            else:
+                click.echo(
+                    f"Failed to download compose.yaml. Status code: {response.status_code}"
+                )
+                return
+
+        os.system("docker-compose up -d")
+    else:
+        obj.serve(host, port)
 
 
 @cli.command()
