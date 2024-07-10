@@ -4,7 +4,7 @@ networks:
 
 services:
   r2r:
-    image: emrgntcmplxty/r2r:main
+    image: r2r:kg
     ports:
       - "8000:8000"
     environment:
@@ -15,6 +15,10 @@ services:
       - POSTGRES_PORT=5432
       - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
       - POSTGRES_VECS_COLLECTION=${POSTGRES_VECS_COLLECTION:-vecs}
+      - NEO4J_USER=${NEO4J_USER:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-ineedastrongerpassword}
+      - NEO4J_URL=${NEO4J_URL:-bolt://neo4j:7687}
+      - NEO4J_DATABASE=${NEO4J_DATABASE:-neo4j}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OLLAMA_API_BASE=${OLLAMA_API_BASE:-}
       - CONFIG_OPTION=${CONFIG_OPTION:-}
@@ -81,5 +85,36 @@ services:
     networks:
       - r2r-network
 
+  # New Neo4j service
+  neo4j:
+    image: neo4j:5.21.0
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    environment:
+      - NEO4J_AUTH=${NEO4J_AUTH:-neo4j/ineedastrongerpassword}
+      - NEO4J_dbms_memory_pagecache_size=${NEO4J_PAGECACHE_SIZE:-512M}
+      - NEO4J_dbms_memory_heap_max__size=${NEO4J_HEAP_SIZE:-512M}
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_apoc_import_file_use__neo4j__config=true
+      - NEO4JLABS_PLUGINS=["apoc"]
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+      - NEO4J_dbms_security_procedures_allowlist=apoc.*
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_plugins:/plugins
+    networks:
+      - r2r-network
+    healthcheck:
+      test: ["CMD", "neo4j", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_plugins:
