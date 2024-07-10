@@ -7,7 +7,7 @@
             "chunk_size": 1024,
             "chunk_overlap": 0
         },
-        "kg_extraction_prompt": "ner_extraction_local", 
+        "kg_extraction_prompt": "ner_kg_extraction_local", 
         "kg_extraction_config": {
             "model": "ollama/shreyas/test_model",
             "temperature": 0.1,
