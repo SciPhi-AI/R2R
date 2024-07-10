@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "r2r"
-version = "0.2.52"
+version = "0.2.53"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
@@ -63,11 +63,10 @@ fsspec = "^2024.6.0"
 posthog = "^3.5.0"
 sqlalchemy = "^2.0.30"
 ollama = "^0.2.1"
-neo4j = {version = "^5.21.0", optional = true}
+neo4j = "^5.21.0"
 
 [tool.poetry.extras]
-all = ["tiktoken", "sentence-transformers", "neo4j", "moviepy", "opencv-python"]
-kg = ["neo4j"]
+all = ["tiktoken", "sentence-transformers", "moviepy", "opencv-python"]
 local-embedding = ["sentence-transformers"]
 ingest-movies = ["moviepy", "opencv-python"]
 

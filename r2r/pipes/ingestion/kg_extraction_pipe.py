@@ -57,6 +57,7 @@ class KGExtractionPipe(AsyncPipe):
             config=config
             or AsyncPipe.PipeConfig(name="default_embedding_pipe"),
         )
+
         self.kg_provider = kg_provider
         self.prompt_provider = prompt_provider
         self.llm_provider = llm_provider

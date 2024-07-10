@@ -10,6 +10,7 @@ from ..abstractions.llama_abstractions import (
     Relation,
     VectorStoreQuery,
 )
+from ..abstractions.llm import GenerationConfig
 from .base_provider import ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ class KGConfig(ProviderConfig):
     batch_size: int = 1
     kg_extraction_prompt: Optional[str] = "ner_kg_extraction"
     kg_agent_prompt: Optional[str] = "kg_agent"
+    kg_extraction_config: Optional[GenerationConfig] = None
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:
