@@ -1,6 +1,3 @@
-# compose.neo4j.yaml
-version: '3.9'
-
 services:
   r2r:
     environment:
