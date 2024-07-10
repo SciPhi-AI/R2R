@@ -3933,4 +3933,8 @@ local-embedding = ["sentence-transformers"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
+<<<<<<< HEAD
 content-hash = "a11aaf6da08f70ddd083f7b3d50a1a57cda078e91b23afe97077774b3483aaac"
+=======
+content-hash = "cbc9f56b0293bc767a0803eb8cd440fa2dff7b0ebde2a6becbe42a554fa5819e"
+>>>>>>> d805c30 (Feature/add local kg settings (#654))
