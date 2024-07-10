@@ -111,41 +111,35 @@ def main(max_entries=50, delete=False):
 
     # Specify the entity types for the KG extraction prompt
     entity_types = [
-        EntityType(
-            "ORGANIZATION",
-            subcategories=["COMPANY", "SCHOOL", "NON-PROFIT", "OTHER"],
-        ),
-        EntityType(
-            "LOCATION", subcategories=["CITY", "STATE", "COUNTRY", "OTHER"]
-        ),
-        EntityType("PERSON"),
+        EntityType("ORGANIZATION"),
+        EntityType("COMPANY"), 
+        EntityType("SCHOOL"),
+        EntityType("NON-PROFIT"), 
+        EntityType("LOCATION"), 
+        EntityType("CITY"), 
+        EntityType("STATE"), 
+        EntityType("COUNTRY"), 
+        EntityType("PERSON"), 
         EntityType("POSITION"),
-        EntityType(
-            "DATE",
-            subcategories=[
-                "YEAR",
-                "MONTH",
-                "DAY",
-                "BATCH (E.G. W24, S20)",
-                "OTHER",
-            ],
-        ),
+        EntityType("DATE"),
+        EntityType("YEAR"),
+        EntityType("MONTH"),
+        EntityType("DAY"),
+        EntityType("BATCH"),
+        EntityType("OTHER"),
         EntityType("QUANTITY"),
-        EntityType(
-            "EVENT",
-            subcategories=[
-                "INCORPORATION",
-                "FUNDING_ROUND",
-                "ACQUISITION",
-                "LAUNCH",
-                "OTHER",
-            ],
-        ),
+        EntityType("EVENT"),
+        EntityType("INCORPORATION"),
+        EntityType("FUNDING_ROUND"),
+        EntityType("ACQUISITION"),
+        EntityType("LAUNCH"),
         EntityType("INDUSTRY"),
-        EntityType(
-            "MEDIA",
-            subcategories=["EMAIL", "WEBSITE", "TWITTER", "LINKEDIN", "OTHER"],
-        ),
+        EntityType("MEDIA"),
+        EntityType("EMAIL"), 
+        EntityType("WEBSITE"),
+        EntityType("TWITTER"),
+        EntityType("LINKEDIN"),
+        EntityType("OTHER"),
         EntityType("PRODUCT"),
     ]
 
