@@ -49,9 +49,7 @@ class Relation:
         self.name = name
 
 
-def format_entity_types(
-    entity_types: List[EntityType]
-) -> str:
+def format_entity_types(entity_types: List[EntityType]) -> str:
     lines = []
     for entity in entity_types:
         lines.append(entity.name)
