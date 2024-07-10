@@ -8,7 +8,7 @@ networks:
 
 services:
   r2r:
-    image: r2r:kg
+    image: emrgntcmplxty/r2r:main
     ports:
       - "8000:8000"
     environment:
@@ -27,7 +27,6 @@ services:
       - OLLAMA_API_BASE=${OLLAMA_API_BASE:-}
       - CONFIG_OPTION=${CONFIG_OPTION:-}
       - CLIENT_MODE=${CLIENT_MODE:-false}
-      - USE_NEO4J=${USE_NEO4J:-false}
     depends_on:
       postgres:
         condition: service_healthy
