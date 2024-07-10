@@ -156,7 +156,7 @@ class KGExtractionPipe(AsyncPipe):
                     logger.error(f"Failed after retries with {e}")
                     # raise e  # Ensure the exception is raised after the final attempt
 
-        return KGExtraction(entities=[], triples=[])
+        return KGExtraction(entities={}, triples=[])
 
     async def _process_batch(
         self,
