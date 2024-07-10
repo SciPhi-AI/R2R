@@ -137,7 +137,7 @@ class KGExtractionPipe(AsyncPipe):
                     kg_extraction.split("```json")[1].split("```")[0]
                 )
 
-                llm_payload = kg_json.get("entities_and_triplets", {})
+                llm_payload = kg_json.get("entities_and_triples", {})
 
                 # Extract triples with detailed logging
                 entities = extract_entities(llm_payload)
