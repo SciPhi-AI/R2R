@@ -222,7 +222,7 @@ def extract_triples(
                 elements = entry.split(" ")
                 subject = elements[0]
                 predicate = elements[1]
-                object = ' '.join(elements[2:])
+                object = " ".join(elements[2:])
                 subject = entities[subject].value  # Use entity.value
                 if "[" in object and "]" in object:
                     object = entities[object].value  # Use entity.value

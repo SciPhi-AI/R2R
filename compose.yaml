@@ -1,10 +1,14 @@
+x-depends-on:
+  neo4j: &neo4j-dependency
+    condition: service_healthy
+
 networks:
   r2r-network:
     driver: bridge
 
 services:
   r2r:
-    image: emrgntcmplxty/r2r:main
+    image: r2r:kg
     ports:
       - "8000:8000"
     environment:
@@ -15,12 +19,18 @@ services:
       - POSTGRES_PORT=5432
       - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
       - POSTGRES_VECS_COLLECTION=${POSTGRES_VECS_COLLECTION:-vecs}
+      - NEO4J_USER=${NEO4J_USER:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-ineedastrongerpassword}
+      - NEO4J_URL=${NEO4J_URL:-bolt://neo4j:7687}
+      - NEO4J_DATABASE=${NEO4J_DATABASE:-neo4j}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OLLAMA_API_BASE=${OLLAMA_API_BASE:-}
       - CONFIG_OPTION=${CONFIG_OPTION:-}
       - CLIENT_MODE=${CLIENT_MODE:-false}
+      - USE_NEO4J=${USE_NEO4J:-false}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - r2r-network
     healthcheck:
@@ -63,6 +73,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - r2r-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   traefik:
     image: traefik:v2.9

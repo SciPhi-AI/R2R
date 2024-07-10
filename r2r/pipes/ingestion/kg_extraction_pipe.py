@@ -23,7 +23,6 @@ from r2r.base import (
     extract_triples,
     generate_id_from_label,
 )
-from r2r.base.abstractions.llm import GenerationConfig
 from r2r.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
@@ -110,7 +109,6 @@ class KGExtractionPipe(AsyncPipe):
     async def extract_kg(
         self,
         fragment: Fragment,
-        kg_generation_config: GenerationConfig,
         retries: int = 3,
         delay: int = 2,
     ) -> KGExtraction:
@@ -127,7 +125,7 @@ class KGExtractionPipe(AsyncPipe):
         for attempt in range(retries):
             try:
                 response = await self.llm_provider.aget_completion(
-                    messages, kg_generation_config
+                    messages, self.kg_provider.config.kg_extraction_config
                 )
 
                 kg_extraction = response.choices[0].message.content
@@ -163,15 +161,12 @@ class KGExtractionPipe(AsyncPipe):
     async def _process_batch(
         self,
         fragment_batch: list[Fragment],
-        kg_generation_config: GenerationConfig,
     ) -> list[KGExtraction]:
         """
         Embeds a batch of fragments and yields vector entries.
         """
         tasks = [
-            asyncio.create_task(
-                self.extract_kg(fragment, kg_generation_config)
-            )
+            asyncio.create_task(self.extract_kg(fragment))
             for fragment in fragment_batch
         ]
         return await asyncio.gather(*tasks)
@@ -181,9 +176,6 @@ class KGExtractionPipe(AsyncPipe):
         input: AsyncPipe.Input,
         state: AsyncState,
         run_id: uuid.UUID,
-        kg_generation_config: GenerationConfig = GenerationConfig(
-            model="gpt-4o", temperature=0.0
-        ),
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[KGExtraction, None]:
@@ -209,9 +201,7 @@ class KGExtractionPipe(AsyncPipe):
                 if len(fragment_batch) >= self.kg_batch_size:
                     # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
                     batch_tasks.append(
-                        self._process_batch(
-                            fragment_batch.copy(), kg_generation_config
-                        )
+                        self._process_batch(fragment_batch.copy())
                     )  # pass a copy if necessary
                     fragment_batch.clear()  # Clear the batch for new fragments
 
