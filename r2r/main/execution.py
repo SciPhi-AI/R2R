@@ -392,6 +392,18 @@ class R2RExecutionWrapper:
         sample_ingestor = SampleDataIngestor(self)
         return sample_ingestor.ingest_sample_files(no_media=no_media)
 
+    def print_relationships(self, limit: int = 100) -> str:
+        if self.client_mode:
+            return self.client.print_relationships(limit)["results"]
+        else:
+            return self.engine.print_relationships(limit)
+
+    def health(self) -> str:
+        if self.client_mode:
+            return self.client.health()
+        else:
+            pass
+
     def get_app(self):
         if not self.client_mode:
             return self.app.app.app

@@ -99,5 +99,11 @@ class R2REngine(metaclass=AsyncSyncMeta):
         )
 
     @syncable
+    async def print_kg_relationships(self, *args, **kwargs):
+        return await self.management_service.print_kg_relationships(
+            *args, **kwargs
+        )
+
+    @syncable
     async def adocument_chunks(self, *args, **kwargs):
         return await self.management_service.document_chunks(*args, **kwargs)

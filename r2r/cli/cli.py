@@ -1,8 +1,11 @@
 import json
+import os
+import subprocess
 import time
 import uuid
 
 import click
+import requests
 
 from r2r.main.execution import R2RExecutionWrapper
 
@@ -41,21 +44,186 @@ def cli(ctx, config_path, config_name, client_mode, base_url):
             "Cannot specify both config_path and config_name"
         )
 
-    ctx.obj = R2RExecutionWrapper(
-        config_path,
-        config_name,
-        client_mode if ctx.invoked_subcommand != "serve" else False,
-        base_url,
-    )
+    if ctx.invoked_subcommand != "serve":
+        ctx.obj = R2RExecutionWrapper(
+            config_path,
+            config_name,
+            client_mode if ctx.invoked_subcommand != "serve" else False,
+            base_url,
+        )
+    else:
+        ctx.obj = {
+            "config_path": config_path,
+            "config_name": config_name,
+            "base_url": base_url,
+        }
+
+
+import os
+
+import click
+import requests
+from dotenv import load_dotenv
 
 
 @cli.command()
 @click.option("--host", default="0.0.0.0", help="Host to run the server on")
 @click.option("--port", default=8000, help="Port to run the server on")
+@click.option("--docker", is_flag=True, help="Run using Docker")
+@click.option("--docker-ext-neo4j", is_flag=True, help="Run using Docker")
+@click.option(
+    "--config-option",
+    default="default",
+    help="Configuration option (default, local_ollama, etc.)",
+)
 @click.pass_obj
-def serve(obj, host, port):
+def serve(obj, host, port, docker, docker_ext_neo4j, config_option):
     """Start the R2R server."""
-    obj.serve(host, port)
+    # Load environment variables from .env file if it exists
+    load_dotenv()
+
+    # Set environment variables based on CLI options
+    if config_option:
+        os.environ["CONFIG_OPTION"] = config_option
+
+    if "local" in config_option:
+        os.environ["OLLAMA_API_BASE"] = "http://host.docker.internal:11434"
+    else:
+        os.unsetenv("OLLAMA_API_BASE")
+    if docker:
+        if not os.path.exists("compose.yaml"):
+            click.echo("compose.yaml not found. Downloading from GitHub...")
+            url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/compose.yaml"
+            response = requests.get(url)
+            if response.status_code == 200:
+                with open("compose.yaml", "w") as f:
+                    f.write(response.text)
+                click.echo("compose.yaml downloaded successfully.")
+            else:
+                click.echo(
+                    f"Failed to download compose.yaml. Status code: {response.status_code}"
+                )
+                return
+
+            url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/compose.neo4j.yaml"
+            response = requests.get(url)
+            if response.status_code == 200:
+                with open("compose.neo4j.yaml", "w") as f:
+                    f.write(response.text)
+                click.echo("compose.neo4j.yaml downloaded successfully.")
+            else:
+                click.echo(
+                    f"Failed to download compose.neo4j.yaml. Status code: {response.status_code}"
+                )
+                return
+
+        # Build the docker-compose command with the specified host and port
+        docker_command = f"docker-compose -f compose.yaml"
+        if docker_ext_neo4j:
+            docker_command += " -f compose.neo4j.yaml"
+        if host != "0.0.0.0" or port != 8000:
+            docker_command += (
+                f" --build-arg HOST={host} --build-arg PORT={port}"
+            )
+
+        docker_command += " up -d"
+        os.system(docker_command)
+    else:
+        wrapper = R2RExecutionWrapper(**obj, client_mode=False)
+        wrapper.serve(host, port)
+
+
+@cli.command()
+@click.option(
+    "--volumes",
+    is_flag=True,
+    help="Remove named volumes declared in the `volumes` section of the Compose file",
+)
+@click.option(
+    "--remove-orphans",
+    is_flag=True,
+    help="Remove containers for services not defined in the Compose file",
+)
+@click.pass_context
+def docker_down(ctx, volumes, remove_orphans):
+    """Bring down the Docker Compose setup and attempt to remove the network if necessary."""
+    if not os.path.exists("compose.yaml"):
+        click.echo(
+            "compose.yaml not found. Make sure you're in the correct directory."
+        )
+        return
+
+    docker_command = (
+        "docker-compose -f compose.yaml -f compose.neo4j.yaml down"
+    )
+
+    if volumes:
+        docker_command += " --volumes"
+
+    if remove_orphans:
+        docker_command += " --remove-orphans"
+
+    click.echo("Bringing down Docker Compose setup...")
+    result = os.system(docker_command)
+
+    if result != 0:
+        click.echo(
+            "An error occurred while bringing down the Docker Compose setup. Attempting to remove the network..."
+        )
+
+        # Get the list of networks
+        networks = (
+            subprocess.check_output(
+                ["docker", "network", "ls", "--format", "{{.Name}}"]
+            )
+            .decode()
+            .split()
+        )
+
+        # Find the r2r network
+        r2r_network = next(
+            (
+                network
+                for network in networks
+                if network.startswith("r2r_") and "network" in network
+            ),
+            None,
+        )
+
+        if r2r_network:
+            # Try to remove the network
+            for _ in range(1):  # Try 1 extra times
+                remove_command = f"docker network rm {r2r_network}"
+                remove_result = os.system(remove_command)
+
+                if remove_result == 0:
+                    click.echo(f"Successfully removed network: {r2r_network}")
+                    return
+                else:
+                    click.echo(
+                        f"Failed to remove network: {r2r_network}. Retrying in 5 seconds..."
+                    )
+                    time.sleep(5)
+
+            click.echo(
+                "Failed to remove the network after multiple attempts. Please try the following steps:"
+            )
+            click.echo(
+                "1. Run 'docker ps' to check for any running containers using this network."
+            )
+            click.echo(
+                "2. Stop any running containers with 'docker stop <container_id>'."
+            )
+            click.echo(
+                f"3. Try removing the network manually with 'docker network rm {r2r_network}'."
+            )
+            click.echo(
+                "4. If the above steps don't work, you may need to restart the Docker daemon."
+            )
+        else:
+            click.echo("Could not find the r2r network to remove.")
+    else:
+        click.echo("Docker Compose setup has been successfully brought down.")
 
 
 @cli.command()
@@ -349,6 +517,21 @@ def analytics(obj, filters, analysis_types):
 
 @cli.command()
 @click.option(
+    "--limit", default=100, help="Limit the number of relationships returned"
+)
+@click.pass_obj
+def print_relationships(obj, limit):
+    """Print relationships from the knowledge graph."""
+    t0 = time.time()
+    response = obj.print_relationships(limit)
+    t1 = time.time()
+
+    click.echo(response)
+    click.echo(f"Time taken to print relationships: {t1 - t0:.2f} seconds")
+
+
+@cli.command()
+@click.option(
     "--no-media",
     default=True,
     help="Exclude media files from ingestion",
@@ -378,6 +561,26 @@ def ingest_sample_files(obj, no_media):
 
     click.echo(response)
     click.echo(f"Time taken to ingest sample files: {t1 - t0:.2f} seconds")
+
+
+@cli.command()
+@click.pass_obj
+def health(obj):
+    """Check the health of the server."""
+    t0 = time.time()
+    response = obj.health()
+    t1 = time.time()
+
+    click.echo(response)
+    click.echo(f"Time taken to ingest sample: {t1 - t0:.2f} seconds")
+
+
+@cli.command()
+def version():
+    """Print the version of R2R."""
+    from importlib.metadata import version
+
+    click.echo(version("r2r"))
 
 
 def main():

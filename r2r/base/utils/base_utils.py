@@ -40,9 +40,8 @@ def increment_version(version: str) -> str:
 
 
 class EntityType:
-    def __init__(self, name: str, subcategories: Optional[List[str]] = None):
+    def __init__(self, name: str):
         self.name = name
-        self.subcategories = subcategories
 
 
 class Relation:
@@ -50,16 +49,10 @@ class Relation:
         self.name = name
 
 
-def format_entity_types(
-    entity_types: List[EntityType], ignore_subcats=False
-) -> str:
+def format_entity_types(entity_types: List[EntityType]) -> str:
     lines = []
     for entity in entity_types:
         lines.append(entity.name)
-        if entity.subcategories:
-            subcategories_str = ", ".join(entity.subcategories)
-            if not ignore_subcats:
-                lines.append(f"subcategories: {subcategories_str}")
     return "\n".join(lines)
 
 
