@@ -17,7 +17,7 @@ networks:
 
 services:
   r2r:
-    image: emrgntcmplxty/r2r:main
+    image: r2r:kg
     ports:
       - "8000:8000"
     environment:
@@ -37,6 +37,7 @@ services:
       - CONFIG_OPTION=${CONFIG_OPTION:-}
       - CONFIG_PATH=${CONFIG_PATH:-}
       - CLIENT_MODE=${CLIENT_MODE:-false}
+      - USE_NEO4J=${USE_NEO4J:-false}
     depends_on:
       postgres:
         condition: service_healthy

@@ -365,10 +365,17 @@ class R2RClient:
             "GET", "document_chunks", json=json.loads(request.json())
         )
 
+<<<<<<< HEAD
     def inspect_knowledge_graph(self, limit: int = 100) -> str:
         request = R2RPrintRelationshipsRequest(limit=limit)
         return self._make_request(
             "POST", "inspect_knowledge_graph", json=json.loads(request.json())
+=======
+    def print_relationships(self, limit: int = 100) -> str:
+        request = R2RPrintRelationshipsRequest(limit=limit)
+        return self._make_request(
+            "POST", "print_kg_relationships", json=json.loads(request.json())
+>>>>>>> 0c38cb6 (up)
         )
 
 
