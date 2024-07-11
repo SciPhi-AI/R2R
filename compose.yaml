@@ -39,8 +39,7 @@ services:
       - CLIENT_MODE=${CLIENT_MODE:-false}
       - USE_NEO4J=${USE_NEO4J:-false}
     depends_on:
-      postgres:
-        condition: service_healthy
+      postgres
     networks:
       - r2r-network
     healthcheck:
