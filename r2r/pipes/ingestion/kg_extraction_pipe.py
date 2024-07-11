@@ -5,8 +5,6 @@ import logging
 import uuid
 from typing import Any, AsyncGenerator, Optional
 
-from aiohttp import ClientError
-
 from r2r.base import (
     AsyncState,
     Extraction,
@@ -26,6 +24,12 @@ from r2r.base import (
 from r2r.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
+
+
+class ClientError(Exception):
+    """Base class for client connection errors."""
+
+    pass
 
 
 class KGExtractionPipe(AsyncPipe):
