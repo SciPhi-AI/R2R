@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 import json
 import os
 import subprocess
@@ -7,6 +6,7 @@ import uuid
 
 import click
 import requests
+from dotenv import load_dotenv
 
 from r2r.main.execution import R2RExecutionWrapper
 
@@ -58,29 +58,40 @@ def cli(ctx, config_path, config_name, client_mode, base_url):
             "config_name": config_name,
             "base_url": base_url,
         }
+
+
 @cli.command()
 @click.option("--host", default="0.0.0.0", help="Host to run the server on")
 @click.option("--port", default=8000, help="Port to run the server on")
 @click.option("--docker", is_flag=True, help="Run using Docker")
-@click.option("--docker-ext-neo4j", is_flag=True, help="Run using Docker with external Neo4j")
+@click.option(
+    "--docker-ext-neo4j",
+    is_flag=True,
+    help="Run using Docker with external Neo4j",
+)
 @click.option("--project-name", default="r2r", help="Project name for Docker")
 @click.pass_obj
-def serve(obj, host, port, docker, docker_ext_neo4j, config_option, project_name):
+def serve(obj, host, port, docker, docker_ext_neo4j, project_name):
     """Start the R2R server."""
     # Load environment variables from .env file if it exists
     load_dotenv()
 
-    
     if docker:
-        os.environ["CONFIG_OPTION"] = obj['config_name'] or "default"
+        os.environ["CONFIG_OPTION"] = obj.get("config_name", None) or "default"
         os.environ["OLLAMA_API_BASE"] = "http://host.docker.internal:11434"
         # Check if compose files exist in the package directory
-        package_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+        package_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", ".."
+        )
         compose_yaml = os.path.join(package_dir, "compose.yaml")
         compose_neo4j_yaml = os.path.join(package_dir, "compose.neo4j.yaml")
 
-        if not os.path.exists(compose_yaml) or not os.path.exists(compose_neo4j_yaml):
-            click.echo("Error: Docker Compose files not found in the package directory.")
+        if not os.path.exists(compose_yaml) or not os.path.exists(
+            compose_neo4j_yaml
+        ):
+            click.echo(
+                "Error: Docker Compose files not found in the package directory."
+            )
             return
 
         # Build the docker-compose command with the specified host and port
@@ -88,7 +99,9 @@ def serve(obj, host, port, docker, docker_ext_neo4j, config_option, project_name
         if docker_ext_neo4j:
             docker_command += f" -f {compose_neo4j_yaml}"
         if host != "0.0.0.0" or port != 8000:
-            docker_command += f" --build-arg HOST={host} --build-arg PORT={port}"
+            docker_command += (
+                f" --build-arg HOST={host} --build-arg PORT={port}"
+            )
 
         docker_command += f" --project-name {project_name}"
 
@@ -97,6 +110,7 @@ def serve(obj, host, port, docker, docker_ext_neo4j, config_option, project_name
     else:
         wrapper = R2RExecutionWrapper(**obj, client_mode=False)
         wrapper.serve(host, port)
+
 
 @cli.command()
 @click.option(
@@ -112,15 +126,23 @@ def serve(obj, host, port, docker, docker_ext_neo4j, config_option, project_name
 @click.pass_context
 def docker_down(ctx, volumes, remove_orphans):
     """Bring down the Docker Compose setup and attempt to remove the network if necessary."""
-    package_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+    package_dir = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", ".."
+    )
     compose_yaml = os.path.join(package_dir, "compose.yaml")
     compose_neo4j_yaml = os.path.join(package_dir, "compose.neo4j.yaml")
 
-    if not os.path.exists(compose_yaml) or not os.path.exists(compose_neo4j_yaml):
-        click.echo("Error: Docker Compose files not found in the package directory.")
+    if not os.path.exists(compose_yaml) or not os.path.exists(
+        compose_neo4j_yaml
+    ):
+        click.echo(
+            "Error: Docker Compose files not found in the package directory."
+        )
         return
 
-    docker_command = f"docker-compose -f {compose_yaml} -f {compose_neo4j_yaml} down"
+    docker_command = (
+        f"docker-compose -f {compose_yaml} -f {compose_neo4j_yaml} down"
+    )
 
     if volumes:
         docker_command += " --volumes"
