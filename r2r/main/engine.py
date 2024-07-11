@@ -99,8 +99,8 @@ class R2REngine(metaclass=AsyncSyncMeta):
         )
 
     @syncable
-    async def print_kg_relationships(self, *args, **kwargs):
-        return await self.management_service.print_kg_relationships(
+    async def inspect_knowledge_graph(self, *args, **kwargs):
+        return await self.management_service.inspect_knowledge_graph(
             *args, **kwargs
         )
 
