@@ -4,7 +4,7 @@ x-depends-on:
 
 networks:
   r2r-network:
-    name: r2r_r2r-network
+    name: r2r-network
     driver: bridge
     attachable: true
     ipam:
@@ -17,7 +17,7 @@ networks:
 
 services:
   r2r:
-    image: emrgntcmplxty/r2r:main
+    image: r2r:kg
     ports:
       - "8000:8000"
     environment:
@@ -38,7 +38,7 @@ services:
       - CLIENT_MODE=${CLIENT_MODE:-false}
       - USE_NEO4J=${USE_NEO4J:-false}
     depends_on:
-      postgres
+      - postgres
     networks:
       - r2r-network
     healthcheck:
