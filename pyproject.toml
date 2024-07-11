@@ -58,7 +58,6 @@ litellm = "^1.35.18"
 openai = "^1.11.1"
 
 # integrations
-dateutils = "^0.6.12"
 fsspec = "^2024.6.0"
 posthog = "^3.5.0"
 sqlalchemy = "^2.0.30"
