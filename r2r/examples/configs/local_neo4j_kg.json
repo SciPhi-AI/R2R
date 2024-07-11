@@ -9,7 +9,7 @@
         },
         "kg_extraction_prompt": "ner_kg_extraction_local", 
         "kg_extraction_config": {
-            "model": "ollama/shreyas/test_model",
+            "model": "ollama/sciphi/triplex",
             "temperature": 0.1,
             "top_p": 1.0,
             "top_k": 100,
