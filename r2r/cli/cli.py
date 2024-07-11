@@ -52,7 +52,7 @@ def cli(ctx, config_path, config_name, client_mode, base_url):
             base_url,
         )
     else:
-        ctx.obj = (config_path, config_name, client_mode, base_url)
+        ctx.obj = {"config_path":config_path, "config_name":config_name, "base_url":base_url}
 
 
 import os
@@ -125,7 +125,7 @@ def serve(obj, host, port, docker, docker_ext_neo4j, config_option):
         docker_command += " up -d"
         os.system(docker_command)
     else:
-        wrapper = R2RExecutionWrapper(*obj)
+        wrapper = R2RExecutionWrapper(**obj, client_mode=False)
         wrapper.serve(host, port)
 
 
