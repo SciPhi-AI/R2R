@@ -88,7 +88,6 @@ class IngestionService(Service):
 
         for iteration, document in enumerate(documents):
             version = versions[iteration] if versions else "v0"
-            print("ingesting with version = ", version)
             if (
                 document.id in existing_document_info
                 and existing_document_info[document.id].version == version
