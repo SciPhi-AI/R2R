@@ -5,8 +5,6 @@ networks:
     
 services:
   r2r:
-    environment:
-      - USE_NEO4J=true
     depends_on:
       neo4j:
         condition: service_healthy

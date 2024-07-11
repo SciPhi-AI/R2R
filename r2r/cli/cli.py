@@ -100,6 +100,15 @@ def serve(obj, host, port, docker, docker_ext_neo4j, config_option):
                     f"Failed to download compose.yaml. Status code: {response.status_code}"
                 )
                 return
+            if response.status_code == 200:
+                with open("compose.neo4j.yaml", "w") as f:
+                    f.write(response.text)
+                click.echo("compose.neo4j.yaml downloaded successfully.")
+            else:
+                click.echo(
+                    f"Failed to download compose.neo4j.yaml. Status code: {response.status_code}"
+                )
+                return
 
         # Build the docker-compose command with the specified host and port
         docker_command = f"docker-compose -f compose.yaml"
