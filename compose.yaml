@@ -17,7 +17,7 @@ networks:
 
 services:
   r2r:
-    image: r2r:kg
+    image: emrgntcmplxty/r2r:main
     ports:
       - "8000:8000"
     environment:
