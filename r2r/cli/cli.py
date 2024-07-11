@@ -57,11 +57,22 @@ def cli(ctx, config_path, config_name, client_mode, base_url):
             base_url,
         )
     else:
+<<<<<<< HEAD
         ctx.obj = {
             "config_path": config_path,
             "config_name": config_name,
             "base_url": base_url,
         }
+=======
+        ctx.obj = {"config_path":config_path, "config_name":config_name, "base_url":base_url}
+
+
+import os
+
+import click
+import requests
+from dotenv import load_dotenv
+>>>>>>> ecc95fe (fix serve)
 
 
 @cli.command()
