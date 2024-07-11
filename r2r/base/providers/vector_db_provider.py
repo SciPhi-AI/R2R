@@ -132,7 +132,9 @@ class VectorDBProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def delete_documents_overview(self, document_ids: list[str]) -> dict:
+    def delete_from_documents_overview(
+        self, document_id: str, version: Optional[str] = None
+    ) -> dict:
         pass
 
     @abstractmethod

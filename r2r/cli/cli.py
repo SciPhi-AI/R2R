@@ -52,7 +52,11 @@ def cli(ctx, config_path, config_name, client_mode, base_url):
             base_url,
         )
     else:
-        ctx.obj = {"config_path":config_path, "config_name":config_name, "base_url":base_url}
+        ctx.obj = {
+            "config_path": config_path,
+            "config_name": config_name,
+            "base_url": base_url,
+        }
 
 
 import os
@@ -100,7 +104,7 @@ def serve(obj, host, port, docker, docker_ext_neo4j, config_option):
                     f"Failed to download compose.yaml. Status code: {response.status_code}"
                 )
                 return
-            
+
             url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/compose.neo4j.yaml"
             response = requests.get(url)
             if response.status_code == 200:

@@ -430,7 +430,6 @@ class PGVectorDB(VectorDBProvider):
                     for k, v in zip(metadata_fields, metadata_values)
                 ]
             }
-
         return self.collection.delete(filters=filters)
 
     def get_metadatas(
@@ -488,23 +487,22 @@ class PGVectorDB(VectorDBProvider):
                 sess.execute(query, db_entry)
                 sess.commit()
 
-    def delete_documents_overview(self, document_ids: list[str]) -> None:
-        placeholders = ", ".join(
-            f":doc_id_{i}" for i in range(len(document_ids))
-        )
-        query = text(
-            f"""
-            DELETE FROM document_info_{self.collection_name} WHERE document_id IN ({placeholders});
-            """
-        )
-        params = {
-            f"doc_id_{i}": document_id
-            for i, document_id in enumerate(document_ids)
-        }
+    def delete_from_documents_overview(
+        self, document_id: str, version: Optional[str] = None
+    ) -> None:
+        query = f"""
+            DELETE FROM document_info_{self.collection_name}
+            WHERE document_id = :document_id
+        """
+        params = {"document_id": document_id}
+
+        if version is not None:
+            query += " AND version = :version"
+            params["version"] = version
 
         with self.vx.Session() as sess:
             with sess.begin():
-                sess.execute(query, params)
+                sess.execute(text(query), params)
             sess.commit()
 
     def get_documents_overview(
