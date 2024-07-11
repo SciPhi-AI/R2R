@@ -47,6 +47,8 @@ services:
       timeout: 5s
       retries: 5
     restart: on-failure
+    volumes:
+      - ${CONFIG_PATH}:${CONFIG_PATH}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.r2r.rule=PathPrefix(`/api`)"

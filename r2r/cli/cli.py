@@ -45,6 +45,10 @@ def cli(ctx, config_path, config_name, client_mode, base_url):
             "Cannot specify both config_path and config_name"
         )
 
+    # Convert relative config path to absolute path
+    if config_path:
+        config_path = os.path.abspath(config_path)
+
     if ctx.invoked_subcommand != "serve":
         ctx.obj = R2RExecutionWrapper(
             config_path,
@@ -77,7 +81,13 @@ def serve(obj, host, port, docker, docker_ext_neo4j, project_name):
     load_dotenv()
 
     if docker:
-        os.environ["CONFIG_OPTION"] = obj.get("config_name", None) or "default"
+        if x := obj.get("config_path", None):
+            os.environ["CONFIG_PATH"] = x
+        else:
+            os.environ["CONFIG_OPTION"] = (
+                obj.get("config_name", None) or "default"
+            )
+
         os.environ["OLLAMA_API_BASE"] = "http://host.docker.internal:11434"
         # Check if compose files exist in the package directory
         package_dir = os.path.join(
