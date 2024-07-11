@@ -68,3 +68,7 @@ class R2RDocumentChunksRequest(BaseModel):
 class R2RLogsRequest(BaseModel):
     log_type_filter: Optional[str] = (None,)
     max_runs_requested: int = 100
+
+
+class R2RPrintRelationshipsRequest(BaseModel):
+    limit: int = 100

@@ -5,6 +5,7 @@ from ..requests import (
     R2RDocumentChunksRequest,
     R2RDocumentsOverviewRequest,
     R2RLogsRequest,
+    R2RPrintRelationshipsRequest,
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
@@ -74,6 +75,16 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def get_document_chunks_app(request: R2RDocumentChunksRequest):
             return await self.engine.adocument_chunks(request.document_id)
+
+        @self.router.post("/print_kg_relationships")
+        @self.router.get("/print_kg_relationships")
+        @self.base_endpoint
+        async def print_kg_relationships(
+            request: R2RPrintRelationshipsRequest,
+        ):
+            return await self.engine.print_kg_relationships(
+                limit=request.limit
+            )
 
         @self.router.get("/app_settings")
         @self.base_endpoint

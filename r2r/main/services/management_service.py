@@ -254,6 +254,39 @@ class ManagementService(Service):
             [str(ele) for ele in user_ids]
         )
 
+    @telemetry_event("PrintKGRelationships")
+    async def print_kg_relationships(
+        self, limit=10, *args: Any, **kwargs: Any
+    ):
+        if self.providers.kg is None:
+            raise R2RException(
+                status_code=404, message="Knowledge Graph provider not found."
+            )
+
+        rel_query = f"""
+        MATCH (n1)-[r]->(n2)
+        RETURN n1.id AS subject, type(r) AS relation, n2.id AS object
+        LIMIT {limit}
+        """
+
+        try:
+            with self.providers.kg.client.session(
+                database=self.providers.kg._database
+            ) as session:
+                results = session.run(rel_query)
+                relationships = [
+                    f"{record['subject']} > {record['relation']} > {record['object']}"
+                    for record in results
+                ]
+
+            return "\n".join(relationships)
+        except Exception as e:
+            logger.error(f"Error printing relationships: {str(e)}")
+            raise R2RException(
+                status_code=500,
+                message=f"An error occurred while fetching relationships: {str(e)}",
+            )
+
     @telemetry_event("AppSettings")
     async def app_settings(
         self,

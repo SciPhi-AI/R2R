@@ -4,11 +4,20 @@ x-depends-on:
 
 networks:
   r2r-network:
+    name: r2r_r2r-network
     driver: bridge
+    attachable: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+    labels:
+      - "com.docker.compose.recreate=always"
+      
 
 services:
   r2r:
-    image: emrgntcmplxty/r2r:main
+    image: r2r:kg
     ports:
       - "8000:8000"
     environment:
@@ -27,6 +36,7 @@ services:
       - OLLAMA_API_BASE=${OLLAMA_API_BASE:-}
       - CONFIG_OPTION=${CONFIG_OPTION:-}
       - CLIENT_MODE=${CLIENT_MODE:-false}
+      - USE_NEO4J=${USE_NEO4J:-false}
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,6 +47,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: on-failure
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.r2r.rule=PathPrefix(`/api`)"
@@ -73,10 +84,11 @@ services:
     networks:
       - r2r-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: on-failure
 
   traefik:
     image: traefik:v2.9
