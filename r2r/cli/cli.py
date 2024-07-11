@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 import json
 import os
 import subprocess
@@ -57,20 +58,11 @@ def cli(ctx, config_path, config_name, client_mode, base_url):
             "config_name": config_name,
             "base_url": base_url,
         }
-
-
-import os
-
-import click
-import requests
-from dotenv import load_dotenv
-
-
 @cli.command()
 @click.option("--host", default="0.0.0.0", help="Host to run the server on")
 @click.option("--port", default=8000, help="Port to run the server on")
 @click.option("--docker", is_flag=True, help="Run using Docker")
-@click.option("--docker-ext-neo4j", is_flag=True, help="Run using Docker")
+@click.option("--docker-ext-neo4j", is_flag=True, help="Run using Docker with external Neo4j")
 @click.option(
     "--config-option",
     default="default",
@@ -86,52 +78,29 @@ def serve(obj, host, port, docker, docker_ext_neo4j, config_option):
     if config_option:
         os.environ["CONFIG_OPTION"] = config_option
 
-    if "local" in config_option:
-        os.environ["OLLAMA_API_BASE"] = "http://host.docker.internal:11434"
-    else:
-        os.unsetenv("OLLAMA_API_BASE")
     if docker:
-        if not os.path.exists("compose.yaml"):
-            click.echo("compose.yaml not found. Downloading from GitHub...")
-            url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/compose.yaml"
-            response = requests.get(url)
-            if response.status_code == 200:
-                with open("compose.yaml", "w") as f:
-                    f.write(response.text)
-                click.echo("compose.yaml downloaded successfully.")
-            else:
-                click.echo(
-                    f"Failed to download compose.yaml. Status code: {response.status_code}"
-                )
-                return
+        os.environ["OLLAMA_API_BASE"] = "http://host.docker.internal:11434"
+        # Check if compose files exist in the package directory
+        package_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+        compose_yaml = os.path.join(package_dir, "compose.yaml")
+        compose_neo4j_yaml = os.path.join(package_dir, "compose.neo4j.yaml")
 
-            url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/compose.neo4j.yaml"
-            response = requests.get(url)
-            if response.status_code == 200:
-                with open("compose.neo4j.yaml", "w") as f:
-                    f.write(response.text)
-                click.echo("compose.neo4j.yaml downloaded successfully.")
-            else:
-                click.echo(
-                    f"Failed to download compose.neo4j.yaml. Status code: {response.status_code}"
-                )
-                return
+        if not os.path.exists(compose_yaml) or not os.path.exists(compose_neo4j_yaml):
+            click.echo("Error: Docker Compose files not found in the package directory.")
+            return
 
         # Build the docker-compose command with the specified host and port
-        docker_command = f"docker-compose -f compose.yaml"
+        docker_command = f"docker-compose -f {compose_yaml}"
         if docker_ext_neo4j:
-            docker_command += " -f compose.neo4j.yaml"
+            docker_command += f" -f {compose_neo4j_yaml}"
         if host != "0.0.0.0" or port != 8000:
-            docker_command += (
-                f" --build-arg HOST={host} --build-arg PORT={port}"
-            )
+            docker_command += f" --build-arg HOST={host} --build-arg PORT={port}"
 
         docker_command += " up -d"
         os.system(docker_command)
     else:
         wrapper = R2RExecutionWrapper(**obj, client_mode=False)
         wrapper.serve(host, port)
-
 
 @cli.command()
 @click.option(
@@ -147,15 +116,15 @@ def serve(obj, host, port, docker, docker_ext_neo4j, config_option):
 @click.pass_context
 def docker_down(ctx, volumes, remove_orphans):
     """Bring down the Docker Compose setup and attempt to remove the network if necessary."""
-    if not os.path.exists("compose.yaml"):
-        click.echo(
-            "compose.yaml not found. Make sure you're in the correct directory."
-        )
+    package_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+    compose_yaml = os.path.join(package_dir, "compose.yaml")
+    compose_neo4j_yaml = os.path.join(package_dir, "compose.neo4j.yaml")
+
+    if not os.path.exists(compose_yaml) or not os.path.exists(compose_neo4j_yaml):
+        click.echo("Error: Docker Compose files not found in the package directory.")
         return
 
-    docker_command = (
-        "docker-compose -f compose.yaml -f compose.neo4j.yaml down"
-    )
+    docker_command = f"docker-compose -f {compose_yaml} -f {compose_neo4j_yaml} down"
 
     if volumes:
         docker_command += " --volumes"
