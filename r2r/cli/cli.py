@@ -100,6 +100,9 @@ def serve(obj, host, port, docker, docker_ext_neo4j, config_option):
                     f"Failed to download compose.yaml. Status code: {response.status_code}"
                 )
                 return
+            
+            url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/compose.neo4j.yaml"
+            response = requests.get(url)
             if response.status_code == 200:
                 with open("compose.neo4j.yaml", "w") as f:
                     f.write(response.text)
