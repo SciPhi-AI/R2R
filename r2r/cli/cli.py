@@ -63,22 +63,16 @@ def cli(ctx, config_path, config_name, client_mode, base_url):
 @click.option("--port", default=8000, help="Port to run the server on")
 @click.option("--docker", is_flag=True, help="Run using Docker")
 @click.option("--docker-ext-neo4j", is_flag=True, help="Run using Docker with external Neo4j")
-@click.option(
-    "--config-option",
-    default="default",
-    help="Configuration option (default, local_ollama, etc.)",
-)
+@click.option("--project-name", default="r2r", help="Project name for Docker")
 @click.pass_obj
-def serve(obj, host, port, docker, docker_ext_neo4j, config_option):
+def serve(obj, host, port, docker, docker_ext_neo4j, config_option, project_name):
     """Start the R2R server."""
     # Load environment variables from .env file if it exists
     load_dotenv()
 
-    # Set environment variables based on CLI options
-    if config_option:
-        os.environ["CONFIG_OPTION"] = config_option
-
+    
     if docker:
+        os.environ["CONFIG_OPTION"] = obj['config_name'] or "default"
         os.environ["OLLAMA_API_BASE"] = "http://host.docker.internal:11434"
         # Check if compose files exist in the package directory
         package_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -95,6 +89,8 @@ def serve(obj, host, port, docker, docker_ext_neo4j, config_option):
             docker_command += f" -f {compose_neo4j_yaml}"
         if host != "0.0.0.0" or port != 8000:
             docker_command += f" --build-arg HOST={host} --build-arg PORT={port}"
+
+        docker_command += f" --project-name {project_name}"
 
         docker_command += " up -d"
         os.system(docker_command)
