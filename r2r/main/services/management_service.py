@@ -214,7 +214,8 @@ class ManagementService(Service):
             raise R2RException(
                 status_code=404, message="No entries found for deletion."
             )
-        self.providers.vector_db.delete_documents_overview(ids)
+        for id in ids:
+            self.providers.vector_db.delete_from_documents_overview(id)
         return f"Documents {ids} deleted successfully."
 
     @telemetry_event("DocumentsOverview")

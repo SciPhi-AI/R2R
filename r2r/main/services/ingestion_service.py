@@ -282,6 +282,9 @@ class IngestionService(Service):
                 await self._delete(
                     ["document_id", "version"], [str(doc_id), old_version]
                 )
+                self.providers.vector_db.delete_from_documents_overview(
+                    doc_id, old_version
+                )
 
             return ingestion_results
 
@@ -481,5 +484,4 @@ class IngestionService(Service):
             raise R2RException(
                 status_code=404, message="No entries found for deletion."
             )
-        self.providers.vector_db.delete_documents_overview(ids)
         return "Entries deleted successfully."
