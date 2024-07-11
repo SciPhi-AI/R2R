@@ -35,6 +35,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OLLAMA_API_BASE=${OLLAMA_API_BASE:-http://host.docker.internal:11434}
       - CONFIG_OPTION=${CONFIG_OPTION:-}
+      - CONFIG_PATH=${CONFIG_PATH:-}
       - CLIENT_MODE=${CLIENT_MODE:-false}
     depends_on:
       - postgres
