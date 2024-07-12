@@ -1,22 +1,17 @@
+import json
 import os
-import string
 
 import fire
 import requests
 from bs4 import BeautifulSoup, Comment
 
 from r2r import (
-    Document,
     EntityType,
-    KGSearchSettings,
-    R2RBuilder,
     R2RClient,
     R2RPromptProvider,
     Relation,
-    VectorSearchSettings,
-    generate_id_from_label,
+    update_kg_prompt,
 )
-from r2r.base.abstractions.llm import GenerationConfig
 
 
 def escape_braces(text):
@@ -100,36 +95,16 @@ def main(
 
     # Specify the entity types for the KG extraction prompt
     entity_types = [
-        EntityType("ORGANIZATION"),
         EntityType("COMPANY"),
         EntityType("SCHOOL"),
-        EntityType("NON-PROFIT"),
         EntityType("LOCATION"),
-        EntityType("CITY"),
-        EntityType("STATE"),
-        EntityType("COUNTRY"),
         EntityType("PERSON"),
-        EntityType("POSITION"),
         EntityType("DATE"),
-        EntityType("YEAR"),
-        EntityType("MONTH"),
-        EntityType("DAY"),
-        EntityType("BATCH"),
         EntityType("OTHER"),
         EntityType("QUANTITY"),
         EntityType("EVENT"),
-        EntityType("INCORPORATION"),
-        EntityType("FUNDING_ROUND"),
-        EntityType("ACQUISITION"),
-        EntityType("LAUNCH"),
         EntityType("INDUSTRY"),
         EntityType("MEDIA"),
-        EntityType("EMAIL"),
-        EntityType("WEBSITE"),
-        EntityType("TWITTER"),
-        EntityType("LINKEDIN"),
-        EntityType("OTHER"),
-        EntityType("PRODUCT"),
     ]
 
     # Specify the relations for the KG construction
@@ -149,54 +124,24 @@ def main(
         # Product relations
         Relation("PRODUCT"),
         Relation("FEATURES"),
-        Relation("USES"),
-        Relation("USED_BY"),
         Relation("TECHNOLOGY"),
         # Additional relations
         Relation("HAS"),
         Relation("AS_OF"),
         Relation("PARTICIPATED"),
         Relation("ASSOCIATED"),
-        Relation("GROUP_PARTNER"),
-        Relation("ALIAS"),
     ]
 
     client = R2RClient(base_url=base_url)
     r2r_prompts = R2RPromptProvider()
 
-    # get the default extraction template
-    # note that 'local' templates omit the n-shot example
-    new_template = r2r_prompts.get_prompt(
-        (
-            "zero_shot_ner_kg_extraction_with_spec"
-            if local_mode
-            else "few_shot_ner_kg_extraction_with_spec"
-        ),
-        {
-            "entity_types": "\n".join(
-                [str(entity.name) for entity in entity_types]
-            ),
-            "relations": "\n".join(
-                [str(relation.name) for relation in relations]
-            ),
-            "input": """\n{input}""",
-        },
+    prompt_base = (
+        "zero_shot_ner_kg_extraction"
+        if local_mode
+        else "few_shot_ner_kg_extraction"
     )
 
-    # Escape all braces in the template, except for the {input} placeholder, for formatting
-    escaped_template = escape_braces(new_template).replace(
-        """{{input}}""", """{input}"""
-    )
-
-    client.update_prompt(
-        (
-            "zero_shot_ner_kg_extraction"
-            if local_mode
-            else "few_shot_ner_kg_extraction"
-        ),
-        template=escaped_template,
-        input_types={"input": "str"},
-    )
+    update_kg_prompt(client, r2r_prompts, prompt_base, entity_types, relations)
 
     url_map = get_all_yc_co_directory_urls()
 
@@ -224,25 +169,10 @@ def main(
 
     print(client.inspect_knowledge_graph(1_000)["results"])
 
-    new_template = r2r_prompts.get_prompt(
-        "kg_agent_with_spec",
-        {
-            "entity_types": "\n".join(
-                [str(entity.name) for entity in entity_types]
-            ),
-            "relations": "\n".join(
-                [str(relation.name) for relation in relations]
-            ),
-            "input": """\n{input}""",
-        },
-    )
     if not local_mode:
-        # RAG client currently only works with powerful remote LLMs,
-        # we are working to expand support to local LLMs.
-        client.update_prompt(
-            "kg_agent",
-            template=new_template,
-            input_types={"input": "str"},
+
+        update_kg_prompt(
+            client, r2r_prompts, "kg_agent", entity_types, relations
         )
 
         result = client.search(
