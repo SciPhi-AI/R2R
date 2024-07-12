@@ -20,7 +20,7 @@ class PipelineType(Enum):
 
 
 def r2r_app(
-    config_option: Optional[str] = "default",
+    config_name: Optional[str] = "default",
     config_path: Optional[str] = None,
     client_mode: bool = False,
     base_url: Optional[str] = None,
@@ -28,16 +28,16 @@ def r2r_app(
 ) -> FastAPI:
     if pipeline_type != PipelineType.QNA:
         raise ValueError("Only QNA pipeline is supported in quickstart.")
-    if config_path and config_option:
-        raise ValueError("Cannot specify both config and config_option")
+    if config_path and config_name:
+        raise ValueError("Cannot specify both config and config_name")
 
     if config_path:
         config = R2RConfig.from_json(config_path)
     else:
-        config_option = os.getenv("CONFIG_NAME") or config_option
-        if config_option not in R2RBuilder.CONFIG_OPTIONS:
-            raise ValueError(f"Invalid config name: {config_option}")
-        config = R2RConfig.from_json(R2RBuilder.CONFIG_OPTIONS[config_option])
+        config_name = os.getenv("CONFIG_NAME") or config_name
+        if config_name not in R2RBuilder.CONFIG_OPTIONS:
+            raise ValueError(f"Invalid config name: {config_name}")
+        config = R2RConfig.from_json(R2RBuilder.CONFIG_OPTIONS[config_name])
 
     if (
         config.embedding.provider == "openai"
@@ -48,7 +48,7 @@ def r2r_app(
         )
 
     wrapper = R2RExecutionWrapper(
-        config_name=config_option,
+        config_name=config_name,
         config_path=config_path,
         client_mode=client_mode,
         base_url=base_url,
@@ -59,24 +59,24 @@ def r2r_app(
 
 logging.basicConfig(level=logging.INFO)
 
-config_option = os.getenv("CONFIG_OPTION", None)
+config_name = os.getenv("CONFIG_NAME", None)
 config_path = os.getenv("CONFIG_PATH", None)
-if not config_path and not config_option:
-    config_option = "default"
+if not config_path and not config_name:
+    config_name = "default"
 client_mode = os.getenv("CLIENT_MODE", "false").lower() == "true"
 base_url = os.getenv("BASE_URL")
 host = os.getenv("HOST", "0.0.0.0")
 port = int(os.getenv("PORT", "8000"))
 pipeline_type = os.getenv("PIPELINE_TYPE", "qna")
 
-logger.info(f"Environment CONFIG_OPTION: {config_option}")
+logger.info(f"Environment CONFIG_NAME: {config_name}")
 logger.info(f"Environment CONFIG_PATH: {config_path}")
 logger.info(f"Environment CLIENT_MODE: {client_mode}")
 logger.info(f"Environment BASE_URL: {base_url}")
 logger.info(f"Environment PIPELINE_TYPE: {pipeline_type}")
 
 app = r2r_app(
-    config_option=config_option,
+    config_name=config_name,
     config_path=config_path,
     client_mode=client_mode,
     base_url=base_url,

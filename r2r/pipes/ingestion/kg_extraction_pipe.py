@@ -132,13 +132,18 @@ class KGExtractionPipe(AsyncPipe):
                     messages, self.kg_provider.config.kg_extraction_config
                 )
 
+                print("messages = ", messages)
                 kg_extraction = response.choices[0].message.content
+                print("kg_extraction = ", kg_extraction)
 
                 # Parsing JSON from the response
-                kg_json = json.loads(
-                    kg_extraction.split("```json")[1].split("```")[0]
+                kg_json = (
+                    json.loads(
+                        kg_extraction.split("```json")[1].split("```")[0]
+                    )
+                    if """```json""" in kg_extraction
+                    else json.loads(kg_extraction)
                 )
-
                 llm_payload = kg_json.get("entities_and_triples", {})
 
                 # Extract triples with detailed logging
