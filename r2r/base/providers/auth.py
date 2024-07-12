@@ -1,17 +1,10 @@
-import uuid
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
 from typing import Optional
-
-import bcrypt
-import jwt
-from fastapi import Depends, HTTPException, Security
+from fastapi import Security
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBearer,
-    OAuth2PasswordBearer,
 )
-from pydantic import BaseModel
 
 # Assume these are imported from your existing modules
 from ..abstractions.user import Token, TokenData, User, UserCreate
@@ -20,7 +13,8 @@ from .base import Provider, ProviderConfig
 
 class AuthConfig(ProviderConfig):
     enabled: bool = True
-    token_lifetime: int = 30
+    secret_key: Optional[str] = None
+    token_lifetime: Optional[int] = None
 
     @property
     def supported_providers(self) -> list[str]:

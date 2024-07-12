@@ -21,10 +21,8 @@ from r2r.base import (
     VectorEntry,
     VectorSearchResult,
 )
-from r2r.providers.database.vecs.client import Client
-from r2r.providers.database.vecs.collection import Collection
 
-from .vecs import create_client
+from .vecs import Client, Collection, create_client
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +45,6 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
         if not dimension:
             raise ValueError(
                 "Please provide a valid `dimension` to the `PostgresVectorDBProvider`."
-            )
-        self._initialize_vector_db(dimension)
-        try:
-            import r2r.vecs
-        except ImportError:
-            raise ValueError(
-                f"Error, PGVectorDB requires the vecs library. Please run `pip install vecs`."
             )
 
         # Check if a complete Postgres URI is provided
@@ -120,7 +111,7 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
 
         # The rest of the initialization remains the same
         try:
-            self.vx: Client = r2r.vecs.create_client(DB_CONNECTION)
+            self.vx: Client = create_client(DB_CONNECTION)
         except Exception as e:
             raise ValueError(
                 f"Error {e} occurred while attempting to connect to the pgvector provider with {DB_CONNECTION}."
@@ -135,6 +126,7 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             )
 
         self.collection: Optional[Collection] = None
+        self._initialize_vector_db(dimension)
 
         logger.info(
             f"Successfully initialized PGVectorDB with collection: {self.collection_name}"
@@ -467,6 +459,8 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
 
         results = {tuple(metadata_fields): {}}
         for field in metadata_fields:
+            print("self.collection = ", self.collection)
+            print("dir(self.collection) = ", dir(self.collection))
             unique_values = self.collection.get_unique_metadata_values(
                 field=field,
                 filter_field=filter_field,
@@ -509,7 +503,8 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     logger.error(f"Error enabling uuid-ossp extension: {e}")
                     raise
 
-                query = f"""
+                # Create the table if it doesn't exist
+                create_table_query = f"""
                 CREATE TABLE IF NOT EXISTS document_info_{self.collection_name} (
                     document_id UUID PRIMARY KEY,
                     title TEXT,
@@ -518,10 +513,28 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     size_in_bytes INT,
                     created_at TIMESTAMPTZ DEFAULT NOW(),
                     updated_at TIMESTAMPTZ DEFAULT NOW(),
-                    metadata JSONB
+                    metadata JSONB,
+                    status TEXT
                 );
                 """
-                sess.execute(text(query))
+                sess.execute(text(create_table_query))
+
+                # Add the new column if it doesn't exist
+                add_column_query = f"""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1
+                        FROM information_schema.columns
+                        WHERE table_name = 'document_info_{self.collection_name}'
+                        AND column_name = 'status'
+                    ) THEN
+                        ALTER TABLE document_info_{self.collection_name}
+                        ADD COLUMN status TEXT DEFAULT 'processing';
+                    END IF;
+                END $$;
+                """
+                sess.execute(text(add_column_query))
 
                 # Create users table
                 query = f"""
@@ -954,15 +967,15 @@ class PostgresDBProvider(DatabaseProvider):
                 "Error, please set a valid POSTGRES_DBNAME environment variable or set a 'db_name' in the 'vector_database' settings of your `config.json`."
             )
 
-        collection = config.extra_fields.get(
+        collection_name = config.extra_fields.get(
             "vecs_collection", None
         ) or os.getenv("POSTGRES_VECS_COLLECTION")
-        if not collection:
+        if not collection_name:
             raise ValueError(
                 "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'collection' in the 'vector_database' settings of your `config.json`."
             )
 
-        if not all([user, password, host, port, db_name, collection]):
+        if not all([user, password, host, port, db_name, collection_name]):
             raise ValueError(
                 "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DBNAME, and POSTGRES_VECS_COLLECTION environment variables to use pgvector database."
             )
@@ -976,7 +989,7 @@ class PostgresDBProvider(DatabaseProvider):
                 f"Error {e} occurred while attempting to connect to the pgvector provider with {DB_CONNECTION}."
             )
         self.vector_db_dimension = dimension
-        self.collection_name = collection
+        self.collection_name = collection_name
         self.config: DatabaseConfig = config
         super().__init__(config)
 

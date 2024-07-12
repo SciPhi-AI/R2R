@@ -43,6 +43,11 @@ def mock_bad_file():
 def mock_file():
     mock_data = json.dumps(
         {
+            "auth": {
+                "provider": "r2r",
+                "enabled": True,
+                "token_lifetime": 86400,
+            },
             "app": {"max_file_size_in_mb": 128},
             "embedding": {
                 "provider": "example_provider",
