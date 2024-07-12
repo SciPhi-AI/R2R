@@ -1,3 +1,0 @@
-John is a person that works at Google.
-
-Paul is a person that works at Microsoft that knows John.
