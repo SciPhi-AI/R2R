@@ -1,13 +1,17 @@
 import logging
 from abc import abstractmethod
 from enum import Enum
-from typing import Optional
+from typing import Optional, Dict
 
 from ..abstractions.search import VectorSearchResult
 from .base_provider import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 
+class EmbeddingPurpose(Enum):
+    INDEX = 1
+    QUERY = 2
+    DOCUMENT = 3
 
 class EmbeddingConfig(ProviderConfig):
     """A base embedding configuration class"""
@@ -19,6 +23,7 @@ class EmbeddingConfig(ProviderConfig):
     rerank_dimension: Optional[int] = None
     rerank_transformer_type: Optional[str] = None
     batch_size: int = 1
+    prefixes: Optional[dict[EmbeddingPurpose, str]] = None
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:
@@ -46,24 +51,30 @@ class EmbeddingProvider(Provider):
         super().__init__(config)
 
     @abstractmethod
-    def get_embedding(self, text: str, stage: PipeStage = PipeStage.BASE):
+    def get_embedding(
+        self, text: str, stage: PipeStage = PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX
+    ):
         pass
 
     async def async_get_embedding(
-        self, text: str, stage: PipeStage = PipeStage.BASE
+        self, text: str, stage: PipeStage = PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX
     ):
-        return self.get_embedding(text, stage)
+        return self.get_embedding(text, stage, purpose)
 
     @abstractmethod
     def get_embeddings(
-        self, texts: list[str], stage: PipeStage = PipeStage.BASE
+        self, texts: list[str], stage: PipeStage = PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX
     ):
         pass
 
     async def async_get_embeddings(
-        self, texts: list[str], stage: PipeStage = PipeStage.BASE
+        self, texts: list[str], stage: PipeStage = PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX
     ):
-        return self.get_embeddings(texts, stage)
+        return self.get_embeddings(texts, stage, purpose)
 
     @abstractmethod
     def rerank(
