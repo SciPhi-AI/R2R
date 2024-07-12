@@ -5,7 +5,7 @@
   },
   "auth": {
     "provider": "r2r",
-    "enabled": true,
+    "enabled": false,
     "token_lifetime": 86400
   },
   "completions": {
