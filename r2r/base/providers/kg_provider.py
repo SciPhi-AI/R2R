@@ -1,11 +1,9 @@
 """Base classes for knowledge graph providers."""
 
+import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Tuple, TYPE_CHECKING
-
-
-import json
+from typing import TYPE_CHECKING, Any, Optional, Tuple
 
 from .prompt_provider import PromptProvider
 
@@ -13,12 +11,9 @@ if TYPE_CHECKING:
     from r2r.main import R2RClient
 
 from ...base.utils.base_utils import EntityType, Relation
-from ..abstractions.llama_abstractions import (
-    EntityNode,
-    LabelledNode,
-    Relation as LlamaRelation,
-    VectorStoreQuery,
-)
+from ..abstractions.llama_abstractions import EntityNode, LabelledNode
+from ..abstractions.llama_abstractions import Relation as LlamaRelation
+from ..abstractions.llama_abstractions import VectorStoreQuery
 from ..abstractions.llm import GenerationConfig
 from .base_provider import ProviderConfig
 
@@ -143,13 +138,14 @@ def escape_braces(s: str) -> str:
     # Implement your escape_braces logic here
     return s.replace("{", "{{").replace("}", "}}")
 
+
 # TODO - Make this more configurable / intelligent
 def update_kg_prompt(
     client: "R2RClient",
     r2r_prompts: PromptProvider,
     prompt_base: str,
     entity_types: list[EntityType],
-    relations: list[Relation]
+    relations: list[Relation],
 ) -> None:
     # Get the default extraction template
     template_name: str = f"{prompt_base}_with_spec"
@@ -177,7 +173,6 @@ def update_kg_prompt(
     escaped_template: str = escape_braces(new_template).replace(
         """{{input}}""", """{input}"""
     )
-
 
     # Update the client's prompt
     client.update_prompt(

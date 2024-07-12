@@ -5,7 +5,13 @@ import fire
 import requests
 from bs4 import BeautifulSoup, Comment
 
-from r2r import EntityType, R2RClient, R2RPromptProvider, Relation, update_kg_prompt
+from r2r import (
+    EntityType,
+    R2RClient,
+    R2RPromptProvider,
+    Relation,
+    update_kg_prompt,
+)
 
 
 def escape_braces(text):
@@ -123,20 +129,19 @@ def main(
         Relation("HAS"),
         Relation("AS_OF"),
         Relation("PARTICIPATED"),
-        Relation("ASSOCIATED")
+        Relation("ASSOCIATED"),
     ]
-
-    
 
     client = R2RClient(base_url=base_url)
     r2r_prompts = R2RPromptProvider()
 
-
-    prompt_base = "zero_shot_ner_kg_extraction" if local_mode else "few_shot_ner_kg_extraction"
-
-    update_kg_prompt(
-        client, r2r_prompts, prompt_base, entity_types, relations
+    prompt_base = (
+        "zero_shot_ner_kg_extraction"
+        if local_mode
+        else "few_shot_ner_kg_extraction"
     )
+
+    update_kg_prompt(client, r2r_prompts, prompt_base, entity_types, relations)
 
     url_map = get_all_yc_co_directory_urls()
 
@@ -167,7 +172,7 @@ def main(
     if not local_mode:
 
         update_kg_prompt(
-            client, r2r_prompts, "kg_agent" , entity_types, relations
+            client, r2r_prompts, "kg_agent", entity_types, relations
         )
 
         result = client.search(
