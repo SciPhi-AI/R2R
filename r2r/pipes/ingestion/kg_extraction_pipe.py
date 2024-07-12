@@ -132,9 +132,7 @@ class KGExtractionPipe(AsyncPipe):
                     messages, self.kg_provider.config.kg_extraction_config
                 )
 
-                print("messages = ", messages)
                 kg_extraction = response.choices[0].message.content
-                print("kg_extraction = ", kg_extraction)
 
                 # Parsing JSON from the response
                 kg_json = (
