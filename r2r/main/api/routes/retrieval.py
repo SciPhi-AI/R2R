@@ -20,6 +20,7 @@ class RetrievalRouter(BaseRouter):
                 request.kg_search_settings["agent_generation_config"] = (
                     GenerationConfig(
                         **request.kg_search_settings["agent_generation_config"]
+                        or {}
                     )
                 )
 

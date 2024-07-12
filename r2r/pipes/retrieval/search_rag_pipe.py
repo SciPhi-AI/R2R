@@ -67,7 +67,7 @@ class SearchRAGPipe(GeneratorPipe):
 
         messages = self._get_message_payload(sel_query, context)
 
-        response = self.llm_provider.get_completion(
+        response = await self.llm_provider.aget_completion(
             messages=messages, generation_config=rag_generation_config
         )
         yield RAGCompletion(completion=response, search_results=search_results)

@@ -18,6 +18,7 @@ from .requests import (
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
     R2RDocumentsOverviewRequest,
+    R2RExtractionRequest,
     R2RIngestFilesRequest,
     R2RLogsRequest,
     R2RPrintRelationshipsRequest,
@@ -365,10 +366,10 @@ class R2RClient:
             "GET", "document_chunks", json=json.loads(request.json())
         )
 
-    def print_relationships(self, limit: int = 100) -> str:
+    def inspect_knowledge_graph(self, limit: int = 100) -> str:
         request = R2RPrintRelationshipsRequest(limit=limit)
         return self._make_request(
-            "POST", "print_kg_relationships", json=json.loads(request.json())
+            "POST", "inspect_knowledge_graph", json=json.loads(request.json())
         )
 
 
