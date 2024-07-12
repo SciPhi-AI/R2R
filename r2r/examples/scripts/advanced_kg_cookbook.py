@@ -118,16 +118,12 @@ def main(
         # Product relations
         Relation("PRODUCT"),
         Relation("FEATURES"),
-        Relation("USES"),
-        Relation("USED_BY"),
         Relation("TECHNOLOGY"),
         # Additional relations
         Relation("HAS"),
         Relation("AS_OF"),
         Relation("PARTICIPATED"),
-        Relation("ASSOCIATED"),
-        Relation("GROUP_PARTNER"),
-        Relation("ALIAS"),
+        Relation("ASSOCIATED")
     ]
 
     
@@ -171,7 +167,7 @@ def main(
     if not local_mode:
 
         update_kg_prompt(
-            client, r2r_prompts, "kg_agent_with_spec" , entity_types, relations
+            client, r2r_prompts, "kg_agent" , entity_types, relations
         )
 
         result = client.search(
