@@ -144,19 +144,15 @@ def escape_braces(s: str) -> str:
     return s.replace("{", "{{").replace("}", "}}")
 
 # TODO - Make this more configurable / intelligent
-def update_kg_extraction_prompt(
+def update_kg_prompt(
     client: "R2RClient",
     r2r_prompts: PromptProvider,
-    local_mode: bool,
+    prompt_base: str,
     entity_types: list[EntityType],
-    relations: list[Relation],
+    relations: list[Relation]
 ) -> None:
     # Get the default extraction template
-    template_name: str = (
-        "zero_shot_ner_kg_extraction_with_spec"
-        if local_mode
-        else "few_shot_ner_kg_extraction_with_spec"
-    )
+    template_name: str = f"{prompt_base}_with_spec"
 
     new_template: str = r2r_prompts.get_prompt(
         template_name,
@@ -182,13 +178,10 @@ def update_kg_extraction_prompt(
         """{{input}}""", """{input}"""
     )
 
+
     # Update the client's prompt
     client.update_prompt(
-        (
-            "zero_shot_ner_kg_extraction"
-            if local_mode
-            else "few_shot_ner_kg_extraction"
-        ),
+        prompt_base,
         template=escaped_template,
         input_types={"input": "str"},
     )

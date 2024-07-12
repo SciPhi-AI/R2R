@@ -5,7 +5,7 @@ import fire
 import requests
 from bs4 import BeautifulSoup, Comment
 
-from r2r import EntityType, R2RClient, R2RPromptProvider, Relation, update_kg_extraction_prompt
+from r2r import EntityType, R2RClient, R2RPromptProvider, Relation, update_kg_prompt
 
 
 def escape_braces(text):
@@ -135,8 +135,11 @@ def main(
     client = R2RClient(base_url=base_url)
     r2r_prompts = R2RPromptProvider()
 
-    update_kg_extraction_prompt(
-        client, r2r_prompts, local_mode, entity_types, relations
+
+    prompt_base = "zero_shot_ner_kg_extraction" if local_mode else "few_shot_ner_kg_extraction"
+
+    update_kg_prompt(
+        client, r2r_prompts, prompt_base, entity_types, relations
     )
 
     url_map = get_all_yc_co_directory_urls()
@@ -165,25 +168,10 @@ def main(
 
     print(client.inspect_knowledge_graph(1_000)["results"])
 
-    new_template = r2r_prompts.get_prompt(
-        "kg_agent_with_spec",
-        {
-            "entity_types": "\n".join(
-                [str(entity.name) for entity in entity_types]
-            ),
-            "relations": "\n".join(
-                [str(relation.name) for relation in relations]
-            ),
-            "input": """\n{input}""",
-        },
-    )
     if not local_mode:
-        # RAG client currently only works with powerful remote LLMs,
-        # we are working to expand support to local LLMs.
-        client.update_prompt(
-            "kg_agent",
-            template=new_template,
-            input_types={"input": "str"},
+
+        update_kg_prompt(
+            client, r2r_prompts, "kg_agent_with_spec" , entity_types, relations
         )
 
         result = client.search(
