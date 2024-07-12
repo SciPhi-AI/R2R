@@ -2,12 +2,21 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, TYPE_CHECKING
 
+
+import json
+
+from .prompt_provider import PromptProvider
+
+if TYPE_CHECKING:
+    from r2r.main import R2RClient
+
+from ...base.utils.base_utils import EntityType, Relation
 from ..abstractions.llama_abstractions import (
     EntityNode,
     LabelledNode,
-    Relation,
+    Relation as LlamaRelation,
     VectorStoreQuery,
 )
 from ..abstractions.llm import GenerationConfig
@@ -76,7 +85,7 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    def upsert_relations(self, relations: list[Relation]) -> None:
+    def upsert_relations(self, relations: list[LlamaRelation]) -> None:
         """Abstract method to add triplet."""
         pass
 
@@ -124,3 +133,62 @@ class KGProvider(ABC):
     ):
         """Abstract method to update the KG agent prompt."""
         pass
+
+
+def escape_braces(s: str) -> str:
+    """
+    Escape braces in a string.
+    This is a placeholder function - implement the actual logic as needed.
+    """
+    # Implement your escape_braces logic here
+    return s.replace("{", "{{").replace("}", "}}")
+
+# TODO - Make this more configurable / intelligent
+def update_kg_extraction_prompt(
+    client: "R2RClient",
+    r2r_prompts: PromptProvider,
+    local_mode: bool,
+    entity_types: list[EntityType],
+    relations: list[Relation],
+) -> None:
+    # Get the default extraction template
+    template_name: str = (
+        "zero_shot_ner_kg_extraction_with_spec"
+        if local_mode
+        else "few_shot_ner_kg_extraction_with_spec"
+    )
+
+    new_template: str = r2r_prompts.get_prompt(
+        template_name,
+        {
+            "entity_types": json.dumps(
+                {
+                    "entity_types": [
+                        str(entity.name) for entity in entity_types
+                    ]
+                },
+                indent=4,
+            ),
+            "relations": json.dumps(
+                {"predicates": [str(relation.name) for relation in relations]},
+                indent=4,
+            ),
+            "input": """\n{input}""",
+        },
+    )
+
+    # Escape all braces in the template, except for the {input} placeholder, for formatting
+    escaped_template: str = escape_braces(new_template).replace(
+        """{{input}}""", """{input}"""
+    )
+
+    # Update the client's prompt
+    client.update_prompt(
+        (
+            "zero_shot_ner_kg_extraction"
+            if local_mode
+            else "few_shot_ner_kg_extraction"
+        ),
+        template=escaped_template,
+        input_types={"input": "str"},
+    )

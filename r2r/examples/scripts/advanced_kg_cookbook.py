@@ -1,15 +1,11 @@
-
-
-
 import json
 import os
-import string
 
 import fire
 import requests
 from bs4 import BeautifulSoup, Comment
 
-from r2r import EntityType, R2RClient, R2RPromptProvider, Relation
+from r2r import EntityType, R2RClient, R2RPromptProvider, Relation, update_kg_extraction_prompt
 
 
 def escape_braces(text):
@@ -134,47 +130,13 @@ def main(
         Relation("ALIAS"),
     ]
 
+    
+
     client = R2RClient(base_url=base_url)
     r2r_prompts = R2RPromptProvider()
 
-    # get the default extraction template
-    # note that 'local' templates omit the n-shot example
-    new_template = r2r_prompts.get_prompt(
-        (
-            "zero_shot_ner_kg_extraction_with_spec"
-            if local_mode
-            else "few_shot_ner_kg_extraction_with_spec"
-        ),
-        {
-            "entity_types": json.dumps(
-                {
-                    "entity_types": [str(entity.name) for entity in entity_types]
-                },
-                indent=4,
-            ),
-            "relations": json.dumps(
-                {
-                    "predicates": [str(relation.name) for relation in relations]
-                },
-                indent=4,
-            ),
-            "input": """\n{input}""",
-        },
-    )
-
-    # Escape all braces in the template, except for the {input} placeholder, for formatting
-    escaped_template = escape_braces(new_template).replace(
-        """{{input}}""", """{input}"""
-    )
-
-    client.update_prompt(
-        (
-            "zero_shot_ner_kg_extraction"
-            if local_mode
-            else "few_shot_ner_kg_extraction"
-        ),
-        template=escaped_template,
-        input_types={"input": "str"},
+    update_kg_extraction_prompt(
+        client, r2r_prompts, local_mode, entity_types, relations
     )
 
     url_map = get_all_yc_co_directory_urls()

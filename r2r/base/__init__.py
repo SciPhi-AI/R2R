@@ -55,7 +55,7 @@ from .pipeline.base_pipeline import AsyncPipeline
 from .pipes.base_pipe import AsyncPipe, AsyncState, PipeType
 from .providers.embedding_provider import EmbeddingConfig, EmbeddingProvider
 from .providers.eval_provider import EvalConfig, EvalProvider
-from .providers.kg_provider import KGConfig, KGProvider
+from .providers.kg_provider import KGConfig, KGProvider, update_kg_extraction_prompt
 from .providers.llm_provider import LLMConfig, LLMProvider
 from .providers.prompt_provider import PromptConfig, PromptProvider
 from .providers.vector_db_provider import VectorDBConfig, VectorDBProvider
@@ -143,6 +143,7 @@ __all__ = [
     "VectorDBProvider",
     "KGProvider",
     "KGConfig",
+    "update_kg_extraction_prompt",
     # Other
     "FilterCriteria",
     "TextSplitter",
