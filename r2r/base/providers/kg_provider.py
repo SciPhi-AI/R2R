@@ -21,7 +21,7 @@ class KGConfig(ProviderConfig):
 
     provider: Optional[str] = None
     batch_size: int = 1
-    kg_extraction_prompt: Optional[str] = "ner_kg_extraction"
+    kg_extraction_prompt: Optional[str] = "few_shot_ner_kg_extraction"
     kg_agent_prompt: Optional[str] = "kg_agent"
     kg_extraction_config: Optional[GenerationConfig] = None
 

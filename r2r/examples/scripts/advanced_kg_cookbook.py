@@ -92,14 +92,11 @@ def execute_query(provider, query, params={}):
         return [record.data() for record in result]
 
 
-def delete_all_entries(provider):
-    delete_query = "MATCH (n) DETACH DELETE n;"
-    with provider.client.session(database=provider._database) as session:
-        session.run(delete_query)
-    print("All entries deleted.")
-
-
-def main(max_entries=50, base_url="http://localhost:8000", delete=False):
+def main(
+    max_entries=50,
+    local_mode=True,
+    base_url="http://localhost:8000",
+):
 
     # Specify the entity types for the KG extraction prompt
     entity_types = [
@@ -167,8 +164,14 @@ def main(max_entries=50, base_url="http://localhost:8000", delete=False):
     client = R2RClient(base_url=base_url)
     r2r_prompts = R2RPromptProvider()
 
+    # get the default extraction template
+    # note that 'local' templates omit the n-shot example
     new_template = r2r_prompts.get_prompt(
-        "ner_kg_extraction_with_spec",
+        (
+            "zero_shot_ner_kg_extraction_with_spec"
+            if local_mode
+            else "few_shot_ner_kg_extraction_with_spec"
+        ),
         {
             "entity_types": "\n".join(
                 [str(entity.name) for entity in entity_types]
@@ -180,14 +183,17 @@ def main(max_entries=50, base_url="http://localhost:8000", delete=False):
         },
     )
 
-    # Escape all braces in the template, except for the {input} placeholder
+    # Escape all braces in the template, except for the {input} placeholder, for formatting
     escaped_template = escape_braces(new_template).replace(
         """{{input}}""", """{input}"""
     )
-    print("escaped_template = ", escaped_template)
 
     client.update_prompt(
-        "ner_kg_extraction",
+        (
+            "zero_shot_ner_kg_extraction"
+            if local_mode
+            else "few_shot_ner_kg_extraction"
+        ),
         template=escaped_template,
         input_types={"input": "str"},
     )
@@ -230,26 +236,28 @@ def main(max_entries=50, base_url="http://localhost:8000", delete=False):
             "input": """\n{input}""",
         },
     )
+    if not local_mode:
+        # RAG client currently only works with powerful remote LLMs,
+        # we are working to expand support to local LLMs.
+        client.update_prompt(
+            "kg_agent",
+            template=new_template,
+            input_types={"input": "str"},
+        )
 
-    client.update_prompt(
-        "kg_agent",
-        template=new_template,
-        input_types={"input": "str"},
-    )
+        result = client.search(
+            query="Find up to 10 founders that worked at Google",
+            use_kg_search=True,
+        )["results"]
 
-    result = client.search(
-        query="Find up to 10 founders that worked at Google",
-        use_kg_search=True,
-    )["results"]
+        print("result:\n", result)
+        print("Search Result:\n", result["kg_search_results"])
 
-    print("result:\n", result)
-    print("Search Result:\n", result["kg_search_results"])
-
-    result = client.rag(
-        query="Find up to 10 founders that worked at Google",
-        use_kg_search=True,
-    )
-    print("RAG Result:\n", result)
+        result = client.rag(
+            query="Find up to 10 founders that worked at Google",
+            use_kg_search=True,
+        )
+        print("RAG Result:\n", result)
 
 
 if __name__ == "__main__":

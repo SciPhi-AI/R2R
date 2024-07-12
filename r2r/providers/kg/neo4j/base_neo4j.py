@@ -939,19 +939,21 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
     ):
         # Fetch the kg extraction prompt with blank entity types and relations
         # Note - Assumes that for given prompt there is a `_with_spec` that can have entities + relations specified
-        ner_kg_extraction_with_spec = prompt_provider.get_prompt(
+        few_shot_ner_kg_extraction_with_spec = prompt_provider.get_prompt(
             f"{self.config.kg_extraction_prompt}_with_spec"
         )
 
         # Format the prompt to include the desired entity types and relations
-        ner_kg_extraction = ner_kg_extraction_with_spec.replace(
-            "{entity_types}", format_entity_types(entity_types)
-        ).replace("{relations}", format_relations(relations))
+        few_shot_ner_kg_extraction = (
+            few_shot_ner_kg_extraction_with_spec.replace(
+                "{entity_types}", format_entity_types(entity_types)
+            ).replace("{relations}", format_relations(relations))
+        )
 
-        # Update the "ner_kg_extraction" prompt used in downstream KG construction
+        # Update the "few_shot_ner_kg_extraction" prompt used in downstream KG construction
         prompt_provider.update_prompt(
             self.config.kg_extraction_prompt,
-            json.dumps(ner_kg_extraction, ensure_ascii=False),
+            json.dumps(few_shot_ner_kg_extraction, ensure_ascii=False),
         )
 
     def update_kg_agent_prompt(
@@ -962,18 +964,20 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
     ):
         # Fetch the kg extraction prompt with blank entity types and relations
         # Note - Assumes that for given prompt there is a `_with_spec` that can have entities + relations specified
-        ner_kg_extraction_with_spec = prompt_provider.get_prompt(
+        few_shot_ner_kg_extraction_with_spec = prompt_provider.get_prompt(
             f"{self.config.kg_agent_prompt}_with_spec"
         )
 
         # Format the prompt to include the desired entity types and relations
-        ner_kg_extraction = ner_kg_extraction_with_spec.replace(
-            "{entity_types}",
-            format_entity_types(entity_types, ignore_subcats=True),
-        ).replace("{relations}", format_relations(relations))
+        few_shot_ner_kg_extraction = (
+            few_shot_ner_kg_extraction_with_spec.replace(
+                "{entity_types}",
+                format_entity_types(entity_types, ignore_subcats=True),
+            ).replace("{relations}", format_relations(relations))
+        )
 
-        # Update the "ner_kg_extraction" prompt used in downstream KG construction
+        # Update the "few_shot_ner_kg_extraction" prompt used in downstream KG construction
         prompt_provider.update_prompt(
             self.config.kg_agent_prompt,
-            json.dumps(ner_kg_extraction, ensure_ascii=False),
+            json.dumps(few_shot_ner_kg_extraction, ensure_ascii=False),
         )
