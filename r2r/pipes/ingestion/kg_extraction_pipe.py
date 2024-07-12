@@ -135,8 +135,12 @@ class KGExtractionPipe(AsyncPipe):
                 kg_extraction = response.choices[0].message.content
 
                 # Parsing JSON from the response
-                kg_json = json.loads(
-                    kg_extraction.split("```json")[1].split("```")[0]
+                kg_json = (
+                    json.loads(
+                        kg_extraction.split("```json")[1].split("```")[0]
+                    )
+                    if """```json""" in kg_extraction
+                    else json.loads(kg_extraction)
                 )
 
                 llm_payload = kg_json.get("entities_and_triples", {})

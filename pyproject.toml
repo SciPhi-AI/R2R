@@ -13,7 +13,7 @@ include = ["config.json", "compose.yaml", "compose.neo4j.yaml"]
 
 [tool.poetry.dependencies]
 # Python Versions
-python = ">=3.10,<3.13"
+python = ">=3.9,<3.13"
 
 # Required dependencies
 
