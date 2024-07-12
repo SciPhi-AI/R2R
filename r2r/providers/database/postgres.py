@@ -31,7 +31,6 @@ logger = logging.getLogger(__name__)
 class PostgresVectorDBProvider(VectorDatabaseProvider):
     def __init__(self, config: DatabaseConfig, *args, **kwargs):
         super().__init__(config)
-<<<<<<< HEAD:r2r/providers/database/postgres.py
         self.collection: Optional[Collection] = None
         self.vx: Client = kwargs.get("vx", None)
         if not self.vx:
@@ -43,7 +42,6 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
         if not dimension:
             raise ValueError("Please provide a valid `dimension` to the `PostgresVectorDBProvider`.")
         self._initialize_vector_db(dimension)
-=======
         try:
             import r2r.vecs
         except ImportError:
@@ -134,15 +132,12 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
         logger.info(
             f"Successfully initialized PGVectorDB with collection: {self.collection_name}"
         )
->>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df:r2r/providers/vector_dbs/pgvector/pgvector_db.py
 
     def _initialize_vector_db(self, dimension: int) -> None:
         self.collection = self.vx.get_or_create_collection(
             name=self.collection_name, dimension=dimension
         )
 
-<<<<<<< HEAD:r2r/providers/database/postgres.py
-=======
     def _create_document_info_table(self):
         with self.vx.Session() as sess:
             with sess.begin():
@@ -191,7 +186,6 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
                 sess.commit()
 
     def _create_hybrid_search_function(self):
->>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df:r2r/providers/vector_dbs/pgvector/pgvector_db.py
         hybrid_search_function = f"""
         CREATE OR REPLACE FUNCTION hybrid_search_{self.collection_name}(
             query_text TEXT,
