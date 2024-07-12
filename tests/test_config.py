@@ -1,9 +1,35 @@
+import asyncio
 import json
 from unittest.mock import Mock, mock_open, patch
 
 import pytest
 
 from r2r import DocumentType, R2RConfig
+
+
+@pytest.fixture(scope="session", autouse=True)
+def event_loop_policy():
+    asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+
+
+@pytest.fixture(scope="function")
+def event_loop():
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+    asyncio.set_event_loop(None)
+
+
+@pytest.fixture(scope="session", autouse=True)
+async def cleanup_tasks():
+    yield
+    for task in asyncio.all_tasks():
+        if task is not asyncio.current_task():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
 
 @pytest.fixture
@@ -17,6 +43,11 @@ def mock_bad_file():
 def mock_file():
     mock_data = json.dumps(
         {
+            "auth": {
+                "provider": "r2r",
+                "enabled": True,
+                "token_lifetime": 86400,
+            },
             "app": {"max_file_size_in_mb": 128},
             "embedding": {
                 "provider": "example_provider",
@@ -51,13 +82,13 @@ def mock_file():
 
 
 @pytest.mark.asyncio
-def test_r2r_config_loading_required_keys(mock_bad_file):
+async def test_r2r_config_loading_required_keys(mock_bad_file):
     with pytest.raises(KeyError):
         R2RConfig.from_json("config.json")
 
 
 @pytest.mark.asyncio
-def test_r2r_config_loading(mock_file):
+async def test_r2r_config_loading(mock_file):
     config = R2RConfig.from_json("config.json")
     assert (
         config.embedding.provider == "example_provider"

@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+from collections import defaultdict
 from datetime import datetime
 from typing import Any, Optional, Union
 
@@ -81,14 +82,23 @@ class IngestionService(Service):
         document_infos = []
         skipped_documents = []
         processed_documents = {}
+        duplicate_documents = defaultdict(list)
 
         existing_document_info = {
             doc_info.document_id: doc_info
-            for doc_info in self.providers.database.get_documents_overview()
+            for doc_info in self.providers.database.relational.get_documents_overview()
         }
 
         for iteration, document in enumerate(documents):
             version = versions[iteration] if versions else "v0"
+
+            # Check for duplicates within the current batch
+            if document.id in processed_documents:
+                duplicate_documents[document.id].append(
+                    document.metadata.get("title", str(document.id))
+                )
+                continue
+
             if (
                 document.id in existing_document_info
                 and existing_document_info[document.id].version == version
@@ -130,6 +140,14 @@ class IngestionService(Service):
                 "title", str(document.id)
             )
 
+        if duplicate_documents:
+            duplicate_details = [
+                f"{doc_id}: {', '.join(titles)}"
+                for doc_id, titles in duplicate_documents.items()
+            ]
+            warning_message = f"Duplicate documents detected: {'; '.join(duplicate_details)}. These duplicates were skipped."
+            raise R2RException(status_code=418, message=warning_message)
+
         if skipped_documents and len(skipped_documents) == len(documents):
             logger.error("All provided documents already exist.")
             raise R2RException(
@@ -138,7 +156,7 @@ class IngestionService(Service):
             )
 
         # Insert pending document infos
-        self.providers.database.upsert_documents_overview(document_infos)
+        self.providers.database.relational.upsert_documents_overview(document_infos)
         ingestion_results = await self.pipelines.ingestion_pipeline.run(
             input=to_async_generator(
                 [
@@ -283,6 +301,9 @@ class IngestionService(Service):
                 await self._delete(
                     ["document_id", "version"], [str(doc_id), old_version]
                 )
+                self.providers.database.relational.delete_from_documents_overview(
+                    doc_id, old_version
+                )
 
             return ingestion_results
 
@@ -328,7 +349,7 @@ class IngestionService(Service):
                 documents_to_upsert.append(document_info)
 
         if documents_to_upsert:
-            self.providers.database.upsert_documents_overview(
+            self.providers.database.relational.upsert_documents_overview(
                 documents_to_upsert
             )
 
@@ -461,7 +482,7 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ):
-        return self.providers.database.get_documents_overview(
+        return self.providers.database.relational.get_documents_overview(
             filter_document_ids=(
                 [str(ele) for ele in document_ids] if document_ids else None
             ),
@@ -477,10 +498,9 @@ class IngestionService(Service):
             f"Deleting documents which match on these keys and values: ({keys}, {values})"
         )
 
-        ids = self.providers.database.delete_by_metadata(keys, values)
+        ids = self.providers.database.vector.delete_by_metadata(keys, values)
         if not ids:
             raise R2RException(
                 status_code=404, message="No entries found for deletion."
             )
-        self.providers.database.delete_documents_overview(ids)
         return "Entries deleted successfully."

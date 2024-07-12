@@ -58,9 +58,9 @@ class VectorStoragePipe(AsyncPipe):
 
         try:
             if do_upsert:
-                self.database_provider.upsert_entries(vector_entries)
+                self.database_provider.vector.upsert_entries(vector_entries)
             else:
-                self.database_provider.copy_entries(vector_entries)
+                self.database_provider.vector.copy_entries(vector_entries)
         except Exception as e:
             error_message = (
                 f"Failed to store vector entries in the database: {e}"

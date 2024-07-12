@@ -335,7 +335,7 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
         if not run_ids:
             raise ValueError("No run ids provided.")
 
-        placeholders = ",".join([f"${i+1}" for i in range(len(run_ids))])
+        placeholders = ",".join([f"${i + 1}" for i in range(len(run_ids))])
         query = f"""
         SELECT * FROM (
             SELECT *, ROW_NUMBER() OVER (PARTITION BY log_id ORDER BY timestamp DESC) as rn

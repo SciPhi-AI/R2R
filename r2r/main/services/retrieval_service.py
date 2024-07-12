@@ -81,7 +81,7 @@ class RetrievalService(Service):
             )
 
             t1 = time.time()
-            latency = f"{t1-t0:.2f}"
+            latency = f"{t1 - t0:.2f}"
 
             await self.logging_connection.log(
                 log_id=run_id,
@@ -118,7 +118,7 @@ class RetrievalService(Service):
 
                 if rag_generation_config.stream:
                     t1 = time.time()
-                    latency = f"{t1-t0:.2f}"
+                    latency = f"{t1 - t0:.2f}"
 
                     await self.logging_connection.log(
                         log_id=run_id,
@@ -153,7 +153,7 @@ class RetrievalService(Service):
                 )
 
                 t1 = time.time()
-                latency = f"{t1-t0:.2f}"
+                latency = f"{t1 - t0:.2f}"
 
                 await self.logging_connection.log(
                     log_id=run_id,

@@ -8,6 +8,7 @@ from .main import *
 from .parsers import *
 from .pipelines import *
 from .pipes import *
+from .providers import *
 
 logger = logging.getLogger("r2r")
 logger.setLevel(logging.INFO)

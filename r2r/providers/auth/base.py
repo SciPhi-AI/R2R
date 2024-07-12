@@ -1,24 +1,42 @@
+import os
 import secrets
 import string
-import os
-import uuid
 from datetime import datetime, timedelta
-from typing import Optional
 
 import bcrypt
 import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
 
-from r2r.base import AuthConfig, AuthProvider, TokenData, User, UserCreate
+from r2r.base import (
+    AuthConfig,
+    AuthProvider,
+    DatabaseProvider,
+    TokenData,
+    User,
+    UserCreate,
+)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 class R2RAuthProvider(AuthProvider):
-    def __init__(self, config: AuthConfig):
+    def __init__(self, config: AuthConfig, db_provider: DatabaseProvider):
         self.config = config
+        self.secret_key = config.secret_key or os.getenv(
+            "R2R_SECRET_KEY"
+        )
+        if not self.secret_key:
+            raise ValueError("Secret key not set")
+
+        self.token_lifetime = config.token_lifetime or int(
+            os.getenv("R2R_TOKEN_LIFETIME")
+        )
+        if not self.token_lifetime:
+            raise ValueError("Token lifetime not set")
+
+        self.db_provider = db_provider
+        super().__init__(config)
 
     def get_password_hash(self, password: str) -> str:
         return bcrypt.hashpw(
@@ -55,11 +73,7 @@ class R2RAuthProvider(AuthProvider):
 
     def get_current_user(self, token: str = Depends(oauth2_scheme)):
         token_data = self.decode_token(token)
-        user = (
-            self.db_session.query(User)
-            .filter(User.email == token_data.email)
-            .first()
-        )
+        user = self.db_provider.relational.get_user_by_email(token_data.email)
         if user is None:
             raise HTTPException(
                 status_code=401, detail="Invalid authentication credentials"
@@ -74,48 +88,46 @@ class R2RAuthProvider(AuthProvider):
         return current_user
 
     def register_user(self, user: UserCreate):
-        db_user = (
-            self.db_session.query(User)
-            .filter(User.email == user.email)
-            .first()
+        existing_user = self.db_provider.relational.get_user_by_email(
+            user.email
         )
-        if db_user:
+        if existing_user:
             raise HTTPException(
                 status_code=400, detail="Email already registered"
             )
         hashed_password = self.get_password_hash(user.password)
-        verification_code = str(uuid.uuid4())
+        verification_code = self.generate_verification_code()
         new_user = User(
             email=user.email,
             hashed_password=hashed_password,
-            verification_code=verification_code,
-            verification_code_expiry=datetime.utcnow() + timedelta(hours=24),
+            is_active=True,
+            is_verified=False,
         )
-        self.db_session.add(new_user)
-        self.db_session.commit()
+        created_user = self.db_provider.relational.create_user(new_user)
+        self.db_provider.relational.store_verification_code(
+            created_user.id,
+            verification_code,
+            datetime.utcnow() + timedelta(hours=24),
+        )
         # Send verification email here
         return {
             "message": "User created. Please check your email for verification."
         }
 
     def verify_email(self, verification_code: str):
-        user = (
-            self.db_session.query(User)
-            .filter(User.verification_code == verification_code)
-            .first()
+        user_id = self.db_provider.relational.get_user_id_by_verification_code(
+            verification_code
         )
-        if not user or user.verification_code_expiry < datetime.utcnow():
+        if not user_id:
             raise HTTPException(
                 status_code=400, detail="Invalid or expired verification code"
             )
-        user.is_verified = True
-        user.verification_code = None
-        user.verification_code_expiry = None
-        self.db_session.commit()
+        self.db_provider.relational.mark_user_as_verified(user_id)
+        self.db_provider.relational.remove_verification_code(verification_code)
         return {"message": "Email verified successfully"}
 
     def login(self, email: str, password: str):
-        user = self.db_session.query(User).filter(User.email == email).first()
+        user = self.db_provider.relational.get_user_by_email(email)
         if not user or not self.verify_password(
             password, user.hashed_password
         ):
@@ -126,34 +138,20 @@ class R2RAuthProvider(AuthProvider):
             raise HTTPException(status_code=401, detail="Email not verified")
         access_token = self.create_access_token(data={"sub": user.email})
         return {"access_token": access_token, "token_type": "bearer"}
-    
+
     def generate_verification_code(self, length: int = 32) -> str:
         alphabet = string.ascii_letters + string.digits
-        return ''.join(secrets.choice(alphabet) for _ in range(length))
+        return "".join(secrets.choice(alphabet) for _ in range(length))
 
-    def register_user(self, user: UserCreate):
-        db_user = (
-            self.db_session.query(User)
-            .filter(User.email == user.email)
-            .first()
-        )
-        if db_user:
-            raise HTTPException(
-                status_code=400, detail="Email already registered"
-            )
-        hashed_password = self.get_password_hash(user.password)
-        verification_code = self.generate_verification_code()
-        new_user = User(
-            email=user.email,
-            hashed_password=hashed_password,
-            verification_code=verification_code,
-            verification_code_expiry=datetime.utcnow() + timedelta(hours=24),
-        )
-        self.db_session.add(new_user)
-        self.db_session.commit()
-        # Send verification email here
-        return {
-            "message": "User created. Please check your email for verification."
-        }
+    @staticmethod
+    def generate_secret_key(length: int = 32) -> str:
+        """
+        Generate a secure random secret key.
 
-    
+        Args:
+            length (int): The length of the secret key. Defaults to 32.
+
+        Returns:
+            str: A secure random secret key.
+        """
+        return secrets.token_urlsafe(length)

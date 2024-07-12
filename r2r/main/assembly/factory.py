@@ -35,35 +35,23 @@ class R2RProviderFactory:
     def __init__(self, config: R2RConfig):
         self.config = config
 
-    def create_auth_provider(
-            self, auth_config: AuthConfig, *args, **kwargs
-    ) -> AuthProvider:
-        auth_provider: Optional[AuthProvider] = None
-        if auth_config.provider == "r2r":
-            from r2r.providers import R2RAuthProvider
-
-            auth_provider = R2RAuthProvider(auth_config)
-        elif auth_config.provider is None:
-            auth_provider = None
-        else:
-            raise ValueError(
-                f"Auth provider {auth_config.provider} not supported."
-            )
-        return auth_provider
-
     def create_database_provider(
         self, db_config: DatabaseConfig, *args, **kwargs
     ) -> DatabaseProvider:
         database_provider: Optional[DatabaseProvider] = None
         if not self.config.embedding.base_dimension:
-            raise ValueError("Embedding config must have a base dimension to initialize database.")
+            raise ValueError(
+                "Embedding config must have a base dimension to initialize database."
+            )
 
         vector_db_dimension = self.config.embedding.base_dimension
-        print('db_config.provider = ', db_config.provider)
+        print("db_config.provider = ", db_config.provider)
         if db_config.provider == "postgres":
             from r2r.providers import PostgresDBProvider
 
-            database_provider = PostgresDBProvider(db_config, vector_db_dimension)
+            database_provider = PostgresDBProvider(
+                db_config, vector_db_dimension
+            )
         else:
             raise ValueError(
                 f"Database provider {db_config.provider} not supported"
@@ -71,8 +59,27 @@ class R2RProviderFactory:
         if not database_provider:
             raise ValueError("Database provider not found")
 
-
         return database_provider
+
+    def create_auth_provider(
+        self,
+        auth_config: AuthConfig,
+        db_provider: DatabaseProvider,
+        *args,
+        **kwargs,
+    ) -> AuthProvider:
+        auth_provider: Optional[AuthProvider] = None
+        if auth_config.provider == "r2r":
+            from r2r.providers import R2RAuthProvider
+
+            auth_provider = R2RAuthProvider(auth_config, db_provider)
+        elif auth_config.provider is None:
+            auth_provider = None
+        else:
+            raise ValueError(
+                f"Auth provider {auth_config.provider} not supported."
+            )
+        return auth_provider
 
     def create_embedding_provider(
         self, embedding: EmbeddingConfig, *args, **kwargs
@@ -190,34 +197,45 @@ class R2RProviderFactory:
             prompt_provider_override
             or self.create_prompt_provider(self.config.prompt, *args, **kwargs)
         )
-        return R2RProviders(
-            auth=auth_provider_override
-            or self.create_auth_provider(self.config.auth, *args, **kwargs),
-            database=database_provider_override
-            or self.create_database_provider(
-                self.config.database, *args, **kwargs
-            ),
-            embedding=embedding_provider_override
+        embedding_provider = (
+            embedding_provider_override
             or self.create_embedding_provider(
                 self.config.embedding, *args, **kwargs
-            ),
-            eval=eval_provider_override
-            or self.create_eval_provider(
-                self.config.eval,
-                prompt_provider=prompt_provider,
-                *args,
-                **kwargs,
-            ),
-            llm=llm_provider_override
-            or self.create_llm_provider(
-                self.config.completions, *args, **kwargs
-            ),
-            prompt=prompt_provider_override
-            or self.create_prompt_provider(
-                self.config.prompt, *args, **kwargs
-            ),
-            kg=kg_provider_override
-            or self.create_kg_provider(self.config.kg, *args, **kwargs),
+            )
+        )
+        eval_provider = eval_provider_override or self.create_eval_provider(
+            self.config.eval,
+            prompt_provider=prompt_provider,
+            *args,
+            **kwargs,
+        )
+
+        llm_provider = llm_provider_override or self.create_llm_provider(
+            self.config.completions, *args, **kwargs
+        )
+        kg_provider = kg_provider_override or self.create_kg_provider(
+            self.config.kg, *args, **kwargs
+        )
+        database_provider = (
+            database_provider_override
+            or self.create_database_provider(
+                self.config.database, *args, **kwargs
+            )
+        )
+        auth_provider = (
+            auth_provider_override
+            or self.create_auth_provider(
+                self.config.auth, database_provider, *args, **kwargs
+            )
+        )
+        return R2RProviders(
+            auth=auth_provider,
+            database=database_provider,
+            embedding=embedding_provider,
+            eval=eval_provider,
+            llm=llm_provider,
+            prompt=prompt_provider,
+            kg=kg_provider,
         )
 
 

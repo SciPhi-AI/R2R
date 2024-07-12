@@ -65,21 +65,15 @@ class SampleDataIngestor:
                 for it in range(len(sample_files))
             ],
         )
-
-        print("Sample files ingested successfully.")
-        print(response)
         return response
 
-    def ingest_sample_file(self, no_media: bool = True):
+    def ingest_sample_file(self, no_media: bool = True, option: int = 0):
         sample_files = self.get_sample_files()
-        user_id = uuid.UUID(self.USER_IDS[0])
+        user_id = uuid.UUID(self.USER_IDS[option % len(self.USER_IDS)])
 
         response = self.executor.ingest_files(
-            [sample_files[0]], [{"user_id": user_id}]
+            [sample_files[option]], [{"user_id": user_id}]
         )
-
-        print("First sample file ingested successfully.")
-        print(response)
         return response
 
 

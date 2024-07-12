@@ -25,7 +25,6 @@ from typing import (
 
 import psycopg2
 from flupy import flu
-from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     Column,
     MetaData,
@@ -42,6 +41,7 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.types import Float, UserDefinedType
 
 from .adapter import Adapter, AdapterContext, NoOp
 from .exc import (
@@ -143,6 +143,48 @@ INDEX_MEASURE_TO_SQLA_ACC = {
     IndexMeasure.l2_distance: lambda x: x.l2_distance,
     IndexMeasure.max_inner_product: lambda x: x.max_inner_product,
 }
+
+
+class Vector(UserDefinedType):
+    cache_ok = True
+
+    def __init__(self, dim=None):
+        super(UserDefinedType, self).__init__()
+        self.dim = dim
+
+    def get_col_spec(self, **kw):
+        return "VECTOR" if self.dim is None else f"VECTOR({self.dim})"
+
+    def bind_processor(self, dialect):
+        def process(value):
+            if value is None:
+                return value
+            if not isinstance(value, list):
+                raise ValueError("Expected a list")
+            if self.dim is not None and len(value) != self.dim:
+                raise ValueError(
+                    f"Expected {self.dim} dimensions, not {len(value)}"
+                )
+            return "[" + ",".join(str(float(v)) for v in value) + "]"
+
+        return process
+
+    def result_processor(self, dialect, coltype):
+        return lambda value: (
+            value
+            if value is None
+            else [float(v) for v in value[1:-1].split(",")]
+        )
+
+    class comparator_factory(UserDefinedType.Comparator):
+        def l2_distance(self, other):
+            return self.op("<->", return_type=Float)(other)
+
+        def max_inner_product(self, other):
+            return self.op("<#>", return_type=Float)(other)
+
+        def cosine_distance(self, other):
+            return self.op("<=>", return_type=Float)(other)
 
 
 class Collection:

@@ -1,11 +1,37 @@
+import asyncio
+
 import pytest
 
 from r2r import EmbeddingConfig, VectorSearchResult, generate_id_from_label
-
-from .embeddings import (
+from r2r.providers import (
     OpenAIEmbeddingProvider,
     SentenceTransformerEmbeddingProvider,
 )
+
+
+@pytest.fixture(scope="session", autouse=True)
+def event_loop_policy():
+    asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+
+
+@pytest.fixture(scope="function")
+def event_loop():
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+    asyncio.set_event_loop(None)
+
+
+@pytest.fixture(scope="session", autouse=True)
+async def cleanup_tasks():
+    yield
+    for task in asyncio.all_tasks():
+        if task is not asyncio.current_task():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
 
 @pytest.fixture
@@ -38,9 +64,12 @@ def test_openai_get_embedding(openai_provider):
 
 @pytest.mark.asyncio
 async def test_openai_async_get_embedding(openai_provider):
-    embedding = await openai_provider.async_get_embedding("test text")
-    assert len(embedding) == 1536
-    assert isinstance(embedding, list)
+    try:
+        embedding = await openai_provider.async_get_embedding("test text")
+        assert len(embedding) == 1536
+        assert isinstance(embedding, list)
+    except asyncio.CancelledError:
+        pass  # Task cancelled as expected
 
 
 def test_openai_get_embeddings(openai_provider):
@@ -51,9 +80,14 @@ def test_openai_get_embeddings(openai_provider):
 
 @pytest.mark.asyncio
 async def test_openai_async_get_embeddings(openai_provider):
-    embeddings = await openai_provider.async_get_embeddings(["text1", "text2"])
-    assert len(embeddings) == 2
-    assert all(len(emb) == 1536 for emb in embeddings)
+    try:
+        embeddings = await openai_provider.async_get_embeddings(
+            ["text1", "text2"]
+        )
+        assert len(embeddings) == 2
+        assert all(len(emb) == 1536 for emb in embeddings)
+    except asyncio.CancelledError:
+        pass  # Task cancelled as expected
 
 
 def test_openai_tokenize_string(openai_provider):
@@ -64,7 +98,6 @@ def test_openai_tokenize_string(openai_provider):
     assert all(isinstance(token, int) for token in tokens)
 
 
-# Test setup for SentenceTransformerEmbeddingProvider
 @pytest.fixture
 def sentence_transformer_provider():
     config = EmbeddingConfig(

@@ -1,10 +1,11 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from pydantic import BaseModel
+
 from r2r.base import Token, TokenData, User, UserCreate
 
 from ...engine import R2REngine
 from .base_router import BaseRouter
-from pydantic import BaseModel
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -23,7 +24,7 @@ class AuthRouter(BaseRouter):
         @self.base_endpoint
         async def register(user: UserCreate):
             return await self.engine.aregister_user(user)
-        
+
         @self.router.post("/verify_email/{verification_code}")
         @self.base_endpoint
         async def verify_email(verification_code: str):
@@ -32,7 +33,9 @@ class AuthRouter(BaseRouter):
         @self.router.post("/login", response_model=Token)
         @self.base_endpoint
         async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-            return await self.engine.alogin(form_data.username, form_data.password)
+            return await self.engine.alogin(
+                form_data.username, form_data.password
+            )
 
         @self.router.get("/users/me", response_model=User)
         @self.base_endpoint

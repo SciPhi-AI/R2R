@@ -1,15 +1,17 @@
-import uuid
 import logging
+import uuid
 from abc import ABC, abstractmethod
-from typing import Optional, Union
 from datetime import datetime
-from ..abstractions.user import User, UserCreate, UserResponse
+from typing import Optional, Union
+
 from ..abstractions.document import DocumentInfo
 from ..abstractions.search import VectorSearchResult
+from ..abstractions.user import User, UserCreate, UserResponse
 from ..abstractions.vector import VectorEntry
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
+
 
 class DatabaseConfig(ProviderConfig):
     provider: str
@@ -27,6 +29,7 @@ class DatabaseConfig(ProviderConfig):
     @property
     def supported_providers(self) -> list[str]:
         return ["postgres"]
+
 
 class VectorDatabaseProvider(Provider, ABC):
     @abstractmethod
@@ -100,6 +103,7 @@ class VectorDatabaseProvider(Provider, ABC):
         for entry in entries:
             self.copy(entry, commit=commit)
 
+
 class RelationalDatabaseProvider(Provider, ABC):
     @abstractmethod
     def _initialize_relational_db(self) -> None:
@@ -124,7 +128,9 @@ class RelationalDatabaseProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def delete_documents_overview(self, document_ids: list[str]) -> dict:
+    def delete_from_documents_overview(
+        self, document_id: str, version: Optional[str] = None
+    ) -> dict:
         pass
 
     @abstractmethod
@@ -140,11 +146,15 @@ class RelationalDatabaseProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def store_verification_code(self, user_id: uuid.UUID, verification_code: str, expiry: datetime):
+    def store_verification_code(
+        self, user_id: uuid.UUID, verification_code: str, expiry: datetime
+    ):
         pass
 
     @abstractmethod
-    def get_user_id_by_verification_code(self, verification_code: str) -> Optional[uuid.UUID]:
+    def get_user_id_by_verification_code(
+        self, verification_code: str
+    ) -> Optional[uuid.UUID]:
         pass
 
     @abstractmethod
@@ -182,7 +192,9 @@ class DatabaseProvider(Provider):
         logger.info(f"Initializing DatabaseProvider with config {config}.")
         super().__init__(config)
         self.vector: VectorDatabaseProvider = self._initialize_vector_db()
-        self.relational: RelationalDatabaseProvider = self._initialize_relational_db()
+        self.relational: RelationalDatabaseProvider = (
+            self._initialize_relational_db()
+        )
 
     @abstractmethod
     def _initialize_vector_db(self) -> VectorDatabaseProvider:
@@ -191,6 +203,7 @@ class DatabaseProvider(Provider):
     @abstractmethod
     def _initialize_relational_db(self) -> RelationalDatabaseProvider:
         pass
+
 
 # Example usage:
 # db_provider = DatabaseProvider(config)
