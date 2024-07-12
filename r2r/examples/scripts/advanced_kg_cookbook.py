@@ -1,3 +1,7 @@
+
+
+
+import json
 import os
 import string
 
@@ -5,18 +9,7 @@ import fire
 import requests
 from bs4 import BeautifulSoup, Comment
 
-from r2r import (
-    Document,
-    EntityType,
-    KGSearchSettings,
-    R2RBuilder,
-    R2RClient,
-    R2RPromptProvider,
-    Relation,
-    VectorSearchSettings,
-    generate_id_from_label,
-)
-from r2r.base.abstractions.llm import GenerationConfig
+from r2r import EntityType, R2RClient, R2RPromptProvider, Relation
 
 
 def escape_braces(text):
@@ -100,36 +93,16 @@ def main(
 
     # Specify the entity types for the KG extraction prompt
     entity_types = [
-        EntityType("ORGANIZATION"),
         EntityType("COMPANY"),
         EntityType("SCHOOL"),
-        EntityType("NON-PROFIT"),
         EntityType("LOCATION"),
-        EntityType("CITY"),
-        EntityType("STATE"),
-        EntityType("COUNTRY"),
         EntityType("PERSON"),
-        EntityType("POSITION"),
         EntityType("DATE"),
-        EntityType("YEAR"),
-        EntityType("MONTH"),
-        EntityType("DAY"),
-        EntityType("BATCH"),
         EntityType("OTHER"),
         EntityType("QUANTITY"),
         EntityType("EVENT"),
-        EntityType("INCORPORATION"),
-        EntityType("FUNDING_ROUND"),
-        EntityType("ACQUISITION"),
-        EntityType("LAUNCH"),
         EntityType("INDUSTRY"),
         EntityType("MEDIA"),
-        EntityType("EMAIL"),
-        EntityType("WEBSITE"),
-        EntityType("TWITTER"),
-        EntityType("LINKEDIN"),
-        EntityType("OTHER"),
-        EntityType("PRODUCT"),
     ]
 
     # Specify the relations for the KG construction
@@ -173,15 +146,22 @@ def main(
             else "few_shot_ner_kg_extraction_with_spec"
         ),
         {
-            "entity_types": "\n".join(
-                [str(entity.name) for entity in entity_types]
+            "entity_types": json.dumps(
+                {
+                    "entity_types": [str(entity.name) for entity in entity_types]
+                },
+                indent=4,
             ),
-            "relations": "\n".join(
-                [str(relation.name) for relation in relations]
+            "relations": json.dumps(
+                {
+                    "predicates": [str(relation.name) for relation in relations]
+                },
+                indent=4,
             ),
             "input": """\n{input}""",
         },
     )
+    print('new_template = ', new_template)
 
     # Escape all braces in the template, except for the {input} placeholder, for formatting
     escaped_template = escape_braces(new_template).replace(

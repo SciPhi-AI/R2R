@@ -146,8 +146,8 @@ class KGExtractionPipe(AsyncPipe):
 
                 # Extract triples with detailed logging
                 entities = extract_entities(llm_payload)
-
                 triples = extract_triples(llm_payload, entities)
+
                 # Create KG extraction object
                 return KGExtraction(entities=entities, triples=triples)
             except (

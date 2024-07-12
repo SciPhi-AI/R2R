@@ -5,7 +5,6 @@ import time
 import uuid
 
 import click
-import requests
 from dotenv import load_dotenv
 
 from r2r.main.execution import R2RExecutionWrapper
