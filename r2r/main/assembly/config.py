@@ -6,8 +6,8 @@ from typing import Any
 
 from ...base.abstractions.document import DocumentType
 from ...base.abstractions.llm import GenerationConfig
-from ...base.providers.auth import AuthConfig
 from ...base.logging.kv_logger import LoggingConfig
+from ...base.providers.auth import AuthConfig
 from ...base.providers.database import DatabaseConfig, ProviderConfig
 from ...base.providers.embedding import EmbeddingConfig
 from ...base.providers.eval import EvalConfig

@@ -3,15 +3,15 @@ import asyncio
 import json
 import os
 import uuid
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import UploadFile
 
 from r2r.base import (
-    VectorSearchSettings,
-    KGSearchSettings,
     AnalysisTypes,
     FilterCriteria,
+    KGSearchSettings,
+    VectorSearchSettings,
     generate_id_from_label,
 )
 from r2r.base.abstractions.llm import GenerationConfig

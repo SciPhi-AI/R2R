@@ -4,11 +4,14 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, EmailStr, Field
 
+
 class UserBase(BaseModel):
     email: EmailStr
 
+
 class UserCreate(UserBase):
     password: str
+
 
 class User(BaseModel):
     email: EmailStr
@@ -24,6 +27,7 @@ class User(BaseModel):
     class Config:
         orm_mode = True
 
+
 class UserResponse(UserBase):
     id: UUID
     is_active: bool
@@ -34,9 +38,11 @@ class UserResponse(UserBase):
     class Config:
         orm_mode = True
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str
+
 
 class TokenData(BaseModel):
     email: Optional[str] = None

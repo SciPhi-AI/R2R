@@ -36,7 +36,7 @@ class R2RProviderFactory:
         self.config = config
 
     def create_auth_provider(
-            self, auth_config: AuthConfig, *args, **kwargs
+        self, auth_config: AuthConfig, *args, **kwargs
     ) -> AuthProvider:
         auth_provider: Optional[AuthProvider] = None
         if auth_config.provider == "r2r":
@@ -56,21 +56,24 @@ class R2RProviderFactory:
     ) -> DatabaseProvider:
         database_provider: Optional[DatabaseProvider] = None
         if not self.config.embedding.base_dimension:
-            raise ValueError("Embedding config must have a base dimension to initialize database.")
+            raise ValueError(
+                "Embedding config must have a base dimension to initialize database."
+            )
 
         vector_db_dimension = self.config.embedding.base_dimension
-        print('db_config.provider = ', db_config.provider)
+        print("db_config.provider = ", db_config.provider)
         if db_config.provider == "postgres":
             from r2r.providers import PostgresDBProvider
 
-            database_provider = PostgresDBProvider(db_config, vector_db_dimension)
+            database_provider = PostgresDBProvider(
+                db_config, vector_db_dimension
+            )
         else:
             raise ValueError(
                 f"Database provider {db_config.provider} not supported"
             )
         if not database_provider:
             raise ValueError("Database provider not found")
-
 
         return database_provider
 

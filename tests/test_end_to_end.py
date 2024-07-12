@@ -7,6 +7,7 @@ from fastapi.datastructures import UploadFile
 
 from r2r import (
     Document,
+    GenerationConfig,
     KVLoggingSingleton,
     R2RConfig,
     R2REngine,
@@ -16,7 +17,6 @@ from r2r import (
     VectorSearchSettings,
     generate_id_from_label,
 )
-from r2r.base.abstractions.llm import GenerationConfig
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -88,7 +88,6 @@ def logging_connection():
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_txt_document(app, logging_connection):
-<<<<<<< HEAD
     await app.aingest_documents(
         [
             Document(
@@ -331,21 +330,19 @@ async def test_double_ingest(app, logging_connection):
 
     assert len(search_results["vector_search_results"]) == 1
     with pytest.raises(Exception):
-=======
-    try:
->>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df
-        await app.aingest_documents(
-            [
-                Document(
-                    id=generate_id_from_label("doc_1"),
-                    data="The quick brown fox jumps over the lazy dog.",
-                    type="txt",
-                    metadata={"author": "John Doe"},
-                ),
-            ]
-        )
-    except asyncio.CancelledError:
-        pass
+        try:
+            await app.aingest_documents(
+                [
+                    Document(
+                        id=generate_id_from_label("doc_1"),
+                        data="The quick brown fox jumps over the lazy dog.",
+                        type="txt",
+                        metadata={"author": "John Doe"},
+                    ),
+                ]
+            )
+        except asyncio.CancelledError:
+            pass
 
 
 @pytest.mark.parametrize("app", ["pgvector"], indirect=True)

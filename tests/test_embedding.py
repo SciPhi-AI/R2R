@@ -3,8 +3,7 @@ import asyncio
 import pytest
 
 from r2r import EmbeddingConfig, VectorSearchResult, generate_id_from_label
-
-from .embeddings import (
+from r2r.providers import (
     OpenAIEmbeddingProvider,
     SentenceTransformerEmbeddingProvider,
 )

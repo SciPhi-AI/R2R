@@ -55,10 +55,15 @@ from .parsers import AsyncParser
 from .pipeline.base_pipeline import AsyncPipeline
 from .pipes.base_pipe import AsyncPipe, AsyncState, PipeType
 from .providers.auth import AuthConfig, AuthProvider
-from .providers.database import DatabaseConfig, DatabaseProvider, VectorDatabaseProvider, RelationalDatabaseProvider
+from .providers.database import (
+    DatabaseConfig,
+    DatabaseProvider,
+    RelationalDatabaseProvider,
+    VectorDatabaseProvider,
+)
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
 from .providers.eval import EvalConfig, EvalProvider
-from .providers.kg import KGConfig, KGProvider
+from .providers.kg import KGConfig, KGProvider, update_kg_prompt
 from .providers.llm import LLMConfig, LLMProvider
 from .providers.prompt import PromptConfig, PromptProvider
 from .utils import (

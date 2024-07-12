@@ -1,29 +1,30 @@
-from datetime import datetime
-from uuid import UUID
-from .vecs import create_client
 import json
 import logging
 import os
 import time
+from datetime import datetime
 from typing import Literal, Optional, Union
+from uuid import UUID
 
 from sqlalchemy import exc, text
 from sqlalchemy.engine.url import make_url
 
 from r2r.base import (
-    UserCreate,
-    User,
     DatabaseConfig,
     DatabaseProvider,
     DocumentInfo,
-    UserStats,
-    VectorEntry,
-    VectorDatabaseProvider,
     RelationalDatabaseProvider,
+    User,
+    UserCreate,
+    UserStats,
+    VectorDatabaseProvider,
+    VectorEntry,
     VectorSearchResult,
 )
 from r2r.providers.database.vecs.client import Client
 from r2r.providers.database.vecs.collection import Collection
+
+from .vecs import create_client
 
 logger = logging.getLogger(__name__)
 
@@ -34,13 +35,19 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
         self.collection: Optional[Collection] = None
         self.vx: Client = kwargs.get("vx", None)
         if not self.vx:
-            raise ValueError("Please provide a valid `vx` client to the `PostgresVectorDBProvider`.")
+            raise ValueError(
+                "Please provide a valid `vx` client to the `PostgresVectorDBProvider`."
+            )
         self.collection_name = kwargs.get("collection_name", None)
         if not self.collection_name:
-            raise ValueError("Please provide a valid `collection_name` to the `PostgresVectorDBProvider`.")
+            raise ValueError(
+                "Please provide a valid `collection_name` to the `PostgresVectorDBProvider`."
+            )
         dimension = kwargs.get("dimension", None)
         if not dimension:
-            raise ValueError("Please provide a valid `dimension` to the `PostgresVectorDBProvider`.")
+            raise ValueError(
+                "Please provide a valid `dimension` to the `PostgresVectorDBProvider`."
+            )
         self._initialize_vector_db(dimension)
         try:
             import r2r.vecs
@@ -258,7 +265,7 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             raise RuntimeError(
                 "Failed to create hybrid search function after multiple attempts"
             )
-        
+
     def copy(self, entry: VectorEntry, commit=True) -> None:
         if self.collection is None:
             raise ValueError(
@@ -277,7 +284,9 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             ]
         )
 
-    def copy_entries(self, entries: list[VectorEntry], commit: bool = True) -> None:
+    def copy_entries(
+        self, entries: list[VectorEntry], commit: bool = True
+    ) -> None:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `copy_entries`."
@@ -310,7 +319,9 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             ]
         )
 
-    def upsert_entries(self, entries: list[VectorEntry], commit: bool = True) -> None:
+    def upsert_entries(
+        self, entries: list[VectorEntry], commit: bool = True
+    ) -> None:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `upsert_entries`."
@@ -327,7 +338,14 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             ]
         )
 
-    def search(self, query_vector: list[float], filters: dict[str, Union[bool, int, str]] = {}, limit: int = 10, *args, **kwargs) -> list[VectorSearchResult]:
+    def search(
+        self,
+        query_vector: list[float],
+        filters: dict[str, Union[bool, int, str]] = {},
+        limit: int = 10,
+        *args,
+        **kwargs,
+    ) -> list[VectorSearchResult]:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `search`."
@@ -349,8 +367,18 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             )
         ]
 
-
-    def hybrid_search(self, query_text: str, query_vector: list[float], limit: int = 10, filters: Optional[dict[str, Union[bool, int, str]]] = None, full_text_weight: float = 1.0, semantic_weight: float = 1.0, rrf_k: int = 20, *args, **kwargs) -> list[VectorSearchResult]:
+    def hybrid_search(
+        self,
+        query_text: str,
+        query_vector: list[float],
+        limit: int = 10,
+        filters: Optional[dict[str, Union[bool, int, str]]] = None,
+        full_text_weight: float = 1.0,
+        semantic_weight: float = 1.0,
+        rrf_k: int = 20,
+        *args,
+        **kwargs,
+    ) -> list[VectorSearchResult]:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `hybrid_search`."
@@ -388,11 +416,15 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             for row in result
         ]
 
-
     def create_index(self, index_type, column_name, index_options):
         self.collection.create_index()
 
-    def delete_by_metadata(self, metadata_fields: list[str], metadata_values: list[Union[bool, int, str]], logic: Literal["AND", "OR"] = "AND") -> list[str]:
+    def delete_by_metadata(
+        self,
+        metadata_fields: list[str],
+        metadata_values: list[Union[bool, int, str]],
+        logic: Literal["AND", "OR"] = "AND",
+    ) -> list[str]:
         if logic == "OR":
             raise ValueError(
                 "OR logic is still being tested before official support for `delete_by_metadata` in pgvector."
@@ -420,14 +452,14 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
                     for k, v in zip(metadata_fields, metadata_values)
                 ]
             }
-<<<<<<< HEAD:r2r/providers/database/postgres.py
-
-=======
->>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df:r2r/providers/vector_dbs/pgvector/pgvector_db.py
         return self.collection.delete(filters=filters)
 
-
-    def get_metadatas(self, metadata_fields: list[str], filter_field: Optional[str] = None, filter_value: Optional[Union[bool, int, str]] = None) -> list[dict]:
+    def get_metadatas(
+        self,
+        metadata_fields: list[str],
+        filter_field: Optional[str] = None,
+        filter_value: Optional[Union[bool, int, str]] = None,
+    ) -> list[dict]:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `get_metadatas`."
@@ -449,15 +481,20 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             results[key] for key in results if key != tuple(metadata_fields)
         ]
 
+
 class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def __init__(self, config: DatabaseConfig, *args, **kwargs):
         super().__init__(config)
         self.vx: Client = kwargs.get("vx", None)
         if not self.vx:
-            raise ValueError("Please provide a valid `vx` client to the `PostgresRelationalDBProvider`.")
+            raise ValueError(
+                "Please provide a valid `vx` client to the `PostgresRelationalDBProvider`."
+            )
         self.collection_name = kwargs.get("collection_name", None)
         if not self.collection_name:
-            raise ValueError("Please provide a valid `collection_name` to the `PostgresRelationalDBProvider`.")
+            raise ValueError(
+                "Please provide a valid `collection_name` to the `PostgresRelationalDBProvider`."
+            )
         self._initialize_relational_db()
 
     def _initialize_relational_db(self):
@@ -486,7 +523,6 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 """
                 sess.execute(text(query))
 
-
                 # Create users table
                 query = f"""
                 CREATE TABLE IF NOT EXISTS users_{self.collection_name} (
@@ -504,7 +540,9 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 sess.execute(text(query))
                 sess.commit()
 
-    def upsert_documents_overview(self, documents_overview: list[DocumentInfo]) -> None:
+    def upsert_documents_overview(
+        self, documents_overview: list[DocumentInfo]
+    ) -> None:
         for document_info in documents_overview:
             db_entry = document_info.convert_to_db_entry()
 
@@ -548,7 +586,11 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 sess.execute(text(query), params)
             sess.commit()
 
-    def get_documents_overview(self, filter_document_ids: Optional[list[str]] = None, filter_user_ids: Optional[list[str]] = None):
+    def get_documents_overview(
+        self,
+        filter_document_ids: Optional[list[str]] = None,
+        filter_user_ids: Optional[list[str]] = None,
+    ):
         conditions = []
         params = {}
 
@@ -598,7 +640,6 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 )
                 for row in results
             ]
-
 
     def get_document_chunks(self, document_id: str) -> list[dict]:
         if not self.collection:
@@ -650,23 +691,27 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             if row[0] is not None
         ]
 
-
     def create_user(self, user: UserCreate) -> User:
-        query = text(f"""
+        query = text(
+            f"""
         INSERT INTO users_{self.collection_name} 
         (email, hashed_password) 
         VALUES (:email, :hashed_password) 
         RETURNING id, email, is_active, is_verified, created_at, updated_at
-        """)
-        
+        """
+        )
+
         with self.vx.Session() as sess:
-            result = sess.execute(query, {
-                "email": user.email,
-                "hashed_password": user.password  # Note: This should be hashed before storage
-            })
+            result = sess.execute(
+                query,
+                {
+                    "email": user.email,
+                    "hashed_password": user.password,  # Note: This should be hashed before storage
+                },
+            )
             user_data = result.fetchone()
             sess.commit()
-        
+
         return User(
             id=user_data[0],
             email=user_data[1],
@@ -674,20 +719,22 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             is_verified=user_data[3],
             created_at=user_data[4],
             updated_at=user_data[5],
-            hashed_password=user.password  # Note: This is not stored in the database
+            hashed_password=user.password,  # Note: This is not stored in the database
         )
 
     def get_user_by_email(self, email: str) -> Optional[User]:
-        query = text(f"""
+        query = text(
+            f"""
         SELECT id, email, hashed_password, is_active, is_verified, created_at, updated_at 
         FROM users_{self.collection_name} 
         WHERE email = :email
-        """)
-        
+        """
+        )
+
         with self.vx.Session() as sess:
             result = sess.execute(query, {"email": email})
             user_data = result.fetchone()
-        
+
         if user_data:
             return User(
                 id=user_data[0],
@@ -697,70 +744,87 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 is_active=user_data[3],
                 is_verified=user_data[4],
                 created_at=user_data[5],
-                updated_at=user_data[6]
+                updated_at=user_data[6],
             )
         return None
 
-    def store_verification_code(self, user_id: UUID, verification_code: str, expiry: datetime):
-        query = text(f"""
+    def store_verification_code(
+        self, user_id: UUID, verification_code: str, expiry: datetime
+    ):
+        query = text(
+            f"""
         UPDATE users_{self.collection_name} 
         SET verification_code = :code, verification_code_expiry = :expiry 
         WHERE id = :user_id
-        """)
-        
+        """
+        )
+
         with self.vx.Session() as sess:
-            sess.execute(query, {
-                "code": verification_code,
-                "expiry": expiry,
-                "user_id": user_id
-            })
+            sess.execute(
+                query,
+                {
+                    "code": verification_code,
+                    "expiry": expiry,
+                    "user_id": user_id,
+                },
+            )
             sess.commit()
 
-    def get_user_id_by_verification_code(self, verification_code: str) -> Optional[UUID]:
-        query = text(f"""
+    def get_user_id_by_verification_code(
+        self, verification_code: str
+    ) -> Optional[UUID]:
+        query = text(
+            f"""
         SELECT id FROM users_{self.collection_name} 
         WHERE verification_code = :code AND verification_code_expiry > NOW()
-        """)
-        
+        """
+        )
+
         with self.vx.Session() as sess:
             result = sess.execute(query, {"code": verification_code})
             user_data = result.fetchone()
-        
+
         return user_data[0] if user_data else None
 
     def mark_user_as_verified(self, user_id: UUID):
-        query = text(f"""
+        query = text(
+            f"""
         UPDATE users_{self.collection_name} 
         SET is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL 
         WHERE id = :user_id
-        """)
-        
+        """
+        )
+
         with self.vx.Session() as sess:
             sess.execute(query, {"user_id": user_id})
             sess.commit()
 
     def remove_verification_code(self, verification_code: str):
-        query = text(f"""
+        query = text(
+            f"""
         UPDATE users_{self.collection_name} 
         SET verification_code = NULL, verification_code_expiry = NULL 
         WHERE verification_code = :code
-        """)
-        
+        """
+        )
+
         with self.vx.Session() as sess:
             sess.execute(query, {"code": verification_code})
             sess.commit()
 
     def get_user_by_id(self, user_id: UUID) -> Optional[User]:
-        query = text(f"""
+        query = text(
+            f"""
         SELECT id, email, hashed_password, is_active, is_verified, created_at, updated_at 
         FROM users_{self.collection_name} 
         WHERE id = :user_id
-        """)
-        
+        """
+        )
+
         with self.vx.Session() as sess:
             result = sess.execute(query, {"user_id": user_id})
             user_data = result.fetchone()
-        
+
         if user_data:
             return User(
                 id=user_data[0],
@@ -770,29 +834,34 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 is_active=user_data[3],
                 is_verified=user_data[4],
                 created_at=user_data[5],
-                updated_at=user_data[6]
+                updated_at=user_data[6],
             )
         return None
 
     def update_user(self, user: User) -> User:
-        query = text(f"""
+        query = text(
+            f"""
         UPDATE users_{self.collection_name} 
         SET email = :email, is_active = :is_active, is_verified = :is_verified, 
             updated_at = NOW() 
         WHERE id = :user_id 
         RETURNING id, email, is_active, is_verified, created_at, updated_at
-        """)
-        
+        """
+        )
+
         with self.vx.Session() as sess:
-            result = sess.execute(query, {
-                "email": user.email,
-                "is_active": user.is_active,
-                "is_verified": user.is_verified,
-                "user_id": user.id
-            })
+            result = sess.execute(
+                query,
+                {
+                    "email": user.email,
+                    "is_active": user.is_active,
+                    "is_verified": user.is_verified,
+                    "user_id": user.id,
+                },
+            )
             updated_user_data = result.fetchone()
             sess.commit()
-        
+
         return User(
             id=updated_user_data[0],
             email=updated_user_data[1],
@@ -801,29 +870,33 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             is_active=updated_user_data[2],
             is_verified=updated_user_data[3],
             created_at=updated_user_data[4],
-            updated_at=updated_user_data[5]
+            updated_at=updated_user_data[5],
         )
 
     def delete_user(self, user_id: UUID):
-        query = text(f"""
+        query = text(
+            f"""
         DELETE FROM users_{self.collection_name} 
         WHERE id = :user_id
-        """)
-        
+        """
+        )
+
         with self.vx.Session() as sess:
             sess.execute(query, {"user_id": user_id})
             sess.commit()
 
     def get_all_users(self) -> list[User]:
-        query = text(f"""
+        query = text(
+            f"""
         SELECT id, email, is_active, is_verified, created_at, updated_at 
         FROM users_{self.collection_name}
-        """)
-        
+        """
+        )
+
         with self.vx.Session() as sess:
             result = sess.execute(query)
             users_data = result.fetchall()
-        
+
         return [
             User(
                 id=user_data[0],
@@ -832,14 +905,16 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 is_active=user_data[2],
                 is_verified=user_data[3],
                 created_at=user_data[4],
-                updated_at=user_data[5]
+                updated_at=user_data[5],
             )
             for user_data in users_data
         ]
-    
+
 
 class PostgresDBProvider(DatabaseProvider):
-    def __init__(self, config: DatabaseConfig, dimension: int, *args, **kwargs):
+    def __init__(
+        self, config: DatabaseConfig, dimension: int, *args, **kwargs
+    ):
         user = config.extra_fields.get("user", None) or os.getenv(
             "POSTGRES_USER"
         )
@@ -905,10 +980,15 @@ class PostgresDBProvider(DatabaseProvider):
         self.config: DatabaseConfig = config
         super().__init__(config)
 
-
     def _initialize_vector_db(self) -> VectorDatabaseProvider:
-        return PostgresVectorDBProvider(self.config, vx=self.vx, collection_name=self.collection_name, dimension=self.vector_db_dimension)
+        return PostgresVectorDBProvider(
+            self.config,
+            vx=self.vx,
+            collection_name=self.collection_name,
+            dimension=self.vector_db_dimension,
+        )
 
     def _initialize_relational_db(self) -> RelationalDatabaseProvider:
-        return PostgresRelationalDBProvider(self.config, vx=self.vx, collection_name=self.collection_name)
-
+        return PostgresRelationalDBProvider(
+            self.config, vx=self.vx, collection_name=self.collection_name
+        )

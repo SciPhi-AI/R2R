@@ -1,9 +1,7 @@
 import pytest
 
-from r2r import LLMConfig
-from r2r.base.abstractions.llm import GenerationConfig
-
-from .llms import LiteLLM
+from r2r import GenerationConfig, LLMConfig
+from r2r.providers import LiteLLM
 
 
 @pytest.fixture

@@ -1,6 +1,6 @@
+import os
 import secrets
 import string
-import os
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional
@@ -126,10 +126,10 @@ class R2RAuthProvider(AuthProvider):
             raise HTTPException(status_code=401, detail="Email not verified")
         access_token = self.create_access_token(data={"sub": user.email})
         return {"access_token": access_token, "token_type": "bearer"}
-    
+
     def generate_verification_code(self, length: int = 32) -> str:
         alphabet = string.ascii_letters + string.digits
-        return ''.join(secrets.choice(alphabet) for _ in range(length))
+        return "".join(secrets.choice(alphabet) for _ in range(length))
 
     def register_user(self, user: UserCreate):
         db_user = (
@@ -155,5 +155,3 @@ class R2RAuthProvider(AuthProvider):
         return {
             "message": "User created. Please check your email for verification."
         }
-
-    

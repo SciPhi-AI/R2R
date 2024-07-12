@@ -6,7 +6,11 @@ from typing import Optional
 import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, Security
-from fastapi.security import OAuth2PasswordBearer, HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import (
+    HTTPAuthorizationCredentials,
+    HTTPBearer,
+    OAuth2PasswordBearer,
+)
 from pydantic import BaseModel
 
 # Assume these are imported from your existing modules
@@ -74,6 +78,7 @@ class AuthProvider(Provider, ABC):
     def login(self, email: str, password: str):
         pass
 
-    def auth_wrapper(self, auth: HTTPAuthorizationCredentials = Security(security)):
+    def auth_wrapper(
+        self, auth: HTTPAuthorizationCredentials = Security(security)
+    ):
         return self.decode_token(auth.credentials)
-

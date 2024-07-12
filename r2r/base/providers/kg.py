@@ -155,7 +155,9 @@ def update_kg_prompt(
 ) -> None:
     # TODO - DO NOT HARD CODE THIS!
     if len(entity_types) > 10:
-        raise ValueError("Too many entity types to update prompt, limited to 10")
+        raise ValueError(
+            "Too many entity types to update prompt, limited to 10"
+        )
     if len(relations) > 20:
         raise ValueError("Too many relations to update prompt, limited to 20")
     # Get the default extraction template
