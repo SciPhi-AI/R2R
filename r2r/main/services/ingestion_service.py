@@ -139,6 +139,14 @@ class IngestionService(Service):
                 "title", str(document.id)
             )
 
+        if duplicate_documents:
+            duplicate_details = [
+                f"{doc_id}: {', '.join(titles)}"
+                for doc_id, titles in duplicate_documents.items()
+            ]
+            warning_message = f"Duplicate documents detected: {'; '.join(duplicate_details)}. These duplicates were skipped."
+            raise R2RException(status_code=418, message=warning_message)
+
         if skipped_documents and len(skipped_documents) == len(documents):
             logger.error("All provided documents already exist.")
             raise R2RException(
