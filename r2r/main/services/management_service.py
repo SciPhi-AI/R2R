@@ -3,8 +3,6 @@ import uuid
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import networkx as nx
-
 from r2r.base import (
     AnalysisTypes,
     FilterCriteria,
