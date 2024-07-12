@@ -3622,13 +3622,13 @@ tutorials = ["matplotlib", "pandas", "tabulate", "torch"]
 
 [[package]]
 name = "types-requests"
-version = "2.32.0.20240622"
+version = "2.32.0.20240712"
 description = "Typing stubs for requests"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-requests-2.32.0.20240622.tar.gz", hash = "sha256:ed5e8a412fcc39159d6319385c009d642845f250c63902718f605cd90faade31"},
-    {file = "types_requests-2.32.0.20240622-py3-none-any.whl", hash = "sha256:97bac6b54b5bd4cf91d407e62f0932a74821bc2211f22116d9ee1dd643826caf"},
+    {file = "types-requests-2.32.0.20240712.tar.gz", hash = "sha256:90c079ff05e549f6bf50e02e910210b98b8ff1ebdd18e19c873cd237737c1358"},
+    {file = "types_requests-2.32.0.20240712-py3-none-any.whl", hash = "sha256:f754283e152c752e46e70942fa2a146b5bc70393522257bb85bd1ef7e019dcc3"},
 ]
 
 [package.dependencies]
@@ -3939,12 +3939,4 @@ local-embedding = ["sentence-transformers"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-<<<<<<< HEAD
-<<<<<<< HEAD
 content-hash = "a11aaf6da08f70ddd083f7b3d50a1a57cda078e91b23afe97077774b3483aaac"
-=======
-content-hash = "cbc9f56b0293bc767a0803eb8cd440fa2dff7b0ebde2a6becbe42a554fa5819e"
->>>>>>> d805c30 (Feature/add local kg settings (#654))
-=======
-content-hash = "a11aaf6da08f70ddd083f7b3d50a1a57cda078e91b23afe97077774b3483aaac"
->>>>>>> 83db285 (finish dev tweaks)
