@@ -1,3 +1,4 @@
+import json
 import os
 
 import fire
@@ -5,15 +6,16 @@ import requests
 from bs4 import BeautifulSoup, Comment
 
 from r2r import (
-    Document,
     EntityType,
-    KGSearchSettings,
-    R2RBuilder,
+    R2RClient,
+    R2RPromptProvider,
     Relation,
-    VectorSearchSettings,
-    generate_id_from_label,
+    update_kg_prompt,
 )
-from r2r.base.abstractions.llm import GenerationConfig
+
+
+def escape_braces(text):
+    return text.replace("{", "{{").replace("}", "}}")
 
 
 def get_all_yc_co_directory_urls():
@@ -85,68 +87,24 @@ def execute_query(provider, query, params={}):
         return [record.data() for record in result]
 
 
-def delete_all_entries(provider):
-    delete_query = "MATCH (n) DETACH DELETE n;"
-    with provider.client.session(database=provider._database) as session:
-        session.run(delete_query)
-    print("All entries deleted.")
-
-
-def print_all_relationships(provider):
-    rel_query = """
-    MATCH (n1)-[r]->(n2)
-    RETURN n1.id AS subject, type(r) AS relation, n2.id AS object;
-    """
-    with provider.client.session(database=provider._database) as session:
-        results = session.run(rel_query)
-        for record in results:
-            print(
-                f"{record['subject']} -[{record['relation']}]-> {record['object']}"
-            )
-
-
-def main(max_entries=50, delete=False):
-    # Load the R2R configuration and build the app
-    app = R2RBuilder(from_config="neo4j_kg").build()
+def main(
+    max_entries=50,
+    local_mode=True,
+    base_url="http://localhost:8000",
+):
 
     # Specify the entity types for the KG extraction prompt
     entity_types = [
-        EntityType(
-            "ORGANIZATION",
-            subcategories=["COMPANY", "SCHOOL", "NON-PROFIT", "OTHER"],
-        ),
-        EntityType(
-            "LOCATION", subcategories=["CITY", "STATE", "COUNTRY", "OTHER"]
-        ),
+        EntityType("COMPANY"),
+        EntityType("SCHOOL"),
+        EntityType("LOCATION"),
         EntityType("PERSON"),
-        EntityType("POSITION"),
-        EntityType(
-            "DATE",
-            subcategories=[
-                "YEAR",
-                "MONTH",
-                "DAY",
-                "BATCH (E.G. W24, S20)",
-                "OTHER",
-            ],
-        ),
+        EntityType("DATE"),
+        EntityType("OTHER"),
         EntityType("QUANTITY"),
-        EntityType(
-            "EVENT",
-            subcategories=[
-                "INCORPORATION",
-                "FUNDING_ROUND",
-                "ACQUISITION",
-                "LAUNCH",
-                "OTHER",
-            ],
-        ),
+        EntityType("EVENT"),
         EntityType("INDUSTRY"),
-        EntityType(
-            "MEDIA",
-            subcategories=["EMAIL", "WEBSITE", "TWITTER", "LINKEDIN", "OTHER"],
-        ),
-        EntityType("PRODUCT"),
+        EntityType("MEDIA"),
     ]
 
     # Specify the relations for the KG construction
@@ -166,28 +124,24 @@ def main(max_entries=50, delete=False):
         # Product relations
         Relation("PRODUCT"),
         Relation("FEATURES"),
-        Relation("USES"),
-        Relation("USED_BY"),
         Relation("TECHNOLOGY"),
         # Additional relations
         Relation("HAS"),
         Relation("AS_OF"),
         Relation("PARTICIPATED"),
         Relation("ASSOCIATED"),
-        Relation("GROUP_PARTNER"),
-        Relation("ALIAS"),
     ]
 
-    # Get the prompt provider and KG provider
-    prompt_provider = app.providers.prompt
-    kg = app.providers.kg
+    client = R2RClient(base_url=base_url)
+    r2r_prompts = R2RPromptProvider()
 
-    # Update the KG extraction prompt with the specified entity types and relations
-    kg.update_extraction_prompt(prompt_provider, entity_types, relations)
+    prompt_base = (
+        "zero_shot_ner_kg_extraction"
+        if local_mode
+        else "few_shot_ner_kg_extraction"
+    )
 
-    # Optional - clear the graph if the delete flag is set
-    if delete:
-        delete_all_entries(kg)
+    update_kg_prompt(client, r2r_prompts, prompt_base, entity_types, relations)
 
     url_map = get_all_yc_co_directory_urls()
 
@@ -197,44 +151,43 @@ def main(max_entries=50, delete=False):
         company_data = fetch_and_clean_yc_co_data(url)
         if i >= max_entries:
             break
-        try:
-            # Ingest as a text document
-            app.ingest_documents(
-                [
-                    Document(
-                        id=generate_id_from_label(company),
-                        type="txt",
-                        data=company_data,
-                        metadata={"title": company},
-                    )
-                ]
-            )
-        except:
-            continue
         i += 1
 
-    print_all_relationships(kg)
+        try:
+            # Ingest as a text document
+            file_name = f"{company}.txt"
+            with open(file_name, "w") as f:
+                f.write(company_data)
 
-    # the default prompt is `kg_agent` in `prompts/local/defaults.jsonl`
-    # `update_kg_agent_prompt` updates this with `kg_agent_with_spec`,
-    # after updating the prompt with the specified entity types and relations
-    kg.update_kg_agent_prompt(prompt_provider, entity_types, relations)
+            client.ingest_files(
+                [file_name],
+                metadatas=[{"title": company}],
+            )
+            os.remove(file_name)
+        except:
+            continue
 
-    result = app.search(
-        query="Find up to 10 founders that worked at Google",
-        kg_search_settings=KGSearchSettings(use_kg_search=True),
-        vector_search_settings=VectorSearchSettings(use_vector_search=False),
-    )
+    print(client.inspect_knowledge_graph(1_000)["results"])
 
-    print("Search Result:\n", result["kg_search_results"])
+    if not local_mode:
 
-    result = app.rag(
-        query="Find up to 10 founders that worked at Google",
-        kg_search_settings=KGSearchSettings(use_kg_search=True),
-        vector_search_settings=VectorSearchSettings(use_vector_search=False),
-        rag_generation_config=GenerationConfig(model="gpt-4o"),
-    )
-    print("RAG Result:\n", result)
+        update_kg_prompt(
+            client, r2r_prompts, "kg_agent", entity_types, relations
+        )
+
+        result = client.search(
+            query="Find up to 10 founders that worked at Google",
+            use_kg_search=True,
+        )["results"]
+
+        print("result:\n", result)
+        print("Search Result:\n", result["kg_search_results"])
+
+        result = client.rag(
+            query="Find up to 10 founders that worked at Google",
+            use_kg_search=True,
+        )
+        print("RAG Result:\n", result)
 
 
 if __name__ == "__main__":

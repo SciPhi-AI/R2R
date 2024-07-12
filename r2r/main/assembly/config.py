@@ -33,6 +33,7 @@ class R2RConfig:
         "kg": [
             "provider",
             "batch_size",
+            "kg_extraction_config",
             "text_splitter",
         ],
         "ingestion": ["excluded_parsers"],

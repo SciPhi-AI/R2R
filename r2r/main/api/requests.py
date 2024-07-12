@@ -5,10 +5,7 @@ from pydantic import BaseModel
 
 from r2r.base import (
     AnalysisTypes,
-    FilterCriteria,
-    GenerationConfig,
-    KGSearchSettings,
-    VectorSearchSettings,
+    FilterCriteria
 )
 
 
@@ -31,15 +28,15 @@ class R2RUpdateFilesRequest(BaseModel):
 
 class R2RSearchRequest(BaseModel):
     query: str
-    vector_search_settings: Optional[VectorSearchSettings] = None
-    kg_search_settings: Optional[KGSearchSettings] = None
+    vector_search_settings: Optional[dict] = None
+    kg_search_settings: Optional[dict] = None
 
 
 class R2RRAGRequest(BaseModel):
     query: str
-    vector_search_settings: Optional[VectorSearchSettings] = None
-    kg_search_settings: Optional[KGSearchSettings] = None
-    rag_generation_config: Optional[GenerationConfig] = None
+    vector_search_settings: Optional[dict] = None
+    kg_search_settings: Optional[dict] = None
+    rag_generation_config: Optional[dict] = None
 
 
 class R2REvalRequest(BaseModel):
@@ -74,3 +71,12 @@ class R2RDocumentChunksRequest(BaseModel):
 class R2RLogsRequest(BaseModel):
     log_type_filter: Optional[str] = (None,)
     max_runs_requested: int = 100
+
+
+class R2RPrintRelationshipsRequest(BaseModel):
+    limit: int = 100
+
+
+class R2RExtractionRequest(BaseModel):
+    entity_types: list[str]
+    relations: list[str]

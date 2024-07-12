@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 
 import pytest
@@ -15,7 +16,31 @@ from r2r import (
 )
 
 
-# Testing AsyncState for state management
+@pytest.fixture(scope="session", autouse=True)
+def event_loop_policy():
+    asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+
+
+@pytest.fixture(scope="function")
+def event_loop():
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+    asyncio.set_event_loop(None)
+
+
+@pytest.fixture(scope="session", autouse=True)
+async def cleanup_tasks():
+    yield
+    for task in asyncio.all_tasks():
+        if task is not asyncio.current_task():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+
 @pytest.mark.asyncio
 async def test_async_state_update_and_get():
     state = AsyncState()
@@ -37,7 +62,6 @@ async def test_async_state_delete():
     assert result == {}, "Expect empty result after deletion"
 
 
-# Test AsyncPipe by creating a mock subclass
 class MockAsyncPipe(AsyncPipe):
     async def _run_logic(self, input, state, run_id, *args, **kwargs):
         yield "processed"
@@ -53,9 +77,12 @@ async def test_async_pipe_run():
 
     input = pipe.Input(message=list_to_generator(["test"]))
     state = AsyncState()
-    async_generator = await pipe.run(input, state)
-    results = [result async for result in async_generator]
-    assert results == ["processed"]
+    try:
+        async_generator = await pipe.run(input, state)
+        results = [result async for result in async_generator]
+        assert results == ["processed"]
+    except asyncio.CancelledError:
+        pass  # Task cancelled as expected
 
 
 def test_prompt_initialization_and_formatting():

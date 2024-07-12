@@ -69,7 +69,7 @@ class KGAgentSearchPipe(GeneratorPipe):
             )
             messages = self._get_message_payload(formatted_prompt)
 
-            result = self.llm_provider.get_completion(
+            result = await self.llm_provider.aget_completion(
                 messages=messages,
                 generation_config=kg_search_settings.agent_generation_config,
             )

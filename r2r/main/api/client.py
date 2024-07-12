@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import json
+import os
 import threading
 import time
 import uuid
@@ -12,8 +13,6 @@ import httpx
 import nest_asyncio
 import requests
 
-from r2r.base import GenerationConfig, KGSearchSettings, VectorSearchSettings
-
 from .requests import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
@@ -21,6 +20,7 @@ from .requests import (
     R2RDocumentsOverviewRequest,
     R2RIngestFilesRequest,
     R2RLogsRequest,
+    R2RPrintRelationshipsRequest,
     R2RRAGRequest,
     R2RSearchRequest,
     R2RUpdateFilesRequest,
@@ -137,9 +137,27 @@ class R2RClient:
         document_ids: Optional[list[Union[uuid.UUID, str]]] = None,
         versions: Optional[list[str]] = None,
     ) -> dict:
+        all_file_paths = []
+
+        for path in file_paths:
+            if os.path.isdir(path):
+                for root, _, files in os.walk(path):
+                    all_file_paths.extend(
+                        os.path.join(root, file) for file in files
+                    )
+            else:
+                all_file_paths.append(path)
+
         files_to_upload = [
-            ("files", (file, open(file, "rb"), "application/octet-stream"))
-            for file in file_paths
+            (
+                "files",
+                (
+                    os.path.basename(file),
+                    open(file, "rb"),
+                    "application/octet-stream",
+                ),
+            )
+            for file in all_file_paths
         ]
         request = R2RIngestFilesRequest(
             metadatas=metadatas,
@@ -202,20 +220,20 @@ class R2RClient:
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
-        kg_agent_generation_config: Optional[GenerationConfig] = None,
+        kg_agent_generation_config: Optional[dict] = None,
     ) -> dict:
         request = R2RSearchRequest(
             query=query,
-            vector_search_settings=VectorSearchSettings(
-                use_vector_search=use_vector_search,
-                search_filters=search_filters or {},
-                search_limit=search_limit,
-                do_hybrid_search=do_hybrid_search,
-            ),
-            kg_search_settings=KGSearchSettings(
-                use_kg_search=use_kg_search,
-                agent_generation_config=kg_agent_generation_config,
-            ),
+            vector_search_settings={
+                "use_vector_search": use_vector_search,
+                "search_filters": search_filters or {},
+                "search_limit": search_limit,
+                "do_hybrid_search": do_hybrid_search,
+            },
+            kg_search_settings={
+                "use_kg_search": use_kg_search,
+                "agent_generation_config": kg_agent_generation_config,
+            },
         )
         return self._make_request(
             "POST", "search", json=json.loads(request.json())
@@ -229,25 +247,27 @@ class R2RClient:
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
-        kg_agent_generation_config: Optional[GenerationConfig] = None,
-        rag_generation_config: Optional[GenerationConfig] = None,
+        kg_agent_generation_config: Optional[dict] = None,
+        rag_generation_config: Optional[dict] = None,
     ) -> dict:
         request = R2RRAGRequest(
             query=query,
-            vector_search_settings=VectorSearchSettings(
-                use_vector_search=use_vector_search,
-                search_filters=search_filters or {},
-                search_limit=search_limit,
-                do_hybrid_search=do_hybrid_search,
-            ),
-            kg_search_settings=KGSearchSettings(
-                use_kg_search=use_kg_search,
-                agent_generation_config=kg_agent_generation_config,
-            ),
+            vector_search_settings={
+                "use_vector_search": use_vector_search,
+                "search_filters": search_filters or {},
+                "search_limit": search_limit,
+                "do_hybrid_search": do_hybrid_search,
+            },
+            kg_search_settings={
+                "use_kg_search": use_kg_search,
+                "agent_generation_config": kg_agent_generation_config,
+            },
             rag_generation_config=rag_generation_config,
         )
 
-        if rag_generation_config.stream:
+        if rag_generation_config and rag_generation_config.get(
+            "stream", False
+        ):
             return self._stream_rag_sync(request)
         else:
             return self._make_request(
@@ -343,6 +363,12 @@ class R2RClient:
         request = R2RDocumentChunksRequest(document_id=document_id)
         return self._make_request(
             "GET", "document_chunks", json=json.loads(request.json())
+        )
+
+    def inspect_knowledge_graph(self, limit: int = 100) -> str:
+        request = R2RPrintRelationshipsRequest(limit=limit)
+        return self._make_request(
+            "POST", "inspect_knowledge_graph", json=json.loads(request.json())
         )
 
 

@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 class PostgresVectorDBProvider(VectorDatabaseProvider):
     def __init__(self, config: DatabaseConfig, *args, **kwargs):
         super().__init__(config)
+<<<<<<< HEAD:r2r/providers/database/postgres.py
         self.collection: Optional[Collection] = None
         self.vx: Client = kwargs.get("vx", None)
         if not self.vx:
@@ -42,12 +43,155 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
         if not dimension:
             raise ValueError("Please provide a valid `dimension` to the `PostgresVectorDBProvider`.")
         self._initialize_vector_db(dimension)
+=======
+        try:
+            import r2r.vecs
+        except ImportError:
+            raise ValueError(
+                f"Error, PGVectorDB requires the vecs library. Please run `pip install vecs`."
+            )
+
+        # Check if a complete Postgres URI is provided
+        postgres_uri = self.config.extra_fields.get(
+            "postgres_uri"
+        ) or os.getenv("POSTGRES_URI")
+
+        if postgres_uri:
+            # Log loudly that Postgres URI is being used
+            logger.warning("=" * 50)
+            logger.warning(
+                "ATTENTION: Using provided Postgres URI for connection"
+            )
+            logger.warning("=" * 50)
+
+            # Validate and use the provided URI
+            try:
+                parsed_uri = make_url(postgres_uri)
+                if not all([parsed_uri.username, parsed_uri.database]):
+                    raise ValueError(
+                        "The provided Postgres URI is missing required components."
+                    )
+                DB_CONNECTION = postgres_uri
+
+                # Log the sanitized URI (without password)
+                sanitized_uri = parsed_uri.set(password="*****")
+                logger.info(f"Connecting using URI: {sanitized_uri}")
+            except Exception as e:
+                raise ValueError(f"Invalid Postgres URI provided: {e}")
+        else:
+            # Fall back to existing logic for individual connection parameters
+            user = self.config.extra_fields.get("user", None) or os.getenv(
+                "POSTGRES_USER"
+            )
+            password = self.config.extra_fields.get(
+                "password", None
+            ) or os.getenv("POSTGRES_PASSWORD")
+            host = self.config.extra_fields.get("host", None) or os.getenv(
+                "POSTGRES_HOST"
+            )
+            port = self.config.extra_fields.get("port", None) or os.getenv(
+                "POSTGRES_PORT"
+            )
+            db_name = self.config.extra_fields.get(
+                "db_name", None
+            ) or os.getenv("POSTGRES_DBNAME")
+
+            if not all([user, password, host, db_name]):
+                raise ValueError(
+                    "Error, please set the POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_DBNAME environment variables or provide them in the config."
+                )
+
+            # Check if it's a Unix socket connection
+            if host.startswith("/") and not port:
+                DB_CONNECTION = (
+                    f"postgresql://{user}:{password}@/{db_name}?host={host}"
+                )
+                logger.info("Using Unix socket connection")
+            else:
+                DB_CONNECTION = (
+                    f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
+                )
+                logger.info("Using TCP connection")
+
+        # The rest of the initialization remains the same
+        try:
+            self.vx: Client = r2r.vecs.create_client(DB_CONNECTION)
+        except Exception as e:
+            raise ValueError(
+                f"Error {e} occurred while attempting to connect to the pgvector provider with {DB_CONNECTION}."
+            )
+
+        self.collection_name = self.config.extra_fields.get(
+            "vecs_collection"
+        ) or os.getenv("POSTGRES_VECS_COLLECTION")
+        if not self.collection_name:
+            raise ValueError(
+                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'vecs_collection' in the 'vector_database' settings of your `config.json`."
+            )
+
+        self.collection: Optional[Collection] = None
+
+        logger.info(
+            f"Successfully initialized PGVectorDB with collection: {self.collection_name}"
+        )
+>>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df:r2r/providers/vector_dbs/pgvector/pgvector_db.py
 
     def _initialize_vector_db(self, dimension: int) -> None:
         self.collection = self.vx.get_or_create_collection(
             name=self.collection_name, dimension=dimension
         )
 
+<<<<<<< HEAD:r2r/providers/database/postgres.py
+=======
+    def _create_document_info_table(self):
+        with self.vx.Session() as sess:
+            with sess.begin():
+                try:
+                    # Enable uuid-ossp extension
+                    sess.execute(
+                        text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
+                    )
+                except exc.ProgrammingError as e:
+                    logger.error(f"Error enabling uuid-ossp extension: {e}")
+                    raise
+
+                # Create the table if it doesn't exist
+                create_table_query = f"""
+                CREATE TABLE IF NOT EXISTS document_info_{self.collection_name} (
+                    document_id UUID PRIMARY KEY,
+                    title TEXT,
+                    user_id UUID NULL,
+                    version TEXT,
+                    size_in_bytes INT,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW(),
+                    metadata JSONB,
+                    status TEXT
+                );
+                """
+                sess.execute(text(create_table_query))
+
+                # Add the new column if it doesn't exist
+                add_column_query = f"""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1
+                        FROM information_schema.columns
+                        WHERE table_name = 'document_info_{self.collection_name}'
+                        AND column_name = 'status'
+                    ) THEN
+                        ALTER TABLE document_info_{self.collection_name}
+                        ADD COLUMN status TEXT DEFAULT 'processing';
+                    END IF;
+                END $$;
+                """
+                sess.execute(text(add_column_query))
+
+                sess.commit()
+
+    def _create_hybrid_search_function(self):
+>>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df:r2r/providers/vector_dbs/pgvector/pgvector_db.py
         hybrid_search_function = f"""
         CREATE OR REPLACE FUNCTION hybrid_search_{self.collection_name}(
             query_text TEXT,
@@ -282,7 +426,10 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
                     for k, v in zip(metadata_fields, metadata_values)
                 ]
             }
+<<<<<<< HEAD:r2r/providers/database/postgres.py
 
+=======
+>>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df:r2r/providers/vector_dbs/pgvector/pgvector_db.py
         return self.collection.delete(filters=filters)
 
 
@@ -389,23 +536,22 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 sess.execute(query, db_entry)
                 sess.commit()
 
-    def delete_documents_overview(self, document_ids: list[str]) -> None:
-        placeholders = ", ".join(
-            f":doc_id_{i}" for i in range(len(document_ids))
-        )
-        query = text(
-            f"""
-            DELETE FROM document_info_{self.collection_name} WHERE document_id IN ({placeholders});
-            """
-        )
-        params = {
-            f"doc_id_{i}": document_id
-            for i, document_id in enumerate(document_ids)
-        }
+    def delete_from_documents_overview(
+        self, document_id: str, version: Optional[str] = None
+    ) -> None:
+        query = f"""
+            DELETE FROM document_info_{self.collection_name}
+            WHERE document_id = :document_id
+        """
+        params = {"document_id": document_id}
+
+        if version is not None:
+            query += " AND version = :version"
+            params["version"] = version
 
         with self.vx.Session() as sess:
             with sess.begin():
-                sess.execute(query, params)
+                sess.execute(text(query), params)
             sess.commit()
 
     def get_documents_overview(self, filter_document_ids: Optional[list[str]] = None, filter_user_ids: Optional[list[str]] = None):

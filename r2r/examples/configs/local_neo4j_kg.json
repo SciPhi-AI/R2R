@@ -1,0 +1,69 @@
+{
+    "kg": {
+        "provider": "neo4j",
+        "batch_size": 1,
+        "text_splitter": {
+            "type": "recursive_character",
+            "chunk_size": 512,
+            "chunk_overlap": 0
+        },
+        "max_entities": 10,
+        "max_relations": 20,
+        "kg_extraction_prompt": "zero_shot_ner_kg_extraction", 
+        "kg_extraction_config": {
+            "model": "ollama/sciphi/triplex",
+            "temperature": 1.0,
+            "top_p": 1.0,
+            "top_k": 100,
+            "max_tokens_to_sample": 1024,
+            "stream": false,
+            "functions": null,
+            "skip_special_tokens": false,
+            "stop_token": null,
+            "num_beams": 1,
+            "do_sample": true,
+            "generate_with_chat": false,
+            "add_generation_kwargs": {},
+            "api_base": null
+        }
+    },
+    "completions": {
+        "provider": "litellm",
+        "generation_config": {
+          "model": "ollama/llama3",
+          "temperature": 0.1,
+          "top_p": 1.0,
+          "top_k": 100,
+          "max_tokens_to_sample": 1024,
+          "stream": false,
+          "functions": null,
+          "skip_special_tokens": false,
+          "stop_token": null,
+          "num_beams": 1,
+          "do_sample": true,
+          "generate_with_chat": false,
+          "add_generation_kwargs": {},
+          "api_base": null
+        }
+      },  
+      "embedding": {
+        "provider": "ollama",
+        "base_model": "mxbai-embed-large",
+        "base_dimension": 1024,
+        "batch_size": 32
+      },
+      "ingestion":{
+        "excluded_parsers": [
+          "gif",
+          "jpeg",
+          "jpg",
+          "png",
+          "svg",
+          "mp3",
+          "mp4"
+        ]
+      },
+      "vector_database": {
+        "provider": "pgvector"
+      }    
+}

@@ -100,6 +100,10 @@ __all__ = [
     "VectorSearchRequest",
     "VectorSearchResult",
     "VectorSearchSettings",
+    "Token",
+    "TokenData",
+    "User",
+    "UserCreate",
     "KGSearchRequest",
     "KGSearchResult",
     "KGSearchSettings",
@@ -149,6 +153,7 @@ __all__ = [
     "RelationalDatabaseProvider",
     "KGProvider",
     "KGConfig",
+    "update_kg_prompt",
     # Other
     "FilterCriteria",
     "TextSplitter",

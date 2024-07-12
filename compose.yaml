@@ -1,6 +1,19 @@
+x-depends-on:
+  neo4j: &neo4j-dependency
+    condition: service_healthy
+
 networks:
   r2r-network:
+    name: r2r-network
     driver: bridge
+    attachable: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+    labels:
+      - "com.docker.compose.recreate=always"
+      
 
 services:
   r2r:
@@ -14,10 +27,16 @@ services:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
-      - POSTGRES_VECS_COLLECTION=${POSTGRES_VECS_COLLECTION:-vecs}
+      - POSTGRES_VECS_COLLECTION=${POSTGRES_VECS_COLLECTION:-${CONFIG_NAME:-vecs}}
+      - NEO4J_USER=${NEO4J_USER:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-ineedastrongerpassword}
+      - NEO4J_URL=${NEO4J_URL:-bolt://neo4j:7687}
+      - NEO4J_DATABASE=${NEO4J_DATABASE:-neo4j}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - OLLAMA_API_BASE=${OLLAMA_API_BASE:-}
-      - CONFIG_OPTION=${CONFIG_OPTION:-}
+      - OLLAMA_API_BASE=${OLLAMA_API_BASE:-http://host.docker.internal:11434}
+      - CONFIG_NAME=${CONFIG_NAME:-}
+      - CONFIG_PATH=${CONFIG_PATH:-}
+      - CLIENT_MODE=${CLIENT_MODE:-false}
     depends_on:
       - postgres
     networks:
@@ -27,6 +46,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: on-failure
+    volumes:
+      - ${CONFIG_PATH:-/}:${CONFIG_PATH:-/app/config}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.r2r.rule=PathPrefix(`/api`)"
@@ -62,6 +84,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - r2r-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
 
   traefik:
     image: traefik:v2.9

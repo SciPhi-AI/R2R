@@ -5,8 +5,6 @@ import logging
 import uuid
 from typing import Any, AsyncGenerator, Optional
 
-from aiohttp import ClientError
-
 from r2r.base import (
     AsyncState,
     Extraction,
@@ -23,10 +21,15 @@ from r2r.base import (
     extract_triples,
     generate_id_from_label,
 )
-from r2r.base.abstractions.llm import GenerationConfig
 from r2r.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
+
+
+class ClientError(Exception):
+    """Base class for client connection errors."""
+
+    pass
 
 
 class KGExtractionPipe(AsyncPipe):
@@ -57,6 +60,7 @@ class KGExtractionPipe(AsyncPipe):
             config=config
             or AsyncPipe.PipeConfig(name="default_embedding_pipe"),
         )
+
         self.kg_provider = kg_provider
         self.prompt_provider = prompt_provider
         self.llm_provider = llm_provider
@@ -109,7 +113,6 @@ class KGExtractionPipe(AsyncPipe):
     async def extract_kg(
         self,
         fragment: Fragment,
-        kg_generation_config: GenerationConfig,
         retries: int = 3,
         delay: int = 2,
     ) -> KGExtraction:
@@ -126,22 +129,25 @@ class KGExtractionPipe(AsyncPipe):
         for attempt in range(retries):
             try:
                 response = await self.llm_provider.aget_completion(
-                    messages, kg_generation_config
+                    messages, self.kg_provider.config.kg_extraction_config
                 )
 
                 kg_extraction = response.choices[0].message.content
 
                 # Parsing JSON from the response
-                kg_json = json.loads(
-                    kg_extraction.split("```json")[1].split("```")[0]
+                kg_json = (
+                    json.loads(
+                        kg_extraction.split("```json")[1].split("```")[0]
+                    )
+                    if """```json""" in kg_extraction
+                    else json.loads(kg_extraction)
                 )
-
-                llm_payload = kg_json.get("entities_and_triplets", {})
+                llm_payload = kg_json.get("entities_and_triples", {})
 
                 # Extract triples with detailed logging
                 entities = extract_entities(llm_payload)
-
                 triples = extract_triples(llm_payload, entities)
+
                 # Create KG extraction object
                 return KGExtraction(entities=entities, triples=triples)
             except (
@@ -157,20 +163,17 @@ class KGExtractionPipe(AsyncPipe):
                     logger.error(f"Failed after retries with {e}")
                     # raise e  # Ensure the exception is raised after the final attempt
 
-        return KGExtraction(entities=[], triples=[])
+        return KGExtraction(entities={}, triples=[])
 
     async def _process_batch(
         self,
         fragment_batch: list[Fragment],
-        kg_generation_config: GenerationConfig,
     ) -> list[KGExtraction]:
         """
         Embeds a batch of fragments and yields vector entries.
         """
         tasks = [
-            asyncio.create_task(
-                self.extract_kg(fragment, kg_generation_config)
-            )
+            asyncio.create_task(self.extract_kg(fragment))
             for fragment in fragment_batch
         ]
         return await asyncio.gather(*tasks)
@@ -180,9 +183,6 @@ class KGExtractionPipe(AsyncPipe):
         input: AsyncPipe.Input,
         state: AsyncState,
         run_id: uuid.UUID,
-        kg_generation_config: GenerationConfig = GenerationConfig(
-            model="gpt-4o", temperature=0.0
-        ),
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[KGExtraction, None]:
@@ -208,9 +208,7 @@ class KGExtractionPipe(AsyncPipe):
                 if len(fragment_batch) >= self.kg_batch_size:
                     # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
                     batch_tasks.append(
-                        self._process_batch(
-                            fragment_batch.copy(), kg_generation_config
-                        )
+                        self._process_batch(fragment_batch.copy())
                     )  # pass a copy if necessary
                     fragment_batch.clear()  # Clear the batch for new fragments
 

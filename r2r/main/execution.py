@@ -8,10 +8,10 @@ from typing import Optional
 from fastapi import UploadFile
 
 from r2r.base import (
+    VectorSearchSettings,
+    KGSearchSettings,
     AnalysisTypes,
     FilterCriteria,
-    KGSearchSettings,
-    VectorSearchSettings,
     generate_id_from_label,
 )
 from r2r.base.abstractions.llm import GenerationConfig
@@ -29,16 +29,19 @@ class R2RExecutionWrapper:
         self,
         config_path: Optional[str] = None,
         config_name: Optional[str] = "default",
-        client_server_mode: bool = True,
+        client_mode: bool = True,
         base_url="http://localhost:8000",
     ):
         if config_path and config_name:
             raise Exception("Cannot specify both config_path and config_name")
-        # handle fire CLI
-        if isinstance(client_server_mode, str):
-            client_server_mode = client_server_mode == "True"
-        self.client_server_mode = client_server_mode
-        if self.client_server_mode:
+
+        # Handle fire CLI
+        if isinstance(client_mode, str):
+            client_mode = client_mode.lower() == "true"
+        self.client_mode = client_mode
+        self.base_url = base_url
+
+        if self.client_mode:
             self.client = R2RClient(base_url)
             self.app = None
         else:
@@ -49,15 +52,16 @@ class R2RExecutionWrapper:
                     R2RBuilder.CONFIG_OPTIONS[config_name or "default"]
                 )
             )
-            self.app = R2R(config=config)
+
             self.client = None
+            self.app = R2R(config=config)
 
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
-        if not self.client_server_mode:
+        if not self.client_mode:
             self.app.serve(host, port)
         else:
-            raise Exception(
-                "Serve method is only available when `client_server_mode=False`."
+            raise ValueError(
+                "Serve method is only available when `client_mode=False`."
             )
 
     def _parse_metadata_string(metadata_string: str) -> list[dict]:
@@ -83,7 +87,7 @@ class R2RExecutionWrapper:
         try:
             # First, try to parse as JSON
             return json.loads(metadata_string)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
             try:
                 # If JSON parsing fails, try to evaluate as a Python literal
                 result = ast.literal_eval(metadata_string)
@@ -92,19 +96,19 @@ class R2RExecutionWrapper:
                 ):
                     raise ValueError(
                         "The string does not represent a list of dictionaries"
-                    )
+                    ) from e
                 return result
-            except (ValueError, SyntaxError):
+            except (ValueError, SyntaxError) as exc:
                 raise ValueError(
                     "Unable to parse the metadata string. "
                     "Please ensure it's a valid JSON array or Python list of dictionaries."
-                )
+                ) from exc
 
     def ingest_files(
         self,
         file_paths: list[str],
         metadatas: Optional[list[dict]] = None,
-        document_ids: Optional[list[str]] = None,
+        document_ids: Optional[list[Union[uuid.UUID, str]]] = None,
         versions: Optional[list[str]] = None,
     ):
         if isinstance(file_paths, str):
@@ -116,21 +120,28 @@ class R2RExecutionWrapper:
         if isinstance(versions, str):
             versions = list(versions.split(","))
 
-        document_ids = (
-            [
-                generate_id_from_label(file_path.split(os.path.sep)[-1])
-                for file_path in file_paths
+        all_file_paths = []
+        for path in file_paths:
+            if os.path.isdir(path):
+                for root, _, files in os.walk(path):
+                    all_file_paths.extend(
+                        os.path.join(root, file) for file in files
+                    )
+            else:
+                all_file_paths.append(path)
+
+        if not document_ids:
+            document_ids = [
+                generate_id_from_label(os.path.basename(file_path))
+                for file_path in all_file_paths
             ]
-            if not document_ids
-            else document_ids
-        )
 
         files = [
             UploadFile(
-                filename=file_path,
+                filename=os.path.basename(file_path),
                 file=open(file_path, "rb"),
             )
-            for file_path in file_paths
+            for file_path in all_file_paths
         ]
 
         for file in files:
@@ -138,21 +149,25 @@ class R2RExecutionWrapper:
             file.size = file.file.tell()
             file.file.seek(0)
 
-        if self.client_server_mode:
-            return self.client.ingest_files(
-                file_paths=file_paths,
-                document_ids=document_ids,
-                metadatas=metadatas,
-                versions=versions,
-                monitor=True,
-            )["results"]
-        else:
-            return self.app.ingest_files(
-                files=files,
-                document_ids=document_ids,
-                metadatas=metadatas,
-                versions=versions,
-            )
+        try:
+            if self.client_mode:
+                return self.client.ingest_files(
+                    file_paths=all_file_paths,
+                    document_ids=document_ids,
+                    metadatas=metadatas,
+                    versions=versions,
+                    monitor=True,
+                )["results"]
+            else:
+                return self.app.ingest_files(
+                    files=files,
+                    document_ids=document_ids,
+                    metadatas=metadatas,
+                    versions=versions,
+                )
+        finally:
+            for file in files:
+                file.file.close()
 
     def update_files(
         self,
@@ -167,7 +182,7 @@ class R2RExecutionWrapper:
         if isinstance(document_ids, str):
             document_ids = list(document_ids.split(","))
 
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.update_files(
                 file_paths=file_paths,
                 document_ids=document_ids,
@@ -196,13 +211,7 @@ class R2RExecutionWrapper:
         use_kg_search: bool = False,
         kg_agent_generation_config: Optional[dict] = None,
     ):
-        kg_agent_generation_config = (
-            GenerationConfig(**kg_agent_generation_config)
-            if kg_agent_generation_config
-            else GenerationConfig()
-        )
-
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.search(
                 query,
                 use_vector_search,
@@ -223,7 +232,9 @@ class R2RExecutionWrapper:
                 ),
                 KGSearchSettings(
                     use_kg_search=use_kg_search,
-                    agent_generation_config=kg_agent_generation_config,
+                    agent_generation_config=GenerationConfig(
+                        **(kg_agent_generation_config or {})
+                    ),
                 ),
             )
 
@@ -239,24 +250,7 @@ class R2RExecutionWrapper:
         stream: bool = False,
         rag_generation_config: Optional[dict] = None,
     ):
-        kg_agent_generation_config = (
-            GenerationConfig(**kg_agent_generation_config)
-            if kg_agent_generation_config
-            else GenerationConfig(model="gpt-4o")
-        )
-
-        # Create a copy of rag_generation_config to avoid modifying the original
-        rag_config = (
-            rag_generation_config.copy() if rag_generation_config else {}
-        )
-
-        # Override the 'stream' setting in rag_config with the function parameter
-        rag_config["stream"] = stream
-        rag_config["model"] = rag_config.get("model", "gpt-4o")
-
-        rag_generation_config = GenerationConfig(**rag_config)
-
-        if self.client_server_mode:
+        if self.client_mode:
             response = self.client.rag(
                 query=query,
                 use_vector_search=use_vector_search,
@@ -283,12 +277,16 @@ class R2RExecutionWrapper:
                 ),
                 kg_search_settings=KGSearchSettings(
                     use_kg_search=use_kg_search,
-                    agent_generation_config=kg_agent_generation_config,
+                    agent_generation_config=GenerationConfig(
+                        **(kg_agent_generation_config or {})
+                    ),
                 ),
-                rag_generation_config=rag_generation_config,
+                rag_generation_config=GenerationConfig(
+                    **(rag_generation_config or {})
+                ),
             )
             if not stream:
-                return response["results"]
+                return response
             else:
 
                 async def async_generator():
@@ -316,7 +314,7 @@ class R2RExecutionWrapper:
         document_ids: Optional[list[str]] = None,
         user_ids: Optional[list[str]] = None,
     ):
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.documents_overview(document_ids, user_ids)[
                 "results"
             ]
@@ -328,32 +326,32 @@ class R2RExecutionWrapper:
         keys: list[str],
         values: list[str],
     ):
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.delete(keys, values)["results"]
         else:
             return self.app.delete(keys, values)
 
     def logs(self, log_type_filter: Optional[str] = None):
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.logs(log_type_filter)["results"]
         else:
             return self.app.logs(log_type_filter)
 
     def document_chunks(self, document_id: str):
         doc_uuid = uuid.UUID(document_id)
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.document_chunks(doc_uuid)["results"]
         else:
             return self.app.document_chunks(doc_uuid)
 
     def app_settings(self):
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.app_settings()
         else:
             return self.app.app_settings()
 
     def users_overview(self, user_ids: Optional[list[uuid.UUID]] = None):
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.users_overview(user_ids)["results"]
         else:
             return self.app.users_overview(user_ids)
@@ -366,7 +364,7 @@ class R2RExecutionWrapper:
         filter_criteria = FilterCriteria(filters=filters)
         analysis_types = AnalysisTypes(analysis_types=analysis_types)
 
-        if self.client_server_mode:
+        if self.client_mode:
             return self.client.analytics(
                 filter_criteria=filter_criteria.model_dump(),
                 analysis_types=analysis_types.model_dump(),
@@ -376,15 +374,16 @@ class R2RExecutionWrapper:
                 filter_criteria=filter_criteria, analysis_types=analysis_types
             )
 
-    def ingest_sample_file(self, no_media: bool = True):
+    def ingest_sample_file(self, no_media: bool = True, option: int = 0):
         from r2r.examples.scripts.sample_data_ingestor import (
             SampleDataIngestor,
         )
 
         """Ingest the first sample file into R2R."""
         sample_ingestor = SampleDataIngestor(self)
-        response = sample_ingestor.ingest_sample_file(no_media=no_media)
-        return response
+        return sample_ingestor.ingest_sample_file(
+            no_media=no_media, option=option
+        )
 
     def ingest_sample_files(self, no_media: bool = True):
         from r2r.examples.scripts.sample_data_ingestor import (
@@ -393,15 +392,26 @@ class R2RExecutionWrapper:
 
         """Ingest the first sample file into R2R."""
         sample_ingestor = SampleDataIngestor(self)
-        response = sample_ingestor.ingest_sample_files(no_media=no_media)
-        return response
+        return sample_ingestor.ingest_sample_files(no_media=no_media)
+
+    def inspect_knowledge_graph(self, limit: int = 100) -> str:
+        if self.client_mode:
+            return self.client.inspect_knowledge_graph(limit)["results"]
+        else:
+            return self.engine.inspect_knowledge_graph(limit)
+
+    def health(self) -> str:
+        if self.client_mode:
+            return self.client.health()
+        else:
+            pass
 
     def get_app(self):
-        if not self.client_server_mode:
+        if not self.client_mode:
             return self.app.app.app
         else:
             raise Exception(
-                "`get_app` method is only available when running with `client_server_mode=False`."
+                "`get_app` method is only available when running with `client_mode=False`."
             )
 
 

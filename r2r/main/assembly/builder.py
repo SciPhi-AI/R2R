@@ -35,6 +35,7 @@ class R2RBuilder:
             config_root, "local_ollama_rerank.json"
         ),
         "neo4j_kg": os.path.join(config_root, "neo4j_kg.json"),
+        "local_neo4j_kg": os.path.join(config_root, "local_neo4j_kg.json"),
         "postgres_logging": os.path.join(config_root, "postgres_logging.json"),
     }
 

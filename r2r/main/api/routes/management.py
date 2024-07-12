@@ -7,6 +7,7 @@ from ..requests import (
     R2RDocumentChunksRequest,
     R2RDocumentsOverviewRequest,
     R2RLogsRequest,
+    R2RPrintRelationshipsRequest,
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
@@ -123,6 +124,16 @@ class ManagementRouter(BaseRouter):
             ),
         ):
             return await self.engine.adocument_chunks(request.document_id)
+
+        @self.router.post("/inspect_knowledge_graph")
+        @self.router.get("/inspect_knowledge_graph")
+        @self.base_endpoint
+        async def inspect_knowledge_graph(
+            request: R2RPrintRelationshipsRequest,
+        ):
+            return await self.engine.inspect_knowledge_graph(
+                limit=request.limit
+            )
 
         @self.router.get("/app_settings")
         @self.base_endpoint
