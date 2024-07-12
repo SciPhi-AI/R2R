@@ -5,7 +5,6 @@ import time
 import uuid
 
 import click
-import requests
 from dotenv import load_dotenv
 
 from r2r.main.execution import R2RExecutionWrapper
@@ -133,8 +132,9 @@ def serve(obj, host, port, docker, docker_ext_neo4j, project_name):
     is_flag=True,
     help="Remove containers for services not defined in the Compose file",
 )
+@click.option("--project-name", default="r2r", help="Project name for Docker")
 @click.pass_context
-def docker_down(ctx, volumes, remove_orphans):
+def docker_down(ctx, volumes, remove_orphans, project_name):
     """Bring down the Docker Compose setup and attempt to remove the network if necessary."""
     package_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "..", ".."
@@ -151,14 +151,17 @@ def docker_down(ctx, volumes, remove_orphans):
         return
 
     docker_command = (
-        f"docker-compose -f {compose_yaml} -f {compose_neo4j_yaml} down"
+        f"docker-compose -f {compose_yaml} -f {compose_neo4j_yaml}"
     )
+    docker_command += f" --project-name {project_name}"
 
     if volumes:
         docker_command += " --volumes"
 
     if remove_orphans:
         docker_command += " --remove-orphans"
+
+    docker_command += " down"
 
     click.echo("Bringing down Docker Compose setup...")
     result = os.system(docker_command)
