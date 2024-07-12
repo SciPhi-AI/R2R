@@ -77,8 +77,6 @@ class PDFParserSix(AsyncParser[DataType]):
             if page_text:
                 yield page_text
 
-
-
 class PDFParserUnstructured(AsyncParser[DataType]):
     def __init__(self):
         # pdf parser
@@ -89,23 +87,58 @@ class PDFParserUnstructured(AsyncParser[DataType]):
         except ImportError:
             raise ValueError("Error, `pdfplumber` is required to run `PDFParserUnstructured`. Please install it using `pip install pdfplumber")
         
-    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: DataType, partition_strategy: str = "hi_res") -> AsyncGenerator[str, None]:
         if isinstance(data, str):
             raise ValueError("PDF data must be in bytes format.")
         
         # partition the pdf
-        elements = self.partition_pdf(data)
+        elements = self.partition_pdf(data, partition_strategy = partition_strategy)
         for element in elements:
             yield element.text
 
 
+class PDFParserMarker(AsyncParser[DataType]):
+    def __init__(self):
+        try:
+            from marker.convert import convert_single_pdf
+            from marker.models import load_all_models
 
+            self.convert_single_pdf = convert_single_pdf
+            if not self.model_refs: 
+                self.model_refs = load_all_models()
+
+        except ImportError as e:
+            raise ValueError(f"Error, {e}")
+                             
+    def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+        if isinstance(data, str):
+            raise ValueError("PDF data must be in bytes format.")
+        
+        text, _, _ = self.convert_single_pdf(BytesIO(data), self.model_refs)
+        yield text
 
 class PDFParserLocal(AsyncParser[DataType]):
     def __init__(self):
         try:
             from r2r.parsers.common.layout_extraction import LayoutExtraction
             self.layout_parser = LayoutExtraction()
+        except ImportError as e:
+            raise ValueError(f"Error, {e}")
+        
+    
+    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+        if isinstance(data, str):
+            raise ValueError("PDF data must be in bytes format.")
+        
+        layout = await self.layout_parser.ingest(data)
+
+
+class PDFParserVLM(AsyncParser[DataType]):
+    # todo
+    def __init__(self):
+        try:
+            from r2r.parsers.common.layout_extraction import LayoutExtraction
+            self.layout_parser = None
         except ImportError as e:
             raise ValueError(f"Error, {e}")
         
