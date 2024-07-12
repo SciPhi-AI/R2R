@@ -517,10 +517,10 @@ def analytics(obj, filters, analysis_types):
     "--limit", default=100, help="Limit the number of relationships returned"
 )
 @click.pass_obj
-def print_relationships(obj, limit):
+def inspect_knowledge_graph(obj, limit):
     """Print relationships from the knowledge graph."""
     t0 = time.time()
-    response = obj.print_relationships(limit)
+    response = obj.inspect_knowledge_graph(limit)
     t1 = time.time()
 
     click.echo(response)

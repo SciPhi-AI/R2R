@@ -76,13 +76,13 @@ class ManagementRouter(BaseRouter):
         async def get_document_chunks_app(request: R2RDocumentChunksRequest):
             return await self.engine.adocument_chunks(request.document_id)
 
-        @self.router.post("/print_kg_relationships")
-        @self.router.get("/print_kg_relationships")
+        @self.router.post("/inspect_knowledge_graph")
+        @self.router.get("/inspect_knowledge_graph")
         @self.base_endpoint
-        async def print_kg_relationships(
+        async def inspect_knowledge_graph(
             request: R2RPrintRelationshipsRequest,
         ):
-            return await self.engine.print_kg_relationships(
+            return await self.engine.inspect_knowledge_graph(
                 limit=request.limit
             )
 
