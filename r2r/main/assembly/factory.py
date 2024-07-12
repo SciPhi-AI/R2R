@@ -45,7 +45,6 @@ class R2RProviderFactory:
             )
 
         vector_db_dimension = self.config.embedding.base_dimension
-        print("db_config.provider = ", db_config.provider)
         if db_config.provider == "postgres":
             from r2r.providers import PostgresDBProvider
 
