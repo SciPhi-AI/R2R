@@ -9,8 +9,8 @@
         },
         "kg_extraction_prompt": "ner_kg_extraction_local", 
         "kg_extraction_config": {
-            "model": "ollama/sciphi/triplex",
-            "temperature": 0.1,
+            "model": "ollama/sciphi/triplex-tiny",
+            "temperature": 0.5,
             "top_p": 1.0,
             "top_k": 100,
             "max_tokens_to_sample": 1024,

@@ -91,7 +91,7 @@ test_instance_2() {
     --add-host=host.docker.internal:host-gateway \
     -p 8000:8000 \
     -e OLLAMA_API_BASE=http://host.docker.internal:11434 \
-    -e CONFIG_OPTION=local_ollama \
+    -e CONFIG_NAME=local_ollama \
     $dockerImage)"
 
   # Remove the container afterwards

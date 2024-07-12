@@ -73,14 +73,14 @@ For hosted LLMs (e.g., OpenAI):
 ```bash
 # Be sure to set an OpenAI API key
 export OPENAI_API_KEY=sk-...
-export CONFIG_OPTION=default
+export CONFIG_NAME=default
 docker-compose up -d
 ```
 
 For local LLMs (e.g., Ollama):
 ```bash
 export OLLAMA_API_BASE=http://host.docker.internal:11434
-export CONFIG_OPTION=local_ollama
+export CONFIG_NAME=local_ollama
 docker-compose up -d
 ```
 
