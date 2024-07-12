@@ -659,7 +659,6 @@ tomli = {version = "*", optional = true, markers = "python_full_version <= \"3.1
 toml = ["tomli"]
 
 [[package]]
-<<<<<<< HEAD
 name = "cryptography"
 version = "42.0.8"
 description = "cryptography is a package which provides cryptographic recipes and primitives to Python developers."
@@ -714,23 +713,6 @@ test = ["certifi", "pretend", "pytest (>=6.2.0)", "pytest-benchmark", "pytest-co
 test-randomorder = ["pytest-randomly"]
 
 [[package]]
-name = "dateutils"
-version = "0.6.12"
-description = "Various utilities for working with date and datetime objects"
-optional = false
-python-versions = "*"
-files = [
-    {file = "dateutils-0.6.12-py2.py3-none-any.whl", hash = "sha256:f33b6ab430fa4166e7e9cb8b21ee9f6c9843c48df1a964466f52c79b2a8d53b3"},
-    {file = "dateutils-0.6.12.tar.gz", hash = "sha256:03dd90bcb21541bd4eb4b013637e4f1b5f944881c46cc6e4b67a6059e370e3f1"},
-]
-
-[package.dependencies]
-python-dateutil = "*"
-pytz = "*"
-
-[[package]]
-=======
->>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df
 name = "decorator"
 version = "4.4.2"
 description = "Decorators for Humans"
@@ -2175,22 +2157,13 @@ httpx = ">=0.27.0,<0.28.0"
 
 [[package]]
 name = "openai"
-<<<<<<< HEAD
-version = "1.35.10"
-=======
 version = "1.35.13"
->>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-<<<<<<< HEAD
-    {file = "openai-1.35.10-py3-none-any.whl", hash = "sha256:962cb5c23224b5cbd16078308dabab97a08b0a5ad736a4fdb3dc2ffc44ac974f"},
-    {file = "openai-1.35.10.tar.gz", hash = "sha256:85966949f4f960f3e4b239a659f9fd64d3a97ecc43c44dc0a044b5c7f11cccc6"},
-=======
     {file = "openai-1.35.13-py3-none-any.whl", hash = "sha256:36ec3e93e0d1f243f69be85c89b9221a471c3e450dfd9df16c9829e3cdf63e60"},
     {file = "openai-1.35.13.tar.gz", hash = "sha256:c684f3945608baf7d2dcc0ef3ee6f3e27e4c66f21076df0b47be45d57e6ae6e4"},
->>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df
 ]
 
 [package.dependencies]
@@ -2596,10 +2569,7 @@ files = [
 
 [package.dependencies]
 annotated-types = ">=0.4.0"
-<<<<<<< HEAD
 email-validator = {version = ">=2.0.0", optional = true, markers = "extra == \"email\""}
-=======
->>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df
 pydantic-core = "2.20.1"
 typing-extensions = {version = ">=4.6.1", markers = "python_version < \"3.13\""}
 
@@ -3351,22 +3321,13 @@ dev = ["pre-commit", "pytest", "ruff (>=0.3.0)"]
 
 [[package]]
 name = "setuptools"
-<<<<<<< HEAD
-version = "70.2.0"
-=======
 version = "70.3.0"
->>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
 optional = false
 python-versions = ">=3.8"
 files = [
-<<<<<<< HEAD
-    {file = "setuptools-70.2.0-py3-none-any.whl", hash = "sha256:b8b8060bb426838fbe942479c90296ce976249451118ef566a5a0b7d8b78fb05"},
-    {file = "setuptools-70.2.0.tar.gz", hash = "sha256:bd63e505105011b25c3c11f753f7e3b8465ea739efddaccef8f0efac2137bac1"},
-=======
     {file = "setuptools-70.3.0-py3-none-any.whl", hash = "sha256:fe384da74336c398e0d956d1cae0669bc02eed936cdb1d49b57de1990dc11ffc"},
     {file = "setuptools-70.3.0.tar.gz", hash = "sha256:f171bab1dfbc86b132997f26a119f6056a57950d058587841a0082e8830f9dc5"},
->>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df
 ]
 
 [package.extras]
@@ -3822,22 +3783,13 @@ telegram = ["requests"]
 
 [[package]]
 name = "transformers"
-<<<<<<< HEAD
-version = "4.42.3"
-=======
 version = "4.42.4"
->>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df
 description = "State-of-the-art Machine Learning for JAX, PyTorch and TensorFlow"
 optional = true
 python-versions = ">=3.8.0"
 files = [
-<<<<<<< HEAD
-    {file = "transformers-4.42.3-py3-none-any.whl", hash = "sha256:a61a0df9609b7d69229d941b2fd857c841ba3043d6da503d0da1a4b133f65b92"},
-    {file = "transformers-4.42.3.tar.gz", hash = "sha256:7539873ff45809145265cbc94ea4619d2713c41ceaa277b692d8b0be3430f7eb"},
-=======
     {file = "transformers-4.42.4-py3-none-any.whl", hash = "sha256:6d59061392d0f1da312af29c962df9017ff3c0108c681a56d1bc981004d16d24"},
     {file = "transformers-4.42.4.tar.gz", hash = "sha256:f956e25e24df851f650cb2c158b6f4352dfae9d702f04c113ed24fc36ce7ae2d"},
->>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df
 ]
 
 [package.dependencies]
@@ -4239,8 +4191,4 @@ local-embedding = ["sentence-transformers"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-<<<<<<< HEAD
-content-hash = "9f5e5489d1e4a8f05454f01160506fe0f45ede17ad32ffc5968da866d700704d"
-=======
-content-hash = "a11aaf6da08f70ddd083f7b3d50a1a57cda078e91b23afe97077774b3483aaac"
->>>>>>> cdbe06f4fa5aed0320aef5b6291243537ae1a8df
+content-hash = "eeb5a8a1ca237d11731c09621e082c5789be467c1afae20aea267ea858d1b4d2"
