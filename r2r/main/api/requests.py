@@ -72,3 +72,8 @@ class R2RLogsRequest(BaseModel):
 
 class R2RPrintRelationshipsRequest(BaseModel):
     limit: int = 100
+
+
+class R2RExtractionRequest(BaseModel):
+    entity_types: list[str]
+    relations: list[str]
