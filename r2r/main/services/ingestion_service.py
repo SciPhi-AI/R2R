@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+from collections import defaultdict
 from datetime import datetime
 from typing import Any, Optional, Union
 
@@ -80,6 +81,7 @@ class IngestionService(Service):
         document_infos = []
         skipped_documents = []
         processed_documents = {}
+        duplicate_documents = defaultdict(list)
 
         existing_document_info = {
             doc_info.document_id: doc_info
@@ -88,6 +90,14 @@ class IngestionService(Service):
 
         for iteration, document in enumerate(documents):
             version = versions[iteration] if versions else "v0"
+
+            # Check for duplicates within the current batch
+            if document.id in processed_documents:
+                duplicate_documents[document.id].append(
+                    document.metadata.get("title", str(document.id))
+                )
+                continue
+
             if (
                 document.id in existing_document_info
                 and existing_document_info[document.id].version == version
@@ -128,6 +138,14 @@ class IngestionService(Service):
             processed_documents[document.id] = document.metadata.get(
                 "title", str(document.id)
             )
+
+        if duplicate_documents:
+            duplicate_details = [
+                f"{doc_id}: {', '.join(titles)}"
+                for doc_id, titles in duplicate_documents.items()
+            ]
+            warning_message = f"Duplicate documents detected: {'; '.join(duplicate_details)}. These duplicates were skipped."
+            raise R2RException(status_code=418, message=warning_message)
 
         if skipped_documents and len(skipped_documents) == len(documents):
             logger.error("All provided documents already exist.")
