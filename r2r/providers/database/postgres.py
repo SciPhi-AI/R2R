@@ -122,7 +122,7 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
         ) or os.getenv("POSTGRES_VECS_COLLECTION")
         if not self.collection_name:
             raise ValueError(
-                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'vecs_collection' in the 'vector_database' settings of your `config.json`."
+                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'vecs_collection' in the 'vector_database' settings of your `r2r.json`."
             )
 
         self.collection: Optional[Collection] = None
@@ -933,14 +933,14 @@ class PostgresDBProvider(DatabaseProvider):
         )
         if not user:
             raise ValueError(
-                "Error, please set a valid POSTGRES_USER environment variable or set a 'user' in the 'vector_database' settings of your `config.json`."
+                "Error, please set a valid POSTGRES_USER environment variable or set a 'user' in the 'vector_database' settings of your `r2r.json`."
             )
         password = config.extra_fields.get("password", None) or os.getenv(
             "POSTGRES_PASSWORD"
         )
         if not password:
             raise ValueError(
-                "Error, please set a valid POSTGRES_PASSWORD environment variable or set a 'password' in the 'vector_database' settings of your `config.json`."
+                "Error, please set a valid POSTGRES_PASSWORD environment variable or set a 'password' in the 'vector_database' settings of your `r2r.json`."
             )
 
         host = config.extra_fields.get("host", None) or os.getenv(
@@ -948,7 +948,7 @@ class PostgresDBProvider(DatabaseProvider):
         )
         if not host:
             raise ValueError(
-                "Error, please set a valid POSTGRES_HOST environment variable or set a 'host' in the 'vector_database' settings of your `config.json`."
+                "Error, please set a valid POSTGRES_HOST environment variable or set a 'host' in the 'vector_database' settings of your `r2r.json`."
             )
 
         port = config.extra_fields.get("port", None) or os.getenv(
@@ -956,7 +956,7 @@ class PostgresDBProvider(DatabaseProvider):
         )
         if not port:
             raise ValueError(
-                "Error, please set a valid POSTGRES_PORT environment variable or set a 'port' in the 'vector_database' settings of your `config.json`."
+                "Error, please set a valid POSTGRES_PORT environment variable or set a 'port' in the 'vector_database' settings of your `r2r.json`."
             )
 
         db_name = config.extra_fields.get("db_name", None) or os.getenv(
@@ -964,7 +964,7 @@ class PostgresDBProvider(DatabaseProvider):
         )
         if not db_name:
             raise ValueError(
-                "Error, please set a valid POSTGRES_DBNAME environment variable or set a 'db_name' in the 'vector_database' settings of your `config.json`."
+                "Error, please set a valid POSTGRES_DBNAME environment variable or set a 'db_name' in the 'vector_database' settings of your `r2r.json`."
             )
 
         collection_name = config.extra_fields.get(
@@ -972,7 +972,7 @@ class PostgresDBProvider(DatabaseProvider):
         ) or os.getenv("POSTGRES_VECS_COLLECTION")
         if not collection_name:
             raise ValueError(
-                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'collection' in the 'vector_database' settings of your `config.json`."
+                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'collection' in the 'vector_database' settings of your `r2r.json`."
             )
 
         if not all([user, password, host, port, db_name, collection_name]):

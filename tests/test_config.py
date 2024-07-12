@@ -84,12 +84,12 @@ def mock_file():
 @pytest.mark.asyncio
 async def test_r2r_config_loading_required_keys(mock_bad_file):
     with pytest.raises(KeyError):
-        R2RConfig.from_json("config.json")
+        R2RConfig.from_json("r2r.json")
 
 
 @pytest.mark.asyncio
 async def test_r2r_config_loading(mock_file):
-    config = R2RConfig.from_json("config.json")
+    config = R2RConfig.from_json("r2r.json")
     assert (
         config.embedding.provider == "example_provider"
     ), "Provider should match the mock data"
@@ -102,7 +102,7 @@ def mock_redis_client():
 
 
 def test_r2r_config_serialization(mock_file, mock_redis_client):
-    config = R2RConfig.from_json("config.json")
+    config = R2RConfig.from_json("r2r.json")
     config.save_to_redis(mock_redis_client, "test_key")
     mock_redis_client.set.assert_called_once()
     saved_data = json.loads(mock_redis_client.set.call_args[0][1])
@@ -157,7 +157,7 @@ def test_r2r_config_missing_section():
     }
     with patch("builtins.open", mock_open(read_data=json.dumps(invalid_data))):
         with pytest.raises(KeyError):
-            R2RConfig.from_json("config.json")
+            R2RConfig.from_json("r2r.json")
 
 
 def test_r2r_config_missing_required_key():
@@ -189,4 +189,4 @@ def test_r2r_config_missing_required_key():
     }
     with patch("builtins.open", mock_open(read_data=json.dumps(invalid_data))):
         with pytest.raises(KeyError):
-            R2RConfig.from_json("config.json")
+            R2RConfig.from_json("r2r.json")

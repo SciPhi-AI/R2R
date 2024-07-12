@@ -109,7 +109,7 @@ class R2RConfig:
             # Get the root directory of the project
             file_dir = os.path.dirname(os.path.abspath(__file__))
             config_path = os.path.join(
-                file_dir, "..", "..", "..", "config.json"
+                file_dir, "..", "..", "..", "r2r.json"
             )
 
         # Load configuration from JSON file
@@ -143,7 +143,7 @@ class R2RConfig:
         # Get the root directory of the project
         file_dir = os.path.dirname(os.path.abspath(__file__))
         default_config_path = os.path.join(
-            file_dir, "..", "..", "..", "config.json"
+            file_dir, "..", "..", "..", "r2r.json"
         )
         # Load default configuration from JSON file
         with open(default_config_path) as f:

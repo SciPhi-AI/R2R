@@ -28,7 +28,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy the application and config
 COPY r2r /app/r2r
-COPY config.json /app/config.json
+COPY r2r.json /app/r2r.json
 
 # Expose the port
 EXPOSE 8000
