@@ -161,7 +161,6 @@ def main(
             "input": """\n{input}""",
         },
     )
-    print('new_template = ', new_template)
 
     # Escape all braces in the template, except for the {input} placeholder, for formatting
     escaped_template = escape_braces(new_template).replace(
