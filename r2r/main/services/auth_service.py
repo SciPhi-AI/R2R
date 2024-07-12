@@ -45,7 +45,9 @@ class AuthService(Service):
         new_user = self.providers.database.relational.create_user(user)
 
         # Generate verification code and send email
-        verification_code = 123456 #self.providers.auth.generate_verification_code()
+        verification_code = (
+            123456  # self.providers.auth.generate_verification_code()
+        )
         expiry = datetime.utcnow() + timedelta(hours=24)
 
         self.providers.database.relational.store_verification_code(

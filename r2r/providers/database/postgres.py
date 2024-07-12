@@ -842,8 +842,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             return User(
                 id=user_data[0],
                 email=user_data[1],
-                # password="",  # We don't return the hashed password
-                hashed_password=user_data[2],
+                hashed_password="null",  # We don't return the hashed password
                 is_active=user_data[3],
                 is_verified=user_data[4],
                 created_at=user_data[5],

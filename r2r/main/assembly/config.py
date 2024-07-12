@@ -108,9 +108,7 @@ class R2RConfig:
         if config_path is None:
             # Get the root directory of the project
             file_dir = os.path.dirname(os.path.abspath(__file__))
-            config_path = os.path.join(
-                file_dir, "..", "..", "..", "r2r.json"
-            )
+            config_path = os.path.join(file_dir, "..", "..", "..", "r2r.json")
 
         # Load configuration from JSON file
         with open(config_path) as f:

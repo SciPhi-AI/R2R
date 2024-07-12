@@ -23,9 +23,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 class R2RAuthProvider(AuthProvider):
     def __init__(self, config: AuthConfig, db_provider: DatabaseProvider):
         self.config = config
-        self.secret_key = config.secret_key or os.getenv(
-            "R2R_SECRET_KEY"
-        )
+        self.secret_key = config.secret_key or os.getenv("R2R_SECRET_KEY")
         if not self.secret_key:
             raise ValueError("Secret key not set")
 

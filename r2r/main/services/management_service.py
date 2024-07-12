@@ -243,7 +243,9 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return self.providers.database.relational.get_document_chunks(str(document_id))
+        return self.providers.database.relational.get_document_chunks(
+            str(document_id)
+        )
 
     @telemetry_event("UsersOverview")
     async def users_overview(

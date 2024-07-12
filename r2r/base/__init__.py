@@ -55,6 +55,7 @@ from .parsers import AsyncParser
 from .pipeline.base_pipeline import AsyncPipeline
 from .pipes.base_pipe import AsyncPipe, AsyncState, PipeType
 from .providers.auth import AuthConfig, AuthProvider
+from .providers.crypto import CryptoConfig, CryptoProvider
 from .providers.database import (
     DatabaseConfig,
     DatabaseProvider,
@@ -152,6 +153,8 @@ __all__ = [
     "LLMProvider",
     "AuthConfig",
     "AuthProvider",
+    "CryptoConfig",
+    "CryptoProvider",
     "DatabaseConfig",
     "DatabaseProvider",
     "VectorDatabaseProvider",

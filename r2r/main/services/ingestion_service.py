@@ -156,7 +156,9 @@ class IngestionService(Service):
             )
 
         # Insert pending document infos
-        self.providers.database.relational.upsert_documents_overview(document_infos)
+        self.providers.database.relational.upsert_documents_overview(
+            document_infos
+        )
         ingestion_results = await self.pipelines.ingestion_pipeline.run(
             input=to_async_generator(
                 [

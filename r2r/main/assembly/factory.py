@@ -221,11 +221,8 @@ class R2RProviderFactory:
                 self.config.database, *args, **kwargs
             )
         )
-        auth_provider = (
-            auth_provider_override
-            or self.create_auth_provider(
-                self.config.auth, database_provider, *args, **kwargs
-            )
+        auth_provider = auth_provider_override or self.create_auth_provider(
+            self.config.auth, database_provider, *args, **kwargs
         )
         return R2RProviders(
             auth=auth_provider,

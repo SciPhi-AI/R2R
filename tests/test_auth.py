@@ -162,9 +162,11 @@ def test_env_variable_usage(monkeypatch, mock_db_provider):
 
 def test_fallback_to_config_secret(mock_db_provider, auth_config):
     auth_handler = R2RAuthProvider(auth_config, mock_db_provider)
-    assert auth_handler.secret_key == "wNFbczH3QhUVcPALwtWZCPi0lrDlGV3P1DPRVEQCPbM"
+    assert (
+        auth_handler.secret_key
+        == "wNFbczH3QhUVcPALwtWZCPi0lrDlGV3P1DPRVEQCPbM"
+    )
     assert auth_handler.token_lifetime == 30
-
 
 
 def test_user_registration(auth_handler, mock_db_provider):
