@@ -84,7 +84,7 @@ def serve(obj, host, port, docker, docker_ext_neo4j, project_name):
         if x := obj.get("config_path", None):
             os.environ["CONFIG_PATH"] = x
         else:
-            os.environ["CONFIG_OPTION"] = (
+            os.environ["CONFIG_NAME"] = (
                 obj.get("config_name", None) or "default"
             )
 
@@ -533,10 +533,11 @@ def inspect_knowledge_graph(obj, limit):
     default=True,
     help="Exclude media files from ingestion",
 )
+@click.option("--option", default=0, help="Which file to ingest?")
 @click.pass_obj
-def ingest_sample_file(obj, no_media):
+def ingest_sample_file(obj, no_media, option):
     t0 = time.time()
-    response = obj.ingest_sample_file(no_media=no_media)
+    response = obj.ingest_sample_file(no_media=no_media, option=option)
     t1 = time.time()
 
     click.echo(response)

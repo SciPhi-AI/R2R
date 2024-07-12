@@ -63,7 +63,7 @@ class QueryTransformPipe(GeneratorPipe):
                 query, num_outputs=num_query_xf_outputs
             )
 
-            response = self.llm_provider.get_completion(
+            response = await self.llm_provider.aget_completion(
                 messages=query_transform_request,
                 generation_config=query_transform_generation_config,
             )
