@@ -454,7 +454,7 @@ class R2RPipelineFactory:
         try:
             self.configure_logging()
         except Exception as e:
-            logger.warn(f"Error configuring logging: {e}")
+            logger.warning(f"Error configuring logging: {e}")
         search_pipeline = search_pipeline or self.create_search_pipeline(
             *args, **kwargs
         )
