@@ -8,6 +8,20 @@ from .base_provider import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 
+default_embedding_prefixes = {
+    'nomic-embed-text-v1.5': {
+        EmbeddingPurpose.INDEX: '',
+        EmbeddingPurpose.QUERY: 'search_query: ',
+        EmbeddingPurpose.DOCUMENT: 'search_document: ',
+    },
+    'nomic-embed-text': {
+        EmbeddingPurpose.INDEX: '',
+        EmbeddingPurpose.QUERY: 'search_query: ',
+        EmbeddingPurpose.DOCUMENT: 'search_document: ',
+    },
+}
+
+
 class EmbeddingPurpose(StrEnum):
     INDEX = auto()
     QUERY = auto()

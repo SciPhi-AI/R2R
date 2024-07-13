@@ -11,20 +11,6 @@ from r2r.base import EmbeddingConfig, EmbeddingProvider, VectorSearchResult, Emb
 logger = logging.getLogger(__name__)
 
 
-default_embedding_prefixes = {
-    'nomic-embed-text-v1.5': {
-        EmbeddingPurpose.INDEX: '',
-        EmbeddingPurpose.QUERY: 'search_query: ',
-        EmbeddingPurpose.DOCUMENT: 'search_document: ',
-    },
-    'nomic-embed-text': {
-        EmbeddingPurpose.INDEX: '',
-        EmbeddingPurpose.QUERY: 'search_query: ',
-        EmbeddingPurpose.DOCUMENT: 'search_document: ',
-    },
-}
-
-
 class OllamaEmbeddingProvider(EmbeddingProvider):
     def __init__(self, config: EmbeddingConfig):
         super().__init__(config)
