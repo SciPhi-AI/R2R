@@ -1,20 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Dict
 from fastapi import Security
-from fastapi.security import (
-    HTTPAuthorizationCredentials,
-    HTTPBearer,
-)
-
-# Assume these are imported from your existing modules
-from ..abstractions.user import Token, TokenData, User, UserCreate
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from ..abstractions.user import TokenData, User, UserCreate
 from .base import Provider, ProviderConfig
-
 
 class AuthConfig(ProviderConfig):
     enabled: bool = True
     secret_key: Optional[str] = None
-    token_lifetime: Optional[int] = None
+    access_token_lifetime_in_minutes: Optional[int] = None
+    refresh_token_lifetime_in_days: Optional[int] = None
 
     @property
     def supported_providers(self) -> list[str]:
@@ -23,56 +18,49 @@ class AuthConfig(ProviderConfig):
     def validate(self) -> None:
         super().validate()
 
-
 class AuthProvider(Provider, ABC):
     security = HTTPBearer()
 
     def __init__(self, config: AuthConfig):
         if not isinstance(config, AuthConfig):
-            raise ValueError(
-                "AuthProvider must be initialized with an AuthConfig"
-            )
+            raise ValueError("AuthProvider must be initialized with an AuthConfig")
         super().__init__(config)
 
     @abstractmethod
-    def get_password_hash(self, password: str) -> str:
+    def create_access_token(self, data: dict) -> str:
         pass
 
     @abstractmethod
-    def verify_password(
-        self, plain_password: str, hashed_password: str
-    ) -> bool:
+    def create_refresh_token(self, data: dict) -> str:
         pass
 
     @abstractmethod
-    def create_access_token(self, data: dict):
+    def decode_token(self, token: str) -> TokenData:
         pass
 
     @abstractmethod
-    def decode_token(self, token: str):
+    def get_current_user(self, token: str) -> User:
         pass
 
     @abstractmethod
-    def get_current_user(self, token: str):
+    def get_current_active_user(self, current_user: User) -> User:
         pass
 
     @abstractmethod
-    def get_current_active_user(self, current_user: User):
+    def register_user(self, user: UserCreate) -> Dict[str, str]:
         pass
 
     @abstractmethod
-    def register_user(self, user: UserCreate):
+    def verify_email(self, verification_code: str) -> Dict[str, str]:
         pass
 
     @abstractmethod
-    def verify_email(self, verification_code: str):
+    def login(self, email: str, password: str) -> Dict[str, str]:
         pass
 
     @abstractmethod
-    def login(self, email: str, password: str):
+    def refresh_access_token(self, refresh_token: str) -> Dict[str, str]:
         pass
 
-    def auth_wrapper(
-        self, auth: HTTPAuthorizationCredentials = Security(security)
-    ):
+    def auth_wrapper(self, auth: HTTPAuthorizationCredentials = Security(security)):
         return self.decode_token(auth.credentials)

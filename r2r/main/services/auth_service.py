@@ -76,7 +76,7 @@ class AuthService(Service):
     @telemetry_event("Login")
     async def login(self, email: str, password: str) -> Token:
         user = self.providers.database.relational.get_user_by_email(email)
-        if not user or not self.providers.auth.verify_password(
+        if not user or not self.providers.auth.crypto_provider.verify_password(
             password, user.hashed_password
         ):
             raise R2RException(
