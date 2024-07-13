@@ -1,4 +1,5 @@
 from .auth import R2RAuthProvider
+from .crypto import BCryptProvider
 from .database import PostgresDBProvider
 from .embeddings import (
     OllamaEmbeddingProvider,
@@ -12,6 +13,7 @@ from .prompts import R2RPromptProvider
 
 __all__ = [
     "R2RAuthProvider",
+    "BCryptProvider",
     "PostgresDBProvider",
     "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",

@@ -110,7 +110,7 @@ class R2RClient:
         self.base_url = base_url
         self.prefix = prefix
         self.access_token = None
-        self.refresh_token = None
+        self._refresh_token = None
 
     def _make_request(self, method, endpoint, **kwargs):
         url = f"{self.base_url}{self.prefix}/{endpoint}"
@@ -140,20 +140,23 @@ class R2RClient:
     def login(self, email: str, password: str) -> dict:
         form_data = {"username": email, "password": password}
         response = self._make_request("POST", "login", data=form_data)
+        response = response["results"]
+        print('response = ', response)
         self.access_token = response["access_token"]
-        self.refresh_token = response.get("refresh_token")
+        self._refresh_token = response.get("refresh_token")
         return response
 
     def get_current_user(self) -> dict:
         return self._make_request("GET", "users/me")
 
     def refresh_token(self) -> dict:
-        if not self.refresh_token:
+        if not self._refresh_token:
             raise ValueError("No refresh token available. Please login again.")
         response = self._make_request(
-            "POST", "token/refresh", json={"refresh_token": self.refresh_token}
+            "POST", "token/refresh", json={"refresh_token": self._refresh_token}
         )
-        self.access_token = response["access_token"]
+        print('response = ', response)
+        self.access_token = response["results"]["access_token"]
         return response
 
     def _ensure_authenticated(self):

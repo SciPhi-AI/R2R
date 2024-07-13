@@ -8,6 +8,7 @@ from ...base.abstractions.document import DocumentType
 from ...base.abstractions.llm import GenerationConfig
 from ...base.logging.kv_logger import LoggingConfig
 from ...base.providers.auth import AuthConfig
+from ...base.providers.crypto import CryptoConfig
 from ...base.providers.database import DatabaseConfig, ProviderConfig
 from ...base.providers.embedding import EmbeddingConfig
 from ...base.providers.eval import EvalConfig
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 class R2RConfig:
     REQUIRED_KEYS: dict[str, list] = {
         "app": ["max_file_size_in_mb"],
+        "crypto": ["provider"],
         "auth": ["provider", "enabled"],
         "embedding": [
             "provider",
@@ -44,6 +46,7 @@ class R2RConfig:
     }
     app: dict[str, Any]
     auth: AuthConfig
+    crypto: CryptoConfig
     embedding: EmbeddingConfig
     kg: KGConfig
     completions: LLMConfig
@@ -76,6 +79,7 @@ class R2RConfig:
 
         self.app = self.app  # for type hinting
         self.auth = AuthConfig.create(**self.auth)
+        self.crypto = CryptoConfig.create(**self.crypto)
         self.ingestion = self.ingestion  # for type hinting
         self.ingestion["excluded_parsers"] = [
             DocumentType(k) for k in self.ingestion["excluded_parsers"]

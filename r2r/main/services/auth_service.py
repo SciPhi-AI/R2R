@@ -93,7 +93,7 @@ class AuthService(Service):
 
     @telemetry_event("GetCurrentUser")
     async def get_current_user(self, token: str) -> User:
-        token_data = self.providers.auth.decode_access_token(token)
+        token_data = self.providers.auth.decode_token(token)
         user = self.providers.database.relational.get_user_by_email(
             token_data.email
         )

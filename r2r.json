@@ -27,6 +27,9 @@
       "api_base": null
     }
   },
+  "crypto":{
+    "provider": "None"
+  },
   "embedding": {
     "provider": "openai",
     "base_model": "text-embedding-3-small",

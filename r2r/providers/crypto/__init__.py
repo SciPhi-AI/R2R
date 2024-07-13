@@ -1,3 +1,3 @@
-from .base import R2RAuthProvider
+from .bcrypt import BCryptProvider, BCryptConfig
 
-__all__ = ["R2RAuthProvider"]
+__all__ = ["BCryptProvider", "BCryptConfig"]

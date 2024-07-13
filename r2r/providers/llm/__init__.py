@@ -1,5 +1,5 @@
-from .litellm.base_litellm import LiteLLM
-from .openai.base_openai import OpenAILLM
+from .litellm import LiteLLM
+from .openai import OpenAILLM
 
 __all__ = [
     "LiteLLM",

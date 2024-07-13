@@ -10,6 +10,7 @@ from sqlalchemy import exc, text
 from sqlalchemy.engine.url import make_url
 
 from r2r.base import (
+    CryptoProvider,
     DatabaseConfig,
     DatabaseProvider,
     DocumentInfo,
@@ -477,9 +478,10 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
 
 
 class PostgresRelationalDBProvider(RelationalDatabaseProvider):
-    def __init__(self, config: DatabaseConfig, *args, **kwargs):
+    def __init__(self, config: DatabaseConfig, crypto_provider: Optional[CryptoProvider],*args, **kwargs):
         super().__init__(config)
         self.vx: Client = kwargs.get("vx", None)
+        self.crypto_provider = crypto_provider
         if not self.vx:
             raise ValueError(
                 "Please provide a valid `vx` client to the `PostgresRelationalDBProvider`."
@@ -705,6 +707,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         ]
 
     def create_user(self, user: UserCreate) -> User:
+        hashed_password = self.crypto_provider.get_password_hash(user.password)
         query = text(
             f"""
         INSERT INTO users_{self.collection_name} 
@@ -719,7 +722,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 query,
                 {
                     "email": user.email,
-                    "hashed_password": user.password,  # Note: This should be hashed before storage
+                    "hashed_password": hashed_password,
                 },
             )
             user_data = result.fetchone()
@@ -732,7 +735,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             is_verified=user_data[3],
             created_at=user_data[4],
             updated_at=user_data[5],
-            hashed_password=user.password,  # Note: This is not stored in the database
+            hashed_password=hashed_password,
         )
 
     def get_user_by_email(self, email: str) -> Optional[User]:
@@ -925,7 +928,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
 
 class PostgresDBProvider(DatabaseProvider):
     def __init__(
-        self, config: DatabaseConfig, dimension: int, *args, **kwargs
+        self, config: DatabaseConfig, crypto_provider: Optional[CryptoProvider], dimension: int, *args, **kwargs
     ):
         user = config.extra_fields.get("user", None) or os.getenv(
             "POSTGRES_USER"
@@ -990,6 +993,7 @@ class PostgresDBProvider(DatabaseProvider):
         self.vector_db_dimension = dimension
         self.collection_name = collection_name
         self.config: DatabaseConfig = config
+        self.crypto_provider = crypto_provider
         super().__init__(config)
 
     def _initialize_vector_db(self) -> VectorDatabaseProvider:
@@ -1002,5 +1006,5 @@ class PostgresDBProvider(DatabaseProvider):
 
     def _initialize_relational_db(self) -> RelationalDatabaseProvider:
         return PostgresRelationalDBProvider(
-            self.config, vx=self.vx, collection_name=self.collection_name
+            self.config, vx=self.vx, crypto_provider=self.crypto_provider, collection_name=self.collection_name,
         )

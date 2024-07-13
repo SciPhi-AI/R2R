@@ -17,6 +17,8 @@ from r2r.base import (
     LLMProvider,
     PromptConfig,
     PromptProvider,
+    CryptoConfig,
+    CryptoProvider,
 )
 from r2r.pipelines import (
     EvalPipeline,
@@ -35,8 +37,45 @@ class R2RProviderFactory:
     def __init__(self, config: R2RConfig):
         self.config = config
 
+    def create_auth_provider(
+        self,
+        auth_config: AuthConfig,
+        db_provider: DatabaseProvider,
+        crypto_provider: CryptoProvider,
+        *args,
+        **kwargs,
+    ) -> AuthProvider:
+        auth_provider: Optional[AuthProvider] = None
+        if auth_config.provider == "r2r":
+            from r2r.providers import R2RAuthProvider
+
+            auth_provider = R2RAuthProvider(auth_config, crypto_provider, db_provider)
+        elif auth_config.provider is None:
+            auth_provider = None
+        else:
+            raise ValueError(
+                f"Auth provider {auth_config.provider} not supported."
+            )
+        return auth_provider
+
+    def create_crypto_provider(
+        self, crypto_config: CryptoConfig, *args, **kwargs
+    ) -> CryptoProvider:
+        crypto_provider: Optional[CryptoProvider] = None
+        if crypto_config.provider == "bcrypt":
+            from r2r.providers.crypto import BCryptProvider, BCryptConfig
+
+            crypto_provider = BCryptProvider(BCryptConfig(**crypto_config.dict()))
+        elif crypto_config.provider is None:
+            crypto_provider = None
+        else:
+            raise ValueError(
+                f"Crypto provider {crypto_config.provider} not supported."
+            )
+        return crypto_provider
+    
     def create_database_provider(
-        self, db_config: DatabaseConfig, *args, **kwargs
+        self, db_config: DatabaseConfig, crypto_provider: CryptoProvider, *args, **kwargs
     ) -> DatabaseProvider:
         database_provider: Optional[DatabaseProvider] = None
         if not self.config.embedding.base_dimension:
@@ -49,7 +88,7 @@ class R2RProviderFactory:
             from r2r.providers import PostgresDBProvider
 
             database_provider = PostgresDBProvider(
-                db_config, vector_db_dimension
+                db_config, crypto_provider, vector_db_dimension
             )
         else:
             raise ValueError(
@@ -60,25 +99,6 @@ class R2RProviderFactory:
 
         return database_provider
 
-    def create_auth_provider(
-        self,
-        auth_config: AuthConfig,
-        db_provider: DatabaseProvider,
-        *args,
-        **kwargs,
-    ) -> AuthProvider:
-        auth_provider: Optional[AuthProvider] = None
-        if auth_config.provider == "r2r":
-            from r2r.providers import R2RAuthProvider
-
-            auth_provider = R2RAuthProvider(auth_config, db_provider)
-        elif auth_config.provider is None:
-            auth_provider = None
-        else:
-            raise ValueError(
-                f"Auth provider {auth_config.provider} not supported."
-            )
-        return auth_provider
 
     def create_embedding_provider(
         self, embedding: EmbeddingConfig, *args, **kwargs
@@ -182,16 +202,18 @@ class R2RProviderFactory:
 
     def create_providers(
         self,
-        auth_provider_override: Optional[AuthProvider] = None,
-        database_provider_override: Optional[DatabaseProvider] = None,
         embedding_provider_override: Optional[EmbeddingProvider] = None,
         eval_provider_override: Optional[EvalProvider] = None,
         llm_provider_override: Optional[LLMProvider] = None,
         prompt_provider_override: Optional[PromptProvider] = None,
         kg_provider_override: Optional[KGProvider] = None,
+        crypto_provider_override: Optional[CryptoProvider] = None,
+        auth_provider_override: Optional[AuthProvider] = None,
+        database_provider_override: Optional[DatabaseProvider] = None,
         *args,
         **kwargs,
     ) -> R2RProviders:
+    
         prompt_provider = (
             prompt_provider_override
             or self.create_prompt_provider(self.config.prompt, *args, **kwargs)
@@ -215,14 +237,17 @@ class R2RProviderFactory:
         kg_provider = kg_provider_override or self.create_kg_provider(
             self.config.kg, *args, **kwargs
         )
+        crypto_provider = crypto_provider_override or self.create_crypto_provider(
+            self.config.crypto, *args, **kwargs
+        )
         database_provider = (
             database_provider_override
             or self.create_database_provider(
-                self.config.database, *args, **kwargs
+                self.config.database, crypto_provider, *args, **kwargs
             )
         )
         auth_provider = auth_provider_override or self.create_auth_provider(
-            self.config.auth, database_provider, *args, **kwargs
+            self.config.auth, database_provider, crypto_provider, *args, **kwargs
         )
         return R2RProviders(
             auth=auth_provider,

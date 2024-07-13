@@ -13,6 +13,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 class UserResponse(BaseModel):
     results: User
 
+class TokenResponse(BaseModel):
+    results: Token
 
 class AuthRouter(BaseRouter):
     def __init__(self, engine: R2REngine):
@@ -30,19 +32,21 @@ class AuthRouter(BaseRouter):
         async def verify_email(verification_code: str):
             return await self.engine.averify_email(verification_code)
 
-        @self.router.post("/login", response_model=Token)
+        @self.router.post("/login", response_model=TokenResponse)
         @self.base_endpoint
         async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-            return await self.engine.alogin(
+            login_result =  await self.engine.alogin(
                 form_data.username, form_data.password
             )
+            print('login_result', login_result)
+            return login_result
 
-        @self.router.get("/users/me", response_model=User)
+        @self.router.get("/users/me", response_model=UserResponse)
         @self.base_endpoint
         async def read_users_me(token: str = Depends(oauth2_scheme)):
             return await self.engine.aget_current_user(token)
 
-        @self.router.post("/token/refresh", response_model=Token)
+        @self.router.post("/token/refresh", response_model=TokenResponse)
         @self.base_endpoint
         async def refresh_token(token: str = Depends(oauth2_scheme)):
             return await self.engine.arefresh_token(token)

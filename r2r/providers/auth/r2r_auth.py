@@ -9,6 +9,7 @@ from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 
 from r2r.base import (
+    CryptoProvider,
     AuthConfig,
     AuthProvider,
     DatabaseProvider,
@@ -21,7 +22,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 class R2RAuthProvider(AuthProvider):
-    def __init__(self, config: AuthConfig, db_provider: DatabaseProvider):
+    def __init__(self, config: AuthConfig, crypto_provider:CryptoProvider, db_provider: DatabaseProvider,  *args, **kwargs):
+        self.crypto_provider = crypto_provider
         self.config = config
         self.secret_key = config.secret_key or os.getenv("R2R_SECRET_KEY")
         if not self.secret_key:
