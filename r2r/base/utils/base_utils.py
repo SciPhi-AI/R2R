@@ -1,6 +1,6 @@
 import asyncio
 import uuid
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable, List, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
 
 if TYPE_CHECKING:
     from ..pipeline.base_pipeline import AsyncPipeline
@@ -49,14 +49,14 @@ class Relation:
         self.name = name
 
 
-def format_entity_types(entity_types: List[EntityType]) -> str:
+def format_entity_types(entity_types: list[EntityType]) -> str:
     lines = []
     for entity in entity_types:
         lines.append(entity.name)
     return "\n".join(lines)
 
 
-def format_relations(predicates: List[Relation]) -> str:
+def format_relations(predicates: list[Relation]) -> str:
     lines = []
     for predicate in predicates:
         lines.append(predicate.name)

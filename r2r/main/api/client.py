@@ -18,7 +18,6 @@ from .requests import (
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
     R2RDocumentsOverviewRequest,
-    R2RExtractionRequest,
     R2RIngestFilesRequest,
     R2RLogsRequest,
     R2RPrintRelationshipsRequest,

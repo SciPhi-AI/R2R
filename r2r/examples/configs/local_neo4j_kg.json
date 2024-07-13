@@ -4,13 +4,15 @@
         "batch_size": 1,
         "text_splitter": {
             "type": "recursive_character",
-            "chunk_size": 1024,
+            "chunk_size": 512,
             "chunk_overlap": 0
         },
+        "max_entities": 10,
+        "max_relations": 20,
         "kg_extraction_prompt": "zero_shot_ner_kg_extraction",
         "kg_extraction_config": {
             "model": "ollama/sciphi/triplex",
-            "temperature": 0.7,
+            "temperature": 1.0,
             "top_p": 1.0,
             "top_k": 100,
             "max_tokens_to_sample": 1024,
