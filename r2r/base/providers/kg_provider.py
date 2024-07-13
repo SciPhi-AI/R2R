@@ -1,15 +1,19 @@
 """Base classes for knowledge graph providers."""
 
+import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional, Tuple
 
-from ..abstractions.llama_abstractions import (
-    EntityNode,
-    LabelledNode,
-    Relation,
-    VectorStoreQuery,
-)
+from .prompt_provider import PromptProvider
+
+if TYPE_CHECKING:
+    from r2r.main import R2RClient
+
+from ...base.utils.base_utils import EntityType, Relation
+from ..abstractions.llama_abstractions import EntityNode, LabelledNode
+from ..abstractions.llama_abstractions import Relation as LlamaRelation
+from ..abstractions.llama_abstractions import VectorStoreQuery
 from ..abstractions.llm import GenerationConfig
 from .base_provider import ProviderConfig
 
@@ -76,7 +80,7 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    def upsert_relations(self, relations: list[Relation]) -> None:
+    def upsert_relations(self, relations: list[LlamaRelation]) -> None:
         """Abstract method to add triplet."""
         pass
 
@@ -124,3 +128,55 @@ class KGProvider(ABC):
     ):
         """Abstract method to update the KG agent prompt."""
         pass
+
+
+def escape_braces(s: str) -> str:
+    """
+    Escape braces in a string.
+    This is a placeholder function - implement the actual logic as needed.
+    """
+    # Implement your escape_braces logic here
+    return s.replace("{", "{{").replace("}", "}}")
+
+
+# TODO - Make this more configurable / intelligent
+def update_kg_prompt(
+    client: "R2RClient",
+    r2r_prompts: PromptProvider,
+    prompt_base: str,
+    entity_types: list[EntityType],
+    relations: list[Relation],
+) -> None:
+    # Get the default extraction template
+    template_name: str = f"{prompt_base}_with_spec"
+
+    new_template: str = r2r_prompts.get_prompt(
+        template_name,
+        {
+            "entity_types": json.dumps(
+                {
+                    "entity_types": [
+                        str(entity.name) for entity in entity_types
+                    ]
+                },
+                indent=4,
+            ),
+            "relations": json.dumps(
+                {"predicates": [str(relation.name) for relation in relations]},
+                indent=4,
+            ),
+            "input": """\n{input}""",
+        },
+    )
+
+    # Escape all braces in the template, except for the {input} placeholder, for formatting
+    escaped_template: str = escape_braces(new_template).replace(
+        """{{input}}""", """{input}"""
+    )
+
+    # Update the client's prompt
+    client.update_prompt(
+        prompt_base,
+        template=escaped_template,
+        input_types={"input": "str"},
+    )
