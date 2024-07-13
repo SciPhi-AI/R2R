@@ -8,6 +8,12 @@ from .base_provider import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 
+
+class EmbeddingPurpose(StrEnum):
+    INDEX = auto()
+    QUERY = auto()
+    DOCUMENT = auto()
+
 default_embedding_prefixes = {
     'nomic-embed-text-v1.5': {
         EmbeddingPurpose.INDEX: '',
@@ -21,11 +27,6 @@ default_embedding_prefixes = {
     },
 }
 
-
-class EmbeddingPurpose(StrEnum):
-    INDEX = auto()
-    QUERY = auto()
-    DOCUMENT = auto()
 
 class EmbeddingConfig(ProviderConfig):
     """A base embedding configuration class"""
