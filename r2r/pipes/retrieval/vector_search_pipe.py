@@ -7,6 +7,7 @@ from r2r.base import (
     AsyncPipe,
     AsyncState,
     EmbeddingProvider,
+    EmbeddingPurpose,
     PipeType,
     VectorDBProvider,
     VectorSearchResult,
