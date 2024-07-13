@@ -1,22 +1,10 @@
 import os
-import string
 
 import fire
 import requests
 from bs4 import BeautifulSoup, Comment
 
-from r2r import (
-    Document,
-    EntityType,
-    KGSearchSettings,
-    R2RBuilder,
-    R2RClient,
-    R2RPromptProvider,
-    Relation,
-    VectorSearchSettings,
-    generate_id_from_label,
-)
-from r2r.base.abstractions.llm import GenerationConfig
+from r2r import EntityType, R2RClient, R2RPromptProvider, Relation
 
 
 def escape_braces(text):
