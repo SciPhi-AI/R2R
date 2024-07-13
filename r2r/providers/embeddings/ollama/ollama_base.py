@@ -13,11 +13,13 @@ logger = logging.getLogger(__name__)
 
 default_embedding_prefixes = {
     'nomic-embed-text-v1.5': {
-        EmbeddingPurpose.INDEX: 'search_query: ',
+        EmbeddingPurpose.INDEX: '',
+        EmbeddingPurpose.QUERY: 'search_query: ',
         EmbeddingPurpose.DOCUMENT: 'search_document: ',
     },
     'nomic-embed-text': {
-        EmbeddingPurpose.INDEX: 'search_query: ',
+        EmbeddingPurpose.INDEX: '',
+        EmbeddingPurpose.QUERY: 'search_query: ',
         EmbeddingPurpose.DOCUMENT: 'search_document: ',
     },
 }
@@ -55,13 +57,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self.max_backoff = 60
         self.concurrency_limit = 10
         self.semaphore = asyncio.Semaphore(self.concurrency_limit)
-        set_prefixes(config.prefixes or {}, self.base_model)
-
-    def set_prefixes(self, prefixes: dict[EmbeddingPurpose, str], base_model: str):
-        self.prefixes = {}
-        if base_model and (base_model in default_embedding_prefixes):
-            for t, p in default_embedding_prefixes[base_model].items():
-                self.prefixes[t] = p
+        self.set_prefixes(config.prefixes or {}, self.base_model)
 
     async def process_queue(self):
         while True:

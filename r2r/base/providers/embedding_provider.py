@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod
-from enum import Enum
+from enum import StrEnum
 from typing import Optional, Dict
 
 from ..abstractions.search import VectorSearchResult
@@ -8,10 +8,10 @@ from .base_provider import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 
-class EmbeddingPurpose(Enum):
-    INDEX = 1
-    QUERY = 2
-    DOCUMENT = 3
+class EmbeddingPurpose(StrEnum):
+    INDEX = auto()
+    QUERY = auto()
+    DOCUMENT = auto()
 
 class EmbeddingConfig(ProviderConfig):
     """A base embedding configuration class"""
@@ -92,3 +92,17 @@ class EmbeddingProvider(Provider):
     ) -> list[int]:
         """Tokenizes the input string."""
         pass
+
+    def set_prefixes(self, config_prefixes: dict[str, str], base_model: str):
+        self.prefixes = {}
+
+        # use the configured prefixes if given
+        for t, p in config_prefixes.items():
+            purpose = EmbeddingPurpose(t.lower())
+            self.prefixes[purpose] = p
+
+        # but apply known defaults otherwise
+        if base_model in default_embedding_prefixes:
+            for t, p in default_embedding_prefixes[base_model].items():
+                if t not in self.prefixes:
+                    self.prefixes[t] = p

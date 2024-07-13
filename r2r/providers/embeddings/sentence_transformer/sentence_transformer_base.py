@@ -92,6 +92,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ) -> list[float]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError("`get_embedding` only supports `SEARCH` stage.")
@@ -106,6 +107,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         self,
         texts: list[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError("`get_embeddings` only supports `SEARCH` stage.")
