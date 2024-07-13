@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod
-from enum import StrEnum, auto
+from enum import Enum, StrEnum, auto
 from typing import Optional, Dict
 
 from ..abstractions.search import VectorSearchResult
