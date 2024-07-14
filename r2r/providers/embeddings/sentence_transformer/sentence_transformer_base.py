@@ -44,6 +44,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         self.rerank_encoder = self._init_model(
             config, EmbeddingProvider.PipeStage.RERANK
         )
+        self.set_prefixes(config.prefixes or {}, self.base_model)
 
     def _init_model(self, config: EmbeddingConfig, stage: str):
         stage_name = stage.name.lower()
@@ -100,6 +101,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             raise ValueError(
                 "`get_embedding` can only be called for the search stage if a search model is set."
             )
+        text = self.prefixes.get(purpose, '') + text
         encoder = self.search_encoder
         return encoder.encode([text]).tolist()[0]
 
@@ -120,7 +122,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             if stage == EmbeddingProvider.PipeStage.BASE
             else self.rerank_encoder
         )
-        return encoder.encode(texts).tolist()
+        return encoder.encode([(self.prefixes.get(purpose, '') + text) for text in texts]).tolist()
 
     def rerank(
         self,

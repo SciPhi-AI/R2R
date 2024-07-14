@@ -25,6 +25,16 @@ default_embedding_prefixes = {
         EmbeddingPurpose.QUERY: 'search_query: ',
         EmbeddingPurpose.DOCUMENT: 'search_document: ',
     },
+    'mixedbread-ai/mxbai-embed-large-v1': {
+        EmbeddingPurpose.INDEX: '',
+        EmbeddingPurpose.QUERY: 'Represent this sentence for searching relevant passages: ',
+        EmbeddingPurpose.DOCUMENT: 'Represent this sentence for searching relevant passages: ',
+    },
+    'mixedbread-ai/mxbai-embed-large': {
+        EmbeddingPurpose.INDEX: '',
+        EmbeddingPurpose.QUERY: 'Represent this sentence for searching relevant passages: ',
+        EmbeddingPurpose.DOCUMENT: 'Represent this sentence for searching relevant passages: ',
+    },
 }
 
 

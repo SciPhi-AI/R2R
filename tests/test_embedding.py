@@ -3,6 +3,7 @@ import asyncio
 import pytest
 
 from r2r import EmbeddingConfig, VectorSearchResult, generate_id_from_label
+from r2r.base import EmbeddingPurpose
 from r2r.providers.embeddings import (
     OpenAIEmbeddingProvider,
     SentenceTransformerEmbeddingProvider,
@@ -110,6 +111,18 @@ def sentence_transformer_provider():
     return SentenceTransformerEmbeddingProvider(config)
 
 
+class FakeEmbedding:
+    def tolist(self):
+        return [[]]
+
+
+class FakeEncoder:
+    def encode(self, *args, **kwargs):
+        self._last_encode_args = args
+        self._last_encode_kwargs = kwargs
+        return FakeEmbedding()
+
+
 def test_sentence_transformer_initialization(sentence_transformer_provider):
     assert isinstance(
         sentence_transformer_provider, SentenceTransformerEmbeddingProvider
@@ -122,6 +135,20 @@ def test_sentence_transformer_invalid_provider_initialization():
     config = EmbeddingConfig(provider="invalid_provider")
     with pytest.raises(ValueError):
         SentenceTransformerEmbeddingProvider(config)
+
+
+def test_sentence_transformer_indexing_no_prefix(sentence_transformer_provider):
+    encoder = FakeEncoder()
+    sentence_transformer_provider.search_encoder = encoder
+    embedding = sentence_transformer_provider.get_embedding("test text")
+    assert encoder._last_encode_args[0][0] == 'test text'
+
+
+def test_sentence_transformer_querying_with_prefix(sentence_transformer_provider):
+    encoder = FakeEncoder()
+    sentence_transformer_provider.search_encoder = encoder
+    embedding = sentence_transformer_provider.get_embedding("test text", purpose=EmbeddingPurpose.QUERY)
+    assert encoder._last_encode_args[0][0] == 'Represent this sentence for searching relevant passages: test text'
 
 
 def test_sentence_transformer_get_embedding(sentence_transformer_provider):
