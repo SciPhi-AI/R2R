@@ -478,7 +478,13 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
 
 
 class PostgresRelationalDBProvider(RelationalDatabaseProvider):
-    def __init__(self, config: DatabaseConfig, crypto_provider: Optional[CryptoProvider],*args, **kwargs):
+    def __init__(
+        self,
+        config: DatabaseConfig,
+        crypto_provider: Optional[CryptoProvider],
+        *args,
+        **kwargs,
+    ):
         super().__init__(config)
         self.vx: Client = kwargs.get("vx", None)
         self.crypto_provider = crypto_provider
@@ -928,7 +934,12 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
 
 class PostgresDBProvider(DatabaseProvider):
     def __init__(
-        self, config: DatabaseConfig, crypto_provider: Optional[CryptoProvider], dimension: int, *args, **kwargs
+        self,
+        config: DatabaseConfig,
+        crypto_provider: Optional[CryptoProvider],
+        dimension: int,
+        *args,
+        **kwargs,
     ):
         user = config.extra_fields.get("user", None) or os.getenv(
             "POSTGRES_USER"
@@ -1006,5 +1017,8 @@ class PostgresDBProvider(DatabaseProvider):
 
     def _initialize_relational_db(self) -> RelationalDatabaseProvider:
         return PostgresRelationalDBProvider(
-            self.config, vx=self.vx, crypto_provider=self.crypto_provider, collection_name=self.collection_name,
+            self.config,
+            vx=self.vx,
+            crypto_provider=self.crypto_provider,
+            collection_name=self.collection_name,
         )

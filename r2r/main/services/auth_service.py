@@ -31,7 +31,7 @@ class AuthService(Service):
         )
 
     @telemetry_event("RegisterUser")
-    async def register_user(self, user: UserCreate) -> User:
+    async def register(self, user: UserCreate) -> User:
         # Check if user already exists
         existing_user = self.providers.database.relational.get_user_by_email(
             user.email
@@ -74,22 +74,23 @@ class AuthService(Service):
         return True
 
     @telemetry_event("Login")
-    async def login(self, email: str, password: str) -> Token:
-        user = self.providers.database.relational.get_user_by_email(email)
-        if not user or not self.providers.auth.crypto_provider.verify_password(
-            password, user.hashed_password
-        ):
-            raise R2RException(
-                status_code=401, message="Incorrect email or password"
-            )
+    async def login(self, email: str, password: str) -> dict[str, Token]:
+        return self.providers.auth.login(email, password)
+        # user = self.providers.database.relational.get_user_by_email(email)
+        # if not user or not self.providers.auth.crypto_provider.verify_password(
+        #     password, user.hashed_password
+        # ):
+        #     raise R2RException(
+        #         status_code=401, message="Incorrect email or password"
+        #     )
 
-        if not user.is_verified:
-            raise R2RException(status_code=401, message="Email not verified")
+        # if not user.is_verified:
+        #     raise R2RException(status_code=401, message="Email not verified")
 
-        access_token = self.providers.auth.create_access_token(
-            data={"sub": user.email}
-        )
-        return Token(access_token=access_token, token_type="bearer")
+        # access_token = self.providers.auth.create_access_token(
+        #     data={"sub": user.email}
+        # )
+        # return Token(access_token=access_token, token_type="access")
 
     @telemetry_event("GetCurrentUser")
     async def get_current_user(self, token: str) -> User:
@@ -104,9 +105,9 @@ class AuthService(Service):
         return user
 
     @telemetry_event("RefreshToken")
-    async def refresh_token(self, token: str) -> Token:
-        current_user = await self.get_current_user(token)
-        new_access_token = self.providers.auth.create_access_token(
-            data={"sub": current_user.email}
+    async def refresh_access_token(
+        self, user_email: str, refresh_access_token: str
+    ) -> dict[str, Token]:
+        return self.providers.auth.refresh_access_token(
+            user_email, refresh_access_token
         )
-        return Token(access_token=new_access_token, token_type="bearer")

@@ -171,7 +171,7 @@ def test_fallback_to_config_secret(mock_db_provider, auth_config):
 
 def test_user_registration(auth_handler, mock_db_provider):
     user = UserCreate(email="test@example.com", password="password123")
-    result = auth_handler.register_user(user)
+    result = auth_handler.register(user)
     assert "User created" in result["message"]
     assert (
         mock_db_provider.relational.get_user_by_email("test@example.com")
@@ -181,7 +181,7 @@ def test_user_registration(auth_handler, mock_db_provider):
 
 def test_user_login(auth_handler, mock_db_provider):
     user = UserCreate(email="test@example.com", password="password123")
-    auth_handler.register_user(user)
+    auth_handler.register(user)
 
     # Simulate email verification
     db_user = mock_db_provider.relational.get_user_by_email("test@example.com")
@@ -189,7 +189,7 @@ def test_user_login(auth_handler, mock_db_provider):
 
     token_data = auth_handler.login("test@example.com", "password123")
     assert "access_token" in token_data
-    assert token_data["token_type"] == "bearer"
+    assert token_data["token_type"] == "access"
 
     with pytest.raises(HTTPException):
         auth_handler.login("test@example.com", "wrong_password")
@@ -197,7 +197,7 @@ def test_user_login(auth_handler, mock_db_provider):
 
 def test_get_current_user(auth_handler, mock_db_provider):
     user = UserCreate(email="test@example.com", password="password123")
-    auth_handler.register_user(user)
+    auth_handler.register(user)
 
     # Simulate email verification
     db_user = mock_db_provider.relational.get_user_by_email("test@example.com")
@@ -212,7 +212,7 @@ def test_get_current_user(auth_handler, mock_db_provider):
 
 def test_get_current_active_user(auth_handler, mock_db_provider):
     user = UserCreate(email="test@example.com", password="password123")
-    created_user = auth_handler.register_user(user)
+    created_user = auth_handler.register(user)
 
     # Simulate email verification
     db_user = mock_db_provider.relational.get_user_by_email("test@example.com")
@@ -236,7 +236,7 @@ def test_get_current_active_user(auth_handler, mock_db_provider):
 
 def test_verify_email(auth_handler, mock_db_provider):
     user = UserCreate(email="test@example.com", password="password123")
-    auth_handler.register_user(user)
+    auth_handler.register(user)
 
     # Get the verification code
     verification_code = next(

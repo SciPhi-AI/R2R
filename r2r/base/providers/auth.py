@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Dict
+from typing import Dict, Optional
+
 from fastapi import Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from ..abstractions.user import TokenData, User, UserCreate
+
+from ..abstractions.user import Token, TokenData, User, UserCreate
 from .base import Provider, ProviderConfig
+
 
 class AuthConfig(ProviderConfig):
     enabled: bool = True
@@ -18,12 +21,15 @@ class AuthConfig(ProviderConfig):
     def validate(self) -> None:
         super().validate()
 
+
 class AuthProvider(Provider, ABC):
     security = HTTPBearer()
 
     def __init__(self, config: AuthConfig):
         if not isinstance(config, AuthConfig):
-            raise ValueError("AuthProvider must be initialized with an AuthConfig")
+            raise ValueError(
+                "AuthProvider must be initialized with an AuthConfig"
+            )
         super().__init__(config)
 
     @abstractmethod
@@ -47,7 +53,7 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def register_user(self, user: UserCreate) -> Dict[str, str]:
+    def register(self, user: UserCreate) -> Dict[str, str]:
         pass
 
     @abstractmethod
@@ -55,12 +61,16 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def login(self, email: str, password: str) -> Dict[str, str]:
+    def login(self, email: str, password: str) -> Dict[str, Token]:
         pass
 
     @abstractmethod
-    def refresh_access_token(self, refresh_token: str) -> Dict[str, str]:
+    def refresh_access_token(
+        self, user_email: str, refresh_access_token: str
+    ) -> Dict[str, str]:
         pass
 
-    def auth_wrapper(self, auth: HTTPAuthorizationCredentials = Security(security)):
+    def auth_wrapper(
+        self, auth: HTTPAuthorizationCredentials = Security(security)
+    ):
         return self.decode_token(auth.credentials)

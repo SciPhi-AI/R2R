@@ -6,6 +6,8 @@ from r2r.base import (
     AsyncPipe,
     AuthConfig,
     AuthProvider,
+    CryptoConfig,
+    CryptoProvider,
     DatabaseConfig,
     DatabaseProvider,
     EmbeddingConfig,
@@ -17,8 +19,6 @@ from r2r.base import (
     LLMProvider,
     PromptConfig,
     PromptProvider,
-    CryptoConfig,
-    CryptoProvider,
 )
 from r2r.pipelines import (
     EvalPipeline,
@@ -49,7 +49,9 @@ class R2RProviderFactory:
         if auth_config.provider == "r2r":
             from r2r.providers import R2RAuthProvider
 
-            auth_provider = R2RAuthProvider(auth_config, crypto_provider, db_provider)
+            auth_provider = R2RAuthProvider(
+                auth_config, crypto_provider, db_provider
+            )
         elif auth_config.provider is None:
             auth_provider = None
         else:
@@ -63,9 +65,11 @@ class R2RProviderFactory:
     ) -> CryptoProvider:
         crypto_provider: Optional[CryptoProvider] = None
         if crypto_config.provider == "bcrypt":
-            from r2r.providers.crypto import BCryptProvider, BCryptConfig
+            from r2r.providers.crypto import BCryptConfig, BCryptProvider
 
-            crypto_provider = BCryptProvider(BCryptConfig(**crypto_config.dict()))
+            crypto_provider = BCryptProvider(
+                BCryptConfig(**crypto_config.dict())
+            )
         elif crypto_config.provider is None:
             crypto_provider = None
         else:
@@ -73,9 +77,13 @@ class R2RProviderFactory:
                 f"Crypto provider {crypto_config.provider} not supported."
             )
         return crypto_provider
-    
+
     def create_database_provider(
-        self, db_config: DatabaseConfig, crypto_provider: CryptoProvider, *args, **kwargs
+        self,
+        db_config: DatabaseConfig,
+        crypto_provider: CryptoProvider,
+        *args,
+        **kwargs,
     ) -> DatabaseProvider:
         database_provider: Optional[DatabaseProvider] = None
         if not self.config.embedding.base_dimension:
@@ -98,7 +106,6 @@ class R2RProviderFactory:
             raise ValueError("Database provider not found")
 
         return database_provider
-
 
     def create_embedding_provider(
         self, embedding: EmbeddingConfig, *args, **kwargs
@@ -213,7 +220,7 @@ class R2RProviderFactory:
         *args,
         **kwargs,
     ) -> R2RProviders:
-    
+
         prompt_provider = (
             prompt_provider_override
             or self.create_prompt_provider(self.config.prompt, *args, **kwargs)
@@ -237,8 +244,9 @@ class R2RProviderFactory:
         kg_provider = kg_provider_override or self.create_kg_provider(
             self.config.kg, *args, **kwargs
         )
-        crypto_provider = crypto_provider_override or self.create_crypto_provider(
-            self.config.crypto, *args, **kwargs
+        crypto_provider = (
+            crypto_provider_override
+            or self.create_crypto_provider(self.config.crypto, *args, **kwargs)
         )
         database_provider = (
             database_provider_override
@@ -247,7 +255,11 @@ class R2RProviderFactory:
             )
         )
         auth_provider = auth_provider_override or self.create_auth_provider(
-            self.config.auth, database_provider, crypto_provider, *args, **kwargs
+            self.config.auth,
+            database_provider,
+            crypto_provider,
+            *args,
+            **kwargs,
         )
         return R2RProviders(
             auth=auth_provider,

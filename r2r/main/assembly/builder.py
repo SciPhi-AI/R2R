@@ -3,14 +3,14 @@ from typing import Optional, Type
 
 from r2r.base import (
     AsyncPipe,
+    AuthProvider,
+    CryptoProvider,
     DatabaseProvider,
     EmbeddingProvider,
     EvalProvider,
+    KGProvider,
     LLMProvider,
     PromptProvider,
-    KGProvider,
-    CryptoProvider,
-    AuthProvider,
 )
 from r2r.pipelines import (
     EvalPipeline,
@@ -40,6 +40,7 @@ class R2RBuilder:
         "neo4j_kg": os.path.join(config_root, "neo4j_kg.json"),
         "local_neo4j_kg": os.path.join(config_root, "local_neo4j_kg.json"),
         "postgres_logging": os.path.join(config_root, "postgres_logging.json"),
+        "auth": os.path.join(config_root, "auth.json"),
     }
 
     @staticmethod
@@ -53,13 +54,15 @@ class R2RBuilder:
     def __init__(
         self,
         config: Optional[R2RConfig] = None,
-        from_config: Optional[str] = None,
+        config_name: Optional[str] = None,
     ):
-        if config and from_config:
+        if config and config_name:
             raise ValueError("Cannot specify both config and config_name")
-        self.config = config or R2RBuilder._get_config(from_config)
+        self.config = config or R2RBuilder._get_config(config_name)
         self.r2r_app_override: Optional[Type[R2REngine]] = None
-        self.provider_factory_override: Optional[Type[R2RProviderFactory]] = None
+        self.provider_factory_override: Optional[Type[R2RProviderFactory]] = (
+            None
+        )
         self.pipe_factory_override: Optional[R2RPipeFactory] = None
         self.pipeline_factory_override: Optional[R2RPipelineFactory] = None
 

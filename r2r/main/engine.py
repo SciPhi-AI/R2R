@@ -114,8 +114,8 @@ class R2REngine(metaclass=AsyncSyncMeta):
         return await self.management_service.document_chunks(*args, **kwargs)
 
     @syncable
-    async def aregister_user(self, *args, **kwargs):
-        return await self.auth_service.register_user(*args, **kwargs)
+    async def aregister(self, *args, **kwargs):
+        return await self.auth_service.register(*args, **kwargs)
 
     @syncable
     async def averify_email(self, *args, **kwargs):
@@ -131,4 +131,4 @@ class R2REngine(metaclass=AsyncSyncMeta):
 
     @syncable
     async def arefresh_token(self, *args, **kwargs):
-        return await self.auth_service.refresh_token(*args, **kwargs)
+        return await self.auth_service.refresh_access_token(*args, **kwargs)

@@ -1,13 +1,13 @@
-from typing import Optional
 from abc import ABC, abstractmethod
+from typing import Optional
+
 from .base import Provider, ProviderConfig
 
 
 class CryptoConfig(ProviderConfig):
     provider: Optional[str] = None
-    access_token_lifetime_in_minutes: int = 30 # minutes
-    refresh_token_lifetime_in_days: int = 7 # days
-
+    access_token_lifetime_in_minutes: int = 30  # minutes
+    refresh_token_lifetime_in_days: int = 7  # days
 
     @property
     def supported_providers(self) -> list[str]:

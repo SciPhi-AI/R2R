@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Body, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 
@@ -13,8 +13,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 class UserResponse(BaseModel):
     results: User
 
+
 class TokenResponse(BaseModel):
-    results: Token
+    results: dict[str, Token]
+
 
 class AuthRouter(BaseRouter):
     def __init__(self, engine: R2REngine):
@@ -25,7 +27,7 @@ class AuthRouter(BaseRouter):
         @self.router.post("/register", response_model=UserResponse)
         @self.base_endpoint
         async def register(user: UserCreate):
-            return await self.engine.aregister_user(user)
+            return await self.engine.aregister(user)
 
         @self.router.post("/verify_email/{verification_code}")
         @self.base_endpoint
@@ -35,10 +37,9 @@ class AuthRouter(BaseRouter):
         @self.router.post("/login", response_model=TokenResponse)
         @self.base_endpoint
         async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-            login_result =  await self.engine.alogin(
+            login_result = await self.engine.alogin(
                 form_data.username, form_data.password
             )
-            print('login_result', login_result)
             return login_result
 
         @self.router.get("/users/me", response_model=UserResponse)
@@ -48,5 +49,12 @@ class AuthRouter(BaseRouter):
 
         @self.router.post("/token/refresh", response_model=TokenResponse)
         @self.base_endpoint
-        async def refresh_token(token: str = Depends(oauth2_scheme)):
-            return await self.engine.arefresh_token(token)
+        async def refresh_access_token(
+            refresh_access_token: str = Body(..., embed=True),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            refresh_result = await self.engine.arefresh_token(
+                user_email=auth_user.email,
+                refresh_access_token=refresh_access_token,
+            )
+            return refresh_result
