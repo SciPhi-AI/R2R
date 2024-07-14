@@ -29,7 +29,7 @@ class OpenAILLM(LLMProvider):
                 "The provided config must be an instance of OpenAIConfig."
             )
         try:
-            from openai import OpenAI  # noqa
+            from openai import AsyncOpenAI, OpenAI  # noqa
         except ImportError:
             raise ImportError(
                 "Error, `openai` is required to run an OpenAILLM. Please install it using `pip install openai`."
@@ -44,6 +44,7 @@ class OpenAILLM(LLMProvider):
             )
         super().__init__(config)
         self.config: LLMConfig = config
+        self.async_client = AsyncOpenAI()
         self.client = OpenAI()
 
     def get_completion(
@@ -141,4 +142,4 @@ class OpenAILLM(LLMProvider):
 
         args = {**args, **kwargs}
         # Create the chat completion
-        return await self.client.chat.completions.create(**args)
+        return await self.async_client.chat.completions.create(**args)
