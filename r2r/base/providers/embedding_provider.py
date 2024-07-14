@@ -1,7 +1,7 @@
 import logging
 from abc import abstractmethod
 from enum import Enum, StrEnum, auto
-from typing import Optional, Dict
+from typing import Optional
 
 from ..abstractions.search import VectorSearchResult
 from .base_provider import Provider, ProviderConfig
@@ -48,7 +48,7 @@ class EmbeddingConfig(ProviderConfig):
     rerank_dimension: Optional[int] = None
     rerank_transformer_type: Optional[str] = None
     batch_size: int = 1
-    prefixes: Optional[dict[EmbeddingPurpose, str]] = None
+    prefixes: Optional[dict[str, str]] = None
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:
