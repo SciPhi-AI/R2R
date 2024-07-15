@@ -6,7 +6,7 @@ from typing import Any
 
 from ollama import AsyncClient, Client
 
-from r2r.base import EmbeddingConfig, EmbeddingProvider, VectorSearchResult
+from r2r.base import EmbeddingConfig, EmbeddingProvider, VectorSearchResult, EmbeddingPurpose
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self.max_backoff = 60
         self.concurrency_limit = 10
         self.semaphore = asyncio.Semaphore(self.concurrency_limit)
+        self.set_prefixes(config.prefixes or {}, self.base_model)
 
     async def process_queue(self):
         while True:
@@ -84,11 +85,13 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ) -> list[float]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OllamaEmbeddingProvider only supports search stage."
             )
+        text = self.prefixes.get(purpose, '') + text
 
         try:
             response = self.client.embeddings(
@@ -110,6 +113,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self,
         texts: list[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
@@ -119,6 +123,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         queue_processor = asyncio.create_task(self.process_queue())
         futures = []
         for text in texts:
+            text = self.prefixes.get(purpose, '') + text
             future = asyncio.Future()
             await self.request_queue.put({"text": text, "future": future})
             futures.append(future)
