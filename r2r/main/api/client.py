@@ -110,7 +110,6 @@ class R2RClient:
         ]:
             headers.update(self._get_auth_header())
         if isinstance(self.client, TestClient):
-            # TestClient doesn't have a 'request' method, so we call the appropriate method directly
             response = getattr(self.client, method.lower())(
                 url, headers=headers, **kwargs
             )
@@ -141,8 +140,8 @@ class R2RClient:
         self._refresh_token = response["results"]["refresh_token"]["token"]
         return response
 
-    def get_current_user(self) -> dict:
-        return self._make_request("GET", "users/me")
+    def user_info(self) -> dict:
+        return self._make_request("GET", "user_info")
 
     def refresh_access_token(self) -> dict:
         if not self._refresh_token:

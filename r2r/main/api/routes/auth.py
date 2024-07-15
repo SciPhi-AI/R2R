@@ -42,9 +42,9 @@ class AuthRouter(BaseRouter):
             )
             return login_result
 
-        @self.router.get("/users/me", response_model=UserResponse)
+        @self.router.get("/user_info", response_model=UserResponse)
         @self.base_endpoint
-        async def read_users_me(
+        async def user_info(
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             return auth_user

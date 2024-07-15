@@ -8,14 +8,17 @@ from fastapi.testclient import TestClient
 
 from r2r import (
     R2RApp,
+    R2RAuthProvider,
     R2RBuilder,
     R2RClient,
+    R2RConfig,
     R2REngine,
     R2RException,
     Token,
     User,
     UserCreate,
 )
+from r2r.providers import BCryptConfig, BCryptProvider
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -91,7 +94,36 @@ def app_client(mock_db, mock_auth_wrapper):
 
 @pytest.fixture(scope="function")
 def r2r_client(app_client):
+    print("using regular r2r client")
     return R2RClient(base_url="http://testserver", custom_client=app_client)
+
+
+@pytest.fixture(scope="function")
+def non_auth_app_client(mock_db, mock_auth_wrapper):
+    providers = MagicMock()
+    providers.database = mock_db
+    config = R2RConfig.from_json()
+    providers.auth = R2RAuthProvider(
+        config.auth, BCryptProvider(BCryptConfig()), providers.database
+    )
+
+    pipelines = MagicMock()
+    engine = R2REngine(
+        config=config,
+        providers=providers,
+        pipelines=pipelines,
+    )
+    engine.asearch = mock_asearch
+    app = R2RApp(engine)
+    return TestClient(app.app)
+
+
+@pytest.fixture(scope="function")
+def non_auth_r2r_client(non_auth_app_client):
+    print("using non auth r2r")
+    return R2RClient(
+        base_url="http://testserver", custom_client=non_auth_app_client
+    )
 
 
 def test_health_check(r2r_client):
@@ -167,3 +199,30 @@ def test_authenticated_search(r2r_client, mock_db):
         == "Sample search result"
     )
     assert results["vector_search_results"][0]["score"] == 0.95
+
+
+def test_non_auth_get_current_user(non_auth_r2r_client):
+    print("calling user info....")
+    response = non_auth_r2r_client.user_info()
+    user = response["results"]
+
+    assert user["email"] == "admin@example.com"
+    assert user["is_superuser"] is True
+    assert user["is_active"] is True
+    assert user["is_verified"] is True
+    assert "id" in user
+    assert "hashed_password" in user
+    assert "created_at" in user
+    assert "updated_at" in user
+
+
+# def test_non_auth_search(non_auth_r2r_client):
+#     search_query = "test query"
+#     search_response = non_auth_r2r_client.search(search_query)
+#     results = search_response["results"]
+
+#     assert "vector_search_results" in results
+#     assert len(results["vector_search_results"]) > 0
+#     assert results["vector_search_results"][0]["id"] == "doc1"
+#     assert results["vector_search_results"][0]["metadata"]["text"] == "Sample search result"
+#     assert results["vector_search_results"][0]["score"] == 0.95

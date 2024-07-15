@@ -179,7 +179,6 @@ def main(
             use_kg_search=True,
         )["results"]
 
-        print("result:\n", result)
         print("Search Result:\n", result["kg_search_results"])
 
         result = client.rag(

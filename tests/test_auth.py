@@ -331,7 +331,7 @@ async def test_get_current_user_with_expired_token(
     access_token = tokens["refresh_token"]
 
     with pytest.raises(HTTPException) as exc_info:
-        result = await auth_service.get_current_user(access_token.token)
+        result = await auth_service.user_info(access_token.token)
     assert "Token has expired" in str(exc_info.value)
 
     # Reset the token lifetime
