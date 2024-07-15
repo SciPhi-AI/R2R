@@ -224,5 +224,8 @@ def test_non_auth_search(non_auth_r2r_client):
     assert "vector_search_results" in results
     assert len(results["vector_search_results"]) > 0
     assert results["vector_search_results"][0]["id"] == "doc1"
-    assert results["vector_search_results"][0]["metadata"]["text"] == "Sample search result"
+    assert (
+        results["vector_search_results"][0]["metadata"]["text"]
+        == "Sample search result"
+    )
     assert results["vector_search_results"][0]["score"] == 0.95

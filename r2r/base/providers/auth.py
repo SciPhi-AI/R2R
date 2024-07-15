@@ -6,7 +6,6 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from ..abstractions.exception import R2RException
 from ..abstractions.user import Token, TokenData, User, UserCreate
-from ..utils import generate_id_from_label
 from .base import Provider, ProviderConfig
 
 
