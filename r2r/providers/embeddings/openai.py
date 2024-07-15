@@ -3,7 +3,7 @@ import os
 
 from openai import AsyncOpenAI, AuthenticationError, OpenAI
 
-from r2r.base import EmbeddingConfig, EmbeddingProvider, VectorSearchResult
+from r2r.base import EmbeddingConfig, EmbeddingProvider, EmbeddingPurpose, VectorSearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +72,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ) -> list[float]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
@@ -100,6 +101,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ) -> list[float]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
@@ -125,6 +127,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self,
         texts: list[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
@@ -152,6 +155,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self,
         texts: list[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(

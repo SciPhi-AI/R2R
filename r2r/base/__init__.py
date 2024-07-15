@@ -16,6 +16,7 @@ from .abstractions.document import (
 )
 from .abstractions.exception import R2RDocumentProcessingError, R2RException
 from .abstractions.llama_abstractions import VectorStoreQuery
+from .abstractions.embedding import EmbeddingPurpose
 from .abstractions.llm import (
     GenerationConfig,
     LLMChatCompletion,

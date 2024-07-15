@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Optional
 
 from ..abstractions.search import VectorSearchResult
+from ..abstractions.embedding import EmbeddingPurpose, default_embedding_prefixes
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -19,6 +20,7 @@ class EmbeddingConfig(ProviderConfig):
     rerank_dimension: Optional[int] = None
     rerank_transformer_type: Optional[str] = None
     batch_size: int = 1
+    prefixes: Optional[dict[str, str]] = None
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:
@@ -46,24 +48,30 @@ class EmbeddingProvider(Provider):
         super().__init__(config)
 
     @abstractmethod
-    def get_embedding(self, text: str, stage: PipeStage = PipeStage.BASE):
+    def get_embedding(
+        self, text: str, stage: PipeStage = PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX
+    ):
         pass
 
     async def async_get_embedding(
-        self, text: str, stage: PipeStage = PipeStage.BASE
+        self, text: str, stage: PipeStage = PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX
     ):
-        return self.get_embedding(text, stage)
+        return self.get_embedding(text, stage, purpose)
 
     @abstractmethod
     def get_embeddings(
-        self, texts: list[str], stage: PipeStage = PipeStage.BASE
+        self, texts: list[str], stage: PipeStage = PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX
     ):
         pass
 
     async def async_get_embeddings(
-        self, texts: list[str], stage: PipeStage = PipeStage.BASE
+        self, texts: list[str], stage: PipeStage = PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX
     ):
-        return self.get_embeddings(texts, stage)
+        return self.get_embeddings(texts, stage, purpose)
 
     @abstractmethod
     def rerank(
@@ -81,3 +89,17 @@ class EmbeddingProvider(Provider):
     ) -> list[int]:
         """Tokenizes the input string."""
         pass
+
+    def set_prefixes(self, config_prefixes: dict[str, str], base_model: str):
+        self.prefixes = {}
+
+        # use the configured prefixes if given
+        for t, p in config_prefixes.items():
+            purpose = EmbeddingPurpose(t.lower())
+            self.prefixes[purpose] = p
+
+        # but apply known defaults otherwise
+        if base_model in default_embedding_prefixes:
+            for t, p in default_embedding_prefixes[base_model].items():
+                if t not in self.prefixes:
+                    self.prefixes[t] = p

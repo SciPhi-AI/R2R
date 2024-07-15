@@ -8,6 +8,7 @@ from r2r.base import (
     AsyncState,
     DatabaseProvider,
     EmbeddingProvider,
+    EmbeddingPurpose,
     PipeType,
     VectorSearchResult,
     VectorSearchSettings,
@@ -57,6 +58,7 @@ class VectorSearchPipe(SearchPipe):
         results = []
         query_vector = self.embedding_provider.get_embedding(
             message,
+            purpose=EmbeddingPurpose.QUERY,
         )
         search_results = (
             self.database_provider.hybrid_search(
