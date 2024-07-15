@@ -111,10 +111,6 @@ class R2RClient:
             headers.update(self._get_auth_header())
         if isinstance(self.client, TestClient):
             # TestClient doesn't have a 'request' method, so we call the appropriate method directly
-            print("method = ", method)
-            print("url = ", url)
-            print("headers = ", headers)
-            print("kwargs = ", kwargs)
             response = getattr(self.client, method.lower())(
                 url, headers=headers, **kwargs
             )
