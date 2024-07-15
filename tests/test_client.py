@@ -131,7 +131,6 @@ def test_login_user(r2r_client, mock_db):
     user_data = {"email": "login_test@example.com", "password": "testpassword"}
     mock_db.relational.get_user_by_email.return_value = None
     response = r2r_client.register(**user_data)
-    print("response = ", response)
 
     mock_db.relational.get_user_by_email.return_value = User(
         id=uuid.UUID("12345678-1234-5678-1234-567812345678"),

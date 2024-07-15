@@ -43,7 +43,6 @@ def app(request):
         config.logging.logging_path
     )
     try:
-        print("config.database = ", config.database)
         providers = R2RProviderFactory(config).create_providers()
         pipes = R2RPipeFactory(config, providers).create_pipes()
         pipelines = R2RPipelineFactory(config, pipes).create_pipelines()

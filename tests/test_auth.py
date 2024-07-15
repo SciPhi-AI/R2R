@@ -256,7 +256,6 @@ async def test_refresh_token_flow(auth_service, auth_provider):
 
     # Login to get initial tokens
     tokens = await auth_service.login("refresh@example.com", "password123")
-    print("tokens = ", tokens)
     initial_access_token = tokens["access_token"]
     refresh_token = tokens["refresh_token"]
 
@@ -265,10 +264,6 @@ async def test_refresh_token_flow(auth_service, auth_provider):
         "refresh@example.com", refresh_token.token
     )
     assert "access_token" in new_tokens
-    print("initial_access_token.token = ", initial_access_token.token)
-    print(
-        'new_tokens["access_token"].token = ', new_tokens["access_token"].token
-    )
     assert new_tokens["access_token"].token != initial_access_token.token
 
 
@@ -337,7 +332,6 @@ async def test_get_current_user_with_expired_token(
 
     with pytest.raises(HTTPException) as exc_info:
         result = await auth_service.get_current_user(access_token.token)
-        print("result = ", result)
     assert "Token has expired" in str(exc_info.value)
 
     # Reset the token lifetime
