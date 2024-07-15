@@ -1,6 +1,7 @@
 import string
 from io import BytesIO
 from typing import AsyncGenerator
+import asyncio
 
 from r2r.base.abstractions.document import DataType
 from r2r.base.parsers.base_parser import AsyncParser
@@ -87,34 +88,34 @@ class PDFParserUnstructured(AsyncParser[DataType]):
         except ImportError:
             raise ValueError("Error, `pdfplumber` is required to run `PDFParserUnstructured`. Please install it using `pip install pdfplumber")
         
-    async def ingest(self, data: DataType, partition_strategy: str = "hi_res") -> AsyncGenerator[str, None]:
-        if isinstance(data, str):
-            raise ValueError("PDF data must be in bytes format.")
+    async def ingest(self, data, partition_strategy: str = "hi_res") -> AsyncGenerator[str, None]:
         
         # partition the pdf
-        elements = self.partition_pdf(data, partition_strategy = partition_strategy)
+        elements = self.partition_pdf(file = BytesIO(data), partition_strategy = partition_strategy)
         for element in elements:
             yield element.text
 
 
 class PDFParserMarker(AsyncParser[DataType]):
+    model_refs = None
+
     def __init__(self):
         try:
             from marker.convert import convert_single_pdf
             from marker.models import load_all_models
 
             self.convert_single_pdf = convert_single_pdf
-            if not self.model_refs: 
-                self.model_refs = load_all_models()
+            if PDFParserMarker.model_refs is None:
+                PDFParserMarker.model_refs = load_all_models()
 
         except ImportError as e:
-            raise ValueError(f"Error, {e}")
+            raise ValueError(f"Error, marker is not installed {e}, please install using `pip install marker-pdf` ")
                              
-    def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: DataType) -> AsyncGenerator[str, None]:
         if isinstance(data, str):
             raise ValueError("PDF data must be in bytes format.")
         
-        text, _, _ = self.convert_single_pdf(BytesIO(data), self.model_refs)
+        text, _, _ = self.convert_single_pdf(BytesIO(data), PDFParserMarker.model_refs)
         yield text
 
 class PDFParserLocal(AsyncParser[DataType]):
