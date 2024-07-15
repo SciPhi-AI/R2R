@@ -24,7 +24,6 @@ class BaseRouter:
                     results = await func(*args, **kwargs)
                     if isinstance(results, StreamingResponse):
                         return results
-
                     return {"results": results}
                 except R2RException as re:
                     raise HTTPException(

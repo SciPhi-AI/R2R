@@ -110,7 +110,6 @@ class R2RClient:
         ]:
             headers.update(self._get_auth_header())
         if isinstance(self.client, TestClient):
-            # TestClient doesn't have a 'request' method, so we call the appropriate method directly
             response = getattr(self.client, method.lower())(
                 url, headers=headers, **kwargs
             )
@@ -124,7 +123,7 @@ class R2RClient:
 
     def _get_auth_header(self) -> dict:
         if not self.access_token:
-            raise ValueError("Not authenticated. Please login first.")
+            {}  # Return empty dict if no access token
         return {"Authorization": f"Bearer {self.access_token}"}
 
     def register(self, email: str, password: str) -> dict:
@@ -141,8 +140,8 @@ class R2RClient:
         self._refresh_token = response["results"]["refresh_token"]["token"]
         return response
 
-    def get_current_user(self) -> dict:
-        return self._make_request("GET", "users/me")
+    def user_info(self) -> dict:
+        return self._make_request("GET", "user_info")
 
     def refresh_access_token(self) -> dict:
         if not self._refresh_token:
@@ -159,8 +158,9 @@ class R2RClient:
         return response
 
     def _ensure_authenticated(self):
-        if not self.access_token:
-            raise ValueError("Not authenticated. Please login first.")
+        pass
+        # if not self.access_token:
+        #     raise ValueError("Not authenticated. Please login first.")
 
     def health(self) -> dict:
         return self._make_request("GET", "health")

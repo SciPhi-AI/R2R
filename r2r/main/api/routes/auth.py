@@ -26,25 +26,25 @@ class AuthRouter(BaseRouter):
     def setup_routes(self):
         @self.router.post("/register", response_model=UserResponse)
         @self.base_endpoint
-        async def register(user: UserCreate):
+        async def register_app(user: UserCreate):
             return await self.engine.aregister(user)
 
         @self.router.post("/verify_email/{verification_code}")
         @self.base_endpoint
-        async def verify_email(verification_code: str):
+        async def verify_email_app(verification_code: str):
             return await self.engine.averify_email(verification_code)
 
         @self.router.post("/login", response_model=TokenResponse)
         @self.base_endpoint
-        async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+        async def login_app(form_data: OAuth2PasswordRequestForm = Depends()):
             login_result = await self.engine.alogin(
                 form_data.username, form_data.password
             )
             return login_result
 
-        @self.router.get("/users/me", response_model=UserResponse)
+        @self.router.get("/user_info", response_model=UserResponse)
         @self.base_endpoint
-        async def read_users_me(
+        async def user_info_app(
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             return auth_user
@@ -53,7 +53,7 @@ class AuthRouter(BaseRouter):
             "/refresh_access_token", response_model=TokenResponse
         )
         @self.base_endpoint
-        async def refresh_access_token(
+        async def refresh_access_token_app(
             refresh_token: str = Body(..., embed=True),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):

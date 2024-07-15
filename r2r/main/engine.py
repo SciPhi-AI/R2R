@@ -127,7 +127,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
 
     @syncable
     async def aget_current_user(self, *args, **kwargs):
-        return await self.auth_service.get_current_user(*args, **kwargs)
+        return await self.auth_service.user_info(*args, **kwargs)
 
     @syncable
     async def arefresh_access_token(self, *args, **kwargs):

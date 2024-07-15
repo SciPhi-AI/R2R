@@ -6,7 +6,6 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from ..abstractions.exception import R2RException
 from ..abstractions.user import Token, TokenData, User, UserCreate
-from ..utils import generate_id_from_label
 from .base import Provider, ProviderConfig
 
 
@@ -63,7 +62,7 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def get_current_user(self, token: str) -> User:
+    def user_info(self, token: str) -> User:
         pass
 
     @abstractmethod
@@ -100,7 +99,7 @@ class AuthProvider(Provider, ABC):
             )
 
         try:
-            user = self.get_current_user(auth.credentials)
+            user = self.user_info(auth.credentials)
             return user
         except Exception as e:
             raise R2RException(
