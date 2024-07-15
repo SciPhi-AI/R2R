@@ -1,3 +1,4 @@
+import asyncio
 import io
 import uuid
 from datetime import datetime
@@ -15,6 +16,19 @@ from r2r.base import (
 )
 from r2r.main import R2RPipelines, R2RProviders
 from r2r.main.services.ingestion_service import IngestionService
+
+
+@pytest.fixture(scope="session", autouse=True)
+def event_loop_policy():
+    asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+
+
+@pytest.fixture(scope="function", autouse=True)
+async def cleanup_tasks():
+    yield
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    [task.cancel() for task in tasks]
+    await asyncio.gather(*tasks, return_exceptions=True)
 
 
 @pytest.fixture

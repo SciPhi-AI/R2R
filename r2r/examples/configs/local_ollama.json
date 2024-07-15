@@ -17,7 +17,7 @@
       "add_generation_kwargs": {},
       "api_base": null
     }
-  },  
+  },
   "embedding": {
     "provider": "ollama",
     "base_model": "mxbai-embed-large",

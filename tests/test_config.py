@@ -12,24 +12,20 @@ def event_loop_policy():
     asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
 
 
-@pytest.fixture(scope="function")
-def event_loop():
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-    asyncio.set_event_loop(None)
-
-
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="function", autouse=True)
 async def cleanup_tasks():
     yield
-    for task in asyncio.all_tasks():
-        if task is not asyncio.current_task():
-            task.cancel()
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    [task.cancel() for task in tasks]
+    await asyncio.gather(*tasks, return_exceptions=True)
+
+
+@pytest.fixture(autouse=True)
+async def manage_async_pipes():
+    async_pipes = []
+    yield async_pipes
+    for pipe in async_pipes:
+        await pipe.shutdown()
 
 
 @pytest.fixture
@@ -89,16 +85,18 @@ async def test_r2r_config_loading_required_keys(mock_bad_file):
 
 @pytest.mark.asyncio
 async def test_r2r_config_loading(mock_file):
-    config = R2RConfig.from_json("r2r.json")
-    assert (
-        config.embedding.provider == "example_provider"
-    ), "Provider should match the mock data"
+    try:
+        config = R2RConfig.from_json("r2r.json")
+        assert (
+            config.embedding.provider == "example_provider"
+        ), "Provider should match the mock data"
+    except Exception as e:
+        pytest.fail(f"Test failed with exception: {e}")
 
 
 @pytest.fixture
 def mock_redis_client():
-    client = Mock()
-    return client
+    return Mock()
 
 
 def test_r2r_config_serialization(mock_file, mock_redis_client):

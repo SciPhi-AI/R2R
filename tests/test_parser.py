@@ -20,24 +20,12 @@ def event_loop_policy():
     asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
 
 
-@pytest.fixture(scope="function")
-def event_loop():
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-    asyncio.set_event_loop(None)
-
-
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="function", autouse=True)
 async def cleanup_tasks():
     yield
-    for task in asyncio.all_tasks():
-        if task is not asyncio.current_task():
-            task.cancel()
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    [task.cancel() for task in tasks]
+    await asyncio.gather(*tasks, return_exceptions=True)
 
 
 @pytest.mark.asyncio
