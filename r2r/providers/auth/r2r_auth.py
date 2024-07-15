@@ -218,3 +218,7 @@ class R2RAuthProvider(AuthProvider):
                 token=new_refresh_token, token_type="refresh"
             ),
         }
+
+    def auth_wrapper(self, token: str = Depends(oauth2_scheme)) -> User:
+        if self.config.require_authentication:
+            return self.get_current_user(token)

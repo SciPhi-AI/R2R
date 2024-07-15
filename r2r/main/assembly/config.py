@@ -23,7 +23,7 @@ class R2RConfig:
     REQUIRED_KEYS: dict[str, list] = {
         "app": ["max_file_size_in_mb"],
         "crypto": ["provider"],
-        "auth": ["provider", "enabled"],
+        "auth": ["provider"],
         "embedding": [
             "provider",
             "base_model",
@@ -76,7 +76,6 @@ class R2RConfig:
             ):
                 self._validate_config_section(default_config, section, keys)
             setattr(self, section, default_config[section])
-
         self.app = self.app  # for type hinting
         self.auth = AuthConfig.create(**self.auth)
         self.crypto = CryptoConfig.create(**self.crypto)

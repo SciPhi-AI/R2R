@@ -28,11 +28,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def update_prompt_app(
             request: R2RUpdatePromptRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.config.auth.enabled
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             return await self.engine.aupdate_prompt(
                 request.name, request.template, request.input_types
@@ -43,11 +39,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def get_logs_app(
             request: R2RLogsRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.config.auth.enabled
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             return await self.engine.alogs(
                 log_type_filter=request.log_type_filter,
@@ -59,11 +51,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def get_analytics_app(
             request: R2RAnalyticsRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.config.auth.enabled
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             return await self.engine.aanalytics(
                 filter_criteria=request.filter_criteria,
@@ -75,11 +63,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def get_users_overview_app(
             request: R2RUsersOverviewRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.config.auth.enabled
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             return await self.engine.ausers_overview(user_ids=request.user_ids)
 
@@ -87,11 +71,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def delete_app(
             request: R2RDeleteRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.config.auth.enabled
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             return await self.engine.adelete(
                 keys=request.keys, values=request.values
@@ -102,11 +82,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def get_documents_overview_app(
             request: R2RDocumentsOverviewRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.config.auth.enabled
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             return await self.engine.adocuments_overview(
                 document_ids=request.document_ids, user_ids=request.user_ids
@@ -117,11 +93,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def get_document_chunks_app(
             request: R2RDocumentChunksRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.config.auth.enabled
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             return await self.engine.adocument_chunks(request.document_id)
 
@@ -130,6 +102,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def inspect_knowledge_graph(
             request: R2RPrintRelationshipsRequest,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             return await self.engine.inspect_knowledge_graph(
                 limit=request.limit
@@ -138,11 +111,7 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/app_settings")
         @self.base_endpoint
         async def get_app_settings_app(
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.config.auth.enabled
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             return await self.engine.aapp_settings()
 

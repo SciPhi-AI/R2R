@@ -4,6 +4,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, EmailStr, Field
 
+from ..utils import generate_id_from_label
+
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -15,8 +17,9 @@ class UserCreate(UserBase):
 
 class User(BaseModel):
     email: EmailStr
-    id: UUID = Field(default_factory=uuid4)
+    id: UUID = Field(default=None)
     hashed_password: str
+    is_superuser: bool = False
     is_active: bool = True
     is_verified: bool = False
     verification_code_expiry: Optional[datetime] = None
@@ -26,9 +29,15 @@ class User(BaseModel):
     class Config:
         orm_mode = True
 
+    def __init__(self, **data):
+        super().__init__(**data)
+        if self.id is None:
+            self.id = generate_id_from_label(self.email)
+
 
 class UserResponse(UserBase):
     id: UUID
+    is_superuser: bool
     is_active: bool
     is_verified: bool
     created_at: datetime
