@@ -12,8 +12,9 @@ import fire
 import httpx
 import nest_asyncio
 import requests
+from fastapi.testclient import TestClient
 
-from r2r.base import UserCreate
+from r2r.base import R2RException, UserCreate
 
 from .requests import (
     R2RAnalyticsRequest,
@@ -33,14 +34,6 @@ from .requests import (
 nest_asyncio.apply()
 
 
-class R2RHTTPError(Exception):
-    def __init__(self, status_code, error_type, message):
-        self.status_code = status_code
-        self.error_type = error_type
-        self.message = message
-        super().__init__(f"[{status_code}] {error_type}: {message}")
-
-
 def handle_request_error(response):
     if response.status_code >= 400:
         try:
@@ -49,20 +42,15 @@ def handle_request_error(response):
                 detail = error_content["detail"]
                 if isinstance(detail, dict):
                     message = detail.get("message", str(response.text))
-                    error_type = detail.get("error_type", "UnknownError")
                 else:
                     message = str(detail)
-                    error_type = "HTTPException"
             else:
                 message = str(error_content)
-                error_type = "UnknownError"
         except json.JSONDecodeError:
             message = response.text
-            error_type = "UnknownError"
 
-        raise R2RHTTPError(
+        raise R2RException(
             status_code=response.status_code,
-            error_type=error_type,
             message=message,
         )
 
@@ -105,11 +93,12 @@ def monitor_request(func):
 
 
 class R2RClient:
-    def __init__(self, base_url: str, prefix: str = "/v1"):
+    def __init__(self, base_url: str, prefix: str = "/v1", custom_client=None):
         self.base_url = base_url
         self.prefix = prefix
         self.access_token = None
         self._refresh_token = None
+        self.client = custom_client if custom_client else requests
 
     def _make_request(self, method, endpoint, **kwargs):
         url = f"{self.base_url}{self.prefix}/{endpoint}"
@@ -120,7 +109,16 @@ class R2RClient:
             "verify_email",
         ]:
             headers.update(self._get_auth_header())
-        response = requests.request(method, url, headers=headers, **kwargs)
+        if isinstance(self.client, TestClient):
+            # TestClient doesn't have a 'request' method, so we call the appropriate method directly
+            response = getattr(self.client, method.lower())(
+                url, headers=headers, **kwargs
+            )
+        else:
+            response = self.client.request(
+                method, url, headers=headers, **kwargs
+            )
+
         handle_request_error(response)
         return response.json()
 
@@ -139,9 +137,8 @@ class R2RClient:
     def login(self, email: str, password: str) -> dict:
         form_data = {"username": email, "password": password}
         response = self._make_request("POST", "login", data=form_data)
-        response = response["results"]
-        self.access_token = response["access_token"]["token"]
-        self._refresh_token = response["refresh_token"]["token"]
+        self.access_token = response["results"]["access_token"]["token"]
+        self._refresh_token = response["results"]["refresh_token"]["token"]
         return response
 
     def get_current_user(self) -> dict:
@@ -155,9 +152,8 @@ class R2RClient:
             "token/refresh",
             json={"refresh_token": self._refresh_token},
         )
-        results = response["results"]
-        self.access_token = results["access_token"]["token"]
-        self._refresh_token = results["refresh_token"][
+        self.access_token = response["results"]["access_token"]["token"]
+        self._refresh_token = response["results"]["refresh_token"][
             "token"
         ]  # Update the refresh token
         return response
