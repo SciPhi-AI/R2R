@@ -83,6 +83,8 @@ def test_openai_tokenize_string(openai_provider):
     assert all(isinstance(token, int) for token in tokens)
 
 
+# from r2r.providers import SentenceTransformerEmbeddingProvider
+
 # @pytest.fixture
 # def sentence_transformer_provider():
 #     config = EmbeddingConfig(
@@ -93,6 +95,31 @@ def test_openai_tokenize_string(openai_provider):
 #         rerank_dimension=384,
 #     )
 #     return SentenceTransformerEmbeddingProvider(config)
+
+# class FakeEmbedding:
+#     def tolist(self):
+#         return [[]]
+
+
+# class FakeEncoder:
+#     def encode(self, *args, **kwargs):
+#         self._last_encode_args = args
+#         self._last_encode_kwargs = kwargs
+#         return FakeEmbedding()
+
+# def test_sentence_transformer_indexing_no_prefix(sentence_transformer_provider):
+#     encoder = FakeEncoder()
+#     sentence_transformer_provider.search_encoder = encoder
+#     embedding = sentence_transformer_provider.get_embedding("test text")
+#     assert encoder._last_encode_args[0][0] == 'test text'
+
+
+# def test_sentence_transformer_querying_with_prefix(sentence_transformer_provider):
+#     from r2r.base import EmbeddingPurpose
+#     encoder = FakeEncoder()
+#     sentence_transformer_provider.search_encoder = encoder
+#     embedding = sentence_transformer_provider.get_embedding("test text", purpose=EmbeddingPurpose.QUERY)
+#     assert encoder._last_encode_args[0][0] == 'Represent this sentence for searching relevant passages: test text'
 
 
 # def test_sentence_transformer_initialization(sentence_transformer_provider):
