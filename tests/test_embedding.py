@@ -82,6 +82,7 @@ def test_openai_tokenize_string(openai_provider):
     assert isinstance(tokens, list)
     assert all(isinstance(token, int) for token in tokens)
 
+
 # from r2r.providers import SentenceTransformerEmbeddingProvider
 
 # @pytest.fixture

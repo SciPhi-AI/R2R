@@ -6,7 +6,12 @@ from typing import Any
 
 from ollama import AsyncClient, Client
 
-from r2r.base import EmbeddingConfig, EmbeddingProvider, VectorSearchResult, EmbeddingPurpose
+from r2r.base import (
+    EmbeddingConfig,
+    EmbeddingProvider,
+    EmbeddingPurpose,
+    VectorSearchResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +96,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             raise ValueError(
                 "OllamaEmbeddingProvider only supports search stage."
             )
-        text = self.prefixes.get(purpose, '') + text
+        text = self.prefixes.get(purpose, "") + text
 
         try:
             response = self.client.embeddings(
@@ -123,7 +128,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         queue_processor = asyncio.create_task(self.process_queue())
         futures = []
         for text in texts:
-            text = self.prefixes.get(purpose, '') + text
+            text = self.prefixes.get(purpose, "") + text
             future = asyncio.Future()
             await self.request_queue.put({"text": text, "future": future})
             futures.append(future)

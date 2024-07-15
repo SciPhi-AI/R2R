@@ -3,8 +3,11 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Optional
 
+from ..abstractions.embedding import (
+    EmbeddingPurpose,
+    default_embedding_prefixes,
+)
 from ..abstractions.search import VectorSearchResult
-from ..abstractions.embedding import EmbeddingPurpose, default_embedding_prefixes
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -49,27 +52,35 @@ class EmbeddingProvider(Provider):
 
     @abstractmethod
     def get_embedding(
-        self, text: str, stage: PipeStage = PipeStage.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX
+        self,
+        text: str,
+        stage: PipeStage = PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ):
         pass
 
     async def async_get_embedding(
-        self, text: str, stage: PipeStage = PipeStage.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX
+        self,
+        text: str,
+        stage: PipeStage = PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ):
         return self.get_embedding(text, stage, purpose)
 
     @abstractmethod
     def get_embeddings(
-        self, texts: list[str], stage: PipeStage = PipeStage.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX
+        self,
+        texts: list[str],
+        stage: PipeStage = PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ):
         pass
 
     async def async_get_embeddings(
-        self, texts: list[str], stage: PipeStage = PipeStage.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX
+        self,
+        texts: list[str],
+        stage: PipeStage = PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ):
         return self.get_embeddings(texts, stage, purpose)
 

@@ -14,9 +14,9 @@ from .abstractions.document import (
     extract_entities,
     extract_triples,
 )
+from .abstractions.embedding import EmbeddingPurpose
 from .abstractions.exception import R2RDocumentProcessingError, R2RException
 from .abstractions.llama_abstractions import VectorStoreQuery
-from .abstractions.embedding import EmbeddingPurpose
 from .abstractions.llm import (
     GenerationConfig,
     LLMChatCompletion,

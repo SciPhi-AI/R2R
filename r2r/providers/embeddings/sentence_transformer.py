@@ -1,6 +1,11 @@
 import logging
 
-from r2r.base import EmbeddingConfig, EmbeddingProvider, EmbeddingPurpose, VectorSearchResult
+from r2r.base import (
+    EmbeddingConfig,
+    EmbeddingProvider,
+    EmbeddingPurpose,
+    VectorSearchResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +106,7 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             raise ValueError(
                 "`get_embedding` can only be called for the search stage if a search model is set."
             )
-        text = self.prefixes.get(purpose, '') + text
+        text = self.prefixes.get(purpose, "") + text
         encoder = self.search_encoder
         return encoder.encode([text]).tolist()[0]
 
@@ -122,7 +127,9 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             if stage == EmbeddingProvider.PipeStage.BASE
             else self.rerank_encoder
         )
-        return encoder.encode([(self.prefixes.get(purpose, '') + text) for text in texts]).tolist()
+        return encoder.encode(
+            [(self.prefixes.get(purpose, "") + text) for text in texts]
+        ).tolist()
 
     def rerank(
         self,

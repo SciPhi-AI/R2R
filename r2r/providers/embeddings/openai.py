@@ -3,7 +3,12 @@ import os
 
 from openai import AsyncOpenAI, AuthenticationError, OpenAI
 
-from r2r.base import EmbeddingConfig, EmbeddingProvider, EmbeddingPurpose, VectorSearchResult
+from r2r.base import (
+    EmbeddingConfig,
+    EmbeddingProvider,
+    EmbeddingPurpose,
+    VectorSearchResult,
+)
 
 logger = logging.getLogger(__name__)
 
