@@ -66,7 +66,7 @@ class VectorSearchPipe(SearchPipe):
                 limit=search_limit,
             )
             if vector_search_settings.do_hybrid_search
-            else self.database_provider.search(
+            else self.database_provider.vector.search(
                 query_vector=query_vector,
                 filters=search_filters,
                 limit=search_limit,

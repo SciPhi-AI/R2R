@@ -45,6 +45,7 @@ def mock_file():
                 "token_lifetime": 86400,
             },
             "app": {"max_file_size_in_mb": 128},
+            "crypto": {"provider": "r2r"},
             "embedding": {
                 "provider": "example_provider",
                 "base_model": "model",

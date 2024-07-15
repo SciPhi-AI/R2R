@@ -1,6 +1,5 @@
 import functools
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse

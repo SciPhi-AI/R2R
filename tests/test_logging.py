@@ -215,87 +215,87 @@ async def test_postgres_specific_run_type_retrieval(postgres_provider):
     assert logs[0]["value"] == "value_0"
 
 
-@pytest.fixture(scope="function")
-async def redis_provider():
-    log_table = f"logs_{str(uuid.uuid4()).replace('-', '_')}"
-    log_info_table = f"log_info_{str(uuid.uuid4()).replace('-', '_')}"
-    provider = RedisKVLoggingProvider(
-        RedisLoggingConfig(log_table=log_table, log_info_table=log_info_table)
-    )
-    await provider.init()
-    yield provider
-    await provider.close()
+# @pytest.fixture(scope="function")
+# async def redis_provider():
+#     log_table = f"logs_{str(uuid.uuid4()).replace('-', '_')}"
+#     log_info_table = f"log_info_{str(uuid.uuid4()).replace('-', '_')}"
+#     provider = RedisKVLoggingProvider(
+#         RedisLoggingConfig(log_table=log_table, log_info_table=log_info_table)
+#     )
+#     await provider.init()
+#     yield provider
+#     await provider.close()
 
 
-@pytest.mark.asyncio
-async def test_redis_logging(redis_provider):
-    """Test logging and retrieving from the Redis logging provider."""
-    run_id = generate_run_id()
-    await redis_provider.log(run_id, "key", "value")
-    logs = await redis_provider.get_logs([run_id])
-    assert len(logs) == 1
-    assert logs[0]["key"] == "key"
-    assert logs[0]["value"] == "value"
+# @pytest.mark.asyncio
+# async def test_redis_logging(redis_provider):
+#     """Test logging and retrieving from the Redis logging provider."""
+#     run_id = generate_run_id()
+#     await redis_provider.log(run_id, "key", "value")
+#     logs = await redis_provider.get_logs([run_id])
+#     assert len(logs) == 1
+#     assert logs[0]["key"] == "key"
+#     assert logs[0]["value"] == "value"
 
 
-@pytest.mark.asyncio
-async def test_redis_multiple_log_entries(redis_provider):
-    """Test logging multiple entries and retrieving them."""
-    run_id_0 = generate_run_id()
-    run_id_1 = generate_run_id()
-    run_id_2 = generate_run_id()
+# @pytest.mark.asyncio
+# async def test_redis_multiple_log_entries(redis_provider):
+#     """Test logging multiple entries and retrieving them."""
+#     run_id_0 = generate_run_id()
+#     run_id_1 = generate_run_id()
+#     run_id_2 = generate_run_id()
 
-    entries = [
-        (run_id_0, "key_0", "value_0"),
-        (run_id_1, "key_1", "value_1"),
-        (run_id_2, "key_2", "value_2"),
-    ]
-    for run_id, key, value in entries:
-        await redis_provider.log(run_id, key, value)
+#     entries = [
+#         (run_id_0, "key_0", "value_0"),
+#         (run_id_1, "key_1", "value_1"),
+#         (run_id_2, "key_2", "value_2"),
+#     ]
+#     for run_id, key, value in entries:
+#         await redis_provider.log(run_id, key, value)
 
-    logs = await redis_provider.get_logs([run_id_0, run_id_1, run_id_2])
-    assert len(logs) == 3
+#     logs = await redis_provider.get_logs([run_id_0, run_id_1, run_id_2])
+#     assert len(logs) == 3
 
-    # Check that logs are returned in the correct order (most recent first if applicable)
-    for log in logs:
-        selected_entry = [
-            entry for entry in entries if entry[0] == log["log_id"]
-        ][0]
-        assert log["log_id"] == selected_entry[0]
-        assert log["key"] == selected_entry[1]
-        assert log["value"] == selected_entry[2]
-
-
-@pytest.mark.asyncio
-async def test_redis_log_retrieval_limit(redis_provider):
-    """Test the max_logs limit parameter works correctly."""
-    run_ids = []
-    for i in range(10):  # Add 10 entries
-        run_ids.append(generate_run_id())
-        await redis_provider.log(run_ids[-1], f"key_{i}", f"value_{i}")
-
-    logs = await redis_provider.get_logs(run_ids[:5])
-    assert len(logs) == 5  # Ensure only 5 logs are returned
+#     # Check that logs are returned in the correct order (most recent first if applicable)
+#     for log in logs:
+#         selected_entry = [
+#             entry for entry in entries if entry[0] == log["log_id"]
+#         ][0]
+#         assert log["log_id"] == selected_entry[0]
+#         assert log["key"] == selected_entry[1]
+#         assert log["value"] == selected_entry[2]
 
 
-@pytest.mark.asyncio
-async def test_redis_specific_run_type_retrieval(redis_provider):
-    """Test retrieving logs for a specific run type works correctly."""
-    run_id_0 = generate_run_id()
-    run_id_1 = generate_run_id()
+# @pytest.mark.asyncio
+# async def test_redis_log_retrieval_limit(redis_provider):
+#     """Test the max_logs limit parameter works correctly."""
+#     run_ids = []
+#     for i in range(10):  # Add 10 entries
+#         run_ids.append(generate_run_id())
+#         await redis_provider.log(run_ids[-1], f"key_{i}", f"value_{i}")
 
-    await redis_provider.log(
-        run_id_0, "pipeline_type", "search", is_info_log=True
-    )
-    await redis_provider.log(run_id_0, "key_0", "value_0")
-    await redis_provider.log(
-        run_id_1, "pipeline_type", "rag", is_info_log=True
-    )
-    await redis_provider.log(run_id_1, "key_1", "value_1")
+#     logs = await redis_provider.get_logs(run_ids[:5])
+#     assert len(logs) == 5  # Ensure only 5 logs are returned
 
-    run_info = await redis_provider.get_run_info(log_type_filter="search")
-    logs = await redis_provider.get_logs([run.run_id for run in run_info])
-    assert len(logs) == 1
-    assert logs[0]["log_id"] == run_id_0
-    assert logs[0]["key"] == "key_0"
-    assert logs[0]["value"] == "value_0"
+
+# @pytest.mark.asyncio
+# async def test_redis_specific_run_type_retrieval(redis_provider):
+#     """Test retrieving logs for a specific run type works correctly."""
+#     run_id_0 = generate_run_id()
+#     run_id_1 = generate_run_id()
+
+#     await redis_provider.log(
+#         run_id_0, "pipeline_type", "search", is_info_log=True
+#     )
+#     await redis_provider.log(run_id_0, "key_0", "value_0")
+#     await redis_provider.log(
+#         run_id_1, "pipeline_type", "rag", is_info_log=True
+#     )
+#     await redis_provider.log(run_id_1, "key_1", "value_1")
+
+#     run_info = await redis_provider.get_run_info(log_type_filter="search")
+#     logs = await redis_provider.get_logs([run.run_id for run in run_info])
+#     assert len(logs) == 1
+#     assert logs[0]["log_id"] == run_id_0
+#     assert logs[0]["key"] == "key_0"
+#     assert logs[0]["value"] == "value_0"

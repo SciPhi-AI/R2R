@@ -216,7 +216,9 @@ class ManagementService(Service):
                 status_code=404, message="No entries found for deletion."
             )
         for id in ids:
-            self.providers.vector_db.delete_from_documents_overview(id)
+            self.providers.database.relational.delete_from_documents_overview(
+                id
+            )
         return f"Documents {ids} deleted successfully."
 
     @telemetry_event("DocumentsOverview")

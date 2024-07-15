@@ -5,12 +5,9 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Optional, Tuple
 
-from ..abstractions.llama_abstractions import (
-    EntityNode,
-    LabelledNode,
-    Relation,
-    VectorStoreQuery,
-)
+from ..abstractions.llama_abstractions import EntityNode, LabelledNode
+from ..abstractions.llama_abstractions import Relation as LlamaRelation
+from ..abstractions.llama_abstractions import VectorStoreQuery
 from .base import ProviderConfig
 from .prompt import PromptProvider
 
@@ -18,9 +15,6 @@ if TYPE_CHECKING:
     from r2r.main import R2RClient
 
 from ...base.utils.base_utils import EntityType, Relation
-from ..abstractions.llama_abstractions import EntityNode, LabelledNode
-from ..abstractions.llama_abstractions import Relation as LlamaRelation
-from ..abstractions.llama_abstractions import VectorStoreQuery
 from ..abstractions.llm import GenerationConfig
 
 logger = logging.getLogger(__name__)

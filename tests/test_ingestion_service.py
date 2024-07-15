@@ -1,5 +1,6 @@
 import asyncio
 import io
+import logging
 import uuid
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, Mock
@@ -12,10 +13,13 @@ from r2r.base import (
     DocumentInfo,
     R2RDocumentProcessingError,
     R2RException,
+    RunManager,
     generate_id_from_label,
 )
 from r2r.main import R2RPipelines, R2RProviders
 from r2r.main.services.ingestion_service import IngestionService
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -34,7 +38,10 @@ async def cleanup_tasks():
 @pytest.fixture
 def mock_vector_db():
     mock_db = MagicMock()
-    mock_db.get_documents_overview.return_value = []  # Default to empty list
+    mock_db.relational = MagicMock()
+    mock_db.relational.get_documents_overview.return_value = (
+        []
+    )  # Default to empty list
     return mock_db
 
 
@@ -55,7 +62,7 @@ def ingestion_service(mock_vector_db, mock_embedding_model):
     pipelines.ingestion_pipeline.run.return_value = {
         "embedding_pipeline_output": []
     }
-    run_manager = Mock()
+    run_manager = RunManager(logger)
     logging_connection = Mock()
 
     service = IngestionService(
@@ -76,7 +83,7 @@ async def test_ingest_single_document(ingestion_service, mock_vector_db):
     ingestion_service.pipelines.ingestion_pipeline.run.return_value = {
         "embedding_pipeline_output": [(document.id, None)]
     }
-    mock_vector_db.get_documents_overview.return_value = (
+    mock_vector_db.relational.get_documents_overview.return_value = (
         []
     )  # No existing documents
 
@@ -97,7 +104,7 @@ async def test_ingest_duplicate_document(ingestion_service, mock_vector_db):
         type="txt",
         metadata={},
     )
-    mock_vector_db.get_documents_overview.return_value = [
+    mock_vector_db.relational.get_documents_overview.return_value = [
         DocumentInfo(
             document_id=document.id,
             version="v0",
@@ -183,8 +190,10 @@ async def test_ingest_mixed_success_and_failure(
     assert str(documents[1].id) in result["failed_documents"][0]
     assert "Embedding failed" in result["failed_documents"][0]
 
-    assert mock_vector_db.upsert_documents_overview.call_count == 2
-    upserted_docs = mock_vector_db.upsert_documents_overview.call_args[0][0]
+    assert mock_vector_db.relational.upsert_documents_overview.call_count == 2
+    upserted_docs = (
+        mock_vector_db.relational.upsert_documents_overview.call_args[0][0]
+    )
     assert len(upserted_docs) == 2
     assert upserted_docs[0].document_id == documents[0].id
     assert upserted_docs[0].status == "success"
@@ -292,7 +301,7 @@ async def test_version_increment(ingestion_service, mock_vector_db):
         type="txt",
         metadata={},
     )
-    mock_vector_db.get_documents_overview.return_value = [
+    mock_vector_db.relational.get_documents_overview.return_value = [
         DocumentInfo(
             document_id=document.id,
             version="v2",
@@ -307,7 +316,7 @@ async def test_version_increment(ingestion_service, mock_vector_db):
     )
     await ingestion_service.update_files([file_mock], [document.id])
 
-    calls = mock_vector_db.upsert_documents_overview.call_args_list
+    calls = mock_vector_db.relational.upsert_documents_overview.call_args_list
     assert len(calls) == 2
     assert calls[1][0][0][0].version == "v3"
 
@@ -335,7 +344,7 @@ async def test_process_ingestion_results_error_handling(ingestion_service):
         ]
     }
 
-    result = ingestion_service._process_ingestion_results(
+    result = await ingestion_service._process_ingestion_results(
         ingestion_results,
         document_infos,
         [],
@@ -389,19 +398,21 @@ async def test_document_status_update_after_ingestion(
     ingestion_service.pipelines.ingestion_pipeline.run.return_value = {
         "embedding_pipeline_output": [(document.id, None)]
     }
-    mock_vector_db.get_documents_overview.return_value = (
+    mock_vector_db.relational.get_documents_overview.return_value = (
         []
     )  # No existing documents
 
     await ingestion_service.ingest_documents([document])
 
     # Check that upsert_documents_overview was called twice
-    assert mock_vector_db.upsert_documents_overview.call_count == 2
+    assert mock_vector_db.relational.upsert_documents_overview.call_count == 2
 
     # Check the second call to upsert_documents_overview (status update)
-    second_call_args = mock_vector_db.upsert_documents_overview.call_args_list[
-        1
-    ][0][0]
+    second_call_args = (
+        mock_vector_db.relational.upsert_documents_overview.call_args_list[1][
+            0
+        ][0]
+    )
     assert len(second_call_args) == 1
     assert second_call_args[0].document_id == document.id
     assert second_call_args[0].status == "success"

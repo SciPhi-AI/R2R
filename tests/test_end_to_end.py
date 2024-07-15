@@ -38,13 +38,12 @@ def app(request):
     config.logging.provider = "local"
     config.logging.logging_path = uuid.uuid4().hex
 
-    database_provider = request.param
-    if database_provider == "postgres":
-        config.database.provider = "postgres"
-        config.database.extra_fields["vecs_collection"] = (
-            config.logging.logging_path
-        )
+    config.database.provider = "postgres"
+    config.database.extra_fields["vecs_collection"] = (
+        config.logging.logging_path
+    )
     try:
+        print("config.database = ", config.database)
         providers = R2RProviderFactory(config).create_providers()
         pipes = R2RPipeFactory(config, providers).create_pipes()
         pipelines = R2RPipelineFactory(config, pipes).create_pipelines()

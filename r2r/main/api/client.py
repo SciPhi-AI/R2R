@@ -12,7 +12,6 @@ import fire
 import httpx
 import nest_asyncio
 import requests
-from fastapi.security import OAuth2PasswordRequestForm
 
 from r2r.base import UserCreate
 

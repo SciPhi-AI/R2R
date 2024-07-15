@@ -1,8 +1,8 @@
-from fastapi import Body, Depends, HTTPException, status
+from fastapi import Body, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 
-from r2r.base import Token, TokenData, User, UserCreate
+from r2r.base import Token, User, UserCreate
 
 from ...engine import R2REngine
 from .base_router import BaseRouter
