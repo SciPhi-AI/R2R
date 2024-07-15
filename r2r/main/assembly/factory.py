@@ -81,7 +81,7 @@ class R2RProviderFactory:
     def create_database_provider(
         self,
         db_config: DatabaseConfig,
-        crypto_provider: CryptoProvider,
+        crypto_provider: Optional[CryptoProvider] = None,
         *args,
         **kwargs,
     ) -> DatabaseProvider:
@@ -96,7 +96,7 @@ class R2RProviderFactory:
             from r2r.providers import PostgresDBProvider
 
             database_provider = PostgresDBProvider(
-                db_config, crypto_provider, vector_db_dimension
+                db_config, vector_db_dimension, crypto_provider=crypto_provider
             )
         else:
             raise ValueError(

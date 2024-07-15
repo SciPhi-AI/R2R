@@ -781,6 +781,10 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         """
         )
 
+        print(
+            f"storing verification code.... user_id = {user_id}, verification_code = {verification_code}, expiry = {expiry}"
+        )
+
         with self.vx.Session() as sess:
             sess.execute(
                 query,
@@ -931,13 +935,25 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             for user_data in users_data
         ]
 
+    def expire_verification_code(self, user_id):
+        query = text(
+            f"""
+        UPDATE users_{self.collection_name}
+        SET verification_code_expiry = NOW() - INTERVAL '365 day'
+        WHERE id = :user_id
+        """
+        )
+        with self.vx.Session() as sess:
+            sess.execute(query, {"user_id": user_id})
+            sess.commit()
+
 
 class PostgresDBProvider(DatabaseProvider):
     def __init__(
         self,
         config: DatabaseConfig,
-        crypto_provider: Optional[CryptoProvider],
         dimension: int,
+        crypto_provider: Optional[CryptoProvider] = None,
         *args,
         **kwargs,
     ):

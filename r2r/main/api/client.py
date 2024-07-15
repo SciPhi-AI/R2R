@@ -142,7 +142,7 @@ class R2RClient:
         response = self._make_request("POST", "login", data=form_data)
         response = response["results"]
         self.access_token = response["access_token"]["token"]
-        self._refresh_token = response["refresh_access_token"]["token"]
+        self._refresh_token = response["refresh_token"]["token"]
         return response
 
     def get_current_user(self) -> dict:
@@ -154,11 +154,11 @@ class R2RClient:
         response = self._make_request(
             "POST",
             "token/refresh",
-            json={"refresh_access_token": self._refresh_token},
+            json={"refresh_token": self._refresh_token},
         )
         results = response["results"]
         self.access_token = results["access_token"]["token"]
-        self._refresh_token = results["refresh_access_token"][
+        self._refresh_token = results["refresh_token"][
             "token"
         ]  # Update the refresh token
         return response

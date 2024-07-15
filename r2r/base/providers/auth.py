@@ -11,6 +11,7 @@ from .base import Provider, ProviderConfig
 class AuthConfig(ProviderConfig):
     enabled: bool = True
     secret_key: Optional[str] = None
+    require_email_verification: Optional[bool] = False
     access_token_lifetime_in_minutes: Optional[int] = None
     refresh_token_lifetime_in_days: Optional[int] = None
 

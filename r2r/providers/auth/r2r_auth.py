@@ -48,9 +48,7 @@ class R2RAuthProvider(AuthProvider):
         expire = datetime.utcnow() + timedelta(
             minutes=self.access_token_lifetime_in_minutes
         )
-        to_encode.update({"exp": expire, "token_type": "access"})
-        print("to_encode = ", to_encode)
-        print("self.secret_key = ", self.secret_key)
+        to_encode.update({"exp": expire.timestamp(), "token_type": "access"})
         return jwt.encode(to_encode, self.secret_key, algorithm="HS256")
 
     def create_refresh_token(self, data: dict) -> str:
@@ -66,6 +64,7 @@ class R2RAuthProvider(AuthProvider):
             payload = jwt.decode(token, self.secret_key, algorithms=["HS256"])
             email: str = payload.get("sub")
             token_type: str = payload.get("token_type")
+            print(f"Decoded token: {email}, {token_type}")
             if email is None or token_type is None:
                 raise HTTPException(status_code=401, detail="Invalid token")
             return TokenData(email=email, token_type=token_type)
@@ -178,34 +177,35 @@ class R2RAuthProvider(AuthProvider):
 
         logger.info(f"Successful login for user: {email}")
         access_token = self.create_access_token(data={"sub": user.email})
-        refresh_access_token = self.create_refresh_token(
-            data={"sub": user.email}
-        )
+        refresh_token = self.create_refresh_token(data={"sub": user.email})
         return {
             "access_token": Token(token=access_token, token_type="access"),
-            "refresh_access_token": Token(
-                token=refresh_access_token, token_type="refresh"
-            ),
+            "refresh_token": Token(token=refresh_token, token_type="refresh"),
         }
 
     def refresh_access_token(
-        self, user_email: str, refresh_access_token: str
+        self, user_email: str, refresh_token: str
     ) -> Dict[str, Token]:
-        token_data = self.decode_token(refresh_access_token)
+        print("decoding refresh_token = ", refresh_token)
+        token_data = self.decode_token(refresh_token)
+        print("token_data = ", token_data)
         if token_data.token_type != "refresh":
             raise HTTPException(
                 status_code=401, detail="Invalid refresh token"
             )
         if token_data.email != user_email:
             raise HTTPException(
-                status_code=401, detail="Invalid refresh token"
+                status_code=402,
+                detail="Invalid email address attached to token",
             )
+
         # TODO - Implement refresh token tracking
         # Verify if the refresh token is still valid in the database
-        # if not self.is_refresh_token_valid(token_data.email, refresh_access_token):
+        # if not self.is_refresh_token_valid(token_data.email, refresh_token):
         #     raise HTTPException(status_code=401, detail="Refresh token has been revoked")
         # Invalidate the old refresh token and create a new one
-        # self.invalidate_refresh_token(token_data.email, refresh_access_token)
+        # self.invalidate_refresh_token(token_data.email, refresh_token)
+
         new_access_token = self.create_access_token(
             data={"sub": token_data.email}
         )
@@ -214,7 +214,7 @@ class R2RAuthProvider(AuthProvider):
         )
         return {
             "access_token": Token(token=new_access_token, token_type="access"),
-            "refresh_access_token": Token(
+            "refresh_token": Token(
                 token=new_refresh_token, token_type="refresh"
             ),
         }

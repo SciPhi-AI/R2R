@@ -47,14 +47,16 @@ class AuthRouter(BaseRouter):
         async def read_users_me(token: str = Depends(oauth2_scheme)):
             return await self.engine.aget_current_user(token)
 
-        @self.router.post("/token/refresh", response_model=TokenResponse)
+        @self.router.post(
+            "/refresh_access_token", response_model=TokenResponse
+        )
         @self.base_endpoint
         async def refresh_access_token(
-            refresh_access_token: str = Body(..., embed=True),
+            refresh_token: str = Body(..., embed=True),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
-            refresh_result = await self.engine.arefresh_token(
+            refresh_result = await self.engine.arefresh_access_token(
                 user_email=auth_user.email,
-                refresh_access_token=refresh_access_token,
+                refresh_token=refresh_token,
             )
             return refresh_result

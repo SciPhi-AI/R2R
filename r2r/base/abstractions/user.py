@@ -19,7 +19,6 @@ class User(BaseModel):
     hashed_password: str
     is_active: bool = True
     is_verified: bool = False
-    verification_code: Optional[str] = None
     verification_code_expiry: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
