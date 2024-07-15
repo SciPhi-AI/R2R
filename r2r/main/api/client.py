@@ -149,7 +149,7 @@ class R2RClient:
             raise ValueError("No refresh token available. Please login again.")
         response = self._make_request(
             "POST",
-            "token/refresh",
+            "refresh_access_token",
             json={"refresh_token": self._refresh_token},
         )
         self.access_token = response["results"]["access_token"]["token"]

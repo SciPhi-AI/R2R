@@ -5,8 +5,10 @@
   },
   "auth": {
     "provider": "r2r",
-    "enabled": false,
-    "token_lifetime": 86400
+    "access_token_lifetime_in_minutes": 60,
+    "refresh_token_lifetime_in_days": 7,
+    "require_authentication": false,
+    "require_email_verification": false
   },
   "completions": {
     "provider": "litellm",
@@ -28,7 +30,7 @@
     }
   },
   "crypto":{
-    "provider": "None"
+    "provider": "bcrypt"
   },
   "embedding": {
     "provider": "openai",

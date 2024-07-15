@@ -64,7 +64,6 @@ class R2RAuthProvider(AuthProvider):
             payload = jwt.decode(token, self.secret_key, algorithms=["HS256"])
             email: str = payload.get("sub")
             token_type: str = payload.get("token_type")
-            print(f"Decoded token: {email}, {token_type}")
             if email is None or token_type is None:
                 raise HTTPException(status_code=401, detail="Invalid token")
             return TokenData(email=email, token_type=token_type)
@@ -186,9 +185,7 @@ class R2RAuthProvider(AuthProvider):
     def refresh_access_token(
         self, user_email: str, refresh_token: str
     ) -> Dict[str, Token]:
-        print("decoding refresh_token = ", refresh_token)
         token_data = self.decode_token(refresh_token)
-        print("token_data = ", token_data)
         if token_data.token_type != "refresh":
             raise HTTPException(
                 status_code=401, detail="Invalid refresh token"

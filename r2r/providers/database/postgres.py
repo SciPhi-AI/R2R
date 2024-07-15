@@ -460,8 +460,6 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
 
         results = {tuple(metadata_fields): {}}
         for field in metadata_fields:
-            print("self.collection = ", self.collection)
-            print("dir(self.collection) = ", dir(self.collection))
             unique_values = self.collection.get_unique_metadata_values(
                 field=field,
                 filter_field=filter_field,
@@ -779,10 +777,6 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         SET verification_code = :code, verification_code_expiry = :expiry 
         WHERE id = :user_id
         """
-        )
-
-        print(
-            f"storing verification code.... user_id = {user_id}, verification_code = {verification_code}, expiry = {expiry}"
         )
 
         with self.vx.Session() as sess:

@@ -41,7 +41,7 @@ class R2RProviderFactory:
         self,
         auth_config: AuthConfig,
         db_provider: DatabaseProvider,
-        crypto_provider: CryptoProvider,
+        crypto_provider: Optional[CryptoProvider] = None,
         *args,
         **kwargs,
     ) -> AuthProvider:
