@@ -1,4 +1,7 @@
-from r2r.base import CryptoProvider, CryptoConfig
+import secrets
+import string
+
+from r2r.base import CryptoConfig, CryptoProvider
 
 
 class BCryptConfig(CryptoConfig):
@@ -37,3 +40,7 @@ class BCryptProvider(CryptoProvider):
         return self.bcrypt.checkpw(
             plain_password.encode("utf-8"), hashed_password.encode("utf-8")
         )
+
+    def generate_verification_code(self, length: int = 32) -> str:
+        alphabet = string.ascii_letters + string.digits
+        return "".join(secrets.choice(alphabet) for _ in range(length))

@@ -19,7 +19,6 @@ class User(BaseModel):
     hashed_password: str
     is_active: bool = True
     is_verified: bool = False
-    verification_code: Optional[str] = None
     verification_code_expiry: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -40,9 +39,10 @@ class UserResponse(UserBase):
 
 
 class Token(BaseModel):
-    access_token: str
+    token: str
     token_type: str
 
 
 class TokenData(BaseModel):
     email: Optional[str] = None
+    token_type: Optional[str] = None

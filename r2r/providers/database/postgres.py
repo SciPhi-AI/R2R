@@ -478,7 +478,13 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
 
 
 class PostgresRelationalDBProvider(RelationalDatabaseProvider):
-    def __init__(self, config: DatabaseConfig, crypto_provider: Optional[CryptoProvider],*args, **kwargs):
+    def __init__(
+        self,
+        config: DatabaseConfig,
+        crypto_provider: Optional[CryptoProvider],
+        *args,
+        **kwargs,
+    ):
         super().__init__(config)
         self.vx: Client = kwargs.get("vx", None)
         self.crypto_provider = crypto_provider
@@ -775,6 +781,10 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         """
         )
 
+        print(
+            f"storing verification code.... user_id = {user_id}, verification_code = {verification_code}, expiry = {expiry}"
+        )
+
         with self.vx.Session() as sess:
             sess.execute(
                 query,
@@ -925,10 +935,27 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             for user_data in users_data
         ]
 
+    def expire_verification_code(self, user_id):
+        query = text(
+            f"""
+        UPDATE users_{self.collection_name}
+        SET verification_code_expiry = NOW() - INTERVAL '365 day'
+        WHERE id = :user_id
+        """
+        )
+        with self.vx.Session() as sess:
+            sess.execute(query, {"user_id": user_id})
+            sess.commit()
+
 
 class PostgresDBProvider(DatabaseProvider):
     def __init__(
-        self, config: DatabaseConfig, crypto_provider: Optional[CryptoProvider], dimension: int, *args, **kwargs
+        self,
+        config: DatabaseConfig,
+        dimension: int,
+        crypto_provider: Optional[CryptoProvider] = None,
+        *args,
+        **kwargs,
     ):
         user = config.extra_fields.get("user", None) or os.getenv(
             "POSTGRES_USER"
@@ -1006,5 +1033,8 @@ class PostgresDBProvider(DatabaseProvider):
 
     def _initialize_relational_db(self) -> RelationalDatabaseProvider:
         return PostgresRelationalDBProvider(
-            self.config, vx=self.vx, crypto_provider=self.crypto_provider, collection_name=self.collection_name,
+            self.config,
+            vx=self.vx,
+            crypto_provider=self.crypto_provider,
+            collection_name=self.collection_name,
         )

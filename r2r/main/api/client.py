@@ -12,6 +12,9 @@ import fire
 import httpx
 import nest_asyncio
 import requests
+from fastapi.security import OAuth2PasswordRequestForm
+
+from r2r.base import UserCreate
 
 from .requests import (
     R2RAnalyticsRequest,
@@ -27,9 +30,6 @@ from .requests import (
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
-
-from r2r.base import UserCreate
-from fastapi.security import OAuth2PasswordRequestForm
 
 nest_asyncio.apply()
 
@@ -141,22 +141,26 @@ class R2RClient:
         form_data = {"username": email, "password": password}
         response = self._make_request("POST", "login", data=form_data)
         response = response["results"]
-        print('response = ', response)
-        self.access_token = response["access_token"]
-        self._refresh_token = response.get("refresh_token")
+        self.access_token = response["access_token"]["token"]
+        self._refresh_token = response["refresh_token"]["token"]
         return response
 
     def get_current_user(self) -> dict:
         return self._make_request("GET", "users/me")
 
-    def refresh_token(self) -> dict:
+    def refresh_access_token(self) -> dict:
         if not self._refresh_token:
             raise ValueError("No refresh token available. Please login again.")
         response = self._make_request(
-            "POST", "token/refresh", json={"refresh_token": self._refresh_token}
+            "POST",
+            "token/refresh",
+            json={"refresh_token": self._refresh_token},
         )
-        print('response = ', response)
-        self.access_token = response["results"]["access_token"]
+        results = response["results"]
+        self.access_token = results["access_token"]["token"]
+        self._refresh_token = results["refresh_token"][
+            "token"
+        ]  # Update the refresh token
         return response
 
     def _ensure_authenticated(self):
