@@ -18,6 +18,11 @@ class R2RApp:
             routes=self.app.routes,
         )
 
+    def serve(self, host: str = "0.0.0.0", port: int = 8000):
+        import uvicorn
+
+        uvicorn.run(self.app, host=host, port=port)
+
     def _setup_routes(self):
         from .api.routes import ingestion, management, retrieval
 
@@ -35,6 +40,12 @@ class R2RApp:
         self.app.include_router(management_router, prefix="/v1")
         self.app.include_router(retrieval_router, prefix="/v1")
 
+        if self.engine.config.auth.enabled:
+            from .api.routes import auth
+
+            auth_router = auth.AuthRouter.build_router(self.engine)
+            self.app.include_router(auth_router, prefix="/v1")
+
     def _apply_cors(self):
         from fastapi.middleware.cors import CORSMiddleware
 
@@ -46,8 +57,3 @@ class R2RApp:
             allow_methods=["*"],
             allow_headers=["*"],
         )
-
-    def serve(self, host: str = "0.0.0.0", port: int = 8000):
-        import uvicorn
-
-        uvicorn.run(self.app, host=host, port=port)

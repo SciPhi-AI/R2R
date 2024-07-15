@@ -5,6 +5,7 @@ from r2r.base.abstractions.base import AsyncSyncMeta, syncable
 
 from .abstractions import R2RPipelines, R2RProviders
 from .assembly.config import R2RConfig
+from .services.auth_service import AuthService
 from .services.ingestion_service import IngestionService
 from .services.management_service import ManagementService
 from .services.retrieval_service import RetrievalService
@@ -34,6 +35,10 @@ class R2REngine(metaclass=AsyncSyncMeta):
             config, providers, pipelines, run_manager, logging_connection
         )
         self.management_service = ManagementService(
+            config, providers, pipelines, run_manager, logging_connection
+        )
+
+        self.auth_service = AuthService(
             config, providers, pipelines, run_manager, logging_connection
         )
 
@@ -107,3 +112,23 @@ class R2REngine(metaclass=AsyncSyncMeta):
     @syncable
     async def adocument_chunks(self, *args, **kwargs):
         return await self.management_service.document_chunks(*args, **kwargs)
+
+    @syncable
+    async def aregister(self, *args, **kwargs):
+        return await self.auth_service.register(*args, **kwargs)
+
+    @syncable
+    async def averify_email(self, *args, **kwargs):
+        return await self.auth_service.verify_email(*args, **kwargs)
+
+    @syncable
+    async def alogin(self, *args, **kwargs):
+        return await self.auth_service.login(*args, **kwargs)
+
+    @syncable
+    async def aget_current_user(self, *args, **kwargs):
+        return await self.auth_service.get_current_user(*args, **kwargs)
+
+    @syncable
+    async def arefresh_access_token(self, *args, **kwargs):
+        return await self.auth_service.refresh_access_token(*args, **kwargs)

@@ -13,6 +13,8 @@ import httpx
 import nest_asyncio
 import requests
 
+from r2r.base import UserCreate
+
 from .requests import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
@@ -106,12 +108,63 @@ class R2RClient:
     def __init__(self, base_url: str, prefix: str = "/v1"):
         self.base_url = base_url
         self.prefix = prefix
+        self.access_token = None
+        self._refresh_token = None
 
     def _make_request(self, method, endpoint, **kwargs):
         url = f"{self.base_url}{self.prefix}/{endpoint}"
-        response = requests.request(method, url, **kwargs)
+        headers = kwargs.pop("headers", {})
+        if self.access_token and endpoint not in [
+            "register",
+            "login",
+            "verify_email",
+        ]:
+            headers.update(self._get_auth_header())
+        response = requests.request(method, url, headers=headers, **kwargs)
         handle_request_error(response)
         return response.json()
+
+    def _get_auth_header(self) -> dict:
+        if not self.access_token:
+            raise ValueError("Not authenticated. Please login first.")
+        return {"Authorization": f"Bearer {self.access_token}"}
+
+    def register(self, email: str, password: str) -> dict:
+        user = UserCreate(email=email, password=password)
+        return self._make_request("POST", "register", json=user.dict())
+
+    def verify_email(self, verification_code: str) -> dict:
+        return self._make_request("POST", f"verify_email/{verification_code}")
+
+    def login(self, email: str, password: str) -> dict:
+        form_data = {"username": email, "password": password}
+        response = self._make_request("POST", "login", data=form_data)
+        response = response["results"]
+        self.access_token = response["access_token"]["token"]
+        self._refresh_token = response["refresh_token"]["token"]
+        return response
+
+    def get_current_user(self) -> dict:
+        return self._make_request("GET", "users/me")
+
+    def refresh_access_token(self) -> dict:
+        if not self._refresh_token:
+            raise ValueError("No refresh token available. Please login again.")
+        response = self._make_request(
+            "POST",
+            "token/refresh",
+            json={"refresh_token": self._refresh_token},
+        )
+        results = response["results"]
+        self.access_token = results["access_token"]["token"]
+        self._refresh_token = results["refresh_token"][
+            "token"
+        ]  # Update the refresh token
+        return response
+
+    def _ensure_authenticated(self):
+        if not self.access_token:
+            raise ValueError("Not authenticated. Please login first.")
 
     def health(self) -> dict:
         return self._make_request("GET", "health")
@@ -122,6 +175,7 @@ class R2RClient:
         template: Optional[str] = None,
         input_types: Optional[dict] = None,
     ) -> dict:
+        self._ensure_authenticated()
         request = R2RUpdatePromptRequest(
             name=name, template=template, input_types=input_types
         )
@@ -137,6 +191,8 @@ class R2RClient:
         document_ids: Optional[list[Union[uuid.UUID, str]]] = None,
         versions: Optional[list[str]] = None,
     ) -> dict:
+        self._ensure_authenticated()
+
         all_file_paths = []
 
         for path in file_paths:
@@ -187,6 +243,8 @@ class R2RClient:
         document_ids: list[str],
         metadatas: Optional[list[dict]] = None,
     ) -> dict:
+        self._ensure_authenticated()
+
         request = R2RUpdateFilesRequest(
             metadatas=metadatas,
             document_ids=document_ids,
@@ -222,6 +280,8 @@ class R2RClient:
         use_kg_search: bool = False,
         kg_agent_generation_config: Optional[dict] = None,
     ) -> dict:
+        self._ensure_authenticated()
+
         request = R2RSearchRequest(
             query=query,
             vector_search_settings={
@@ -250,6 +310,8 @@ class R2RClient:
         kg_agent_generation_config: Optional[dict] = None,
         rag_generation_config: Optional[dict] = None,
     ) -> dict:
+        self._ensure_authenticated()
+
         request = R2RRAGRequest(
             query=query,
             vector_search_settings={
@@ -310,21 +372,29 @@ class R2RClient:
     def delete(
         self, keys: list[str], values: list[Union[bool, int, str]]
     ) -> dict:
+        self._ensure_authenticated()
+
         request = R2RDeleteRequest(keys=keys, values=values)
         return self._make_request(
             "DELETE", "delete", json=json.loads(request.json())
         )
 
     def logs(self, log_type_filter: Optional[str] = None) -> dict:
+        self._ensure_authenticated()
+
         request = R2RLogsRequest(log_type_filter=log_type_filter)
         return self._make_request(
             "GET", "logs", json=json.loads(request.json())
         )
 
     def app_settings(self) -> dict:
+        self._ensure_authenticated()
+
         return self._make_request("GET", "app_settings")
 
     def analytics(self, filter_criteria: dict, analysis_types: dict) -> dict:
+        self._ensure_authenticated()
+
         request = R2RAnalyticsRequest(
             filter_criteria=filter_criteria, analysis_types=analysis_types
         )
@@ -335,6 +405,8 @@ class R2RClient:
     def users_overview(
         self, user_ids: Optional[list[uuid.UUID]] = None
     ) -> dict:
+        self._ensure_authenticated()
+
         request = R2RUsersOverviewRequest(user_ids=user_ids)
         return self._make_request(
             "GET", "users_overview", json=json.loads(request.json())
@@ -345,6 +417,8 @@ class R2RClient:
         document_ids: Optional[list[str]] = None,
         user_ids: Optional[list[str]] = None,
     ) -> dict:
+        self._ensure_authenticated()
+
         request = R2RDocumentsOverviewRequest(
             document_ids=(
                 [uuid.UUID(did) for did in document_ids]
@@ -360,12 +434,16 @@ class R2RClient:
         )
 
     def document_chunks(self, document_id: str) -> dict:
+        self._ensure_authenticated()
+
         request = R2RDocumentChunksRequest(document_id=document_id)
         return self._make_request(
             "GET", "document_chunks", json=json.loads(request.json())
         )
 
     def inspect_knowledge_graph(self, limit: int = 100) -> str:
+        self._ensure_authenticated()
+
         request = R2RPrintRelationshipsRequest(limit=limit)
         return self._make_request(
             "POST", "inspect_knowledge_graph", json=json.loads(request.json())

@@ -10,11 +10,11 @@ from fastapi import UploadFile
 from r2r.base import (
     AnalysisTypes,
     FilterCriteria,
-    GenerationConfig,
     KGSearchSettings,
     VectorSearchSettings,
     generate_id_from_label,
 )
+from r2r.base.abstractions.llm import GenerationConfig
 
 from .api.client import R2RClient
 from .assembly.builder import R2RBuilder

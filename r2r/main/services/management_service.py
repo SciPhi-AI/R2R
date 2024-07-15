@@ -193,7 +193,7 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return self.providers.vector_db.get_users_overview(
+        return self.providers.database.relational.get_users_overview(
             [str(ele) for ele in user_ids] if user_ids else None
         )
 
@@ -210,13 +210,15 @@ class ManagementService(Service):
         )
         values = [str(value) for value in values]
         logger.info(f"Deleting entries with metadata: {metadata}")
-        ids = self.providers.vector_db.delete_by_metadata(keys, values)
+        ids = self.providers.database.vector.delete_by_metadata(keys, values)
         if not ids:
             raise R2RException(
                 status_code=404, message="No entries found for deletion."
             )
         for id in ids:
-            self.providers.vector_db.delete_from_documents_overview(id)
+            self.providers.database.relational.delete_from_documents_overview(
+                id
+            )
         return f"Documents {ids} deleted successfully."
 
     @telemetry_event("DocumentsOverview")
@@ -227,7 +229,7 @@ class ManagementService(Service):
         *args: Any,
         **kwargs: Any,
     ):
-        return self.providers.vector_db.get_documents_overview(
+        return self.providers.database.relational.get_documents_overview(
             filter_document_ids=(
                 [str(ele) for ele in document_ids] if document_ids else None
             ),
@@ -243,7 +245,9 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return self.providers.vector_db.get_document_chunks(str(document_id))
+        return self.providers.database.relational.get_document_chunks(
+            str(document_id)
+        )
 
     @telemetry_event("UsersOverview")
     async def users_overview(
@@ -252,7 +256,7 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return self.providers.vector_db.get_users_overview(
+        return self.providers.database.relational.get_users_overview(
             [str(ele) for ele in user_ids]
         )
 

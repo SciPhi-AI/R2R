@@ -1,8 +1,6 @@
-from .ollama.ollama_base import OllamaEmbeddingProvider
-from .openai.openai_base import OpenAIEmbeddingProvider
-from .sentence_transformer.sentence_transformer_base import (
-    SentenceTransformerEmbeddingProvider,
-)
+from .ollama import OllamaEmbeddingProvider
+from .openai import OpenAIEmbeddingProvider
+from .sentence_transformer import SentenceTransformerEmbeddingProvider
 
 __all__ = [
     "OllamaEmbeddingProvider",

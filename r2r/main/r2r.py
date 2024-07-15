@@ -14,31 +14,31 @@ class R2R:
         engine: Optional[R2REngine] = None,
         app: Optional[R2RApp] = None,
         config: Optional[R2RConfig] = None,
-        from_config: Optional[str] = None,
+        config_name: Optional[str] = None,
         *args,
         **kwargs
     ):
         if engine and app:
             self.engine = engine
             self.app = app
-        elif (config or from_config) or (
-            config is None and from_config is None
+        elif (config or config_name) or (
+            config is None and config_name is None
         ):
             from .assembly.builder import R2RBuilder
 
-            # Handle the case where 'from_config' is None and 'config' is None
-            if not config and not from_config:
-                from_config = "default"
+            # Handle the case where 'config_name' is None and 'config' is None
+            if not config and not config_name:
+                config_name = "default"
             builder = R2RBuilder(
                 config=config,
-                from_config=from_config,
+                config_name=config_name,
             )
             built = builder.build()
             self.engine = built.engine
             self.app = built.app
         else:
             raise ValueError(
-                "Must provide either 'engine' and 'app', or 'config'/'from_config' to build the R2R object."
+                "Must provide either 'engine' and 'app', or 'config'/'config_name' to build the R2R object."
             )
 
     def __getattr__(self, name):
