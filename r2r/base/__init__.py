@@ -131,6 +131,7 @@ __all__ = [
     "extract_entities",
     "Entity",
     "extract_triples",
+    "EmbeddingPurpose",
     "R2RException",
     "R2RDocumentProcessingError",
     "Triple",
