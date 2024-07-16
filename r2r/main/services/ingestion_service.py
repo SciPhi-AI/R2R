@@ -343,9 +343,7 @@ class IngestionService(Service):
                     keys.append("user_id")
                     values.append(str(user.id))
 
-                self.providers.database.vector.delete_by_metadata(
-                    keys, values
-                )
+                self.providers.database.vector.delete_by_metadata(keys, values)
                 self.providers.database.relational.delete_from_documents_overview(
                     doc_id, old_version
                 )

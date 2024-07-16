@@ -12,7 +12,6 @@ from r2r.base import (
     FilterCriteria,
     KGSearchSettings,
     VectorSearchSettings,
-    generate_id_from_label,
 )
 from r2r.base.abstractions.llm import GenerationConfig
 
