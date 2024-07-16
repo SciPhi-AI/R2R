@@ -124,7 +124,6 @@ class R2RAuthProvider(AuthProvider):
         existing_user = self.db_provider.relational.get_user_by_email(
             user.email
         )
-        print("existing_user = ", existing_user)
         if existing_user:
             raise R2RException(
                 status_code=400, message="Email already registered"
@@ -286,7 +285,6 @@ class R2RAuthProvider(AuthProvider):
     def change_password(
         self, user: User, current_password: str, new_password: str
     ) -> Dict[str, str]:
-        print("user = ", user)
         if not self.crypto_provider.verify_password(
             current_password, user.hashed_password
         ):

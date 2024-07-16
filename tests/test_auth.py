@@ -536,26 +536,26 @@ async def test_token_blacklist_cleanup(auth_service, auth_provider):
     access_token = tokens["access_token"].token
     await auth_service.logout(access_token)
 
-    # Manually insert an expired blacklisted token
-    expired_token = "expired_token"
+    # Manually insert an "old" blacklisted token
+    old_token = "old_token"
+    # with patch('datetime.datetime') as mock_datetime:
+    # mock_datetime.utcnow.return_value = datetime.utcnow() - timedelta(hours=7*25)
     auth_provider.db_provider.relational.blacklist_token(
-        expired_token, datetime.utcnow() - timedelta(days=365)
+        old_token, datetime.utcnow() - timedelta(hours=7 * 25)
     )
 
     # Verify both tokens are in the blacklist before cleanup
-    assert auth_provider.db_provider.relational.is_token_blacklisted(
-        expired_token
-    )
+    assert auth_provider.db_provider.relational.is_token_blacklisted(old_token)
     assert auth_provider.db_provider.relational.is_token_blacklisted(
         access_token
     )
 
-    # Run cleanup
+    # Run cleanup (tokens older than 24 hours will be removed)
     await auth_service.clean_expired_blacklisted_tokens()
 
-    # Check that the expired token was removed and the valid one remains
+    # Check that the old token was removed and the newer one remains
     assert not auth_provider.db_provider.relational.is_token_blacklisted(
-        expired_token
+        old_token
     )
     assert auth_provider.db_provider.relational.is_token_blacklisted(
         access_token

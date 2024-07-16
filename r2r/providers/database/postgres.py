@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Literal, Optional, Union
 from uuid import UUID
 
@@ -593,6 +593,8 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 );
                 CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.collection_name}_token 
                 ON blacklisted_tokens_{self.collection_name} (token);
+                CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.collection_name}_blacklisted_at 
+                ON blacklisted_tokens_{self.collection_name} (blacklisted_at);
                 """
                 sess.execute(text(query))
 
@@ -866,68 +868,6 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             sess.execute(query, {"code": verification_code})
             sess.commit()
 
-    def get_user_by_id(self, user_id: UUID) -> Optional[User]:
-        query = text(
-            f"""
-        SELECT id, email, hashed_password, is_superuser, is_active, is_verified, created_at, updated_at 
-        FROM users_{self.collection_name} 
-        WHERE id = :user_id
-        """
-        )
-
-        with self.vx.Session() as sess:
-            result = sess.execute(query, {"user_id": user_id})
-            user_data = result.fetchone()
-
-        if user_data:
-            return User(
-                id=user_data[0],
-                email=user_data[1],
-                hashed_password=user_data[2],
-                is_superuser=user_data[3],
-                is_active=user_data[4],
-                is_verified=user_data[5],
-                created_at=user_data[6],
-                updated_at=user_data[7],
-            )
-        return None
-
-    def update_user(self, user: User) -> User:
-        query = text(
-            f"""
-        UPDATE users_{self.collection_name} 
-        SET email = :email, is_superuser = :is_superuser, is_active = :is_active, is_verified = :is_verified, 
-            updated_at = NOW() 
-        WHERE id = :user_id 
-        RETURNING id, email, is_superuser, is_active, is_verified, created_at, updated_at
-        """
-        )
-
-        with self.vx.Session() as sess:
-            result = sess.execute(
-                query,
-                {
-                    "email": user.email,
-                    "is_superuser": user.is_superuser,
-                    "is_active": user.is_active,
-                    "is_verified": user.is_verified,
-                    "user_id": user.id,
-                },
-            )
-            updated_user_data = result.fetchone()
-            sess.commit()
-
-        return User(
-            id=updated_user_data[0],
-            email=updated_user_data[1],
-            hashed_password="null",
-            is_superuser=updated_user_data[2],
-            is_active=updated_user_data[3],
-            is_verified=updated_user_data[4],
-            created_at=updated_user_data[5],
-            updated_at=updated_user_data[6],
-        )
-
     def delete_user(self, user_id: UUID):
         query = text(
             f"""
@@ -1027,16 +967,20 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             sess.execute(query, {"user_id": user_id})
             sess.commit()
 
-    def blacklist_token(self, token: str):
+    def blacklist_token(self, token: str, current_time: datetime = None):
+        if current_time is None:
+            current_time = datetime.utcnow()
         query = text(
             f"""
-            INSERT INTO blacklisted_tokens_{self.collection_name} (token)
-            VALUES (:token)
+            INSERT INTO blacklisted_tokens_{self.collection_name} (token, blacklisted_at)
+            VALUES (:token, :blacklisted_at)
             """
         )
 
         with self.vx.Session() as sess:
-            sess.execute(query, {"token": token})
+            sess.execute(
+                query, {"token": token, "blacklisted_at": current_time}
+            )
             sess.commit()
 
     def is_token_blacklisted(self, token: str) -> bool:
@@ -1053,15 +997,23 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             result = sess.execute(query, {"token": token})
             return result.scalar()
 
-    def clean_expired_blacklisted_tokens(self):
+    def clean_expired_blacklisted_tokens(
+        self,
+        max_age_hours: int = 7 * 24,
+        current_time: Optional[datetime] = None,
+    ):
+        if current_time is None:
+            current_time = datetime.utcnow()
+        expiry_time = current_time - timedelta(hours=max_age_hours)
         query = text(
             f"""
             DELETE FROM blacklisted_tokens_{self.collection_name}
+            WHERE blacklisted_at < :expiry_time
             """
         )
 
         with self.vx.Session() as sess:
-            sess.execute(query)
+            sess.execute(query, {"expiry_time": expiry_time})
             sess.commit()
 
     # Modify existing methods to include new profile fields

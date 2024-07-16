@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from r2r.base import (
@@ -139,5 +139,9 @@ class AuthService(Service):
         return {"message": "User account deleted successfully"}
 
     @telemetry_event("CleanExpiredBlacklistedTokens")
-    async def clean_expired_blacklisted_tokens(self):
-        self.providers.auth.clean_expired_blacklisted_tokens()
+    async def clean_expired_blacklisted_tokens(
+        self, max_age_hours: int = 7 * 24, current_time: datetime = None
+    ):
+        self.providers.database.relational.clean_expired_blacklisted_tokens(
+            max_age_hours, current_time
+        )
