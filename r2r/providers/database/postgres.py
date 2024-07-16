@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Literal, Optional, Union
 from uuid import UUID
 
@@ -568,15 +568,36 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                     email TEXT UNIQUE NOT NULL,
                     hashed_password TEXT NOT NULL,
+                    is_superuser BOOLEAN DEFAULT FALSE,
                     is_active BOOLEAN DEFAULT TRUE,
                     is_verified BOOLEAN DEFAULT FALSE,
                     verification_code TEXT,
                     verification_code_expiry TIMESTAMPTZ,
+                    name TEXT,
+                    bio TEXT,
+                    profile_picture TEXT,
+                    reset_token TEXT,
+                    reset_token_expiry TIMESTAMPTZ,
                     created_at TIMESTAMPTZ DEFAULT NOW(),
                     updated_at TIMESTAMPTZ DEFAULT NOW()
                 );
                 """
                 sess.execute(text(query))
+
+                # Create blacklisted tokens table
+                query = f"""
+                CREATE TABLE IF NOT EXISTS blacklisted_tokens_{self.collection_name} (
+                    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                    token TEXT NOT NULL,
+                    blacklisted_at TIMESTAMPTZ DEFAULT NOW()
+                );
+                CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.collection_name}_token 
+                ON blacklisted_tokens_{self.collection_name} (token);
+                CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.collection_name}_blacklisted_at 
+                ON blacklisted_tokens_{self.collection_name} (blacklisted_at);
+                """
+                sess.execute(text(query))
+
                 sess.commit()
 
     def upsert_documents_overview(
@@ -717,7 +738,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         INSERT INTO users_{self.collection_name} 
         (email, hashed_password) 
         VALUES (:email, :hashed_password) 
-        RETURNING id, email, is_active, is_verified, created_at, updated_at
+        RETURNING id, email, is_superuser, is_active, is_verified, created_at, updated_at
         """
         )
 
@@ -735,17 +756,18 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         return User(
             id=user_data[0],
             email=user_data[1],
-            is_active=user_data[2],
-            is_verified=user_data[3],
-            created_at=user_data[4],
-            updated_at=user_data[5],
+            is_superuser=user_data[2],
+            is_active=user_data[3],
+            is_verified=user_data[4],
+            created_at=user_data[5],
+            updated_at=user_data[6],
             hashed_password=hashed_password,
         )
 
     def get_user_by_email(self, email: str) -> Optional[User]:
         query = text(
             f"""
-        SELECT id, email, hashed_password, is_active, is_verified, created_at, updated_at 
+        SELECT id, email, hashed_password, is_superuser, is_active, is_verified, created_at, updated_at 
         FROM users_{self.collection_name} 
         WHERE email = :email
         """
@@ -761,10 +783,11 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 email=user_data[1],
                 # password="",  # We don't return the hashed password
                 hashed_password=user_data[2],
-                is_active=user_data[3],
-                is_verified=user_data[4],
-                created_at=user_data[5],
-                updated_at=user_data[6],
+                is_superuser=user_data[3],
+                is_active=user_data[4],
+                is_verified=user_data[5],
+                created_at=user_data[6],
+                updated_at=user_data[7],
             )
         return None
 
@@ -819,6 +842,19 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             sess.execute(query, {"user_id": user_id})
             sess.commit()
 
+    def mark_user_as_superuser(self, user_id: UUID):
+        query = text(
+            f"""
+        UPDATE users_{self.collection_name} 
+        SET is_superuser = TRUE, is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL 
+        WHERE id = :user_id
+        """
+        )
+
+        with self.vx.Session() as sess:
+            sess.execute(query, {"user_id": user_id})
+            sess.commit()
+
     def remove_verification_code(self, verification_code: str):
         query = text(
             f"""
@@ -831,66 +867,6 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         with self.vx.Session() as sess:
             sess.execute(query, {"code": verification_code})
             sess.commit()
-
-    def get_user_by_id(self, user_id: UUID) -> Optional[User]:
-        query = text(
-            f"""
-        SELECT id, email, hashed_password, is_active, is_verified, created_at, updated_at 
-        FROM users_{self.collection_name} 
-        WHERE id = :user_id
-        """
-        )
-
-        with self.vx.Session() as sess:
-            result = sess.execute(query, {"user_id": user_id})
-            user_data = result.fetchone()
-
-        if user_data:
-            return User(
-                id=user_data[0],
-                email=user_data[1],
-                hashed_password="null",  # We don't return the hashed password
-                is_active=user_data[3],
-                is_verified=user_data[4],
-                created_at=user_data[5],
-                updated_at=user_data[6],
-            )
-        return None
-
-    def update_user(self, user: User) -> User:
-        query = text(
-            f"""
-        UPDATE users_{self.collection_name} 
-        SET email = :email, is_active = :is_active, is_verified = :is_verified, 
-            updated_at = NOW() 
-        WHERE id = :user_id 
-        RETURNING id, email, is_active, is_verified, created_at, updated_at
-        """
-        )
-
-        with self.vx.Session() as sess:
-            result = sess.execute(
-                query,
-                {
-                    "email": user.email,
-                    "is_active": user.is_active,
-                    "is_verified": user.is_verified,
-                    "user_id": user.id,
-                },
-            )
-            updated_user_data = result.fetchone()
-            sess.commit()
-
-        return User(
-            id=updated_user_data[0],
-            email=updated_user_data[1],
-            # password="",  # We don't return the password
-            hashed_password="null",
-            is_active=updated_user_data[2],
-            is_verified=updated_user_data[3],
-            created_at=updated_user_data[4],
-            updated_at=updated_user_data[5],
-        )
 
     def delete_user(self, user_id: UUID):
         query = text(
@@ -907,7 +883,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def get_all_users(self) -> list[User]:
         query = text(
             f"""
-        SELECT id, email, is_active, is_verified, created_at, updated_at 
+        SELECT id, email, is_superuser, is_active, is_verified, created_at, updated_at 
         FROM users_{self.collection_name}
         """
         )
@@ -921,10 +897,11 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 id=user_data[0],
                 email=user_data[1],
                 hashed_password="null",
-                is_active=user_data[2],
-                is_verified=user_data[3],
-                created_at=user_data[4],
-                updated_at=user_data[5],
+                is_superuser=user_data[2],
+                is_active=user_data[3],
+                is_verified=user_data[4],
+                created_at=user_data[5],
+                updated_at=user_data[6],
             )
             for user_data in users_data
         ]
@@ -939,6 +916,199 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         )
         with self.vx.Session() as sess:
             sess.execute(query, {"user_id": user_id})
+            sess.commit()
+
+    def store_reset_token(
+        self, user_id: UUID, reset_token: str, expiry: datetime
+    ):
+        query = text(
+            f"""
+            UPDATE users_{self.collection_name} 
+            SET reset_token = :token, reset_token_expiry = :expiry 
+            WHERE id = :user_id
+            """
+        )
+
+        with self.vx.Session() as sess:
+            sess.execute(
+                query,
+                {
+                    "token": reset_token,
+                    "expiry": expiry,
+                    "user_id": user_id,
+                },
+            )
+            sess.commit()
+
+    def get_user_id_by_reset_token(self, reset_token: str) -> Optional[UUID]:
+        query = text(
+            f"""
+            SELECT id FROM users_{self.collection_name} 
+            WHERE reset_token = :token AND reset_token_expiry > NOW()
+            """
+        )
+
+        with self.vx.Session() as sess:
+            result = sess.execute(query, {"token": reset_token})
+            user_data = result.fetchone()
+
+        return user_data[0] if user_data else None
+
+    def remove_reset_token(self, user_id: UUID):
+        query = text(
+            f"""
+            UPDATE users_{self.collection_name} 
+            SET reset_token = NULL, reset_token_expiry = NULL 
+            WHERE id = :user_id
+            """
+        )
+
+        with self.vx.Session() as sess:
+            sess.execute(query, {"user_id": user_id})
+            sess.commit()
+
+    def blacklist_token(self, token: str, current_time: datetime = None):
+        if current_time is None:
+            current_time = datetime.utcnow()
+        query = text(
+            f"""
+            INSERT INTO blacklisted_tokens_{self.collection_name} (token, blacklisted_at)
+            VALUES (:token, :blacklisted_at)
+            """
+        )
+
+        with self.vx.Session() as sess:
+            sess.execute(
+                query, {"token": token, "blacklisted_at": current_time}
+            )
+            sess.commit()
+
+    def is_token_blacklisted(self, token: str) -> bool:
+        query = text(
+            f"""
+            SELECT EXISTS(
+                SELECT 1 FROM blacklisted_tokens_{self.collection_name}
+                WHERE token = :token
+            )
+            """
+        )
+
+        with self.vx.Session() as sess:
+            result = sess.execute(query, {"token": token})
+            return result.scalar()
+
+    def clean_expired_blacklisted_tokens(
+        self,
+        max_age_hours: int = 7 * 24,
+        current_time: Optional[datetime] = None,
+    ):
+        if current_time is None:
+            current_time = datetime.utcnow()
+        expiry_time = current_time - timedelta(hours=max_age_hours)
+        query = text(
+            f"""
+            DELETE FROM blacklisted_tokens_{self.collection_name}
+            WHERE blacklisted_at < :expiry_time
+            """
+        )
+
+        with self.vx.Session() as sess:
+            sess.execute(query, {"expiry_time": expiry_time})
+            sess.commit()
+
+    # Modify existing methods to include new profile fields
+
+    def get_user_by_id(self, user_id: UUID) -> Optional[User]:
+        query = text(
+            f"""
+            SELECT id, email, hashed_password, is_superuser, is_active, is_verified, 
+                   created_at, updated_at, name, profile_picture, bio
+            FROM users_{self.collection_name} 
+            WHERE id = :user_id
+            """
+        )
+
+        with self.vx.Session() as sess:
+            result = sess.execute(query, {"user_id": user_id})
+            user_data = result.fetchone()
+
+        if user_data:
+            return User(
+                id=user_data[0],
+                email=user_data[1],
+                hashed_password=user_data[2],
+                is_superuser=user_data[3],
+                is_active=user_data[4],
+                is_verified=user_data[5],
+                created_at=user_data[6],
+                updated_at=user_data[7],
+                name=user_data[8],
+                profile_picture=user_data[9],
+                bio=user_data[10],
+            )
+        return None
+
+    def update_user(self, user: User) -> User:
+        query = text(
+            f"""
+            UPDATE users_{self.collection_name} 
+            SET email = :email, is_superuser = :is_superuser, is_active = :is_active, 
+                is_verified = :is_verified, updated_at = NOW(), name = :name, 
+                profile_picture = :profile_picture, bio = :bio
+            WHERE id = :user_id 
+            RETURNING id, email, is_superuser, is_active, is_verified, created_at, 
+                      updated_at, name, profile_picture, bio
+            """
+        )
+
+        with self.vx.Session() as sess:
+            result = sess.execute(
+                query,
+                {
+                    "email": user.email,
+                    "is_superuser": user.is_superuser,
+                    "is_active": user.is_active,
+                    "is_verified": user.is_verified,
+                    "user_id": user.id,
+                    "name": user.name,
+                    "profile_picture": user.profile_picture,
+                    "bio": user.bio,
+                },
+            )
+            updated_user_data = result.fetchone()
+            sess.commit()
+
+        return User(
+            id=updated_user_data[0],
+            email=updated_user_data[1],
+            hashed_password="null",
+            is_superuser=updated_user_data[2],
+            is_active=updated_user_data[3],
+            is_verified=updated_user_data[4],
+            created_at=updated_user_data[5],
+            updated_at=updated_user_data[6],
+            name=updated_user_data[7],
+            profile_picture=updated_user_data[8],
+            bio=updated_user_data[9],
+        )
+
+    def update_user_password(self, user_id: UUID, new_hashed_password: str):
+        query = text(
+            f"""
+            UPDATE users_{self.collection_name} 
+            SET hashed_password = :new_hashed_password, updated_at = NOW()
+            WHERE id = :user_id
+            """
+        )
+
+        with self.vx.Session() as sess:
+            sess.execute(
+                query,
+                {
+                    "user_id": user_id,
+                    "new_hashed_password": new_hashed_password,
+                },
+            )
             sess.commit()
 
 

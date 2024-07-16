@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Optional
 
@@ -7,6 +8,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from ..abstractions.exception import R2RException
 from ..abstractions.user import Token, TokenData, User, UserCreate
 from .base import Provider, ProviderConfig
+
+logger = logging.getLogger(__name__)
 
 
 class AuthConfig(ProviderConfig):
@@ -34,6 +37,7 @@ class AuthProvider(Provider, ABC):
             raise ValueError(
                 "AuthProvider must be initialized with an AuthConfig"
             )
+        self.config = config
         self.admin_email = config.default_admin_email
         self.admin_password = config.default_admin_password
         super().__init__(config)

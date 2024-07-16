@@ -132,3 +132,37 @@ class R2REngine(metaclass=AsyncSyncMeta):
     @syncable
     async def arefresh_access_token(self, *args, **kwargs):
         return await self.auth_service.refresh_access_token(*args, **kwargs)
+
+    @syncable
+    async def achange_password(self, *args, **kwargs):
+        return await self.auth_service.change_password(*args, **kwargs)
+
+    @syncable
+    async def arequest_password_reset(self, *args, **kwargs):
+        return await self.auth_service.request_password_reset(*args, **kwargs)
+
+    @syncable
+    async def aconfirm_password_reset(self, *args, **kwargs):
+        return await self.auth_service.confirm_password_reset(*args, **kwargs)
+
+    @syncable
+    async def alogout(self, *args, **kwargs):
+        return await self.auth_service.logout(*args, **kwargs)
+
+    @syncable
+    async def aget_user_profile(self, *args, **kwargs):
+        return await self.auth_service.get_user_profile(*args, **kwargs)
+
+    @syncable
+    async def aupdate_user_profile(self, *args, **kwargs):
+        return await self.auth_service.update_user_profile(*args, **kwargs)
+
+    @syncable
+    async def adelete_user_account(self, *args, **kwargs):
+        return await self.auth_service.delete_user_account(*args, **kwargs)
+
+    @syncable
+    async def aclean_expired_blacklisted_tokens(self, *args, **kwargs):
+        return await self.auth_service.clean_expired_blacklisted_tokens(
+            *args, **kwargs
+        )
