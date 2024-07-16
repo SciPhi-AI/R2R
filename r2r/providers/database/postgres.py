@@ -568,6 +568,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                     email TEXT UNIQUE NOT NULL,
                     hashed_password TEXT NOT NULL,
+                    is_superuser BOOLEAN DEFAULT FALSE,
                     is_active BOOLEAN DEFAULT TRUE,
                     is_verified BOOLEAN DEFAULT FALSE,
                     verification_code TEXT,
@@ -717,7 +718,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         INSERT INTO users_{self.collection_name} 
         (email, hashed_password) 
         VALUES (:email, :hashed_password) 
-        RETURNING id, email, is_active, is_verified, created_at, updated_at
+        RETURNING id, email, is_superuser, is_active, is_verified, created_at, updated_at
         """
         )
 
@@ -735,17 +736,18 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         return User(
             id=user_data[0],
             email=user_data[1],
-            is_active=user_data[2],
-            is_verified=user_data[3],
-            created_at=user_data[4],
-            updated_at=user_data[5],
+            is_superuser=user_data[2],
+            is_active=user_data[3],
+            is_verified=user_data[4],
+            created_at=user_data[5],
+            updated_at=user_data[6],
             hashed_password=hashed_password,
         )
 
     def get_user_by_email(self, email: str) -> Optional[User]:
         query = text(
             f"""
-        SELECT id, email, hashed_password, is_active, is_verified, created_at, updated_at 
+        SELECT id, email, hashed_password, is_superuser, is_active, is_verified, created_at, updated_at 
         FROM users_{self.collection_name} 
         WHERE email = :email
         """
@@ -761,10 +763,11 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 email=user_data[1],
                 # password="",  # We don't return the hashed password
                 hashed_password=user_data[2],
-                is_active=user_data[3],
-                is_verified=user_data[4],
-                created_at=user_data[5],
-                updated_at=user_data[6],
+                is_superuser=user_data[3],
+                is_active=user_data[4],
+                is_verified=user_data[5],
+                created_at=user_data[6],
+                updated_at=user_data[7],
             )
         return None
 
@@ -819,6 +822,20 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             sess.execute(query, {"user_id": user_id})
             sess.commit()
 
+
+    def mark_user_as_superuser(self, user_id: UUID):
+        query = text(
+            f"""
+        UPDATE users_{self.collection_name} 
+        SET is_superuser = TRUE, is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL 
+        WHERE id = :user_id
+        """
+        )
+
+        with self.vx.Session() as sess:
+            sess.execute(query, {"user_id": user_id})
+            sess.commit()
+
     def remove_verification_code(self, verification_code: str):
         query = text(
             f"""
@@ -835,7 +852,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def get_user_by_id(self, user_id: UUID) -> Optional[User]:
         query = text(
             f"""
-        SELECT id, email, hashed_password, is_active, is_verified, created_at, updated_at 
+        SELECT id, email, hashed_password, is_superuser, is_active, is_verified, created_at, updated_at 
         FROM users_{self.collection_name} 
         WHERE id = :user_id
         """
@@ -850,10 +867,11 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 id=user_data[0],
                 email=user_data[1],
                 hashed_password="null",  # We don't return the hashed password
-                is_active=user_data[3],
-                is_verified=user_data[4],
-                created_at=user_data[5],
-                updated_at=user_data[6],
+                is_superuser=user_data[3],
+                is_active=user_data[4],
+                is_verified=user_data[5],
+                created_at=user_data[6],
+                updated_at=user_data[7],
             )
         return None
 
@@ -861,10 +879,10 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         query = text(
             f"""
         UPDATE users_{self.collection_name} 
-        SET email = :email, is_active = :is_active, is_verified = :is_verified, 
+        SET email = :email, is_superuser = :is_superuser, is_active = :is_active, is_verified = :is_verified, 
             updated_at = NOW() 
         WHERE id = :user_id 
-        RETURNING id, email, is_active, is_verified, created_at, updated_at
+        RETURNING id, email, is_superuser, is_active, is_verified, created_at, updated_at
         """
         )
 
@@ -873,6 +891,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 query,
                 {
                     "email": user.email,
+                    "is_superuser": user.is_superuser,
                     "is_active": user.is_active,
                     "is_verified": user.is_verified,
                     "user_id": user.id,
@@ -884,12 +903,12 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         return User(
             id=updated_user_data[0],
             email=updated_user_data[1],
-            # password="",  # We don't return the password
             hashed_password="null",
-            is_active=updated_user_data[2],
-            is_verified=updated_user_data[3],
-            created_at=updated_user_data[4],
-            updated_at=updated_user_data[5],
+            is_superuser=updated_user_data[2],
+            is_active=updated_user_data[3],
+            is_verified=updated_user_data[4],
+            created_at=updated_user_data[5],
+            updated_at=updated_user_data[6],
         )
 
     def delete_user(self, user_id: UUID):
@@ -907,7 +926,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def get_all_users(self) -> list[User]:
         query = text(
             f"""
-        SELECT id, email, is_active, is_verified, created_at, updated_at 
+        SELECT id, email, is_superuser, is_active, is_verified, created_at, updated_at 
         FROM users_{self.collection_name}
         """
         )
@@ -921,10 +940,11 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 id=user_data[0],
                 email=user_data[1],
                 hashed_password="null",
-                is_active=user_data[2],
-                is_verified=user_data[3],
-                created_at=user_data[4],
-                updated_at=user_data[5],
+                is_superuser=user_data[2],
+                is_active=user_data[3],
+                is_verified=user_data[4],
+                created_at=user_data[5],
+                updated_at=user_data[6],
             )
             for user_data in users_data
         ]

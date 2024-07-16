@@ -15,6 +15,7 @@ from r2r.base import (
     Token,
     TokenData,
     User,
+    R2RException,
     UserCreate,
 )
 
@@ -33,7 +34,7 @@ class R2RAuthProvider(AuthProvider):
         logger.debug(f"Initializing R2RAuthProvider with config: {config}")
         self.crypto_provider = crypto_provider
         self.db_provider = db_provider
-        self.secret_key = config.secret_key or os.getenv("R2R_SECRET_KEY")
+        self.secret_key = config.secret_key or os.getenv("R2R_SECRET_KEY") or "wNFbczH3QhUVcPALwtWZCPi0lrDlGV3P1DPRVEQCPbM"
         self.access_token_lifetime_in_minutes = (
             config.access_token_lifetime_in_minutes
             or os.getenv("R2R_TOKEN_LIFE_IN_MINUTES")
@@ -42,6 +43,16 @@ class R2RAuthProvider(AuthProvider):
             config.refresh_token_lifetime_in_days
             or os.getenv("R2R_TOKEN_LIFE_IN_DAYS")
         )
+        try:
+            user = self.register(UserCreate(email=self.admin_email, password=self.admin_password))
+            self.db_provider.relational.mark_user_as_superuser(
+                user.id
+            )
+
+        except R2RException:
+            logger.info("Default admin user already exists.")
+            pass
+
 
     def create_access_token(self, data: dict) -> str:
         to_encode = data.copy()
@@ -89,31 +100,68 @@ class R2RAuthProvider(AuthProvider):
         return current_user
 
     def register(self, user: UserCreate) -> Dict[str, str]:
+        # Check if user already exists
         existing_user = self.db_provider.relational.get_user_by_email(
             user.email
         )
         if existing_user:
-            raise HTTPException(
-                status_code=400, detail="Email already registered"
+            raise R2RException(
+                status_code=400, message="Email already registered"
             )
-        hashed_password = self.crypto_provider.get_password_hash(user.password)
-        verification_code = self.crypto_provider.generate_verification_code()
-        new_user = User(
-            email=user.email,
-            hashed_password=hashed_password,
-            is_active=True,
-            is_verified=False,
-        )
-        created_user = self.db_provider.relational.create_user(new_user)
-        self.db_provider.relational.store_verification_code(
-            created_user.id,
-            verification_code,
-            datetime.utcnow() + timedelta(hours=24),
-        )
-        # Send verification email here
-        return {
-            "message": "User created. Please check your email for verification."
-        }
+
+        # Create new user
+        new_user = self.db_provider.relational.create_user(user)
+
+        if self.config.require_email_verification:
+            # Generate verification code and send email
+            verification_code = (
+                self.auth_provider.crypto_provider.generate_verification_code()
+            )
+            expiry = datetime.utcnow() + timedelta(hours=24)
+
+            self.db_provider.relational.store_verification_code(
+                new_user.id, verification_code, expiry
+            )
+            new_user.verification_code_expiry = expiry
+            # TODO - Integrate email provider(s)
+            # self.providers.email.send_verification_email(new_user.email, verification_code)
+        else:
+            # Mark user as verified
+            self.db_provider.relational.store_verification_code(
+                new_user.id, None, None
+            )
+            self.db_provider.relational.mark_user_as_verified(
+                new_user.id
+            )
+
+        return new_user
+
+    # def register(self, user: UserCreate) -> Dict[str, str]:
+    #     existing_user = self.db_provider.relational.get_user_by_email(
+    #         user.email
+    #     )
+    #     if existing_user:
+    #         raise HTTPException(
+    #             status_code=400, detail="Email already registered"
+    #         )
+    #     hashed_password = self.crypto_provider.get_password_hash(user.password)
+    #     verification_code = self.crypto_provider.generate_verification_code()
+    #     new_user = User(
+    #         email=user.email,
+    #         hashed_password=hashed_password,
+    #         is_active=True,
+    #         is_verified=False,
+    #     )
+    #     created_user = self.db_provider.relational.create_user(new_user)
+    #     self.db_provider.relational.store_verification_code(
+    #         created_user.id,
+    #         verification_code,
+    #         datetime.utcnow() + timedelta(hours=24),
+    #     )
+    #     # Send verification email here
+    #     return {
+    #         "message": "User created. Please check your email for verification."
+    #     }
 
     def verify_email(self, verification_code: str) -> Dict[str, str]:
         user_id = self.db_provider.relational.get_user_id_by_verification_code(

@@ -30,41 +30,7 @@ class AuthService(Service):
 
     @telemetry_event("RegisterUser")
     async def register(self, user: UserCreate) -> User:
-        # Check if user already exists
-        existing_user = self.providers.database.relational.get_user_by_email(
-            user.email
-        )
-        if existing_user:
-            raise R2RException(
-                status_code=400, message="Email already registered"
-            )
-
-        # Create new user
-        new_user = self.providers.database.relational.create_user(user)
-
-        if self.config.auth.require_email_verification:
-            # Generate verification code and send email
-            verification_code = (
-                self.providers.auth.crypto_provider.generate_verification_code()
-            )
-            expiry = datetime.utcnow() + timedelta(hours=24)
-
-            self.providers.database.relational.store_verification_code(
-                new_user.id, verification_code, expiry
-            )
-            new_user.verification_code_expiry = expiry
-            # TODO - Integrate email provider(s)
-            # self.providers.email.send_verification_email(new_user.email, verification_code)
-        else:
-            # Mark user as verified
-            self.providers.database.relational.store_verification_code(
-                new_user.id, None, None
-            )
-            self.providers.database.relational.mark_user_as_verified(
-                new_user.id
-            )
-
-        return new_user
+        return self.providers.auth.register(user)
 
     @telemetry_event("VerifyEmail")
     async def verify_email(self, verification_code: str) -> bool:

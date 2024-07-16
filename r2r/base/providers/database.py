@@ -162,6 +162,10 @@ class RelationalDatabaseProvider(Provider, ABC):
         pass
 
     @abstractmethod
+    def mark_user_as_superuser(self, user_id: uuid.UUID):
+        pass
+
+    @abstractmethod
     def remove_verification_code(self, verification_code: str):
         pass
 
