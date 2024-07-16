@@ -22,6 +22,8 @@ from r2r.base import (
 logger = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+DEFAULT_R2R_SK = "wNFbczH3QhUVcPALwtWZCPi0lrDlGV3P1DPRVEQCPbM"
+
 
 class R2RAuthProvider(AuthProvider):
     def __init__(
@@ -35,9 +37,7 @@ class R2RAuthProvider(AuthProvider):
         self.crypto_provider = crypto_provider
         self.db_provider = db_provider
         self.secret_key = (
-            config.secret_key
-            or os.getenv("R2R_SECRET_KEY")
-            or "wNFbczH3QhUVcPALwtWZCPi0lrDlGV3P1DPRVEQCPbM"
+            config.secret_key or os.getenv("R2R_SECRET_KEY") or DEFAULT_R2R_SK
         )
         self.access_token_lifetime_in_minutes = (
             config.access_token_lifetime_in_minutes
@@ -124,6 +124,7 @@ class R2RAuthProvider(AuthProvider):
         existing_user = self.db_provider.relational.get_user_by_email(
             user.email
         )
+        print("existing_user = ", existing_user)
         if existing_user:
             raise R2RException(
                 status_code=400, message="Email already registered"
@@ -342,6 +343,8 @@ class R2RAuthProvider(AuthProvider):
 
     def logout(self, token: str) -> Dict[str, str]:
         # Add the token to a blacklist
-        token_data = self.decode_token(token)
-        self.db_provider.relational.blacklist_token(token, token_data.exp)
+        self.db_provider.relational.blacklist_token(token)
         return {"message": "Logged out successfully"}
+
+    def clean_expired_blacklisted_tokens(self):
+        self.db_provider.relational.clean_expired_blacklisted_tokens()

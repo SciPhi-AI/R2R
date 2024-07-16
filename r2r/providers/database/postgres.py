@@ -1030,7 +1030,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             sess.execute(query, {"user_id": user_id})
             sess.commit()
 
-    def blacklist_token(self, token: str, expires_at: datetime):
+    def blacklist_token(self, token: str):
         query = text(
             f"""
             INSERT INTO blacklisted_tokens_{self.collection_name} (token, expires_at)
@@ -1047,7 +1047,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             f"""
             SELECT EXISTS(
                 SELECT 1 FROM blacklisted_tokens_{self.collection_name}
-                WHERE token = :token AND expires_at > NOW()
+                WHERE token = :token
             )
             """
         )

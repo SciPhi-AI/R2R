@@ -137,3 +137,7 @@ class AuthService(Service):
             raise R2RException(status_code=400, message="Incorrect password")
         self.providers.database.relational.delete_user(user_id)
         return {"message": "User account deleted successfully"}
+
+    @telemetry_event("CleanExpiredBlacklistedTokens")
+    async def clean_expired_blacklisted_tokens(self):
+        self.providers.auth.clean_expired_blacklisted_tokens()

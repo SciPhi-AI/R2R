@@ -183,7 +183,7 @@ async def test_login_failure_wrong_password(auth_service, auth_provider):
         await auth_service.login("login_fail@example.com", "wrong_password")
 
     assert exc_info.value.status_code == 401
-    assert exc_info.value.detail == "Incorrect email or password"
+    assert exc_info.value.message == "Incorrect email or password"
 
 
 @pytest.mark.asyncio
@@ -197,7 +197,7 @@ async def test_login_failure_unverified_user(auth_service, auth_provider):
         await auth_service.login("unverified@example.com", "password123")
 
     assert exc_info.value.status_code == 401
-    assert exc_info.value.detail == "Email not verified"
+    assert exc_info.value.message == "Email not verified"
 
 
 @pytest.mark.asyncio
@@ -207,7 +207,7 @@ async def test_login_failure_nonexistent_user(auth_service):
         await auth_service.login("nonexistent@example.com", "password123")
 
     assert exc_info.value.status_code == 401
-    assert exc_info.value.detail == "Incorrect email or password"
+    assert exc_info.value.message == "Incorrect email or password"
 
 
 @pytest.mark.asyncio
@@ -296,9 +296,9 @@ async def test_refresh_token_with_wrong_user(auth_service, auth_provider):
     # Try to use user1's refresh token for user2
     with pytest.raises(R2RException) as exc_info:
         await auth_service.refresh_access_token(
-            "user2@example.com", refresh_token
+            "user2@example.com", refresh_token.token
         )
-    assert "401: Invalid token" in str(exc_info.value)
+    assert "Invalid email address attached to token" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -354,7 +354,7 @@ async def test_change_password(auth_service, auth_provider):
 
     # Change password
     await auth_service.change_password(
-        new_user.id, "old_password", "new_password"
+        new_user, "old_password", "new_password"
     )
 
     # Try logging in with old password
@@ -539,7 +539,15 @@ async def test_token_blacklist_cleanup(auth_service, auth_provider):
     # Manually insert an expired blacklisted token
     expired_token = "expired_token"
     auth_provider.db_provider.relational.blacklist_token(
-        expired_token, datetime.utcnow() - timedelta(days=1)
+        expired_token, datetime.utcnow() - timedelta(days=365)
+    )
+
+    # Verify both tokens are in the blacklist before cleanup
+    assert auth_provider.db_provider.relational.is_token_blacklisted(
+        expired_token
+    )
+    assert auth_provider.db_provider.relational.is_token_blacklisted(
+        access_token
     )
 
     # Run cleanup
