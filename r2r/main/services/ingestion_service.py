@@ -3,7 +3,7 @@ import logging
 import uuid
 from collections import defaultdict
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from fastapi import Form, UploadFile
 
@@ -15,6 +15,7 @@ from r2r.base import (
     R2RDocumentProcessingError,
     R2RException,
     RunManager,
+    User,
     generate_id_from_label,
     increment_version,
     to_async_generator,
@@ -70,6 +71,7 @@ class IngestionService(Service):
         self,
         documents: list[Document],
         versions: Optional[list[str]] = None,
+        user: Optional[User] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -82,14 +84,29 @@ class IngestionService(Service):
         skipped_documents = []
         processed_documents = {}
         duplicate_documents = defaultdict(list)
+        user_ids = [str(user.id)] if user else []
 
+        existing_documents = (
+            self.providers.database.relational.get_documents_overview(
+                filter_user_ids=user_ids
+            )
+        )
         existing_document_info = {
-            doc_info.document_id: doc_info
-            for doc_info in self.providers.database.relational.get_documents_overview()
+            doc_info.document_id: doc_info for doc_info in existing_documents
         }
 
         for iteration, document in enumerate(documents):
             version = versions[iteration] if versions else "v0"
+
+            # Check if user ID has already been provided, and if it matches the authenticated user
+            user_id = document.metadata.get("user_id", None)
+            if user:
+                if user_id and user_id != str(user.id):
+                    raise R2RException(
+                        status_code=403,
+                        message="User ID in metadata does not match authenticated user.",
+                    )
+                document.metadata["user_id"] = str(user.id)
 
             # Check for duplicates within the current batch
             if document.id in processed_documents:
@@ -128,7 +145,7 @@ class IngestionService(Service):
                     size_in_bytes=len(document.data),
                     metadata=document.metadata.copy(),
                     title=document.metadata.get("title", str(document.id)),
-                    user_id=document.metadata.get("user_id", None),
+                    user_id=user.id if user else None,
                     created_at=now,
                     updated_at=now,
                     status="processing",  # Set initial status to `processing`
@@ -158,6 +175,7 @@ class IngestionService(Service):
         self.providers.database.relational.upsert_documents_overview(
             document_infos
         )
+
         ingestion_results = await self.pipelines.ingestion_pipeline.run(
             input=to_async_generator(
                 [
@@ -187,6 +205,7 @@ class IngestionService(Service):
         metadatas: Optional[list[dict]] = None,
         document_ids: Optional[list[uuid.UUID]] = None,
         versions: Optional[list[str]] = None,
+        user: Optional[User] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -214,19 +233,23 @@ class IngestionService(Service):
                     )
 
                 document_metadata = metadatas[iteration] if metadatas else {}
+
+                id_label = str(file.filename.split("/")[-1])
+                # Make user-level ids unique
+                if user:
+                    id_label += str(user.id)
                 document_id = (
                     document_ids[iteration]
                     if document_ids
-                    else generate_id_from_label(file.filename.split("/")[-1])
+                    else generate_id_from_label(id_label)
                 )
 
                 document = self._file_to_document(
                     file, document_id, document_metadata
                 )
                 documents.append(document)
-
             return await self.ingest_documents(
-                documents, versions, *args, **kwargs
+                documents, versions, *args, **kwargs, user=user
             )
 
         finally:
@@ -239,6 +262,7 @@ class IngestionService(Service):
         files: list[UploadFile],
         document_ids: list[uuid.UUID],
         metadatas: Optional[list[dict]] = None,
+        user: Optional[User] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -254,9 +278,14 @@ class IngestionService(Service):
                     message="Number of ids does not match number of files.",
                 )
 
-            documents_overview = await self._documents_overview(
-                document_ids=document_ids
+            documents_overview = (
+                self.providers.database.relational.get_documents_overview(
+                    filter_document_ids=[
+                        str(doc_id) for doc_id in document_ids
+                    ]
+                )
             )
+
             if len(documents_overview) != len(files):
                 raise R2RException(
                     status_code=404,
@@ -275,6 +304,15 @@ class IngestionService(Service):
                         message=f"Document with id {doc_id} not found.",
                     )
 
+                user_id = doc_info.metadata.get("user_id", None)
+                if user:
+                    if user_id and user_id != str(user.id):
+                        raise R2RException(
+                            status_code=403,
+                            message="User ID in metadata does not match authenticated user.",
+                        )
+                    doc_info.metadata["user_id"] = str(user.id)
+
                 new_version = increment_version(doc_info.version)
                 new_versions.append(new_version)
 
@@ -292,16 +330,20 @@ class IngestionService(Service):
                 documents.append(document)
 
             ingestion_results = await self.ingest_documents(
-                documents, versions=new_versions, *args, **kwargs
+                documents, versions=new_versions, user=user, *args, **kwargs
             )
 
             for doc_id, old_version in zip(
                 document_ids,
                 [doc_info.version for doc_info in documents_overview],
             ):
-                await self._delete(
-                    ["document_id", "version"], [str(doc_id), old_version]
-                )
+                keys = ["document_id", "version"]
+                values = [str(doc_id), old_version]
+                if user:
+                    keys.append("user_id")
+                    values.append(str(user.id))
+
+                self.providers.database.vector.delete_by_metadata(keys, values)
                 self.providers.database.relational.delete_from_documents_overview(
                     doc_id, old_version
                 )
@@ -474,34 +516,3 @@ class IngestionService(Service):
             raise R2RException(
                 status_code=400, message=f"Error processing form data: {e}"
             )
-
-    # TODO - Move to mgmt service for document info, delete, post orchestration buildout
-    async def _documents_overview(
-        self,
-        document_ids: Optional[list[uuid.UUID]] = None,
-        user_ids: Optional[list[uuid.UUID]] = None,
-        *args: Any,
-        **kwargs: Any,
-    ):
-        return self.providers.database.relational.get_documents_overview(
-            filter_document_ids=(
-                [str(ele) for ele in document_ids] if document_ids else None
-            ),
-            filter_user_ids=(
-                [str(ele) for ele in user_ids] if user_ids else None
-            ),
-        )
-
-    async def _delete(
-        self, keys: list[str], values: list[Union[bool, int, str]]
-    ):
-        logger.info(
-            f"Deleting documents which match on these keys and values: ({keys}, {values})"
-        )
-
-        ids = self.providers.database.vector.delete_by_metadata(keys, values)
-        if not ids:
-            raise R2RException(
-                status_code=404, message="No entries found for deletion."
-            )
-        return "Entries deleted successfully."

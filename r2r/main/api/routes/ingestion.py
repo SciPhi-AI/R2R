@@ -26,6 +26,7 @@ class IngestionRouter(BaseRouter):
                 metadatas=request.metadatas,
                 document_ids=request.document_ids,
                 versions=request.versions,
+                user=auth_user,
             )
 
         @self.router.post("/update_files")
@@ -41,4 +42,5 @@ class IngestionRouter(BaseRouter):
                 files=files,
                 metadatas=request.metadatas,
                 document_ids=request.document_ids,
+                user=auth_user,
             )

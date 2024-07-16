@@ -103,6 +103,10 @@ class VectorDatabaseProvider(Provider, ABC):
         for entry in entries:
             self.copy(entry, commit=commit)
 
+    @abstractmethod
+    def get_document_chunks(self, document_id: str) -> list[dict]:
+        pass
+
 
 class RelationalDatabaseProvider(Provider, ABC):
     @abstractmethod
@@ -121,10 +125,6 @@ class RelationalDatabaseProvider(Provider, ABC):
         filter_document_ids: Optional[list[str]] = None,
         filter_user_ids: Optional[list[str]] = None,
     ) -> list[DocumentInfo]:
-        pass
-
-    @abstractmethod
-    def get_document_chunks(self, document_id: str) -> list[dict]:
         pass
 
     @abstractmethod

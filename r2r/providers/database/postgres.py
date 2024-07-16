@@ -128,7 +128,7 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
 
         self.collection: Optional[Collection] = None
         self._initialize_vector_db(dimension)
-
+        self._create_hybrid_search_function()
         logger.info(
             f"Successfully initialized PGVectorDB with collection: {self.collection_name}"
         )
@@ -474,6 +474,26 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             results[key] for key in results if key != tuple(metadata_fields)
         ]
 
+    def get_document_chunks(self, document_id: str) -> list[dict]:
+        if not self.collection:
+            raise ValueError("Collection is not initialized.")
+
+        table_name = self.collection.table.name
+        query = text(
+            f"""
+            SELECT metadata
+            FROM vecs."{table_name}"
+            WHERE metadata->>'document_id' = :document_id
+            ORDER BY CAST(metadata->>'chunk_order' AS INTEGER)
+        """
+        )
+
+        params = {"document_id": document_id}
+
+        with self.vx.Session() as sess:
+            results = sess.execute(query, params).fetchall()
+            return [result[0] for result in results]
+
 
 class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def __init__(
@@ -659,26 +679,6 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 )
                 for row in results
             ]
-
-    def get_document_chunks(self, document_id: str) -> list[dict]:
-        if not self.collection:
-            raise ValueError("Collection is not initialized.")
-
-        table_name = self.collection.table.name
-        query = text(
-            f"""
-            SELECT metadata
-            FROM vecs."{table_name}"
-            WHERE metadata->>'document_id' = :document_id
-            ORDER BY CAST(metadata->>'chunk_order' AS INTEGER)
-        """
-        )
-
-        params = {"document_id": document_id}
-
-        with self.vx.Session() as sess:
-            results = sess.execute(query, params).fetchall()
-            return [result[0] for result in results]
 
     # TODO - Deprecate this method
     def get_users_overview(self, user_ids: Optional[list[str]] = None):
