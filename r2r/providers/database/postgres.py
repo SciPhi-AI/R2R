@@ -589,13 +589,10 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 CREATE TABLE IF NOT EXISTS blacklisted_tokens_{self.collection_name} (
                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                     token TEXT NOT NULL,
-                    blacklisted_at TIMESTAMPTZ DEFAULT NOW(),
-                    expires_at TIMESTAMPTZ NOT NULL
+                    blacklisted_at TIMESTAMPTZ DEFAULT NOW()
                 );
                 CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.collection_name}_token 
                 ON blacklisted_tokens_{self.collection_name} (token);
-                CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.collection_name}_expires_at 
-                ON blacklisted_tokens_{self.collection_name} (expires_at);
                 """
                 sess.execute(text(query))
 
@@ -1033,13 +1030,13 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def blacklist_token(self, token: str):
         query = text(
             f"""
-            INSERT INTO blacklisted_tokens_{self.collection_name} (token, expires_at)
-            VALUES (:token, :expires_at)
+            INSERT INTO blacklisted_tokens_{self.collection_name} (token)
+            VALUES (:token)
             """
         )
 
         with self.vx.Session() as sess:
-            sess.execute(query, {"token": token, "expires_at": expires_at})
+            sess.execute(query, {"token": token})
             sess.commit()
 
     def is_token_blacklisted(self, token: str) -> bool:
@@ -1060,7 +1057,6 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         query = text(
             f"""
             DELETE FROM blacklisted_tokens_{self.collection_name}
-            WHERE expires_at <= NOW()
             """
         )
 

@@ -83,6 +83,19 @@ def app_client(mock_db, mock_auth_wrapper):
     }
     providers.auth.auth_wrapper = mock_auth_wrapper
     providers.auth.register.side_effect = mock_db.relational.create_user
+    providers.auth.verify_email.return_value = {
+        "message": "Email verified successfully"
+    }
+    providers.auth.change_password.return_value = {
+        "message": "Password changed successfully"
+    }
+    providers.auth.request_password_reset.return_value = {
+        "message": "If the email exists, a reset link has been sent"
+    }
+    providers.auth.confirm_password_reset.return_value = {
+        "message": "Password reset successfully"
+    }
+    providers.auth.logout.return_value = {"message": "Logged out successfully"}
 
     providers.database = mock_db
     pipelines = MagicMock()
@@ -175,3 +188,108 @@ def test_authenticated_search(r2r_client, mock_db):
         == "Sample search result"
     )
     assert results["vector_search_results"][0]["score"] == 0.95
+
+
+@pytest.mark.asyncio
+async def test_change_password(r2r_client, mock_db):
+    # Register and login
+    user_data = {
+        "email": "change_pass@example.com",
+        "password": "old_password",
+    }
+    r2r_client.register(**user_data)
+    r2r_client.login(**user_data)
+
+    # Change password
+    response = r2r_client.change_password("old_password", "new_password")
+    print("response = ", response)
+    assert response["results"]["message"] == "Password changed successfully"
+
+    # Try logging in with new password
+    login_response = r2r_client.login(
+        email="change_pass@example.com", password="new_password"
+    )
+    assert "access_token" in login_response["results"]
+
+
+@pytest.mark.asyncio
+async def test_password_reset_flow(r2r_client, mock_db):
+    # Register a user
+    user_data = {"email": "reset_pass@example.com", "password": "old_password"}
+    r2r_client.register(**user_data)
+
+    # Request password reset
+    reset_response = r2r_client.request_password_reset(
+        "reset_pass@example.com"
+    )
+    assert "message" in reset_response["results"]
+
+    # Confirm password reset (we'll need to mock the reset token)
+    mock_reset_token = "mock_reset_token"
+    confirm_response = r2r_client.confirm_password_reset(
+        mock_reset_token, "new_password"
+    )
+    assert (
+        confirm_response["results"]["message"] == "Password reset successfully"
+    )
+
+    # Try logging in with new password
+    login_response = r2r_client.login(
+        email="reset_pass@example.com", password="new_password"
+    )
+    assert "access_token" in login_response["results"]
+
+
+@pytest.mark.asyncio
+async def test_logout(r2r_client, mock_db):
+    # Register and login
+    user_data = {"email": "logout@example.com", "password": "password123"}
+    r2r_client.register(**user_data)
+    r2r_client.login(**user_data)
+
+    # Logout
+    logout_response = r2r_client.logout()
+    assert logout_response["results"]["message"] == "Logged out successfully"
+
+    # Ensure client's tokens are cleared
+    assert r2r_client.access_token is None
+    assert r2r_client._refresh_token is None
+
+
+@pytest.mark.asyncio
+async def test_user_profile(r2r_client, mock_db):
+    # Register and login
+    user_data = {"email": "profile@example.com", "password": "password123"}
+    r2r_client.register(**user_data)
+    r2r_client.login(**user_data)
+
+    # Get user profile
+    profile = r2r_client.get_user_profile()
+    assert profile["email"] == "profile@example.com"
+
+    # Update user profile
+    updated_profile = r2r_client.update_user_profile(
+        {"name": "John Doe", "bio": "Test bio"}
+    )
+    assert updated_profile["name"] == "John Doe"
+    assert updated_profile["bio"] == "Test bio"
+
+
+@pytest.mark.asyncio
+async def test_delete_account(r2r_client, mock_db):
+    # Register and login
+    user_data = {"email": "delete@example.com", "password": "password123"}
+    r2r_client.register(**user_data)
+    r2r_client.login(**user_data)
+
+    # Delete account
+    delete_response = r2r_client.delete_account("password123")
+    assert "message" in delete_response["results"]
+
+    # Ensure client's tokens are cleared
+    assert r2r_client.access_token is None
+    assert r2r_client._refresh_token is None
+
+    # Try to login with deleted account (should fail)
+    with pytest.raises(R2RException):
+        r2r_client.login(**user_data)

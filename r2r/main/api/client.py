@@ -445,6 +445,57 @@ class R2RClient:
             "POST", "inspect_knowledge_graph", json=json.loads(request.json())
         )
 
+    def change_password(
+        self, current_password: str, new_password: str
+    ) -> dict:
+        self._ensure_authenticated()
+        return self._make_request(
+            "POST",
+            "change_password",
+            json={
+                "current_password": current_password,
+                "new_password": new_password,
+            },
+        )
+
+    def request_password_reset(self, email: str) -> dict:
+        return self._make_request(
+            "POST", "request_password_reset", json={"email": email}
+        )
+
+    def confirm_password_reset(
+        self, reset_token: str, new_password: str
+    ) -> dict:
+        return self._make_request(
+            "POST",
+            f"reset_password/{reset_token}",
+            json={"new_password": new_password},
+        )
+
+    def logout(self) -> dict:
+        self._ensure_authenticated()
+        response = self._make_request("POST", "logout")
+        self.access_token = None
+        self._refresh_token = None
+        return response
+
+    def get_user_profile(self) -> dict:
+        self._ensure_authenticated()
+        return self._make_request("GET", "profile")
+
+    def update_user_profile(self, profile_data: dict) -> dict:
+        self._ensure_authenticated()
+        return self._make_request("PUT", "profile", json=profile_data)
+
+    def delete_account(self, password: str) -> dict:
+        self._ensure_authenticated()
+        response = self._make_request(
+            "DELETE", "account", json={"password": password}
+        )
+        self.access_token = None
+        self._refresh_token = None
+        return response
+
 
 if __name__ == "__main__":
     client = R2RClient(base_url="http://localhost:8000")
