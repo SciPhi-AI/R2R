@@ -8,11 +8,11 @@
 
 <img src="./assets/r2r.png" alt="R2R Answer Engine">
 <h3 align="center">
-The ultimate open source RAG answer engine
+Build, scale, and manage user-facing Retrieval-Augmented Generation applications.
 </h3>
 
 # About
-R2R was designed to bridge the gap between local LLM experimentation and scalable, production-ready Retrieval-Augmented Generation (RAG). R2R provides a comprehensive and SOTA RAG system for developers, built around a RESTful API for ease of use.
+R2R was designed to bridge the gap between local LLM experimentation and scalable, production-ready Retrieval-Augmented Generation (RAG) applications. R2R provides a comprehensive SOTA platform that is built around a RESTful API for ease of use.
 
 For a more complete view of R2R, check out the [full documentation](https://r2r-docs.sciphi.ai/).
 
@@ -20,11 +20,11 @@ For a more complete view of R2R, check out the [full documentation](https://r2r-
 - **📁 Multimodal Support**: Ingest files ranging from `.txt`, `.pdf`, `.json` to `.png`, `.mp3`, and more.
 - **🔍 Hybrid Search**: Combine semantic and keyword search with reciprocal rank fusion for enhanced relevancy.
 - **🔗 Graph RAG**: Automatically extract relationships and build knowledge graphs.
-- **🗂️ App Management**: Efficiently manage documents and users with rich observability and analytics.
-- **🌐 Client-Server**: RESTful API support out of the box.
+- **🗂️ App Management**: Efficiently manage documents and users with full authentication.
+- **🔭 Observability**: Observe and analyze your RAG engine performance.
 - **🧩 Configurable**: Provision your application using intuitive configuration files.
-- **🔌 Extensible**: Develop your application further with easy builder + factory pattern.
-- **🖥️ Dashboard**: Use the [R2R Dashboard](https://github.com/SciPhi-AI/R2R-Dashboard), an open-source React+Next.js app for a user-friendly interaction with R2R.
+- **🔌 Extensibility**: Develop your application further with easy builder + factory pattern.
+- **🖥️ Dashboard**: Use the [R2R Dashboard](https://github.com/SciPhi-AI/R2R-Dashboard), an open-source React+Next.js app with optional authentication for interacting with R2R.
 
 ## Table of Contents
 1. [Install](#install)

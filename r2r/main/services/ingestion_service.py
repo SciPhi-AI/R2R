@@ -138,14 +138,17 @@ class IngestionService(Service):
                 continue
 
             now = datetime.now()
+            document_info_metadata = document.metadata.copy()
+            title = document_info_metadata.pop("title", str(document.id))
+            user_id = document_info_metadata.pop("user_id", None)
             document_infos.append(
                 DocumentInfo(
                     document_id=document.id,
                     version=version,
                     size_in_bytes=len(document.data),
-                    metadata=document.metadata.copy(),
-                    title=document.metadata.get("title", str(document.id)),
-                    user_id=user.id if user else None,
+                    metadata=document_info_metadata,
+                    title=title,
+                    user_id=user_id,
                     created_at=now,
                     updated_at=now,
                     status="processing",  # Set initial status to `processing`
