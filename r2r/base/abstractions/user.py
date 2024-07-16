@@ -23,6 +23,9 @@ class User(BaseModel):
     is_active: bool = True
     is_verified: bool = False
     verification_code_expiry: Optional[datetime] = None
+    name: Optional[str] = None
+    bio: Optional[str] = None
+    profile_picture: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -55,3 +58,4 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
     token_type: Optional[str] = None
+    exp: Optional[datetime] = None

@@ -1,4 +1,6 @@
+import uuid
 from datetime import datetime, timedelta
+from typing import Any
 
 from r2r.base import (
     KVLoggingSingleton,
@@ -77,3 +79,61 @@ class AuthService(Service):
         return self.providers.auth.refresh_access_token(
             user_email, refresh_token
         )
+
+    @telemetry_event("ChangePassword")
+    async def change_password(
+        self, user: User, current_password: str, new_password: str
+    ) -> dict[str, str]:
+        if not user:
+            raise R2RException(status_code=404, message="User not found")
+        return self.providers.auth.change_password(
+            user, current_password, new_password
+        )
+
+    @telemetry_event("RequestPasswordReset")
+    async def request_password_reset(self, email: str) -> dict[str, str]:
+        return self.providers.auth.request_password_reset(email)
+
+    @telemetry_event("ConfirmPasswordReset")
+    async def confirm_password_reset(
+        self, reset_token: str, new_password: str
+    ) -> dict[str, str]:
+        return self.providers.auth.confirm_password_reset(
+            reset_token, new_password
+        )
+
+    @telemetry_event("Logout")
+    async def logout(self, token: str) -> dict[str, str]:
+        return self.providers.auth.logout(token)
+
+    @telemetry_event("GetUserProfile")
+    async def get_user_profile(self, user_id: uuid.UUID) -> User:
+        user = self.providers.database.relational.get_user_by_id(user_id)
+        if not user:
+            raise R2RException(status_code=404, message="User not found")
+        return user
+
+    @telemetry_event("UpdateUserProfile")
+    async def update_user_profile(
+        self, user_id: uuid.UUID, profile_data: dict[str, Any]
+    ) -> User:
+        user = self.providers.database.relational.get_user_by_id(user_id)
+        if not user:
+            raise R2RException(status_code=404, message="User not found")
+        for key, value in profile_data.items():
+            setattr(user, key, value)
+        return self.providers.database.relational.update_user(user)
+
+    @telemetry_event("DeleteUserAccount")
+    async def delete_user_account(
+        self, user_id: uuid.UUID, password: str
+    ) -> dict[str, str]:
+        user = self.providers.database.relational.get_user_by_id(user_id)
+        if not user:
+            raise R2RException(status_code=404, message="User not found")
+        if not self.providers.auth.crypto_provider.verify_password(
+            password, user.hashed_password
+        ):
+            raise R2RException(status_code=400, message="Incorrect password")
+        self.providers.database.relational.delete_user(user_id)
+        return {"message": "User account deleted successfully"}

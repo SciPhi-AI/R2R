@@ -1,4 +1,4 @@
-from fastapi import Body, Depends
+from fastapi import Body, Depends, Path
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 
@@ -16,6 +16,25 @@ class UserResponse(BaseModel):
 
 class TokenResponse(BaseModel):
     results: dict[str, Token]
+
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class PasswordResetRequest(BaseModel):
+    email: str
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    new_password: str
+
+
+class UserProfileUpdate(BaseModel):
+    name: str | None = None
+    bio: str | None = None
+    profile_picture: str | None = None
 
 
 class AuthRouter(BaseRouter):
@@ -62,3 +81,69 @@ class AuthRouter(BaseRouter):
                 refresh_token=refresh_token,
             )
             return refresh_result
+
+        @self.router.post("/change_password")
+        @self.base_endpoint
+        async def change_password_app(
+            password_change: PasswordChangeRequest,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            return await self.engine.achange_password(
+                auth_user,
+                password_change.current_password,
+                password_change.new_password,
+            )
+
+        @self.router.post("/request_password_reset")
+        @self.base_endpoint
+        async def request_password_reset_app(
+            reset_request: PasswordResetRequest,
+        ):
+            return await self.engine.arequest_password_reset(
+                reset_request.email
+            )
+
+        @self.router.post("/reset_password/{reset_token}")
+        @self.base_endpoint
+        async def reset_password_app(
+            reset_token: str = Path(...),
+            reset_confirm: PasswordResetConfirmRequest = Body(...),
+        ):
+            return await self.engine.aconfirm_password_reset(
+                reset_token, reset_confirm.new_password
+            )
+
+        @self.router.post("/logout")
+        @self.base_endpoint
+        async def logout_app(
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            token: str = Depends(oauth2_scheme),
+        ):
+            return await self.engine.alogout(token)
+
+        @self.router.get("/profile", response_model=UserResponse)
+        @self.base_endpoint
+        async def get_profile_app(
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            return await self.engine.aget_user_profile(auth_user.id)
+
+        @self.router.put("/profile", response_model=UserResponse)
+        @self.base_endpoint
+        async def update_profile_app(
+            profile_update: UserProfileUpdate,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            return await self.engine.aupdate_user_profile(
+                auth_user.id, profile_update.dict(exclude_unset=True)
+            )
+
+        @self.router.delete("/account")
+        @self.base_endpoint
+        async def delete_account_app(
+            password: str = Body(..., embed=True),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            return await self.engine.adelete_user_account(
+                auth_user.id, password
+            )

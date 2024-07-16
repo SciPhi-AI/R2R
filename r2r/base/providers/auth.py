@@ -11,6 +11,7 @@ from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 
+
 class AuthConfig(ProviderConfig):
     secret_key: Optional[str] = None
     require_authentication: Optional[bool] = False
