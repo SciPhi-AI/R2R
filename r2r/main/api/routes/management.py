@@ -108,14 +108,8 @@ class ManagementRouter(BaseRouter):
                 chunks[0].get("user_id", None) != auth_user.id
                 and not auth_user.is_superuser
             ):
+                # Always raise this exception to 'hide' if the document exists
                 raise Exception("Document not found.")
-            elif (
-                not auth_user.is_superuser
-                and chunks[0].user_id != auth_user.id
-            ):
-                raise Exception(
-                    "Only a superuser can access arbitrary document data."
-                )
             return chunks
 
         @self.router.post("/users_overview")
@@ -165,12 +159,23 @@ class ManagementRouter(BaseRouter):
 
         @self.router.get("/app_settings")
         @self.base_endpoint
-        async def get_app_settings_app(
+        async def app_settings(
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
+            if not auth_user.is_superuser:
+                raise Exception(
+                    "Only a superuser can call the `app_settings` endpoint."
+                )
             return await self.engine.aapp_settings()
 
         @self.router.get("/openapi_spec")
         @self.base_endpoint
-        def get_openapi_spec_app():
+        def openapi_spec(
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise Exception(
+                    "Only a superuser can call the `openapi_spec` endpoint."
+                )
+
             return self.engine.openapi_spec()

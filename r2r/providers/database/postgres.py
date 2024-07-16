@@ -128,7 +128,7 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
 
         self.collection: Optional[Collection] = None
         self._initialize_vector_db(dimension)
-
+        self._create_hybrid_search_function()
         logger.info(
             f"Successfully initialized PGVectorDB with collection: {self.collection_name}"
         )
