@@ -20,7 +20,6 @@ class RetrievalRouter(BaseRouter):
             request: R2RSearchRequest,
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
-            print("auth_user = ", auth_user)
             if "agent_generation_config" in request.kg_search_settings:
                 request.kg_search_settings["agent_generation_config"] = (
                     GenerationConfig(
@@ -37,6 +36,7 @@ class RetrievalRouter(BaseRouter):
                 kg_search_settings=KGSearchSettings(
                     **(request.kg_search_settings or {})
                 ),
+                user=auth_user,
             )
             return results
 
@@ -68,6 +68,7 @@ class RetrievalRouter(BaseRouter):
                 rag_generation_config=GenerationConfig(
                     **(request.rag_generation_config or {})
                 ),
+                user=auth_user,
             )
             if (
                 request.rag_generation_config
@@ -94,5 +95,6 @@ class RetrievalRouter(BaseRouter):
                 query=request.query,
                 context=request.context,
                 completion=request.completion,
+                user=auth_user,
             )
             return results

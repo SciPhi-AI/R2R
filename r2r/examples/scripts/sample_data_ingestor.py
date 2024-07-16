@@ -1,5 +1,4 @@
 import os
-import uuid
 from typing import TYPE_CHECKING
 
 import fire
@@ -9,13 +8,6 @@ if TYPE_CHECKING:
 
 
 class SampleDataIngestor:
-    USER_IDS = [
-        "063edaf8-3e63-4cb9-a4d6-a855f36376c3",
-        "45c3f5a8-bcbe-43b1-9b20-51c07fd79f14",
-        "c6c23d85-6217-4caa-b391-91ec0021a000",
-        None,
-    ]
-
     def __init__(
         self,
         executor: "R2RExecutionWrapper",
@@ -53,26 +45,17 @@ class SampleDataIngestor:
 
     def ingest_sample_files(self, no_media: bool = True):
         sample_files = self.get_sample_files(no_media)
-        user_ids = [
-            uuid.UUID(user_id) if user_id else None
-            for user_id in self.USER_IDS
-        ]
 
         response = self.executor.ingest_files(
             sample_files,
-            [
-                {"user_id": user_ids[it % len(user_ids)]}
-                for it in range(len(sample_files))
-            ],
         )
         return response
 
     def ingest_sample_file(self, no_media: bool = True, option: int = 0):
         sample_files = self.get_sample_files()
-        user_id = uuid.UUID(self.USER_IDS[option % len(self.USER_IDS)])
 
         response = self.executor.ingest_files(
-            [sample_files[option]], [{"user_id": user_id}]
+            [sample_files[option]],
         )
         return response
 

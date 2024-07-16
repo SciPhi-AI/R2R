@@ -130,12 +130,6 @@ class R2RExecutionWrapper:
             else:
                 all_file_paths.append(path)
 
-        if not document_ids:
-            document_ids = [
-                generate_id_from_label(os.path.basename(file_path))
-                for file_path in all_file_paths
-            ]
-
         files = [
             UploadFile(
                 filename=os.path.basename(file_path),

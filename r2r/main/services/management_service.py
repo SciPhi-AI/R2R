@@ -245,7 +245,7 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return self.providers.database.relational.get_document_chunks(
+        return self.providers.database.vector.get_document_chunks(
             str(document_id)
         )
 
