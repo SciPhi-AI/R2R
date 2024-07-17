@@ -1,6 +1,8 @@
 x-depends-on:
   neo4j: &neo4j-dependency
     condition: service_healthy
+  ollama: &ollama-dependency
+    condition: service_healthy
 
 networks:
   r2r-network:
@@ -13,7 +15,7 @@ networks:
         - subnet: 172.28.0.0/16
     labels:
       - "com.docker.compose.recreate=always"
-      
+
 
 services:
   r2r:
