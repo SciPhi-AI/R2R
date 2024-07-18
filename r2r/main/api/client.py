@@ -100,7 +100,7 @@ class R2RClient:
         self.prefix = prefix
         self.access_token = None
         self._refresh_token = None
-        self.client = custom_client if custom_client else requests
+        self.client = custom_client or requests
 
     def _make_request(self, method, endpoint, **kwargs):
         url = f"{self.base_url}{self.prefix}/{endpoint}"
@@ -360,8 +360,7 @@ class R2RClient:
 
         try:
             while True:
-                chunk = loop.run_until_complete(async_gen.__anext__())
-                yield chunk
+                yield loop.run_until_complete(async_gen.__anext__())
         except StopAsyncIteration:
             pass
         finally:
