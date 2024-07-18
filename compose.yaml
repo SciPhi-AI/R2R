@@ -1,6 +1,8 @@
 x-depends-on:
   neo4j: &neo4j-dependency
     condition: service_healthy
+  ollama: &ollama-dependency
+    condition: service_healthy
 
 networks:
   r2r-network:
