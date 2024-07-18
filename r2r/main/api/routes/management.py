@@ -111,6 +111,11 @@ class ManagementRouter(BaseRouter):
                 chunks[0].get("user_id", None) != auth_user.id
                 and not auth_user.is_superuser
             ):
+                if not auth_user.is_superuser:
+                    raise R2RException(
+                        "Only a superuser can call the `document_chunks` endpoint.",
+                        403,
+                    )
                 # Always raise this exception to 'hide' if the document exists
                 raise Exception("Document not found.")
             return chunks
