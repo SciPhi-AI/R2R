@@ -100,6 +100,7 @@ class AuthProvider(Provider, ABC):
         if auth is None:
             raise R2RException(
                 message="Authentication required.",
+                status_code=401,
             )
 
         try:
