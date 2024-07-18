@@ -128,7 +128,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
     @syncable
     async def auser(self, *args, **kwargs):
         return await self.auth_service.user(*args, **kwargs)
-    
+
     @syncable
     async def aupdate_user(self, *args, **kwargs):
         return await self.auth_service.update_user(*args, **kwargs)

@@ -21,6 +21,7 @@ from r2r.base import (
     VectorDatabaseProvider,
     VectorEntry,
     VectorSearchResult,
+    generate_id_from_label,
 )
 
 from .vecs import Client, Collection, create_client
@@ -736,8 +737,8 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         query = text(
             f"""
         INSERT INTO users_{self.collection_name} 
-        (email, hashed_password) 
-        VALUES (:email, :hashed_password) 
+        (email, id, hashed_password) 
+        VALUES (:email, :id, :hashed_password) 
         RETURNING id, email, is_superuser, is_active, is_verified, created_at, updated_at
         """
         )
@@ -747,6 +748,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 query,
                 {
                     "email": user.email,
+                    "id": generate_id_from_label(user.email),
                     "hashed_password": hashed_password,
                 },
             )

@@ -19,7 +19,7 @@ services:
     networks:
       - r2r-network
     healthcheck:
-      test: ["CMD", "ollama", "status"]
+      test: ["CMD", "ollama", "ps"]
       interval: 10s
       timeout: 5s
       retries: 5
