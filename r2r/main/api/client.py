@@ -35,24 +35,26 @@ nest_asyncio.apply()
 
 
 def handle_request_error(response):
-    if response.status_code >= 400:
-        try:
-            error_content = response.json()
-            if isinstance(error_content, dict) and "detail" in error_content:
-                detail = error_content["detail"]
-                if isinstance(detail, dict):
-                    message = detail.get("message", str(response.text))
-                else:
-                    message = str(detail)
-            else:
-                message = str(error_content)
-        except json.JSONDecodeError:
-            message = response.text
+    if response.status_code < 400:
+        return
 
-        raise R2RException(
-            status_code=response.status_code,
-            message=message,
-        )
+    try:
+        error_content = response.json()
+        if isinstance(error_content, dict) and "detail" in error_content:
+            detail = error_content["detail"]
+            if isinstance(detail, dict):
+                message = detail.get("message", str(response.text))
+            else:
+                message = str(detail)
+        else:
+            message = str(error_content)
+    except json.JSONDecodeError:
+        message = response.text
+
+    raise R2RException(
+        status_code=response.status_code,
+        message=message,
+    )
 
 
 def monitor_request(func):
@@ -98,7 +100,7 @@ class R2RClient:
         self.prefix = prefix
         self.access_token = None
         self._refresh_token = None
-        self.client = custom_client if custom_client else requests
+        self.client = custom_client or requests
 
     def _make_request(self, method, endpoint, **kwargs):
         url = f"{self.base_url}{self.prefix}/{endpoint}"
@@ -358,8 +360,7 @@ class R2RClient:
 
         try:
             while True:
-                chunk = loop.run_until_complete(async_gen.__anext__())
-                yield chunk
+                yield loop.run_until_complete(async_gen.__anext__())
         except StopAsyncIteration:
             pass
         finally:
