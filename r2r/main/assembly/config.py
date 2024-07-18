@@ -7,12 +7,14 @@ from typing import Any
 from ...base.abstractions.document import DocumentType
 from ...base.abstractions.llm import GenerationConfig
 from ...base.logging.kv_logger import LoggingConfig
-from ...base.providers.embedding_provider import EmbeddingConfig
-from ...base.providers.eval_provider import EvalConfig
-from ...base.providers.kg_provider import KGConfig
-from ...base.providers.llm_provider import LLMConfig
-from ...base.providers.prompt_provider import PromptConfig
-from ...base.providers.vector_db_provider import ProviderConfig, VectorDBConfig
+from ...base.providers.auth import AuthConfig
+from ...base.providers.crypto import CryptoConfig
+from ...base.providers.database import DatabaseConfig, ProviderConfig
+from ...base.providers.embedding import EmbeddingConfig
+from ...base.providers.eval import EvalConfig
+from ...base.providers.kg import KGConfig
+from ...base.providers.llm import LLMConfig
+from ...base.providers.prompt import PromptConfig
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,8 @@ logger = logging.getLogger(__name__)
 class R2RConfig:
     REQUIRED_KEYS: dict[str, list] = {
         "app": ["max_file_size_in_mb"],
+        "crypto": ["provider"],
+        "auth": ["provider"],
         "embedding": [
             "provider",
             "base_model",
@@ -38,14 +42,17 @@ class R2RConfig:
         "completions": ["provider"],
         "logging": ["provider", "log_table"],
         "prompt": ["provider"],
-        "vector_database": ["provider"],
+        "database": ["provider"],
     }
     app: dict[str, Any]
+    auth: AuthConfig
+    crypto: CryptoConfig
     embedding: EmbeddingConfig
+    kg: KGConfig
     completions: LLMConfig
     logging: LoggingConfig
     prompt: PromptConfig
-    vector_database: VectorDBConfig
+    database: DatabaseConfig
 
     def __init__(self, config_data: dict[str, Any]):
         # Load the default configuration
@@ -69,8 +76,9 @@ class R2RConfig:
             ):
                 self._validate_config_section(default_config, section, keys)
             setattr(self, section, default_config[section])
-
         self.app = self.app  # for type hinting
+        self.auth = AuthConfig.create(**self.auth)
+        self.crypto = CryptoConfig.create(**self.crypto)
         self.ingestion = self.ingestion  # for type hinting
         self.ingestion["excluded_parsers"] = [
             DocumentType(k) for k in self.ingestion["excluded_parsers"]
@@ -88,7 +96,7 @@ class R2RConfig:
         self.completions = LLMConfig.create(**self.completions)
         self.logging = LoggingConfig.create(**self.logging)
         self.prompt = PromptConfig.create(**self.prompt)
-        self.vector_database = VectorDBConfig.create(**self.vector_database)
+        self.database = DatabaseConfig.create(**self.database)
 
     def _validate_config_section(
         self, config_data: dict[str, Any], section: str, keys: list
@@ -103,9 +111,7 @@ class R2RConfig:
         if config_path is None:
             # Get the root directory of the project
             file_dir = os.path.dirname(os.path.abspath(__file__))
-            config_path = os.path.join(
-                file_dir, "..", "..", "..", "config.json"
-            )
+            config_path = os.path.join(file_dir, "..", "..", "..", "r2r.json")
 
         # Load configuration from JSON file
         with open(config_path) as f:
@@ -131,10 +137,6 @@ class R2RConfig:
                 f"Configuration not found in Redis with key '{key}'"
             )
         config_data = json.loads(config_data)
-        # config_data["ingestion"]["selected_parsers"] = {
-        #     DocumentType(k): v
-        #     for k, v in config_data["ingestion"]["selected_parsers"].items()
-        # }
         return cls(config_data)
 
     @classmethod
@@ -142,7 +144,7 @@ class R2RConfig:
         # Get the root directory of the project
         file_dir = os.path.dirname(os.path.abspath(__file__))
         default_config_path = os.path.join(
-            file_dir, "..", "..", "..", "config.json"
+            file_dir, "..", "..", "..", "r2r.json"
         )
         # Load default configuration from JSON file
         with open(default_config_path) as f:

@@ -3,11 +3,14 @@ from typing import Optional, Type
 
 from r2r.base import (
     AsyncPipe,
+    AuthProvider,
+    CryptoProvider,
+    DatabaseProvider,
     EmbeddingProvider,
     EvalProvider,
+    KGProvider,
     LLMProvider,
     PromptProvider,
-    VectorDBProvider,
 )
 from r2r.pipelines import (
     EvalPipeline,
@@ -37,6 +40,7 @@ class R2RBuilder:
         "neo4j_kg": os.path.join(config_root, "neo4j_kg.json"),
         "local_neo4j_kg": os.path.join(config_root, "local_neo4j_kg.json"),
         "postgres_logging": os.path.join(config_root, "postgres_logging.json"),
+        "auth": os.path.join(config_root, "auth.json"),
     }
 
     @staticmethod
@@ -50,22 +54,29 @@ class R2RBuilder:
     def __init__(
         self,
         config: Optional[R2RConfig] = None,
-        from_config: Optional[str] = None,
+        config_name: Optional[str] = None,
     ):
-        if config and from_config:
+        if config and config_name:
             raise ValueError("Cannot specify both config and config_name")
-        self.config = config or R2RBuilder._get_config(from_config)
+        self.config = config or R2RBuilder._get_config(config_name)
         self.r2r_app_override: Optional[Type[R2REngine]] = None
         self.provider_factory_override: Optional[Type[R2RProviderFactory]] = (
             None
         )
         self.pipe_factory_override: Optional[R2RPipeFactory] = None
         self.pipeline_factory_override: Optional[R2RPipelineFactory] = None
-        self.vector_db_provider_override: Optional[VectorDBProvider] = None
+
+        # Provider overrides
+        self.auth_provider_override: Optional[AuthProvider] = None
+        self.database_provider_override: Optional[DatabaseProvider] = None
         self.embedding_provider_override: Optional[EmbeddingProvider] = None
         self.eval_provider_override: Optional[EvalProvider] = None
         self.llm_provider_override: Optional[LLMProvider] = None
         self.prompt_provider_override: Optional[PromptProvider] = None
+        self.kg_provider_override: Optional[KGProvider] = None
+        self.crypto_provider_override: Optional[CryptoProvider] = None
+
+        # Pipe overrides
         self.parsing_pipe_override: Optional[AsyncPipe] = None
         self.embedding_pipe_override: Optional[AsyncPipe] = None
         self.vector_storage_pipe_override: Optional[AsyncPipe] = None
@@ -73,6 +84,11 @@ class R2RBuilder:
         self.rag_pipe_override: Optional[AsyncPipe] = None
         self.streaming_rag_pipe_override: Optional[AsyncPipe] = None
         self.eval_pipe_override: Optional[AsyncPipe] = None
+        self.kg_pipe_override: Optional[AsyncPipe] = None
+        self.kg_storage_pipe_override: Optional[AsyncPipe] = None
+        self.kg_agent_pipe_override: Optional[AsyncPipe] = None
+
+        # Pipeline overrides
         self.ingestion_pipeline: Optional[IngestionPipeline] = None
         self.search_pipeline: Optional[SearchPipeline] = None
         self.rag_pipeline: Optional[RAGPipeline] = None
@@ -95,8 +111,13 @@ class R2RBuilder:
         self.pipeline_factory_override = factory
         return self
 
-    def with_vector_db_provider(self, provider: VectorDBProvider):
-        self.vector_db_provider_override = provider
+    # Provider override methods
+    def with_auth_provider(self, provider: AuthProvider):
+        self.auth_provider_override = provider
+        return self
+
+    def with_database_provider(self, provider: DatabaseProvider):
+        self.database_provider_override = provider
         return self
 
     def with_embedding_provider(self, provider: EmbeddingProvider):
@@ -115,6 +136,15 @@ class R2RBuilder:
         self.prompt_provider_override = provider
         return self
 
+    def with_kg_provider(self, provider: KGProvider):
+        self.kg_provider_override = provider
+        return self
+
+    def with_crypto_provider(self, provider: CryptoProvider):
+        self.crypto_provider_override = provider
+        return self
+
+    # Pipe override methods
     def with_parsing_pipe(self, pipe: AsyncPipe):
         self.parsing_pipe_override = pipe
         return self
@@ -143,11 +173,24 @@ class R2RBuilder:
         self.eval_pipe_override = pipe
         return self
 
+    def with_kg_pipe(self, pipe: AsyncPipe):
+        self.kg_pipe_override = pipe
+        return self
+
+    def with_kg_storage_pipe(self, pipe: AsyncPipe):
+        self.kg_storage_pipe_override = pipe
+        return self
+
+    def with_kg_agent_pipe(self, pipe: AsyncPipe):
+        self.kg_agent_pipe_override = pipe
+        return self
+
+    # Pipeline override methods
     def with_ingestion_pipeline(self, pipeline: IngestionPipeline):
         self.ingestion_pipeline = pipeline
         return self
 
-    def with_vector_search_pipeline(self, pipeline: SearchPipeline):
+    def with_search_pipeline(self, pipeline: SearchPipeline):
         self.search_pipeline = pipeline
         return self
 
@@ -169,11 +212,14 @@ class R2RBuilder:
         pipeline_factory = self.pipeline_factory_override or R2RPipelineFactory
 
         providers = provider_factory(self.config).create_providers(
-            vector_db_provider_override=self.vector_db_provider_override,
+            auth_provider_override=self.auth_provider_override,
+            database_provider_override=self.database_provider_override,
             embedding_provider_override=self.embedding_provider_override,
             eval_provider_override=self.eval_provider_override,
             llm_provider_override=self.llm_provider_override,
             prompt_provider_override=self.prompt_provider_override,
+            kg_provider_override=self.kg_provider_override,
+            crypto_provider_override=self.crypto_provider_override,
             *args,
             **kwargs,
         )
@@ -186,6 +232,9 @@ class R2RBuilder:
             rag_pipe_override=self.rag_pipe_override,
             streaming_rag_pipe_override=self.streaming_rag_pipe_override,
             eval_pipe_override=self.eval_pipe_override,
+            kg_pipe_override=self.kg_pipe_override,
+            kg_storage_pipe_override=self.kg_storage_pipe_override,
+            kg_agent_pipe_override=self.kg_agent_pipe_override,
             *args,
             **kwargs,
         )

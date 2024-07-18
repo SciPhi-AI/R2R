@@ -5,9 +5,9 @@ from typing import Any, AsyncGenerator, Optional, Tuple, Union
 
 from r2r.base import (
     AsyncState,
+    DatabaseProvider,
     KVLoggingSingleton,
     PipeType,
-    VectorDBProvider,
     VectorEntry,
 )
 from r2r.base.pipes.base_pipe import AsyncPipe
@@ -26,7 +26,7 @@ class VectorStoragePipe(AsyncPipe):
 
     def __init__(
         self,
-        vector_db_provider: VectorDBProvider,
+        database_provider: DatabaseProvider,
         storage_batch_size: int = 128,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
@@ -44,7 +44,7 @@ class VectorStoragePipe(AsyncPipe):
             *args,
             **kwargs,
         )
-        self.vector_db_provider = vector_db_provider
+        self.database_provider = database_provider
         self.storage_batch_size = storage_batch_size
 
     async def store(
@@ -58,9 +58,9 @@ class VectorStoragePipe(AsyncPipe):
 
         try:
             if do_upsert:
-                self.vector_db_provider.upsert_entries(vector_entries)
+                self.database_provider.vector.upsert_entries(vector_entries)
             else:
-                self.vector_db_provider.copy_entries(vector_entries)
+                self.database_provider.vector.copy_entries(vector_entries)
         except Exception as e:
             error_message = (
                 f"Failed to store vector entries in the database: {e}"

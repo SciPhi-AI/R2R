@@ -4,6 +4,12 @@ from typing import Any, Optional
 
 from r2r.base import (
     AsyncPipe,
+    AuthConfig,
+    AuthProvider,
+    CryptoConfig,
+    CryptoProvider,
+    DatabaseConfig,
+    DatabaseProvider,
     EmbeddingConfig,
     EmbeddingProvider,
     EvalProvider,
@@ -11,9 +17,8 @@ from r2r.base import (
     KVLoggingSingleton,
     LLMConfig,
     LLMProvider,
+    PromptConfig,
     PromptProvider,
-    VectorDBConfig,
-    VectorDBProvider,
 )
 from r2r.pipelines import (
     EvalPipeline,
@@ -32,28 +37,75 @@ class R2RProviderFactory:
     def __init__(self, config: R2RConfig):
         self.config = config
 
-    def create_vector_db_provider(
-        self, vector_db_config: VectorDBConfig, *args, **kwargs
-    ) -> VectorDBProvider:
-        vector_db_provider: Optional[VectorDBProvider] = None
-        if vector_db_config.provider == "pgvector":
-            from r2r.providers.vector_dbs import PGVectorDB
+    def create_auth_provider(
+        self,
+        auth_config: AuthConfig,
+        db_provider: DatabaseProvider,
+        crypto_provider: Optional[CryptoProvider] = None,
+        *args,
+        **kwargs,
+    ) -> AuthProvider:
+        auth_provider: Optional[AuthProvider] = None
+        if auth_config.provider == "r2r":
+            from r2r.providers import R2RAuthProvider
 
-            vector_db_provider = PGVectorDB(vector_db_config)
+            auth_provider = R2RAuthProvider(
+                auth_config, crypto_provider, db_provider
+            )
+        elif auth_config.provider is None:
+            auth_provider = None
         else:
             raise ValueError(
-                f"Vector database provider {vector_db_config.provider} not supported"
+                f"Auth provider {auth_config.provider} not supported."
             )
-        if not vector_db_provider:
-            raise ValueError("Vector database provider not found")
+        return auth_provider
 
+    def create_crypto_provider(
+        self, crypto_config: CryptoConfig, *args, **kwargs
+    ) -> CryptoProvider:
+        crypto_provider: Optional[CryptoProvider] = None
+        if crypto_config.provider == "bcrypt":
+            from r2r.providers.crypto import BCryptConfig, BCryptProvider
+
+            crypto_provider = BCryptProvider(
+                BCryptConfig(**crypto_config.dict())
+            )
+        elif crypto_config.provider is None:
+            crypto_provider = None
+        else:
+            raise ValueError(
+                f"Crypto provider {crypto_config.provider} not supported."
+            )
+        return crypto_provider
+
+    def create_database_provider(
+        self,
+        db_config: DatabaseConfig,
+        crypto_provider: Optional[CryptoProvider] = None,
+        *args,
+        **kwargs,
+    ) -> DatabaseProvider:
+        database_provider: Optional[DatabaseProvider] = None
         if not self.config.embedding.base_dimension:
-            raise ValueError("Search dimension not found in embedding config")
+            raise ValueError(
+                "Embedding config must have a base dimension to initialize database."
+            )
 
-        vector_db_provider.initialize_collection(
-            self.config.embedding.base_dimension
-        )
-        return vector_db_provider
+        vector_db_dimension = self.config.embedding.base_dimension
+        if db_config.provider == "postgres":
+            from r2r.providers import PostgresDBProvider
+
+            database_provider = PostgresDBProvider(
+                db_config, vector_db_dimension, crypto_provider=crypto_provider
+            )
+        else:
+            raise ValueError(
+                f"Database provider {db_config.provider} not supported"
+            )
+        if not database_provider:
+            raise ValueError("Database provider not found")
+
+        return database_provider
 
     def create_embedding_provider(
         self, embedding: EmbeddingConfig, *args, **kwargs
@@ -65,18 +117,16 @@ class R2RProviderFactory:
                 raise ValueError(
                     "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
                 )
-            from r2r.providers.embeddings import OpenAIEmbeddingProvider
+            from r2r.providers import OpenAIEmbeddingProvider
 
             embedding_provider = OpenAIEmbeddingProvider(embedding)
         elif embedding.provider == "ollama":
-            from r2r.providers.embeddings import OllamaEmbeddingProvider
+            from r2r.providers import OllamaEmbeddingProvider
 
             embedding_provider = OllamaEmbeddingProvider(embedding)
 
         elif embedding.provider == "sentence-transformers":
-            from r2r.providers.embeddings import (
-                SentenceTransformerEmbeddingProvider,
-            )
+            from r2r.providers import SentenceTransformerEmbeddingProvider
 
             embedding_provider = SentenceTransformerEmbeddingProvider(
                 embedding
@@ -94,7 +144,7 @@ class R2RProviderFactory:
         self, eval_config, prompt_provider, *args, **kwargs
     ) -> Optional[EvalProvider]:
         if eval_config.provider == "local":
-            from r2r.providers.eval import LLMEvalProvider
+            from r2r.providers import LLMEvalProvider
 
             llm_provider = self.create_llm_provider(eval_config.llm)
             eval_provider = LLMEvalProvider(
@@ -116,11 +166,11 @@ class R2RProviderFactory:
     ) -> LLMProvider:
         llm_provider: Optional[LLMProvider] = None
         if llm_config.provider == "openai":
-            from r2r.providers.llms import OpenAILLM
+            from r2r.providers import OpenAILLM
 
             llm_provider = OpenAILLM(llm_config)
         elif llm_config.provider == "litellm":
-            from r2r.providers.llms import LiteLLM
+            from r2r.providers import LiteLLM
 
             llm_provider = LiteLLM(llm_config)
         else:
@@ -132,13 +182,13 @@ class R2RProviderFactory:
         return llm_provider
 
     def create_prompt_provider(
-        self, prompt_config, *args, **kwargs
+        self, prompt_config: PromptConfig, *args, **kwargs
     ) -> PromptProvider:
         prompt_provider = None
-        if prompt_config.provider == "local":
-            from r2r.prompts import R2RPromptProvider
+        if prompt_config.provider == "r2r":
+            from r2r.providers import R2RPromptProvider
 
-            prompt_provider = R2RPromptProvider()
+            prompt_provider = R2RPromptProvider(prompt_config)
         else:
             raise ValueError(
                 f"Prompt provider {prompt_config.provider} not supported"
@@ -147,7 +197,7 @@ class R2RProviderFactory:
 
     def create_kg_provider(self, kg_config, *args, **kwargs):
         if kg_config.provider == "neo4j":
-            from r2r.providers.kg import Neo4jKGProvider
+            from r2r.providers import Neo4jKGProvider
 
             return Neo4jKGProvider(kg_config)
         elif kg_config.provider is None:
@@ -159,45 +209,66 @@ class R2RProviderFactory:
 
     def create_providers(
         self,
-        vector_db_provider_override: Optional[VectorDBProvider] = None,
         embedding_provider_override: Optional[EmbeddingProvider] = None,
         eval_provider_override: Optional[EvalProvider] = None,
         llm_provider_override: Optional[LLMProvider] = None,
         prompt_provider_override: Optional[PromptProvider] = None,
         kg_provider_override: Optional[KGProvider] = None,
+        crypto_provider_override: Optional[CryptoProvider] = None,
+        auth_provider_override: Optional[AuthProvider] = None,
+        database_provider_override: Optional[DatabaseProvider] = None,
         *args,
         **kwargs,
     ) -> R2RProviders:
+
         prompt_provider = (
             prompt_provider_override
             or self.create_prompt_provider(self.config.prompt, *args, **kwargs)
         )
-        return R2RProviders(
-            vector_db=vector_db_provider_override
-            or self.create_vector_db_provider(
-                self.config.vector_database, *args, **kwargs
-            ),
-            embedding=embedding_provider_override
+        embedding_provider = (
+            embedding_provider_override
             or self.create_embedding_provider(
                 self.config.embedding, *args, **kwargs
-            ),
-            eval=eval_provider_override
-            or self.create_eval_provider(
-                self.config.eval,
-                prompt_provider=prompt_provider,
-                *args,
-                **kwargs,
-            ),
-            llm=llm_provider_override
-            or self.create_llm_provider(
-                self.config.completions, *args, **kwargs
-            ),
-            prompt=prompt_provider_override
-            or self.create_prompt_provider(
-                self.config.prompt, *args, **kwargs
-            ),
-            kg=kg_provider_override
-            or self.create_kg_provider(self.config.kg, *args, **kwargs),
+            )
+        )
+        eval_provider = eval_provider_override or self.create_eval_provider(
+            self.config.eval,
+            prompt_provider=prompt_provider,
+            *args,
+            **kwargs,
+        )
+
+        llm_provider = llm_provider_override or self.create_llm_provider(
+            self.config.completions, *args, **kwargs
+        )
+        kg_provider = kg_provider_override or self.create_kg_provider(
+            self.config.kg, *args, **kwargs
+        )
+        crypto_provider = (
+            crypto_provider_override
+            or self.create_crypto_provider(self.config.crypto, *args, **kwargs)
+        )
+        database_provider = (
+            database_provider_override
+            or self.create_database_provider(
+                self.config.database, crypto_provider, *args, **kwargs
+            )
+        )
+        auth_provider = auth_provider_override or self.create_auth_provider(
+            self.config.auth,
+            database_provider,
+            crypto_provider,
+            *args,
+            **kwargs,
+        )
+        return R2RProviders(
+            auth=auth_provider,
+            database=database_provider,
+            embedding=embedding_provider,
+            eval=eval_provider,
+            llm=llm_provider,
+            prompt=prompt_provider,
+            kg=kg_provider,
         )
 
 
@@ -275,7 +346,7 @@ class R2RPipeFactory:
         )
         return EmbeddingPipe(
             embedding_provider=self.providers.embedding,
-            vector_db_provider=self.providers.vector_db,
+            database_provider=self.providers.database,
             text_splitter=text_splitter,
             embedding_batch_size=self.config.embedding.batch_size,
         )
@@ -286,7 +357,7 @@ class R2RPipeFactory:
 
         from r2r.pipes import VectorStoragePipe
 
-        return VectorStoragePipe(vector_db_provider=self.providers.vector_db)
+        return VectorStoragePipe(database_provider=self.providers.database)
 
     def create_vector_search_pipe(self, *args, **kwargs) -> Any:
         if self.config.embedding.provider is None:
@@ -295,7 +366,7 @@ class R2RPipeFactory:
         from r2r.pipes import VectorSearchPipe
 
         return VectorSearchPipe(
-            vector_db_provider=self.providers.vector_db,
+            database_provider=self.providers.database,
             embedding_provider=self.providers.embedding,
         )
 
@@ -320,7 +391,7 @@ class R2RPipeFactory:
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
-            vector_db_provider=self.providers.vector_db,
+            database_provider=self.providers.database,
             text_splitter=text_splitter,
             kg_batch_size=self.config.kg.batch_size,
         )
@@ -406,7 +477,7 @@ class R2RPipelineFactory:
         # Add vector search pipes if embedding provider and vector provider is set
         if (
             self.config.embedding.provider is not None
-            and self.config.vector_database.provider is not None
+            and self.config.database.provider is not None
         ):
             search_pipeline.add_pipe(
                 self.pipes.vector_search_pipe, vector_search_pipe=True
@@ -454,7 +525,7 @@ class R2RPipelineFactory:
         try:
             self.configure_logging()
         except Exception as e:
-            logger.warn(f"Error configuring logging: {e}")
+            logger.warning(f"Error configuring logging: {e}")
         search_pipeline = search_pipeline or self.create_search_pipeline(
             *args, **kwargs
         )

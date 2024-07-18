@@ -12,8 +12,13 @@ import fire
 import httpx
 import nest_asyncio
 import requests
+from fastapi.testclient import TestClient
+
+from r2r.base import R2RException, UserCreate
 
 from .requests import (
+    AnalysisTypes,
+    FilterCriteria,
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
@@ -31,38 +36,27 @@ from .requests import (
 nest_asyncio.apply()
 
 
-class R2RHTTPError(Exception):
-    def __init__(self, status_code, error_type, message):
-        self.status_code = status_code
-        self.error_type = error_type
-        self.message = message
-        super().__init__(f"[{status_code}] {error_type}: {message}")
-
-
 def handle_request_error(response):
-    if response.status_code >= 400:
-        try:
-            error_content = response.json()
-            if isinstance(error_content, dict) and "detail" in error_content:
-                detail = error_content["detail"]
-                if isinstance(detail, dict):
-                    message = detail.get("message", str(response.text))
-                    error_type = detail.get("error_type", "UnknownError")
-                else:
-                    message = str(detail)
-                    error_type = "HTTPException"
-            else:
-                message = str(error_content)
-                error_type = "UnknownError"
-        except json.JSONDecodeError:
-            message = response.text
-            error_type = "UnknownError"
+    if response.status_code < 400:
+        return
 
-        raise R2RHTTPError(
-            status_code=response.status_code,
-            error_type=error_type,
-            message=message,
-        )
+    try:
+        error_content = response.json()
+        if isinstance(error_content, dict) and "detail" in error_content:
+            detail = error_content["detail"]
+            if isinstance(detail, dict):
+                message = detail.get("message", str(response.text))
+            else:
+                message = str(detail)
+        else:
+            message = str(error_content)
+    except json.JSONDecodeError:
+        message = response.text
+
+    raise R2RException(
+        status_code=response.status_code,
+        message=message,
+    )
 
 
 def monitor_request(func):
@@ -103,15 +97,74 @@ def monitor_request(func):
 
 
 class R2RClient:
-    def __init__(self, base_url: str, prefix: str = "/v1"):
+    def __init__(self, base_url: str, prefix: str = "/v1", custom_client=None):
         self.base_url = base_url
         self.prefix = prefix
+        self.access_token = None
+        self._refresh_token = None
+        self.client = custom_client or requests
 
     def _make_request(self, method, endpoint, **kwargs):
         url = f"{self.base_url}{self.prefix}/{endpoint}"
-        response = requests.request(method, url, **kwargs)
+        headers = kwargs.pop("headers", {})
+        if self.access_token and endpoint not in [
+            "register",
+            "login",
+            "verify_email",
+        ]:
+            headers.update(self._get_auth_header())
+        if isinstance(self.client, TestClient):
+            response = getattr(self.client, method.lower())(
+                url, headers=headers, **kwargs
+            )
+        else:
+            response = self.client.request(
+                method, url, headers=headers, **kwargs
+            )
+
         handle_request_error(response)
         return response.json()
+
+    def _get_auth_header(self) -> dict:
+        if not self.access_token:
+            {}  # Return empty dict if no access token
+        return {"Authorization": f"Bearer {self.access_token}"}
+
+    def register(self, email: str, password: str) -> dict:
+        user = UserCreate(email=email, password=password)
+        return self._make_request("POST", "register", json=user.dict())
+
+    def verify_email(self, verification_code: str) -> dict:
+        return self._make_request("POST", f"verify_email/{verification_code}")
+
+    def login(self, email: str, password: str) -> dict:
+        form_data = {"username": email, "password": password}
+        response = self._make_request("POST", "login", data=form_data)
+        self.access_token = response["results"]["access_token"]["token"]
+        self._refresh_token = response["results"]["refresh_token"]["token"]
+        return response
+
+    def user(self) -> dict:
+        return self._make_request("GET", "user")
+
+    def refresh_access_token(self) -> dict:
+        if not self._refresh_token:
+            raise ValueError("No refresh token available. Please login again.")
+        response = self._make_request(
+            "POST",
+            "refresh_access_token",
+            json={"refresh_token": self._refresh_token},
+        )
+        self.access_token = response["results"]["access_token"]["token"]
+        self._refresh_token = response["results"]["refresh_token"][
+            "token"
+        ]  # Update the refresh token
+        return response
+
+    def _ensure_authenticated(self):
+        pass
+        # if not self.access_token:
+        #     raise ValueError("Not authenticated. Please login first.")
 
     def health(self) -> dict:
         return self._make_request("GET", "health")
@@ -122,6 +175,7 @@ class R2RClient:
         template: Optional[str] = None,
         input_types: Optional[dict] = None,
     ) -> dict:
+        self._ensure_authenticated()
         request = R2RUpdatePromptRequest(
             name=name, template=template, input_types=input_types
         )
@@ -137,6 +191,8 @@ class R2RClient:
         document_ids: Optional[list[Union[uuid.UUID, str]]] = None,
         versions: Optional[list[str]] = None,
     ) -> dict:
+        self._ensure_authenticated()
+
         all_file_paths = []
 
         for path in file_paths:
@@ -187,6 +243,8 @@ class R2RClient:
         document_ids: list[str],
         metadatas: Optional[list[dict]] = None,
     ) -> dict:
+        self._ensure_authenticated()
+
         request = R2RUpdateFilesRequest(
             metadatas=metadatas,
             document_ids=document_ids,
@@ -222,6 +280,8 @@ class R2RClient:
         use_kg_search: bool = False,
         kg_agent_generation_config: Optional[dict] = None,
     ) -> dict:
+        self._ensure_authenticated()
+
         request = R2RSearchRequest(
             query=query,
             vector_search_settings={
@@ -250,6 +310,8 @@ class R2RClient:
         kg_agent_generation_config: Optional[dict] = None,
         rag_generation_config: Optional[dict] = None,
     ) -> dict:
+        self._ensure_authenticated()
+
         request = R2RRAGRequest(
             query=query,
             vector_search_settings={
@@ -300,8 +362,7 @@ class R2RClient:
 
         try:
             while True:
-                chunk = loop.run_until_complete(async_gen.__anext__())
-                yield chunk
+                yield loop.run_until_complete(async_gen.__anext__())
         except StopAsyncIteration:
             pass
         finally:
@@ -310,23 +371,32 @@ class R2RClient:
     def delete(
         self, keys: list[str], values: list[Union[bool, int, str]]
     ) -> dict:
+        self._ensure_authenticated()
+
         request = R2RDeleteRequest(keys=keys, values=values)
         return self._make_request(
             "DELETE", "delete", json=json.loads(request.json())
         )
 
     def logs(self, log_type_filter: Optional[str] = None) -> dict:
+        self._ensure_authenticated()
+
         request = R2RLogsRequest(log_type_filter=log_type_filter)
         return self._make_request(
             "GET", "logs", json=json.loads(request.json())
         )
 
     def app_settings(self) -> dict:
+        self._ensure_authenticated()
+
         return self._make_request("GET", "app_settings")
 
     def analytics(self, filter_criteria: dict, analysis_types: dict) -> dict:
+        self._ensure_authenticated()
+
         request = R2RAnalyticsRequest(
-            filter_criteria=filter_criteria, analysis_types=analysis_types
+            filter_criteria=FilterCriteria(filters=filter_criteria),
+            analysis_types=AnalysisTypes(analysis_types=analysis_types),
         )
         return self._make_request(
             "GET", "analytics", json=json.loads(request.json())
@@ -335,6 +405,8 @@ class R2RClient:
     def users_overview(
         self, user_ids: Optional[list[uuid.UUID]] = None
     ) -> dict:
+        self._ensure_authenticated()
+
         request = R2RUsersOverviewRequest(user_ids=user_ids)
         return self._make_request(
             "GET", "users_overview", json=json.loads(request.json())
@@ -345,6 +417,8 @@ class R2RClient:
         document_ids: Optional[list[str]] = None,
         user_ids: Optional[list[str]] = None,
     ) -> dict:
+        self._ensure_authenticated()
+
         request = R2RDocumentsOverviewRequest(
             document_ids=(
                 [uuid.UUID(did) for did in document_ids]
@@ -360,16 +434,67 @@ class R2RClient:
         )
 
     def document_chunks(self, document_id: str) -> dict:
+        self._ensure_authenticated()
+
         request = R2RDocumentChunksRequest(document_id=document_id)
         return self._make_request(
             "GET", "document_chunks", json=json.loads(request.json())
         )
 
     def inspect_knowledge_graph(self, limit: int = 100) -> str:
+        self._ensure_authenticated()
+
         request = R2RPrintRelationshipsRequest(limit=limit)
         return self._make_request(
             "POST", "inspect_knowledge_graph", json=json.loads(request.json())
         )
+
+    def change_password(
+        self, current_password: str, new_password: str
+    ) -> dict:
+        self._ensure_authenticated()
+        return self._make_request(
+            "POST",
+            "change_password",
+            json={
+                "current_password": current_password,
+                "new_password": new_password,
+            },
+        )
+
+    def request_password_reset(self, email: str) -> dict:
+        return self._make_request(
+            "POST", "request_password_reset", json={"email": email}
+        )
+
+    def confirm_password_reset(
+        self, reset_token: str, new_password: str
+    ) -> dict:
+        return self._make_request(
+            "POST",
+            f"reset_password/{reset_token}",
+            json={"new_password": new_password},
+        )
+
+    def logout(self) -> dict:
+        self._ensure_authenticated()
+        response = self._make_request("POST", "logout")
+        self.access_token = None
+        self._refresh_token = None
+        return response
+
+    def update_user(self, user_data: dict) -> dict:
+        self._ensure_authenticated()
+        return self._make_request("PUT", "user", json=user_data)
+
+    def delete_user(self, password: str) -> dict:
+        self._ensure_authenticated()
+        response = self._make_request(
+            "DELETE", "user", json={"password": password}
+        )
+        self.access_token = None
+        self._refresh_token = None
+        return response
 
 
 if __name__ == "__main__":

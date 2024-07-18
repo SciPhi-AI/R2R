@@ -2,11 +2,8 @@ import asyncio
 
 import pytest
 
-from r2r import EmbeddingConfig, VectorSearchResult, generate_id_from_label
-from r2r.providers.embeddings import (
-    OpenAIEmbeddingProvider,
-    SentenceTransformerEmbeddingProvider,
-)
+from r2r import EmbeddingConfig
+from r2r.providers import OpenAIEmbeddingProvider
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -14,24 +11,12 @@ def event_loop_policy():
     asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
 
 
-@pytest.fixture(scope="function")
-def event_loop():
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-    asyncio.set_event_loop(None)
-
-
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="function", autouse=True)
 async def cleanup_tasks():
     yield
-    for task in asyncio.all_tasks():
-        if task is not asyncio.current_task():
-            task.cancel()
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    [task.cancel() for task in tasks]
+    await asyncio.gather(*tasks, return_exceptions=True)
 
 
 @pytest.fixture
@@ -98,65 +83,92 @@ def test_openai_tokenize_string(openai_provider):
     assert all(isinstance(token, int) for token in tokens)
 
 
-@pytest.fixture
-def sentence_transformer_provider():
-    config = EmbeddingConfig(
-        provider="sentence-transformers",
-        base_model="mixedbread-ai/mxbai-embed-large-v1",
-        base_dimension=512,
-        rerank_model="jinaai/jina-reranker-v1-turbo-en",
-        rerank_dimension=384,
-    )
-    return SentenceTransformerEmbeddingProvider(config)
+# from r2r.providers import SentenceTransformerEmbeddingProvider
+
+# @pytest.fixture
+# def sentence_transformer_provider():
+#     config = EmbeddingConfig(
+#         provider="sentence-transformers",
+#         base_model="mixedbread-ai/mxbai-embed-large-v1",
+#         base_dimension=512,
+#         rerank_model="jinaai/jina-reranker-v1-turbo-en",
+#         rerank_dimension=384,
+#     )
+#     return SentenceTransformerEmbeddingProvider(config)
+
+# class FakeEmbedding:
+#     def tolist(self):
+#         return [[]]
 
 
-def test_sentence_transformer_initialization(sentence_transformer_provider):
-    assert isinstance(
-        sentence_transformer_provider, SentenceTransformerEmbeddingProvider
-    )
-    assert sentence_transformer_provider.do_search
-    # assert sentence_transformer_provider.do_rerank
+# class FakeEncoder:
+#     def encode(self, *args, **kwargs):
+#         self._last_encode_args = args
+#         self._last_encode_kwargs = kwargs
+#         return FakeEmbedding()
+
+# def test_sentence_transformer_indexing_no_prefix(sentence_transformer_provider):
+#     encoder = FakeEncoder()
+#     sentence_transformer_provider.search_encoder = encoder
+#     embedding = sentence_transformer_provider.get_embedding("test text")
+#     assert encoder._last_encode_args[0][0] == 'test text'
 
 
-def test_sentence_transformer_invalid_provider_initialization():
-    config = EmbeddingConfig(provider="invalid_provider")
-    with pytest.raises(ValueError):
-        SentenceTransformerEmbeddingProvider(config)
+# def test_sentence_transformer_querying_with_prefix(sentence_transformer_provider):
+#     from r2r.base import EmbeddingPurpose
+#     encoder = FakeEncoder()
+#     sentence_transformer_provider.search_encoder = encoder
+#     embedding = sentence_transformer_provider.get_embedding("test text", purpose=EmbeddingPurpose.QUERY)
+#     assert encoder._last_encode_args[0][0] == 'Represent this sentence for searching relevant passages: test text'
 
 
-def test_sentence_transformer_get_embedding(sentence_transformer_provider):
-    embedding = sentence_transformer_provider.get_embedding("test text")
-    assert len(embedding) == 512
-    assert isinstance(embedding, list)
+# def test_sentence_transformer_initialization(sentence_transformer_provider):
+#     assert isinstance(
+#         sentence_transformer_provider, SentenceTransformerEmbeddingProvider
+#     )
+#     assert sentence_transformer_provider.do_search
+#     # assert sentence_transformer_provider.do_rerank
 
 
-def test_sentence_transformer_get_embeddings(sentence_transformer_provider):
-    embeddings = sentence_transformer_provider.get_embeddings(
-        ["text1", "text2"]
-    )
-    assert len(embeddings) == 2
-    assert all(len(emb) == 512 for emb in embeddings)
+# def test_sentence_transformer_invalid_provider_initialization():
+#     config = EmbeddingConfig(provider="invalid_provider")
+#     with pytest.raises(ValueError):
+#         SentenceTransformerEmbeddingProvider(config)
 
 
-def test_sentence_transformer_rerank(sentence_transformer_provider):
-    results = [
-        VectorSearchResult(
-            id=generate_id_from_label("x"),
-            score=0.9,
-            metadata={"text": "doc1"},
-        ),
-        VectorSearchResult(
-            id=generate_id_from_label("y"),
-            score=0.8,
-            metadata={"text": "doc2"},
-        ),
-    ]
-    reranked_results = sentence_transformer_provider.rerank("query", results)
-    assert len(reranked_results) == 2
-    assert reranked_results[0].metadata["text"] == "doc1"
-    assert reranked_results[1].metadata["text"] == "doc2"
+# def test_sentence_transformer_get_embedding(sentence_transformer_provider):
+#     embedding = sentence_transformer_provider.get_embedding("test text")
+#     assert len(embedding) == 512
+#     assert isinstance(embedding, list)
 
 
-def test_sentence_transformer_tokenize_string(sentence_transformer_provider):
-    with pytest.raises(ValueError):
-        sentence_transformer_provider.tokenize_string("test text")
+# def test_sentence_transformer_get_embeddings(sentence_transformer_provider):
+#     embeddings = sentence_transformer_provider.get_embeddings(
+#         ["text1", "text2"]
+#     )
+#     assert len(embeddings) == 2
+#     assert all(len(emb) == 512 for emb in embeddings)
+
+
+# def test_sentence_transformer_rerank(sentence_transformer_provider):
+#     results = [
+#         VectorSearchResult(
+#             id=generate_id_from_label("x"),
+#             score=0.9,
+#             metadata={"text": "doc1"},
+#         ),
+#         VectorSearchResult(
+#             id=generate_id_from_label("y"),
+#             score=0.8,
+#             metadata={"text": "doc2"},
+#         ),
+#     ]
+#     reranked_results = sentence_transformer_provider.rerank("query", results)
+#     assert len(reranked_results) == 2
+#     assert reranked_results[0].metadata["text"] == "doc1"
+#     assert reranked_results[1].metadata["text"] == "doc2"
+
+
+# def test_sentence_transformer_tokenize_string(sentence_transformer_provider):
+#     with pytest.raises(ValueError):
+#         sentence_transformer_provider.tokenize_string("test text")

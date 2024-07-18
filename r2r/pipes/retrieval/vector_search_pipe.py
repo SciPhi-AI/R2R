@@ -6,9 +6,10 @@ from typing import Any, AsyncGenerator, Optional
 from r2r.base import (
     AsyncPipe,
     AsyncState,
+    DatabaseProvider,
     EmbeddingProvider,
+    EmbeddingPurpose,
     PipeType,
-    VectorDBProvider,
     VectorSearchResult,
     VectorSearchSettings,
 )
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 class VectorSearchPipe(SearchPipe):
     def __init__(
         self,
-        vector_db_provider: VectorDBProvider,
+        database_provider: DatabaseProvider,
         embedding_provider: EmbeddingProvider,
         type: PipeType = PipeType.SEARCH,
         config: Optional[SearchPipe.SearchConfig] = None,
@@ -35,7 +36,7 @@ class VectorSearchPipe(SearchPipe):
             **kwargs,
         )
         self.embedding_provider = embedding_provider
-        self.vector_db_provider = vector_db_provider
+        self.database_provider = database_provider
 
     async def search(
         self,
@@ -57,16 +58,17 @@ class VectorSearchPipe(SearchPipe):
         results = []
         query_vector = self.embedding_provider.get_embedding(
             message,
+            purpose=EmbeddingPurpose.QUERY,
         )
         search_results = (
-            self.vector_db_provider.hybrid_search(
+            self.database_provider.vector.hybrid_search(
                 query_vector=query_vector,
                 query_text=message,
                 filters=search_filters,
                 limit=search_limit,
             )
             if vector_search_settings.do_hybrid_search
-            else self.vector_db_provider.search(
+            else self.database_provider.vector.search(
                 query_vector=query_vector,
                 filters=search_filters,
                 limit=search_limit,

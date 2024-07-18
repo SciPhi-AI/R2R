@@ -9,7 +9,7 @@
         },
         "max_entities": 10,
         "max_relations": 20,
-        "kg_extraction_prompt": "zero_shot_ner_kg_extraction", 
+        "kg_extraction_prompt": "zero_shot_ner_kg_extraction",
         "kg_extraction_config": {
             "model": "ollama/sciphi/triplex",
             "temperature": 1.0,
@@ -45,7 +45,7 @@
           "add_generation_kwargs": {},
           "api_base": null
         }
-      },  
+      },
       "embedding": {
         "provider": "ollama",
         "base_model": "mxbai-embed-large",
@@ -65,5 +65,5 @@
       },
       "vector_database": {
         "provider": "pgvector"
-      }    
+      }
 }

@@ -17,7 +17,7 @@
       "add_generation_kwargs": {},
       "api_base": null
     }
-  },  
+  },
   "embedding": {
     "provider": "sentence-transformers",
     "base_model": "all-MiniLM-L6-v2",

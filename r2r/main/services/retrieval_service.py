@@ -9,6 +9,7 @@ from r2r.base import (
     KVLoggingSingleton,
     R2RException,
     RunManager,
+    User,
     VectorSearchSettings,
     manage_run,
     to_async_generator,
@@ -42,6 +43,7 @@ class RetrievalService(Service):
         query: str,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
+        user: Optional[User] = None,
         *args,
         **kwargs,
     ):
@@ -59,7 +61,7 @@ class RetrievalService(Service):
 
             if (
                 vector_search_settings.use_vector_search
-                and self.config.vector_database.provider is None
+                and self.config.database.provider is None
             ):
                 raise R2RException(
                     status_code=400,
@@ -70,6 +72,8 @@ class RetrievalService(Service):
             for filter, value in vector_search_settings.search_filters.items():
                 if isinstance(value, uuid.UUID):
                     vector_search_settings.search_filters[filter] = str(value)
+            if user and not user.is_superuser:
+                vector_search_settings.search_filters["user_id"] = str(user.id)
 
             results = await self.pipelines.search_pipeline.run(
                 input=to_async_generator([query]),
@@ -99,6 +103,7 @@ class RetrievalService(Service):
         rag_generation_config: GenerationConfig,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
+        user: Optional[User] = None,
         *args,
         **kwargs,
     ):
@@ -115,6 +120,11 @@ class RetrievalService(Service):
                         vector_search_settings.search_filters[filter] = str(
                             value
                         )
+
+                if user and not user.is_superuser:
+                    vector_search_settings.search_filters["user_id"] = str(
+                        user.id
+                    )
 
                 if rag_generation_config.stream:
                     t1 = time.time()
@@ -191,6 +201,7 @@ class RetrievalService(Service):
         context: str,
         completion: str,
         eval_generation_config: Optional[GenerationConfig],
+        user: Optional[User] = None,
         *args,
         **kwargs,
     ):

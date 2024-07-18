@@ -1,5 +1,6 @@
 import json
 import os
+import secrets
 import subprocess
 import time
 import uuid
@@ -72,9 +73,16 @@ def cli(ctx, config_path, config_name, client_mode, base_url):
     is_flag=True,
     help="Run using Docker with external Neo4j",
 )
+@click.option(
+    "--docker-ext-ollama",
+    is_flag=True,
+    help="Run using Docker with external Ollama",
+)
 @click.option("--project-name", default="r2r", help="Project name for Docker")
 @click.pass_obj
-def serve(obj, host, port, docker, docker_ext_neo4j, project_name):
+def serve(
+    obj, host, port, docker, docker_ext_neo4j, docker_ext_ollama, project_name
+):
     """Start the R2R server."""
     # Load environment variables from .env file if it exists
     load_dotenv()
@@ -94,9 +102,12 @@ def serve(obj, host, port, docker, docker_ext_neo4j, project_name):
         )
         compose_yaml = os.path.join(package_dir, "compose.yaml")
         compose_neo4j_yaml = os.path.join(package_dir, "compose.neo4j.yaml")
+        compose_ollama_yaml = os.path.join(package_dir, "compose.ollama.yaml")
 
-        if not os.path.exists(compose_yaml) or not os.path.exists(
-            compose_neo4j_yaml
+        if (
+            not os.path.exists(compose_yaml)
+            or not os.path.exists(compose_neo4j_yaml)
+            or not os.path.exists(compose_ollama_yaml)
         ):
             click.echo(
                 "Error: Docker Compose files not found in the package directory."
@@ -107,6 +118,8 @@ def serve(obj, host, port, docker, docker_ext_neo4j, project_name):
         docker_command = f"docker-compose -f {compose_yaml}"
         if docker_ext_neo4j:
             docker_command += f" -f {compose_neo4j_yaml}"
+        if docker_ext_ollama:
+            docker_command += f" -f {compose_ollama_yaml}"
         if host != "0.0.0.0" or port != 8000:
             docker_command += (
                 f" --build-arg HOST={host} --build-arg PORT={port}"
@@ -582,6 +595,14 @@ def version():
     from importlib.metadata import version
 
     click.echo(version("r2r"))
+
+
+@cli.command()
+def generate_private_key():
+    """Generate a secure private key for R2R."""
+    private_key = secrets.token_urlsafe(32)
+    click.echo(f"Generated Private Key: {private_key}")
+    click.echo("Keep this key secure and use it as your R2R_SECRET_KEY.")
 
 
 def main():

@@ -1,3 +1,4 @@
+from fastapi import Depends
 from fastapi.responses import StreamingResponse
 
 from r2r.base import GenerationConfig, KGSearchSettings, VectorSearchSettings
@@ -15,7 +16,10 @@ class RetrievalRouter(BaseRouter):
     def setup_routes(self):
         @self.router.post("/search")
         @self.base_endpoint
-        async def search_app(request: R2RSearchRequest):
+        async def search_app(
+            request: R2RSearchRequest,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
             if "agent_generation_config" in request.kg_search_settings:
                 request.kg_search_settings["agent_generation_config"] = (
                     GenerationConfig(
@@ -32,12 +36,16 @@ class RetrievalRouter(BaseRouter):
                 kg_search_settings=KGSearchSettings(
                     **(request.kg_search_settings or {})
                 ),
+                user=auth_user,
             )
             return results
 
         @self.router.post("/rag")
         @self.base_endpoint
-        async def rag_app(request: R2RRAGRequest):
+        async def rag_app(
+            request: R2RRAGRequest,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
             if "agent_generation_config" in request.kg_search_settings:
                 request.kg_search_settings["agent_generation_config"] = (
                     GenerationConfig(
@@ -60,6 +68,7 @@ class RetrievalRouter(BaseRouter):
                 rag_generation_config=GenerationConfig(
                     **(request.rag_generation_config or {})
                 ),
+                user=auth_user,
             )
             if (
                 request.rag_generation_config
@@ -78,14 +87,14 @@ class RetrievalRouter(BaseRouter):
 
         @self.router.post("/evaluate")
         @self.base_endpoint
-        async def evaluate_app(request: R2REvalRequest):
+        async def evaluate_app(
+            request: R2REvalRequest,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
             results = await self.engine.aevaluate(
                 query=request.query,
                 context=request.context,
                 completion=request.completion,
+                user=auth_user,
             )
             return results
-
-
-def create_retrieval_router(engine: R2REngine):
-    return RetrievalRouter(engine).router

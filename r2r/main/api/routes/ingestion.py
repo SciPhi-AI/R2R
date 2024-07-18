@@ -19,12 +19,14 @@ class IngestionRouter(BaseRouter):
             request: R2RIngestFilesRequest = Depends(
                 IngestionService.parse_ingest_files_form_data
             ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             return await self.engine.aingest_files(
                 files=files,
                 metadatas=request.metadatas,
                 document_ids=request.document_ids,
                 versions=request.versions,
+                user=auth_user,
             )
 
         @self.router.post("/update_files")
@@ -34,9 +36,11 @@ class IngestionRouter(BaseRouter):
             request: R2RUpdateFilesRequest = Depends(
                 IngestionService.parse_update_files_form_data
             ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             return await self.engine.aupdate_files(
                 files=files,
                 metadatas=request.metadatas,
                 document_ids=request.document_ids,
+                user=auth_user,
             )

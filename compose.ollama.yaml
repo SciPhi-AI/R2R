@@ -1,0 +1,28 @@
+networks:
+  r2r-network:
+    name: r2r-network
+
+services:
+  r2r:
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - r2r-network
+    healthcheck:
+      test: ["CMD", "ollama", "ps"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  ollama_data:
