@@ -61,7 +61,7 @@ class AuthService(Service):
         return self.providers.auth.login(email, password)
 
     @telemetry_event("GetCurrentUser")
-    async def user_info(self, token: str) -> User:
+    async def user(self, token: str) -> User:
         token_data = self.providers.auth.decode_token(token)
         user = self.providers.database.relational.get_user_by_email(
             token_data.email
@@ -114,18 +114,18 @@ class AuthService(Service):
         return user
 
     @telemetry_event("UpdateUserProfile")
-    async def update_user_profile(
-        self, user_id: uuid.UUID, profile_data: dict[str, Any]
+    async def update_user(
+        self, user_id: uuid.UUID, user_data: dict[str, Any]
     ) -> User:
         user = self.providers.database.relational.get_user_by_id(user_id)
         if not user:
             raise R2RException(status_code=404, message="User not found")
-        for key, value in profile_data.items():
+        for key, value in user_data.items():
             setattr(user, key, value)
         return self.providers.database.relational.update_user(user)
 
     @telemetry_event("DeleteUserAccount")
-    async def delete_user_account(
+    async def delete_user(
         self, user_id: uuid.UUID, password: str
     ) -> dict[str, str]:
         user = self.providers.database.relational.get_user_by_id(user_id)

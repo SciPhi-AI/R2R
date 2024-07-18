@@ -140,8 +140,8 @@ class R2RClient:
         self._refresh_token = response["results"]["refresh_token"]["token"]
         return response
 
-    def user_info(self) -> dict:
-        return self._make_request("GET", "user_info")
+    def user(self) -> dict:
+        return self._make_request("GET", "user")
 
     def refresh_access_token(self) -> dict:
         if not self._refresh_token:
@@ -479,13 +479,9 @@ class R2RClient:
         self._refresh_token = None
         return response
 
-    def get_user_profile(self) -> dict:
+    def update_user(self, user_data: dict) -> dict:
         self._ensure_authenticated()
-        return self._make_request("GET", "profile")
-
-    def update_user_profile(self, profile_data: dict) -> dict:
-        self._ensure_authenticated()
-        return self._make_request("PUT", "profile", json=profile_data)
+        return self._make_request("PUT", "user", json=user_data)
 
     def delete_account(self, password: str) -> dict:
         self._ensure_authenticated()

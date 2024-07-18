@@ -1,6 +1,6 @@
-import secrets
 import json
 import os
+import secrets
 import subprocess
 import time
 import uuid
@@ -577,7 +577,6 @@ def ingest_sample_files(obj, no_media):
     click.echo(f"Time taken to ingest sample files: {t1 - t0:.2f} seconds")
 
 
-
 @cli.command()
 @click.pass_obj
 def health(obj):
@@ -596,6 +595,7 @@ def version():
     from importlib.metadata import version
 
     click.echo(version("r2r"))
+
 
 @cli.command()
 def generate_private_key():

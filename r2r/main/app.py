@@ -9,15 +9,6 @@ class R2RApp:
         self._setup_routes()
         self._apply_cors()
 
-    async def openapi_spec(self, *args, **kwargs):
-        from fastapi.openapi.utils import get_openapi
-
-        return get_openapi(
-            title="R2R Application API",
-            version="1.0.0",
-            routes=self.app.routes,
-        )
-
     def serve(self, host: str = "0.0.0.0", port: int = 8000):
         import uvicorn
 
@@ -27,7 +18,7 @@ class R2RApp:
         from .api.routes import auth, ingestion, management, retrieval
 
         self.app = FastAPI()
- 
+
         # Create routers with the engine
         ingestion_router = ingestion.IngestionRouter.build_router(self.engine)
         management_router = management.ManagementRouter.build_router(
@@ -41,6 +32,16 @@ class R2RApp:
         self.app.include_router(management_router, prefix="/v1")
         self.app.include_router(retrieval_router, prefix="/v1")
         self.app.include_router(auth_router, prefix="/v1")
+
+        @self.app.router.get("/v1/openapi_spec")
+        async def openapi_spec():
+            from fastapi.openapi.utils import get_openapi
+
+            return get_openapi(
+                title="R2R Application API",
+                version="1.0.0",
+                routes=self.app.routes,
+            )
 
     def _apply_cors(self):
         from fastapi.middleware.cors import CORSMiddleware
