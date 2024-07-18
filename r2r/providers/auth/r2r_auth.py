@@ -104,7 +104,7 @@ class R2RAuthProvider(AuthProvider):
         except jwt.InvalidTokenError as e:
             raise R2RException(status_code=401, message="Invalid token") from e
 
-    def user_info(self, token: str = Depends(oauth2_scheme)) -> User:
+    def user(self, token: str = Depends(oauth2_scheme)) -> User:
         token_data = self.decode_token(token)
         user = self.db_provider.relational.get_user_by_email(token_data.email)
         if user is None:
@@ -114,7 +114,7 @@ class R2RAuthProvider(AuthProvider):
         return user
 
     def get_current_active_user(
-        self, current_user: User = Depends(user_info)
+        self, current_user: User = Depends(user)
     ) -> User:
         if not current_user.is_active:
             raise R2RException(status_code=400, message="Inactive user")

@@ -51,4 +51,3 @@ class R2R:
             return self.app.app
         # Otherwise, delegate to the engine
         return getattr(self.engine, name)
-

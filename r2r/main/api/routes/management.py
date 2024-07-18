@@ -140,7 +140,10 @@ class ManagementRouter(BaseRouter):
                     "Only a superuser can call the `documents_overview` endpoint for arbitrary users."
                 )
             request_user_ids = request_user_ids or [str(auth_user.id)]
-            print('getting doc overview for request_user_ids = ', request_user_ids)
+            print(
+                "getting doc overview for request_user_ids = ",
+                request_user_ids,
+            )
             return await self.engine.adocuments_overview(
                 document_ids=request.document_ids, user_ids=request_user_ids
             )
@@ -170,15 +173,3 @@ class ManagementRouter(BaseRouter):
                     "Only a superuser can call the `app_settings` endpoint."
                 )
             return await self.engine.aapp_settings()
-
-        @self.router.get("/openapi_spec")
-        @self.base_endpoint
-        def openapi_spec(
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
-        ):
-            if not auth_user.is_superuser:
-                raise Exception(
-                    "Only a superuser can call the `openapi_spec` endpoint."
-                )
-
-            return self.engine.openapi_spec()
