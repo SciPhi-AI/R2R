@@ -159,7 +159,7 @@ class ManagementRouter(BaseRouter):
                 raise Exception(
                     "Only a superuser can call the `inspect_knowledge_graph` endpoint."
                 )
-            return await self.engine.inspect_knowledge_graph(
+            return await self.engine.ainspect_knowledge_graph(
                 limit=request.limit
             )
 

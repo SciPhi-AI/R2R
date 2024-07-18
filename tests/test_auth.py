@@ -331,7 +331,7 @@ async def test_get_current_user_with_expired_token(
     access_token = tokens["refresh_token"]
 
     with pytest.raises(R2RException) as exc_info:
-        result = await auth_service.user_info(access_token.token)
+        result = await auth_service.user(access_token.token)
     assert "Token has expired" in str(exc_info.value)
 
     # Reset the token lifetime
@@ -434,7 +434,7 @@ async def test_logout(auth_service, auth_provider):
 
     # Try to use the logged out token
     with pytest.raises(R2RException) as exc_info:
-        await auth_service.user_info(access_token)
+        await auth_service.user(access_token)
     assert exc_info.value.status_code == 401
 
 
@@ -472,7 +472,7 @@ async def test_update_user_profile(auth_service, auth_provider):
     await auth_service.verify_email("123456")
 
     # Update user profile
-    updated_profile = await auth_service.update_user_profile(
+    updated_profile = await auth_service.update_user(
         new_user.id,
         {
             "name": "John Doe",
@@ -504,7 +504,7 @@ async def test_delete_user_account(auth_service, auth_provider):
     await auth_service.verify_email("123456")
 
     # Delete user account
-    await auth_service.delete_user_account(new_user.id, "password123")
+    await auth_service.delete_user(new_user.id, "password123")
 
     # Try to get the deleted user's profile
     with pytest.raises(R2RException) as exc_info:

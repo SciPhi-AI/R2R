@@ -104,7 +104,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
         )
 
     @syncable
-    async def inspect_knowledge_graph(self, *args, **kwargs):
+    async def ainspect_knowledge_graph(self, *args, **kwargs):
         return await self.management_service.inspect_knowledge_graph(
             *args, **kwargs
         )
@@ -126,8 +126,12 @@ class R2REngine(metaclass=AsyncSyncMeta):
         return await self.auth_service.login(*args, **kwargs)
 
     @syncable
-    async def aget_user(self, *args, **kwargs):
+    async def auser(self, *args, **kwargs):
         return await self.auth_service.user(*args, **kwargs)
+
+    @syncable
+    async def aupdate_user(self, *args, **kwargs):
+        return await self.auth_service.update_user(*args, **kwargs)
 
     @syncable
     async def arefresh_access_token(self, *args, **kwargs):
