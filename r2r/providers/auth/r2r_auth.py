@@ -86,7 +86,7 @@ class R2RAuthProvider(AuthProvider):
             email: str = payload.get("sub")
             token_type: str = payload.get("token_type")
             exp: float = payload.get("exp")
-            exp_datetime = datetime.fromtimestamp(exp)
+            exp_datetime = datetime.fromtimestamp(exp, tz=timezone.utc)
             if (
                 email is None
                 or token_type is None

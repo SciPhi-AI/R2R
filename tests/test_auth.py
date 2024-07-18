@@ -1,5 +1,5 @@
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 import pytest
@@ -453,8 +453,8 @@ async def test_get_user_profile(auth_service, auth_provider):
     # Get user profile
     profile = await auth_service.get_user_profile(new_user.id)
     assert profile.email == "profile@example.com"
-    assert profile.name == None
-    assert profile.bio == None
+    assert profile.name is None
+    assert profile.bio is None
 
 
 @pytest.mark.asyncio
@@ -528,7 +528,7 @@ async def test_token_blacklist_cleanup(auth_service, auth_provider):
         "generate_verification_code",
         return_value="123456",
     ):
-        new_user = await auth_service.register(user)
+        await auth_service.register(user)
     await auth_service.verify_email("123456")
 
     # Login and logout to create a blacklisted token
@@ -541,7 +541,7 @@ async def test_token_blacklist_cleanup(auth_service, auth_provider):
     # with patch('datetime.datetime') as mock_datetime:
     # mock_datetime.utcnow.return_value = datetime.utcnow() - timedelta(hours=7*25)
     auth_provider.db_provider.relational.blacklist_token(
-        old_token, datetime.utcnow() - timedelta(hours=7 * 25)
+        old_token, datetime.now(timezone.utc) - timedelta(hours=7 * 25)
     )
 
     # Verify both tokens are in the blacklist before cleanup
