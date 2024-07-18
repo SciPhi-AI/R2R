@@ -1,5 +1,7 @@
 from fastapi import Depends
 
+from r2r.base import R2RException
+
 from ...engine import R2REngine
 from ..requests import (
     R2RAnalyticsRequest,
@@ -31,8 +33,9 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise Exception(
-                    "Only a superuser can call the `update_prompt` endpoint."
+                raise R2RException(
+                    "Only a superuser can call the `update_prompt` endpoint.",
+                    403,
                 )
 
             return await self.engine.aupdate_prompt(
@@ -47,8 +50,8 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise Exception(
-                    "Only a superuser can call the `logs` endpoint."
+                raise R2RException(
+                    "Only a superuser can call the `logs` endpoint.", 403
                 )
 
             return await self.engine.alogs(
@@ -64,8 +67,8 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise Exception(
-                    "Only a superuser can call the `analytics` endpoint."
+                raise R2RException(
+                    "Only a superuser can call the `analytics` endpoint.", 403
                 )
 
             return await self.engine.aanalytics(
@@ -85,8 +88,8 @@ class ManagementRouter(BaseRouter):
                     and request.values[request.keys.index("user_id")]
                     != auth_user.id
                 ):
-                    raise Exception(
-                        "Only a superuser can delete arbitrary user data."
+                    raise R2RException(
+                        "Only a superuser can delete arbitrary user data.", 403
                     )
                 else:
                     request.keys.append("user_id")
@@ -120,8 +123,9 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise Exception(
-                    "Only a superuser can call the `users_overview` endpoint."
+                raise R2RException(
+                    "Only a superuser can call the `users_overview` endpoint.",
+                    403,
                 )
 
             return await self.engine.ausers_overview(user_ids=request.user_ids)
@@ -136,8 +140,9 @@ class ManagementRouter(BaseRouter):
             request_user_ids = request.user_ids
 
             if request_user_ids and not auth_user.is_superuser:
-                raise Exception(
-                    "Only a superuser can call the `documents_overview` endpoint for arbitrary users."
+                raise R2RException(
+                    "Only a superuser can call the `documents_overview` endpoint for arbitrary users.",
+                    403,
                 )
             request_user_ids = request_user_ids or [str(auth_user.id)]
             print(
@@ -156,8 +161,9 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise Exception(
-                    "Only a superuser can call the `inspect_knowledge_graph` endpoint."
+                raise R2RException(
+                    "Only a superuser can call the `inspect_knowledge_graph` endpoint.",
+                    403,
                 )
             return await self.engine.ainspect_knowledge_graph(
                 limit=request.limit
@@ -169,7 +175,8 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise Exception(
-                    "Only a superuser can call the `app_settings` endpoint."
+                raise R2RException(
+                    "Only a superuser can call the `app_settings` endpoint.",
+                    403,
                 )
             return await self.engine.aapp_settings()
