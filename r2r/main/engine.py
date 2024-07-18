@@ -105,7 +105,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
 
     @syncable
     async def ainspect_knowledge_graph(self, *args, **kwargs):
-        return await self.management_service.ainspect_knowledge_graph(
+        return await self.management_service.inspect_knowledge_graph(
             *args, **kwargs
         )
 
