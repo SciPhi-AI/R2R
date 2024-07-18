@@ -490,7 +490,7 @@ class R2RClient:
     def delete_user(self, password: str) -> dict:
         self._ensure_authenticated()
         response = self._make_request(
-            "DELETE", "account", json={"password": password}
+            "DELETE", "user", json={"password": password}
         )
         self.access_token = None
         self._refresh_token = None
