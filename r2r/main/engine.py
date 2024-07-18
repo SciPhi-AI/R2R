@@ -126,8 +126,8 @@ class R2REngine(metaclass=AsyncSyncMeta):
         return await self.auth_service.login(*args, **kwargs)
 
     @syncable
-    async def aget_current_user(self, *args, **kwargs):
-        return await self.auth_service.user_info(*args, **kwargs)
+    async def aget_user(self, *args, **kwargs):
+        return await self.auth_service.user(*args, **kwargs)
 
     @syncable
     async def arefresh_access_token(self, *args, **kwargs):
@@ -150,16 +150,8 @@ class R2REngine(metaclass=AsyncSyncMeta):
         return await self.auth_service.logout(*args, **kwargs)
 
     @syncable
-    async def aget_user_profile(self, *args, **kwargs):
-        return await self.auth_service.get_user_profile(*args, **kwargs)
-
-    @syncable
-    async def aupdate_user_profile(self, *args, **kwargs):
-        return await self.auth_service.update_user_profile(*args, **kwargs)
-
-    @syncable
-    async def adelete_user_account(self, *args, **kwargs):
-        return await self.auth_service.delete_user_account(*args, **kwargs)
+    async def adelete_user(self, *args, **kwargs):
+        return await self.auth_service.delete_user(*args, **kwargs)
 
     @syncable
     async def aclean_expired_blacklisted_tokens(self, *args, **kwargs):

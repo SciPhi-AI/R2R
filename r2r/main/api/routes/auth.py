@@ -32,6 +32,7 @@ class PasswordResetConfirmRequest(BaseModel):
 
 
 class UserProfileUpdate(BaseModel):
+    email: str | None = None
     name: str | None = None
     bio: str | None = None
     profile_picture: str | None = None
@@ -61,9 +62,9 @@ class AuthRouter(BaseRouter):
             )
             return login_result
 
-        @self.router.get("/user_info", response_model=UserResponse)
+        @self.router.get("/user", response_model=UserResponse)
         @self.base_endpoint
-        async def user_info_app(
+        async def get_user_app(
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             return auth_user
@@ -71,6 +72,16 @@ class AuthRouter(BaseRouter):
         @self.router.post(
             "/refresh_access_token", response_model=TokenResponse
         )
+        @self.router.put("/user", response_model=UserResponse)
+        @self.base_endpoint
+        async def put_user_app(
+            profile_update: UserProfileUpdate,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            return await self.engine.aupdate_user(
+                auth_user.id, profile_update.dict(exclude_unset=True)
+            )
+
         @self.base_endpoint
         async def refresh_access_token_app(
             refresh_token: str = Body(..., embed=True),
@@ -121,29 +132,10 @@ class AuthRouter(BaseRouter):
         ):
             return await self.engine.alogout(token)
 
-        @self.router.get("/profile", response_model=UserResponse)
-        @self.base_endpoint
-        async def get_profile_app(
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
-        ):
-            return await self.engine.aget_user_profile(auth_user.id)
-
-        @self.router.put("/profile", response_model=UserResponse)
-        @self.base_endpoint
-        async def update_profile_app(
-            profile_update: UserProfileUpdate,
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
-        ):
-            return await self.engine.aupdate_user_profile(
-                auth_user.id, profile_update.dict(exclude_unset=True)
-            )
-
-        @self.router.delete("/account")
+        @self.router.delete("/user")
         @self.base_endpoint
         async def delete_user_app(
             password: str = Body(..., embed=True),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
-            return await self.engine.adelete_user_account(
-                auth_user.id, password
-            )
+            return await self.engine.adelete_user(auth_user.id, password)

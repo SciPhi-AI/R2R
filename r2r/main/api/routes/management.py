@@ -173,15 +173,3 @@ class ManagementRouter(BaseRouter):
                     "Only a superuser can call the `app_settings` endpoint."
                 )
             return await self.engine.aapp_settings()
-
-        @self.router.get("/openapi_spec")
-        @self.base_endpoint
-        def openapi_spec(
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
-        ):
-            if not auth_user.is_superuser:
-                raise Exception(
-                    "Only a superuser can call the `openapi_spec` endpoint."
-                )
-
-            return self.engine.openapi_spec()
