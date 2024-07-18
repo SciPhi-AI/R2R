@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict
 
 import jwt
@@ -57,22 +57,21 @@ class R2RAuthProvider(AuthProvider):
 
         except R2RException:
             logger.info("Default admin user already exists.")
-            pass
 
     def create_access_token(self, data: dict) -> str:
         to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(
+        expire = datetime.now(timezone.utc) + timedelta(
             minutes=self.access_token_lifetime_in_minutes
         )
-        to_encode.update({"exp": expire.timestamp(), "token_type": "access"})
+        to_encode |= {"exp": expire.timestamp(), "token_type": "access"}
         return jwt.encode(to_encode, self.secret_key, algorithm="HS256")
 
     def create_refresh_token(self, data: dict) -> str:
         to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(
+        expire = datetime.now(timezone.utc) + timedelta(
             days=self.refresh_token_lifetime_in_days
         )
-        to_encode.update({"exp": expire, "token_type": "refresh"})
+        to_encode |= {"exp": expire, "token_type": "refresh"}
         return jwt.encode(to_encode, self.secret_key, algorithm="HS256")
 
     def decode_token(self, token: str) -> TokenData:
@@ -87,21 +86,23 @@ class R2RAuthProvider(AuthProvider):
             email: str = payload.get("sub")
             token_type: str = payload.get("token_type")
             exp: float = payload.get("exp")
-            exp_datetime = datetime.fromtimestamp(exp)
+            exp_datetime = datetime.fromtimestamp(exp, tz=timezone.utc)
             if (
                 email is None
                 or token_type is None
                 or exp is None
-                or exp_datetime < datetime.utcnow()
+                or exp_datetime < datetime.now(timezone.utc)
             ):
                 raise R2RException(status_code=401, message="Invalid token")
             return TokenData(
                 email=email, token_type=token_type, exp=exp_datetime
             )
-        except jwt.ExpiredSignatureError:
-            raise R2RException(status_code=401, message="Token has expired")
-        except jwt.InvalidTokenError:
-            raise R2RException(status_code=401, message="Invalid token")
+        except jwt.ExpiredSignatureError as e:
+            raise R2RException(
+                status_code=401, message="Token has expired"
+            ) from e
+        except jwt.InvalidTokenError as e:
+            raise R2RException(status_code=401, message="Invalid token") from e
 
     def user_info(self, token: str = Depends(oauth2_scheme)) -> User:
         token_data = self.decode_token(token)
@@ -121,10 +122,7 @@ class R2RAuthProvider(AuthProvider):
 
     def register(self, user: UserCreate) -> Dict[str, str]:
         # Check if user already exists
-        existing_user = self.db_provider.relational.get_user_by_email(
-            user.email
-        )
-        if existing_user:
+        if self.db_provider.relational.get_user_by_email(user.email):
             raise R2RException(
                 status_code=400, message="Email already registered"
             )
@@ -137,7 +135,7 @@ class R2RAuthProvider(AuthProvider):
             verification_code = (
                 self.crypto_provider.generate_verification_code()
             )
-            expiry = datetime.utcnow() + timedelta(hours=24)
+            expiry = datetime.now(timezone.utc) + timedelta(hours=24)
 
             self.db_provider.relational.store_verification_code(
                 new_user.id, verification_code, expiry
@@ -228,7 +226,7 @@ class R2RAuthProvider(AuthProvider):
             logger.error(f"Error during password verification: {str(e)}")
             raise R2RException(
                 status_code=500, message="Error during password verification"
-            )
+            ) from e
 
         if not password_verified:
             logger.warning(f"Invalid password for user: {email}")
@@ -309,7 +307,7 @@ class R2RAuthProvider(AuthProvider):
             }
 
         reset_token = self.crypto_provider.generate_verification_code()
-        expiry = datetime.utcnow() + timedelta(hours=1)
+        expiry = datetime.now(timezone.utc) + timedelta(hours=1)
         self.db_provider.relational.store_reset_token(
             user.id, reset_token, expiry
         )
