@@ -204,12 +204,6 @@ class R2RAuthProvider(AuthProvider):
 
         logger.debug(f"User found: {user}")
 
-        if not isinstance(password, str):
-            logger.error(f"Invalid password type: {type(password)}")
-            raise R2RException(
-                status_code=400, message="Invalid password format"
-            )
-
         if not isinstance(user.hashed_password, str):
             logger.error(
                 f"Invalid hashed_password type: {type(user.hashed_password)}"
