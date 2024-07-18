@@ -107,17 +107,21 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             chunks = await self.engine.adocument_chunks(request.document_id)
-            if len(chunks) == 0 or (
-                chunks[0].get("user_id", None) != auth_user.id
-                and not auth_user.is_superuser
-            ):
-                if not auth_user.is_superuser:
-                    raise R2RException(
-                        "Only a superuser can call the `document_chunks` endpoint.",
-                        403,
-                    )
-                # Always raise this exception to 'hide' if the document exists
-                raise Exception("Document not found.")
+
+            if not chunks:
+                raise R2RException(
+                    "Only a superuser can call the `document_chunks` endpoint.",
+                    500,
+                )
+
+            is_owner = chunks[0].get("user_id") == auth_user.id
+
+            if not is_owner and not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can call the `document_chunks` endpoint.",
+                    403,
+                )
+
             return chunks
 
         @self.router.post("/users_overview")
