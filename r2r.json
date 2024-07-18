@@ -5,8 +5,8 @@
   },
   "auth": {
     "provider": "r2r",
-    "access_token_minutes_lifetime": 60,
-    "access_token_days_lifetime": 7,
+    "access_token_lifetime_in_minutes": 60,
+    "refresh_token_lifetime_in_days": 7,
     "require_authentication": false,
     "require_email_verification": false,
     "default_admin_email": "admin@example.com",

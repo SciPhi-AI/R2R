@@ -17,6 +17,8 @@ from fastapi.testclient import TestClient
 from r2r.base import R2RException, UserCreate
 
 from .requests import (
+    AnalysisTypes,
+    FilterCriteria,
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
@@ -393,7 +395,8 @@ class R2RClient:
         self._ensure_authenticated()
 
         request = R2RAnalyticsRequest(
-            filter_criteria=filter_criteria, analysis_types=analysis_types
+            filter_criteria=FilterCriteria(filters=filter_criteria),
+            analysis_types=AnalysisTypes(analysis_types=analysis_types),
         )
         return self._make_request(
             "GET", "analytics", json=json.loads(request.json())
@@ -488,7 +491,7 @@ class R2RClient:
         self._ensure_authenticated()
         return self._make_request("PUT", "profile", json=profile_data)
 
-    def delete_account(self, password: str) -> dict:
+    def delete_user(self, password: str) -> dict:
         self._ensure_authenticated()
         response = self._make_request(
             "DELETE", "account", json={"password": password}

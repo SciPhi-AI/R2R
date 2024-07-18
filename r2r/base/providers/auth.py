@@ -16,10 +16,10 @@ class AuthConfig(ProviderConfig):
     secret_key: Optional[str] = None
     require_authentication: Optional[bool] = False
     require_email_verification: Optional[bool] = False
-    access_token_minutes_lifetime: Optional[int] = None
-    access_token_days_lifetime: Optional[int] = None
+    access_token_lifetime_in_minutes: Optional[int] = None
+    refresh_token_lifetime_in_days: Optional[int] = None
     default_admin_email: Optional[str] = "admin@example.com"
-    default_admin_password: Optional[str] = "password123"
+    default_admin_password: Optional[str] = "change_me_immediately"
 
     @property
     def supported_providers(self) -> list[str]:

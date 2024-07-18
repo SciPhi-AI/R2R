@@ -6,8 +6,6 @@ from .base import Provider, ProviderConfig
 
 class CryptoConfig(ProviderConfig):
     provider: Optional[str] = None
-    access_token_minutes_lifetime: int = 30  # minutes
-    access_token_days_lifetime: int = 7  # days
 
     @property
     def supported_providers(self) -> list[str]:
