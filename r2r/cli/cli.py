@@ -1,3 +1,4 @@
+import secrets
 import json
 import os
 import subprocess
@@ -576,6 +577,7 @@ def ingest_sample_files(obj, no_media):
     click.echo(f"Time taken to ingest sample files: {t1 - t0:.2f} seconds")
 
 
+
 @cli.command()
 @click.pass_obj
 def health(obj):
@@ -594,6 +596,13 @@ def version():
     from importlib.metadata import version
 
     click.echo(version("r2r"))
+
+@cli.command()
+def generate_private_key():
+    """Generate a secure private key for R2R."""
+    private_key = secrets.token_urlsafe(32)
+    click.echo(f"Generated Private Key: {private_key}")
+    click.echo("Keep this key secure and use it as your R2R_SECRET_KEY.")
 
 
 def main():

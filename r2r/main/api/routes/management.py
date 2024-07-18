@@ -133,13 +133,16 @@ class ManagementRouter(BaseRouter):
             request: R2RDocumentsOverviewRequest,
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
-            if not auth_user.is_superuser:
-                raise Exception(
-                    "Only a superuser can call the `documents_overview` endpoint."
-                )
+            request_user_ids = request.user_ids
 
+            if request_user_ids and not auth_user.is_superuser:
+                raise Exception(
+                    "Only a superuser can call the `documents_overview` endpoint for arbitrary users."
+                )
+            request_user_ids = request_user_ids or [str(auth_user.id)]
+            print('getting doc overview for request_user_ids = ', request_user_ids)
             return await self.engine.adocuments_overview(
-                document_ids=request.document_ids, user_ids=request.user_ids
+                document_ids=request.document_ids, user_ids=request_user_ids
             )
 
         @self.router.post("/inspect_knowledge_graph")
