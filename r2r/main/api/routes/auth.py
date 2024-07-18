@@ -140,7 +140,7 @@ class AuthRouter(BaseRouter):
 
         @self.router.delete("/account")
         @self.base_endpoint
-        async def delete_account_app(
+        async def delete_user_app(
             password: str = Body(..., embed=True),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):

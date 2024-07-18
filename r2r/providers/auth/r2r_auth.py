@@ -39,13 +39,13 @@ class R2RAuthProvider(AuthProvider):
         self.secret_key = (
             config.secret_key or os.getenv("R2R_SECRET_KEY") or DEFAULT_R2R_SK
         )
-        self.access_token_minutes_lifetime = (
-            config.access_token_minutes_lifetime
-            or os.getenv("R2R_TOKEN_LIFE_IN_MINUTES")
+        self.access_token_lifetime_in_minutes = (
+            config.access_token_lifetime_in_minutes
+            or os.getenv("R2R_ACCESS_LIFE_IN_MINUTES")
         )
-        self.access_token_days_lifetime = (
-            config.access_token_days_lifetime
-            or os.getenv("R2R_TOKEN_LIFE_IN_DAYS")
+        self.refresh_token_lifetime_in_days = (
+            config.refresh_token_lifetime_in_days
+            or os.getenv("R2R_REFRESH_LIFE_IN_MINUTES")
         )
         try:
             user = self.register(

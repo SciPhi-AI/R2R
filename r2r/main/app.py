@@ -27,7 +27,7 @@ class R2RApp:
         from .api.routes import auth, ingestion, management, retrieval
 
         self.app = FastAPI()
- 
+
         # Create routers with the engine
         ingestion_router = ingestion.IngestionRouter.build_router(self.engine)
         management_router = management.ManagementRouter.build_router(

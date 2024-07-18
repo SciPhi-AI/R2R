@@ -297,14 +297,14 @@ async def test_user_profile(r2r_client, mock_db):
 
 # TODO - Fix this test
 # @pytest.mark.asyncio
-# async def test_delete_account(r2r_client, mock_db):
+# async def test_delete_user(r2r_client, mock_db):
 #     # Register and login
 #     user_data = {"email": "delete@example.com", "password": "password123"}
 #     r2r_client.register(**user_data)
 #     r2r_client.login(**user_data)
 
 #     # Delete account
-#     delete_response = r2r_client.delete_account("password123")
+#     delete_response = r2r_client.delete_user("password123")
 #     assert "message" in delete_response["results"]
 
 #     # Ensure client's tokens are cleared

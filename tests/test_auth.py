@@ -494,9 +494,7 @@ async def test_update_user_profile(auth_service, auth_provider):
 @pytest.mark.asyncio
 async def test_delete_user_account(auth_service, auth_provider):
     # Register and verify a user
-    user = UserCreate(
-        email="delete_account@example.com", password="password123"
-    )
+    user = UserCreate(email="delete_user@example.com", password="password123")
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
@@ -515,7 +513,7 @@ async def test_delete_user_account(auth_service, auth_provider):
 
     # Try to login with deleted account
     with pytest.raises(R2RException) as exc_info:
-        await auth_service.login("delete_account@example.com", "password123")
+        await auth_service.login("delete_user@example.com", "password123")
     assert exc_info.value.status_code == 401
 
 
