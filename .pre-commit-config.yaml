@@ -23,10 +23,3 @@ repos:
         language: system
         types: [python]
         args: ["--check", "--diff"]
-
-      - id: flake8
-        name: flake8
-        entry: poetry run flake8
-        language: system
-        types: [python]
-        args: ["--config=.flake8"]

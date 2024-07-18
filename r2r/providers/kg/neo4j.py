@@ -150,10 +150,18 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
         except ImportError:
             raise ImportError("Please install neo4j: pip install neo4j")
 
-        username = os.getenv("NEO4J_USER")
-        password = os.getenv("NEO4J_PASSWORD")
-        url = os.getenv("NEO4J_URL")
-        database = os.getenv("NEO4J_DATABASE", "neo4j")
+        username = config.extra_fields.get(
+            "user", None
+        ) or os.getenv("NEO4J_USER")
+        password = config.extra_fields.get(
+            "password", None
+        ) or os.getenv("NEO4J_PASSWORD")
+        url = config.extra_fields.get(
+            "url", None
+        ) or os.getenv("NEO4J_URL")
+        database = config.extra_fields.get(
+            "database", None
+        ) or os.getenv("NEO4J_DATABASE", "neo4j")
 
         if not username or not password or not url:
             raise ValueError(

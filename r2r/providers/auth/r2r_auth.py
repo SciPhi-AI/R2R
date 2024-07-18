@@ -39,12 +39,12 @@ class R2RAuthProvider(AuthProvider):
         self.secret_key = (
             config.secret_key or os.getenv("R2R_SECRET_KEY") or DEFAULT_R2R_SK
         )
-        self.access_token_lifetime_in_minutes = (
-            config.access_token_lifetime_in_minutes
+        self.access_token_minutes_lifetime = (
+            config.access_token_minutes_lifetime
             or os.getenv("R2R_TOKEN_LIFE_IN_MINUTES")
         )
-        self.refresh_token_lifetime_in_days = (
-            config.refresh_token_lifetime_in_days
+        self.access_token_days_lifetime = (
+            config.access_token_days_lifetime
             or os.getenv("R2R_TOKEN_LIFE_IN_DAYS")
         )
         try:
@@ -62,7 +62,7 @@ class R2RAuthProvider(AuthProvider):
     def create_access_token(self, data: dict) -> str:
         to_encode = data.copy()
         expire = datetime.utcnow() + timedelta(
-            minutes=self.access_token_lifetime_in_minutes
+            minutes=self.access_token_minutes_lifetime
         )
         to_encode.update({"exp": expire.timestamp(), "token_type": "access"})
         return jwt.encode(to_encode, self.secret_key, algorithm="HS256")
@@ -70,7 +70,7 @@ class R2RAuthProvider(AuthProvider):
     def create_refresh_token(self, data: dict) -> str:
         to_encode = data.copy()
         expire = datetime.utcnow() + timedelta(
-            days=self.refresh_token_lifetime_in_days
+            days=self.access_token_days_lifetime
         )
         to_encode.update({"exp": expire, "token_type": "refresh"})
         return jwt.encode(to_encode, self.secret_key, algorithm="HS256")
@@ -154,33 +154,6 @@ class R2RAuthProvider(AuthProvider):
 
         return new_user
 
-    # def register(self, user: UserCreate) -> Dict[str, str]:
-    #     existing_user = self.db_provider.relational.get_user_by_email(
-    #         user.email
-    #     )
-    #     if existing_user:
-    #         raise HTTPException(
-    #             status_code=400, detail="Email already registered"
-    #         )
-    #     hashed_password = self.crypto_provider.get_password_hash(user.password)
-    #     verification_code = self.crypto_provider.generate_verification_code()
-    #     new_user = User(
-    #         email=user.email,
-    #         hashed_password=hashed_password,
-    #         is_active=True,
-    #         is_verified=False,
-    #     )
-    #     created_user = self.db_provider.relational.create_user(new_user)
-    #     self.db_provider.relational.store_verification_code(
-    #         created_user.id,
-    #         verification_code,
-    #         datetime.utcnow() + timedelta(hours=24),
-    #     )
-    #     # Send verification email here
-    #     return {
-    #         "message": "User created. Please check your email for verification."
-    #     }
-
     def verify_email(self, verification_code: str) -> Dict[str, str]:
         user_id = self.db_provider.relational.get_user_id_by_verification_code(
             verification_code
@@ -262,12 +235,8 @@ class R2RAuthProvider(AuthProvider):
                 message="Invalid email address attached to token",
             )
 
-        # TODO - Implement refresh token tracking
-        # Verify if the refresh token is still valid in the database
-        # if not self.is_refresh_token_valid(token_data.email, refresh_token):
-        #     raise HTTPException(status_code=401, detail="Refresh token has been revoked")
         # Invalidate the old refresh token and create a new one
-        # self.invalidate_refresh_token(token_data.email, refresh_token)
+        self.db_provider.relational.blacklist_token(refresh_token)
 
         new_access_token = self.create_access_token(
             data={"sub": token_data.email}
