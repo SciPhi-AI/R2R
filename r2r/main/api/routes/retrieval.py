@@ -68,6 +68,7 @@ class RetrievalRouter(BaseRouter):
                 rag_generation_config=GenerationConfig(
                     **(request.rag_generation_config or {})
                 ),
+                task_prompt_override=request.task_prompt_override,
                 user=auth_user,
             )
             if (
