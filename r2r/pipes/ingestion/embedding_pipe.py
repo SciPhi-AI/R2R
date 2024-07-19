@@ -99,7 +99,7 @@ class EmbeddingPipe(AsyncPipe):
         async for fragment in fragments:
             if "chunk_prefix" in fragment.metadata:
                 prefix = fragment.metadata.pop("chunk_prefix")
-                fragment.data = f"{prefix}\n{fragment.metadata.data}"
+                fragment.data = f"{prefix}\n{fragment.data}"
             if "chunk_suffix" in fragment.metadata:
                 suffix = fragment.metadata.pop("chunk_suffix")
                 fragment.data = f"{fragment.data}\n{suffix}"
