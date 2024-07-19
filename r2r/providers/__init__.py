@@ -2,6 +2,7 @@ from .auth import R2RAuthProvider
 from .crypto import BCryptConfig, BCryptProvider
 from .database import PostgresDBProvider
 from .embeddings import (
+    LiteLLMEmbeddingProvider,
     OllamaEmbeddingProvider,
     OpenAIEmbeddingProvider,
     SentenceTransformerEmbeddingProvider,
@@ -16,6 +17,7 @@ __all__ = [
     "BCryptProvider",
     "BCryptConfig",
     "PostgresDBProvider",
+    "LiteLLMEmbeddingProvider",
     "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",
     "SentenceTransformerEmbeddingProvider",

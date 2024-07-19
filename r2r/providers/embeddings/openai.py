@@ -47,8 +47,14 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             raise ValueError(
                 "OpenAIEmbeddingProvider does not support separate reranking."
             )
+
         self.base_model = config.base_model
         self.base_dimension = config.base_dimension
+
+        if not self.base_model or not self.base_dimension:
+            raise ValueError(
+                "Must set base_model and base_dimension in order to initialize OpenAIEmbeddingProvider."
+            )
 
         if self.base_model not in OpenAIEmbeddingProvider.MODEL_TO_TOKENIZER:
             raise ValueError(
@@ -60,12 +66,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             not in OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.base_model]
         ):
             raise ValueError(
-                f"Dimensions {self.dimension} for {self.base_model} are not supported"
-            )
-
-        if not self.base_model or not self.base_dimension:
-            raise ValueError(
-                "Must set base_model and base_dimension in order to initialize OpenAIEmbeddingProvider."
+                f"Dimensions {self.base_dimension} for {self.base_model} are not supported"
             )
 
         if config.rerank_model:
@@ -102,32 +103,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 "Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable."
             ) from e
 
-    async def async_get_embedding(
-        self,
-        text: str,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
-    ) -> list[float]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
-            raise ValueError(
-                "OpenAIEmbeddingProvider only supports search stage."
-            )
-
-        try:
-            response = await self.async_client.embeddings.create(
-                input=[text],
-                model=self.base_model,
-                dimensions=self.base_dimension
-                or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                    self.base_model
-                ][-1],
-            )
-            return response.data[0].embedding
-        except AuthenticationError as e:
-            raise ValueError(
-                "Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable."
-            ) from e
-
     def get_embeddings(
         self,
         texts: list[str],
@@ -151,6 +126,32 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                     ][-1],
                 ).data
             ]
+        except AuthenticationError as e:
+            raise ValueError(
+                "Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable."
+            ) from e
+
+    async def async_get_embedding(
+        self,
+        text: str,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
+    ) -> list[float]:
+        if stage != EmbeddingProvider.PipeStage.BASE:
+            raise ValueError(
+                "OpenAIEmbeddingProvider only supports search stage."
+            )
+
+        try:
+            response = await self.async_client.embeddings.create(
+                input=[text],
+                model=self.base_model,
+                dimensions=self.base_dimension
+                or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
+                    self.base_model
+                ][-1],
+            )
+            return response.data[0].embedding
         except AuthenticationError as e:
             raise ValueError(
                 "Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable."

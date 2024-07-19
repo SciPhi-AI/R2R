@@ -120,6 +120,12 @@ class R2RProviderFactory:
             from r2r.providers import OpenAIEmbeddingProvider
 
             embedding_provider = OpenAIEmbeddingProvider(embedding)
+
+        elif embedding.provider == "litellm":
+            from r2r.providers import LiteLLMEmbeddingProvider
+
+            embedding_provider = LiteLLMEmbeddingProvider(embedding)
+
         elif embedding.provider == "ollama":
             from r2r.providers import OllamaEmbeddingProvider
 
