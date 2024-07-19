@@ -26,10 +26,10 @@ class LiteLLM(LLMProvider):
 
             self.litellm_completion = completion
             self.litellm_acompletion = acompletion
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "Error, `litellm` is required to run a LiteLLM. Please install it using `pip install litellm`."
-            )
+            ) from e
         super().__init__(config)
 
     def get_completion(

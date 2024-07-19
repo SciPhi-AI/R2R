@@ -10,7 +10,7 @@
     "require_authentication": false,
     "require_email_verification": false,
     "default_admin_email": "admin@example.com",
-    "default_admin_password": "change_me_immediately"  
+    "default_admin_password": "change_me_immediately"
   },
   "completions": {
     "provider": "litellm",

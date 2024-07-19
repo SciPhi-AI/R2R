@@ -592,9 +592,9 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     token TEXT NOT NULL,
                     blacklisted_at TIMESTAMPTZ DEFAULT NOW()
                 );
-                CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.collection_name}_token 
+                CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.collection_name}_token
                 ON blacklisted_tokens_{self.collection_name} (token);
-                CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.collection_name}_blacklisted_at 
+                CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.collection_name}_blacklisted_at
                 ON blacklisted_tokens_{self.collection_name} (blacklisted_at);
                 """
                 sess.execute(text(query))
@@ -736,9 +736,9 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         hashed_password = self.crypto_provider.get_password_hash(user.password)
         query = text(
             f"""
-        INSERT INTO users_{self.collection_name} 
-        (email, id, hashed_password) 
-        VALUES (:email, :id, :hashed_password) 
+        INSERT INTO users_{self.collection_name}
+        (email, id, hashed_password)
+        VALUES (:email, :id, :hashed_password)
         RETURNING id, email, is_superuser, is_active, is_verified, created_at, updated_at
         """
         )
@@ -769,8 +769,8 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def get_user_by_email(self, email: str) -> Optional[User]:
         query = text(
             f"""
-        SELECT id, email, hashed_password, is_superuser, is_active, is_verified, created_at, updated_at 
-        FROM users_{self.collection_name} 
+        SELECT id, email, hashed_password, is_superuser, is_active, is_verified, created_at, updated_at
+        FROM users_{self.collection_name}
         WHERE email = :email
         """
         )
@@ -798,8 +798,8 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     ):
         query = text(
             f"""
-        UPDATE users_{self.collection_name} 
-        SET verification_code = :code, verification_code_expiry = :expiry 
+        UPDATE users_{self.collection_name}
+        SET verification_code = :code, verification_code_expiry = :expiry
         WHERE id = :user_id
         """
         )
@@ -820,7 +820,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     ) -> Optional[UUID]:
         query = text(
             f"""
-        SELECT id FROM users_{self.collection_name} 
+        SELECT id FROM users_{self.collection_name}
         WHERE verification_code = :code AND verification_code_expiry > NOW()
         """
         )
@@ -834,8 +834,8 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def mark_user_as_verified(self, user_id: UUID):
         query = text(
             f"""
-        UPDATE users_{self.collection_name} 
-        SET is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL 
+        UPDATE users_{self.collection_name}
+        SET is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL
         WHERE id = :user_id
         """
         )
@@ -847,8 +847,8 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def mark_user_as_superuser(self, user_id: UUID):
         query = text(
             f"""
-        UPDATE users_{self.collection_name} 
-        SET is_superuser = TRUE, is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL 
+        UPDATE users_{self.collection_name}
+        SET is_superuser = TRUE, is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL
         WHERE id = :user_id
         """
         )
@@ -860,8 +860,8 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def remove_verification_code(self, verification_code: str):
         query = text(
             f"""
-        UPDATE users_{self.collection_name} 
-        SET verification_code = NULL, verification_code_expiry = NULL 
+        UPDATE users_{self.collection_name}
+        SET verification_code = NULL, verification_code_expiry = NULL
         WHERE verification_code = :code
         """
         )
@@ -873,7 +873,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def delete_user(self, user_id: UUID):
         query = text(
             f"""
-        DELETE FROM users_{self.collection_name} 
+        DELETE FROM users_{self.collection_name}
         WHERE id = :user_id
         """
         )
@@ -885,7 +885,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def get_all_users(self) -> list[User]:
         query = text(
             f"""
-        SELECT id, email, is_superuser, is_active, is_verified, created_at, updated_at 
+        SELECT id, email, is_superuser, is_active, is_verified, created_at, updated_at
         FROM users_{self.collection_name}
         """
         )
@@ -925,8 +925,8 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     ):
         query = text(
             f"""
-            UPDATE users_{self.collection_name} 
-            SET reset_token = :token, reset_token_expiry = :expiry 
+            UPDATE users_{self.collection_name}
+            SET reset_token = :token, reset_token_expiry = :expiry
             WHERE id = :user_id
             """
         )
@@ -945,7 +945,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def get_user_id_by_reset_token(self, reset_token: str) -> Optional[UUID]:
         query = text(
             f"""
-            SELECT id FROM users_{self.collection_name} 
+            SELECT id FROM users_{self.collection_name}
             WHERE reset_token = :token AND reset_token_expiry > NOW()
             """
         )
@@ -959,8 +959,8 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def remove_reset_token(self, user_id: UUID):
         query = text(
             f"""
-            UPDATE users_{self.collection_name} 
-            SET reset_token = NULL, reset_token_expiry = NULL 
+            UPDATE users_{self.collection_name}
+            SET reset_token = NULL, reset_token_expiry = NULL
             WHERE id = :user_id
             """
         )
@@ -1023,9 +1023,9 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def get_user_by_id(self, user_id: UUID) -> Optional[User]:
         query = text(
             f"""
-            SELECT id, email, hashed_password, is_superuser, is_active, is_verified, 
+            SELECT id, email, hashed_password, is_superuser, is_active, is_verified,
                    created_at, updated_at, name, profile_picture, bio
-            FROM users_{self.collection_name} 
+            FROM users_{self.collection_name}
             WHERE id = :user_id
             """
         )
@@ -1053,12 +1053,12 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def update_user(self, user: User) -> User:
         query = text(
             f"""
-            UPDATE users_{self.collection_name} 
-            SET email = :email, is_superuser = :is_superuser, is_active = :is_active, 
-                is_verified = :is_verified, updated_at = NOW(), name = :name, 
+            UPDATE users_{self.collection_name}
+            SET email = :email, is_superuser = :is_superuser, is_active = :is_active,
+                is_verified = :is_verified, updated_at = NOW(), name = :name,
                 profile_picture = :profile_picture, bio = :bio
-            WHERE id = :user_id 
-            RETURNING id, email, is_superuser, is_active, is_verified, created_at, 
+            WHERE id = :user_id
+            RETURNING id, email, is_superuser, is_active, is_verified, created_at,
                       updated_at, name, profile_picture, bio
             """
         )
@@ -1097,7 +1097,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def update_user_password(self, user_id: UUID, new_hashed_password: str):
         query = text(
             f"""
-            UPDATE users_{self.collection_name} 
+            UPDATE users_{self.collection_name}
             SET hashed_password = :new_hashed_password, updated_at = NOW()
             WHERE id = :user_id
             """
