@@ -50,7 +50,8 @@
         "provider": "ollama",
         "base_model": "mxbai-embed-large",
         "base_dimension": 1024,
-        "batch_size": 32
+        "batch_size": 32,
+        "add_title_as_prefix": true
       },
       "ingestion":{
         "excluded_parsers": [
