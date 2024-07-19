@@ -50,7 +50,7 @@ class RAGPipeline(AsyncPipeline):
 
             if not self._search_pipeline:
                 raise ValueError(
-                    "_search_pipeline must be set before running the RAG pipeline"
+                    "`_search_pipeline` must be set before running the RAG pipeline"
                 )
 
             async def multi_query_generator(input):
@@ -60,9 +60,9 @@ class RAGPipeline(AsyncPipeline):
                         self._search_pipeline.run(
                             to_async_generator([query]),
                             state=state,
-                            stream=False,  # do not stream the search results
+                            stream=False,
                             run_manager=run_manager,
-                            log_run_info=False,  # do not log the run info as it is already logged above
+                            log_run_info=False,
                             vector_search_settings=vector_search_settings,
                             kg_search_settings=kg_search_settings,
                             *args,

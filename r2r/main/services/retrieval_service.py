@@ -147,6 +147,8 @@ class RetrievalService(Service):
                                 vector_search_settings=vector_search_settings,
                                 kg_search_settings=kg_search_settings,
                                 rag_generation_config=rag_generation_config,
+                                *args,
+                                **kwargs,
                             ):
                                 yield chunk
 
@@ -214,5 +216,7 @@ class RetrievalService(Service):
             input=to_async_generator([eval_payload]),
             run_manager=self.run_manager,
             eval_generation_config=eval_generation_config,
+            *args,
+            **kwargs,
         )
         return result
