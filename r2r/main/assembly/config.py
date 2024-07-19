@@ -30,7 +30,7 @@ class R2RConfig:
             "base_dimension",
             "batch_size",
             "text_splitter",
-            "add_title_as_prefix"
+            "add_title_as_prefix",
         ],
         "eval": ["llm"],
         "kg": [

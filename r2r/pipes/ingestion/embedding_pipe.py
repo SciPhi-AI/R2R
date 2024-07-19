@@ -175,7 +175,9 @@ class EmbeddingPipe(AsyncPipe):
                 yield extraction
                 continue
 
-            async for fragment in self.transform_fragments(self.fragment(extraction, run_id)):
+            async for fragment in self.transform_fragments(
+                self.fragment(extraction, run_id)
+            ):
                 if extraction.document_id in fragment_info:
                     fragment_info[extraction.document_id] += 1
                 else:
