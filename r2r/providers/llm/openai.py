@@ -98,12 +98,15 @@ class OpenAILLM(LLMProvider):
     ) -> dict:
         """Get the base arguments for the OpenAI API."""
 
+        if generation_config.api_base is not None:
+            raise ValueError(
+                "The `api_base` argument is not supported by the OpenAI API."
+            )
         args = {
             "model": generation_config.model,
             "temperature": generation_config.temperature,
             "top_p": generation_config.top_p,
             "stream": generation_config.stream,
-            # TODO - We need to cap this to avoid potential errors when exceed max allowable context
             "max_tokens": generation_config.max_tokens_to_sample,
         }
 
