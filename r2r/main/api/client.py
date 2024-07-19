@@ -97,7 +97,7 @@ def monitor_request(func):
 
 
 class R2RClient:
-    def __init__(self, base_url: str, prefix: str = "/v1", custom_client=None):
+    def __init__(self, base_url: str = "http://localhost:8000", prefix: str = "/v1", custom_client=None):
         self.base_url = base_url
         self.prefix = prefix
         self.access_token = None
