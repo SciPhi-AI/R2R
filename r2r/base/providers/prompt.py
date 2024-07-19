@@ -73,15 +73,17 @@ class PromptProvider(Provider):
         system_prompt_name: Optional[str] = None,
         system_role: str = "system",
         system_inputs: dict = {},
+        system_prompt_override: Optional[str] = None,
         task_prompt_name: Optional[str] = None,
         task_role: str = "user",
         task_inputs: dict = {},
+        task_prompt_override: Optional[str] = None,
     ) -> dict:
-        system_prompt = self.get_prompt(
+        system_prompt = system_prompt_override or self.get_prompt(
             system_prompt_name or self.config.default_system_name,
             system_inputs,
         )
-        task_prompt = self.get_prompt(
+        task_prompt = task_prompt_override or self.get_prompt(
             task_prompt_name or self.config.default_task_name, task_inputs
         )
         return [

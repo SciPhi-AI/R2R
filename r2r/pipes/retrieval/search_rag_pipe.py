@@ -69,6 +69,7 @@ class SearchRAGPipe(GeneratorPipe):
             system_prompt_name=self.config.system_prompt,
             task_prompt_name=self.config.task_prompt,
             task_inputs={"query": sel_query, "context": context},
+            task_prompt_override=kwargs.get("task_prompt_override", None),
         )
         response = await self.llm_provider.aget_completion(
             messages=messages, generation_config=rag_generation_config
