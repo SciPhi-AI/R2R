@@ -10,6 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class PromptConfig(ProviderConfig):
+    default_system_name: Optional[str] = "default_system"
+    default_task_name: Optional[str] = "default_rag"
+
     # TODO - Replace this with a database
     file_path: Path = os.path.join(
         os.path.dirname(__file__),
@@ -66,12 +69,25 @@ class PromptProvider(Provider):
         pass
 
     def _get_message_payload(
-        self, system_prompt: str, task_prompt: str
+        self,
+        system_prompt_name: Optional[str] = None,
+        system_role: str = "system",
+        system_inputs: dict = {},
+        task_prompt_name: Optional[str] = None,
+        task_role: str = "user",
+        task_inputs: dict = {},
     ) -> dict:
+        system_prompt = self.get_prompt(
+            system_prompt_name or self.config.default_system_name,
+            system_inputs,
+        )
+        task_prompt = self.get_prompt(
+            task_prompt_name or self.config.default_task_name, task_inputs
+        )
         return [
             {
-                "role": "system",
+                "role": system_role,
                 "content": system_prompt,
             },
-            {"role": "user", "content": task_prompt},
+            {"role": task_role, "content": task_prompt},
         ]

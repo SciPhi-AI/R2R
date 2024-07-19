@@ -65,8 +65,11 @@ class SearchRAGPipe(GeneratorPipe):
             context += context_piece
             search_iteration += 1
 
-        messages = self._get_message_payload(sel_query, context)
-
+        messages = self.prompt_provider._get_message_payload(
+            system_prompt_name=self.config.system_prompt,
+            task_prompt_name=self.config.task_prompt,
+            task_inputs={"query": sel_query, "context": context},
+        )
         response = await self.llm_provider.aget_completion(
             messages=messages, generation_config=rag_generation_config
         )
@@ -77,26 +80,6 @@ class SearchRAGPipe(GeneratorPipe):
             key="llm_response",
             value=response.choices[0].message.content,
         )
-
-    def _get_message_payload(self, query: str, context: str) -> dict:
-        return [
-            {
-                "role": "system",
-                "content": self.prompt_provider.get_prompt(
-                    self.config.system_prompt,
-                ),
-            },
-            {
-                "role": "user",
-                "content": self.prompt_provider.get_prompt(
-                    self.config.task_prompt,
-                    inputs={
-                        "query": query,
-                        "context": context,
-                    },
-                ),
-            },
-        ]
 
     async def _collect_context(
         self,
