@@ -35,7 +35,6 @@ class R2RRAGRequest(BaseModel):
     kg_search_settings: Optional[dict] = None
     rag_generation_config: Optional[dict] = None
     task_prompt_override: Optional[str] = None
-    task_prompt_override_input: Optional[str] = None
 
 
 class R2REvalRequest(BaseModel):
