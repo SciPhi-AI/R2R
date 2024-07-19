@@ -101,8 +101,8 @@ class LiteLLM(LLMProvider):
             "temperature": generation_config.temperature,
             "top_p": generation_config.top_p,
             "stream": generation_config.stream,
-            # TODO - We need to cap this to avoid potential errors when exceed max allowable context
             "max_tokens": generation_config.max_tokens_to_sample,
+            "api_base": generation_config.api_base
         }
         return args
 
