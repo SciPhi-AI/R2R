@@ -43,11 +43,23 @@ class R2RPromptProvider(PromptProvider):
         )
 
     def get_prompt(
-        self, prompt_name: str, inputs: Optional[dict[str, Any]] = None
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        prompt_override: Optional[str] = None,
     ) -> str:
         if prompt_name not in self.prompts:
             raise ValueError(f"Prompt '{prompt_name}' not found.")
-        prompt = self.prompts[prompt_name]
+        existing_types = self.prompts[prompt_name].input_types
+        prompt = (
+            Prompt(
+                name=prompt_name,
+                template=prompt_override,
+                input_types=existing_types,
+            )
+            if prompt_override
+            else self.prompts[prompt_name]
+        )
         if inputs is None:
             return prompt.template
         return prompt.format_prompt(inputs)

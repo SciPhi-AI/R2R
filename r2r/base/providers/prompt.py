@@ -82,9 +82,12 @@ class PromptProvider(Provider):
         system_prompt = system_prompt_override or self.get_prompt(
             system_prompt_name or self.config.default_system_name,
             system_inputs,
+            prompt_override=system_prompt_override,
         )
-        task_prompt = task_prompt_override or self.get_prompt(
-            task_prompt_name or self.config.default_task_name, task_inputs
+        task_prompt = self.get_prompt(
+            task_prompt_name or self.config.default_task_name,
+            task_inputs,
+            prompt_override=task_prompt_override,
         )
         return [
             {
