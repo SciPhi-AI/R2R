@@ -77,6 +77,18 @@ class VectorSearchPipe(SearchPipe):
         reranked_results = self.embedding_provider.rerank(
             query=message, results=search_results, limit=search_limit
         )
+        include_title_if_available = kwargs.get(
+            "include_title_if_available", False
+        )
+        if include_title_if_available:
+            for result in reranked_results:
+                title = result.metadata.get("title", None)
+                if title:
+                    text = result.metadata.get("text", "")
+                    result.metadata["text"] = (
+                        f"Document Title:{title}\n\nText:{text}"
+                    )
+
         for result in reranked_results:
             result.metadata["associatedQuery"] = message
             results.append(result)
