@@ -9,9 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 class R2RPromptProvider(PromptProvider):
-    def __init__(self, config: PromptConfig):
+    def __init__(self, config: PromptConfig = PromptConfig()):
         self.prompts: dict[str, Prompt] = {}
         self._load_prompts_from_jsonl(file_path=config.file_path)
+        super().__init__(config)
 
     def _load_prompts_from_jsonl(self, file_path: Optional[str] = None):
         if not file_path:

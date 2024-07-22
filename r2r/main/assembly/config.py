@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 class R2RConfig:
     REQUIRED_KEYS: dict[str, list] = {
-        "app": ["max_file_size_in_mb"],
         "crypto": ["provider"],
         "auth": ["provider"],
         "embedding": [
@@ -45,7 +44,6 @@ class R2RConfig:
         "prompt": ["provider"],
         "database": ["provider"],
     }
-    app: dict[str, Any]
     auth: AuthConfig
     crypto: CryptoConfig
     embedding: EmbeddingConfig
@@ -77,7 +75,6 @@ class R2RConfig:
             ):
                 self._validate_config_section(default_config, section, keys)
             setattr(self, section, default_config[section])
-        self.app = self.app  # for type hinting
         self.auth = AuthConfig.create(**self.auth)
         self.crypto = CryptoConfig.create(**self.crypto)
         self.ingestion = self.ingestion  # for type hinting
