@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from pathlib import Path
 from typing import Any, Optional
 
 from r2r.base import Prompt, PromptConfig, PromptProvider
@@ -14,7 +15,7 @@ class R2RPromptProvider(PromptProvider):
         self._load_prompts_from_jsonl(file_path=config.file_path)
         super().__init__(config)
 
-    def _load_prompts_from_jsonl(self, file_path: Optional[str] = None):
+    def _load_prompts_from_jsonl(self, file_path: Optional[Path] = None):
         if not file_path:
             file_path = os.path.join(
                 os.path.dirname(__file__), "defaults.jsonl"
