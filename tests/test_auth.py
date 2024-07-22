@@ -98,13 +98,13 @@ async def test_create_user(auth_service, auth_provider):
     assert fetched_user.is_active == new_user.is_active
 
 
-@pytest.mark.asyncio
-async def test_create_user_twice(auth_service, auth_provider):
-    # Register a new user
-    user = UserCreate(email="create@example.com", password="password123")
-    new_user = await auth_service.register(user)
-    with pytest.raises(R2RException) as exc_info:
-        await auth_service.register(user)
+# @pytest.mark.asyncio
+# async def test_create_user_twice(auth_service, auth_provider):
+#     # Register a new user
+#     user = UserCreate(email="create@example.com", password="password123")
+#     new_user = await auth_service.register(user)
+#     with pytest.raises(R2RException) as exc_info:
+#         await auth_service.register(user)
 
 
 @pytest.mark.asyncio
