@@ -29,6 +29,7 @@
     },
     "completions": {
         "provider": "litellm",
+        "concurrency_limit": 1,
         "generation_config": {
           "model": "ollama/llama3",
           "temperature": 0.1,

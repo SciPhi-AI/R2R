@@ -39,7 +39,7 @@
     "base_model": "text-embedding-3-small",
     "base_dimension": 512,
     "batch_size": 128,
-    "add_title_as_prefix": true,
+    "add_title_as_prefix": false,
     "text_splitter": {
       "type": "recursive_character",
       "chunk_size": 512,

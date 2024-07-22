@@ -57,14 +57,6 @@ class ManagementService(Service):
             raise R2RException(
                 status_code=404, message="Logging provider not found."
             )
-        if (
-            self.config.app.get("max_logs_per_request", 100)
-            > max_runs_requested
-        ):
-            raise R2RException(
-                status_code=400,
-                message="Max runs requested exceeds the limit.",
-            )
 
         run_info = await self.logging_connection.get_run_info(
             limit=max_runs_requested,
