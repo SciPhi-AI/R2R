@@ -139,53 +139,6 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             name=self.collection_name, dimension=dimension
         )
 
-    def _create_document_info_table(self):
-        with self.vx.Session() as sess:
-            with sess.begin():
-                try:
-                    # Enable uuid-ossp extension
-                    sess.execute(
-                        text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
-                    )
-                except exc.ProgrammingError as e:
-                    logger.error(f"Error enabling uuid-ossp extension: {e}")
-                    raise
-
-                # Create the table if it doesn't exist
-                create_table_query = f"""
-                CREATE TABLE IF NOT EXISTS document_info_{self.collection_name} (
-                    document_id UUID PRIMARY KEY,
-                    title TEXT,
-                    user_id UUID NULL,
-                    version TEXT,
-                    size_in_bytes INT,
-                    created_at TIMESTAMPTZ DEFAULT NOW(),
-                    updated_at TIMESTAMPTZ DEFAULT NOW(),
-                    metadata JSONB,
-                    status TEXT
-                );
-                """
-                sess.execute(text(create_table_query))
-
-                # Add the new column if it doesn't exist
-                add_column_query = f"""
-                DO $$
-                BEGIN
-                    IF NOT EXISTS (
-                        SELECT 1
-                        FROM information_schema.columns
-                        WHERE table_name = 'document_info_{self.collection_name}'
-                        AND column_name = 'status'
-                    ) THEN
-                        ALTER TABLE document_info_{self.collection_name}
-                        ADD COLUMN status TEXT DEFAULT 'processing';
-                    END IF;
-                END $$;
-                """
-                sess.execute(text(add_column_query))
-
-                sess.commit()
-
     def _create_hybrid_search_function(self):
         hybrid_search_function = f"""
         CREATE OR REPLACE FUNCTION hybrid_search_{self.collection_name}(
@@ -541,27 +494,10 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     created_at TIMESTAMPTZ DEFAULT NOW(),
                     updated_at TIMESTAMPTZ DEFAULT NOW(),
                     metadata JSONB,
-                    status TEXT
+                    status TEXT DEFAULT 'processing'
                 );
                 """
                 sess.execute(text(create_table_query))
-
-                # Add the new column if it doesn't exist
-                add_column_query = f"""
-                DO $$
-                BEGIN
-                    IF NOT EXISTS (
-                        SELECT 1
-                        FROM information_schema.columns
-                        WHERE table_name = 'document_info_{self.collection_name}'
-                        AND column_name = 'status'
-                    ) THEN
-                        ALTER TABLE document_info_{self.collection_name}
-                        ADD COLUMN status TEXT DEFAULT 'processing';
-                    END IF;
-                END $$;
-                """
-                sess.execute(text(add_column_query))
 
                 # Create users table
                 query = f"""
