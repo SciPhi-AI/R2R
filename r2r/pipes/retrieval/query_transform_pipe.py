@@ -62,7 +62,7 @@ class QueryTransformPipe(GeneratorPipe):
             query_transform_request = (
                 self.prompt_provider._get_message_payload(
                     system_prompt_name=self.config.system_prompt,
-                    system_task_name=self.config.task_prompt,
+                    task_prompt_name=self.config.task_prompt,
                     task_inputs={
                         "message": query,
                         "num_outputs": num_query_xf_outputs,
