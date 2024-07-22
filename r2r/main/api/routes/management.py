@@ -154,10 +154,6 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
             request_user_ids = request_user_ids or [str(auth_user.id)]
-            print(
-                "getting doc overview for request_user_ids = ",
-                request_user_ids,
-            )
             return await self.engine.adocuments_overview(
                 document_ids=request.document_ids, user_ids=request_user_ids
             )
