@@ -51,29 +51,29 @@ r2r --config-name=default serve
 
 
 ## Quickstart
-After [installing](/installation), the [R2R Quickstart](/quickstart) is your go to for a step-by-step guide to get up and running with R2R in minutes. The guide demonstrates R2R's Retrieval-Augmented Generation (RAG) system by ingesting sample documents and then showcasing features for search, RAG, logging, analytics, and document management.
+After [installing](https://r2r-docs.sciphi.a/installation), the [R2R Quickstart](https://r2r-docs.sciphi.ai/quickstart) is your go to for a step-by-step guide to get up and running with R2R in minutes. The guide demonstrates R2R's Retrieval-Augmented Generation (RAG) system by ingesting sample documents and then showcasing features for search, RAG, logging, analytics, and document management.
 ## Getting Started
 
 To get started with R2R, we recommend starting with the quickstart and then moving on to specific cookbooks.
 
-- [Installation](/installation): Quick setup using Docker or `pip`
-- [R2R Quickstart](/quickstart): A quickstart guide designed to get you familiarized with R2R.
+- [Installation](https://r2r-docs.sciphi.ai/installation): Quick setup using Docker or `pip`
+- [R2R Quickstart](https://r2r-docs.sciphi.ai/quickstart): A quickstart guide designed to get you familiarized with R2R.
 
 
 ### Auth & Admin Features
-- [User Auth](/cookbooks/user-auth): A cookbook showing how to authenticate users using R2R.
-- [Analytics & Observability](/cookbooks/observability): A cookbook showing R2Rs end to end logging and analytics.
-- [Dashboard](/cookbooks/dashboard): A how-to guide on connecting with the R2R Admin/User Dashboard.
+- [User Auth](https://r2r-docs.sciphi.ai/cookbooks/user-auth): A cookbook showing how to authenticate users using R2R.
+- [Analytics & Observability](https://r2r-docs.sciphi.ai/cookbooks/observability): A cookbook showing R2Rs end to end logging and analytics.
+- [Dashboard](https://r2r-docs.sciphi.ai/cookbooks/dashboard): A how-to guide on connecting with the R2R Admin/User Dashboard.
 
 ### RAG Cookbooks
 
-- [Multiple LLMs](/cookbooks/multiple-llms): A simple cookbook showing how R2R supports multiple LLMs.
-- [Hybrid Search](/cookbooks/hybrid-search): A brief introduction to running hybrid search with R2R.
-- [Multimodal RAG](/cookbooks/multimodal): A cookbook on multimodal RAG with R2R.
-- [Knowledge Graphs](/cookbooks/knowledge-graph): A walkthrough of automatic knowledge graph generation with R2R.
-- [Advanced Graphs](/cookbooks/advanced-rag): A walkthrough of R2Rs advanced RAG features.
-- [Local RAG](/cookbooks/local-rag): A quick cookbook demonstration of how to run R2R with local LLMs.
-- [Reranking](/cookbooks/rerank-search): A short guide on how to apply reranking to R2R results.
+- [Multiple LLMs](https://r2r-docs.sciphi.ai/cookbooks/multiple-llms): A simple cookbook showing how R2R supports multiple LLMs.
+- [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): A brief introduction to running hybrid search with R2R.
+- [Multimodal RAG](https://r2r-docs.sciphi.ai/cookbooks/multimodal): A cookbook on multimodal RAG with R2R.
+- [Knowledge Graphs](https://r2r-docs.sciphi.ai/cookbooks/knowledge-graph): A walkthrough of automatic knowledge graph generation with R2R.
+- [Advanced Graphs](https://r2r-docs.sciphi.ai/cookbooks/advanced-rag): A walkthrough of R2Rs advanced RAG features.
+- [Local RAG](https://r2r-docs.sciphi.ai/cookbooks/local-rag): A quick cookbook demonstration of how to run R2R with local LLMs.
+- [Reranking](https://r2r-docs.sciphi.ai/cookbooks/rerank-search): A short guide on how to apply reranking to R2R results.
 
 ## Community
 
