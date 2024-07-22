@@ -9,14 +9,14 @@ if __name__ == "__main__":
     user_result = client.register("user1@test.com", "password123")
     print(user_result)
 
-    # Login immediately (assuming email verification is disabled)
-    login_result = client.login("user1@test.com", "password123")
-    print(login_result)
-
     # # Uncomment when running with authentication
     # # Verify email (replace with actual verification code sent to the user's email)
     # verify_result = client.verify_email("verification_code_here")
     # print(verify_result)
+
+    # Login immediately (assuming email verification is disabled)
+    login_result = client.login("user1@test.com", "password123")
+    print(login_result)
 
     # Refresh access token
     refresh_result = client.refresh_access_token()

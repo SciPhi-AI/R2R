@@ -119,12 +119,9 @@ class KGExtractionPipe(AsyncPipe):
         """
         Extracts NER triples from a list of fragments with retries.
         """
-        task_prompt = self.prompt_provider.get_prompt(
-            self.kg_provider.config.kg_extraction_prompt,
-            inputs={"input": fragment.data},
-        )
         messages = self.prompt_provider._get_message_payload(
-            self.prompt_provider.get_prompt("default_system"), task_prompt
+            task_prompt_name=self.kg_provider.config.kg_extraction_prompt,
+            task_inputs={"input": fragment.data},
         )
         for attempt in range(retries):
             try:

@@ -97,7 +97,12 @@ def monitor_request(func):
 
 
 class R2RClient:
-    def __init__(self, base_url: str, prefix: str = "/v1", custom_client=None):
+    def __init__(
+        self,
+        base_url: str = "http://localhost:8000",
+        prefix: str = "/v1",
+        custom_client=None,
+    ):
         self.base_url = base_url
         self.prefix = prefix
         self.access_token = None
@@ -309,6 +314,7 @@ class R2RClient:
         use_kg_search: bool = False,
         kg_agent_generation_config: Optional[dict] = None,
         rag_generation_config: Optional[dict] = None,
+        task_prompt_override: Optional[str] = None,
     ) -> dict:
         self._ensure_authenticated()
 
@@ -325,6 +331,7 @@ class R2RClient:
                 "agent_generation_config": kg_agent_generation_config,
             },
             rag_generation_config=rag_generation_config,
+            task_prompt_override=task_prompt_override,
         )
 
         if rag_generation_config and rag_generation_config.get(

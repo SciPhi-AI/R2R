@@ -215,23 +215,23 @@ async def test_ingest_unsupported_file_type(ingestion_service):
     assert "is not a valid DocumentType" in str(exc_info.value)
 
 
-@pytest.mark.asyncio
-async def test_ingest_large_file(ingestion_service):
-    large_content = b"Large content" * 1000000  # 12MB content
-    file_mock = UploadFile(
-        filename="large_file.txt", file=io.BytesIO(large_content)
-    )
-    file_mock.file.seek(0)
-    file_mock.size = len(large_content)  # Set file size manually
+# @pytest.mark.asyncio
+# async def test_ingest_large_file(ingestion_service):
+#     large_content = b"Large content" * 1000000  # 12MB content
+#     file_mock = UploadFile(
+#         filename="large_file.txt", file=io.BytesIO(large_content)
+#     )
+#     file_mock.file.seek(0)
+#     file_mock.size = len(large_content)  # Set file size manually
 
-    ingestion_service.config.app.get.return_value = (
-        10  # Set max file size to 10MB
-    )
+#     ingestion_service.config.app.get.return_value = (
+#         10  # Set max file size to 10MB
+#     )
 
-    with pytest.raises(R2RException) as exc_info:
-        await ingestion_service.ingest_files([file_mock])
+#     with pytest.raises(R2RException) as exc_info:
+#         await ingestion_service.ingest_files([file_mock])
 
-    assert "File size exceeds maximum allowed size" in str(exc_info.value)
+#     assert "File size exceeds maximum allowed size" in str(exc_info.value)
 
 
 # @pytest.mark.asyncio
@@ -355,33 +355,33 @@ async def test_process_ingestion_results_error_handling(ingestion_service):
     assert "Unexpected error" in result["failed_documents"][0]
 
 
-@pytest.mark.asyncio
-async def test_file_size_limit_edge_cases(ingestion_service):
-    ingestion_service.config.app.get.return_value = 1  # 1MB limit
+# @pytest.mark.asyncio
+# async def test_file_size_limit_edge_cases(ingestion_service):
+#     ingestion_service.config.app.get.return_value = 1  # 1MB limit
 
-    just_under_limit = b"x" * (1024 * 1024 - 1)
-    at_limit = b"x" * (1024 * 1024)
-    over_limit = b"x" * (1024 * 1024 + 1)
+#     just_under_limit = b"x" * (1024 * 1024 - 1)
+#     at_limit = b"x" * (1024 * 1024)
+#     over_limit = b"x" * (1024 * 1024 + 1)
 
-    file_under = UploadFile(
-        filename="under.txt",
-        file=io.BytesIO(just_under_limit),
-        size=1024 * 1024 - 1,
-    )
-    file_at = UploadFile(
-        filename="at.txt", file=io.BytesIO(at_limit), size=1024 * 1024
-    )
-    file_over = UploadFile(
-        filename="over.txt", file=io.BytesIO(over_limit), size=1024 * 1024 + 1
-    )
+#     file_under = UploadFile(
+#         filename="under.txt",
+#         file=io.BytesIO(just_under_limit),
+#         size=1024 * 1024 - 1,
+#     )
+#     file_at = UploadFile(
+#         filename="at.txt", file=io.BytesIO(at_limit), size=1024 * 1024
+#     )
+#     file_over = UploadFile(
+#         filename="over.txt", file=io.BytesIO(over_limit), size=1024 * 1024 + 1
+#     )
 
-    await ingestion_service.ingest_files([file_under])  # Should succeed
-    await ingestion_service.ingest_files([file_at])  # Should succeed
+#     await ingestion_service.ingest_files([file_under])  # Should succeed
+#     await ingestion_service.ingest_files([file_at])  # Should succeed
 
-    with pytest.raises(
-        R2RException, match="File size exceeds maximum allowed size"
-    ):
-        await ingestion_service.ingest_files([file_over])
+#     with pytest.raises(
+#         R2RException, match="File size exceeds maximum allowed size"
+#     ):
+#         await ingestion_service.ingest_files([file_over])
 
 
 @pytest.mark.asyncio

@@ -220,16 +220,6 @@ class IngestionService(Service):
         try:
             documents = []
             for iteration, file in enumerate(files):
-                logger.info(f"Processing file: {file.filename}")
-                if (
-                    file.size
-                    > self.config.app.get("max_file_size_in_mb", 32)
-                    * MB_CONVERSION_FACTOR
-                ):
-                    raise R2RException(
-                        status_code=413,
-                        message=f"File size exceeds maximum allowed size: {file.filename}",
-                    )
                 if not file.filename:
                     raise R2RException(
                         status_code=400, message="File name not provided."

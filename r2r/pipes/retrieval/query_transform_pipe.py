@@ -59,8 +59,15 @@ class QueryTransformPipe(GeneratorPipe):
                 f"Transforming query: {query} into {num_query_xf_outputs} outputs with {self.config.task_prompt}."
             )
 
-            query_transform_request = self._get_message_payload(
-                query, num_outputs=num_query_xf_outputs
+            query_transform_request = (
+                self.prompt_provider._get_message_payload(
+                    system_prompt_name=self.config.system_prompt,
+                    system_task_name=self.config.task_prompt,
+                    task_inputs={
+                        "message": query,
+                        "num_outputs": num_query_xf_outputs,
+                    },
+                )
             )
 
             response = await self.llm_provider.aget_completion(
@@ -79,23 +86,3 @@ class QueryTransformPipe(GeneratorPipe):
             for output in outputs:
                 logger.info(f"Yielding transformed output: {output}")
                 yield output
-
-    def _get_message_payload(self, input: str, num_outputs: int) -> dict:
-        return [
-            {
-                "role": "system",
-                "content": self.prompt_provider.get_prompt(
-                    self.config.system_prompt,
-                ),
-            },
-            {
-                "role": "user",
-                "content": self.prompt_provider.get_prompt(
-                    self.config.task_prompt,
-                    inputs={
-                        "message": input,
-                        "num_outputs": num_outputs,
-                    },
-                ),
-            },
-        ]

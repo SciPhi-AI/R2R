@@ -17,6 +17,10 @@ class LLMConfig(ProviderConfig):
 
     provider: Optional[str] = None
     generation_config: Optional[GenerationConfig] = None
+    concurrency_limit: int = 16
+    max_retries: int = 2
+    initial_backoff: int = 1
+    max_backoff: int = 60
 
     def validate(self) -> None:
         if not self.provider:

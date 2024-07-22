@@ -91,15 +91,22 @@ class EmbeddingPipe(AsyncPipe):
             iteration += 1
 
     async def transform_fragments(
-        self, fragments: list[Fragment], metadatas: list[dict]
+        self, fragments: list[Fragment]
     ) -> AsyncGenerator[Fragment, None]:
         """
         Transforms text chunks based on their metadata, e.g., adding prefixes.
         """
-        async for fragment, metadata in zip(fragments, metadatas):
-            if "chunk_prefix" in metadata:
-                prefix = metadata.pop("chunk_prefix")
+        async for fragment in fragments:
+            if "chunk_prefix" in fragment.metadata:
+                prefix = fragment.metadata.pop("chunk_prefix")
                 fragment.data = f"{prefix}\n{fragment.data}"
+            if "chunk_suffix" in fragment.metadata:
+                suffix = fragment.metadata.pop("chunk_suffix")
+                fragment.data = f"{fragment.data}\n{suffix}"
+            if self.embedding_provider.config.add_title_as_prefix:
+                title = fragment.metadata.get("title", None)
+                if title:
+                    fragment.data = f"Title:{title}\n\n{fragment.data}"
             yield fragment
 
     async def embed(self, fragments: list[Fragment]) -> list[float]:
@@ -168,7 +175,9 @@ class EmbeddingPipe(AsyncPipe):
                 yield extraction
                 continue
 
-            async for fragment in self.fragment(extraction, run_id):
+            async for fragment in self.transform_fragments(
+                self.fragment(extraction, run_id)
+            ):
                 if extraction.document_id in fragment_info:
                     fragment_info[extraction.document_id] += 1
                 else:

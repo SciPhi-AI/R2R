@@ -24,6 +24,7 @@ class EmbeddingConfig(ProviderConfig):
     rerank_transformer_type: Optional[str] = None
     batch_size: int = 1
     prefixes: Optional[dict[str, str]] = None
+    add_title_as_prefix: bool = True
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:
@@ -31,7 +32,7 @@ class EmbeddingConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return [None, "openai", "ollama", "sentence-transformers"]
+        return [None, "litellm", "openai", "ollama", "sentence-transformers"]
 
 
 class EmbeddingProvider(Provider):

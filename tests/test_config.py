@@ -44,7 +44,6 @@ def mock_file():
                 "enabled": True,
                 "token_lifetime": 86400,
             },
-            "app": {"max_file_size_in_mb": 128},
             "crypto": {"provider": "r2r"},
             "embedding": {
                 "provider": "example_provider",
@@ -52,6 +51,7 @@ def mock_file():
                 "base_dimension": 128,
                 "batch_size": 16,
                 "text_splitter": "default",
+                "add_title_as_prefix": False,
             },
             "kg": {
                 "provider": "None",
@@ -105,12 +105,11 @@ def test_r2r_config_serialization(mock_file, mock_redis_client):
     config.save_to_redis(mock_redis_client, "test_key")
     mock_redis_client.set.assert_called_once()
     saved_data = json.loads(mock_redis_client.set.call_args[0][1])
-    assert saved_data["app"]["max_file_size_in_mb"] == 128
+    assert saved_data["embedding"]["provider"] == "example_provider"
 
 
 def test_r2r_config_deserialization(mock_file, mock_redis_client):
     config_data = {
-        "app": {"max_file_size_in_mb": 128},
         "embedding": {
             "provider": "example_provider",
             "base_model": "model",
@@ -140,7 +139,6 @@ def test_r2r_config_deserialization(mock_file, mock_redis_client):
     }
     mock_redis_client.get.return_value = json.dumps(config_data)
     config = R2RConfig.load_from_redis(mock_redis_client, "test_key")
-    assert config.app["max_file_size_in_mb"] == 128
     assert DocumentType.PDF in config.ingestion["excluded_parsers"]
 
 

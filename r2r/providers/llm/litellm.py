@@ -1,4 +1,6 @@
+import asyncio
 import logging
+import random
 from typing import Any, Generator, Union
 
 from r2r.base import (
@@ -13,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class LiteLLM(LLMProvider):
-    """A concrete class for creating LiteLLM models."""
+    """A concrete class for creating LiteLLM models with request throttling."""
 
     def __init__(
         self,
@@ -26,11 +28,49 @@ class LiteLLM(LLMProvider):
 
             self.litellm_completion = completion
             self.litellm_acompletion = acompletion
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
-                "Error, `litellm` is required to run a LiteLLM. Please install it using `pip install litellm`."
-            )
+                "Error, `litellm` is required to run ThrottledLiteLLM. Please install it using `pip install litellm`."
+            ) from e
         super().__init__(config)
+
+        # Initialize semaphore and request queue
+        self.semaphore = asyncio.Semaphore(config.concurrency_limit)
+        self.request_queue = asyncio.Queue()
+
+    async def process_queue(self):
+        while True:
+            task = await self.request_queue.get()
+            try:
+                result = await self.execute_task_with_backoff(task)
+                task["future"].set_result(result)
+            except Exception as e:
+                task["future"].set_exception(e)
+            finally:
+                self.request_queue.task_done()
+
+    async def execute_task_with_backoff(self, task: dict[str, Any]):
+        retries = 0
+        backoff = self.config.initial_backoff
+        while retries < self.config.max_retries:
+            try:
+                async with self.semaphore:
+                    response = await asyncio.wait_for(
+                        self.litellm_acompletion(**task["args"]),
+                        timeout=30,
+                    )
+                return response
+            except Exception as e:
+                logger.warning(
+                    f"Request failed (attempt {retries + 1}): {str(e)}"
+                )
+                retries += 1
+                if retries == self.config.max_retries:
+                    raise Exception(
+                        f"Max retries reached. Last error: {str(e)}"
+                    )
+                await asyncio.sleep(backoff + random.uniform(0, 1))
+                backoff = min(backoff * 2, self.config.max_backoff)
 
     def get_completion(
         self,
@@ -67,11 +107,9 @@ class LiteLLM(LLMProvider):
     ) -> Union[
         LLMChatCompletion, Generator[LLMChatCompletionChunk, None, None]
     ]:
-        # Create a dictionary with the default arguments
         args = self._get_base_args(generation_config)
         args["messages"] = messages
 
-        # Conditionally add the 'functions' argument if it's not None
         if generation_config.functions is not None:
             args["functions"] = generation_config.functions
 
@@ -101,8 +139,8 @@ class LiteLLM(LLMProvider):
             "temperature": generation_config.temperature,
             "top_p": generation_config.top_p,
             "stream": generation_config.stream,
-            # TODO - We need to cap this to avoid potential errors when exceed max allowable context
             "max_tokens": generation_config.max_tokens_to_sample,
+            "api_base": generation_config.api_base,
         }
         return args
 
@@ -126,17 +164,24 @@ class LiteLLM(LLMProvider):
         generation_config: GenerationConfig,
         **kwargs,
     ) -> Union[LLMChatCompletion, LLMChatCompletionChunk]:
-        """Asynchronously get a completion from the OpenAI API based on the provided messages."""
-
-        # Create a dictionary with the default arguments
         args = self._get_base_args(generation_config)
-
         args["messages"] = messages
 
-        # Conditionally add the 'functions' argument if it's not None
         if generation_config.functions is not None:
             args["functions"] = generation_config.functions
 
         args = {**args, **kwargs}
-        # Create the chat completion
-        return await self.litellm_acompletion(**args)
+
+        queue_processor = asyncio.create_task(self.process_queue())
+        future = asyncio.Future()
+        await self.request_queue.put({"args": args, "future": future})
+
+        try:
+            response = await future
+            return LLMChatCompletion(**response.dict())
+        except Exception as e:
+            logger.error(f"Completion generation failed: {str(e)}")
+            raise
+        finally:
+            await self.request_queue.join()
+            queue_processor.cancel()
