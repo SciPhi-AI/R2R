@@ -69,9 +69,6 @@ class AuthRouter(BaseRouter):
         ):
             return auth_user
 
-        @self.router.post(
-            "/refresh_access_token", response_model=TokenResponse
-        )
         @self.router.put("/user", response_model=UserResponse)
         @self.base_endpoint
         async def put_user_app(
@@ -82,6 +79,9 @@ class AuthRouter(BaseRouter):
                 auth_user.id, profile_update.dict(exclude_unset=True)
             )
 
+        @self.router.post(
+            "/refresh_access_token", response_model=TokenResponse
+        )
         @self.base_endpoint
         async def refresh_access_token_app(
             refresh_token: str = Body(..., embed=True),
