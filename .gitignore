@@ -15,5 +15,3 @@ coverage.xml
 
 **/*.sqlite*
 **/*.sqlite3*
-
-r2r/evals/examples/*

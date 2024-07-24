@@ -47,7 +47,7 @@
     "override_parsers": [
       {
         "document_type": "pdf",
-        "parser": "PDFParserUnstructured"
+        "parser": "PDFParser"
       }
     ]
   },
