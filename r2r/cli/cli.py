@@ -114,8 +114,8 @@ def serve(
             )
             return
 
-        # Build the docker-compose command with the specified host and port
-        docker_command = f"docker-compose -f {compose_yaml}"
+        # Build the docker compose command with the specified host and port
+        docker_command = f"docker compose -f {compose_yaml}"
         if docker_ext_neo4j:
             docker_command += f" -f {compose_neo4j_yaml}"
         if docker_ext_ollama:
@@ -164,7 +164,7 @@ def docker_down(ctx, volumes, remove_orphans, project_name):
         return
 
     docker_command = (
-        f"docker-compose -f {compose_yaml} -f {compose_neo4j_yaml}"
+        f"docker compose -f {compose_yaml} -f {compose_neo4j_yaml}"
     )
     docker_command += f" --project-name {project_name}"
 
