@@ -88,10 +88,10 @@ class PDFParserUnstructured(AsyncParser[DataType]):
         except ImportError:
             raise ValueError("Error, `pdfplumber` is required to run `PDFParserUnstructured`. Please install it using `pip install pdfplumber")
         
-    async def ingest(self, data, partition_strategy: str = "hi_res") -> AsyncGenerator[str, None]:
+    async def ingest(self, data, partition_strategy: str = "hi_res", chunking_strategy='by_title') -> AsyncGenerator[str, None]:
         
         # partition the pdf
-        elements = self.partition_pdf(file = BytesIO(data), partition_strategy = partition_strategy)
+        elements = self.partition_pdf(file = BytesIO(data), partition_strategy = partition_strategy, chunking_strategy = chunking_strategy)
         for element in elements:
             yield element.text
 
@@ -117,6 +117,7 @@ class PDFParserMarker(AsyncParser[DataType]):
         
         text, _, _ = self.convert_single_pdf(BytesIO(data), PDFParserMarker.model_refs)
         yield text
+
 
 class PDFParserLocal(AsyncParser[DataType]):
     def __init__(self):

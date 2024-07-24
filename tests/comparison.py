@@ -4,6 +4,10 @@ import argparse
 from typing import AsyncGenerator, List
 from r2r.base.abstractions.document import DataType
 from r2r.base.parsers.base_parser import AsyncParser
+import time
+
+import os
+os.environ['PYTORCH_ENABLE_MPS_FALLBACK']='1'
 
 # Import parsers
 from r2r.parsers import PDFParserUnstructured, PDFParser, PDFParserMarker
@@ -52,24 +56,35 @@ async def process_file(file_path: str, parser: str, output_folder: str):
 
 async def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--folder', type=str, help='Folder containing the files to be parsed')
+    parser.add_argument('--folder', type=str, help='Folder containing the files to be parsed', default= '/Users/shreyas/code/parsing/data/sample_files')
     args = parser.parse_args()
 
     file_list = [
         'pdf_easy.pdf',
         'pdf_hard.pdf',
-        'TSLA Q1 2024 Update.pdf',
+        'TSLA.pdf',
     ]
 
-    os.makedirs(args.output, exist_ok=True)
+    results = {}  # Dictionary to store processing times
 
-    tasks = []
     for file in file_list:
         file_path = os.path.join(args.folder, file)
-        for parser_type in [ 'marker']:
-            tasks.append(process_file(file_path, parser_type, args.folder))
-    
-    await asyncio.gather(*tasks)
+        results[file] = {} 
+
+        # for parser_type in ['r2r', 'unstructured', 'marker']:
+        for parser_type in ['unstructured']:
+            start_time = time.time()
+            await process_file(file_path, parser_type, args.folder) 
+            end_time = time.time()  
+
+            # Store the processing time
+            results[file][parser_type] = end_time - start_time
+
+    # Print the results in a tabular format
+    print("File Processing Times (seconds):")
+    print(f"{'File':<20} {'r2r':<10} {'unstructured':<15} {'marker':<10}")
+    for file, times in results.items():
+        print(f"{file:<20} {times['r2r']:<10.2f} {times['unstructured']:<15.2f} {times['marker']:<10.2f}")
 
 if __name__ == '__main__':
     asyncio.run(main())
