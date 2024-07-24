@@ -41,5 +41,5 @@ class ImageParser(AsyncParser[DataType]):
 
 class ImageParserLocal(AsyncParser[DataType]):
 
-    def __init__(self, ):
+    def __init__(self):
         pass
