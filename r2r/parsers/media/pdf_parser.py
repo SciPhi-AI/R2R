@@ -6,6 +6,7 @@ import asyncio
 from r2r.base.abstractions.document import DataType
 from r2r.base.parsers.base_parser import AsyncParser
 
+
 class PDFParser(AsyncParser[DataType]):
     """A parser for PDF data."""
 

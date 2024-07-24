@@ -43,6 +43,12 @@
   "ingestion":{
     "excluded_parsers": [
       "mp4"
+    ],
+    "override_parsers": [
+      {
+        "document_type": "pdf",
+        "parser": "PDFParserUnstructured"
+      }
     ]
   },
   "logging": {
