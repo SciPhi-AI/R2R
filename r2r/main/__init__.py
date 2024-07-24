@@ -1,15 +1,18 @@
 from .abstractions import R2RPipelines, R2RProviders
 from .api.client import R2RClient
-from .api.requests import (
+from .api.routes.ingestion.requests import (
+    R2RIngestFilesRequest,
+    R2RUpdateFilesRequest,
+)
+from .api.routes.management.requests import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
     R2RDocumentsOverviewRequest,
+    R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
-from .api.routes.ingestion import R2RIngestFilesRequest, R2RUpdateFilesRequest
-from .api.routes.management import R2RUpdatePromptRequest
-from .api.routes.retrieval import (
+from .api.routes.retrieval.requests import (
     R2REvalRequest,
     R2RRAGRequest,
     R2RSearchRequest,

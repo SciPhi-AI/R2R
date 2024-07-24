@@ -14,22 +14,23 @@ import nest_asyncio
 import requests
 from fastapi.testclient import TestClient
 
-from r2r.base import R2RException, UserCreate
+from r2r.base import AnalysisTypes, FilterCriteria, R2RException, UserCreate
 
-from .requests import (
-    AnalysisTypes,
-    FilterCriteria,
+from .routes.ingestion.requests import (
+    R2RIngestFilesRequest,
+    R2RUpdateFilesRequest,
+)
+from .routes.management.requests import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
     R2RDocumentsOverviewRequest,
     R2RLogsRequest,
     R2RPrintRelationshipsRequest,
+    R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
-from .routes.ingestion import R2RIngestFilesRequest, R2RUpdateFilesRequest
-from .routes.management import R2RUpdatePromptRequest
-from .routes.retrieval import R2RRAGRequest, R2RSearchRequest
+from .routes.retrieval.requests import R2RRAGRequest, R2RSearchRequest
 
 nest_asyncio.apply()
 
