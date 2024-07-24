@@ -1,9 +1,23 @@
+import uuid
+from typing import Optional
+
 from fastapi import Depends, File, UploadFile
+from pydantic import BaseModel
 
 from ...engine import R2REngine
 from ...services.ingestion_service import IngestionService
-from ..requests import R2RIngestFilesRequest, R2RUpdateFilesRequest
 from .base_router import BaseRouter
+
+
+class R2RIngestFilesRequest(BaseModel):
+    document_ids: Optional[list[uuid.UUID]] = None
+    metadatas: Optional[list[dict]] = None
+    versions: Optional[list[str]] = None
+
+
+class R2RUpdateFilesRequest(BaseModel):
+    metadatas: Optional[list[dict]] = None
+    document_ids: Optional[list[uuid.UUID]] = None
 
 
 class IngestionRouter(BaseRouter):

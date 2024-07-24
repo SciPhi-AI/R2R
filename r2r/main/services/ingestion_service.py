@@ -23,7 +23,7 @@ from r2r.base import (
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RPipelines, R2RProviders
-from ..api.requests import R2RIngestFilesRequest, R2RUpdateFilesRequest
+from ..api.routes.ingestion import R2RIngestFilesRequest, R2RUpdateFilesRequest
 from ..assembly.config import R2RConfig
 from .base import Service
 
