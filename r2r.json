@@ -1,0 +1,74 @@
+{
+  "auth": {
+    "provider": "r2r",
+    "access_token_lifetime_in_minutes": 60,
+    "refresh_token_lifetime_in_days": 7,
+    "require_authentication": false,
+    "require_email_verification": false,
+    "default_admin_email": "admin@example.com",
+    "default_admin_password": "change_me_immediately"
+  },
+  "completions": {
+    "provider": "litellm",
+    "generation_config": {
+      "model": "gpt-4o",
+      "temperature": 0.1,
+      "top_p": 1.0,
+      "top_k": 100,
+      "max_tokens_to_sample": 1024,
+      "stream": false,
+      "functions": null,
+      "skip_special_tokens": false,
+      "stop_token": null,
+      "num_beams": 1,
+      "do_sample": true,
+      "generate_with_chat": false,
+      "add_generation_kwargs": {},
+      "api_base": null
+    }
+  },
+  "crypto":{
+    "provider": "bcrypt"
+  },
+  "embedding": {
+    "provider": "openai",
+    "base_model": "text-embedding-3-small",
+    "base_dimension": 512,
+    "batch_size": 128,
+    "add_title_as_prefix": false,
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 512,
+      "chunk_overlap": 20
+    },
+    "rerank_model": "None"
+  },
+  "kg": {
+    "provider": "None"
+  },
+  "eval": {
+    "provider": "None"
+  },
+  "ingestion":{
+    "excluded_parsers": [
+      "mp4"
+    ],
+    "override_parsers": [
+      {
+        "document_type": "pdf",
+        "parser": "PDFParser"
+      }
+    ]
+  },
+  "logging": {
+    "provider": "local",
+    "log_table": "logs",
+    "log_info_table": "log_info"
+  },
+  "prompt": {
+    "provider": "r2r"
+  },
+  "database": {
+    "provider": "postgres"
+  }
+}

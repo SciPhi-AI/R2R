@@ -8,7 +8,7 @@ from .main import *
 from .parsers import *
 from .pipelines import *
 from .pipes import *
-from .prompts import *
+from .providers import *
 
 logger = logging.getLogger("r2r")
 logger.setLevel(logging.INFO)
@@ -81,8 +81,8 @@ __all__ = [
     "LLMChatCompletionChunk",
     "LLMConfig",
     "LLMProvider",
-    "VectorDBConfig",
-    "VectorDBProvider",
+    "DatabaseConfig",
+    "DatabaseProvider",
     "R2RConfig",
     "TextSplitter",
     "RecursiveCharacterTextSplitter",

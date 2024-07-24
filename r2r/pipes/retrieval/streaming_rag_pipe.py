@@ -78,7 +78,11 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
 
             yield f"</{self.SEARCH_STREAM_MARKER}>"
 
-            messages = self._get_message_payload(query, context)
+            messages = self.prompt_provider._get_message_payload(
+                system_prompt_name=self.config.system_prompt,
+                task_prompt_name=self.config.task_prompt,
+                task_inputs={"query": query, "context": context},
+            )
             yield f"<{self.COMPLETION_STREAM_MARKER}>"
             response = ""
             for chunk in self.llm_provider.get_completion_stream(
@@ -106,25 +110,6 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
         for chunk in chunks:
             yield chunk
         yield end_marker
-
-    def _get_message_payload(
-        self, query: str, context: str
-    ) -> list[dict[str, str]]:
-        return [
-            {
-                "role": "system",
-                "content": self.prompt_provider.get_prompt(
-                    self.config.system_prompt
-                ),
-            },
-            {
-                "role": "user",
-                "content": self.prompt_provider.get_prompt(
-                    self.config.task_prompt,
-                    inputs={"query": query, "context": context},
-                ),
-            },
-        ]
 
     @staticmethod
     def _process_chunk(chunk: LLMChatCompletionChunk) -> str:

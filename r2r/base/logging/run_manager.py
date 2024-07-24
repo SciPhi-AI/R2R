@@ -1,7 +1,7 @@
 import contextvars
 import uuid
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, Optional
 
 from .kv_logger import KVLoggingSingleton
 
@@ -16,8 +16,10 @@ class RunManager:
     def generate_run_id(self) -> uuid.UUID:
         return uuid.uuid4()
 
-    async def set_run_info(self, pipeline_type: str):
-        run_id = run_id_var.get()
+    async def set_run_info(
+        self, pipeline_type: str, run_id: Optional[uuid.UUID] = None
+    ):
+        run_id = run_id or run_id_var.get()
         if run_id is None:
             run_id = self.generate_run_id()
             token = run_id_var.set(run_id)
@@ -47,8 +49,12 @@ class RunManager:
 
 
 @asynccontextmanager
-async def manage_run(run_manager: RunManager, pipeline_type: str):
-    run_id, token = await run_manager.set_run_info(pipeline_type)
+async def manage_run(
+    run_manager: RunManager,
+    pipeline_type: str,
+    run_id: Optional[uuid.UUID] = None,
+):
+    run_id, token = await run_manager.set_run_info(pipeline_type, run_id)
     try:
         yield run_id
     finally:

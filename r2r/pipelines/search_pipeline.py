@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from asyncio import Queue
+from copy import copy
 from typing import Any, Optional
 
 from ..base.abstractions.search import (
@@ -86,6 +87,8 @@ class SearchPipeline(AsyncPipeline):
                         run_manager,
                         log_run_info=False,
                         vector_search_settings=vector_search_settings,
+                        *args,
+                        **kwargs,
                     )
                 )
 
@@ -98,6 +101,8 @@ class SearchPipeline(AsyncPipeline):
                         run_manager,
                         log_run_info=False,
                         kg_search_settings=kg_search_settings,
+                        *args,
+                        **kwargs,
                     )
                 )
 

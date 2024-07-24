@@ -1,6 +1,7 @@
 import logging
 import uuid
-from typing import Any, Optional, Union
+from collections import defaultdict
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from r2r.base import (
     AnalysisTypes,
@@ -55,14 +56,6 @@ class ManagementService(Service):
         if self.logging_connection is None:
             raise R2RException(
                 status_code=404, message="Logging provider not found."
-            )
-        if (
-            self.config.app.get("max_logs_per_request", 100)
-            > max_runs_requested
-        ):
-            raise R2RException(
-                status_code=400,
-                message="Max runs requested exceeds the limit.",
             )
 
         run_info = await self.logging_connection.get_run_info(
@@ -192,7 +185,7 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return self.providers.vector_db.get_users_overview(
+        return self.providers.database.relational.get_users_overview(
             [str(ele) for ele in user_ids] if user_ids else None
         )
 
@@ -209,13 +202,15 @@ class ManagementService(Service):
         )
         values = [str(value) for value in values]
         logger.info(f"Deleting entries with metadata: {metadata}")
-        ids = self.providers.vector_db.delete_by_metadata(keys, values)
+        ids = self.providers.database.vector.delete_by_metadata(keys, values)
         if not ids:
             raise R2RException(
                 status_code=404, message="No entries found for deletion."
             )
         for id in ids:
-            self.providers.vector_db.delete_from_documents_overview(id)
+            self.providers.database.relational.delete_from_documents_overview(
+                id
+            )
         return f"Documents {ids} deleted successfully."
 
     @telemetry_event("DocumentsOverview")
@@ -226,7 +221,7 @@ class ManagementService(Service):
         *args: Any,
         **kwargs: Any,
     ):
-        return self.providers.vector_db.get_documents_overview(
+        return self.providers.database.relational.get_documents_overview(
             filter_document_ids=(
                 [str(ele) for ele in document_ids] if document_ids else None
             ),
@@ -242,7 +237,9 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return self.providers.vector_db.get_document_chunks(str(document_id))
+        return self.providers.database.vector.get_document_chunks(
+            str(document_id)
+        )
 
     @telemetry_event("UsersOverview")
     async def users_overview(
@@ -251,13 +248,13 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return self.providers.vector_db.get_users_overview(
+        return self.providers.database.relational.get_users_overview(
             [str(ele) for ele in user_ids]
         )
 
-    @telemetry_event("PrintKGRelationships")
-    async def print_kg_relationships(
-        self, limit=10, *args: Any, **kwargs: Any
+    @telemetry_event("InspectKnowledgeGraph")
+    async def inspect_knowledge_graph(
+        self, limit=10000, *args: Any, **kwargs: Any
     ):
         if self.providers.kg is None:
             raise R2RException(
@@ -276,17 +273,98 @@ class ManagementService(Service):
             ) as session:
                 results = session.run(rel_query)
                 relationships = [
-                    f"{record['subject']} > {record['relation']} > {record['object']}"
+                    (record["subject"], record["relation"], record["object"])
                     for record in results
                 ]
 
-            return "\n".join(relationships)
+            # Create graph representation and group relationships
+            graph, grouped_relationships = self.process_relationships(
+                relationships
+            )
+
+            # Generate output
+            output = self.generate_output(grouped_relationships, graph)
+
+            return "\n".join(output)
+
         except Exception as e:
             logger.error(f"Error printing relationships: {str(e)}")
             raise R2RException(
                 status_code=500,
                 message=f"An error occurred while fetching relationships: {str(e)}",
             )
+
+    def process_relationships(
+        self, relationships: List[Tuple[str, str, str]]
+    ) -> Tuple[Dict[str, List[str]], Dict[str, Dict[str, List[str]]]]:
+        graph = defaultdict(list)
+        grouped = defaultdict(lambda: defaultdict(list))
+        for subject, relation, obj in relationships:
+            graph[subject].append(obj)
+            grouped[subject][relation].append(obj)
+            if obj not in graph:
+                graph[obj] = []
+        return dict(graph), dict(grouped)
+
+    def generate_output(
+        self,
+        grouped_relationships: Dict[str, Dict[str, List[str]]],
+        graph: Dict[str, List[str]],
+    ) -> List[str]:
+        output = []
+
+        # Print grouped relationships
+        for subject, relations in grouped_relationships.items():
+            output.append(f"\n== {subject} ==")
+            for relation, objects in relations.items():
+                output.append(f"  {relation}:")
+                for obj in objects:
+                    output.append(f"    - {obj}")
+
+        # Print basic graph statistics
+        output.append("\n== Graph Statistics ==")
+        output.append(f"Number of nodes: {len(graph)}")
+        output.append(
+            f"Number of edges: {sum(len(neighbors) for neighbors in graph.values())}"
+        )
+        output.append(
+            f"Number of connected components: {self.count_connected_components(graph)}"
+        )
+
+        # Find central nodes
+        central_nodes = self.get_central_nodes(graph)
+        output.append("\n== Most Central Nodes ==")
+        for node, centrality in central_nodes:
+            output.append(f"  {node}: {centrality:.4f}")
+
+        return output
+
+    def count_connected_components(self, graph: Dict[str, List[str]]) -> int:
+        visited = set()
+        components = 0
+
+        def dfs(node):
+            visited.add(node)
+            for neighbor in graph[node]:
+                if neighbor not in visited:
+                    dfs(neighbor)
+
+        for node in graph:
+            if node not in visited:
+                dfs(node)
+                components += 1
+
+        return components
+
+    def get_central_nodes(
+        self, graph: Dict[str, List[str]]
+    ) -> List[Tuple[str, float]]:
+        degree = {node: len(neighbors) for node, neighbors in graph.items()}
+        total_nodes = len(graph)
+        centrality = {
+            node: deg / (total_nodes - 1) for node, deg in degree.items()
+        }
+        return sorted(centrality.items(), key=lambda x: x[1], reverse=True)[:5]
 
     @telemetry_event("AppSettings")
     async def app_settings(

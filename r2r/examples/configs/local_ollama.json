@@ -1,6 +1,7 @@
 {
   "completions": {
     "provider": "litellm",
+    "concurrency_limit": 1,
     "generation_config": {
       "model": "ollama/llama3",
       "temperature": 0.1,
@@ -17,12 +18,18 @@
       "add_generation_kwargs": {},
       "api_base": null
     }
-  },  
+  },
   "embedding": {
     "provider": "ollama",
     "base_model": "mxbai-embed-large",
     "base_dimension": 1024,
-    "batch_size": 32
+    "batch_size": 32,
+    "add_title_as_prefix": true,
+    "text_splitter": {
+      "type": "recursive_character",
+      "chunk_size": 512,
+      "chunk_overlap": 20
+    }
   },
   "ingestion":{
     "excluded_parsers": [
@@ -35,7 +42,7 @@
       "mp4"
     ]
   },
-  "vector_database": {
-    "provider": "pgvector"
+  "database": {
+    "provider": "postgres"
   }
 }

@@ -5,8 +5,6 @@ import logging
 import uuid
 from typing import Any, AsyncGenerator, Optional
 
-from aiohttp import ClientError
-
 from r2r.base import (
     AsyncState,
     Extraction,
@@ -26,6 +24,12 @@ from r2r.base import (
 from r2r.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
+
+
+class ClientError(Exception):
+    """Base class for client connection errors."""
+
+    pass
 
 
 class KGExtractionPipe(AsyncPipe):
@@ -115,12 +119,9 @@ class KGExtractionPipe(AsyncPipe):
         """
         Extracts NER triples from a list of fragments with retries.
         """
-        task_prompt = self.prompt_provider.get_prompt(
-            self.kg_provider.config.kg_extraction_prompt,
-            inputs={"input": fragment.data},
-        )
         messages = self.prompt_provider._get_message_payload(
-            self.prompt_provider.get_prompt("default_system"), task_prompt
+            task_prompt_name=self.kg_provider.config.kg_extraction_prompt,
+            task_inputs={"input": fragment.data},
         )
         for attempt in range(retries):
             try:
@@ -131,16 +132,19 @@ class KGExtractionPipe(AsyncPipe):
                 kg_extraction = response.choices[0].message.content
 
                 # Parsing JSON from the response
-                kg_json = json.loads(
-                    kg_extraction.split("```json")[1].split("```")[0]
+                kg_json = (
+                    json.loads(
+                        kg_extraction.split("```json")[1].split("```")[0]
+                    )
+                    if """```json""" in kg_extraction
+                    else json.loads(kg_extraction)
                 )
-
                 llm_payload = kg_json.get("entities_and_triples", {})
 
                 # Extract triples with detailed logging
                 entities = extract_entities(llm_payload)
-
                 triples = extract_triples(llm_payload, entities)
+
                 # Create KG extraction object
                 return KGExtraction(entities=entities, triples=triples)
             except (

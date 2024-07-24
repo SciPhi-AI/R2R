@@ -67,9 +67,11 @@ class KGAgentSearchPipe(GeneratorPipe):
             formatted_prompt = self.prompt_provider.get_prompt(
                 "kg_agent", {"input": message}
             )
-            messages = self._get_message_payload(formatted_prompt)
+            messages = self.prompt_provider._get_message_payload(
+                task_prompt_name="kg_agent", task_inputs={"input": message}
+            )
 
-            result = self.llm_provider.get_completion(
+            result = await self.llm_provider.aget_completion(
                 messages=messages,
                 generation_config=kg_search_settings.agent_generation_config,
             )
@@ -90,14 +92,3 @@ class KGAgentSearchPipe(GeneratorPipe):
                 key="kg_agent_execution_result",
                 value=result,
             )
-
-    def _get_message_payload(self, message: str) -> dict:
-        return [
-            {
-                "role": "system",
-                "content": self.prompt_provider.get_prompt(
-                    self.config.system_prompt,
-                ),
-            },
-            {"role": "user", "content": message},
-        ]

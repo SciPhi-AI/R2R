@@ -50,9 +50,3 @@ class GeneratorPipe(AsyncPipe):
         **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:
         pass
-
-    @abstractmethod
-    def _get_message_payload(
-        self, message: str, *args: Any, **kwargs: Any
-    ) -> list:
-        pass

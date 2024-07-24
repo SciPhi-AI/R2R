@@ -24,7 +24,6 @@ class BaseRouter:
                     results = await func(*args, **kwargs)
                     if isinstance(results, StreamingResponse):
                         return results
-
                     return {"results": results}
                 except R2RException as re:
                     raise HTTPException(
@@ -62,7 +61,7 @@ class BaseRouter:
                     raise HTTPException(
                         status_code=500,
                         detail={
-                            "message": f"An error occurred during {func.__name__}",
+                            "message": f"An error '{e}' occurred during {func.__name__}",
                             "error": str(e),
                             "error_type": type(e).__name__,
                         },
