@@ -89,7 +89,7 @@ class PDFParserUnstructured(AsyncParser[DataType]):
         except ImportError:
             raise ValueError("Error, `pdfplumber` is required to run `PDFParserUnstructured`. Please install it using `pip install pdfplumber")
         
-    async def ingest(self, data, partition_strategy: str = "hi_res", chunking_strategy='by_title') -> AsyncGenerator[str, None]:
+    async def ingest(self, data: DataType, partition_strategy: str = "hi_res", chunking_strategy='by_title') -> AsyncGenerator[str, None]:
         
         # partition the pdf
         elements = self.partition_pdf(file = BytesIO(data), partition_strategy = partition_strategy, chunking_strategy = chunking_strategy)

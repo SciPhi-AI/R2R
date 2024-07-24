@@ -19,6 +19,8 @@ from r2r.base import (
     PipeType,
     generate_id_from_label,
 )
+
+from r2r import parsers
 from r2r.base.abstractions.exception import R2RDocumentProcessingError
 from r2r.base.pipes.base_pipe import AsyncPipe
 from r2r.parsers.media.audio_parser import AudioParser
@@ -98,8 +100,13 @@ class ParsingPipe(AsyncPipe):
             override_parsers = []
 
         # Apply overrides if specified
-        for parser_override in override_parsers.items():
-            self.parsers[parser_override['document_type']] = getattr('r2r.parsers', parser_override['parser'])
+        for parser_override in override_parsers:
+            parser_name = getattr(parsers, parser_override['parser'])
+
+            if parser_name:
+                self.parsers[parser_override['document_type']] = parser_name()
+
+            print(f"Overriding parser for {parser_override['document_type']} with {parser_override['parser']}")
 
         for doc_type, parser_infos in self.AVAILABLE_PARSERS.items():
             for parser_info in parser_infos:
