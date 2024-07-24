@@ -5,13 +5,14 @@ from .api.requests import (
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
     R2RDocumentsOverviewRequest,
+    R2RUsersOverviewRequest,
+)
+from .api.routes.ingestion import R2RIngestFilesRequest, R2RUpdateFilesRequest
+from .api.routes.management import R2RUpdatePromptRequest
+from .api.routes.retrieval import (
     R2REvalRequest,
-    R2RIngestFilesRequest,
     R2RRAGRequest,
     R2RSearchRequest,
-    R2RUpdateFilesRequest,
-    R2RUpdatePromptRequest,
-    R2RUsersOverviewRequest,
 )
 from .app import R2RApp
 from .assembly.builder import R2RBuilder

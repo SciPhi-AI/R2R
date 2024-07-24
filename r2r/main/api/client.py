@@ -23,15 +23,13 @@ from .requests import (
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
     R2RDocumentsOverviewRequest,
-    R2RIngestFilesRequest,
     R2RLogsRequest,
     R2RPrintRelationshipsRequest,
-    R2RRAGRequest,
-    R2RSearchRequest,
-    R2RUpdateFilesRequest,
-    R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
+from .routes.ingestion import R2RIngestFilesRequest, R2RUpdateFilesRequest
+from .routes.management import R2RUpdatePromptRequest
+from .routes.retrieval import R2RRAGRequest, R2RSearchRequest
 
 nest_asyncio.apply()
 

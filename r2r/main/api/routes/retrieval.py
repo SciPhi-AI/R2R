@@ -1,11 +1,34 @@
+from typing import Optional
+
 from fastapi import Depends
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from r2r.base import GenerationConfig, KGSearchSettings, VectorSearchSettings
 
 from ...engine import R2REngine
-from ..requests import R2REvalRequest, R2RRAGRequest, R2RSearchRequest
 from .base_router import BaseRouter
+
+
+class R2RSearchRequest(BaseModel):
+    query: str
+    vector_search_settings: Optional[dict] = None
+    kg_search_settings: Optional[dict] = None
+
+
+class R2RRAGRequest(BaseModel):
+    query: str
+    vector_search_settings: Optional[dict] = None
+    kg_search_settings: Optional[dict] = None
+    rag_generation_config: Optional[dict] = None
+    task_prompt_override: Optional[str] = None
+    include_title_if_available: Optional[bool] = True
+
+
+class R2REvalRequest(BaseModel):
+    query: str
+    context: str
+    completion: str
 
 
 class RetrievalRouter(BaseRouter):
