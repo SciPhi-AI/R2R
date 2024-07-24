@@ -23,10 +23,10 @@ class R2RApp:
         self.app = FastAPI()
 
         # Create routers with the engine
-        ingestion_router = management_base.IngestionRouter.build_router(
+        ingestion_router = ingestion_base.IngestionRouter.build_router(
             self.engine
         )
-        management_router = ingestion_base.ManagementRouter.build_router(
+        management_router = management_base.ManagementRouter.build_router(
             self.engine
         )
         retrieval_router = retrieval_base.RetrievalRouter.build_router(
