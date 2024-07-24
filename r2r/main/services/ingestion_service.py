@@ -193,7 +193,6 @@ class IngestionService(Service):
             *args,
             **kwargs,
         )
-
         return await self._process_ingestion_results(
             ingestion_results,
             document_infos,

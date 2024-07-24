@@ -63,6 +63,7 @@ __all__ = [
     "JSONParser",
     "MDParser",
     "PDFParser",
+    "PDFParserUnstructured",
     "PPTParser",
     "TextParser",
     "XLSXParser",
