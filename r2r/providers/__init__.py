@@ -9,7 +9,7 @@ from .embeddings import (
 )
 from .eval import LLMEvalProvider
 from .kg import Neo4jKGProvider
-from .llm import LiteLLM, OpenAILLM
+from .llm import LiteLLMProvider, OpenAILLMProvider
 from .prompts import R2RPromptProvider
 
 __all__ = [
@@ -23,7 +23,7 @@ __all__ = [
     "SentenceTransformerEmbeddingProvider",
     "LLMEvalProvider",
     "Neo4jKGProvider",
-    "OpenAILLM",
-    "LiteLLM",
+    "OpenAILLMProvider",
+    "LiteLLMProvider",
     "R2RPromptProvider",
 ]

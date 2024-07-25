@@ -15,7 +15,7 @@ from r2r.base.abstractions.llm import GenerationConfig
 logger = logging.getLogger(__name__)
 
 
-class OpenAILLM(LLMProvider):
+class OpenAILLMProvider(LLMProvider):
     """A concrete class for creating OpenAI models."""
 
     def __init__(
@@ -32,11 +32,11 @@ class OpenAILLM(LLMProvider):
             from openai import AsyncOpenAI, OpenAI  # noqa
         except ImportError:
             raise ImportError(
-                "Error, `openai` is required to run an OpenAILLM. Please install it using `pip install openai`."
+                "Error, `openai` is required to run an OpenAILLMProvider. Please install it using `pip install openai`."
             )
         if config.provider != "openai":
             raise ValueError(
-                "OpenAILLM must be initialized with config with `openai` provider."
+                "OpenAILLMProvider must be initialized with config with `openai` provider."
             )
         if not os.getenv("OPENAI_API_KEY"):
             raise ValueError(

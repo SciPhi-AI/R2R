@@ -39,6 +39,7 @@ class ImageParser(AsyncParser[DataType]):
             self.api_base,
         )
 
+
 class ImageParserLocal(AsyncParser[DataType]):
 
     def __init__(self):

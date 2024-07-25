@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field
@@ -59,3 +59,10 @@ class TokenData(BaseModel):
     email: Optional[str] = None
     token_type: Optional[str] = None
     exp: Optional[datetime] = None
+
+
+class UserStats(BaseModel):
+    user_id: UUID
+    num_files: int
+    total_size_in_bytes: int
+    document_ids: List[UUID]

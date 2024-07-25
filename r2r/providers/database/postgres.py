@@ -17,12 +17,12 @@ from r2r.base import (
     RelationalDatabaseProvider,
     User,
     UserCreate,
-    UserStats,
     VectorDatabaseProvider,
     VectorEntry,
     VectorSearchResult,
     generate_id_from_label,
 )
+from r2r.base.abstractions.user import UserStats
 
 from .vecs import Client, Collection, create_client
 

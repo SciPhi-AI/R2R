@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 if TYPE_CHECKING:
     from .search import AggregateSearchResult
 
+
 LLMChatCompletion = ChatCompletion
 LLMChatCompletionChunk = ChatCompletionChunk
 

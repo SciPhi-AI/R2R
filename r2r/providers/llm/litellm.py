@@ -14,8 +14,8 @@ from r2r.base.abstractions.llm import GenerationConfig
 logger = logging.getLogger(__name__)
 
 
-class LiteLLM(LLMProvider):
-    """A concrete class for creating LiteLLM models with request throttling."""
+class LiteLLMProvider(LLMProvider):
+    """A concrete class for creating LiteLLMProvider models with request throttling."""
 
     def __init__(
         self,
@@ -133,7 +133,7 @@ class LiteLLM(LLMProvider):
         generation_config: GenerationConfig,
         prompt=None,
     ) -> dict:
-        """Get the base arguments for the LiteLLM API."""
+        """Get the base arguments for the LiteLLMProvider API."""
         args = {
             "model": generation_config.model,
             "temperature": generation_config.temperature,

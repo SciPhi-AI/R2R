@@ -1,7 +1,7 @@
-from .litellm import LiteLLM
-from .openai import OpenAILLM
+from .litellm import LiteLLMProvider
+from .openai import OpenAILLMProvider
 
 __all__ = [
-    "LiteLLM",
-    "OpenAILLM",
+    "LiteLLMProvider",
+    "OpenAILLMProvider",
 ]
