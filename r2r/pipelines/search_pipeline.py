@@ -54,7 +54,6 @@ class SearchPipeline(AsyncPipeline):
         )
         run_manager = run_manager or self.run_manager
         async with manage_run(run_manager, self.pipeline_type) as run_id:
-            print("search_pipeline.py: runid = ", run_id)
             if log_run_info:
                 await run_manager.log_run_info(
                     key="pipeline_type",

@@ -1,6 +1,6 @@
 import json
 from abc import ABCMeta, abstractmethod
-from typing import Any, Optional
+from typing import Any, AsyncGenerator, Generator, Optional
 
 from r2r.base import (
     Assistant,
@@ -32,7 +32,6 @@ class BaseR2RAssistant(Assistant, metaclass=CombinedMeta):
 
         if messages:
             for message in messages:
-                print("message = ", message)
                 self.conversation.add_message(message)
 
         while not self._completed:
@@ -120,22 +119,48 @@ class R2RStreamingAssistant(BaseR2RAssistant):
     def is_streaming(self) -> bool:
         return True
 
+    async def arun(
+        self,
+        system_instruction: Optional[str] = None,
+        messages: Optional[list[Message]] = None,
+    ) -> AsyncGenerator[str, None]:
+        messages_have_system_instruction = not (
+            messages and "system" in messages
+        )
+        if system_instruction or messages_have_system_instruction:
+            self._completed = False
+            self._setup(system_instruction)
+
+        if messages:
+            for message in messages:
+                self.conversation.add_message(message)
+
+        while not self._completed:
+            generation_config_with_functions = self.get_generation_config()
+            async for chunk in self.get_and_process_response(
+                generation_config_with_functions
+            ):
+                yield chunk
+
+    def run(self, *args, **kwargs) -> AsyncGenerator[str, None]:
+        return self.arun(*args, **kwargs)
+
     async def get_and_process_response(
         self, generation_config: GenerationConfig
-    ) -> str:
+    ) -> Generator[str, None, None]:
         stream = self.llm_provider.get_completion_stream(
             self.conversation.get_messages(),
             generation_config,
         )
-        return await self.process_llm_response(stream)
+        async for chunk in self.process_llm_response(stream):
+            yield chunk
 
-    async def process_llm_response(self, stream):
+    async def process_llm_response(self, stream) -> Generator[str, None, None]:
         function_name = None
         function_arguments = ""
-        content = ""
+        content_buffer = ""
 
         for chunk in stream:
-            print("chunk = ", chunk)
             delta = chunk.choices[0].delta
 
             if delta.function_call:
@@ -144,11 +169,37 @@ class R2RStreamingAssistant(BaseR2RAssistant):
                 if delta.function_call.arguments:
                     function_arguments += delta.function_call.arguments
             elif delta.content:
-                content += delta.content
+                content_buffer += delta.content
+                yield delta.content
 
-        if function_name:
-            return await self.handle_function_call(
-                function_name, function_arguments
-            )
-        else:
-            return self.handle_content_response(content)
+            if chunk.choices[0].finish_reason == "function_call":
+                tool_result = await self.handle_function_call(
+                    function_name, function_arguments
+                )
+                function_name = None
+                function_arguments = ""
+
+            elif chunk.choices[0].finish_reason == "stop":
+                if content_buffer:
+                    self.handle_content_response(content_buffer)
+                self._completed = True
+
+    async def handle_function_call(
+        self, function_name: str, function_arguments: str
+    ) -> str:
+        tool_args = json.loads(function_arguments)
+        self.conversation.create_and_add_message(
+            "assistant",
+            function_call={
+                "name": function_name,
+                "arguments": function_arguments,
+            },
+        )
+        tool_result = await self.execute_tool(function_name, **tool_args)
+        self.conversation.create_and_add_message(
+            "function", content=tool_result, name=function_name
+        )
+        return tool_result
+
+    def handle_content_response(self, content: str) -> None:
+        self.conversation.create_and_add_message("assistant", content=content)
