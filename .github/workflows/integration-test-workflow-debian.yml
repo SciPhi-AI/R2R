@@ -39,11 +39,11 @@ jobs:
       run: docker pull pgvector/pgvector:pg16
 
     - name: Create Docker network
-      run: docker network create r2r-network
+      run: docker network create sciphi-network
 
     - name: Start Postgres
       run: |
-        docker run -d --name postgres --network r2r-network \
+        docker run -d --name postgres --network sciphi-network \
           -e POSTGRES_USER=postgres \
           -e POSTGRES_PASSWORD=postgres \
           -e POSTGRES_DB=postgres \
@@ -51,7 +51,7 @@ jobs:
 
     - name: Start R2R
       run: |
-        docker run -d --name r2r --network r2r-network \
+        docker run -d --name r2r --network sciphi-network \
           -e PYTHONUNBUFFERED=1 \
           -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
           -e POSTGRES_USER=postgres \
@@ -109,5 +109,5 @@ jobs:
       run: |
         docker stop r2r postgres
         docker rm r2r postgres
-        docker network rm r2r-network
+        docker network rm sciphi-network
         docker system prune -af --volumes
