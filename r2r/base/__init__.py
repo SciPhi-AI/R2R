@@ -1,3 +1,4 @@
+from .abstractions.assistant import Assistant, AssistantConfig, Tool
 from .abstractions.base import AsyncSyncMeta, UserStats, syncable
 from .abstractions.document import (
     DataType,
@@ -96,6 +97,9 @@ __all__ = [
     "RedisLoggingConfig",
     "AsyncSyncMeta",
     "syncable",
+    "Assistant",
+    "AssistantConfig",
+    "Tool",
     "RedisKVLoggingProvider",
     "KVLoggingSingleton",
     "RunManager",

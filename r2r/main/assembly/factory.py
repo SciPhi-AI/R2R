@@ -172,13 +172,13 @@ class R2RProviderFactory:
     ) -> LLMProvider:
         llm_provider: Optional[LLMProvider] = None
         if llm_config.provider == "openai":
-            from r2r.providers import OpenAILLM
+            from r2r.providers import OpenAILLMProvider
 
-            llm_provider = OpenAILLM(llm_config)
+            llm_provider = OpenAILLMProvider(llm_config)
         elif llm_config.provider == "litellm":
-            from r2r.providers import LiteLLM
+            from r2r.providers import LiteLLMProvider
 
-            llm_provider = LiteLLM(llm_config)
+            llm_provider = LiteLLMProvider(llm_config)
         else:
             raise ValueError(
                 f"Language model provider {llm_config.provider} not supported"
