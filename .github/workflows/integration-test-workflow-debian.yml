@@ -8,14 +8,14 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: self-hosted
+    runs-on: [ self-hosted, Linux ]
 
     steps:
     - uses: actions/checkout@v3
 
     - name: Set up Python virtual environment
       run: |
-        python -m venv $HOME/r2r_venv
+        python3 -m venv $HOME/r2r_venv
         echo "$HOME/r2r_venv/bin" >> $GITHUB_PATH
 
     - name: Activate virtual environment and install R2R
