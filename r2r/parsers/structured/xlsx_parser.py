@@ -67,11 +67,8 @@ class XLSXParserAdvanced(AsyncParser[DataType]):
         workbook = self.load_workbook(data)
 
         for ws in workbook.worksheets:
-            print(ws.title)
             ws_data = self.np.array([[cell.value for cell in row] for row in ws.iter_rows()])
             for table in self.connected_components(ws_data):
-
-                print(table)
 
                 # parse like a csv parser, assumes that the first row has column names
                 if len(table)<=1:

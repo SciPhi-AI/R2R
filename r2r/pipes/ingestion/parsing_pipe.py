@@ -31,7 +31,7 @@ from r2r.parsers.media.pdf_parser import PDFParser, PDFParserUnstructured
 from r2r.parsers.media.ppt_parser import PPTParser
 from r2r.parsers.structured.csv_parser import CSVParser, CSVParserAdvanced
 from r2r.parsers.structured.json_parser import JSONParser
-from r2r.parsers.structured.xlsx_parser import XLSXParser
+from r2r.parsers.structured.xlsx_parser import XLSXParser, XLSXParserAdvanced
 from r2r.parsers.text.html_parser import HTMLParser
 from r2r.parsers.text.md_parser import MDParser
 from r2r.parsers.text.text_parser import TextParser
@@ -57,7 +57,7 @@ class ParsingPipe(AsyncPipe):
         DocumentType.PDF: [PDFParser, PDFParserUnstructured],
         DocumentType.PPTX: [PPTParser],
         DocumentType.TXT: [TextParser],
-        DocumentType.XLSX: [XLSXParser],
+        DocumentType.XLSX: [XLSXParser, XLSXParserAdvanced],
         DocumentType.GIF: [ImageParser],
         DocumentType.JPEG: [ImageParser],
         DocumentType.JPG: [ImageParser],

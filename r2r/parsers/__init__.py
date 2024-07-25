@@ -6,7 +6,7 @@ from .media.pdf_parser import PDFParser, PDFParserLocal, PDFParserUnstructured, 
 from .media.ppt_parser import PPTParser
 from .structured.csv_parser import CSVParser, CSVParserAdvanced
 from .structured.json_parser import JSONParser
-from .structured.xlsx_parser import XLSXParser
+from .structured.xlsx_parser import XLSXParser, XLSXParserAdvanced
 from .text.html_parser import HTMLParser
 from .text.md_parser import MDParser
 from .text.text_parser import TextParser
@@ -29,4 +29,5 @@ __all__ = [
     "CSVParserAdvanced",
     "JSONParser",
     "XLSXParser",
+    "XLSXParserAdvanced"
 ]
