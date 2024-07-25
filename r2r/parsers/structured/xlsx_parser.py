@@ -64,7 +64,7 @@ class XLSXParserAdvanced(AsyncParser[DataType]):
         if isinstance(data, str):
             raise ValueError("XLSX data must be in bytes format.")
         
-        workbook = self.load_workbook(data)
+        workbook = self.load_workbook(filename=BytesIO(data))
 
         for ws in workbook.worksheets:
             ws_data = self.np.array([[cell.value for cell in row] for row in ws.iter_rows()])
