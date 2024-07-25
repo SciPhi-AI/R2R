@@ -45,7 +45,7 @@ class XLSXParserAdvanced(AsyncParser[DataType]):
 
         except ImportError:
             raise ValueError(
-                "Error, `networkx` and `pandas` are required to run `XLSXParserAdvanced`. Please install them using `pip install networkx pandas`."
+                "Error, `networkx` and `numpy` are required to run `XLSXParserAdvanced`. Please install them using `pip install networkx numpy`."
             )
 
     def connected_components(self, arr):
