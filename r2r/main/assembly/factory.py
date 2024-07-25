@@ -587,14 +587,15 @@ class R2RAssistantFactory:
     def create_assistants(
         self,
         rag_assistant_override: Optional[RAGAssistant] = None,
+        stream_rag_assistant_override: Optional[StreamingRAGAssistant] = None,
         *args,
         **kwargs,
     ) -> R2RAssistants:
         return R2RAssistants(
             rag_assistant=rag_assistant_override
             or self.create_rag_assistant(*args, **kwargs),
-            streaming_rag_assistant=rag_assistant_override
-            or self.create_rag_assistant(*args, **kwargs),
+            streaming_rag_assistant=stream_rag_assistant_override
+            or self.create_rag_assistant(*args, **kwargs, stream=True),
         )
 
     def create_rag_assistant(
