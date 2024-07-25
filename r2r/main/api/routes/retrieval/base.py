@@ -2,10 +2,14 @@ from fastapi import Depends
 from fastapi.responses import StreamingResponse
 
 from r2r.base import GenerationConfig, KGSearchSettings, VectorSearchSettings
+from r2r.main.api.routes.retrieval.requests import (
+    R2REvalRequest,
+    R2RRAGRequest,
+    R2RSearchRequest,
+)
 
-from ...engine import R2REngine
-from ..requests import R2REvalRequest, R2RRAGRequest, R2RSearchRequest
-from .base_router import BaseRouter
+from ....engine import R2REngine
+from ..base_router import BaseRouter
 
 
 class RetrievalRouter(BaseRouter):

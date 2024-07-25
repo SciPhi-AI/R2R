@@ -1,4 +1,4 @@
-.env*
+.env
 .DS_Store
 *.gguf
 logs/
@@ -15,5 +15,3 @@ coverage.xml
 
 **/*.sqlite*
 **/*.sqlite3*
-
-r2r/examples/data/*

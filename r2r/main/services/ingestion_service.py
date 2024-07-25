@@ -23,7 +23,10 @@ from r2r.base import (
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RPipelines, R2RProviders
-from ..api.requests import R2RIngestFilesRequest, R2RUpdateFilesRequest
+from ..api.routes.ingestion.requests import (
+    R2RIngestFilesRequest,
+    R2RUpdateFilesRequest,
+)
 from ..assembly.config import R2RConfig
 from .base import Service
 
@@ -193,7 +196,6 @@ class IngestionService(Service):
             *args,
             **kwargs,
         )
-
         return await self._process_ingestion_results(
             ingestion_results,
             document_infos,

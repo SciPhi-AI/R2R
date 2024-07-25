@@ -301,7 +301,9 @@ class R2RPipeFactory:
         return R2RPipes(
             parsing_pipe=parsing_pipe_override
             or self.create_parsing_pipe(
-                self.config.ingestion.get("excluded_parsers"), *args, **kwargs
+                self.config.ingestion.get("excluded_parsers"), 
+                self.config.ingestion.get("override_parsers"), 
+                *args, **kwargs
             ),
             embedding_pipe=embedding_pipe_override
             or self.create_embedding_pipe(*args, **kwargs),
@@ -323,11 +325,14 @@ class R2RPipeFactory:
         )
 
     def create_parsing_pipe(
-        self, excluded_parsers: Optional[list] = None, *args, **kwargs
+        self, 
+        excluded_parsers: Optional[list] = None, 
+        override_parsers: Optional[list] = None,
+        *args, **kwargs
     ) -> Any:
         from r2r.pipes import ParsingPipe
 
-        return ParsingPipe(excluded_parsers=excluded_parsers or [])
+        return ParsingPipe(excluded_parsers=excluded_parsers or [], override_parsers=override_parsers or [])
 
     def create_embedding_pipe(self, *args, **kwargs) -> Any:
         if self.config.embedding.provider is None:
