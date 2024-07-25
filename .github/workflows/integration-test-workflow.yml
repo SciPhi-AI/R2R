@@ -6,12 +6,6 @@ on:
   pull_request:
   workflow_dispatch:
 
-env:
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: postgres
-  POSTGRES_DBNAME: postgres
-  CONFIG_NAME: vecs
-
 jobs:
   build-and-test:
     runs-on: self-hosted
@@ -32,18 +26,19 @@ jobs:
     - name: Start containers
       run: |
         docker run -d --name postgres --network r2r-network \
-          -e POSTGRES_USER=${POSTGRES_USER} \
-          -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
-          -e POSTGRES_DB=${POSTGRES_DBNAME} \
+          -e POSTGRES_USER=${POSTGRES_USER:-postgres} \
+          -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres} \
+          -e POSTGRES_DB=${POSTGRES_DBNAME:-postgres} \
           pgvector/pgvector:pg16
 
         docker run -d --name r2r --network r2r-network \
-          -e POSTGRES_USER=${POSTGRES_USER} \
-          -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
+          -e PYTHONUNBUFFERED=1 \
+          -e POSTGRES_USER=${POSTGRES_USER:-postgres} \
+          -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres} \
           -e POSTGRES_HOST=postgres \
           -e POSTGRES_PORT=5432 \
-          -e POSTGRES_DBNAME=${POSTGRES_DBNAME} \
-          -e POSTGRES_VECS_COLLECTION=${CONFIG_NAME} \
+          -e POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres} \
+          -e POSTGRES_VECS_COLLECTION=${POSTGRES_VECS_COLLECTION:-${CONFIG_NAME:-vecs}} \
           -p 8000:8000 \
           emrgntcmplxty/r2r:${GITHUB_SHA}
 
