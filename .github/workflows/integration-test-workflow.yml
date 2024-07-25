@@ -49,7 +49,7 @@ jobs:
           -e POSTGRES_DB=postgres \
           pgvector/pgvector:pg16
 
-    - name: Start R2R and capture logs
+    - name: Start R2R
       run: |
         docker run -d --name r2r --network r2r-network \
           -e PYTHONUNBUFFERED=1 \
@@ -63,13 +63,49 @@ jobs:
           -p 8000:8000 \
           emrgntcmplxty/r2r:${{ github.sha }}
 
+        sleep 30
+
     - name: Run integration tests
       run: |
         echo "R2R Version"
         r2r version
 
-        echo "Ingest Files"
+        echo "Ingest Data"
         r2r ingest-sample-files
+
+        echo "Get Documents Overview"
+        r2r documents-overview
+
+        echo "Get Document Chunks"
+        r2r document-chunks 93123a68-d668-51de-8291-92162730dc87
+
+        echo "Delete Documents"
+        r2r delete --keys=document_id --values=b736292c-11e6-5453-9686-055da3edb866
+
+        echo "Vector Search"
+        r2r search --query="What was Uber's profit in 2020?"
+
+        echo "Hybrid Search"
+        r2r search --query="What is a fierce nerd?" --do-hybrid-search
+
+        ehco "Basic RAG"
+        r2r rag --query="What was Uber's profit in 2020?"
+
+        echo "RAG with Hybrid Search"
+        r2r rag --query="Who is John Snow?" --do-hybrid-search
+
+        echo "Streaming RAG"
+        r2r rag --query="What was Lyft's profit in 2020?" --stream
+
+        echo "Users Overview"
+        r2r users-overview
+
+        echo "Logging"
+        r2r logs
+
+        echo "Analytics"
+        r2r analytics --filters '{"search_latencies": "search_latency"}' --analysis-types '{"search_latencies": ["basic_statistics", "search_latency"]}'
+
 
     - name: Clean up
       if: always()
