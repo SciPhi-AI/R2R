@@ -141,6 +141,7 @@ class FragmentType(Enum):
 
     TEXT = "text"
     IMAGE = "image"
+    TABLE = "table"
 
 
 class Fragment(BaseModel):

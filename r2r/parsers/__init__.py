@@ -4,7 +4,7 @@ from .media.img_parser import ImageParser
 from .media.movie_parser import MovieParser
 from .media.pdf_parser import PDFParser
 from .media.ppt_parser import PPTParser
-from .structured.csv_parser import CSVParser
+from .structured.csv_parser import CSVParser, CSVParserAdvanced
 from .structured.json_parser import JSONParser
 from .structured.xlsx_parser import XLSXParser
 from .text.html_parser import HTMLParser
@@ -22,6 +22,7 @@ __all__ = [
     "HTMLParser",
     "TextParser",
     "CSVParser",
+    "CSVParserAdvanced",
     "JSONParser",
     "XLSXParser",
 ]

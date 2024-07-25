@@ -27,7 +27,7 @@ from r2r.parsers.media.img_parser import ImageParser
 from r2r.parsers.media.movie_parser import MovieParser
 from r2r.parsers.media.pdf_parser import PDFParser
 from r2r.parsers.media.ppt_parser import PPTParser
-from r2r.parsers.structured.csv_parser import CSVParser
+from r2r.parsers.structured.csv_parser import CSVParser, CSVParserAdvanced
 from r2r.parsers.structured.json_parser import JSONParser
 from r2r.parsers.structured.xlsx_parser import XLSXParser
 from r2r.parsers.text.html_parser import HTMLParser

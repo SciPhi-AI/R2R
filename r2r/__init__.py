@@ -58,6 +58,7 @@ __all__ = [
     # Parsers
     "AsyncParser",
     "CSVParser",
+    "CSVParserAdvanced",
     "DOCXParser",
     "HTMLParser",
     "JSONParser",
