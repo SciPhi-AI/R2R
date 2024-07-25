@@ -17,6 +17,13 @@ jobs:
       run: |
         docker build -t emrgntcmplxty/r2r:${{ github.sha }} .
 
+    - name: Build R2R Docker image
+      run: |
+        docker build \
+        --build-arg GITHUB_SHA=${{ github.sha }} \
+        --build-arg GITHUB_REF=${{ github.ref }} \
+        -t emrgntcmplxty/r2r:${{ github.sha }} .
+
     - name: Pull pgvector image
       run: docker pull pgvector/pgvector:pg16
 
