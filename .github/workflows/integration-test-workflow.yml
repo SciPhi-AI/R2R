@@ -33,7 +33,7 @@ jobs:
 
         docker run -d --name r2r --network r2r-network \
           -e PYTHONUNBUFFERED=1 \
-          -e OPENAI_API_KEY=${${{ secrets.OPENAI_API_KEY }}} \
+          -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
           -e POSTGRES_USER=${POSTGRES_USER:-postgres} \
           -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres} \
           -e POSTGRES_HOST=postgres \
