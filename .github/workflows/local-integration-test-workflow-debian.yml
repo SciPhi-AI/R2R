@@ -15,12 +15,12 @@ jobs:
 
     - name: Set up Python virtual environment
       run: |
-        python3 -m venv $HOME/r2r_venv
-        echo "$HOME/r2r_venv/bin" >> $GITHUB_PATH
+        python3 -m venv $HOME/r2r_local_venv
+        echo "$HOME/r2r_local_venv/bin" >> $GITHUB_PATH
 
     - name: Activate virtual environment and install R2R
       run: |
-        . $HOME/r2r_venv/bin/activate
+        . $HOME/r2r_local_venv/bin/activate
         pip install --upgrade pip
         pip install --upgrade r2r
 
@@ -30,8 +30,8 @@ jobs:
 
     - name: Install Ollama Models
       run: |
-        docker exec -it r2r-ollama-1 ollama pull llama3
-        docker exec -it r2r-ollama-1 ollama pull mxbai-embed-large
+        docker exec r2r-ollama-1 ollama pull llama3
+        docker exec r2r-ollama-1 ollama pull mxbai-embed-large
 
     - name: Run integration tests
       run: |
