@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from asyncio import Queue
-from copy import copy
 from typing import Any, Optional
 
 from ..base.abstractions.search import (

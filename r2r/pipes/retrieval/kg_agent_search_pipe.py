@@ -64,9 +64,6 @@ class KGAgentSearchPipe(GeneratorPipe):
     ):
         async for message in input.message:
             # TODO - Remove hard code
-            formatted_prompt = self.prompt_provider.get_prompt(
-                "kg_agent", {"input": message}
-            )
             messages = self.prompt_provider._get_message_payload(
                 task_prompt_name="kg_agent", task_inputs={"input": message}
             )
