@@ -80,12 +80,12 @@ class KGAgentSearchPipe(GeneratorPipe):
 
             await self.enqueue_log(
                 run_id=run_id,
-                key="kg_agent_response",
+                key="kg_search_response",
                 value=extraction,
             )
 
             await self.enqueue_log(
                 run_id=run_id,
-                key="kg_agent_execution_result",
+                key="kg_search_execution_result",
                 value=result,
             )

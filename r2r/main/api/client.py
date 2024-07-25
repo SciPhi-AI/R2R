@@ -282,7 +282,7 @@ class R2RClient:
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
-        kg_agent_generation_config: Optional[dict] = None,
+        kg_search_generation_config: Optional[dict] = None,
     ) -> dict:
         self._ensure_authenticated()
 
@@ -296,7 +296,7 @@ class R2RClient:
             },
             kg_search_settings={
                 "use_kg_search": use_kg_search,
-                "agent_generation_config": kg_agent_generation_config,
+                "agent_generation_config": kg_search_generation_config,
             },
         )
         return self._make_request(
@@ -311,7 +311,7 @@ class R2RClient:
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
-        kg_agent_generation_config: Optional[dict] = None,
+        kg_search_generation_config: Optional[dict] = None,
         rag_generation_config: Optional[dict] = None,
         task_prompt_override: Optional[str] = None,
     ) -> dict:
@@ -327,7 +327,7 @@ class R2RClient:
             },
             kg_search_settings={
                 "use_kg_search": use_kg_search,
-                "agent_generation_config": kg_agent_generation_config,
+                "agent_generation_config": kg_search_generation_config,
             },
             rag_generation_config=rag_generation_config,
             task_prompt_override=task_prompt_override,

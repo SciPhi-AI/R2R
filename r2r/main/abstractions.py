@@ -44,7 +44,7 @@ class R2RPipes(BaseModel):
     eval_pipe: Optional[AsyncPipe]
     kg_pipe: Optional[AsyncPipe]
     kg_storage_pipe: Optional[AsyncPipe]
-    kg_agent_search_pipe: Optional[AsyncPipe]
+    kg_search_search_pipe: Optional[AsyncPipe]
 
     class Config:
         arbitrary_types_allowed = True
