@@ -429,9 +429,9 @@ class R2RPipeFactory:
         if self.config.kg.provider is None:
             return None
 
-        from r2r.pipes import KGAgentSearchPipe
+        from r2r.pipes import KGSearchSearchPipe
 
-        return KGAgentSearchPipe(
+        return KGSearchSearchPipe(
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,

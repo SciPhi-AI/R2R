@@ -103,7 +103,7 @@ __all__ = [
     "WebSearchPipe",
     "R2RBuilder",
     "R2R",
-    "KGAgentSearchPipe",
+    "KGSearchSearchPipe",
     # Prebuilts
     "MultiSearchPipe",
     "R2RPipeFactoryWithMultiSearch",
