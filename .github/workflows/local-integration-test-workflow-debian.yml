@@ -1,4 +1,4 @@
-name: Debian R2R Docker Build and Integration Test (Debian GNU/Linux 12 (bookworm) amd64)
+name: Debian R2R Docker Build and Integration Test Local (Debian GNU/Linux 12 (bookworm) amd64)
 
 on:
   push:
@@ -24,46 +24,14 @@ jobs:
         pip install --upgrade pip
         pip install --upgrade r2r
 
-    - name: Build R2R Docker image
+    - name: Run Docker with the Ollama Docker Extension
       run: |
-        docker build -t emrgntcmplxty/r2r:${{ github.sha }} .
+        r2r --config-name=local_ollama serve --docker --docker-ext-ollama
 
-    - name: Build R2R Docker image
+    - name: Install Ollama Models
       run: |
-        docker build \
-        --build-arg GITHUB_SHA=${{ github.sha }} \
-        --build-arg GITHUB_REF=${{ github.ref }} \
-        -t emrgntcmplxty/r2r:${{ github.sha }} .
-
-    - name: Pull pgvector image
-      run: docker pull pgvector/pgvector:pg16
-
-    - name: Create Docker network
-      run: docker network create r2r-network
-
-    - name: Start Postgres
-      run: |
-        docker run -d --name postgres --network r2r-network \
-          -e POSTGRES_USER=postgres \
-          -e POSTGRES_PASSWORD=postgres \
-          -e POSTGRES_DB=postgres \
-          pgvector/pgvector:pg16
-
-    - name: Start R2R
-      run: |
-        docker run -d --name r2r --network r2r-network \
-          -e PYTHONUNBUFFERED=1 \
-          -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
-          -e POSTGRES_USER=postgres \
-          -e POSTGRES_PASSWORD=postgres \
-          -e POSTGRES_HOST=postgres \
-          -e POSTGRES_PORT=5432 \
-          -e POSTGRES_DBNAME=postgres \
-          -e POSTGRES_VECS_COLLECTION=vecs \
-          -p 8000:8000 \
-          emrgntcmplxty/r2r:${{ github.sha }}
-
-        sleep 10
+        docker exec -it r2r-ollama-1 ollama pull llama3
+        docker exec -it r2r-ollama-1 ollama pull mxbai-embed-large
 
     - name: Run integration tests
       run: |
@@ -71,7 +39,7 @@ jobs:
         r2r version
 
         echo "Ingest Data"
-        r2r ingest-sample-files
+        r2r ingest-sample-file
 
         echo "Get Documents Overview"
         r2r documents-overview
@@ -103,11 +71,11 @@ jobs:
         echo "Logging"
         r2r logs
 
+        echo "Stop Docker"
+        r2r docker-down
+
 
     - name: Clean up
       if: always()
       run: |
-        docker stop r2r postgres
-        docker rm r2r postgres
-        docker network rm r2r-network
         docker system prune -af --volumes
