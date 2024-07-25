@@ -13,6 +13,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Upgrade pip and install R2R
+      run: |
+        pip3 install --upgrade pip
+        pip3 install --upgrade r2r
+
     - name: Build R2R Docker image
       run: |
         docker build -t emrgntcmplxty/r2r:${{ github.sha }} .
@@ -54,13 +59,11 @@ jobs:
 
     - name: Run integration tests
       run: |
-        echo "R2R Version:"
-        docker exec r2r r2r version
-
-    - name: Run integration tests
-      run: |
-        echo "R2R Version another way:"
+        echo "R2R Version"
         r2r version
+
+        echo "Ingest Files"
+        r2r ingest-sample-files
 
     - name: Clean up
       if: always()
