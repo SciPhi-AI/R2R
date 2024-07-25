@@ -23,7 +23,7 @@ jobs:
     - name: Create Docker network
       run: docker network create r2r-network
 
-    - name: Start containers
+    - name: Start Postgres
       run: |
         docker run -d --name postgres --network r2r-network \
           -e POSTGRES_USER=postgres \
@@ -31,6 +31,11 @@ jobs:
           -e POSTGRES_DB=postgres \
           pgvector/pgvector:pg16
 
+    - name: Ensure Postgres is ready
+      run: timeout 60s bash -c 'until docker exec postgres pg_isready -h localhost -U ${POSTGRES_USER:-postgres}; do sleep 5; done'
+
+    - name: Start R2R
+      run: |
         docker run -d --name r2r --network r2r-network \
           -e PYTHONUNBUFFERED=1 \
           -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
@@ -41,12 +46,11 @@ jobs:
           -e POSTGRES_DBNAME=postgres \
           -e POSTGRES_VECS_COLLECTION=vecs \
           -p 8000:8000 \
-          emrgntcmplxty/r2r:${GITHUB_SHA}
+          emrgntcmplxty/r2r:${{ github.sha }}
 
-    - name: Ensure containers are ready
+    - name: Ensure R2R is ready
       run: |
-        timeout 60s bash -c 'until docker exec postgres pg_isready -h localhost -U ${POSTGRES_USER:-postgres}; do sleep 5; done'
-        timeout 60s bash -c 'until docker exec r2r curl -s http://localhost:8000/healthcheck/ | grep "OK"; do sleep 5; done'
+        timeout 60s bash -c 'until docker exec r2r curl -s http://localhost:8000/v1/health | grep "ok"; do sleep 5; done'
 
     - name: Run integration tests
       run: |
