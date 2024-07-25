@@ -49,7 +49,7 @@ class ParsingPipe(AsyncPipe):
         message: AsyncGenerator[Document, None]
 
     AVAILABLE_PARSERS = {
-        DocumentType.CSV: [CSVParser],
+        DocumentType.CSV: [CSVParser, CSVParserAdvanced],
         DocumentType.DOCX: [DOCXParser],
         DocumentType.HTML: [HTMLParser],
         DocumentType.JSON: [JSONParser],
