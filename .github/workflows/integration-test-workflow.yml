@@ -103,9 +103,6 @@ jobs:
         echo "Logging"
         r2r logs
 
-        echo "Analytics"
-        r2r analytics --filters '{"search_latencies": "search_latency"}' --analysis-types '{"search_latencies": ["basic_statistics", "search_latency"]}'
-
 
     - name: Clean up
       if: always()
