@@ -26,20 +26,20 @@ jobs:
     - name: Start containers
       run: |
         docker run -d --name postgres --network r2r-network \
-          -e POSTGRES_USER=${POSTGRES_USER:-postgres} \
-          -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres} \
-          -e POSTGRES_DB=${POSTGRES_DBNAME:-postgres} \
+          -e POSTGRES_USER=postgres \
+          -e POSTGRES_PASSWORD=postgres \
+          -e POSTGRES_DB=postgres \
           pgvector/pgvector:pg16
 
         docker run -d --name r2r --network r2r-network \
           -e PYTHONUNBUFFERED=1 \
           -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
-          -e POSTGRES_USER=${POSTGRES_USER:-postgres} \
-          -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres} \
+          -e POSTGRES_USER=postgres \
+          -e POSTGRES_PASSWORD=postgres \
           -e POSTGRES_HOST=postgres \
           -e POSTGRES_PORT=5432 \
-          -e POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres} \
-          -e POSTGRES_VECS_COLLECTION=${POSTGRES_VECS_COLLECTION:-${CONFIG_NAME:-vecs}} \
+          -e POSTGRES_DBNAME=postgres \
+          -e POSTGRES_VECS_COLLECTION=vecs \
           -p 8000:8000 \
           emrgntcmplxty/r2r:${GITHUB_SHA}
 
