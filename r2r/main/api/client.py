@@ -30,7 +30,11 @@ from .routes.management.requests import (
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
-from .routes.retrieval.requests import R2RRAGRequest, R2RSearchRequest
+from .routes.retrieval.requests import (
+    R2RRAGChatRequest,
+    R2RRAGRequest,
+    R2RSearchRequest,
+)
 
 nest_asyncio.apply()
 
@@ -296,7 +300,7 @@ class R2RClient:
             },
             kg_search_settings={
                 "use_kg_search": use_kg_search,
-                "agent_generation_config": kg_search_generation_config,
+                "kg_search_generation_config": kg_search_generation_config,
             },
         )
         return self._make_request(
@@ -327,7 +331,7 @@ class R2RClient:
             },
             kg_search_settings={
                 "use_kg_search": use_kg_search,
-                "agent_generation_config": kg_search_generation_config,
+                "kg_search_generation_config": kg_search_generation_config,
             },
             rag_generation_config=rag_generation_config,
             task_prompt_override=task_prompt_override,
@@ -501,6 +505,77 @@ class R2RClient:
         self.access_token = None
         self._refresh_token = None
         return response
+
+    def rag_chat(
+        self,
+        messages: list[dict],
+        use_vector_search: bool = True,
+        search_filters: Optional[dict[str, Any]] = {},
+        search_limit: int = 10,
+        do_hybrid_search: bool = False,
+        use_kg_search: bool = False,
+        kg_search_generation_config: Optional[dict] = None,
+        rag_generation_config: Optional[dict] = None,
+        task_prompt_override: Optional[str] = None,
+    ) -> dict:
+        self._ensure_authenticated()
+
+        request = R2RRAGChatRequest(
+            messages=messages,
+            vector_search_settings={
+                "use_vector_search": use_vector_search,
+                "search_filters": search_filters or {},
+                "search_limit": search_limit,
+                "do_hybrid_search": do_hybrid_search,
+            },
+            kg_search_settings={
+                "use_kg_search": use_kg_search,
+                "kg_search_generation_config": kg_search_generation_config,
+            },
+            rag_generation_config=rag_generation_config,
+            task_prompt_override=task_prompt_override,
+        )
+
+        if rag_generation_config and rag_generation_config.get(
+            "stream", False
+        ):
+            return self._stream_rag_chat_sync(request)
+        else:
+            return self._make_request(
+                "POST", "rag_chat", json=json.loads(request.json())
+            )
+
+    async def _stream_rag_chat(
+        self, rag_chat_request: R2RRAGChatRequest
+    ) -> AsyncGenerator[str, None]:
+        url = f"{self.base_url}{self.prefix}/rag_chat"
+        async with httpx.AsyncClient() as client:
+            async with client.stream(
+                "POST", url, json=json.loads(rag_chat_request.json())
+            ) as response:
+                handle_request_error(response)
+                async for chunk in response.aiter_text():
+                    yield chunk
+
+    def _stream_rag_chat_sync(
+        self, rag_chat_request: R2RRAGChatRequest
+    ) -> Generator[str, None, None]:
+        async def run_async_generator():
+            async for chunk in self._stream_rag_chat(rag_chat_request):
+                yield chunk
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        async_gen = run_async_generator()
+
+        try:
+            while True:
+                yield loop.run_until_complete(async_gen.__anext__())
+        except StopAsyncIteration:
+            pass
+        finally:
+            loop.close()
 
 
 if __name__ == "__main__":

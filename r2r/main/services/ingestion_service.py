@@ -22,7 +22,7 @@ from r2r.base import (
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RPipelines, R2RProviders
+from ..abstractions import R2RAssistants, R2RPipelines, R2RProviders
 from ..api.routes.ingestion.requests import (
     R2RIngestFilesRequest,
     R2RUpdateFilesRequest,
@@ -40,11 +40,17 @@ class IngestionService(Service):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
+        assistants: R2RAssistants,
         run_manager: RunManager,
         logging_connection: KVLoggingSingleton,
     ):
         super().__init__(
-            config, providers, pipelines, run_manager, logging_connection
+            config,
+            providers,
+            pipelines,
+            assistants,
+            run_manager,
+            logging_connection,
         )
 
     def _file_to_document(

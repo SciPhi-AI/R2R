@@ -31,17 +31,37 @@ class R2REngine(metaclass=AsyncSyncMeta):
         self.run_manager = run_manager
 
         self.ingestion_service = IngestionService(
-            config, providers, pipelines, run_manager, logging_connection
+            config,
+            providers,
+            pipelines,
+            assistants,
+            run_manager,
+            logging_connection,
         )
         self.retrieval_service = RetrievalService(
-            config, providers, pipelines, run_manager, logging_connection
+            config,
+            providers,
+            pipelines,
+            assistants,
+            run_manager,
+            logging_connection,
         )
         self.management_service = ManagementService(
-            config, providers, pipelines, run_manager, logging_connection
+            config,
+            providers,
+            pipelines,
+            assistants,
+            run_manager,
+            logging_connection,
         )
 
         self.auth_service = AuthService(
-            config, providers, pipelines, run_manager, logging_connection
+            config,
+            providers,
+            pipelines,
+            assistants,
+            run_manager,
+            logging_connection,
         )
 
     @syncable
@@ -67,6 +87,10 @@ class R2REngine(metaclass=AsyncSyncMeta):
     @syncable
     async def arag(self, *args, **kwargs):
         return await self.retrieval_service.rag(*args, **kwargs)
+
+    @syncable
+    async def arag_chat(self, *args, **kwargs):
+        return await self.retrieval_service.rag_chat(*args, **kwargs)
 
     @syncable
     async def aevaluate(self, *args, **kwargs):

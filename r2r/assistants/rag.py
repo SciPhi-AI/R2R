@@ -5,6 +5,7 @@ from r2r.base import (
     LLMProvider,
     PromptProvider,
     Tool,
+    VectorSearchSettings,
     to_async_generator,
 )
 from r2r.pipelines import SearchPipeline
@@ -46,8 +47,13 @@ class RAGAssistant(R2RAssistant):
         # Call the parent constructor with the updated config
         super().__init__(llm_provider, prompt_provider, config)
 
-    async def asearch(self, query: str) -> str:
-        response = await self.search_pipeline.run(to_async_generator([query]))
+    async def asearch(
+        self, query: str, vector_search_settings: VectorSearchSettings
+    ) -> str:
+        response = await self.search_pipeline.run(
+            to_async_generator([query]),
+            vector_search_settings=vector_search_settings,
+        )
         results = ""
         for i, result in enumerate(response.vector_search_results):
             text = result.metadata.get("text", "N/A")
@@ -92,8 +98,13 @@ class StreamingRAGAssistant(R2RStreamingAssistant):
         config.stream = True
         super().__init__(llm_provider, prompt_provider, config)
 
-    async def asearch(self, query: str) -> str:
-        response = await self.search_pipeline.run(to_async_generator([query]))
+    async def asearch(
+        self, query: str, vector_search_settings: VectorSearchSettings
+    ) -> str:
+        response = await self.search_pipeline.run(
+            to_async_generator([query]),
+            vector_search_settings=vector_search_settings,
+        )
         results = ""
         for i, result in enumerate(response.vector_search_results):
             text = result.metadata.get("text", "N/A")

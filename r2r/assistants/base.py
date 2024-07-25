@@ -6,7 +6,9 @@ from r2r.base import (
     Assistant,
     AsyncSyncMeta,
     GenerationConfig,
+    LLMChatCompletion,
     Message,
+    VectorSearchSettings,
     syncable,
 )
 
@@ -22,7 +24,10 @@ class BaseR2RAssistant(Assistant, metaclass=CombinedMeta):
         self,
         system_instruction: Optional[str] = None,
         messages: Optional[list[Message]] = None,
-    ) -> str:
+        vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
+        *args,
+        **kwargs,
+    ) -> list[LLMChatCompletion]:
         messages_have_system_instruction = not (
             messages and "system" in messages
         )
@@ -36,12 +41,11 @@ class BaseR2RAssistant(Assistant, metaclass=CombinedMeta):
 
         while not self._completed:
             generation_config_with_functions = self.get_generation_config()
-            result = await self.get_and_process_response(
-                generation_config_with_functions
+            await self.get_and_process_response(
+                generation_config_with_functions, vector_search_settings
             )
 
-            if self._completed:
-                return result
+        return self.conversation.messages
 
     def get_generation_config(self) -> GenerationConfig:
         return GenerationConfig(
@@ -70,8 +74,12 @@ class BaseR2RAssistant(Assistant, metaclass=CombinedMeta):
         pass
 
     async def handle_function_call(
-        self, function_name: str, function_arguments: str
+        self,
+        function_name: str,
+        function_arguments: str,
+        vector_search_settings: VectorSearchSettings,
     ) -> str:
+
         tool_args = json.loads(function_arguments)
         self.conversation.create_and_add_message(
             "assistant",
@@ -80,16 +88,27 @@ class BaseR2RAssistant(Assistant, metaclass=CombinedMeta):
                 "arguments": function_arguments,
             },
         )
-        tool_result = await self.execute_tool(function_name, **tool_args)
+
+        if function_name == "search":
+            tool_result = await self.asearch(
+                **tool_args, vector_search_settings=vector_search_settings
+            )
+        else:
+            tool_result = await self.execute_tool(function_name, **tool_args)
+
         self.conversation.create_and_add_message(
             "function", content=tool_result, name=function_name
         )
         return await self.arun()  # Continue the conversation
 
-    def handle_content_response(self, content: str) -> str:
-        self.conversation.create_and_add_message("assistant", content=content)
+    def handle_content_response(
+        self, response: LLMChatCompletion
+    ) -> LLMChatCompletion:
+        self.conversation.create_and_add_message(
+            "assistant", content=response.choices[0].message.content
+        )
         self._completed = True
-        return content
+        return response
 
 
 class R2RAssistant(BaseR2RAssistant):
@@ -97,22 +116,34 @@ class R2RAssistant(BaseR2RAssistant):
         return False
 
     async def get_and_process_response(
-        self, generation_config: GenerationConfig
+        self,
+        generation_config: GenerationConfig,
+        vector_search_settings: VectorSearchSettings,
     ) -> str:
+        print("conversation:", self.conversation.get_messages())
         response = await self.llm_provider.aget_completion(
             self.conversation.get_messages(),
             generation_config,
         )
-        return await self.process_llm_response(response)
+        print("response:", response)
+        return await self.process_llm_response(
+            response, vector_search_settings
+        )
 
-    async def process_llm_response(self, response: dict[str, Any]) -> str:
+    async def process_llm_response(
+        self,
+        response: dict[str, Any],
+        vector_search_settings: VectorSearchSettings,
+    ) -> str:
         message = response.choices[0].message
         if message.function_call:
             return await self.handle_function_call(
-                message.function_call.name, message.function_call.arguments
+                message.function_call.name,
+                message.function_call.arguments,
+                vector_search_settings,
             )
         else:
-            return self.handle_content_response(message.content)
+            return self.handle_content_response(response)
 
 
 class R2RStreamingAssistant(BaseR2RAssistant):
@@ -123,7 +154,10 @@ class R2RStreamingAssistant(BaseR2RAssistant):
         self,
         system_instruction: Optional[str] = None,
         messages: Optional[list[Message]] = None,
-    ) -> AsyncGenerator[str, None]:
+        vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
+        *args,
+        **kwargs,
+    ) -> AsyncGenerator[LLMChatCompletion, None]:
         messages_have_system_instruction = not (
             messages and "system" in messages
         )
@@ -137,30 +171,30 @@ class R2RStreamingAssistant(BaseR2RAssistant):
 
         while not self._completed:
             generation_config_with_functions = self.get_generation_config()
-            async for chunk in self.get_and_process_response(
-                generation_config_with_functions
+            async for chunk in await self.get_and_process_response(
+                generation_config_with_functions, vector_search_settings
             ):
                 yield chunk
 
-    def run(self, *args, **kwargs) -> AsyncGenerator[str, None]:
-        return self.arun(*args, **kwargs)
-
     async def get_and_process_response(
-        self, generation_config: GenerationConfig
-    ) -> Generator[str, None, None]:
+        self,
+        generation_config: GenerationConfig,
+        vector_search_settings: VectorSearchSettings,
+    ) -> AsyncGenerator[str, None]:
         stream = self.llm_provider.get_completion_stream(
             self.conversation.get_messages(),
             generation_config,
         )
-        async for chunk in self.process_llm_response(stream):
-            yield chunk
+        return self.process_llm_response(stream, vector_search_settings)
 
-    async def process_llm_response(self, stream) -> Generator[str, None, None]:
+    async def process_llm_response(
+        self, stream, vector_search_settings: VectorSearchSettings
+    ) -> AsyncGenerator[str, None]:
         function_name = None
         function_arguments = ""
         content_buffer = ""
 
-        for chunk in stream:
+        async for chunk in self._iterate_stream(stream):
             delta = chunk.choices[0].delta
 
             if delta.function_call:
@@ -173,9 +207,10 @@ class R2RStreamingAssistant(BaseR2RAssistant):
                 yield delta.content
 
             if chunk.choices[0].finish_reason == "function_call":
-                tool_result = await self.handle_function_call(
-                    function_name, function_arguments
-                )
+                async for result in self.handle_function_call(
+                    function_name, function_arguments, vector_search_settings
+                ):
+                    yield result
                 function_name = None
                 function_arguments = ""
 
@@ -184,9 +219,20 @@ class R2RStreamingAssistant(BaseR2RAssistant):
                     self.handle_content_response(content_buffer)
                 self._completed = True
 
+    async def _iterate_stream(self, stream):
+        if hasattr(stream, "__aiter__"):
+            async for chunk in stream:
+                yield chunk
+        else:
+            for chunk in stream:
+                yield chunk
+
     async def handle_function_call(
-        self, function_name: str, function_arguments: str
-    ) -> str:
+        self,
+        function_name: str,
+        function_arguments: str,
+        vector_search_settings: VectorSearchSettings,
+    ) -> AsyncGenerator[str, None]:
         tool_args = json.loads(function_arguments)
         self.conversation.create_and_add_message(
             "assistant",
@@ -195,11 +241,195 @@ class R2RStreamingAssistant(BaseR2RAssistant):
                 "arguments": function_arguments,
             },
         )
-        tool_result = await self.execute_tool(function_name, **tool_args)
+        if function_name == "search":
+            tool_result = await self.asearch(
+                **tool_args, vector_search_settings=vector_search_settings
+            )
+        else:
+            tool_result = await self.execute_tool(function_name, **tool_args)
+
         self.conversation.create_and_add_message(
             "function", content=tool_result, name=function_name
         )
-        return tool_result
+        yield tool_result
 
     def handle_content_response(self, content: str) -> None:
         self.conversation.create_and_add_message("assistant", content=content)
+
+    # async def get_and_process_response(
+    #     self, generation_config: GenerationConfig, vector_search_settings: VectorSearchSettings
+    # ) -> AsyncGenerator[LLMChatCompletion, None]:
+    #     stream = self.llm_provider.get_completion_stream(
+    #         self.conversation.get_messages(),
+    #         generation_config,
+    #     )
+
+    #     # Check if the stream is an async generator or a regular generator
+    #     if hasattr(stream, '__aiter__'):
+    #         # It's an async generator, we can use it directly
+    #         async for chunk in stream:
+    #             yield from self.process_llm_response(chunk, vector_search_settings)
+    #     else:
+    #         # It's a regular generator, we need to wrap it
+    #         for chunk in stream:
+    #             yield from self.process_llm_response(chunk, vector_search_settings)
+
+    # # async def get_and_process_response(
+    # #     self, generation_config: GenerationConfig, vector_search_settings: VectorSearchSettings
+    # # ) -> AsyncGenerator[LLMChatCompletion, None]:
+    # #     stream = self.llm_provider.get_completion_stream(
+    # #         self.conversation.get_messages(),
+    # #         generation_config,
+    # #     )
+    # #     for chunk in stream:
+    # #         yield chunk
+
+    # async def process_llm_response(self, stream: AsyncGenerator[LLMChatCompletion, None], vector_search_settings: VectorSearchSettings) -> AsyncGenerator[LLMChatCompletion, None]:
+    #     function_name = None
+    #     function_arguments = ""
+    #     content_buffer = ""
+
+    #     async for chunk in stream:
+    #         delta = chunk.choices[0].delta
+
+    #         if delta.function_call:
+    #             if delta.function_call.name:
+    #                 function_name = delta.function_call.name
+    #             if delta.function_call.arguments:
+    #                 function_arguments += delta.function_call.arguments
+    #         elif delta.content:
+    #             content_buffer += delta.content
+    #             yield chunk
+
+    #         if chunk.choices[0].finish_reason == "function_call":
+    #             await self.handle_function_call(
+    #                 function_name, function_arguments, vector_search_settings=vector_search_settings
+    #             )
+    #             function_name = None
+    #             function_arguments = ""
+
+    #         elif chunk.choices[0].finish_reason == "stop":
+    #             if content_buffer:
+    #                 self.handle_content_response(content_buffer)
+    #             self._completed = True
+
+    # async def handle_function_call(
+    #     self, function_name: str, function_arguments: str, vector_search_settings: VectorSearchSettings
+    # ) -> None:
+    #     tool_args = json.loads(function_arguments)
+    #     self.conversation.create_and_add_message(
+    #         "assistant",
+    #         function_call={
+    #             "name": function_name,
+    #             "arguments": function_arguments,
+    #         },
+    #     )
+    #     if function_name == "search":
+    #         tool_result = await self.asearch(**tool_args, vector_search_settings=vector_search_settings)
+    #     else:
+    #         tool_result = await self.execute_tool(function_name, **tool_args)
+
+    #     self.conversation.create_and_add_message(
+    #         "function", content=tool_result, name=function_name
+    #     )
+    #     # We don't return or yield anything here, as we'll continue the conversation in the main loop
+
+    # def handle_content_response(self, content: str) -> None:
+    #     self.conversation.create_and_add_message("assistant", content=content)
+
+
+# class R2RStreamingAssistant(BaseR2RAssistant):
+#     def is_streaming(self) -> bool:
+#         return True
+
+#     async def arun(
+#         self,
+#         system_instruction: Optional[str] = None,
+#         messages: Optional[list[Message]] = None,
+#         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
+#         *args,
+#         **kwargs,
+#     ) -> AsyncGenerator[str, None]:
+#         messages_have_system_instruction = not (
+#             messages and "system" in messages
+#         )
+#         if system_instruction or messages_have_system_instruction:
+#             self._completed = False
+#             self._setup(system_instruction)
+
+#         if messages:
+#             for message in messages:
+#                 self.conversation.add_message(message)
+
+#         while not self._completed:
+#             generation_config_with_functions = self.get_generation_config()
+#             async for chunk in self.get_and_process_response(
+#                 generation_config_with_functions, vector_search_settings
+#             ):
+#                 yield chunk
+
+#     def run(self, *args, **kwargs) -> AsyncGenerator[str, None]:
+#         return self.arun(*args, **kwargs)
+
+#     async def get_and_process_response(
+#         self, generation_config: GenerationConfig, vector_search_settings: VectorSearchSettings
+#     ) -> Generator[str, None, None]:
+#         stream = self.llm_provider.get_completion_stream(
+#             self.conversation.get_messages(),
+#             generation_config,
+#         )
+#         async for chunk in self.process_llm_response(stream, vector_search_settings):
+#             yield chunk
+
+#     async def process_llm_response(self, stream: bool, vector_search_settings: VectorSearchSettings) -> Generator[str, None, None]:
+#         function_name = None
+#         function_arguments = ""
+#         content_buffer = ""
+
+#         for chunk in stream:
+#             delta = chunk.choices[0].delta
+
+#             if delta.function_call:
+#                 if delta.function_call.name:
+#                     function_name = delta.function_call.name
+#                 if delta.function_call.arguments:
+#                     function_arguments += delta.function_call.arguments
+#             elif delta.content:
+#                 content_buffer += delta.content
+#                 yield delta.content
+
+#             if chunk.choices[0].finish_reason == "function_call":
+#                 tool_result = await self.handle_function_call(
+#                     function_name, function_arguments, vector_search_settings=vector_search_settings
+#                 )
+#                 function_name = None
+#                 function_arguments = ""
+
+#             elif chunk.choices[0].finish_reason == "stop":
+#                 if content_buffer:
+#                     self.handle_content_response(content_buffer)
+#                 self._completed = True
+
+#     # async def handle_function_call(
+#     #     self, function_name: str, function_arguments: str, vector_search_settings: VectorSearchSettings
+#     # ) -> str:
+#     #     tool_args = json.loads(function_arguments)
+#     #     self.conversation.create_and_add_message(
+#     #         "assistant",
+#     #         function_call={
+#     #             "name": function_name,
+#     #             "arguments": function_arguments,
+#     #         },
+#     #     )
+#     #     if function_name == "search":
+#     #         tool_result = await self.asearch(**tool_args, vector_search_settings=vector_search_settings)
+#     #     else:
+#     #         tool_result = await self.execute_tool(function_name, **tool_args)
+
+#     #     self.conversation.create_and_add_message(
+#     #         "function", content=tool_result, name=function_name
+#     #     )
+#     #     return tool_result
+
+#     def handle_content_response(self, content: str) -> None:
+#         self.conversation.create_and_add_message("assistant", content=content)

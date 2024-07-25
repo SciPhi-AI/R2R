@@ -79,6 +79,6 @@ class VectorSearchSettings(BaseModel):
 
 class KGSearchSettings(BaseModel):
     use_kg_search: bool = False
-    agent_generation_config: Optional[GenerationConfig] = Field(
+    kg_search_generation_config: Optional[GenerationConfig] = Field(
         default_factory=GenerationConfig
     )

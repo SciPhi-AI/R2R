@@ -87,6 +87,8 @@ class Assistant(ABC):
         self,
         system_instruction: Optional[str] = None,
         messages: Optional[list[Message]] = None,
+        *args,
+        **kwargs,
     ):
         pass
 

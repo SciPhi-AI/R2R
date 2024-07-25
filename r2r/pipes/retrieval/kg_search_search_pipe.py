@@ -70,7 +70,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             result = await self.llm_provider.aget_completion(
                 messages=messages,
-                generation_config=kg_search_settings.agent_generation_config,
+                generation_config=kg_search_settings.kg_search_generation_config,
             )
 
             extraction = result.choices[0].message.content
