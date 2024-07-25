@@ -4,12 +4,14 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 from pydantic import BaseModel, Field
 
 from ..providers.llm import GenerationConfig, LLMProvider
+from ..providers.prompt import PromptProvider
 
 
 class Tool(BaseModel):
     name: str
     description: str
     function: Callable
+    parameters: Optional[Dict[str, Any]] = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -47,7 +49,7 @@ class Conversation:
 
 
 class AssistantConfig(BaseModel):
-    system_instruction: str
+    system_instruction_name: str = "rag_assistant"
     tools: List[Tool] = Field(default_factory=list)
     generation_config: GenerationConfig = GenerationConfig()
 
@@ -55,27 +57,31 @@ class AssistantConfig(BaseModel):
 class Assistant(ABC):
     def __init__(
         self,
-        instructions: str,
         llm_provider: LLMProvider,
+        prompt_provider: PromptProvider,
         config: AssistantConfig,
     ):
-        self.instructions = instructions
         self.llm_provider = llm_provider
+        self.prompt_provider = prompt_provider
         self.config = config
         self.conversation = Conversation()
         self.completed = False
         self._setup()
 
     def _setup(self):
-        self.conversation.add_message("system", self.config.system_instruction)
-        self.conversation.add_message("system", self.instructions)
+        self.conversation.add_message(
+            "system",
+            self.prompt_provider.get_prompt(
+                self.config.system_instruction_name
+            ),
+        )
 
     @property
     def tools(self) -> Sequence[Tool]:
         return self.config.tools
 
     @abstractmethod
-    async def run(self) -> str:
+    async def arun(self) -> str:
         pass
 
     @abstractmethod
@@ -84,11 +90,6 @@ class Assistant(ABC):
 
     def add_user_message(self, content: str):
         self.conversation.add_message("user", content)
-
-    async def search(self, query: str) -> str:
-        # Implement the search functionality here
-        # This could involve calling an external search API or querying a local database
-        return f"Simulated search results for: {query}"
 
     async def execute_tool(self, tool_name: str, **kwargs) -> str:
         tool = next((t for t in self.tools if t.name == tool_name), None)
