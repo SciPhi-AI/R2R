@@ -50,6 +50,9 @@ jobs:
     - name: Check container status
       run: docker ps -a
 
+    - name: Check R2R container logs
+      run: docker logs r2r
+
     - name: Wait for containers to be ready
       run: |
         timeout 60s bash -c 'until docker exec postgres pg_isready -U ${POSTGRES_USER}; do sleep 5; done'
