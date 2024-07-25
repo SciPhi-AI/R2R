@@ -1,3 +1,4 @@
+from .abstractions.assistant import Assistant, AssistantConfig, Tool
 from .abstractions.base import AsyncSyncMeta, UserStats, syncable
 from .abstractions.document import (
     DataType,
@@ -18,9 +19,13 @@ from .abstractions.embedding import EmbeddingPurpose
 from .abstractions.exception import R2RDocumentProcessingError, R2RException
 from .abstractions.llama_abstractions import VectorStoreQuery
 from .abstractions.llm import (
+    FunctionCall,
     GenerationConfig,
     LLMChatCompletion,
     LLMChatCompletionChunk,
+    LLMChatMessage,
+    LLMConversation,
+    LLMIterationResult,
     RAGCompletion,
 )
 from .abstractions.prompt import Prompt
@@ -96,6 +101,10 @@ __all__ = [
     "RedisLoggingConfig",
     "AsyncSyncMeta",
     "syncable",
+    "Assistant",
+    "AssistantConfig",
+    "Tool",
+    "FunctionCall",
     "RedisKVLoggingProvider",
     "KVLoggingSingleton",
     "RunManager",
@@ -147,10 +156,13 @@ __all__ = [
     "PromptConfig",
     "PromptProvider",
     "GenerationConfig",
+    "LLMChatMessage",
     "RAGCompletion",
     "VectorStoreQuery",
     "LLMChatCompletion",
     "LLMChatCompletionChunk",
+    "LLMConversation",
+    "LLMIterationResult",
     "LLMConfig",
     "LLMProvider",
     "AuthConfig",
