@@ -15,7 +15,7 @@ jobs:
 
     - name: Set up Python virtual environment
       run: |
-        python3 -m venv $HOME/r2r_local_venv
+        python -m venv $HOME/r2r_local_venv
         echo "$HOME/r2r_local_venv/bin" >> $GITHUB_PATH
 
     - name: Activate virtual environment and install R2R
