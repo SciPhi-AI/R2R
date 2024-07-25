@@ -92,7 +92,7 @@ class R2RBuilder:
         self.eval_pipe_override: Optional[AsyncPipe] = None
         self.kg_pipe_override: Optional[AsyncPipe] = None
         self.kg_storage_pipe_override: Optional[AsyncPipe] = None
-        self.kg_agent_pipe_override: Optional[AsyncPipe] = None
+        self.kg_search_pipe_override: Optional[AsyncPipe] = None
 
         # Pipeline overrides
         self.ingestion_pipeline: Optional[IngestionPipeline] = None
@@ -191,8 +191,8 @@ class R2RBuilder:
         self.kg_storage_pipe_override = pipe
         return self
 
-    def with_kg_agent_pipe(self, pipe: AsyncPipe):
-        self.kg_agent_pipe_override = pipe
+    def with_kg_search_pipe(self, pipe: AsyncPipe):
+        self.kg_search_pipe_override = pipe
         return self
 
     # Pipeline override methods
@@ -252,7 +252,7 @@ class R2RBuilder:
             eval_pipe_override=self.eval_pipe_override,
             kg_pipe_override=self.kg_pipe_override,
             kg_storage_pipe_override=self.kg_storage_pipe_override,
-            kg_agent_pipe_override=self.kg_agent_pipe_override,
+            kg_search_pipe_override=self.kg_search_pipe_override,
             *args,
             **kwargs,
         )

@@ -291,7 +291,7 @@ class R2RPipeFactory:
         embedding_pipe_override: Optional[AsyncPipe] = None,
         kg_pipe_override: Optional[AsyncPipe] = None,
         kg_storage_pipe_override: Optional[AsyncPipe] = None,
-        kg_agent_pipe_override: Optional[AsyncPipe] = None,
+        kg_search_pipe_override: Optional[AsyncPipe] = None,
         vector_storage_pipe_override: Optional[AsyncPipe] = None,
         vector_search_pipe_override: Optional[AsyncPipe] = None,
         rag_pipe_override: Optional[AsyncPipe] = None,
@@ -313,8 +313,8 @@ class R2RPipeFactory:
             kg_pipe=kg_pipe_override or self.create_kg_pipe(*args, **kwargs),
             kg_storage_pipe=kg_storage_pipe_override
             or self.create_kg_storage_pipe(*args, **kwargs),
-            kg_agent_search_pipe=kg_agent_pipe_override
-            or self.create_kg_agent_pipe(*args, **kwargs),
+            kg_search_search_pipe=kg_search_pipe_override
+            or self.create_kg_search_pipe(*args, **kwargs),
             vector_storage_pipe=vector_storage_pipe_override
             or self.create_vector_storage_pipe(*args, **kwargs),
             vector_search_pipe=vector_search_pipe_override
@@ -425,13 +425,13 @@ class R2RPipeFactory:
             embedding_provider=self.providers.embedding,
         )
 
-    def create_kg_agent_pipe(self, *args, **kwargs) -> Any:
+    def create_kg_search_pipe(self, *args, **kwargs) -> Any:
         if self.config.kg.provider is None:
             return None
 
-        from r2r.pipes import KGAgentSearchPipe
+        from r2r.pipes import KGSearchSearchPipe
 
-        return KGAgentSearchPipe(
+        return KGSearchSearchPipe(
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
@@ -504,7 +504,7 @@ class R2RPipelineFactory:
         # Add KG pipes if provider is set
         if self.config.kg.provider is not None:
             search_pipeline.add_pipe(
-                self.pipes.kg_agent_search_pipe, kg_pipe=True
+                self.pipes.kg_search_search_pipe, kg_pipe=True
             )
 
         return search_pipeline

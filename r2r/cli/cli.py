@@ -318,12 +318,12 @@ def search(
     search_limit,
     do_hybrid_search,
     use_kg_search,
-    kg_agent_model,
+    kg_search_model,
 ):
     """Perform a search query."""
-    kg_agent_generation_config = {}
-    if kg_agent_model:
-        kg_agent_generation_config["model"] = kg_agent_model
+    kg_search_generation_config = {}
+    if kg_search_model:
+        kg_search_generation_config["model"] = kg_search_model
 
     t0 = time.time()
 
@@ -334,7 +334,7 @@ def search(
         search_limit,
         do_hybrid_search,
         use_kg_search,
-        kg_agent_generation_config,
+        kg_search_generation_config,
     )
 
     if isinstance(results, dict) and "results" in results:
@@ -378,14 +378,14 @@ def rag(
     search_limit,
     do_hybrid_search,
     use_kg_search,
-    kg_agent_model,
+    kg_search_model,
     stream,
     rag_model,
 ):
     """Perform a RAG query."""
-    kg_agent_generation_config = {}
-    if kg_agent_model:
-        kg_agent_generation_config = {"model": kg_agent_model}
+    kg_search_generation_config = {}
+    if kg_search_model:
+        kg_search_generation_config = {"model": kg_search_model}
     rag_generation_config = {"stream": stream}
     if rag_model:
         rag_generation_config["model"] = rag_model
@@ -398,7 +398,7 @@ def rag(
         search_limit,
         do_hybrid_search,
         use_kg_search,
-        kg_agent_generation_config,
+        kg_search_generation_config,
         stream,
         rag_generation_config,
     )

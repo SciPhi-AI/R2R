@@ -202,7 +202,7 @@ class R2RExecutionWrapper:
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
-        kg_agent_generation_config: Optional[dict] = None,
+        kg_search_generation_config: Optional[dict] = None,
     ):
         if self.client_mode:
             return self.client.search(
@@ -212,7 +212,7 @@ class R2RExecutionWrapper:
                 search_limit,
                 do_hybrid_search,
                 use_kg_search,
-                kg_agent_generation_config,
+                kg_search_generation_config,
             )["results"]
         else:
             return self.app.search(
@@ -226,7 +226,7 @@ class R2RExecutionWrapper:
                 KGSearchSettings(
                     use_kg_search=use_kg_search,
                     agent_generation_config=GenerationConfig(
-                        **(kg_agent_generation_config or {})
+                        **(kg_search_generation_config or {})
                     ),
                 ),
             )
@@ -239,7 +239,7 @@ class R2RExecutionWrapper:
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
-        kg_agent_generation_config: Optional[dict] = None,
+        kg_search_generation_config: Optional[dict] = None,
         stream: bool = False,
         rag_generation_config: Optional[dict] = None,
     ):
@@ -251,7 +251,7 @@ class R2RExecutionWrapper:
                 search_limit=search_limit,
                 do_hybrid_search=do_hybrid_search,
                 use_kg_search=use_kg_search,
-                kg_agent_generation_config=kg_agent_generation_config,
+                kg_search_generation_config=kg_search_generation_config,
                 rag_generation_config=rag_generation_config,
             )
             if not stream:
@@ -271,7 +271,7 @@ class R2RExecutionWrapper:
                 kg_search_settings=KGSearchSettings(
                     use_kg_search=use_kg_search,
                     agent_generation_config=GenerationConfig(
-                        **(kg_agent_generation_config or {})
+                        **(kg_search_generation_config or {})
                     ),
                 ),
                 rag_generation_config=GenerationConfig(

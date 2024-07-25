@@ -17,7 +17,7 @@ from ..abstractions.generator_pipe import GeneratorPipe
 logger = logging.getLogger(__name__)
 
 
-class KGAgentSearchPipe(GeneratorPipe):
+class KGSearchSearchPipe(GeneratorPipe):
     """
     Embeds and stores documents using a specified embedding model and database.
     """
@@ -42,7 +42,7 @@ class KGAgentSearchPipe(GeneratorPipe):
             type=type,
             config=config
             or GeneratorPipe.Config(
-                name="kg_rag_pipe", task_prompt="kg_agent"
+                name="kg_rag_pipe", task_prompt="kg_search"
             ),
             pipe_logger=pipe_logger,
             *args,
@@ -65,7 +65,7 @@ class KGAgentSearchPipe(GeneratorPipe):
         async for message in input.message:
             # TODO - Remove hard code
             messages = self.prompt_provider._get_message_payload(
-                task_prompt_name="kg_agent", task_inputs={"input": message}
+                task_prompt_name="kg_search", task_inputs={"input": message}
             )
 
             result = await self.llm_provider.aget_completion(
@@ -80,12 +80,12 @@ class KGAgentSearchPipe(GeneratorPipe):
 
             await self.enqueue_log(
                 run_id=run_id,
-                key="kg_agent_response",
+                key="kg_search_response",
                 value=extraction,
             )
 
             await self.enqueue_log(
                 run_id=run_id,
-                key="kg_agent_execution_result",
+                key="kg_search_execution_result",
                 value=result,
             )
