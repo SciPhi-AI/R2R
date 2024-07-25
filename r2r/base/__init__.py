@@ -1,5 +1,5 @@
 from .abstractions.assistant import Assistant, AssistantConfig, Tool
-from .abstractions.base import AsyncSyncMeta, UserStats, syncable
+from .abstractions.base import AsyncSyncMeta, syncable
 from .abstractions.document import (
     DataType,
     Document,
@@ -34,7 +34,7 @@ from .abstractions.search import (
     VectorSearchResult,
     VectorSearchSettings,
 )
-from .abstractions.user import Token, TokenData, User, UserCreate
+from .abstractions.user import Token, TokenData, User, UserCreate, UserStats
 from .abstractions.vector import Vector, VectorEntry, VectorType
 from .logging.kv_logger import (
     KVLoggingSingleton,

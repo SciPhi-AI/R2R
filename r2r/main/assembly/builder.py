@@ -1,6 +1,7 @@
 import os
 from typing import Optional, Type
 
+from r2r.assistants import RAGAssistant
 from r2r.base import (
     AsyncPipe,
     AuthProvider,
@@ -23,7 +24,12 @@ from ..app import R2RApp
 from ..engine import R2REngine
 from ..r2r import R2R
 from .config import R2RConfig
-from .factory import R2RPipeFactory, R2RPipelineFactory, R2RProviderFactory
+from .factory import (
+    R2RAssistantFactory,
+    R2RPipeFactory,
+    R2RPipelineFactory,
+    R2RProviderFactory,
+)
 
 
 class R2RBuilder:
@@ -94,6 +100,10 @@ class R2RBuilder:
         self.rag_pipeline: Optional[RAGPipeline] = None
         self.streaming_rag_pipeline: Optional[RAGPipeline] = None
         self.eval_pipeline: Optional[EvalPipeline] = None
+
+        # Assistant overrides
+        self.assistant_factory_override: Optional[R2RAssistantFactory] = None
+        self.rag_assistant_override: Optional[RAGAssistant] = None
 
     def with_app(self, app: Type[R2REngine]):
         self.r2r_app_override = app
@@ -206,6 +216,14 @@ class R2RBuilder:
         self.eval_pipeline = pipeline
         return self
 
+    def with_assistant_factory(self, factory: R2RAssistantFactory):
+        self.assistant_factory_override = factory
+        return self
+
+    def with_rag_assistant(self, assistant: RAGAssistant):
+        self.rag_assistant_override = assistant
+        return self
+
     def build(self, *args, **kwargs) -> R2R:
         provider_factory = self.provider_factory_override or R2RProviderFactory
         pipe_factory = self.pipe_factory_override or R2RPipeFactory
@@ -249,8 +267,18 @@ class R2RBuilder:
             **kwargs,
         )
 
+        assistant_factory = (
+            self.assistant_factory_override
+            or R2RAssistantFactory(self.config, providers, pipelines)
+        )
+        assistants = assistant_factory.create_assistants(
+            rag_assistant_override=self.rag_assistant_override,
+            *args,
+            **kwargs,
+        )
+
         engine = (self.r2r_app_override or R2REngine)(
-            self.config, providers, pipelines
+            self.config, providers, pipelines, assistants
         )
         r2r_app = R2RApp(engine)
         return R2R(engine=engine, app=r2r_app)

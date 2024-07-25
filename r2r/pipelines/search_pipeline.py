@@ -52,6 +52,7 @@ class SearchPipeline(AsyncPipeline):
             self._kg_search_pipeline is not None
             and kg_search_settings.use_kg_search
         )
+        run_manager = run_manager or self.run_manager
         async with manage_run(run_manager, self.pipeline_type):
             if log_run_info:
                 await run_manager.log_run_info(
