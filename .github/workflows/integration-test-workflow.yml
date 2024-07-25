@@ -43,9 +43,9 @@ jobs:
           -p 8000:8000 \
           emrgntcmplxty/r2r:${GITHUB_SHA}
 
-    - name: Wait for containers to be ready
+    - name: Ensure containers are ready
       run: |
-        timeout 60s bash -c 'until docker exec postgres pg_isready -U ${POSTGRES_USER}; do sleep 5; done'
+        timeout 60s bash -c 'until docker exec postgres pg_isready -h localhost -U ${POSTGRES_USER:-postgres}; do sleep 5; done'
         timeout 60s bash -c 'until docker exec r2r curl -s http://localhost:8000/healthcheck/ | grep "OK"; do sleep 5; done'
 
     - name: Run integration tests
