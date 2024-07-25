@@ -38,9 +38,6 @@ jobs:
           -e POSTGRES_DB=postgres \
           pgvector/pgvector:pg16
 
-    - name: Ensure Postgres is ready
-      run: timeout 60s bash -c 'until docker exec postgres pg_isready -h localhost -U ${POSTGRES_USER:-postgres}; do sleep 5; done'
-
     - name: Start R2R and capture logs
       run: |
         docker run -d --name r2r --network r2r-network \
@@ -55,14 +52,15 @@ jobs:
           -p 8000:8000 \
           emrgntcmplxty/r2r:${{ github.sha }}
 
-    - name: Ensure R2R is ready
-      run: |
-        timeout 60s bash -c 'until docker exec r2r curl -s http://localhost:8000/v1/health | grep "ok"; do sleep 5; done'
-
     - name: Run integration tests
       run: |
         echo "R2R Version:"
         docker exec r2r r2r version
+
+    - name: Run integration tests
+      run: |
+        echo "R2R Version another way:"
+        r2r version
 
     - name: Clean up
       if: always()
