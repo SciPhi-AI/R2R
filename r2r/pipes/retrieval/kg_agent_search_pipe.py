@@ -42,7 +42,7 @@ class KGAgentSearchPipe(GeneratorPipe):
             type=type,
             config=config
             or GeneratorPipe.Config(
-                name="kg_rag_pipe", task_prompt="kg_agent"
+                name="kg_rag_pipe", task_prompt="kg_search"
             ),
             pipe_logger=pipe_logger,
             *args,
@@ -65,7 +65,7 @@ class KGAgentSearchPipe(GeneratorPipe):
         async for message in input.message:
             # TODO - Remove hard code
             messages = self.prompt_provider._get_message_payload(
-                task_prompt_name="kg_agent", task_inputs={"input": message}
+                task_prompt_name="kg_search", task_inputs={"input": message}
             )
 
             result = await self.llm_provider.aget_completion(
