@@ -27,3 +27,79 @@ class XLSXParser(AsyncParser[DataType]):
         for sheet in wb.worksheets:
             for row in sheet.iter_rows(values_only=True):
                 yield ", ".join(map(str, row))
+
+
+class XLSXParserAdvanced(AsyncParser[DataType]):
+    """A parser for XLSX data."""
+
+    # identifies connected components in the excel graph and extracts data from each component
+    def __init__(self):
+        try:
+            import networkx as nx
+            from openpyxl import load_workbook
+            import numpy as np
+
+            self.nx = nx
+            self.np = np
+            self.load_workbook = load_workbook
+
+        except ImportError:
+            raise ValueError(
+                "Error, `networkx` and `pandas` are required to run `XLSXParserAdvanced`. Please install them using `pip install networkx pandas`."
+            )
+
+    def connected_components(self, arr):
+        g = self.nx.grid_2d_graph(len(arr), len(arr[0]))
+        empty_cell_indices = list(zip(*self.np.where(arr == None)))
+        g.remove_nodes_from(empty_cell_indices)
+        components = self.nx.connected_components(g)
+        for component in components:
+            rows, cols = zip(*component)
+            min_row, max_row = min(rows), max(rows)
+            min_col, max_col = min(cols), max(cols)
+            yield arr[min_row:max_row+1, min_col:max_col+1].astype('str')
+
+    async def ingest(self, data: bytes, num_col_times_num_rows: int = 100) -> AsyncGenerator[str, None]:
+        """Ingest XLSX data and yield text from each connected component."""
+        if isinstance(data, str):
+            raise ValueError("XLSX data must be in bytes format.")
+        
+        workbook = self.load_workbook(data)
+
+        for ws in workbook.worksheets:
+            print(ws.title)
+            ws_data = self.np.array([[cell.value for cell in row] for row in ws.iter_rows()])
+            for table in self.connected_components(ws_data):
+
+                print(table)
+
+                # parse like a csv parser, assumes that the first row has column names
+                if len(table)<=1:
+                    continue
+
+                num_cols, num_rows = len(table[0]), len(table)
+                num_rows_per_chunk = num_col_times_num_rows // num_rows
+                headers = ", ".join(table[0])
+                # add header to each one
+                for i in range(1, num_rows, num_rows_per_chunk):
+                    chunk = table[i:i + num_rows_per_chunk]
+                    yield headers + '\n' + '\n'.join([", ".join(row) for row in chunk])
+
+# async def main():
+#     csv_file = '/Users/shreyas/parse_this.xlsx'
+#     parser = XLSXParserAdvanced()
+
+#     with open(csv_file, 'rb') as file:
+#         file_content = file.read()
+
+#     async for chunk in parser.ingest(BytesIO(file_content)):
+#         print("Chunk:")
+#         print(chunk)
+#         print("---")  # Separator between chunks
+
+#     import pdb; pdb.set_trace()
+
+
+# if __name__== '__main__':
+#     import asyncio
+#     out = asyncio.run(main())
