@@ -20,8 +20,8 @@ jobs:
 
     - name: Upgrade pip and install R2R
       run: |
-        pip3 install --upgrade pip
-        pip3 install --upgrade r2r
+        pip install --upgrade pip
+        pip install --upgrade r2r
 
     - name: Build R2R Docker image
       run: |
