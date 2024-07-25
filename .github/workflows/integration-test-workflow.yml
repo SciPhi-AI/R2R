@@ -55,32 +55,6 @@ jobs:
           -p 8000:8000 \
           emrgntcmplxty/r2r:${{ github.sha }}
 
-        # Start tailing logs immediately
-        docker logs -f r2r &
-
-        # Wait for up to 60 seconds for the health check to pass or the container to exit
-        timeout 60s bash -c '
-          while true; do
-            if docker exec r2r curl -s http://localhost:8000/v1/health | grep "ok"; then
-              echo "R2R is healthy"
-              exit 0
-            fi
-            if ! docker ps | grep -q r2r; then
-              echo "R2R container has exited"
-              exit 1
-            fi
-            sleep 5
-          done
-        '
-
-        # Capture the full logs after the wait period
-        echo "Full R2R logs:"
-        docker logs r2r
-
-
-    - name: View R2R container logs
-      run: docker logs r2r
-
     - name: Ensure R2R is ready
       run: |
         timeout 60s bash -c 'until docker exec r2r curl -s http://localhost:8000/v1/health | grep "ok"; do sleep 5; done'
