@@ -13,6 +13,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Set up Python virtual environment
+      run: |
+        python3 -m venv r2r_env
+        source r2r_env/bin/activate
+
     - name: Upgrade pip and install R2R
       run: |
         pip3 install --upgrade pip
