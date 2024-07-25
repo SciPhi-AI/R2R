@@ -47,6 +47,9 @@ jobs:
           -p 8000:8000 \
           emrgntcmplxty/r2r:${GITHUB_SHA}
 
+    - name: Check container status
+      run: docker ps -a
+
     - name: Wait for containers to be ready
       run: |
         timeout 60s bash -c 'until docker exec postgres pg_isready -U ${POSTGRES_USER}; do sleep 5; done'
