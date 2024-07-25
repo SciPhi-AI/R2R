@@ -58,10 +58,11 @@ class CSVParserAdvanced(AsyncParser[DataType]):
         """Ingest CSV data and yield text from each row."""
         if isinstance(data, bytes):
             data = data.decode("utf-8")
-        csv_reader = self.csv.reader(self.StringIO(data))
-        
         # let the first row be the header
-        delimiter = self.get_delimiter(data)
+        delimiter = self.get_delimiter(file = self.StringIO(data))
+        
+        csv_reader = self.csv.reader(self.StringIO(data), delimiter=delimiter)
+        
 
         header = next(csv_reader)
         num_cols = len(header.split(delimiter))
