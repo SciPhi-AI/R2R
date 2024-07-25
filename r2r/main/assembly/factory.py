@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Any, Optional
 
-from r2r.assistants import RAGAssistant
+from r2r.assistants import RAGAssistant, StreamingRAGAssistant
 from r2r.base import (
     AssistantConfig,
     AsyncPipe,
@@ -592,10 +592,14 @@ class R2RAssistantFactory:
     ) -> R2RAssistants:
         return R2RAssistants(
             rag_assistant=rag_assistant_override
-            or self.create_rag_assistant(*args, **kwargs)
+            or self.create_rag_assistant(*args, **kwargs),
+            streaming_rag_assistant=rag_assistant_override
+            or self.create_rag_assistant(*args, **kwargs),
         )
 
-    def create_rag_assistant(self, *args, **kwargs) -> RAGAssistant:
+    def create_rag_assistant(
+        self, stream: bool = False, *args, **kwargs
+    ) -> RAGAssistant:
         if not self.providers.llm or not self.providers.prompt:
             raise ValueError(
                 "LLM and Prompt providers are required for RAG Assistant"
@@ -605,13 +609,22 @@ class R2RAssistantFactory:
             system_instruction_name="rag_assistant",
             tools=[],  # Add any specific tools for the RAG assistant here
             generation_config=self.config.completions.generation_config,
+            stream=stream,
         )
 
-        rag_assistant = RAGAssistant(
-            llm_provider=self.providers.llm,
-            prompt_provider=self.providers.prompt,
-            config=assistant_config,
-            search_pipeline=self.pipelines.search_pipeline,
-        )
+        if stream:
+            rag_assistant = StreamingRAGAssistant(
+                llm_provider=self.providers.llm,
+                prompt_provider=self.providers.prompt,
+                config=assistant_config,
+                search_pipeline=self.pipelines.search_pipeline,
+            )
+        else:
+            rag_assistant = RAGAssistant(
+                llm_provider=self.providers.llm,
+                prompt_provider=self.providers.prompt,
+                config=assistant_config,
+                search_pipeline=self.pipelines.search_pipeline,
+            )
 
         return rag_assistant

@@ -50,6 +50,16 @@ class LLMProvider(Provider):
         super().__init__(config)
 
     @abstractmethod
+    async def aget_completion(
+        self,
+        messages: list[dict],
+        generation_config: GenerationConfig,
+        **kwargs,
+    ) -> LLMChatCompletion:
+        """Abstract method to get an async chat completion from the provider."""
+        pass
+
+    @abstractmethod
     def get_completion(
         self,
         messages: list[dict],
