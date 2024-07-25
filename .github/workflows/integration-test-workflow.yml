@@ -33,6 +33,7 @@ jobs:
 
         docker run -d --name r2r --network r2r-network \
           -e PYTHONUNBUFFERED=1 \
+          -e OPENAI_API_KEY=${${{ secrets.OPENAI_API_KEY }}} \
           -e POSTGRES_USER=${POSTGRES_USER:-postgres} \
           -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres} \
           -e POSTGRES_HOST=postgres \
@@ -42,15 +43,10 @@ jobs:
           -p 8000:8000 \
           emrgntcmplxty/r2r:${GITHUB_SHA}
 
-    - name: Check container status
-      run: docker ps -a
-
-    - name: Check R2R container logs
-      run: docker logs r2r
-
     - name: Wait for containers to be ready
       run: |
         timeout 60s bash -c 'until docker exec postgres pg_isready -U ${POSTGRES_USER}; do sleep 5; done'
+        timeout 60s bash -c 'until docker exec r2r curl -s http://localhost:8000/healthcheck/ | grep "OK"; do sleep 5; done'
 
     - name: Run integration tests
       run: |
@@ -63,3 +59,4 @@ jobs:
         docker stop r2r postgres
         docker rm r2r postgres
         docker network rm r2r-network
+        docker system prune -af --volumes
