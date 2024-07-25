@@ -111,15 +111,15 @@ class ManagementRouter(BaseRouter):
 
             if not chunks:
                 raise R2RException(
-                    "Only a superuser can call the `document_chunks` endpoint.",
-                    500,
+                    "No chunks found for the given document ID.",
+                    404,
                 )
 
-            is_owner = chunks[0].get("user_id") == auth_user.id
+            is_owner = str(chunks[0].get("user_id")) == str(auth_user.id)
 
             if not is_owner and not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can call the `document_chunks` endpoint.",
+                    "Only a superuser can arbitrarily call document_chunks.",
                     403,
                 )
 
