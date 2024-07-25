@@ -1,4 +1,10 @@
-from .abstractions.assistant import Assistant, AssistantConfig, Tool
+from .abstractions.assistant import (
+    Assistant,
+    AssistantConfig,
+    Conversation,
+    Message,
+    Tool,
+)
 from .abstractions.base import AsyncSyncMeta, syncable
 from .abstractions.document import (
     DataType,
@@ -100,6 +106,8 @@ __all__ = [
     "Assistant",
     "AssistantConfig",
     "Tool",
+    "Message",
+    "Conversation",
     "RedisKVLoggingProvider",
     "KVLoggingSingleton",
     "RunManager",

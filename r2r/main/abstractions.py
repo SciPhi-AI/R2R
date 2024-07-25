@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from r2r.assistants import RAGAssistant
+from r2r.assistants import RAGAssistant, StreamingRAGAssistant
 from r2r.base import (
     AsyncPipe,
     AuthProvider,
@@ -63,6 +63,7 @@ class R2RPipelines(BaseModel):
 
 class R2RAssistants(BaseModel):
     rag_assistant: RAGAssistant
+    streaming_rag_assistant: StreamingRAGAssistant
 
     class Config:
         arbitrary_types_allowed = True

@@ -2,13 +2,7 @@ from .media.audio_parser import AudioParser
 from .media.docx_parser import DOCXParser
 from .media.img_parser import ImageParser
 from .media.movie_parser import MovieParser
-from .media.pdf_parser import (
-    PDFParser,
-    PDFParserLocal,
-    PDFParserMarker,
-    PDFParserUnstructured,
-    PDFParserVLM,
-)
+from .media.pdf_parser import PDFParser, PDFParserMarker, PDFParserUnstructured
 from .media.ppt_parser import PPTParser
 from .structured.csv_parser import CSVParser
 from .structured.json_parser import JSONParser
@@ -23,9 +17,7 @@ __all__ = [
     "ImageParser",
     "MovieParser",
     "PDFParser",
-    "PDFParserLocal",
     "PDFParserUnstructured",
-    "PDFParserVLM",
     "PDFParserMarker",
     "PPTParser",
     "MDParser",
