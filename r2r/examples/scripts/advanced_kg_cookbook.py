@@ -171,7 +171,7 @@ def main(
     if not local_mode:
 
         update_kg_prompt(
-            client, r2r_prompts, "kg_agent", entity_types, relations
+            client, r2r_prompts, "kg_assistant", entity_types, relations
         )
 
         result = client.search(

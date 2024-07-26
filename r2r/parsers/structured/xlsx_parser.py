@@ -36,8 +36,8 @@ class XLSXParserAdvanced(AsyncParser[DataType]):
     def __init__(self):
         try:
             import networkx as nx
-            from openpyxl import load_workbook
             import numpy as np
+            from openpyxl import load_workbook
 
             self.nx = nx
             self.np = np
@@ -57,21 +57,27 @@ class XLSXParserAdvanced(AsyncParser[DataType]):
             rows, cols = zip(*component)
             min_row, max_row = min(rows), max(rows)
             min_col, max_col = min(cols), max(cols)
-            yield arr[min_row:max_row+1, min_col:max_col+1].astype('str')
+            yield arr[min_row : max_row + 1, min_col : max_col + 1].astype(
+                "str"
+            )
 
-    async def ingest(self, data: bytes, num_col_times_num_rows: int = 100) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: bytes, num_col_times_num_rows: int = 100
+    ) -> AsyncGenerator[str, None]:
         """Ingest XLSX data and yield text from each connected component."""
         if isinstance(data, str):
             raise ValueError("XLSX data must be in bytes format.")
-        
+
         workbook = self.load_workbook(filename=BytesIO(data))
 
         for ws in workbook.worksheets:
-            ws_data = self.np.array([[cell.value for cell in row] for row in ws.iter_rows()])
+            ws_data = self.np.array(
+                [[cell.value for cell in row] for row in ws.iter_rows()]
+            )
             for table in self.connected_components(ws_data):
 
                 # parse like a csv parser, assumes that the first row has column names
-                if len(table)<=1:
+                if len(table) <= 1:
                     continue
 
                 num_cols, num_rows = len(table[0]), len(table)
@@ -79,8 +85,11 @@ class XLSXParserAdvanced(AsyncParser[DataType]):
                 headers = ", ".join(table[0])
                 # add header to each one
                 for i in range(1, num_rows, num_rows_per_chunk):
-                    chunk = table[i:i + num_rows_per_chunk]
-                    yield headers + '\n' + '\n'.join([", ".join(row) for row in chunk])
+                    chunk = table[i : i + num_rows_per_chunk]
+                    yield headers + "\n" + "\n".join(
+                        [", ".join(row) for row in chunk]
+                    )
+
 
 # async def main():
 #     csv_file = '/Users/shreyas/parse_this.xlsx'
