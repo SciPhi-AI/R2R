@@ -78,4 +78,5 @@ jobs:
     - name: Clean up
       if: always()
       run: |
+        deactivate
         docker system prune -af --volumes

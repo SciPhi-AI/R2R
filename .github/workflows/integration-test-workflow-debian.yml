@@ -107,6 +107,8 @@ jobs:
     - name: Clean up
       if: always()
       run: |
+        deactivate
+        rm -rf $HOME/r2r_venv
         docker stop r2r postgres
         docker rm r2r postgres
         docker network rm sciphi-network
