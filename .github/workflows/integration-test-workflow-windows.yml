@@ -1,9 +1,6 @@
 name: Windows R2R Docker Build and Integration Test (Windows Server 2022 Datacenter x64)
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
   workflow_dispatch:
 
 jobs:
