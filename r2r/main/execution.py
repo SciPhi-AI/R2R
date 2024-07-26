@@ -5,7 +5,7 @@ import os
 import threading
 import time
 import uuid
-from typing import Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import click
 from fastapi import UploadFile
@@ -375,21 +375,20 @@ class R2RExecutionWrapper:
 
     def analytics(
         self,
-        filters: Optional[str] = None,
-        analysis_types: Optional[str] = None,
+        filters: Optional[Dict[str, Any]] = None,
+        analysis_types: Optional[Dict[str, Any]] = None,
     ):
-        filter_criteria = FilterCriteria(filters=filters)
-        analysis_types = AnalysisTypes(analysis_types=analysis_types)
-
         if self.client_mode:
             return self.client.analytics(
-                filter_criteria=filter_criteria.model_dump(),
-                analysis_types=analysis_types.model_dump(),
+                filter_criteria=filters,
+                analysis_types=analysis_types,
             )["results"]
-        else:
-            return self.app.analytics(
-                filter_criteria=filter_criteria, analysis_types=analysis_types
-            )
+
+        filter_criteria = FilterCriteria(filters=filters)
+        analysis_types_obj = AnalysisTypes(analysis_types=analysis_types)
+        return self.app.analytics(
+            filter_criteria=filter_criteria, analysis_types=analysis_types_obj
+        )
 
     def ingest_sample_file(self, no_media: bool = True, option: int = 0):
         from r2r.examples.scripts.sample_data_ingestor import (
