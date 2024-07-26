@@ -3,6 +3,7 @@
 import base64
 import json
 import logging
+import re
 import uuid
 from datetime import datetime
 from enum import Enum
@@ -42,15 +43,35 @@ class Document(BaseModel):
     data: Union[str, bytes]
     metadata: dict
 
+    @staticmethod
+    def decode_base64(data: Union[str, bytes]) -> bytes:
+        if isinstance(data, str):
+            data = data.encode("ascii")
+
+        # Normalize: remove non-base64 characters
+        data = re.sub(rb"[^a-zA-Z0-9+/]+", b"", data)
+
+        # Add padding if necessary
+        if missing_padding := len(data) % 4:
+            data += b"=" * (4 - missing_padding)
+
+        try:
+            return base64.b64decode(data)
+        except Exception as e:
+            raise ValueError(f"Invalid base64 data: {str(e)}") from e
+
     def __init__(self, *args, **kwargs):
         data = kwargs.get("data")
-        if data and isinstance(data, str):
-            try:
-                # Try to decode if it's already base64 encoded
-                kwargs["data"] = base64.b64decode(data)
-            except:
-                # If it's not base64, encode it to bytes
-                kwargs["data"] = data.encode("utf-8")
+        if data is not None:
+            if isinstance(data, str):
+                try:
+                    # Try to decode if it's base64 encoded
+                    kwargs["data"] = self.decode_base64(data)
+                except ValueError:
+                    # If it's not valid base64, encode it to bytes
+                    kwargs["data"] = data.encode("utf-8")
+            elif not isinstance(data, bytes):
+                raise ValueError("Data must be either a string or bytes")
 
         doc_type = kwargs.get("type")
         if isinstance(doc_type, str):
@@ -59,12 +80,10 @@ class Document(BaseModel):
         # Generate UUID based on the hash of the data
         if "id" not in kwargs:
             if isinstance(kwargs["data"], bytes):
-                data_hash = uuid.uuid5(
-                    uuid.NAMESPACE_DNS, kwargs["data"].decode("utf-8")
-                )
+                data_str = kwargs["data"].decode("utf-8", errors="replace")
             else:
-                data_hash = uuid.uuid5(uuid.NAMESPACE_DNS, kwargs["data"])
-
+                data_str = kwargs["data"]
+            data_hash = uuid.uuid5(uuid.NAMESPACE_DNS, data_str)
             kwargs["id"] = data_hash  # Set the id based on the data hash
 
         super().__init__(*args, **kwargs)
