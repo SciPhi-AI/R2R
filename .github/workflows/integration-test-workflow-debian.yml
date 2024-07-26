@@ -96,6 +96,9 @@ jobs:
         echo "Users Overview"
         r2r users-overview
 
+        echo "Analytics"
+        r2r analytics --filters '{"search_latencies": "search_latency"}' --analysis-types '{"search_latencies": ["basic_statistics", "search_latency"]}'
+
         echo "Logging"
         r2r logs
 

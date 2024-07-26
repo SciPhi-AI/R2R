@@ -4,6 +4,7 @@ import secrets
 import subprocess
 import time
 import uuid
+from typing import Any, Dict
 
 import click
 from dotenv import load_dotenv
@@ -14,7 +15,9 @@ from r2r.main.execution import R2RExecutionWrapper
 class JsonParamType(click.ParamType):
     name = "json"
 
-    def convert(self, value, param, ctx):
+    def convert(self, value, param, ctx) -> Dict[str, Any]:
+        if isinstance(value, dict):
+            return value
         try:
             return json.loads(value)
         except json.JSONDecodeError:
@@ -518,7 +521,7 @@ def users_overview(obj, user_ids):
     "--analysis-types", type=JsonParamType(), help="Analysis types as JSON"
 )
 @click.pass_obj
-def analytics(obj, filters, analysis_types):
+def analytics(obj, filters: Dict[str, Any], analysis_types: Dict[str, Any]):
     """Retrieve analytics data."""
     t0 = time.time()
     response = obj.analytics(filters, analysis_types)
