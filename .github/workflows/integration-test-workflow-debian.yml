@@ -13,11 +13,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up Python virtual environment
-      run: |
-        python3 -m venv $HOME/r2r_venv
-        echo "$HOME/r2r_venv/bin" >> $GITHUB_PATH
-
     - name: Build R2R Docker image
       run: |
         docker build \
@@ -55,56 +50,53 @@ jobs:
 
         sleep 10
 
-    - name: Install CLI and run integration tests
+    - name: Run integration tests in Docker container
       run: |
-        . $HOME/r2r_venv/bin/activate
-        pip install --upgrade pip
-        pip install --upgrade r2r
+        docker exec r2r /bin/sh -c '
+          echo "R2R Version"
+          r2r version
 
-        echo "R2R Version"
-        r2r version
+          echo "Ingest Data"
+          r2r ingest-sample-files
 
-        echo "Ingest Data"
-        r2r ingest-sample-files
+          echo "Get Documents Overview"
+          r2r documents-overview
 
-        echo "Get Documents Overview"
-        r2r documents-overview
+          echo "Get Document Chunks"
+          r2r document-chunks 93123a68-d668-51de-8291-92162730dc87
 
-        echo "Get Document Chunks"
-        r2r document-chunks 93123a68-d668-51de-8291-92162730dc87
+          echo "Delete Documents"
+          r2r delete --keys=document_id --values=b736292c-11e6-5453-9686-055da3edb866
 
-        echo "Delete Documents"
-        r2r delete --keys=document_id --values=b736292c-11e6-5453-9686-055da3edb866
+          echo "Vector Search"
+          r2r search --query="What was Uber'\''s profit in 2020?"
 
-        echo "Vector Search"
-        r2r search --query="What was Uber's profit in 2020?"
+          echo "Hybrid Search"
+          r2r search --query="What is a fierce nerd?" --do-hybrid-search
 
-        echo "Hybrid Search"
-        r2r search --query="What is a fierce nerd?" --do-hybrid-search
+          echo "Basic RAG"
+          r2r rag --query="What was Uber'\''s profit in 2020?"
 
-        echo "Basic RAG"
-        r2r rag --query="What was Uber's profit in 2020?"
+          echo "RAG with Hybrid Search"
+          r2r rag --query="Who is John Snow?" --do-hybrid-search
 
-        echo "RAG with Hybrid Search"
-        r2r rag --query="Who is John Snow?" --do-hybrid-search
+          echo "Streaming RAG"
+          r2r rag --query="What was Lyft'\''s profit in 2020?" --stream
 
-        echo "Streaming RAG"
-        r2r rag --query="What was Lyft's profit in 2020?" --stream
+          echo "Users Overview"
+          r2r users-overview
 
-        echo "Users Overview"
-        r2r users-overview
+          echo "Analytics"
+          r2r analytics --filters '\''{"search_latencies": "search_latency"}'\'' --analysis-types '\''{"search_latencies": ["basic_statistics", "search_latency"]}'\''
 
-        echo "Analytics"
-        r2r analytics --filters '{"search_latencies": "search_latency"}' --analysis-types '{"search_latencies": ["basic_statistics", "search_latency"]}'
-
-        echo "Logging"
-        r2r logs
+          echo "Logging"
+          r2r logs
+        '
 
 
     - name: Clean up
       if: always()
       run: |
-        rm -rf $HOME/r2r_venv
         docker stop r2r postgres
         docker rm r2r postgres
         docker network rm sciphi-network
