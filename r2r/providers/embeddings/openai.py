@@ -91,10 +91,14 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 self.client.embeddings.create(
                     input=[text],
                     model=self.base_model,
-                    dimensions= NOT_GIVEN if self.base_model == "text-embedding-ada-002" else  self.base_dimension
-                    or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                        self.base_model
-                    ][-1],
+                    dimensions=(
+                        NOT_GIVEN
+                        if self.base_model == "text-embedding-ada-002"
+                        else self.base_dimension
+                        or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
+                            self.base_model
+                        ][-1]
+                    ),
                 )
                 .data[0]
                 .embedding
@@ -121,10 +125,14 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 for ele in self.client.embeddings.create(
                     input=texts,
                     model=self.base_model,
-                    dimensions= NOT_GIVEN if self.base_model == "text-embedding-ada-002" else  self.base_dimension
-                    or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                        self.base_model
-                    ][-1],
+                    dimensions=(
+                        NOT_GIVEN
+                        if self.base_model == "text-embedding-ada-002"
+                        else self.base_dimension
+                        or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
+                            self.base_model
+                        ][-1]
+                    ),
                 ).data
             ]
         except AuthenticationError as e:
@@ -147,10 +155,14 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             response = await self.async_client.embeddings.create(
                 input=[text],
                 model=self.base_model,
-                dimensions= NOT_GIVEN if self.base_model == "text-embedding-ada-002" else  self.base_dimension
-                or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                    self.base_model
-                ][-1],
+                dimensions=(
+                    NOT_GIVEN
+                    if self.base_model == "text-embedding-ada-002"
+                    else self.base_dimension
+                    or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
+                        self.base_model
+                    ][-1]
+                ),
             )
             return response.data[0].embedding
         except AuthenticationError as e:
@@ -173,10 +185,14 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             response = await self.async_client.embeddings.create(
                 input=texts,
                 model=self.base_model,
-                dimensions= NOT_GIVEN if self.base_model == "text-embedding-ada-002" else  self.base_dimension
-                or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                    self.base_model
-                ][-1],
+                dimensions=(
+                    NOT_GIVEN
+                    if self.base_model == "text-embedding-ada-002"
+                    else self.base_dimension
+                    or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
+                        self.base_model
+                    ][-1]
+                ),
             )
             return [ele.embedding for ele in response.data]
         except AuthenticationError as e:
