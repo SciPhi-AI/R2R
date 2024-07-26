@@ -41,22 +41,29 @@ class R2RAssistant(Assistant, metaclass=CombinedMeta):
         *args,
         **kwargs,
     ) -> list[LLMChatCompletion]:
-        if system_instruction or not self.conversation:
+        try:
             self._completed = False
-            self._setup(system_instruction)
+            if system_instruction or not self.conversation:
+                self._setup(system_instruction)
 
-        if messages:
-            self.conversation.extend(messages)
+            if messages:
+                self.conversation.extend(messages)
 
-        while not self._completed:
-            generation_config = self.get_generation_config()
-            response = await self.llm_provider.aget_completion(
-                self.conversation,
-                generation_config,
-            )
-            await self.process_llm_response(response, *args, **kwargs)
-
-        return self.conversation
+            while not self._completed:
+                generation_config = self.get_generation_config(
+                    self.conversation[-1]
+                )
+                response = await self.llm_provider.aget_completion(
+                    [
+                        ele.model_dump(exclude_none=True)
+                        for ele in self.conversation
+                    ],
+                    generation_config,
+                )
+                await self.process_llm_response(response, *args, **kwargs)
+            return self.conversation
+        finally:
+            self.conversation = []
 
     async def process_llm_response(
         self, response: LLMChatCompletion, *args, **kwargs
@@ -70,6 +77,15 @@ class R2RAssistant(Assistant, metaclass=CombinedMeta):
                 **kwargs,
             )
             return await self.arun(*args, **kwargs)
+        elif message.tool_calls:
+            for tool_call in message.tool_calls:
+                await self.handle_function_call(
+                    tool_call.function.name,
+                    tool_call.function.arguments,
+                    # FIXME: tool_call.id,
+                    *args,
+                    **kwargs,
+                )
         else:
             self.conversation.append(
                 Message(role="assistant", content=message.content)
@@ -86,23 +102,31 @@ class R2RStreamingAssistant(Assistant):
         *args,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
-        if system_instruction or not self.conversation:
+        try:
             self._completed = False
-            self._setup(system_instruction)
+            if system_instruction or not self.conversation:
+                self._setup(system_instruction)
 
-        if messages:
-            self.conversation.extend(messages)
+            if messages:
+                self.conversation.extend(messages)
 
-        while not self._completed:
-            generation_config = self.get_generation_config()
-            stream = self.llm_provider.get_completion_stream(
-                self.conversation,
-                generation_config,
-            )
-            async for chunk in self.process_llm_response(
-                stream, *args, **kwargs
-            ):
-                yield chunk
+            while not self._completed:
+                generation_config = self.get_generation_config(
+                    self.conversation[-1], stream=True
+                )
+                stream = self.llm_provider.get_completion_stream(
+                    [
+                        ele.model_dump(exclude_none=True)
+                        for ele in self.conversation
+                    ],
+                    generation_config,
+                )
+                async for chunk in self.process_llm_response(
+                    stream, *args, **kwargs
+                ):
+                    yield chunk
+        finally:
+            self.conversation = []
 
     def run(
         self, system_instruction, messages, *args, **kwargs
@@ -120,6 +144,22 @@ class R2RStreamingAssistant(Assistant):
 
         for chunk in stream:
             delta = chunk.choices[0].delta
+            if delta.tool_calls:
+                for tool_call in delta.tool_calls:
+                    results = await self.handle_function_call(
+                        tool_call.function.name,
+                        tool_call.function.arguments,
+                        # FIXME: tool_call.id,
+                        *args,
+                        **kwargs,
+                    )
+
+                    yield f"<tool_call>"
+                    yield f"<name>{tool_call.function.name}</name>"
+                    yield f"<arguments>{tool_call.function.arguments}</arguments>"
+                    yield f"<results>{results}</results>"
+                    yield f"</tool_call>"
+
             if delta.function_call:
                 if delta.function_call.name:
                     function_name = delta.function_call.name
@@ -137,6 +177,7 @@ class R2RStreamingAssistant(Assistant):
                     function_name, function_arguments, *args, **kwargs
                 )
                 yield f"<results>{results}</results>"
+                yield "</function_call>"
 
                 function_name = None
                 function_arguments = ""

@@ -65,12 +65,14 @@ class R2RClient:
         base_url: str = "http://localhost:8000",
         prefix: str = "/v1",
         custom_client=None,
+        timeout: float = 60.0,
     ):
         self.base_url = base_url
         self.prefix = prefix
         self.access_token = None
         self._refresh_token = None
         self.client = custom_client or requests
+        self.timeout = timeout
 
     def _make_request(self, method, endpoint, **kwargs):
         url = f"{self.base_url}{self.prefix}/{endpoint}"
@@ -310,7 +312,10 @@ class R2RClient:
         url = f"{self.base_url}{self.prefix}/rag"
         async with httpx.AsyncClient() as client:
             async with client.stream(
-                "POST", url, json=json.loads(rag_request.model_dump_json())
+                "POST",
+                url,
+                json=json.loads(rag_request.model_dump_json(),
+                timeout=self.timeout,
             ) as response:
                 handle_request_error(response)
                 async for chunk in response.aiter_text():
@@ -521,7 +526,8 @@ class R2RClient:
             async with client.stream(
                 "POST",
                 url,
-                json=json.loads(rag_chat_request.model_dump_json()),
+                json=json.loads(rag_chat_request.model_dump_json(),
+                timeout=self.timeout,
             ) as response:
                 handle_request_error(response)
                 async for chunk in response.aiter_text():
