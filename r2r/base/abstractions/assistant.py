@@ -24,6 +24,7 @@ class Message(BaseModel):
     content: Optional[str] = None
     name: Optional[str] = None
     function_call: Optional[Dict[str, Any]] = None
+    tool_calls: Optional[List[Dict[str, Any]]] = None
 
 
 class Conversation:
@@ -36,12 +37,14 @@ class Conversation:
         content: Optional[str] = None,
         name: Optional[str] = None,
         function_call: Optional[Dict[str, Any]] = None,
+        tool_calls: Optional[List[Dict[str, Any]]] = None,
     ):
         message = Message(
             role=role,
             content=content,
             name=name,
             function_call=function_call,
+            tool_calls=tool_calls,
         )
         self.add_message(message)
 
@@ -120,6 +123,17 @@ class Assistant(ABC):
             **self.config.generation_config.dict(
                 exclude={"functions", "stream"}
             ),
+            # tools=[
+            #     {
+            #         "function":{
+            #             "name": tool.name,
+            #             "description": tool.description,
+            #             "parameters": tool.parameters,
+            #         },
+            #         "type": "function"
+            #     }
+            #     for tool in self.tools
+            # ],
             functions=[
                 {
                     "name": tool.name,
@@ -132,24 +146,63 @@ class Assistant(ABC):
         )
 
     async def handle_function_call(
-        self, function_name: str, function_arguments: str, *args, **kwargs
+        self,
+        function_name: str,
+        function_arguments: str,
+        tool_id: Optional[str] = None,
+        *args,
+        **kwargs,
     ) -> Union[str, AsyncGenerator[str, None]]:
+        print("function_name = ", function_name)
+        print("function_arguments = ", function_arguments)
+        print("tool_id = ", tool_id)
         tool_args = json.loads(function_arguments)
-        self.conversation.append(
-            Message(
-                role="assistant",
-                function_call={
-                    "name": function_name,
-                    "arguments": function_arguments,
-                },
+
+        (
+            self.conversation.append(
+                Message(
+                    role="assistant",
+                    tool_calls=[
+                        {
+                            "id": tool_id,
+                            "name": function_name,
+                            "arguments": function_arguments,
+                        }
+                    ],
+                )
+            )
+            if tool_id
+            else self.conversation.append(
+                Message(
+                    role="assistant",
+                    function_call={
+                        "name": function_name,
+                        "arguments": function_arguments,
+                    },
+                )
             )
         )
 
         tool_result = await self.execute_tool(
             function_name, *args, **tool_args, **kwargs
         )
-
-        self.conversation.append(
-            Message(role="function", content=tool_result, name=function_name)
+        print("tool_result = ", tool_result)
+        (
+            self.conversation.append(
+                Message(
+                    tool_call_id=tool_id,
+                    role="tool",
+                    content=str(tool_result),
+                    name=function_name,
+                )
+            )
+            if tool_id
+            else self.conversation.append(
+                Message(
+                    role="function",
+                    content=str(tool_result),
+                    name=function_name,
+                )
+            )
         )
         return tool_result

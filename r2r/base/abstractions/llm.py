@@ -35,6 +35,7 @@ class GenerationConfig(BaseModel):
         "max_tokens_to_sample": 1024,
         "stream": False,
         "functions": None,
+        "tools": None,
         "skip_special_tokens": False,
         "stop_token": None,
         "num_beams": 1,
@@ -66,6 +67,9 @@ class GenerationConfig(BaseModel):
     )
     functions: Optional[list[dict]] = Field(
         default_factory=lambda: GenerationConfig._defaults["functions"]
+    )
+    tools: Optional[list[dict]] = Field(
+        default_factory=lambda: GenerationConfig._defaults["tools"]
     )
     skip_special_tokens: bool = Field(
         default_factory=lambda: GenerationConfig._defaults[

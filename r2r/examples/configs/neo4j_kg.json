@@ -14,7 +14,7 @@
             "top_k": 100,
             "max_tokens_to_sample": 1024,
             "stream": false,
-            "functions": null,
+            "tools": null,
             "skip_special_tokens": false,
             "stop_token": null,
             "num_beams": 1,

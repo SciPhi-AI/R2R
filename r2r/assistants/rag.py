@@ -91,6 +91,17 @@ class R2RStreamingRAGAssistant(RAGAssistantMixin, R2RStreamingAssistant):
     def get_generation_config(self) -> GenerationConfig:
         return self.config.generation_config.model_copy(
             update={
+                # "tools": [
+                #     {
+                #     "function":{
+                #         "name": tool.name,
+                #         "description": tool.description,
+                #         "parameters": tool.parameters,
+                #     },
+                #         "type": "function"
+                #     }
+                #     for tool in self.tools
+                # ],
                 "functions": [
                     {
                         "name": tool.name,

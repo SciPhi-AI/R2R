@@ -110,10 +110,16 @@ class LiteLLMProvider(LLMProvider):
         args = self._get_base_args(generation_config)
         args["messages"] = messages
 
+        if generation_config.tools is not None:
+            args["tools"] = generation_config.tools
+
         if generation_config.functions is not None:
             args["functions"] = generation_config.functions
 
         args = {**args, **kwargs}
+        print("args = ", args)
+        print("generation_config = ", generation_config)
+        print("generation_config.tools = ", generation_config.tools)
         response = self.litellm_completion(**args)
 
         if not generation_config.stream:
@@ -166,6 +172,9 @@ class LiteLLMProvider(LLMProvider):
     ) -> Union[LLMChatCompletion, LLMChatCompletionChunk]:
         args = self._get_base_args(generation_config)
         args["messages"] = messages
+
+        if generation_config.tools is not None:
+            args["tools"] = generation_config.tools
 
         if generation_config.functions is not None:
             args["functions"] = generation_config.functions
