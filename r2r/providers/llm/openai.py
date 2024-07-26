@@ -98,18 +98,9 @@ class OpenAILLMProvider(LLMProvider):
             "model": generation_config.model,
             "temperature": generation_config.temperature,
             "top_p": generation_config.top_p,
-            "top_k": generation_config.top_k,
-            "min_p": generation_config.min_p,
             "stream": generation_config.stream,
             "max_tokens": generation_config.max_tokens_to_sample,
-            "skip_special_tokens": generation_config.skip_special_tokens,
-            "num_beams": generation_config.num_beams,
-            "do_sample": generation_config.do_sample,
-            "api_base": generation_config.api_base,
         }
-
-        if generation_config.stop_token is not None:
-            args["stop_token"] = generation_config.stop_token
 
         if generation_config.functions is not None:
             args["functions"] = generation_config.functions

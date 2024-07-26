@@ -42,7 +42,6 @@ class R2RAssistant(Assistant, metaclass=CombinedMeta):
         **kwargs,
     ) -> list[LLMChatCompletion]:
         try:
-            print("conversation:", self.conversation)
             self._completed = False
             if system_instruction or not self.conversation:
                 self._setup(system_instruction)
@@ -51,7 +50,9 @@ class R2RAssistant(Assistant, metaclass=CombinedMeta):
                 self.conversation.extend(messages)
 
             while not self._completed:
-                generation_config = self.get_generation_config()
+                generation_config = self.get_generation_config(
+                    self.conversation[-1]
+                )
                 response = await self.llm_provider.aget_completion(
                     [
                         ele.model_dump(exclude_none=True)
@@ -110,12 +111,9 @@ class R2RStreamingAssistant(Assistant):
                 self.conversation.extend(messages)
 
             while not self._completed:
-                print(
-                    "messages = ",
-                    [ele.model_dump() for ele in self.conversation],
+                generation_config = self.get_generation_config(
+                    self.conversation[-1], stream=True
                 )
-                generation_config = self.get_generation_config()
-                print("generation_config = ", generation_config)
                 stream = self.llm_provider.get_completion_stream(
                     [
                         ele.model_dump(exclude_none=True)
@@ -145,11 +143,9 @@ class R2RStreamingAssistant(Assistant):
         content_buffer = ""
 
         for chunk in stream:
-            print("chunk:", chunk)
             delta = chunk.choices[0].delta
             if delta.tool_calls:
                 for tool_call in delta.tool_calls:
-                    print("tool_call:", tool_call)
                     results = await self.handle_function_call(
                         tool_call.function.name,
                         tool_call.function.arguments,

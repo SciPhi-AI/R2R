@@ -118,11 +118,23 @@ class Assistant(ABC):
         else:
             return f"Error: Tool {tool_name} not found."
 
-    def get_generation_config(self) -> GenerationConfig:
+    def get_generation_config(
+        self, last_message: Message, stream: bool = False
+    ) -> GenerationConfig:
+        if (
+            last_message.role == "tool" or last_message.role == "function"
+        ) and last_message.content != "":
+            return GenerationConfig(
+                **self.config.generation_config.dict(
+                    exclude={"functions", "tools", "stream"}
+                ),
+                stream=stream,
+            )
         return GenerationConfig(
             **self.config.generation_config.dict(
-                exclude={"functions", "stream"}
+                exclude={"functions", "tools", "stream"}
             ),
+            # TODO - Investigate why `tools` fails with OpenAI+LiteLLM
             # tools=[
             #     {
             #         "function":{
@@ -142,7 +154,7 @@ class Assistant(ABC):
                 }
                 for tool in self.tools
             ],
-            stream=self.config.stream,
+            stream=stream,
         )
 
     async def handle_function_call(
@@ -153,9 +165,6 @@ class Assistant(ABC):
         *args,
         **kwargs,
     ) -> Union[str, AsyncGenerator[str, None]]:
-        print("function_name = ", function_name)
-        print("function_arguments = ", function_arguments)
-        print("tool_id = ", tool_id)
         tool_args = json.loads(function_arguments)
 
         (
@@ -165,8 +174,10 @@ class Assistant(ABC):
                     tool_calls=[
                         {
                             "id": tool_id,
-                            "name": function_name,
-                            "arguments": function_arguments,
+                            "function": {
+                                "name": function_name,
+                                "arguments": function_arguments,
+                            },
                         }
                     ],
                 )
@@ -186,7 +197,6 @@ class Assistant(ABC):
         tool_result = await self.execute_tool(
             function_name, *args, **tool_args, **kwargs
         )
-        print("tool_result = ", tool_result)
         (
             self.conversation.append(
                 Message(

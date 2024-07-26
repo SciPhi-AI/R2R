@@ -11,14 +11,9 @@
             "model": "gpt-4o",
             "temperature": 0.1,
             "top_p": 1.0,
-            "top_k": 100,
             "max_tokens_to_sample": 1024,
             "stream": false,
             "tools": null,
-            "skip_special_tokens": false,
-            "stop_token": null,
-            "num_beams": 1,
-            "do_sample": true,
             "add_generation_kwargs": {},
             "api_base": null
         }
