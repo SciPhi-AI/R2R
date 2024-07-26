@@ -314,7 +314,9 @@ class R2RClient:
             async with client.stream(
                 "POST",
                 url,
-                json=json.loads(rag_request.model_dump_json(),
+                json=json.loads(
+                    rag_request.model_dump_json(),
+                ),
                 timeout=self.timeout,
             ) as response:
                 handle_request_error(response)
@@ -526,7 +528,9 @@ class R2RClient:
             async with client.stream(
                 "POST",
                 url,
-                json=json.loads(rag_chat_request.model_dump_json(),
+                json=json.loads(
+                    rag_chat_request.model_dump_json(),
+                ),
                 timeout=self.timeout,
             ) as response:
                 handle_request_error(response)
