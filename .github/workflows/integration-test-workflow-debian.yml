@@ -1,0 +1,110 @@
+name: Debian R2R Docker Build and Integration Test (Debian GNU/Linux 12 (bookworm) amd64)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: [ self-hosted, Linux ]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python virtual environment
+      run: |
+        python3 -m venv $HOME/r2r_venv
+        echo "$HOME/r2r_venv/bin" >> $GITHUB_PATH
+
+    - name: Activate virtual environment and install R2R
+      run: |
+        . $HOME/r2r_venv/bin/activate
+        pip install --upgrade pip
+        pip install --upgrade r2r
+
+    - name: Build R2R Docker image
+      run: |
+        docker build \
+        --build-arg GITHUB_SHA=${{ github.sha }} \
+        --build-arg GITHUB_REF=${{ github.ref }} \
+        -t emrgntcmplxty/r2r:${{ github.sha }} .
+
+    - name: Pull pgvector image
+      run: docker pull pgvector/pgvector:pg16
+
+    - name: Create Docker network
+      run: docker network create sciphi-network
+
+    - name: Start Postgres
+      run: |
+        docker run -d --name postgres --network sciphi-network \
+          -e POSTGRES_USER=postgres \
+          -e POSTGRES_PASSWORD=postgres \
+          -e POSTGRES_DB=postgres \
+          pgvector/pgvector:pg16
+
+    - name: Start R2R
+      run: |
+        docker run -d --name r2r --network sciphi-network \
+          -e PYTHONUNBUFFERED=1 \
+          -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
+          -e POSTGRES_USER=postgres \
+          -e POSTGRES_PASSWORD=postgres \
+          -e POSTGRES_HOST=postgres \
+          -e POSTGRES_PORT=5432 \
+          -e POSTGRES_DBNAME=postgres \
+          -e POSTGRES_VECS_COLLECTION=vecs \
+          -p 8000:8000 \
+          emrgntcmplxty/r2r:${{ github.sha }}
+
+        sleep 10
+
+    - name: Run integration tests
+      run: |
+        echo "R2R Version"
+        r2r version
+
+        echo "Ingest Data"
+        r2r ingest-sample-files
+
+        echo "Get Documents Overview"
+        r2r documents-overview
+
+        echo "Get Document Chunks"
+        r2r document-chunks 93123a68-d668-51de-8291-92162730dc87
+
+        echo "Delete Documents"
+        r2r delete --keys=document_id --values=b736292c-11e6-5453-9686-055da3edb866
+
+        echo "Vector Search"
+        r2r search --query="What was Uber's profit in 2020?"
+
+        echo "Hybrid Search"
+        r2r search --query="What is a fierce nerd?" --do-hybrid-search
+
+        echo "Basic RAG"
+        r2r rag --query="What was Uber's profit in 2020?"
+
+        echo "RAG with Hybrid Search"
+        r2r rag --query="Who is John Snow?" --do-hybrid-search
+
+        echo "Streaming RAG"
+        r2r rag --query="What was Lyft's profit in 2020?" --stream
+
+        echo "Users Overview"
+        r2r users-overview
+
+        echo "Logging"
+        r2r logs
+
+
+    - name: Clean up
+      if: always()
+      run: |
+        rm -rf $HOME/r2r_venv
+        docker stop r2r postgres
+        docker rm r2r postgres
+        docker network rm sciphi-network
+        docker system prune -af --volumes
