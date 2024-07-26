@@ -4,6 +4,7 @@ import secrets
 import subprocess
 import time
 import uuid
+from contextlib import contextmanager
 
 import click
 from dotenv import load_dotenv
@@ -22,6 +23,14 @@ class JsonParamType(click.ParamType):
 
 
 JSON = JsonParamType()
+
+
+@contextmanager
+def timer():
+    start = time.time()
+    yield
+    end = time.time()
+    click.echo(f"Time taken: {end - start:.2f} seconds")
 
 
 @click.group()
@@ -88,6 +97,27 @@ def serve(
     load_dotenv()
 
     if docker:
+        env_vars = [
+            "POSTGRES_HOST",
+            "POSTGRES_USER",
+            "POSTGRES_PASSWORD",
+            "POSTGRES_PORT",
+            "POSTGRES_DBNAME",
+            "POSTGRES_VECS_COLLECTION",
+        ]
+
+        for var in env_vars:
+            if value := os.environ.get(var):
+                prompt = (
+                    f"Warning: You should not manually set your Postgres variables if you are using Docker.\n"
+                    f"Environment variable {var} is set to '{value}'. Unset it?"
+                )
+                if click.confirm(prompt, default=True):
+                    os.environ[var] = ""
+                    click.echo(f"Unset {var}")
+                else:
+                    click.echo(f"Kept {var}")
+
         if x := obj.get("config_path", None):
             os.environ["CONFIG_PATH"] = x
         else:
@@ -96,6 +126,7 @@ def serve(
             )
 
         os.environ["OLLAMA_API_BASE"] = "http://host.docker.internal:11434"
+
         # Check if compose files exist in the package directory
         package_dir = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "..", ".."
@@ -126,7 +157,6 @@ def serve(
             )
 
         docker_command += f" --project-name {project_name}"
-
         docker_command += " up -d"
         os.system(docker_command)
     else:
@@ -154,18 +184,18 @@ def docker_down(ctx, volumes, remove_orphans, project_name):
     )
     compose_yaml = os.path.join(package_dir, "compose.yaml")
     compose_neo4j_yaml = os.path.join(package_dir, "compose.neo4j.yaml")
-
-    if not os.path.exists(compose_yaml) or not os.path.exists(
-        compose_neo4j_yaml
+    compose_ollama_yaml = os.path.join(package_dir, "compose.ollama.yaml")
+    if (
+        not os.path.exists(compose_yaml)
+        or not os.path.exists(compose_neo4j_yaml)
+        or not os.path.exists(compose_ollama_yaml)
     ):
         click.echo(
             "Error: Docker Compose files not found in the package directory."
         )
         return
 
-    docker_command = (
-        f"docker compose -f {compose_yaml} -f {compose_neo4j_yaml}"
-    )
+    docker_command = f"docker compose -f {compose_yaml} -f {compose_neo4j_yaml} -f {compose_ollama_yaml}"
     docker_command += f" --project-name {project_name}"
 
     if volumes:
@@ -194,16 +224,14 @@ def docker_down(ctx, volumes, remove_orphans, project_name):
         )
 
         # Find the r2r network
-        r2r_network = next(
+        if r2r_network := next(
             (
                 network
                 for network in networks
                 if network.startswith("r2r_") and "network" in network
             ),
             None,
-        )
-
-        if r2r_network:
+        ):
             # Try to remove the network
             for _ in range(1):  # Try 1 extra times
                 remove_command = f"docker network rm {r2r_network}"
@@ -219,20 +247,13 @@ def docker_down(ctx, volumes, remove_orphans, project_name):
                     time.sleep(5)
 
             click.echo(
-                "Failed to remove the network after multiple attempts. Please try the following steps:"
-            )
-            click.echo(
-                "1. Run 'docker ps' to check for any running containers using this network."
-            )
-            click.echo(
-                "2. Stop any running containers with 'docker stop <container_id>'."
-            )
-            click.echo(
-                f"3. Try removing the network manually with 'docker network rm {r2r_network}'."
-            )
-            click.echo(
+                "Failed to remove the network after multiple attempts. Please try the following steps:\n"
+                "1. Run 'docker ps' to check for any running containers using this network.\n"
+                "2. Stop any running containers with 'docker stop <container_id>'.\n"
+                f"3. Try removing the network manually with 'docker network rm {r2r_network}'.\n"
                 "4. If the above steps don't work, you may need to restart the Docker daemon."
             )
+
         else:
             click.echo("Could not find the r2r network to remove.")
     else:
@@ -253,19 +274,15 @@ def docker_down(ctx, volumes, remove_orphans, project_name):
 @click.pass_obj
 def ingest_files(obj, file_paths, document_ids, metadatas, versions):
     """Ingest files into R2R."""
+    with timer():
+        # Default to None if empty tuples are provided
+        document_ids = list(document_ids) if document_ids else None
+        metadatas = list(metadatas) if metadatas else None
+        versions = list(versions) if versions else None
 
-    t0 = time.time()
-
-    # Default to None if empty tuples are provided
-    document_ids = None if not document_ids else list(document_ids)
-    metadatas = None if not metadatas else list(metadatas)
-    versions = None if not versions else list(versions)
-
-    response = obj.ingest_files(
-        list(file_paths), document_ids, metadatas, versions
-    )
-    t1 = time.time()
-    click.echo(f"Time taken to ingest files: {t1 - t0:.2f} seconds")
+        response = obj.ingest_files(
+            list(file_paths), document_ids, metadatas, versions
+        )
     click.echo(response)
 
 
@@ -278,16 +295,14 @@ def ingest_files(obj, file_paths, document_ids, metadatas, versions):
 @click.pass_obj
 def update_files(obj, file_paths, document_ids, metadatas):
     """Ingest files into R2R."""
-    t0 = time.time()
+    with timer():
+        # Default to None if empty tuples are provided
+        metadatas = list(metadatas) if metadatas else None
 
-    # Default to None if empty tuples are provided
-    metadatas = None if not metadatas else list(metadatas)
+        response = obj.update_files(
+            list(file_paths), list(document_ids), metadatas
+        )
 
-    response = obj.update_files(
-        list(file_paths), list(document_ids), metadatas
-    )
-    t1 = time.time()
-    click.echo(f"Time taken to ingest files: {t1 - t0:.2f} seconds")
     click.echo(response)
 
 
@@ -325,30 +340,26 @@ def search(
     if kg_search_model:
         kg_search_generation_config["model"] = kg_search_model
 
-    t0 = time.time()
+    with timer():
+        results = obj.search(
+            query,
+            use_vector_search,
+            search_filters,
+            search_limit,
+            do_hybrid_search,
+            use_kg_search,
+            kg_search_generation_config,
+        )
 
-    results = obj.search(
-        query,
-        use_vector_search,
-        search_filters,
-        search_limit,
-        do_hybrid_search,
-        use_kg_search,
-        kg_search_generation_config,
-    )
+        if isinstance(results, dict) and "results" in results:
+            results = results["results"]
 
-    if isinstance(results, dict) and "results" in results:
-        results = results["results"]
-
-    if "vector_search_results" in results:
-        click.echo("Vector search results:")
-        for result in results["vector_search_results"]:
-            click.echo(result)
-    if "kg_search_results" in results and results["kg_search_results"]:
-        click.echo("KG search results:", results["kg_search_results"])
-
-    t1 = time.time()
-    click.echo(f"Time taken to search: {t1 - t0:.2f} seconds")
+        if "vector_search_results" in results:
+            click.echo("Vector search results:")
+            for result in results["vector_search_results"]:
+                click.echo(result)
+        if "kg_search_results" in results and results["kg_search_results"]:
+            click.echo("KG search results:", results["kg_search_results"])
 
 
 @cli.command()
@@ -389,33 +400,29 @@ def rag(
     rag_generation_config = {"stream": stream}
     if rag_model:
         rag_generation_config["model"] = rag_model
-    t0 = time.time()
 
-    response = obj.rag(
-        query,
-        use_vector_search,
-        search_filters,
-        search_limit,
-        do_hybrid_search,
-        use_kg_search,
-        kg_search_generation_config,
-        stream,
-        rag_generation_config,
-    )
-    if stream:
-        for chunk in response:
-            click.echo(chunk, nl=False)
-        click.echo()
-    else:
-        if obj.client_mode:
+    with timer():
+        response = obj.rag(
+            query,
+            use_vector_search,
+            search_filters,
+            search_limit,
+            do_hybrid_search,
+            use_kg_search,
+            kg_search_generation_config,
+            stream,
+            rag_generation_config,
+        )
+        if stream:
+            for chunk in response:
+                click.echo(chunk, nl=False)
+            click.echo()
+        elif obj.client_mode:
             click.echo(f"Search Results:\n{response['search_results']}")
             click.echo(f"Completion:\n{response['completion']}")
         else:
             click.echo(f"Search Results:\n{response.search_results}")
             click.echo(f"Completion:\n{response.completion}")
-
-    t1 = time.time()
-    click.echo(f"Time taken for RAG: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -427,12 +434,10 @@ def delete(obj, keys, values):
     if len(keys) != len(values):
         raise click.UsageError("Number of keys must match number of values")
 
-    t0 = time.time()
-    response = obj.delete(list(keys), list(values))
-    t1 = time.time()
+    with timer():
+        response = obj.delete(list(keys), list(values))
 
     click.echo(response)
-    click.echo(f"Time taken for deletion: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -440,12 +445,10 @@ def delete(obj, keys, values):
 @click.pass_obj
 def logs(obj, log_type_filter):
     """Retrieve logs with optional type filter."""
-    t0 = time.time()
-    response = obj.logs(log_type_filter)
-    t1 = time.time()
+    with timer():
+        response = obj.logs(log_type_filter)
 
     click.echo(response)
-    click.echo(f"Time taken to retrieve logs: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -457,13 +460,11 @@ def documents_overview(obj, document_ids, user_ids):
     document_ids = list(document_ids) if document_ids else None
     user_ids = list(user_ids) if user_ids else None
 
-    t0 = time.time()
-    response = obj.documents_overview(document_ids, user_ids)
-    t1 = time.time()
+    with timer():
+        response = obj.documents_overview(document_ids, user_ids)
 
     for document in response:
         click.echo(document)
-    click.echo(f"Time taken to get document overview: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -471,25 +472,21 @@ def documents_overview(obj, document_ids, user_ids):
 @click.pass_obj
 def document_chunks(obj, document_id):
     """Get chunks of a specific document."""
-    t0 = time.time()
-    response = obj.document_chunks(document_id)
-    t1 = time.time()
+    with timer():
+        response = obj.document_chunks(document_id)
 
     for chunk in response:
         click.echo(chunk)
-    click.echo(f"Time taken to get document chunks: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
 @click.pass_obj
 def app_settings(obj):
     """Retrieve application settings."""
-    t0 = time.time()
-    response = obj.app_settings()
-    t1 = time.time()
+    with timer():
+        response = obj.app_settings()
 
     click.echo(response)
-    click.echo(f"Time taken to get app settings: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -501,13 +498,11 @@ def users_overview(obj, user_ids):
         [uuid.UUID(user_id) for user_id in user_ids] if user_ids else None
     )
 
-    t0 = time.time()
-    response = obj.users_overview(user_ids)
-    t1 = time.time()
+    with timer():
+        response = obj.users_overview(user_ids)
 
     for user in response:
         click.echo(user)
-    click.echo(f"Time taken to get users overview: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -520,12 +515,10 @@ def users_overview(obj, user_ids):
 @click.pass_obj
 def analytics(obj, filters, analysis_types):
     """Retrieve analytics data."""
-    t0 = time.time()
-    response = obj.analytics(filters, analysis_types)
-    t1 = time.time()
+    with timer():
+        response = obj.analytics(filters, analysis_types)
 
     click.echo(response)
-    click.echo(f"Time taken to get analytics: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -535,12 +528,10 @@ def analytics(obj, filters, analysis_types):
 @click.pass_obj
 def inspect_knowledge_graph(obj, limit):
     """Print relationships from the knowledge graph."""
-    t0 = time.time()
-    response = obj.inspect_knowledge_graph(limit)
-    t1 = time.time()
+    with timer():
+        response = obj.inspect_knowledge_graph(limit)
 
     click.echo(response)
-    click.echo(f"Time taken to print relationships: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -552,12 +543,10 @@ def inspect_knowledge_graph(obj, limit):
 @click.option("--option", default=0, help="Which file to ingest?")
 @click.pass_obj
 def ingest_sample_file(obj, no_media, option):
-    t0 = time.time()
-    response = obj.ingest_sample_file(no_media=no_media, option=option)
-    t1 = time.time()
+    with timer():
+        response = obj.ingest_sample_file(no_media=no_media, option=option)
 
     click.echo(response)
-    click.echo(f"Time taken to ingest sample: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
@@ -569,24 +558,20 @@ def ingest_sample_file(obj, no_media, option):
 @click.pass_obj
 def ingest_sample_files(obj, no_media):
     """Ingest all sample files into R2R."""
-    t0 = time.time()
-    response = obj.ingest_sample_files(no_media=no_media)
-    t1 = time.time()
+    with timer():
+        response = obj.ingest_sample_files(no_media=no_media)
 
     click.echo(response)
-    click.echo(f"Time taken to ingest sample files: {t1 - t0:.2f} seconds")
 
 
 @cli.command()
 @click.pass_obj
 def health(obj):
     """Check the health of the server."""
-    t0 = time.time()
-    response = obj.health()
-    t1 = time.time()
+    with timer():
+        response = obj.health()
 
     click.echo(response)
-    click.echo(f"Time taken to ingest sample: {t1 - t0:.2f} seconds")
 
 
 @cli.command()

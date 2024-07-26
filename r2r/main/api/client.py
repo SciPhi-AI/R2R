@@ -62,43 +62,6 @@ def handle_request_error(response):
     )
 
 
-def monitor_request(func):
-    @functools.wraps(func)
-    def wrapper(*args, monitor=False, **kwargs):
-        if not monitor:
-            return func(*args, **kwargs)
-
-        result = None
-        exception = None
-
-        def run_func():
-            nonlocal result, exception
-            try:
-                result = func(*args, **kwargs)
-            except Exception as e:
-                exception = e
-
-        thread = threading.Thread(target=run_func)
-        thread.start()
-
-        dots = [".", "..", "..."]
-        i = 0
-        while thread.is_alive():
-            print(f"\rRequesting{dots[i % 3]}", end="", flush=True)
-            i += 1
-            time.sleep(0.5)
-
-        thread.join()
-
-        print("\r", end="", flush=True)
-
-        if exception:
-            raise exception
-        return result
-
-    return wrapper
-
-
 class R2RClient:
     def __init__(
         self,
@@ -188,10 +151,9 @@ class R2RClient:
             name=name, template=template, input_types=input_types
         )
         return self._make_request(
-            "POST", "update_prompt", json=json.loads(request.json())
+            "POST", "update_prompt", json=json.loads(request.model_dump_json())
         )
 
-    @monitor_request
     def ingest_files(
         self,
         file_paths: list[str],
@@ -236,7 +198,7 @@ class R2RClient:
                 "ingest_files",
                 data={
                     k: json.dumps(v)
-                    for k, v in json.loads(request.json()).items()
+                    for k, v in json.loads(request.model_dump_json()).items()
                 },
                 files=files_to_upload,
             )
@@ -244,7 +206,6 @@ class R2RClient:
             for _, file_tuple in files_to_upload:
                 file_tuple[1].close()
 
-    @monitor_request
     def update_files(
         self,
         file_paths: list[str],
@@ -263,7 +224,7 @@ class R2RClient:
                 "update_files",
                 data={
                     k: json.dumps(v)
-                    for k, v in json.loads(request.json()).items()
+                    for k, v in json.loads(request.model_dump_json()).items()
                 },
                 files=[
                     (
@@ -304,7 +265,7 @@ class R2RClient:
             },
         )
         return self._make_request(
-            "POST", "search", json=json.loads(request.json())
+            "POST", "search", json=json.loads(request.model_dump_json())
         )
 
     def rag(
@@ -343,7 +304,7 @@ class R2RClient:
             return self._stream_rag_sync(request)
         else:
             return self._make_request(
-                "POST", "rag", json=json.loads(request.json())
+                "POST", "rag", json=json.loads(request.model_dump_json())
             )
 
     async def _stream_rag(
@@ -352,7 +313,7 @@ class R2RClient:
         url = f"{self.base_url}{self.prefix}/rag"
         async with httpx.AsyncClient() as client:
             async with client.stream(
-                "POST", url, json=json.loads(rag_request.json())
+                "POST", url, json=json.loads(rag_request.model_dump_json())
             ) as response:
                 handle_request_error(response)
                 async for chunk in response.aiter_text():
@@ -385,7 +346,7 @@ class R2RClient:
 
         request = R2RDeleteRequest(keys=keys, values=values)
         return self._make_request(
-            "DELETE", "delete", json=json.loads(request.json())
+            "DELETE", "delete", json=json.loads(request.model_dump_json())
         )
 
     def logs(self, log_type_filter: Optional[str] = None) -> dict:
@@ -393,7 +354,7 @@ class R2RClient:
 
         request = R2RLogsRequest(log_type_filter=log_type_filter)
         return self._make_request(
-            "GET", "logs", json=json.loads(request.json())
+            "GET", "logs", json=json.loads(request.model_dump_json())
         )
 
     def app_settings(self) -> dict:
@@ -409,7 +370,7 @@ class R2RClient:
             analysis_types=AnalysisTypes(analysis_types=analysis_types),
         )
         return self._make_request(
-            "GET", "analytics", json=json.loads(request.json())
+            "GET", "analytics", json=json.loads(request.model_dump_json())
         )
 
     def users_overview(
@@ -419,7 +380,7 @@ class R2RClient:
 
         request = R2RUsersOverviewRequest(user_ids=user_ids)
         return self._make_request(
-            "GET", "users_overview", json=json.loads(request.json())
+            "GET", "users_overview", json=json.loads(request.model_dump_json())
         )
 
     def documents_overview(
@@ -440,7 +401,9 @@ class R2RClient:
             ),
         )
         return self._make_request(
-            "GET", "documents_overview", json=json.loads(request.json())
+            "GET",
+            "documents_overview",
+            json=json.loads(request.model_dump_json()),
         )
 
     def document_chunks(self, document_id: str) -> dict:
@@ -448,7 +411,9 @@ class R2RClient:
 
         request = R2RDocumentChunksRequest(document_id=document_id)
         return self._make_request(
-            "GET", "document_chunks", json=json.loads(request.json())
+            "GET",
+            "document_chunks",
+            json=json.loads(request.model_dump_json()),
         )
 
     def inspect_knowledge_graph(self, limit: int = 100) -> str:
@@ -456,7 +421,9 @@ class R2RClient:
 
         request = R2RPrintRelationshipsRequest(limit=limit)
         return self._make_request(
-            "POST", "inspect_knowledge_graph", json=json.loads(request.json())
+            "POST",
+            "inspect_knowledge_graph",
+            json=json.loads(request.model_dump_json()),
         )
 
     def change_password(
@@ -542,7 +509,7 @@ class R2RClient:
             return self._stream_rag_chat_sync(request)
         else:
             return self._make_request(
-                "POST", "rag_chat", json=json.loads(request.json())
+                "POST", "rag_chat", json=json.loads(request.model_dump_json())
             )
 
     async def _stream_rag_chat(
@@ -551,7 +518,9 @@ class R2RClient:
         url = f"{self.base_url}{self.prefix}/rag_chat"
         async with httpx.AsyncClient() as client:
             async with client.stream(
-                "POST", url, json=json.loads(rag_chat_request.json())
+                "POST",
+                url,
+                json=json.loads(rag_chat_request.model_dump_json()),
             ) as response:
                 handle_request_error(response)
                 async for chunk in response.aiter_text():

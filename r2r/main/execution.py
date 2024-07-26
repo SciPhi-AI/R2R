@@ -2,9 +2,12 @@ import ast
 import asyncio
 import json
 import os
+import threading
+import time
 import uuid
 from typing import Optional, Union
 
+import click
 from fastapi import UploadFile
 
 from r2r.base import (
@@ -143,21 +146,43 @@ class R2RExecutionWrapper:
             file.file.seek(0)
 
         try:
-            if self.client_mode:
-                return self.client.ingest_files(
-                    file_paths=all_file_paths,
-                    document_ids=document_ids,
-                    metadatas=metadatas,
-                    versions=versions,
-                    monitor=True,
-                )["results"]
-            else:
-                return self.app.ingest_files(
-                    files=files,
-                    document_ids=document_ids,
-                    metadatas=metadatas,
-                    versions=versions,
-                )
+            spinner_chars = "|/-\\"
+            stop_spinner = False
+
+            def spinner():
+                i = 0
+                while not stop_spinner:
+                    click.echo(
+                        f"\rIngesting files {spinner_chars[i % len(spinner_chars)]}",
+                        nl=False,
+                    )
+                    time.sleep(0.1)
+                    i += 1
+
+            spinner_thread = threading.Thread(target=spinner)
+            spinner_thread.start()
+
+            try:
+                if self.client_mode:
+                    results = self.client.ingest_files(
+                        file_paths=all_file_paths,
+                        document_ids=document_ids,
+                        metadatas=metadatas,
+                        versions=versions,
+                    )["results"]
+                else:
+                    results = self.app.ingest_files(
+                        files=files,
+                        document_ids=document_ids,
+                        metadatas=metadatas,
+                        versions=versions,
+                    )
+            finally:
+                stop_spinner = True
+                spinner_thread.join()
+                click.echo("\rIngestion complete!    ")
+
+            return results
         finally:
             for file in files:
                 file.file.close()
@@ -180,19 +205,18 @@ class R2RExecutionWrapper:
                 file_paths=file_paths,
                 document_ids=document_ids,
                 metadatas=metadatas,
-                monitor=True,
             )["results"]
-        else:
-            files = [
-                UploadFile(
-                    filename=file_path,
-                    file=open(file_path, "rb"),
-                )
-                for file_path in file_paths
-            ]
-            return self.app.update_files(
-                files=files, document_ids=document_ids, metadatas=metadatas
+
+        files = [
+            UploadFile(
+                filename=file_path,
+                file=open(file_path, "rb"),
             )
+            for file_path in file_paths
+        ]
+        return self.app.update_files(
+            files=files, document_ids=document_ids, metadatas=metadatas
+        )
 
     def search(
         self,
@@ -396,8 +420,6 @@ class R2RExecutionWrapper:
     def health(self) -> str:
         if self.client_mode:
             return self.client.health()
-        else:
-            pass
 
     def get_app(self):
         if not self.client_mode:

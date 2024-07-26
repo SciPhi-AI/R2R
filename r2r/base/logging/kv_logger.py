@@ -177,11 +177,9 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         params = [str(ele) for ele in run_ids] + [limit_per_run]
         await cursor.execute(query, params)
         rows = await cursor.fetchall()
-        new_rows = []
-        for row in rows:
-            new_rows.append(
-                (row[0], uuid.UUID(row[1]), row[2], row[3], row[4])
-            )
+        new_rows = [
+            (row[0], uuid.UUID(row[1]), row[2], row[3], row[4]) for row in rows
+        ]
         return [
             {desc[0]: row[i] for i, desc in enumerate(cursor.description)}
             for row in new_rows
