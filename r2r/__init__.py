@@ -59,6 +59,7 @@ __all__ = [
     # Parsers
     "AsyncParser",
     "CSVParser",
+    "CSVParserAdvanced",
     "DOCXParser",
     "HTMLParser",
     "JSONParser",
@@ -68,6 +69,7 @@ __all__ = [
     "PPTParser",
     "TextParser",
     "XLSXParser",
+    "XSLXParserAdvanced", 
     "AsyncPipeline",
     # Providers
     "EmbeddingConfig",
