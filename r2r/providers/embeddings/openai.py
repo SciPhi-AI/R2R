@@ -2,6 +2,7 @@ import logging
 import os
 
 from openai import AsyncOpenAI, AuthenticationError, OpenAI
+from openai._types import NOT_GIVEN
 
 from r2r.base import (
     EmbeddingConfig,
@@ -90,7 +91,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 self.client.embeddings.create(
                     input=[text],
                     model=self.base_model,
-                    dimensions=self.base_dimension
+                    dimensions= NOT_GIVEN if self.base_model == "text-embedding-ada-002" else  self.base_dimension
                     or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
                         self.base_model
                     ][-1],
@@ -120,7 +121,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 for ele in self.client.embeddings.create(
                     input=texts,
                     model=self.base_model,
-                    dimensions=self.base_dimension
+                    dimensions= NOT_GIVEN if self.base_model == "text-embedding-ada-002" else  self.base_dimension
                     or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
                         self.base_model
                     ][-1],
@@ -146,7 +147,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             response = await self.async_client.embeddings.create(
                 input=[text],
                 model=self.base_model,
-                dimensions=self.base_dimension
+                dimensions= NOT_GIVEN if self.base_model == "text-embedding-ada-002" else  self.base_dimension
                 or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
                     self.base_model
                 ][-1],
@@ -172,7 +173,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             response = await self.async_client.embeddings.create(
                 input=texts,
                 model=self.base_model,
-                dimensions=self.base_dimension
+                dimensions= NOT_GIVEN if self.base_model == "text-embedding-ada-002" else  self.base_dimension
                 or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
                     self.base_model
                 ][-1],
