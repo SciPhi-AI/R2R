@@ -6,7 +6,7 @@ import threading
 import time
 import uuid
 from contextlib import ExitStack
-from typing import Any, AsyncGenerator, Generator, Optional, Union
+from typing import Any, AsyncGenerator, Dict, Generator, Optional, Union
 
 import fire
 import httpx
@@ -401,7 +401,11 @@ class R2RClient:
 
         return self._make_request("GET", "app_settings")
 
-    def analytics(self, filter_criteria: dict, analysis_types: dict) -> dict:
+    def analytics(
+        self,
+        filter_criteria: Optional[Dict[str, Any]],
+        analysis_types: Optional[Dict[str, Any]],
+    ) -> dict:
         self._ensure_authenticated()
 
         request = R2RAnalyticsRequest(
@@ -409,7 +413,7 @@ class R2RClient:
             analysis_types=AnalysisTypes(analysis_types=analysis_types),
         )
         return self._make_request(
-            "GET", "analytics", json=json.loads(request.json())
+            "GET", "analytics", json=request.model_dump(exclude_none=True)
         )
 
     def users_overview(
