@@ -79,4 +79,5 @@ jobs:
       if: always()
       run: |
         deactivate
+        rm -rf $HOME/r2r_local_venv
         docker system prune -af --volumes
