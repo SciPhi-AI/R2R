@@ -211,6 +211,8 @@ class RetrievalService(Service):
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         user: Optional[User] = None,
+        task_prompt_override: Optional[str] = None,
+        include_title_if_available: Optional[bool] = False,
         *args,
         **kwargs,
     ):
@@ -250,10 +252,11 @@ class RetrievalService(Service):
                                 chunk
                             ) in self.assistants.streaming_rag_assistant.arun(
                                 messages=messages,
-                                # run_manager=self.run_manager,
+                                system_instruction=task_prompt_override,
                                 vector_search_settings=vector_search_settings,
-                                # kg_search_settings=kg_search_settings,
-                                # rag_generation_config=rag_generation_config,
+                                kg_search_settings=kg_search_settings,
+                                rag_generation_config=rag_generation_config,
+                                include_title_if_available=include_title_if_available,
                                 *args,
                                 **kwargs,
                             ):
@@ -263,10 +266,11 @@ class RetrievalService(Service):
 
                 results = await self.assistants.rag_assistant.arun(
                     messages=messages,
-                    # run_manager=self.run_manager,
+                    system_instruction=task_prompt_override,
                     vector_search_settings=vector_search_settings,
-                    # kg_search_settings=kg_search_settings,
-                    # rag_generation_config=rag_generation_config,
+                    kg_search_settings=kg_search_settings,
+                    rag_generation_config=rag_generation_config,
+                    include_title_if_available=include_title_if_available,
                     *args,
                     **kwargs,
                 )
