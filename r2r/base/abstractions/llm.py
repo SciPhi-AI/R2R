@@ -31,15 +31,10 @@ class GenerationConfig(BaseModel):
         "model": "gpt-4o",
         "temperature": 0.1,
         "top_p": 1.0,
-        "top_k": 100,
         "max_tokens_to_sample": 1024,
         "stream": False,
         "functions": None,
-        "skip_special_tokens": False,
-        "stop_token": None,
-        "num_beams": 1,
-        "do_sample": True,
-        "generate_with_chat": False,
+        "tools": None,
         "add_generation_kwargs": None,
         "api_base": None,
     }
@@ -53,9 +48,6 @@ class GenerationConfig(BaseModel):
     top_p: float = Field(
         default_factory=lambda: GenerationConfig._defaults["top_p"]
     )
-    top_k: int = Field(
-        default_factory=lambda: GenerationConfig._defaults["top_k"]
-    )
     max_tokens_to_sample: int = Field(
         default_factory=lambda: GenerationConfig._defaults[
             "max_tokens_to_sample"
@@ -67,24 +59,8 @@ class GenerationConfig(BaseModel):
     functions: Optional[list[dict]] = Field(
         default_factory=lambda: GenerationConfig._defaults["functions"]
     )
-    skip_special_tokens: bool = Field(
-        default_factory=lambda: GenerationConfig._defaults[
-            "skip_special_tokens"
-        ]
-    )
-    stop_token: Optional[str] = Field(
-        default_factory=lambda: GenerationConfig._defaults["stop_token"]
-    )
-    num_beams: int = Field(
-        default_factory=lambda: GenerationConfig._defaults["num_beams"]
-    )
-    do_sample: bool = Field(
-        default_factory=lambda: GenerationConfig._defaults["do_sample"]
-    )
-    generate_with_chat: bool = Field(
-        default_factory=lambda: GenerationConfig._defaults[
-            "generate_with_chat"
-        ]
+    tools: Optional[list[dict]] = Field(
+        default_factory=lambda: GenerationConfig._defaults["tools"]
     )
     add_generation_kwargs: Optional[dict] = Field(
         default_factory=lambda: GenerationConfig._defaults[

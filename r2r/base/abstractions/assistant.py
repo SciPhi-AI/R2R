@@ -24,6 +24,7 @@ class Message(BaseModel):
     content: Optional[str] = None
     name: Optional[str] = None
     function_call: Optional[Dict[str, Any]] = None
+    tool_calls: Optional[List[Dict[str, Any]]] = None
 
 
 class Conversation:
@@ -36,12 +37,14 @@ class Conversation:
         content: Optional[str] = None,
         name: Optional[str] = None,
         function_call: Optional[Dict[str, Any]] = None,
+        tool_calls: Optional[List[Dict[str, Any]]] = None,
     ):
         message = Message(
             role=role,
             content=content,
             name=name,
             function_call=function_call,
+            tool_calls=tool_calls,
         )
         self.add_message(message)
 
@@ -115,11 +118,35 @@ class Assistant(ABC):
         else:
             return f"Error: Tool {tool_name} not found."
 
-    def get_generation_config(self) -> GenerationConfig:
+    def get_generation_config(
+        self, last_message: Message, stream: bool = False
+    ) -> GenerationConfig:
+        if (
+            last_message.role == "tool" or last_message.role == "function"
+        ) and last_message.content != "":
+            return GenerationConfig(
+                **self.config.generation_config.dict(
+                    exclude={"functions", "tools", "stream"}
+                ),
+                stream=stream,
+            )
         return GenerationConfig(
             **self.config.generation_config.dict(
-                exclude={"functions", "stream"}
+                exclude={"functions", "tools", "stream"}
             ),
+            # FIXME: Use tools instead of functions
+            # TODO - Investigate why `tools` fails with OpenAI+LiteLLM
+            # tools=[
+            #     {
+            #         "function":{
+            #             "name": tool.name,
+            #             "description": tool.description,
+            #             "parameters": tool.parameters,
+            #         },
+            #         "type": "function"
+            #     }
+            #     for tool in self.tools
+            # ],
             functions=[
                 {
                     "name": tool.name,
@@ -128,28 +155,65 @@ class Assistant(ABC):
                 }
                 for tool in self.tools
             ],
-            stream=self.config.stream,
+            stream=stream,
         )
 
     async def handle_function_call(
-        self, function_name: str, function_arguments: str, *args, **kwargs
+        self,
+        function_name: str,
+        function_arguments: str,
+        tool_id: Optional[str] = None,
+        *args,
+        **kwargs,
     ) -> Union[str, AsyncGenerator[str, None]]:
         tool_args = json.loads(function_arguments)
-        self.conversation.append(
-            Message(
-                role="assistant",
-                function_call={
-                    "name": function_name,
-                    "arguments": function_arguments,
-                },
+
+        (
+            self.conversation.append(
+                Message(
+                    role="assistant",
+                    tool_calls=[
+                        {
+                            "id": tool_id,
+                            "function": {
+                                "name": function_name,
+                                "arguments": function_arguments,
+                            },
+                        }
+                    ],
+                )
+            )
+            if tool_id
+            else self.conversation.append(
+                Message(
+                    role="assistant",
+                    function_call={
+                        "name": function_name,
+                        "arguments": function_arguments,
+                    },
+                )
             )
         )
 
         tool_result = await self.execute_tool(
             function_name, *args, **tool_args, **kwargs
         )
-
-        self.conversation.append(
-            Message(role="function", content=tool_result, name=function_name)
+        (
+            self.conversation.append(
+                Message(
+                    tool_call_id=tool_id,
+                    role="tool",
+                    content=str(tool_result),
+                    name=function_name,
+                )
+            )
+            if tool_id
+            else self.conversation.append(
+                Message(
+                    role="function",
+                    content=str(tool_result),
+                    name=function_name,
+                )
+            )
         )
         return tool_result

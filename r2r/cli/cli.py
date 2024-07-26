@@ -311,7 +311,7 @@ def update_files(obj, file_paths, document_ids, metadatas):
 @click.option(
     "--use-kg-search", is_flag=True, help="Use knowledge graph search"
 )
-@click.option("--kg-agent-model", default=None, help="Model for KG agent")
+@click.option("--kg-search-model", default=None, help="Model for KG agent")
 @click.pass_obj
 def search(
     obj,
@@ -369,7 +369,7 @@ def search(
 @click.option(
     "--use-kg-search", is_flag=True, help="Use knowledge graph search"
 )
-@click.option("--kg-agent-model", default=None, help="Model for KG agent")
+@click.option("--kg-search-model", default=None, help="Model for KG agent")
 @click.option("--stream", is_flag=True, help="Stream the RAG response")
 @click.option("--rag-model", default=None, help="Model for RAG")
 @click.pass_obj
