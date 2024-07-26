@@ -1,8 +1,13 @@
+import logging
 from typing import Optional
+
+from pkg_resources import get_distribution
 
 from .app import R2RApp
 from .assembly.config import R2RConfig
 from .engine import R2REngine
+
+logger = logging.getLogger(__name__)
 
 
 class R2R:
@@ -16,8 +21,11 @@ class R2R:
         config: Optional[R2RConfig] = None,
         config_name: Optional[str] = None,
         *args,
-        **kwargs
+        **kwargs,
     ):
+        logger.info(
+            f"Starting R2R with version {get_distribution('r2r').version}"
+        )
         if engine and app:
             self.engine = engine
             self.app = app
