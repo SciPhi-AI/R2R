@@ -1,9 +1,6 @@
 name: Debian R2R Docker Build and Integration Test Local (Debian GNU/Linux 12 (bookworm) amd64)
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
   workflow_dispatch:
 
 jobs:
