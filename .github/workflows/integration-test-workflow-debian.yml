@@ -55,8 +55,12 @@ jobs:
 
         sleep 10
 
-    - name: Run integration tests
+    - name: Install CLI and run integration tests
       run: |
+        . $HOME/r2r_venv/bin/activate
+        pip install --upgrade pip
+        pip install --upgrade r2r
+
         echo "R2R Version"
         r2r version
 
