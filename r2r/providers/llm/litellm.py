@@ -110,12 +110,6 @@ class LiteLLMProvider(LLMProvider):
         args = self._get_base_args(generation_config)
         args["messages"] = messages
 
-        if generation_config.tools is not None:
-            args["tools"] = generation_config.tools
-
-        if generation_config.functions is not None:
-            args["functions"] = generation_config.functions
-
         args = {**args, **kwargs}
         print("args = ", args)
         print("generation_config = ", generation_config)
@@ -148,6 +142,27 @@ class LiteLLMProvider(LLMProvider):
             "max_tokens": generation_config.max_tokens_to_sample,
             "api_base": generation_config.api_base,
         }
+
+        # args = {
+        #     "model": generation_config.model,
+        #     "temperature": generation_config.temperature,
+        #     "top_p": generation_config.top_p,
+        #     "top_k": generation_config.top_k,
+        #     "min_p": generation_config.min_p,
+        #     "stream": generation_config.stream,
+        #     "max_tokens": generation_config.max_tokens_to_sample,
+        #     "skip_special_tokens": generation_config.skip_special_tokens,
+        #     "num_beams": generation_config.num_beams,
+        #     "do_sample": generation_config.do_sample,
+        #     "api_base": generation_config.api_base,
+        # }
+
+        if generation_config.functions is not None:
+            args["functions"] = generation_config.functions
+
+        if generation_config.tools is not None:
+            args["tools"] = generation_config.tools
+
         return args
 
     async def aget_completion(

@@ -84,10 +84,6 @@ class OpenAILLMProvider(LLMProvider):
 
         args["messages"] = messages
 
-        # Conditionally add the 'functions' argument if it's not None
-        if generation_config.functions is not None:
-            args["functions"] = generation_config.functions
-
         args = {**args, **kwargs}
         # Create the chat completion
         return self.client.chat.completions.create(**args)
@@ -95,20 +91,31 @@ class OpenAILLMProvider(LLMProvider):
     def _get_base_args(
         self,
         generation_config: GenerationConfig,
+        prompt=None,
     ) -> dict:
-        """Get the base arguments for the OpenAI API."""
-
-        if generation_config.api_base is not None:
-            raise ValueError(
-                "The `api_base` argument is not supported by the OpenAI API."
-            )
+        """Get the base arguments for the LiteLLMProvider API."""
         args = {
             "model": generation_config.model,
             "temperature": generation_config.temperature,
             "top_p": generation_config.top_p,
+            "top_k": generation_config.top_k,
+            "min_p": generation_config.min_p,
             "stream": generation_config.stream,
             "max_tokens": generation_config.max_tokens_to_sample,
+            "skip_special_tokens": generation_config.skip_special_tokens,
+            "num_beams": generation_config.num_beams,
+            "do_sample": generation_config.do_sample,
+            "api_base": generation_config.api_base,
         }
+
+        if generation_config.stop_token is not None:
+            args["stop_token"] = generation_config.stop_token
+
+        if generation_config.functions is not None:
+            args["functions"] = generation_config.functions
+
+        if generation_config.tools is not None:
+            args["tools"] = generation_config.tools
 
         return args
 
@@ -138,10 +145,6 @@ class OpenAILLMProvider(LLMProvider):
         args = self._get_base_args(generation_config)
 
         args["messages"] = messages
-
-        # Conditionally add the 'functions' argument if it's not None
-        if generation_config.functions is not None:
-            args["functions"] = generation_config.functions
 
         args = {**args, **kwargs}
         # Create the chat completion

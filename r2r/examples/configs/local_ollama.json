@@ -3,7 +3,7 @@
     "provider": "litellm",
     "concurrency_limit": 1,
     "generation_config": {
-      "model": "ollama/llama3.1",
+      "model": "ollama/llama3-groq-tool-use",
       "temperature": 0.1,
       "top_p": 1.0,
       "top_k": 100,
@@ -14,7 +14,6 @@
       "stop_token": null,
       "num_beams": 1,
       "do_sample": true,
-      "generate_with_chat": false,
       "add_generation_kwargs": {},
       "api_base": null
     }

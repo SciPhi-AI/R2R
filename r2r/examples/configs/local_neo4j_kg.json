@@ -22,7 +22,6 @@
             "stop_token": null,
             "num_beams": 1,
             "do_sample": true,
-            "generate_with_chat": false,
             "add_generation_kwargs": {},
             "api_base": null
         }
@@ -42,7 +41,6 @@
           "stop_token": null,
           "num_beams": 1,
           "do_sample": true,
-          "generate_with_chat": false,
           "add_generation_kwargs": {},
           "api_base": null
         }
