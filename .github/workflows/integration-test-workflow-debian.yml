@@ -53,6 +53,8 @@ jobs:
     - name: Run integration tests in Docker container
       run: |
         docker exec r2r /bin/sh -c '
+          pip install .
+
           echo "R2R Version"
           r2r version
 
