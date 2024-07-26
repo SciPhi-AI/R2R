@@ -2,25 +2,23 @@ from r2r.assistants import R2RAssistant, R2RStreamingAssistant
 from r2r.base import (
     AssistantConfig,
     GenerationConfig,
+    KGSearchSettings,
     LLMProvider,
     PromptProvider,
     Tool,
+    VectorSearchSettings,
     to_async_generator,
 )
 from r2r.pipelines import SearchPipeline
 
 
-class RAGAssistant(R2RAssistant):
-    def __init__(
-        self,
-        llm_provider: LLMProvider,
-        prompt_provider: PromptProvider,
-        search_pipeline: SearchPipeline,
-        config: AssistantConfig,
-    ):
+class RAGAssistantMixin:
+    def __init__(self, search_pipeline: SearchPipeline, *args, **kwargs):
         self.search_pipeline = search_pipeline
+        super().__init__(*args, **kwargs)
+        self.add_search_tool()
 
-        # Define the search tool using the asearch method
+    def add_search_tool(self):
         search_tool = Tool(
             name="search",
             description="Search for information using the R2R framework",
@@ -36,18 +34,21 @@ class RAGAssistant(R2RAssistant):
                 "required": ["query"],
             },
         )
+        if search_tool.name not in [tool.name for tool in self.config.tools]:
+            self.config.tools.append(search_tool)
 
-        # Add the search tool to the config
-        if config.tools is None:
-            config.tools = [search_tool]
-        else:
-            config.tools.append(search_tool)
-
-        # Call the parent constructor with the updated config
-        super().__init__(llm_provider, prompt_provider, config)
-
-    async def asearch(self, query: str) -> str:
-        response = await self.search_pipeline.run(to_async_generator([query]))
+    async def asearch(
+        self,
+        query: str,
+        vector_search_settings: VectorSearchSettings,
+        kg_search_settings: KGSearchSettings,
+        *args,
+        **kwargs,
+    ) -> str:
+        response = await self.search_pipeline.run(
+            to_async_generator([query]),
+            vector_search_settings=vector_search_settings,
+        )
         results = ""
         for i, result in enumerate(response.vector_search_results):
             text = result.metadata.get("text", "N/A")
@@ -55,7 +56,7 @@ class RAGAssistant(R2RAssistant):
         return results
 
 
-class StreamingRAGAssistant(R2RStreamingAssistant):
+class R2RRAGAssistant(RAGAssistantMixin, R2RAssistant):
     def __init__(
         self,
         llm_provider: LLMProvider,
@@ -63,48 +64,29 @@ class StreamingRAGAssistant(R2RStreamingAssistant):
         search_pipeline: SearchPipeline,
         config: AssistantConfig,
     ):
-        self.search_pipeline = search_pipeline
-
-        # Define the search tool using the asearch method
-        search_tool = Tool(
-            name="search",
-            description="Search for information using the R2R framework",
-            function=self.asearch,
-            parameters={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "The query to search the local vector database with.",
-                    },
-                },
-                "required": ["query"],
-            },
+        super().__init__(
+            search_pipeline=search_pipeline,
+            llm_provider=llm_provider,
+            prompt_provider=prompt_provider,
+            config=config,
         )
 
-        # Add the search tool to the config
-        if config.tools is None:
-            config.tools = [search_tool]
-        else:
-            config.tools.append(search_tool)
 
-        # Ensure the config is set to stream
+class R2RStreamingRAGAssistant(RAGAssistantMixin, R2RStreamingAssistant):
+    def __init__(
+        self,
+        llm_provider: LLMProvider,
+        prompt_provider: PromptProvider,
+        search_pipeline: SearchPipeline,
+        config: AssistantConfig,
+    ):
         config.stream = True
-        super().__init__(llm_provider, prompt_provider, config)
-
-    async def asearch(self, query: str) -> str:
-        response = await self.search_pipeline.run(to_async_generator([query]))
-        results = ""
-        for i, result in enumerate(response.vector_search_results):
-            text = result.metadata.get("text", "N/A")
-            results += f"{i+1}. {text}\n"
-        return results
-
-    async def execute_tool(self, tool_name: str, **kwargs) -> str:
-        if tool_name == "search":
-            return await self.asearch(**kwargs)
-        else:
-            return f"Error: Tool {tool_name} not found."
+        super().__init__(
+            search_pipeline=search_pipeline,
+            llm_provider=llm_provider,
+            prompt_provider=prompt_provider,
+            config=config,
+        )
 
     def get_generation_config(self) -> GenerationConfig:
         return self.config.generation_config.model_copy(

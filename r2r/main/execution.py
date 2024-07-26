@@ -225,7 +225,7 @@ class R2RExecutionWrapper:
                 ),
                 KGSearchSettings(
                     use_kg_search=use_kg_search,
-                    agent_generation_config=GenerationConfig(
+                    kg_search_generation_config=GenerationConfig(
                         **(kg_search_generation_config or {})
                     ),
                 ),
@@ -270,7 +270,7 @@ class R2RExecutionWrapper:
                 ),
                 kg_search_settings=KGSearchSettings(
                     use_kg_search=use_kg_search,
-                    agent_generation_config=GenerationConfig(
+                    kg_search_generation_config=GenerationConfig(
                         **(kg_search_generation_config or {})
                     ),
                 ),

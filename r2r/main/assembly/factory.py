@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Any, Optional
 
-from r2r.assistants import RAGAssistant, StreamingRAGAssistant
+from r2r.assistants import R2RRAGAssistant, R2RStreamingRAGAssistant
 from r2r.base import (
     AssistantConfig,
     AsyncPipe,
@@ -586,8 +586,10 @@ class R2RAssistantFactory:
 
     def create_assistants(
         self,
-        rag_assistant_override: Optional[RAGAssistant] = None,
-        stream_rag_assistant_override: Optional[StreamingRAGAssistant] = None,
+        rag_assistant_override: Optional[R2RRAGAssistant] = None,
+        stream_rag_assistant_override: Optional[
+            R2RStreamingRAGAssistant
+        ] = None,
         *args,
         **kwargs,
     ) -> R2RAssistants:
@@ -600,7 +602,7 @@ class R2RAssistantFactory:
 
     def create_rag_assistant(
         self, stream: bool = False, *args, **kwargs
-    ) -> RAGAssistant:
+    ) -> R2RRAGAssistant:
         if not self.providers.llm or not self.providers.prompt:
             raise ValueError(
                 "LLM and Prompt providers are required for RAG Assistant"
@@ -614,14 +616,14 @@ class R2RAssistantFactory:
         )
 
         if stream:
-            rag_assistant = StreamingRAGAssistant(
+            rag_assistant = R2RStreamingRAGAssistant(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
                 config=assistant_config,
                 search_pipeline=self.pipelines.search_pipeline,
             )
         else:
-            rag_assistant = RAGAssistant(
+            rag_assistant = R2RRAGAssistant(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
                 config=assistant_config,

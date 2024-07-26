@@ -1,7 +1,7 @@
 import os
 from typing import Optional, Type
 
-from r2r.assistants import RAGAssistant
+from r2r.assistants import R2RRAGAssistant
 from r2r.base import (
     AsyncPipe,
     AuthProvider,
@@ -103,7 +103,7 @@ class R2RBuilder:
 
         # Assistant overrides
         self.assistant_factory_override: Optional[R2RAssistantFactory] = None
-        self.rag_assistant_override: Optional[RAGAssistant] = None
+        self.rag_assistant_override: Optional[R2RRAGAssistant] = None
 
     def with_app(self, app: Type[R2REngine]):
         self.r2r_app_override = app
@@ -220,7 +220,7 @@ class R2RBuilder:
         self.assistant_factory_override = factory
         return self
 
-    def with_rag_assistant(self, assistant: RAGAssistant):
+    def with_rag_assistant(self, assistant: R2RRAGAssistant):
         self.rag_assistant_override = assistant
         return self
 
