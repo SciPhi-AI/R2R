@@ -82,7 +82,7 @@ class R2RAssistant(Assistant, metaclass=CombinedMeta):
                 await self.handle_function_call(
                     tool_call.function.name,
                     tool_call.function.arguments,
-                    # tool_call.id,
+                    # FIXME: tool_call.id,
                     *args,
                     **kwargs,
                 )
@@ -149,7 +149,7 @@ class R2RStreamingAssistant(Assistant):
                     results = await self.handle_function_call(
                         tool_call.function.name,
                         tool_call.function.arguments,
-                        # tool_call.id,
+                        # FIXME: tool_call.id,
                         *args,
                         **kwargs,
                     )

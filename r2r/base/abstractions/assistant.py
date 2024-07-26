@@ -134,6 +134,7 @@ class Assistant(ABC):
             **self.config.generation_config.dict(
                 exclude={"functions", "tools", "stream"}
             ),
+            # FIXME: Use tools instead of functions
             # TODO - Investigate why `tools` fails with OpenAI+LiteLLM
             # tools=[
             #     {

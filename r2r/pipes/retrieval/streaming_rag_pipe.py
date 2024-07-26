@@ -68,6 +68,7 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
                     )
                     iteration += 1
 
+            # FIXME: Add KG search results into RAG workflow
             # if search_results.kg_search_results:
             #     for result in search_results.kg_search_results:
             #         if iteration >= 1:
