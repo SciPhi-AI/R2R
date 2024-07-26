@@ -1,4 +1,4 @@
-from .abstractions import R2RPipelines, R2RProviders
+from .abstractions import R2RAssistants, R2RPipelines, R2RProviders
 from .api.client import R2RClient
 from .api.routes.ingestion.requests import (
     R2RIngestFilesRequest,
@@ -34,6 +34,7 @@ __all__ = [
     "R2R",
     "R2RPipelines",
     "R2RProviders",
+    "R2RAssistants",
     "R2RUpdatePromptRequest",
     "R2RIngestFilesRequest",
     "R2RUpdateFilesRequest",

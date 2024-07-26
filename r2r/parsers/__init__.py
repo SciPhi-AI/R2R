@@ -27,5 +27,5 @@ __all__ = [
     "CSVParserAdvanced",
     "JSONParser",
     "XLSXParser",
-    "XLSXParserAdvanced"
+    "XLSXParserAdvanced",
 ]

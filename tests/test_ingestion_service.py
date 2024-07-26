@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock
 import pytest
 from fastapi import UploadFile
 
+from r2r import R2RAssistants
 from r2r.base import (
     Document,
     DocumentInfo,
@@ -64,9 +65,15 @@ def ingestion_service(mock_vector_db, mock_embedding_model):
     }
     run_manager = RunManager(logger)
     logging_connection = Mock()
+    assistants = Mock(spec=R2RAssistants)
 
     service = IngestionService(
-        config, providers, pipelines, run_manager, logging_connection
+        config,
+        providers,
+        pipelines,
+        assistants,
+        run_manager,
+        logging_connection=logging_connection,
     )
     return service
 
