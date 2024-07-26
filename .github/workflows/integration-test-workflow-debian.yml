@@ -18,12 +18,6 @@ jobs:
         python3 -m venv $HOME/r2r_venv
         echo "$HOME/r2r_venv/bin" >> $GITHUB_PATH
 
-    - name: Activate virtual environment and install R2R
-      run: |
-        . $HOME/r2r_venv/bin/activate
-        pip install --upgrade pip
-        pip install --upgrade r2r
-
     - name: Build R2R Docker image
       run: |
         docker build \
