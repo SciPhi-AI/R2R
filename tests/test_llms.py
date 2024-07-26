@@ -1,13 +1,13 @@
 import pytest
 
 from r2r import GenerationConfig, LLMConfig
-from r2r.providers import LiteLLM
+from r2r.providers import LiteLLMProvider
 
 
 @pytest.fixture
 def lite_llm():
     config = LLMConfig(provider="litellm")
-    return LiteLLM(config)
+    return LiteLLMProvider(config)
 
 
 # @pytest.mark.parametrize("llm_fixture", ["lite_llm"])
