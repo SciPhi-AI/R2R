@@ -38,7 +38,7 @@ class DocumentType(str, Enum):
 class Document(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     type: DocumentType
-    data: str
+    data: Union[str, bytes]
     metadata: dict
 
     def __init__(self, *args, **kwargs):
@@ -48,7 +48,11 @@ class Document(BaseModel):
 
         # Generate UUID based on the hash of the data
         if "id" not in kwargs:
-            data_str = kwargs["data"]
+            data = kwargs["data"]
+            if isinstance(data, bytes):
+                data_str = data.decode("utf-8", errors="ignore")
+            else:
+                data_str = data
             data_hash = uuid.uuid5(uuid.NAMESPACE_DNS, data_str)
             kwargs["id"] = data_hash  # Set the id based on the data hash
 
@@ -58,6 +62,7 @@ class Document(BaseModel):
         arbitrary_types_allowed = True
         json_encoders = {
             uuid.UUID: str,
+            bytes: lambda v: v.decode("utf-8", errors="ignore"),
         }
 
 
