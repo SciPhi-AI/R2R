@@ -112,7 +112,7 @@ def serve(
         for var in env_vars:
             if value := os.environ.get(var):
                 prompt = (
-                    f"Warning: You should not manually set your Postgres variables if you are using Docker.\n"
+                    f"Warning: Only set a Postgres variable when trying to connect to your own existing database.\n"
                     f"Environment variable {var} is set to '{value}'. Unset it?"
                 )
                 if click.confirm(prompt, default=True):
