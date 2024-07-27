@@ -51,7 +51,7 @@ r2r --config-name=default serve
 
 
 ## Quickstart
-After [installing](https://r2r-docs.sciphi.a/installation), the [R2R Quickstart](https://r2r-docs.sciphi.ai/quickstart) is your go to for a step-by-step guide to get up and running with R2R in minutes. The guide demonstrates R2R's Retrieval-Augmented Generation (RAG) system by ingesting sample documents and then showcasing features for search, RAG, logging, analytics, and document management.
+After [installing](https://r2r-docs.sciphi.ai/installation), the [R2R Quickstart](https://r2r-docs.sciphi.ai/quickstart) is your go to for a step-by-step guide to get up and running with R2R in minutes. The guide demonstrates R2R's Retrieval-Augmented Generation (RAG) system by ingesting sample documents and then showcasing features for search, RAG, logging, analytics, and document management.
 ## Getting Started
 
 To get started with R2R, we recommend starting with the quickstart and then moving on to specific cookbooks.
