@@ -1,7 +1,6 @@
 from r2r.assistants import R2RAssistant, R2RStreamingAssistant
 from r2r.base import (
     AssistantConfig,
-    GenerationConfig,
     KGSearchSettings,
     LLMProvider,
     PromptProvider,

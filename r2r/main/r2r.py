@@ -1,13 +1,25 @@
 import logging
+from pathlib import Path
 from typing import Optional
 
-from pkg_resources import get_distribution
+import toml
 
 from .app import R2RApp
 from .assembly.config import R2RConfig
 from .engine import R2REngine
 
 logger = logging.getLogger(__name__)
+
+
+def get_version_from_pyproject():
+    try:
+        pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
+        with open(pyproject_path, "r") as f:
+            pyproject_data = toml.load(f)
+        return pyproject_data["tool"]["poetry"]["version"]
+    except Exception as e:
+        logger.warning(f"Failed to read version from pyproject.toml: {e}")
+        return "unknown"
 
 
 class R2R:
@@ -23,9 +35,8 @@ class R2R:
         *args,
         **kwargs,
     ):
-        logger.info(
-            f"Starting R2R with version {get_distribution('r2r').version}"
-        )
+        version = get_version_from_pyproject()
+        logger.info(f"Starting R2R with version {version}")
         if engine and app:
             self.engine = engine
             self.app = app
