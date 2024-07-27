@@ -1,5 +1,4 @@
 import asyncio
-import copy
 from abc import ABCMeta
 from typing import AsyncGenerator, Generator, Optional
 
