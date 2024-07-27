@@ -1,4 +1,5 @@
 import asyncio
+import copy
 from abc import ABCMeta
 from typing import AsyncGenerator, Generator, Optional
 
@@ -33,6 +34,14 @@ def sync_wrapper(async_gen):
 
 
 class R2RAssistant(Assistant, metaclass=CombinedMeta):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._reset()
+
+    def _reset(self):
+        self._completed = False
+        self.conversation = []
+
     @syncable
     async def arun(
         self,
@@ -41,57 +50,54 @@ class R2RAssistant(Assistant, metaclass=CombinedMeta):
         *args,
         **kwargs,
     ) -> list[LLMChatCompletion]:
-        try:
-            self._completed = False
-            if system_instruction or not self.conversation:
-                self._setup(system_instruction)
+        self._reset()
 
-            if messages:
-                self.conversation.extend(messages)
+        if system_instruction or not self.conversation:
+            self._setup(system_instruction)
 
-            while not self._completed:
-                generation_config = self.get_generation_config(
-                    self.conversation[-1]
-                )
-                response = await self.llm_provider.aget_completion(
-                    [
-                        ele.model_dump(exclude_none=True)
-                        for ele in self.conversation
-                    ],
-                    generation_config,
-                )
-                await self.process_llm_response(response, *args, **kwargs)
-            return self.conversation
-        finally:
-            self.conversation = []
+        if messages:
+            self.conversation.extend(messages)
+
+        while not self._completed:
+            generation_config = self.get_generation_config(
+                self.conversation[-1]
+            )
+            response = await self.llm_provider.aget_completion(
+                [
+                    ele.model_dump(exclude_none=True)
+                    for ele in self.conversation
+                ],
+                generation_config,
+            )
+            await self.process_llm_response(response, *args, **kwargs)
+
+        return self.conversation
 
     async def process_llm_response(
         self, response: LLMChatCompletion, *args, **kwargs
     ) -> str:
-        message = response.choices[0].message
-        if message.function_call:
-            await self.handle_function_call(
-                message.function_call.name,
-                message.function_call.arguments,
-                *args,
-                **kwargs,
-            )
-            return await self.arun(*args, **kwargs)
-        elif message.tool_calls:
-            for tool_call in message.tool_calls:
+        if not self._completed:
+            message = response.choices[0].message
+            if message.function_call:
                 await self.handle_function_call(
-                    tool_call.function.name,
-                    tool_call.function.arguments,
-                    # FIXME: tool_call.id,
+                    message.function_call.name,
+                    message.function_call.arguments,
                     *args,
                     **kwargs,
                 )
-        else:
-            self.conversation.append(
-                Message(role="assistant", content=message.content)
-            )
-            self._completed = True
-            return message.content
+            elif message.tool_calls:
+                for tool_call in message.tool_calls:
+                    await self.handle_function_call(
+                        tool_call.function.name,
+                        tool_call.function.arguments,
+                        *args,
+                        **kwargs,
+                    )
+            else:
+                self.conversation.append(
+                    Message(role="assistant", content=message.content)
+                )
+                self._completed = True
 
 
 class R2RStreamingAssistant(Assistant):
@@ -103,7 +109,6 @@ class R2RStreamingAssistant(Assistant):
         **kwargs,
     ) -> AsyncGenerator[str, None]:
         try:
-            self._completed = False
             if system_instruction or not self.conversation:
                 self._setup(system_instruction)
 
@@ -126,6 +131,7 @@ class R2RStreamingAssistant(Assistant):
                 ):
                     yield chunk
         finally:
+            self._completed = False
             self.conversation = []
 
     def run(
