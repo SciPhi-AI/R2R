@@ -2,9 +2,12 @@ import ast
 import asyncio
 import json
 import os
+import threading
+import time
 import uuid
-from typing import Optional, Union
+from typing import Any, Dict, Optional, Union
 
+import click
 from fastapi import UploadFile
 
 from r2r.base import (
@@ -143,21 +146,43 @@ class R2RExecutionWrapper:
             file.file.seek(0)
 
         try:
-            if self.client_mode:
-                return self.client.ingest_files(
-                    file_paths=all_file_paths,
-                    document_ids=document_ids,
-                    metadatas=metadatas,
-                    versions=versions,
-                    monitor=True,
-                )["results"]
-            else:
-                return self.app.ingest_files(
-                    files=files,
-                    document_ids=document_ids,
-                    metadatas=metadatas,
-                    versions=versions,
-                )
+            spinner_chars = "|/-\\"
+            stop_spinner = False
+
+            def spinner():
+                i = 0
+                while not stop_spinner:
+                    click.echo(
+                        f"\rIngesting files {spinner_chars[i % len(spinner_chars)]}",
+                        nl=False,
+                    )
+                    time.sleep(0.1)
+                    i += 1
+
+            spinner_thread = threading.Thread(target=spinner)
+            spinner_thread.start()
+
+            try:
+                if self.client_mode:
+                    results = self.client.ingest_files(
+                        file_paths=all_file_paths,
+                        document_ids=document_ids,
+                        metadatas=metadatas,
+                        versions=versions,
+                    )["results"]
+                else:
+                    results = self.app.ingest_files(
+                        files=files,
+                        document_ids=document_ids,
+                        metadatas=metadatas,
+                        versions=versions,
+                    )
+            finally:
+                stop_spinner = True
+                spinner_thread.join()
+                click.echo("\rIngestion complete!    ")
+
+            return results
         finally:
             for file in files:
                 file.file.close()
@@ -180,19 +205,18 @@ class R2RExecutionWrapper:
                 file_paths=file_paths,
                 document_ids=document_ids,
                 metadatas=metadatas,
-                monitor=True,
             )["results"]
-        else:
-            files = [
-                UploadFile(
-                    filename=file_path,
-                    file=open(file_path, "rb"),
-                )
-                for file_path in file_paths
-            ]
-            return self.app.update_files(
-                files=files, document_ids=document_ids, metadatas=metadatas
+
+        files = [
+            UploadFile(
+                filename=file_path,
+                file=open(file_path, "rb"),
             )
+            for file_path in file_paths
+        ]
+        return self.app.update_files(
+            files=files, document_ids=document_ids, metadatas=metadatas
+        )
 
     def search(
         self,
@@ -202,7 +226,7 @@ class R2RExecutionWrapper:
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
-        kg_agent_generation_config: Optional[dict] = None,
+        kg_search_generation_config: Optional[dict] = None,
     ):
         if self.client_mode:
             return self.client.search(
@@ -212,7 +236,7 @@ class R2RExecutionWrapper:
                 search_limit,
                 do_hybrid_search,
                 use_kg_search,
-                kg_agent_generation_config,
+                kg_search_generation_config,
             )["results"]
         else:
             return self.app.search(
@@ -225,8 +249,8 @@ class R2RExecutionWrapper:
                 ),
                 KGSearchSettings(
                     use_kg_search=use_kg_search,
-                    agent_generation_config=GenerationConfig(
-                        **(kg_agent_generation_config or {})
+                    kg_search_generation_config=GenerationConfig(
+                        **(kg_search_generation_config or {})
                     ),
                 ),
             )
@@ -239,7 +263,7 @@ class R2RExecutionWrapper:
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
-        kg_agent_generation_config: Optional[dict] = None,
+        kg_search_generation_config: Optional[dict] = None,
         stream: bool = False,
         rag_generation_config: Optional[dict] = None,
     ):
@@ -251,7 +275,7 @@ class R2RExecutionWrapper:
                 search_limit=search_limit,
                 do_hybrid_search=do_hybrid_search,
                 use_kg_search=use_kg_search,
-                kg_agent_generation_config=kg_agent_generation_config,
+                kg_search_generation_config=kg_search_generation_config,
                 rag_generation_config=rag_generation_config,
             )
             if not stream:
@@ -270,8 +294,8 @@ class R2RExecutionWrapper:
                 ),
                 kg_search_settings=KGSearchSettings(
                     use_kg_search=use_kg_search,
-                    agent_generation_config=GenerationConfig(
-                        **(kg_agent_generation_config or {})
+                    kg_search_generation_config=GenerationConfig(
+                        **(kg_search_generation_config or {})
                     ),
                 ),
                 rag_generation_config=GenerationConfig(
@@ -351,21 +375,20 @@ class R2RExecutionWrapper:
 
     def analytics(
         self,
-        filters: Optional[str] = None,
-        analysis_types: Optional[str] = None,
+        filters: Optional[Dict[str, Any]] = None,
+        analysis_types: Optional[Dict[str, Any]] = None,
     ):
-        filter_criteria = FilterCriteria(filters=filters)
-        analysis_types = AnalysisTypes(analysis_types=analysis_types)
-
         if self.client_mode:
             return self.client.analytics(
-                filter_criteria=filter_criteria.model_dump(),
-                analysis_types=analysis_types.model_dump(),
+                filter_criteria=filters,
+                analysis_types=analysis_types,
             )["results"]
-        else:
-            return self.app.analytics(
-                filter_criteria=filter_criteria, analysis_types=analysis_types
-            )
+
+        filter_criteria = FilterCriteria(filters=filters)
+        analysis_types_obj = AnalysisTypes(analysis_types=analysis_types)
+        return self.app.analytics(
+            filter_criteria=filter_criteria, analysis_types=analysis_types_obj
+        )
 
     def ingest_sample_file(self, no_media: bool = True, option: int = 0):
         from r2r.examples.scripts.sample_data_ingestor import (
@@ -396,8 +419,6 @@ class R2RExecutionWrapper:
     def health(self) -> str:
         if self.client_mode:
             return self.client.health()
-        else:
-            pass
 
     def get_app(self):
         if not self.client_mode:

@@ -7,6 +7,7 @@ from r2r.base import (
     GenerationConfig,
     KGSearchSettings,
     KVLoggingSingleton,
+    Message,
     R2RException,
     RunManager,
     User,
@@ -17,7 +18,7 @@ from r2r.base import (
 from r2r.pipes import EvalPipe
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RPipelines, R2RProviders
+from ..abstractions import R2RAssistants, R2RPipelines, R2RProviders
 from ..assembly.config import R2RConfig
 from .base import Service
 
@@ -30,11 +31,17 @@ class RetrievalService(Service):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
+        assistants: R2RAssistants,
         run_manager: RunManager,
         logging_connection: KVLoggingSingleton,
     ):
         super().__init__(
-            config, providers, pipelines, run_manager, logging_connection
+            config,
+            providers,
+            pipelines,
+            assistants,
+            run_manager,
+            logging_connection,
         )
 
     @telemetry_event("Search")
@@ -184,6 +191,99 @@ class RetrievalService(Service):
                     )
                 # unpack the first result
                 return results[0]
+
+            except Exception as e:
+                logger.error(f"Pipeline error: {str(e)}")
+                if "NoneType" in str(e):
+                    raise R2RException(
+                        status_code=502,
+                        message="Ollama server not reachable or returned an invalid response",
+                    )
+                raise R2RException(
+                    status_code=500, message="Internal Server Error"
+                )
+
+    @telemetry_event("RAGChat")
+    async def rag_chat(
+        self,
+        messages: list[Message],
+        rag_generation_config: GenerationConfig,
+        vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
+        kg_search_settings: KGSearchSettings = KGSearchSettings(),
+        user: Optional[User] = None,
+        task_prompt_override: Optional[str] = None,
+        include_title_if_available: Optional[bool] = False,
+        *args,
+        **kwargs,
+    ):
+        async with manage_run(self.run_manager, "rag_chat_app") as run_id:
+            try:
+                t0 = time.time()
+
+                # Transform UUID filters to strings
+                for (
+                    filter,
+                    value,
+                ) in vector_search_settings.search_filters.items():
+                    if isinstance(value, uuid.UUID):
+                        vector_search_settings.search_filters[filter] = str(
+                            value
+                        )
+
+                if user and not user.is_superuser:
+                    vector_search_settings.search_filters["user_id"] = str(
+                        user.id
+                    )
+
+                if rag_generation_config.stream:
+                    t1 = time.time()
+                    latency = f"{t1 - t0:.2f}"
+
+                    await self.logging_connection.log(
+                        log_id=run_id,
+                        key="rag_chat_generation_latency",
+                        value=latency,
+                        is_info_log=False,
+                    )
+
+                    async def stream_response():
+                        async with manage_run(self.run_manager, "arag_chat"):
+                            async for (
+                                chunk
+                            ) in self.assistants.streaming_rag_assistant.arun(
+                                messages=messages,
+                                system_instruction=task_prompt_override,
+                                vector_search_settings=vector_search_settings,
+                                kg_search_settings=kg_search_settings,
+                                rag_generation_config=rag_generation_config,
+                                include_title_if_available=include_title_if_available,
+                                *args,
+                                **kwargs,
+                            ):
+                                yield chunk
+
+                    return stream_response()
+
+                results = await self.assistants.rag_assistant.arun(
+                    messages=messages,
+                    system_instruction=task_prompt_override,
+                    vector_search_settings=vector_search_settings,
+                    kg_search_settings=kg_search_settings,
+                    rag_generation_config=rag_generation_config,
+                    include_title_if_available=include_title_if_available,
+                    *args,
+                    **kwargs,
+                )
+                t1 = time.time()
+                latency = f"{t1 - t0:.2f}"
+
+                await self.logging_connection.log(
+                    log_id=run_id,
+                    key="rag_chat_generation_latency",
+                    value=latency,
+                    is_info_log=False,
+                )
+                return results
 
             except Exception as e:
                 logger.error(f"Pipeline error: {str(e)}")

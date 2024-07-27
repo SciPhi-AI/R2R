@@ -3,7 +3,7 @@ from typing import Optional
 from r2r.base import KVLoggingSingleton, RunManager
 from r2r.base.abstractions.base import AsyncSyncMeta, syncable
 
-from .abstractions import R2RPipelines, R2RProviders
+from .abstractions import R2RAssistants, R2RPipelines, R2RProviders
 from .assembly.config import R2RConfig
 from .services.auth_service import AuthService
 from .services.ingestion_service import IngestionService
@@ -17,6 +17,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
+        assistants: R2RAssistants,
         run_manager: Optional[RunManager] = None,
     ):
         logging_connection = KVLoggingSingleton()
@@ -25,24 +26,44 @@ class R2REngine(metaclass=AsyncSyncMeta):
         self.config = config
         self.providers = providers
         self.pipelines = pipelines
+        self.assistants = assistants
         self.logging_connection = KVLoggingSingleton()
         self.run_manager = run_manager
 
         self.ingestion_service = IngestionService(
-            config, providers, pipelines, run_manager, logging_connection
+            config,
+            providers,
+            pipelines,
+            assistants,
+            run_manager,
+            logging_connection,
         )
         self.retrieval_service = RetrievalService(
-            config, providers, pipelines, run_manager, logging_connection
+            config,
+            providers,
+            pipelines,
+            assistants,
+            run_manager,
+            logging_connection,
         )
         self.management_service = ManagementService(
-            config, providers, pipelines, run_manager, logging_connection
+            config,
+            providers,
+            pipelines,
+            assistants,
+            run_manager,
+            logging_connection,
         )
 
         self.auth_service = AuthService(
-            config, providers, pipelines, run_manager, logging_connection
+            config,
+            providers,
+            pipelines,
+            assistants,
+            run_manager,
+            logging_connection,
         )
 
-    # Ingestion routes
     @syncable
     async def aingest_documents(self, *args, **kwargs):
         return await self.ingestion_service.ingest_documents(*args, **kwargs)
@@ -59,7 +80,6 @@ class R2REngine(metaclass=AsyncSyncMeta):
     async def aupdate_files(self, *args, **kwargs):
         return await self.ingestion_service.update_files(*args, **kwargs)
 
-    # Retrieval routes
     @syncable
     async def asearch(self, *args, **kwargs):
         return await self.retrieval_service.search(*args, **kwargs)
@@ -69,10 +89,13 @@ class R2REngine(metaclass=AsyncSyncMeta):
         return await self.retrieval_service.rag(*args, **kwargs)
 
     @syncable
+    async def arag_chat(self, *args, **kwargs):
+        return await self.retrieval_service.rag_chat(*args, **kwargs)
+
+    @syncable
     async def aevaluate(self, *args, **kwargs):
         return await self.retrieval_service.evaluate(*args, **kwargs)
 
-    # Management routes
     @syncable
     async def aupdate_prompt(self, *args, **kwargs):
         return await self.management_service.update_prompt(*args, **kwargs)

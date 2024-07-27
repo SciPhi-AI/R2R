@@ -1,6 +1,5 @@
 """Abstractions for documents and their extractions."""
 
-import base64
 import json
 import logging
 import uuid
@@ -43,28 +42,18 @@ class Document(BaseModel):
     metadata: dict
 
     def __init__(self, *args, **kwargs):
-        data = kwargs.get("data")
-        if data and isinstance(data, str):
-            try:
-                # Try to decode if it's already base64 encoded
-                kwargs["data"] = base64.b64decode(data)
-            except:
-                # If it's not base64, encode it to bytes
-                kwargs["data"] = data.encode("utf-8")
-
         doc_type = kwargs.get("type")
         if isinstance(doc_type, str):
             kwargs["type"] = DocumentType(doc_type)
 
         # Generate UUID based on the hash of the data
         if "id" not in kwargs:
-            if isinstance(kwargs["data"], bytes):
-                data_hash = uuid.uuid5(
-                    uuid.NAMESPACE_DNS, kwargs["data"].decode("utf-8")
-                )
+            data = kwargs["data"]
+            if isinstance(data, bytes):
+                data_str = data.decode("utf-8", errors="ignore")
             else:
-                data_hash = uuid.uuid5(uuid.NAMESPACE_DNS, kwargs["data"])
-
+                data_str = data
+            data_hash = uuid.uuid5(uuid.NAMESPACE_DNS, data_str)
             kwargs["id"] = data_hash  # Set the id based on the data hash
 
         super().__init__(*args, **kwargs)
@@ -73,7 +62,7 @@ class Document(BaseModel):
         arbitrary_types_allowed = True
         json_encoders = {
             uuid.UUID: str,
-            bytes: lambda v: base64.b64encode(v).decode("utf-8"),
+            bytes: lambda v: v.decode("utf-8", errors="ignore"),
         }
 
 
@@ -141,6 +130,7 @@ class FragmentType(Enum):
 
     TEXT = "text"
     IMAGE = "image"
+    TABLE = "table"
 
 
 class Fragment(BaseModel):

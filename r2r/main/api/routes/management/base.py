@@ -1,9 +1,8 @@
 from fastapi import Depends
+from pydantic import BaseModel
 
 from r2r.base import R2RException
-
-from ...engine import R2REngine
-from ..requests import (
+from r2r.main.api.routes.management.requests import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
@@ -13,7 +12,9 @@ from ..requests import (
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
-from .base_router import BaseRouter
+
+from ....engine import R2REngine
+from ..base_router import BaseRouter
 
 
 class ManagementRouter(BaseRouter):
@@ -185,3 +186,8 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
             return await self.engine.aapp_settings()
+
+
+class R2RExtractionRequest(BaseModel):
+    entity_types: list[str]
+    relations: list[str]

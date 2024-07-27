@@ -1,17 +1,21 @@
-from .abstractions import R2RPipelines, R2RProviders
+from .abstractions import R2RAssistants, R2RPipelines, R2RProviders
 from .api.client import R2RClient
-from .api.requests import (
+from .api.routes.ingestion.requests import (
+    R2RIngestFilesRequest,
+    R2RUpdateFilesRequest,
+)
+from .api.routes.management.requests import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
     R2RDocumentsOverviewRequest,
-    R2REvalRequest,
-    R2RIngestFilesRequest,
-    R2RRAGRequest,
-    R2RSearchRequest,
-    R2RUpdateFilesRequest,
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
+)
+from .api.routes.retrieval.requests import (
+    R2REvalRequest,
+    R2RRAGRequest,
+    R2RSearchRequest,
 )
 from .app import R2RApp
 from .assembly.builder import R2RBuilder
@@ -30,6 +34,7 @@ __all__ = [
     "R2R",
     "R2RPipelines",
     "R2RProviders",
+    "R2RAssistants",
     "R2RUpdatePromptRequest",
     "R2RIngestFilesRequest",
     "R2RUpdateFilesRequest",

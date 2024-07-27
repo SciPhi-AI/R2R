@@ -1,9 +1,13 @@
 from fastapi import Depends, File, UploadFile
 
-from ...engine import R2REngine
-from ...services.ingestion_service import IngestionService
-from ..requests import R2RIngestFilesRequest, R2RUpdateFilesRequest
-from .base_router import BaseRouter
+from r2r.main.api.routes.ingestion.requests import (
+    R2RIngestFilesRequest,
+    R2RUpdateFilesRequest,
+)
+
+from ....engine import R2REngine
+from ....services.ingestion_service import IngestionService
+from ..base_router import BaseRouter
 
 
 class IngestionRouter(BaseRouter):

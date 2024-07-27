@@ -2,6 +2,7 @@ import logging
 
 # Keep '*' imports for enhanced development velocity
 # corresponding flake8 error codes are F403, F405
+from .assistants import *
 from .base import *
 from .integrations import *
 from .main import *
@@ -58,14 +59,17 @@ __all__ = [
     # Parsers
     "AsyncParser",
     "CSVParser",
+    "CSVParserAdvanced",
     "DOCXParser",
     "HTMLParser",
     "JSONParser",
     "MDParser",
     "PDFParser",
+    "PDFParserUnstructured",
     "PPTParser",
     "TextParser",
     "XLSXParser",
+    "XSLXParserAdvanced",
     "AsyncPipeline",
     # Providers
     "EmbeddingConfig",
@@ -101,7 +105,7 @@ __all__ = [
     "WebSearchPipe",
     "R2RBuilder",
     "R2R",
-    "KGAgentSearchPipe",
+    "KGSearchSearchPipe",
     # Prebuilts
     "MultiSearchPipe",
     "R2RPipeFactoryWithMultiSearch",

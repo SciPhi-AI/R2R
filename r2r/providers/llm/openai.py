@@ -15,7 +15,7 @@ from r2r.base.abstractions.llm import GenerationConfig
 logger = logging.getLogger(__name__)
 
 
-class OpenAILLM(LLMProvider):
+class OpenAILLMProvider(LLMProvider):
     """A concrete class for creating OpenAI models."""
 
     def __init__(
@@ -32,11 +32,11 @@ class OpenAILLM(LLMProvider):
             from openai import AsyncOpenAI, OpenAI  # noqa
         except ImportError:
             raise ImportError(
-                "Error, `openai` is required to run an OpenAILLM. Please install it using `pip install openai`."
+                "Error, `openai` is required to run an OpenAILLMProvider. Please install it using `pip install openai`."
             )
         if config.provider != "openai":
             raise ValueError(
-                "OpenAILLM must be initialized with config with `openai` provider."
+                "OpenAILLMProvider must be initialized with config with `openai` provider."
             )
         if not os.getenv("OPENAI_API_KEY"):
             raise ValueError(
@@ -84,10 +84,6 @@ class OpenAILLM(LLMProvider):
 
         args["messages"] = messages
 
-        # Conditionally add the 'functions' argument if it's not None
-        if generation_config.functions is not None:
-            args["functions"] = generation_config.functions
-
         args = {**args, **kwargs}
         # Create the chat completion
         return self.client.chat.completions.create(**args)
@@ -95,13 +91,9 @@ class OpenAILLM(LLMProvider):
     def _get_base_args(
         self,
         generation_config: GenerationConfig,
+        prompt=None,
     ) -> dict:
-        """Get the base arguments for the OpenAI API."""
-
-        if generation_config.api_base is not None:
-            raise ValueError(
-                "The `api_base` argument is not supported by the OpenAI API."
-            )
+        """Get the base arguments for the LiteLLMProvider API."""
         args = {
             "model": generation_config.model,
             "temperature": generation_config.temperature,
@@ -109,6 +101,12 @@ class OpenAILLM(LLMProvider):
             "stream": generation_config.stream,
             "max_tokens": generation_config.max_tokens_to_sample,
         }
+
+        if generation_config.functions is not None:
+            args["functions"] = generation_config.functions
+
+        if generation_config.tools is not None:
+            args["tools"] = generation_config.tools
 
         return args
 
@@ -138,10 +136,6 @@ class OpenAILLM(LLMProvider):
         args = self._get_base_args(generation_config)
 
         args["messages"] = messages
-
-        # Conditionally add the 'functions' argument if it's not None
-        if generation_config.functions is not None:
-            args["functions"] = generation_config.functions
 
         args = {**args, **kwargs}
         # Create the chat completion

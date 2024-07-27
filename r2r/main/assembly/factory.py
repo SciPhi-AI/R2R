@@ -2,7 +2,9 @@ import logging
 import os
 from typing import Any, Optional
 
+from r2r.assistants import R2RRAGAssistant, R2RStreamingRAGAssistant
 from r2r.base import (
+    AssistantConfig,
     AsyncPipe,
     AuthConfig,
     AuthProvider,
@@ -27,7 +29,7 @@ from r2r.pipelines import (
     SearchPipeline,
 )
 
-from ..abstractions import R2RPipelines, R2RPipes, R2RProviders
+from ..abstractions import R2RAssistants, R2RPipelines, R2RPipes, R2RProviders
 from .config import R2RConfig
 
 logger = logging.getLogger(__name__)
@@ -172,13 +174,13 @@ class R2RProviderFactory:
     ) -> LLMProvider:
         llm_provider: Optional[LLMProvider] = None
         if llm_config.provider == "openai":
-            from r2r.providers import OpenAILLM
+            from r2r.providers import OpenAILLMProvider
 
-            llm_provider = OpenAILLM(llm_config)
+            llm_provider = OpenAILLMProvider(llm_config)
         elif llm_config.provider == "litellm":
-            from r2r.providers import LiteLLM
+            from r2r.providers import LiteLLMProvider
 
-            llm_provider = LiteLLM(llm_config)
+            llm_provider = LiteLLMProvider(llm_config)
         else:
             raise ValueError(
                 f"Language model provider {llm_config.provider} not supported"
@@ -289,7 +291,7 @@ class R2RPipeFactory:
         embedding_pipe_override: Optional[AsyncPipe] = None,
         kg_pipe_override: Optional[AsyncPipe] = None,
         kg_storage_pipe_override: Optional[AsyncPipe] = None,
-        kg_agent_pipe_override: Optional[AsyncPipe] = None,
+        kg_search_pipe_override: Optional[AsyncPipe] = None,
         vector_storage_pipe_override: Optional[AsyncPipe] = None,
         vector_search_pipe_override: Optional[AsyncPipe] = None,
         rag_pipe_override: Optional[AsyncPipe] = None,
@@ -301,15 +303,18 @@ class R2RPipeFactory:
         return R2RPipes(
             parsing_pipe=parsing_pipe_override
             or self.create_parsing_pipe(
-                self.config.ingestion.get("excluded_parsers"), *args, **kwargs
+                self.config.ingestion.get("excluded_parsers"),
+                self.config.ingestion.get("override_parsers"),
+                *args,
+                **kwargs,
             ),
             embedding_pipe=embedding_pipe_override
             or self.create_embedding_pipe(*args, **kwargs),
             kg_pipe=kg_pipe_override or self.create_kg_pipe(*args, **kwargs),
             kg_storage_pipe=kg_storage_pipe_override
             or self.create_kg_storage_pipe(*args, **kwargs),
-            kg_agent_search_pipe=kg_agent_pipe_override
-            or self.create_kg_agent_pipe(*args, **kwargs),
+            kg_search_search_pipe=kg_search_pipe_override
+            or self.create_kg_search_pipe(*args, **kwargs),
             vector_storage_pipe=vector_storage_pipe_override
             or self.create_vector_storage_pipe(*args, **kwargs),
             vector_search_pipe=vector_search_pipe_override
@@ -323,11 +328,18 @@ class R2RPipeFactory:
         )
 
     def create_parsing_pipe(
-        self, excluded_parsers: Optional[list] = None, *args, **kwargs
+        self,
+        excluded_parsers: Optional[list] = None,
+        override_parsers: Optional[list] = None,
+        *args,
+        **kwargs,
     ) -> Any:
         from r2r.pipes import ParsingPipe
 
-        return ParsingPipe(excluded_parsers=excluded_parsers or [])
+        return ParsingPipe(
+            excluded_parsers=excluded_parsers or [],
+            override_parsers=override_parsers or [],
+        )
 
     def create_embedding_pipe(self, *args, **kwargs) -> Any:
         if self.config.embedding.provider is None:
@@ -413,13 +425,13 @@ class R2RPipeFactory:
             embedding_provider=self.providers.embedding,
         )
 
-    def create_kg_agent_pipe(self, *args, **kwargs) -> Any:
+    def create_kg_search_pipe(self, *args, **kwargs) -> Any:
         if self.config.kg.provider is None:
             return None
 
-        from r2r.pipes import KGAgentSearchPipe
+        from r2r.pipes import KGSearchSearchPipe
 
-        return KGAgentSearchPipe(
+        return KGSearchSearchPipe(
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
@@ -492,7 +504,7 @@ class R2RPipelineFactory:
         # Add KG pipes if provider is set
         if self.config.kg.provider is not None:
             search_pipeline.add_pipe(
-                self.pipes.kg_agent_search_pipe, kg_pipe=True
+                self.pipes.kg_search_search_pipe, kg_pipe=True
             )
 
         return search_pipeline
@@ -559,3 +571,63 @@ class R2RPipelineFactory:
 
     def configure_logging(self):
         KVLoggingSingleton.configure(self.config.logging)
+
+
+class R2RAssistantFactory:
+    def __init__(
+        self,
+        config: R2RConfig,
+        providers: R2RProviders,
+        pipelines: R2RPipelines,
+    ):
+        self.config = config
+        self.providers = providers
+        self.pipelines = pipelines
+
+    def create_assistants(
+        self,
+        rag_assistant_override: Optional[R2RRAGAssistant] = None,
+        stream_rag_assistant_override: Optional[
+            R2RStreamingRAGAssistant
+        ] = None,
+        *args,
+        **kwargs,
+    ) -> R2RAssistants:
+        return R2RAssistants(
+            rag_assistant=rag_assistant_override
+            or self.create_rag_assistant(*args, **kwargs),
+            streaming_rag_assistant=stream_rag_assistant_override
+            or self.create_rag_assistant(*args, **kwargs, stream=True),
+        )
+
+    def create_rag_assistant(
+        self, stream: bool = False, *args, **kwargs
+    ) -> R2RRAGAssistant:
+        if not self.providers.llm or not self.providers.prompt:
+            raise ValueError(
+                "LLM and Prompt providers are required for RAG Assistant"
+            )
+
+        assistant_config = AssistantConfig(
+            system_instruction_name="rag_assistant",
+            tools=[],  # Add any specific tools for the RAG assistant here
+            generation_config=self.config.completions.generation_config,
+            stream=stream,
+        )
+
+        if stream:
+            rag_assistant = R2RStreamingRAGAssistant(
+                llm_provider=self.providers.llm,
+                prompt_provider=self.providers.prompt,
+                config=assistant_config,
+                search_pipeline=self.pipelines.search_pipeline,
+            )
+        else:
+            rag_assistant = R2RRAGAssistant(
+                llm_provider=self.providers.llm,
+                prompt_provider=self.providers.prompt,
+                config=assistant_config,
+                search_pipeline=self.pipelines.search_pipeline,
+            )
+
+        return rag_assistant

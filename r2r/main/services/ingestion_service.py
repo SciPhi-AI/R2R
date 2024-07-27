@@ -22,8 +22,11 @@ from r2r.base import (
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RPipelines, R2RProviders
-from ..api.requests import R2RIngestFilesRequest, R2RUpdateFilesRequest
+from ..abstractions import R2RAssistants, R2RPipelines, R2RProviders
+from ..api.routes.ingestion.requests import (
+    R2RIngestFilesRequest,
+    R2RUpdateFilesRequest,
+)
 from ..assembly.config import R2RConfig
 from .base import Service
 
@@ -37,11 +40,17 @@ class IngestionService(Service):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
+        assistants: R2RAssistants,
         run_manager: RunManager,
         logging_connection: KVLoggingSingleton,
     ):
         super().__init__(
-            config, providers, pipelines, run_manager, logging_connection
+            config,
+            providers,
+            pipelines,
+            assistants,
+            run_manager,
+            logging_connection,
         )
 
     def _file_to_document(
@@ -54,9 +63,7 @@ class IngestionService(Service):
                 message=f"'{file_extension}' is not a valid DocumentType.",
             )
 
-        document_title = (
-            metadata.get("title", None) or file.filename.split("/")[-1]
-        )
+        document_title = metadata.get("title") or file.filename.split("/")[-1]
         metadata["title"] = document_title
 
         return Document(
@@ -193,7 +200,6 @@ class IngestionService(Service):
             *args,
             **kwargs,
         )
-
         return await self._process_ingestion_results(
             ingestion_results,
             document_infos,
@@ -360,9 +366,7 @@ class IngestionService(Service):
 
         results = {}
         if ingestion_results["embedding_pipeline_output"]:
-            results = {
-                k: v for k, v in ingestion_results["embedding_pipeline_output"]
-            }
+            results = dict(ingestion_results["embedding_pipeline_output"])
             for doc_id, error in results.items():
                 if isinstance(error, R2RDocumentProcessingError):
                     logger.error(
@@ -405,8 +409,7 @@ class IngestionService(Service):
         }
 
         # TODO - Clean up logging for document parse results
-        run_ids = list(self.run_manager.run_info.keys())
-        if run_ids:
+        if run_ids := list(self.run_manager.run_info.keys()):
             run_id = run_ids[0]
             for key in results:
                 if key in ["processed_documents", "failed_documents"]:

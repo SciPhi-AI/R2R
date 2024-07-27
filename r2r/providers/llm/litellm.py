@@ -14,8 +14,8 @@ from r2r.base.abstractions.llm import GenerationConfig
 logger = logging.getLogger(__name__)
 
 
-class LiteLLM(LLMProvider):
-    """A concrete class for creating LiteLLM models with request throttling."""
+class LiteLLMProvider(LLMProvider):
+    """A concrete class for creating LiteLLMProvider models with request throttling."""
 
     def __init__(
         self,
@@ -110,9 +110,6 @@ class LiteLLM(LLMProvider):
         args = self._get_base_args(generation_config)
         args["messages"] = messages
 
-        if generation_config.functions is not None:
-            args["functions"] = generation_config.functions
-
         args = {**args, **kwargs}
         response = self.litellm_completion(**args)
 
@@ -133,7 +130,7 @@ class LiteLLM(LLMProvider):
         generation_config: GenerationConfig,
         prompt=None,
     ) -> dict:
-        """Get the base arguments for the LiteLLM API."""
+        """Get the base arguments for the LiteLLMProvider API."""
         args = {
             "model": generation_config.model,
             "temperature": generation_config.temperature,
@@ -142,6 +139,13 @@ class LiteLLM(LLMProvider):
             "max_tokens": generation_config.max_tokens_to_sample,
             "api_base": generation_config.api_base,
         }
+
+        if generation_config.functions is not None:
+            args["functions"] = generation_config.functions
+
+        if generation_config.tools is not None:
+            args["tools"] = generation_config.tools
+
         return args
 
     async def aget_completion(
@@ -166,6 +170,9 @@ class LiteLLM(LLMProvider):
     ) -> Union[LLMChatCompletion, LLMChatCompletionChunk]:
         args = self._get_base_args(generation_config)
         args["messages"] = messages
+
+        if generation_config.tools is not None:
+            args["tools"] = generation_config.tools
 
         if generation_config.functions is not None:
             args["functions"] = generation_config.functions

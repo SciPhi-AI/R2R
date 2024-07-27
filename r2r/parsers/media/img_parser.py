@@ -38,3 +38,9 @@ class ImageParser(AsyncParser[DataType]):
             self.max_tokens,
             self.api_base,
         )
+
+
+class ImageParserLocal(AsyncParser[DataType]):
+
+    def __init__(self):
+        pass

@@ -13,17 +13,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up Python virtual environment
-      run: |
-        python3 -m venv $HOME/r2r_venv
-        echo "$HOME/r2r_venv/bin" >> $GITHUB_PATH
-
-    - name: Activate virtual environment and install R2R
-      run: |
-        . $HOME/r2r_venv/bin/activate
-        pip install --upgrade pip
-        pip install --upgrade r2r
-
     - name: Build R2R Docker image
       run: |
         docker build \
@@ -61,8 +50,12 @@ jobs:
 
         sleep 10
 
-    - name: Run integration tests
+    - name: Run integration tests in Docker container
       run: |
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install -e .
+
         echo "R2R Version"
         r2r version
 
@@ -79,22 +72,25 @@ jobs:
         r2r delete --keys=document_id --values=b736292c-11e6-5453-9686-055da3edb866
 
         echo "Vector Search"
-        r2r search --query="What was Uber's profit in 2020?"
+        r2r search --query="What was Uber'\''s profit in 2020?"
 
         echo "Hybrid Search"
         r2r search --query="What is a fierce nerd?" --do-hybrid-search
 
         echo "Basic RAG"
-        r2r rag --query="What was Uber's profit in 2020?"
+        r2r rag --query="What was Uber'\''s profit in 2020?"
 
         echo "RAG with Hybrid Search"
         r2r rag --query="Who is John Snow?" --do-hybrid-search
 
         echo "Streaming RAG"
-        r2r rag --query="What was Lyft's profit in 2020?" --stream
+        r2r rag --query="What was Lyft'\''s profit in 2020?" --stream
 
         echo "Users Overview"
         r2r users-overview
+
+        echo "Analytics"
+        r2r analytics --filters '{"search_latencies": "search_latency"}' --analysis-types '{"search_latencies": ["basic_statistics", "search_latency"]}'
 
         echo "Logging"
         r2r logs
@@ -103,7 +99,7 @@ jobs:
     - name: Clean up
       if: always()
       run: |
-        rm -rf $HOME/r2r_venv
+        rm -rf venv
         docker stop r2r postgres
         docker rm r2r postgres
         docker network rm sciphi-network

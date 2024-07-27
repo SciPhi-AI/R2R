@@ -1,12 +1,9 @@
 import asyncio
-import functools
 import json
 import os
-import threading
-import time
 import uuid
 from contextlib import ExitStack
-from typing import Any, AsyncGenerator, Generator, Optional, Union
+from typing import Any, AsyncGenerator, Dict, Generator, Optional, Union
 
 import fire
 import httpx
@@ -14,23 +11,26 @@ import nest_asyncio
 import requests
 from fastapi.testclient import TestClient
 
-from r2r.base import R2RException, UserCreate
+from r2r.base import AnalysisTypes, FilterCriteria, R2RException, UserCreate
 
-from .requests import (
-    AnalysisTypes,
-    FilterCriteria,
+from .routes.ingestion.requests import (
+    R2RIngestFilesRequest,
+    R2RUpdateFilesRequest,
+)
+from .routes.management.requests import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
     R2RDocumentsOverviewRequest,
-    R2RIngestFilesRequest,
     R2RLogsRequest,
     R2RPrintRelationshipsRequest,
-    R2RRAGRequest,
-    R2RSearchRequest,
-    R2RUpdateFilesRequest,
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
+)
+from .routes.retrieval.requests import (
+    R2RRAGChatRequest,
+    R2RRAGRequest,
+    R2RSearchRequest,
 )
 
 nest_asyncio.apply()
@@ -59,55 +59,20 @@ def handle_request_error(response):
     )
 
 
-def monitor_request(func):
-    @functools.wraps(func)
-    def wrapper(*args, monitor=False, **kwargs):
-        if not monitor:
-            return func(*args, **kwargs)
-
-        result = None
-        exception = None
-
-        def run_func():
-            nonlocal result, exception
-            try:
-                result = func(*args, **kwargs)
-            except Exception as e:
-                exception = e
-
-        thread = threading.Thread(target=run_func)
-        thread.start()
-
-        dots = [".", "..", "..."]
-        i = 0
-        while thread.is_alive():
-            print(f"\rRequesting{dots[i % 3]}", end="", flush=True)
-            i += 1
-            time.sleep(0.5)
-
-        thread.join()
-
-        print("\r", end="", flush=True)
-
-        if exception:
-            raise exception
-        return result
-
-    return wrapper
-
-
 class R2RClient:
     def __init__(
         self,
         base_url: str = "http://localhost:8000",
         prefix: str = "/v1",
         custom_client=None,
+        timeout: float = 60.0,
     ):
         self.base_url = base_url
         self.prefix = prefix
         self.access_token = None
         self._refresh_token = None
         self.client = custom_client or requests
+        self.timeout = timeout
 
     def _make_request(self, method, endpoint, **kwargs):
         url = f"{self.base_url}{self.prefix}/{endpoint}"
@@ -185,10 +150,9 @@ class R2RClient:
             name=name, template=template, input_types=input_types
         )
         return self._make_request(
-            "POST", "update_prompt", json=json.loads(request.json())
+            "POST", "update_prompt", json=json.loads(request.model_dump_json())
         )
 
-    @monitor_request
     def ingest_files(
         self,
         file_paths: list[str],
@@ -233,7 +197,7 @@ class R2RClient:
                 "ingest_files",
                 data={
                     k: json.dumps(v)
-                    for k, v in json.loads(request.json()).items()
+                    for k, v in json.loads(request.model_dump_json()).items()
                 },
                 files=files_to_upload,
             )
@@ -241,7 +205,6 @@ class R2RClient:
             for _, file_tuple in files_to_upload:
                 file_tuple[1].close()
 
-    @monitor_request
     def update_files(
         self,
         file_paths: list[str],
@@ -260,7 +223,7 @@ class R2RClient:
                 "update_files",
                 data={
                     k: json.dumps(v)
-                    for k, v in json.loads(request.json()).items()
+                    for k, v in json.loads(request.model_dump_json()).items()
                 },
                 files=[
                     (
@@ -283,7 +246,7 @@ class R2RClient:
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
-        kg_agent_generation_config: Optional[dict] = None,
+        kg_search_generation_config: Optional[dict] = None,
     ) -> dict:
         self._ensure_authenticated()
 
@@ -297,11 +260,11 @@ class R2RClient:
             },
             kg_search_settings={
                 "use_kg_search": use_kg_search,
-                "agent_generation_config": kg_agent_generation_config,
+                "kg_search_generation_config": kg_search_generation_config,
             },
         )
         return self._make_request(
-            "POST", "search", json=json.loads(request.json())
+            "POST", "search", json=json.loads(request.model_dump_json())
         )
 
     def rag(
@@ -312,7 +275,7 @@ class R2RClient:
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
-        kg_agent_generation_config: Optional[dict] = None,
+        kg_search_generation_config: Optional[dict] = None,
         rag_generation_config: Optional[dict] = None,
         task_prompt_override: Optional[str] = None,
     ) -> dict:
@@ -328,7 +291,7 @@ class R2RClient:
             },
             kg_search_settings={
                 "use_kg_search": use_kg_search,
-                "agent_generation_config": kg_agent_generation_config,
+                "kg_search_generation_config": kg_search_generation_config,
             },
             rag_generation_config=rag_generation_config,
             task_prompt_override=task_prompt_override,
@@ -340,7 +303,7 @@ class R2RClient:
             return self._stream_rag_sync(request)
         else:
             return self._make_request(
-                "POST", "rag", json=json.loads(request.json())
+                "POST", "rag", json=json.loads(request.model_dump_json())
             )
 
     async def _stream_rag(
@@ -349,7 +312,12 @@ class R2RClient:
         url = f"{self.base_url}{self.prefix}/rag"
         async with httpx.AsyncClient() as client:
             async with client.stream(
-                "POST", url, json=json.loads(rag_request.json())
+                "POST",
+                url,
+                json=json.loads(
+                    rag_request.model_dump_json(),
+                ),
+                timeout=self.timeout,
             ) as response:
                 handle_request_error(response)
                 async for chunk in response.aiter_text():
@@ -382,7 +350,7 @@ class R2RClient:
 
         request = R2RDeleteRequest(keys=keys, values=values)
         return self._make_request(
-            "DELETE", "delete", json=json.loads(request.json())
+            "DELETE", "delete", json=json.loads(request.model_dump_json())
         )
 
     def logs(self, log_type_filter: Optional[str] = None) -> dict:
@@ -390,7 +358,7 @@ class R2RClient:
 
         request = R2RLogsRequest(log_type_filter=log_type_filter)
         return self._make_request(
-            "GET", "logs", json=json.loads(request.json())
+            "GET", "logs", json=json.loads(request.model_dump_json())
         )
 
     def app_settings(self) -> dict:
@@ -398,7 +366,11 @@ class R2RClient:
 
         return self._make_request("GET", "app_settings")
 
-    def analytics(self, filter_criteria: dict, analysis_types: dict) -> dict:
+    def analytics(
+        self,
+        filter_criteria: Optional[Dict[str, Any]],
+        analysis_types: Optional[Dict[str, Any]],
+    ) -> dict:
         self._ensure_authenticated()
 
         request = R2RAnalyticsRequest(
@@ -406,7 +378,7 @@ class R2RClient:
             analysis_types=AnalysisTypes(analysis_types=analysis_types),
         )
         return self._make_request(
-            "GET", "analytics", json=json.loads(request.json())
+            "GET", "analytics", json=request.model_dump(exclude_none=True)
         )
 
     def users_overview(
@@ -416,7 +388,7 @@ class R2RClient:
 
         request = R2RUsersOverviewRequest(user_ids=user_ids)
         return self._make_request(
-            "GET", "users_overview", json=json.loads(request.json())
+            "GET", "users_overview", json=json.loads(request.model_dump_json())
         )
 
     def documents_overview(
@@ -437,7 +409,9 @@ class R2RClient:
             ),
         )
         return self._make_request(
-            "GET", "documents_overview", json=json.loads(request.json())
+            "GET",
+            "documents_overview",
+            json=json.loads(request.model_dump_json()),
         )
 
     def document_chunks(self, document_id: str) -> dict:
@@ -445,7 +419,9 @@ class R2RClient:
 
         request = R2RDocumentChunksRequest(document_id=document_id)
         return self._make_request(
-            "GET", "document_chunks", json=json.loads(request.json())
+            "GET",
+            "document_chunks",
+            json=json.loads(request.model_dump_json()),
         )
 
     def inspect_knowledge_graph(self, limit: int = 100) -> str:
@@ -453,7 +429,9 @@ class R2RClient:
 
         request = R2RPrintRelationshipsRequest(limit=limit)
         return self._make_request(
-            "POST", "inspect_knowledge_graph", json=json.loads(request.json())
+            "POST",
+            "inspect_knowledge_graph",
+            json=json.loads(request.model_dump_json()),
         )
 
     def change_password(
@@ -502,6 +480,82 @@ class R2RClient:
         self.access_token = None
         self._refresh_token = None
         return response
+
+    def rag_chat(
+        self,
+        messages: list[dict],
+        use_vector_search: bool = True,
+        search_filters: Optional[dict[str, Any]] = {},
+        search_limit: int = 10,
+        do_hybrid_search: bool = False,
+        use_kg_search: bool = False,
+        kg_search_generation_config: Optional[dict] = None,
+        rag_generation_config: Optional[dict] = None,
+        task_prompt_override: Optional[str] = None,
+    ) -> dict:
+        self._ensure_authenticated()
+
+        request = R2RRAGChatRequest(
+            messages=messages,
+            vector_search_settings={
+                "use_vector_search": use_vector_search,
+                "search_filters": search_filters or {},
+                "search_limit": search_limit,
+                "do_hybrid_search": do_hybrid_search,
+            },
+            kg_search_settings={
+                "use_kg_search": use_kg_search,
+                "kg_search_generation_config": kg_search_generation_config,
+            },
+            rag_generation_config=rag_generation_config,
+            task_prompt_override=task_prompt_override,
+        )
+
+        if rag_generation_config and rag_generation_config.get(
+            "stream", False
+        ):
+            return self._stream_rag_chat_sync(request)
+        else:
+            return self._make_request(
+                "POST", "rag_chat", json=json.loads(request.model_dump_json())
+            )
+
+    async def _stream_rag_chat(
+        self, rag_chat_request: R2RRAGChatRequest
+    ) -> AsyncGenerator[str, None]:
+        url = f"{self.base_url}{self.prefix}/rag_chat"
+        async with httpx.AsyncClient() as client:
+            async with client.stream(
+                "POST",
+                url,
+                json=json.loads(
+                    rag_chat_request.model_dump_json(),
+                ),
+                timeout=self.timeout,
+            ) as response:
+                handle_request_error(response)
+                async for chunk in response.aiter_text():
+                    yield chunk
+
+    def _stream_rag_chat_sync(
+        self, rag_chat_request: R2RRAGChatRequest
+    ) -> Generator[str, None, None]:
+        async def run_async_generator():
+            async for chunk in self._stream_rag_chat(rag_chat_request):
+                yield chunk
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        async_gen = run_async_generator()
+
+        try:
+            while True:
+                yield loop.run_until_complete(async_gen.__anext__())
+        except StopAsyncIteration:
+            pass
+        finally:
+            loop.close()
 
 
 if __name__ == "__main__":
