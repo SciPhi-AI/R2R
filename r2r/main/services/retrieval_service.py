@@ -274,7 +274,6 @@ class RetrievalService(Service):
                     *args,
                     **kwargs,
                 )
-                print("results = ", results)
                 t1 = time.time()
                 latency = f"{t1 - t0:.2f}"
 
@@ -284,7 +283,6 @@ class RetrievalService(Service):
                     value=latency,
                     is_info_log=False,
                 )
-
                 return results
 
             except Exception as e:
