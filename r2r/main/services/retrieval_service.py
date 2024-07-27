@@ -277,7 +277,7 @@ class RetrievalService(Service):
                     *args,
                     **kwargs,
                 )
-
+                print("results = ", results)
                 t1 = time.time()
                 latency = f"{t1 - t0:.2f}"
 
