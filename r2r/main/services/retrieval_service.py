@@ -216,9 +216,6 @@ class RetrievalService(Service):
         *args,
         **kwargs,
     ):
-        print(
-            f"rag_chat called with messages: {messages} and stream: {rag_generation_config.stream}"
-        )
         async with manage_run(self.run_manager, "rag_chat_app") as run_id:
             try:
                 t0 = time.time()
@@ -277,7 +274,6 @@ class RetrievalService(Service):
                     *args,
                     **kwargs,
                 )
-                print("results = ", results)
                 t1 = time.time()
                 latency = f"{t1 - t0:.2f}"
 
@@ -286,10 +282,6 @@ class RetrievalService(Service):
                     key="rag_chat_generation_latency",
                     value=latency,
                     is_info_log=False,
-                )
-
-                print(
-                    f"rag_chat results: {results} which is of type: {type(results)}"
                 )
                 return results
 
