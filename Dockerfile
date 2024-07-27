@@ -29,6 +29,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy the application and config
 COPY r2r /app/r2r
 COPY r2r.json /app/r2r.json
+COPY pyproject.toml /app/pyproject.toml
 
 # Expose the port
 EXPOSE 8000
