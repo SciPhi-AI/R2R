@@ -128,7 +128,10 @@ def serve(
                 obj.get("config_name", None) or "default"
             )
 
-        os.environ["OLLAMA_API_BASE"] = "http://host.docker.internal:11434"
+        if not docker_ext_ollama:
+            os.environ["OLLAMA_API_BASE"] = "http://host.docker.internal:11434"
+        else:
+            os.environ["OLLAMA_API_BASE"] = "http://ollama:11434"
 
         # Check if compose files exist in the package directory
         package_dir = os.path.join(
