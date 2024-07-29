@@ -19,7 +19,7 @@ networks:
 
 services:
   r2r:
-    image: emrgntcmplxty/r2r:main
+    image: emrgntcmplxty/r2r:${R2R_IMAGE_TAG:-main}
     ports:
       - "8000:8000"
     environment:
