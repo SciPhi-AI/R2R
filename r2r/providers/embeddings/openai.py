@@ -1,5 +1,7 @@
+import asyncio
 import logging
 import os
+from typing import Any, List
 
 from openai import AsyncOpenAI, AuthenticationError, OpenAI
 from openai._types import NOT_GIVEN
@@ -52,53 +54,64 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self.base_model = config.base_model
         self.base_dimension = config.base_dimension
 
-        if not self.base_model or not self.base_dimension:
+        if not self.base_model:
             raise ValueError(
-                "Must set base_model and base_dimension in order to initialize OpenAIEmbeddingProvider."
+                "Must set base_model in order to initialize OpenAIEmbeddingProvider."
             )
 
         if self.base_model not in OpenAIEmbeddingProvider.MODEL_TO_TOKENIZER:
             raise ValueError(
                 f"OpenAI embedding model {self.base_model} not supported."
             )
-        if (
-            self.base_dimension
-            and self.base_dimension
-            not in OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.base_model]
-        ):
-            raise ValueError(
-                f"Dimensions {self.base_dimension} for {self.base_model} are not supported"
+
+        if self.base_dimension:
+            if (
+                self.base_dimension
+                not in OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
+                    self.base_model
+                ]
+            ):
+                raise ValueError(
+                    f"Dimensions {self.base_dimension} for {self.base_model} are not supported"
+                )
+        else:
+            # If base_dimension is not set, use the largest available dimension for the model
+            self.base_dimension = max(
+                OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.base_model]
             )
 
-        if config.rerank_model:
-            raise ValueError(
-                "OpenAIEmbeddingProvider does not support separate reranking."
-            )
+    def _get_dimensions(self):
+        return (
+            NOT_GIVEN
+            if self.base_model == "text-embedding-ada-002"
+            else self.base_dimension
+            or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.base_model][-1]
+        )
 
-    def get_embedding(
-        self,
-        text: str,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
-    ) -> list[float]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
-            raise ValueError(
-                "OpenAIEmbeddingProvider only supports search stage."
+    async def _execute_task(self, task: dict[str, Any]) -> List[float]:
+        text = task["text"]
+        try:
+            response = await self.async_client.embeddings.create(
+                input=[text],
+                model=self.base_model,
+                dimensions=self._get_dimensions(),
             )
+            return response.data[0].embedding
+        except AuthenticationError as e:
+            raise ValueError(
+                "Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable."
+            ) from e
+        except Exception as e:
+            raise ValueError(f"Error getting embedding: {str(e)}")
 
+    def _execute_task_sync(self, task: dict[str, Any]) -> List[float]:
+        text = task["text"]
         try:
             return (
                 self.client.embeddings.create(
                     input=[text],
                     model=self.base_model,
-                    dimensions=(
-                        NOT_GIVEN
-                        if self.base_model == "text-embedding-ada-002"
-                        else self.base_dimension
-                        or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                            self.base_model
-                        ][-1]
-                    ),
+                    dimensions=self._get_dimensions(),
                 )
                 .data[0]
                 .embedding
@@ -107,98 +120,88 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             raise ValueError(
                 "Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable."
             ) from e
-
-    def get_embeddings(
-        self,
-        texts: list[str],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
-    ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
-            raise ValueError(
-                "OpenAIEmbeddingProvider only supports search stage."
-            )
-
-        try:
-            return [
-                ele.embedding
-                for ele in self.client.embeddings.create(
-                    input=texts,
-                    model=self.base_model,
-                    dimensions=(
-                        NOT_GIVEN
-                        if self.base_model == "text-embedding-ada-002"
-                        else self.base_dimension
-                        or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                            self.base_model
-                        ][-1]
-                    ),
-                ).data
-            ]
-        except AuthenticationError as e:
-            raise ValueError(
-                "Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable."
-            ) from e
+        except Exception as e:
+            raise ValueError(f"Error getting embedding: {str(e)}")
 
     async def async_get_embedding(
         self,
         text: str,
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
-    ) -> list[float]:
+    ) -> List[float]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
             )
 
-        try:
-            response = await self.async_client.embeddings.create(
-                input=[text],
-                model=self.base_model,
-                dimensions=(
-                    NOT_GIVEN
-                    if self.base_model == "text-embedding-ada-002"
-                    else self.base_dimension
-                    or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                        self.base_model
-                    ][-1]
-                ),
-            )
-            return response.data[0].embedding
-        except AuthenticationError as e:
+        task = {
+            "text": text,
+            "stage": stage,
+            "purpose": purpose,
+        }
+        return await self._execute_with_backoff_async(task)
+
+    def get_embedding(
+        self,
+        text: str,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
+    ) -> List[float]:
+        if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
-                "Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable."
-            ) from e
+                "OpenAIEmbeddingProvider only supports search stage."
+            )
+
+        task = {
+            "text": text,
+            "stage": stage,
+            "purpose": purpose,
+        }
+        return self._execute_with_backoff_sync(task)
 
     async def async_get_embeddings(
         self,
-        texts: list[str],
+        texts: List[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
-    ) -> list[list[float]]:
+    ) -> List[List[float]]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OpenAIEmbeddingProvider only supports search stage."
             )
 
-        try:
-            response = await self.async_client.embeddings.create(
-                input=texts,
-                model=self.base_model,
-                dimensions=(
-                    NOT_GIVEN
-                    if self.base_model == "text-embedding-ada-002"
-                    else self.base_dimension
-                    or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                        self.base_model
-                    ][-1]
-                ),
-            )
-            return [ele.embedding for ele in response.data]
-        except AuthenticationError as e:
+        tasks = [
+            {
+                "text": text,
+                "stage": stage,
+                "purpose": purpose,
+            }
+            for text in texts
+        ]
+        return await asyncio.gather(
+            *[self._execute_with_backoff_async(task) for task in tasks]
+        )
+
+    def get_embeddings(
+        self,
+        texts: List[str],
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
+    ) -> List[List[float]]:
+        if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
-                "Invalid OpenAI API key provided. Please check your OPENAI_API_KEY environment variable."
-            ) from e
+                "OpenAIEmbeddingProvider only supports search stage."
+            )
+
+        tasks = [
+            {
+                "text": text,
+                "stage": stage,
+                "purpose": purpose,
+            }
+            for text in texts
+        ]
+        return [self._execute_with_backoff_sync(task) for task in tasks]
 
     def rerank(
         self,
@@ -216,8 +219,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             raise ValueError(
                 "Must download tiktoken library to run `tokenize_string`."
             )
-        # tiktoken encoding -
-        # cl100k_base -	gpt-4, gpt-3.5-turbo, text-embedding-ada-002, text-embedding-3-small, text-embedding-3-large
         if model not in OpenAIEmbeddingProvider.MODEL_TO_TOKENIZER:
             raise ValueError(f"OpenAI embedding model {model} not supported.")
         encoding = tiktoken.get_encoding(
