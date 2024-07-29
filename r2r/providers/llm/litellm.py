@@ -15,7 +15,7 @@ class LiteLLMProvider(LLMProvider):
 
             self.acompletion = acompletion
             self.completion = completion
-            logger.info("LiteLLM imported successfully")
+            logger.debug("LiteLLM imported successfully")
         except ImportError:
             logger.error("Failed to import LiteLLM")
             raise ImportError(
@@ -51,10 +51,10 @@ class LiteLLMProvider(LLMProvider):
         args["messages"] = messages
         args = {**args, **kwargs}
 
-        logger.info(f"Executing async LiteLLM task with args: {args}")
+        logger.debug(f"Executing async LiteLLM task with args: {args}")
         try:
             response = await self.acompletion(**args)
-            logger.info("Async LiteLLM task executed successfully")
+            logger.debug("Async LiteLLM task executed successfully")
             return response
         except Exception as e:
             logger.error(f"Async LiteLLM task execution failed: {str(e)}")
@@ -69,10 +69,10 @@ class LiteLLMProvider(LLMProvider):
         args["messages"] = messages
         args = {**args, **kwargs}
 
-        logger.info(f"Executing sync LiteLLM task with args: {args}")
+        logger.debug(f"Executing sync LiteLLM task with args: {args}")
         try:
             response = self.completion(**args)
-            logger.info("Sync LiteLLM task executed successfully")
+            logger.debug("Sync LiteLLM task executed successfully")
             return response
         except Exception as e:
             logger.error(f"Sync LiteLLM task execution failed: {str(e)}")

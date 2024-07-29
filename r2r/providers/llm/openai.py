@@ -25,7 +25,7 @@ class OpenAILLMProvider(LLMProvider):
             )
         self.async_client = AsyncOpenAI()
         self.client = OpenAI()
-        logger.info("OpenAILLMProvider initialized successfully")
+        logger.debug("OpenAILLMProvider initialized successfully")
 
     def _get_base_args(self, generation_config: GenerationConfig) -> dict:
         args = {
@@ -50,10 +50,10 @@ class OpenAILLMProvider(LLMProvider):
         args["messages"] = messages
         args = {**args, **kwargs}
 
-        logger.info(f"Executing async OpenAI task with args: {args}")
+        logger.debug(f"Executing async OpenAI task with args: {args}")
         try:
             response = await self.async_client.chat.completions.create(**args)
-            logger.info("Async OpenAI task executed successfully")
+            logger.debug("Async OpenAI task executed successfully")
             return response
         except Exception as e:
             logger.error(f"Async OpenAI task execution failed: {str(e)}")
@@ -68,10 +68,10 @@ class OpenAILLMProvider(LLMProvider):
         args["messages"] = messages
         args = {**args, **kwargs}
 
-        logger.info(f"Executing sync OpenAI task with args: {args}")
+        logger.debug(f"Executing sync OpenAI task with args: {args}")
         try:
             response = self.client.chat.completions.create(**args)
-            logger.info("Sync OpenAI task executed successfully")
+            logger.debug("Sync OpenAI task executed successfully")
             return response
         except Exception as e:
             logger.error(f"Sync OpenAI task execution failed: {str(e)}")

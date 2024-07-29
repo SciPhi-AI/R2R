@@ -41,6 +41,7 @@ class LLMProvider(Provider):
             raise ValueError(
                 "LLMProvider must be initialized with a `LLMConfig`."
             )
+        logger.info(f"Initializing LLMProvider with config: {config}")
         super().__init__(config)
         self.config: LLMConfig = config
         self.semaphore = asyncio.Semaphore(config.concurrency_limit)
