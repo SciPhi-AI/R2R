@@ -1,99 +1,33 @@
-"""A module for creating OpenAI model abstractions."""
-
 import logging
 import os
-from typing import Union
+from typing import Any
 
-from r2r.base import (
-    LLMChatCompletion,
-    LLMChatCompletionChunk,
-    LLMConfig,
-    LLMProvider,
-)
+from openai import AsyncOpenAI, OpenAI
+
 from r2r.base.abstractions.llm import GenerationConfig
+from r2r.base.providers.llm import LLMConfig, LLMProvider
 
 logger = logging.getLogger(__name__)
 
 
 class OpenAILLMProvider(LLMProvider):
-    """A concrete class for creating OpenAI models."""
-
-    def __init__(
-        self,
-        config: LLMConfig,
-        *args,
-        **kwargs,
-    ) -> None:
-        if not isinstance(config, LLMConfig):
-            raise ValueError(
-                "The provided config must be an instance of OpenAIConfig."
-            )
-        try:
-            from openai import AsyncOpenAI, OpenAI  # noqa
-        except ImportError:
-            raise ImportError(
-                "Error, `openai` is required to run an OpenAILLMProvider. Please install it using `pip install openai`."
-            )
+    def __init__(self, config: LLMConfig, *args, **kwargs) -> None:
+        super().__init__(config)
         if config.provider != "openai":
+            logger.error(f"Invalid provider: {config.provider}")
             raise ValueError(
                 "OpenAILLMProvider must be initialized with config with `openai` provider."
             )
         if not os.getenv("OPENAI_API_KEY"):
+            logger.error("OpenAI API key not found")
             raise ValueError(
                 "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable."
             )
-        super().__init__(config)
-        self.config: LLMConfig = config
         self.async_client = AsyncOpenAI()
         self.client = OpenAI()
+        logger.info("OpenAILLMProvider initialized successfully")
 
-    def get_completion(
-        self,
-        messages: list[dict],
-        generation_config: GenerationConfig,
-        **kwargs,
-    ) -> LLMChatCompletion:
-        if generation_config.stream:
-            raise ValueError(
-                "Stream must be set to False to use the `get_completion` method."
-            )
-        return self._get_completion(messages, generation_config, **kwargs)
-
-    def get_completion_stream(
-        self,
-        messages: list[dict],
-        generation_config: GenerationConfig,
-        **kwargs,
-    ) -> LLMChatCompletionChunk:
-        if not generation_config.stream:
-            raise ValueError(
-                "Stream must be set to True to use the `get_completion_stream` method."
-            )
-        return self._get_completion(messages, generation_config, **kwargs)
-
-    def _get_completion(
-        self,
-        messages: list[dict],
-        generation_config: GenerationConfig,
-        **kwargs,
-    ) -> Union[LLMChatCompletion, LLMChatCompletionChunk]:
-        """Get a completion from the OpenAI API based on the provided messages."""
-
-        # Create a dictionary with the default arguments
-        args = self._get_base_args(generation_config)
-
-        args["messages"] = messages
-
-        args = {**args, **kwargs}
-        # Create the chat completion
-        return self.client.chat.completions.create(**args)
-
-    def _get_base_args(
-        self,
-        generation_config: GenerationConfig,
-        prompt=None,
-    ) -> dict:
-        """Get the base arguments for the LiteLLMProvider API."""
+    def _get_base_args(self, generation_config: GenerationConfig) -> dict:
         args = {
             "model": generation_config.model,
             "temperature": generation_config.temperature,
@@ -101,42 +35,44 @@ class OpenAILLMProvider(LLMProvider):
             "stream": generation_config.stream,
             "max_tokens": generation_config.max_tokens_to_sample,
         }
-
         if generation_config.functions is not None:
             args["functions"] = generation_config.functions
-
         if generation_config.tools is not None:
             args["tools"] = generation_config.tools
-
         return args
 
-    async def aget_completion(
-        self,
-        messages: list[dict],
-        generation_config: GenerationConfig,
-        **kwargs,
-    ) -> LLMChatCompletion:
-        if generation_config.stream:
-            raise ValueError(
-                "Stream must be set to False to use the `aget_completion` method."
-            )
-        return await self._aget_completion(
-            messages, generation_config, **kwargs
-        )
+    async def _execute_task(self, task: dict[str, Any]):
+        messages = task["messages"]
+        generation_config = task["generation_config"]
+        kwargs = task["kwargs"]
 
-    async def _aget_completion(
-        self,
-        messages: list[dict],
-        generation_config: GenerationConfig,
-        **kwargs,
-    ) -> Union[LLMChatCompletion, LLMChatCompletionChunk]:
-        """Asynchronously get a completion from the OpenAI API based on the provided messages."""
-
-        # Create a dictionary with the default arguments
         args = self._get_base_args(generation_config)
-
         args["messages"] = messages
-
         args = {**args, **kwargs}
-        # Create the chat completion
-        return await self.async_client.chat.completions.create(**args)
+
+        logger.info(f"Executing async OpenAI task with args: {args}")
+        try:
+            response = await self.async_client.chat.completions.create(**args)
+            logger.info("Async OpenAI task executed successfully")
+            return response
+        except Exception as e:
+            logger.error(f"Async OpenAI task execution failed: {str(e)}")
+            raise
+
+    def _execute_task_sync(self, task: dict[str, Any]):
+        messages = task["messages"]
+        generation_config = task["generation_config"]
+        kwargs = task["kwargs"]
+
+        args = self._get_base_args(generation_config)
+        args["messages"] = messages
+        args = {**args, **kwargs}
+
+        logger.info(f"Executing sync OpenAI task with args: {args}")
+        try:
+            response = self.client.chat.completions.create(**args)
+            logger.info("Sync OpenAI task executed successfully")
+            return response
+        except Exception as e:
+            logger.error(f"Sync OpenAI task execution failed: {str(e)}")
+            raise
