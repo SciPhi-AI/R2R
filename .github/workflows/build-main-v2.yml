@@ -1,0 +1,71 @@
+name: Build and Publish Docker Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (leave empty to use default versioning)'
+        required: false
+        type: string
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+      id-token: write
+      actions: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Docker Auth
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
+          password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Determine version and tags
+        id: version
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            if [ -n "${{ github.event.inputs.version }}" ]; then
+              echo "RELEASE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+              echo "TAGS=ragtoriches/prod:${{ github.event.inputs.version }},ragtoriches/prod:latest" >> $GITHUB_OUTPUT
+            else
+              echo "RELEASE_VERSION=latest" >> $GITHUB_OUTPUT
+              echo "TAGS=ragtoriches/prod:latest" >> $GITHUB_OUTPUT
+            fi
+          elif [ "${{ github.ref }}" = "refs/heads/dev" ]; then
+            echo "RELEASE_VERSION=main" >> $GITHUB_OUTPUT
+            echo "TAGS=ragtoriches/dev:main" >> $GITHUB_OUTPUT
+          else
+            echo "RELEASE_VERSION=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+            echo "TAGS=ragtoriches/prod:${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.version.outputs.TAGS }}
+          platforms: linux/amd64,linux/arm64,linux/386
+          no-cache: true
+          pull: true
+
+      - name: Clean up
+        if: always()
+        run: docker system prune -af
