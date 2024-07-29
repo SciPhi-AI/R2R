@@ -31,6 +31,7 @@ def r2r_app(
     if config_path and config_name:
         raise ValueError("Cannot specify both config and config_name")
 
+    config_path = os.getenv("CONFIG_PATH") or config_path
     if config_path:
         config = R2RConfig.from_json(config_path)
     else:
