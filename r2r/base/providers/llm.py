@@ -3,7 +3,7 @@ import logging
 import time
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, AsyncGenerator, Generator, Optional, Union
+from typing import Any, AsyncGenerator, Generator, Optional
 
 from r2r.base.abstractions.llm import (
     GenerationConfig,
@@ -49,7 +49,7 @@ class LLMProvider(Provider):
             max_workers=config.concurrency_limit
         )
 
-    async def _execute_with_backoff(self, task: dict[str, Any]):
+    async def _execute_with_backoff_async(self, task: dict[str, Any]):
         retries = 0
         backoff = self.config.initial_backoff
         while retries < self.config.max_retries:
@@ -66,6 +66,27 @@ class LLMProvider(Provider):
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, self.config.max_backoff)
 
+    async def _execute_with_backoff_async_stream(
+        self, task: dict[str, Any]
+    ) -> AsyncGenerator[Any, None]:
+        retries = 0
+        backoff = self.config.initial_backoff
+        while retries < self.config.max_retries:
+            try:
+                async with self.semaphore:
+                    async for chunk in await self._execute_task(task):
+                        yield chunk
+                return  # Successful completion of the stream
+            except Exception as e:
+                logger.warning(
+                    f"Streaming request failed (attempt {retries + 1}): {str(e)}"
+                )
+                retries += 1
+                if retries == self.config.max_retries:
+                    raise
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, self.config.max_backoff)
+
     def _execute_with_backoff_sync(self, task: dict[str, Any]):
         retries = 0
         backoff = self.config.initial_backoff
@@ -75,6 +96,25 @@ class LLMProvider(Provider):
             except Exception as e:
                 logger.warning(
                     f"Request failed (attempt {retries + 1}): {str(e)}"
+                )
+                retries += 1
+                if retries == self.config.max_retries:
+                    raise
+                time.sleep(backoff)
+                backoff = min(backoff * 2, self.config.max_backoff)
+
+    def _execute_with_backoff_sync_stream(
+        self, task: dict[str, Any]
+    ) -> Generator[Any, None, None]:
+        retries = 0
+        backoff = self.config.initial_backoff
+        while retries < self.config.max_retries:
+            try:
+                yield from self._execute_task_sync(task)
+                return  # Successful completion of the stream
+            except Exception as e:
+                logger.warning(
+                    f"Streaming request failed (attempt {retries + 1}): {str(e)}"
                 )
                 retries += 1
                 if retries == self.config.max_retries:
@@ -101,7 +141,7 @@ class LLMProvider(Provider):
             "generation_config": generation_config,
             "kwargs": kwargs,
         }
-        response = await self._execute_with_backoff(task)
+        response = await self._execute_with_backoff_async(task)
         return LLMChatCompletion(**response.dict())
 
     def get_completion(
@@ -130,7 +170,7 @@ class LLMProvider(Provider):
             "generation_config": generation_config,
             "kwargs": kwargs,
         }
-        async for chunk in await self._execute_with_backoff(task):
+        async for chunk in self._execute_with_backoff_async_stream(task):
             yield LLMChatCompletionChunk(**chunk.dict())
 
     def get_completion_stream(
@@ -145,5 +185,5 @@ class LLMProvider(Provider):
             "generation_config": generation_config,
             "kwargs": kwargs,
         }
-        for chunk in self._execute_with_backoff_sync(task):
+        for chunk in self._execute_with_backoff_sync_stream(task):
             yield LLMChatCompletionChunk(**chunk.dict())
