@@ -4,7 +4,7 @@ from fastapi.responses import StreamingResponse
 from r2r.base import GenerationConfig, KGSearchSettings, VectorSearchSettings
 from r2r.main.api.routes.retrieval.requests import (
     R2REvalRequest,
-    R2RRAGChatRequest,
+    R2RRAGAgentRequest,
     R2RRAGRequest,
     R2RSearchRequest,
 )
@@ -109,7 +109,7 @@ class RetrievalRouter(BaseRouter):
         @self.router.post("/rag_agent")
         @self.base_endpoint
         async def rag_agent_app(
-            request: R2RRAGChatRequest,
+            request: R2RRAGAgentRequest,
             auth_user=(
                 Depends(self.engine.providers.auth.auth_wrapper)
                 if self.engine.providers.auth

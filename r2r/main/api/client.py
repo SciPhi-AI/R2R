@@ -36,7 +36,7 @@ from .routes.management.requests import (
     R2RUsersOverviewRequest,
 )
 from .routes.retrieval.requests import (
-    R2RRAGChatRequest,
+    R2RRAGAgentRequest,
     R2RRAGRequest,
     R2RSearchRequest,
 )
@@ -543,7 +543,7 @@ class R2RClient:
                 vector_search_settings.model_dump_json()
             )
 
-        request = R2RRAGChatRequest(
+        request = R2RRAGAgentRequest(
             messages=messages,
             vector_search_settings=vector_search_settings
             or {
@@ -571,7 +571,7 @@ class R2RClient:
             )
 
     async def _stream_rag_agent(
-        self, rag_agent_request: R2RRAGChatRequest
+        self, rag_agent_request: R2RRAGAgentRequest
     ) -> AsyncGenerator[str, None]:
         url = f"{self.base_url}{self.prefix}/rag_agent"
         async with httpx.AsyncClient() as client:
@@ -588,7 +588,7 @@ class R2RClient:
                     yield chunk
 
     def _stream_rag_agent_sync(
-        self, rag_agent_request: R2RRAGChatRequest
+        self, rag_agent_request: R2RRAGAgentRequest
     ) -> Generator[str, None, None]:
         async def run_async_generator():
             async for chunk in self._stream_rag_agent(rag_agent_request):
