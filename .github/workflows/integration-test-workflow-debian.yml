@@ -157,3 +157,8 @@ jobs:
         deactivate
         rm -rf venv
         docker system prune -af --volumes
+
+    - name: Cleanup
+      run: |
+        docker system prune -af --volumes
+        docker network rm r2r-network
