@@ -174,11 +174,10 @@ class R2RStreamingAssistant(Assistant):
                 if delta.function_call.arguments:
                     function_arguments += delta.function_call.arguments
             elif delta.content:
-                if not has_yielded_a_completion_chunk:
+                if content_buffer == "":
                     yield "<completion>"
-                    has_yielded_a_completion_chunk = True
                 content_buffer += delta.content
-                yield f"<completion>{delta.content}</completion>"
+                yield delta.content
 
             if chunk.choices[0].finish_reason == "function_call":
                 yield "<function_call>"
