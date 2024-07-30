@@ -18,6 +18,8 @@ from r2r.base import (
     PipeType,
     PromptProvider,
     TextSplitter,
+    Entity,
+    Triple,
     extract_entities,
     extract_triples,
     generate_id_from_label,
@@ -113,17 +115,6 @@ class KGExtractionPipe(AsyncPipe):
                 fragment.data = f"{prefix}\n{fragment.data}"
             yield fragment
 
-
-    async def extract_kg_graph_rag(
-        self,
-        fragment: Fragment,
-        retries: int = 3,
-        delay: int = 2,
-    ) -> KGExtraction:
-        
-
-
-
     async def extract_kg(
         self,
         fragment: Fragment,
@@ -156,9 +147,26 @@ class KGExtractionPipe(AsyncPipe):
                     def parse_fn(response_str: str) -> Any:
                         entities = re.findall(entity_pattern, response_str)
                         relationships = re.findall(relationship_pattern, response_str)
-                        return entities, relationships
+
+                        entities_arr = []
+                        for entity in entities: 
+                            entity_id = generate_id_from_label(entity[0])
+                            entity_value = entity[1]
+                            entity_category = entity[2]
+                            entity_subcategory = entity[3]
+                            entities_arr.append(Entity(entity_id, entity_value, entity_category, entity_subcategory))
+
+                        relations_arr = []
+                        for relationship in relationships:
+                            subject = relationship[0]
+                            predicate = relationship[1]
+                            object = relationship[2]
+                            relations_arr.append(Triple(subject, predicate, object))
+
+                        return entities_arr, relations_arr
                     
                     entities, triples = parse_fn(kg_extraction)
+                    return KGExtraction(entities=entities, triples=triples)
 
                 else:
 

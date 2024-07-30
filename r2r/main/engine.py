@@ -9,6 +9,7 @@ from .services.auth_service import AuthService
 from .services.ingestion_service import IngestionService
 from .services.management_service import ManagementService
 from .services.retrieval_service import RetrievalService
+from .services.kg_service import KGService
 
 
 class R2REngine(metaclass=AsyncSyncMeta):
@@ -56,6 +57,15 @@ class R2REngine(metaclass=AsyncSyncMeta):
         )
 
         self.auth_service = AuthService(
+            config,
+            providers,
+            pipelines,
+            assistants,
+            run_manager,
+            logging_connection,
+        )
+
+        self.kg_service = KGService(
             config,
             providers,
             pipelines,

@@ -11,16 +11,21 @@ from .abstractions.document import (
     Document,
     DocumentInfo,
     DocumentType,
-    Entity,
     Extraction,
     ExtractionType,
     Fragment,
     FragmentType,
+)
+
+from .abstractions.graph import (
+    Entity,
+    Community,
     KGExtraction,
     Triple,
     extract_entities,
     extract_triples,
 )
+
 from .abstractions.embedding import EmbeddingPurpose
 from .abstractions.exception import R2RDocumentProcessingError, R2RException
 from .abstractions.llama_abstractions import VectorStoreQuery
@@ -142,6 +147,7 @@ __all__ = [
     "FragmentType",
     "extract_entities",
     "Entity",
+    "Community", 
     "extract_triples",
     "EmbeddingPurpose",
     "R2RException",

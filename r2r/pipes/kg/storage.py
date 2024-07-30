@@ -79,6 +79,7 @@ class KGStoragePipe(AsyncPipe):
                             ),
                         )
                     )
+                    
                 for triple in extraction.triples:
                     relations.append(
                         Relation(
@@ -87,8 +88,10 @@ class KGStoragePipe(AsyncPipe):
                             label=triple.predicate,
                         )
                     )
+            
             self.kg_provider.upsert_nodes(nodes)
             self.kg_provider.upsert_relations(relations)
+
         except Exception as e:
             error_message = f"Failed to store knowledge graph extractions in the database: {e}"
             logger.error(error_message)

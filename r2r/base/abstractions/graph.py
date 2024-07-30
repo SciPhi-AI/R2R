@@ -318,14 +318,10 @@ class TextUnit(Identified):
             document_ids=d.get(document_ids_key),
             attributes=d.get(attributes_key),
         )
-    
-
 
 from collections.abc import Callable
 
 TextEmbedder = Callable[[str], list[float]]
-
-
 
 def extract_entities(llm_payload: list[str]) -> dict[str, Entity]:
     entities = {}
@@ -379,7 +375,6 @@ def extract_triples(
             logger.error(f"Error processing triplet {entry}: {e}")
             continue
     return triples
-
 
 class KGExtraction(BaseModel):
     """An extraction from a document that is part of a knowledge graph."""

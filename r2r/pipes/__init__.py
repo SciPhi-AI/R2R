@@ -1,7 +1,8 @@
 from .abstractions.search_pipe import SearchPipe
 from .ingestion.embedding_pipe import EmbeddingPipe
-from .ingestion.kg_extraction_pipe import KGExtractionPipe
-from .ingestion.kg_storage_pipe import KGStoragePipe
+from .kg.extraction import KGExtractionPipe
+from .kg.storage import KGStoragePipe
+from .kg.clustering import KGClusteringPipe
 from .ingestion.parsing_pipe import ParsingPipe
 from .ingestion.vector_storage_pipe import VectorStoragePipe
 from .other.eval_pipe import EvalPipe
@@ -27,5 +28,6 @@ __all__ = [
     "WebSearchPipe",
     "KGSearchSearchPipe",
     "KGStoragePipe",
+    "KGClusteringPipe",
     "MultiSearchPipe",
 ]

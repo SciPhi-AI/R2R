@@ -200,6 +200,10 @@ class IngestionService(Service):
             *args,
             **kwargs,
         )
+
+        # enrich using graphrag
+        graphrag_results = await self.pipelines.kg_cluster_pipeline.run(documents)
+
         return await self._process_ingestion_results(
             ingestion_results,
             document_infos,
