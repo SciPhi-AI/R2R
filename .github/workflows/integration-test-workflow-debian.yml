@@ -1,56 +1,26 @@
 name: Debian R2R Docker Build and Integration Test (Debian GNU/Linux 12 (bookworm) amd64)
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Build and Publish Development Docker Image"]
+    types:
+      - completed
+    branches:
+      - '**'
 
 jobs:
   build-and-test:
     runs-on: [ self-hosted, Linux ]
+    permissions:
+      actions: write
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - name: Build R2R Docker image
-      run: |
-        docker build \
-        --build-arg GITHUB_SHA=${{ github.sha }} \
-        --build-arg GITHUB_REF=${{ github.ref }} \
-        -t emrgntcmplxty/r2r:${{ github.sha }} .
-
-    - name: Pull pgvector image
-      run: docker pull pgvector/pgvector:pg16
-
-    - name: Create Docker network
-      run: docker network create sciphi-network
-
-    - name: Start Postgres
-      run: |
-        docker run -d --name postgres --network sciphi-network \
-          -e POSTGRES_USER=postgres \
-          -e POSTGRES_PASSWORD=postgres \
-          -e POSTGRES_DB=postgres \
-          pgvector/pgvector:pg16
-
-    - name: Start R2R
-      run: |
-        docker run -d --name r2r --network sciphi-network \
-          -e PYTHONUNBUFFERED=1 \
-          -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
-          -e POSTGRES_USER=postgres \
-          -e POSTGRES_PASSWORD=postgres \
-          -e POSTGRES_HOST=postgres \
-          -e POSTGRES_PORT=5432 \
-          -e POSTGRES_DBNAME=postgres \
-          -e POSTGRES_VECS_COLLECTION=vecs \
-          -p 8000:8000 \
-          emrgntcmplxty/r2r:${{ github.sha }}
-
-        sleep 10
-
-    - name: Run integration tests in Docker container
+    - name: Run cloud LLM integration tests in Docker
       run: |
         python3 -m venv venv
         source venv/bin/activate
@@ -58,6 +28,12 @@ jobs:
 
         echo "R2R Version"
         r2r version
+
+        echo "R2R Serve --docker"
+        r2r serve --docker --exclude-neo4j --exclude-ollama --image=ragtoriches/dev:latest
+
+        echo "Waiting for services to start..."
+        sleep 30
 
         echo "Ingest Data"
         r2r ingest-sample-files
@@ -95,12 +71,16 @@ jobs:
         echo "Logging"
         r2r logs
 
+        echo "Docker Down"
+        r2r docker-down
 
-    - name: Clean up
-      if: always()
-      run: |
+        echo "Clean up Virtual Environment"
+        deactivate
         rm -rf venv
-        docker stop r2r postgres
-        docker rm r2r postgres
-        docker network rm sciphi-network
         docker system prune -af --volumes
+        docker volume rm $(docker volume ls -qf dangling=true)
+
+    - name: Cleanup
+      run: |
+        docker system prune -af --volumes
+        docker volume rm $(docker volume ls -qf dangling=true)

@@ -139,6 +139,7 @@ def health(obj):
     type=click.Path(exists=True),
     help="Path to the configuration file",
 )
+@click.option("--image", help="Docker image to use")
 @click.pass_obj
 def serve(
     obj,
@@ -149,6 +150,7 @@ def serve(
     exclude_ollama,
     project_name,
     config_path,
+    image,
 ):
     """Start the R2R server."""
     load_dotenv()
@@ -173,6 +175,7 @@ def serve(
             exclude_ollama,
             project_name,
             config_path,
+            image,
         )
     else:
         run_local_serve(obj, host, port)
