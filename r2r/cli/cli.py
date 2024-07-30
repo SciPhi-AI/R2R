@@ -360,12 +360,15 @@ def search(
         if isinstance(results, dict) and "results" in results:
             results = results["results"]
 
+
         if "vector_search_results" in results:
             click.echo("Vector search results:")
             for result in results["vector_search_results"]:
                 click.echo(result)
         if "kg_search_results" in results and results["kg_search_results"]:
-            click.echo("KG search results:", results["kg_search_results"])
+            click.echo("KG search results:")
+            for result in results["kg_search_results"]:
+                click.echo(result)
 
 
 @cli.command()
