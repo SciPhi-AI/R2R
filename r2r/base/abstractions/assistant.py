@@ -12,11 +12,19 @@ from .llm import LLMChatCompletion
 class Tool(BaseModel):
     name: str
     description: str
-    function: Callable
+    results_function: Callable
+    llm_format_function: Callable
+    stream_function: Optional[Callable] = None
     parameters: Optional[Dict[str, Any]] = None
 
     class Config:
         arbitrary_types_allowed = True
+
+
+class ToolResult(BaseModel):
+    raw_result: Any
+    llm_formatted_result: str
+    stream_result: Optional[str] = None
 
 
 class Message(BaseModel):
