@@ -1,5 +1,4 @@
 import asyncio
-import json
 from abc import ABCMeta
 from typing import AsyncGenerator, Generator, Optional
 
@@ -9,7 +8,6 @@ from r2r.base import (
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
-    ToolResult,
     syncable,
 )
 
@@ -151,7 +149,6 @@ class R2RStreamingAssistant(Assistant):
 
         for chunk in stream:
             delta = chunk.choices[0].delta
-            has_yielded_a_completion_chunk = False
             if delta.tool_calls:
                 for tool_call in delta.tool_calls:
                     results = await self.handle_function_or_tool_call(

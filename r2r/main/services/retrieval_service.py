@@ -204,7 +204,7 @@ class RetrievalService(Service):
                 )
 
     @telemetry_event("RAGChat")
-    async def rag_chat(
+    async def rag_agent(
         self,
         messages: list[Message],
         rag_generation_config: GenerationConfig,
@@ -216,7 +216,7 @@ class RetrievalService(Service):
         *args,
         **kwargs,
     ):
-        async with manage_run(self.run_manager, "rag_chat_app") as run_id:
+        async with manage_run(self.run_manager, "rag_agent_app") as run_id:
             try:
                 t0 = time.time()
 
@@ -241,13 +241,13 @@ class RetrievalService(Service):
 
                     await self.logging_connection.log(
                         log_id=run_id,
-                        key="rag_chat_generation_latency",
+                        key="rag_agent_generation_latency",
                         value=latency,
                         is_info_log=False,
                     )
 
                     async def stream_response():
-                        async with manage_run(self.run_manager, "arag_chat"):
+                        async with manage_run(self.run_manager, "arag_agent"):
                             async for (
                                 chunk
                             ) in self.assistants.streaming_rag_assistant.arun(
@@ -279,7 +279,7 @@ class RetrievalService(Service):
 
                 await self.logging_connection.log(
                     log_id=run_id,
-                    key="rag_chat_generation_latency",
+                    key="rag_agent_generation_latency",
                     value=latency,
                     is_info_log=False,
                 )
