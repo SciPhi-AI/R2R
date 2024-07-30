@@ -174,8 +174,6 @@ class Assistant(ABC):
         *args,
         **kwargs,
     ) -> Union[str, AsyncGenerator[str, None]]:
-        tool_args = json.loads(function_arguments)
-
         (
             self.conversation.append(
                 Message(

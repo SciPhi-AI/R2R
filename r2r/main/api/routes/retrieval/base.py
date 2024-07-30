@@ -106,9 +106,9 @@ class RetrievalRouter(BaseRouter):
             else:
                 return response
 
-        @self.router.post("/rag_chat")
+        @self.router.post("/rag_agent")
         @self.base_endpoint
-        async def rag_chat_app(
+        async def rag_agent_app(
             request: R2RRAGChatRequest,
             auth_user=(
                 Depends(self.engine.providers.auth.auth_wrapper)
@@ -128,7 +128,7 @@ class RetrievalRouter(BaseRouter):
                     )
                 )
 
-            response = await self.engine.arag_chat(
+            response = await self.engine.arag_agent(
                 messages=request.messages,
                 vector_search_settings=VectorSearchSettings(
                     **(request.vector_search_settings or {})
