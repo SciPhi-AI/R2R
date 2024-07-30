@@ -64,6 +64,10 @@ services:
       - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Methods=GET,POST,OPTIONS"
       - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Headers=DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
       - "traefik.http.middlewares.r2r-headers.headers.customresponseheaders.Access-Control-Expose-Headers=Content-Length,Content-Range"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
+
 
   r2r-dashboard:
     image: emrgntcmplxty/r2r-dashboard:latest
