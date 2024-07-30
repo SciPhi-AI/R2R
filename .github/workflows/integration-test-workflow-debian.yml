@@ -1,10 +1,6 @@
 name: Debian R2R Docker Build and Integration Test (Debian GNU/Linux 12 (bookworm) amd64)
 
 on:
-  push:
-    branches:
-        - '**'
-  workflow_dispatch:
   workflow_run:
     workflows: ["Build and Publish Development Docker Image"]
     types:
@@ -17,7 +13,6 @@ jobs:
     runs-on: [ self-hosted, Linux ]
     permissions:
       actions: write
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
