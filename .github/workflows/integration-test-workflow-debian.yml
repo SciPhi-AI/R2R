@@ -83,5 +83,4 @@ jobs:
     - name: Cleanup
       run: |
         docker system prune -af --volumes
-        docker network rm r2r-network
         docker volume rm $(docker volume ls -qf dangling=true)
