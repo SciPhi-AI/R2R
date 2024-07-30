@@ -151,6 +151,7 @@ class R2RStreamingAssistant(Assistant):
 
         for chunk in stream:
             delta = chunk.choices[0].delta
+            has_yielded_a_completion_chunk = False
             if delta.tool_calls:
                 for tool_call in delta.tool_calls:
                     results = await self.handle_function_or_tool_call(
@@ -173,8 +174,11 @@ class R2RStreamingAssistant(Assistant):
                 if delta.function_call.arguments:
                     function_arguments += delta.function_call.arguments
             elif delta.content:
+                if not has_yielded_a_completion_chunk:
+                    yield "<completion>"
+                    has_yielded_a_completion_chunk = True
                 content_buffer += delta.content
-                yield f"<completion>{delta.content}</completion>"
+                yield delta.content
 
             if chunk.choices[0].finish_reason == "function_call":
                 yield "<function_call>"
@@ -201,3 +205,4 @@ class R2RStreamingAssistant(Assistant):
                         Message(role="assistant", content=content_buffer)
                     )
                 self._completed = True
+                yield "</completion>"
