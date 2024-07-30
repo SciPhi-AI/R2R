@@ -63,14 +63,20 @@ class KGSearchSearchPipe(GeneratorPipe):
         **kwargs: Any,
     ):
         async for message in input.message:
-            
-            if not kg_search_settings.entity_types: 
+
+            if not kg_search_settings.entity_types:
                 messages = self.prompt_provider._get_message_payload(
-                    task_prompt_name="kg_search", task_inputs={"input": message}
+                    task_prompt_name="kg_search",
+                    task_inputs={"input": message},
                 )
             else:
                 messages = self.prompt_provider._get_message_payload(
-                    task_prompt_name="kg_search_with_spec", task_inputs={"input": message, "entity_types": str(kg_search_settings.entity_types), 'relations': str(kg_search_settings.relationships)}
+                    task_prompt_name="kg_search_with_spec",
+                    task_inputs={
+                        "input": message,
+                        "entity_types": str(kg_search_settings.entity_types),
+                        "relations": str(kg_search_settings.relationships),
+                    },
                 )
 
             result = await self.llm_provider.aget_completion(
