@@ -65,6 +65,8 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
 
+
+
   r2r-dashboard:
     image: emrgntcmplxty/r2r-dashboard:latest
     environment:
