@@ -63,7 +63,6 @@ class RAGAssistantMixin:
         formatted_results = ""
         for i, result in enumerate(results):
             text = result.metadata.get("text", "N/A")
-            print("text = ", text)
             formatted_results += f"{i+1}. {text}\n"
         return formatted_results
 
@@ -71,11 +70,9 @@ class RAGAssistantMixin:
     def format_search_results_for_stream(
         results: list[VectorSearchResult],
     ) -> str:
-        print("results = ", results)
         formatted_result = ",".join(
             [json.dumps(result.json()) for result in results]
         )
-        print("formatted_result = ", formatted_result)
         return formatted_result
 
 
