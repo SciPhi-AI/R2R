@@ -48,7 +48,9 @@ def document_chunks(obj, document_id):
 
 
 @cli.command()
-@click.argument("file-paths", nargs=-1)
+@click.option(
+    "--file-paths", multiple=True, help="Paths to files for ingestion"
+)
 @click.option(
     "--document-ids", multiple=True, help="Document IDs for ingestion"
 )
@@ -62,13 +64,13 @@ def document_chunks(obj, document_id):
 def ingest_files(obj, file_paths, document_ids, metadatas, versions):
     """Ingest files into R2R."""
     with timer():
-        # Default to None if empty tuples are provided
+        file_paths = list(file_paths)
         document_ids = list(document_ids) if document_ids else None
         metadatas = list(metadatas) if metadatas else None
         versions = list(versions) if versions else None
 
         response = obj.ingest_files(
-            list(file_paths), document_ids, metadatas, versions
+            file_paths, document_ids, metadatas, versions
         )
     click.echo(response)
 
@@ -76,10 +78,11 @@ def ingest_files(obj, file_paths, document_ids, metadatas, versions):
 @cli.command()
 @click.option(
     "--no-media",
-    default=True,
+    is_flag=True,
+    default=False,
     help="Exclude media files from ingestion",
 )
-@click.option("--option", default=0, help="Which file to ingest?")
+@click.option("--option", type=int, default=0, help="Which file to ingest?")
 @click.pass_obj
 def ingest_sample_file(obj, no_media, option):
     """Ingest sample files into R2R."""

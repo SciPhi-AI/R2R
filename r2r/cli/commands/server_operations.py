@@ -58,7 +58,7 @@ def generate_report():
         docker_ps_output = subprocess.check_output(
             ["docker", "ps", "--format", "{{.ID}}\t{{.Names}}\t{{.Status}}"],
             text=True,
-        )
+        ).decode("utf-8")
         report["docker_ps"] = [
             dict(zip(["id", "name", "status"], line.split("\t")))
             for line in docker_ps_output.strip().split("\n")
@@ -69,7 +69,7 @@ def generate_report():
         docker_network_output = subprocess.check_output(
             ["docker", "network", "ls", "--format", "{{.ID}}\t{{.Name}}"],
             text=True,
-        )
+        ).decode("utf-8")
         networks = [
             dict(zip(["id", "name"], line.split("\t")))
             for line in docker_network_output.strip().split("\n")
@@ -88,7 +88,7 @@ def generate_report():
                     "{{range .IPAM.Config}}{{.Subnet}}{{end}}",
                 ],
                 text=True,
-            )
+            ).decode("utf-8")
             if subnet := inspect_output.strip():
                 network["subnet"] = subnet
                 report["docker_subnets"].append(network)
