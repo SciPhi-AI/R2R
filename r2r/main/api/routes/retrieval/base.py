@@ -23,7 +23,11 @@ class RetrievalRouter(BaseRouter):
         @self.base_endpoint
         async def search_app(
             request: R2RSearchRequest,
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=(
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.providers.auth
+                else None
+            ),
         ):
             if "kg_search_generation_config" in request.kg_search_settings:
                 request.kg_search_settings["kg_search_generation_config"] = (
@@ -51,7 +55,11 @@ class RetrievalRouter(BaseRouter):
         @self.base_endpoint
         async def rag_app(
             request: R2RRAGRequest,
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=(
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.providers.auth
+                else None
+            ),
         ):
             if "kg_search_generation_config" in request.kg_search_settings:
                 request.kg_search_settings["kg_search_generation_config"] = (
@@ -97,7 +105,11 @@ class RetrievalRouter(BaseRouter):
         @self.base_endpoint
         async def rag_chat_app(
             request: R2RRAGChatRequest,
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=(
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.providers.auth
+                else None
+            ),
         ):
             if "kg_search_generation_config" in request.kg_search_settings:
                 request.kg_search_settings["kg_search_generation_config"] = (
@@ -146,7 +158,11 @@ class RetrievalRouter(BaseRouter):
         @self.base_endpoint
         async def evaluate_app(
             request: R2REvalRequest,
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=(
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.providers.auth
+                else None
+            ),
         ):
             results = await self.engine.aevaluate(
                 query=request.query,
