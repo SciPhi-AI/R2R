@@ -46,7 +46,7 @@ jobs:
         no-cache: true
         pull: true
 
-    - name: Run cloud provider integration tests in Docker
+    - name: Run cloud LLM integration tests in Docker
       run: |
         python3 -m venv venv
         source venv/bin/activate
@@ -102,7 +102,7 @@ jobs:
         rm -rf venv
         docker system prune -af --volumes
 
-    - name: Run cloud provider integration tests in Docker
+    - name: Run local LLM integration tests in Docker
       run: |
         python3 -m venv venv
         source venv/bin/activate
@@ -112,7 +112,7 @@ jobs:
         r2r version
 
         echo "R2R Serve --docker"
-        r2r serve --docker --exclude-neo4j --exclude-ollama --image=ragtoriches/dev:latest
+        r2r serve --docker --image=ragtoriches/dev:latest
 
         echo "Ingest Data"
         r2r ingest-sample-files
@@ -156,14 +156,4 @@ jobs:
         echo "Clean up Virtual Environment"
         deactivate
         rm -rf venv
-        docker system prune -af --volumes
-
-
-    - name: Clean up
-      if: always()
-      run: |
-        rm -rf venv
-        docker stop r2r postgres
-        docker rm r2r postgres
-        docker network rm sciphi-network
         docker system prune -af --volumes

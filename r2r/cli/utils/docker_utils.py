@@ -126,7 +126,7 @@ def check_external_ollama():
             f"{warning_text} Unable to connect to external Ollama instance. Error: {e}"
         )
         click.echo(
-            "Please ensure Ollama is running externally if you've excluded it from Docker."
+            "Please ensure Ollama is running externally if you've excluded it from Docker and plan on running Local LLMs."
         )
 
 
