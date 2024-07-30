@@ -89,8 +89,8 @@ class R2REngine(metaclass=AsyncSyncMeta):
         return await self.retrieval_service.rag(*args, **kwargs)
 
     @syncable
-    async def arag_chat(self, *args, **kwargs):
-        return await self.retrieval_service.rag_chat(*args, **kwargs)
+    async def arag_agent(self, *args, **kwargs):
+        return await self.retrieval_service.rag_agent(*args, **kwargs)
 
     @syncable
     async def aevaluate(self, *args, **kwargs):
