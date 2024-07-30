@@ -11,7 +11,7 @@
       "add_generation_kwargs": {},
       "api_base": null
     },
-    "concurrent_request_limit": 4
+    "concurrent_request_limit": 1
   },
   "embedding": {
     "provider": "sentence-transformers",

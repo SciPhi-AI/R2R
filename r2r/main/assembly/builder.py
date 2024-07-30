@@ -45,7 +45,9 @@ class R2RBuilder:
         "neo4j_kg_no_vector_postgres": os.path.join(
             config_root, "neo4j_kg_no_vector_postgres.json"
         ),
-        "local_neo4j_kg": os.path.join(config_root, "local_neo4j_kg.json"),
+        "local_llm_neo4j_kg": os.path.join(
+            config_root, "local_llm_neo4j_kg.json"
+        ),
         "postgres_logging": os.path.join(config_root, "postgres_logging.json"),
         "auth": os.path.join(config_root, "auth.json"),
     }
