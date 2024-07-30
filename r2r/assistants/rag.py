@@ -26,8 +26,8 @@ class RAGAssistantMixin:
             name="search",
             description="Search for information using the R2R framework",
             results_function=self.asearch,
-            llm_format_function=self.format_search_results_for_llm,
-            stream_function=self.format_search_results_for_stream,
+            llm_format_function=RAGAssistantMixin.format_search_results_for_llm,
+            stream_function=RAGAssistantMixin.format_search_results_for_stream,
             parameters={
                 "type": "object",
                 "properties": {
@@ -56,17 +56,20 @@ class RAGAssistantMixin:
         )
         return response.vector_search_results
 
+    @staticmethod
     def format_search_results_for_llm(
-        self, results: list[VectorSearchResult]
+        results: list[VectorSearchResult],
     ) -> str:
-        results = ""
+        formatted_results = ""
         for i, result in enumerate(results):
             text = result.metadata.get("text", "N/A")
-            results += f"{i+1}. {text}\n"
-        return results
+            print("text = ", text)
+            formatted_results += f"{i+1}. {text}\n"
+        return formatted_results
 
+    @staticmethod
     def format_search_results_for_stream(
-        self, results: list[VectorSearchResult]
+        results: list[VectorSearchResult],
     ) -> str:
         print("results = ", results)
         formatted_result = ",".join(
