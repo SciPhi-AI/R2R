@@ -43,8 +43,6 @@ services:
       - postgres
     networks:
       - r2r-network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/v1/health"]
       interval: 10s
