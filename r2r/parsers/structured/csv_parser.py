@@ -1,4 +1,5 @@
-from typing import IO, AsyncGenerator, Union
+import json
+from typing import AsyncGenerator, Union, IO
 
 from r2r.base.abstractions.document import DataType
 from r2r.base.parsers.base_parser import AsyncParser
@@ -35,10 +36,9 @@ class CSVParserAdvanced(AsyncParser[DataType]):
         self.csv = csv
         self.StringIO = StringIO
 
-    def get_delimiter(
-        self, file_path: str | None = None, file: IO[bytes] | None = None
-    ):
 
+    def get_delimiter(self, file_path: str | None = None, file: IO[bytes] | None = None):
+        
         sniffer = self.csv.Sniffer()
         num_bytes = 65536
 
@@ -59,9 +59,10 @@ class CSVParserAdvanced(AsyncParser[DataType]):
         if isinstance(data, bytes):
             data = data.decode("utf-8")
         # let the first row be the header
-        delimiter = self.get_delimiter(file=self.StringIO(data))
-
+        delimiter = self.get_delimiter(file = self.StringIO(data))
+        
         csv_reader = self.csv.reader(self.StringIO(data), delimiter=delimiter)
+        
 
         header = next(csv_reader)
         num_cols = len(header.split(delimiter))
@@ -71,12 +72,8 @@ class CSVParserAdvanced(AsyncParser[DataType]):
         for row_num, row in enumerate(csv_reader):
             chunk_rows.append(row)
             if row_num % num_rows == 0:
-                yield ", ".join(header) + "\n" + "\n".join(
-                    [", ".join(row) for row in chunk_rows]
-                )
+                yield ", ".join(header) + "\n" + "\n".join([", ".join(row) for row in chunk_rows])
                 chunk_rows = []
 
         if chunk_rows:
-            yield ", ".join(header) + "\n" + "\n".join(
-                [", ".join(row) for row in chunk_rows]
-            )
+            yield ", ".join(header) + "\n" + "\n".join([", ".join(row) for row in chunk_rows])
