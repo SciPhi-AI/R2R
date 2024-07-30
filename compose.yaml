@@ -3,6 +3,8 @@ x-depends-on:
     condition: service_healthy
   ollama: &ollama-dependency
     condition: service_healthy
+  postgres: &postgres-dependency
+    condition: service_healthy
 
 networks:
   r2r-network:
@@ -39,8 +41,6 @@ services:
       - CONFIG_NAME=${CONFIG_NAME:-}
       - CONFIG_PATH=${CONFIG_PATH:-}
       - CLIENT_MODE=${CLIENT_MODE:-false}
-    depends_on:
-      - postgres
     networks:
       - r2r-network
     healthcheck:
@@ -78,23 +78,6 @@ services:
       - "traefik.http.routers.dashboard.rule=PathPrefix(`/`)"
       - "traefik.http.services.dashboard.loadbalancer.server.port=3000"
 
-  postgres:
-    image: pgvector/pgvector:pg16
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=${POSTGRES_DBNAME:-postgres}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - r2r-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: on-failure
-
   traefik:
     image: traefik:v2.9
     command:
@@ -111,6 +94,3 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - r2r-network
-
-volumes:
-  postgres_data:

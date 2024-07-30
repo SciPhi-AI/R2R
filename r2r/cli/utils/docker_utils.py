@@ -12,7 +12,7 @@ from requests.exceptions import RequestException
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
-    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f {compose_files['ollama']}"
+    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f {compose_files['ollama']} -f {compose_files['postgres']}"
     docker_command += f" --project-name {project_name}"
 
     if volumes:
@@ -74,11 +74,12 @@ def run_docker_serve(
     port,
     exclude_neo4j,
     exclude_ollama,
+    exclude_postgres,
     project_name,
     config_path,
     image,
 ):
-    unset_env_vars()
+    unset_env_vars(exclude_postgres)
     set_config_env_vars(obj)
     set_ollama_api_base(exclude_ollama)
 
@@ -100,6 +101,7 @@ def run_docker_serve(
         port,
         exclude_neo4j,
         exclude_ollama,
+        exclude_postgres,
         project_name,
         config_path,
         image,
@@ -130,26 +132,32 @@ def check_external_ollama():
         )
 
 
-def unset_env_vars():
+def unset_env_vars(exclude_postgres=False):
     env_vars = [
         "NEO4J_USER",
         "NEO4J_PASSWORD",
         "NEO4J_URL",
         "NEO4J_DATABASE",
         "OLLAMA_API_BASE",
-        "POSTGRES_HOST",
-        "POSTGRES_USER",
-        "POSTGRES_PASSWORD",
-        "POSTGRES_PORT",
-        "POSTGRES_DBNAME",
-        "POSTGRES_VECS_COLLECTION",
     ]
+
+    if not exclude_postgres:
+        postgres_vars = [
+            "POSTGRES_HOST",
+            "POSTGRES_USER",
+            "POSTGRES_PASSWORD",
+            "POSTGRES_PORT",
+            "POSTGRES_DBNAME",
+            "POSTGRES_VECS_COLLECTION",
+        ]
+        env_vars.extend(postgres_vars)
 
     for var in env_vars:
         if value := os.environ.get(var):
             warning_text = click.style("Warning:", fg="red", bold=True)
             prompt = (
                 f"{warning_text} It's only necessary to set this environment variable when connecting to an instance not managed by R2R.\n"
+                f"Add the flag --exclude-postgres to avoid deploying a Postgres instance with R2R.\n"
                 f"Environment variable {var} is set to '{value}'. Unset it?"
             )
             if click.confirm(prompt, default=True):
@@ -182,6 +190,7 @@ def get_compose_files():
         "base": os.path.join(package_dir, "compose.yaml"),
         "neo4j": os.path.join(package_dir, "compose.neo4j.yaml"),
         "ollama": os.path.join(package_dir, "compose.ollama.yaml"),
+        "postgres": os.path.join(package_dir, "compose.postgres.yaml"),
     }
 
     for name, path in compose_files.items():
@@ -200,6 +209,7 @@ def build_docker_command(
     port,
     exclude_neo4j,
     exclude_ollama,
+    exclude_postgres,
     project_name,
     config_path,
     image,
@@ -209,6 +219,8 @@ def build_docker_command(
         command += f" -f {compose_files['neo4j']}"
     if not exclude_ollama:
         command += f" -f {compose_files['ollama']}"
+    if not exclude_postgres:
+        command += f" -f {compose_files['postgres']}"
 
     command += f" --project-name {project_name}"
 
