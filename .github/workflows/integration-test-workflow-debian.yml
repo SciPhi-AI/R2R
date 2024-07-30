@@ -1,6 +1,7 @@
 name: Debian R2R Docker Build and Integration Test (Debian GNU/Linux 12 (bookworm) amd64)
 
 on:
+  workflow_dispatch:
   workflow_run:
     workflows: ["Build and Publish Development Docker Image"]
     types:
