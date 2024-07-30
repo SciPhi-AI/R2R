@@ -9,6 +9,11 @@ on:
 jobs:
   build-and-test:
     runs-on: [ self-hosted, Linux ]
+    permissions:
+      packages: write
+      contents: read
+      id-token: write
+      actions: write
 
     steps:
     - uses: actions/checkout@v4
@@ -36,12 +41,12 @@ jobs:
         context: .
         file: ./Dockerfile
         push: true
-        tags: dev
+        tags: ragtoriches/dev:latest
         platforms: linux/amd64
         no-cache: true
         pull: true
 
-    - name: Run integration tests in Docker container
+    - name: Run cloud provider integration tests in Docker
       run: |
         python3 -m venv venv
         source venv/bin/activate
@@ -51,7 +56,7 @@ jobs:
         r2r version
 
         echo "R2R Serve --docker"
-        r2r serve --docker --exclude-neo4j --exclude-ollama
+        r2r serve --docker --exclude-neo4j --exclude-ollama --image=ragtoriches/dev:latest
 
         echo "Ingest Data"
         r2r ingest-sample-files

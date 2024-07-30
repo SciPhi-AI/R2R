@@ -69,7 +69,14 @@ def remove_r2r_network():
 
 
 def run_docker_serve(
-    obj, host, port, exclude_neo4j, exclude_ollama, project_name, config_path
+    obj,
+    host,
+    port,
+    exclude_neo4j,
+    exclude_ollama,
+    project_name,
+    config_path,
+    image,
 ):
     unset_env_vars()
     set_config_env_vars(obj)
@@ -95,6 +102,7 @@ def run_docker_serve(
         exclude_ollama,
         project_name,
         config_path,
+        image,
     )
 
     click.echo("Starting Docker Compose setup...")
@@ -194,6 +202,7 @@ def build_docker_command(
     exclude_ollama,
     project_name,
     config_path,
+    image,
 ):
     command = f"docker compose -f {compose_files['base']}"
     if not exclude_neo4j:
@@ -211,6 +220,9 @@ def build_docker_command(
         config_file = os.path.basename(config_path)
         command += f" --build-arg CONFIG_PATH=/app/config/{config_file}"
         command += f" -v {config_dir}:/app/config"
+
+    if image:
+        command += f" -e R2R_IMAGE={image}"
 
     command += " up -d"
     return command
