@@ -302,7 +302,8 @@ def test_openai_wrong_dimension():
 def test_openai_missing_model_or_dimension():
     config = EmbeddingConfig(provider="openai")
     with pytest.raises(
-        ValueError, match="Must set base_model and base_dimension"
+        ValueError,
+        match="Must set base_model in order to initialize OpenAIEmbeddingProvider.",
     ):
         OpenAIEmbeddingProvider(config)
 
