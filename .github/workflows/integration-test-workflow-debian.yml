@@ -32,6 +32,9 @@ jobs:
         echo "R2R Serve --docker"
         r2r serve --docker --exclude-neo4j --exclude-ollama --image=ragtoriches/dev:latest
 
+        echo "Waiting for services to start..."
+        sleep 30
+
         echo "Ingest Data"
         r2r ingest-sample-files
 
