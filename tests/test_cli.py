@@ -257,6 +257,7 @@ def test_serve_command(runner):
             8000,
             False,
             False,
+            False,
             "r2r",
             None,
             None,
