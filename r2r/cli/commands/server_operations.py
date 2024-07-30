@@ -133,6 +133,11 @@ def health(obj):
 @click.option(
     "--exclude-ollama", is_flag=True, help="Exclude Ollama from Docker setup"
 )
+@click.option(
+    "--exclude-postgres",
+    is_flag=True,
+    help="Exclude Postgres from Docker setup",
+)
 @click.option("--project-name", default="r2r", help="Project name for Docker")
 @click.option(
     "--config-path",
@@ -148,6 +153,7 @@ def serve(
     docker,
     exclude_neo4j,
     exclude_ollama,
+    exclude_postgres,
     project_name,
     config_path,
     image,
@@ -173,6 +179,7 @@ def serve(
             port,
             exclude_neo4j,
             exclude_ollama,
+            exclude_postgres,
             project_name,
             config_path,
             image,

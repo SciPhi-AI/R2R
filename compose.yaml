@@ -114,3 +114,102 @@ services:
 
 volumes:
   postgres_data:
+
+
+
+# x-depends-on:
+#   neo4j: &neo4j-dependency
+#     condition: service_healthy
+#   ollama: &ollama-dependency
+#     condition: service_healthy
+#   postgres: &postgres-dependency
+#     condition: service_healthy
+
+# networks:
+#   r2r-network:
+#     name: r2r-network
+#     driver: bridge
+#     attachable: true
+#     ipam:
+#       driver: default
+#       config:
+#         - subnet: 172.28.0.0/16
+#     labels:
+#       - "com.docker.compose.recreate=always"
+
+
+# services:
+#   r2r:
+#     image: ${R2R_IMAGE:-emrgntcmplxty/r2r:main}
+#     ports:
+#       - "8000:8000"
+#     environment:
+#       - PYTHONUNBUFFERED=1
+#       - POSTGRES_USER=${POSTGRES_USER:-postgres}
+#       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+#       - POSTGRES_HOST=postgres
+#       - POSTGRES_PORT=5432
+#       - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
+#       - POSTGRES_VECS_COLLECTION=${POSTGRES_VECS_COLLECTION:-${CONFIG_NAME:-vecs}}
+#       - NEO4J_USER=${NEO4J_USER:-neo4j}
+#       - NEO4J_PASSWORD=${NEO4J_PASSWORD:-ineedastrongerpassword}
+#       - NEO4J_URL=${NEO4J_URL:-bolt://neo4j:7687}
+#       - NEO4J_DATABASE=${NEO4J_DATABASE:-neo4j}
+#       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+#       - OLLAMA_API_BASE=${OLLAMA_API_BASE:-http://host.docker.internal:11434}
+#       - CONFIG_NAME=${CONFIG_NAME:-}
+#       - CONFIG_PATH=${CONFIG_PATH:-}
+#       - CLIENT_MODE=${CLIENT_MODE:-false}
+#     networks:
+#       - r2r-network
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:8000/v1/health"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#     restart: on-failure
+#     volumes:
+#       - ${CONFIG_PATH:-/}:${CONFIG_PATH:-/app/config}
+#     labels:
+#       - "traefik.enable=true"
+#       - "traefik.http.routers.r2r.rule=PathPrefix(`/api`)"
+#       - "traefik.http.services.r2r.loadbalancer.server.port=8000"
+#       - "traefik.http.middlewares.r2r-strip-prefix.stripprefix.prefixes=/api"
+#       - "traefik.http.middlewares.r2r-add-v1.addprefix.prefix=/v1"
+#       - "traefik.http.routers.r2r.middlewares=r2r-strip-prefix,r2r-add-v1,r2r-headers"
+#       - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Origin=*"
+#       - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Methods=GET,POST,OPTIONS"
+#       - "traefik.http.middlewares.r2r-headers.headers.customrequestheaders.Access-Control-Allow-Headers=DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+#       - "traefik.http.middlewares.r2r-headers.headers.customresponseheaders.Access-Control-Expose-Headers=Content-Length,Content-Range"
+#     extra_hosts:
+#       - host.docker.internal:host-gateway
+
+#   r2r-dashboard:
+#     image: emrgntcmplxty/r2r-dashboard:latest
+#     environment:
+#       - NEXT_PUBLIC_API_URL=http://traefik:80/api
+#     depends_on:
+#       - r2r
+#     networks:
+#       - r2r-network
+#     labels:
+#       - "traefik.enable=true"
+#       - "traefik.http.routers.dashboard.rule=PathPrefix(`/`)"
+#       - "traefik.http.services.dashboard.loadbalancer.server.port=3000"
+
+#   traefik:
+#     image: traefik:v2.9
+#     command:
+#       - "--api.insecure=true"
+#       - "--providers.docker=true"
+#       - "--providers.docker.exposedbydefault=false"
+#       - "--entrypoints.web.address=:80"
+#       - "--accesslog=true"
+#       - "--accesslog.filepath=/var/log/traefik/access.log"
+#     ports:
+#       - "80:80"
+#       - "8080:8080"  # Traefik dashboard
+#     volumes:
+#       - /var/run/docker.sock:/var/run/docker.sock:ro
+#     networks:
+#       - r2r-network
