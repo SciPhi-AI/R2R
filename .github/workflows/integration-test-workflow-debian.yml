@@ -5,6 +5,8 @@ on:
     workflows: ["Debian R2R Docker Build"]
     types:
       - completed
+    branches:
+      - '**'
 
 jobs:
   build-and-test:

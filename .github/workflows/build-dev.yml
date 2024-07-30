@@ -2,7 +2,8 @@ name: Build and Publish Development Docker Image
 
 on:
   push:
-    branches: [ main ]
+    branches:
+        - '**'
   pull_request:
   workflow_dispatch:
 
