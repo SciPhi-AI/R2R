@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir poetry
+RUN pip install --upgrade pip && pip install --no-cache-dir poetry
 
 # Copy the dependencies files
 COPY pyproject.toml poetry.lock* ./
