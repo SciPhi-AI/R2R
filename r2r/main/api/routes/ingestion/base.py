@@ -23,7 +23,11 @@ class IngestionRouter(BaseRouter):
             request: R2RIngestFilesRequest = Depends(
                 IngestionService.parse_ingest_files_form_data
             ),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=(
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.providers.auth
+                else None
+            ),
         ):
             return await self.engine.aingest_files(
                 files=files,
@@ -40,7 +44,11 @@ class IngestionRouter(BaseRouter):
             request: R2RUpdateFilesRequest = Depends(
                 IngestionService.parse_update_files_form_data
             ),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=(
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.providers.auth
+                else None
+            ),
         ):
             return await self.engine.aupdate_files(
                 files=files,
