@@ -5,7 +5,7 @@ import logging
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Union
+from typing import Optional, Union, Any
 
 from pydantic import BaseModel, Field
 
@@ -39,6 +39,9 @@ class Document(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     type: DocumentType
     data: Union[str, bytes]
+    summary: Optional[str] | None = None
+    summary_embedding: list[float] | None = None
+    raw_content_embedding: list[float] | None = None
     metadata: dict
 
     def __init__(self, *args, **kwargs):
@@ -142,30 +145,6 @@ class Fragment(BaseModel):
     metadata: dict
     document_id: uuid.UUID
     extraction_id: uuid.UUID
-
-
-class Entity(BaseModel):
-    """An entity extracted from a document."""
-
-    category: str
-    subcategory: Optional[str] = None
-    value: str
-
-    def __str__(self):
-        return (
-            f"{self.category}:{self.subcategory}:{self.value}"
-            if self.subcategory
-            else f"{self.category}:{self.value}"
-        )
-
-
-class Triple(BaseModel):
-    """A triple extracted from a document."""
-
-    subject: str
-    predicate: str
-    object: str
-
 
 def extract_entities(llm_payload: list[str]) -> dict[str, Entity]:
     entities = {}

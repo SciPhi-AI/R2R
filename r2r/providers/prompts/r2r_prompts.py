@@ -1,3 +1,4 @@
+import yaml
 import json
 import logging
 import os
@@ -35,6 +36,24 @@ class R2RPromptProvider(PromptProvider):
             logger.error(error_msg)
             raise ValueError(error_msg)
 
+        if not file_path: 
+            file_path = os.path.join(
+                os.path.dirname(__file__), "defaults.yaml"
+            )
+            try:
+                with open(file_path, "r") as file:
+                    yaml_data = yaml.safe_load(file)
+                    for prompt in yaml_data:
+                        self.add_prompt(
+                            prompt["name"],
+                            prompt["template"],
+                            prompt.get("input_types", {}),
+                        )
+            except yaml.YAMLError as e:
+                error_msg = f"Error loading prompts from YAML file: {e}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+        
     def add_prompt(
         self, name: str, template: str, input_types: dict[str, str]
     ) -> None:
