@@ -69,7 +69,7 @@ __all__ = [
     "PPTParser",
     "TextParser",
     "XLSXParser",
-    "XSLXParserAdvanced", 
+    "XSLXParserAdvanced",
     "AsyncPipeline",
     # Providers
     "EmbeddingConfig",
