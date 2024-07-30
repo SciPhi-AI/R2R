@@ -222,7 +222,7 @@ def build_docker_command(
         command += f" -v {config_dir}:/app/config"
 
     if image:
-        command += f" -e R2R_IMAGE={image}"
+        os.environ["R2R_IMAGE"] = image
 
     command += " up -d"
     return command

@@ -94,6 +94,70 @@ jobs:
         echo "Logging"
         r2r logs
 
+        echo "Docker Down"
+        r2r docker-down
+
+        echo "Clean up Virtual Environment"
+        deactivate
+        rm -rf venv
+        docker system prune -af --volumes
+
+    - name: Run cloud provider integration tests in Docker
+      run: |
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install -e .
+
+        echo "R2R Version"
+        r2r version
+
+        echo "R2R Serve --docker"
+        r2r serve --docker --exclude-neo4j --exclude-ollama --image=ragtoriches/dev:latest
+
+        echo "Ingest Data"
+        r2r ingest-sample-files
+
+        echo "Get Documents Overview"
+        r2r documents-overview
+
+        echo "Get Document Chunks"
+        r2r document-chunks 93123a68-d668-51de-8291-92162730dc87
+
+        echo "Delete Documents"
+        r2r delete --keys=document_id --values=b736292c-11e6-5453-9686-055da3edb866
+
+        echo "Vector Search"
+        r2r search --query="What was Uber'\''s profit in 2020?"
+
+        echo "Hybrid Search"
+        r2r search --query="What is a fierce nerd?" --do-hybrid-search
+
+        echo "Basic RAG"
+        r2r rag --query="What was Uber'\''s profit in 2020?"
+
+        echo "RAG with Hybrid Search"
+        r2r rag --query="Who is John Snow?" --do-hybrid-search
+
+        echo "Streaming RAG"
+        r2r rag --query="What was Lyft'\''s profit in 2020?" --stream
+
+        echo "Users Overview"
+        r2r users-overview
+
+        echo "Analytics"
+        r2r analytics --filters '{"search_latencies": "search_latency"}' --analysis-types '{"search_latencies": ["basic_statistics", "search_latency"]}'
+
+        echo "Logging"
+        r2r logs
+
+        echo "Docker Down"
+        r2r docker-down
+
+        echo "Clean up Virtual Environment"
+        deactivate
+        rm -rf venv
+        docker system prune -af --volumes
+
 
     - name: Clean up
       if: always()
