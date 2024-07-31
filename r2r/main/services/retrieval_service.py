@@ -250,7 +250,7 @@ class RetrievalService(Service):
                         async with manage_run(self.run_manager, "arag_agent"):
                             async for (
                                 chunk
-                            ) in self.assistants.streaming_rag_assistant.arun(
+                            ) in self.assistants.streaming_rag_agent.arun(
                                 messages=messages,
                                 system_instruction=task_prompt_override,
                                 vector_search_settings=vector_search_settings,
@@ -264,7 +264,7 @@ class RetrievalService(Service):
 
                     return stream_response()
 
-                results = await self.assistants.rag_assistant.arun(
+                results = await self.assistants.rag_agent.arun(
                     messages=messages,
                     system_instruction=task_prompt_override,
                     vector_search_settings=vector_search_settings,

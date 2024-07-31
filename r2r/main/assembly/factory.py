@@ -589,21 +589,19 @@ class R2RAssistantFactory:
 
     def create_assistants(
         self,
-        rag_assistant_override: Optional[R2RRAGAssistant] = None,
-        stream_rag_assistant_override: Optional[
-            R2RStreamingRAGAssistant
-        ] = None,
+        rag_agent_override: Optional[R2RRAGAssistant] = None,
+        stream_rag_agent_override: Optional[R2RStreamingRAGAssistant] = None,
         *args,
         **kwargs,
     ) -> R2RAssistants:
         return R2RAssistants(
-            rag_assistant=rag_assistant_override
-            or self.create_rag_assistant(*args, **kwargs),
-            streaming_rag_assistant=stream_rag_assistant_override
-            or self.create_rag_assistant(*args, **kwargs, stream=True),
+            rag_agent=rag_agent_override
+            or self.create_rag_agent(*args, **kwargs),
+            streaming_rag_agent=stream_rag_agent_override
+            or self.create_rag_agent(*args, **kwargs, stream=True),
         )
 
-    def create_rag_assistant(
+    def create_rag_agent(
         self, stream: bool = False, *args, **kwargs
     ) -> R2RRAGAssistant:
         if not self.providers.llm or not self.providers.prompt:
@@ -612,25 +610,25 @@ class R2RAssistantFactory:
             )
 
         assistant_config = AssistantConfig(
-            system_instruction_name="rag_assistant",
+            system_instruction_name="rag_agent",
             tools=[],  # Add any specific tools for the RAG assistant here
             generation_config=self.config.completions.generation_config,
             stream=stream,
         )
 
         if stream:
-            rag_assistant = R2RStreamingRAGAssistant(
+            rag_agent = R2RStreamingRAGAssistant(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
                 config=assistant_config,
                 search_pipeline=self.pipelines.search_pipeline,
             )
         else:
-            rag_assistant = R2RRAGAssistant(
+            rag_agent = R2RRAGAssistant(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
                 config=assistant_config,
                 search_pipeline=self.pipelines.search_pipeline,
             )
 
-        return rag_assistant
+        return rag_agent

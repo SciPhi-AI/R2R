@@ -106,7 +106,7 @@ class R2RBuilder:
 
         # Assistant overrides
         self.assistant_factory_override: Optional[R2RAssistantFactory] = None
-        self.rag_assistant_override: Optional[R2RRAGAssistant] = None
+        self.rag_agent_override: Optional[R2RRAGAssistant] = None
 
     def with_app(self, app: Type[R2REngine]):
         self.r2r_app_override = app
@@ -223,8 +223,8 @@ class R2RBuilder:
         self.assistant_factory_override = factory
         return self
 
-    def with_rag_assistant(self, assistant: R2RRAGAssistant):
-        self.rag_assistant_override = assistant
+    def with_rag_agent(self, assistant: R2RRAGAssistant):
+        self.rag_agent_override = assistant
         return self
 
     def build(self, *args, **kwargs) -> R2R:
@@ -275,7 +275,7 @@ class R2RBuilder:
             or R2RAssistantFactory(self.config, providers, pipelines)
         )
         assistants = assistant_factory.create_assistants(
-            rag_assistant_override=self.rag_assistant_override,
+            rag_agent_override=self.rag_agent_override,
             *args,
             **kwargs,
         )

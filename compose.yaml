@@ -26,22 +26,56 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
+      # R2R
+      - CONFIG_NAME=${CONFIG_NAME:-}
+      - CONFIG_PATH=${CONFIG_PATH:-}
+
+      # Postgres
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
       - POSTGRES_VECS_COLLECTION=${POSTGRES_VECS_COLLECTION:-${CONFIG_NAME:-vecs}}
+      # Neo4j
       - NEO4J_USER=${NEO4J_USER:-neo4j}
       - NEO4J_PASSWORD=${NEO4J_PASSWORD:-ineedastrongerpassword}
       - NEO4J_URL=${NEO4J_URL:-bolt://neo4j:7687}
       - NEO4J_DATABASE=${NEO4J_DATABASE:-neo4j}
+
+      # OpenAI
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-}
+
+      # Anthropic
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+
+      # Azure
+      - AZURE_API_KEY=${AZURE_API_KEY:-}
+      - AZURE_API_BASE=${AZURE_API_BASE:-}
+      - AZURE_API_VERSION=${AZURE_API_VERSION:-}
+
+      # Google Vertex AI
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-}
+      - VERTEX_PROJECT=${VERTEX_PROJECT:-}
+      - VERTEX_LOCATION=${VERTEX_LOCATION:-}
+
+      # AWS Bedrock
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_REGION_NAME=${AWS_REGION_NAME:-}
+
+      # Groq
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+
+      # Cohere
+      - COHERE_API_KEY=${COHERE_API_KEY:-}
+
+      # Anyscale
+      - ANYSCALE_API_KEY=${ANYSCALE_API_KEY:-}
+
+      # Ollama
       - OLLAMA_API_BASE=${OLLAMA_API_BASE:-http://host.docker.internal:11434}
-      - CONFIG_NAME=${CONFIG_NAME:-}
-      - CONFIG_PATH=${CONFIG_PATH:-}
-      - CLIENT_MODE=${CLIENT_MODE:-false}
     networks:
       - r2r-network
     healthcheck:

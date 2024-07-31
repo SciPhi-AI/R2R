@@ -12,9 +12,9 @@ from r2r.cli.utils.docker_utils import (
     bring_down_docker_compose,
     remove_r2r_network,
     run_docker_serve,
+    run_local_serve,
 )
 from r2r.cli.utils.timer import timer
-from r2r.main.execution import R2RExecutionWrapper
 
 
 @cli.command()
@@ -33,12 +33,12 @@ from r2r.main.execution import R2RExecutionWrapper
 def docker_down(ctx, volumes, remove_orphans, project_name):
     """Bring down the Docker Compose setup and attempt to remove the network if necessary."""
     result = bring_down_docker_compose(project_name, volumes, remove_orphans)
+    remove_r2r_network()
 
     if result != 0:
         click.echo(
             "An error occurred while bringing down the Docker Compose setup. Attempting to remove the network..."
         )
-        remove_r2r_network()
     else:
         click.echo("Docker Compose setup has been successfully brought down.")
 
@@ -139,11 +139,6 @@ def health(obj):
     help="Exclude Postgres from Docker setup",
 )
 @click.option("--project-name", default="r2r", help="Project name for Docker")
-@click.option(
-    "--config-path",
-    type=click.Path(exists=True),
-    help="Path to the configuration file",
-)
 @click.option("--image", help="Docker image to use")
 @click.pass_obj
 def serve(
@@ -155,14 +150,13 @@ def serve(
     exclude_ollama,
     exclude_postgres,
     project_name,
-    config_path,
     image,
 ):
     """Start the R2R server."""
     load_dotenv()
 
-    if config_path:
-        config_path = os.path.abspath(config_path)
+    if obj["config_path"]:
+        config_path = os.path.abspath(obj["config_path"])
 
         # For Windows, convert backslashes to forward slashes and prepend /host_mnt/
         if platform.system() == "Windows":
@@ -181,16 +175,10 @@ def serve(
             exclude_ollama,
             exclude_postgres,
             project_name,
-            config_path,
             image,
         )
     else:
         run_local_serve(obj, host, port)
-
-
-def run_local_serve(obj, host, port):
-    wrapper = R2RExecutionWrapper(**obj, client_mode=False)
-    wrapper.serve(host, port)
 
 
 @cli.command()
