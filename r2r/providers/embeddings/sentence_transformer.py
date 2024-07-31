@@ -1,4 +1,6 @@
+import asyncio
 import logging
+from typing import Any, List
 
 from r2r.base import (
     EmbeddingConfig,
@@ -32,14 +34,12 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             from sentence_transformers import CrossEncoder, SentenceTransformer
 
             self.SentenceTransformer = SentenceTransformer
-            # TODO - Modify this to be configurable, as `bge-reranker-large` is a `SentenceTransformer` model
             self.CrossEncoder = CrossEncoder
         except ImportError as e:
             raise ValueError(
                 "Must download sentence-transformers library to run `SentenceTransformerEmbeddingProvider`."
             ) from e
 
-        # Initialize separate models for search and rerank
         self.do_search = False
         self.do_rerank = False
 
@@ -50,26 +50,26 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             config, EmbeddingProvider.PipeStage.RERANK
         )
         self.set_prefixes(config.prefixes or {}, self.base_model)
+        self.semaphore = asyncio.Semaphore(config.concurrent_request_limit)
 
-    def _init_model(self, config: EmbeddingConfig, stage: str):
+    def _init_model(
+        self, config: EmbeddingConfig, stage: EmbeddingProvider.PipeStage
+    ):
         stage_name = stage.name.lower()
         model = config.dict().get(f"{stage_name}_model", None)
         dimension = config.dict().get(f"{stage_name}_dimension", None)
-
         transformer_type = config.dict().get(
             f"{stage_name}_transformer_type", "SentenceTransformer"
         )
 
         if stage == EmbeddingProvider.PipeStage.BASE:
             self.do_search = True
-            # Check if a model is set for the stage
             if not (model and dimension and transformer_type):
                 raise ValueError(
-                    f"Must set {stage.name.lower()}_model and {stage.name.lower()}_dimension for {stage} stage in order to initialize SentenceTransformerEmbeddingProvider."
+                    f"Must set {stage_name}_model and {stage_name}_dimension for {stage} stage in order to initialize SentenceTransformerEmbeddingProvider."
                 )
 
         if stage == EmbeddingProvider.PipeStage.RERANK:
-            # Check if a model is set for the stage
             if not (model and dimension and transformer_type):
                 return None
 
@@ -79,12 +79,10 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
                     f"`SentenceTransformer` models are not yet supported for {stage} stage in SentenceTransformerEmbeddingProvider."
                 )
 
-        # Save the model_key and dimension into instance variables
         setattr(self, f"{stage_name}_model", model)
         setattr(self, f"{stage_name}_dimension", dimension)
         setattr(self, f"{stage_name}_transformer_type", transformer_type)
 
-        # Initialize the model
         encoder = (
             self.SentenceTransformer(
                 model, truncate_dim=dimension, trust_remote_code=True
@@ -94,42 +92,84 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         )
         return encoder
 
+    async def _execute_task(self, task: dict[str, Any]) -> List[float]:
+        text = task["text"]
+        stage = task["stage"]
+        purpose = task["purpose"]
+
+        if stage != EmbeddingProvider.PipeStage.BASE:
+            raise ValueError(
+                "Only BASE stage is supported for embedding tasks."
+            )
+        if not self.do_search:
+            raise ValueError("Search model is not set.")
+
+        text = self.prefixes.get(purpose, "") + text
+        encoder = self.search_encoder
+        return encoder.encode([text]).tolist()[0]
+
+    def _execute_task_sync(self, task: dict[str, Any]) -> List[float]:
+        return asyncio.run(self._execute_task(task))
+
+    async def async_get_embedding(
+        self,
+        text: str,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
+    ) -> List[float]:
+        task = {
+            "text": text,
+            "stage": stage,
+            "purpose": purpose,
+        }
+        return await self._execute_with_backoff_async(task)
+
     def get_embedding(
         self,
         text: str,
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
-    ) -> list[float]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
-            raise ValueError("`get_embedding` only supports `SEARCH` stage.")
-        if not self.do_search:
-            raise ValueError(
-                "`get_embedding` can only be called for the search stage if a search model is set."
-            )
-        text = self.prefixes.get(purpose, "") + text
-        encoder = self.search_encoder
-        return encoder.encode([text]).tolist()[0]
+    ) -> List[float]:
+        task = {
+            "text": text,
+            "stage": stage,
+            "purpose": purpose,
+        }
+        return self._execute_with_backoff_sync(task)
+
+    async def async_get_embeddings(
+        self,
+        texts: List[str],
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
+    ) -> List[List[float]]:
+        tasks = [
+            {
+                "text": text,
+                "stage": stage,
+                "purpose": purpose,
+            }
+            for text in texts
+        ]
+        return await asyncio.gather(
+            *[self._execute_with_backoff_async(task) for task in tasks]
+        )
 
     def get_embeddings(
         self,
-        texts: list[str],
+        texts: List[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
-    ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
-            raise ValueError("`get_embeddings` only supports `SEARCH` stage.")
-        if not self.do_search:
-            raise ValueError(
-                "`get_embeddings` can only be called for the search stage if a search model is set."
-            )
-        encoder = (
-            self.search_encoder
-            if stage == EmbeddingProvider.PipeStage.BASE
-            else self.rerank_encoder
-        )
-        return encoder.encode(
-            [(self.prefixes.get(purpose, "") + text) for text in texts]
-        ).tolist()
+    ) -> List[List[float]]:
+        tasks = [
+            {
+                "text": text,
+                "stage": stage,
+                "purpose": purpose,
+            }
+            for text in texts
+        ]
+        return [self._execute_with_backoff_sync(task) for task in tasks]
 
     def rerank(
         self,
@@ -146,11 +186,9 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         from copy import copy
 
         texts = copy([doc.metadata["text"] for doc in results])
-        # Use the rank method from the rerank_encoder, which is a CrossEncoder model
         reranked_scores = self.rerank_encoder.rank(
             query, texts, return_documents=False, top_k=limit
         )
-        # Map the reranked scores back to the original documents
         reranked_results = []
         for score in reranked_scores:
             corpus_id = score["corpus_id"]
@@ -158,7 +196,6 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
             new_result.score = float(score["score"])
             reranked_results.append(new_result)
 
-        # Sort the documents by the new scores in descending order
         reranked_results.sort(key=lambda doc: doc.score, reverse=True)
         return reranked_results
 

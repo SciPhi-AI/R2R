@@ -100,12 +100,12 @@ class R2RProviderFactory:
             database_provider = PostgresDBProvider(
                 db_config, vector_db_dimension, crypto_provider=crypto_provider
             )
+        elif db_config.provider is None:
+            database_provider = None
         else:
             raise ValueError(
                 f"Database provider {db_config.provider} not supported"
             )
-        if not database_provider:
-            raise ValueError("Database provider not found")
 
         return database_provider
 
@@ -472,7 +472,10 @@ class R2RPipelineFactory:
             pipe=self.pipes.parsing_pipe, parsing_pipe=True
         )
         # Add embedding pipes if provider is set
-        if self.config.embedding.provider is not None:
+        if (
+            self.config.embedding.provider is not None
+            and self.config.database.provider is not None
+        ):
             ingestion_pipeline.add_pipe(
                 self.pipes.embedding_pipe, embedding_pipe=True
             )

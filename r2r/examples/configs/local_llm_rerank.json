@@ -1,7 +1,6 @@
 {
   "completions": {
     "provider": "litellm",
-    "concurrency_limit": 1,
     "generation_config": {
       "model": "ollama/llama3.1",
       "temperature": 0.1,
@@ -11,7 +10,8 @@
       "tools": null,
       "add_generation_kwargs": {},
       "api_base": null
-    }
+    },
+    "concurrent_request_limit": 1
   },
   "embedding": {
     "provider": "sentence-transformers",
@@ -26,7 +26,8 @@
       "type": "recursive_character",
       "chunk_size": 512,
       "chunk_overlap": 20
-    }
+    },
+    "concurrent_request_limit": 32
   },
   "ingestion":{
     "excluded_parsers": [

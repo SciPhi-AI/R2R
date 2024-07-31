@@ -1,3 +1,5 @@
+import json
+
 from r2r.assistants import R2RAssistant, R2RStreamingAssistant
 from r2r.base import (
     AssistantConfig,
@@ -5,6 +7,7 @@ from r2r.base import (
     LLMProvider,
     PromptProvider,
     Tool,
+    VectorSearchResult,
     VectorSearchSettings,
     to_async_generator,
 )
@@ -21,7 +24,9 @@ class RAGAssistantMixin:
         search_tool = Tool(
             name="search",
             description="Search for information using the R2R framework",
-            function=self.asearch,
+            results_function=self.asearch,
+            llm_format_function=RAGAssistantMixin.format_search_results_for_llm,
+            stream_function=RAGAssistantMixin.format_search_results_for_stream,
             parameters={
                 "type": "object",
                 "properties": {
@@ -43,16 +48,31 @@ class RAGAssistantMixin:
         kg_search_settings: KGSearchSettings,
         *args,
         **kwargs,
-    ) -> str:
+    ) -> list[VectorSearchResult]:
         response = await self.search_pipeline.run(
             to_async_generator([query]),
             vector_search_settings=vector_search_settings,
         )
-        results = ""
-        for i, result in enumerate(response.vector_search_results):
+        return response.vector_search_results
+
+    @staticmethod
+    def format_search_results_for_llm(
+        results: list[VectorSearchResult],
+    ) -> str:
+        formatted_results = ""
+        for i, result in enumerate(results):
             text = result.metadata.get("text", "N/A")
-            results += f"{i+1}. {text}\n"
-        return results
+            formatted_results += f"{i+1}. {text}\n"
+        return formatted_results
+
+    @staticmethod
+    def format_search_results_for_stream(
+        results: list[VectorSearchResult],
+    ) -> str:
+        formatted_result = ",".join(
+            [json.dumps(result.json()) for result in results]
+        )
+        return formatted_result
 
 
 class R2RRAGAssistant(RAGAssistantMixin, R2RAssistant):

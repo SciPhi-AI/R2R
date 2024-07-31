@@ -94,10 +94,15 @@ class IngestionService(Service):
         user_ids = [str(user.id)] if user else []
 
         existing_documents = (
-            self.providers.database.relational.get_documents_overview(
-                filter_user_ids=user_ids
+            (
+                self.providers.database.relational.get_documents_overview(
+                    filter_user_ids=user_ids
+                )
             )
+            if self.providers.database
+            else []
         )
+
         existing_document_info = {
             doc_info.document_id: doc_info for doc_info in existing_documents
         }
@@ -181,10 +186,11 @@ class IngestionService(Service):
                 message="All provided documents already exist. Use the `update_documents` endpoint instead to update these documents.",
             )
 
-        # Insert pending document infos
-        self.providers.database.relational.upsert_documents_overview(
-            document_infos
-        )
+        # Insert pending document info
+        if self.providers.database:
+            self.providers.database.relational.upsert_documents_overview(
+                document_infos
+            )
 
         ingestion_results = await self.pipelines.ingestion_pipeline.run(
             input=to_async_generator(
@@ -268,6 +274,11 @@ class IngestionService(Service):
         if not files:
             raise R2RException(
                 status_code=400, message="No files provided for update."
+            )
+        if not self.providers.database:
+            raise R2RException(
+                status_code=501,
+                message="Database provider is not available for updating documents.",
             )
 
         try:

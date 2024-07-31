@@ -26,7 +26,7 @@ class R2REvalRequest(BaseModel):
     completion: str
 
 
-class R2RRAGChatRequest(BaseModel):
+class R2RRAGAgentRequest(BaseModel):
     messages: list[Message]
     vector_search_settings: Optional[dict] = None
     kg_search_settings: Optional[dict] = None

@@ -12,11 +12,19 @@ from .llm import LLMChatCompletion
 class Tool(BaseModel):
     name: str
     description: str
-    function: Callable
+    results_function: Callable
+    llm_format_function: Callable
+    stream_function: Optional[Callable] = None
     parameters: Optional[Dict[str, Any]] = None
 
     class Config:
         arbitrary_types_allowed = True
+
+
+class ToolResult(BaseModel):
+    raw_result: Any
+    llm_formatted_result: str
+    stream_result: Optional[str] = None
 
 
 class Message(BaseModel):
@@ -158,7 +166,7 @@ class Assistant(ABC):
             stream=stream,
         )
 
-    async def handle_function_call(
+    async def handle_function_or_tool_call(
         self,
         function_name: str,
         function_arguments: str,
@@ -166,8 +174,6 @@ class Assistant(ABC):
         *args,
         **kwargs,
     ) -> Union[str, AsyncGenerator[str, None]]:
-        tool_args = json.loads(function_arguments)
-
         (
             self.conversation.append(
                 Message(
@@ -195,25 +201,45 @@ class Assistant(ABC):
             )
         )
 
-        tool_result = await self.execute_tool(
-            function_name, *args, **tool_args, **kwargs
+        # TODO - We always use tools, not functions
+        # Think of ways to make this clearer
+
+        tool = next(
+            (t for t in self.config.tools if t.name == function_name), None
         )
-        (
-            self.conversation.append(
-                Message(
-                    tool_call_id=tool_id,
-                    role="tool",
-                    content=str(tool_result),
-                    name=function_name,
+        if tool:
+            raw_result = await tool.results_function(
+                *args, **kwargs, **json.loads(function_arguments)
+            )
+            llm_formatted_result = tool.llm_format_function(raw_result)
+
+            tool_result = ToolResult(
+                raw_result=raw_result,
+                llm_formatted_result=llm_formatted_result,
+            )
+
+            if tool.stream_function:
+                tool_result.stream_result = tool.stream_function(raw_result)
+
+            (
+                self.conversation.append(
+                    Message(
+                        tool_call_id=tool_id,
+                        role="tool",
+                        content=str(tool_result.llm_formatted_result),
+                        name=function_name,
+                    )
+                )
+                if tool_id
+                else self.conversation.append(
+                    Message(
+                        role="function",
+                        content=str(tool_result.llm_formatted_result),
+                        name=function_name,
+                    )
                 )
             )
-            if tool_id
-            else self.conversation.append(
-                Message(
-                    role="function",
-                    content=str(tool_result),
-                    name=function_name,
-                )
-            )
-        )
-        return tool_result
+
+            return tool_result
+        else:
+            raise ValueError(f"Tool {function_name} not found")

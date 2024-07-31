@@ -23,9 +23,8 @@
     },
     "completions": {
         "provider": "litellm",
-        "concurrency_limit": 1,
         "generation_config": {
-          "model": "ollama/llama3",
+          "model": "ollama/llama3.1",
           "temperature": 0.1,
           "top_p": 1.0,
           "max_tokens_to_sample": 1024,
@@ -33,7 +32,8 @@
           "tools": null,
           "add_generation_kwargs": {},
           "api_base": null
-        }
+        },
+        "concurrent_request_limit": 1
       },
       "embedding": {
         "provider": "ollama",

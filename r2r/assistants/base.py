@@ -78,7 +78,7 @@ class R2RAssistant(Assistant, metaclass=CombinedMeta):
         if not self._completed:
             message = response.choices[0].message
             if message.function_call:
-                await self.handle_function_call(
+                await self.handle_function_or_tool_call(
                     message.function_call.name,
                     message.function_call.arguments,
                     *args,
@@ -86,7 +86,7 @@ class R2RAssistant(Assistant, metaclass=CombinedMeta):
                 )
             elif message.tool_calls:
                 for tool_call in message.tool_calls:
-                    await self.handle_function_call(
+                    await self.handle_function_or_tool_call(
                         tool_call.function.name,
                         tool_call.function.arguments,
                         *args,
@@ -151,7 +151,7 @@ class R2RStreamingAssistant(Assistant):
             delta = chunk.choices[0].delta
             if delta.tool_calls:
                 for tool_call in delta.tool_calls:
-                    results = await self.handle_function_call(
+                    results = await self.handle_function_or_tool_call(
                         tool_call.function.name,
                         tool_call.function.arguments,
                         # FIXME: tool_call.id,
@@ -171,6 +171,8 @@ class R2RStreamingAssistant(Assistant):
                 if delta.function_call.arguments:
                     function_arguments += delta.function_call.arguments
             elif delta.content:
+                if content_buffer == "":
+                    yield "<completion>"
                 content_buffer += delta.content
                 yield delta.content
 
@@ -178,10 +180,14 @@ class R2RStreamingAssistant(Assistant):
                 yield "<function_call>"
                 yield f"<name>{function_name}</name>"
                 yield f"<arguments>{function_arguments}</arguments>"
-                results = await self.handle_function_call(
+                tool_result = await self.handle_function_or_tool_call(
                     function_name, function_arguments, *args, **kwargs
                 )
-                yield f"<results>{results}</results>"
+                if tool_result.stream_result:
+                    yield f"<results>{tool_result.stream_result}</results>"
+                else:
+                    yield f"<results>{tool_result.llm_formatted_result}</results>"
+
                 yield "</function_call>"
 
                 function_name = None
@@ -195,3 +201,4 @@ class R2RStreamingAssistant(Assistant):
                         Message(role="assistant", content=content_buffer)
                     )
                 self._completed = True
+                yield "</completion>"

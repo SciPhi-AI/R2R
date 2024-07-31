@@ -14,8 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseConfig(ProviderConfig):
-    provider: str
-
     def __post_init__(self):
         self.validate()
         # Capture additional fields
@@ -28,7 +26,7 @@ class DatabaseConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["postgres"]
+        return ["postgres", None]
 
 
 class VectorDatabaseProvider(Provider, ABC):

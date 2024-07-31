@@ -1,0 +1,27 @@
+{
+  "auth": {
+    "provider": "None"
+  },
+  "database": {
+    "provider": "None"
+  },
+  "kg": {
+    "provider": "neo4j",
+    "batch_size": 1,
+    "text_splitter": {
+        "type": "recursive_character",
+        "chunk_size": 1024,
+        "chunk_overlap": 0
+    },
+    "kg_extraction_config": {
+        "model": "gpt-4o",
+        "temperature": 0.1,
+        "top_p": 1.0,
+        "max_tokens_to_sample": 1024,
+        "stream": false,
+        "tools": null,
+        "add_generation_kwargs": {},
+        "api_base": null
+    }
+  }
+}

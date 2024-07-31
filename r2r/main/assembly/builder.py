@@ -39,12 +39,15 @@ class R2RBuilder:
     )
     CONFIG_OPTIONS = {
         "default": None,
-        "local_ollama": os.path.join(config_root, "local_ollama.json"),
-        "local_ollama_rerank": os.path.join(
-            config_root, "local_ollama_rerank.json"
-        ),
+        "local_llm": os.path.join(config_root, "local_llm.json"),
+        "local_llm_rerank": os.path.join(config_root, "local_llm_rerank.json"),
         "neo4j_kg": os.path.join(config_root, "neo4j_kg.json"),
-        "local_neo4j_kg": os.path.join(config_root, "local_neo4j_kg.json"),
+        "neo4j_kg_no_vector_postgres": os.path.join(
+            config_root, "neo4j_kg_no_vector_postgres.json"
+        ),
+        "local_llm_neo4j_kg": os.path.join(
+            config_root, "local_llm_neo4j_kg.json"
+        ),
         "postgres_logging": os.path.join(config_root, "postgres_logging.json"),
         "auth": os.path.join(config_root, "auth.json"),
     }

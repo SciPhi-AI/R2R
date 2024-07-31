@@ -82,3 +82,5 @@ class KGSearchSettings(BaseModel):
     kg_search_generation_config: Optional[GenerationConfig] = Field(
         default_factory=GenerationConfig
     )
+    entity_types: list = []
+    relationships: list = []
