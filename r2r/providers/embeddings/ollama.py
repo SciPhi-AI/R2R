@@ -9,6 +9,7 @@ from r2r.base import (
     EmbeddingConfig,
     EmbeddingProvider,
     EmbeddingPurpose,
+    R2RException,
     VectorSearchResult,
 )
 
@@ -54,8 +55,9 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             )
             return response["embedding"]
         except Exception as e:
-            logger.error(f"Error getting embedding: {str(e)}")
-            raise
+            error_msg = f"Error getting embeddings: {str(e)}"
+            logger.error(error_msg)
+            raise R2RException(error_msg, 400)
 
     def _execute_task_sync(self, task: dict[str, Any]) -> List[float]:
         text = task["text"]
@@ -68,8 +70,9 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             )
             return response["embedding"]
         except Exception as e:
-            logger.error(f"Error getting embedding: {str(e)}")
-            raise
+            error_msg = f"Error getting embeddings: {str(e)}"
+            logger.error(error_msg)
+            raise R2RException(error_msg, 400)
 
     async def async_get_embedding(
         self,

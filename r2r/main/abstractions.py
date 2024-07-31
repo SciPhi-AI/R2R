@@ -62,8 +62,8 @@ class R2RPipelines(BaseModel):
 
 
 class R2RAssistants(BaseModel):
-    rag_assistant: R2RRAGAssistant
-    streaming_rag_assistant: R2RStreamingRAGAssistant
+    rag_agent: R2RRAGAssistant
+    streaming_rag_agent: R2RStreamingRAGAssistant
 
     class Config:
         arbitrary_types_allowed = True

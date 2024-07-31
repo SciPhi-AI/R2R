@@ -9,6 +9,9 @@ import click
 import requests
 from requests.exceptions import RequestException
 
+from r2r.main import R2RBuilder, R2RConfig
+from r2r.main.execution import R2RExecutionWrapper
+
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
@@ -68,6 +71,16 @@ def remove_r2r_network():
     )
 
 
+def run_local_serve(obj, host, port):
+    wrapper = R2RExecutionWrapper(**obj, client_mode=False)
+    llm_provider = wrapper.app.config.completions.provider
+    llm_model = wrapper.app.config.completions.generation_config.model
+    model_provider = llm_model.split("/")[0]
+
+    check_llm_reqs(llm_provider, model_provider, include_ollama=True)
+    wrapper.serve(host, port)
+
+
 def run_docker_serve(
     obj,
     host,
@@ -76,15 +89,23 @@ def run_docker_serve(
     exclude_ollama,
     exclude_postgres,
     project_name,
-    config_path,
     image,
 ):
-    unset_env_vars(exclude_postgres)
+    check_set_docker_env_vars(exclude_neo4j, exclude_postgres)
     set_config_env_vars(obj)
     set_ollama_api_base(exclude_ollama)
+    config = (
+        R2RConfig.from_json(obj["config_path"])
+        if obj["config_path"]
+        else R2RConfig.from_json(
+            R2RBuilder.CONFIG_OPTIONS[obj["config_name"] or "default"]
+        )
+    )
+    llm_provider = config.completions.provider
+    llm_model = config.completions.generation_config.model
+    model_provider = llm_model.split("/")[0]
 
-    if exclude_ollama:
-        check_external_ollama()
+    check_llm_reqs(llm_provider, model_provider, include_ollama=True)
 
     no_conflict, message = check_subnet_conflict()
     if not no_conflict:
@@ -103,7 +124,7 @@ def run_docker_serve(
         exclude_ollama,
         exclude_postgres,
         project_name,
-        config_path,
+        obj["config_path"],
         image,
     )
 
@@ -111,8 +132,100 @@ def run_docker_serve(
     os.system(docker_command)
 
 
-def check_external_ollama():
-    ollama_url = "http://localhost:11434/api/version"
+def check_llm_reqs(llm_provider, model_provider, include_ollama=False):
+
+    if llm_provider == "openai" or model_provider == "openai":
+        openai_api_key = os.environ.get("OPENAI_API_KEY")
+        if not openai_api_key:
+            if not click.confirm(
+                "You have specified `openai` as a default LLM provider, would you like to continue without setting `OPENAI_API_KEY`?",
+                default=False,
+            ):
+                click.echo("Aborting Docker setup.")
+                sys.exit(1)
+    if llm_provider == "anthropic" or model_provider == "anthropic":
+        anthropic_api_key = os.environ.get("ANTHROPIC_API_KEY")
+        if not anthropic_api_key:
+            if not click.confirm(
+                "You have specified `anthropic` as a default LLM provider, would you like to continue without setting `ANTHROPIC_API_KEY`?",
+                default=False,
+            ):
+                click.echo("Aborting Docker setup.")
+                sys.exit(1)
+    if llm_provider == "azure" or model_provider == "azure":
+        azure_api_key = os.environ.get("AZURE_API_KEY")
+        azure_api_base = os.environ.get("AZURE_API_BASE")
+        azure_api_version = os.environ.get("AZURE_API_VERSION")
+        if not azure_api_key or not azure_api_base or not azure_api_version:
+            if not click.confirm(
+                "You have specified `azure` as a default LLM provider, would you like to continue without setting `AZURE_API_KEY`, `AZURE_API_BASE`, and `AZURE_API_VERSION`?",
+                default=False,
+            ):
+                click.echo("Aborting Docker setup.")
+                sys.exit(1)
+    if llm_provider == "vertex" or model_provider == "vertex":
+        google_credentials = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+        vertex_project = os.environ.get("VERTEX_PROJECT")
+        vertex_location = os.environ.get("VERTEX_LOCATION")
+        if not google_credentials or not vertex_project or not vertex_location:
+            if not click.confirm(
+                "You have specified `vertex` as a default LLM provider, would you like to continue without setting `GOOGLE_APPLICATION_CREDENTIALS`, `VERTEX_PROJECT`, and `VERTEX_LOCATION`?",
+                default=False,
+            ):
+                click.echo("Aborting Docker setup.")
+                sys.exit(1)
+    if llm_provider == "bedrock" or model_provider == "bedrock":
+        aws_access_key = os.environ.get("AWS_ACCESS_KEY_ID")
+        aws_secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
+        aws_region_name = os.environ.get("AWS_REGION_NAME")
+        if (
+            not aws_access_key
+            or not aws_secret_access_key
+            or not aws_region_name
+        ):
+            if not click.confirm(
+                "You have specified `bedrock` as a default LLM provider, would you like to continue without setting `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_REGION_NAME`?",
+                default=False,
+            ):
+                click.echo("Aborting Docker setup.")
+                sys.exit(1)
+    if llm_provider == "groq" or model_provider == "groq":
+        groq_api_key = os.environ.get("GROQ_API_KEY")
+        if not groq_api_key:
+            if not click.confirm(
+                "You have specified `groq` as a default LLM provider, would you like to continue without setting `GROQ_API_KEY`?",
+                default=False,
+            ):
+                click.echo("Aborting Docker setup.")
+                sys.exit(1)
+    if llm_provider == "cohere" or model_provider == "cohere":
+        cohere_api_key = os.environ.get("COHERE_API_KEY")
+        if not cohere_api_key:
+            if not click.confirm(
+                "You have specified `cohere` as a default LLM provider, would you like to continue without setting `COHERE_API_KEY`?",
+                default=False,
+            ):
+                click.echo("Aborting Docker setup.")
+                sys.exit(1)
+    if llm_provider == "anyscale" or model_provider == "anyscale":
+        anyscale_api_key = os.environ.get("ANYSCALE_API_KEY")
+        if not anyscale_api_key:
+            if not click.confirm(
+                "You have specified `anyscale` as a default LLM provider, would you like to continue without setting `ANYSCALE_API_KEY`?",
+                default=False,
+            ):
+                click.echo("Aborting Docker setup.")
+                sys.exit(1)
+    if (
+        llm_provider == "ollama"
+        or model_provider == "ollama"
+        and include_ollama
+    ):
+        check_external_ollama()
+
+
+def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
+
     try:
         response = requests.get(ollama_url, timeout=5)
         if response.status_code == 200:
@@ -122,6 +235,12 @@ def check_external_ollama():
             click.echo(
                 f"{warning_text} External Ollama instance returned unexpected status code: {response.status_code}"
             )
+            if not click.confirm(
+                "Do you want to continue without Ollama connection?",
+                default=False,
+            ):
+                click.echo("Aborting Docker setup.")
+                sys.exit(1)
     except RequestException as e:
         warning_text = click.style("Warning:", fg="red", bold=True)
         click.echo(
@@ -130,16 +249,24 @@ def check_external_ollama():
         click.echo(
             "Please ensure Ollama is running externally if you've excluded it from Docker and plan on running Local LLMs."
         )
+        if not click.confirm(
+            "Do you want to continue without Ollama connection?", default=False
+        ):
+            click.echo("Aborting Docker setup.")
+            sys.exit(1)
 
 
-def unset_env_vars(exclude_postgres=False):
-    env_vars = [
-        "NEO4J_USER",
-        "NEO4J_PASSWORD",
-        "NEO4J_URL",
-        "NEO4J_DATABASE",
-        "OLLAMA_API_BASE",
-    ]
+def check_set_docker_env_vars(exclude_neo4j=False, exclude_postgres=False):
+    env_vars = []
+    if not exclude_neo4j:
+        neo4j_vars = [
+            "NEO4J_USER",
+            "NEO4J_PASSWORD",
+            "NEO4J_URL",
+            "NEO4J_DATABASE",
+            "OLLAMA_API_BASE",
+        ]
+        env_vars.extend(neo4j_vars)
 
     if not exclude_postgres:
         postgres_vars = [
