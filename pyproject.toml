@@ -4,12 +4,12 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "r2r"
-version = "0.2.74"
+version = "0.2.75"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
 readme = "README.md"
-include = ["r2r.json", "compose.yaml", "compose.neo4j.yaml", "compose.ollama.yaml", "pyproject.toml"]
+include = ["r2r.json", "compose.yaml", "compose.neo4j.yaml", "compose.ollama.yaml", "compose.postgres.yaml", "pyproject.toml"]
 
 [tool.poetry.dependencies]
 # Python Versions
