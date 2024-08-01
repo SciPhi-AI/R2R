@@ -9,12 +9,14 @@ from ...base.abstractions.document import DocumentType
 from ...base.abstractions.llm import GenerationConfig
 from ...base.logging.kv_logger import LoggingConfig
 from ...base.providers.auth import AuthConfig
+from ...base.providers.chunking import ChunkingConfig
 from ...base.providers.crypto import CryptoConfig
 from ...base.providers.database import DatabaseConfig, ProviderConfig
 from ...base.providers.embedding import EmbeddingConfig
 from ...base.providers.eval import EvalConfig
 from ...base.providers.kg import KGConfig
 from ...base.providers.llm import CompletionConfig
+from ...base.providers.parsing import ParsingConfig
 from ...base.providers.prompt import PromptConfig
 
 logger = logging.getLogger(__name__)
@@ -37,20 +39,24 @@ class R2RConfig:
             "batch_size",
             "kg_extraction_config",
         ],
-        "ingestion": ["excluded_parsers", "text_splitter"],
+        "parsing": ["provider", "excluded_parsers"],
+        "chunking": ["provider", "method"],
         "completion": ["provider"],
         "logging": ["provider", "log_table"],
         "prompt": ["provider"],
         "database": ["provider"],
     }
     auth: AuthConfig
-    crypto: CryptoConfig
-    embedding: EmbeddingConfig
-    kg: KGConfig
+    chunking: ChunkingConfig
     completion: CompletionConfig
-    logging: LoggingConfig
-    prompt: PromptConfig
+    crypto: CryptoConfig
     database: DatabaseConfig
+    embedding: EmbeddingConfig
+    eval: EvalConfig
+    kg: KGConfig
+    logging: LoggingConfig
+    parsing: ParsingConfig
+    prompt: PromptConfig
 
     def __init__(self, config_data: dict[str, Any]):
         # Load the default configuration
@@ -75,19 +81,16 @@ class R2RConfig:
                 self._validate_config_section(default_config, section, keys)
             setattr(self, section, default_config[section])
         self.auth = AuthConfig.create(**self.auth)
+        self.chunking = ChunkingConfig.create(**self.chunking)
         self.completion = CompletionConfig.create(**self.completion)
         self.crypto = CryptoConfig.create(**self.crypto)
         self.database = DatabaseConfig.create(**self.database)
         self.embedding = EmbeddingConfig.create(**self.embedding)
         self.eval = EvalConfig.create(**self.eval, llm=None)
-        self.logging = LoggingConfig.create(**self.logging)
         self.kg = KGConfig.create(**self.kg)
+        self.logging = LoggingConfig.create(**self.logging)
+        self.parsing = ParsingConfig.create(**self.parsing)
         self.prompt = PromptConfig.create(**self.prompt)
-
-        self.ingestion = self.ingestion  # for type hinting
-        self.ingestion["excluded_parsers"] = [
-            DocumentType(k) for k in self.ingestion.get("excluded_parsers", [])
-        ]  # fix types
 
         # override GenerationConfig defaults
         GenerationConfig.set_default(

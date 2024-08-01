@@ -1,4 +1,4 @@
-from .r2r_chunker import R2RChunkingProvider
-from .unstructured_chunker import UnstructuredChunkingProvider
+from .r2r_chunking import R2RChunkingProvider
+from .unstructured_chunking import UnstructuredChunkingProvider
 
 __all__ = ["R2RChunkingProvider", "UnstructuredChunkingProvider"]

@@ -14,19 +14,16 @@ class Method(str, Enum):
     RECURSIVE = "recursive"
 
 
-class TextSplitterConfig(BaseModel):
-    type: str = "recursive_character"
-    chunk_size: int = 512
-    chunk_overlap: int = 20
-    hard_max: Optional[int] = None
-
-
 class ChunkingConfig(ProviderConfig):
-    provider = "r2r"
+    provider: str = "r2r"
     method: Method = Method.RECURSIVE
-    text_splitter: TextSplitterConfig = Field(
-        default_factory=TextSplitterConfig
-    )
+    chunk_size: int = 512
+    chunk_overlap: int = 0
+    max_chunk_size: Optional[int] = None
+
+    def validate(self) -> None:
+        if self.provider not in self.supported_providers:
+            raise ValueError(f"Provider {self.provider} is not supported.")
 
     @property
     def supported_providers(self) -> list[str]:

@@ -13,13 +13,17 @@ class OverrideParser(BaseModel):
 
 
 class ParsingConfig(ProviderConfig):
-    provider = "r2r"
+    provider: str = "r2r"
     excluded_parsers: List[DocumentType] = Field(default_factory=list)
     override_parsers: List[OverrideParser] = Field(default_factory=list)
 
     @property
     def supported_providers(self) -> list[str]:
         return ["r2r", "unstructured", None]
+
+    def validate(self) -> None:
+        if self.provider not in self.supported_providers:
+            raise ValueError(f"Provider {self.provider} is not supported.")
 
 
 class ParsingProvider(Provider, ABC):

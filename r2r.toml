@@ -7,6 +7,12 @@ require_email_verification = false
 default_admin_email = "admin@example.com"
 default_admin_password = "change_me_immediately"
 
+[chunking]
+provider = "r2r"
+method = "recursive"
+chunk_size = 512
+chunk_overlap = 50
+
 [completion]
 provider = "litellm"
 concurrent_request_limit = 16
@@ -37,20 +43,6 @@ concurrent_request_limit = 256
 [eval]
 provider = "None"
 
-[ingestion]
-provider = "r2r"
-
-  [ingestion.ingestion_config]
-  parser = "default"
-  excluded_parsers = [ "mp4" ]
-
-  chunking_strategy = "unstructured"
-  unstructured_method = "by_title"
-  max_characters = 500
-  new_after_n_chars = 500
-  overlap = 50
-
-
 [kg]
 provider = "None"
 
@@ -58,6 +50,14 @@ provider = "None"
 provider = "local"
 log_table = "logs"
 log_info_table = "log_info"
+
+[parsing]
+provider = "r2r"
+excluded_parsers = ["mp4"]
+
+  [[parsing.override_parsers]]
+  document_type = "pdf"
+  parser = "PDFParserUnstructured"
 
 [prompt]
 provider = "r2r"

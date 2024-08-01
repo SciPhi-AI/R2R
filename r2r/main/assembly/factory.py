@@ -8,6 +8,8 @@ from r2r.base import (
     AsyncPipe,
     AuthConfig,
     AuthProvider,
+    ChunkingConfig,
+    ChunkingProvider,
     CompletionConfig,
     CompletionProvider,
     CryptoConfig,
@@ -19,6 +21,8 @@ from r2r.base import (
     EvalProvider,
     KGProvider,
     KVLoggingSingleton,
+    ParsingConfig,
+    ParsingProvider,
     PromptConfig,
     PromptProvider,
 )
@@ -79,6 +83,38 @@ class R2RProviderFactory:
                 f"Crypto provider {crypto_config.provider} not supported."
             )
         return crypto_provider
+
+    def create_parsing_provider(
+        self, parsing_config: ParsingConfig, *args, **kwargs
+    ) -> ParsingProvider:
+        if parsing_config.provider == "r2r":
+            from r2r.providers import R2RParsingProvider
+
+            return R2RParsingProvider(parsing_config)
+        elif parsing_config.provider == "unstructured":
+            from r2r.providers import UnstructuredParsingProvider
+
+            return UnstructuredParsingProvider(parsing_config)
+        else:
+            raise ValueError(
+                f"Parsing provider {parsing_config.provider} not supported"
+            )
+
+    def create_chunking_provider(
+        self, chunking_config: ChunkingConfig, *args, **kwargs
+    ) -> ChunkingProvider:
+        if chunking_config.provider == "r2r":
+            from r2r.providers import R2RChunkingProvider
+
+            return R2RChunkingProvider(chunking_config)
+        elif chunking_config.provider == "unstructured":
+            from r2r.providers import UnstructuredChunkingProvider
+
+            return UnstructuredChunkingProvider(chunking_config)
+        else:
+            raise ValueError(
+                f"Chunking provider {chunking_config.provider} not supported"
+            )
 
     def create_database_provider(
         self,
@@ -220,6 +256,8 @@ class R2RProviderFactory:
         crypto_provider_override: Optional[CryptoProvider] = None,
         auth_provider_override: Optional[AuthProvider] = None,
         database_provider_override: Optional[DatabaseProvider] = None,
+        parsing_provider_override: Optional[ParsingProvider] = None,
+        chunking_provider_override: Optional[ChunkingProvider] = None,
         *args,
         **kwargs,
     ) -> R2RProviders:
@@ -264,12 +302,27 @@ class R2RProviderFactory:
             *args,
             **kwargs,
         )
+        parsing_provider = (
+            parsing_provider_override
+            or self.create_parsing_provider(
+                self.config.parsing, *args, **kwargs
+            )
+        )
+        chunking_provider = (
+            chunking_provider_override
+            or self.create_chunking_provider(
+                self.config.chunking, *args, **kwargs
+            )
+        )
+
         return R2RProviders(
             auth=auth_provider,
+            chunking=chunking_provider,
             database=database_provider,
             embedding=embedding_provider,
             eval=eval_provider,
             llm=llm_provider,
+            parsing=parsing_provider,
             prompt=prompt_provider,
             kg=kg_provider,
         )
@@ -292,14 +345,15 @@ class R2RPipeFactory:
         rag_pipe_override: Optional[AsyncPipe] = None,
         streaming_rag_pipe_override: Optional[AsyncPipe] = None,
         eval_pipe_override: Optional[AsyncPipe] = None,
+        chunking_pipe_override: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
     ) -> R2RPipes:
         return R2RPipes(
             parsing_pipe=parsing_pipe_override
             or self.create_parsing_pipe(
-                self.config.ingestion.get("excluded_parsers"),
-                self.config.ingestion.get("override_parsers"),
+                self.config.parsing.excluded_parsers,
+                self.config.parsing.override_parsers,
                 *args,
                 **kwargs,
             ),
@@ -320,6 +374,8 @@ class R2RPipeFactory:
             or self.create_rag_pipe(stream=True, *args, **kwargs),
             eval_pipe=eval_pipe_override
             or self.create_eval_pipe(*args, **kwargs),
+            chunking_pipe=chunking_pipe_override
+            or self.create_chunking_pipe(*args, **kwargs),
         )
 
     def create_parsing_pipe(
@@ -336,10 +392,15 @@ class R2RPipeFactory:
             override_parsers=override_parsers or [],
         )
 
-    def chunking_pipe(self, *args, **kwargs) -> Any:
+    def create_parsing_pipe(self, *args, **kwargs) -> Any:
+        from r2r.pipes import ParsingPipe
+
+        return ParsingPipe(parsing_provider=self.providers.parsing)
+
+    def create_chunking_pipe(self, *args, **kwargs) -> Any:
         from r2r.pipes import ChunkingPipe
 
-        return ChunkingPipe()
+        return ChunkingPipe(chunking_provider=self.providers.chunking)
 
     def create_embedding_pipe(self, *args, **kwargs) -> Any:
         if self.config.embedding.provider is None:
@@ -348,22 +409,9 @@ class R2RPipeFactory:
         from r2r.base import RecursiveCharacterTextSplitter
         from r2r.pipes import EmbeddingPipe
 
-        text_splitter_config = self.config.ingestion.get("text_splitter")
-        if not text_splitter_config:
-            raise ValueError(
-                "Text splitter config not found in ingestion config."
-            )
-
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=text_splitter_config["chunk_size"],
-            chunk_overlap=text_splitter_config["chunk_overlap"],
-            length_function=len,
-            is_separator_regex=False,
-        )
         return EmbeddingPipe(
             embedding_provider=self.providers.embedding,
             database_provider=self.providers.database,
-            text_splitter=text_splitter,
             embedding_batch_size=self.config.embedding.batch_size,
         )
 
@@ -390,25 +438,13 @@ class R2RPipeFactory:
         if self.config.kg.provider is None:
             return None
 
-        from r2r.base import RecursiveCharacterTextSplitter
         from r2r.pipes import KGExtractionPipe
 
-        text_splitter_config = self.config.ingestion.get("text_splitter")
-        if not text_splitter_config:
-            raise ValueError("Text splitter config not found in kg config.")
-
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=text_splitter_config["chunk_size"],
-            chunk_overlap=text_splitter_config["chunk_overlap"],
-            length_function=len,
-            is_separator_regex=False,
-        )
         return KGExtractionPipe(
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
-            database_provider=self.providers.database,
-            text_splitter=text_splitter,
+            chunking_provider=self.providers.chunking,
             kg_batch_size=self.config.kg.batch_size,
         )
 
@@ -469,6 +505,10 @@ class R2RPipelineFactory:
         ingestion_pipeline.add_pipe(
             pipe=self.pipes.parsing_pipe, parsing_pipe=True
         )
+        ingestion_pipeline.add_pipe(
+            self.pipes.chunking_pipe, chunking_pipe=True
+        )
+
         # Add embedding pipes if provider is set
         if (
             self.config.embedding.provider is not None

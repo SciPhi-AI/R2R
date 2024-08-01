@@ -25,7 +25,7 @@ class ChunkingPipe(AsyncPipe):
         self,
         chunking_provider: ChunkingProvider,
         pipe_logger: Optional[KVLoggingSingleton] = None,
-        type: PipeType = PipeType.PROCESSOR,
+        type: PipeType = PipeType.INGESTOR,
         config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,
