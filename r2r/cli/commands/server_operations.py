@@ -154,7 +154,6 @@ def serve(
 ):
     """Start the R2R server."""
     load_dotenv()
-    print("docker = ", docker)
 
     if obj["config_path"]:
         config_path = os.path.abspath(obj["config_path"])
@@ -178,6 +177,21 @@ def serve(
             project_name,
             image,
         )
+        # Open browser after Docker setup is complete
+        import time
+
+        print("Navigating to dashboard in 3 seconds...")
+        time.sleep(1)
+        print("Navigating to dashboard in 2 seconds...")
+        time.sleep(1)
+        print("Navigating to dashboard in 1 seconds...")
+        time.sleep(1)
+        import webbrowser
+
+        url = f"http://localhost"
+        click.echo(f"Opening browser to {url}")
+        webbrowser.open(url)
+
     else:
         run_local_serve(obj, host, port)
 

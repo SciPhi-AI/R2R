@@ -105,7 +105,7 @@ def run_docker_serve(
     llm_model = config.completion.generation_config.model
     model_provider = llm_model.split("/")[0]
 
-    check_llm_reqs(llm_provider, model_provider, include_ollama=True)
+    check_llm_reqs(llm_provider, model_provider, include_ollama=exclude_ollama)
 
     no_conflict, message = check_subnet_conflict()
     if not no_conflict:
