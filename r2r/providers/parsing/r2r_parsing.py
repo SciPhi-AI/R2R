@@ -11,6 +11,7 @@ from r2r.base import (
     ParsingConfig,
     ParsingProvider,
     R2RDocumentProcessingError,
+    generate_id_from_label,
 )
 
 logger = logging.getLogger(__name__)
@@ -65,7 +66,9 @@ class R2RParsingProvider(ParsingProvider):
             if parser_name:
                 self.parsers[parser_override.document_type] = parser_name()
 
-    async def parse(self, document: Document) -> AsyncGenerator[Any, None]:
+    async def parse(
+        self, document: Document
+    ) -> AsyncGenerator[Extraction, None]:
         if document.type not in self.parsers:
             yield R2RDocumentProcessingError(
                 document_id=document.id,
@@ -88,7 +91,7 @@ class R2RParsingProvider(ParsingProvider):
         iteration = 0
         async for text in texts:
             extraction = Extraction(
-                id=f"{document.id}-{iteration}",
+                id=generate_id_from_label(f"{document.id}-{iteration}"),
                 data=text,
                 metadata=document.metadata,
                 document_id=document.id,

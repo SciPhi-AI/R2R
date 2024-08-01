@@ -54,15 +54,17 @@ class ChunkingPipe(AsyncPipe):
                 continue
 
             try:
+                iteration = 0
                 async for chunk in self.chunking_provider.chunk(item.data):
                     yield Fragment(
-                        id=generate_id_from_label(f"{item.id}-chunk"),
+                        id=generate_id_from_label(f"{item.id}-{iteration}"),
                         type=FragmentType.TEXT,
                         data=chunk,
                         metadata=item.metadata,
                         extraction_id=item.id,
                         document_id=item.document_id,
                     )
+                    iteration += 1
             except Exception as e:
                 yield R2RDocumentProcessingError(
                     document_id=item.document_id,

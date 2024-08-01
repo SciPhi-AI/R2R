@@ -54,17 +54,11 @@ class ParsingPipe(AsyncPipe):
         version: str,
     ) -> AsyncGenerator[Union[R2RDocumentProcessingError, Extraction], None]:
         try:
-            async for parsed_content in self.parsing_provider.parse(document):
+            async for extraction in self.parsing_provider.parse(document):
                 extraction_id = generate_id_from_label(
-                    f"{document.id}-{version}"
+                    f"{extraction.id}-{version}"
                 )
-                extraction = Extraction(
-                    id=extraction_id,
-                    data=parsed_content,
-                    metadata=document.metadata,
-                    document_id=document.id,
-                    type=ExtractionType.TXT,  # Adjust as needed
-                )
+                extraction.id = extraction_id
                 yield extraction
         except Exception as e:
             yield R2RDocumentProcessingError(
