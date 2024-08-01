@@ -1,8 +1,12 @@
+# Start with your existing base image
 FROM python:3.10-slim AS builder
 
-# Install system dependencies
+# Install system dependencies (including those needed for Unstructured and OpenCV)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ musl-dev curl libffi-dev gfortran libopenblas-dev \
+    tesseract-ocr libtesseract-dev libleptonica-dev pkg-config \
+    poppler-utils libmagic1 \
+    libgl1-mesa-glx libglib2.0-0 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -12,17 +16,20 @@ RUN pip install --no-cache-dir poetry
 # Copy the dependencies files
 COPY pyproject.toml poetry.lock* ./
 
-# Install the dependencies, including gunicorn and uvicorn
+# Install the dependencies, including gunicorn, uvicorn, and unstructured
 RUN poetry config virtualenvs.create false \
+    && poetry add "unstructured[all-docs]" \
     && poetry install --no-dev --no-root \
     && pip install --no-cache-dir gunicorn uvicorn
 
 # Create the final image
 FROM python:3.10-slim
 
-# Install healthcheck dependency
+# Install runtime dependencies
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
+    && apt-get install -y --no-install-recommends \
+    curl tesseract-ocr poppler-utils libmagic1 \
+    libgl1-mesa-glx libglib2.0-0 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -33,8 +40,15 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy the application and config
 COPY r2r /app/r2r
-COPY r2r.json /app/r2r.json
+COPY r2r.toml /app/r2r.toml
 COPY pyproject.toml /app/pyproject.toml
+
+# Download NLTK packages and initialize models
+RUN python3 -m nltk.downloader punkt averaged_perceptron_tagger \
+    && python3 -c "from unstructured.partition.model_init import initialize; initialize()"
+
+# Set environment variables
+ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata
 
 # Expose the port
 EXPOSE 8000

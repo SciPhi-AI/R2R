@@ -53,12 +53,8 @@ log_table = "logs"
 log_info_table = "log_info"
 
 [parsing]
-provider = "r2r"
+provider = "unstructured"
 excluded_parsers = ["mp4"]
-
-  [[parsing.override_parsers]]
-  document_type = "pdf"
-  parser = "PDFParser"
 
 [prompt]
 provider = "r2r"
