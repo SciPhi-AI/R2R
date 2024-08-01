@@ -5,18 +5,18 @@ from typing import Any
 from openai import AsyncOpenAI, OpenAI
 
 from r2r.base.abstractions.llm import GenerationConfig
-from r2r.base.providers.llm import LLMConfig, LLMProvider
+from r2r.base.providers.llm import CompletionConfig, CompletionProvider
 
 logger = logging.getLogger(__name__)
 
 
-class OpenAILLMProvider(LLMProvider):
-    def __init__(self, config: LLMConfig, *args, **kwargs) -> None:
+class OpenAICompletionProvider(CompletionProvider):
+    def __init__(self, config: CompletionConfig, *args, **kwargs) -> None:
         super().__init__(config)
         if config.provider != "openai":
             logger.error(f"Invalid provider: {config.provider}")
             raise ValueError(
-                "OpenAILLMProvider must be initialized with config with `openai` provider."
+                "OpenAICompletionProvider must be initialized with config with `openai` provider."
             )
         if not os.getenv("OPENAI_API_KEY"):
             logger.error("OpenAI API key not found")
@@ -25,7 +25,7 @@ class OpenAILLMProvider(LLMProvider):
             )
         self.async_client = AsyncOpenAI()
         self.client = OpenAI()
-        logger.debug("OpenAILLMProvider initialized successfully")
+        logger.debug("OpenAICompletionProvider initialized successfully")
 
     def _get_base_args(self, generation_config: GenerationConfig) -> dict:
         args = {
@@ -52,7 +52,7 @@ class OpenAILLMProvider(LLMProvider):
 
         logger.debug(f"Executing async OpenAI task with args: {args}")
         try:
-            response = await self.async_client.chat.completions.create(**args)
+            response = await self.async_client.chat.completion.create(**args)
             logger.debug("Async OpenAI task executed successfully")
             return response
         except Exception as e:
@@ -70,7 +70,7 @@ class OpenAILLMProvider(LLMProvider):
 
         logger.debug(f"Executing sync OpenAI task with args: {args}")
         try:
-            response = self.client.chat.completions.create(**args)
+            response = self.client.chat.completion.create(**args)
             logger.debug("Sync OpenAI task executed successfully")
             return response
         except Exception as e:

@@ -16,7 +16,7 @@ from .base import Provider, ProviderConfig
 logger = logging.getLogger(__name__)
 
 
-class LLMConfig(ProviderConfig):
+class CompletionConfig(ProviderConfig):
     provider: Optional[str] = None
     generation_config: Optional[GenerationConfig] = None
     concurrency_limit: int = 16
@@ -35,15 +35,15 @@ class LLMConfig(ProviderConfig):
         return ["litellm", "openai"]
 
 
-class LLMProvider(Provider):
-    def __init__(self, config: LLMConfig) -> None:
-        if not isinstance(config, LLMConfig):
+class CompletionProvider(Provider):
+    def __init__(self, config: CompletionConfig) -> None:
+        if not isinstance(config, CompletionConfig):
             raise ValueError(
-                "LLMProvider must be initialized with a `LLMConfig`."
+                "CompletionProvider must be initialized with a `CompletionConfig`."
             )
-        logger.info(f"Initializing LLMProvider with config: {config}")
+        logger.info(f"Initializing CompletionProvider with config: {config}")
         super().__init__(config)
-        self.config: LLMConfig = config
+        self.config: CompletionConfig = config
         self.semaphore = asyncio.Semaphore(config.concurrency_limit)
         self.thread_pool = ThreadPoolExecutor(
             max_workers=config.concurrency_limit

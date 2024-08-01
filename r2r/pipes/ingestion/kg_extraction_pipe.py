@@ -7,13 +7,13 @@ from typing import Any, AsyncGenerator, Optional
 
 from r2r.base import (
     AsyncState,
+    CompletionProvider,
     Extraction,
     Fragment,
     FragmentType,
     KGExtraction,
     KGProvider,
     KVLoggingSingleton,
-    LLMProvider,
     PipeType,
     PromptProvider,
     TextSplitter,
@@ -40,7 +40,7 @@ class KGExtractionPipe(AsyncPipe):
     def __init__(
         self,
         kg_provider: KGProvider,
-        llm_provider: LLMProvider,
+        llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         text_splitter: TextSplitter,
         kg_batch_size: int = 1,

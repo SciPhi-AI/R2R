@@ -1,0 +1,184 @@
+few_shot_ner_kg_extraction_with_spec:
+  template: >
+    ### Instruction
+
+    You will shortly be asked to perform Named Entity Recognition (NER) and knowledge graph triplet extraction on the text that follows. NER involves identifying named entities in a text, and knowledge graph triplet extraction involves identifying relationships between these entities and other attributes in the text.
+
+
+    A knowledge graph triplet contains the three following pieces of information:
+
+    - `subject`: The main entity.
+
+    - `predicate`: The relationship type.
+
+    - `object`: The related entity.
+
+
+    They are represented below as `[subject]:<predicate>:[object]`.
+
+
+    #### Process
+
+    **Identify Named Entities**: Extract entities based on the given entity types, ensuring they appear in the order they are mentioned in the text.
+
+    **Establish Triplets**: Form triplets using the provided predicates, again in the order they appear in the text.
+
+
+    Your final response should follow this format:
+
+
+    **Output:**
+
+    ```json
+
+    {{
+        "entities_and_triples": [
+            "[1], ENTITY_TYPE:ENTITY_NAME",
+            "[1] PREDICATE [2]",
+            "[1] PREDICATE [3]",
+            "[2], ENTITY_TYPE:ENTITY_NAME",
+            ...
+        ]
+    }}
+
+    ```
+
+
+    ### Example:
+
+
+    **Entity Types:**
+
+    ORGANIZATION
+
+    COMPANY
+
+    CITY, STATE, COUNTRY, OTHER
+
+    PERSON
+
+    YEAR, MONTH, DAY, OTHER
+
+    QUANTITY
+
+    EVENT
+
+
+    **Predicates:**
+
+    FOUNDED_BY
+
+    HEADQUARTERED_IN
+
+    OPERATES_IN
+
+    OWNED_BY
+
+    ACQUIRED_BY
+
+    HAS_EMPLOYEE_COUNT
+
+    GENERATED_REVENUE
+
+    LISTED_ON
+
+    INCORPORATED
+
+    HAS_DIVISION
+
+    ALIAS
+
+    ANNOUNCED
+
+    HAS_QUANTITY
+
+    AS_OF
+
+
+    **Input:**
+
+    Walmart Inc. (formerly Wal-Mart Stores, Inc.) is an American multinational retail corporation that operates a chain of hypermarkets (also called supercenters), discount department stores, and grocery stores in the United States, headquartered in Bentonville, Arkansas.[10] The company was founded by brothers Sam and James "Bud" Walton in nearby Rogers, Arkansas in 1962 and incorporated under Delaware General Corporation Law on October 31, 1969. It also owns and operates Sam's Club retail warehouses.[11][12]
+
+
+    As of October 31, 2022, Walmart has 10,586 stores and clubs in 24 countries, operating under 46 different names.[2][3][4] The company operates under the name Walmart in the United States and Canada, as Walmart de México y Centroamérica in Mexico and Central America, and as Flipkart Wholesale in India.
+
+
+    **Output:**
+
+    ```json
+
+    {{
+        "entities_and_triples": [
+            "[1], ORGANIZATION:COMPANY:Walmart Inc.",
+            "[2], ORGANIZATION:COMPANY:Wal-Mart Stores, Inc.",
+            "[1] ALIAS [2]",
+            "[3], LOCATION:COUNTRY:United States",
+            "[1] OPERATES_IN [3]",
+            "[4], LOCATION:CITY:Bentonville",
+            "[1] HEADQUARTERED_IN [4]",
+            "[5], LOCATION:STATE:Arkansas",
+            "[1] HEADQUARTERED_IN [5]",
+            "[6], PERSON:Sam Walton",
+            "[1] FOUNDED_BY [6]",
+            "[7], PERSON:James Walton",
+            "[8], PERSON:Bud Walton",
+            "[7] ALIAS [8]",
+            "[1] FOUNDED_BY [7]",
+            "[9], LOCATION:CITY:Rogers",
+            "[10], DATE:YEAR:1962",
+            "[11], EVENT:Incorporated under Delaware General Corporation Law",
+            "[1] INCORPORATED [11]",
+            "[12], DATE:DAY:October 31",
+            "[1] INCORPORATED [12]",
+            "[13], DATE:YEAR:1969",
+            "[1] INCORPORATED [13]",
+            "[14], ORGANIZATION:COMPANY:Sam's Club",
+            "[1] INCORPORATED [14]",
+            "[15], DATE:DAY:October 31, 2022",
+            "[16], QUANTITY:10,586 stores and clubs",
+            "[16] AS_OF [15]",
+            "[1] HAS_QUANTITY [16]",
+            "[17], QUANTITY:24 countries",
+            "[18], QUANTITY:46 different names",
+            "[1] HAS_QUANTITY [18]",
+            "[18], ORGANIZATION:COMPANY:Walmart de México y Centroamérica",
+            "[1] ALIAS [18]",
+            "[19], LOCATION:COUNTRY:Mexico",
+            "[1] OPERATES_IN [19]",
+            "[20], LOCATION:REGION:Central America",
+            "[1] OPERATES_IN [20]",
+            "[21], ORGANIZATION:COMPANY:Flipkart Wholesale",
+            "[1] ALIAS [21]",
+            "[22], LOCATION:COUNTRY:India",
+            "[1] OPERATES_IN [22]"
+        ]
+    }}
+
+    ```
+
+
+    ### Task:
+
+    Your task is to perform Named Entity Recognition (NER) and knowledge graph triplet extraction on the text that follows below. Use the provided entities and predicates as shown
+
+
+    **Entity Types:**
+
+    {entity_types}
+
+
+    **Predicates:**
+
+    {relations}
+
+
+    **Input:**
+
+    {input}
+
+
+    **Output:**
+  input_types:
+    entity_types: str
+    relations: str
+    input: str

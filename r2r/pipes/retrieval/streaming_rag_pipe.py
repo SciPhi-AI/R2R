@@ -5,8 +5,8 @@ from typing import Any, AsyncGenerator, Generator, Optional
 
 from r2r.base import (
     AsyncState,
+    CompletionProvider,
     LLMChatCompletionChunk,
-    LLMProvider,
     PipeType,
     PromptProvider,
 )
@@ -24,7 +24,7 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
 
     def __init__(
         self,
-        llm_provider: LLMProvider,
+        llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         type: PipeType = PipeType.GENERATOR,
         config: Optional[GeneratorPipe] = None,

@@ -3,8 +3,8 @@ import json
 from r2r.assistants import R2RAssistant, R2RStreamingAssistant
 from r2r.base import (
     AssistantConfig,
+    CompletionProvider,
     KGSearchSettings,
-    LLMProvider,
     PromptProvider,
     Tool,
     VectorSearchResult,
@@ -78,7 +78,7 @@ class RAGAssistantMixin:
 class R2RRAGAssistant(RAGAssistantMixin, R2RAssistant):
     def __init__(
         self,
-        llm_provider: LLMProvider,
+        llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         search_pipeline: SearchPipeline,
         config: AssistantConfig,
@@ -94,7 +94,7 @@ class R2RRAGAssistant(RAGAssistantMixin, R2RAssistant):
 class R2RStreamingRAGAssistant(RAGAssistantMixin, R2RStreamingAssistant):
     def __init__(
         self,
-        llm_provider: LLMProvider,
+        llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         search_pipeline: SearchPipeline,
         config: AssistantConfig,

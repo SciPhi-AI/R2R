@@ -5,11 +5,10 @@ from .embeddings import (
     LiteLLMEmbeddingProvider,
     OllamaEmbeddingProvider,
     OpenAIEmbeddingProvider,
-    SentenceTransformerEmbeddingProvider,
 )
 from .eval import LLMEvalProvider
 from .kg import Neo4jKGProvider
-from .llm import LiteLLMProvider, OpenAILLMProvider
+from .llm import LiteCompletionProvider, OpenAICompletionProvider
 from .prompts import R2RPromptProvider
 
 __all__ = [
@@ -20,10 +19,9 @@ __all__ = [
     "LiteLLMEmbeddingProvider",
     "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",
-    "SentenceTransformerEmbeddingProvider",
     "LLMEvalProvider",
     "Neo4jKGProvider",
-    "OpenAILLMProvider",
-    "LiteLLMProvider",
+    "OpenAICompletionProvider",
+    "LiteCompletionProvider",
     "R2RPromptProvider",
 ]

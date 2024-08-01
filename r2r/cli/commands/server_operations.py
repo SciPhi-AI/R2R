@@ -154,6 +154,7 @@ def serve(
 ):
     """Start the R2R server."""
     load_dotenv()
+    print("docker = ", docker)
 
     if obj["config_path"]:
         config_path = os.path.abspath(obj["config_path"])

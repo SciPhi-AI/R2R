@@ -34,7 +34,7 @@ async def cleanup_tasks():
 
 @pytest.fixture(scope="function")
 def app(request):
-    config = R2RConfig.from_json()
+    config = R2RConfig.from_toml()
     config.logging.provider = "local"
     config.logging.logging_path = uuid.uuid4().hex
 

@@ -6,11 +6,11 @@ from r2r.assistants import R2RRAGAssistant, R2RStreamingRAGAssistant
 from r2r.base import (
     AsyncPipe,
     AuthProvider,
+    CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
     EvalProvider,
     KGProvider,
-    LLMProvider,
     PromptProvider,
 )
 from r2r.pipelines import (
@@ -25,7 +25,7 @@ class R2RProviders(BaseModel):
     auth: Optional[AuthProvider]
     database: Optional[DatabaseProvider]
     embedding: Optional[EmbeddingProvider]
-    llm: Optional[LLMProvider]
+    llm: Optional[CompletionProvider]
     prompt: Optional[PromptProvider]
     eval: Optional[EvalProvider]
     kg: Optional[KGProvider]

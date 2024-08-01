@@ -1,8 +1,8 @@
 import asyncio
-import json
 from unittest.mock import Mock, mock_open, patch
 
 import pytest
+import toml
 
 from r2r import DocumentType, R2RConfig
 
@@ -30,48 +30,66 @@ async def manage_async_pipes():
 
 @pytest.fixture
 def mock_bad_file():
-    mock_data = json.dumps({})
+    mock_data = toml.dumps({})
     with patch("builtins.open", mock_open(read_data=mock_data)) as m:
         yield m
 
 
 @pytest.fixture
 def mock_file():
-    mock_data = json.dumps(
+    mock_data = toml.dumps(
         {
             "auth": {
                 "provider": "r2r",
-                "enabled": True,
-                "token_lifetime": 86400,
+                "access_token_lifetime_in_minutes": 60,
+                "refresh_token_lifetime_in_days": 7,
+                "require_authentication": False,
+                "require_email_verification": False,
+                "default_admin_email": "admin@example.com",
+                "default_admin_password": "change_me_immediately",
             },
-            "crypto": {"provider": "r2r"},
-            "embedding": {
-                "provider": "example_provider",
-                "base_model": "model",
-                "base_dimension": 128,
-                "batch_size": 16,
-                "text_splitter": "default",
-                "add_title_as_prefix": False,
-            },
-            "kg": {
-                "provider": "None",
-                "batch_size": 1,
-                "text_splitter": {
-                    "type": "recursive_character",
-                    "chunk_size": 2048,
-                    "chunk_overlap": 0,
+            "completion": {
+                "provider": "litellm",
+                "concurrent_request_limit": 16,
+                "generation_config": {
+                    "model": "openai/gpt-4o",
+                    "temperature": 0.1,
+                    "top_p": 1,
+                    "max_tokens_to_sample": 1024,
+                    "stream": False,
+                    "add_generation_kwargs": {},
                 },
             },
-            "eval": {"llm": {"provider": "local"}},
-            "ingestion": {"excluded_parsers": {}},
-            "completions": {"provider": "lm_provider"},
+            "crypto": {"provider": "bcrypt"},
+            "database": {"provider": "postgres"},
+            "embedding": {
+                "provider": "litellm",
+                "base_model": "text-embedding-3-small",
+                "base_dimension": 512,
+                "batch_size": 128,
+                "add_title_as_prefix": False,
+                "rerank_model": "None",
+                "concurrent_request_limit": 256,
+            },
+            "eval": {"provider": "None"},
+            "ingestion": {
+                "excluded_parsers": ["mp4"],
+                "override_parsers": [
+                    {"document_type": "pdf", "parser": "PDFParser"}
+                ],
+                "text_splitter": {
+                    "type": "recursive_character",
+                    "chunk_size": 512,
+                    "chunk_overlap": 20,
+                },
+            },
+            "kg": {"provider": "None"},
             "logging": {
                 "provider": "local",
                 "log_table": "logs",
                 "log_info_table": "log_info",
             },
-            "prompt": {"provider": "prompt_provider"},
-            "database": {"provider": "vector_db"},
+            "prompt": {"provider": "r2r"},
         }
     )
     with patch("builtins.open", mock_open(read_data=mock_data)) as m:
@@ -81,15 +99,15 @@ def mock_file():
 @pytest.mark.asyncio
 async def test_r2r_config_loading_required_keys(mock_bad_file):
     with pytest.raises(KeyError):
-        R2RConfig.from_json("r2r.json")
+        R2RConfig.from_toml("r2r.toml")
 
 
 @pytest.mark.asyncio
 async def test_r2r_config_loading(mock_file):
     try:
-        config = R2RConfig.from_json("r2r.json")
+        config = R2RConfig.from_toml("r2r.toml")
         assert (
-            config.embedding.provider == "example_provider"
+            config.embedding.provider == "litellm"
         ), "Provider should match the mock data"
     except Exception as e:
         pytest.fail(f"Test failed with exception: {e}")
@@ -101,89 +119,85 @@ def mock_redis_client():
 
 
 def test_r2r_config_serialization(mock_file, mock_redis_client):
-    config = R2RConfig.from_json("r2r.json")
+    config = R2RConfig.from_toml("r2r.toml")
     config.save_to_redis(mock_redis_client, "test_key")
     mock_redis_client.set.assert_called_once()
-    saved_data = json.loads(mock_redis_client.set.call_args[0][1])
-    assert saved_data["embedding"]["provider"] == "example_provider"
+    saved_data = toml.loads(mock_redis_client.set.call_args[0][1])
+    assert saved_data["embedding"]["provider"] == "litellm"
 
 
 def test_r2r_config_deserialization(mock_file, mock_redis_client):
     config_data = {
         "embedding": {
-            "provider": "example_provider",
-            "base_model": "model",
-            "base_dimension": 128,
-            "batch_size": 16,
-            "text_splitter": "default",
+            "provider": "litellm",
+            "base_model": "text-embedding-3-small",
+            "base_dimension": 512,
+            "batch_size": 128,
+            "add_title_as_prefix": False,
+            "rerank_model": "None",
+            "concurrent_request_limit": 256,
         },
-        "kg": {
-            "provider": "None",
-            "batch_size": 1,
+        "kg": {"provider": "None"},
+        "eval": {"provider": "None"},
+        "ingestion": {
+            "excluded_parsers": ["mp4"],
+            "override_parsers": [
+                {"document_type": "pdf", "parser": "PDFParser"}
+            ],
             "text_splitter": {
                 "type": "recursive_character",
-                "chunk_size": 2048,
-                "chunk_overlap": 0,
+                "chunk_size": 512,
+                "chunk_overlap": 20,
             },
         },
-        "eval": {"llm": {"provider": "local"}},
-        "ingestion": {"excluded_parsers": ["pdf"]},
-        "completions": {"provider": "lm_provider"},
+        "completion": {"provider": "litellm"},
         "logging": {
             "provider": "local",
             "log_table": "logs",
             "log_info_table": "log_info",
         },
-        "prompt": {"provider": "prompt_provider"},
-        "database": {"provider": "vector_db"},
+        "prompt": {"provider": "r2r"},
+        "database": {"provider": "postgres"},
     }
-    mock_redis_client.get.return_value = json.dumps(config_data)
+    mock_redis_client.get.return_value = toml.dumps(config_data)
     config = R2RConfig.load_from_redis(mock_redis_client, "test_key")
-    assert DocumentType.PDF in config.ingestion["excluded_parsers"]
+    assert DocumentType.MP4 in config.ingestion["excluded_parsers"]
 
 
 def test_r2r_config_missing_section():
     invalid_data = {
         "embedding": {
-            "provider": "example_provider",
-            "base_model": "model",
-            "base_dimension": 128,
-            "batch_size": 16,
-            "text_splitter": "default",
+            "provider": "litellm",
+            "base_model": "text-embedding-3-small",
+            "base_dimension": 512,
+            "batch_size": 128,
+            "add_title_as_prefix": False,
         }
     }
-    with patch("builtins.open", mock_open(read_data=json.dumps(invalid_data))):
+    with patch("builtins.open", mock_open(read_data=toml.dumps(invalid_data))):
         with pytest.raises(KeyError):
-            R2RConfig.from_json("r2r.json")
+            R2RConfig.from_toml("r2r.toml")
 
 
 def test_r2r_config_missing_required_key():
     invalid_data = {
-        "app": {"max_file_size_in_mb": 128},
+        "auth": {"access_token_lifetime_in_minutes": 60},
         "embedding": {
-            "base_model": "model",
-            "base_dimension": 128,
-            "batch_size": 16,
-            "text_splitter": "default",
+            "base_model": "text-embedding-3-small",
+            "base_dimension": 512,
+            "batch_size": 128,
+            "add_title_as_prefix": False,
         },
-        "kg": {
-            "provider": "None",
-            "batch_size": 1,
-            "text_splitter": {
-                "type": "recursive_character",
-                "chunk_size": 2048,
-                "chunk_overlap": 0,
-            },
-        },
-        "completions": {"provider": "lm_provider"},
+        "kg": {"provider": "None"},
+        "completion": {"provider": "litellm"},
         "logging": {
             "provider": "local",
             "log_table": "logs",
             "log_info_table": "log_info",
         },
-        "prompt": {"provider": "prompt_provider"},
-        "database": {"provider": "vector_db"},
+        "prompt": {"provider": "r2r"},
+        "database": {"provider": "postgres"},
     }
-    with patch("builtins.open", mock_open(read_data=json.dumps(invalid_data))):
+    with patch("builtins.open", mock_open(read_data=toml.dumps(invalid_data))):
         with pytest.raises(KeyError):
-            R2RConfig.from_json("r2r.json")
+            R2RConfig.from_toml("r2r.toml")

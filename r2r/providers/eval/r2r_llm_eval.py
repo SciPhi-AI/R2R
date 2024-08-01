@@ -1,7 +1,7 @@
 from fractions import Fraction
 from typing import Union
 
-from r2r import EvalConfig, EvalProvider, LLMProvider, PromptProvider
+from r2r import CompletionProvider, EvalConfig, EvalProvider, PromptProvider
 from r2r.base.abstractions.llm import GenerationConfig
 
 
@@ -9,7 +9,7 @@ class LLMEvalProvider(EvalProvider):
     def __init__(
         self,
         config: EvalConfig,
-        llm_provider: LLMProvider,
+        llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
     ):
         super().__init__(config)

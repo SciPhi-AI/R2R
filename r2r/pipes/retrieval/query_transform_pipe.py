@@ -5,7 +5,7 @@ from typing import Any, AsyncGenerator, Optional
 from r2r.base import (
     AsyncPipe,
     AsyncState,
-    LLMProvider,
+    CompletionProvider,
     PipeType,
     PromptProvider,
 )
@@ -27,7 +27,7 @@ class QueryTransformPipe(GeneratorPipe):
 
     def __init__(
         self,
-        llm_provider: LLMProvider,
+        llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         type: PipeType = PipeType.TRANSFORM,
         config: Optional[QueryTransformConfig] = None,

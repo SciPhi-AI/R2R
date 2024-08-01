@@ -1,0 +1,4 @@
+[logging]
+provider = "postgres"
+log_table = "logs"
+log_info_table = "log_info"

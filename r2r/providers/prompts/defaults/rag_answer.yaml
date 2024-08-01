@@ -1,0 +1,52 @@
+rag_answer_eval:
+  template: >+
+    ### Instruction:
+
+
+    You are given a `query`, related `context` and an associated `answer`. Your task is to sequentially score each sentence in the given answer as either 1 or 0, based on whether or not the given sentence is relevant to the given query and supported in full by the given context.
+
+    ### Example:
+
+    #### Input:
+
+
+    Query:
+
+    Why does Alice prefer spending her mornings in the garden?
+
+
+    Context:
+
+    Alice loves to read books in her garden. She has a large collection of mystery novels. Every morning, she spends an hour reading while drinking her favorite tea. Her garden is filled with various flowers, and she especially loves the roses. On weekends, Alice's friend, Bob, often joins her for tea and they discuss the books they've read.
+
+
+    Answer:
+
+    Alice enjoys her mornings in the garden because she loves to read there. She often listens to music while reading.
+
+    ####### Response:
+
+
+    ([1,0], '1/2')### Input:
+
+    Query:
+
+    {query}
+
+
+    Context:
+
+    {context}
+
+
+    Answer:
+
+    {answer}
+
+
+    Response:
+
+  input_types:
+    query: str
+    context: str
+    answer: str

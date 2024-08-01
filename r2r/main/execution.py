@@ -48,9 +48,9 @@ class R2RExecutionWrapper:
             self.app = None
         else:
             config = (
-                R2RConfig.from_json(config_path)
+                R2RConfig.from_toml(config_path)
                 if config_path
-                else R2RConfig.from_json(
+                else R2RConfig.from_toml(
                     R2RBuilder.CONFIG_OPTIONS[config_name or "default"]
                 )
             )

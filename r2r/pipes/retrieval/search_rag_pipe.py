@@ -6,7 +6,7 @@ from r2r.base import (
     AggregateSearchResult,
     AsyncPipe,
     AsyncState,
-    LLMProvider,
+    CompletionProvider,
     PipeType,
     PromptProvider,
 )
@@ -23,7 +23,7 @@ class SearchRAGPipe(GeneratorPipe):
 
     def __init__(
         self,
-        llm_provider: LLMProvider,
+        llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         type: PipeType = PipeType.GENERATOR,
         config: Optional[GeneratorPipe] = None,
