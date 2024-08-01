@@ -2263,6 +2263,23 @@ dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
+name = "poppler-utils"
+version = "0.1.0"
+description = "Precompiled command-line utilities (based on Poppler) for manipulating PDF files and converting them to other formats."
+optional = false
+python-versions = "*"
+files = [
+    {file = "poppler-utils-0.1.0.tar.gz", hash = "sha256:e97a92dcfde57b21a90c3070694e58f8eea155515ae8e624266a052d0776a349"},
+    {file = "poppler_utils-0.1.0-py3-none-any.whl", hash = "sha256:a6336b4c7d59e49d339b92c60d1f63905f577ab106038bde940a6861deefd3f3"},
+]
+
+[package.dependencies]
+Click = ">=7.0"
+
+[package.extras]
+dev = ["Click (>=7.0)", "Sphinx (>=2.2.1)"]
+
+[[package]]
 name = "posthog"
 version = "3.5.0"
 description = "Integrate PostHog into any python application."
@@ -4099,4 +4116,4 @@ ingest-movies = ["moviepy", "opencv-python"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "59ddeac0acb5e12b0b17b2fdad76b1da3e985934f558860ee18bda59854eafa8"
+content-hash = "12d3909bab6b035123a85fe6ba645f6e74b8abab7308d114e90d5b29917ad09d"

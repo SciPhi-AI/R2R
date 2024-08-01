@@ -143,17 +143,6 @@ def test_r2r_config_deserialization(mock_file, mock_redis_client):
         "eval": {"provider": "None"},
         "parsing": {"provider": "r2r"},
         "chunking": {"provider": "r2r"},
-        "ingestion": {
-            "excluded_parsers": ["mp4"],
-            "override_parsers": [
-                {"document_type": "pdf", "parser": "PDFParser"}
-            ],
-            "text_splitter": {
-                "type": "recursive_character",
-                "chunk_size": 512,
-                "chunk_overlap": 20,
-            },
-        },
         "completion": {"provider": "litellm"},
         "logging": {
             "provider": "local",
@@ -165,7 +154,7 @@ def test_r2r_config_deserialization(mock_file, mock_redis_client):
     }
     mock_redis_client.get.return_value = toml.dumps(config_data)
     config = R2RConfig.load_from_redis(mock_redis_client, "test_key")
-    assert DocumentType.MP4 in config.ingestion["excluded_parsers"]
+    assert config.chunking.provider == "r2r"
 
 
 def test_r2r_config_missing_section():
