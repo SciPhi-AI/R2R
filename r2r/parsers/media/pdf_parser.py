@@ -1,5 +1,6 @@
 import asyncio
 import string
+import unicodedata
 from io import BytesIO
 from typing import AsyncGenerator
 
@@ -24,26 +25,37 @@ class PDFParser(AsyncParser[DataType]):
         """Ingest PDF data and yield text from each page."""
         if isinstance(data, str):
             raise ValueError("PDF data must be in bytes format.")
-        import unicodedata
         pdf = self.PdfReader(BytesIO(data))
         for page in pdf.pages:
             page_text = page.extract_text()
             if page_text is not None:
                 page_text = "".join(
-                    filter(lambda x: (
-                      unicodedata.category(x) in ['Ll', 'Lu', 'Lt', 'Lm', 'Lo', 'Nl', 'No'] or  # Keep letters and numbers
-                        '\u4E00' <= x <= '\u9FFF' or  # Chinese characters
-                        '\u0600' <= x <= '\u06FF' or  # Arabic characters
-                        '\u0400' <= x <= '\u04FF' or  # Cyrillic letters
-                        '\u0370' <= x <= '\u03FF' or  # Greek letters
-                        '\u0E00' <= x <= '\u0E7F' or  # Thai
-                        '\u3040' <= x <= '\u309F' or  # Japanese Hiragana
-                        '\u30A0' <= x <= '\u30FF' or  # Katakana
-                        # Other printable characters
-                        x in string.printable
-                    ), page_text)
+                    filter(
+                        lambda x: (
+                            unicodedata.category(x)
+                            in [
+                                "Ll",
+                                "Lu",
+                                "Lt",
+                                "Lm",
+                                "Lo",
+                                "Nl",
+                                "No",
+                            ]  # Keep letters and numbers
+                            or "\u4E00" <= x <= "\u9FFF"  # Chinese characters
+                            or "\u0600" <= x <= "\u06FF"  # Arabic characters
+                            or "\u0400" <= x <= "\u04FF"  # Cyrillic letters
+                            or "\u0370" <= x <= "\u03FF"  # Greek letters
+                            or "\u0E00" <= x <= "\u0E7F"  # Thai
+                            or "\u3040" <= x <= "\u309F"  # Japanese Hiragana
+                            or "\u30A0" <= x <= "\u30FF"  # Katakana
+                            or
+                            # Other printable characters
+                            x in string.printable
+                        ),
+                        page_text,
+                    )
                 )  # Keep characters in common languages ; # Filter out non-printable characters
-                print("\n##### pypdf parser page_text #####\n", page_text)
                 yield page_text
 
 
@@ -102,11 +114,13 @@ class PDFParserUnstructured(AsyncParser[DataType]):
             self.partition_pdf = partition_pdf
 
         except ImportError as e:
-            print("PDFParserUnstructured ImportError :  " ,  e)
-            print( """Please install missing modules using : 
-            pip install unstructured  unstructured_pytesseract  unstructured_inference  
+            print("PDFParserUnstructured ImportError :  ", e)
+            print(
+                """Please install missing modules using :
+            pip install unstructured  unstructured_pytesseract  unstructured_inference
             pip install pdfplumber   matplotlib   pillow_heif  toml
-            """)
+            """
+            )
 
     async def ingest(
         self,
