@@ -55,7 +55,6 @@ class ChunkingPipe(AsyncPipe):
 
             try:
                 iteration = 0
-                print("item.data = ", item.data)
                 async for chunk in self.chunking_provider.chunk(item.data):
                     yield Fragment(
                         id=generate_id_from_label(f"{item.id}-{iteration}"),
