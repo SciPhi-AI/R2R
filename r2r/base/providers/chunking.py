@@ -36,6 +36,6 @@ class ChunkingProvider(Provider, ABC):
         self.config = config
 
     @abstractmethod
-    async def chunk(self, parsed_document: Any) -> AsyncGenerator[Any, None]:
+    async def chunk(self, parsed_document: str) -> AsyncGenerator[str, None]:
         """Chunk the parsed document using the configured chunking strategy."""
         pass
