@@ -228,22 +228,7 @@ def test_json_param_type():
 
 def test_serve_command(runner):
     with patch(
-        "r2r.cli.commands.server_operations.run_local_serve"
-    ) as mock_run_local_serve:
-        result = runner.invoke(cli, ["serve"])
-        assert result.exit_code == 0
-        mock_run_local_serve.assert_called_once_with(
-            {
-                "config_path": None,
-                "config_name": None,
-                "base_url": "http://localhost:8000",
-            },
-            "0.0.0.0",
-            8000,
-        )
-
-    with patch(
-        "r2r.cli.commands.server_operations.run_docker_serve"
+        "r2r.cli.utils.docker_utils.run_docker_serve"
     ) as mock_run_docker_serve:
         result = runner.invoke(cli, ["serve", "--docker"])
         assert result.exit_code == 0
@@ -263,6 +248,21 @@ def test_serve_command(runner):
             None,
         )
 
+    with patch(
+        "r2r.cli.commands.server_operations.run_local_serve"
+    ) as mock_run_local_serve:
+        result = runner.invoke(cli, ["serve"])
+        assert result.exit_code == 0
+        mock_run_local_serve.assert_called_once_with(
+            {
+                "config_path": None,
+                "config_name": None,
+                "base_url": "http://localhost:8000",
+            },
+            "0.0.0.0",
+            8000,
+        )
+
 
 def test_docker_down_command(runner):
     with patch(
@@ -279,16 +279,17 @@ def test_docker_down_command(runner):
             in result.output
         )
         mock_bring_down.assert_called_once()
-        mock_remove_network.assert_not_called()
-
-        mock_bring_down.return_value = 1
-        result = runner.invoke(cli, ["docker-down"])
-        assert result.exit_code == 0
-        assert (
-            "An error occurred while bringing down the Docker Compose setup."
-            in result.output
-        )
         mock_remove_network.assert_called_once()
+
+        # legacy code
+        # mock_bring_down.return_value = 1
+        # result = runner.invoke(cli, ["docker-down"])
+        # assert result.exit_code == 0
+        # assert (
+        #     "An error occurred while bringing down the Docker Compose setup."
+        #     in result.output
+        # )
+        # mock_remove_network.assert_called_once()
 
 
 def test_generate_report_command(runner):

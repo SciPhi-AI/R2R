@@ -7,7 +7,7 @@ from r2r.main.assembly.factory_extensions import R2RPipeFactoryWithMultiSearch
 
 def main(task_prompt_name="hyde", query="Who was aristotle?"):
     # Load the configuration file
-    config = R2RConfig.from_json()
+    config = R2RConfig.from_toml()
 
     app = (
         R2RBuilder(config)
