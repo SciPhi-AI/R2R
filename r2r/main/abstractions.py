@@ -6,11 +6,13 @@ from r2r.assistants import R2RRAGAssistant, R2RStreamingRAGAssistant
 from r2r.base import (
     AsyncPipe,
     AuthProvider,
+    ChunkingProvider,
     CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
     EvalProvider,
     KGProvider,
+    ParsingProvider,
     PromptProvider,
 )
 from r2r.pipelines import (
@@ -23,12 +25,14 @@ from r2r.pipelines import (
 
 class R2RProviders(BaseModel):
     auth: Optional[AuthProvider]
+    chunking: Optional[ChunkingProvider]
+    llm: Optional[CompletionProvider]
     database: Optional[DatabaseProvider]
     embedding: Optional[EmbeddingProvider]
-    llm: Optional[CompletionProvider]
     prompt: Optional[PromptProvider]
     eval: Optional[EvalProvider]
     kg: Optional[KGProvider]
+    parsing: Optional[ParsingProvider]
 
     class Config:
         arbitrary_types_allowed = True
@@ -36,6 +40,7 @@ class R2RProviders(BaseModel):
 
 class R2RPipes(BaseModel):
     parsing_pipe: Optional[AsyncPipe]
+    chunking_pipe: Optional[AsyncPipe]
     embedding_pipe: Optional[AsyncPipe]
     vector_storage_pipe: Optional[AsyncPipe]
     vector_search_pipe: Optional[AsyncPipe]

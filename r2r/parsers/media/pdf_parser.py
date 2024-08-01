@@ -107,7 +107,6 @@ class PDFParserSix(AsyncParser[DataType]):
 
 class PDFParserUnstructured(AsyncParser[DataType]):
     def __init__(self):
-        # pdf parser
         try:
             from unstructured.partition.pdf import partition_pdf
 

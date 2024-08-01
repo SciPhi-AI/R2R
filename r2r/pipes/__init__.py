@@ -1,4 +1,5 @@
 from .abstractions.search_pipe import SearchPipe
+from .ingestion.chunking_pipe import ChunkingPipe
 from .ingestion.embedding_pipe import EmbeddingPipe
 from .ingestion.kg_extraction_pipe import KGExtractionPipe
 from .ingestion.kg_storage_pipe import KGStoragePipe
@@ -19,6 +20,7 @@ __all__ = [
     "EvalPipe",
     "KGExtractionPipe",
     "ParsingPipe",
+    "ChunkingPipe",
     "QueryTransformPipe",
     "SearchRAGPipe",
     "StreamingSearchRAGPipe",

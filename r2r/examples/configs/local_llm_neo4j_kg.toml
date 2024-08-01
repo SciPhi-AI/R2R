@@ -35,5 +35,5 @@ kg_extraction_prompt = "zero_shot_ner_kg_extraction"
   stream = false
   add_generation_kwargs = { }
 
-[vector_database]
+[database]
 provider = "pgvector"
