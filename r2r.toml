@@ -38,11 +38,9 @@ concurrent_request_limit = 256
 provider = "None"
 
 [ingestion]
-excluded_parsers = [ "mp4" ]
-
   [[ingestion.override_parsers]]
   document_type = "pdf"
-  parser = "PDFParser"
+  parser = "PDFParserUnstructured"
 
   [ingestion.text_splitter]
   type = "recursive_character"
