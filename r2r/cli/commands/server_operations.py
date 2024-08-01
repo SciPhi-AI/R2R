@@ -54,25 +54,29 @@ def generate_report():
 
     # Get Docker info
     try:
-        # Get running containers
+        subprocess.run(
+            ["docker", "version"], check=True, capture_output=True, timeout=5
+        )
+
         docker_ps_output = subprocess.check_output(
             ["docker", "ps", "--format", "{{.ID}}\t{{.Names}}\t{{.Status}}"],
             text=True,
-        ).decode("utf-8")
+            timeout=5,
+        ).strip()
         report["docker_ps"] = [
             dict(zip(["id", "name", "status"], line.split("\t")))
-            for line in docker_ps_output.strip().split("\n")
+            for line in docker_ps_output.split("\n")
             if line
         ]
 
-        # Get running subnets in Docker
         docker_network_output = subprocess.check_output(
             ["docker", "network", "ls", "--format", "{{.ID}}\t{{.Name}}"],
             text=True,
-        ).decode("utf-8")
+            timeout=5,
+        ).strip()
         networks = [
             dict(zip(["id", "name"], line.split("\t")))
-            for line in docker_network_output.strip().split("\n")
+            for line in docker_network_output.split("\n")
             if line
         ]
 
@@ -88,8 +92,9 @@ def generate_report():
                     "{{range .IPAM.Config}}{{.Subnet}}{{end}}",
                 ],
                 text=True,
-            ).decode("utf-8")
-            if subnet := inspect_output.strip():
+                timeout=5,
+            ).strip()
+            if subnet := inspect_output:
                 network["subnet"] = subnet
                 report["docker_subnets"].append(network)
 
@@ -98,6 +103,10 @@ def generate_report():
     except FileNotFoundError:
         report["docker_error"] = (
             "Docker command not found. Is Docker installed and in PATH?"
+        )
+    except subprocess.TimeoutExpired:
+        report["docker_error"] = (
+            "Docker command timed out. Docker might be unresponsive."
         )
 
     # Get OS information
@@ -188,7 +197,7 @@ def serve(
         time.sleep(1)
         import webbrowser
 
-        url = f"http://localhost"
+        url = "http://localhost"
         click.echo(f"Opening browser to {url}")
         webbrowser.open(url)
 

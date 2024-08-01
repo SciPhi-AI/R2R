@@ -133,94 +133,48 @@ def run_docker_serve(
 
 
 def check_llm_reqs(llm_provider, model_provider, include_ollama=False):
+    providers = {
+        "openai": {"env_vars": ["OPENAI_API_KEY"]},
+        "anthropic": {"env_vars": ["ANTHROPIC_API_KEY"]},
+        "azure": {
+            "env_vars": [
+                "AZURE_API_KEY",
+                "AZURE_API_BASE",
+                "AZURE_API_VERSION",
+            ]
+        },
+        "vertex": {
+            "env_vars": [
+                "GOOGLE_APPLICATION_CREDENTIALS",
+                "VERTEX_PROJECT",
+                "VERTEX_LOCATION",
+            ]
+        },
+        "bedrock": {
+            "env_vars": [
+                "AWS_ACCESS_KEY_ID",
+                "AWS_SECRET_ACCESS_KEY",
+                "AWS_REGION_NAME",
+            ]
+        },
+        "groq": {"env_vars": ["GROQ_API_KEY"]},
+        "cohere": {"env_vars": ["COHERE_API_KEY"]},
+        "anyscale": {"env_vars": ["ANYSCALE_API_KEY"]},
+    }
 
-    if llm_provider == "openai" or model_provider == "openai":
-        openai_api_key = os.environ.get("OPENAI_API_KEY")
-        if not openai_api_key:
-            if not click.confirm(
-                "You have specified `openai` as a default LLM provider, would you like to continue without setting `OPENAI_API_KEY`?",
-                default=False,
-            ):
-                click.echo("Aborting Docker setup.")
-                sys.exit(1)
-    if llm_provider == "anthropic" or model_provider == "anthropic":
-        anthropic_api_key = os.environ.get("ANTHROPIC_API_KEY")
-        if not anthropic_api_key:
-            if not click.confirm(
-                "You have specified `anthropic` as a default LLM provider, would you like to continue without setting `ANTHROPIC_API_KEY`?",
-                default=False,
-            ):
-                click.echo("Aborting Docker setup.")
-                sys.exit(1)
-    if llm_provider == "azure" or model_provider == "azure":
-        azure_api_key = os.environ.get("AZURE_API_KEY")
-        azure_api_base = os.environ.get("AZURE_API_BASE")
-        azure_api_version = os.environ.get("AZURE_API_VERSION")
-        if not azure_api_key or not azure_api_base or not azure_api_version:
-            if not click.confirm(
-                "You have specified `azure` as a default LLM provider, would you like to continue without setting `AZURE_API_KEY`, `AZURE_API_BASE`, and `AZURE_API_VERSION`?",
-                default=False,
-            ):
-                click.echo("Aborting Docker setup.")
-                sys.exit(1)
-    if llm_provider == "vertex" or model_provider == "vertex":
-        google_credentials = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
-        vertex_project = os.environ.get("VERTEX_PROJECT")
-        vertex_location = os.environ.get("VERTEX_LOCATION")
-        if not google_credentials or not vertex_project or not vertex_location:
-            if not click.confirm(
-                "You have specified `vertex` as a default LLM provider, would you like to continue without setting `GOOGLE_APPLICATION_CREDENTIALS`, `VERTEX_PROJECT`, and `VERTEX_LOCATION`?",
-                default=False,
-            ):
-                click.echo("Aborting Docker setup.")
-                sys.exit(1)
-    if llm_provider == "bedrock" or model_provider == "bedrock":
-        aws_access_key = os.environ.get("AWS_ACCESS_KEY_ID")
-        aws_secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
-        aws_region_name = os.environ.get("AWS_REGION_NAME")
-        if (
-            not aws_access_key
-            or not aws_secret_access_key
-            or not aws_region_name
-        ):
-            if not click.confirm(
-                "You have specified `bedrock` as a default LLM provider, would you like to continue without setting `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_REGION_NAME`?",
-                default=False,
-            ):
-                click.echo("Aborting Docker setup.")
-                sys.exit(1)
-    if llm_provider == "groq" or model_provider == "groq":
-        groq_api_key = os.environ.get("GROQ_API_KEY")
-        if not groq_api_key:
-            if not click.confirm(
-                "You have specified `groq` as a default LLM provider, would you like to continue without setting `GROQ_API_KEY`?",
-                default=False,
-            ):
-                click.echo("Aborting Docker setup.")
-                sys.exit(1)
-    if llm_provider == "cohere" or model_provider == "cohere":
-        cohere_api_key = os.environ.get("COHERE_API_KEY")
-        if not cohere_api_key:
-            if not click.confirm(
-                "You have specified `cohere` as a default LLM provider, would you like to continue without setting `COHERE_API_KEY`?",
-                default=False,
-            ):
-                click.echo("Aborting Docker setup.")
-                sys.exit(1)
-    if llm_provider == "anyscale" or model_provider == "anyscale":
-        anyscale_api_key = os.environ.get("ANYSCALE_API_KEY")
-        if not anyscale_api_key:
-            if not click.confirm(
-                "You have specified `anyscale` as a default LLM provider, would you like to continue without setting `ANYSCALE_API_KEY`?",
-                default=False,
-            ):
-                click.echo("Aborting Docker setup.")
-                sys.exit(1)
+    for provider, config in providers.items():
+        if llm_provider == provider or model_provider == provider:
+            if missing_vars := [
+                var for var in config["env_vars"] if not os.environ.get(var)
+            ]:
+                message = f"You have specified `{provider}` as a default LLM provider, but the following environment variables are missing: {', '.join(missing_vars)}. Would you like to continue?"
+                if not click.confirm(message, default=False):
+                    click.echo("Aborting Docker setup.")
+                    sys.exit(1)
+
     if (
-        llm_provider == "ollama"
-        or model_provider == "ollama"
-        and include_ollama
-    ):
+        llm_provider == "ollama" or model_provider == "ollama"
+    ) and include_ollama:
         check_external_ollama()
 
 
