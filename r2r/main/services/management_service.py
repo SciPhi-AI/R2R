@@ -178,7 +178,7 @@ class ManagementService(Service):
     async def aapp_settings(self, *args: Any, **kwargs: Any):
         prompts = self.providers.prompt.get_all_prompts()
         return {
-            "config": self.config.to_json(),
+            "config": self.config.to_toml(),
             "prompts": {
                 name: prompt.dict() for name, prompt in prompts.items()
             },
