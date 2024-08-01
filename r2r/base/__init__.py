@@ -74,7 +74,7 @@ from .providers.database import (
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
 from .providers.eval import EvalConfig, EvalProvider
 from .providers.kg import KGConfig, KGProvider, update_kg_prompt
-from .providers.llm import LLMConfig, LLMProvider
+from .providers.llm import CompletionConfig, CompletionProvider
 from .providers.prompt import PromptConfig, PromptProvider
 from .utils import (
     EntityType,
@@ -165,8 +165,8 @@ __all__ = [
     "VectorStoreQuery",
     "LLMChatCompletion",
     "LLMChatCompletionChunk",
-    "LLMConfig",
-    "LLMProvider",
+    "CompletionConfig",
+    "CompletionProvider",
     "AuthConfig",
     "AuthProvider",
     "CryptoConfig",

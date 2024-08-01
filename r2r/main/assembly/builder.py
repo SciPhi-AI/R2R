@@ -5,12 +5,12 @@ from r2r.assistants import R2RRAGAssistant
 from r2r.base import (
     AsyncPipe,
     AuthProvider,
+    CompletionProvider,
     CryptoProvider,
     DatabaseProvider,
     EmbeddingProvider,
     EvalProvider,
     KGProvider,
-    LLMProvider,
     PromptProvider,
 )
 from r2r.pipelines import (
@@ -39,25 +39,25 @@ class R2RBuilder:
     )
     CONFIG_OPTIONS = {
         "default": None,
-        "local_llm": os.path.join(config_root, "local_llm.json"),
-        "local_llm_rerank": os.path.join(config_root, "local_llm_rerank.json"),
-        "neo4j_kg": os.path.join(config_root, "neo4j_kg.json"),
+        "local_llm": os.path.join(config_root, "local_llm.toml"),
+        "local_llm_rerank": os.path.join(config_root, "local_llm_rerank.toml"),
+        "neo4j_kg": os.path.join(config_root, "neo4j_kg.toml"),
         "neo4j_kg_no_vector_postgres": os.path.join(
-            config_root, "neo4j_kg_no_vector_postgres.json"
+            config_root, "neo4j_kg_no_vector_postgres.toml"
         ),
         "local_llm_neo4j_kg": os.path.join(
-            config_root, "local_llm_neo4j_kg.json"
+            config_root, "local_llm_neo4j_kg.toml"
         ),
-        "postgres_logging": os.path.join(config_root, "postgres_logging.json"),
-        "auth": os.path.join(config_root, "auth.json"),
+        "postgres_logging": os.path.join(config_root, "postgres_logging.toml"),
+        "auth": os.path.join(config_root, "auth.toml"),
     }
 
     @staticmethod
     def _get_config(config_name):
         if config_name is None:
-            return R2RConfig.from_json()
+            return R2RConfig.from_toml()
         if config_name in R2RBuilder.CONFIG_OPTIONS:
-            return R2RConfig.from_json(R2RBuilder.CONFIG_OPTIONS[config_name])
+            return R2RConfig.from_toml(R2RBuilder.CONFIG_OPTIONS[config_name])
         raise ValueError(f"Invalid config name: {config_name}")
 
     def __init__(
@@ -80,7 +80,7 @@ class R2RBuilder:
         self.database_provider_override: Optional[DatabaseProvider] = None
         self.embedding_provider_override: Optional[EmbeddingProvider] = None
         self.eval_provider_override: Optional[EvalProvider] = None
-        self.llm_provider_override: Optional[LLMProvider] = None
+        self.llm_provider_override: Optional[CompletionProvider] = None
         self.prompt_provider_override: Optional[PromptProvider] = None
         self.kg_provider_override: Optional[KGProvider] = None
         self.crypto_provider_override: Optional[CryptoProvider] = None
@@ -141,7 +141,7 @@ class R2RBuilder:
         self.eval_provider_override = provider
         return self
 
-    def with_llm_provider(self, provider: LLMProvider):
+    def with_llm_provider(self, provider: CompletionProvider):
         self.llm_provider_override = provider
         return self
 

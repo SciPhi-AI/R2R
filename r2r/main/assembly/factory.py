@@ -8,6 +8,8 @@ from r2r.base import (
     AsyncPipe,
     AuthConfig,
     AuthProvider,
+    CompletionConfig,
+    CompletionProvider,
     CryptoConfig,
     CryptoProvider,
     DatabaseConfig,
@@ -17,8 +19,6 @@ from r2r.base import (
     EvalProvider,
     KGProvider,
     KVLoggingSingleton,
-    LLMConfig,
-    LLMProvider,
     PromptConfig,
     PromptProvider,
 )
@@ -133,14 +133,9 @@ class R2RProviderFactory:
 
             embedding_provider = OllamaEmbeddingProvider(embedding)
 
-        elif embedding.provider == "sentence-transformers":
-            from r2r.providers import SentenceTransformerEmbeddingProvider
-
-            embedding_provider = SentenceTransformerEmbeddingProvider(
-                embedding
-            )
         elif embedding is None:
             embedding_provider = None
+
         else:
             raise ValueError(
                 f"Embedding provider {embedding.provider} not supported"
@@ -170,17 +165,17 @@ class R2RProviderFactory:
         return eval_provider
 
     def create_llm_provider(
-        self, llm_config: LLMConfig, *args, **kwargs
-    ) -> LLMProvider:
-        llm_provider: Optional[LLMProvider] = None
+        self, llm_config: CompletionConfig, *args, **kwargs
+    ) -> CompletionProvider:
+        llm_provider: Optional[CompletionProvider] = None
         if llm_config.provider == "openai":
-            from r2r.providers import OpenAILLMProvider
+            from r2r.providers import OpenAICompletionProvider
 
-            llm_provider = OpenAILLMProvider(llm_config)
+            llm_provider = OpenAICompletionProvider(llm_config)
         elif llm_config.provider == "litellm":
-            from r2r.providers import LiteLLMProvider
+            from r2r.providers import LiteCompletionProvider
 
-            llm_provider = LiteLLMProvider(llm_config)
+            llm_provider = LiteCompletionProvider(llm_config)
         else:
             raise ValueError(
                 f"Language model provider {llm_config.provider} not supported"
@@ -219,7 +214,7 @@ class R2RProviderFactory:
         self,
         embedding_provider_override: Optional[EmbeddingProvider] = None,
         eval_provider_override: Optional[EvalProvider] = None,
-        llm_provider_override: Optional[LLMProvider] = None,
+        llm_provider_override: Optional[CompletionProvider] = None,
         prompt_provider_override: Optional[PromptProvider] = None,
         kg_provider_override: Optional[KGProvider] = None,
         crypto_provider_override: Optional[CryptoProvider] = None,
@@ -247,7 +242,7 @@ class R2RProviderFactory:
         )
 
         llm_provider = llm_provider_override or self.create_llm_provider(
-            self.config.completions, *args, **kwargs
+            self.config.completion, *args, **kwargs
         )
         kg_provider = kg_provider_override or self.create_kg_provider(
             self.config.kg, *args, **kwargs
@@ -348,12 +343,10 @@ class R2RPipeFactory:
         from r2r.base import RecursiveCharacterTextSplitter
         from r2r.pipes import EmbeddingPipe
 
-        text_splitter_config = self.config.embedding.extra_fields.get(
-            "text_splitter"
-        )
+        text_splitter_config = self.config.ingestion.get("text_splitter")
         if not text_splitter_config:
             raise ValueError(
-                "Text splitter config not found in embedding config"
+                "Text splitter config not found in ingestion config."
             )
 
         text_splitter = RecursiveCharacterTextSplitter(
@@ -395,7 +388,7 @@ class R2RPipeFactory:
         from r2r.base import RecursiveCharacterTextSplitter
         from r2r.pipes import KGExtractionPipe
 
-        text_splitter_config = self.config.kg.extra_fields.get("text_splitter")
+        text_splitter_config = self.config.ingestion.get("text_splitter")
         if not text_splitter_config:
             raise ValueError("Text splitter config not found in kg config.")
 
@@ -612,7 +605,7 @@ class R2RAssistantFactory:
         assistant_config = AssistantConfig(
             system_instruction_name="rag_agent",
             tools=[],  # Add any specific tools for the RAG assistant here
-            generation_config=self.config.completions.generation_config,
+            generation_config=self.config.completion.generation_config,
             stream=stream,
         )
 

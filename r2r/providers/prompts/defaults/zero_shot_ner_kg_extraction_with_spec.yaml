@@ -1,0 +1,23 @@
+zero_shot_ner_kg_extraction_with_spec:
+  template: >
+    Perform Named Entity Recognition (NER) and extract knowledge graph triplets
+    from the text. NER identifies named entities of given entity types, and
+    triple extraction identifies relationships between entities using specified
+    predicates.
+
+
+    **Entity Types**
+
+    {entity_types}
+
+
+    **Predicates**
+
+    {relations}
+
+
+    **Text**{input}
+  input_types:
+    entity_types: str
+    relations: str
+    input: str

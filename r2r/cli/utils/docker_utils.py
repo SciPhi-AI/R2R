@@ -73,8 +73,8 @@ def remove_r2r_network():
 
 def run_local_serve(obj, host, port):
     wrapper = R2RExecutionWrapper(**obj, client_mode=False)
-    llm_provider = wrapper.app.config.completions.provider
-    llm_model = wrapper.app.config.completions.generation_config.model
+    llm_provider = wrapper.app.config.completion.provider
+    llm_model = wrapper.app.config.completion.generation_config.model
     model_provider = llm_model.split("/")[0]
 
     check_llm_reqs(llm_provider, model_provider, include_ollama=True)
@@ -95,14 +95,14 @@ def run_docker_serve(
     set_config_env_vars(obj)
     set_ollama_api_base(exclude_ollama)
     config = (
-        R2RConfig.from_json(obj["config_path"])
+        R2RConfig.from_toml(obj["config_path"])
         if obj["config_path"]
-        else R2RConfig.from_json(
+        else R2RConfig.from_toml(
             R2RBuilder.CONFIG_OPTIONS[obj["config_name"] or "default"]
         )
     )
-    llm_provider = config.completions.provider
-    llm_model = config.completions.generation_config.model
+    llm_provider = config.completion.provider
+    llm_model = config.completion.generation_config.model
     model_provider = llm_model.split("/")[0]
 
     check_llm_reqs(llm_provider, model_provider, include_ollama=True)

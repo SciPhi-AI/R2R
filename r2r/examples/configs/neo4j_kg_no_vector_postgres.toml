@@ -1,0 +1,17 @@
+[auth]
+provider = "None"
+
+[database]
+provider = "None"
+
+[kg]
+provider = "neo4j"
+batch_size = 1
+
+  [kg.kg_extraction_config]
+  model = "gpt-4o"
+  temperature = 0.1
+  top_p = 1
+  max_tokens_to_sample = 1_024
+  stream = false
+  add_generation_kwargs = { }

@@ -4,7 +4,7 @@ from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
-from ..providers.llm import GenerationConfig, LLMProvider
+from ..providers.llm import CompletionProvider, GenerationConfig
 from ..providers.prompt import PromptProvider
 from .llm import LLMChatCompletion
 
@@ -73,7 +73,7 @@ class AssistantConfig(BaseModel):
 class Assistant(ABC):
     def __init__(
         self,
-        llm_provider: LLMProvider,
+        llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         config: AssistantConfig,
     ):
