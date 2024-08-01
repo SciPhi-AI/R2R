@@ -336,6 +336,11 @@ class R2RPipeFactory:
             override_parsers=override_parsers or [],
         )
 
+    def chunking_pipe(self, *args, **kwargs) -> Any:
+        from r2r.pipes import ChunkingPipe
+
+        return ChunkingPipe()
+
     def create_embedding_pipe(self, *args, **kwargs) -> Any:
         if self.config.embedding.provider is None:
             return None

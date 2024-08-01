@@ -86,8 +86,9 @@ class R2RConfig:
 
         self.ingestion = self.ingestion  # for type hinting
         self.ingestion["excluded_parsers"] = [
-            DocumentType(k) for k in self.ingestion["excluded_parsers"]
-        ]
+            DocumentType(k) for k in self.ingestion.get("excluded_parsers", [])
+        ]  # fix types
+
         # override GenerationConfig defaults
         GenerationConfig.set_default(
             **self.completion.generation_config.dict()
