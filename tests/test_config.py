@@ -62,6 +62,8 @@ def mock_file():
             },
             "crypto": {"provider": "bcrypt"},
             "database": {"provider": "postgres"},
+            "parsing": {"provider": "r2r", "excluded_parsers": ["mp4"]},
+            "chunking": {"provider": "r2r", "method": "recursive"},
             "embedding": {
                 "provider": "litellm",
                 "base_model": "text-embedding-3-small",
@@ -139,6 +141,8 @@ def test_r2r_config_deserialization(mock_file, mock_redis_client):
         },
         "kg": {"provider": "None"},
         "eval": {"provider": "None"},
+        "parsing": {"provider": "r2r"},
+        "chunking": {"provider": "r2r"},
         "ingestion": {
             "excluded_parsers": ["mp4"],
             "override_parsers": [
