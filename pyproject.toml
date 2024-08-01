@@ -9,7 +9,7 @@ description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
 readme = "README.md"
-include = ["r2r.json", "compose.yaml", "compose.neo4j.yaml", "compose.ollama.yaml", "compose.postgres.yaml", "pyproject.toml"]
+include = ["r2r.toml", "compose.yaml", "compose.neo4j.yaml", "compose.ollama.yaml", "compose.postgres.yaml", "pyproject.toml"]
 
 [tool.poetry.dependencies]
 # Python Versions
