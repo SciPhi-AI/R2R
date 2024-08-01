@@ -34,6 +34,8 @@ class UnstructuredParsingProvider(ParsingProvider):
         if isinstance(data, bytes):
             data = BytesIO(data)
 
+        # TODO - Include check on excluded parsers here.
+
         t0 = time.time()
         elements = self.partition(file=data)
 
