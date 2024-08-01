@@ -147,6 +147,10 @@ class R2RClient:
     def health(self) -> dict:
         return self._make_request("GET", "health")
 
+    def server_stats(self) -> dict:
+        self._ensure_authenticated()
+        return self._make_request("GET", "server_stats")
+
     def update_prompt(
         self,
         name: str = "default_system",
