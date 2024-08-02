@@ -38,7 +38,7 @@ Then, after installing R2R, it is recommended to launch with Docker, if possible
 
 ```bash
 # export OPENAI_API_KEY=sk-...
-r2r --config-name=default serve --docker
+r2r serve --docker
 ```
 
 Alternatively, you may run R2R directly from the python package, but additional dependencies like Postgres+pgvector must be configured:
@@ -65,7 +65,7 @@ To get started with R2R, we recommend starting with the quickstart and then movi
 - [JS SDK](https://r2r-docs.sciphi.ai/js-sdk)
 - [API Reference](https://r2r-docs.sciphi.ai/api-reference/introduction)
 
-  
+
 ### Auth & Admin Features
 - [User Auth](https://r2r-docs.sciphi.ai/cookbooks/user-auth): A cookbook showing how to authenticate users using R2R.
 - [Analytics & Observability](https://r2r-docs.sciphi.ai/cookbooks/observability): A cookbook showing R2Rs end to end logging and analytics.
