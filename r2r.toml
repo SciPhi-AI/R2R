@@ -34,7 +34,7 @@ provider = "postgres"
 
 [embedding]
 provider = "litellm"
-base_model = "text-embedding-3-small"
+base_model = "openai/text-embedding-3-small"
 base_dimension = 512
 batch_size = 128
 add_title_as_prefix = false

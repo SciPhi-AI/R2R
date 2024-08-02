@@ -3,7 +3,7 @@ from abc import ABCMeta
 from typing import AsyncGenerator, Generator, Optional
 
 from r2r.base import (
-    Assistant,
+    Agent,
     AsyncSyncMeta,
     LLMChatCompletion,
     LLMChatCompletionChunk,
@@ -32,7 +32,7 @@ def sync_wrapper(async_gen):
     return wrapper()
 
 
-class R2RAssistant(Assistant, metaclass=CombinedMeta):
+class R2RAssistant(Agent, metaclass=CombinedMeta):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._reset()
@@ -94,12 +94,12 @@ class R2RAssistant(Assistant, metaclass=CombinedMeta):
                     )
             else:
                 self.conversation.append(
-                    Message(role="assistant", content=message.content)
+                    Message(role="agent", content=message.content)
                 )
                 self._completed = True
 
 
-class R2RStreamingAssistant(Assistant):
+class R2RStreamingAssistant(Agent):
     async def arun(
         self,
         system_instruction: Optional[str] = None,
@@ -198,7 +198,7 @@ class R2RStreamingAssistant(Assistant):
             elif chunk.choices[0].finish_reason == "stop":
                 if content_buffer:
                     self.conversation.append(
-                        Message(role="assistant", content=content_buffer)
+                        Message(role="agent", content=content_buffer)
                     )
                 self._completed = True
                 yield "</completion>"

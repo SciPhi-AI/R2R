@@ -26,7 +26,7 @@ class ManagementService(Service):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
-        assistants: R2RAssistants,
+        agents: R2RAssistants,
         run_manager: RunManager,
         logging_connection: KVLoggingSingleton,
     ):
@@ -34,7 +34,7 @@ class ManagementService(Service):
             config,
             providers,
             pipelines,
-            assistants,
+            agents,
             run_manager,
             logging_connection,
         )

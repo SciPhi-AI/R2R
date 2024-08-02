@@ -31,7 +31,7 @@ class RetrievalService(Service):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
-        assistants: R2RAssistants,
+        agents: R2RAssistants,
         run_manager: RunManager,
         logging_connection: KVLoggingSingleton,
     ):
@@ -39,7 +39,7 @@ class RetrievalService(Service):
             config,
             providers,
             pipelines,
-            assistants,
+            agents,
             run_manager,
             logging_connection,
         )
@@ -250,7 +250,7 @@ class RetrievalService(Service):
                         async with manage_run(self.run_manager, "arag_agent"):
                             async for (
                                 chunk
-                            ) in self.assistants.streaming_rag_agent.arun(
+                            ) in self.agents.streaming_rag_agent.arun(
                                 messages=messages,
                                 system_instruction=task_prompt_override,
                                 vector_search_settings=vector_search_settings,
@@ -264,7 +264,7 @@ class RetrievalService(Service):
 
                     return stream_response()
 
-                results = await self.assistants.rag_agent.arun(
+                results = await self.agents.rag_agent.arun(
                     messages=messages,
                     system_instruction=task_prompt_override,
                     vector_search_settings=vector_search_settings,

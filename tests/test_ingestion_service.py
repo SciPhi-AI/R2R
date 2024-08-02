@@ -65,13 +65,13 @@ def ingestion_service(mock_vector_db, mock_embedding_model):
     }
     run_manager = RunManager(logger)
     logging_connection = Mock()
-    assistants = Mock(spec=R2RAssistants)
+    agents = Mock(spec=R2RAssistants)
 
     service = IngestionService(
         config,
         providers,
         pipelines,
-        assistants,
+        agents,
         run_manager,
         logging_connection=logging_connection,
     )
