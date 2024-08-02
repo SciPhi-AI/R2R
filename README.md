@@ -60,6 +60,12 @@ To get started with R2R, we recommend starting with the quickstart and then movi
 - [R2R Quickstart](https://r2r-docs.sciphi.ai/quickstart): A quickstart guide designed to get you familiarized with R2R.
 
 
+### API & SDKs
+- [Pyhon SDK](https://r2r-docs.sciphi.ai/python-sdk)
+- [JS SDK](https://r2r-docs.sciphi.ai/js-sdk)
+- [API Reference](https://r2r-docs.sciphi.ai/api-reference/introduction)
+
+  
 ### Auth & Admin Features
 - [User Auth](https://r2r-docs.sciphi.ai/cookbooks/user-auth): A cookbook showing how to authenticate users using R2R.
 - [Analytics & Observability](https://r2r-docs.sciphi.ai/cookbooks/observability): A cookbook showing R2Rs end to end logging and analytics.
