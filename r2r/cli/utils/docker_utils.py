@@ -78,8 +78,10 @@ def run_local_serve(obj, host, port):
     llm_model = wrapper.app.config.completion.generation_config.model
     model_provider = llm_model.split("/")[0]
 
+    available_port = find_available_port(port)
+
     check_llm_reqs(llm_provider, model_provider, include_ollama=True)
-    wrapper.serve(host, port)
+    wrapper.serve(host, available_port)
 
 
 def run_docker_serve(
