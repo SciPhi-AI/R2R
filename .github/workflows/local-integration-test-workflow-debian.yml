@@ -23,7 +23,7 @@ jobs:
 
     - name: Run Docker with the Ollama Docker Extension
       run: |
-        r2r --config-name=local_ollama serve --docker --docker-ext-ollama
+        r2r --config-name=local_llm serve --docker --docker-ext-ollama
 
     - name: Install Ollama Models
       run: |

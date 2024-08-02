@@ -29,12 +29,19 @@ class RetrievalRouter(BaseRouter):
                 else None
             ),
         ):
-            if "kg_search_generation_config" in request.kg_search_settings:
-                request.kg_search_settings["kg_search_generation_config"] = (
+            kg_search_settings = request.kg_search_settings or {}
+
+            if "entity_types" not in kg_search_settings:
+                kg_search_settings["entity_types"] = []
+            elif not isinstance(kg_search_settings["entity_types"], list):
+                kg_search_settings["entity_types"] = [
+                    kg_search_settings["entity_types"]
+                ]
+
+            if "kg_search_generation_config" in kg_search_settings:
+                kg_search_settings["kg_search_generation_config"] = (
                     GenerationConfig(
-                        **request.kg_search_settings[
-                            "kg_search_generation_config"
-                        ]
+                        **kg_search_settings["kg_search_generation_config"]
                         or {}
                     )
                 )
@@ -44,9 +51,7 @@ class RetrievalRouter(BaseRouter):
                 vector_search_settings=VectorSearchSettings(
                     **(request.vector_search_settings or {})
                 ),
-                kg_search_settings=KGSearchSettings(
-                    **(request.kg_search_settings or {})
-                ),
+                kg_search_settings=KGSearchSettings(**kg_search_settings),
                 user=auth_user,
             )
             return results

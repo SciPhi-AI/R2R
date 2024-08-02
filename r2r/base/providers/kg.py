@@ -163,13 +163,19 @@ def update_kg_prompt(
             "entity_types": json.dumps(
                 {
                     "entity_types": [
-                        str(entity.name.replace(' ', '_').upper()) for entity in entity_types
+                        str(entity.name.replace(" ", "_").upper())
+                        for entity in entity_types
                     ]
                 },
                 indent=4,
             ),
             "relations": json.dumps(
-                {"predicates": [str(relation.name.replace(' ', '_').upper()) for relation in relations]},
+                {
+                    "predicates": [
+                        str(relation.name.replace(" ", "_").upper())
+                        for relation in relations
+                    ]
+                },
                 indent=4,
             ),
             "input": """\n{input}""",
