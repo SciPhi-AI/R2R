@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any
 
 import toml
+from pydantic import BaseModel
 
 from ...base.abstractions.agent import AgentConfig
 from ...base.abstractions.document import DocumentType
@@ -158,6 +159,8 @@ class R2RConfig:
         # TODO - Make this approach cleaner
         if isinstance(config_section, ProviderConfig):
             config_section = config_section.dict()
+        elif isinstance(config_section, BaseModel):
+            config_section = config_section.dict(exclude_none=True)
         filtered_result = {}
         for k, v in config_section.items():
             if isinstance(k, Enum):
