@@ -205,7 +205,6 @@ class R2RClient:
             versions=versions,
             chunking_provider_override=chunking_provider_override,
         )
-        print("request= ", request)
         try:
             return self._make_request(
                 "POST",
