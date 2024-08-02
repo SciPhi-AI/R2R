@@ -33,7 +33,8 @@ class UserProfileUpdate(BaseModel):
 class AuthRouter(BaseRouter):
     def __init__(self, engine: R2REngine):
         super().__init__(engine)
-        self.setup_routes()
+        if self.engine.providers.auth:
+            self.setup_routes()
 
     def setup_routes(self):
         @self.router.post("/register", response_model=UserResponse)

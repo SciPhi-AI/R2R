@@ -4,6 +4,7 @@ from .abstractions.assistant import (
     Conversation,
     Message,
     Tool,
+    ToolResult,
 )
 from .abstractions.base import AsyncSyncMeta, syncable
 from .abstractions.document import (
@@ -111,6 +112,7 @@ __all__ = [
     "Assistant",
     "AssistantConfig",
     "Tool",
+    "ToolResult",
     "Message",
     "Conversation",
     "RedisKVLoggingProvider",

@@ -246,6 +246,8 @@ class R2RClient:
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
+        entity_types: list = [],
+        relationships: list = [],
         kg_search_generation_config: Optional[dict] = None,
     ) -> dict:
         self._ensure_authenticated()
@@ -260,6 +262,8 @@ class R2RClient:
             },
             kg_search_settings={
                 "use_kg_search": use_kg_search,
+                "entity_types": entity_types,
+                "relationships": relationships,
                 "kg_search_generation_config": kg_search_generation_config,
             },
         )

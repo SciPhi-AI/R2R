@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import Any, List
 
 from litellm import aembedding, embedding
 
@@ -20,10 +21,10 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         *args,
         **kwargs,
     ) -> None:
+        super().__init__(config)
 
         self.litellm_embedding = embedding
         self.litellm_aembedding = aembedding
-        super().__init__(config)
 
         provider = config.provider
         if not provider:
@@ -41,59 +42,22 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
 
         self.base_model = config.base_model
         self.base_dimension = config.base_dimension
+        self.semaphore = asyncio.Semaphore(config.concurrent_request_limit)
 
-    def get_embedding(
-        self,
-        text: str,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
-        **kwargs,
-    ) -> list[float]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
-            raise ValueError(
-                "LiteLLMEmbeddingProvider only supports search stage."
-            )
+    def _get_embedding_kwargs(self, **kwargs):
+        embedding_kwargs = {
+            "model": self.base_model,
+            "dimensions": self.base_dimension,
+        }
+        embedding_kwargs.update(kwargs)
+        return embedding_kwargs
 
-        try:
-            return self.litellm_embedding(
-                model=self.base_model,
-                input=text,
-                **kwargs,
-            ).data[0]["embedding"]
-        except Exception as e:
-            logger.error(f"Error getting embedding: {str(e)}")
-            raise
-
-    def get_embeddings(
-        self,
-        texts: list[str],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
-        **kwargs,
-    ) -> list[list[float]]:
-        return [
-            self.litellm_embedding(
-                model=self.base_model, input=text, **kwargs
-            ).data[0]["embedding"]
-            for text in texts
-        ]
-
-    async def async_get_embedding(
-        self,
-        text: str,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
-        **kwargs,
-    ) -> list[float]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
-            raise ValueError(
-                "LiteLLMEmbeddingProvider only supports search stage."
-            )
-
+    async def _execute_task(self, task: dict[str, Any]) -> List[float]:
+        text = task["text"]
+        kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
         try:
             response = await self.litellm_aembedding(
-                model=self.base_model,
-                input=text,
+                input=[text],
                 **kwargs,
             )
             return response.data[0]["embedding"]
@@ -101,32 +65,107 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
             logger.error(f"Error getting embedding: {str(e)}")
             raise
 
-    async def async_get_embeddings(
+    def _execute_task_sync(self, task: dict[str, Any]) -> List[float]:
+        text = task["text"]
+        kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
+        try:
+            return self.litellm_embedding(
+                input=[text],
+                **kwargs,
+            ).data[
+                0
+            ]["embedding"]
+        except Exception as e:
+            logger.error(f"Error getting embedding: {str(e)}")
+            raise
+
+    async def async_get_embedding(
         self,
-        texts: list[str],
+        text: str,
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
-    ) -> list[list[float]]:
+    ) -> List[float]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "LiteLLMEmbeddingProvider only supports search stage."
             )
-        try:
-            responses = await asyncio.gather(
-                *[
-                    self.litellm_aembedding(
-                        model=self.base_model,
-                        input=text,
-                        **kwargs,
-                    )
-                    for text in texts
-                ]
+
+        task = {
+            "text": text,
+            "stage": stage,
+            "purpose": purpose,
+            "kwargs": kwargs,
+        }
+        return await self._execute_with_backoff_async(task)
+
+    def get_embedding(
+        self,
+        text: str,
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
+        **kwargs,
+    ) -> List[float]:
+        if stage != EmbeddingProvider.PipeStage.BASE:
+            raise ValueError(
+                "LiteLLMEmbeddingProvider only supports search stage."
             )
-            return [response.data[0]["embedding"] for response in responses]
-        except Exception as e:
-            logger.error(f"Error getting embeddings: {str(e)}")
-            raise
+
+        task = {
+            "text": text,
+            "stage": stage,
+            "purpose": purpose,
+            "kwargs": kwargs,
+        }
+        return self._execute_with_backoff_sync(task)
+
+    async def async_get_embeddings(
+        self,
+        texts: List[str],
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
+        **kwargs,
+    ) -> List[List[float]]:
+        if stage != EmbeddingProvider.PipeStage.BASE:
+            raise ValueError(
+                "LiteLLMEmbeddingProvider only supports search stage."
+            )
+
+        tasks = [
+            {
+                "text": text,
+                "stage": stage,
+                "purpose": purpose,
+                "kwargs": kwargs,
+            }
+            for text in texts
+        ]
+        return await asyncio.gather(
+            *[self._execute_with_backoff_async(task) for task in tasks]
+        )
+
+    def get_embeddings(
+        self,
+        texts: List[str],
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
+        **kwargs,
+    ) -> List[List[float]]:
+        if stage != EmbeddingProvider.PipeStage.BASE:
+            raise ValueError(
+                "LiteLLMEmbeddingProvider only supports search stage."
+            )
+
+        tasks = [
+            {
+                "text": text,
+                "stage": stage,
+                "purpose": purpose,
+                "kwargs": kwargs,
+            }
+            for text in texts
+        ]
+        return [self._execute_with_backoff_sync(task) for task in tasks]
 
     def rerank(
         self,
