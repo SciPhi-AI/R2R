@@ -292,7 +292,8 @@ def test_docker_down_command(runner):
         # mock_remove_network.assert_called_once()
 
 
-def test_generate_report_command(runner):
+def test_generate_report_command():
+    runner = CliRunner()
     with patch("subprocess.check_output") as mock_check_output, patch(
         "platform.system"
     ) as mock_system, patch("platform.release") as mock_release, patch(
@@ -304,9 +305,9 @@ def test_generate_report_command(runner):
     ) as mock_processor:
 
         mock_check_output.side_effect = [
-            b"container1\tname1\tUp 2 hours\n",
-            b"network1\tnetwork_name1\n",
-            b"172.17.0.0/16\n",
+            "container1\tname1\tUp 2 hours\n",
+            "network1\tnetwork_name1\n",
+            "172.17.0.0/16\n",
         ]
         mock_system.return_value = "Linux"
         mock_release.return_value = "5.4.0"

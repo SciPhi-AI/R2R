@@ -1,4 +1,7 @@
 # TODO - Cleanup the handling for non-auth configurations
+from datetime import datetime, timezone
+
+import psutil
 from fastapi import Depends
 from pydantic import BaseModel
 
@@ -21,12 +24,36 @@ from ..base_router import BaseRouter
 class ManagementRouter(BaseRouter):
     def __init__(self, engine: R2REngine):
         super().__init__(engine)
+        self.start_time = datetime.now(timezone.utc)
         self.setup_routes()
 
     def setup_routes(self):
         @self.router.get("/health")
         async def health_check():
             return {"response": "ok"}
+
+        @self.router.get("/server_stats")
+        @self.base_endpoint
+        async def server_stats(
+            auth_user=(
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.providers.auth
+                else None
+            ),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only an authorized user can call the `server_stats` endpoint.",
+                    403,
+                )
+            return {
+                "start_time": self.start_time.isoformat(),
+                "uptime_seconds": (
+                    datetime.now(timezone.utc) - self.start_time
+                ).total_seconds(),
+                "cpu_usage": psutil.cpu_percent(),
+                "memory_usage": psutil.virtual_memory().percent,
+            }
 
         @self.router.post("/update_prompt")
         @self.base_endpoint

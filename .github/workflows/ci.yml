@@ -11,7 +11,7 @@ on:
 
 jobs:
   pre-commit:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, Linux ]
 
     steps:
       - name: Checkout code
@@ -35,7 +35,7 @@ jobs:
         run: poetry run pre-commit run --all-files
 
   pytest:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, Linux ]
     timeout-minutes: 15  # Increased timeout to accommodate Ollama setup
 
     env:
@@ -83,3 +83,9 @@ jobs:
         uses: codecov/codecov-action@v4.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Cleanup
+        if: always()
+        run: |
+          pkill -f ollama || true
+          echo "Cleaned up Ollama server"
