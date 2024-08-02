@@ -20,6 +20,16 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Clean up disk space
+      uses: jlumbroso/free-disk-space@main
+      with:
+        tool-cache: true
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        swap-storage: true
+
     - name: Docker Auth
       uses: docker/login-action@v3
       with:
@@ -105,5 +115,7 @@ jobs:
         echo "Clean up Virtual Environment"
         deactivate
         rm -rf venv
+        docker stop $(docker ps -a -q)
         docker system prune -af --volumes
+        docker network prune --force
         docker volume rm $(docker volume ls -qf dangling=true)

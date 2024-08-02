@@ -17,28 +17,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install dependencies
+      - name: Run pre-commit
         run: |
           python3 -m venv venv
           source venv/bin/activate
-          pip install poetry
           poetry install
-
-      - name: Install pre-commit
-        run: poetry run pre-commit install
-
-      - name: Run pre-commit
-        run: poetry run pre-commit run --all-files
-
-      - name: Cleanup
-        if: always()
-        run: |
+          pip install pre-commit
+          pre-commit install
+          pre-commit run --all-files
           deactivate
           rm -rf venv
 
+      - name: Clean up disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
   pytest:
     runs-on: [ self-hosted, Linux ]
-    timeout-minutes: 15  # Increased timeout to accommodate Ollama setup
+    timeout-minutes: 15
 
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -53,31 +55,40 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install dependencies
-        run: |
-          python3 -m venv venv
-          source venv/bin/activate
-          pip install poetry
-          poetry install
-
       - name: Start Ollama server
         run: |
           ollama serve &
           sleep 5
           curl -i http://localhost:11434
 
-      - name: Run tests
-        run: poetry run pytest tests/ -k "not redis and not sentence_transformer"
+      - name: Run pytest
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          poetry install
+          pip install pytest
+          pip install pytest
+          poetry run pytest tests/ -k "not redis and not sentence_transformer"
+          deactivate
+          rm -rf venv
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
+      - name: Clean up disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
       - name: Cleanup
         if: always()
         run: |
-          deactivate
-          rm -rf venv
           pkill -f ollama || true
           echo "Cleaned up Ollama server"

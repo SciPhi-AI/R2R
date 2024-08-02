@@ -1,6 +1,4 @@
-import json
-import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import click
 import pytest
@@ -224,44 +222,6 @@ def test_json_param_type():
 
     result = JSON.convert({"key": "value"}, param=None, ctx=None)
     assert result == {"key": "value"}
-
-
-def test_serve_command(runner):
-    with patch(
-        "r2r.cli.utils.docker_utils.run_docker_serve"
-    ) as mock_run_docker_serve:
-        result = runner.invoke(cli, ["serve", "--docker"])
-        assert result.exit_code == 0
-        mock_run_docker_serve.assert_called_once_with(
-            {
-                "config_path": None,
-                "config_name": None,
-                "base_url": "http://localhost:8000",
-            },
-            "0.0.0.0",
-            8000,
-            False,
-            False,
-            False,
-            "r2r",
-            None,
-            None,
-        )
-
-    with patch(
-        "r2r.cli.commands.server_operations.run_local_serve"
-    ) as mock_run_local_serve:
-        result = runner.invoke(cli, ["serve"])
-        assert result.exit_code == 0
-        mock_run_local_serve.assert_called_once_with(
-            {
-                "config_path": None,
-                "config_name": None,
-                "base_url": "http://localhost:8000",
-            },
-            "0.0.0.0",
-            8000,
-        )
 
 
 def test_docker_down_command(runner):

@@ -150,8 +150,7 @@ class Agent(ABC):
         pass
 
     async def execute_tool(self, tool_name: str, *args, **kwargs) -> str:
-        tool = next((t for t in self.tools if t.name == tool_name), None)
-        if tool:
+        if tool := next((t for t in self.tools if t.name == tool_name), None):
             return await tool.function(*args, **kwargs)
         else:
             return f"Error: Tool {tool_name} not found."
@@ -160,8 +159,9 @@ class Agent(ABC):
         self, last_message: Message, stream: bool = False
     ) -> GenerationConfig:
         if (
-            last_message.role == "tool" or last_message.role == "function"
-        ) and last_message.content != "":
+            last_message.role in ["tool", "function"]
+            and last_message.content != ""
+        ):
             return GenerationConfig(
                 **self.config.generation_config.dict(
                     exclude={"functions", "tools", "stream"}
