@@ -1,6 +1,6 @@
-from .abstractions.assistant import (
-    Assistant,
-    AssistantConfig,
+from .abstractions.agent import (
+    Agent,
+    AgentConfig,
     Conversation,
     Message,
     Tool,
@@ -106,8 +106,8 @@ __all__ = [
     "RedisLoggingConfig",
     "AsyncSyncMeta",
     "syncable",
-    "Assistant",
-    "AssistantConfig",
+    "Agent",
+    "AgentConfig",
     "Tool",
     "ToolResult",
     "Message",

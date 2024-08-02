@@ -17,7 +17,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
-        assistants: R2RAssistants,
+        agents: R2RAssistants,
         run_manager: Optional[RunManager] = None,
     ):
         logging_connection = KVLoggingSingleton()
@@ -26,7 +26,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
         self.config = config
         self.providers = providers
         self.pipelines = pipelines
-        self.assistants = assistants
+        self.agents = agents
         self.logging_connection = KVLoggingSingleton()
         self.run_manager = run_manager
 
@@ -34,7 +34,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
             config,
             providers,
             pipelines,
-            assistants,
+            agents,
             run_manager,
             logging_connection,
         )
@@ -42,7 +42,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
             config,
             providers,
             pipelines,
-            assistants,
+            agents,
             run_manager,
             logging_connection,
         )
@@ -50,7 +50,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
             config,
             providers,
             pipelines,
-            assistants,
+            agents,
             run_manager,
             logging_connection,
         )
@@ -59,7 +59,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
             config,
             providers,
             pipelines,
-            assistants,
+            agents,
             run_manager,
             logging_connection,
         )

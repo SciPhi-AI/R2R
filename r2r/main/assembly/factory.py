@@ -2,9 +2,9 @@ import logging
 import os
 from typing import Any, Optional
 
-from r2r.assistants import R2RRAGAssistant, R2RStreamingRAGAssistant
+from r2r.agents import R2RRAGAssistant, R2RStreamingRAGAssistant
 from r2r.base import (
-    AssistantConfig,
+    AgentConfig,
     AsyncPipe,
     AuthConfig,
     AuthProvider,
@@ -644,12 +644,12 @@ class R2RAssistantFactory:
     ) -> R2RRAGAssistant:
         if not self.providers.llm or not self.providers.prompt:
             raise ValueError(
-                "LLM and Prompt providers are required for RAG Assistant"
+                "LLM and Prompt providers are required for RAG Agent"
             )
 
-        assistant_config = AssistantConfig(
+        assistant_config = AgentConfig(
             system_instruction_name="rag_agent",
-            tools=[],  # Add any specific tools for the RAG assistant here
+            tools=[],  # Add any specific tools for the RAG agent here
             generation_config=self.config.completion.generation_config,
             stream=stream,
         )

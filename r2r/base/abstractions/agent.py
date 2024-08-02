@@ -63,19 +63,19 @@ class Conversation:
         return [msg.dict(exclude_none=True) for msg in self.messages]
 
 
-class AssistantConfig(BaseModel):
-    system_instruction_name: str = "assistant"
+class AgentConfig(BaseModel):
+    system_instruction_name: str = "agent"
     tools: list[Tool] = []
     generation_config: GenerationConfig = GenerationConfig()
     stream: bool = False
 
 
-class Assistant(ABC):
+class Agent(ABC):
     def __init__(
         self,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
-        config: AssistantConfig,
+        config: AgentConfig,
     ):
         self.llm_provider = llm_provider
         self.prompt_provider = prompt_provider
@@ -177,7 +177,7 @@ class Assistant(ABC):
         (
             self.conversation.append(
                 Message(
-                    role="assistant",
+                    role="agent",
                     tool_calls=[
                         {
                             "id": tool_id,
@@ -192,7 +192,7 @@ class Assistant(ABC):
             if tool_id
             else self.conversation.append(
                 Message(
-                    role="assistant",
+                    role="agent",
                     function_call={
                         "name": function_name,
                         "arguments": function_arguments,

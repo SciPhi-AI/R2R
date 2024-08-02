@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from r2r.assistants import R2RRAGAssistant, R2RStreamingRAGAssistant
+from r2r.agents import R2RRAGAssistant, R2RStreamingRAGAssistant
 from r2r.base import (
     AsyncPipe,
     AuthProvider,

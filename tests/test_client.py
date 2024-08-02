@@ -115,12 +115,12 @@ def app_client(mock_db, mock_auth_wrapper):
 
     providers.database = mock_db
     pipelines = MagicMock()
-    assistants = MagicMock()
+    agents = MagicMock()
     engine = R2REngine(
         config=config,
         providers=providers,
         pipelines=pipelines,
-        assistants=assistants,
+        agents=agents,
     )
     engine.asearch = mock_asearch
     app = R2RApp(engine)

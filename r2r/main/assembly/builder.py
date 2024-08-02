@@ -1,7 +1,7 @@
 import os
 from typing import Optional, Type
 
-from r2r.assistants import R2RRAGAssistant
+from r2r.agents import R2RRAGAssistant
 from r2r.base import (
     AsyncPipe,
     AuthProvider,
@@ -104,7 +104,7 @@ class R2RBuilder:
         self.streaming_rag_pipeline: Optional[RAGPipeline] = None
         self.eval_pipeline: Optional[EvalPipeline] = None
 
-        # Assistant overrides
+        # Agent overrides
         self.assistant_factory_override: Optional[R2RAssistantFactory] = None
         self.rag_agent_override: Optional[R2RRAGAssistant] = None
 
@@ -223,8 +223,8 @@ class R2RBuilder:
         self.assistant_factory_override = factory
         return self
 
-    def with_rag_agent(self, assistant: R2RRAGAssistant):
-        self.rag_agent_override = assistant
+    def with_rag_agent(self, agent: R2RRAGAssistant):
+        self.rag_agent_override = agent
         return self
 
     def build(self, *args, **kwargs) -> R2R:
@@ -274,14 +274,14 @@ class R2RBuilder:
             self.assistant_factory_override
             or R2RAssistantFactory(self.config, providers, pipelines)
         )
-        assistants = assistant_factory.create_assistants(
+        agents = assistant_factory.create_assistants(
             rag_agent_override=self.rag_agent_override,
             *args,
             **kwargs,
         )
 
         engine = (self.r2r_app_override or R2REngine)(
-            self.config, providers, pipelines, assistants
+            self.config, providers, pipelines, agents
         )
         r2r_app = R2RApp(engine)
         return R2R(engine=engine, app=r2r_app)

@@ -51,7 +51,7 @@ def app(request):
             config=config,
             providers=providers,
             pipelines=pipelines,
-            assistants={},
+            agents={},
         )
 
         try:

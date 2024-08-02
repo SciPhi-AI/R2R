@@ -1,8 +1,8 @@
 import json
 
-from r2r.assistants import R2RAssistant, R2RStreamingAssistant
+from r2r.agents import R2RAssistant, R2RStreamingAssistant
 from r2r.base import (
-    AssistantConfig,
+    AgentConfig,
     CompletionProvider,
     KGSearchSettings,
     PromptProvider,
@@ -81,7 +81,7 @@ class R2RRAGAssistant(RAGAssistantMixin, R2RAssistant):
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         search_pipeline: SearchPipeline,
-        config: AssistantConfig,
+        config: AgentConfig,
     ):
         super().__init__(
             search_pipeline=search_pipeline,
@@ -97,7 +97,7 @@ class R2RStreamingRAGAssistant(RAGAssistantMixin, R2RStreamingAssistant):
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         search_pipeline: SearchPipeline,
-        config: AssistantConfig,
+        config: AgentConfig,
     ):
         config.stream = True
         super().__init__(

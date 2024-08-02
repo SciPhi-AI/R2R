@@ -18,7 +18,7 @@ class MockCompletionResponse:
         self.choices = [
             {
                 "index": 0,
-                "message": {"role": "assistant", "content": content},
+                "message": {"role": "agent", "content": content},
                 "finish_reason": "stop",
             }
         ]
@@ -95,7 +95,7 @@ def test_get_completion(request, llm_fixture, messages, generation_config):
     ):
         completion = llm.get_completion(messages, generation_config)
         assert isinstance(completion, LLMChatCompletion)
-        assert completion.choices[0].message.role == "assistant"
+        assert completion.choices[0].message.role == "agent"
         assert completion.choices[0].message.content.strip() == "True"
         assert completion.id == "mock_id"
         assert completion.model == "gpt-3.5-turbo"
@@ -142,7 +142,7 @@ async def test_aget_completion(
     ):
         completion = await llm.aget_completion(messages, generation_config)
         assert isinstance(completion, LLMChatCompletion)
-        assert completion.choices[0].message.role == "assistant"
+        assert completion.choices[0].message.role == "agent"
         assert completion.choices[0].message.content.strip() == "True"
         assert completion.id == "mock_id"
         assert completion.model == "gpt-3.5-turbo"
