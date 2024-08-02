@@ -1,0 +1,22 @@
+zero_shot_ner_kg_extraction:
+  template: >
+    Perform Named Entity Recognition (NER) and extract knowledge graph triplets
+    from the text. NER identifies named entities of given entity types, and
+    triple extraction identifies relationships between entities using specified
+    predicates.
+
+
+    **Entity Types**:
+
+
+    ["PERSON", "ORGANIZATION", "LOCATION", "DATE", "TIME", "MONEY", "PERCENTAGE", "PRODUCT", "EVENT", "LANGUAGE", "NATIONALITY", "RELIGION", "TITLE", "PROFESSION", "ANIMAL", "PLANT", "DISEASE", "MEDICATION", "CHEMICAL", "MATERIAL", "COLOR", "SHAPE", "MEASUREMENT", "WEATHER", "NATURAL_DISASTER", "AWARD", "LAW", "CRIME", "TECHNOLOGY", "SOFTWARE", "HARDWARE", "VEHICLE", "FOOD", "DRINK", "SPORT", "MUSIC_GENRE", "INSTRUMENT", "ARTWORK", "BOOK", "MOVIE", "TV_SHOW", "ACADEMIC_SUBJECT", "SCIENTIFIC_THEORY", "POLITICAL_PARTY", "CURRENCY", "STOCK_SYMBOL", "FILE_TYPE", "PROGRAMMING_LANGUAGE", "MEDICAL_PROCEDURE", "CELESTIAL_BODY"]
+
+
+    **Predicates**
+
+    ["IS_EMPLOYED_BY", "LIVES_IN", "BORN_IN", "DIED_IN", "FOUNDED", "INVENTED", "WROTE", "DIRECTED", "STARRED_IN", "MARRIED_TO", "PARENT_OF", "CHILD_OF", "SIBLING_OF", "MEMBER_OF", "OWNER_OF", "CEO_OF", "STUDIED_AT", "GRADUATED_FROM", "TEACHES_AT", "SPEAKS", "CAPITAL_OF", "LOCATED_IN", "PART_OF", "CONTAINS", "PRODUCES", "CONSUMES", "EXPORTS", "IMPORTS", "ALLIES_WITH", "CONFLICTS_WITH", "PREDECESSOR_OF", "SUCCESSOR_OF", "DISCOVERED", "DEVELOPED", "FUNDED_BY", "INVESTED_IN", "COLLABORATES_WITH", "COMPETES_WITH", "ACQUIRED", "MERGED_WITH", "SPECIALIZES_IN", "PERFORMS", "AFFECTS", "CAUSES", "PREVENTS", "TREATS", "SYMPTOMS_OF", "BELONGS_TO", "DERIVED_FROM", "MEASURED_IN"]
+
+
+    **Text**{input}
+  input_types:
+    input: str

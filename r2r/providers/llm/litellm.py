@@ -2,13 +2,13 @@ import logging
 from typing import Any
 
 from r2r.base.abstractions.llm import GenerationConfig
-from r2r.base.providers.llm import LLMConfig, LLMProvider
+from r2r.base.providers.llm import CompletionConfig, CompletionProvider
 
 logger = logging.getLogger(__name__)
 
 
-class LiteLLMProvider(LLMProvider):
-    def __init__(self, config: LLMConfig, *args, **kwargs) -> None:
+class LiteCompletionProvider(CompletionProvider):
+    def __init__(self, config: CompletionConfig, *args, **kwargs) -> None:
         super().__init__(config)
         try:
             from litellm import acompletion, completion
@@ -19,13 +19,13 @@ class LiteLLMProvider(LLMProvider):
         except ImportError:
             logger.error("Failed to import LiteLLM")
             raise ImportError(
-                "Please install the `litellm` package to use the LiteLLMProvider."
+                "Please install the `litellm` package to use the LiteCompletionProvider."
             )
 
         if config.provider != "litellm":
             logger.error(f"Invalid provider: {config.provider}")
             raise ValueError(
-                "LiteLLMProvider must be initialized with config with `litellm` provider."
+                "LiteCompletionProvider must be initialized with config with `litellm` provider."
             )
 
     def _get_base_args(self, generation_config: GenerationConfig) -> dict:

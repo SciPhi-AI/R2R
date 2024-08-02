@@ -1,10 +1,19 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    Union,
+)
 
 from pydantic import BaseModel
 
-from ..providers.llm import GenerationConfig, LLMProvider
+from ..providers.llm import CompletionProvider, GenerationConfig
 from ..providers.prompt import PromptProvider
 from .llm import LLMChatCompletion
 
@@ -63,25 +72,42 @@ class Conversation:
         return [msg.dict(exclude_none=True) for msg in self.messages]
 
 
-class AssistantConfig(BaseModel):
-    system_instruction_name: str = "assistant"
-    tools: list[Tool] = []
+# TODO - Move agents to provider pattern
+class AgentConfig(BaseModel):
+    system_instruction_name: str = "rag_agent"
+    tool_names: list[str] = ["search"]
     generation_config: GenerationConfig = GenerationConfig()
     stream: bool = False
 
+    @classmethod
+    def create(cls: Type["AgentConfig"], **kwargs: Any) -> "AgentConfig":
+        base_args = cls.__fields__.keys()
+        filtered_kwargs = {
+            k: v if v != "None" else None
+            for k, v in kwargs.items()
+            if k in base_args
+        }
+        return cls(**filtered_kwargs)
 
-class Assistant(ABC):
+
+class Agent(ABC):
     def __init__(
         self,
-        llm_provider: LLMProvider,
+        llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
-        config: AssistantConfig,
+        config: AgentConfig,
     ):
         self.llm_provider = llm_provider
         self.prompt_provider = prompt_provider
         self.config = config
         self.conversation = []
         self._completed = False
+        self._tools = []
+        self._register_tools()
+
+    @abstractmethod
+    def _register_tools(self):
+        pass
 
     def _setup(self, system_instruction: Optional[str] = None):
         self.conversation = [
@@ -96,7 +122,11 @@ class Assistant(ABC):
 
     @property
     def tools(self) -> list[Tool]:
-        return self.config.tools
+        return self._tools
+
+    @tools.setter
+    def tools(self, tools: list[Tool]):
+        self._tools = tools
 
     @abstractmethod
     async def arun(
@@ -120,8 +150,7 @@ class Assistant(ABC):
         pass
 
     async def execute_tool(self, tool_name: str, *args, **kwargs) -> str:
-        tool = next((t for t in self.tools if t.name == tool_name), None)
-        if tool:
+        if tool := next((t for t in self.tools if t.name == tool_name), None):
             return await tool.function(*args, **kwargs)
         else:
             return f"Error: Tool {tool_name} not found."
@@ -130,8 +159,9 @@ class Assistant(ABC):
         self, last_message: Message, stream: bool = False
     ) -> GenerationConfig:
         if (
-            last_message.role == "tool" or last_message.role == "function"
-        ) and last_message.content != "":
+            last_message.role in ["tool", "function"]
+            and last_message.content != ""
+        ):
             return GenerationConfig(
                 **self.config.generation_config.dict(
                     exclude={"functions", "tools", "stream"}
@@ -204,9 +234,7 @@ class Assistant(ABC):
         # TODO - We always use tools, not functions
         # Think of ways to make this clearer
 
-        tool = next(
-            (t for t in self.config.tools if t.name == function_name), None
-        )
+        tool = next((t for t in self.tools if t.name == function_name), None)
         if tool:
             raw_result = await tool.results_function(
                 *args, **kwargs, **json.loads(function_arguments)

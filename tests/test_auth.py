@@ -79,7 +79,7 @@ def auth_service(auth_provider, auth_config, pg_vector_db):
         providers=mock_providers,
         pipelines=mock_pipelines,
         run_manager=mock_run_manager,
-        assistants=mock_assistants,
+        agents=mock_assistants,
         logging_connection=mock_logging_connection,
     )
 

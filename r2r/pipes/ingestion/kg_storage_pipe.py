@@ -65,7 +65,7 @@ class KGStoragePipe(AsyncPipe):
                     embedding = None
                     if self.embedding_provider:
                         embedding = self.embedding_provider.get_embedding(
-                            "Entity:\n{entity.value}\nLabel:\n{entity.category}\nSubcategory:\n{entity.subcategory}"
+                            f"Entity:\n{entity.value}\nLabel:\n{entity.category}\nSubcategory:\n{entity.subcategory}"
                         )
                     nodes.append(
                         EntityNode(

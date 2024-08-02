@@ -1,0 +1,27 @@
+rag_fusion_prompt:
+  template: >
+    ### Instruction:
+
+
+    Given the following query that follows to write a double newline separated list of up to {num_outputs} queries meant to help answer the original query.
+
+    DO NOT generate any single query which is likely to require information from multiple distinct documents,
+
+    EACH single query will be used to carry out a cosine similarity semantic search over distinct indexed documents, such as varied medical documents.
+
+    FOR EXAMPLE if asked `how do the key themes of Great Gatsby compare with 1984`, the two queries would be
+
+    `What are the key themes of Great Gatsby?` and `What are the key themes of 1984?`.
+
+    Here is the original user query to be transformed into answers:
+
+
+    ### Query:
+
+    {message}
+
+
+    ### Response:
+  input_types:
+    num_outputs: int
+    message: str

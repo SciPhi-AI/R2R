@@ -1,0 +1,39 @@
+[completion]
+provider = "litellm"
+concurrent_request_limit = 1
+
+  [completion.generation_config]
+  model = "ollama/llama3.1"
+  temperature = 0.1
+  top_p = 1
+  max_tokens_to_sample = 1_024
+  stream = false
+  add_generation_kwargs = { }
+
+[embedding]
+provider = "ollama"
+base_model = "mxbai-embed-large"
+base_dimension = 1_024
+batch_size = 32
+add_title_as_prefix = true
+
+[ingestion]
+excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
+
+[kg]
+provider = "neo4j"
+batch_size = 1
+max_entities = 10
+max_relations = 20
+kg_extraction_prompt = "zero_shot_ner_kg_extraction"
+
+  [kg.kg_extraction_config]
+  model = "ollama/sciphi/triplex"
+  temperature = 1
+  top_p = 1
+  max_tokens_to_sample = 1_024
+  stream = false
+  add_generation_kwargs = { }
+
+[database]
+provider = "pgvector"

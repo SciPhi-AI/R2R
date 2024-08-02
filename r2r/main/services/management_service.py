@@ -13,7 +13,7 @@ from r2r.base import (
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RAssistants, R2RPipelines, R2RProviders
+from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
 from ..assembly.config import R2RConfig
 from .base import Service
 
@@ -26,7 +26,7 @@ class ManagementService(Service):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
-        assistants: R2RAssistants,
+        agents: R2RAgents,
         run_manager: RunManager,
         logging_connection: KVLoggingSingleton,
     ):
@@ -34,7 +34,7 @@ class ManagementService(Service):
             config,
             providers,
             pipelines,
-            assistants,
+            agents,
             run_manager,
             logging_connection,
         )
@@ -178,7 +178,7 @@ class ManagementService(Service):
     async def aapp_settings(self, *args: Any, **kwargs: Any):
         prompts = self.providers.prompt.get_all_prompts()
         return {
-            "config": self.config.to_json(),
+            "config": self.config.to_toml(),
             "prompts": {
                 name: prompt.dict() for name, prompt in prompts.items()
             },

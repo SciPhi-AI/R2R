@@ -1,6 +1,6 @@
-from .abstractions.assistant import (
-    Assistant,
-    AssistantConfig,
+from .abstractions.agent import (
+    Agent,
+    AgentConfig,
     Conversation,
     Message,
     Tool,
@@ -64,6 +64,7 @@ from .parsers import AsyncParser
 from .pipeline.base_pipeline import AsyncPipeline
 from .pipes.base_pipe import AsyncPipe, AsyncState, PipeType
 from .providers.auth import AuthConfig, AuthProvider
+from .providers.chunking import ChunkingConfig, ChunkingProvider
 from .providers.crypto import CryptoConfig, CryptoProvider
 from .providers.database import (
     DatabaseConfig,
@@ -74,7 +75,8 @@ from .providers.database import (
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
 from .providers.eval import EvalConfig, EvalProvider
 from .providers.kg import KGConfig, KGProvider, update_kg_prompt
-from .providers.llm import LLMConfig, LLMProvider
+from .providers.llm import CompletionConfig, CompletionProvider
+from .providers.parsing import ParsingConfig, ParsingProvider
 from .providers.prompt import PromptConfig, PromptProvider
 from .utils import (
     EntityType,
@@ -104,8 +106,8 @@ __all__ = [
     "RedisLoggingConfig",
     "AsyncSyncMeta",
     "syncable",
-    "Assistant",
-    "AssistantConfig",
+    "Agent",
+    "AgentConfig",
     "Tool",
     "ToolResult",
     "Message",
@@ -154,6 +156,10 @@ __all__ = [
     # Pipelines
     "AsyncPipeline",
     # Providers
+    "ParsingConfig",
+    "ParsingProvider",
+    "ChunkingConfig",
+    "ChunkingProvider",
     "EmbeddingConfig",
     "EmbeddingProvider",
     "EvalConfig",
@@ -165,8 +171,8 @@ __all__ = [
     "VectorStoreQuery",
     "LLMChatCompletion",
     "LLMChatCompletionChunk",
-    "LLMConfig",
-    "LLMProvider",
+    "CompletionConfig",
+    "CompletionProvider",
     "AuthConfig",
     "AuthProvider",
     "CryptoConfig",

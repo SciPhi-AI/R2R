@@ -18,7 +18,7 @@ from r2r.base import (
 from r2r.pipes import EvalPipe
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RAssistants, R2RPipelines, R2RProviders
+from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
 from ..assembly.config import R2RConfig
 from .base import Service
 
@@ -31,7 +31,7 @@ class RetrievalService(Service):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
-        assistants: R2RAssistants,
+        agents: R2RAgents,
         run_manager: RunManager,
         logging_connection: KVLoggingSingleton,
     ):
@@ -39,7 +39,7 @@ class RetrievalService(Service):
             config,
             providers,
             pipelines,
-            assistants,
+            agents,
             run_manager,
             logging_connection,
         )
@@ -204,7 +204,7 @@ class RetrievalService(Service):
                 )
 
     @telemetry_event("RAGChat")
-    async def rag_agent(
+    async def agent(
         self,
         messages: list[Message],
         rag_generation_config: GenerationConfig,
@@ -216,7 +216,7 @@ class RetrievalService(Service):
         *args,
         **kwargs,
     ):
-        async with manage_run(self.run_manager, "rag_agent_app") as run_id:
+        async with manage_run(self.run_manager, "agent_app") as run_id:
             try:
                 t0 = time.time()
 
@@ -250,7 +250,7 @@ class RetrievalService(Service):
                         async with manage_run(self.run_manager, "arag_agent"):
                             async for (
                                 chunk
-                            ) in self.assistants.streaming_rag_assistant.arun(
+                            ) in self.agents.streaming_rag_agent.arun(
                                 messages=messages,
                                 system_instruction=task_prompt_override,
                                 vector_search_settings=vector_search_settings,
@@ -264,7 +264,7 @@ class RetrievalService(Service):
 
                     return stream_response()
 
-                results = await self.assistants.rag_assistant.arun(
+                results = await self.agents.rag_agent.arun(
                     messages=messages,
                     system_instruction=task_prompt_override,
                     vector_search_settings=vector_search_settings,

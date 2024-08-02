@@ -33,12 +33,12 @@ def r2r_app(
 
     config_path = os.getenv("CONFIG_PATH") or config_path
     if config_path:
-        config = R2RConfig.from_json(config_path)
+        config = R2RConfig.from_toml(config_path)
     else:
         config_name = os.getenv("CONFIG_NAME") or config_name
         if config_name not in R2RBuilder.CONFIG_OPTIONS:
             raise ValueError(f"Invalid config name: {config_name}")
-        config = R2RConfig.from_json(R2RBuilder.CONFIG_OPTIONS[config_name])
+        config = R2RConfig.from_toml(R2RBuilder.CONFIG_OPTIONS[config_name])
 
     if (
         config.embedding.provider == "openai"
