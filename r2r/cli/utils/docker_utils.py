@@ -233,19 +233,26 @@ def check_set_docker_env_vars(exclude_neo4j=False, exclude_postgres=False):
         ]
         env_vars.extend(postgres_vars)
 
-    for var in env_vars:
-        if value := os.environ.get(var):
-            warning_text = click.style("Warning:", fg="red", bold=True)
-            prompt = (
-                f"{warning_text} It's only necessary to set this environment variable when connecting to an instance not managed by R2R.\n"
-                f"Add the flag --exclude-postgres to avoid deploying a Postgres instance with R2R.\n"
-                f"Environment variable {var} is set to '{value}'. Unset it?"
-            )
-            if click.confirm(prompt, default=True):
-                os.environ[var] = ""
-                click.echo(f"Unset {var}")
-            else:
-                click.echo(f"Kept {var}")
+    is_test = (
+        "pytest" in sys.modules
+        or "unittest" in sys.modules
+        or os.environ.get("PYTEST_CURRENT_TEST")
+    )
+
+    if not is_test:
+        for var in env_vars:
+            if value := os.environ.get(var):
+                warning_text = click.style("Warning:", fg="red", bold=True)
+                prompt = (
+                    f"{warning_text} It's only necessary to set this environment variable when connecting to an instance not managed by R2R.\n"
+                    f"Add the flag --exclude-postgres to avoid deploying a Postgres instance with R2R.\n"
+                    f"Environment variable {var} is set to '{value}'. Unset it?"
+                )
+                if click.confirm(prompt, default=True):
+                    os.environ[var] = ""
+                    click.echo(f"Unset {var}")
+                else:
+                    click.echo(f"Kept {var}")
 
 
 def set_config_env_vars(obj):
