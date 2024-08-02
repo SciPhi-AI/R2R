@@ -195,16 +195,14 @@ def serve(
         else:
             # Open browser after Docker setup is complete
             import time
-
-            print("Navigating to dashboard in 3 seconds...")
-            time.sleep(1)
-            print("Navigating to dashboard in 2 seconds...")
-            time.sleep(1)
-            print("Navigating to dashboard in 1 seconds...")
-            time.sleep(1)
             import webbrowser
 
-            url = "http://localhost"
+            for i in range(3, 0, -1):
+                print(f"Navigating to dashboard in {i} seconds...")
+                time.sleep(1)
+
+            traefik_port = os.environ.get("TRAEFIK_PORT", "80")
+            url = f"http://localhost:{traefik_port}"
             click.echo(f"Opening browser to {url}")
             webbrowser.open(url)
     else:
