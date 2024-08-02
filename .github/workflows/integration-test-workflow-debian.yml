@@ -1,90 +1,109 @@
-name: Build and Publish Docker Image
+name: Debian R2R Docker Build and Integration Test (Debian GNU/Linux 12 (bookworm) amd64)
 
 on:
+  push:
+    branches:
+      - '**'
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to publish (leave empty to use default versioning)'
-        required: false
-        type: string
 
 jobs:
-  build-and-publish:
-    runs-on: ubuntu-latest
+  build-and-test:
+    runs-on: [ self-hosted, Linux ]
     permissions:
       packages: write
       contents: read
       id-token: write
       actions: write
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Google Auth
-        uses: 'google-github-actions/auth@v2'
-        with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+    - name: Docker Auth
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
+        password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
 
-      - name: Set up Cloud SDK
-        uses: 'google-github-actions/setup-gcloud@v2'
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
 
-      - name: Configure SDK
-        run: 'gcloud auth configure-docker us-east1-docker.pkg.dev'
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
 
-      - name: Docker Auth (Original registry)
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
+    - name: Set image name
+      id: image
+      run: |
+        echo "IMAGE_NAME=ragtoriches/dev" >> $GITHUB_OUTPUT
 
-      - name: Docker Auth (Additional registry)
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
-          password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
+    - name: Build and Push Docker Image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: ragtoriches/dev:latest
+        platforms: linux/amd64
+        no-cache: true
+        pull: true
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+    - name: Run cloud LLM integration tests in Docker
+      run: |
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install -e .
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        echo "R2R Version"
+        r2r version
 
-      - name: Determine version to use
-        id: version
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "RELEASE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "RELEASE_VERSION=main" >> $GITHUB_OUTPUT
-          fi
+        echo "R2R Serve --docker"
+        r2r serve --docker --exclude-neo4j --exclude-ollama --image=ragtoriches/dev:latest
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            emrgntcmplxty/r2r
-            us-east1-docker.pkg.dev/alert-rush-397022/sciphi-r2r/r2r
-            ragtoriches/r2r
-          tags: |
-            type=raw,value=${{ steps.version.outputs.RELEASE_VERSION }}
-            type=raw,value=latest
+        echo "Waiting for services to start..."
+        sleep 30
 
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
+        echo "Ingest Data"
+        r2r ingest-sample-files
 
-      - name: Trigger Dependent Repositories
-        if: success()
-        run: |
-          curl -X POST \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
-            https://api.github.com/repos/SciPhi-AI/R2R-basic-rag-template/dispatches \
-            -d '{"event_type": "rebuild", "client_payload": {"r2r_tag": "${{ steps.version.outputs.RELEASE_VERSION }}"}}'
+        echo "Get Documents Overview"
+        r2r documents-overview
+
+        echo "Get Document Chunks"
+        r2r document-chunks 93123a68-d668-51de-8291-92162730dc87
+
+        echo "Delete Documents"
+        r2r delete --keys=document_id --values=b736292c-11e6-5453-9686-055da3edb866
+
+        echo "Vector Search"
+        r2r search --query="What was Uber'\''s profit in 2020?"
+
+        echo "Hybrid Search"
+        r2r search --query="What is a fierce nerd?" --do-hybrid-search
+
+        echo "Basic RAG"
+        r2r rag --query="What was Uber'\''s profit in 2020?"
+
+        echo "RAG with Hybrid Search"
+        r2r rag --query="Who is John Snow?" --do-hybrid-search
+
+        echo "Streaming RAG"
+        r2r rag --query="What was Lyft'\''s profit in 2020?" --stream
+
+        echo "Users Overview"
+        r2r users-overview
+
+        echo "Analytics"
+        r2r analytics --filters '{"search_latencies": "search_latency"}' --analysis-types '{"search_latencies": ["basic_statistics", "search_latency"]}'
+
+        echo "Logging"
+        r2r logs
+
+        echo "Docker Down"
+        r2r docker-down
+
+        echo "Clean up Virtual Environment"
+        deactivate
+        rm -rf venv
+        docker system prune -af --volumes
+        docker volume rm $(docker volume ls -qf dangling=true)
