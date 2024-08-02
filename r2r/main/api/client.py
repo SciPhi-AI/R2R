@@ -171,6 +171,7 @@ class R2RClient:
         metadatas: Optional[list[dict]] = None,
         document_ids: Optional[list[Union[uuid.UUID, str]]] = None,
         versions: Optional[list[str]] = None,
+        chunking_provider_override: Optional[dict] = None,
     ) -> dict:
         self._ensure_authenticated()
 
@@ -202,6 +203,7 @@ class R2RClient:
                 [str(ele) for ele in document_ids] if document_ids else None
             ),
             versions=versions,
+            chunking_provider_override=chunking_provider_override,
         )
         try:
             return self._make_request(

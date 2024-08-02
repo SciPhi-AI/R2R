@@ -25,6 +25,10 @@ class UnstructuredParsingProvider(ParsingProvider):
             raise ImportError(
                 "Please install the unstructured package to use the unstructured parsing provider."
             )
+        if config.excluded_parsers:
+            logger.warning(
+                "Excluded parsers are not supported by the unstructured parsing provider."
+            )
         super().__init__(config)
 
     async def parse(

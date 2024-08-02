@@ -43,8 +43,8 @@ class R2RProviderFactory:
     def __init__(self, config: R2RConfig):
         self.config = config
 
+    @staticmethod
     def create_auth_provider(
-        self,
         auth_config: AuthConfig,
         db_provider: DatabaseProvider,
         crypto_provider: Optional[CryptoProvider] = None,
@@ -66,8 +66,9 @@ class R2RProviderFactory:
             )
         return auth_provider
 
+    @staticmethod
     def create_crypto_provider(
-        self, crypto_config: CryptoConfig, *args, **kwargs
+        crypto_config: CryptoConfig, *args, **kwargs
     ) -> CryptoProvider:
         crypto_provider: Optional[CryptoProvider] = None
         if crypto_config.provider == "bcrypt":
@@ -84,8 +85,9 @@ class R2RProviderFactory:
             )
         return crypto_provider
 
+    @staticmethod
     def create_parsing_provider(
-        self, parsing_config: ParsingConfig, *args, **kwargs
+        parsing_config: ParsingConfig, *args, **kwargs
     ) -> ParsingProvider:
         if parsing_config.provider == "r2r":
             from r2r.providers import R2RParsingProvider
@@ -100,8 +102,9 @@ class R2RProviderFactory:
                 f"Parsing provider {parsing_config.provider} not supported"
             )
 
+    @staticmethod
     def create_chunking_provider(
-        self, chunking_config: ChunkingConfig, *args, **kwargs
+        chunking_config: ChunkingConfig, *args, **kwargs
     ) -> ChunkingProvider:
         if chunking_config.provider == "r2r":
             from r2r.providers import R2RChunkingProvider
@@ -145,8 +148,9 @@ class R2RProviderFactory:
 
         return database_provider
 
+    @staticmethod
     def create_embedding_provider(
-        self, embedding: EmbeddingConfig, *args, **kwargs
+        embedding: EmbeddingConfig, *args, **kwargs
     ) -> EmbeddingProvider:
         embedding_provider: Optional[EmbeddingProvider] = None
 
@@ -179,13 +183,16 @@ class R2RProviderFactory:
 
         return embedding_provider
 
+    @staticmethod
     def create_eval_provider(
-        self, eval_config, prompt_provider, *args, **kwargs
+        eval_config, prompt_provider, *args, **kwargs
     ) -> Optional[EvalProvider]:
         if eval_config.provider == "local":
             from r2r.providers import LLMEvalProvider
 
-            llm_provider = self.create_llm_provider(eval_config.llm)
+            llm_provider = R2RProviderFactory.create_llm_provider(
+                eval_config.llm
+            )
             eval_provider = LLMEvalProvider(
                 eval_config,
                 llm_provider=llm_provider,
@@ -200,8 +207,9 @@ class R2RProviderFactory:
 
         return eval_provider
 
+    @staticmethod
     def create_llm_provider(
-        self, llm_config: CompletionConfig, *args, **kwargs
+        llm_config: CompletionConfig, *args, **kwargs
     ) -> CompletionProvider:
         llm_provider: Optional[CompletionProvider] = None
         if llm_config.provider == "openai":
@@ -220,8 +228,9 @@ class R2RProviderFactory:
             raise ValueError("Language model provider not found")
         return llm_provider
 
+    @staticmethod
     def create_prompt_provider(
-        self, prompt_config: PromptConfig, *args, **kwargs
+        prompt_config: PromptConfig, *args, **kwargs
     ) -> PromptProvider:
         prompt_provider = None
         if prompt_config.provider == "r2r":
@@ -234,7 +243,8 @@ class R2RProviderFactory:
             )
         return prompt_provider
 
-    def create_kg_provider(self, kg_config, *args, **kwargs):
+    @staticmethod
+    def create_kg_provider(kg_config, *args, **kwargs):
         if kg_config.provider == "neo4j":
             from r2r.providers import Neo4jKGProvider
 
