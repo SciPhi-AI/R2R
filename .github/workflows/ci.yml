@@ -27,19 +27,14 @@ jobs:
           large-packages: true
           swap-storage: true
 
-      - name: Install dependencies
+      - name: Run pre-commit
         run: |
           python3 -m venv venv
           source venv/bin/activate
           poetry install
-
-      - name: Install pre-commit
-        run: |
           pip install pre-commit
           pre-commit install
-
-      - name: Run pre-commit
-        run: pre-commit run --all-files
+          pre-commit run --all-files
 
       - name: Cleanup
         if: always()
@@ -64,24 +59,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install dependencies
-        run: |
-          python3 -m venv venv
-          source venv/bin/activate
-          poetry install
-
       - name: Start Ollama server
         run: |
           ollama serve &
           sleep 5
           curl -i http://localhost:11434
 
-      - name: Install pre-commit
+      - name: Run pytest
         run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          poetry install
           pip install pytest
-
-      - name: Run tests
-        run: poetry run pytest tests/ -k "not redis and not sentence_transformer"
+          pip install pytest
+          poetry run pytest tests/ -k "not redis and not sentence_transformer"
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
