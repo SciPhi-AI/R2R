@@ -52,7 +52,7 @@ jobs:
         with:
           images: |
             emrgntcmplxty/r2r
-            ragtoriches/r2r
+            ragtoriches/prod
           tags: |
             type=raw,value=${{ steps.version.outputs.RELEASE_VERSION }}
             type=raw,value=latest
