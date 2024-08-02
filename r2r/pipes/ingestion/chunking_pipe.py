@@ -45,7 +45,7 @@ class ChunkingPipe(AsyncPipe):
         input: Input,
         state: AsyncState,
         run_id: Any,
-        chunking_provider_override: Optional[ChunkingProvider] = None,
+        chunking_config_override: Optional[ChunkingProvider] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Union[R2RDocumentProcessingError, Fragment], None]:

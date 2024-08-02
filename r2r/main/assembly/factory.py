@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Any, Optional
 
-from r2r.agents import R2RRAGAssistant, R2RStreamingRAGAssistant
+from r2r.agents import R2RRAGAgent, R2RStreamingRAGAgent
 from r2r.base import (
     AgentConfig,
     AsyncPipe,
@@ -33,7 +33,7 @@ from r2r.pipelines import (
     SearchPipeline,
 )
 
-from ..abstractions import R2RAssistants, R2RPipelines, R2RPipes, R2RProviders
+from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from .config import R2RConfig
 
 logger = logging.getLogger(__name__)
@@ -267,7 +267,7 @@ class R2RProviderFactory:
         auth_provider_override: Optional[AuthProvider] = None,
         database_provider_override: Optional[DatabaseProvider] = None,
         parsing_provider_override: Optional[ParsingProvider] = None,
-        chunking_provider_override: Optional[ChunkingProvider] = None,
+        chunking_config_override: Optional[ChunkingProvider] = None,
         *args,
         **kwargs,
     ) -> R2RProviders:
@@ -319,7 +319,7 @@ class R2RProviderFactory:
             )
         )
         chunking_provider = (
-            chunking_provider_override
+            chunking_config_override
             or self.create_chunking_provider(
                 self.config.chunking, *args, **kwargs
             )
@@ -624,7 +624,7 @@ class R2RPipelineFactory:
         KVLoggingSingleton.configure(self.config.logging)
 
 
-class R2RAssistantFactory:
+class R2RAgentFactory:
     def __init__(
         self,
         config: R2RConfig,
@@ -635,14 +635,14 @@ class R2RAssistantFactory:
         self.providers = providers
         self.pipelines = pipelines
 
-    def create_assistants(
+    def create_agents(
         self,
-        rag_agent_override: Optional[R2RRAGAssistant] = None,
-        stream_rag_agent_override: Optional[R2RStreamingRAGAssistant] = None,
+        rag_agent_override: Optional[R2RRAGAgent] = None,
+        stream_rag_agent_override: Optional[R2RStreamingRAGAgent] = None,
         *args,
         **kwargs,
-    ) -> R2RAssistants:
-        return R2RAssistants(
+    ) -> R2RAgents:
+        return R2RAgents(
             rag_agent=rag_agent_override
             or self.create_rag_agent(*args, **kwargs),
             streaming_rag_agent=stream_rag_agent_override
@@ -651,31 +651,24 @@ class R2RAssistantFactory:
 
     def create_rag_agent(
         self, stream: bool = False, *args, **kwargs
-    ) -> R2RRAGAssistant:
+    ) -> R2RRAGAgent:
         if not self.providers.llm or not self.providers.prompt:
             raise ValueError(
                 "LLM and Prompt providers are required for RAG Agent"
             )
 
-        assistant_config = AgentConfig(
-            system_instruction_name="rag_agent",
-            tools=[],  # Add any specific tools for the RAG agent here
-            generation_config=self.config.completion.generation_config,
-            stream=stream,
-        )
-
         if stream:
-            rag_agent = R2RStreamingRAGAssistant(
+            rag_agent = R2RStreamingRAGAgent(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
-                config=assistant_config,
+                config=self.config.agent,
                 search_pipeline=self.pipelines.search_pipeline,
             )
         else:
-            rag_agent = R2RRAGAssistant(
+            rag_agent = R2RRAGAgent(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
-                config=assistant_config,
+                config=self.config.agent,
                 search_pipeline=self.pipelines.search_pipeline,
             )
 

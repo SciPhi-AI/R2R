@@ -8,11 +8,10 @@ default_admin_email = "admin@example.com"
 default_admin_password = "change_me_immediately"
 
 [chunking]
-provider = "unstructured"
-method = "by_title"
+provider = "r2r"
+method = "recursive"
 chunk_size = 512
 chunk_overlap = 50
-max_chunk_size = 1024
 
 [completion]
 provider = "litellm"
@@ -58,3 +57,7 @@ excluded_parsers = ["mp4"]
 
 [prompt]
 provider = "r2r"
+
+[agent]
+system_instruction_name = "rag_agent"
+tool_names = ["search"]

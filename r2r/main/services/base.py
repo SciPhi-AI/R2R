@@ -2,7 +2,7 @@ from abc import ABC
 
 from r2r.base import KVLoggingSingleton, RunManager
 
-from ..abstractions import R2RAssistants, R2RPipelines, R2RProviders
+from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
 from ..assembly.config import R2RConfig
 
 
@@ -12,7 +12,7 @@ class Service(ABC):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
-        agents: R2RAssistants,
+        agents: R2RAgents,
         run_manager: RunManager,
         logging_connection: KVLoggingSingleton,
     ):

@@ -4,7 +4,9 @@ from enum import Enum
 from typing import Any
 
 import toml
+from pydantic import BaseModel
 
+from ...base.abstractions.agent import AgentConfig
 from ...base.abstractions.document import DocumentType
 from ...base.abstractions.llm import GenerationConfig
 from ...base.logging.kv_logger import LoggingConfig
@@ -45,6 +47,7 @@ class R2RConfig:
         "logging": ["provider", "log_table"],
         "prompt": ["provider"],
         "database": ["provider"],
+        "agent": ["generation_config"],
     }
     auth: AuthConfig
     chunking: ChunkingConfig
@@ -57,6 +60,7 @@ class R2RConfig:
     logging: LoggingConfig
     parsing: ParsingConfig
     prompt: PromptConfig
+    agent: AgentConfig
 
     def __init__(self, config_data: dict[str, Any]):
         # Load the default configuration
@@ -80,9 +84,14 @@ class R2RConfig:
             ):
                 self._validate_config_section(default_config, section, keys)
             setattr(self, section, default_config[section])
+        self.completion = CompletionConfig.create(**self.completion)
+        # override GenerationConfig defaults
+        GenerationConfig.set_default(
+            **self.completion.generation_config.dict()
+        )
+
         self.auth = AuthConfig.create(**self.auth)
         self.chunking = ChunkingConfig.create(**self.chunking)
-        self.completion = CompletionConfig.create(**self.completion)
         self.crypto = CryptoConfig.create(**self.crypto)
         self.database = DatabaseConfig.create(**self.database)
         self.embedding = EmbeddingConfig.create(**self.embedding)
@@ -91,11 +100,7 @@ class R2RConfig:
         self.logging = LoggingConfig.create(**self.logging)
         self.parsing = ParsingConfig.create(**self.parsing)
         self.prompt = PromptConfig.create(**self.prompt)
-
-        # override GenerationConfig defaults
-        GenerationConfig.set_default(
-            **self.completion.generation_config.dict()
-        )
+        self.agent = AgentConfig.create(**self.agent)
 
     def _validate_config_section(
         self, config_data: dict[str, Any], section: str, keys: list
@@ -154,6 +159,8 @@ class R2RConfig:
         # TODO - Make this approach cleaner
         if isinstance(config_section, ProviderConfig):
             config_section = config_section.dict()
+        elif isinstance(config_section, BaseModel):
+            config_section = config_section.dict(exclude_none=True)
         filtered_result = {}
         for k, v in config_section.items():
             if isinstance(k, Enum):

@@ -31,10 +31,10 @@ class IngestionRouter(BaseRouter):
                 else None
             ),
         ):
-            chunking_provider_override = None
-            if request.chunking_provider_override:
-                config = ChunkingConfig(**request.chunking_provider_override)
-                chunking_provider_override = (
+            chunking_config_override = None
+            if request.chunking_config_override:
+                config = ChunkingConfig(**request.chunking_config_override)
+                chunking_config_override = (
                     R2RProviderFactory.create_chunking_provider(config)
                 )
 
@@ -44,7 +44,7 @@ class IngestionRouter(BaseRouter):
                 document_ids=request.document_ids,
                 versions=request.versions,
                 user=auth_user,
-                chunking_provider_override=chunking_provider_override,
+                chunking_config_override=chunking_config_override,
             )
 
         @self.router.post("/update_files")
@@ -60,6 +60,13 @@ class IngestionRouter(BaseRouter):
                 else None
             ),
         ):
+            chunking_config_override = None
+            if request.chunking_config_override:
+                config = ChunkingConfig(**request.chunking_config_override)
+                chunking_config_override = (
+                    R2RProviderFactory.create_chunking_provider(config)
+                )
+
             return await self.engine.aupdate_files(
                 files=files,
                 metadatas=request.metadatas,

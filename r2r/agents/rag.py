@@ -1,6 +1,6 @@
 import json
 
-from r2r.agents import R2RAssistant, R2RStreamingAssistant
+from r2r.agents import R2RAgent, R2RStreamingAgent
 from r2r.base import (
     AgentConfig,
     CompletionProvider,
@@ -14,19 +14,27 @@ from r2r.base import (
 from r2r.pipelines import SearchPipeline
 
 
-class RAGAssistantMixin:
+class RAGAgentMixin:
     def __init__(self, search_pipeline: SearchPipeline, *args, **kwargs):
         self.search_pipeline = search_pipeline
         super().__init__(*args, **kwargs)
-        self.add_search_tool()
 
-    def add_search_tool(self):
-        search_tool = Tool(
+    def _register_tools(self):
+        if not self.config.tool_names:
+            return
+        for tool_name in self.config.tool_names:
+            if tool_name == "search":
+                self._tools.append(self.search_tool())
+            else:
+                raise ValueError(f"Unsupported tool name: {tool_name}")
+
+    def search_tool(self) -> Tool:
+        return Tool(
             name="search",
             description="Search for information using the R2R framework",
             results_function=self.asearch,
-            llm_format_function=RAGAssistantMixin.format_search_results_for_llm,
-            stream_function=RAGAssistantMixin.format_search_results_for_stream,
+            llm_format_function=RAGAgentMixin.format_search_results_for_llm,
+            stream_function=RAGAgentMixin.format_search_results_for_stream,
             parameters={
                 "type": "object",
                 "properties": {
@@ -38,8 +46,6 @@ class RAGAssistantMixin:
                 "required": ["query"],
             },
         )
-        if search_tool.name not in [tool.name for tool in self.config.tools]:
-            self.config.tools.append(search_tool)
 
     async def asearch(
         self,
@@ -75,7 +81,7 @@ class RAGAssistantMixin:
         return formatted_result
 
 
-class R2RRAGAssistant(RAGAssistantMixin, R2RAssistant):
+class R2RRAGAgent(RAGAgentMixin, R2RAgent):
     def __init__(
         self,
         llm_provider: CompletionProvider,
@@ -91,7 +97,7 @@ class R2RRAGAssistant(RAGAssistantMixin, R2RAssistant):
         )
 
 
-class R2RStreamingRAGAssistant(RAGAssistantMixin, R2RStreamingAssistant):
+class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
     def __init__(
         self,
         llm_provider: CompletionProvider,

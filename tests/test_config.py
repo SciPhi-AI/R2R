@@ -91,6 +91,10 @@ def mock_file():
                 "log_table": "logs",
                 "log_info_table": "log_info",
             },
+            "agent": {
+                "system_instruction_name": "rag_agent",
+                "tool_names": ["search"],
+            },
             "prompt": {"provider": "r2r"},
         }
     )

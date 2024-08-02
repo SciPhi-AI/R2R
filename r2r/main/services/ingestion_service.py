@@ -22,7 +22,7 @@ from r2r.base import (
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RAssistants, R2RPipelines, R2RProviders
+from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
 from ..api.routes.ingestion.requests import (
     R2RIngestFilesRequest,
     R2RUpdateFilesRequest,
@@ -40,7 +40,7 @@ class IngestionService(Service):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
-        agents: R2RAssistants,
+        agents: R2RAgents,
         run_manager: RunManager,
         logging_connection: KVLoggingSingleton,
     ):
@@ -437,7 +437,7 @@ class IngestionService(Service):
         metadatas: Optional[str] = Form(None),
         document_ids: str = Form(None),
         versions: Optional[str] = Form(None),
-        chunking_provider_override: Optional[str] = Form(None),
+        chunking_config_override: Optional[str] = Form(None),
     ) -> R2RIngestFilesRequest:
         try:
             parsed_metadatas = (
@@ -465,17 +465,17 @@ class IngestionService(Service):
                 if versions and versions != "null"
                 else None
             )
-            chunking_provider_override = (
-                json.loads(chunking_provider_override)
-                if chunking_provider_override
-                and chunking_provider_override != "null"
+            chunking_config_override = (
+                json.loads(chunking_config_override)
+                if chunking_config_override
+                and chunking_config_override != "null"
                 else None
             )
             request_data = {
                 "metadatas": parsed_metadatas,
                 "document_ids": parsed_document_ids,
                 "versions": parsed_versions,
-                "chunking_provider_override": chunking_provider_override,
+                "chunking_config_override": chunking_config_override,
             }
             return R2RIngestFilesRequest(**request_data)
         except json.JSONDecodeError as e:
@@ -493,6 +493,7 @@ class IngestionService(Service):
     def parse_update_files_form_data(
         metadatas: Optional[str] = Form(None),
         document_ids: str = Form(...),
+        chunking_config_override: Optional[str] = Form(None),
     ) -> R2RUpdateFilesRequest:
         try:
             parsed_metadatas = (
@@ -514,10 +515,17 @@ class IngestionService(Service):
             parsed_document_ids = [
                 uuid.UUID(doc_id) for doc_id in parsed_document_ids
             ]
+            chunking_config_override = (
+                json.loads(chunking_config_override)
+                if chunking_config_override
+                and chunking_config_override != "null"
+                else None
+            )
 
             request_data = {
                 "metadatas": parsed_metadatas,
                 "document_ids": parsed_document_ids,
+                "chunking_config_override": chunking_config_override,
             }
             return R2RUpdateFilesRequest(**request_data)
         except json.JSONDecodeError as e:

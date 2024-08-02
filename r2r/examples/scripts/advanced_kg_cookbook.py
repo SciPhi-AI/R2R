@@ -176,14 +176,14 @@ def main(
 
         result = client.search(
             query="Find up to 10 founders that worked at Google",
-            use_kg_search=True,
+            kg_search_settings={"use_kg_search": True},
         )["results"]
 
         print("Search Result:\n", result["kg_search_results"])
 
         result = client.rag(
             query="Find up to 10 founders that worked at Google",
-            use_kg_search=True,
+            kg_search_settings={"use_kg_search": True},
         )
         print("RAG Result:\n", result)
 
