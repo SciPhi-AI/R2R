@@ -186,20 +186,30 @@ def serve(
             project_name,
             image,
         )
-        # Open browser after Docker setup is complete
-        import time
+        # Check if we're running in a test environment
+        is_test = (
+            "pytest" in sys.modules
+            or "unittest" in sys.modules
+            or os.environ.get("PYTEST_CURRENT_TEST")
+        )
 
-        print("Navigating to dashboard in 3 seconds...")
-        time.sleep(1)
-        print("Navigating to dashboard in 2 seconds...")
-        time.sleep(1)
-        print("Navigating to dashboard in 1 seconds...")
-        time.sleep(1)
-        import webbrowser
+        if not is_test:
+            # Open browser after Docker setup is complete
+            import time
 
-        url = "http://localhost"
-        click.echo(f"Opening browser to {url}")
-        webbrowser.open(url)
+            print("Navigating to dashboard in 3 seconds...")
+            time.sleep(1)
+            print("Navigating to dashboard in 2 seconds...")
+            time.sleep(1)
+            print("Navigating to dashboard in 1 seconds...")
+            time.sleep(1)
+            import webbrowser
+
+            url = "http://localhost"
+            click.echo(f"Opening browser to {url}")
+            webbrowser.open(url)
+        else:
+            click.echo("Test environment detected. Skipping browser open.")
 
     else:
         run_local_serve(obj, host, port)

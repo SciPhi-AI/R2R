@@ -53,7 +53,7 @@ log_table = "logs"
 log_info_table = "log_info"
 
 [parsing]
-provider = "unstructured"
+provider = "r2r"
 excluded_parsers = ["mp4"]
 
 [prompt]

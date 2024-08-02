@@ -394,9 +394,11 @@ async def test_ingest_search_txt_file(app, logging_connection):
             file.size = file.file.tell()  # Get the file size
             file.file.seek(0)  # Move back to the start of the file
 
-        await app.aingest_files(metadatas=[metadata], files=files)
+        result = await app.aingest_files(metadatas=[metadata], files=files)
+        print(result)
 
         search_results = await app.asearch("who was aristotle?")
+        print("search_results = ", search_results)
         assert len(search_results["vector_search_results"]) == 10
         assert (
             "was an Ancient Greek philosopher and polymath"
