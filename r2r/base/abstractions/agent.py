@@ -120,8 +120,7 @@ class Agent(ABC):
         pass
 
     async def execute_tool(self, tool_name: str, *args, **kwargs) -> str:
-        tool = next((t for t in self.tools if t.name == tool_name), None)
-        if tool:
+        if tool := next((t for t in self.tools if t.name == tool_name), None):
             return await tool.function(*args, **kwargs)
         else:
             return f"Error: Tool {tool_name} not found."
@@ -130,8 +129,9 @@ class Agent(ABC):
         self, last_message: Message, stream: bool = False
     ) -> GenerationConfig:
         if (
-            last_message.role == "tool" or last_message.role == "function"
-        ) and last_message.content != "":
+            last_message.role in ["tool", "function"]
+            and last_message.content != ""
+        ):
             return GenerationConfig(
                 **self.config.generation_config.dict(
                     exclude={"functions", "tools", "stream"}
@@ -177,7 +177,7 @@ class Agent(ABC):
         (
             self.conversation.append(
                 Message(
-                    role="agent",
+                    role="assistant",
                     tool_calls=[
                         {
                             "id": tool_id,
@@ -192,7 +192,7 @@ class Agent(ABC):
             if tool_id
             else self.conversation.append(
                 Message(
-                    role="agent",
+                    role="assistant",
                     function_call={
                         "name": function_name,
                         "arguments": function_arguments,
@@ -204,10 +204,9 @@ class Agent(ABC):
         # TODO - We always use tools, not functions
         # Think of ways to make this clearer
 
-        tool = next(
+        if tool := next(
             (t for t in self.config.tools if t.name == function_name), None
-        )
-        if tool:
+        ):
             raw_result = await tool.results_function(
                 *args, **kwargs, **json.loads(function_arguments)
             )

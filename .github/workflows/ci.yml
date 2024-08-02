@@ -21,7 +21,6 @@ jobs:
         run: |
           python3 -m venv venv
           source venv/bin/activate
-          pip install poetry
           poetry install
 
       - name: Install pre-commit
@@ -38,7 +37,7 @@ jobs:
 
   pytest:
     runs-on: [ self-hosted, Linux ]
-    timeout-minutes: 15  # Increased timeout to accommodate Ollama setup
+    timeout-minutes: 15
 
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -57,7 +56,6 @@ jobs:
         run: |
           python3 -m venv venv
           source venv/bin/activate
-          pip install poetry
           poetry install
 
       - name: Start Ollama server

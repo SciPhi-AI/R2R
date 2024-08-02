@@ -1,6 +1,7 @@
 import ipaddress
 import json
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -304,6 +305,21 @@ def get_compose_files():
     return compose_files
 
 
+def find_available_port(start_port):
+    port = start_port
+    while True:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex(("localhost", port)) != 0:
+                if port != start_port:
+                    click.secho(
+                        f"Warning: Port {start_port} is in use. Using {port}",
+                        fg="red",
+                        bold=True,
+                    )
+                return port
+            port += 1
+
+
 def build_docker_command(
     compose_files,
     host,
@@ -315,6 +331,8 @@ def build_docker_command(
     config_path,
     image,
 ):
+    available_port = find_available_port(port)
+
     command = f"docker compose -f {compose_files['base']}"
     if not exclude_neo4j:
         command += f" -f {compose_files['neo4j']}"
@@ -325,13 +343,14 @@ def build_docker_command(
 
     command += f" --project-name {project_name}"
 
-    if host != "0.0.0.0" or port != 8000:
-        command += f" --build-arg HOST={host} --build-arg PORT={port}"
+    os.environ["PORT"] = str(available_port)
+    os.environ["HOST"] = host
+    os.environ["TRAEFIK_PORT"] = str(available_port + 1)
 
     if config_path:
         config_dir = os.path.dirname(config_path)
         config_file = os.path.basename(config_path)
-        command += f" --build-arg CONFIG_PATH=/app/config/{config_file}"
+        os.environ["CONFIG_PATH"] = f"/app/config/{config_file}"
         command += f" -v {config_dir}:/app/config"
 
     if image:
