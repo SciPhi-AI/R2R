@@ -7,6 +7,7 @@ from r2r.base.logging.kv_logger import KVLoggingSingleton
 from r2r.base.logging.run_manager import RunManager, manage_run
 from r2r.base.pipeline.base_pipeline import AsyncPipeline, dequeue_requests
 from r2r.base.pipes.base_pipe import AsyncPipe, AsyncState
+from r2r.base.providers.chunking import ChunkingProvider
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ class IngestionPipeline(AsyncPipeline):
         stream: bool = False,
         run_manager: Optional[RunManager] = None,
         log_run_info: bool = True,
+        chunking_provider_override: Optional[ChunkingProvider] = None,
         *args: Any,
         **kwargs: Any,
     ) -> None:
@@ -79,6 +81,7 @@ class IngestionPipeline(AsyncPipeline):
                     ),
                     state,
                     run_manager,
+                    chunking_provider_override=chunking_provider_override,
                     *args,
                     **kwargs,
                 ):

@@ -437,6 +437,7 @@ class IngestionService(Service):
         metadatas: Optional[str] = Form(None),
         document_ids: str = Form(None),
         versions: Optional[str] = Form(None),
+        chunking_provider_override: Optional[str] = Form(None),
     ) -> R2RIngestFilesRequest:
         try:
             parsed_metadatas = (
@@ -464,11 +465,17 @@ class IngestionService(Service):
                 if versions and versions != "null"
                 else None
             )
-
+            chunking_provider_override = (
+                json.loads(chunking_provider_override)
+                if chunking_provider_override
+                and chunking_provider_override != "null"
+                else None
+            )
             request_data = {
                 "metadatas": parsed_metadatas,
                 "document_ids": parsed_document_ids,
                 "versions": parsed_versions,
+                "chunking_provider_override": chunking_provider_override,
             }
             return R2RIngestFilesRequest(**request_data)
         except json.JSONDecodeError as e:
