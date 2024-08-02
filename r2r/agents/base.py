@@ -32,9 +32,10 @@ def sync_wrapper(async_gen):
     return wrapper()
 
 
-class R2RAssistant(Agent, metaclass=CombinedMeta):
+class R2RAgent(Agent, metaclass=CombinedMeta):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._register_tools()
         self._reset()
 
     def _reset(self):
@@ -94,12 +95,12 @@ class R2RAssistant(Agent, metaclass=CombinedMeta):
                     )
             else:
                 self.conversation.append(
-                    Message(role="agent", content=message.content)
+                    Message(role="assistant", content=message.content)
                 )
                 self._completed = True
 
 
-class R2RStreamingAssistant(Agent):
+class R2RStreamingAgent(Agent):
     async def arun(
         self,
         system_instruction: Optional[str] = None,
@@ -198,7 +199,7 @@ class R2RStreamingAssistant(Agent):
             elif chunk.choices[0].finish_reason == "stop":
                 if content_buffer:
                     self.conversation.append(
-                        Message(role="agent", content=content_buffer)
+                        Message(role="assistant", content=content_buffer)
                     )
                 self._completed = True
                 yield "</completion>"

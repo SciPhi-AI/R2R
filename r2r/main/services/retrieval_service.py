@@ -18,7 +18,7 @@ from r2r.base import (
 from r2r.pipes import EvalPipe
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RAssistants, R2RPipelines, R2RProviders
+from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
 from ..assembly.config import R2RConfig
 from .base import Service
 
@@ -31,7 +31,7 @@ class RetrievalService(Service):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
-        agents: R2RAssistants,
+        agents: R2RAgents,
         run_manager: RunManager,
         logging_connection: KVLoggingSingleton,
     ):
@@ -204,7 +204,7 @@ class RetrievalService(Service):
                 )
 
     @telemetry_event("RAGChat")
-    async def rag_agent(
+    async def agent(
         self,
         messages: list[Message],
         rag_generation_config: GenerationConfig,
@@ -216,7 +216,7 @@ class RetrievalService(Service):
         *args,
         **kwargs,
     ):
-        async with manage_run(self.run_manager, "rag_agent_app") as run_id:
+        async with manage_run(self.run_manager, "agent_app") as run_id:
             try:
                 t0 = time.time()
 

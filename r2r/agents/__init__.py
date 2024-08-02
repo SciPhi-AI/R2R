@@ -1,9 +1,9 @@
-from .base import R2RAssistant, R2RStreamingAssistant
-from .rag import R2RRAGAssistant, R2RStreamingRAGAssistant
+from .base import R2RAgent, R2RStreamingAgent
+from .rag import R2RRAGAgent, R2RStreamingRAGAgent
 
 __all__ = [
-    "R2RAssistant",
-    "R2RStreamingAssistant",
-    "R2RRAGAssistant",
-    "R2RStreamingRAGAssistant",
+    "R2RAgent",
+    "R2RStreamingAgent",
+    "R2RRAGAgent",
+    "R2RStreamingRAGAgent",
 ]

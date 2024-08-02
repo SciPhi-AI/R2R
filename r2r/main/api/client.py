@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 
 from r2r.base import (
     AnalysisTypes,
+    ChunkingConfig,
     FilterCriteria,
     GenerationConfig,
     KGSearchSettings,
@@ -36,7 +37,7 @@ from .routes.management.requests import (
     R2RUsersOverviewRequest,
 )
 from .routes.retrieval.requests import (
-    R2RRAGAgentRequest,
+    R2RAgentRequest,
     R2RRAGRequest,
     R2RSearchRequest,
 )
@@ -171,9 +172,14 @@ class R2RClient:
         metadatas: Optional[list[dict]] = None,
         document_ids: Optional[list[Union[uuid.UUID, str]]] = None,
         versions: Optional[list[str]] = None,
-        chunking_provider_override: Optional[dict] = None,
+        chunking_config_override: Optional[Union[dict, ChunkingConfig]] = None,
     ) -> dict:
         self._ensure_authenticated()
+
+        if isinstance(chunking_config_override, ChunkingConfig):
+            chunking_config_override = json.loads(
+                chunking_config_override.model_dump_json()
+            )
 
         all_file_paths = []
 
@@ -203,7 +209,7 @@ class R2RClient:
                 [str(ele) for ele in document_ids] if document_ids else None
             ),
             versions=versions,
-            chunking_provider_override=chunking_provider_override,
+            chunking_config_override=chunking_config_override,
         )
         try:
             return self._make_request(
@@ -224,12 +230,14 @@ class R2RClient:
         file_paths: list[str],
         document_ids: list[str],
         metadatas: Optional[list[dict]] = None,
+        chunking_config_override: Optional[Union[dict, ChunkingConfig]] = None,
     ) -> dict:
         self._ensure_authenticated()
 
         request = R2RUpdateFilesRequest(
             metadatas=metadatas,
             document_ids=document_ids,
+            chunking_config_override=chunking_config_override,
         )
         with ExitStack() as stack:
             return self._make_request(
@@ -255,31 +263,29 @@ class R2RClient:
     def search(
         self,
         query: str,
-        use_vector_search: bool = True,
-        search_filters: Optional[dict[str, Any]] = {},
-        search_limit: int = 10,
-        do_hybrid_search: bool = False,
-        use_kg_search: bool = False,
-        entity_types: list = [],
-        relationships: list = [],
-        kg_search_generation_config: Optional[dict] = None,
+        vector_search_settings: Optional[
+            Union[dict, VectorSearchSettings]
+        ] = None,
+        kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
     ) -> dict:
         self._ensure_authenticated()
+        if vector_search_settings and isinstance(
+            vector_search_settings, VectorSearchSettings
+        ):
+            vector_search_settings = json.loads(
+                vector_search_settings.model_dump_json()
+            )
+        if kg_search_settings and isinstance(
+            kg_search_settings, KGSearchSettings
+        ):
+            kg_search_settings = json.loads(
+                kg_search_settings.model_dump_json()
+            )
 
         request = R2RSearchRequest(
             query=query,
-            vector_search_settings={
-                "use_vector_search": use_vector_search,
-                "search_filters": search_filters or {},
-                "search_limit": search_limit,
-                "do_hybrid_search": do_hybrid_search,
-            },
-            kg_search_settings={
-                "use_kg_search": use_kg_search,
-                "entity_types": entity_types,
-                "relationships": relationships,
-                "kg_search_generation_config": kg_search_generation_config,
-            },
+            vector_search_settings=vector_search_settings,
+            kg_search_settings=kg_search_settings,
         )
         return self._make_request(
             "POST", "search", json=json.loads(request.model_dump_json())
@@ -288,51 +294,38 @@ class R2RClient:
     def rag(
         self,
         query: str,
-        use_vector_search: bool = True,
-        search_filters: Optional[dict[str, Any]] = {},
-        search_limit: int = 10,
-        do_hybrid_search: bool = False,
-        use_kg_search: bool = False,
-        kg_search_generation_config: Optional[dict] = None,
-        rag_generation_config: Optional[Union[dict, GenerationConfig]] = None,
-        kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
         vector_search_settings: Optional[
             Union[dict, VectorSearchSettings]
         ] = None,
+        kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
+        rag_generation_config: Optional[Union[dict, GenerationConfig]] = None,
         task_prompt_override: Optional[str] = None,
+        include_title_if_available: Optional[bool] = None,
     ) -> dict:
         self._ensure_authenticated()
 
-        if isinstance(rag_generation_config, GenerationConfig):
-            rag_generation_config = json.loads(
-                rag_generation_config.model_dump_json()
+        if isinstance(vector_search_settings, VectorSearchSettings):
+            vector_search_settings = json.loads(
+                vector_search_settings.model_dump_json()
             )
         if isinstance(kg_search_settings, KGSearchSettings):
             kg_search_settings = json.loads(
                 kg_search_settings.model_dump_json()
             )
-        if isinstance(vector_search_settings, VectorSearchSettings):
-            vector_search_settings = json.loads(
-                vector_search_settings.model_dump_json()
+        if isinstance(rag_generation_config, GenerationConfig):
+            rag_generation_config = json.loads(
+                rag_generation_config.model_dump_json()
             )
 
         request = R2RRAGRequest(
             query=query,
-            vector_search_settings=vector_search_settings
-            or {
-                "use_vector_search": use_vector_search,
-                "search_filters": search_filters or {},
-                "search_limit": search_limit,
-                "do_hybrid_search": do_hybrid_search,
-            },
-            kg_search_settings=kg_search_settings
-            or {
-                "use_kg_search": use_kg_search,
-                "kg_search_generation_config": kg_search_generation_config,
-            },
-            rag_generation_config=rag_generation_config,
+            vector_search_settings=vector_search_settings,
+            kg_search_settings=kg_search_settings,
+            rag_generation_config=rag_generation_config or {"stream": False},
             task_prompt_override=task_prompt_override,
+            include_title_if_available=include_title_if_available,
         )
+        print("request = ", request)
 
         if rag_generation_config and rag_generation_config.get(
             "stream", False
@@ -365,6 +358,84 @@ class R2RClient:
     ) -> Generator[str, None, None]:
         async def run_async_generator():
             async for chunk in self._stream_rag(rag_request):
+                yield chunk
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        async_gen = run_async_generator()
+
+        try:
+            while True:
+                yield loop.run_until_complete(async_gen.__anext__())
+        except StopAsyncIteration:
+            pass
+        finally:
+            loop.close()
+
+    def agent(
+        self,
+        messages: list[dict],
+        vector_search_settings: Optional[
+            Union[dict, VectorSearchSettings]
+        ] = None,
+        kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
+        rag_generation_config: Optional[Union[dict, GenerationConfig]] = None,
+        task_prompt_override: Optional[str] = None,
+    ) -> dict:
+        self._ensure_authenticated()
+
+        if isinstance(vector_search_settings, VectorSearchSettings):
+            vector_search_settings = json.loads(
+                vector_search_settings.model_dump_json()
+            )
+        if isinstance(kg_search_settings, KGSearchSettings):
+            kg_search_settings = json.loads(
+                kg_search_settings.model_dump_json()
+            )
+        if isinstance(rag_generation_config, GenerationConfig):
+            rag_generation_config = json.loads(
+                rag_generation_config.model_dump_json()
+            )
+        request = R2RAgentRequest(
+            messages=messages,
+            vector_search_settings=vector_search_settings,
+            kg_search_settings=kg_search_settings,
+            rag_generation_config=rag_generation_config,
+            task_prompt_override=task_prompt_override,
+        )
+
+        if rag_generation_config and rag_generation_config.get(
+            "stream", False
+        ):
+            return self._stream_agent_sync(request)
+        else:
+            return self._make_request(
+                "POST", "agent", json=json.loads(request.model_dump_json())
+            )
+
+    async def _stream_agent(
+        self, rag_agent_request: R2RAgentRequest
+    ) -> AsyncGenerator[str, None]:
+        url = f"{self.base_url}{self.prefix}/agent"
+        async with httpx.AsyncClient() as client:
+            async with client.stream(
+                "POST",
+                url,
+                json=json.loads(
+                    rag_agent_request.model_dump_json(),
+                ),
+                timeout=self.timeout,
+            ) as response:
+                handle_request_error(response)
+                async for chunk in response.aiter_text():
+                    yield chunk
+
+    def _stream_agent_sync(
+        self, rag_agent_request: R2RAgentRequest
+    ) -> Generator[str, None, None]:
+        async def run_async_generator():
+            async for chunk in self._stream_agent(rag_agent_request):
                 yield chunk
 
         loop = asyncio.new_event_loop()
@@ -517,101 +588,6 @@ class R2RClient:
         self.access_token = None
         self._refresh_token = None
         return response
-
-    def rag_agent(
-        self,
-        messages: list[dict],
-        use_vector_search: bool = True,
-        search_filters: Optional[dict[str, Any]] = {},
-        search_limit: int = 10,
-        do_hybrid_search: bool = False,
-        use_kg_search: bool = False,
-        kg_search_generation_config: Optional[dict] = None,
-        rag_generation_config: Optional[Union[dict, GenerationConfig]] = None,
-        kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
-        vector_search_settings: Optional[
-            Union[dict, VectorSearchSettings]
-        ] = None,
-        task_prompt_override: Optional[str] = None,
-    ) -> dict:
-        self._ensure_authenticated()
-
-        if isinstance(rag_generation_config, GenerationConfig):
-            rag_generation_config = json.loads(
-                rag_generation_config.model_dump_json()
-            )
-        if isinstance(kg_search_settings, KGSearchSettings):
-            kg_search_settings = json.loads(
-                kg_search_settings.model_dump_json()
-            )
-        if isinstance(vector_search_settings, VectorSearchSettings):
-            vector_search_settings = json.loads(
-                vector_search_settings.model_dump_json()
-            )
-
-        request = R2RRAGAgentRequest(
-            messages=messages,
-            vector_search_settings=vector_search_settings
-            or {
-                "use_vector_search": use_vector_search,
-                "search_filters": search_filters or {},
-                "search_limit": search_limit,
-                "do_hybrid_search": do_hybrid_search,
-            },
-            kg_search_settings=kg_search_settings
-            or {
-                "use_kg_search": use_kg_search,
-                "kg_search_generation_config": kg_search_generation_config,
-            },
-            rag_generation_config=rag_generation_config,
-            task_prompt_override=task_prompt_override,
-        )
-
-        if rag_generation_config and rag_generation_config.get(
-            "stream", False
-        ):
-            return self._stream_rag_agent_sync(request)
-        else:
-            return self._make_request(
-                "POST", "rag_agent", json=json.loads(request.model_dump_json())
-            )
-
-    async def _stream_rag_agent(
-        self, rag_agent_request: R2RRAGAgentRequest
-    ) -> AsyncGenerator[str, None]:
-        url = f"{self.base_url}{self.prefix}/rag_agent"
-        async with httpx.AsyncClient() as client:
-            async with client.stream(
-                "POST",
-                url,
-                json=json.loads(
-                    rag_agent_request.model_dump_json(),
-                ),
-                timeout=self.timeout,
-            ) as response:
-                handle_request_error(response)
-                async for chunk in response.aiter_text():
-                    yield chunk
-
-    def _stream_rag_agent_sync(
-        self, rag_agent_request: R2RRAGAgentRequest
-    ) -> Generator[str, None, None]:
-        async def run_async_generator():
-            async for chunk in self._stream_rag_agent(rag_agent_request):
-                yield chunk
-
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-        async_gen = run_async_generator()
-
-        try:
-            while True:
-                yield loop.run_until_complete(async_gen.__anext__())
-        except StopAsyncIteration:
-            pass
-        finally:
-            loop.close()
 
 
 if __name__ == "__main__":

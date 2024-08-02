@@ -3,8 +3,8 @@ from fastapi.responses import StreamingResponse
 
 from r2r.base import GenerationConfig, KGSearchSettings, VectorSearchSettings
 from r2r.main.api.routes.retrieval.requests import (
+    R2RAgentRequest,
     R2REvalRequest,
-    R2RRAGAgentRequest,
     R2RRAGRequest,
     R2RSearchRequest,
 )
@@ -66,7 +66,11 @@ class RetrievalRouter(BaseRouter):
                 else None
             ),
         ):
-            if "kg_search_generation_config" in request.kg_search_settings:
+            if (
+                request.kg_search_settings
+                and request.kg_search_settings
+                and "kg_search_generation_config" in request.kg_search_settings
+            ):
                 request.kg_search_settings["kg_search_generation_config"] = (
                     GenerationConfig(
                         **(
@@ -106,17 +110,20 @@ class RetrievalRouter(BaseRouter):
             else:
                 return response
 
-        @self.router.post("/rag_agent")
+        @self.router.post("/agent")
         @self.base_endpoint
-        async def rag_agent_app(
-            request: R2RRAGAgentRequest,
+        async def agent_app(
+            request: R2RAgentRequest,
             auth_user=(
                 Depends(self.engine.providers.auth.auth_wrapper)
                 if self.engine.providers.auth
                 else None
             ),
         ):
-            if "kg_search_generation_config" in request.kg_search_settings:
+            if (
+                request.kg_search_settings
+                and "kg_search_generation_config" in request.kg_search_settings
+            ):
                 request.kg_search_settings["kg_search_generation_config"] = (
                     GenerationConfig(
                         **(

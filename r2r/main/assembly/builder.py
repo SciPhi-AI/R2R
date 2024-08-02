@@ -1,7 +1,7 @@
 import os
 from typing import Optional, Type
 
-from r2r.agents import R2RRAGAssistant
+from r2r.agents import R2RRAGAgent
 from r2r.base import (
     AsyncPipe,
     AuthProvider,
@@ -25,7 +25,7 @@ from ..engine import R2REngine
 from ..r2r import R2R
 from .config import R2RConfig
 from .factory import (
-    R2RAssistantFactory,
+    R2RAgentFactory,
     R2RPipeFactory,
     R2RPipelineFactory,
     R2RProviderFactory,
@@ -105,8 +105,8 @@ class R2RBuilder:
         self.eval_pipeline: Optional[EvalPipeline] = None
 
         # Agent overrides
-        self.assistant_factory_override: Optional[R2RAssistantFactory] = None
-        self.rag_agent_override: Optional[R2RRAGAssistant] = None
+        self.assistant_factory_override: Optional[R2RAgentFactory] = None
+        self.rag_agent_override: Optional[R2RRAGAgent] = None
 
     def with_app(self, app: Type[R2REngine]):
         self.r2r_app_override = app
@@ -219,11 +219,11 @@ class R2RBuilder:
         self.eval_pipeline = pipeline
         return self
 
-    def with_assistant_factory(self, factory: R2RAssistantFactory):
+    def with_assistant_factory(self, factory: R2RAgentFactory):
         self.assistant_factory_override = factory
         return self
 
-    def with_rag_agent(self, agent: R2RRAGAssistant):
+    def with_rag_agent(self, agent: R2RRAGAgent):
         self.rag_agent_override = agent
         return self
 
@@ -270,11 +270,10 @@ class R2RBuilder:
             **kwargs,
         )
 
-        assistant_factory = (
-            self.assistant_factory_override
-            or R2RAssistantFactory(self.config, providers, pipelines)
+        assistant_factory = self.assistant_factory_override or R2RAgentFactory(
+            self.config, providers, pipelines
         )
-        agents = assistant_factory.create_assistants(
+        agents = assistant_factory.create_agents(
             rag_agent_override=self.rag_agent_override,
             *args,
             **kwargs,

@@ -137,14 +137,14 @@ def health(obj):
 @click.option("--port", default=8000, help="Port to run the server on")
 @click.option("--docker", is_flag=True, help="Run using Docker")
 @click.option(
-    "--exclude-neo4j", is_flag=True, help="Exclude Neo4j from Docker setup"
+    "--exclude-neo4j", default=False, help="Exclude Neo4j from Docker setup"
 )
 @click.option(
-    "--exclude-ollama", is_flag=True, help="Exclude Ollama from Docker setup"
+    "--exclude-ollama", default=True, help="Exclude Ollama from Docker setup"
 )
 @click.option(
     "--exclude-postgres",
-    is_flag=True,
+    default=False,
     help="Exclude Postgres from Docker setup",
 )
 @click.option("--project-name", default="r2r", help="Project name for Docker")

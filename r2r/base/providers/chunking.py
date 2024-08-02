@@ -18,7 +18,7 @@ class ChunkingConfig(ProviderConfig):
     provider: str = "r2r"
     method: Method = Method.RECURSIVE
     chunk_size: int = 512
-    chunk_overlap: int = 0
+    chunk_overlap: int = 20
     max_chunk_size: Optional[int] = None
 
     def validate(self) -> None:
