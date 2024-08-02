@@ -34,10 +34,12 @@ jobs:
           poetry install
 
       - name: Install pre-commit
-        run: poetry run pre-commit install
+        run: |
+          pip install pre-commit
+          pre-commit install
 
       - name: Run pre-commit
-        run: poetry run pre-commit run --all-files
+        run: pre-commit run --all-files
 
       - name: Cleanup
         if: always()
@@ -73,6 +75,10 @@ jobs:
           ollama serve &
           sleep 5
           curl -i http://localhost:11434
+
+      - name: Install pre-commit
+        run: |
+          pip install pytest
 
       - name: Run tests
         run: poetry run pytest tests/ -k "not redis and not sentence_transformer"
