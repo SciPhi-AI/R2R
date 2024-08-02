@@ -186,14 +186,13 @@ def serve(
             project_name,
             image,
         )
-        # Check if we're running in a test environment
-        is_test = (
+        if (
             "pytest" in sys.modules
             or "unittest" in sys.modules
             or os.environ.get("PYTEST_CURRENT_TEST")
-        )
-
-        if not is_test:
+        ):
+            click.echo("Test environment detected. Skipping browser open.")
+        else:
             # Open browser after Docker setup is complete
             import time
 
@@ -208,9 +207,6 @@ def serve(
             url = "http://localhost"
             click.echo(f"Opening browser to {url}")
             webbrowser.open(url)
-        else:
-            click.echo("Test environment detected. Skipping browser open.")
-
     else:
         run_local_serve(obj, host, port)
 
