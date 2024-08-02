@@ -4,7 +4,7 @@ import time
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
-from typing import Any, AsyncGenerator, Generator, Optional
+from typing import Any, Optional
 
 from ..abstractions.embedding import (
     EmbeddingPurpose,

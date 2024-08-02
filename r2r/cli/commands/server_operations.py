@@ -58,7 +58,7 @@ def generate_report():
         docker_ps_output = subprocess.check_output(
             ["docker", "ps", "--format", "{{.ID}}\t{{.Names}}\t{{.Status}}"],
             text=True,
-        )
+        ).decode("utf-8")
         report["docker_ps"] = [
             dict(zip(["id", "name", "status"], line.split("\t")))
             for line in docker_ps_output.strip().split("\n")
@@ -69,7 +69,7 @@ def generate_report():
         docker_network_output = subprocess.check_output(
             ["docker", "network", "ls", "--format", "{{.ID}}\t{{.Name}}"],
             text=True,
-        )
+        ).decode("utf-8")
         networks = [
             dict(zip(["id", "name"], line.split("\t")))
             for line in docker_network_output.strip().split("\n")
@@ -88,7 +88,7 @@ def generate_report():
                     "{{range .IPAM.Config}}{{.Subnet}}{{end}}",
                 ],
                 text=True,
-            )
+            ).decode("utf-8")
             if subnet := inspect_output.strip():
                 network["subnet"] = subnet
                 report["docker_subnets"].append(network)
@@ -133,12 +133,18 @@ def health(obj):
 @click.option(
     "--exclude-ollama", is_flag=True, help="Exclude Ollama from Docker setup"
 )
+@click.option(
+    "--exclude-postgres",
+    is_flag=True,
+    help="Exclude Postgres from Docker setup",
+)
 @click.option("--project-name", default="r2r", help="Project name for Docker")
 @click.option(
     "--config-path",
     type=click.Path(exists=True),
     help="Path to the configuration file",
 )
+@click.option("--image", help="Docker image to use")
 @click.pass_obj
 def serve(
     obj,
@@ -147,8 +153,10 @@ def serve(
     docker,
     exclude_neo4j,
     exclude_ollama,
+    exclude_postgres,
     project_name,
     config_path,
+    image,
 ):
     """Start the R2R server."""
     load_dotenv()
@@ -171,8 +179,10 @@ def serve(
             port,
             exclude_neo4j,
             exclude_ollama,
+            exclude_postgres,
             project_name,
             config_path,
+            image,
         )
     else:
         run_local_serve(obj, host, port)
