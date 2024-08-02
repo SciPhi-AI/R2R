@@ -1,4 +1,4 @@
-name: Build and Publish Docker Image
+name: Build and Publish Docker Images
 
 on:
   workflow_dispatch:
@@ -46,6 +46,10 @@ jobs:
             echo "RELEASE_VERSION=main" >> $GITHUB_OUTPUT
           fi
 
+      - name: Generate Cache Buster
+        id: cache-buster
+        run: echo "CACHE_BUSTER=$(date +%s)" >> $GITHUB_OUTPUT
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -57,7 +61,7 @@ jobs:
             type=raw,value=${{ steps.version.outputs.RELEASE_VERSION }}
             type=raw,value=latest
 
-      - name: Build and Push Docker Image
+      - name: Build and Push Docker Image (Standard)
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -66,3 +70,28 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            CACHE_BUST=${{ steps.cache-buster.outputs.CACHE_BUSTER }}
+
+      - name: Build and Push Docker Image (Unstructured)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.unstructured
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            CACHE_BUST=${{ steps.cache-buster.outputs.CACHE_BUSTER }}
+
+      - name: Modify and Push Unstructured Tags
+        run: |
+          for tag in ${{ steps.meta.outputs.tags }}; do
+            IFS=':' read -ra PARTS <<< "$tag"
+            REPO="${PARTS[0]}"
+            VERSION="${PARTS[1]}"
+            NEW_TAG="${REPO}:${VERSION}-unstructured"
+            docker tag $tag $NEW_TAG
+            docker push $NEW_TAG
+          done
