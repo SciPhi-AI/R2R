@@ -115,5 +115,7 @@ jobs:
         echo "Clean up Virtual Environment"
         deactivate
         rm -rf venv
+        docker stop $(docker ps -a -q)
         docker system prune -af --volumes
+        docker network prune --force
         docker volume rm $(docker volume ls -qf dangling=true)
