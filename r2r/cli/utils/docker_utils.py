@@ -101,11 +101,24 @@ def run_docker_serve(
             R2RBuilder.CONFIG_OPTIONS[obj["config_name"] or "default"]
         )
     )
-    llm_provider = config.completion.provider
-    llm_model = config.completion.generation_config.model
-    model_provider = llm_model.split("/")[0]
+    completion_provider = config.completion.provider
+    completion_model = config.completion.generation_config.model
+    completion_model_provider = completion_model.split("/")[0]
 
-    check_llm_reqs(llm_provider, model_provider, include_ollama=exclude_ollama)
+    check_llm_reqs(
+        completion_provider,
+        completion_model_provider,
+        include_ollama=exclude_ollama,
+    )
+
+    embedding_provider = config.embedding.provider
+    embedding_model = config.embedding.base_model
+    embedding_model_provider = embedding_model.split("/")[0]
+    check_llm_reqs(
+        embedding_provider,
+        embedding_model_provider,
+        include_ollama=exclude_ollama,
+    )
 
     no_conflict, message = check_subnet_conflict()
     if not no_conflict:
