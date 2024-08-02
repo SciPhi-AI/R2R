@@ -16,6 +16,7 @@ jobs:
       actions: write
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      TELEMETRY_ENABLED: false
 
     steps:
     - uses: actions/checkout@v4
@@ -68,7 +69,7 @@ jobs:
         r2r version
 
         echo "R2R Serve --docker"
-        r2r serve --docker --exclude-neo4j --exclude-ollama --image=ragtoriches/dev:latest
+        r2r serve --docker --exclude-neo4j=true --exclude-ollama=true  --image=ragtoriches/dev:latest
 
         echo "Waiting for services to start..."
         sleep 30

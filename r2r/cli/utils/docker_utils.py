@@ -261,7 +261,7 @@ def check_set_docker_env_vars(exclude_neo4j=False, exclude_postgres=False):
                 warning_text = click.style("Warning:", fg="red", bold=True)
                 prompt = (
                     f"{warning_text} It's only necessary to set this environment variable when connecting to an instance not managed by R2R.\n"
-                    f"Add the flag --exclude-postgres to avoid deploying a Postgres instance with R2R.\n"
+                    f"Set --exclude-postgres=true to avoid deploying a Postgres instance with R2R.\n"
                     f"Environment variable {var} is set to '{value}'. Unset it?"
                 )
                 if click.confirm(prompt, default=True):
