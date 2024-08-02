@@ -51,8 +51,6 @@ class KGNodeExtractionPipe(AsyncPipe):
         
         # now pass a single one to description pipe
 
-
-
 class KGNodeDescriptionPipe(AsyncPipe):
     """
         The pipe takes input a list of nodes and extracts description from them.
@@ -79,7 +77,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
         self.llm_provider = llm_provider
         
 
-    async def _run_logic(self, input: Input, state: AsyncState, run_id: UUID, *args: Any, **kwargs: Any) -> AsyncGenerator[Any, None]:
+    async def _run_logic(self, input: Input, state: AsyncState, run_id: uuid.UUID, *args: Any, **kwargs: Any) -> AsyncGenerator[Any, None]:
         """
             Extracts description from the input.
         """
@@ -92,6 +90,3 @@ class KGNodeDescriptionPipe(AsyncPipe):
             
             # call llm completion
             self.llm_provider.get_completion(node.description)
-
-
-

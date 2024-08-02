@@ -1,6 +1,7 @@
 from .abstractions.search_pipe import SearchPipe
 from .ingestion.embedding_pipe import EmbeddingPipe
 from .kg.extraction import KGExtractionPipe
+from .kg.node_extraction import KGNodeDescriptionPipe, KGNodeExtractionPipe
 from .kg.storage import KGStoragePipe
 from .kg.clustering import KGClusteringPipe
 from .ingestion.parsing_pipe import ParsingPipe
@@ -19,6 +20,8 @@ __all__ = [
     "EmbeddingPipe",
     "EvalPipe",
     "KGExtractionPipe",
+    "KGNodeExtractionPipe",
+    "KGNodeDescriptionPipe",
     "ParsingPipe",
     "QueryTransformPipe",
     "SearchRAGPipe",

@@ -7,6 +7,7 @@ from .abstractions import R2RAssistants, R2RPipelines, R2RProviders
 from .assembly.config import R2RConfig
 from .services.auth_service import AuthService
 from .services.ingestion_service import IngestionService
+from .services.kg_service import KGService
 from .services.management_service import ManagementService
 from .services.retrieval_service import RetrievalService
 
@@ -38,6 +39,16 @@ class R2REngine(metaclass=AsyncSyncMeta):
             run_manager,
             logging_connection,
         )
+
+        self.kg_service = KGService(
+            config,
+            providers,
+            pipelines,
+            assistants,
+            run_manager,
+            logging_connection,
+        )
+
         self.retrieval_service = RetrievalService(
             config,
             providers,
@@ -79,6 +90,10 @@ class R2REngine(metaclass=AsyncSyncMeta):
     @syncable
     async def aupdate_files(self, *args, **kwargs):
         return await self.ingestion_service.update_files(*args, **kwargs)
+    
+    @syncable
+    async def aenrich_graph(self, *args, **kwargs):
+        return await self.kg_service.enrich_graph(*args, **kwargs)
 
     @syncable
     async def asearch(self, *args, **kwargs):

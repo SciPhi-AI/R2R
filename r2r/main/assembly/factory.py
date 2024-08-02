@@ -27,6 +27,7 @@ from r2r.pipelines import (
     IngestionPipeline,
     RAGPipeline,
     SearchPipeline,
+    KGPipeline
 )
 
 from ..abstractions import R2RAssistants, R2RPipelines, R2RPipes, R2RProviders
@@ -297,6 +298,7 @@ class R2RPipeFactory:
         rag_pipe_override: Optional[AsyncPipe] = None,
         streaming_rag_pipe_override: Optional[AsyncPipe] = None,
         eval_pipe_override: Optional[AsyncPipe] = None,
+        kg_node_extraction_pipe: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
     ) -> R2RPipes:
@@ -325,7 +327,13 @@ class R2RPipeFactory:
             or self.create_rag_pipe(stream=True, *args, **kwargs),
             eval_pipe=eval_pipe_override
             or self.create_eval_pipe(*args, **kwargs),
+            kg_node_extraction_pipe = kg_node_extraction_pipe 
+            or self.create_kg_node_extraction_pipe(*args, **kwargs)
         )
+
+    def create_kg_node_extraction_pipe(self, args, **kwargs):
+        from r2r.pipes import KGNodeExtractionPipe
+        return KGNodeExtractionPipe()
 
     def create_parsing_pipe(
         self,
@@ -458,6 +466,9 @@ class R2RPipeFactory:
 
         return EvalPipe(eval_provider=self.providers.eval)
 
+    def create_kg_node_extraction_pipe(self, *args, **kwargs) -> Any:
+        from r2r.pipes import KGNodeExtractionPipe
+        return KGNodeExtractionPipe(kg_provider=self.providers.kg)
 
 class R2RPipelineFactory:
     def __init__(self, config: R2RConfig, pipes: R2RPipes):
@@ -532,6 +543,11 @@ class R2RPipelineFactory:
         eval_pipeline = EvalPipeline()
         eval_pipeline.add_pipe(self.pipes.eval_pipe)
         return eval_pipeline
+    
+    def create_kg_pipeline(self, *args, **kwargs) -> KGPipeline:
+        kg_pipeline = KGPipeline()
+        kg_pipeline.add_pipe(self.pipes.kg_node_extraction_pipe)
+        return kg_pipeline
 
     def create_pipelines(
         self,
@@ -540,6 +556,7 @@ class R2RPipelineFactory:
         rag_pipeline: Optional[RAGPipeline] = None,
         streaming_rag_pipeline: Optional[RAGPipeline] = None,
         eval_pipeline: Optional[EvalPipeline] = None,
+        kg_pipeline: Optional[KGPipeline] = None,
         *args,
         **kwargs,
     ) -> R2RPipelines:
@@ -570,6 +587,8 @@ class R2RPipelineFactory:
             ),
             eval_pipeline=eval_pipeline
             or self.create_eval_pipeline(*args, **kwargs),
+            kg_pipeline=kg_pipeline or 
+            self.create_kg_pipeline(*args, **kwargs),
         )
 
     def configure_logging(self):

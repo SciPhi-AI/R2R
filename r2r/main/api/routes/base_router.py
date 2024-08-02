@@ -20,6 +20,7 @@ class BaseRouter:
             async with manage_run(
                 self.engine.run_manager, func.__name__
             ) as run_id:
+                print("Hi endpoint")
                 try:
                     results = await func(*args, **kwargs)
                     if isinstance(results, StreamingResponse):

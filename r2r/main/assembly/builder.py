@@ -18,6 +18,7 @@ from r2r.pipelines import (
     IngestionPipeline,
     RAGPipeline,
     SearchPipeline,
+    KGPipeline
 )
 
 from ..app import R2RApp
@@ -88,6 +89,7 @@ class R2RBuilder:
         self.kg_pipe_override: Optional[AsyncPipe] = None
         self.kg_storage_pipe_override: Optional[AsyncPipe] = None
         self.kg_search_pipe_override: Optional[AsyncPipe] = None
+        self.kg_node_extraction_pipe_override: Optional[AsyncPipe] = None
 
         # Pipeline overrides
         self.ingestion_pipeline: Optional[IngestionPipeline] = None
@@ -95,6 +97,7 @@ class R2RBuilder:
         self.rag_pipeline: Optional[RAGPipeline] = None
         self.streaming_rag_pipeline: Optional[RAGPipeline] = None
         self.eval_pipeline: Optional[EvalPipeline] = None
+        self.kg_pipeline: Optional[KGPipeline] = None
 
         # Assistant overrides
         self.assistant_factory_override: Optional[R2RAssistantFactory] = None
@@ -189,6 +192,10 @@ class R2RBuilder:
     def with_kg_search_pipe(self, pipe: AsyncPipe):
         self.kg_search_pipe_override = pipe
         return self
+    
+    def with_kg_node_extraction_pipe(self, pipe: AsyncPipe):
+        self.kg_node_extraction_pipe_override = pipe
+        return self
 
     # Pipeline override methods
     def with_ingestion_pipeline(self, pipeline: IngestionPipeline):
@@ -205,6 +212,10 @@ class R2RBuilder:
 
     def with_streaming_rag_pipeline(self, pipeline: RAGPipeline):
         self.streaming_rag_pipeline = pipeline
+        return self
+    
+    def with_kg_pipeline(self, pipeline: KGPipeline):
+        self.kg_pipeline = pipeline
         return self
 
     def with_eval_pipeline(self, pipeline: EvalPipeline):
@@ -248,6 +259,7 @@ class R2RBuilder:
             kg_pipe_override=self.kg_pipe_override,
             kg_storage_pipe_override=self.kg_storage_pipe_override,
             kg_search_pipe_override=self.kg_search_pipe_override,
+            kg_node_extraction_pipe=self.kg_node_extraction_pipe_override,
             *args,
             **kwargs,
         )
@@ -258,6 +270,7 @@ class R2RBuilder:
             rag_pipeline=self.rag_pipeline,
             streaming_rag_pipeline=self.streaming_rag_pipeline,
             eval_pipeline=self.eval_pipeline,
+            kg_pipeline=self.kg_pipeline,
             *args,
             **kwargs,
         )

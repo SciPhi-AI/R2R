@@ -278,6 +278,9 @@ class R2RClient:
         return self._make_request(
             "POST", "search", json=json.loads(request.model_dump_json())
         )
+    
+    def enrich_graph(self, *args, **kwargs):
+        return self._make_request("POST", "enrich_graph", json=kwargs)
 
     def rag(
         self,

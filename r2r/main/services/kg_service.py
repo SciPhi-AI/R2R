@@ -3,13 +3,9 @@
 import logging
 from typing import List, Dict, Any
 from ..assembly.config import R2RConfig
+from ..abstractions import R2RAssistants, R2RPipelines, R2RProviders
+from r2r.base import Document, R2RException, RunManager, KVLoggingSingleton
 from .base import Service
-from ..providers import R2RProviders
-from ..pipelines import R2RPipelines
-from ..assistants import R2RAssistants
-from ..run_manager import RunManager
-from ..logging import KVLoggingSingleton
-from ..base import Document, R2RException
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +28,7 @@ class KGService(Service):
             logging_connection,
         )
 
-    async def enrich_graph(self, documents: List[Document]) -> Dict[str, Any]:
+    async def enrich_graph(self, documents: List[Document] = None) -> Dict[str, Any]:
         """
         Perform graph enrichment on the given documents.
         
@@ -42,12 +38,13 @@ class KGService(Service):
         Returns:
             Dict[str, Any]: Results of the graph enrichment process.
         """
+
         if not documents:
             raise R2RException(status_code=400, message="No documents provided for graph enrichment.")
 
         try:
             # Assuming there's a graph enrichment pipeline
-            enrichment_results = await self.pipelines.graph_enrichment_pipeline.run(
+            enrichment_results = await self.pipelines.kg_pipeline.run(
                 input=documents,
                 run_manager=self.run_manager,
             )

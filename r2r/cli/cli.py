@@ -5,6 +5,7 @@ from r2r.cli.commands import (
     oberservability_operations,
     rag_operations,
     server_operations,
+    kg_operations,
 )
 
 # Server operations
@@ -38,10 +39,12 @@ cli.add_command(oberservability_operations.app_settings)
 cli.add_command(oberservability_operations.logs)
 cli.add_command(oberservability_operations.users_overview)
 
+cli.add_command(kg_operations.enrich_graph)
+
 
 def main():
     cli()
 
 
 if __name__ == "__main__":
-    main()
+    main()  

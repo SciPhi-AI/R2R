@@ -338,6 +338,12 @@ class R2RExecutionWrapper:
         else:
             return self.app.documents_overview(document_ids, user_ids)
 
+    def enrich_graph(self):
+        if self.client_mode:
+            return self.client.enrich_graph()
+        else:
+            return self.app.enrich_graph()
+
     def delete(
         self,
         keys: list[str],
