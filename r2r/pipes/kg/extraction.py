@@ -125,9 +125,13 @@ class KGExtractionPipe(AsyncPipe):
         Extracts NER triples from a list of fragments with retries.
         """
 
+        task_inputs={"input": fragment.data}
+        if self.graph_rag:
+            task_inputs['max_knowledge_triplets'] = 100
+
         messages = self.prompt_provider._get_message_payload(
             task_prompt_name=self.kg_provider.config.kg_extraction_prompt,
-            task_inputs={"input": fragment.data},
+            task_inputs=task_inputs
         )
 
         for attempt in range(retries):
@@ -141,31 +145,33 @@ class KGExtractionPipe(AsyncPipe):
 
                 if self.graph_rag:
 
-                    entity_pattern = r'\("entity"\$\$\$\$"(.+?)"\$\$\$\$"(.+?)"\$\$\$\$"(.+?)"\)'
-                    relationship_pattern = r'\("relationship"\$\$\$\$"(.+?)"\$\$\$\$"(.+?)"\$\$\$\$"(.+?)"\$\$\$\$"(.+?)"\)'
+                    entity_pattern = r'\("entity"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\)'
+                    relationship_pattern = r'\("relationship"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\)'
 
                     def parse_fn(response_str: str) -> Any:
                         entities = re.findall(entity_pattern, response_str)
                         relationships = re.findall(relationship_pattern, response_str)
 
-                        entities_arr = []
+                        entities_dict = {}
                         for entity in entities: 
-                            entity_id = generate_id_from_label(entity[0])
-                            entity_value = entity[1]
-                            entity_category = entity[2]
-                            entity_subcategory = entity[3]
-                            entities_arr.append(Entity(entity_id, entity_value, entity_category, entity_subcategory))
+                            entity_value = entity[0]
+                            entity_category = entity[1]
+                            entity_description = entity[2]
+                            entities_dict[entity_value] = Entity(category=entity_category, description=entity_description, value=entity_value)
 
                         relations_arr = []
                         for relationship in relationships:
                             subject = relationship[0]
-                            predicate = relationship[1]
-                            object = relationship[2]
-                            relations_arr.append(Triple(subject, predicate, object))
+                            object = relationship[1]
+                            predicate = relationship[2]
+                            description = relationship[3]
+                            relations_arr.append(Triple(subject = subject, predicate = predicate, object = object, description = description))
 
-                        return entities_arr, relations_arr
+                        return entities_dict, relations_arr
                     
                     entities, triples = parse_fn(kg_extraction)
+                    logger.info(f"entities are {entities}")
+                    logger.info(f"triples are {triples}")
                     return KGExtraction(entities=entities, triples=triples)
 
                 else:

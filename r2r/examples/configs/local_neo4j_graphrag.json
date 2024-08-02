@@ -25,7 +25,7 @@
         "provider": "litellm",
         "concurrency_limit": 1,
         "generation_config": {
-          "model": "ollama/llama3",
+          "model": "gpt-4o-mini",
           "temperature": 0.1,
           "top_p": 1.0,
           "max_tokens_to_sample": 1024,
@@ -36,9 +36,9 @@
         }
       },
       "embedding": {
-        "provider": "ollama",
-        "base_model": "mxbai-embed-large",
-        "base_dimension": 1024,
+        "provider": "litellm",
+        "base_model": "text-embedding-3-small",
+        "base_dimension": 1536,
         "batch_size": 32,
         "add_title_as_prefix": true
       },

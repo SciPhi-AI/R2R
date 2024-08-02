@@ -18,6 +18,7 @@ from r2r.base import (
     Community,
     AsyncPipe,
     Triple,
+    KVLoggingSingleton,
 )
 from r2r.base.pipes.base_pipe import AsyncPipe
 
@@ -34,8 +35,8 @@ class KGClusteringPipe(AsyncPipe):
         cluster_batch_size: int = 100,
         max_cluster_size: int = 10,
         use_lcc: bool = True,
-        pipe_logger: Optional[AsyncPipe.KVLoggingSingleton] = None,
-        type: PipeType = PipeType.PROCESSOR,
+        pipe_logger: Optional[KVLoggingSingleton] = None,
+        type: PipeType = PipeType.OTHER,
         config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
         **kwargs,

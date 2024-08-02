@@ -25,8 +25,9 @@
 
     -Real Data-
     ######################
-    text: {text}
+    text: {input}
     ######################
 
   input_types:
+    max_knowledge_triplets: int
     input: str

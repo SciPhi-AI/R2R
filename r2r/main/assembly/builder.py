@@ -37,17 +37,12 @@ class R2RBuilder:
     config_root = os.path.join(
         current_file_path, "..", "..", "examples", "configs"
     )
-    CONFIG_OPTIONS = {
-        "default": None,
-        "local_ollama": os.path.join(config_root, "local_ollama.json"),
-        "local_ollama_rerank": os.path.join(
-            config_root, "local_ollama_rerank.json"
-        ),
-        "neo4j_kg": os.path.join(config_root, "neo4j_kg.json"),
-        "local_neo4j_kg": os.path.join(config_root, "local_neo4j_kg.json"),
-        "postgres_logging": os.path.join(config_root, "postgres_logging.json"),
-        "auth": os.path.join(config_root, "auth.json"),
-    }
+
+    CONFIG_OPTIONS = {}
+    for file in os.listdir(config_root):
+        if file.endswith('.json'):
+            CONFIG_OPTIONS[file.removesuffix('.json')] = os.path.join(config_root, file)
+    CONFIG_OPTIONS['default'] = None
 
     @staticmethod
     def _get_config(config_name):

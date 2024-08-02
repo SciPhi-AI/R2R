@@ -1,1 +1,0 @@
-# create a kg pipeline that takes input a list of documents, goes to the graph and returns a list of enriched documents

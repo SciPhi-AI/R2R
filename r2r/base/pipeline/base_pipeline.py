@@ -1,5 +1,6 @@
 """Base pipeline class for running a sequence of pipes."""
 
+import traceback
 import asyncio
 import logging
 from enum import Enum
@@ -98,7 +99,8 @@ class AsyncPipeline:
                 else:
                     return current_input
             except Exception as error:
-                logger.error(f"Pipeline failed with error: {error}")
+                error_trace = traceback.format_exc()
+                logger.error(f"Pipeline failed with error: {error}\n\nStack trace:\n{error_trace}")
                 raise error
 
     async def _consume_all(self, gen: AsyncGenerator) -> list[Any]:

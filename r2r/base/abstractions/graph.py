@@ -4,8 +4,6 @@ from pydantic import BaseModel
 from dataclasses import dataclass
 from typing import Any
 
-from .named import Named
-
 logger = logging.getLogger(__name__)
 
 
@@ -147,8 +145,6 @@ class Community(Named):
             covariate_ids=d.get(covariates_key),
             attributes=d.get(attributes_key),
         )
-    
-
 
 @dataclass
 class CommunityReport(Named):
@@ -203,9 +199,6 @@ class CommunityReport(Named):
             full_content_embedding=d.get(full_content_embedding_key),
             attributes=d.get(attributes_key),
         )
-    
-
-
 
 @dataclass
 class Covariate(Identified):
@@ -258,9 +251,6 @@ class Covariate(Identified):
             attributes=d.get(attributes_key),
         )
     
-
-
-
 
 @dataclass
 class TextUnit(Identified):
