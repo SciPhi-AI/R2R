@@ -333,8 +333,7 @@ def build_docker_command(
     config_path,
     image,
 ):
-    # available_port = find_available_port(port)
-    available_port = port
+    available_port = find_available_port(port)
 
     command = f"docker compose -f {compose_files['base']}"
     if not exclude_neo4j:
