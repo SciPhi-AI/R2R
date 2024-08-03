@@ -1,5 +1,6 @@
 .env
 .DS_Store
+**/.DS_Store
 *.gguf
 logs/
 workspace/
@@ -8,7 +9,8 @@ env/
 **/__pycache__
 dump/*
 .next
-node_modules
+node_modules/
+dist/
 
 coverage.xml
 .coverage
