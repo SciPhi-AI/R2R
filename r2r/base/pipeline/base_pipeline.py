@@ -92,11 +92,11 @@ class AsyncPipeline:
                         **kwargs,
                     )
                     self.futures[config_name].set_result(current_input)
-                if not stream:
-                    final_result = await self._consume_all(current_input)
-                    return final_result
-                else:
-                    return current_input
+                return (
+                    current_input
+                    if stream
+                    else await self._consume_all(current_input)
+                )
             except Exception as error:
                 logger.error(f"Pipeline failed with error: {error}")
                 raise error

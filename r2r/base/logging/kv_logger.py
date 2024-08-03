@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 class RunInfo(BaseModel):
     run_id: uuid.UUID
     log_type: str
+    timestamp: datetime
 
 
 class LoggingConfig(ProviderConfig):
@@ -52,7 +53,10 @@ class KVLoggingProvider(Provider):
 
     @abstractmethod
     async def get_logs(
-        self, run_ids: list[uuid.UUID], limit_per_run: int
+        self,
+        run_ids: list[uuid.UUID],
+        limit_per_run: int,
+        include_timestamp: bool = False,
     ) -> list:
         pass
 
@@ -141,7 +145,9 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         self, limit: int = 10, log_type_filter: Optional[str] = None
     ) -> list[RunInfo]:
         cursor = await self.conn.cursor()
-        query = f"SELECT log_id, log_type FROM {self.log_info_table}"
+        query = (
+            f"SELECT log_id, log_type, timestamp FROM {self.log_info_table}"
+        )
         conditions = []
         params = []
         if log_type_filter:
@@ -154,18 +160,25 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         await cursor.execute(query, params)
         rows = await cursor.fetchall()
         return [
-            RunInfo(run_id=uuid.UUID(row[0]), log_type=row[1]) for row in rows
+            RunInfo(
+                run_id=uuid.UUID(row[0]), log_type=row[1], timestamp=row[2]
+            )
+            for row in rows
         ]
 
     async def get_logs(
-        self, run_ids: list[uuid.UUID], limit_per_run: int = 10
+        self,
+        run_ids: list[uuid.UUID],
+        limit_per_run: int = 10,
+        include_timestamp: bool = False,
     ) -> list:
         if not run_ids:
             raise ValueError("No run ids provided.")
         cursor = await self.conn.cursor()
         placeholders = ",".join(["?" for _ in run_ids])
+        select_fields = "timestamp, " if include_timestamp else ""
         query = f"""
-        SELECT *
+        SELECT {select_fields}log_id, key, value
         FROM (
             SELECT *, ROW_NUMBER() OVER (PARTITION BY log_id ORDER BY timestamp DESC) as rn
             FROM {self.log_table}
@@ -177,12 +190,8 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         params = [str(ele) for ele in run_ids] + [limit_per_run]
         await cursor.execute(query, params)
         rows = await cursor.fetchall()
-        new_rows = [
-            (row[0], uuid.UUID(row[1]), row[2], row[3], row[4]) for row in rows
-        ]
         return [
-            {desc[0]: row[i] for i, desc in enumerate(cursor.description)}
-            for row in new_rows
+            dict(zip([d[0] for d in cursor.description], row)) for row in rows
         ]
 
 
@@ -539,7 +548,12 @@ class KVLoggingSingleton:
 
     @classmethod
     async def get_logs(
-        cls, run_ids: list[uuid.UUID], limit_per_run: int = 10
+        cls,
+        run_ids: list[uuid.UUID],
+        limit_per_run: int = 10,
+        include_timestamp: bool = False,
     ) -> list:
         async with cls.get_instance() as provider:
-            return await provider.get_logs(run_ids, limit_per_run)
+            return await provider.get_logs(
+                run_ids, limit_per_run, include_timestamp
+            )

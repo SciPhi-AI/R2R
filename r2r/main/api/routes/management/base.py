@@ -94,6 +94,7 @@ class ManagementRouter(BaseRouter):
             return await self.engine.alogs(
                 log_type_filter=request.log_type_filter,
                 max_runs_requested=request.max_runs_requested,
+                include_timestamp=request.include_timestamp,
             )
 
         @self.router.post("/analytics")

@@ -56,6 +56,7 @@ class ManagementService(Service):
         self,
         log_type_filter: Optional[str] = None,
         max_runs_requested: int = 100,
+        include_timestamp: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -71,14 +72,25 @@ class ManagementService(Service):
         run_ids = [run.run_id for run in run_info]
         if len(run_ids) == 0:
             return []
-        logs = await self.logging_connection.get_logs(run_ids)
-        # Aggregate logs by run_id and include run_type
+        logs = await self.logging_connection.get_logs(
+            run_ids, include_timestamp=include_timestamp
+        )
+
         aggregated_logs = []
 
         for run in run_info:
             run_logs = [log for log in logs if log["log_id"] == run.run_id]
             entries = [
-                {"key": log["key"], "value": log["value"]} for log in run_logs
+                {
+                    "key": log["key"],
+                    "value": log["value"],
+                    **(
+                        {"timestamp": log["timestamp"]}
+                        if include_timestamp
+                        else {}
+                    ),
+                }
+                for log in run_logs
             ][
                 ::-1
             ]  # Reverse order so that earliest logged values appear first.
@@ -87,6 +99,9 @@ class ManagementService(Service):
                     "run_id": run.run_id,
                     "run_type": run.log_type,
                     "entries": entries,
+                    "timestamp": (
+                        run.timestamp.isoformat() if run.timestamp else None
+                    ),
                 }
             )
 

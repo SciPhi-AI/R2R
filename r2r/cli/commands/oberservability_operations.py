@@ -32,13 +32,31 @@ def app_settings(obj):
 
 @cli.command()
 @click.option("--log-type-filter", help="Filter for log types")
+@click.option(
+    "--max-runs", default=100, help="Maximum number of runs to fetch"
+)
+@click.option(
+    "--include-timestamp",
+    is_flag=True,
+    default=True,
+    help="Include timestamps in the output",
+)
 @click.pass_obj
-def logs(obj, log_type_filter):
+def logs(obj, log_type_filter, max_runs, include_timestamp):
     """Retrieve logs with optional type filter."""
     with timer():
-        response = obj.logs(log_type_filter)
+        response = obj.logs(log_type_filter, max_runs, include_timestamp)
 
-    click.echo(response)
+    for log in response:
+        click.echo(f"Run ID: {log['run_id']}")
+        click.echo(f"Run Type: {log['run_type']}")
+        click.echo(f"Timestamp: {log.get('timestamp', 'N/A')}")
+        click.echo("Entries:")
+        for entry in log["entries"]:
+            click.echo(f"  - {entry['key']}: {entry['value']}")
+        click.echo("---")
+
+    click.echo(f"Total runs: {len(response)}")
 
 
 @cli.command()

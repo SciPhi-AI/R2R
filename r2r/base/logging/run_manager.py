@@ -35,8 +35,7 @@ class RunManager:
     async def log_run_info(
         self, key: str, value: Any, is_info_log: bool = False
     ):
-        run_id = run_id_var.get()
-        if run_id:
+        if run_id := run_id_var.get():
             await self.logger.log(
                 log_id=run_id, key=key, value=value, is_info_log=is_info_log
             )
