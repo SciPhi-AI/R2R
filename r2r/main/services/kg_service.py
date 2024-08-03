@@ -39,20 +39,18 @@ class KGService(Service):
             Dict[str, Any]: Results of the graph enrichment process.
         """
 
-        if not documents:
-            raise R2RException(status_code=400, message="No documents provided for graph enrichment.")
 
         try:
             # Assuming there's a graph enrichment pipeline
             enrichment_results = await self.pipelines.kg_pipeline.run(
-                input=documents,
+                input=[],
                 run_manager=self.run_manager,
             )
 
             # Process and store the enrichment results
-            for doc_id, result in enrichment_results.items():
-                # Store the enriched graph data
-                self.providers.database.graph.store_graph_data(doc_id, result)
+            # for doc_id, result in enrichment_results.items():
+            #     # Store the enriched graph data
+            #     self.providers.database.graph.store_graph_data(doc_id, result)
 
             return {"message": f"Successfully enriched graph for {len(documents)} documents."}
 

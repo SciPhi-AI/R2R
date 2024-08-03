@@ -210,19 +210,19 @@ class IngestionService(Service):
         # enrich using graphrag
         # get triples from the graph
 
-        self.graph_rag = True
-        if self.graph_rag:
+        # self.graph_rag = True
+        # if self.graph_rag:
 
-            graphrag_results = await self.pipelines.kg_cluster_pipeline.run(
-                input = to_async_generator()
-            )
+        #     graphrag_results = await self.pipelines.kg_cluster_pipeline.run(
+        #         input = to_async_generator()
+        #     )
 
-        return await self._process_ingestion_results(
-            ingestion_results,
-            document_infos,
-            skipped_documents,
-            processed_documents,
-        )
+        # return await self._process_ingestion_results(
+        #     ingestion_results,
+        #     document_infos,
+        #     skipped_documents,
+        #     processed_documents,
+        # )
 
     @telemetry_event("IngestFiles")
     async def ingest_files(

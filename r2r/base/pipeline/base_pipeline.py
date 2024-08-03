@@ -172,6 +172,8 @@ class AsyncPipeline:
                 ]
 
         # Handle the pipe generator
+
+        import pdb; pdb.set_trace()
         async for ele in await pipe.run(
             pipe.Input(**input_dict),
             self.state,

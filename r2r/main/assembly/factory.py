@@ -330,11 +330,7 @@ class R2RPipeFactory:
             kg_node_extraction_pipe = kg_node_extraction_pipe 
             or self.create_kg_node_extraction_pipe(*args, **kwargs)
         )
-
-    def create_kg_node_extraction_pipe(self, args, **kwargs):
-        from r2r.pipes import KGNodeExtractionPipe
-        return KGNodeExtractionPipe()
-
+    
     def create_parsing_pipe(
         self,
         excluded_parsers: Optional[list] = None,

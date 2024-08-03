@@ -26,7 +26,7 @@ class KGNodeExtractionPipe(AsyncPipe):
     """
 
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[Any, None]
+        message: Any
 
     def __init__(self, 
         kg_provider: KGProvider,
@@ -43,13 +43,11 @@ class KGNodeExtractionPipe(AsyncPipe):
         self.kg_provider = kg_provider
 
     async def _run_logic(self, input: Input, state: AsyncState, run_id: uuid.UUID, *args, **kwargs):
-        """
-            Extracts nodes and triples from the input.
-        """
-
-        nodes = await self.kg_provider.get_nodes()
+        nodes = self.kg_provider.get()
         
-        # now pass a single one to description pipe
+        for node in nodes: 
+            yield node
+
 
 class KGNodeDescriptionPipe(AsyncPipe):
     """
