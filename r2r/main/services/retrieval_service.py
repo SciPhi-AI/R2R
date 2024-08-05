@@ -87,6 +87,7 @@ class RetrievalService(Service):
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
                 run_manager=self.run_manager,
+                user=user,
                 *args,
                 **kwargs,
             )
@@ -154,6 +155,7 @@ class RetrievalService(Service):
                                 vector_search_settings=vector_search_settings,
                                 kg_search_settings=kg_search_settings,
                                 rag_generation_config=rag_generation_config,
+                                user=user,
                                 *args,
                                 **kwargs,
                             ):
@@ -203,7 +205,7 @@ class RetrievalService(Service):
                     status_code=500, message="Internal Server Error"
                 )
 
-    @telemetry_event("RAGChat")
+    @telemetry_event("Agent")
     async def agent(
         self,
         messages: list[Message],
@@ -257,6 +259,7 @@ class RetrievalService(Service):
                                 kg_search_settings=kg_search_settings,
                                 rag_generation_config=rag_generation_config,
                                 include_title_if_available=include_title_if_available,
+                                user=user,
                                 *args,
                                 **kwargs,
                             ):
@@ -271,6 +274,7 @@ class RetrievalService(Service):
                     kg_search_settings=kg_search_settings,
                     rag_generation_config=rag_generation_config,
                     include_title_if_available=include_title_if_available,
+                    user=user,
                     *args,
                     **kwargs,
                 )

@@ -3,6 +3,7 @@ import logging
 from asyncio import Queue
 from typing import Any, Optional
 
+from ..base import User
 from ..base.abstractions.search import (
     AggregateSearchResult,
     KGSearchSettings,
@@ -40,6 +41,7 @@ class SearchPipeline(AsyncPipeline):
         log_run_info: bool = True,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
+        user: Optional[User] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -59,6 +61,7 @@ class SearchPipeline(AsyncPipeline):
                     key="pipeline_type",
                     value=self.pipeline_type,
                     is_info_log=True,
+                    user=user,
                 )
 
             vector_search_queue = Queue()

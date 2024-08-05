@@ -5,6 +5,8 @@ import logging
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional
 
+from r2r.base import User
+
 from ..logging.kv_logger import KVLoggingSingleton
 from ..logging.run_manager import RunManager, manage_run
 from ..pipes.base_pipe import AsyncPipe, AsyncState
@@ -57,6 +59,7 @@ class AsyncPipeline:
         stream: bool = False,
         run_manager: Optional[RunManager] = None,
         log_run_info: bool = True,
+        user: Optional[User] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -65,10 +68,10 @@ class AsyncPipeline:
 
         try:
             PipelineTypes(self.pipeline_type)
-        except ValueError:
+        except ValueError as e:
             raise ValueError(
                 f"Invalid pipeline type: {self.pipeline_type}, must be one of {PipelineTypes.__members__.keys()}"
-            )
+            ) from e
 
         self.state = state or AsyncState()
         current_input = input
@@ -78,6 +81,7 @@ class AsyncPipeline:
                     key="pipeline_type",
                     value=self.pipeline_type,
                     is_info_log=True,
+                    user=user,
                 )
             try:
                 for pipe_num in range(len(self.pipes)):
