@@ -51,17 +51,6 @@ class KVLoggingProvider(Provider):
     ):
         pass
 
-    # TODO: deprecated, remove in version 0.3.0
-    @abstractmethod
-    async def log_without_user_id(
-        self, log_id: uuid.UUID, key: str, value: str
-    ):
-        # TODO: add in link to migration guide
-        logger.warning(
-            "Logs excluding user ids are deprecated and will be removed in version 0.3.0. Please follow the migration guide here."
-        )
-        await self.log(log_id, key, value)
-
     @abstractmethod
     async def get_run_info(
         self,
@@ -190,15 +179,6 @@ class LocalKVLoggingProvider(KVLoggingProvider):
             )
 
         await self.conn.commit()
-
-    async def log_without_user_id(
-        self,
-        log_id: uuid.UUID,
-        key: str,
-        value: str,
-        is_info_log: bool = False,
-    ):
-        await super().log_without_user_id(log_id, key, value)
 
     async def get_run_info(
         self,
@@ -679,23 +659,6 @@ class KVLoggingSingleton:
             logger.error(
                 f"Error logging data {(log_id, key, value, user_id)}: {e}"
             )
-
-    # TODO: deprecated, remove in version 0.3.0
-    @classmethod
-    async def log_without_user_id(
-        cls,
-        log_id: uuid.UUID,
-        key: str,
-        value: str,
-        is_info_log: bool = False,
-    ):
-        # TODO: add in link to migration guide
-        logger.warning(
-            "Logs excluding user ids are deprecated and will be removed in version 0.3.0. Please follow the migration guide here."
-        )
-        await cls.log(
-            log_id, key, value, user_id=None, is_info_log=is_info_log
-        )
 
     @classmethod
     async def get_run_info(
