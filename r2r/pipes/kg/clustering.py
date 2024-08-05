@@ -16,6 +16,7 @@ from r2r.base import (
     KGProvider,
     PipeType,
     Community,
+    CommunityReport,
     AsyncPipe,
     Triple,
     KVLoggingSingleton,
@@ -74,29 +75,61 @@ class KGClusteringPipe(AsyncPipe):
         """
         Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm.
         """
+
+        #         for record in data:
+        #     source = EntityNode(
+        #         name=record["source_id"],
+        #         label=record["source_type"],
+        #         properties=remove_empty_values(record["source_properties"]),
+        #     )
+        #     target = EntityNode(
+        #         name=record["target_id"],
+        #         label=record["target_type"],
+        #         properties=remove_empty_values(record["target_properties"]),
+        #     )
+        #     rel = Relation(
+        #         source_id=record["source_id"],
+        #         target_id=record["target_id"],
+        #         label=record["type"],
+        #     )
+        #     triples.append([source, rel, target])
+        # return triples
+
+
         G = nx.Graph()
         for triple in triples:
-            G.add_edge(triple.subject, triple.object, weight=triple.weight or 1.0)
+            [source, rel, target] = triple
+            G.add_edge(source.name, target.name, weight=1.0)
 
         hierarchical_communities = self._compute_leiden_communities(G)
 
-        communities = []
+        community_details = {}
+
         for level, level_communities in hierarchical_communities.items():
-            for node, community_id in level_communities.items():
-                community = Community(
-                    id=f"community_{level}_{community_id}",
-                    name=f"Community {level}.{community_id}",
-                    level=str(level),
-                    entity_ids=[node],
-                    relationship_ids=[
-                        triple.id for triple in triples
-                        if triple.subject == node or triple.object == node
-                    ],
-                )
-                communities.append(community)
+            for node, cluster in level_communities.items():
+                if f"{level}_{cluster}" not in community_details:
+                    community_details[f"{level}_{cluster}"] = Community(
+                        id = f"{level}_{cluster}",
+                        level=str(level),
+                        entity_ids=[],
+                        relationship_ids=[],
+                        short_id=f"{level}.{cluster}",
+                        title=f"Community {level}.{cluster}",
+                        attributes= {
+                            "name": f"Community {level}.{cluster}",
+                            "community_report": None,
+                        }
+                    )
 
-        return communities
+                community_details[f"{level}_{cluster}"].entity_ids.append(node)
+                for neighbor in G.neighbors(node):
+                    edge_info = G.get_edge_data(node, neighbor)
+                    if edge_info:
+                        community_details[f"{level}_{cluster}"].relationship_ids.append(edge_info.get('relationship', 'Unknown'))
 
+        for community in community_details.values():
+            yield community
+ 
     async def _process_batch(self, triples: list[Triple]) -> list[Community]:
         """
         Processes a batch of triples and returns the resulting communities.
@@ -114,19 +147,31 @@ class KGClusteringPipe(AsyncPipe):
         """
         Executes the KG clustering pipe: clustering entities and triples into communities.
         """
-        batch_tasks = []
-        triple_batch = []
+        # batch_tasks = []
+        # triple_batch = []
 
-        async for triple in input.message:
-            triple_batch.append(triple)
-            if len(triple_batch) >= self.cluster_batch_size:
-                batch_tasks.append(self._process_batch(triple_batch.copy()))
-                triple_batch.clear()
+        # async for triple in input.message:
+        #     triple_batch.append(triple)
+        #     if len(triple_batch) >= self.cluster_batch_size:
+        #         batch_tasks.append(self._process_batch(triple_batch.copy()))
+        #         triple_batch.clear()
 
-        if triple_batch:  # Process any remaining triples
-            batch_tasks.append(self._process_batch(triple_batch))
+        # if triple_batch:  # Process any remaining triples
+        #     batch_tasks.append(self._process_batch(triple_batch))
 
-        for task in asyncio.as_completed(batch_tasks):
-            communities = await task
-            for community in communities:
-                yield community
+        # for task in asyncio.as_completed(batch_tasks):
+        #     communities = await task
+        #     for community in communities:
+        #         yield community
+
+        # store all inputs 
+
+        all_nodes = []
+        async for node in input.message:
+            all_nodes.append(node)
+
+        triples = self.kg_provider.get_triplets()
+        # create a networkx graph
+
+        async for community in self.cluster_kg(triples):
+            yield community
