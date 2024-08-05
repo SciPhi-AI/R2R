@@ -35,26 +35,20 @@ def app_settings(obj):
 @click.option(
     "--max-runs", default=100, help="Maximum number of runs to fetch"
 )
-@click.option(
-    "--include-timestamp",
-    is_flag=True,
-    default=False,
-    help="Include timestamps in the output",
-)
 @click.pass_obj
-def logs(obj, log_type_filter, max_runs, include_timestamp):
+def logs(obj, log_type_filter, max_runs):
     """Retrieve logs with optional type filter."""
     with timer():
-        response = obj.logs(log_type_filter, max_runs, include_timestamp)
-
-    print(response)
+        response = obj.logs(log_type_filter, max_runs)
 
     for log in response:
         click.echo(f"Run ID: {log['run_id']}")
         click.echo(f"Run Type: {log['run_type']}")
-        if "timestamp" in log:
-            click.echo(f"Timestamp: {log['timestamp']}")
-        click.echo(f"User ID: {log['user_id']}")
+        click.echo(f"Timestamp: {log['timestamp']}")
+        if "user_id" in log:
+            click.echo(f"User ID: {log['user_id']}")
+        else:
+            click.echo("User ID: Not available")
         click.echo("Entries:")
         for entry in log["entries"]:
             click.echo(f"  - {entry['key']}: {entry['value']}")

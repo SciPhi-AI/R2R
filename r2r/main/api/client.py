@@ -465,14 +465,12 @@ class R2RClient:
         self,
         log_type_filter: Optional[str] = None,
         max_runs: int = 100,
-        include_timestamp: bool = False,
     ) -> dict:
         self._ensure_authenticated()
 
         request = R2RLogsRequest(
             log_type_filter=log_type_filter,
             max_runs_requested=max_runs,
-            include_timestamp=include_timestamp,
         )
         return self._make_request(
             "GET", "logs", json=json.loads(request.model_dump_json())

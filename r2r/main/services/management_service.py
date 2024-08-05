@@ -56,7 +56,6 @@ class ManagementService(Service):
         self,
         log_type_filter: Optional[str] = None,
         max_runs_requested: int = 100,
-        include_timestamp: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -68,14 +67,11 @@ class ManagementService(Service):
         run_info = await self.logging_connection.get_run_info(
             limit=max_runs_requested,
             log_type_filter=log_type_filter,
-            include_timestamp=include_timestamp,
         )
         run_ids = [run.run_id for run in run_info]
         if len(run_ids) == 0:
             return []
-        logs = await self.logging_connection.get_logs(
-            run_ids, include_timestamp=include_timestamp
-        )
+        logs = await self.logging_connection.get_logs(run_ids)
 
         aggregated_logs = []
 
@@ -85,29 +81,26 @@ class ManagementService(Service):
                 {
                     "key": log["key"],
                     "value": log["value"],
-                    **(
-                        {"timestamp": log["timestamp"]}
-                        if include_timestamp
-                        else {}
-                    ),
+                    "timestamp": log["timestamp"],
                 }
                 for log in run_logs
             ][
                 ::-1
             ]  # Reverse order so that earliest logged values appear first.
-            aggregated_logs.append(
-                {
-                    "run_id": run.run_id,
-                    "run_type": run.log_type,
-                    "entries": entries,
-                    **(
-                        {"timestamp": run.timestamp.isoformat()}
-                        if include_timestamp and run.timestamp
-                        else {}
-                    ),
-                    "user_id": run.user_id,
-                }
-            )
+
+            log_entry = {
+                "run_id": run.run_id,
+                "run_type": run.log_type,
+                "entries": entries,
+            }
+
+            if run.timestamp:
+                log_entry["timestamp"] = run.timestamp.isoformat()
+
+            if hasattr(run, "user_id") and run.user_id is not None:
+                log_entry["user_id"] = run.user_id
+
+            aggregated_logs.append(log_entry)
 
         return aggregated_logs
 

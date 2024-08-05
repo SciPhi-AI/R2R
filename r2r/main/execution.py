@@ -367,14 +367,11 @@ class R2RExecutionWrapper:
         self,
         log_type_filter: Optional[str] = None,
         max_runs: int = 100,
-        include_timestamp: bool = False,
     ):
         if self.client_mode:
-            return self.client.logs(
-                log_type_filter, max_runs, include_timestamp
-            )["results"]
+            return self.client.logs(log_type_filter, max_runs)["results"]
         else:
-            return self.app.logs(log_type_filter, max_runs, include_timestamp)
+            return self.app.logs(log_type_filter, max_runs)
 
     def document_chunks(self, document_id: str):
         doc_uuid = uuid.UUID(document_id)
