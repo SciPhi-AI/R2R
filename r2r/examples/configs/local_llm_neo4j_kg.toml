@@ -41,7 +41,6 @@ provider = "postgres"
 [agent]
 system_instruction_name = "rag_agent"
 tool_names = ["search"]
-  
+
   [agent.generation_config]
   model = "ollama/llama3.1"
-
