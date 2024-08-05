@@ -7,6 +7,8 @@ import sys
 import click
 from dotenv import load_dotenv
 
+from alembic import command
+from alembic.config import Config
 from r2r.cli.command_group import cli
 from r2r.cli.utils.docker_utils import (
     bring_down_docker_compose,
@@ -130,6 +132,30 @@ def health(obj):
         response = obj.health()
 
     click.echo(response)
+
+
+@cli.command()
+@click.option(
+    "--config",
+    default="alembic.ini",
+    help="Path to the Alembic configuration file",
+)
+@click.pass_obj
+def migrate(obj, config):
+    """Run database migrations."""
+    click.echo("Running database migrations...")
+
+    try:
+        # Create Alembic configuration
+        alembic_cfg = Config(config)
+
+        # Run the migration
+        command.upgrade(alembic_cfg, "head")
+
+        click.echo("Migrations completed successfully.")
+    except Exception as e:
+        click.echo(f"Error running migrations: {str(e)}")
+        sys.exit(1)
 
 
 @cli.command()

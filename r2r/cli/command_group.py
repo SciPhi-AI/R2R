@@ -5,6 +5,7 @@ import click
 from r2r.main.execution import R2RExecutionWrapper
 
 
+# TODO: refactor this to remove config path and config name
 @click.group()
 @click.option(
     "--config-path", default=None, help="Path to the configuration file"

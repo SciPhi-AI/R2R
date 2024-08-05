@@ -127,18 +127,18 @@ class ManagementRouter(BaseRouter):
                 else None
             ),
         ):
-            if not auth_user.is_superuser:
-                if (
-                    "user_id" in request.keys
-                    and request.values[request.keys.index("user_id")]
-                    != auth_user.id
-                ):
-                    raise R2RException(
-                        "Only a superuser can delete arbitrary user data.", 403
-                    )
-                else:
-                    request.keys.append("user_id")
-                    request.values.append(auth_user.id)
+            if not auth_user.is_superuser and (
+                "user_id" in request.keys
+                and request.values[request.keys.index("user_id")]
+                != auth_user.id
+            ):
+                raise R2RException(
+                    "Only a superuser can delete arbitrary user data.", 403
+                )
+
+            if "user_id" not in request.keys:
+                request.keys.append("user_id")
+                request.values.append(auth_user.id)
 
             return await self.engine.adelete(
                 keys=request.keys, values=request.values

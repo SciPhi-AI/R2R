@@ -186,13 +186,25 @@ def test_app_settings(runner, mock_r2r_execution_wrapper):
 
 def test_logs(runner, mock_r2r_execution_wrapper):
     mock_instance = mock_r2r_execution_wrapper.return_value
-    mock_instance.logs.return_value = ["Log entry 1", "Log entry 2"]
+    mock_instance.logs.return_value = [
+        {
+            "run_id": "test-run-id",
+            "run_type": "test",
+            "timestamp": "2024-08-05T20:00:00",
+            "user_id": "test-user-id",
+            "entries": [{"key": "test-key", "value": "test-value"}],
+        }
+    ]
 
     result = runner.invoke(cli, ["logs", "--log-type-filter", "error"])
     assert result.exit_code == 0
-    assert "Log entry 1" in result.output
-    assert "Log entry 2" in result.output
-    mock_instance.logs.assert_called_once_with("error")
+    assert "Run ID: test-run-id" in result.output
+    assert "Run Type: test" in result.output
+    assert "Timestamp: 2024-08-05T20:00:00" in result.output
+    assert "User ID: test-user-id" in result.output
+    assert "Entries:" in result.output
+    assert "  - test-key: test-value" in result.output
+    assert "Total runs: 1" in result.output
 
 
 def test_users_overview(runner, mock_r2r_execution_wrapper):
