@@ -95,6 +95,7 @@ def rag(
     "--use-kg-search", is_flag=True, help="Use knowledge graph search"
 )
 @click.option("--kg-search-model", default=None, help="Model for KG agent")
+@click.option("--kg-search-type", default='global', help="Local or Global")
 @click.pass_obj
 def search(
     obj,
@@ -105,6 +106,7 @@ def search(
     do_hybrid_search,
     use_kg_search,
     kg_search_model,
+    kg_search_type,
 ):
     """Perform a search query."""
     kg_search_generation_config = {}
@@ -114,12 +116,15 @@ def search(
     with timer():
         results = obj.search(
             query,
-            use_vector_search,
-            search_filters,
-            search_limit,
-            do_hybrid_search,
-            use_kg_search,
-            kg_search_generation_config,
+            use_vector_search = use_vector_search,
+            search_filters = search_filters,
+            search_limit = search_limit,
+            do_hybrid_search = do_hybrid_search,
+            use_kg_search = use_kg_search,
+            entity_types = [],
+            relationships = [],
+            kg_search_type = kg_search_type,
+            kg_search_generation_config = kg_search_generation_config,
         )
 
         if isinstance(results, dict) and "results" in results:

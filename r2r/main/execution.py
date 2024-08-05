@@ -227,16 +227,22 @@ class R2RExecutionWrapper:
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
         kg_search_generation_config: Optional[dict] = None,
+        kg_search_type: str = 'global',
+        entity_types: list = [],
+        relationships: list = [],
     ):
         if self.client_mode:
             return self.client.search(
                 query,
-                use_vector_search,
-                search_filters,
-                search_limit,
-                do_hybrid_search,
-                use_kg_search,
-                kg_search_generation_config,
+                use_vector_search = use_vector_search,
+                search_filters = search_filters,
+                search_limit = search_limit,
+                do_hybrid_search = do_hybrid_search,
+                use_kg_search = use_kg_search,
+                kg_search_generation_config = kg_search_generation_config,
+                kg_search_type = kg_search_type,
+                entity_types = entity_types,
+                relationships = relationships,
             )["results"]
         else:
             return self.app.search(
@@ -252,6 +258,9 @@ class R2RExecutionWrapper:
                     kg_search_generation_config=GenerationConfig(
                         **(kg_search_generation_config or {})
                     ),
+                    kg_search_type=kg_search_type,
+                    entity_types = entity_types,
+                    relationships = relationships,
                 ),
             )
 

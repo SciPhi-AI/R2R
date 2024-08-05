@@ -79,7 +79,7 @@ class VectorSearchSettings(BaseModel):
 
 class KGSearchSettings(BaseModel):
     use_kg_search: bool = False
-    search_type: str = 'global' # 'global' or 'local'
+    kg_search_type: str = 'global' # 'global' or 'local'
     kg_search_generation_config: Optional[GenerationConfig] = Field(
         default_factory=GenerationConfig
     )

@@ -94,7 +94,7 @@ class SearchPipeline(AsyncPipeline):
 
             if do_kg:
                 kg_task = asyncio.create_task(
-                    self._kg_search_pipeline.run(
+                self._kg_search_pipeline.run(
                         dequeue_requests(kg_queue),
                         state,
                         stream,

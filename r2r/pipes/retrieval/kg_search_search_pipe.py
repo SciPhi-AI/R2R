@@ -111,10 +111,6 @@ class KGSearchSearchPipe(GeneratorPipe):
         responses = sorted(responses, key=lambda x: x['score'], reverse=True)
         return responses
     
-
-    async def reduce_queries(self, ):
-        return filtered_responses
-
     async def global_search(self,
         input: GeneratorPipe.Input,
         state: AsyncState,
@@ -127,7 +123,6 @@ class KGSearchSearchPipe(GeneratorPipe):
         async for message in input.message:
             map_responses = []
             communities = self.kg_provider.get_all_communities()
-
             
             async def process_community(community):
                 community_description = self.kg_provider.get_community_description(community)
@@ -147,14 +142,16 @@ class KGSearchSearchPipe(GeneratorPipe):
             # Use asyncio.gather to process all communities concurrently
             map_responses = await asyncio.gather(*[process_community(community) for community in communities])
 
-            # Filter only the relevant responses (if needed)
+            # Filter only the relevant responses
             filtered_responses = self.filter_responses(map_responses)
 
-            # reducing the queries
+            # reducing the outputs
             output = await self.llm_provider.aget_completion(
                 messages=self.prompt_provider._get_message_payload(
                     task_prompt_name="reduce_system_prompt",
                     task_inputs={
+                        "response_type": 'multiple paragraphs',
+                        "report_data": filtered_responses,
                         "input": message,
                     },
                 ),
@@ -171,7 +168,9 @@ class KGSearchSearchPipe(GeneratorPipe):
         *args: Any,
         **kwargs: Any,
     ):
-        if kg_search_settings.search_type == 'local':
+
+        kg_search_type = kg_search_settings.kg_search_type
+        if kg_search_type == 'local':
             async for query, result in self.local_search(input, state, run_id, kg_search_settings):
                 yield (query, result)
 

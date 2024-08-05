@@ -256,6 +256,7 @@ class R2RClient:
         use_kg_search: bool = False,
         entity_types: list = [],
         relationships: list = [],
+        kg_search_type: str = 'global',
         kg_search_generation_config: Optional[dict] = None,
     ) -> dict:
         self._ensure_authenticated()
@@ -273,6 +274,7 @@ class R2RClient:
                 "entity_types": entity_types,
                 "relationships": relationships,
                 "kg_search_generation_config": kg_search_generation_config,
+                "kg_search_type": kg_search_type,
             },
         )
         return self._make_request(
