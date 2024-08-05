@@ -43,7 +43,11 @@ class RunManager:
     ):
         if run_id := run_id_var.get():
             await self.logger.log(
-                log_id=run_id, key=key, value=value, is_info_log=is_info_log
+                log_id=run_id,
+                key=key,
+                value=value,
+                is_info_log=is_info_log,
+                user_id=user.id if user else None,
             )
 
     async def clear_run_info(self, token: contextvars.Token):

@@ -47,12 +47,14 @@ def logs(obj, log_type_filter, max_runs, include_timestamp):
     with timer():
         response = obj.logs(log_type_filter, max_runs, include_timestamp)
 
+    print(response)
+
     for log in response:
         click.echo(f"Run ID: {log['run_id']}")
         click.echo(f"Run Type: {log['run_type']}")
         if "timestamp" in log:
             click.echo(f"Timestamp: {log['timestamp']}")
-        click.echo(f"User ID: {log.get('user_id', 'Null')}")
+        click.echo(f"User ID: {log['user_id']}")
         click.echo("Entries:")
         for entry in log["entries"]:
             click.echo(f"  - {entry['key']}: {entry['value']}")

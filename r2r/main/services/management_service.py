@@ -105,6 +105,7 @@ class ManagementService(Service):
                         if include_timestamp and run.timestamp
                         else {}
                     ),
+                    "user_id": run.user_id,
                 }
             )
 

@@ -375,7 +375,6 @@ class IngestionService(Service):
         processed_documents: dict,
         user: Optional[User] = None,
     ):
-        logger.info(f"Process ingestion results got user: {user}")
         skipped_ids = [ele[0] for ele in skipped_documents]
         failed_ids = []
         successful_ids = []
@@ -423,8 +422,6 @@ class IngestionService(Service):
                 for _, filename in skipped_documents
             ],
         }
-
-        logger.info(f"User ID: {user.id if user else None}")
 
         # TODO - Clean up logging for document parse results
         if run_ids := list(self.run_manager.run_info.keys()):
