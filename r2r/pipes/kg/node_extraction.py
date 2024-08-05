@@ -4,6 +4,7 @@ import asyncio
 import logging
 import uuid
 from typing import AsyncGenerator, Optional, Union, Any
+from r2r.base.providers.llm import GenerationConfig
 
 from r2r.base import (
     AsyncState,
@@ -11,6 +12,7 @@ from r2r.base import (
     KGExtraction,
     KGProvider,
     LLMProvider,
+    PromptProvider,
     R2RDocumentProcessingError,
     KVLoggingSingleton,
     PipeType,
@@ -30,6 +32,8 @@ class KGNodeExtractionPipe(AsyncPipe):
 
     def __init__(self, 
         kg_provider: KGProvider,
+        llm_provider: LLMProvider,
+        prompt_provider: PromptProvider,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.OTHER,
         config: Optional[AsyncPipe.PipeConfig] = None,
@@ -41,13 +45,14 @@ class KGNodeExtractionPipe(AsyncPipe):
             config=config or AsyncPipe.PipeConfig(name="kg_node_extraction_pipe"),
         )
         self.kg_provider = kg_provider
+        self.llm_provider = llm_provider
+        self.prompt_provider = prompt_provider
 
-    async def _run_logic(self, input: Input, state: AsyncState, run_id: uuid.UUID, *args, **kwargs):
+    async def _run_logic(self, input: Input, state: AsyncState, run_id: uuid.UUID, *args, **kwargs) -> AsyncGenerator[Any, None]:
         nodes = self.kg_provider.get()
-        
-        for node in nodes: 
-            yield node
 
+        for node in nodes[:2]: 
+            yield node
 
 class KGNodeDescriptionPipe(AsyncPipe):
     """
@@ -80,11 +85,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
             Extracts description from the input.
         """
 
-        # update prompt of llm provider
-        
-        self.llm_provider.update_prompt()
-
-        async for node in input.message:
-            
-            # call llm completion
-            self.llm_provider.get_completion(node.description)
+        async for node in input.message:            
+            messages = [{'role':'user', 'content': 'Summarize the following text: ' + str(node)}]
+            completion = await self.llm_provider.aget_completion(messages, GenerationConfig(model='gpt-4o-mini'))
+            yield node, completion

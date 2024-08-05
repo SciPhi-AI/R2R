@@ -299,6 +299,8 @@ class R2RPipeFactory:
         streaming_rag_pipe_override: Optional[AsyncPipe] = None,
         eval_pipe_override: Optional[AsyncPipe] = None,
         kg_node_extraction_pipe: Optional[AsyncPipe] = None,
+        kg_node_description_pipe: Optional[AsyncPipe] = None,
+        kg_clustering_pipe: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
     ) -> R2RPipes:
@@ -328,7 +330,11 @@ class R2RPipeFactory:
             eval_pipe=eval_pipe_override
             or self.create_eval_pipe(*args, **kwargs),
             kg_node_extraction_pipe = kg_node_extraction_pipe 
-            or self.create_kg_node_extraction_pipe(*args, **kwargs)
+            or self.create_kg_node_extraction_pipe(*args, **kwargs),
+            kg_node_description_pipe = kg_node_description_pipe
+            or self.create_kg_node_description_pipe(*args, **kwargs),
+            kg_clustering_pipe = kg_clustering_pipe
+            or self.create_kg_clustering_pipe(*args, **kwargs)
         )
     
     def create_parsing_pipe(
@@ -464,7 +470,15 @@ class R2RPipeFactory:
 
     def create_kg_node_extraction_pipe(self, *args, **kwargs) -> Any:
         from r2r.pipes import KGNodeExtractionPipe
-        return KGNodeExtractionPipe(kg_provider=self.providers.kg)
+        return KGNodeExtractionPipe(kg_provider=self.providers.kg, llm_provider=self.providers.llm, prompt_provider = self.providers.prompt)
+    
+    def create_kg_node_description_pipe(self, *args, **kwargs) -> Any:
+        from r2r.pipes import KGNodeDescriptionPipe
+        return KGNodeDescriptionPipe(kg_provider=self.providers.kg, llm_provider=self.providers.llm, prompt_provider = self.providers.prompt)
+    
+    def create_kg_clustering_pipe(self, *args, **kwargs) -> Any:
+        from r2r.pipes import KGClusteringPipe
+        return KGClusteringPipe(kg_provider=self.providers.kg, llm_provider=self.providers.llm, prompt_provider = self.providers.prompt)
 
 class R2RPipelineFactory:
     def __init__(self, config: R2RConfig, pipes: R2RPipes):
@@ -543,6 +557,9 @@ class R2RPipelineFactory:
     def create_kg_pipeline(self, *args, **kwargs) -> KGPipeline:
         kg_pipeline = KGPipeline()
         kg_pipeline.add_pipe(self.pipes.kg_node_extraction_pipe)
+        kg_pipeline.add_pipe(self.pipes.kg_node_description_pipe)
+        kg_pipeline.add_pipe(self.pipes.kg_clustering_pipe)
+
         return kg_pipeline
 
     def create_pipelines(

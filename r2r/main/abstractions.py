@@ -47,6 +47,8 @@ class R2RPipes(BaseModel):
     kg_storage_pipe: Optional[AsyncPipe]
     kg_search_search_pipe: Optional[AsyncPipe]
     kg_node_extraction_pipe: Optional[AsyncPipe]
+    kg_node_description_pipe: Optional[AsyncPipe]
+    kg_clustering_pipe: Optional[AsyncPipe]
 
     class Config:
         arbitrary_types_allowed = True

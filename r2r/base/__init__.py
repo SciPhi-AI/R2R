@@ -21,6 +21,7 @@ from .abstractions.document import (
 from .abstractions.graph import (
     Entity,
     Community,
+    CommunityReport,
     KGExtraction,
     Triple,
     extract_entities,

@@ -90,6 +90,8 @@ class R2RBuilder:
         self.kg_storage_pipe_override: Optional[AsyncPipe] = None
         self.kg_search_pipe_override: Optional[AsyncPipe] = None
         self.kg_node_extraction_pipe_override: Optional[AsyncPipe] = None
+        self.kg_node_description_pipe_override: Optional[AsyncPipe] = None
+        self.kg_clustering_pipe_override: Optional[AsyncPipe] = None
 
         # Pipeline overrides
         self.ingestion_pipeline: Optional[IngestionPipeline] = None
@@ -197,6 +199,14 @@ class R2RBuilder:
         self.kg_node_extraction_pipe_override = pipe
         return self
 
+    def with_kg_clustering_pipe(self, pipe: AsyncPipe):
+        self.kg_clustering_pipe_override = pipe
+        return self
+
+    def with_kg_node_description_pipe(self, pipe: AsyncPipe):
+        self.kg_node_description_pipe_override = pipe
+        return self
+
     # Pipeline override methods
     def with_ingestion_pipeline(self, pipeline: IngestionPipeline):
         self.ingestion_pipeline = pipeline
@@ -260,6 +270,8 @@ class R2RBuilder:
             kg_storage_pipe_override=self.kg_storage_pipe_override,
             kg_search_pipe_override=self.kg_search_pipe_override,
             kg_node_extraction_pipe=self.kg_node_extraction_pipe_override,
+            kg_node_description_pipe=self.kg_node_description_pipe_override,
+            kg_clustering_pipe=self.kg_clustering_pipe_override,
             *args,
             **kwargs,
         )

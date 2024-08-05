@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 from typing import Any, Optional
@@ -12,6 +13,7 @@ from r2r.base import (
     PromptProvider,
 )
 
+import asyncio
 from ..abstractions.generator_pipe import GeneratorPipe
 
 logger = logging.getLogger(__name__)
@@ -53,8 +55,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         self.prompt_provider = prompt_provider
         self.pipe_run_info = None
 
-    async def _run_logic(
-        self,
+    async def local_search(self,
         input: GeneratorPipe.Input,
         state: AsyncState,
         run_id: uuid.UUID,
@@ -100,3 +101,80 @@ class KGSearchSearchPipe(GeneratorPipe):
                 key="kg_search_execution_result",
                 value=result,
             )
+
+    def filter_responses(self, map_responses):
+
+        responses = [json.loads(response) for response in map_responses]
+        responses = [item for sublist in responses for item in sublist]
+
+        responses = [response for response in responses if response['score'] > 0]
+        responses = sorted(responses, key=lambda x: x['score'], reverse=True)
+        return responses
+    
+
+    async def reduce_queries(self, ):
+        return filtered_responses
+
+    async def global_search(self,
+        input: GeneratorPipe.Input,
+        state: AsyncState,
+        run_id: uuid.UUID,
+        kg_search_settings: KGSearchSettings,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        # map reduce
+        async for message in input.message:
+            map_responses = []
+            communities = self.kg_provider.get_all_communities()
+
+            
+            async def process_community(community):
+                community_description = self.kg_provider.get_community_description(community)
+                truncated_description = community_description[:kg_search_settings.max_community_description_length]
+                
+                return await self.llm_provider.aget_completion(
+                    messages=self.prompt_provider._get_message_payload(
+                        task_prompt_name="map_system_prompt",
+                        task_inputs={
+                            "context_data": truncated_description,
+                            "input": message,
+                        },
+                    ),
+                    generation_config=kg_search_settings.kg_search_generation_config,
+                )
+
+            # Use asyncio.gather to process all communities concurrently
+            map_responses = await asyncio.gather(*[process_community(community) for community in communities])
+
+            # Filter only the relevant responses (if needed)
+            filtered_responses = self.filter_responses(map_responses)
+
+            # reducing the queries
+            output = await self.llm_provider.aget_completion(
+                messages=self.prompt_provider._get_message_payload(
+                    task_prompt_name="reduce_system_prompt",
+                    task_inputs={
+                        "input": message,
+                    },
+                ),
+                generation_config=kg_search_settings.kg_search_generation_config,
+            )
+            yield output
+
+    async def _run_logic(
+        self,
+        input: GeneratorPipe.Input,
+        state: AsyncState,
+        run_id: uuid.UUID,
+        kg_search_settings: KGSearchSettings,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        if kg_search_settings.search_type == 'local':
+            async for query, result in self.local_search(input, state, run_id, kg_search_settings):
+                yield (query, result)
+
+        else:
+            async for query, result in self.global_search(input, state, run_id, kg_search_settings):
+                yield (query, result)

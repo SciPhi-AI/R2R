@@ -4,11 +4,12 @@ import logging
 from typing import List, Dict, Any
 from ..assembly.config import R2RConfig
 from ..abstractions import R2RAssistants, R2RPipelines, R2RProviders
-from r2r.base import Document, R2RException, RunManager, KVLoggingSingleton
+from r2r.base import Document, R2RException, RunManager, KVLoggingSingleton, to_async_generator
 from .base import Service
+from typing import Iterable
+
 
 logger = logging.getLogger(__name__)
-
 class KGService(Service):
     def __init__(
         self,
@@ -38,8 +39,6 @@ class KGService(Service):
         Returns:
             Dict[str, Any]: Results of the graph enrichment process.
         """
-
-
         try:
             # Assuming there's a graph enrichment pipeline
             enrichment_results = await self.pipelines.kg_pipeline.run(
@@ -47,11 +46,7 @@ class KGService(Service):
                 run_manager=self.run_manager,
             )
 
-            # Process and store the enrichment results
-            # for doc_id, result in enrichment_results.items():
-            #     # Store the enriched graph data
-            #     self.providers.database.graph.store_graph_data(doc_id, result)
-
+            import pdb; pdb.set_trace()
             return {"message": f"Successfully enriched graph for {len(documents)} documents."}
 
         except Exception as e:
