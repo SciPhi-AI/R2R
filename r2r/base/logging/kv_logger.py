@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class RunInfo(BaseModel):
     run_id: uuid.UUID
     log_type: str
-    timestamp: datetime
+    timestamp: Optional[datetime]
 
 
 class LoggingConfig(ProviderConfig):
@@ -40,8 +40,25 @@ class KVLoggingProvider(Provider):
         pass
 
     @abstractmethod
-    async def log(self, log_id: uuid.UUID, key: str, value: str):
+    async def log(
+        self,
+        log_id: uuid.UUID,
+        key: str,
+        value: str,
+        user_id: Optional[str] = None,
+    ):
         pass
+
+    # TODO: deprecated, remove in version 0.3.0
+    @abstractmethod
+    async def log_without_user_id(
+        self, log_id: uuid.UUID, key: str, value: str
+    ):
+        # TODO: add in link to migration guide
+        logger.warning(
+            "Logs excluding user ids are deprecated and will be removed in version 0.3.0. Please follow the migration guide here."
+        )
+        await self.log(log_id, key, value)
 
     @abstractmethod
     async def get_run_info(
@@ -90,7 +107,8 @@ class LocalKVLoggingProvider(KVLoggingProvider):
                 timestamp DATETIME,
                 log_id TEXT,
                 key TEXT,
-                value TEXT
+                value TEXT,
+                user_id TEXT
             )
             """
         )
@@ -100,6 +118,7 @@ class LocalKVLoggingProvider(KVLoggingProvider):
                 timestamp DATETIME,
                 log_id TEXT UNIQUE,
                 log_type TEXT
+                user_id TEXT
             )
         """
         )
@@ -123,26 +142,68 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         log_id: uuid.UUID,
         key: str,
         value: str,
+        user_id: Optional[str] = None,
         is_info_log=False,
     ):
         collection = self.log_info_table if is_info_log else self.log_table
 
+        cursor = await self.conn.execute(f"PRAGMA table_info({collection})")
+        columns = await cursor.fetchall()
+        has_user_id = any(column[1] == "user_id" for column in columns)
+
+        logger.info(
+            f"Logging data in localkv logger: {log_id}, {key}, {value}, {user_id}"
+        )
+
         if is_info_log:
             if "type" not in key:
                 raise ValueError("Info log keys must contain the text 'type'")
-            await self.conn.execute(
-                f"INSERT INTO {collection} (timestamp, log_id, log_type) VALUES (datetime('now'), ?, ?)",
-                (str(log_id), value),
-            )
+            if has_user_id:
+                logger.info("Has user id!")
+                await self.conn.execute(
+                    f"INSERT INTO {collection} (timestamp, log_id, log_type, user_id) VALUES (datetime('now'), ?, ?, ?)",
+                    (str(log_id), value, user_id),
+                )
+            else:
+                logger.info("Does not have user id!")
+                await self.conn.execute(
+                    f"INSERT INTO {collection} (timestamp, log_id, log_type) VALUES (datetime('now'), ?, ?)",
+                    (str(log_id), value),
+                )
         else:
-            await self.conn.execute(
-                f"INSERT INTO {collection} (timestamp, log_id, key, value) VALUES (datetime('now'), ?, ?, ?)",
-                (str(log_id), key, value),
-            )
+            if has_user_id:
+                logger.info("Has user id!")
+                await self.conn.execute(
+                    f"INSERT INTO {collection} (timestamp, log_id, key, value, user_id) VALUES (datetime('now'), ?, ?, ?, ?)",
+                    (str(log_id), key, value, user_id),
+                )
+            else:
+                logger.info("Does not have user id!")
+                await self.conn.execute(
+                    f"INSERT INTO {collection} (timestamp, log_id, key, value) VALUES (datetime('now'), ?, ?, ?)",
+                    (str(log_id), key, value),
+                )
         await self.conn.commit()
 
+        if not has_user_id:
+            logger.warning(
+                "user_id column not found in the database. Please run the database migration."
+            )
+
+    async def log_without_user_id(
+        self,
+        log_id: uuid.UUID,
+        key: str,
+        value: str,
+        is_info_log: bool = False,
+    ):
+        await super().log_without_user_id(log_id, key, value)
+
     async def get_run_info(
-        self, limit: int = 10, log_type_filter: Optional[str] = None
+        self,
+        limit: int = 10,
+        log_type_filter: Optional[str] = None,
+        include_timestamp: bool = False,
     ) -> list[RunInfo]:
         cursor = await self.conn.cursor()
         query = (
@@ -161,7 +222,9 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         rows = await cursor.fetchall()
         return [
             RunInfo(
-                run_id=uuid.UUID(row[0]), log_type=row[1], timestamp=row[2]
+                run_id=uuid.UUID(row[0]),
+                log_type=row[1],
+                timestamp=row[2] if include_timestamp else None,
             )
             for row in rows
         ]
@@ -178,7 +241,7 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         placeholders = ",".join(["?" for _ in run_ids])
         select_fields = "timestamp, " if include_timestamp else ""
         query = f"""
-        SELECT {select_fields}log_id, key, value
+        SELECT {select_fields}log_id, key, value, user_id
         FROM (
             SELECT *, ROW_NUMBER() OVER (PARTITION BY log_id ORDER BY timestamp DESC) as rn
             FROM {self.log_table}
@@ -528,22 +591,53 @@ class KVLoggingSingleton:
         log_id: uuid.UUID,
         key: str,
         value: str,
-        is_info_log=False,
+        user_id: Optional[str] = None,
+        is_info_log: bool = False,
     ):
+        logger.info(f"Logging data: {log_id}, {key}, {value}, {user_id}")
         try:
             async with cls.get_instance() as provider:
-                await provider.log(log_id, key, value, is_info_log=is_info_log)
-
+                await provider.log(
+                    log_id,
+                    key,
+                    value,
+                    user_id=user_id,
+                    is_info_log=is_info_log,
+                )
         except Exception as e:
-            logger.error(f"Error logging data {(log_id, key, value)}: {e}")
+            logger.error(
+                f"Error logging data {(log_id, key, value, user_id)}: {e}"
+            )
+
+    # TODO: deprecated, remove in version 0.3.0
+    @classmethod
+    async def log_without_user_id(
+        cls,
+        log_id: uuid.UUID,
+        key: str,
+        value: str,
+        is_info_log: bool = False,
+    ):
+        # TODO: add in link to migration guide
+        logger.warning(
+            "Logs excluding user ids are deprecated and will be removed in version 0.3.0. Please follow the migration guide here."
+        )
+        await cls.log(
+            log_id, key, value, user_id=None, is_info_log=is_info_log
+        )
 
     @classmethod
     async def get_run_info(
-        cls, limit: int = 10, log_type_filter: Optional[str] = None
+        cls,
+        limit: int = 10,
+        log_type_filter: Optional[str] = None,
+        include_timestamp: bool = False,
     ) -> list[RunInfo]:
         async with cls.get_instance() as provider:
             return await provider.get_run_info(
-                limit, log_type_filter=log_type_filter
+                limit,
+                log_type_filter=log_type_filter,
+                include_timestamp=include_timestamp,
             )
 
     @classmethod

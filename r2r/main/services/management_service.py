@@ -68,6 +68,7 @@ class ManagementService(Service):
         run_info = await self.logging_connection.get_run_info(
             limit=max_runs_requested,
             log_type_filter=log_type_filter,
+            include_timestamp=include_timestamp,
         )
         run_ids = [run.run_id for run in run_info]
         if len(run_ids) == 0:
@@ -99,8 +100,10 @@ class ManagementService(Service):
                     "run_id": run.run_id,
                     "run_type": run.log_type,
                     "entries": entries,
-                    "timestamp": (
-                        run.timestamp.isoformat() if run.timestamp else None
+                    **(
+                        {"timestamp": run.timestamp.isoformat()}
+                        if include_timestamp and run.timestamp
+                        else {}
                     ),
                 }
             )

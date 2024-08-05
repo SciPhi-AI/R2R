@@ -38,7 +38,7 @@ def app_settings(obj):
 @click.option(
     "--include-timestamp",
     is_flag=True,
-    default=True,
+    default=False,
     help="Include timestamps in the output",
 )
 @click.pass_obj
@@ -50,7 +50,9 @@ def logs(obj, log_type_filter, max_runs, include_timestamp):
     for log in response:
         click.echo(f"Run ID: {log['run_id']}")
         click.echo(f"Run Type: {log['run_type']}")
-        click.echo(f"Timestamp: {log.get('timestamp', 'N/A')}")
+        if "timestamp" in log:
+            click.echo(f"Timestamp: {log['timestamp']}")
+        click.echo(f"User ID: {log.get('user_id', 'Null')}")
         click.echo("Entries:")
         for entry in log["entries"]:
             click.echo(f"  - {entry['key']}: {entry['value']}")

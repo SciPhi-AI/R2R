@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+import warnings
 from collections import defaultdict
 from datetime import datetime
 from typing import Any, Optional
@@ -199,10 +200,11 @@ class IngestionService(Service):
                     for doc in documents
                     if doc.id
                     not in [skipped[0] for skipped in skipped_documents]
-                ]
+                ],
             ),
             versions=[info.version for info in document_infos],
             run_manager=self.run_manager,
+            user=user,
             *args,
             **kwargs,
         )
@@ -211,6 +213,7 @@ class IngestionService(Service):
             document_infos,
             skipped_documents,
             processed_documents,
+            user=user,
         )
 
     @telemetry_event("IngestFiles")
@@ -370,7 +373,9 @@ class IngestionService(Service):
         document_infos: list[DocumentInfo],
         skipped_documents: list[tuple[str, str]],
         processed_documents: dict,
+        user: Optional[User] = None,
     ):
+        logger.info(f"Process ingestion results got user: {user}")
         skipped_ids = [ele[0] for ele in skipped_documents]
         failed_ids = []
         successful_ids = []
@@ -419,6 +424,8 @@ class IngestionService(Service):
             ],
         }
 
+        logger.info(f"User ID: {user.id if user else None}")
+
         # TODO - Clean up logging for document parse results
         if run_ids := list(self.run_manager.run_info.keys()):
             run_id = run_ids[0]
@@ -429,7 +436,16 @@ class IngestionService(Service):
                             log_id=run_id,
                             key="document_parse_result",
                             value=value,
+                            user_id=str(user.id) if user else None,
                         )
+
+        if not user:
+            # TODO: add in link to migration guide
+            warnings.warn(
+                "Logs excluding user ids are deprecated and will be removed in version 0.3.0. Please follow the migration guide here.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         return results
 
     @staticmethod
