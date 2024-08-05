@@ -74,6 +74,7 @@ class ManagementService(Service):
         logs = await self.logging_connection.get_logs(run_ids)
 
         aggregated_logs = []
+        warning_shown = False
 
         for run in run_info:
             run_logs = [log for log in logs if log["log_id"] == run.run_id]
@@ -97,8 +98,15 @@ class ManagementService(Service):
             if run.timestamp:
                 log_entry["timestamp"] = run.timestamp.isoformat()
 
-            if hasattr(run, "user_id") and run.user_id is not None:
-                log_entry["user_id"] = run.user_id
+            if hasattr(run, "user_id"):
+                if run.user_id is not None:
+                    log_entry["user_id"] = run.user_id
+            elif not warning_shown:
+                # Show warning only once if 'user_id' attribute doesn't exist
+                logger.warning(
+                    "Logs are missing user ids. This may be due to an outdated database schema. Please run `r2r migrate` to run database migrations."
+                )
+                warning_shown = True
 
             aggregated_logs.append(log_entry)
 

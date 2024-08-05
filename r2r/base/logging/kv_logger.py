@@ -357,7 +357,6 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
 
         # TODO: deprecated, remove in version 0.3.0
         if not self.has_user_id:
-            # TODO: add in link to migration guide
             logger.warning(
                 "Logs excluding user ids are deprecated and will be removed in version 0.3.0. Please run `r2r migrate` to run database migrations."
             )

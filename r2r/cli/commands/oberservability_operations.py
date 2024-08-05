@@ -44,7 +44,11 @@ def logs(obj, log_type_filter, max_runs):
     for log in response:
         click.echo(f"Run ID: {log['run_id']}")
         click.echo(f"Run Type: {log['run_type']}")
-        click.echo(f"Timestamp: {log['timestamp']}")
+        # TODO: deprecated, remove conditional check in v0.3.0
+        if "timestamp" in log:
+            click.echo(f"Timestamp: {log['timestamp']}")
+        else:
+            click.echo("Timestamp: Not available")
         if "user_id" in log:
             click.echo(f"User ID: {log['user_id']}")
         else:
