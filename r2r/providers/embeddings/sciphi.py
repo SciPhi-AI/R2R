@@ -1,6 +1,6 @@
+import os
 import logging
 from typing import Any, List
-
 
 from .litellm import LiteLLMEmbeddingProvider
 from r2r.base import (
@@ -36,11 +36,32 @@ class SciPhiEmbeddingProvider(LiteLLMEmbeddingProvider):
             )
         self.base_model = "openai/text-embedding-3-small"
 
+    def _set_api_key(self, key: str) -> str:
+        original_key = os.environ.get("OPENAI_API_KEY")
+        os.environ["OPENAI_API_KEY"] = key
+        return original_key
+
     async def _execute_task(self, task: dict[str, Any]) -> List[float]:
-        return await super()._execute_task(task)
+        self._validate_model()
+        original_key = self._set_api_key(os.getenv("SCIPHI_PRIVATE_API_KEY"))
+        try:
+            return await super()._execute_task(task)
+        except Exception as e:
+            logger.error(f"Error executing task: {e}")
+            raise
+        finally:
+            os.environ["OPENAI_API_KEY"] = original_key
 
     def _execute_task_sync(self, task: dict[str, Any]) -> List[float]:
-        return super()._execute_task_sync(task)
+        self._validate_model()
+        original_key = self._set_api_key(os.getenv("SCIPHI_PRIVATE_API_KEY"))
+        try:
+            return super()._execute_task_sync(task)
+        except Exception as e:
+            logger.error(f"Error executing task: {e}")
+            raise
+        finally:
+            os.environ["OPENAI_API_KEY"] = original_key
 
     async def async_get_embedding(
         self,
