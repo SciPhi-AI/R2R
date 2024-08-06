@@ -8,8 +8,8 @@ default_admin_email = "admin@example.com"
 default_admin_password = "change_me_immediately"
 
 [chunking]
-provider = "unstructured"
-method = "by_title"
+provider = "r2r"
+method = "recursive"
 chunk_size = 512
 chunk_overlap = 50
 
