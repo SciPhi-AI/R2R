@@ -112,8 +112,7 @@ services:
   r2r-dashboard:
     image: emrgntcmplxty/r2r-dashboard:latest
     environment:
-      #- NEXT_PUBLIC_API_URL=http://traefik:${TRAEFIK_PORT:-80}/api
-      - NEXT_PUBLIC_API_URL=http://traefik:${TRAEFIK_PORT:-9080}/api
+      - NEXT_PUBLIC_API_URL=http://traefik:${TRAEFIK_PORT:-80}/api
     depends_on:
       - r2r
     networks:
@@ -129,8 +128,7 @@ services:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      #- "--entrypoints.web.address=:${TRAEFIK_PORT:-80}"
-      - "--entrypoints.web.address=:${TRAEFIK_PORT:-9080}"
+      - "--entrypoints.web.address=:${TRAEFIK_PORT:-80}"
       - "--accesslog=true"
       - "--accesslog.filepath=/var/log/traefik/access.log"
     ports:
