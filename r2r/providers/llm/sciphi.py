@@ -50,7 +50,7 @@ class SciPhiCompletionProvider(LiteCompletionProvider):
         self._validate_model(generation_config)
         original_key = self._set_api_key(task["SCIPHI_PRIVATE_API_KEY"])
         try:
-            await super()._execute_task(task)
+            return await super()._execute_task(task)
         except Exception as e:
             logger.error(f"Error executing task: {e}")
             raise
@@ -62,7 +62,7 @@ class SciPhiCompletionProvider(LiteCompletionProvider):
         self._validate_model(generation_config)
         original_key = self._set_api_key(task["SCIPHI_PRIVATE_API_KEY"])
         try:
-            super()._execute_task_sync(task)
+            return super()._execute_task_sync(task)
         except Exception as e:
             logger.error(f"Error executing task: {e}")
             raise
