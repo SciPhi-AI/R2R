@@ -159,22 +159,41 @@ class LocalKVLoggingProvider(KVLoggingProvider):
                 raise ValueError("Info log keys must contain the text 'type'")
             if self.has_user_id:
                 await self.conn.execute(
-                    f"INSERT INTO {collection} (timestamp, log_id, log_type, user_id) VALUES (datetime('now'), ?, ?, ?)",
+                    f"""
+                    INSERT INTO {collection} (timestamp, log_id, log_type, user_id)
+                    VALUES (datetime('now'), ?, ?, ?)
+                    ON CONFLICT(log_id) DO UPDATE SET
+                    timestamp = datetime('now'),
+                    log_type = excluded.log_type,
+                    user_id = excluded.user_id
+                    """,
                     (str(log_id), value, str(user_id)),
                 )
             else:
                 await self.conn.execute(
-                    f"INSERT INTO {collection} (timestamp, log_id, log_type) VALUES (datetime('now'), ?, ?)",
-                    (str(log_id), value),
+                    f"""
+                    INSERT INTO {collection} (timestamp, log_id, log_type, user_id)
+                    VALUES (datetime('now'), ?, ?)
+                    ON CONFLICT(log_id) DO UPDATE SET
+                    timestamp = datetime('now'),
+                    log_type = excluded.log_type,
+                    """,
+                    (str(log_id), value, str(user_id)),
                 )
         elif self.has_user_id:
             await self.conn.execute(
-                f"INSERT INTO {collection} (timestamp, log_id, key, value, user_id) VALUES (datetime('now'), ?, ?, ?, ?)",
+                f"""
+                INSERT INTO {collection} (timestamp, log_id, key, value, user_id)
+                VALUES (datetime('now'), ?, ?, ?, ?)
+                """,
                 (str(log_id), key, value, str(user_id)),
             )
         else:
             await self.conn.execute(
-                f"INSERT INTO {collection} (timestamp, log_id, key, value) VALUES (datetime('now'), ?, ?, ?)",
+                f"""
+                INSERT INTO {collection} (timestamp, log_id, key, value)
+                VALUES (datetime('now'), ?, ?, ?)
+                """,
                 (str(log_id), key, value),
             )
 

@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from ..providers.llm import CompletionProvider, GenerationConfig
 from ..providers.prompt import PromptProvider
+from .completion import MessageType
 from .llm import LLMChatCompletion
 
 
@@ -37,7 +38,7 @@ class ToolResult(BaseModel):
 
 
 class Message(BaseModel):
-    role: str
+    role: MessageType
     content: Optional[str] = None
     name: Optional[str] = None
     function_call: Optional[Dict[str, Any]] = None
@@ -50,7 +51,7 @@ class Conversation:
 
     def create_and_add_message(
         self,
-        role: str,
+        role: MessageType,
         content: Optional[str] = None,
         name: Optional[str] = None,
         function_call: Optional[Dict[str, Any]] = None,
@@ -112,7 +113,7 @@ class Agent(ABC):
     def _setup(self, system_instruction: Optional[str] = None):
         self.conversation = [
             Message(
-                role="system",
+                role=MessageType.SYSTEM,
                 content=system_instruction
                 or self.prompt_provider.get_prompt(
                     self.config.system_instruction_name
@@ -207,7 +208,7 @@ class Agent(ABC):
         (
             self.conversation.append(
                 Message(
-                    role="assistant",
+                    role=MessageType.ASSISTANT,
                     tool_calls=[
                         {
                             "id": tool_id,
@@ -222,7 +223,7 @@ class Agent(ABC):
             if tool_id
             else self.conversation.append(
                 Message(
-                    role="assistant",
+                    role=MessageType.ASSISTANT,
                     function_call={
                         "name": function_name,
                         "arguments": function_arguments,
@@ -253,7 +254,7 @@ class Agent(ABC):
                 self.conversation.append(
                     Message(
                         tool_call_id=tool_id,
-                        role="tool",
+                        role=MessageType.TOOL,
                         content=str(tool_result.llm_formatted_result),
                         name=function_name,
                     )
@@ -261,7 +262,7 @@ class Agent(ABC):
                 if tool_id
                 else self.conversation.append(
                     Message(
-                        role="function",
+                        role=MessageType.FUNCTION,
                         content=str(tool_result.llm_formatted_result),
                         name=function_name,
                     )

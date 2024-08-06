@@ -1,3 +1,4 @@
+import json
 import uuid
 from typing import Any, Dict
 
@@ -44,7 +45,6 @@ def logs(obj, log_type_filter, max_runs):
     for log in response:
         click.echo(f"Run ID: {log['run_id']}")
         click.echo(f"Run Type: {log['run_type']}")
-        # TODO: deprecated, remove conditional check in v0.3.0
         if "timestamp" in log:
             click.echo(f"Timestamp: {log['timestamp']}")
         else:
@@ -55,7 +55,29 @@ def logs(obj, log_type_filter, max_runs):
             click.echo("User ID: Not available")
         click.echo("Entries:")
         for entry in log["entries"]:
-            click.echo(f"  - {entry['key']}: {entry['value']}")
+            if entry["key"] == "completion_record":
+                completion_record = json.loads(entry["value"])
+                click.echo("  CompletionRecord:")
+                click.echo(
+                    f"    Message ID: {completion_record['message_id']}"
+                )
+                click.echo(
+                    f"    Message Type: {completion_record['message_type']}"
+                )
+                click.echo(
+                    f"    Search Query: {completion_record['search_query']}"
+                )
+                click.echo(
+                    f"    Completion Start Time: {completion_record['completion_start_time']}"
+                )
+                click.echo(
+                    f"    Completion End Time: {completion_record['completion_end_time']}"
+                )
+                click.echo(
+                    f"    LLM Response: {completion_record['llm_response']}"
+                )
+            else:
+                click.echo(f"  - {entry['key']}: {entry['value'][:100]}")
         click.echo("---")
 
     click.echo(f"Total runs: {len(response)}")

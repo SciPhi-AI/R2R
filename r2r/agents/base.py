@@ -8,6 +8,7 @@ from r2r.base import (
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
+    MessageType,
     User,
     syncable,
 )
@@ -96,7 +97,9 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                     )
             else:
                 self.conversation.append(
-                    Message(role="assistant", content=message.content)
+                    Message(
+                        role=MessageType.ASSISTANT, content=message.content
+                    )
                 )
                 self._completed = True
 
@@ -201,7 +204,9 @@ class R2RStreamingAgent(Agent):
             elif chunk.choices[0].finish_reason == "stop":
                 if content_buffer:
                     self.conversation.append(
-                        Message(role="assistant", content=content_buffer)
+                        Message(
+                            role=MessageType.ASSISTANT, content=content_buffer
+                        )
                     )
                 self._completed = True
                 yield "</completion>"

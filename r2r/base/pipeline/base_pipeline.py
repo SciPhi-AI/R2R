@@ -15,11 +15,12 @@ logger = logging.getLogger(__name__)
 
 
 class PipelineTypes(Enum):
+    AGENT = "agent"
     EVAL = "eval"
     INGESTION = "ingestion"
-    SEARCH = "search"
-    RAG = "rag"
     OTHER = "other"
+    RAG = "rag"
+    SEARCH = "search"
 
 
 class AsyncPipeline:

@@ -77,7 +77,9 @@ class ManagementService(Service):
         warning_shown = False
 
         for run in run_info:
-            run_logs = [log for log in logs if log["log_id"] == run.run_id]
+            run_logs = [
+                log for log in logs if log["log_id"] == str(run.run_id)
+            ]
             entries = [
                 {
                     "key": log["key"],
@@ -102,7 +104,6 @@ class ManagementService(Service):
                 if run.user_id is not None:
                     log_entry["user_id"] = run.user_id
             elif not warning_shown:
-                # Show warning only once if 'user_id' attribute doesn't exist
                 logger.warning(
                     "Logs are missing user ids. This may be due to an outdated database schema. Please run `r2r migrate` to run database migrations."
                 )
