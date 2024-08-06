@@ -7,7 +7,6 @@ from r2r.base import (
     EmbeddingConfig,
     EmbeddingProvider,
     EmbeddingPurpose,
-    GenerationConfig
 )
 
 logger = logging.getLogger(__name__)
