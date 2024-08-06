@@ -35,10 +35,10 @@ class SciPhiCompletionProvider(LiteCompletionProvider):
         return args
 
     def _validate_model(self, generation_config: GenerationConfig) -> None:
-        if generation_config.model != "sciphi/gpt-4o-mini":
-            raise ValueError(
-                "SciPhiCompletionProvider must be initialized with `sciphi/gpt-4o-mini` model."
-            )
+        # if generation_config.model != "sciphi/gpt-4o-mini":
+        #     raise ValueError(
+        #         "SciPhiCompletionProvider must be initialized with `sciphi/gpt-4o-mini` model."
+        #     )
         generation_config.model = "openai/gpt-4o-mini"
 
     def _set_api_key(self, key: str) -> str:

@@ -30,10 +30,10 @@ class SciPhiEmbeddingProvider(LiteLLMEmbeddingProvider):
         self._validate_model()
 
     def _validate_model(self) -> None:
-        if self.base_model != "sciphi/text-embedding-3-small":
-            raise ValueError(
-                "SciPhiEmbeddingProvider must be initialized with `sciphi/text-embedding-3-small` model."
-            )
+        # if self.base_model != "sciphi/text-embedding-3-small":
+        #     raise ValueError(
+        #         "SciPhiEmbeddingProvider must be initialized with `sciphi/text-embedding-3-small` model."
+        #     )
         self.base_model = "openai/text-embedding-3-small"
 
     def _set_api_key(self, key: str) -> str:
