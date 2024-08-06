@@ -41,18 +41,12 @@ class PosthogClient:
             posthog.capture(event.event_id, event.event_type, event.properties)
 
 
-# Initialize the telemetry client with a flag to enable or disable telemetry
-telemetry_enabled = os.getenv("TELEMETRY_ENABLED", "true").lower() in (
-    "true",
-    "1",
-    "t",
-)
 debug_mode = os.getenv("DEBUG_MODE", "false").lower() in (
     "true",
     "1",
     "t",
 )
 telemetry_client = PosthogClient(
-    api_key="phc_OPBbibOIErCGc4NDLQsOrMuYFTKDmRwXX6qxnTr6zpU",
-    enabled=telemetry_enabled,
+    api_key="phc_oD5E3KLRIG6c0rLd6BPXuI4R0ocrzBionyJ4p5GLdYA",
+    enabled=True,
 )
