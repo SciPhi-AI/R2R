@@ -14,11 +14,11 @@ chunk_size = 512
 chunk_overlap = 50
 
 [completion]
-provider = "sciphi"
+provider = "litellm"
 concurrent_request_limit = 16
 
   [completion.generation_config]
-  model = "sciphi/gpt-4o-slim"
+  model = "openai/gpt-4o"
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 1_024
@@ -32,9 +32,9 @@ provider = "bcrypt"
 provider = "postgres"
 
 [embedding]
-provider = "sciphi"
-base_model = "sciphi/text-embedding-3-small"
-base_dimension = 1_024
+provider = "litellm"
+base_model = "openai/text-embedding-3-small"
+base_dimension = 512
 batch_size = 128
 add_title_as_prefix = false
 rerank_model = "None"
