@@ -168,6 +168,11 @@ class R2RProviderFactory:
 
             embedding_provider = LiteLLMEmbeddingProvider(embedding)
 
+        elif embedding.provider == "sciphi":
+            from r2r.providers.embeddings import SciPhiEmbeddingProvider
+
+            embedding_provider = SciPhiEmbeddingProvider(embedding)
+
         elif embedding.provider == "ollama":
             from r2r.providers import OllamaEmbeddingProvider
 
@@ -220,6 +225,10 @@ class R2RProviderFactory:
             from r2r.providers import LiteCompletionProvider
 
             llm_provider = LiteCompletionProvider(llm_config)
+        elif llm_config.provider == "sciphi":
+            from r2r.providers.llm import SciPhiCompletionProvider
+
+            llm_provider = SciPhiCompletionProvider(llm_config)
         else:
             raise ValueError(
                 f"Language model provider {llm_config.provider} not supported"
