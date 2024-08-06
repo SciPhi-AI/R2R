@@ -32,7 +32,7 @@ class CompletionConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["sciphi", "litellm", "openai"]
+        return ["litellm", "openai"]
 
 
 class CompletionProvider(Provider):
