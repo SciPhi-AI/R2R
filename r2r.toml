@@ -18,7 +18,7 @@ provider = "sciphi"
 concurrent_request_limit = 16
 
   [completion.generation_config]
-  model = "sciphi/gpt-4o-slim"
+  model = "sciphi/gpt-4o-mini"
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 1_024

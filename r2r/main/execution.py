@@ -284,13 +284,9 @@ class R2RExecutionWrapper:
                 ),
                 kg_search_settings=KGSearchSettings(
                     use_kg_search=use_kg_search,
-                    kg_search_generation_config=GenerationConfig(
-                        **(kg_search_generation_config or {})
-                    ),
+                    kg_search_generation_config=kg_search_generation_config or {},
                 ),
-                rag_generation_config=GenerationConfig(
-                    **(rag_generation_config or {})
-                ),
+                rag_generation_config=rag_generation_config or {},
             )
 
             if not stream:

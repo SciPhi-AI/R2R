@@ -24,8 +24,9 @@ class SciPhiEmbeddingProvider(LiteLLMEmbeddingProvider):
             raise ValueError(
                 "SciPhiEmbeddingProvider must be initialized with config with `sciphi` provider."
             )
-        config.provider = "litellm"
-        super().__init__(config)
+        config_copy = config.copy()
+        config_copy.provider = "litellm"
+        super().__init__(config_copy)
         self._validate_model()
 
     def _validate_model(self) -> None:
@@ -48,7 +49,6 @@ class SciPhiEmbeddingProvider(LiteLLMEmbeddingProvider):
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> List[float]:
-        self._validate_model(self.base_model)
         return await super().async_get_embedding(text, stage, purpose, **kwargs)
 
     def get_embedding(

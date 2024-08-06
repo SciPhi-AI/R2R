@@ -16,8 +16,9 @@ class SciPhiCompletionProvider(LiteCompletionProvider):
             raise ValueError(
                 "SciPhiCompletionProvider must be initialized with config with `sciphi` provider."
             )
-        config.provider = "litellm"
-        super().__init__(config)
+        config_copy = config.copy()
+        config_copy.provider = "litellm"
+        super().__init__(config_copy)
 
     def _get_base_args(self, generation_config: GenerationConfig) -> dict:
         args = {
@@ -48,7 +49,7 @@ class SciPhiCompletionProvider(LiteCompletionProvider):
     async def _execute_task(self, task: dict[str, Any]):
         generation_config = task["generation_config"]
         self._validate_model(generation_config)
-        original_key = self._set_api_key(task["SCIPHI_PRIVATE_API_KEY"])
+        original_key = self._set_api_key(os.getenv("SCIPHI_PRIVATE_API_KEY"))
         try:
             return await super()._execute_task(task)
         except Exception as e:
@@ -58,9 +59,11 @@ class SciPhiCompletionProvider(LiteCompletionProvider):
             os.environ["OPENAI_API_KEY"] = original_key
 
     def _execute_task_sync(self, task: dict[str, Any]):
+        print('task = ', task)
         generation_config = task["generation_config"]
         self._validate_model(generation_config)
-        original_key = self._set_api_key(task["SCIPHI_PRIVATE_API_KEY"])
+        original_key = self._set_api_key(os.getenv("SCIPHI_PRIVATE_API_KEY"))
+        print('original_key = ', original_key)
         try:
             return super()._execute_task_sync(task)
         except Exception as e:
