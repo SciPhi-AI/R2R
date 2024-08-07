@@ -250,6 +250,10 @@ class R2RProviderFactory:
             from r2r.providers import Neo4jKGProvider
 
             return Neo4jKGProvider(kg_config)
+        elif kg_config.provider == "local":
+            from r2r.providers import LocalKGProvider
+
+            return LocalKGProvider(kg_config)
         elif kg_config.provider is None:
             return None
         else:

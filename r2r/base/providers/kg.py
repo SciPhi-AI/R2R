@@ -28,6 +28,7 @@ class KGConfig(ProviderConfig):
     kg_extraction_prompt: Optional[str] = "few_shot_ner_kg_extraction"
     kg_search_prompt: Optional[str] = "kg_search"
     kg_extraction_config: Optional[GenerationConfig] = None
+    kg_store_path: Optional[str] = None
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:
@@ -35,7 +36,7 @@ class KGConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return [None, "neo4j"]
+        return [None, "neo4j", "local"]
 
 
 class KGProvider(ABC):

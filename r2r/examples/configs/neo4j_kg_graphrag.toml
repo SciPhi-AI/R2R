@@ -21,11 +21,12 @@ add_title_as_prefix = true
 excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
 
 [kg]
-provider = "neo4j"
+provider = "local"
 batch_size = 64
 max_entities = 10
 max_relations = 20
 kg_extraction_prompt = "graphrag_triplet_extraction"
+kg_store_path = "/Users/shreyas/r2rr2r/graph_data"
 
   [kg.kg_extraction_config]
   model = "gpt-4o-mini"
