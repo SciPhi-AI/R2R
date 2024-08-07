@@ -256,13 +256,6 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def score_completion(
             request: R2RScoreCompletionRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
-            message_id: str = None,
-            score: float = None,
         ):
             return await self.engine.ascore_completion(
                 message_id=request.message_id, score=request.score

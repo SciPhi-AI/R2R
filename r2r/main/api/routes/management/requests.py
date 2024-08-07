@@ -45,5 +45,5 @@ class R2RPrintRelationshipsRequest(BaseModel):
 
 
 class R2RScoreCompletionRequest(BaseModel):
-    message_id: uuid.UUID
-    score: Optional[float] = None
+    message_id: uuid.UUID = None
+    score: float = None
