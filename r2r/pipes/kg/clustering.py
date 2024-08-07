@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 class KGClusteringPipe(AsyncPipe):
     """
     Clusters entities and triples into communities within the knowledge graph using hierarchical Leiden algorithm.
-    """
+    """ 
 
     def __init__(
         self,

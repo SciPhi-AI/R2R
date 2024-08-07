@@ -51,7 +51,7 @@ class KGNodeExtractionPipe(AsyncPipe):
     async def _run_logic(self, input: Input, state: AsyncState, run_id: uuid.UUID, *args, **kwargs) -> AsyncGenerator[Any, None]:
         nodes = self.kg_provider.get()
 
-        for node in nodes[:2]: 
+        for node in nodes: 
             yield node
 
 class KGNodeDescriptionPipe(AsyncPipe):

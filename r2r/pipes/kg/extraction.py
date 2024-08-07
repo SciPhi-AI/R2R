@@ -40,6 +40,9 @@ class KGExtractionPipe(AsyncPipe):
     Embeds and stores documents using a specified embedding model and database.
     """
 
+    class Input:
+        message: AsyncGenerator[Extraction, None]
+
     def __init__(
         self,
         kg_provider: KGProvider,
@@ -192,6 +195,7 @@ class KGExtractionPipe(AsyncPipe):
 
                     # Create KG extraction object
                     return KGExtraction(entities=entities, triples=triples)
+
             except (
                 ClientError,
                 json.JSONDecodeError,

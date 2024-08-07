@@ -127,6 +127,10 @@ def search(
             kg_search_generation_config = kg_search_generation_config,
         )
 
+        print("KG_Search Enabled", use_kg_search)
+        print("KG_Search Type", kg_search_type)
+
+
         if isinstance(results, dict) and "results" in results:
             results = results["results"]
 

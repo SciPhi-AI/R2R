@@ -12,6 +12,7 @@ from r2r.base import (
     PromptProvider,
     format_entity_types,
     format_relations,
+    Community,
 )
 from r2r.base.abstractions.llama_abstractions import (
     LIST_LIMIT,
@@ -424,6 +425,11 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
                 )
 
         return nodes
+    
+    def get_communities(self) -> List[Community]:
+        import numpy as np
+        communities = np.load("/Users/shreyas/r2rr2r/communities.npy")
+        return communities
 
     def get_triplets(
         self,

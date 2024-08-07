@@ -122,10 +122,11 @@ class KGSearchSearchPipe(GeneratorPipe):
         # map reduce
         async for message in input.message:
             map_responses = []
-            communities = self.kg_provider.get_all_communities()
+            communities = self.kg_provider.get_communities()
             
             async def process_community(community):
-                community_description = self.kg_provider.get_community_description(community)
+                community_report = community.attributes['community_report']
+                community_description = community_report.summary
                 truncated_description = community_description[:kg_search_settings.max_community_description_length]
                 
                 return await self.llm_provider.aget_completion(
