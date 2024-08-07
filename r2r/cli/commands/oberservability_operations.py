@@ -55,27 +55,7 @@ def logs(obj, log_type_filter, max_runs):
             click.echo("User ID: Not available")
         click.echo("Entries:")
         for entry in log["entries"]:
-            if entry["key"] == "completion_record":
-                completion_record = json.loads(entry["value"])
-                click.echo("  CompletionRecord:")
-                click.echo(
-                    f"    Message ID: {completion_record['message_id']}"
-                )
-                click.echo(f"    Score: {completion_record['score']}")
-                click.echo(
-                    f"    Message Type: {completion_record['message_type']}"
-                )
-                click.echo(
-                    f"    Completion Start Time: {completion_record['completion_start_time']}"
-                )
-                click.echo(
-                    f"    Completion End Time: {completion_record['completion_end_time']}"
-                )
-                click.echo(
-                    f"    LLM Response: {completion_record['llm_response'][:100]}, ..."
-                )
-            else:
-                click.echo(f"  - {entry['key']}: {entry['value'][:100]}")
+            click.echo(f"  - {entry['key']}: {entry['value'][:100]}")
         click.echo("---")
 
     click.echo(f"Total runs: {len(response)}")
