@@ -28,7 +28,6 @@ class R2RUsersOverviewRequest(BaseModel):
 
 class R2RDocumentsOverviewRequest(BaseModel):
     document_ids: Optional[list[uuid.UUID]]
-    user_ids: Optional[list[uuid.UUID]]
 
 
 class R2RDocumentChunksRequest(BaseModel):

@@ -483,12 +483,13 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     logger.error(f"Error enabling uuid-ossp extension: {e}")
                     raise
 
-                # Create the table if it doesn't exist
+                # Create the document info table if it doesn't exist
                 create_table_query = f"""
                 CREATE TABLE IF NOT EXISTS document_info_{self.collection_name} (
                     document_id UUID PRIMARY KEY,
                     title TEXT,
                     user_id UUID NULL,
+                    group_ids UUID[] NULL,
                     version TEXT,
                     size_in_bytes INT,
                     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -499,7 +500,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 """
                 sess.execute(text(create_table_query))
 
-                # Create users table
+                # Create the users table if it doesn't exist
                 query = f"""
                 CREATE TABLE IF NOT EXISTS users_{self.collection_name} (
                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -515,6 +516,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     profile_picture TEXT,
                     reset_token TEXT,
                     reset_token_expiry TIMESTAMPTZ,
+                    group_ids UUID[] NULL,
                     created_at TIMESTAMPTZ DEFAULT NOW(),
                     updated_at TIMESTAMPTZ DEFAULT NOW()
                 );
@@ -535,6 +537,13 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 """
                 sess.execute(text(query))
 
+                # Create the index on group_ids
+                create_index_query = f"""
+                CREATE INDEX IF NOT EXISTS idx_group_ids_{self.collection_name}
+                ON document_info_{self.collection_name} USING GIN (group_ids);
+                """
+                sess.execute(text(create_index_query))
+
                 sess.commit()
 
     def upsert_documents_overview(
@@ -546,14 +555,23 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             # Convert 'None' string to None type for user_id
             if db_entry["user_id"] == "None":
                 db_entry["user_id"] = None
+            if db_entry["group_ids"] == "None":
+                db_entry["group_ids"] = None
+            elif isinstance(db_entry["group_ids"], list):
+                # ensure group_ids are strings
+                db_entry["group_ids"] = [
+                    str(gid) for gid in db_entry["group_ids"]
+                ]
 
             query = text(
                 f"""
-                INSERT INTO document_info_{self.collection_name} (document_id, title, user_id, version, created_at, updated_at, size_in_bytes, metadata, status)
-                VALUES (:document_id, :title, :user_id, :version, :created_at, :updated_at, :size_in_bytes, :metadata, :status)
+                INSERT INTO document_info_{self.collection_name}
+                (document_id, title, user_id, group_ids, version, created_at, updated_at, size_in_bytes, metadata, status)
+                VALUES (:document_id, :title, :user_id, :group_ids, :version, :created_at, :updated_at, :size_in_bytes, :metadata, :status)
                 ON CONFLICT (document_id) DO UPDATE SET
                     title = EXCLUDED.title,
                     user_id = EXCLUDED.user_id,
+                    group_ids = EXCLUDED.group_ids,
                     version = EXCLUDED.version,
                     updated_at = EXCLUDED.updated_at,
                     size_in_bytes = EXCLUDED.size_in_bytes,
@@ -587,6 +605,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         self,
         filter_document_ids: Optional[list[str]] = None,
         filter_user_ids: Optional[list[str]] = None,
+        filter_group_ids: Optional[list[str]] = None,
     ):
         conditions = []
         params = {}
@@ -602,6 +621,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     for i, document_id in enumerate(filter_document_ids)
                 }
             )
+
         if filter_user_ids:
             placeholders = ", ".join(
                 f":user_id_{i}" for i in range(len(filter_user_ids))
@@ -614,8 +634,15 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 }
             )
 
+        if filter_group_ids:
+            group_conditions = []
+            for i, group_id in enumerate(filter_group_ids):
+                group_conditions.append(f":group_id_{i} = ANY(group_ids)")
+                params[f"group_id_{i}"] = str(group_id)
+            conditions.append(f"({' OR '.join(group_conditions)})")
+
         query = f"""
-            SELECT document_id, title, user_id, version, size_in_bytes, created_at, updated_at, metadata, status
+            SELECT document_id, title, user_id, group_ids, version, size_in_bytes, created_at, updated_at, metadata, status
             FROM document_info_{self.collection_name}
         """
         if conditions:
@@ -628,12 +655,13 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     document_id=row[0],
                     title=row[1],
                     user_id=row[2],
-                    version=row[3],
-                    size_in_bytes=row[4],
-                    created_at=row[5],
-                    updated_at=row[6],
-                    metadata=row[7],
-                    status=row[8],
+                    group_ids=row[3],
+                    version=row[4],
+                    size_in_bytes=row[5],
+                    created_at=row[6],
+                    updated_at=row[7],
+                    metadata=row[8],
+                    status=row[9],
                 )
                 for row in results
             ]
@@ -672,11 +700,11 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         hashed_password = self.crypto_provider.get_password_hash(user.password)
         query = text(
             f"""
-        INSERT INTO users_{self.collection_name}
-        (email, id, hashed_password)
-        VALUES (:email, :id, :hashed_password)
-        RETURNING id, email, is_superuser, is_active, is_verified, created_at, updated_at
-        """
+            INSERT INTO users_{self.collection_name}
+            (email, id, hashed_password, group_ids)
+            VALUES (:email, :id, :hashed_password, :group_ids)
+            RETURNING id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            """
         )
 
         with self.vx.Session() as sess:
@@ -686,6 +714,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     "email": user.email,
                     "id": generate_id_from_label(user.email),
                     "hashed_password": hashed_password,
+                    "group_ids": [],
                 },
             )
             user_data = result.fetchone()
@@ -699,16 +728,17 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             is_verified=user_data[4],
             created_at=user_data[5],
             updated_at=user_data[6],
+            group_ids=user_data[7],
             hashed_password=hashed_password,
         )
 
     def get_user_by_email(self, email: str) -> Optional[User]:
         query = text(
             f"""
-        SELECT id, email, hashed_password, is_superuser, is_active, is_verified, created_at, updated_at
-        FROM users_{self.collection_name}
-        WHERE email = :email
-        """
+            SELECT id, email, hashed_password, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            FROM users_{self.collection_name}
+            WHERE email = :email
+            """
         )
 
         with self.vx.Session() as sess:
@@ -719,13 +749,13 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             return User(
                 id=user_data[0],
                 email=user_data[1],
-                # password="",  # We don't return the hashed password
                 hashed_password=user_data[2],
                 is_superuser=user_data[3],
                 is_active=user_data[4],
                 is_verified=user_data[5],
                 created_at=user_data[6],
                 updated_at=user_data[7],
+                group_ids=user_data[8],
             )
         return None
 
@@ -821,9 +851,9 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def get_all_users(self) -> list[User]:
         query = text(
             f"""
-        SELECT id, email, is_superuser, is_active, is_verified, created_at, updated_at
-        FROM users_{self.collection_name}
-        """
+            SELECT id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            FROM users_{self.collection_name}
+            """
         )
 
         with self.vx.Session() as sess:
@@ -840,6 +870,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 is_verified=user_data[4],
                 created_at=user_data[5],
                 updated_at=user_data[6],
+                group_ids=user_data[7],
             )
             for user_data in users_data
         ]
@@ -955,12 +986,11 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             sess.commit()
 
     # Modify existing methods to include new profile fields
-
     def get_user_by_id(self, user_id: UUID) -> Optional[User]:
         query = text(
             f"""
             SELECT id, email, hashed_password, is_superuser, is_active, is_verified,
-                   created_at, updated_at, name, profile_picture, bio
+                   created_at, updated_at, name, profile_picture, bio, group_ids
             FROM users_{self.collection_name}
             WHERE id = :user_id
             """
@@ -983,6 +1013,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 name=user_data[8],
                 profile_picture=user_data[9],
                 bio=user_data[10],
+                group_ids=user_data[11],
             )
         return None
 
@@ -992,10 +1023,10 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             UPDATE users_{self.collection_name}
             SET email = :email, is_superuser = :is_superuser, is_active = :is_active,
                 is_verified = :is_verified, updated_at = NOW(), name = :name,
-                profile_picture = :profile_picture, bio = :bio
+                profile_picture = :profile_picture, bio = :bio, group_ids = :group_ids
             WHERE id = :user_id
             RETURNING id, email, is_superuser, is_active, is_verified, created_at,
-                      updated_at, name, profile_picture, bio
+                      updated_at, name, profile_picture, bio, group_ids
             """
         )
 
@@ -1011,6 +1042,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     "name": user.name,
                     "profile_picture": user.profile_picture,
                     "bio": user.bio,
+                    "group_ids": user.group_ids,
                 },
             )
             updated_user_data = result.fetchone()
@@ -1028,6 +1060,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             name=updated_user_data[7],
             profile_picture=updated_user_data[8],
             bio=updated_user_data[9],
+            group_ids=updated_user_data[10],
         )
 
     def update_user_password(self, user_id: UUID, new_hashed_password: str):

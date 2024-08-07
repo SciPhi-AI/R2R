@@ -21,15 +21,13 @@ def delete(obj, keys, values):
 
 @cli.command()
 @click.option("--document-ids", multiple=True, help="Document IDs to overview")
-@click.option("--user-ids", multiple=True, help="User IDs to overview")
 @click.pass_obj
 def documents_overview(obj, document_ids, user_ids):
     """Get an overview of documents."""
     document_ids = list(document_ids) if document_ids else None
-    user_ids = list(user_ids) if user_ids else None
 
     with timer():
-        response = obj.documents_overview(document_ids, user_ids)
+        response = obj.documents_overview(document_ids)
 
     for document in response:
         click.echo(document)

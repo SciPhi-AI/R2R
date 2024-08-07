@@ -509,7 +509,6 @@ class R2RClient:
     def documents_overview(
         self,
         document_ids: Optional[list[str]] = None,
-        user_ids: Optional[list[str]] = None,
     ) -> dict:
         self._ensure_authenticated()
 
@@ -518,10 +517,7 @@ class R2RClient:
                 [uuid.UUID(did) for did in document_ids]
                 if document_ids
                 else None
-            ),
-            user_ids=(
-                [uuid.UUID(uid) for uid in user_ids] if user_ids else None
-            ),
+            )
         )
         return self._make_request(
             "GET",

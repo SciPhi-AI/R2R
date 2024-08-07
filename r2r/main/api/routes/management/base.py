@@ -203,16 +203,14 @@ class ManagementRouter(BaseRouter):
                 else None
             ),
         ):
-            request_user_ids = request.user_ids
 
-            if request_user_ids and not auth_user.is_superuser:
-                raise R2RException(
-                    "Only a superuser can call the `documents_overview` endpoint for arbitrary users.",
-                    403,
-                )
-            request_user_ids = request_user_ids or [str(auth_user.id)]
+            request_user_ids = (
+                [auth_user.id] if not auth_user.is_superuser else None
+            )
             return await self.engine.adocuments_overview(
-                document_ids=request.document_ids, user_ids=request_user_ids
+                user_ids=request_user_ids,
+                group_ids=auth_user.group_ids,
+                document_ids=request.document_ids,
             )
 
         @self.router.post("/inspect_knowledge_graph")

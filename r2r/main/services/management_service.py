@@ -243,8 +243,9 @@ class ManagementService(Service):
     @telemetry_event("DocumentsOverview")
     async def adocuments_overview(
         self,
-        document_ids: Optional[list[uuid.UUID]] = None,
         user_ids: Optional[list[uuid.UUID]] = None,
+        group_ids: Optional[list[uuid.UUID]] = None,
+        document_ids: Optional[list[uuid.UUID]] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -254,6 +255,9 @@ class ManagementService(Service):
             ),
             filter_user_ids=(
                 [str(ele) for ele in user_ids] if user_ids else None
+            ),
+            filter_group_ids=(
+                [str(ele) for ele in group_ids] if group_ids else None
             ),
         )
 

@@ -344,14 +344,11 @@ class R2RExecutionWrapper:
     def documents_overview(
         self,
         document_ids: Optional[list[str]] = None,
-        user_ids: Optional[list[str]] = None,
     ):
         if self.client_mode:
-            return self.client.documents_overview(document_ids, user_ids)[
-                "results"
-            ]
+            return self.client.documents_overview(document_ids)["results"]
         else:
-            return self.app.documents_overview(document_ids, user_ids)
+            return self.app.documents_overview(document_ids)
 
     def delete(
         self,

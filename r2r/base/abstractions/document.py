@@ -85,6 +85,7 @@ class DocumentInfo(BaseModel):
     metadata: dict
     status: DocumentStatus = DocumentStatus.PROCESSING
 
+    group_ids: list[uuid.UUID] = []
     user_id: Optional[uuid.UUID] = None
     title: Optional[str] = None
     created_at: Optional[datetime] = None
@@ -97,6 +98,7 @@ class DocumentInfo(BaseModel):
         return {
             "document_id": str(self.document_id),
             "title": self.title or "N/A",
+            "group_ids": json.dumps(self.group_ids),
             "user_id": self.user_id,
             "version": self.version,
             "size_in_bytes": self.size_in_bytes,
