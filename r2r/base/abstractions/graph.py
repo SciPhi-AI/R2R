@@ -1,8 +1,9 @@
 import logging
-from typing import Optional, Any
+from typing import Optional, Any, Union
 from pydantic import BaseModel 
 from dataclasses import dataclass
 from typing import Any
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,8 @@ class Named(Identified):
 class Triple(BaseModel):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
+    id: str
+    
     subject: str
     """The source entity name."""
 
@@ -35,6 +38,9 @@ class Triple(BaseModel):
 
     weight: float | None = 1.0
     """The edge weight."""
+
+    description: str | None = None
+    """A description of the relationship (optional)."""
 
     predicate: str | None = None
     """A description of the relationship (optional)."""
@@ -59,7 +65,8 @@ class Triple(BaseModel):
         short_id_key: str = "short_id",
         source_key: str = "subject",
         target_key: str = "object",
-        description_key: str = "predicate",
+        predicate_key: str = "predicate",
+        description_key: str = "description",
         weight_key: str = "weight",
         text_unit_ids_key: str = "text_unit_ids",
         document_ids_key: str = "document_ids",
@@ -71,7 +78,8 @@ class Triple(BaseModel):
             short_id=d.get(short_id_key),
             subject=d[source_key],
             object=d[target_key],
-            predicate=d.get(description_key),
+            predicate=d.get(predicate_key),
+            description=d.get(description_key),
             weight=d.get(weight_key, 1.0),
             text_unit_ids=d.get(text_unit_ids_key),
             document_ids=d.get(document_ids_key),
@@ -81,6 +89,7 @@ class Triple(BaseModel):
 class Entity(BaseModel):
     """An entity extracted from a document."""
 
+    id: str
     category: str
     subcategory: Optional[str] = None
     value: str
@@ -369,5 +378,5 @@ def extract_triples(
 class KGExtraction(BaseModel):
     """An extraction from a document that is part of a knowledge graph."""
 
-    entities: dict[str, Entity]
+    entities: Union[list[Entity], dict[str, Entity]]
     triples: list[Triple]

@@ -46,8 +46,7 @@ class KGService(Service):
                 input=[],
                 run_manager=self.run_manager,
             )
-
-            import pdb; pdb.set_trace()
+            
             return {"message": f"Successfully enriched graph for {len(documents)} documents."}
 
         except Exception as e:

@@ -15,7 +15,8 @@ graphrag_triplet_extraction:
     - target_entity: name of the target entity, as identified in step 1
     - relation: relationship between source_entity and target_entity
     - relationship_description: explanation as to why you think the source entity and the target entity are related to each other
-    Format each relationship as ("relationship"$$$$<source_entity>$$$$<target_entity>$$$$<relation>$$$$<relationship_description>)
+    - relationship_weight: a weight between 0 and 10 that represents the strength of the relationship between the source entity and the target entity
+    Format each relationship as ("relationship"$$$$<source_entity>$$$$<target_entity>$$$$<relation>$$$$<relationship_description>$$$$<relationship_weight>)
     3. When finished, output.
     -Real Data-
     ######################

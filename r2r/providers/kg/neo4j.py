@@ -27,6 +27,11 @@ from r2r.base.abstractions.llama_abstractions import (
     value_sanitize,
 )
 
+from r2r.base.abstractions.graph import (
+    Entity,
+    Triple,
+    KGExtraction,
+)
 
 def remove_empty_values(input_dict):
     """
@@ -295,7 +300,63 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
                 # Sometimes the types are not consistent in the db
                 pass
 
-    def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
+
+    # def filter_fragment(self, fragment):
+    #     out = {}
+    #     out['data'] = fragment['data']
+    #     out['data_type'] = fragment['data_type']
+    #     return out
+    
+    def upsert_nodes_and_relationships(self, kg_extractions: list[KGExtraction]) -> None:
+
+        all_entities = []
+        all_relationships = []
+        for extraction in kg_extractions:
+            all_entities.extend(extraction.entities)
+            all_relationships.extend(extraction.triples)
+
+        # for entity in all_entities: 
+        #     entity.attributes['fragment'] = self.filter_fragment(entity.attributes['fragment'])
+
+        nodes_upserted = self.upsert_nodes(all_entities)
+        relationships_upserted = self.upsert_relations(all_relationships)
+
+        return nodes_upserted, relationships_upserted
+
+
+    def upsert_nodes(self, entities: List[Entity]) -> None:
+        def generate_merge_operation(key, value):
+            if isinstance(value, (str, int, float, bool, None)):
+                return f"SET e.`{key}` = $row.`{key}`"
+            elif isinstance(value, list):
+                return f"SET e.`{key}` = CASE WHEN e.`{key}` IS NULL THEN $row.`{key}` ELSE e.`{key}` + $row.`{key}` END"
+            elif isinstance(value, dict):
+                return f"SET e.`{key}` = $row.`{key}`"
+            else:
+                print(f"Skipping property {key} due to unsupported type {type(value)}")
+                return ""
+
+        query = """
+            UNWIND $data AS row
+            MERGE (e:`__Entity__` {id: row.id})
+        """
+
+        # Dynamically generate SET operations for each attribute
+        set_operations = []
+        for key in entities[0].__dict__.keys():
+            if key != 'id':
+                set_operations.append(generate_merge_operation(key, getattr(entities[0], key)))
+
+        query += "\n".join(set_operations)
+        query += "\nRETURN count(*)"
+
+        import pdb; pdb.set_trace()
+
+        ret = self.structured_query(query, param_map={"data": [entity.__dict__ for entity in entities]})
+        return ret
+
+
+    def upsert_entities(self, nodes: List[LabelledNode]) -> None:
         # Lists to hold separated types
         entity_dicts: List[dict] = []
         chunk_dicts: List[dict] = []

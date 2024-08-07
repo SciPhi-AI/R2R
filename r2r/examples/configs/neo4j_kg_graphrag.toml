@@ -1,6 +1,6 @@
 [completion]
 provider = "litellm"
-concurrent_request_limit = 32
+concurrent_request_limit = 64
 
   [completion.generation_config]
   model = "gpt-4o-mini"
@@ -11,10 +11,10 @@ concurrent_request_limit = 32
   add_generation_kwargs = { }
 
 [embedding]
-provider = "ollama"
-base_model = "mxbai-embed-large"
-base_dimension = 1_024
-batch_size = 32
+provider = "openai"
+base_model = "text-embedding-3-small"
+base_dimension = 1_536
+batch_size = 64
 add_title_as_prefix = true
 
 [ingestion]
@@ -22,7 +22,7 @@ excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
 
 [kg]
 provider = "neo4j"
-batch_size = 1
+batch_size = 64
 max_entities = 10
 max_relations = 20
 kg_extraction_prompt = "graphrag_triplet_extraction"

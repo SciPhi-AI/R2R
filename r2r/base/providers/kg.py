@@ -8,12 +8,12 @@ from typing import TYPE_CHECKING, Any, Optional, Tuple
 from ..abstractions.llama_abstractions import EntityNode, LabelledNode
 from ..abstractions.llama_abstractions import Relation as LlamaRelation
 from ..abstractions.llama_abstractions import VectorStoreQuery
+from ..abstractions.graph import KGExtraction
 from .base import ProviderConfig
 from .prompt import PromptProvider
 
 if TYPE_CHECKING:
     from r2r.main import R2RClient
-
 from ...base.utils.base_utils import EntityType, Relation
 from ..abstractions.llm import GenerationConfig
 
@@ -81,6 +81,11 @@ class KGProvider(ABC):
 
     @abstractmethod
     def upsert_relations(self, relations: list[LlamaRelation]) -> None:
+        """Abstract method to add triplet."""
+        pass
+
+    @abstractmethod
+    def upsert_nodes_and_relationships(self, kg_extractions: list[KGExtraction]) -> None:
         """Abstract method to add triplet."""
         pass
 

@@ -33,6 +33,8 @@ class ClientError(Exception):
     pass
 
 
+
+
 class KGExtractionPipe(AsyncPipe):
     """
     Extracts knowledge graph information from document extractions.
@@ -73,6 +75,12 @@ class KGExtractionPipe(AsyncPipe):
         self.pipe_run_info = None
         self.graph_rag = graph_rag
 
+
+    def map_to_str(self, fragment: Fragment) -> str:
+        # convert fragment to dict object  
+        fragment = json.loads(json.dumps(fragment))
+        return fragment
+
     async def extract_kg(
         self,
         fragment: Fragment,
@@ -104,7 +112,7 @@ class KGExtractionPipe(AsyncPipe):
                 if self.graph_rag:
 
                     entity_pattern = r'\("entity"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\)'
-                    relationship_pattern = r'\("relationship"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\)'
+                    relationship_pattern = r'\("relationship"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\${4}(\d+(?:\.\d+)?)\)'
 
                     def parse_fn(response_str: str) -> Any:
                         entities = re.findall(entity_pattern, response_str)
@@ -115,7 +123,15 @@ class KGExtractionPipe(AsyncPipe):
                             entity_value = entity[0]
                             entity_category = entity[1]
                             entity_description = entity[2]
-                            entities_dict[entity_value] = Entity(category=entity_category, description=entity_description, value=entity_value)
+                            entities_dict[entity_value] = Entity(
+                                id=entity_value,
+                                category=entity_category, 
+                                description=entity_description, 
+                                value=entity_value, 
+                                document_ids=[str(fragment.document_id)],
+                                text_unit_ids=[str(fragment.id)],
+                                attributes={"fragment_text": fragment.data}
+                            )
 
                         relations_arr = []
                         for relationship in relationships:
@@ -123,17 +139,27 @@ class KGExtractionPipe(AsyncPipe):
                             object = relationship[1]
                             predicate = relationship[2]
                             description = relationship[3]
-                            relations_arr.append(Triple(subject = subject, predicate = predicate, object = object, description = description))
+                            weight = float(relationship[4])
+                            relations_arr.append(Triple(
+                                id = str(uuid.uuid4()),
+                                subject = subject, 
+                                predicate = predicate, 
+                                object = object, 
+                                description = description, 
+                                weight = weight, 
+                                document_ids=[str(fragment.document_id)],
+                                text_unit_ids=[str(fragment.id)],
+                                attributes={"fragment_text": fragment.data},
+                            ))
 
                         return entities_dict, relations_arr
                     
                     entities, triples = parse_fn(kg_extraction)
                     logger.info(f"entities are {entities}")
                     logger.info(f"triples are {triples}")
-                    return KGExtraction(entities=entities, triples=triples)
+                    return KGExtraction(entities=list(entities.values()), triples=triples)
 
                 else:
-
                     # Parsing JSON from the response
                     kg_json = (
                         json.loads(
@@ -149,7 +175,7 @@ class KGExtractionPipe(AsyncPipe):
                     triples = extract_triples(llm_payload, entities)
 
                     # Create KG extraction object
-                    return KGExtraction(entities=entities, triples=triples)
+                    return KGExtraction(entities=entities.values(), triples=triples)
 
             except (
                 ClientError,
@@ -163,6 +189,9 @@ class KGExtractionPipe(AsyncPipe):
                 else:
                     logger.error(f"Failed after retries with {e}")
 
+        # add metadata to entities and triples
+
+
         return KGExtraction(entities={}, triples=[])
 
     async def _run_logic(
@@ -175,7 +204,6 @@ class KGExtractionPipe(AsyncPipe):
     ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
 
         async for extraction in input.message:
-            import pdb; pdb.set_trace()
             print(f"extraction is {extraction}")
             kg_extraction = await self.extract_kg(extraction)
             yield kg_extraction

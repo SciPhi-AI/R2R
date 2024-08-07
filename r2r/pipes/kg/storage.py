@@ -12,6 +12,7 @@ from r2r.base import (
     PipeType,
 )
 from r2r.base.abstractions.llama_abstractions import EntityNode, Relation
+from r2r.base.abstractions.graph import Entity, Triple
 from r2r.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
@@ -50,7 +51,22 @@ class KGStoragePipe(AsyncPipe):
         self.embedding_provider = embedding_provider
         self.storage_batch_size = storage_batch_size
 
+
     async def store(
+            self, 
+            kg_extractions: list[KGExtraction],
+    ) -> None:
+        """
+        Stores a batch of knowledge graph extractions in the graph database.
+        """
+        try: 
+            self.kg_provider.upsert_nodes_and_relationships(kg_extractions)
+        except Exception as e:
+            error_message = f"Failed to store knowledge graph extractions in the database: {e}"
+            logger.error(error_message)
+            raise ValueError(error_message)
+ 
+    async def store_old(
         self,
         kg_extractions: list[KGExtraction],
     ) -> None:
