@@ -32,6 +32,9 @@ services:
       - PYTHONUNBUFFERED=1
       - PORT=${PORT:-8000}
       - HOST=${HOST:-0.0.0.0}
+      # smig: Allow setting of BASE_URL from environment
+      - BASE_URL=${BASE_URL:-http://localhost}      
+      
       # R2R
       - CONFIG_NAME=${CONFIG_NAME:-}
       - CONFIG_PATH=${CONFIG_PATH:-}
@@ -130,7 +133,9 @@ services:
       - "--accesslog.filepath=/var/log/traefik/access.log"
     ports:
       - "${TRAEFIK_PORT:-80}:${TRAEFIK_PORT:-80}"
-      - "8080:8080"  # Traefik dashboard
+      # smig: allow setting from environment
+      #- "8080:8080"  # Traefik dashboard
+      - "${TRAEFIK_DASHBOARD_PORT:-8080}:${TRAEFIK_DASHBOARD_PORT:-8080}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
