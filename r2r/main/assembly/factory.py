@@ -2,12 +2,16 @@ import logging
 import os
 from typing import Any, Optional
 
-from r2r.assistants import R2RRAGAssistant, R2RStreamingRAGAssistant
+from r2r.agents import R2RRAGAgent, R2RStreamingRAGAgent
 from r2r.base import (
-    AssistantConfig,
+    AgentConfig,
     AsyncPipe,
     AuthConfig,
     AuthProvider,
+    ChunkingConfig,
+    ChunkingProvider,
+    CompletionConfig,
+    CompletionProvider,
     CryptoConfig,
     CryptoProvider,
     DatabaseConfig,
@@ -17,8 +21,8 @@ from r2r.base import (
     EvalProvider,
     KGProvider,
     KVLoggingSingleton,
-    LLMConfig,
-    LLMProvider,
+    ParsingConfig,
+    ParsingProvider,
     PromptConfig,
     PromptProvider,
 )
@@ -30,7 +34,7 @@ from r2r.pipelines import (
     KGPipeline
 )
 
-from ..abstractions import R2RAssistants, R2RPipelines, R2RPipes, R2RProviders
+from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from .config import R2RConfig
 
 logger = logging.getLogger(__name__)
@@ -40,8 +44,8 @@ class R2RProviderFactory:
     def __init__(self, config: R2RConfig):
         self.config = config
 
+    @staticmethod
     def create_auth_provider(
-        self,
         auth_config: AuthConfig,
         db_provider: DatabaseProvider,
         crypto_provider: Optional[CryptoProvider] = None,
@@ -63,8 +67,9 @@ class R2RProviderFactory:
             )
         return auth_provider
 
+    @staticmethod
     def create_crypto_provider(
-        self, crypto_config: CryptoConfig, *args, **kwargs
+        crypto_config: CryptoConfig, *args, **kwargs
     ) -> CryptoProvider:
         crypto_provider: Optional[CryptoProvider] = None
         if crypto_config.provider == "bcrypt":
@@ -80,6 +85,40 @@ class R2RProviderFactory:
                 f"Crypto provider {crypto_config.provider} not supported."
             )
         return crypto_provider
+
+    @staticmethod
+    def create_parsing_provider(
+        parsing_config: ParsingConfig, *args, **kwargs
+    ) -> ParsingProvider:
+        if parsing_config.provider == "r2r":
+            from r2r.providers import R2RParsingProvider
+
+            return R2RParsingProvider(parsing_config)
+        elif parsing_config.provider == "unstructured":
+            from r2r.providers import UnstructuredParsingProvider
+
+            return UnstructuredParsingProvider(parsing_config)
+        else:
+            raise ValueError(
+                f"Parsing provider {parsing_config.provider} not supported"
+            )
+
+    @staticmethod
+    def create_chunking_provider(
+        chunking_config: ChunkingConfig, *args, **kwargs
+    ) -> ChunkingProvider:
+        if chunking_config.provider == "r2r":
+            from r2r.providers import R2RChunkingProvider
+
+            return R2RChunkingProvider(chunking_config)
+        elif chunking_config.provider == "unstructured":
+            from r2r.providers import UnstructuredChunkingProvider
+
+            return UnstructuredChunkingProvider(chunking_config)
+        else:
+            raise ValueError(
+                f"Chunking provider {chunking_config.provider} not supported"
+            )
 
     def create_database_provider(
         self,
@@ -110,8 +149,9 @@ class R2RProviderFactory:
 
         return database_provider
 
+    @staticmethod
     def create_embedding_provider(
-        self, embedding: EmbeddingConfig, *args, **kwargs
+        embedding: EmbeddingConfig, *args, **kwargs
     ) -> EmbeddingProvider:
         embedding_provider: Optional[EmbeddingProvider] = None
 
@@ -134,14 +174,9 @@ class R2RProviderFactory:
 
             embedding_provider = OllamaEmbeddingProvider(embedding)
 
-        elif embedding.provider == "sentence-transformers":
-            from r2r.providers import SentenceTransformerEmbeddingProvider
-
-            embedding_provider = SentenceTransformerEmbeddingProvider(
-                embedding
-            )
         elif embedding is None:
             embedding_provider = None
+
         else:
             raise ValueError(
                 f"Embedding provider {embedding.provider} not supported"
@@ -149,13 +184,16 @@ class R2RProviderFactory:
 
         return embedding_provider
 
+    @staticmethod
     def create_eval_provider(
-        self, eval_config, prompt_provider, *args, **kwargs
+        eval_config, prompt_provider, *args, **kwargs
     ) -> Optional[EvalProvider]:
         if eval_config.provider == "local":
             from r2r.providers import LLMEvalProvider
 
-            llm_provider = self.create_llm_provider(eval_config.llm)
+            llm_provider = R2RProviderFactory.create_llm_provider(
+                eval_config.llm
+            )
             eval_provider = LLMEvalProvider(
                 eval_config,
                 llm_provider=llm_provider,
@@ -170,18 +208,19 @@ class R2RProviderFactory:
 
         return eval_provider
 
+    @staticmethod
     def create_llm_provider(
-        self, llm_config: LLMConfig, *args, **kwargs
-    ) -> LLMProvider:
-        llm_provider: Optional[LLMProvider] = None
+        llm_config: CompletionConfig, *args, **kwargs
+    ) -> CompletionProvider:
+        llm_provider: Optional[CompletionProvider] = None
         if llm_config.provider == "openai":
-            from r2r.providers import OpenAILLMProvider
+            from r2r.providers import OpenAICompletionProvider
 
-            llm_provider = OpenAILLMProvider(llm_config)
+            llm_provider = OpenAICompletionProvider(llm_config)
         elif llm_config.provider == "litellm":
-            from r2r.providers import LiteLLMProvider
+            from r2r.providers import LiteCompletionProvider
 
-            llm_provider = LiteLLMProvider(llm_config)
+            llm_provider = LiteCompletionProvider(llm_config)
         else:
             raise ValueError(
                 f"Language model provider {llm_config.provider} not supported"
@@ -190,8 +229,9 @@ class R2RProviderFactory:
             raise ValueError("Language model provider not found")
         return llm_provider
 
+    @staticmethod
     def create_prompt_provider(
-        self, prompt_config: PromptConfig, *args, **kwargs
+        prompt_config: PromptConfig, *args, **kwargs
     ) -> PromptProvider:
         prompt_provider = None
         if prompt_config.provider == "r2r":
@@ -204,7 +244,8 @@ class R2RProviderFactory:
             )
         return prompt_provider
 
-    def create_kg_provider(self, kg_config, *args, **kwargs):
+    @staticmethod
+    def create_kg_provider(kg_config, *args, **kwargs):
         if kg_config.provider == "neo4j":
             from r2r.providers import Neo4jKGProvider
 
@@ -220,12 +261,14 @@ class R2RProviderFactory:
         self,
         embedding_provider_override: Optional[EmbeddingProvider] = None,
         eval_provider_override: Optional[EvalProvider] = None,
-        llm_provider_override: Optional[LLMProvider] = None,
+        llm_provider_override: Optional[CompletionProvider] = None,
         prompt_provider_override: Optional[PromptProvider] = None,
         kg_provider_override: Optional[KGProvider] = None,
         crypto_provider_override: Optional[CryptoProvider] = None,
         auth_provider_override: Optional[AuthProvider] = None,
         database_provider_override: Optional[DatabaseProvider] = None,
+        parsing_provider_override: Optional[ParsingProvider] = None,
+        chunking_config_override: Optional[ChunkingProvider] = None,
         *args,
         **kwargs,
     ) -> R2RProviders:
@@ -248,7 +291,7 @@ class R2RProviderFactory:
         )
 
         llm_provider = llm_provider_override or self.create_llm_provider(
-            self.config.completions, *args, **kwargs
+            self.config.completion, *args, **kwargs
         )
         kg_provider = kg_provider_override or self.create_kg_provider(
             self.config.kg, *args, **kwargs
@@ -270,12 +313,27 @@ class R2RProviderFactory:
             *args,
             **kwargs,
         )
+        parsing_provider = (
+            parsing_provider_override
+            or self.create_parsing_provider(
+                self.config.parsing, *args, **kwargs
+            )
+        )
+        chunking_provider = (
+            chunking_config_override
+            or self.create_chunking_provider(
+                self.config.chunking, *args, **kwargs
+            )
+        )
+
         return R2RProviders(
             auth=auth_provider,
+            chunking=chunking_provider,
             database=database_provider,
             embedding=embedding_provider,
             eval=eval_provider,
             llm=llm_provider,
+            parsing=parsing_provider,
             prompt=prompt_provider,
             kg=kg_provider,
         )
@@ -301,14 +359,15 @@ class R2RPipeFactory:
         kg_node_extraction_pipe: Optional[AsyncPipe] = None,
         kg_node_description_pipe: Optional[AsyncPipe] = None,
         kg_clustering_pipe: Optional[AsyncPipe] = None,
+        chunking_pipe_override: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
     ) -> R2RPipes:
         return R2RPipes(
             parsing_pipe=parsing_pipe_override
             or self.create_parsing_pipe(
-                self.config.ingestion.get("excluded_parsers"),
-                self.config.ingestion.get("override_parsers"),
+                self.config.parsing.excluded_parsers,
+                self.config.parsing.override_parsers,
                 *args,
                 **kwargs,
             ),
@@ -351,6 +410,16 @@ class R2RPipeFactory:
             override_parsers=override_parsers or [],
         )
 
+    def create_parsing_pipe(self, *args, **kwargs) -> Any:
+        from r2r.pipes import ParsingPipe
+
+        return ParsingPipe(parsing_provider=self.providers.parsing)
+
+    def create_chunking_pipe(self, *args, **kwargs) -> Any:
+        from r2r.pipes import ChunkingPipe
+
+        return ChunkingPipe(chunking_provider=self.providers.chunking)
+
     def create_embedding_pipe(self, *args, **kwargs) -> Any:
         if self.config.embedding.provider is None:
             return None
@@ -358,24 +427,9 @@ class R2RPipeFactory:
         from r2r.base import RecursiveCharacterTextSplitter
         from r2r.pipes import EmbeddingPipe
 
-        text_splitter_config = self.config.embedding.extra_fields.get(
-            "text_splitter"
-        )
-        if not text_splitter_config:
-            raise ValueError(
-                "Text splitter config not found in embedding config"
-            )
-
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=text_splitter_config["chunk_size"],
-            chunk_overlap=text_splitter_config["chunk_overlap"],
-            length_function=len,
-            is_separator_regex=False,
-        )
         return EmbeddingPipe(
             embedding_provider=self.providers.embedding,
             database_provider=self.providers.database,
-            text_splitter=text_splitter,
             embedding_batch_size=self.config.embedding.batch_size,
         )
 
@@ -402,25 +456,13 @@ class R2RPipeFactory:
         if self.config.kg.provider is None:
             return None
 
-        from r2r.base import RecursiveCharacterTextSplitter
         from r2r.pipes import KGExtractionPipe
 
-        text_splitter_config = self.config.kg.extra_fields.get("text_splitter")
-        if not text_splitter_config:
-            raise ValueError("Text splitter config not found in kg config.")
-
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=text_splitter_config["chunk_size"],
-            chunk_overlap=text_splitter_config["chunk_overlap"],
-            length_function=len,
-            is_separator_regex=False,
-        )
         return KGExtractionPipe(
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
-            database_provider=self.providers.database,
-            text_splitter=text_splitter,
+            chunking_provider=self.providers.chunking,
             kg_batch_size=self.config.kg.batch_size,
         )
 
@@ -492,6 +534,10 @@ class R2RPipelineFactory:
         ingestion_pipeline.add_pipe(
             pipe=self.pipes.parsing_pipe, parsing_pipe=True
         )
+        ingestion_pipeline.add_pipe(
+            self.pipes.chunking_pipe, chunking_pipe=True
+        )
+
         # Add embedding pipes if provider is set
         if (
             self.config.embedding.provider is not None
@@ -608,7 +654,7 @@ class R2RPipelineFactory:
         KVLoggingSingleton.configure(self.config.logging)
 
 
-class R2RAssistantFactory:
+class R2RAgentFactory:
     def __init__(
         self,
         config: R2RConfig,
@@ -619,50 +665,41 @@ class R2RAssistantFactory:
         self.providers = providers
         self.pipelines = pipelines
 
-    def create_assistants(
+    def create_agents(
         self,
-        rag_assistant_override: Optional[R2RRAGAssistant] = None,
-        stream_rag_assistant_override: Optional[
-            R2RStreamingRAGAssistant
-        ] = None,
+        rag_agent_override: Optional[R2RRAGAgent] = None,
+        stream_rag_agent_override: Optional[R2RStreamingRAGAgent] = None,
         *args,
         **kwargs,
-    ) -> R2RAssistants:
-        return R2RAssistants(
-            rag_assistant=rag_assistant_override
-            or self.create_rag_assistant(*args, **kwargs),
-            streaming_rag_assistant=stream_rag_assistant_override
-            or self.create_rag_assistant(*args, **kwargs, stream=True),
+    ) -> R2RAgents:
+        return R2RAgents(
+            rag_agent=rag_agent_override
+            or self.create_rag_agent(*args, **kwargs),
+            streaming_rag_agent=stream_rag_agent_override
+            or self.create_rag_agent(*args, **kwargs, stream=True),
         )
 
-    def create_rag_assistant(
+    def create_rag_agent(
         self, stream: bool = False, *args, **kwargs
-    ) -> R2RRAGAssistant:
+    ) -> R2RRAGAgent:
         if not self.providers.llm or not self.providers.prompt:
             raise ValueError(
-                "LLM and Prompt providers are required for RAG Assistant"
+                "LLM and Prompt providers are required for RAG Agent"
             )
 
-        assistant_config = AssistantConfig(
-            system_instruction_name="rag_assistant",
-            tools=[],  # Add any specific tools for the RAG assistant here
-            generation_config=self.config.completions.generation_config,
-            stream=stream,
-        )
-
         if stream:
-            rag_assistant = R2RStreamingRAGAssistant(
+            rag_agent = R2RStreamingRAGAgent(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
-                config=assistant_config,
+                config=self.config.agent,
                 search_pipeline=self.pipelines.search_pipeline,
             )
         else:
-            rag_assistant = R2RRAGAssistant(
+            rag_agent = R2RRAGAgent(
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
-                config=assistant_config,
+                config=self.config.agent,
                 search_pipeline=self.pipelines.search_pipeline,
             )
 
-        return rag_assistant
+        return rag_agent

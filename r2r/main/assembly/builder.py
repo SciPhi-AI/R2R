@@ -1,16 +1,16 @@
 import os
 from typing import Optional, Type
 
-from r2r.assistants import R2RRAGAssistant
+from r2r.agents import R2RRAGAgent
 from r2r.base import (
     AsyncPipe,
     AuthProvider,
+    CompletionProvider,
     CryptoProvider,
     DatabaseProvider,
     EmbeddingProvider,
     EvalProvider,
     KGProvider,
-    LLMProvider,
     PromptProvider,
 )
 from r2r.pipelines import (
@@ -26,7 +26,7 @@ from ..engine import R2REngine
 from ..r2r import R2R
 from .config import R2RConfig
 from .factory import (
-    R2RAssistantFactory,
+    R2RAgentFactory,
     R2RPipeFactory,
     R2RPipelineFactory,
     R2RProviderFactory,
@@ -44,13 +44,27 @@ class R2RBuilder:
         if file.endswith('.json'):
             CONFIG_OPTIONS[file.removesuffix('.json')] = os.path.join(config_root, file)
     CONFIG_OPTIONS['default'] = None
+    CONFIG_OPTIONS = {
+        "default": None,
+        "local_llm": os.path.join(config_root, "local_llm.toml"),
+        "local_llm_rerank": os.path.join(config_root, "local_llm_rerank.toml"),
+        "neo4j_kg": os.path.join(config_root, "neo4j_kg.toml"),
+        "neo4j_kg_no_vector_postgres": os.path.join(
+            config_root, "neo4j_kg_no_vector_postgres.toml"
+        ),
+        "local_llm_neo4j_kg": os.path.join(
+            config_root, "local_llm_neo4j_kg.toml"
+        ),
+        "postgres_logging": os.path.join(config_root, "postgres_logging.toml"),
+        "auth": os.path.join(config_root, "auth.toml"),
+    }
 
     @staticmethod
     def _get_config(config_name):
         if config_name is None:
-            return R2RConfig.from_json()
+            return R2RConfig.from_toml()
         if config_name in R2RBuilder.CONFIG_OPTIONS:
-            return R2RConfig.from_json(R2RBuilder.CONFIG_OPTIONS[config_name])
+            return R2RConfig.from_toml(R2RBuilder.CONFIG_OPTIONS[config_name])
         raise ValueError(f"Invalid config name: {config_name}")
 
     def __init__(
@@ -73,7 +87,7 @@ class R2RBuilder:
         self.database_provider_override: Optional[DatabaseProvider] = None
         self.embedding_provider_override: Optional[EmbeddingProvider] = None
         self.eval_provider_override: Optional[EvalProvider] = None
-        self.llm_provider_override: Optional[LLMProvider] = None
+        self.llm_provider_override: Optional[CompletionProvider] = None
         self.prompt_provider_override: Optional[PromptProvider] = None
         self.kg_provider_override: Optional[KGProvider] = None
         self.crypto_provider_override: Optional[CryptoProvider] = None
@@ -101,9 +115,9 @@ class R2RBuilder:
         self.eval_pipeline: Optional[EvalPipeline] = None
         self.kg_pipeline: Optional[KGPipeline] = None
 
-        # Assistant overrides
-        self.assistant_factory_override: Optional[R2RAssistantFactory] = None
-        self.rag_assistant_override: Optional[R2RRAGAssistant] = None
+        # Agent overrides
+        self.assistant_factory_override: Optional[R2RAgentFactory] = None
+        self.rag_agent_override: Optional[R2RRAGAgent] = None
 
     def with_app(self, app: Type[R2REngine]):
         self.r2r_app_override = app
@@ -138,7 +152,7 @@ class R2RBuilder:
         self.eval_provider_override = provider
         return self
 
-    def with_llm_provider(self, provider: LLMProvider):
+    def with_llm_provider(self, provider: CompletionProvider):
         self.llm_provider_override = provider
         return self
 
@@ -232,12 +246,12 @@ class R2RBuilder:
         self.eval_pipeline = pipeline
         return self
 
-    def with_assistant_factory(self, factory: R2RAssistantFactory):
+    def with_assistant_factory(self, factory: R2RAgentFactory):
         self.assistant_factory_override = factory
         return self
 
-    def with_rag_assistant(self, assistant: R2RRAGAssistant):
-        self.rag_assistant_override = assistant
+    def with_rag_agent(self, agent: R2RRAGAgent):
+        self.rag_agent_override = agent
         return self
 
     def build(self, *args, **kwargs) -> R2R:
@@ -287,18 +301,17 @@ class R2RBuilder:
             **kwargs,
         )
 
-        assistant_factory = (
-            self.assistant_factory_override
-            or R2RAssistantFactory(self.config, providers, pipelines)
+        assistant_factory = self.assistant_factory_override or R2RAgentFactory(
+            self.config, providers, pipelines
         )
-        assistants = assistant_factory.create_assistants(
-            rag_assistant_override=self.rag_assistant_override,
+        agents = assistant_factory.create_agents(
+            rag_agent_override=self.rag_agent_override,
             *args,
             **kwargs,
         )
 
         engine = (self.r2r_app_override or R2REngine)(
-            self.config, providers, pipelines, assistants
+            self.config, providers, pipelines, agents
         )
         r2r_app = R2RApp(engine)
         return R2R(engine=engine, app=r2r_app)

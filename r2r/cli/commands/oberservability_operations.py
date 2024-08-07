@@ -1,3 +1,4 @@
+import json
 import uuid
 from typing import Any, Dict
 
@@ -32,13 +33,54 @@ def app_settings(obj):
 
 @cli.command()
 @click.option("--log-type-filter", help="Filter for log types")
+@click.option(
+    "--max-runs", default=100, help="Maximum number of runs to fetch"
+)
 @click.pass_obj
-def logs(obj, log_type_filter):
+def logs(obj, log_type_filter, max_runs):
     """Retrieve logs with optional type filter."""
     with timer():
-        response = obj.logs(log_type_filter)
+        response = obj.logs(log_type_filter, max_runs)
 
-    click.echo(response)
+    for log in response:
+        click.echo(f"Run ID: {log['run_id']}")
+        click.echo(f"Run Type: {log['run_type']}")
+        if "timestamp" in log:
+            click.echo(f"Timestamp: {log['timestamp']}")
+        else:
+            click.echo("Timestamp: Not available")
+        if "user_id" in log:
+            click.echo(f"User ID: {log['user_id']}")
+        else:
+            click.echo("User ID: Not available")
+        click.echo("Entries:")
+        for entry in log["entries"]:
+            if entry["key"] == "completion_record":
+                completion_record = json.loads(entry["value"])
+                click.echo("  CompletionRecord:")
+                click.echo(
+                    f"    Message ID: {completion_record['message_id']}"
+                )
+                click.echo(
+                    f"    Message Type: {completion_record['message_type']}"
+                )
+                click.echo(
+                    f"    Search Query: {completion_record['search_query']}"
+                )
+                click.echo(
+                    f"    Completion Start Time: {completion_record['completion_start_time']}"
+                )
+                click.echo(
+                    f"    Completion End Time: {completion_record['completion_end_time']}"
+                )
+                click.echo(
+                    f"    LLM Response: {completion_record['llm_response']}"
+                )
+            else:
+                click.echo(f"  - {entry['key']}: {entry['value'][:100]}")
+        click.echo("---")
+
+    click.echo(f"Total runs: {len(response)}")
 
 
 @cli.command()

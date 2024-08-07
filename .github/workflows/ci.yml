@@ -11,32 +11,36 @@ on:
 
 jobs:
   pre-commit:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, Linux ]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12.4'  # Specify your Python version here
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry
-          poetry install
-
-      - name: Install pre-commit
-        run: poetry run pre-commit install
-
       - name: Run pre-commit
-        run: poetry run pre-commit run --all-files
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          poetry install
+          pip install pre-commit
+          pre-commit install
+          pre-commit run --all-files
+          deactivate
+          rm -rf venv
+
+      - name: Clean up disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
 
   pytest:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15  # Increased timeout to accommodate Ollama setup
+    runs-on: [ self-hosted, Linux ]
+    timeout-minutes: 15
 
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -51,35 +55,40 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12.4'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry
-          poetry install
-
-      - name: Install Ollama
-        run: |
-          curl -fsSL https://ollama.com/install.sh | sudo -E sh
-
       - name: Start Ollama server
         run: |
           ollama serve &
           sleep 5
           curl -i http://localhost:11434
 
-      - name: Pull Ollama model
+      - name: Run pytest
         run: |
-          ollama pull llama2
-
-      - name: Run tests
-        run: poetry run pytest tests/ -k "not redis and not sentence_transformer"
+          python3 -m venv venv
+          source venv/bin/activate
+          poetry install
+          pip install pytest
+          pip install pytest
+          poetry run pytest tests/ -k "not redis and not sentence_transformer"
+          deactivate
+          rm -rf venv
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Clean up disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          pkill -f ollama || true
+          echo "Cleaned up Ollama server"

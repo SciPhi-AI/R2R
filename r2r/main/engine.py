@@ -3,7 +3,7 @@ from typing import Optional
 from r2r.base import KVLoggingSingleton, RunManager
 from r2r.base.abstractions.base import AsyncSyncMeta, syncable
 
-from .abstractions import R2RAssistants, R2RPipelines, R2RProviders
+from .abstractions import R2RAgents, R2RPipelines, R2RProviders
 from .assembly.config import R2RConfig
 from .services.auth_service import AuthService
 from .services.ingestion_service import IngestionService
@@ -18,7 +18,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
-        assistants: R2RAssistants,
+        agents: R2RAgents,
         run_manager: Optional[RunManager] = None,
     ):
         logging_connection = KVLoggingSingleton()
@@ -27,7 +27,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
         self.config = config
         self.providers = providers
         self.pipelines = pipelines
-        self.assistants = assistants
+        self.agents = agents
         self.logging_connection = KVLoggingSingleton()
         self.run_manager = run_manager
 
@@ -35,7 +35,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
             config,
             providers,
             pipelines,
-            assistants,
+            agents,
             run_manager,
             logging_connection,
         )
@@ -53,7 +53,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
             config,
             providers,
             pipelines,
-            assistants,
+            agents,
             run_manager,
             logging_connection,
         )
@@ -61,7 +61,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
             config,
             providers,
             pipelines,
-            assistants,
+            agents,
             run_manager,
             logging_connection,
         )
@@ -70,7 +70,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
             config,
             providers,
             pipelines,
-            assistants,
+            agents,
             run_manager,
             logging_connection,
         )
@@ -105,7 +105,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
 
     @syncable
     async def arag_agent(self, *args, **kwargs):
-        return await self.retrieval_service.rag_agent(*args, **kwargs)
+        return await self.retrieval_service.agent(*args, **kwargs)
 
     @syncable
     async def aevaluate(self, *args, **kwargs):

@@ -1,6 +1,7 @@
 import ipaddress
 import json
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -8,6 +9,9 @@ import time
 import click
 import requests
 from requests.exceptions import RequestException
+
+from r2r.main import R2RBuilder, R2RConfig
+from r2r.main.execution import R2RExecutionWrapper
 
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
@@ -68,6 +72,18 @@ def remove_r2r_network():
     )
 
 
+def run_local_serve(obj, host, port):
+    wrapper = R2RExecutionWrapper(**obj, client_mode=False)
+    llm_provider = wrapper.app.config.completion.provider
+    llm_model = wrapper.app.config.completion.generation_config.model
+    model_provider = llm_model.split("/")[0]
+
+    available_port = find_available_port(port)
+
+    check_llm_reqs(llm_provider, model_provider, include_ollama=True)
+    wrapper.serve(host, available_port)
+
+
 def run_docker_serve(
     obj,
     host,
@@ -76,15 +92,36 @@ def run_docker_serve(
     exclude_ollama,
     exclude_postgres,
     project_name,
-    config_path,
     image,
 ):
-    unset_env_vars(exclude_postgres)
+    check_set_docker_env_vars(exclude_neo4j, exclude_postgres)
     set_config_env_vars(obj)
     set_ollama_api_base(exclude_ollama)
+    config = (
+        R2RConfig.from_toml(obj["config_path"])
+        if obj["config_path"]
+        else R2RConfig.from_toml(
+            R2RBuilder.CONFIG_OPTIONS[obj["config_name"] or "default"]
+        )
+    )
+    completion_provider = config.completion.provider
+    completion_model = config.completion.generation_config.model
+    completion_model_provider = completion_model.split("/")[0]
 
-    if exclude_ollama:
-        check_external_ollama()
+    check_llm_reqs(
+        completion_provider,
+        completion_model_provider,
+        include_ollama=exclude_ollama,
+    )
+
+    embedding_provider = config.embedding.provider
+    embedding_model = config.embedding.base_model
+    embedding_model_provider = embedding_model.split("/")[0]
+    check_llm_reqs(
+        embedding_provider,
+        embedding_model_provider,
+        include_ollama=exclude_ollama,
+    )
 
     no_conflict, message = check_subnet_conflict()
     if not no_conflict:
@@ -103,7 +140,7 @@ def run_docker_serve(
         exclude_ollama,
         exclude_postgres,
         project_name,
-        config_path,
+        obj["config_path"],
         image,
     )
 
@@ -111,8 +148,54 @@ def run_docker_serve(
     os.system(docker_command)
 
 
-def check_external_ollama():
-    ollama_url = "http://localhost:11434/api/version"
+def check_llm_reqs(llm_provider, model_provider, include_ollama=False):
+    providers = {
+        "openai": {"env_vars": ["OPENAI_API_KEY"]},
+        "anthropic": {"env_vars": ["ANTHROPIC_API_KEY"]},
+        "azure": {
+            "env_vars": [
+                "AZURE_API_KEY",
+                "AZURE_API_BASE",
+                "AZURE_API_VERSION",
+            ]
+        },
+        "vertex": {
+            "env_vars": [
+                "GOOGLE_APPLICATION_CREDENTIALS",
+                "VERTEX_PROJECT",
+                "VERTEX_LOCATION",
+            ]
+        },
+        "bedrock": {
+            "env_vars": [
+                "AWS_ACCESS_KEY_ID",
+                "AWS_SECRET_ACCESS_KEY",
+                "AWS_REGION_NAME",
+            ]
+        },
+        "groq": {"env_vars": ["GROQ_API_KEY"]},
+        "cohere": {"env_vars": ["COHERE_API_KEY"]},
+        "anyscale": {"env_vars": ["ANYSCALE_API_KEY"]},
+    }
+
+    for provider, config in providers.items():
+        if llm_provider == provider or model_provider == provider:
+            if missing_vars := [
+                var for var in config["env_vars"] if not os.environ.get(var)
+            ]:
+                message = f"You have specified `{provider}` as a default LLM provider, but the following environment variables are missing: {', '.join(missing_vars)}. Would you like to continue?"
+                if not click.confirm(message, default=False):
+                    click.echo("Aborting Docker setup.")
+                    sys.exit(1)
+
+    if (
+        llm_provider == "ollama" or model_provider == "ollama"
+    ) and include_ollama:
+        check_external_ollama()
+
+
+def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
+
     try:
         response = requests.get(ollama_url, timeout=5)
         if response.status_code == 200:
@@ -122,6 +205,12 @@ def check_external_ollama():
             click.echo(
                 f"{warning_text} External Ollama instance returned unexpected status code: {response.status_code}"
             )
+            if not click.confirm(
+                "Do you want to continue without Ollama connection?",
+                default=False,
+            ):
+                click.echo("Aborting Docker setup.")
+                sys.exit(1)
     except RequestException as e:
         warning_text = click.style("Warning:", fg="red", bold=True)
         click.echo(
@@ -130,16 +219,24 @@ def check_external_ollama():
         click.echo(
             "Please ensure Ollama is running externally if you've excluded it from Docker and plan on running Local LLMs."
         )
+        if not click.confirm(
+            "Do you want to continue without Ollama connection?", default=False
+        ):
+            click.echo("Aborting Docker setup.")
+            sys.exit(1)
 
 
-def unset_env_vars(exclude_postgres=False):
-    env_vars = [
-        "NEO4J_USER",
-        "NEO4J_PASSWORD",
-        "NEO4J_URL",
-        "NEO4J_DATABASE",
-        "OLLAMA_API_BASE",
-    ]
+def check_set_docker_env_vars(exclude_neo4j=False, exclude_postgres=False):
+    env_vars = []
+    if not exclude_neo4j:
+        neo4j_vars = [
+            "NEO4J_USER",
+            "NEO4J_PASSWORD",
+            "NEO4J_URL",
+            "NEO4J_DATABASE",
+            "OLLAMA_API_BASE",
+        ]
+        env_vars.extend(neo4j_vars)
 
     if not exclude_postgres:
         postgres_vars = [
@@ -152,19 +249,26 @@ def unset_env_vars(exclude_postgres=False):
         ]
         env_vars.extend(postgres_vars)
 
-    for var in env_vars:
-        if value := os.environ.get(var):
-            warning_text = click.style("Warning:", fg="red", bold=True)
-            prompt = (
-                f"{warning_text} It's only necessary to set this environment variable when connecting to an instance not managed by R2R.\n"
-                f"Add the flag --exclude-postgres to avoid deploying a Postgres instance with R2R.\n"
-                f"Environment variable {var} is set to '{value}'. Unset it?"
-            )
-            if click.confirm(prompt, default=True):
-                os.environ[var] = ""
-                click.echo(f"Unset {var}")
-            else:
-                click.echo(f"Kept {var}")
+    is_test = (
+        "pytest" in sys.modules
+        or "unittest" in sys.modules
+        or os.environ.get("PYTEST_CURRENT_TEST")
+    )
+
+    if not is_test:
+        for var in env_vars:
+            if value := os.environ.get(var):
+                warning_text = click.style("Warning:", fg="red", bold=True)
+                prompt = (
+                    f"{warning_text} It's only necessary to set this environment variable when connecting to an instance not managed by R2R.\n"
+                    f"Set --exclude-postgres=true to avoid deploying a Postgres instance with R2R.\n"
+                    f"Environment variable {var} is set to '{value}'. Unset it?"
+                )
+                if click.confirm(prompt, default=True):
+                    os.environ[var] = ""
+                    click.echo(f"Unset {var}")
+                else:
+                    click.echo(f"Kept {var}")
 
 
 def set_config_env_vars(obj):
@@ -203,6 +307,21 @@ def get_compose_files():
     return compose_files
 
 
+def find_available_port(start_port):
+    port = start_port
+    while True:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex(("localhost", port)) != 0:
+                if port != start_port:
+                    click.secho(
+                        f"Warning: Port {start_port} is in use. Using {port}",
+                        fg="red",
+                        bold=True,
+                    )
+                return port
+            port += 1
+
+
 def build_docker_command(
     compose_files,
     host,
@@ -214,6 +333,8 @@ def build_docker_command(
     config_path,
     image,
 ):
+    available_port = find_available_port(port)
+
     command = f"docker compose -f {compose_files['base']}"
     if not exclude_neo4j:
         command += f" -f {compose_files['neo4j']}"
@@ -224,17 +345,15 @@ def build_docker_command(
 
     command += f" --project-name {project_name}"
 
-    if host != "0.0.0.0" or port != 8000:
-        command += f" --build-arg HOST={host} --build-arg PORT={port}"
+    os.environ["PORT"] = str(available_port)
+    os.environ["HOST"] = host
+    os.environ["TRAEFIK_PORT"] = str(available_port + 1)
 
-    if config_path:
-        config_dir = os.path.dirname(config_path)
-        config_file = os.path.basename(config_path)
-        command += f" --build-arg CONFIG_PATH=/app/config/{config_file}"
-        command += f" -v {config_dir}:/app/config"
+    os.environ["CONFIG_PATH"] = (
+        os.path.basename(config_path) if config_path else ""
+    )
 
-    if image:
-        os.environ["R2R_IMAGE"] = image
+    os.environ["R2R_IMAGE"] = image or ""
 
     command += " up -d"
     return command

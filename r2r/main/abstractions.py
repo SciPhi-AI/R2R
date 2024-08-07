@@ -2,15 +2,17 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from r2r.assistants import R2RRAGAssistant, R2RStreamingRAGAssistant
+from r2r.agents import R2RRAGAgent, R2RStreamingRAGAgent
 from r2r.base import (
     AsyncPipe,
     AuthProvider,
+    ChunkingProvider,
+    CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
     EvalProvider,
     KGProvider,
-    LLMProvider,
+    ParsingProvider,
     PromptProvider,
 )
 from r2r.pipelines import (
@@ -24,12 +26,14 @@ from r2r.pipelines import (
 
 class R2RProviders(BaseModel):
     auth: Optional[AuthProvider]
+    chunking: Optional[ChunkingProvider]
+    llm: Optional[CompletionProvider]
     database: Optional[DatabaseProvider]
     embedding: Optional[EmbeddingProvider]
-    llm: Optional[LLMProvider]
     prompt: Optional[PromptProvider]
     eval: Optional[EvalProvider]
     kg: Optional[KGProvider]
+    parsing: Optional[ParsingProvider]
 
     class Config:
         arbitrary_types_allowed = True
@@ -37,6 +41,7 @@ class R2RProviders(BaseModel):
 
 class R2RPipes(BaseModel):
     parsing_pipe: Optional[AsyncPipe]
+    chunking_pipe: Optional[AsyncPipe]
     embedding_pipe: Optional[AsyncPipe]
     vector_storage_pipe: Optional[AsyncPipe]
     vector_search_pipe: Optional[AsyncPipe]
@@ -66,9 +71,9 @@ class R2RPipelines(BaseModel):
         arbitrary_types_allowed = True
 
 
-class R2RAssistants(BaseModel):
-    rag_assistant: R2RRAGAssistant
-    streaming_rag_assistant: R2RStreamingRAGAssistant
+class R2RAgents(BaseModel):
+    rag_agent: R2RRAGAgent
+    streaming_rag_agent: R2RStreamingRAGAgent
 
     class Config:
         arbitrary_types_allowed = True

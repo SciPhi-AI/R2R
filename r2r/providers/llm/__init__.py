@@ -1,7 +1,7 @@
-from .litellm import LiteLLMProvider
-from .openai import OpenAILLMProvider
+from .litellm import LiteCompletionProvider
+from .openai import OpenAICompletionProvider
 
 __all__ = [
-    "LiteLLMProvider",
-    "OpenAILLMProvider",
+    "LiteCompletionProvider",
+    "OpenAICompletionProvider",
 ]

@@ -5,6 +5,9 @@ import os
 from pathlib import Path
 from typing import Any, Optional
 
+import toml
+import yaml
+
 from r2r.base import Prompt, PromptConfig, PromptProvider
 
 logger = logging.getLogger(__name__)
@@ -13,47 +16,43 @@ logger = logging.getLogger(__name__)
 class R2RPromptProvider(PromptProvider):
     def __init__(self, config: PromptConfig = PromptConfig()):
         self.prompts: dict[str, Prompt] = {}
-        self._load_prompts_from_jsonl(file_path=config.file_path)
+        self._load_prompts_from_toml_directory(directory_path=config.file_path)
         super().__init__(config)
 
-    def _load_prompts_from_jsonl(self, file_path: Optional[Path] = None):
-        if not file_path:
-            file_path = os.path.join(
-                os.path.dirname(__file__), "defaults.jsonl"
-            )
-        try:
-            with open(file_path, "r") as file:
-                for line in file:
-                    if line.strip():
-                        data = json.loads(line)
-                        self.add_prompt(
-                            data["name"],
-                            data["template"],
-                            data.get("input_types", {}),
-                        )
-        except json.JSONDecodeError as e:
-            error_msg = f"Error loading prompts from JSONL file: {e}"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
+    def _load_prompts_from_toml_directory(
+        self, directory_path: Optional[Path] = None
+    ):
+        if not directory_path:
+            directory_path = Path(os.path.dirname(__file__)) / "defaults"
 
-        file_path = os.path.join(
-            os.path.dirname(__file__), "defaults.yaml"
-        )
-        try:
-            with open(file_path, "r") as file:
-                yaml_data = yaml.safe_load(file)
-                for prompt in yaml_data:
-                    self.add_prompt(
-                        prompt["name"],
-                        prompt["template"],
-                        prompt.get("input_types", {}),
-                    )
-                logger.info(f"Prompt is {str(prompt)}")
-        except yaml.YAMLError as e:
-            error_msg = f"Error loading prompts from YAML file: {e}"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-        
+        if not directory_path.is_dir():
+            raise ValueError(
+                f"The specified path is not a directory: {directory_path}"
+            )
+
+        logger.info(f"Loading prompts from {directory_path}")
+        for yaml_file in directory_path.glob("*.yaml"):
+            logger.debug(f"Loaded prompts from {yaml_file}")
+            try:
+                with open(yaml_file, "r") as file:
+                    data = yaml.safe_load(file)
+                    for name, prompt_data in data.items():
+                        self.add_prompt(
+                            name,
+                            prompt_data["template"],
+                            prompt_data.get("input_types", {}),
+                        )
+            except toml.TomlDecodeError as e:
+                error_msg = (
+                    f"Error loading prompts from TOML file {yaml_file}: {e}"
+                )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            except KeyError as e:
+                error_msg = f"Missing key in TOML file {toml_file}: {e}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
     def add_prompt(
         self, name: str, template: str, input_types: dict[str, str]
     ) -> None:

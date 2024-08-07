@@ -13,7 +13,7 @@ from r2r.base import (
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RAssistants, R2RPipelines, R2RProviders
+from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
 from ..assembly.config import R2RConfig
 from .base import Service
 
@@ -26,7 +26,7 @@ class ManagementService(Service):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
-        assistants: R2RAssistants,
+        agents: R2RAgents,
         run_manager: RunManager,
         logging_connection: KVLoggingSingleton,
     ):
@@ -34,7 +34,7 @@ class ManagementService(Service):
             config,
             providers,
             pipelines,
-            assistants,
+            agents,
             run_manager,
             logging_connection,
         )
@@ -72,23 +72,44 @@ class ManagementService(Service):
         if len(run_ids) == 0:
             return []
         logs = await self.logging_connection.get_logs(run_ids)
-        # Aggregate logs by run_id and include run_type
+
         aggregated_logs = []
+        warning_shown = False
 
         for run in run_info:
-            run_logs = [log for log in logs if log["log_id"] == run.run_id]
+            run_logs = [
+                log for log in logs if log["log_id"] == str(run.run_id)
+            ]
             entries = [
-                {"key": log["key"], "value": log["value"]} for log in run_logs
+                {
+                    "key": log["key"],
+                    "value": log["value"],
+                    "timestamp": log["timestamp"],
+                }
+                for log in run_logs
             ][
                 ::-1
             ]  # Reverse order so that earliest logged values appear first.
-            aggregated_logs.append(
-                {
-                    "run_id": run.run_id,
-                    "run_type": run.log_type,
-                    "entries": entries,
-                }
-            )
+
+            log_entry = {
+                "run_id": run.run_id,
+                "run_type": run.log_type,
+                "entries": entries,
+            }
+
+            if run.timestamp:
+                log_entry["timestamp"] = run.timestamp.isoformat()
+
+            if hasattr(run, "user_id"):
+                if run.user_id is not None:
+                    log_entry["user_id"] = run.user_id
+            elif not warning_shown:
+                logger.warning(
+                    "Logs are missing user ids. This may be due to an outdated database schema. Please run `r2r migrate` to run database migrations."
+                )
+                warning_shown = True
+
+            aggregated_logs.append(log_entry)
 
         return aggregated_logs
 
@@ -178,7 +199,7 @@ class ManagementService(Service):
     async def aapp_settings(self, *args: Any, **kwargs: Any):
         prompts = self.providers.prompt.get_all_prompts()
         return {
-            "config": self.config.to_json(),
+            "config": self.config.to_toml(),
             "prompts": {
                 name: prompt.dict() for name, prompt in prompts.items()
             },

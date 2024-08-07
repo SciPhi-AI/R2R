@@ -1,28 +1,25 @@
 import asyncio
-import copy
 import json
 import logging
-import uuid
 import re
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Optional, Union
 
 from r2r.base import (
     AsyncState,
+    ChunkingProvider,
+    CompletionProvider,
     Extraction,
     Fragment,
-    FragmentType,
     KGExtraction,
     KGProvider,
     KVLoggingSingleton,
-    LLMProvider,
     PipeType,
     PromptProvider,
-    TextSplitter,
+    R2RDocumentProcessingError,
     Entity,
     Triple,
     extract_entities,
     extract_triples,
-    generate_id_from_label,
 )
 from r2r.base.pipes.base_pipe import AsyncPipe
 
@@ -37,18 +34,20 @@ class ClientError(Exception):
 
 class KGExtractionPipe(AsyncPipe):
     """
-    Embeds and stores documents using a specified embedding model and database.
+    Extracts knowledge graph information from document extractions.
     """
 
-    class Input:
-        message: AsyncGenerator[Extraction, None]
+    class Input(AsyncPipe.Input):
+        message: AsyncGenerator[
+            Union[Extraction, R2RDocumentProcessingError], None
+        ]
 
     def __init__(
         self,
         kg_provider: KGProvider,
-        llm_provider: LLMProvider,
+        llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
-        text_splitter: TextSplitter,
+        chunking_provider: ChunkingProvider,
         kg_batch_size: int = 1,
         graph_rag: bool = True,
         id_prefix: str = "demo",
@@ -58,20 +57,16 @@ class KGExtractionPipe(AsyncPipe):
         *args,
         **kwargs,
     ):
-        """
-        Initializes the embedding pipe with necessary components and configurations.
-        """
         super().__init__(
             pipe_logger=pipe_logger,
             type=type,
             config=config
-            or AsyncPipe.PipeConfig(name="default_embedding_pipe"),
+            or AsyncPipe.PipeConfig(name="default_kg_extraction_pipe"),
         )
-
         self.kg_provider = kg_provider
         self.prompt_provider = prompt_provider
         self.llm_provider = llm_provider
-        self.text_splitter = text_splitter
+        self.chunking_provider = chunking_provider
         self.kg_batch_size = kg_batch_size
         self.id_prefix = id_prefix
         self.pipe_run_info = None
@@ -120,12 +115,12 @@ class KGExtractionPipe(AsyncPipe):
 
     async def extract_kg(
         self,
-        fragment: Fragment,
+        fragment: Any,
         retries: int = 3,
         delay: int = 2,
     ) -> KGExtraction:
         """
-        Extracts NER triples from a list of fragments with retries.
+        Extracts NER triples from a fragment with retries.
         """
 
         task_inputs={"input": fragment.data}
@@ -134,7 +129,7 @@ class KGExtractionPipe(AsyncPipe):
 
         messages = self.prompt_provider._get_message_payload(
             task_prompt_name=self.kg_provider.config.kg_extraction_prompt,
-            task_inputs=task_inputs
+            task_inputs={"input": fragment},
         )
 
         for attempt in range(retries):
@@ -179,6 +174,15 @@ class KGExtractionPipe(AsyncPipe):
 
                 else:
 
+                # Parsing JSON from the response
+                kg_json = (
+                    json.loads(
+                        kg_extraction.split("```json")[1].split("```")[0]
+                    )
+                    if "```json" in kg_extraction
+                    else json.loads(kg_extraction)
+                )
+                llm_payload = kg_json.get("entities_and_triples", {})
                     # Parsing JSON from the response
                     kg_json = (
                         json.loads(
@@ -207,16 +211,14 @@ class KGExtractionPipe(AsyncPipe):
                     await asyncio.sleep(delay)
                 else:
                     logger.error(f"Failed after retries with {e}")
-                    # raise e  # Ensure the exception is raised after the final attempt
 
         return KGExtraction(entities={}, triples=[])
 
     async def _process_batch(
-        self,
-        fragment_batch: list[Fragment],
+        self, fragment_batch: list[Any]
     ) -> list[KGExtraction]:
         """
-        Embeds a batch of fragments and yields vector entries.
+        Processes a batch of fragments and extracts KG information.
         """
         tasks = [
             asyncio.create_task(self.extract_kg(fragment))
@@ -226,48 +228,46 @@ class KGExtractionPipe(AsyncPipe):
 
     async def _run_logic(
         self,
-        input: AsyncPipe.Input,
+        input: Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: Any,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[KGExtraction, None]:
-        """
-        Executes the embedding pipe: chunking, transforming, embedding, and storing documents.
-        """
-        batch_tasks = []
+    ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
         fragment_batch = []
 
-        fragment_info = {}
-        async for extraction in input.message:
-            async for fragment in self.transform_fragments(
-                self.fragment(extraction, run_id)
-            ):
-                if extraction.document_id in fragment_info:
-                    fragment_info[extraction.document_id] += 1
-                else:
-                    fragment_info[extraction.document_id] = 1
-                extraction.metadata["chunk_order"] = fragment_info[
-                    extraction.document_id
-                ]
-                fragment_batch.append(fragment)
-                if len(fragment_batch) >= self.kg_batch_size:
-                    # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
-                    batch_tasks.append(
-                        self._process_batch(fragment_batch.copy())
-                    )  # pass a copy if necessary
-                    fragment_batch.clear()  # Clear the batch for new fragments
+        async for item in input.message:
+            if isinstance(item, R2RDocumentProcessingError):
+                yield item
+                continue
 
-        logger.debug(
-            f"Fragmented the input document ids into counts as shown: {fragment_info}"
-        )
+            try:
+                async for chunk in self.chunking_provider.chunk(item.data):
+                    fragment_batch.append(chunk)
+                    if len(fragment_batch) >= self.kg_batch_size:
+                        for kg_extraction in await self._process_batch(
+                            fragment_batch
+                        ):
+                            yield kg_extraction
+                        fragment_batch.clear()
+            except Exception as e:
+                logger.error(f"Error processing document: {e}")
+                yield R2RDocumentProcessingError(
+                    error_message=str(e),
+                    document_id=item.document_id,
+                )
 
-        if fragment_batch:  # Process any remaining fragments
-            batch_tasks.append(self._process_batch(fragment_batch.copy()))
-
-        # Process tasks as they complete
-        for task in asyncio.as_completed(batch_tasks):
-            batch_result = await task  # Wait for the next task to complete
-            for kg_extraction in batch_result:
-                yield kg_extraction
-
+        if fragment_batch:
+            try:
+                for kg_extraction in await self._process_batch(fragment_batch):
+                    yield kg_extraction
+            except Exception as e:
+                logger.error(f"Error processing final batch: {e}")
+                yield R2RDocumentProcessingError(
+                    error_message=str(e),
+                    document_id=(
+                        fragment_batch[0].document_id
+                        if fragment_batch
+                        else None
+                    ),
+                )

@@ -3,11 +3,13 @@ from abc import ABCMeta
 from typing import AsyncGenerator, Generator, Optional
 
 from r2r.base import (
-    Assistant,
+    Agent,
     AsyncSyncMeta,
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
+    MessageType,
+    User,
     syncable,
 )
 
@@ -32,9 +34,10 @@ def sync_wrapper(async_gen):
     return wrapper()
 
 
-class R2RAssistant(Assistant, metaclass=CombinedMeta):
+class R2RAgent(Agent, metaclass=CombinedMeta):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._register_tools()
         self._reset()
 
     def _reset(self):
@@ -94,16 +97,19 @@ class R2RAssistant(Assistant, metaclass=CombinedMeta):
                     )
             else:
                 self.conversation.append(
-                    Message(role="assistant", content=message.content)
+                    Message(
+                        role=MessageType.ASSISTANT, content=message.content
+                    )
                 )
                 self._completed = True
 
 
-class R2RStreamingAssistant(Assistant):
+class R2RStreamingAgent(Agent):
     async def arun(
         self,
         system_instruction: Optional[str] = None,
         messages: Optional[list[Message]] = None,
+        user: Optional[User] = None,
         *args,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
@@ -126,7 +132,7 @@ class R2RStreamingAssistant(Assistant):
                     generation_config,
                 )
                 async for chunk in self.process_llm_response(
-                    stream, *args, **kwargs
+                    stream, user=user, *args, **kwargs
                 ):
                     yield chunk
         finally:
@@ -141,7 +147,7 @@ class R2RStreamingAssistant(Assistant):
         )
 
     async def process_llm_response(
-        self, stream: LLMChatCompletionChunk, *args, **kwargs
+        self, stream: LLMChatCompletionChunk, user, *args, **kwargs
     ) -> AsyncGenerator[str, None]:
         function_name = None
         function_arguments = ""
@@ -193,12 +199,14 @@ class R2RStreamingAssistant(Assistant):
                 function_name = None
                 function_arguments = ""
 
-                self.arun(*args, **kwargs)
+                self.arun(user=user, *args, **kwargs)
 
             elif chunk.choices[0].finish_reason == "stop":
                 if content_buffer:
                     self.conversation.append(
-                        Message(role="assistant", content=content_buffer)
+                        Message(
+                            role=MessageType.ASSISTANT, content=content_buffer
+                        )
                     )
                 self._completed = True
                 yield "</completion>"

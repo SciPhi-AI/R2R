@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import Any, Optional
 
+from ..base import User
 from ..base.abstractions.llm import GenerationConfig
 from ..base.abstractions.search import KGSearchSettings, VectorSearchSettings
 from ..base.logging.kv_logger import KVLoggingSingleton
@@ -36,6 +37,7 @@ class RAGPipeline(AsyncPipeline):
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         rag_generation_config: GenerationConfig = GenerationConfig(),
+        user: Optional[User] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -46,6 +48,7 @@ class RAGPipeline(AsyncPipeline):
                     key="pipeline_type",
                     value=self.pipeline_type,
                     is_info_log=True,
+                    user=user,
                 )
 
             if not self._search_pipeline:

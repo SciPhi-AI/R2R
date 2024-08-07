@@ -48,9 +48,9 @@ class R2RExecutionWrapper:
             self.app = None
         else:
             config = (
-                R2RConfig.from_json(config_path)
+                R2RConfig.from_toml(config_path)
                 if config_path
-                else R2RConfig.from_json(
+                else R2RConfig.from_toml(
                     R2RBuilder.CONFIG_OPTIONS[config_name or "default"]
                 )
             )
@@ -234,15 +234,21 @@ class R2RExecutionWrapper:
         if self.client_mode:
             return self.client.search(
                 query,
-                use_vector_search = use_vector_search,
-                search_filters = search_filters,
-                search_limit = search_limit,
-                do_hybrid_search = do_hybrid_search,
-                use_kg_search = use_kg_search,
-                kg_search_generation_config = kg_search_generation_config,
-                kg_search_type = kg_search_type,
-                entity_types = entity_types,
-                relationships = relationships,
+                VectorSearchSettings(
+                    use_vector_search=use_vector_search,
+                    search_filters=search_filters or {},
+                    search_limit=search_limit,
+                    do_hybrid_search=do_hybrid_search,
+                ),
+                KGSearchSettings(
+                    use_kg_search=use_kg_search,
+                    kg_search_type = kg_search_type,
+                    entity_types = entity_types,
+                    relationships = relationships,
+                    kg_search_generation_config=GenerationConfig(
+                        **(kg_search_generation_config or {})
+                    ),
+                ),
             )["results"]
         else:
             return self.app.search(
@@ -278,15 +284,24 @@ class R2RExecutionWrapper:
     ):
         if self.client_mode:
             response = self.client.rag(
-                query=query,
-                use_vector_search=use_vector_search,
-                search_filters=search_filters or {},
-                search_limit=search_limit,
-                do_hybrid_search=do_hybrid_search,
-                use_kg_search=use_kg_search,
-                kg_search_generation_config=kg_search_generation_config,
-                rag_generation_config=rag_generation_config,
+                query,
+                vector_search_settings=VectorSearchSettings(
+                    use_vector_search=use_vector_search,
+                    search_filters=search_filters or {},
+                    search_limit=search_limit,
+                    do_hybrid_search=do_hybrid_search,
+                ),
+                kg_search_settings=KGSearchSettings(
+                    use_kg_search=use_kg_search,
+                    kg_search_generation_config=GenerationConfig(
+                        **(kg_search_generation_config or {})
+                    ),
+                ),
+                rag_generation_config=GenerationConfig(
+                    **(rag_generation_config or {})
+                ),
             )
+
             if not stream:
                 response = response["results"]
                 return response
@@ -363,11 +378,15 @@ class R2RExecutionWrapper:
         else:
             return self.app.delete(keys, values)
 
-    def logs(self, log_type_filter: Optional[str] = None):
+    def logs(
+        self,
+        log_type_filter: Optional[str] = None,
+        max_runs: int = 100,
+    ):
         if self.client_mode:
-            return self.client.logs(log_type_filter)["results"]
+            return self.client.logs(log_type_filter, max_runs)["results"]
         else:
-            return self.app.logs(log_type_filter)
+            return self.app.logs(log_type_filter, max_runs)
 
     def document_chunks(self, document_id: str):
         doc_uuid = uuid.UUID(document_id)

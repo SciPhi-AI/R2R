@@ -2,7 +2,7 @@ import logging
 
 # Keep '*' imports for enhanced development velocity
 # corresponding flake8 error codes are F403, F405
-from .assistants import *
+from .agents import *
 from .base import *
 from .integrations import *
 from .main import *
@@ -82,8 +82,8 @@ __all__ = [
     "GenerationConfig",
     "LLMChatCompletion",
     "LLMChatCompletionChunk",
-    "LLMConfig",
-    "LLMProvider",
+    "CompletionConfig",
+    "CompletionProvider",
     "DatabaseConfig",
     "DatabaseProvider",
     "R2RConfig",

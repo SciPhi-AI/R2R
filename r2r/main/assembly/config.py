@@ -1,19 +1,24 @@
-import json
 import logging
 import os
 from enum import Enum
 from typing import Any
 
+import toml
+from pydantic import BaseModel
+
+from ...base.abstractions.agent import AgentConfig
 from ...base.abstractions.document import DocumentType
 from ...base.abstractions.llm import GenerationConfig
 from ...base.logging.kv_logger import LoggingConfig
 from ...base.providers.auth import AuthConfig
+from ...base.providers.chunking import ChunkingConfig
 from ...base.providers.crypto import CryptoConfig
 from ...base.providers.database import DatabaseConfig, ProviderConfig
 from ...base.providers.embedding import EmbeddingConfig
 from ...base.providers.eval import EvalConfig
 from ...base.providers.kg import KGConfig
-from ...base.providers.llm import LLMConfig
+from ...base.providers.llm import CompletionConfig
+from ...base.providers.parsing import ParsingConfig
 from ...base.providers.prompt import PromptConfig
 
 logger = logging.getLogger(__name__)
@@ -28,7 +33,6 @@ class R2RConfig:
             "base_model",
             "base_dimension",
             "batch_size",
-            "text_splitter",
             "add_title_as_prefix",
         ],
         "eval": ["llm"],
@@ -36,22 +40,27 @@ class R2RConfig:
             "provider",
             "batch_size",
             "kg_extraction_config",
-            "text_splitter",
         ],
-        "ingestion": ["excluded_parsers"],
-        "completions": ["provider"],
+        "parsing": ["provider", "excluded_parsers"],
+        "chunking": ["provider", "method"],
+        "completion": ["provider"],
         "logging": ["provider", "log_table"],
         "prompt": ["provider"],
         "database": ["provider"],
+        "agent": ["generation_config"],
     }
     auth: AuthConfig
+    chunking: ChunkingConfig
+    completion: CompletionConfig
     crypto: CryptoConfig
-    embedding: EmbeddingConfig
-    kg: KGConfig
-    completions: LLMConfig
-    logging: LoggingConfig
-    prompt: PromptConfig
     database: DatabaseConfig
+    embedding: EmbeddingConfig
+    eval: EvalConfig
+    kg: KGConfig
+    logging: LoggingConfig
+    parsing: ParsingConfig
+    prompt: PromptConfig
+    agent: AgentConfig
 
     def __init__(self, config_data: dict[str, Any]):
         # Load the default configuration
@@ -75,26 +84,23 @@ class R2RConfig:
             ):
                 self._validate_config_section(default_config, section, keys)
             setattr(self, section, default_config[section])
-        self.auth = AuthConfig.create(**self.auth)
-        self.crypto = CryptoConfig.create(**self.crypto)
-        self.ingestion = self.ingestion  # for type hinting
-        self.ingestion["excluded_parsers"] = [
-            DocumentType(k) for k in self.ingestion["excluded_parsers"]
-        ]
+        self.completion = CompletionConfig.create(**self.completion)
         # override GenerationConfig defaults
         GenerationConfig.set_default(
-            **self.completions.get("generation_config", {})
+            **self.completion.generation_config.dict()
         )
-        self.embedding = EmbeddingConfig.create(**self.embedding)
-        self.kg = KGConfig.create(**self.kg)
-        eval_llm = self.eval.pop("llm", None)
-        self.eval = EvalConfig.create(
-            **self.eval, llm=LLMConfig.create(**eval_llm) if eval_llm else None
-        )
-        self.completions = LLMConfig.create(**self.completions)
-        self.logging = LoggingConfig.create(**self.logging)
-        self.prompt = PromptConfig.create(**self.prompt)
+
+        self.auth = AuthConfig.create(**self.auth)
+        self.chunking = ChunkingConfig.create(**self.chunking)
+        self.crypto = CryptoConfig.create(**self.crypto)
         self.database = DatabaseConfig.create(**self.database)
+        self.embedding = EmbeddingConfig.create(**self.embedding)
+        self.eval = EvalConfig.create(**self.eval, llm=None)
+        self.kg = KGConfig.create(**self.kg)
+        self.logging = LoggingConfig.create(**self.logging)
+        self.parsing = ParsingConfig.create(**self.parsing)
+        self.prompt = PromptConfig.create(**self.prompt)
+        self.agent = AgentConfig.create(**self.agent)
 
     def _validate_config_section(
         self, config_data: dict[str, Any], section: str, keys: list
@@ -105,27 +111,27 @@ class R2RConfig:
             raise ValueError(f"Missing required keys in '{section}' config")
 
     @classmethod
-    def from_json(cls, config_path: str = None) -> "R2RConfig":
+    def from_toml(cls, config_path: str = None) -> "R2RConfig":
         if config_path is None:
             # Get the root directory of the project
             file_dir = os.path.dirname(os.path.abspath(__file__))
-            config_path = os.path.join(file_dir, "..", "..", "..", "r2r.json")
+            config_path = os.path.join(file_dir, "..", "..", "..", "r2r.toml")
 
-        # Load configuration from JSON file
+        # Load configuration from TOML file
         with open(config_path) as f:
-            config_data = json.load(f)
+            config_data = toml.load(f)
 
         return cls(config_data)
 
-    def to_json(self):
+    def to_toml(self):
         config_data = {
             section: self._serialize_config(getattr(self, section))
             for section in R2RConfig.REQUIRED_KEYS.keys()
         }
-        return json.dumps(config_data)
+        return toml.dumps(config_data)
 
     def save_to_redis(self, redis_client: Any, key: str):
-        redis_client.set(f"R2RConfig:{key}", self.to_json())
+        redis_client.set(f"R2RConfig:{key}", self.to_toml())
 
     @classmethod
     def load_from_redis(cls, redis_client: Any, key: str) -> "R2RConfig":
@@ -134,7 +140,7 @@ class R2RConfig:
             raise ValueError(
                 f"Configuration not found in Redis with key '{key}'"
             )
-        config_data = json.loads(config_data)
+        config_data = toml.loads(config_data)
         return cls(config_data)
 
     @classmethod
@@ -142,17 +148,19 @@ class R2RConfig:
         # Get the root directory of the project
         file_dir = os.path.dirname(os.path.abspath(__file__))
         default_config_path = os.path.join(
-            file_dir, "..", "..", "..", "r2r.json"
+            file_dir, "..", "..", "..", "r2r.toml"
         )
-        # Load default configuration from JSON file
+        # Load default configuration from TOML file
         with open(default_config_path) as f:
-            return json.load(f)
+            return toml.load(f)
 
     @staticmethod
     def _serialize_config(config_section: Any) -> dict:
         # TODO - Make this approach cleaner
         if isinstance(config_section, ProviderConfig):
             config_section = config_section.dict()
+        elif isinstance(config_section, BaseModel):
+            config_section = config_section.dict(exclude_none=True)
         filtered_result = {}
         for k, v in config_section.items():
             if isinstance(k, Enum):

@@ -1,20 +1,17 @@
-import logging
-import uuid
 from typing import Any, AsyncGenerator, Optional, Tuple
 
 from r2r.base import (
     AggregateSearchResult,
     AsyncPipe,
     AsyncState,
-    LLMProvider,
+    CompletionProvider,
+    CompletionRecord,
     PipeType,
     PromptProvider,
 )
 from r2r.base.abstractions.llm import GenerationConfig, RAGCompletion
 
 from ..abstractions.generator_pipe import GeneratorPipe
-
-logger = logging.getLogger(__name__)
 
 
 class SearchRAGPipe(GeneratorPipe):
@@ -23,7 +20,7 @@ class SearchRAGPipe(GeneratorPipe):
 
     def __init__(
         self,
-        llm_provider: LLMProvider,
+        llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         type: PipeType = PipeType.GENERATOR,
         config: Optional[GeneratorPipe] = None,
@@ -46,15 +43,15 @@ class SearchRAGPipe(GeneratorPipe):
         self,
         input: Input,
         state: AsyncState,
-        run_id: uuid.UUID,
         rag_generation_config: GenerationConfig,
+        completion_record: Optional[CompletionRecord] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[RAGCompletion, None]:
+        run_id = kwargs.get("run_id")
         context = ""
         search_iteration = 1
         total_results = 0
-        # must select a query if there are multiple
         sel_query = None
         async for query, search_results in input.message:
             if search_iteration == 1:
@@ -76,11 +73,12 @@ class SearchRAGPipe(GeneratorPipe):
         )
         yield RAGCompletion(completion=response, search_results=search_results)
 
-        await self.enqueue_log(
-            run_id=run_id,
-            key="llm_response",
-            value=response.choices[0].message.content,
-        )
+        if run_id:
+            await self.enqueue_log(
+                run_id=run_id,
+                key="llm_response",
+                value=response.choices[0].message.content,
+            )
 
     async def _collect_context(
         self,

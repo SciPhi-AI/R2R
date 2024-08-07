@@ -89,23 +89,3 @@ class XLSXParserAdvanced(AsyncParser[DataType]):
                     yield headers + "\n" + "\n".join(
                         [", ".join(row) for row in chunk]
                     )
-
-
-# async def main():
-#     csv_file = '/Users/shreyas/parse_this.xlsx'
-#     parser = XLSXParserAdvanced()
-
-#     with open(csv_file, 'rb') as file:
-#         file_content = file.read()
-
-#     async for chunk in parser.ingest(BytesIO(file_content)):
-#         print("Chunk:")
-#         print(chunk)
-#         print("---")  # Separator between chunks
-
-#     import pdb; pdb.set_trace()
-
-
-# if __name__== '__main__':
-#     import asyncio
-#     out = asyncio.run(main())

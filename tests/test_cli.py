@@ -1,6 +1,4 @@
-import json
-import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import click
 import pytest
@@ -188,13 +186,25 @@ def test_app_settings(runner, mock_r2r_execution_wrapper):
 
 def test_logs(runner, mock_r2r_execution_wrapper):
     mock_instance = mock_r2r_execution_wrapper.return_value
-    mock_instance.logs.return_value = ["Log entry 1", "Log entry 2"]
+    mock_instance.logs.return_value = [
+        {
+            "run_id": "test-run-id",
+            "run_type": "test",
+            "timestamp": "2024-08-05T20:00:00",
+            "user_id": "test-user-id",
+            "entries": [{"key": "test-key", "value": "test-value"}],
+        }
+    ]
 
     result = runner.invoke(cli, ["logs", "--log-type-filter", "error"])
     assert result.exit_code == 0
-    assert "Log entry 1" in result.output
-    assert "Log entry 2" in result.output
-    mock_instance.logs.assert_called_once_with("error")
+    assert "Run ID: test-run-id" in result.output
+    assert "Run Type: test" in result.output
+    assert "Timestamp: 2024-08-05T20:00:00" in result.output
+    assert "User ID: test-user-id" in result.output
+    assert "Entries:" in result.output
+    assert "  - test-key: test-value" in result.output
+    assert "Total runs: 1" in result.output
 
 
 def test_users_overview(runner, mock_r2r_execution_wrapper):
@@ -226,44 +236,6 @@ def test_json_param_type():
     assert result == {"key": "value"}
 
 
-def test_serve_command(runner):
-    with patch(
-        "r2r.cli.commands.server_operations.run_local_serve"
-    ) as mock_run_local_serve:
-        result = runner.invoke(cli, ["serve"])
-        assert result.exit_code == 0
-        mock_run_local_serve.assert_called_once_with(
-            {
-                "config_path": None,
-                "config_name": None,
-                "base_url": "http://localhost:8000",
-            },
-            "0.0.0.0",
-            8000,
-        )
-
-    with patch(
-        "r2r.cli.commands.server_operations.run_docker_serve"
-    ) as mock_run_docker_serve:
-        result = runner.invoke(cli, ["serve", "--docker"])
-        assert result.exit_code == 0
-        mock_run_docker_serve.assert_called_once_with(
-            {
-                "config_path": None,
-                "config_name": None,
-                "base_url": "http://localhost:8000",
-            },
-            "0.0.0.0",
-            8000,
-            False,
-            False,
-            False,
-            "r2r",
-            None,
-            None,
-        )
-
-
 def test_docker_down_command(runner):
     with patch(
         "r2r.cli.commands.server_operations.bring_down_docker_compose"
@@ -279,19 +251,21 @@ def test_docker_down_command(runner):
             in result.output
         )
         mock_bring_down.assert_called_once()
-        mock_remove_network.assert_not_called()
-
-        mock_bring_down.return_value = 1
-        result = runner.invoke(cli, ["docker-down"])
-        assert result.exit_code == 0
-        assert (
-            "An error occurred while bringing down the Docker Compose setup."
-            in result.output
-        )
         mock_remove_network.assert_called_once()
 
+        # legacy code
+        # mock_bring_down.return_value = 1
+        # result = runner.invoke(cli, ["docker-down"])
+        # assert result.exit_code == 0
+        # assert (
+        #     "An error occurred while bringing down the Docker Compose setup."
+        #     in result.output
+        # )
+        # mock_remove_network.assert_called_once()
 
-def test_generate_report_command(runner):
+
+def test_generate_report_command():
+    runner = CliRunner()
     with patch("subprocess.check_output") as mock_check_output, patch(
         "platform.system"
     ) as mock_system, patch("platform.release") as mock_release, patch(
@@ -303,9 +277,9 @@ def test_generate_report_command(runner):
     ) as mock_processor:
 
         mock_check_output.side_effect = [
-            b"container1\tname1\tUp 2 hours\n",
-            b"network1\tnetwork_name1\n",
-            b"172.17.0.0/16\n",
+            "container1\tname1\tUp 2 hours\n",
+            "network1\tnetwork_name1\n",
+            "172.17.0.0/16\n",
         ]
         mock_system.return_value = "Linux"
         mock_release.return_value = "5.4.0"

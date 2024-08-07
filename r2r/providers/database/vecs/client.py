@@ -217,7 +217,7 @@ class Client:
         from r2r.providers.database.vecs.collection import Collection
 
         query = text(
-            f"""
+            """
         select
             relname as table_name,
             atttypmod as embedding_dim

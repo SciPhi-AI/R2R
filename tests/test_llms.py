@@ -4,9 +4,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from r2r import GenerationConfig, LLMConfig
+from r2r import CompletionConfig, GenerationConfig
 from r2r.base.abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
-from r2r.providers import LiteLLMProvider, OpenAILLMProvider
+from r2r.providers import LiteCompletionProvider, OpenAICompletionProvider
 
 
 class MockCompletionResponse:
@@ -55,14 +55,14 @@ class MockStreamResponse:
 
 @pytest.fixture
 def lite_llm():
-    config = LLMConfig(provider="litellm")
-    return LiteLLMProvider(config)
+    config = CompletionConfig(provider="litellm")
+    return LiteCompletionProvider(config)
 
 
 @pytest.fixture
 def openai_llm():
-    config = LLMConfig(provider="openai")
-    return OpenAILLMProvider(config)
+    config = CompletionConfig(provider="openai")
+    return OpenAICompletionProvider(config)
 
 
 @pytest.fixture

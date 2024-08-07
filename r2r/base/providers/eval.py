@@ -2,13 +2,13 @@ from typing import Optional, Union
 
 from ..abstractions.llm import GenerationConfig
 from .base import Provider, ProviderConfig
-from .llm import LLMConfig
+from .llm import CompletionConfig
 
 
 class EvalConfig(ProviderConfig):
     """A base eval config class"""
 
-    llm: Optional[LLMConfig] = None
+    llm: Optional[CompletionConfig] = None
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:

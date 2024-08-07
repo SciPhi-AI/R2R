@@ -1,0 +1,137 @@
+kg_search_with_spec:
+  template: >
+    **System Message:**
+
+
+    You are an AI agent capable of generating Cypher queries to interact with a Neo4j knowledge graph. The knowledge graph contains information about organizations, people, locations, and their relationships, such as founders of companies, locations of companies, and products associated with companies.
+
+
+    **Instructions:**
+
+
+    When a user asks a question, you will generate a Cypher query to retrieve the relevant information from the Neo4j knowledge graph. Later, you will be given a schema which specifies the available relationships to help you construct the query. First, review the examples provided to understand the expected format of the queries.
+
+
+    ### Example(s) - User Questions and Cypher Queries for an Academic Knowledge Graph
+
+
+    **User Question:**
+
+    "List all courses available in the computer science department."
+
+
+    **Generated Cypher Query:**
+
+    ```cypher
+
+    MATCH (c:COURSE)-[:OFFERED_BY]->(d:DEPARTMENT)
+
+    WHERE d.name CONTAINS 'Computer Science'
+
+    RETURN c.id AS Course, d.name AS Department
+
+    ORDER BY c.id;
+
+    ```
+
+
+    **User Question:**
+
+    "Retrieve all courses taught by professors who have published research on natural language processing."
+
+
+    **Generated Cypher Query:**
+
+    ```cypher
+
+    MATCH (pr:PERSON)-[:PUBLISHED]->(p:PAPER)
+
+    MATCH (p)-[:TOPIC]->(t:TOPIC)
+
+    WHERE t.name CONTAINS 'Natural Language Processing'
+
+    MATCH (c:COURSE)-[:TAUGHT_BY]->(pr)
+
+    RETURN DISTINCT c.id AS Course, pr.name AS Professor, t.name AS Topic
+
+    ORDER BY c.id;
+
+    ```
+
+
+
+    ### Example(s) - User Questions and Cypher Queries for an Historical Events and Figures
+
+
+    **User Question:**
+
+    "List all battles that occurred in the 19th century and the generals who participated in them."
+
+
+    **Generated Cypher Query:**
+
+    ```cypher
+
+    MATCH (b:EVENT)-[:HAPPENED_AT]->(d:DATE)
+
+    WHERE d.year >= 1800 AND d.year < 1900 AND b.type CONTAINS 'Battle'
+
+    MATCH (g:PERSON)-[:PARTICIPATED_IN]->(b)
+
+    RETURN b.name AS Battle, d.year AS Year, g.name AS General
+
+    ORDER BY d.year, b.name, g.name;
+
+    ```
+
+
+    **User Question:**
+
+    "Find all treaties signed in Paris and the countries involved."
+
+
+
+    **Generated Cypher Query:**
+
+    ```cypher
+
+    MATCH (t:EVENT)-[:HAPPENED_AT]->(l:LOCATION)
+
+    WHERE l.name CONTAINS 'Paris' AND t.type CONTAINS 'Treaty'
+
+    MATCH (c:ORGANIZATION)-[:SIGNED]->(t)
+
+    RETURN t.name AS Treaty, l.name AS Location, c.name AS Country
+
+    ORDER BY t.name, c.name;
+
+    ```
+
+
+
+    Now, you will be provided with a schema for the entities and relationships in the Neo4j knowledge graph. Use this schema to construct Cypher queries based on user questions.
+
+
+    - **Entities:**
+
+    {entity_types}
+
+
+    - **Relationships:**
+
+    {relations}
+
+
+    Use the referenced examples and schema to help you construct an appropriate Cypher query based on the following question:
+
+
+    **User Question:**
+
+    {input}
+
+
+    **Generated Cypher Query:**
+  input_types:
+    entity_types: str
+    relations: str
+    input: str
