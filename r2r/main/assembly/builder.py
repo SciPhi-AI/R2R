@@ -41,23 +41,9 @@ class R2RBuilder:
 
     CONFIG_OPTIONS = {}
     for file in os.listdir(config_root):
-        if file.endswith('.json'):
-            CONFIG_OPTIONS[file.removesuffix('.json')] = os.path.join(config_root, file)
+        if file.endswith('.toml'):
+            CONFIG_OPTIONS[file.removesuffix('.toml')] = os.path.join(config_root, file)
     CONFIG_OPTIONS['default'] = None
-    CONFIG_OPTIONS = {
-        "default": None,
-        "local_llm": os.path.join(config_root, "local_llm.toml"),
-        "local_llm_rerank": os.path.join(config_root, "local_llm_rerank.toml"),
-        "neo4j_kg": os.path.join(config_root, "neo4j_kg.toml"),
-        "neo4j_kg_no_vector_postgres": os.path.join(
-            config_root, "neo4j_kg_no_vector_postgres.toml"
-        ),
-        "local_llm_neo4j_kg": os.path.join(
-            config_root, "local_llm_neo4j_kg.toml"
-        ),
-        "postgres_logging": os.path.join(config_root, "postgres_logging.toml"),
-        "auth": os.path.join(config_root, "auth.toml"),
-    }
 
     @staticmethod
     def _get_config(config_name):

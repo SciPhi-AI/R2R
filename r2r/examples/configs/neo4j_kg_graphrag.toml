@@ -25,7 +25,7 @@ provider = "neo4j"
 batch_size = 1
 max_entities = 10
 max_relations = 20
-kg_extraction_prompt = "zero_shot_ner_kg_extraction"
+kg_extraction_prompt = "graphrag_triplet_extraction"
 
   [kg.kg_extraction_config]
   model = "gpt-4o-mini"

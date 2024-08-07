@@ -73,50 +73,9 @@ class KGExtractionPipe(AsyncPipe):
         self.pipe_run_info = None
         self.graph_rag = graph_rag
 
-    async def fragment(
-        self, extraction: Extraction, run_id: uuid.UUID
-    ) -> AsyncGenerator[Fragment, None]:
-        """
-        Splits text into manageable chunks for embedding.
-        """
-        if not isinstance(extraction, Extraction):
-            raise ValueError(
-                f"Expected an Extraction, but received {type(extraction)}."
-            )
-        if not isinstance(extraction.data, str):
-            raise ValueError(
-                f"Expected a string, but received {type(extraction.data)}."
-            )
-        text_chunks = [
-            ele.page_content
-            for ele in self.text_splitter.create_documents([extraction.data])
-        ]
-        for iteration, chunk in enumerate(text_chunks):
-            fragment = Fragment(
-                id=generate_id_from_label(f"{extraction.id}-{iteration}"),
-                type=FragmentType.TEXT,
-                data=chunk,
-                metadata=copy.deepcopy(extraction.metadata),
-                extraction_id=extraction.id,
-                document_id=extraction.document_id,
-            )
-            yield fragment
-
-    async def transform_fragments(
-        self, fragments: list[Fragment]
-    ) -> AsyncGenerator[Fragment, None]:
-        """
-        Transforms text chunks based on their metadata, e.g., adding prefixes.
-        """
-        async for fragment in fragments:
-            if "chunk_prefix" in fragment.metadata:
-                prefix = fragment.metadata.pop("chunk_prefix")
-                fragment.data = f"{prefix}\n{fragment.data}"
-            yield fragment
-
     async def extract_kg(
         self,
-        fragment: Any,
+        fragment: Fragment,
         retries: int = 3,
         delay: int = 2,
     ) -> KGExtraction:
@@ -130,7 +89,7 @@ class KGExtractionPipe(AsyncPipe):
 
         messages = self.prompt_provider._get_message_payload(
             task_prompt_name=self.kg_provider.config.kg_extraction_prompt,
-            task_inputs={"input": fragment},
+            task_inputs=task_inputs,
         )
 
         for attempt in range(retries):
@@ -206,18 +165,6 @@ class KGExtractionPipe(AsyncPipe):
 
         return KGExtraction(entities={}, triples=[])
 
-    async def _process_batch(
-        self, fragment_batch: list[Any]
-    ) -> list[KGExtraction]:
-        """
-        Processes a batch of fragments and extracts KG information.
-        """
-        tasks = [
-            asyncio.create_task(self.extract_kg(fragment))
-            for fragment in fragment_batch
-        ]
-        return await asyncio.gather(*tasks)
-
     async def _run_logic(
         self,
         input: Input,
@@ -226,37 +173,9 @@ class KGExtractionPipe(AsyncPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
-        fragment_batch = []
 
-        fragment_info = {}
         async for extraction in input.message:
-            async for fragment in self.transform_fragments(
-                self.fragment(extraction, run_id)
-            ):
-                if extraction.document_id in fragment_info:
-                    fragment_info[extraction.document_id] += 1
-                else:
-                    fragment_info[extraction.document_id] = 1
-                extraction.metadata["chunk_order"] = fragment_info[
-                    extraction.document_id
-                ]
-                fragment_batch.append(fragment)
-                if len(fragment_batch) >= self.kg_batch_size:
-                    # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
-                    batch_tasks.append(
-                        self._process_batch(fragment_batch.copy())
-                    )  # pass a copy if necessary
-                    fragment_batch.clear()  # Clear the batch for new fragments
-
-        logger.debug(
-            f"Fragmented the input document ids into counts as shown: {fragment_info}"
-        )
-
-        if fragment_batch:  # Process any remaining fragments
-            batch_tasks.append(self._process_batch(fragment_batch.copy()))
-
-        # Process tasks as they complete
-        for task in asyncio.as_completed(batch_tasks):
-            batch_result = await task  # Wait for the next task to complete
-            for kg_extraction in batch_result:
-                yield kg_extraction
+            import pdb; pdb.set_trace()
+            print(f"extraction is {extraction}")
+            kg_extraction = await self.extract_kg(extraction)
+            yield kg_extraction
