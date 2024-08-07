@@ -85,7 +85,7 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    def upsert_nodes(self, nodes: list[EntityNode], *args, **kwargs) -> None:
+    def upsert_nodes(self, nodes: list[Any], *args, **kwargs) -> None:
         """Abstract method to add triplet."""
         pass
 

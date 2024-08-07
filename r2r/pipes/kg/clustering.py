@@ -97,10 +97,10 @@ class KGClusteringPipe(AsyncPipe):
 
         G = nx.Graph()
         for triple in triples:
-            G.add_edge(triple.subject, triple.object, weight=triple.weight)
+            G.add_edge(triple.subject, triple.object, weight=triple.weight, description=triple.description, id = triple.id, predicate=triple.predicate)
 
         hierarchical_communities = self._compute_leiden_communities(G)
-        
+
         community_details = {}
 
         for level, level_communities in hierarchical_communities.items():
@@ -125,11 +125,11 @@ class KGClusteringPipe(AsyncPipe):
                     logger.info(f"Node: {node}")
                     logger.info(f"Neighbor: {neighbor}")
                     logger.info(f"Edge info: {edge_info}")
-                    if edge_info:
-                        community_details[f"{level}_{cluster}"].relationship_ids.append(edge_info.get('relationship', 'Unknown'))
+                    if edge_info and edge_info.get('id'):
+                        community_details[f"{level}_{cluster}"].relationship_ids.append(edge_info.get('id'))
 
-        import pdb; pdb.set_trace()
-        for community in community_details.values():
+        for _, community in community_details.items():
+            self.kg_provider.upsert_communities([community])
             yield community
  
     async def _process_batch(self, triples: list[Triple]) -> list[Community]:

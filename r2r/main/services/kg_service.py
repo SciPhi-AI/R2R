@@ -47,7 +47,7 @@ class KGService(Service):
                 run_manager=self.run_manager,
             )
             
-            return {"message": f"Successfully enriched graph for {len(documents)} documents."}
+            return {"message": f"Successfully enriched graph"}
 
         except Exception as e:
             logger.error(f"Error during graph enrichment: {str(e)}")

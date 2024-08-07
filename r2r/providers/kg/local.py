@@ -76,6 +76,14 @@ class LocalKGProvider(KGProvider):
 
         return nodes_upserted, relationships_upserted
 
+
+    def upsert_communities(self, communities: List[Community], *args, **kwargs) -> Any:
+        for community in communities:
+            filepath = os.path.join(self.paths['communities'], f"{community.id}.pkl")
+            with open(filepath, 'wb') as f:
+                pickle.dump(community, f)
+                
+
     def upsert_nodes(self, entities: List[Entity], *args, **kwargs) -> Any:
 
         # Ensure the directory exists
