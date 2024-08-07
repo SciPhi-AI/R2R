@@ -76,7 +76,16 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    def upsert_nodes(self, nodes: list[EntityNode]) -> None:
+    def retrieve_cache(
+        self,
+        cache_type: str,
+        cache_id: str,
+    ) -> bool:
+        """Abstract method to check if the entity is in the cache."""
+        pass
+
+    @abstractmethod
+    def upsert_nodes(self, nodes: list[EntityNode], *args, **kwargs) -> None:
         """Abstract method to add triplet."""
         pass
 

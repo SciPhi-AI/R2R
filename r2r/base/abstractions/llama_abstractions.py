@@ -251,6 +251,11 @@ class PropertyGraphStore(ABC):
         ...
 
     @abstractmethod
+    def get_entity_map(self, entity_names: list[str] | None = None) -> dict[str, list[Any]]:
+        """Get entity map."""
+        ...
+
+    @abstractmethod
     def get_triplets(
         self,
         entity_names: Optional[List[str]] = None,

@@ -95,14 +95,12 @@ class KGClusteringPipe(AsyncPipe):
         #     triples.append([source, rel, target])
         # return triples
 
-
         G = nx.Graph()
         for triple in triples:
-            [source, rel, target] = triple
-            G.add_edge(source.name, target.name, weight=1.0)
+            G.add_edge(triple.subject, triple.object, weight=triple.weight)
 
         hierarchical_communities = self._compute_leiden_communities(G)
-
+        
         community_details = {}
 
         for level, level_communities in hierarchical_communities.items():
@@ -124,9 +122,13 @@ class KGClusteringPipe(AsyncPipe):
                 community_details[f"{level}_{cluster}"].entity_ids.append(node)
                 for neighbor in G.neighbors(node):
                     edge_info = G.get_edge_data(node, neighbor)
+                    logger.info(f"Node: {node}")
+                    logger.info(f"Neighbor: {neighbor}")
+                    logger.info(f"Edge info: {edge_info}")
                     if edge_info:
                         community_details[f"{level}_{cluster}"].relationship_ids.append(edge_info.get('relationship', 'Unknown'))
 
+        import pdb; pdb.set_trace()
         for community in community_details.values():
             yield community
  
