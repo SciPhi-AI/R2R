@@ -63,7 +63,6 @@ class SciPhiCompletionProvider(LiteCompletionProvider):
         generation_config = task["generation_config"]
         self._validate_model(generation_config)
         original_key = self._set_api_key(os.getenv("SCIPHI_PRIVATE_API_KEY"))
-        print('original_key = ', original_key)
         try:
             return super()._execute_task_sync(task)
         except Exception as e:
