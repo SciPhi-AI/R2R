@@ -20,6 +20,9 @@ class MessageType(Enum):
     FUNCTION = "function"
     TOOL = "tool"
 
+    def __str__(self):
+        return self.value
+
 
 class CompletionRecord(BaseModel):
     message_id: uuid.UUID = uuid.uuid4()

@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 from collections import defaultdict
@@ -204,6 +205,55 @@ class ManagementService(Service):
                 name: prompt.dict() for name, prompt in prompts.items()
             },
         }
+
+    @telemetry_event("ScoreCompletion")
+    async def ascore_completion(
+        self,
+        message_id: uuid.UUID,
+        score: float = 0.0,
+        log_type_filter: str = None,
+        max_runs_requested: int = 100,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        try:
+            if self.logging_connection is None:
+                raise R2RException(
+                    status_code=404, message="Logging provider not found."
+                )
+
+            run_info = await self.logging_connection.get_run_info(
+                limit=max_runs_requested,
+                log_type_filter=log_type_filter,
+            )
+            run_ids = [run.run_id for run in run_info]
+
+            logs = await self.logging_connection.get_logs(run_ids)
+
+            for log in logs:
+                if log["key"] != "completion_record":
+                    continue
+                completion_record = log["value"]
+                try:
+                    completion_dict = json.loads(completion_record)
+                except json.JSONDecodeError as e:
+                    logger.error(f"Error processing completion record: {e}")
+                    continue
+
+                if completion_dict.get("message_id") == str(message_id):
+                    bounded_score = round(min(max(score, -1.00), 1.00), 2)
+                    updated = await KVLoggingSingleton.score_completion(
+                        log["log_id"], message_id, bounded_score
+                    )
+                    if not updated:
+                        logger.error(
+                            f"Error updating completion record for message_id: {message_id}"
+                        )
+
+        except Exception as e:
+            logger.error(f"An error occurred in ascore_completion: {e}")
+
+        return "ok"
 
     @telemetry_event("UsersOverview")
     async def ausers_overview(

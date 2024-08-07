@@ -42,3 +42,8 @@ class R2RLogsRequest(BaseModel):
 
 class R2RPrintRelationshipsRequest(BaseModel):
     limit: int = 100
+
+
+class R2RScoreCompletionRequest(BaseModel):
+    message_id: uuid.UUID
+    score: Optional[float] = None

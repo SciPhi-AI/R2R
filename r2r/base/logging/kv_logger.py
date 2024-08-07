@@ -67,6 +67,12 @@ class KVLoggingProvider(Provider):
     ) -> list:
         pass
 
+    @abstractmethod
+    async def score_completion(
+        self, log_id: uuid.UUID, message_id: uuid.UUID, score: float
+    ):
+        pass
+
 
 class LocalKVLoggingProvider(KVLoggingProvider):
     def __init__(self, config: LoggingConfig):
@@ -259,6 +265,46 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         return [
             dict(zip([d[0] for d in cursor.description], row)) for row in rows
         ]
+
+    async def score_completion(
+        self, log_id: uuid.UUID, message_id: uuid.UUID, score: float
+    ):
+        cursor = await self.conn.cursor()
+
+        await cursor.execute(
+            f"SELECT value FROM {self.log_table} WHERE log_id = ? AND key = 'completion_record'",
+            (str(log_id),),
+        )
+        row = await cursor.fetchone()
+
+        if row:
+            completion_record = json.loads(row[0])
+
+            if completion_record.get("message_id") == str(message_id):
+                if (
+                    "score" not in completion_record
+                    or completion_record["score"] is None
+                ):
+                    completion_record["score"] = [score]
+                elif isinstance(completion_record["score"], list):
+                    completion_record["score"] = [
+                        x for x in completion_record["score"] if x is not None
+                    ]
+                    completion_record["score"].append(score)
+                else:
+                    completion_record["score"] = [
+                        completion_record["score"],
+                        score,
+                    ]
+
+                await cursor.execute(
+                    f"UPDATE {self.log_table} SET value = ? WHERE log_id = ? AND key = 'completion_record'",
+                    (json.dumps(completion_record), str(log_id)),
+                )
+                await self.conn.commit()
+                return True
+
+        return False
 
 
 class PostgresLoggingConfig(LoggingConfig):
@@ -698,3 +744,10 @@ class KVLoggingSingleton:
     ) -> list:
         async with cls.get_instance() as provider:
             return await provider.get_logs(run_ids, limit_per_run)
+
+    @classmethod
+    async def score_completion(
+        cls, log_id: uuid.UUID, message_id: uuid.UUID, score: float
+    ):
+        async with cls.get_instance() as provider:
+            return await provider.score_completion(log_id, message_id, score)
