@@ -3710,4 +3710,4 @@ ingest-movies = ["moviepy", "opencv-python"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "07b9d3878a72e8c91802354383e1ac7a1dab830ef23aa94070f7539dcd9de43b"
+content-hash = "e9ca4e0ec88980f4bbd5565ce980c039103a785a96776e123f5cc7c9a8b74b0c"
