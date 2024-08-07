@@ -174,21 +174,12 @@ class KGExtractionPipe(AsyncPipe):
 
                 else:
 
-                # Parsing JSON from the response
-                kg_json = (
-                    json.loads(
-                        kg_extraction.split("```json")[1].split("```")[0]
-                    )
-                    if "```json" in kg_extraction
-                    else json.loads(kg_extraction)
-                )
-                llm_payload = kg_json.get("entities_and_triples", {})
                     # Parsing JSON from the response
                     kg_json = (
                         json.loads(
                             kg_extraction.split("```json")[1].split("```")[0]
                         )
-                        if """```json""" in kg_extraction
+                        if "```json" in kg_extraction
                         else json.loads(kg_extraction)
                     )
                     llm_payload = kg_json.get("entities_and_triples", {})
@@ -236,38 +227,35 @@ class KGExtractionPipe(AsyncPipe):
     ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
         fragment_batch = []
 
-        async for item in input.message:
-            if isinstance(item, R2RDocumentProcessingError):
-                yield item
-                continue
+        fragment_info = {}
+        async for extraction in input.message:
+            async for fragment in self.transform_fragments(
+                self.fragment(extraction, run_id)
+            ):
+                if extraction.document_id in fragment_info:
+                    fragment_info[extraction.document_id] += 1
+                else:
+                    fragment_info[extraction.document_id] = 1
+                extraction.metadata["chunk_order"] = fragment_info[
+                    extraction.document_id
+                ]
+                fragment_batch.append(fragment)
+                if len(fragment_batch) >= self.kg_batch_size:
+                    # Here, ensure `_process_batch` is scheduled as a coroutine, not called directly
+                    batch_tasks.append(
+                        self._process_batch(fragment_batch.copy())
+                    )  # pass a copy if necessary
+                    fragment_batch.clear()  # Clear the batch for new fragments
 
-            try:
-                async for chunk in self.chunking_provider.chunk(item.data):
-                    fragment_batch.append(chunk)
-                    if len(fragment_batch) >= self.kg_batch_size:
-                        for kg_extraction in await self._process_batch(
-                            fragment_batch
-                        ):
-                            yield kg_extraction
-                        fragment_batch.clear()
-            except Exception as e:
-                logger.error(f"Error processing document: {e}")
-                yield R2RDocumentProcessingError(
-                    error_message=str(e),
-                    document_id=item.document_id,
-                )
+        logger.debug(
+            f"Fragmented the input document ids into counts as shown: {fragment_info}"
+        )
 
-        if fragment_batch:
-            try:
-                for kg_extraction in await self._process_batch(fragment_batch):
-                    yield kg_extraction
-            except Exception as e:
-                logger.error(f"Error processing final batch: {e}")
-                yield R2RDocumentProcessingError(
-                    error_message=str(e),
-                    document_id=(
-                        fragment_batch[0].document_id
-                        if fragment_batch
-                        else None
-                    ),
-                )
+        if fragment_batch:  # Process any remaining fragments
+            batch_tasks.append(self._process_batch(fragment_batch.copy()))
+
+        # Process tasks as they complete
+        for task in asyncio.as_completed(batch_tasks):
+            batch_result = await task  # Wait for the next task to complete
+            for kg_extraction in batch_result:
+                yield kg_extraction
