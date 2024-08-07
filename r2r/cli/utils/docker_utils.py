@@ -333,7 +333,8 @@ def build_docker_command(
     config_path,
     image,
 ):
-    available_port = find_available_port(port)
+    # available_port = find_available_port(port)
+    available_port = port
 
     command = f"docker compose -f {compose_files['base']}"
     if not exclude_neo4j:
@@ -343,22 +344,16 @@ def build_docker_command(
     if not exclude_postgres:
         command += f" -f {compose_files['postgres']}"
 
-    command += f" --project-name {project_name}"
-
     os.environ["PORT"] = str(available_port)
     os.environ["HOST"] = host
     os.environ["TRAEFIK_PORT"] = str(available_port + 1)
-
-    if config_path:
-        config_dir = os.path.dirname(config_path)
-        config_file = os.path.basename(config_path)
-        os.environ["CONFIG_PATH"] = f"/app/config/{config_file}"
-        command += f" -v {config_dir}:/app/config"
+    command += f" --project-name {project_name}"
 
     if image:
         os.environ["R2R_IMAGE"] = image
 
     command += " up -d"
+
     return command
 
 

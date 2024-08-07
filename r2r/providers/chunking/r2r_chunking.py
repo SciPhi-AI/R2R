@@ -1,3 +1,4 @@
+import logging
 from typing import Any, AsyncGenerator
 
 from r2r.base import (
@@ -7,9 +8,15 @@ from r2r.base import (
     TextSplitter,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class R2RChunkingProvider(ChunkingProvider):
     def __init__(self, config: ChunkingConfig):
+        logger.info(
+            f"Initializing `R2RChunkingProvider` with config: {config}"
+        )
+
         super().__init__(config)
         self.text_splitter = self._initialize_text_splitter()
 

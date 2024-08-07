@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 class UnstructuredParsingProvider(ParsingProvider):
     def __init__(self, config):
         try:
+            logger.info(
+                f"Initializing `UnstructuredParsingProvider` with config: {config}"
+            )
             from unstructured.partition.auto import partition
 
             self.partition = partition

@@ -1,11 +1,17 @@
+import logging
 from typing import Any, AsyncGenerator
 
 from r2r.base import ChunkingProvider
+
+logger = logging.getLogger(__name__)
 
 
 class UnstructuredChunkingProvider(ChunkingProvider):
     def __init__(self, config):
         try:
+            logger.info(
+                f"Initializing `UnstructuredChunkingProvider` with config: {config}"
+            )
             from unstructured.chunking.basic import chunk_elements
 
             self.chunk_elements = chunk_elements

@@ -156,20 +156,26 @@ class R2RConfig:
 
     @staticmethod
     def _serialize_config(config_section: Any) -> dict:
-        # TODO - Make this approach cleaner
-        if isinstance(config_section, ProviderConfig):
-            config_section = config_section.dict()
+        if isinstance(config_section, dict):
+            return {
+                R2RConfig._serialize_key(k): R2RConfig._serialize_config(v)
+                for k, v in config_section.items()
+            }
+        elif isinstance(config_section, (list, tuple)):
+            return [
+                R2RConfig._serialize_config(item) for item in config_section
+            ]
+        elif isinstance(config_section, Enum):
+            return config_section.value
         elif isinstance(config_section, BaseModel):
-            config_section = config_section.dict(exclude_none=True)
-        filtered_result = {}
-        for k, v in config_section.items():
-            if isinstance(k, Enum):
-                k = k.value
-            if isinstance(v, dict):
-                formatted_v = {
-                    k2.value if isinstance(k2, Enum) else k2: v2
-                    for k2, v2 in v.items()
-                }
-                v = formatted_v
-            filtered_result[k] = v
-        return filtered_result
+            return R2RConfig._serialize_config(
+                config_section.dict(exclude_none=True)
+            )
+        else:
+            return config_section
+
+    @staticmethod
+    def _serialize_key(key: Any) -> str:
+        if isinstance(key, Enum):
+            return key.value
+        return str(key)
