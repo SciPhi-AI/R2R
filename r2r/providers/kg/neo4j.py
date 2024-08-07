@@ -3,6 +3,7 @@
 # https://github.com/run-llama/llama_index
 import json
 import os
+import pickle
 from typing import Any, Dict, List, Optional, Tuple
 
 from r2r.base import (
@@ -324,37 +325,63 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
         return nodes_upserted, relationships_upserted
 
 
-    def upsert_nodes(self, entities: List[Entity]) -> None:
-        def generate_merge_operation(key, value):
-            if isinstance(value, (str, int, float, bool, None)):
-                return f"SET e.`{key}` = $row.`{key}`"
-            elif isinstance(value, list):
-                return f"SET e.`{key}` = CASE WHEN e.`{key}` IS NULL THEN $row.`{key}` ELSE e.`{key}` + $row.`{key}` END"
-            elif isinstance(value, dict):
-                return f"SET e.`{key}` = $row.`{key}`"
-            else:
-                print(f"Skipping property {key} due to unsupported type {type(value)}")
-                return ""
 
-        query = """
-            UNWIND $data AS row
-            MERGE (e:`__Entity__` {id: row.id})
-        """
+    def upsert_nodes(self, entities: List[Entity]) -> Any:
 
-        # Dynamically generate SET operations for each attribute
-        set_operations = []
-        for key in entities[0].__dict__.keys():
-            if key != 'id':
-                set_operations.append(generate_merge_operation(key, getattr(entities[0], key)))
+        # Ensure the directory exists
+        pickle_dir = "/Users/shreyas/r2rr2r/graph_data/entities"
+        os.makedirs(pickle_dir, exist_ok=True)
 
-        query += "\n".join(set_operations)
-        query += "\nRETURN count(*)"
+        # Save each entity as a pickle file
+        for entity in entities:
+            filename = f"{entity.id}_{entity.value}.pkl"
+            filepath = os.path.join(pickle_dir, filename)
+            with open(filepath, 'wb') as f:
+                pickle.dump(entity, f)
 
-        import pdb; pdb.set_trace()
 
-        ret = self.structured_query(query, param_map={"data": [entity.__dict__ for entity in entities]})
-        return ret
+    def upsert_relations(self, triples: List[Triple]) -> None:
 
+        pickle_dir = "/Users/shreyas/r2rr2r/graph_data/triples"
+        os.makedirs(pickle_dir, exist_ok=True)
+
+        for triple in triples:
+            filename = f"{triple.source_id}_{triple.target_id}_{triple.label}.pkl"
+            filepath = os.path.join(pickle_dir, filename)
+            with open(filepath, 'wb') as f:
+                pickle.dump(triple, f)
+
+        # def generate_merge_operation(key, value):
+        #     if isinstance(value, (list, dict)):
+        #         return f"{key}: CASE WHEN e.`{key}` IS NULL THEN row.`{key}` ELSE e.`{key}` + row.`{key}` END"
+        #     else:
+        #         return f"{key}: COALESCE(e.`{key}`, '') + ',' + toString(row.`{key}`)"
+
+        # if not entities:
+        #     return None
+
+        # query = """
+        #     UNWIND $data AS row
+        #     MERGE (e:`__Entity__` {id: row.id})
+        #     SET e += {
+        # """
+
+        # # Dynamically generate SET operations for each attribute
+        # set_operations = []
+        # for key, value in entities[0].__dict__.items():
+        #     if key != 'id':
+        #         set_operations.append(generate_merge_operation(key, value))
+
+        # query += ",\n        ".join(set_operations)
+        # query += "\n    }\n    RETURN count(*)"
+
+        # param = [entity.__dict__ for entity in entities]
+        
+        # try:
+        #     return self.structured_query(query, param_map={"data": param})
+        # except Exception as e:
+        #     print(f"Error executing query: {e}")
+        #     return None
 
     def upsert_entities(self, nodes: List[LabelledNode]) -> None:
         # Lists to hold separated types
@@ -413,7 +440,7 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
                 param_map={"data": entity_dicts},
             )
 
-    def upsert_relations(self, relations: List[Relation]) -> None:
+    def upsert_triples(self, relations: List[Relation]) -> None:
         """Add relations."""
         params = [r.dict() for r in relations]
 

@@ -124,7 +124,7 @@ class KGExtractionPipe(AsyncPipe):
                             entity_category = entity[1]
                             entity_description = entity[2]
                             entities_dict[entity_value] = Entity(
-                                id=entity_value,
+                                id=str(uuid.uuid4()),
                                 category=entity_category, 
                                 description=entity_description, 
                                 value=entity_value, 

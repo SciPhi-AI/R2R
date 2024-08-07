@@ -29,7 +29,7 @@ class Triple(BaseModel):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
     id: str
-    
+
     subject: str
     """The source entity name."""
 
