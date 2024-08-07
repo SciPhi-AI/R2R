@@ -1,4 +1,5 @@
 # TODO - Cleanup the handling for non-auth configurations
+import uuid
 from datetime import datetime, timezone
 
 import psutil
@@ -7,12 +8,17 @@ from pydantic import BaseModel
 
 from r2r.base import R2RException
 from r2r.main.api.routes.management.requests import (
+    R2RAddUserToGroupRequest,
     R2RAnalyticsRequest,
+    R2RCreateGroupRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
     R2RDocumentsOverviewRequest,
+    R2RGroupsOverviewRequest,
     R2RLogsRequest,
     R2RPrintRelationshipsRequest,
+    R2RRemoveUserFromGroupRequest,
+    R2RUpdateGroupRequest,
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
@@ -248,6 +254,144 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
             return await self.engine.aapp_settings()
+
+        @self.router.post("/create_group")
+        @self.base_endpoint
+        async def create_group_app(
+            request: R2RCreateGroupRequest,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException("Only a superuser can create groups.", 403)
+            return await self.engine.acreate_group(
+                request.name, request.description
+            )
+
+        @self.router.get("/get_group/{group_id}")
+        @self.base_endpoint
+        async def get_group_app(
+            group_id: uuid.UUID,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can get group details.", 403
+                )
+            return await self.engine.aget_group(group_id)
+
+        @self.router.put("/update_group/{group_id}")
+        @self.base_endpoint
+        async def update_group_app(
+            group_id: uuid.UUID,
+            request: R2RUpdateGroupRequest,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException("Only a superuser can update groups.", 403)
+            return await self.engine.aupdate_group(
+                group_id, request.name, request.description
+            )
+
+        @self.router.delete("/delete_group/{group_id}")
+        @self.base_endpoint
+        async def delete_group_app(
+            group_id: uuid.UUID,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException("Only a superuser can delete groups.", 403)
+            return await self.engine.adelete_group(group_id)
+
+        @self.router.get("/list_groups")
+        @self.base_endpoint
+        async def list_groups_app(
+            offset: int = 0,
+            limit: int = 100,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can list all groups.", 403
+                )
+            return await self.engine.alist_groups(offset, limit)
+
+        @self.router.post("/add_user_to_group")
+        @self.base_endpoint
+        async def add_user_to_group_app(
+            request: R2RAddUserToGroupRequest,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can add users to groups.", 403
+                )
+            return await self.engine.aadd_user_to_group(
+                request.user_id, request.group_id
+            )
+
+        @self.router.post("/remove_user_from_group")
+        @self.base_endpoint
+        async def remove_user_from_group_app(
+            request: R2RRemoveUserFromGroupRequest,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can remove users from groups.", 403
+                )
+            return await self.engine.aremove_user_from_group(
+                request.user_id, request.group_id
+            )
+
+        @self.router.get("/get_users_in_group/{group_id}")
+        @self.base_endpoint
+        async def get_users_in_group_app(
+            group_id: uuid.UUID,
+            offset: int = 0,
+            limit: int = 100,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can get users in a group.", 403
+                )
+            return await self.engine.aget_users_in_group(
+                group_id, offset, limit
+            )
+
+        @self.router.get("/get_groups_for_user/{user_id}")
+        @self.base_endpoint
+        async def get_groups_for_user_app(
+            user_id: uuid.UUID,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser and auth_user.id != user_id:
+                raise R2RException(
+                    "You can only get groups for yourself unless you're a superuser.",
+                    403,
+                )
+            return await self.engine.aget_groups_for_user(user_id)
+
+        @self.router.post("/groups_overview")
+        @self.router.get("/groups_overview")
+        @self.base_endpoint
+        async def groups_overview_app(
+            request: R2RGroupsOverviewRequest,
+            auth_user=(
+                Depends(self.engine.providers.auth.auth_wrapper)
+                if self.engine.providers.auth
+                else None
+            ),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can call the `groups_overview` endpoint.",
+                    403,
+                )
+
+            return await self.engine.agroups_overview(
+                group_ids=request.group_ids
+            )
 
 
 class R2RExtractionRequest(BaseModel):

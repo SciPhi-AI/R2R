@@ -41,3 +41,27 @@ class R2RLogsRequest(BaseModel):
 
 class R2RPrintRelationshipsRequest(BaseModel):
     limit: int = 100
+
+
+class R2RCreateGroupRequest(BaseModel):
+    name: str
+    description: Optional[str] = ""
+
+
+class R2RUpdateGroupRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
+class R2RAddUserToGroupRequest(BaseModel):
+    user_id: uuid.UUID
+    group_id: uuid.UUID
+
+
+class R2RRemoveUserFromGroupRequest(BaseModel):
+    user_id: uuid.UUID
+    group_id: uuid.UUID
+
+
+class R2RGroupsOverviewRequest(BaseModel):
+    group_ids: Optional[list[uuid.UUID]]

@@ -185,3 +185,51 @@ class R2REngine(metaclass=AsyncSyncMeta):
         return await self.auth_service.clean_expired_blacklisted_tokens(
             *args, **kwargs
         )
+
+    @syncable
+    async def acreate_group(self, *args, **kwargs):
+        return await self.management_service.acreate_group(*args, **kwargs)
+
+    @syncable
+    async def aget_group(self, *args, **kwargs):
+        return await self.management_service.aget_group(*args, **kwargs)
+
+    @syncable
+    async def aupdate_group(self, *args, **kwargs):
+        return await self.management_service.aupdate_group(*args, **kwargs)
+
+    @syncable
+    async def adelete_group(self, *args, **kwargs):
+        return await self.management_service.adelete_group(*args, **kwargs)
+
+    @syncable
+    async def alist_groups(self, *args, **kwargs):
+        return await self.management_service.alist_groups(*args, **kwargs)
+
+    @syncable
+    async def aadd_user_to_group(self, *args, **kwargs):
+        return await self.management_service.aadd_user_to_group(
+            *args, **kwargs
+        )
+
+    @syncable
+    async def aremove_user_from_group(self, *args, **kwargs):
+        return await self.management_service.aremove_user_from_group(
+            *args, **kwargs
+        )
+
+    @syncable
+    async def aget_users_in_group(self, *args, **kwargs):
+        return await self.management_service.aget_users_in_group(
+            *args, **kwargs
+        )
+
+    @syncable
+    async def aget_groups_for_user(self, *args, **kwargs):
+        return await self.management_service.aget_groups_for_user(
+            *args, **kwargs
+        )
+
+    @syncable
+    async def agroups_overview(self, *args, **kwargs):
+        return await self.management_service.agroups_overview(*args, **kwargs)

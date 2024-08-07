@@ -537,6 +537,18 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 """
                 sess.execute(text(query))
 
+                # Create groups table
+                query = f"""
+                CREATE TABLE IF NOT EXISTS groups_{self.collection_name} (
+                    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                );
+                """
+                sess.execute(text(query))
+
                 # Create the index on group_ids
                 create_index_query = f"""
                 CREATE INDEX IF NOT EXISTS idx_group_ids_{self.collection_name}
@@ -695,6 +707,169 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             for row in results
             if row[0] is not None
         ]
+
+    # Group management methods
+    def create_group(self, name: str, description: str = "") -> UUID:
+        query = text(
+            f"""
+            INSERT INTO groups_{self.collection_name} (name, description)
+            VALUES (:name, :description)
+            RETURNING id
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(
+                query, {"name": name, "description": description}
+            )
+            group_id = result.scalar_one()
+            sess.commit()
+        return group_id
+
+    def get_group(self, group_id: UUID) -> Optional[dict]:
+        query = text(
+            f"""
+            SELECT id, name, description, created_at, updated_at
+            FROM groups_{self.collection_name}
+            WHERE id = :group_id
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(query, {"group_id": group_id})
+            group_data = result.fetchone()
+        return dict(group_data) if group_data else None
+
+    def update_group(
+        self, group_id: UUID, name: str = None, description: str = None
+    ) -> bool:
+        update_fields = []
+        params = {"group_id": group_id}
+        if name is not None:
+            update_fields.append("name = :name")
+            params["name"] = name
+        if description is not None:
+            update_fields.append("description = :description")
+            params["description"] = description
+
+        if not update_fields:
+            return False
+
+        query = text(
+            f"""
+            UPDATE groups_{self.collection_name}
+            SET {", ".join(update_fields)}, updated_at = NOW()
+            WHERE id = :group_id
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(query, params)
+            sess.commit()
+        return result.rowcount > 0
+
+    def delete_group(self, group_id: UUID) -> bool:
+        query = text(
+            f"""
+            DELETE FROM groups_{self.collection_name}
+            WHERE id = :group_id
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(query, {"group_id": group_id})
+            sess.commit()
+        return result.rowcount > 0
+
+    def list_groups(self, offset: int = 0, limit: int = 100) -> list[dict]:
+        query = text(
+            f"""
+            SELECT id, name, description, created_at, updated_at
+            FROM groups_{self.collection_name}
+            ORDER BY name
+            OFFSET :offset
+            LIMIT :limit
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(query, {"offset": offset, "limit": limit})
+            groups = result.fetchall()
+        return [dict(group) for group in groups]
+
+    # User-Group management methods
+    def add_user_to_group(self, user_id: UUID, group_id: UUID) -> bool:
+        query = text(
+            f"""
+            UPDATE users_{self.collection_name}
+            SET group_ids = array_append(group_ids, :group_id)
+            WHERE id = :user_id AND NOT (:group_id = ANY(group_ids))
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(
+                query, {"user_id": user_id, "group_id": group_id}
+            )
+            sess.commit()
+        return result.rowcount > 0
+
+    def remove_user_from_group(self, user_id: UUID, group_id: UUID) -> bool:
+        query = text(
+            f"""
+            UPDATE users_{self.collection_name}
+            SET group_ids = array_remove(group_ids, :group_id)
+            WHERE id = :user_id
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(
+                query, {"user_id": user_id, "group_id": group_id}
+            )
+            sess.commit()
+        return result.rowcount > 0
+
+    def get_users_in_group(
+        self, group_id: UUID, offset: int = 0, limit: int = 100
+    ) -> list[User]:
+        query = text(
+            f"""
+            SELECT id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            FROM users_{self.collection_name}
+            WHERE :group_id = ANY(group_ids)
+            ORDER BY email
+            OFFSET :offset
+            LIMIT :limit
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(
+                query, {"group_id": group_id, "offset": offset, "limit": limit}
+            )
+            users_data = result.fetchall()
+        return [
+            User(
+                id=user_data[0],
+                email=user_data[1],
+                hashed_password="null",
+                is_superuser=user_data[2],
+                is_active=user_data[3],
+                is_verified=user_data[4],
+                created_at=user_data[5],
+                updated_at=user_data[6],
+                group_ids=user_data[7],
+            )
+            for user_data in users_data
+        ]
+
+    def get_groups_for_user(self, user_id: UUID) -> list[dict]:
+        query = text(
+            f"""
+            SELECT g.id, g.name, g.description, g.created_at, g.updated_at
+            FROM groups_{self.collection_name} g
+            JOIN users_{self.collection_name} u ON g.id = ANY(u.group_ids)
+            WHERE u.id = :user_id
+            ORDER BY g.name
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(query, {"user_id": user_id})
+            groups = result.fetchall()
+        return [dict(group) for group in groups]
 
     def create_user(self, user: UserCreate) -> User:
         hashed_password = self.crypto_provider.get_password_hash(user.password)
