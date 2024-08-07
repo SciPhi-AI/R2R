@@ -766,16 +766,62 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         return result.rowcount > 0
 
     def delete_group(self, group_id: UUID) -> bool:
-        query = text(
-            f"""
-            DELETE FROM groups_{self.collection_name}
-            WHERE id = :group_id
-            """
-        )
         with self.vx.Session() as sess:
-            result = sess.execute(query, {"group_id": group_id})
-            sess.commit()
-        return result.rowcount > 0
+            try:
+                # Start a transaction
+                sess.begin()
+
+                # Delete the group
+                delete_group_query = text(
+                    f"""
+                    DELETE FROM groups_{self.collection_name}
+                    WHERE id = :group_id
+                    RETURNING id
+                    """
+                )
+                result = sess.execute(
+                    delete_group_query, {"group_id": group_id}
+                )
+                deleted_group = result.scalar_one_or_none()
+
+                if not deleted_group:
+                    # Group not found, rollback and return False
+                    sess.rollback()
+                    return False
+
+                # Update users' group_ids
+                update_users_query = text(
+                    f"""
+                    UPDATE users_{self.collection_name}
+                    SET group_ids = array_remove(group_ids, :group_id)
+                    WHERE :group_id = ANY(group_ids)
+                    """
+                )
+                sess.execute(update_users_query, {"group_id": group_id})
+
+                # Update documents' group_ids
+                update_documents_query = text(
+                    f"""
+                    UPDATE document_info_{self.collection_name}
+                    SET group_ids = array_remove(group_ids, :group_id)
+                    WHERE :group_id = ANY(group_ids)
+                    """
+                )
+                sess.execute(update_documents_query, {"group_id": group_id})
+
+                # Commit the transaction
+                sess.commit()
+
+                # Invalidate tokens for affected users (implement this method)
+                self.invalidate_tokens_for_group(group_id)
+
+                return True
+
+            except Exception as e:
+                # If any error occurs, rollback the transaction
+                sess.rollback()
+                logger.error(f"Error deleting group: {e}")
+                return False
 
     def list_groups(self, offset: int = 0, limit: int = 100) -> list[dict]:
         query = text(
@@ -1012,16 +1058,55 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             sess.commit()
 
     def delete_user(self, user_id: UUID):
-        query = text(
-            f"""
-        DELETE FROM users_{self.collection_name}
-        WHERE id = :user_id
-        """
-        )
-
         with self.vx.Session() as sess:
-            sess.execute(query, {"user_id": user_id})
-            sess.commit()
+            try:
+                sess.begin()
+
+                # Remove user from groups
+                self.remove_user_from_all_groups(user_id)
+
+                # Handle user's documents (e.g., transfer ownership or delete)
+                self.handle_user_documents(user_id)
+
+                # Delete user
+                sess.execute(
+                    text(
+                        f"DELETE FROM users_{self.collection_name} WHERE id = :user_id"
+                    ),
+                    {"user_id": user_id},
+                )
+
+                sess.commit()
+
+                # Invalidate user's tokens
+                self.invalidate_user_tokens(user_id)
+            except Exception as e:
+                sess.rollback()
+                logger.error(f"Error deleting user: {e}")
+
+    def delete_document(self, document_id: str):
+        with self.vx.Session() as sess:
+            try:
+                sess.begin()
+
+                # Delete from document_info
+                sess.execute(
+                    text(
+                        f"DELETE FROM document_info_{self.collection_name} WHERE document_id = :doc_id"
+                    ),
+                    {"doc_id": document_id},
+                )
+
+                # Delete from vector database
+                self.vector_db.delete(document_id)
+
+                # Update user statistics
+                self.update_user_document_stats(document_id)
+
+                sess.commit()
+            except Exception as e:
+                sess.rollback()
+                logger.error(f"Error deleting document: {e}")
 
     def get_all_users(self) -> list[User]:
         query = text(
