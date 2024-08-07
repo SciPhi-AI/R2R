@@ -513,6 +513,46 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
             rows = await conn.fetch(query, *params)
             return [{key: row[key] for key in row.keys()} for row in rows]
 
+    async def score_completion(
+        self, log_id: uuid.UUID, message_id: uuid.UUID, score: float
+    ):
+        async with self.pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"SELECT value FROM {self.log_table} WHERE log_id = $1 AND key = 'completion_record'",
+                log_id,
+            )
+
+            if row:
+                completion_record = json.loads(row["value"])
+
+                if completion_record.get("message_id") == str(message_id):
+                    if (
+                        "score" not in completion_record
+                        or completion_record["score"] is None
+                    ):
+                        completion_record["score"] = [score]
+                    elif isinstance(completion_record["score"], list):
+                        completion_record["score"] = [
+                            x
+                            for x in completion_record["score"]
+                            if x is not None
+                        ]
+                        completion_record["score"].append(score)
+                    else:
+                        completion_record["score"] = [
+                            completion_record["score"],
+                            score,
+                        ]
+
+                    await conn.execute(
+                        f"UPDATE {self.log_table} SET value = $1 WHERE log_id = $2 AND key = 'completion_record'",
+                        json.dumps(completion_record),
+                        log_id,
+                    )
+                    return True
+
+        return False
+
 
 class RedisLoggingConfig(LoggingConfig):
     provider: str = "redis"
@@ -675,6 +715,42 @@ class RedisKVLoggingProvider(KVLoggingProvider):
                 json_log["log_id"] = uuid.UUID(json_log["log_id"])
                 logs.append(json_log)
         return logs
+
+    async def score_completion(
+        self, log_id: uuid.UUID, message_id: uuid.UUID, score: float
+    ):
+        log_key = f"{self.log_key}:{str(log_id)}"
+        logs = await self.redis.lrange(log_key, 0, -1)
+
+        for i, log_entry in enumerate(logs):
+            log_data = json.loads(log_entry)
+            if log_data.get("key") == "completion_record":
+                completion_record = json.loads(log_data["value"])
+
+                if completion_record.get("message_id") == str(message_id):
+                    if (
+                        "score" not in completion_record
+                        or completion_record["score"] is None
+                    ):
+                        completion_record["score"] = [score]
+                    elif isinstance(completion_record["score"], list):
+                        completion_record["score"] = [
+                            x
+                            for x in completion_record["score"]
+                            if x is not None
+                        ]
+                        completion_record["score"].append(score)
+                    else:
+                        completion_record["score"] = [
+                            completion_record["score"],
+                            score,
+                        ]
+
+                    log_data["value"] = json.dumps(completion_record)
+                    await self.redis.lset(log_key, i, json.dumps(log_data))
+                    return True
+
+        return False
 
 
 class KVLoggingSingleton:

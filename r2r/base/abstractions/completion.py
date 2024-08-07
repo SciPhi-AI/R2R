@@ -25,7 +25,7 @@ class MessageType(Enum):
 
 
 class CompletionRecord(BaseModel):
-    message_id: uuid.UUID = uuid.uuid4()
+    message_id: uuid.UUID
     message_type: MessageType
     timestamp: datetime = datetime.now()
     feedback: Optional[List[str]] = None
