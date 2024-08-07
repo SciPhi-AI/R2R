@@ -11,7 +11,7 @@ from r2r.base import (
     EmbeddingProvider,
     KGExtraction,
     KGProvider,
-    LLMProvider,
+    CompletionProvider,
     PromptProvider,
     R2RDocumentProcessingError,
     KVLoggingSingleton,
@@ -32,7 +32,7 @@ class KGNodeExtractionPipe(AsyncPipe):
 
     def __init__(self, 
         kg_provider: KGProvider,
-        llm_provider: LLMProvider,
+        llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.OTHER,
@@ -65,7 +65,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
     def __init__(
         self,
         kg_provider: KGProvider,
-        llm_provider: LLMProvider,
+        llm_provider: CompletionProvider,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.OTHER,
         config: Optional[AsyncPipe.PipeConfig] = None,

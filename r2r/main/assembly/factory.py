@@ -393,7 +393,9 @@ class R2RPipeFactory:
             kg_node_description_pipe = kg_node_description_pipe
             or self.create_kg_node_description_pipe(*args, **kwargs),
             kg_clustering_pipe = kg_clustering_pipe
-            or self.create_kg_clustering_pipe(*args, **kwargs)
+            or self.create_kg_clustering_pipe(*args, **kwargs),
+            chunking_pipe = chunking_pipe_override
+            or self.create_chunking_pipe(*args, **kwargs)
         )
     
     def create_parsing_pipe(

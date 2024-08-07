@@ -271,7 +271,6 @@ class R2RBuilder:
             *args,
             **kwargs,
         )
-
         pipes = pipe_factory(self.config, providers).create_pipes(
             parsing_pipe_override=self.parsing_pipe_override,
             embedding_pipe_override=self.embedding_pipe_override,

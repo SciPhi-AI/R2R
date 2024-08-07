@@ -44,7 +44,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
             config,
             providers,
             pipelines,
-            assistants,
+            agents,
             run_manager,
             logging_connection,
         )

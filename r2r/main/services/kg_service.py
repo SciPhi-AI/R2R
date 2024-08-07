@@ -3,7 +3,7 @@
 import logging
 from typing import List, Dict, Any
 from ..assembly.config import R2RConfig
-from ..abstractions import R2RAssistants, R2RPipelines, R2RProviders
+from ..abstractions import R2RPipelines, R2RProviders, R2RAgents
 from r2r.base import Document, R2RException, RunManager, KVLoggingSingleton, to_async_generator
 from .base import Service
 from typing import Iterable
@@ -16,15 +16,16 @@ class KGService(Service):
         config: R2RConfig,
         providers: R2RProviders,
         pipelines: R2RPipelines,
-        assistants: R2RAssistants,
+        agents: R2RAgents,
         run_manager: RunManager,
         logging_connection: KVLoggingSingleton,
     ):
+
         super().__init__(
             config,
             providers,
             pipelines,
-            assistants,
+            agents,
             run_manager,
             logging_connection,
         )

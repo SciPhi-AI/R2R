@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import re
+import uuid
 from typing import Any, AsyncGenerator, Optional, Union
 
 from r2r.base import (

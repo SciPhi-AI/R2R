@@ -72,14 +72,14 @@ def auth_service(auth_provider, auth_config, pg_vector_db):
     mock_pipelines = Mock()
     mock_run_manager = Mock()
     mock_logging_connection = Mock()
-    mock_assistants = Mock()
+    mock_agents = Mock()
 
     return AuthService(
         config=Mock(auth=auth_config),
         providers=mock_providers,
         pipelines=mock_pipelines,
         run_manager=mock_run_manager,
-        agents=mock_assistants,
+        agents=mock_agents,
         logging_connection=mock_logging_connection,
     )
 

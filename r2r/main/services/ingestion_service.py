@@ -219,13 +219,13 @@ class IngestionService(Service):
         #         input = to_async_generator()
         #     )
 
-        # return await self._process_ingestion_results(
-        #     ingestion_results,
-        #     document_infos,
-        #     skipped_documents,
-        #     processed_documents,
+        return await self._process_ingestion_results(
+            ingestion_results,
+            document_infos,
+            skipped_documents,
+            processed_documents,
             user=user,
-        # )
+        )
 
     @telemetry_event("IngestFiles")
     async def ingest_files(
