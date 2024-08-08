@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "r2r"
-version = "0.2.82"
+version = "0.2.83"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
@@ -65,6 +65,7 @@ pyjwt = "^2.8.0"
 toml = "^0.10.2"
 pyyaml = "^6.0.1"
 poppler-utils = "^0.1.0"
+alembic = "^1.13.2"
 # unstructured = {version = "^0.15.0"}
 psutil = "^6.0.0"
 

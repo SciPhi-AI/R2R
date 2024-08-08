@@ -22,10 +22,11 @@ async def to_async_generator(
 
 
 def run_pipeline(pipeline: "AsyncPipeline", input: Any, *args, **kwargs):
-    if not isinstance(input, AsyncGenerator) and not isinstance(input, list):
-        input = to_async_generator([input])
-    elif not isinstance(input, AsyncGenerator):
-        input = to_async_generator(input)
+    if not isinstance(input, AsyncGenerator):
+        if not isinstance(input, list):
+            input = to_async_generator([input])
+        else:
+            input = to_async_generator(input)
 
     async def _run_pipeline(input, *args, **kwargs):
         return await pipeline.run(input, *args, **kwargs)
@@ -50,14 +51,10 @@ class Relation:
 
 
 def format_entity_types(entity_types: list[EntityType]) -> str:
-    lines = []
-    for entity in entity_types:
-        lines.append(entity.name)
+    lines = [entity.name for entity in entity_types]
     return "\n".join(lines)
 
 
 def format_relations(predicates: list[Relation]) -> str:
-    lines = []
-    for predicate in predicates:
-        lines.append(predicate.name)
+    lines = [predicate.name for predicate in predicates]
     return "\n".join(lines)

@@ -3,6 +3,7 @@ import logging
 from asyncio import Queue
 from typing import Any, Optional
 
+from r2r.base import User
 from r2r.base.logging.kv_logger import KVLoggingSingleton
 from r2r.base.logging.run_manager import RunManager, manage_run
 from r2r.base.pipeline.base_pipeline import AsyncPipeline, dequeue_requests
@@ -35,6 +36,7 @@ class IngestionPipeline(AsyncPipeline):
         run_manager: Optional[RunManager] = None,
         log_run_info: bool = True,
         chunking_config_override: Optional[ChunkingProvider] = None,
+        user: Optional[User] = None,
         *args: Any,
         **kwargs: Any,
     ) -> None:
@@ -45,6 +47,7 @@ class IngestionPipeline(AsyncPipeline):
                     key="pipeline_type",
                     value=self.pipeline_type,
                     is_info_log=True,
+                    user=user,
                 )
             if self.parsing_pipe is None:
                 raise ValueError(

@@ -113,6 +113,10 @@ class R2REngine(metaclass=AsyncSyncMeta):
         return await self.management_service.aapp_settings(*args, **kwargs)
 
     @syncable
+    async def ascore_completion(self, *args, **kwargs):
+        return await self.management_service.ascore_completion(*args, **kwargs)
+
+    @syncable
     async def ausers_overview(self, *args, **kwargs):
         return await self.management_service.ausers_overview(*args, **kwargs)
 

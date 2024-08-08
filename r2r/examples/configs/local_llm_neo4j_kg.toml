@@ -36,4 +36,11 @@ kg_extraction_prompt = "zero_shot_ner_kg_extraction"
   add_generation_kwargs = { }
 
 [database]
-provider = "pgvector"
+provider = "postgres"
+
+[agent]
+system_instruction_name = "rag_agent"
+tool_names = ["search"]
+
+  [agent.generation_config]
+  model = "ollama/llama3.1"

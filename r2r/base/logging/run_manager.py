@@ -3,6 +3,8 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import Any, Optional
 
+from r2r.base import User
+
 from .kv_logger import KVLoggingSingleton
 
 run_id_var = contextvars.ContextVar("run_id", default=None)
@@ -33,12 +35,19 @@ class RunManager:
         return self.run_info.get(run_id, None)
 
     async def log_run_info(
-        self, key: str, value: Any, is_info_log: bool = False
+        self,
+        key: str,
+        value: Any,
+        is_info_log: bool = False,
+        user: Optional[User] = None,
     ):
-        run_id = run_id_var.get()
-        if run_id:
+        if run_id := run_id_var.get():
             await self.logger.log(
-                log_id=run_id, key=key, value=value, is_info_log=is_info_log
+                log_id=run_id,
+                key=key,
+                value=value,
+                user_id=user.id if user else None,
+                is_info_log=is_info_log,
             )
 
     async def clear_run_info(self, token: contextvars.Token):
