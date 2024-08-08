@@ -75,9 +75,7 @@ def test_documents_overview(runner, mock_r2r_execution_wrapper):
     assert result.exit_code == 0
     assert "Document 1" in result.output
     assert "Document 2" in result.output
-    mock_instance.documents_overview.assert_called_once_with(
-        ["id1", "id2"], None
-    )
+    mock_instance.documents_overview.assert_called_once_with(["id1", "id2"])
 
 
 def test_document_chunks(runner, mock_r2r_execution_wrapper):

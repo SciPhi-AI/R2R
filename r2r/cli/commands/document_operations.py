@@ -22,7 +22,7 @@ def delete(obj, keys, values):
 @cli.command()
 @click.option("--document-ids", multiple=True, help="Document IDs to overview")
 @click.pass_obj
-def documents_overview(obj, document_ids, user_ids):
+def documents_overview(obj, document_ids):
     """Get an overview of documents."""
     document_ids = list(document_ids) if document_ids else None
 

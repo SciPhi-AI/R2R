@@ -165,6 +165,7 @@ class IngestionService(Service):
                     created_at=now,
                     updated_at=now,
                     status="processing",  # Set initial status to `processing`
+                    group_ids=[],
                 )
             )
 

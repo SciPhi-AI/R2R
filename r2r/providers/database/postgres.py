@@ -14,6 +14,7 @@ from r2r.base import (
     DatabaseConfig,
     DatabaseProvider,
     DocumentInfo,
+    R2RException,
     RelationalDatabaseProvider,
     User,
     UserCreate,
@@ -1094,6 +1095,48 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             sess.execute(query, {"code": verification_code})
             sess.commit()
 
+    def remove_user_from_all_groups(self, user_id: UUID):
+        query = text(
+            f"""
+            UPDATE users_{self.collection_name}
+            SET group_ids = ARRAY[]::UUID[]
+            WHERE id = :user_id
+            """
+        )
+        with self.vx.Session() as sess:
+            sess.execute(query, {"user_id": user_id})
+            sess.commit()
+
+    def handle_user_documents(self, user_id: UUID):
+        # For now, we'll just delete the user's documents
+        # In the future, you might want to implement a transfer ownership feature
+        query = text(
+            f"""
+            DELETE FROM document_info_{self.collection_name}
+            WHERE user_id = :user_id
+            """
+        )
+        with self.vx.Session() as sess:
+            sess.execute(query, {"user_id": user_id})
+            sess.commit()
+
+    def invalidate_user_tokens(self, user_id: UUID):
+        # This method should blacklist all tokens for the user
+        # For simplicity, we'll just delete all tokens for the user
+        query = text(
+            f"""
+            DELETE FROM blacklisted_tokens_{self.collection_name}
+            WHERE token IN (
+                SELECT token
+                FROM users_{self.collection_name}
+                WHERE id = :user_id
+            )
+            """
+        )
+        with self.vx.Session() as sess:
+            sess.execute(query, {"user_id": user_id})
+            sess.commit()
+
     def delete_user(self, user_id: UUID):
         with self.vx.Session() as sess:
             try:
@@ -1102,16 +1145,21 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 # Remove user from groups
                 self.remove_user_from_all_groups(user_id)
 
-                # Handle user's documents (e.g., transfer ownership or delete)
+                # Handle user's documents
                 self.handle_user_documents(user_id)
 
                 # Delete user
-                sess.execute(
+                result = sess.execute(
                     text(
                         f"DELETE FROM users_{self.collection_name} WHERE id = :user_id"
                     ),
                     {"user_id": user_id},
                 )
+
+                if result.rowcount == 0:
+                    raise R2RException(
+                        status_code=404, message="User not found"
+                    )
 
                 sess.commit()
 
@@ -1120,6 +1168,9 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             except Exception as e:
                 sess.rollback()
                 logger.error(f"Error deleting user: {e}")
+                raise R2RException(
+                    status_code=500, message="Failed to delete user"
+                )
 
     def delete_document(self, document_id: str):
         with self.vx.Session() as sess:
