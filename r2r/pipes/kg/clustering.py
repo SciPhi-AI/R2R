@@ -20,6 +20,9 @@ from r2r.base import (
     AsyncPipe,
     Triple,
     KVLoggingSingleton,
+    CompletionProvider,
+    PromptProvider,
+    GenerationConfig,
 )
 from r2r.base.pipes.base_pipe import AsyncPipe
 
@@ -33,6 +36,8 @@ class KGClusteringPipe(AsyncPipe):
     def __init__(
         self,
         kg_provider: KGProvider,
+        llm_provider: CompletionProvider,
+        prompt_provider: PromptProvider,
         cluster_batch_size: int = 100,
         max_cluster_size: int = 10,
         use_lcc: bool = True,
@@ -51,9 +56,11 @@ class KGClusteringPipe(AsyncPipe):
             config=config or AsyncPipe.PipeConfig(name="kg_cluster_pipe"),
         )
         self.kg_provider = kg_provider
+        self.llm_provider = llm_provider
         self.cluster_batch_size = cluster_batch_size
         self.max_cluster_size = max_cluster_size
         self.use_lcc = use_lcc
+        self.prompt_provider = prompt_provider
 
     def _compute_leiden_communities(
         self,
@@ -128,7 +135,50 @@ class KGClusteringPipe(AsyncPipe):
                     if edge_info and edge_info.get('id'):
                         community_details[f"{level}_{cluster}"].relationship_ids.append(edge_info.get('id'))
 
-        for _, community in community_details.items():
+
+        async def async_iterate_dict(dictionary):
+            for key, value in dictionary.items():
+                yield key, value
+
+        async for _, community in async_iterate_dict(community_details):
+
+            # generate a summary
+            # community.attributes['community_report'] = self.kg_provider.generate_community_report(community)
+
+            input_text = """
+
+                Entities: 
+                {entities}
+
+                Relationships:
+                {relationships}
+
+            """
+
+            entities_info = self.kg_provider.get_entities(community.entity_ids)
+            entities_info = "\n".join([f"{entity.id}, {entity.name}, {entity.description}" for entity in entities_info])
+
+            relationships_info = self.kg_provider.get_triples(community.relationship_ids)
+            relationships_info = "\n".join([f"{relationship.id}, {relationship.subject}, {relationship.object}, {relationship.predicate}, {relationship.description}" for relationship in relationships_info])
+
+            input_text = input_text.format(entities=entities_info, relationships=relationships_info)
+
+            description = await self.llm_provider.aget_completion(
+                messages=self.prompt_provider._get_message_payload(
+                    task_prompt_name="graphrag_community_reports",
+                    task_inputs={
+                        "input_text": input_text,
+                    },
+                ),
+                generation_config=GenerationConfig(
+                    model="gpt-4o-mini",
+                )
+            )
+
+            logger.info(f"Community description: {description}")
+
+            community.attributes['community_report'] = description
+
             self.kg_provider.upsert_communities([community])
             yield community
  

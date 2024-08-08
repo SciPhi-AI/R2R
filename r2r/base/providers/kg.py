@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from r2r.main import R2RClient
 from ...base.utils.base_utils import EntityType, Relation
 from ..abstractions.llm import GenerationConfig
+from ..abstractions.graph import Entity, Triple
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +93,16 @@ class KGProvider(ABC):
     @abstractmethod
     def upsert_relations(self, relations: list[LlamaRelation]) -> None:
         """Abstract method to add triplet."""
+        pass
+
+    @abstractmethod
+    def get_entities(self, entity_ids: list[str] | None = None, with_description: bool = False) -> list[Entity]:
+        """Abstract method to get entities."""
+        pass
+
+    @abstractmethod
+    def get_triples(self, triple_ids: list[str] | None = None) -> list[Triple]:
+        """Abstract method to get triples."""
         pass
 
     @abstractmethod

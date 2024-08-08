@@ -103,12 +103,12 @@ class KGSearchSearchPipe(GeneratorPipe):
             )
 
     def filter_responses(self, map_responses):
-
         responses = [json.loads(response) for response in map_responses]
-        responses = [item for sublist in responses for item in sublist]
-
+        responses = [item for response in responses for item in response['points']]
         responses = [response for response in responses if response['score'] > 0]
         responses = sorted(responses, key=lambda x: x['score'], reverse=True)
+
+        responses = "\n".join([response['description'] for response in responses])
         return responses
     
     async def global_search(self,
@@ -125,13 +125,12 @@ class KGSearchSearchPipe(GeneratorPipe):
             communities = self.kg_provider.get_communities()
             
             async def process_community(community):
-                community_report = community.attributes['community_report']
-                community_description = community_report.summary
-                truncated_description = community_description[:kg_search_settings.max_community_description_length]
+                community_report = community.attributes['community_report'].choices[0].message.content
+                truncated_description = community_report[:kg_search_settings.max_community_description_length]
                 
-                return await self.llm_provider.aget_completion(
+                output = await self.llm_provider.aget_completion(
                     messages=self.prompt_provider._get_message_payload(
-                        task_prompt_name="map_system_prompt",
+                        task_prompt_name="graphrag_map_system_prompt",
                         task_inputs={
                             "context_data": truncated_description,
                             "input": message,
@@ -139,6 +138,8 @@ class KGSearchSearchPipe(GeneratorPipe):
                     ),
                     generation_config=kg_search_settings.kg_search_generation_config,
                 )
+
+                return output.choices[0].message.content
 
             # Use asyncio.gather to process all communities concurrently
             map_responses = await asyncio.gather(*[process_community(community) for community in communities])
@@ -149,16 +150,19 @@ class KGSearchSearchPipe(GeneratorPipe):
             # reducing the outputs
             output = await self.llm_provider.aget_completion(
                 messages=self.prompt_provider._get_message_payload(
-                    task_prompt_name="reduce_system_prompt",
+                    task_prompt_name="graphrag_reduce_system_prompt",
                     task_inputs={
                         "response_type": 'multiple paragraphs',
-                        "report_data": filtered_responses,
+                        "report_data": filtered_responses[:2048],
                         "input": message,
                     },
                 ),
                 generation_config=kg_search_settings.kg_search_generation_config,
             )
-            yield output
+
+            output = output.choices[0].message.content
+
+            yield (message, output)
 
     async def _run_logic(
         self,
@@ -170,6 +174,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         **kwargs: Any,
     ):
 
+        logger.info("Performing global search")
         kg_search_type = kg_search_settings.kg_search_type
         if kg_search_type == 'local':
             async for query, result in self.local_search(input, state, run_id, kg_search_settings):

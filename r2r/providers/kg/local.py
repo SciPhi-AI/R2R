@@ -75,6 +75,16 @@ class LocalKGProvider(KGProvider):
         relationships_upserted = self.upsert_relations(all_relationships)
 
         return nodes_upserted, relationships_upserted
+    
+
+    def get_communities(self) -> List[Community]:
+        communities = []
+        for community_id in os.listdir(self.paths['communities']):
+            filepath = os.path.join(self.paths['communities'], community_id)
+            with open(filepath, 'rb') as f:
+                community = pickle.load(f)
+                communities.append(community)
+        return communities
 
 
     def upsert_communities(self, communities: List[Community], *args, **kwargs) -> Any:
@@ -82,7 +92,7 @@ class LocalKGProvider(KGProvider):
             filepath = os.path.join(self.paths['communities'], f"{community.id}.pkl")
             with open(filepath, 'wb') as f:
                 pickle.dump(community, f)
-                
+
 
     def upsert_nodes(self, entities: List[Entity], *args, **kwargs) -> Any:
 
@@ -124,7 +134,54 @@ class LocalKGProvider(KGProvider):
                     entities.append(entity)
         return entities
     
+
     def get_entity_map(self, entity_names: list[str] | None = None) -> dict[str, list[Any]]:
+        # returns a dictionary
+        # keys are entity values
+        # values contain dictionary of entities and triples
+
+        entities = self.get(entity_names)
+        triples = self.get_triplets(entity_names)
+        entity_map = {}
+        for entity in entities:
+            if entity.id not in entity_map:
+                entity_map[entity.value] = {'entities': [], 'triples': []}
+            entity_map[entity.value]['entities'].append(entity)
+
+        for triple in triples:
+            if triple.subject in entity_map:
+                entity_map[triple.subject]['triples'].append(triple)
+            if triple.object in entity_map:
+                entity_map[triple.object]['triples'].append(triple)
+        return entity_map
+    
+
+    def get_entities(self, entity_ids: list[str] | None = None, with_description: bool = False) -> list[Entity]:
+        
+        if with_description:
+            path = self.paths['entities_with_description']
+        else:
+            path = self.paths['entities']
+        
+        entities = []
+        for entity_id in os.listdir(path):
+            filepath = os.path.join(path, entity_id)
+            with open(filepath, 'rb') as f:
+                entity = pickle.load(f)
+                if entity_ids is None or entity.id in entity_ids:
+                    entities.append(entity)
+        return entities
+    
+    def get_triples(self, triple_ids: list[str] | None = None) -> list[Triple]:
+        triples = []
+        for triple_id in os.listdir(self.paths['triples']):
+            filepath = os.path.join(self.paths['triples'], triple_id)
+            with open(filepath, 'rb') as f:
+                triple = pickle.load(f)
+                if triple_ids is None or triple.id in triple_ids:
+                    triples.append(triple)
+        return triples
+
         # returns a dictionary
         # keys are entity values
         # values contain dictionary of entities and triples

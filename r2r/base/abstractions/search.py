@@ -1,7 +1,7 @@
 """Abstractions for search functionality."""
 
 import uuid
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field
 
@@ -44,7 +44,7 @@ class KGSearchRequest(BaseModel):
 
 
 # [query, ...]
-KGSearchResult = List[Tuple[str, List[Dict[str, Any]]]]
+KGSearchResult = Union[List[Tuple[str, List[Dict[str, Any]]]], Any]
 
 
 class AggregateSearchResult(BaseModel):
