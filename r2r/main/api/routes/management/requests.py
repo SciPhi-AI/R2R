@@ -65,3 +65,8 @@ class R2RRemoveUserFromGroupRequest(BaseModel):
 
 class R2RGroupsOverviewRequest(BaseModel):
     group_ids: Optional[list[uuid.UUID]]
+
+
+class R2RScoreCompletionRequest(BaseModel):
+    message_id: uuid.UUID = None
+    score: float = None

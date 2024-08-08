@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 import uuid
@@ -16,6 +15,7 @@ from r2r.base import (
     RunManager,
     User,
     VectorSearchSettings,
+    generate_id_from_label,
     manage_run,
     to_async_generator,
 )
@@ -121,8 +121,6 @@ class RetrievalService(Service):
     ):
         async with manage_run(self.run_manager, "rag_app") as run_id:
             try:
-                t0 = time.time()
-
                 # TODO - Remove these transforms once we have a better way to handle this
                 for (
                     filter,
@@ -138,10 +136,16 @@ class RetrievalService(Service):
                         user.id
                     )
 
+                completion_start_time = datetime.now()
+                message_id = generate_id_from_label(
+                    f"{query}-{completion_start_time.isoformat()}"
+                )
+
                 completion_record = CompletionRecord(
+                    message_id=message_id,
                     message_type=MessageType.ASSISTANT,
                     search_query=query,
-                    completion_start_time=datetime.now(),
+                    completion_start_time=completion_start_time,
                 )
 
                 if rag_generation_config.stream:

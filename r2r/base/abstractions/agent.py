@@ -38,7 +38,7 @@ class ToolResult(BaseModel):
 
 
 class Message(BaseModel):
-    role: MessageType
+    role: Union[MessageType, str]
     content: Optional[str] = None
     name: Optional[str] = None
     function_call: Optional[Dict[str, Any]] = None
@@ -51,7 +51,7 @@ class Conversation:
 
     def create_and_add_message(
         self,
-        role: MessageType,
+        role: Union[MessageType, str],
         content: Optional[str] = None,
         name: Optional[str] = None,
         function_call: Optional[Dict[str, Any]] = None,
@@ -70,7 +70,10 @@ class Conversation:
         self.messages.append(message)
 
     def get_messages(self) -> List[Dict[str, Any]]:
-        return [msg.dict(exclude_none=True) for msg in self.messages]
+        return [
+            {**msg.model_dump(exclude_none=True), "role": str(msg.role)}
+            for msg in self.messages
+        ]
 
 
 # TODO - Move agents to provider pattern
@@ -82,7 +85,7 @@ class AgentConfig(BaseModel):
 
     @classmethod
     def create(cls: Type["AgentConfig"], **kwargs: Any) -> "AgentConfig":
-        base_args = cls.__fields__.keys()
+        base_args = cls.model_fields.keys()
         filtered_kwargs = {
             k: v if v != "None" else None
             for k, v in kwargs.items()
@@ -113,7 +116,7 @@ class Agent(ABC):
     def _setup(self, system_instruction: Optional[str] = None):
         self.conversation = [
             Message(
-                role=MessageType.SYSTEM,
+                role="system",
                 content=system_instruction
                 or self.prompt_provider.get_prompt(
                     self.config.system_instruction_name
@@ -164,13 +167,13 @@ class Agent(ABC):
             and last_message.content != ""
         ):
             return GenerationConfig(
-                **self.config.generation_config.dict(
+                **self.config.generation_config.model_dump(
                     exclude={"functions", "tools", "stream"}
                 ),
                 stream=stream,
             )
         return GenerationConfig(
-            **self.config.generation_config.dict(
+            **self.config.generation_config.model_dump(
                 exclude={"functions", "tools", "stream"}
             ),
             # FIXME: Use tools instead of functions
@@ -208,7 +211,7 @@ class Agent(ABC):
         (
             self.conversation.append(
                 Message(
-                    role=MessageType.ASSISTANT,
+                    role="assistant",
                     tool_calls=[
                         {
                             "id": tool_id,
@@ -223,7 +226,7 @@ class Agent(ABC):
             if tool_id
             else self.conversation.append(
                 Message(
-                    role=MessageType.ASSISTANT,
+                    role="assistant",
                     function_call={
                         "name": function_name,
                         "arguments": function_arguments,
@@ -234,9 +237,9 @@ class Agent(ABC):
 
         # TODO - We always use tools, not functions
         # Think of ways to make this clearer
-
-        tool = next((t for t in self.tools if t.name == function_name), None)
-        if tool:
+        if tool := next(
+            (t for t in self.tools if t.name == function_name), None
+        ):
             raw_result = await tool.results_function(
                 *args, **kwargs, **json.loads(function_arguments)
             )
@@ -254,7 +257,7 @@ class Agent(ABC):
                 self.conversation.append(
                     Message(
                         tool_call_id=tool_id,
-                        role=MessageType.TOOL,
+                        role="tool",
                         content=str(tool_result.llm_formatted_result),
                         name=function_name,
                     )
@@ -262,7 +265,7 @@ class Agent(ABC):
                 if tool_id
                 else self.conversation.append(
                     Message(
-                        role=MessageType.FUNCTION,
+                        role="function",
                         content=str(tool_result.llm_formatted_result),
                         name=function_name,
                     )

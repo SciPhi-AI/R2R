@@ -9,7 +9,6 @@ from r2r.base import (
     CompletionProvider,
     CompletionRecord,
     LLMChatCompletionChunk,
-    MessageType,
     PipeType,
     PromptProvider,
 )

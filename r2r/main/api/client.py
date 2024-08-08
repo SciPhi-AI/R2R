@@ -33,6 +33,7 @@ from .routes.management.requests import (
     R2RDocumentsOverviewRequest,
     R2RLogsRequest,
     R2RPrintRelationshipsRequest,
+    R2RScoreCompletionRequest,
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
@@ -480,6 +481,23 @@ class R2RClient:
         self._ensure_authenticated()
 
         return self._make_request("GET", "app_settings")
+
+    def score_completion(
+        self,
+        message_id: str = None,
+        score: float = None,
+    ) -> dict:
+        self._ensure_authenticated()
+
+        request = R2RScoreCompletionRequest(
+            message_id=message_id,
+            score=score,
+        )
+        return self._make_request(
+            "POST",
+            "score_completion",
+            json=json.loads(request.model_dump_json()),
+        )
 
     def analytics(
         self,

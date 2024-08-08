@@ -20,9 +20,12 @@ class MessageType(Enum):
     FUNCTION = "function"
     TOOL = "tool"
 
+    def __str__(self):
+        return self.value
+
 
 class CompletionRecord(BaseModel):
-    message_id: uuid.UUID = uuid.uuid4()
+    message_id: uuid.UUID
     message_type: MessageType
     timestamp: datetime = datetime.now()
     feedback: Optional[List[str]] = None
