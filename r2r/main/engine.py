@@ -196,6 +196,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
 
     @syncable
     async def aupdate_group(self, *args, **kwargs):
+        print("calling aupdate_group")
         return await self.management_service.aupdate_group(*args, **kwargs)
 
     @syncable

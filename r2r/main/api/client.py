@@ -592,6 +592,62 @@ class R2RClient:
         self._refresh_token = None
         return response
 
+    def create_group(self, name: str, description: str = "") -> dict:
+        request = {"name": name, "description": description}
+        return self._make_request("POST", "create_group", json=request)
+
+    def get_group(self, group_id: uuid.UUID) -> dict:
+        return self._make_request("GET", f"get_group/{group_id}")
+
+    def update_group(
+        self, group_id: uuid.UUID, name: str = None, description: str = None
+    ) -> dict:
+        request = {"name": name, "description": description}
+        return self._make_request(
+            "PUT", f"update_group/{group_id}", json=request
+        )
+
+    def delete_group(self, group_id: uuid.UUID) -> dict:
+        return self._make_request("DELETE", f"delete_group/{group_id}")
+
+    def list_groups(self, offset: int = 0, limit: int = 100) -> dict:
+        return self._make_request(
+            "GET", f"list_groups?offset={offset}&limit={limit}"
+        )
+
+    def add_user_to_group(
+        self, user_id: uuid.UUID, group_id: uuid.UUID
+    ) -> dict:
+        request = {"user_id": str(user_id), "group_id": str(group_id)}
+        return self._make_request("POST", "add_user_to_group", json=request)
+
+    def remove_user_from_group(
+        self, user_id: uuid.UUID, group_id: uuid.UUID
+    ) -> dict:
+        request = {"user_id": str(user_id), "group_id": str(group_id)}
+        return self._make_request(
+            "POST", "remove_user_from_group", json=request
+        )
+
+    def get_users_in_group(
+        self, group_id: uuid.UUID, offset: int = 0, limit: int = 100
+    ) -> dict:
+        return self._make_request(
+            "GET",
+            f"get_users_in_group/{group_id}?offset={offset}&limit={limit}",
+        )
+
+    def get_groups_for_user(self, user_id: uuid.UUID) -> dict:
+        return self._make_request("GET", f"get_groups_for_user/{user_id}")
+
+    def groups_overview(
+        self, group_ids: Optional[list[uuid.UUID]] = None
+    ) -> dict:
+        request = {
+            "group_ids": [str(gid) for gid in group_ids] if group_ids else None
+        }
+        return self._make_request("POST", "groups_overview", json=request)
+
 
 if __name__ == "__main__":
     client = R2RClient(base_url="http://localhost:8000")

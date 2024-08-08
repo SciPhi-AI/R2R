@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timezone
 
 import psutil
-from fastapi import Depends
+from fastapi import Depends, Query
 from pydantic import BaseModel
 
 from r2r.base import R2RException
@@ -261,6 +261,7 @@ class ManagementRouter(BaseRouter):
             request: R2RCreateGroupRequest,
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
+            print(auth_user)
             if not auth_user.is_superuser:
                 raise R2RException("Only a superuser can create groups.", 403)
             return await self.engine.acreate_group(
@@ -302,17 +303,19 @@ class ManagementRouter(BaseRouter):
                 raise R2RException("Only a superuser can delete groups.", 403)
             return await self.engine.adelete_group(group_id)
 
-        @self.router.get("/list_groups")
+        @self.router.get("/list_groups/")
         @self.base_endpoint
         async def list_groups_app(
-            offset: int = 0,
-            limit: int = 100,
+            offset: int = Query(0, ge=0),
+            limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can list all groups.", 403
                 )
+            print("offset = ", offset)
+            print("limit = ", limit)
             return await self.engine.alist_groups(offset, limit)
 
         @self.router.post("/add_user_to_group")

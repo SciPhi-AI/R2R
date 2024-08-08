@@ -567,7 +567,11 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             # Convert 'None' string to None type for user_id
             if db_entry["user_id"] == "None":
                 db_entry["user_id"] = None
-            if db_entry["group_ids"] == "None":
+
+            if (
+                db_entry["group_ids"] == "None"
+                or db_entry["group_ids"] == "[]"
+            ):
                 db_entry["group_ids"] = None
             elif isinstance(db_entry["group_ids"], list):
                 # ensure group_ids are strings
@@ -709,21 +713,39 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         ]
 
     # Group management methods
-    def create_group(self, name: str, description: str = "") -> UUID:
+    def create_group(self, name: str, description: str = "") -> dict:
+        current_time = datetime.utcnow()
         query = text(
             f"""
-            INSERT INTO groups_{self.collection_name} (name, description)
-            VALUES (:name, :description)
-            RETURNING id
+            INSERT INTO groups_{self.collection_name} (name, description, created_at, updated_at)
+            VALUES (:name, :description, :created_at, :updated_at)
+            RETURNING id, name, description, created_at, updated_at
             """
         )
-        with self.vx.Session() as sess:
-            result = sess.execute(
-                query, {"name": name, "description": description}
-            )
-            group_id = result.scalar_one()
-            sess.commit()
-        return group_id
+        try:
+            with self.vx.Session() as sess:
+                result = sess.execute(
+                    query,
+                    {
+                        "name": name,
+                        "description": description,
+                        "created_at": current_time,
+                        "updated_at": current_time,
+                    },
+                )
+                group_data = result.fetchone()
+                sess.commit()
+
+            return {
+                "id": group_data[0],
+                "name": group_data[1],
+                "description": group_data[2],
+                "created_at": group_data[3],
+                "updated_at": group_data[4],
+            }
+        except Exception as e:
+            logger.error(f"Error creating group: {e}")
+            raise
 
     def get_group(self, group_id: UUID) -> Optional[dict]:
         query = text(
@@ -736,11 +758,23 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         with self.vx.Session() as sess:
             result = sess.execute(query, {"group_id": group_id})
             group_data = result.fetchone()
-        return dict(group_data) if group_data else None
+        return dict(zip(result.keys(), group_data)) if group_data else None
+
+    def get_group_count(self) -> int:
+        query = text(
+            f"""
+            SELECT COUNT(*) FROM groups_{self.collection_name}
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(query)
+            count = result.scalar()
+        return count
 
     def update_group(
         self, group_id: UUID, name: str = None, description: str = None
     ) -> bool:
+        print("in vector update ....")
         update_fields = []
         params = {"group_id": group_id}
         if name is not None:
@@ -776,15 +810,13 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     f"""
                     DELETE FROM groups_{self.collection_name}
                     WHERE id = :group_id
-                    RETURNING id
                     """
                 )
                 result = sess.execute(
                     delete_group_query, {"group_id": group_id}
                 )
-                deleted_group = result.scalar_one_or_none()
 
-                if not deleted_group:
+                if result.rowcount == 0:
                     # Group not found, rollback and return False
                     sess.rollback()
                     return False
@@ -812,9 +844,6 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 # Commit the transaction
                 sess.commit()
 
-                # Invalidate tokens for affected users (implement this method)
-                self.invalidate_tokens_for_group(group_id)
-
                 return True
 
             except Exception as e:
@@ -835,8 +864,9 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         )
         with self.vx.Session() as sess:
             result = sess.execute(query, {"offset": offset, "limit": limit})
+            columns = result.keys()
             groups = result.fetchall()
-        return [dict(group) for group in groups]
+        return [dict(zip(columns, group)) for group in groups]
 
     # User-Group management methods
     def add_user_to_group(self, user_id: UUID, group_id: UUID) -> bool:
@@ -845,29 +875,35 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             UPDATE users_{self.collection_name}
             SET group_ids = array_append(group_ids, :group_id)
             WHERE id = :user_id AND NOT (:group_id = ANY(group_ids))
+            RETURNING id
             """
         )
         with self.vx.Session() as sess:
             result = sess.execute(
                 query, {"user_id": user_id, "group_id": group_id}
             )
-            sess.commit()
-        return result.rowcount > 0
+            updated = result.fetchone() is not None
+            if updated:
+                sess.commit()
+                return updated
 
     def remove_user_from_group(self, user_id: UUID, group_id: UUID) -> bool:
         query = text(
             f"""
             UPDATE users_{self.collection_name}
             SET group_ids = array_remove(group_ids, :group_id)
-            WHERE id = :user_id
+            WHERE id = :user_id AND :group_id = ANY(group_ids)
+            RETURNING id
             """
         )
         with self.vx.Session() as sess:
             result = sess.execute(
                 query, {"user_id": user_id, "group_id": group_id}
             )
-            sess.commit()
-        return result.rowcount > 0
+            updated = result.fetchone() is not None
+            if updated:
+                sess.commit()
+            return updated
 
     def get_users_in_group(
         self, group_id: UUID, offset: int = 0, limit: int = 100
@@ -914,8 +950,9 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         )
         with self.vx.Session() as sess:
             result = sess.execute(query, {"user_id": user_id})
+            columns = result.keys()
             groups = result.fetchall()
-        return [dict(group) for group in groups]
+        return [dict(zip(columns, group)) for group in groups]
 
     def create_user(self, user: UserCreate) -> User:
         hashed_password = self.crypto_provider.get_password_hash(user.password)
