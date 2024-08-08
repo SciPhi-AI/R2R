@@ -8,8 +8,8 @@ default_admin_email = "admin@example.com"
 default_admin_password = "change_me_immediately"
 
 [chunking]
-provider = "r2r"
-method = "recursive"
+provider = "unstructured"
+method = "by_title"
 chunk_size = 512
 chunk_overlap = 50
 
@@ -52,7 +52,7 @@ log_table = "logs"
 log_info_table = "log_info"
 
 [parsing]
-provider = "r2r"
+provider = "unstructured"
 excluded_parsers = ["mp4"]
 
 [prompt]

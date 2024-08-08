@@ -46,6 +46,8 @@ class R2RParsingProvider(ParsingProvider):
     }
 
     def __init__(self, config: ParsingConfig):
+        logger.info(f"Initializing `R2RParsingProvider` with config: {config}")
+
         super().__init__(config)
         self.parsers = {}
         self._initialize_parsers()

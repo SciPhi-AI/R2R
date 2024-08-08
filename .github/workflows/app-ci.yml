@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Check formatting
+        working-directory: ./apps
+        run: pnpm format:check
+
+      - name: Build
+        working-directory: ./apps
+        run: pnpm build
+
+      - name: Start server and run for 20 seconds
+        working-directory: ./apps
+        run: |
+          timeout 20s pnpm start || exit 0
+
+      - name: Check server logs
+        working-directory: ./apps
+        run: |
+          if grep -q "error" .next/server.log; then
+            echo "Server encountered errors during startup"
+            exit 1
+          fi
