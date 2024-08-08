@@ -293,8 +293,9 @@ class ManagementService(Service):
     @telemetry_event("DocumentsOverview")
     async def adocuments_overview(
         self,
-        document_ids: Optional[list[uuid.UUID]] = None,
         user_ids: Optional[list[uuid.UUID]] = None,
+        group_ids: Optional[list[uuid.UUID]] = None,
+        document_ids: Optional[list[uuid.UUID]] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -304,6 +305,9 @@ class ManagementService(Service):
             ),
             filter_user_ids=(
                 [str(ele) for ele in user_ids] if user_ids else None
+            ),
+            filter_group_ids=(
+                [str(ele) for ele in group_ids] if group_ids else None
             ),
         )
 
@@ -456,3 +460,77 @@ class ManagementService(Service):
                 name: prompt.dict() for name, prompt in prompts.items()
             },
         }
+
+    @telemetry_event("CreateGroup")
+    async def acreate_group(
+        self, name: str, description: str = ""
+    ) -> uuid.UUID:
+        return self.providers.database.relational.create_group(
+            name, description
+        )
+
+    @telemetry_event("GetGroup")
+    async def aget_group(self, group_id: uuid.UUID) -> Optional[dict]:
+        return self.providers.database.relational.get_group(group_id)
+
+    @telemetry_event("UpdateGroup")
+    async def aupdate_group(
+        self, group_id: uuid.UUID, name: str = None, description: str = None
+    ) -> bool:
+        print("calling aupdate_group")
+        print("we should be calling update group below...")
+        return self.providers.database.relational.update_group(
+            group_id, name, description
+        )
+
+    @telemetry_event("DeleteGroup")
+    async def adelete_group(self, group_id: uuid.UUID) -> bool:
+        return self.providers.database.relational.delete_group(group_id)
+
+    @telemetry_event("ListGroups")
+    async def alist_groups(
+        self, offset: int = 0, limit: int = 100
+    ) -> list[dict]:
+        print(f"calling listgroups with offset = {offset} and limit = {limit}")
+        return self.providers.database.relational.list_groups(
+            offset=offset, limit=limit
+        )
+
+    @telemetry_event("AddUserToGroup")
+    async def aadd_user_to_group(
+        self, user_id: uuid.UUID, group_id: uuid.UUID
+    ) -> bool:
+        return self.providers.database.relational.add_user_to_group(
+            user_id, group_id
+        )
+
+    @telemetry_event("RemoveUserFromGroup")
+    async def aremove_user_from_group(
+        self, user_id: uuid.UUID, group_id: uuid.UUID
+    ) -> bool:
+        return self.providers.database.relational.remove_user_from_group(
+            user_id, group_id
+        )
+
+    @telemetry_event("GetUsersInGroup")
+    async def aget_users_in_group(
+        self, group_id: uuid.UUID, offset: int = 0, limit: int = 100
+    ) -> list[dict]:
+        return self.providers.database.relational.get_users_in_group(
+            group_id, offset, limit
+        )
+
+    @telemetry_event("GetGroupsForUser")
+    async def aget_groups_for_user(self, user_id: uuid.UUID) -> list[dict]:
+        return self.providers.database.relational.get_groups_for_user(user_id)
+
+    @telemetry_event("GroupsOverview")
+    async def agroups_overview(
+        self,
+        group_ids: Optional[list[uuid.UUID]] = None,
+        *args,
+        **kwargs,
+    ):
+        return self.providers.database.relational.get_groups_overview(
+            [str(ele) for ele in group_ids] if group_ids else None
+        )

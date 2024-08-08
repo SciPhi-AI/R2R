@@ -14,6 +14,7 @@ from r2r.base import (
     DatabaseConfig,
     DatabaseProvider,
     DocumentInfo,
+    R2RException,
     RelationalDatabaseProvider,
     User,
     UserCreate,
@@ -483,12 +484,13 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     logger.error(f"Error enabling uuid-ossp extension: {e}")
                     raise
 
-                # Create the table if it doesn't exist
+                # Create the document info table if it doesn't exist
                 create_table_query = f"""
                 CREATE TABLE IF NOT EXISTS document_info_{self.collection_name} (
                     document_id UUID PRIMARY KEY,
                     title TEXT,
                     user_id UUID NULL,
+                    group_ids UUID[] NULL,
                     version TEXT,
                     size_in_bytes INT,
                     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -499,7 +501,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 """
                 sess.execute(text(create_table_query))
 
-                # Create users table
+                # Create the users table if it doesn't exist
                 query = f"""
                 CREATE TABLE IF NOT EXISTS users_{self.collection_name} (
                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -515,6 +517,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     profile_picture TEXT,
                     reset_token TEXT,
                     reset_token_expiry TIMESTAMPTZ,
+                    group_ids UUID[] NULL,
                     created_at TIMESTAMPTZ DEFAULT NOW(),
                     updated_at TIMESTAMPTZ DEFAULT NOW()
                 );
@@ -535,6 +538,25 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 """
                 sess.execute(text(query))
 
+                # Create groups table
+                query = f"""
+                CREATE TABLE IF NOT EXISTS groups_{self.collection_name} (
+                    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                );
+                """
+                sess.execute(text(query))
+
+                # Create the index on group_ids
+                create_index_query = f"""
+                CREATE INDEX IF NOT EXISTS idx_group_ids_{self.collection_name}
+                ON document_info_{self.collection_name} USING GIN (group_ids);
+                """
+                sess.execute(text(create_index_query))
+
                 sess.commit()
 
     def upsert_documents_overview(
@@ -547,13 +569,26 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             if db_entry["user_id"] == "None":
                 db_entry["user_id"] = None
 
+            if (
+                db_entry["group_ids"] == "None"
+                or db_entry["group_ids"] == "[]"
+            ):
+                db_entry["group_ids"] = None
+            elif isinstance(db_entry["group_ids"], list):
+                # ensure group_ids are strings
+                db_entry["group_ids"] = [
+                    str(gid) for gid in db_entry["group_ids"]
+                ]
+
             query = text(
                 f"""
-                INSERT INTO document_info_{self.collection_name} (document_id, title, user_id, version, created_at, updated_at, size_in_bytes, metadata, status)
-                VALUES (:document_id, :title, :user_id, :version, :created_at, :updated_at, :size_in_bytes, :metadata, :status)
+                INSERT INTO document_info_{self.collection_name}
+                (document_id, title, user_id, group_ids, version, created_at, updated_at, size_in_bytes, metadata, status)
+                VALUES (:document_id, :title, :user_id, :group_ids, :version, :created_at, :updated_at, :size_in_bytes, :metadata, :status)
                 ON CONFLICT (document_id) DO UPDATE SET
                     title = EXCLUDED.title,
                     user_id = EXCLUDED.user_id,
+                    group_ids = EXCLUDED.group_ids,
                     version = EXCLUDED.version,
                     updated_at = EXCLUDED.updated_at,
                     size_in_bytes = EXCLUDED.size_in_bytes,
@@ -587,6 +622,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         self,
         filter_document_ids: Optional[list[str]] = None,
         filter_user_ids: Optional[list[str]] = None,
+        filter_group_ids: Optional[list[str]] = None,
     ):
         conditions = []
         params = {}
@@ -602,6 +638,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     for i, document_id in enumerate(filter_document_ids)
                 }
             )
+
         if filter_user_ids:
             placeholders = ", ".join(
                 f":user_id_{i}" for i in range(len(filter_user_ids))
@@ -614,8 +651,15 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 }
             )
 
+        if filter_group_ids:
+            group_conditions = []
+            for i, group_id in enumerate(filter_group_ids):
+                group_conditions.append(f":group_id_{i} = ANY(group_ids)")
+                params[f"group_id_{i}"] = str(group_id)
+            conditions.append(f"({' OR '.join(group_conditions)})")
+
         query = f"""
-            SELECT document_id, title, user_id, version, size_in_bytes, created_at, updated_at, metadata, status
+            SELECT document_id, title, user_id, group_ids, version, size_in_bytes, created_at, updated_at, metadata, status
             FROM document_info_{self.collection_name}
         """
         if conditions:
@@ -628,12 +672,13 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     document_id=row[0],
                     title=row[1],
                     user_id=row[2],
-                    version=row[3],
-                    size_in_bytes=row[4],
-                    created_at=row[5],
-                    updated_at=row[6],
-                    metadata=row[7],
-                    status=row[8],
+                    group_ids=row[3],
+                    version=row[4],
+                    size_in_bytes=row[5],
+                    created_at=row[6],
+                    updated_at=row[7],
+                    metadata=row[8],
+                    status=row[9],
                 )
                 for row in results
             ]
@@ -668,15 +713,257 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             if row[0] is not None
         ]
 
+    # Group management methods
+    def create_group(self, name: str, description: str = "") -> dict:
+        current_time = datetime.utcnow()
+        query = text(
+            f"""
+            INSERT INTO groups_{self.collection_name} (name, description, created_at, updated_at)
+            VALUES (:name, :description, :created_at, :updated_at)
+            RETURNING id, name, description, created_at, updated_at
+            """
+        )
+        try:
+            with self.vx.Session() as sess:
+                result = sess.execute(
+                    query,
+                    {
+                        "name": name,
+                        "description": description,
+                        "created_at": current_time,
+                        "updated_at": current_time,
+                    },
+                )
+                group_data = result.fetchone()
+                sess.commit()
+
+            return {
+                "id": group_data[0],
+                "name": group_data[1],
+                "description": group_data[2],
+                "created_at": group_data[3],
+                "updated_at": group_data[4],
+            }
+        except Exception as e:
+            logger.error(f"Error creating group: {e}")
+            raise
+
+    def get_group(self, group_id: UUID) -> Optional[dict]:
+        query = text(
+            f"""
+            SELECT id, name, description, created_at, updated_at
+            FROM groups_{self.collection_name}
+            WHERE id = :group_id
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(query, {"group_id": group_id})
+            group_data = result.fetchone()
+        return dict(zip(result.keys(), group_data)) if group_data else None
+
+    def get_group_count(self) -> int:
+        query = text(
+            f"""
+            SELECT COUNT(*) FROM groups_{self.collection_name}
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(query)
+            count = result.scalar()
+        return count
+
+    def update_group(
+        self, group_id: UUID, name: str = None, description: str = None
+    ) -> bool:
+        print("in vector update ....")
+        update_fields = []
+        params = {"group_id": group_id}
+        if name is not None:
+            update_fields.append("name = :name")
+            params["name"] = name
+        if description is not None:
+            update_fields.append("description = :description")
+            params["description"] = description
+
+        if not update_fields:
+            return False
+
+        query = text(
+            f"""
+            UPDATE groups_{self.collection_name}
+            SET {", ".join(update_fields)}, updated_at = NOW()
+            WHERE id = :group_id
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(query, params)
+            sess.commit()
+        return result.rowcount > 0
+
+    def delete_group(self, group_id: UUID) -> bool:
+        with self.vx.Session() as sess:
+            try:
+                # Start a transaction
+                sess.begin()
+
+                # Delete the group
+                delete_group_query = text(
+                    f"""
+                    DELETE FROM groups_{self.collection_name}
+                    WHERE id = :group_id
+                    """
+                )
+                result = sess.execute(
+                    delete_group_query, {"group_id": group_id}
+                )
+
+                if result.rowcount == 0:
+                    # Group not found, rollback and return False
+                    sess.rollback()
+                    return False
+
+                # Update users' group_ids
+                update_users_query = text(
+                    f"""
+                    UPDATE users_{self.collection_name}
+                    SET group_ids = array_remove(group_ids, :group_id)
+                    WHERE :group_id = ANY(group_ids)
+                    """
+                )
+                sess.execute(update_users_query, {"group_id": group_id})
+
+                # Update documents' group_ids
+                update_documents_query = text(
+                    f"""
+                    UPDATE document_info_{self.collection_name}
+                    SET group_ids = array_remove(group_ids, :group_id)
+                    WHERE :group_id = ANY(group_ids)
+                    """
+                )
+                sess.execute(update_documents_query, {"group_id": group_id})
+
+                # Commit the transaction
+                sess.commit()
+
+                return True
+
+            except Exception as e:
+                # If any error occurs, rollback the transaction
+                sess.rollback()
+                logger.error(f"Error deleting group: {e}")
+                return False
+
+    def list_groups(self, offset: int = 0, limit: int = 100) -> list[dict]:
+        query = text(
+            f"""
+            SELECT id, name, description, created_at, updated_at
+            FROM groups_{self.collection_name}
+            ORDER BY name
+            OFFSET :offset
+            LIMIT :limit
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(query, {"offset": offset, "limit": limit})
+            columns = result.keys()
+            groups = result.fetchall()
+        return [dict(zip(columns, group)) for group in groups]
+
+    # User-Group management methods
+    def add_user_to_group(self, user_id: UUID, group_id: UUID) -> bool:
+        query = text(
+            f"""
+            UPDATE users_{self.collection_name}
+            SET group_ids = array_append(group_ids, :group_id)
+            WHERE id = :user_id AND NOT (:group_id = ANY(group_ids))
+            RETURNING id
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(
+                query, {"user_id": user_id, "group_id": group_id}
+            )
+            updated = result.fetchone() is not None
+            if updated:
+                sess.commit()
+                return updated
+
+    def remove_user_from_group(self, user_id: UUID, group_id: UUID) -> bool:
+        query = text(
+            f"""
+            UPDATE users_{self.collection_name}
+            SET group_ids = array_remove(group_ids, :group_id)
+            WHERE id = :user_id AND :group_id = ANY(group_ids)
+            RETURNING id
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(
+                query, {"user_id": user_id, "group_id": group_id}
+            )
+            updated = result.fetchone() is not None
+            if updated:
+                sess.commit()
+            return updated
+
+    def get_users_in_group(
+        self, group_id: UUID, offset: int = 0, limit: int = 100
+    ) -> list[User]:
+        query = text(
+            f"""
+            SELECT id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            FROM users_{self.collection_name}
+            WHERE :group_id = ANY(group_ids)
+            ORDER BY email
+            OFFSET :offset
+            LIMIT :limit
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(
+                query, {"group_id": group_id, "offset": offset, "limit": limit}
+            )
+            users_data = result.fetchall()
+        return [
+            User(
+                id=user_data[0],
+                email=user_data[1],
+                hashed_password="null",
+                is_superuser=user_data[2],
+                is_active=user_data[3],
+                is_verified=user_data[4],
+                created_at=user_data[5],
+                updated_at=user_data[6],
+                group_ids=user_data[7],
+            )
+            for user_data in users_data
+        ]
+
+    def get_groups_for_user(self, user_id: UUID) -> list[dict]:
+        query = text(
+            f"""
+            SELECT g.id, g.name, g.description, g.created_at, g.updated_at
+            FROM groups_{self.collection_name} g
+            JOIN users_{self.collection_name} u ON g.id = ANY(u.group_ids)
+            WHERE u.id = :user_id
+            ORDER BY g.name
+            """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(query, {"user_id": user_id})
+            columns = result.keys()
+            groups = result.fetchall()
+        return [dict(zip(columns, group)) for group in groups]
+
     def create_user(self, user: UserCreate) -> User:
         hashed_password = self.crypto_provider.get_password_hash(user.password)
         query = text(
             f"""
-        INSERT INTO users_{self.collection_name}
-        (email, id, hashed_password)
-        VALUES (:email, :id, :hashed_password)
-        RETURNING id, email, is_superuser, is_active, is_verified, created_at, updated_at
-        """
+            INSERT INTO users_{self.collection_name}
+            (email, id, hashed_password, group_ids)
+            VALUES (:email, :id, :hashed_password, :group_ids)
+            RETURNING id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            """
         )
 
         with self.vx.Session() as sess:
@@ -686,6 +973,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     "email": user.email,
                     "id": generate_id_from_label(user.email),
                     "hashed_password": hashed_password,
+                    "group_ids": [],
                 },
             )
             user_data = result.fetchone()
@@ -699,16 +987,17 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             is_verified=user_data[4],
             created_at=user_data[5],
             updated_at=user_data[6],
+            group_ids=user_data[7],
             hashed_password=hashed_password,
         )
 
     def get_user_by_email(self, email: str) -> Optional[User]:
         query = text(
             f"""
-        SELECT id, email, hashed_password, is_superuser, is_active, is_verified, created_at, updated_at
-        FROM users_{self.collection_name}
-        WHERE email = :email
-        """
+            SELECT id, email, hashed_password, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            FROM users_{self.collection_name}
+            WHERE email = :email
+            """
         )
 
         with self.vx.Session() as sess:
@@ -719,13 +1008,13 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             return User(
                 id=user_data[0],
                 email=user_data[1],
-                # password="",  # We don't return the hashed password
                 hashed_password=user_data[2],
                 is_superuser=user_data[3],
                 is_active=user_data[4],
                 is_verified=user_data[5],
                 created_at=user_data[6],
                 updated_at=user_data[7],
+                group_ids=user_data[8],
             )
         return None
 
@@ -806,24 +1095,113 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             sess.execute(query, {"code": verification_code})
             sess.commit()
 
-    def delete_user(self, user_id: UUID):
+    def remove_user_from_all_groups(self, user_id: UUID):
         query = text(
             f"""
-        DELETE FROM users_{self.collection_name}
-        WHERE id = :user_id
-        """
+            UPDATE users_{self.collection_name}
+            SET group_ids = ARRAY[]::UUID[]
+            WHERE id = :user_id
+            """
         )
-
         with self.vx.Session() as sess:
             sess.execute(query, {"user_id": user_id})
             sess.commit()
 
+    def handle_user_documents(self, user_id: UUID):
+        # For now, we'll just delete the user's documents
+        # In the future, you might want to implement a transfer ownership feature
+        query = text(
+            f"""
+            DELETE FROM document_info_{self.collection_name}
+            WHERE user_id = :user_id
+            """
+        )
+        with self.vx.Session() as sess:
+            sess.execute(query, {"user_id": user_id})
+            sess.commit()
+
+    def invalidate_user_tokens(self, user_id: UUID):
+        # This method should blacklist all tokens for the user
+        # For simplicity, we'll just delete all tokens for the user
+        query = text(
+            f"""
+            DELETE FROM blacklisted_tokens_{self.collection_name}
+            WHERE token IN (
+                SELECT token
+                FROM users_{self.collection_name}
+                WHERE id = :user_id
+            )
+            """
+        )
+        with self.vx.Session() as sess:
+            sess.execute(query, {"user_id": user_id})
+            sess.commit()
+
+    def delete_user(self, user_id: UUID):
+        with self.vx.Session() as sess:
+            try:
+                sess.begin()
+
+                # Remove user from groups
+                self.remove_user_from_all_groups(user_id)
+
+                # Handle user's documents
+                self.handle_user_documents(user_id)
+
+                # Delete user
+                result = sess.execute(
+                    text(
+                        f"DELETE FROM users_{self.collection_name} WHERE id = :user_id"
+                    ),
+                    {"user_id": user_id},
+                )
+
+                if result.rowcount == 0:
+                    raise R2RException(
+                        status_code=404, message="User not found"
+                    )
+
+                sess.commit()
+
+                # Invalidate user's tokens
+                self.invalidate_user_tokens(user_id)
+            except Exception as e:
+                sess.rollback()
+                logger.error(f"Error deleting user: {e}")
+                raise R2RException(
+                    status_code=500, message="Failed to delete user"
+                )
+
+    def delete_document(self, document_id: str):
+        with self.vx.Session() as sess:
+            try:
+                sess.begin()
+
+                # Delete from document_info
+                sess.execute(
+                    text(
+                        f"DELETE FROM document_info_{self.collection_name} WHERE document_id = :doc_id"
+                    ),
+                    {"doc_id": document_id},
+                )
+
+                # Delete from vector database
+                self.vector_db.delete(document_id)
+
+                # Update user statistics
+                self.update_user_document_stats(document_id)
+
+                sess.commit()
+            except Exception as e:
+                sess.rollback()
+                logger.error(f"Error deleting document: {e}")
+
     def get_all_users(self) -> list[User]:
         query = text(
             f"""
-        SELECT id, email, is_superuser, is_active, is_verified, created_at, updated_at
-        FROM users_{self.collection_name}
-        """
+            SELECT id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            FROM users_{self.collection_name}
+            """
         )
 
         with self.vx.Session() as sess:
@@ -840,6 +1218,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 is_verified=user_data[4],
                 created_at=user_data[5],
                 updated_at=user_data[6],
+                group_ids=user_data[7],
             )
             for user_data in users_data
         ]
@@ -955,12 +1334,11 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             sess.commit()
 
     # Modify existing methods to include new profile fields
-
     def get_user_by_id(self, user_id: UUID) -> Optional[User]:
         query = text(
             f"""
             SELECT id, email, hashed_password, is_superuser, is_active, is_verified,
-                   created_at, updated_at, name, profile_picture, bio
+                   created_at, updated_at, name, profile_picture, bio, group_ids
             FROM users_{self.collection_name}
             WHERE id = :user_id
             """
@@ -983,6 +1361,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 name=user_data[8],
                 profile_picture=user_data[9],
                 bio=user_data[10],
+                group_ids=user_data[11],
             )
         return None
 
@@ -992,10 +1371,10 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             UPDATE users_{self.collection_name}
             SET email = :email, is_superuser = :is_superuser, is_active = :is_active,
                 is_verified = :is_verified, updated_at = NOW(), name = :name,
-                profile_picture = :profile_picture, bio = :bio
+                profile_picture = :profile_picture, bio = :bio, group_ids = :group_ids
             WHERE id = :user_id
             RETURNING id, email, is_superuser, is_active, is_verified, created_at,
-                      updated_at, name, profile_picture, bio
+                      updated_at, name, profile_picture, bio, group_ids
             """
         )
 
@@ -1011,6 +1390,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     "name": user.name,
                     "profile_picture": user.profile_picture,
                     "bio": user.bio,
+                    "group_ids": user.group_ids,
                 },
             )
             updated_user_data = result.fetchone()
@@ -1028,6 +1408,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             name=updated_user_data[7],
             profile_picture=updated_user_data[8],
             bio=updated_user_data[9],
+            group_ids=updated_user_data[10],
         )
 
     def update_user_password(self, user_id: UUID, new_hashed_password: str):

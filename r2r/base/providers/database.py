@@ -120,8 +120,9 @@ class RelationalDatabaseProvider(Provider, ABC):
     @abstractmethod
     def get_documents_overview(
         self,
+        filter_user_id: Optional[str] = None,
+        filter_group_ids: Optional[list[str]] = None,
         filter_document_ids: Optional[list[str]] = None,
-        filter_user_ids: Optional[list[str]] = None,
     ) -> list[DocumentInfo]:
         pass
 
@@ -205,9 +206,3 @@ class DatabaseProvider(Provider):
     @abstractmethod
     def _initialize_relational_db(self) -> RelationalDatabaseProvider:
         pass
-
-
-# Example usage:
-# db_provider = DatabaseProvider(config)
-# db_provider.vector.search(...)
-# db_provider.relational.get_documents_overview(...)

@@ -18,6 +18,7 @@ class UserCreate(UserBase):
 class User(BaseModel):
     email: EmailStr
     id: UUID = Field(default=None)
+    group_ids: List[UUID] = []
     hashed_password: str
     is_superuser: bool = False
     is_active: bool = True
@@ -66,3 +67,19 @@ class UserStats(BaseModel):
     num_files: int
     total_size_in_bytes: int
     document_ids: List[UUID]
+
+
+class Group(BaseModel):
+    id: UUID = Field(default=None)
+    name: str
+    description: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        from_attributes = True
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        if self.id is None:
+            self.id = generate_id_from_label(self.name)
