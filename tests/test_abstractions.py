@@ -1,5 +1,6 @@
 import asyncio
 import uuid
+from datetime import datetime
 
 import pytest
 
@@ -14,6 +15,8 @@ from r2r import (
     VectorType,
     generate_id_from_label,
 )
+from r2r.base.abstractions.completion import CompletionRecord, MessageType
+from r2r.base.abstractions.search import AggregateSearchResult
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -148,3 +151,135 @@ def test_vector_entry_serialization():
     assert isinstance(
         serializable["metadata"]["key"], str
     )  # Check UUID conversion to string
+
+
+def test_message_type_enum():
+    assert str(MessageType.SYSTEM) == "system"
+    assert str(MessageType.USER) == "user"
+    assert str(MessageType.ASSISTANT) == "assistant"
+    assert str(MessageType.FUNCTION) == "function"
+    assert str(MessageType.TOOL) == "tool"
+
+
+def test_completion_record_initialization():
+    record = CompletionRecord(
+        message_id=uuid.uuid4(),
+        message_type=MessageType.USER,
+        search_query="test query",
+        llm_response="test response",
+    )
+    assert isinstance(record.message_id, uuid.UUID)
+    assert record.message_type == MessageType.USER
+    assert isinstance(record.timestamp, datetime)
+    assert record.search_query == "test query"
+    assert record.llm_response == "test response"
+
+
+def test_completion_record_optional_fields():
+    record = CompletionRecord(
+        message_id=uuid.uuid4(), message_type=MessageType.SYSTEM
+    )
+    assert record.feedback is None
+    assert record.score is None
+    assert record.completion_start_time is None
+    assert record.completion_end_time is None
+    assert record.search_query is None
+    assert record.search_results is None
+    assert record.llm_response is None
+
+
+def test_completion_record_to_dict():
+    search_results = AggregateSearchResult(vector_search_results=[])
+    record = CompletionRecord(
+        message_id=uuid.uuid4(),
+        message_type=MessageType.ASSISTANT,
+        feedback=["Good"],
+        score=[0.9],
+        completion_start_time=datetime(2023, 1, 1, 12, 0),
+        completion_end_time=datetime(2023, 1, 1, 12, 1),
+        search_query="test",
+        search_results=search_results,
+        llm_response="Response",
+    )
+    record_dict = record.to_dict()
+
+    assert isinstance(record_dict["message_id"], str)
+    assert record_dict["message_type"] == "assistant"
+    assert isinstance(record_dict["timestamp"], str)
+    assert record_dict["feedback"] == ["Good"]
+    assert record_dict["score"] == [0.9]
+    assert record_dict["completion_start_time"] == "2023-01-01T12:00:00"
+    assert record_dict["completion_end_time"] == "2023-01-01T12:01:00"
+    assert record_dict["search_query"] == "test"
+    assert isinstance(record_dict["search_results"], dict)
+    assert record_dict["llm_response"] == "Response"
+
+
+def test_completion_record_to_json():
+    record = CompletionRecord(
+        message_id=uuid.uuid4(),
+        message_type=MessageType.FUNCTION,
+        llm_response="JSON test",
+    )
+    json_str = record.to_json()
+    assert isinstance(json_str, str)
+
+    import json
+
+    parsed_dict = json.loads(json_str)
+    assert parsed_dict["message_type"] == "function"
+    assert parsed_dict["llm_response"] == "JSON test"
+
+
+@pytest.mark.parametrize("message_type", list(MessageType))
+def test_completion_record_all_message_types(message_type):
+    record = CompletionRecord(
+        message_id=uuid.uuid4(), message_type=message_type
+    )
+    assert record.message_type == message_type
+
+
+def test_completion_record_serialization_with_none_values():
+    record = CompletionRecord(
+        message_id=uuid.uuid4(), message_type=MessageType.TOOL
+    )
+    record_dict = record.to_dict()
+    for field in [
+        "feedback",
+        "score",
+        "completion_start_time",
+        "completion_end_time",
+        "search_query",
+        "search_results",
+        "llm_response",
+    ]:
+        assert record_dict[field] is None
+
+
+def test_completion_record_with_complex_search_results():
+    from r2r import VectorSearchResult
+
+    search_result = VectorSearchResult(
+        id=uuid.uuid4(), score=0.95, metadata={"key": "value"}
+    )
+    aggregate_result = AggregateSearchResult(
+        vector_search_results=[search_result]
+    )
+    record = CompletionRecord(
+        message_id=uuid.uuid4(),
+        message_type=MessageType.USER,
+        search_results=aggregate_result,
+    )
+    record_dict = record.to_dict()
+    assert isinstance(record_dict["search_results"], dict)
+    assert isinstance(
+        record_dict["search_results"]["vector_search_results"], list
+    )
+    assert len(record_dict["search_results"]["vector_search_results"]) == 1
+    assert (
+        record_dict["search_results"]["vector_search_results"][0]["score"]
+        == 0.95
+    )
+    assert record_dict["search_results"]["vector_search_results"][0][
+        "metadata"
+    ] == {"key": "value"}

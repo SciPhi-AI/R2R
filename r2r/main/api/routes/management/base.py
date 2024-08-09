@@ -13,6 +13,7 @@ from r2r.main.api.routes.management.requests import (
     R2RDocumentsOverviewRequest,
     R2RLogsRequest,
     R2RPrintRelationshipsRequest,
+    R2RScoreCompletionRequest,
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
@@ -127,18 +128,18 @@ class ManagementRouter(BaseRouter):
                 else None
             ),
         ):
-            if not auth_user.is_superuser:
-                if (
-                    "user_id" in request.keys
-                    and request.values[request.keys.index("user_id")]
-                    != auth_user.id
-                ):
-                    raise R2RException(
-                        "Only a superuser can delete arbitrary user data.", 403
-                    )
-                else:
-                    request.keys.append("user_id")
-                    request.values.append(auth_user.id)
+            if not auth_user.is_superuser and (
+                "user_id" in request.keys
+                and request.values[request.keys.index("user_id")]
+                != auth_user.id
+            ):
+                raise R2RException(
+                    "Only a superuser can delete arbitrary user data.", 403
+                )
+
+            if "user_id" not in request.keys:
+                request.keys.append("user_id")
+                request.values.append(auth_user.id)
 
             return await self.engine.adelete(
                 keys=request.keys, values=request.values
@@ -250,6 +251,15 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
             return await self.engine.aapp_settings()
+
+        @self.router.post("/score_completion")
+        @self.base_endpoint
+        async def score_completion(
+            request: R2RScoreCompletionRequest,
+        ):
+            return await self.engine.ascore_completion(
+                message_id=request.message_id, score=request.score
+            )
 
 
 class R2RExtractionRequest(BaseModel):

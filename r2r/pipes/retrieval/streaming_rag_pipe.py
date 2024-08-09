@@ -1,11 +1,13 @@
 import json
 import logging
 import uuid
+from datetime import datetime
 from typing import Any, AsyncGenerator, Generator, Optional
 
 from r2r.base import (
     AsyncState,
     CompletionProvider,
+    CompletionRecord,
     LLMChatCompletionChunk,
     PipeType,
     PromptProvider,
@@ -47,14 +49,14 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
         self,
         input: SearchRAGPipe.Input,
         state: AsyncState,
-        run_id: uuid.UUID,
         rag_generation_config: GenerationConfig,
+        completion_record: Optional[CompletionRecord] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
+        run_id = kwargs.get("run_id")
         iteration = 0
         context = ""
-        # dump the search results and construct the context
         async for query, search_results in input.message:
             yield f"<{self.SEARCH_STREAM_MARKER}>"
             if search_results.vector_search_results:
@@ -68,15 +70,6 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
                     )
                     iteration += 1
 
-            # FIXME: Add KG search results into RAG workflow
-            # if search_results.kg_search_results:
-            #     for result in search_results.kg_search_results:
-            #         if iteration >= 1:
-            #             yield ","
-            #         yield json.dumps(result.json())
-            #         context += f"Result {iteration+1}:\n{result.metadata['text']}\n\n"
-            #         iteration += 1
-
             yield f"</{self.SEARCH_STREAM_MARKER}>"
 
             messages = self.prompt_provider._get_message_payload(
@@ -85,6 +78,7 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
                 task_inputs={"query": query, "context": context},
             )
             yield f"<{self.COMPLETION_STREAM_MARKER}>"
+
             response = ""
             for chunk in self.llm_provider.get_completion_stream(
                 messages=messages, generation_config=rag_generation_config
@@ -95,11 +89,10 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
 
             yield f"</{self.COMPLETION_STREAM_MARKER}>"
 
-            await self.enqueue_log(
-                run_id=run_id,
-                key="llm_response",
-                value=response,
-            )
+            completion_record.search_results = search_results
+            completion_record.llm_response = response
+            completion_record.completion_end_time = datetime.now()
+            await self.log_completion_record(run_id, completion_record)
 
     async def _yield_chunks(
         self,
@@ -115,3 +108,12 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
     @staticmethod
     def _process_chunk(chunk: LLMChatCompletionChunk) -> str:
         return chunk.choices[0].delta.content or ""
+
+    async def log_completion_record(
+        self, run_id: uuid.UUID, completion_record: CompletionRecord
+    ):
+        await self.enqueue_log(
+            run_id=run_id,
+            key="completion_record",
+            value=completion_record.to_json(),
+        )

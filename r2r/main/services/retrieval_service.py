@@ -1,17 +1,21 @@
 import logging
 import time
 import uuid
+from datetime import datetime
 from typing import Optional
 
 from r2r.base import (
+    CompletionRecord,
     GenerationConfig,
     KGSearchSettings,
     KVLoggingSingleton,
     Message,
+    MessageType,
     R2RException,
     RunManager,
     User,
     VectorSearchSettings,
+    generate_id_from_label,
     manage_run,
     to_async_generator,
 )
@@ -87,6 +91,7 @@ class RetrievalService(Service):
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
                 run_manager=self.run_manager,
+                user=user,
                 *args,
                 **kwargs,
             )
@@ -116,8 +121,6 @@ class RetrievalService(Service):
     ):
         async with manage_run(self.run_manager, "rag_app") as run_id:
             try:
-                t0 = time.time()
-
                 # TODO - Remove these transforms once we have a better way to handle this
                 for (
                     filter,
@@ -133,33 +136,37 @@ class RetrievalService(Service):
                         user.id
                     )
 
-                if rag_generation_config.stream:
-                    t1 = time.time()
-                    latency = f"{t1 - t0:.2f}"
+                completion_start_time = datetime.now()
+                message_id = generate_id_from_label(
+                    f"{query}-{completion_start_time.isoformat()}"
+                )
 
-                    await self.logging_connection.log(
-                        log_id=run_id,
-                        key="rag_generation_latency",
-                        value=latency,
-                        is_info_log=False,
+                completion_record = CompletionRecord(
+                    message_id=message_id,
+                    message_type=MessageType.ASSISTANT,
+                    search_query=query,
+                    completion_start_time=completion_start_time,
+                )
+
+                if rag_generation_config.stream:
+                    return await self.stream_rag_response(
+                        query,
+                        run_id,
+                        completion_record,
+                        rag_generation_config,
+                        vector_search_settings,
+                        kg_search_settings,
+                        user,
+                        *args,
+                        **kwargs,
                     )
 
-                    async def stream_response():
-                        async with manage_run(self.run_manager, "arag"):
-                            async for (
-                                chunk
-                            ) in await self.pipelines.streaming_rag_pipeline.run(
-                                input=to_async_generator([query]),
-                                run_manager=self.run_manager,
-                                vector_search_settings=vector_search_settings,
-                                kg_search_settings=kg_search_settings,
-                                rag_generation_config=rag_generation_config,
-                                *args,
-                                **kwargs,
-                            ):
-                                yield chunk
-
-                    return stream_response()
+                await self.logging_connection.log(
+                    log_id=run_id,
+                    key="run_type",
+                    value="rag",
+                    is_info_log=True,
+                )
 
                 results = await self.pipelines.rag_pipeline.run(
                     input=to_async_generator([query]),
@@ -171,16 +178,6 @@ class RetrievalService(Service):
                     **kwargs,
                 )
 
-                t1 = time.time()
-                latency = f"{t1 - t0:.2f}"
-
-                await self.logging_connection.log(
-                    log_id=run_id,
-                    key="rag_generation_latency",
-                    value=latency,
-                    is_info_log=False,
-                )
-
                 if len(results) == 0:
                     raise R2RException(
                         status_code=404, message="No results found"
@@ -189,6 +186,26 @@ class RetrievalService(Service):
                     logger.warning(
                         f"Multiple results found for query: {query}"
                     )
+
+                completion_record.search_results = (
+                    results[0].search_results
+                    if hasattr(results[0], "search_results")
+                    else None
+                )
+                completion_record.llm_response = (
+                    results[0].completion
+                    if hasattr(results[0], "completion")
+                    else None
+                )
+                completion_record.completion_end_time = datetime.now()
+
+                await self.logging_connection.log(
+                    log_id=run_id,
+                    key="completion_record",
+                    value=completion_record.to_json(),
+                    is_info_log=False,
+                )
+
                 # unpack the first result
                 return results[0]
 
@@ -203,7 +220,38 @@ class RetrievalService(Service):
                     status_code=500, message="Internal Server Error"
                 )
 
-    @telemetry_event("RAGChat")
+    async def stream_rag_response(
+        self,
+        query,
+        run_id,
+        completion_record,
+        rag_generation_config,
+        vector_search_settings,
+        kg_search_settings,
+        user,
+        *args,
+        **kwargs,
+    ):
+        async def stream_response():
+            async with manage_run(self.run_manager, "arag"):
+                async for (
+                    chunk
+                ) in await self.pipelines.streaming_rag_pipeline.run(
+                    input=to_async_generator([query]),
+                    run_manager=self.run_manager,
+                    vector_search_settings=vector_search_settings,
+                    kg_search_settings=kg_search_settings,
+                    rag_generation_config=rag_generation_config,
+                    completion_record=completion_record,
+                    user=user,
+                    *args,
+                    **kwargs,
+                ):
+                    yield chunk
+
+        return stream_response()
+
+    @telemetry_event("Agent")
     async def agent(
         self,
         messages: list[Message],
@@ -257,6 +305,7 @@ class RetrievalService(Service):
                                 kg_search_settings=kg_search_settings,
                                 rag_generation_config=rag_generation_config,
                                 include_title_if_available=include_title_if_available,
+                                user=user,
                                 *args,
                                 **kwargs,
                             ):
@@ -271,6 +320,7 @@ class RetrievalService(Service):
                     kg_search_settings=kg_search_settings,
                     rag_generation_config=rag_generation_config,
                     include_title_if_available=include_title_if_available,
+                    user=user,
                     *args,
                     **kwargs,
                 )
@@ -312,11 +362,10 @@ class RetrievalService(Service):
             context=context,
             completion=completion,
         )
-        result = await self.eval_pipeline.run(
+        return await self.eval_pipeline.run(
             input=to_async_generator([eval_payload]),
             run_manager=self.run_manager,
             eval_generation_config=eval_generation_config,
             *args,
             **kwargs,
         )
-        return result
