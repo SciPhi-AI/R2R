@@ -560,3 +560,139 @@ async def test_token_blacklist_cleanup(auth_service, auth_provider):
     assert auth_provider.db_provider.relational.is_token_blacklisted(
         access_token
     )
+
+
+@pytest.mark.asyncio
+async def test_register_and_verify(auth_service):
+    user = UserCreate(email="newuser@example.com", password="password123")
+    new_user = await auth_service.register(user)
+    assert new_user.email == "newuser@example.com"
+    assert not new_user.is_verified
+
+    # Mock verification code generation
+    with patch.object(
+        auth_service.providers.auth.crypto_provider,
+        "generate_verification_code",
+        return_value="123456",
+    ):
+        verified = await auth_service.verify_email("123456")
+        assert verified
+
+
+@pytest.mark.asyncio
+async def test_login_logout(auth_service):
+    user = UserCreate(email="loginuser@example.com", password="password123")
+    await auth_service.register(user)
+    await auth_service.verify_email("123456")  # Assume verification
+
+    tokens = await auth_service.login("loginuser@example.com", "password123")
+    assert "access_token" in tokens
+    assert "refresh_token" in tokens
+
+    logout_result = await auth_service.logout(tokens["access_token"].token)
+    assert logout_result["message"] == "Logged out successfully"
+
+
+@pytest.mark.asyncio
+async def test_refresh_token(auth_service):
+    user = UserCreate(email="refreshuser@example.com", password="password123")
+    await auth_service.register(user)
+    await auth_service.verify_email("123456")  # Assume verification
+
+    tokens = await auth_service.login("refreshuser@example.com", "password123")
+    new_tokens = await auth_service.refresh_access_token(
+        "refreshuser@example.com", tokens["refresh_token"].token
+    )
+    assert new_tokens["access_token"].token != tokens["access_token"].token
+
+
+@pytest.mark.asyncio
+async def test_change_password(auth_service, auth_provider):
+    user = UserCreate(email="changepass@example.com", password="oldpassword")
+    with patch.object(
+        auth_provider.crypto_provider,
+        "generate_verification_code",
+        return_value="123456",
+    ):
+        new_user = await auth_service.register(user)
+    await auth_service.verify_email("123456")
+
+    result = await auth_service.change_password(
+        new_user, "oldpassword", "newpassword"
+    )
+    assert result["message"] == "Password changed successfully"
+
+    with pytest.raises(R2RException):
+        await auth_service.login("changepass@example.com", "oldpassword")
+
+    tokens = await auth_service.login("changepass@example.com", "newpassword")
+    assert "access_token" in tokens
+
+
+@pytest.mark.asyncio
+async def test_request_reset_password(auth_service):
+    user = UserCreate(email="resetpass@example.com", password="password123")
+    await auth_service.register(user)
+
+    result = await auth_service.request_password_reset("resetpass@example.com")
+    assert (
+        result["message"] == "If the email exists, a reset link has been sent"
+    )
+
+
+@pytest.mark.asyncio
+async def test_confirm_reset_password(auth_service, auth_provider):
+    user = UserCreate(email="confirmreset@example.com", password="oldpassword")
+
+    # Mock reset token generation
+    with patch.object(
+        auth_provider.crypto_provider,
+        "generate_verification_code",
+        return_value="123456",
+    ):
+        await auth_service.register(user)
+        await auth_service.verify_email("123456")
+        await auth_service.request_password_reset("confirmreset@example.com")
+        result = await auth_service.confirm_password_reset(
+            "123456", "newpassword"
+        )
+        assert result["message"] == "Password reset successfully"
+
+    tokens = await auth_service.login(
+        "confirmreset@example.com", "newpassword"
+    )
+    assert "access_token" in tokens
+
+
+@pytest.mark.asyncio
+async def test_get_user_profile(auth_service):
+    user = UserCreate(email="profile@example.com", password="password123")
+    new_user = await auth_service.register(user)
+
+    profile = await auth_service.get_user_profile(new_user.id)
+    assert profile.email == "profile@example.com"
+
+
+@pytest.mark.asyncio
+async def test_update_user_profile(auth_service):
+    user = UserCreate(
+        email="updateprofile@example.com", password="password123"
+    )
+    new_user = await auth_service.register(user)
+
+    updated_user = await auth_service.update_user(
+        new_user.id, {"name": "John Doe"}
+    )
+    assert updated_user.name == "John Doe"
+
+
+@pytest.mark.asyncio
+async def test_delete_user_account(auth_service):
+    user = UserCreate(email="deleteuser@example.com", password="password123")
+    new_user = await auth_service.register(user)
+
+    result = await auth_service.delete_user(new_user.id, "password123")
+    assert result["message"] == "User account deleted successfully"
+
+    with pytest.raises(R2RException):
+        await auth_service.login("deleteuser@example.com", "password123")

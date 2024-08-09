@@ -205,7 +205,6 @@ class R2RAuthProvider(AuthProvider):
             logger.warning(f"Unverified user attempted login: {email}")
             raise R2RException(status_code=401, message="Email not verified")
 
-        logger.info(f"Successful login for user: {email}")
         access_token = self.create_access_token(data={"sub": user.email})
         refresh_token = self.create_refresh_token(data={"sub": user.email})
         return {

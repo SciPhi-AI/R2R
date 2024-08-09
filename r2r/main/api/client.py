@@ -326,7 +326,6 @@ class R2RClient:
             task_prompt_override=task_prompt_override,
             include_title_if_available=include_title_if_available,
         )
-        print("request = ", request)
 
         if rag_generation_config and rag_generation_config.get(
             "stream", False

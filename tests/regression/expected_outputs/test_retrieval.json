@@ -1,0 +1,285 @@
+{
+  "search": {
+    "results": {
+      "vector_search_results": [
+        {
+          "id": "1d0cd8c8-7beb-5ff2-bb36-b8cef6948fde",
+          "score": 0.06490619480609905,
+          "metadata": {
+            "text": "Illyrio Mopatis\nAn obese merchant from the Free Cities who helps Daenerys and Viserys Targaryen. Illyrio is very rich and very well-informed. He is quick to please, especially when there is a possibility that his kindness will help him avoid trouble or gain greater fortune in the future.\nSer Barristan Selmy",
+            "title": "got.txt",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+            "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+            "associatedQuery": "What was Uber's profit in 2020?"
+          }
+        },
+        {
+          "id": "642509fe-eed6-53fb-96b4-13e5fcb65788",
+          "score": 0.022212173789740053,
+          "metadata": {
+            "text": "Bronn\nA sellsword, or mercenary, who saves Tyrion\u2019s life many times over. Bronn is smart and skilled, and he knows a good deal when he sees one. Though he is an unscrupulous mercenary, he develops something of a friendship with Tyrion.\nLysa Arryn",
+            "title": "got.txt",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+            "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+            "associatedQuery": "What was Uber's profit in 2020?"
+          }
+        },
+        {
+          "id": "31d54a33-f9df-5dd4-ab11-2d2fff63b56e",
+          "score": 0.00858027487993196,
+          "metadata": {
+            "text": "Petyr (Littlefinger) Baelish\nThe Red Keep\u2019s master of coin. He is shrewd, conniving, and selfish, and he keeps informed about everything that goes on in King\u2019s Landing. He holds a grudge against the Starks because he wanted to marry Catelyn when he was younger.\nVarys (The Spider)\nThe Red Keep\u2019s master of whispers and a eunuch. His role in the court is to run a network of spies and keep the king informed, and he often uses what he knows to manipulate those around him, including the king.\nRobert Baratheon",
+            "title": "got.txt",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+            "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+            "associatedQuery": "What was Uber's profit in 2020?"
+          }
+        },
+        {
+          "id": "26724da6-6cb7-5e65-9818-c4bc215a61c9",
+          "score": -0.003791129442519914,
+          "metadata": {
+            "text": "Ser Jaime (The Kingslayer) Lannister\nBrother to Tyrion and Cersei, as well as Cersei\u2019s lover. Jaime is arrogant, short-tempered, and rash, but he\u2019s also a gifted swordsman. He is widely mistrusted and called Kingslayer because he murdered the previous king.\nPetyr (Littlefinger) Baelish",
+            "title": "got.txt",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+            "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+            "associatedQuery": "What was Uber's profit in 2020?"
+          }
+        },
+        {
+          "id": "2dad2f0b-1787-55c1-87ca-3d1a17efc5b8",
+          "score": -0.011409667571800064,
+          "metadata": {
+            "text": "Prince Joffrey (Joff) Baratheon\nThe repulsive prince of Westeros. The twelve-year-old Joff is the eldest child of Cersei and Robert, and he is spoiled, impulsive, and cruel when using his power as prince and heir to the throne.\nSandor (The Hound) Clegane",
+            "title": "got.txt",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+            "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+            "associatedQuery": "What was Uber's profit in 2020?"
+          }
+        },
+        {
+          "id": "623ff8bc-cf3b-5345-918d-9282e69e236e",
+          "score": -0.026951710018410013,
+          "metadata": {
+            "text": "Jon Snow\nNed Stark\u2019s bastard son. Since Catelyn is not his mother, he is not a proper member of the Stark family, and he often feels himself an outsider. He is also a highly capable swordsman and thinker, with a knack for piercing observations.\nTyrion (The Imp) Lannister\nA small man with a giant intellect and sharp tongue. Tyrion does not pity himself but rather accepts his shortcomings as a little person and turns them to his advantage. He loves his family but recognizes their greed and ambition.",
+            "title": "got.txt",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+            "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+            "associatedQuery": "What was Uber's profit in 2020?"
+          }
+        },
+        {
+          "id": "9ca45e8a-d6e3-57b6-905f-7a4c5f252e87",
+          "score": -0.028433231804769976,
+          "metadata": {
+            "text": "Viserys Targaryen\nBrother of Daenerys and son of the murdered King Aerys Targaryen. Having lived in exile for many years, earning him the nickname of The Beggar King, he wants to return to Westeros and retake the throne. He is arrogant, cruel, easily angered, and foolish.\nKhal Drogo\nA powerful khal (king) among the Dothraki people and the husband of Daenerys Targaryen. Stoic and brave, Drogo is an exceptional warrior who shows his enemies no mercy. He controls a massive nomadic tribe, or khalasar.",
+            "title": "got.txt",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+            "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+            "associatedQuery": "What was Uber's profit in 2020?"
+          }
+        },
+        {
+          "id": "9903ea21-07ac-5411-9d08-b93398221fae",
+          "score": -0.032165955752130104,
+          "metadata": {
+            "text": "Robert Baratheon\nThe corpulent king of Westeros. He loves to fight, drink, and sleep with women, and he hates the duties of ruling. He and Ned are long-time friends, and he was engaged to Ned\u2019s sister until she died.\nSer Jorah Mormont",
+            "title": "got.txt",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+            "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+            "associatedQuery": "What was Uber's profit in 2020?"
+          }
+        },
+        {
+          "id": "6e2110b9-6ea2-5436-ac73-a49ef62acf17",
+          "score": -0.03681669384240993,
+          "metadata": {
+            "text": "Sandor (The Hound) Clegane\nPrince Joff\u2019s unofficial bodyguard. Proud that he is not a knight, The Hound appears to have no scruples whatsoever and does what Joffrey orders, however cruel or unjust, without question. His face is scarred on one side by extensive burning inflicted by his brother, Gregor.\nRobb Stark\nThe eldest Stark son and thus heir to Ned Stark. Though just fourteen, he is mature beyond his age as well as being brave and dutiful like his father.\nMaester Luwin",
+            "title": "got.txt",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+            "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+            "associatedQuery": "What was Uber's profit in 2020?"
+          }
+        },
+        {
+          "id": "0cf992e1-5760-56ff-a159-7a17a920207c",
+          "score": -0.055617548525330074,
+          "metadata": {
+            "text": "Ser Jorah Mormont\nAn exiled knight who serves unofficially as Daenerys\u2019s chief advisor. Though he was exiled by Ned Stark for selling slaves, he is intelligent, valiant, and a great fighter. He swears allegiance to Viserys as true king of Westeros, but he also feeds information about the Targaryens back to Varys.\nViserys Targaryen",
+            "title": "got.txt",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+            "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+            "associatedQuery": "What was Uber's profit in 2020?"
+          }
+        }
+      ],
+      "kg_search_results": []
+    }
+  },
+  "rag": {
+    "results": {
+      "completion": {
+        "id": "chatcmpl-9uRSTEPYMIpB2WVREy1v8Y7QbOI2r",
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "content": "The provided context does not contain any information about Uber's profit in 2020. The context consists of character descriptions from a fictional universe and does not address financial data or business performance related to Uber. Therefore, I cannot provide Uber's profit for 2020 based on the given context.",
+              "refusal": null,
+              "role": "assistant",
+              "function_call": null,
+              "tool_calls": null
+            }
+          }
+        ],
+        "created": 1723238945,
+        "model": "gpt-4o-2024-05-13",
+        "object": "chat.completion",
+        "service_tier": null,
+        "system_fingerprint": "fp_c9aa9c0491",
+        "usage": {
+          "completion_tokens": 58,
+          "prompt_tokens": 1089,
+          "total_tokens": 1147
+        }
+      },
+      "search_results": {
+        "vector_search_results": [
+          {
+            "id": "1d0cd8c8-7beb-5ff2-bb36-b8cef6948fde",
+            "score": 0.06490619480609905,
+            "metadata": {
+              "text": "Illyrio Mopatis\nAn obese merchant from the Free Cities who helps Daenerys and Viserys Targaryen. Illyrio is very rich and very well-informed. He is quick to please, especially when there is a possibility that his kindness will help him avoid trouble or gain greater fortune in the future.\nSer Barristan Selmy",
+              "title": "got.txt",
+              "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+              "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+              "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+              "associatedQuery": "What was Uber's profit in 2020?"
+            }
+          },
+          {
+            "id": "642509fe-eed6-53fb-96b4-13e5fcb65788",
+            "score": 0.022212173789740053,
+            "metadata": {
+              "text": "Bronn\nA sellsword, or mercenary, who saves Tyrion\u2019s life many times over. Bronn is smart and skilled, and he knows a good deal when he sees one. Though he is an unscrupulous mercenary, he develops something of a friendship with Tyrion.\nLysa Arryn",
+              "title": "got.txt",
+              "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+              "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+              "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+              "associatedQuery": "What was Uber's profit in 2020?"
+            }
+          },
+          {
+            "id": "31d54a33-f9df-5dd4-ab11-2d2fff63b56e",
+            "score": 0.00858027487993196,
+            "metadata": {
+              "text": "Petyr (Littlefinger) Baelish\nThe Red Keep\u2019s master of coin. He is shrewd, conniving, and selfish, and he keeps informed about everything that goes on in King\u2019s Landing. He holds a grudge against the Starks because he wanted to marry Catelyn when he was younger.\nVarys (The Spider)\nThe Red Keep\u2019s master of whispers and a eunuch. His role in the court is to run a network of spies and keep the king informed, and he often uses what he knows to manipulate those around him, including the king.\nRobert Baratheon",
+              "title": "got.txt",
+              "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+              "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+              "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+              "associatedQuery": "What was Uber's profit in 2020?"
+            }
+          },
+          {
+            "id": "26724da6-6cb7-5e65-9818-c4bc215a61c9",
+            "score": -0.003791129442519914,
+            "metadata": {
+              "text": "Ser Jaime (The Kingslayer) Lannister\nBrother to Tyrion and Cersei, as well as Cersei\u2019s lover. Jaime is arrogant, short-tempered, and rash, but he\u2019s also a gifted swordsman. He is widely mistrusted and called Kingslayer because he murdered the previous king.\nPetyr (Littlefinger) Baelish",
+              "title": "got.txt",
+              "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+              "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+              "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+              "associatedQuery": "What was Uber's profit in 2020?"
+            }
+          },
+          {
+            "id": "2dad2f0b-1787-55c1-87ca-3d1a17efc5b8",
+            "score": -0.011409667571800064,
+            "metadata": {
+              "text": "Prince Joffrey (Joff) Baratheon\nThe repulsive prince of Westeros. The twelve-year-old Joff is the eldest child of Cersei and Robert, and he is spoiled, impulsive, and cruel when using his power as prince and heir to the throne.\nSandor (The Hound) Clegane",
+              "title": "got.txt",
+              "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+              "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+              "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+              "associatedQuery": "What was Uber's profit in 2020?"
+            }
+          },
+          {
+            "id": "623ff8bc-cf3b-5345-918d-9282e69e236e",
+            "score": -0.026951710018410013,
+            "metadata": {
+              "text": "Jon Snow\nNed Stark\u2019s bastard son. Since Catelyn is not his mother, he is not a proper member of the Stark family, and he often feels himself an outsider. He is also a highly capable swordsman and thinker, with a knack for piercing observations.\nTyrion (The Imp) Lannister\nA small man with a giant intellect and sharp tongue. Tyrion does not pity himself but rather accepts his shortcomings as a little person and turns them to his advantage. He loves his family but recognizes their greed and ambition.",
+              "title": "got.txt",
+              "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+              "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+              "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+              "associatedQuery": "What was Uber's profit in 2020?"
+            }
+          },
+          {
+            "id": "9ca45e8a-d6e3-57b6-905f-7a4c5f252e87",
+            "score": -0.028433231804769976,
+            "metadata": {
+              "text": "Viserys Targaryen\nBrother of Daenerys and son of the murdered King Aerys Targaryen. Having lived in exile for many years, earning him the nickname of The Beggar King, he wants to return to Westeros and retake the throne. He is arrogant, cruel, easily angered, and foolish.\nKhal Drogo\nA powerful khal (king) among the Dothraki people and the husband of Daenerys Targaryen. Stoic and brave, Drogo is an exceptional warrior who shows his enemies no mercy. He controls a massive nomadic tribe, or khalasar.",
+              "title": "got.txt",
+              "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+              "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+              "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+              "associatedQuery": "What was Uber's profit in 2020?"
+            }
+          },
+          {
+            "id": "9903ea21-07ac-5411-9d08-b93398221fae",
+            "score": -0.032165955752130104,
+            "metadata": {
+              "text": "Robert Baratheon\nThe corpulent king of Westeros. He loves to fight, drink, and sleep with women, and he hates the duties of ruling. He and Ned are long-time friends, and he was engaged to Ned\u2019s sister until she died.\nSer Jorah Mormont",
+              "title": "got.txt",
+              "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+              "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+              "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+              "associatedQuery": "What was Uber's profit in 2020?"
+            }
+          },
+          {
+            "id": "6e2110b9-6ea2-5436-ac73-a49ef62acf17",
+            "score": -0.03681669384240993,
+            "metadata": {
+              "text": "Sandor (The Hound) Clegane\nPrince Joff\u2019s unofficial bodyguard. Proud that he is not a knight, The Hound appears to have no scruples whatsoever and does what Joffrey orders, however cruel or unjust, without question. His face is scarred on one side by extensive burning inflicted by his brother, Gregor.\nRobb Stark\nThe eldest Stark son and thus heir to Ned Stark. Though just fourteen, he is mature beyond his age as well as being brave and dutiful like his father.\nMaester Luwin",
+              "title": "got.txt",
+              "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+              "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+              "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+              "associatedQuery": "What was Uber's profit in 2020?"
+            }
+          },
+          {
+            "id": "0cf992e1-5760-56ff-a159-7a17a920207c",
+            "score": -0.055617548525330074,
+            "metadata": {
+              "text": "Ser Jorah Mormont\nAn exiled knight who serves unofficially as Daenerys\u2019s chief advisor. Though he was exiled by Ned Stark for selling slaves, he is intelligent, valiant, and a great fighter. He swears allegiance to Viserys as true king of Westeros, but he also feeds information about the Targaryens back to Varys.\nViserys Targaryen",
+              "title": "got.txt",
+              "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+              "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+              "extraction_id": "3b39e91d-95a5-5d6c-a78c-943a28f64108",
+              "associatedQuery": "What was Uber's profit in 2020?"
+            }
+          }
+        ],
+        "kg_search_results": null
+      }
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "ingest_sample_file": {
+    "results": {
+      "processed_documents": [
+        "Document 'aristotle.txt' processed successfully."
+      ],
+      "failed_documents": [],
+      "skipped_documents": [],
+      "successful_document_ids": [
+        "93123a68-d668-51de-8291-92162730dc87"
+      ]
+    }
+  },
+  "reingest_sample_file": {
+    "results": "Document with ID 93123a68-d668-51de-8291-92162730dc87 was already successfully processed."
+  },
+  "documents_overview": {
+    "results": [
+      {
+        "document_id": "93123a68-d668-51de-8291-92162730dc87",
+        "version": "v0",
+        "size_in_bytes": 73353,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "aristotle.txt",
+        "created_at": "2024-08-09T15:12:22.448581Z",
+        "updated_at": "2024-08-09T15:12:22.448581Z"
+      }
+    ]
+  },
+  "update_document": {
+    "results": {
+      "processed_documents": [
+        "Document 'aristotle_v2.txt' processed successfully."
+      ],
+      "failed_documents": [],
+      "skipped_documents": [],
+      "successful_document_ids": [
+        "93123a68-d668-51de-8291-92162730dc87"
+      ]
+    }
+  },
+  "delete_document": {
+    "results": "Documents ['93123a68-d668-51de-8291-92162730dc87'] deleted successfully."
+  },
+  "rerun_documents_overview": {
+    "results": []
+  }
+}

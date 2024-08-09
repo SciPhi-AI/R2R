@@ -1,0 +1,48 @@
+{
+  "register_user": {
+    "results": {
+      "email": "test_a55d8044-d83a-424c-8d11-3d4131bf129c@example.com",
+      "id": "791e50a3-5c74-5d3f-b138-927c86832f46",
+      "group_ids": [],
+      "hashed_password": "$2b$12$DvBP/kOaWCJJwaGQaGSubufX7rEwv311eCGdMDcYlqUTRnBFG.Dfm",
+      "is_superuser": false,
+      "is_active": true,
+      "is_verified": false,
+      "verification_code_expiry": null,
+      "name": null,
+      "bio": null,
+      "profile_picture": null,
+      "created_at": "2024-08-09T21:36:15.111262Z",
+      "updated_at": "2024-08-09T21:36:15.111262Z"
+    }
+  },
+  "login_user": {
+    "results": {
+      "access_token": {
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiZXhwIjoxNzIzMjQyOTc1LjU3NzIwOSwidG9rZW5fdHlwZSI6ImFjY2VzcyJ9.8iuBDzjxg_1H-Te6kUP3Ut56qf7LB0JuBF0DmOBwoRI",
+        "token_type": "access"
+      },
+      "refresh_token": {
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiZXhwIjoxNzIzODQ0MTc1LCJ0b2tlbl90eXBlIjoicmVmcmVzaCJ9.qS2-0Tqk0I0PdLbLmr3UKCLhjdC57xOf87IYvK7JIYs",
+        "token_type": "refresh"
+      }
+    }
+  },
+  "user_info": {
+    "results": {
+      "email": "test@example.com",
+      "id": "fcbcbc64-f85c-5025-877c-37f4c7a12d6e",
+      "group_ids": [],
+      "hashed_password": "$2b$12$5zQct0/el3uLCmxZaWZ3B.56mzuChojd3V5OF892AYrfD7/Yopa.G",
+      "is_superuser": false,
+      "is_active": true,
+      "is_verified": true,
+      "verification_code_expiry": null,
+      "name": null,
+      "bio": null,
+      "profile_picture": null,
+      "created_at": "2024-08-09T21:23:11.863355Z",
+      "updated_at": "2024-08-09T21:23:11.863355Z"
+    }
+  }
+}
