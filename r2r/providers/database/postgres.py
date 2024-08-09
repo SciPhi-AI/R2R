@@ -286,6 +286,61 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             ]
         )
 
+    def assign_document_to_group(
+        self, document_id: str, group_id: str
+    ) -> bool:
+        query = text(
+            f"""
+            UPDATE document_info_{self.collection_name}
+            SET group_ids = ARRAY(SELECT DISTINCT UNNEST(ARRAY_APPEND(group_ids, CAST(:group_id AS UUID))))
+            WHERE document_id = CAST(:document_id AS UUID)
+            RETURNING document_id
+        """
+        )
+        chunk_query = text(
+            f"""
+            UPDATE vecs."{self.collection_name}"
+            SET metadata = jsonb_set(
+                metadata,
+                '{{group_ids}}',
+                (
+                    SELECT COALESCE(jsonb_agg(DISTINCT value), '[]'::jsonb)
+                    FROM (
+                        SELECT jsonb_array_elements(COALESCE(metadata->'group_ids', '[]'::jsonb)) AS value
+                        UNION
+                        SELECT to_jsonb(CAST(:group_id AS UUID))
+                    ) AS unique_values
+                )
+            )
+            WHERE metadata->>'document_id' = CAST(:document_id AS TEXT)
+        """
+        )
+        with self.vx.Session() as sess:
+            with sess.begin():
+                result = sess.execute(
+                    query, {"document_id": document_id, "group_id": group_id}
+                )
+                if result.rowcount > 0:
+                    sess.execute(
+                        chunk_query,
+                        {"document_id": document_id, "group_id": group_id},
+                    )
+                    return True
+        return False
+
+    def get_document_groups(self, document_id: str) -> list[str]:
+        query = text(
+            f"""
+            SELECT group_ids
+            FROM document_info_{self.collection_name}
+            WHERE document_id = :document_id
+        """
+        )
+        with self.vx.Session() as sess:
+            result = sess.execute(query, {"document_id": document_id})
+            group_ids = result.scalar()
+        return [str(group_id) for group_id in (group_ids or [])]
+
     def search(
         self,
         query_vector: list[float],
@@ -1429,6 +1484,37 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 },
             )
             sess.commit()
+
+    def get_groups_overview(self, group_ids: Optional[list[str]] = None):
+        group_ids_condition = ""
+        params = {}
+        if group_ids:
+            group_ids_condition = "WHERE id IN :group_ids"
+            params["group_ids"] = tuple(group_ids)
+
+        query = text(
+            f"""
+            SELECT id, name, description, created_at, updated_at,
+                (SELECT COUNT(*) FROM users_{self.collection_name} WHERE groups_{self.collection_name}.id = ANY(group_ids)) AS user_count
+            FROM groups_{self.collection_name}
+            {group_ids_condition}
+            """
+        )
+
+        with self.vx.Session() as sess:
+            results = sess.execute(query, params).fetchall()
+
+        return [
+            {
+                "id": row[0],
+                "name": row[1],
+                "description": row[2],
+                "created_at": row[3],
+                "updated_at": row[4],
+                "user_count": row[5],
+            }
+            for row in results
+        ]
 
 
 class PostgresDBProvider(DatabaseProvider):

@@ -375,6 +375,43 @@ class ManagementService(Service):
                 message=f"An error occurred while fetching relationships: {str(e)}",
             )
 
+    @telemetry_event("AssignDocumentToGroup")
+    async def aassign_document_to_group(
+        self, document_id: str, group_id: uuid.UUID
+    ):
+
+        success = self.providers.database.vector.assign_document_to_group(
+            document_id, group_id
+        )
+        if success:
+            return {"message": "Document assigned to group successfully"}
+        else:
+            raise R2RException(
+                status_code=404,
+                message="Document not found or assignment failed",
+            )
+
+    @telemetry_event("RemoveDocumentFromGroup")
+    async def aremove_document_from_group(
+        self, document_id: str, group_id: uuid.UUID
+    ):
+        success = self.providers.database.vector.remove_document_from_group(
+            document_id, group_id
+        )
+        if success:
+            return {"message": "Document removed from group successfully"}
+        else:
+            raise R2RException(
+                status_code=404, message="Document not found or removal failed"
+            )
+
+    @telemetry_event("GetDocumentGroups")
+    async def aget_document_groups(self, document_id: str):
+        group_ids = self.providers.database.vector.get_document_groups(
+            document_id
+        )
+        return {"group_ids": [str(group_id) for group_id in group_ids]}
+
     def process_relationships(
         self, relationships: List[Tuple[str, str, str]]
     ) -> Tuple[Dict[str, List[str]], Dict[str, Dict[str, List[str]]]]:

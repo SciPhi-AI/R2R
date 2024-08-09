@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from r2r.base import (
     KVLoggingSingleton,
@@ -133,13 +133,19 @@ class AuthService(Service):
 
     @telemetry_event("DeleteUserAccount")
     async def delete_user(
-        self, user_id: uuid.UUID, password: str
+        self,
+        user_id: uuid.UUID,
+        password: Optional[str] = None,
+        is_superuser: bool = False,
     ) -> dict[str, str]:
         user = self.providers.database.relational.get_user_by_id(user_id)
         if not user:
             raise R2RException(status_code=404, message="User not found")
-        if not self.providers.auth.crypto_provider.verify_password(
-            password, user.hashed_password
+        if not (
+            is_superuser
+            or self.providers.auth.crypto_provider.verify_password(
+                password, user.hashed_password
+            )
         ):
             raise R2RException(status_code=400, message="Incorrect password")
         self.providers.database.relational.delete_user(user_id)

@@ -601,10 +601,10 @@ class R2RClient:
         self._ensure_authenticated()
         return self._make_request("PUT", "user", json=user_data)
 
-    def delete_user(self, password: str) -> dict:
+    def delete_user(self, user_id: str, password: str) -> dict:
         self._ensure_authenticated()
         response = self._make_request(
-            "DELETE", "user", json={"password": password}
+            "DELETE", "user", json={"user_id": user_id, "password": password}
         )
         self.access_token = None
         self._refresh_token = None

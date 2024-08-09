@@ -111,15 +111,20 @@ class IngestionService(Service):
         for iteration, document in enumerate(documents):
             version = versions[iteration] if versions else "v0"
 
-            # Check if user ID has already been provided, and if it matches the authenticated user
-            user_id = document.metadata.get("user_id", None)
+            # Handle user management logic
             if user:
-                if user_id and user_id != str(user.id):
-                    raise R2RException(
-                        status_code=403,
-                        message="User ID in metadata does not match authenticated user.",
-                    )
-                document.metadata["user_id"] = str(user.id)
+                if "user_id" in document.metadata:
+                    if document.metadata["user_id"] != str(user.id):
+                        raise R2RException(
+                            status_code=403,
+                            message="User ID in metadata does not match authenticated user.",
+                        )
+                else:
+                    document.metadata["user_id"] = str(user.id)
+
+            # Remove group_ids for non-superusers
+            if user and not user.is_superuser:
+                document.metadata.pop("group_ids", None)
 
             # Check for duplicates within the current batch
             if document.id in processed_documents:
@@ -167,6 +172,10 @@ class IngestionService(Service):
                     status="processing",  # Set initial status to `processing`
                     group_ids=[],
                 )
+            )
+
+            processed_documents[document.id] = document.metadata.get(
+                "title", str(document.id)
             )
 
             processed_documents[document.id] = document.metadata.get(
@@ -242,6 +251,21 @@ class IngestionService(Service):
                     )
 
                 document_metadata = metadatas[iteration] if metadatas else {}
+
+                # Handle user management logic
+                if user:
+                    if "user_id" in document_metadata:
+                        if document_metadata["user_id"] != str(user.id):
+                            raise R2RException(
+                                status_code=403,
+                                message="User ID in metadata does not match authenticated user.",
+                            )
+                    else:
+                        document_metadata["user_id"] = str(user.id)
+
+                # Remove group_ids for non-superusers
+                if user and not user.is_superuser:
+                    document_metadata.pop("group_ids", None)
 
                 id_label = str(file.filename.split("/")[-1])
                 # Make user-level ids unique
@@ -422,6 +446,7 @@ class IngestionService(Service):
                 f"Document '{filename}' skipped since it already exists."
                 for _, filename in skipped_documents
             ],
+            "successful_document_ids": successful_ids,
         }
 
         # TODO - Clean up logging for document parse results

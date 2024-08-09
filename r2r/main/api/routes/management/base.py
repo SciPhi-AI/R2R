@@ -10,6 +10,7 @@ from r2r.base import R2RException
 from r2r.main.api.routes.management.requests import (
     R2RAddUserToGroupRequest,
     R2RAnalyticsRequest,
+    R2RAssignDocumentToGroupRequest,
     R2RCreateGroupRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
@@ -17,6 +18,7 @@ from r2r.main.api.routes.management.requests import (
     R2RGroupsOverviewRequest,
     R2RLogsRequest,
     R2RPrintRelationshipsRequest,
+    R2RRemoveDocumentFromGroupRequest,
     R2RRemoveUserFromGroupRequest,
     R2RScoreCompletionRequest,
     R2RUpdateGroupRequest,
@@ -405,6 +407,42 @@ class ManagementRouter(BaseRouter):
             return await self.engine.ascore_completion(
                 message_id=request.message_id, score=request.score
             )
+
+        @self.router.post("/assign_document_to_group")
+        @self.base_endpoint
+        async def assign_document_to_group_app(
+            request: R2RAssignDocumentToGroupRequest,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can assign documents to groups.", 403
+                )
+            return await self.engine.aassign_document_to_group(
+                request.document_id, request.group_id
+            )
+
+        @self.router.post("/remove_document_from_group")
+        @self.base_endpoint
+        async def remove_document_from_group_app(
+            request: R2RRemoveDocumentFromGroupRequest,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can remove documents from groups.", 403
+                )
+            return await self.engine.aremove_document_from_group(
+                request.document_id, request.group_id
+            )
+
+        @self.router.get("/get_document_groups/{document_id}")
+        @self.base_endpoint
+        async def get_document_groups_app(
+            document_id: str,
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            return await self.engine.aget_document_groups(document_id)
 
 
 class R2RExtractionRequest(BaseModel):

@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from r2r.base import Token, User, UserCreate
 from r2r.main.api.routes.auth.requests import (
+    DeleteUserRequest,
     PasswordChangeRequest,
     PasswordResetConfirmRequest,
     PasswordResetRequest,
@@ -128,7 +129,14 @@ class AuthRouter(BaseRouter):
         @self.router.delete("/user")
         @self.base_endpoint
         async def delete_user_app(
-            password: str = Body(..., embed=True),
+            delete_request: DeleteUserRequest,
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
-            return await self.engine.adelete_user(auth_user.id, password)
+            if (
+                str(auth_user.id) != delete_request.user_id
+                and not auth_user.is_superuser
+            ):
+                raise Exception("User ID does not match authenticated user")
+            return await self.engine.adelete_user(
+                delete_request.user_id, delete_request.password
+            )

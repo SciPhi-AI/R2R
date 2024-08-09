@@ -71,12 +71,17 @@ def rag(
             for chunk in response:
                 click.echo(chunk, nl=False)
             click.echo()
-        elif obj.client_mode:
-            click.echo(f"Search Results:\n{response['search_results']}")
-            click.echo(f"Completion:\n{response['completion']}")
-        else:
-            click.echo(f"Search Results:\n{response.search_results}")
-            click.echo(f"Completion:\n{response.completion}")
+        if isinstance(response, dict) and "response" in response:
+            response = response["response"]
+
+        if "vector_search_results" in response:
+            click.echo("Vector search results:")
+            for result in response["vector_search_results"]:
+                click.echo(result)
+        if "kg_search_results" in response and response["kg_search_results"]:
+            click.echo("KG search results:")
+            for result in response["kg_search_results"]:
+                click.echo(result)
 
 
 @cli.command()

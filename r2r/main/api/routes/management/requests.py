@@ -70,3 +70,13 @@ class R2RGroupsOverviewRequest(BaseModel):
 class R2RScoreCompletionRequest(BaseModel):
     message_id: uuid.UUID = None
     score: float = None
+
+
+class R2RAssignDocumentToGroupRequest(BaseModel):
+    document_id: str
+    group_id: uuid.UUID
+
+
+class R2RRemoveDocumentFromGroupRequest(BaseModel):
+    document_id: str
+    group_id: uuid.UUID

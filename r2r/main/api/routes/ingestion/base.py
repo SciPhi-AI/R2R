@@ -1,6 +1,6 @@
 from fastapi import Depends, File, UploadFile
 
-from r2r.base import ChunkingConfig
+from r2r.base import ChunkingConfig, R2RException
 from r2r.main.api.routes.ingestion.requests import (
     R2RIngestFilesRequest,
     R2RUpdateFilesRequest,
@@ -18,6 +18,7 @@ class IngestionRouter(BaseRouter):
         self.setup_routes()
 
     def setup_routes(self):
+
         @self.router.post("/ingest_files")
         @self.base_endpoint
         async def ingest_files_app(
@@ -38,14 +39,51 @@ class IngestionRouter(BaseRouter):
                     R2RProviderFactory.create_chunking_provider(config)
                 )
 
-            return await self.engine.aingest_files(
+            # Check if the user is a superuser
+            is_superuser = auth_user and auth_user.is_superuser
+
+            # Handle user management logic at the request level
+            if auth_user:
+                for metadata in request.metadatas or []:
+                    if "user_id" in metadata:
+                        if not is_superuser and metadata["user_id"] != str(
+                            auth_user.id
+                        ):
+                            raise R2RException(
+                                status_code=403,
+                                message="Non-superusers cannot set user_id in metadata.",
+                            )
+                    else:
+                        metadata["user_id"] = str(auth_user.id)
+
+            # Remove group_ids from non-superusers
+            if not is_superuser:
+                for metadata in request.metadatas or []:
+                    metadata.pop("group_ids", None)
+
+            ingestion_result = await self.engine.aingest_files(
                 files=files,
                 metadatas=request.metadatas,
                 document_ids=request.document_ids,
                 versions=request.versions,
-                user=auth_user,
                 chunking_config_override=chunking_config_override,
+                user=auth_user,
             )
+
+            # If superuser, assign documents to groups
+            if is_superuser:
+                for idx, metadata in enumerate(request.metadatas or []):
+                    if "group_ids" in metadata:
+                        print("ingestion_result = ", ingestion_result)
+                        document_id = ingestion_result[
+                            "successful_document_ids"
+                        ][idx]
+                        for group_id in metadata["group_ids"]:
+                            await self.engine.management_service.aassign_document_to_group(
+                                document_id, group_id
+                            )
+
+            return ingestion_result
 
         @self.router.post("/update_files")
         @self.base_endpoint
@@ -71,5 +109,6 @@ class IngestionRouter(BaseRouter):
                 files=files,
                 metadatas=request.metadatas,
                 document_ids=request.document_ids,
+                chunking_config_override=chunking_config_override,
                 user=auth_user,
             )
