@@ -4,12 +4,12 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "r2r"
-version = "0.2.82"
+version = "0.2.84"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
 readme = "README.md"
-include = ["r2r.toml", "compose.yaml", "compose.neo4j.yaml", "compose.ollama.yaml", "compose.postgres.yaml", "pyproject.toml"]
+include = ["r2r.toml", "compose.yaml", "compose.neo4j.yaml", "compose.ollama.yaml", "compose.postgres.yaml", "pyproject.toml", "alembic.ini"]
 
 [tool.poetry.dependencies]
 # Python Versions
@@ -66,6 +66,8 @@ toml = "^0.10.2"
 pyyaml = "^6.0.1"
 poppler-utils = "^0.1.0"
 unstructured = {version = "^0.15.0"}
+alembic = "^1.13.2"
+# unstructured = {version = "^0.15.0"}
 psutil = "^6.0.0"
 
 [tool.poetry.extras]

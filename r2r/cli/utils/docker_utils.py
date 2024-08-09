@@ -349,14 +349,11 @@ def build_docker_command(
     os.environ["HOST"] = host
     os.environ["TRAEFIK_PORT"] = str(available_port + 1)
 
-    if config_path:
-        config_dir = os.path.dirname(config_path)
-        config_file = os.path.basename(config_path)
-        os.environ["CONFIG_PATH"] = f"/app/config/{config_file}"
-        command += f" -v {config_dir}:/app/config"
+    os.environ["CONFIG_PATH"] = (
+        os.path.basename(config_path) if config_path else ""
+    )
 
-    if image:
-        os.environ["R2R_IMAGE"] = image
+    os.environ["R2R_IMAGE"] = image or ""
 
     command += " up -d"
     return command

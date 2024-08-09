@@ -162,14 +162,18 @@ class R2RConfig:
                 for k, v in config_section.items()
             }
         elif isinstance(config_section, (list, tuple)):
-            return [R2RConfig._serialize_config(item) for item in config_section]
+            return [
+                R2RConfig._serialize_config(item) for item in config_section
+            ]
         elif isinstance(config_section, Enum):
             return config_section.value
         elif isinstance(config_section, BaseModel):
-            return R2RConfig._serialize_config(config_section.dict(exclude_none=True))
+            return R2RConfig._serialize_config(
+                config_section.dict(exclude_none=True)
+            )
         else:
             return config_section
-    
+
     @staticmethod
     def _serialize_key(key: Any) -> str:
         if isinstance(key, Enum):

@@ -7,6 +7,7 @@ from .abstractions.agent import (
     ToolResult,
 )
 from .abstractions.base import AsyncSyncMeta, syncable
+from .abstractions.completion import CompletionRecord, MessageType
 from .abstractions.document import (
     DataType,
     Document,
@@ -96,6 +97,7 @@ __all__ = [
     # Logging
     "AsyncParser",
     "AnalysisTypes",
+    "CompletionRecord",
     "LogAnalytics",
     "LogAnalyticsConfig",
     "LogProcessor",
@@ -111,6 +113,7 @@ __all__ = [
     "Tool",
     "ToolResult",
     "Message",
+    "MessageType",
     "Conversation",
     "RedisKVLoggingProvider",
     "KVLoggingSingleton",

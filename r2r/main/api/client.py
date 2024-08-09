@@ -33,6 +33,7 @@ from .routes.management.requests import (
     R2RDocumentsOverviewRequest,
     R2RLogsRequest,
     R2RPrintRelationshipsRequest,
+    R2RScoreCompletionRequest,
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
@@ -461,10 +462,17 @@ class R2RClient:
             "DELETE", "delete", json=json.loads(request.model_dump_json())
         )
 
-    def logs(self, log_type_filter: Optional[str] = None) -> dict:
+    def logs(
+        self,
+        log_type_filter: Optional[str] = None,
+        max_runs: int = 100,
+    ) -> dict:
         self._ensure_authenticated()
 
-        request = R2RLogsRequest(log_type_filter=log_type_filter)
+        request = R2RLogsRequest(
+            log_type_filter=log_type_filter,
+            max_runs_requested=max_runs,
+        )
         return self._make_request(
             "GET", "logs", json=json.loads(request.model_dump_json())
         )
@@ -473,6 +481,23 @@ class R2RClient:
         self._ensure_authenticated()
 
         return self._make_request("GET", "app_settings")
+
+    def score_completion(
+        self,
+        message_id: str = None,
+        score: float = None,
+    ) -> dict:
+        self._ensure_authenticated()
+
+        request = R2RScoreCompletionRequest(
+            message_id=message_id,
+            score=score,
+        )
+        return self._make_request(
+            "POST",
+            "score_completion",
+            json=json.loads(request.model_dump_json()),
+        )
 
     def analytics(
         self,
