@@ -1,6 +1,6 @@
 [completion]
 provider = "litellm"
-concurrent_request_limit = 64
+concurrent_request_limit = 256
 
   [completion.generation_config]
   model = "gpt-4o-mini"
@@ -14,7 +14,7 @@ concurrent_request_limit = 64
 provider = "openai"
 base_model = "text-embedding-3-small"
 base_dimension = 1_536
-batch_size = 64
+batch_size = 256
 add_title_as_prefix = true
 
 [ingestion]
@@ -22,7 +22,7 @@ excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
 
 [kg]
 provider = "local"
-batch_size = 64
+batch_size = 256
 max_entities = 10
 max_relations = 20
 kg_extraction_prompt = "graphrag_triplet_extraction"

@@ -155,8 +155,6 @@ class KGExtractionPipe(AsyncPipe):
                         return entities_dict, relations_arr
                     
                     entities, triples = parse_fn(kg_extraction)
-                    logger.info(f"entities are {entities}")
-                    logger.info(f"triples are {triples}")
                     return KGExtraction(entities=list(entities.values()), triples=triples)
 
                 else:
@@ -202,8 +200,15 @@ class KGExtractionPipe(AsyncPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
+        
+        async def process_extraction(extraction):
+            return await self.extract_kg(extraction)
 
+        extractions = []
         async for extraction in input.message:
-            print(f"extraction is {extraction}")
-            kg_extraction = await self.extract_kg(extraction)
+            extractions.append(extraction)
+
+        kg_extractions = await asyncio.gather(*[process_extraction(extraction) for extraction in extractions])
+        
+        for kg_extraction in kg_extractions:
             yield kg_extraction

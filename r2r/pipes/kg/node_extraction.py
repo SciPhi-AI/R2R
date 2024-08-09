@@ -132,31 +132,26 @@ class KGNodeDescriptionPipe(AsyncPipe):
 
         """
 
-        async for entity, triples in input.message:            
-
+        async def process_entity(entity, triples):
             entity_info = f'{entity.value}, {entity.description}'
             triples_txt = '\n'.join([f"{i+1}: {triple.subject}, {triple.object}, {triple.predicate} - Summary: {triple.description}" for i, triple in enumerate(triples)])
 
             messages = [{'role':'user', 'content': summarization_content.format(entity_info=entity_info, triples_txt=triples_txt)}]
-  
+
             out_entity = self.kg_provider.retrieve_cache('entities_with_description', f'{entity.id}_{entity.value}')
             if out_entity:
                 logger.info(f"Hit cache for entity {entity.value}")
             else:
                 completion = await self.llm_provider.aget_completion(messages, GenerationConfig(model='gpt-4o-mini'))
-
-                # parse the output 
-                # import re 
-                # pattern = r'\("entity"$$$$([^$]+)$$$$([^$]+)$$$$([^$]+)$$$$([^$]+)\)'
-                # matches = re.findall(pattern, completion.choices[0].message.content)
-
-                # if len(matches) > 1:
-    
                 entity.description = completion.choices[0].message.content
-
-                # entity.description_embedding = self.embedding_provider.get_embedding(entity.description)
-
                 self.kg_provider.upsert_nodes([entity], with_description=True)
                 out_entity = entity
-                
-            yield entity
+            
+            return out_entity
+
+        tasks = []
+        async for entity, triples in input.message:
+            tasks.append(asyncio.create_task(process_entity(entity, triples)))
+
+        for completed_task in asyncio.as_completed(tasks):
+            yield await completed_task

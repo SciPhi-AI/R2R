@@ -104,7 +104,7 @@ class LocalKGProvider(KGProvider):
 
         # Save each entity as a pickle file
         for entity in entities:
-            filepath = os.path.join(path, f"{entity.id}_{entity.value}.pkl")
+            filepath = os.path.join(path, f"{entity.id}.pkl")
             with open(filepath, 'wb') as f:
                 pickle.dump(entity, f)
 

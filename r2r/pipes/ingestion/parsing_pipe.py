@@ -7,6 +7,7 @@ import logging
 import time
 import uuid
 from typing import AsyncGenerator, Optional, Union
+import logging
 
 from r2r import parsers
 from r2r.base import (
@@ -23,6 +24,7 @@ from r2r.base import (
 from r2r.base.abstractions.exception import R2RDocumentProcessingError
 from r2r.base.pipes.base_pipe import AsyncPipe
 
+logger = logging.getLogger(__name__)
 
 class ParsingPipe(AsyncPipe):
     class Input(AsyncPipe.Input):
@@ -78,4 +80,5 @@ class ParsingPipe(AsyncPipe):
         async for document in input.message:
             version = versions[0] if versions else "v0"
             async for result in self._parse(document, run_id, version):
+                logger.info(f"Parsing pipe result for document, {document.id}")
                 yield result

@@ -140,11 +140,7 @@ class KGClusteringPipe(AsyncPipe):
             for key, value in dictionary.items():
                 yield key, value
 
-        async for _, community in async_iterate_dict(community_details):
-
-            # generate a summary
-            # community.attributes['community_report'] = self.kg_provider.generate_community_report(community)
-
+        async def process_community(community_key, community):
             input_text = """
 
                 Entities: 
@@ -180,7 +176,14 @@ class KGClusteringPipe(AsyncPipe):
             community.attributes['community_report'] = description
 
             self.kg_provider.upsert_communities([community])
-            yield community
+            return community
+
+        tasks = []
+        async for community_key, community in async_iterate_dict(community_details):
+            tasks.append(asyncio.create_task(process_community(community_key, community)))
+
+        for completed_task in asyncio.as_completed(tasks):
+            yield await completed_task
  
     async def _process_batch(self, triples: list[Triple]) -> list[Community]:
         """

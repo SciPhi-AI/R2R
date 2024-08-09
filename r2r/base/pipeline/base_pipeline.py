@@ -54,7 +54,7 @@ class AsyncPipeline:
             add_upstream_outputs = []
         self.upstream_outputs.append(add_upstream_outputs)
 
-    async def run(
+async def run(
         self,
         input: Any,
         state: Optional[AsyncState] = None,
