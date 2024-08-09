@@ -61,7 +61,7 @@ To get started with R2R, we recommend starting with the quickstart and then movi
 
 
 ### API & SDKs
-- [Pyhon SDK](https://r2r-docs.sciphi.ai/python-sdk)
+- [Python SDK](https://r2r-docs.sciphi.ai/python-sdk)
 - [JS SDK](https://r2r-docs.sciphi.ai/js-sdk)
 - [API Reference](https://r2r-docs.sciphi.ai/api-reference/introduction)
 
