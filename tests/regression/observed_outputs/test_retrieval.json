@@ -16,7 +16,7 @@
         },
         {
           "id": "9b192aac-ddcd-5cfa-8e25-49ae7f21afd6",
-          "score": 0.22035981714725505,
+          "score": 0.22033508121967305,
           "metadata": {
             "text": "s, could also restrict our future access to the capital markets.ITEM 1B. UNRESOLVED STAFF\n COMMENTSNot applicable.\nITEM 2. PROPERTIES\nAs\n of December 31, 2021, we leased and owned office facilities around the world totaling 10.6 million square feet, including 2.6 million square feet for ourcorporate headquarte\nrs in the San Francisco Bay Area, California.We",
             "title": "uber_2021.pdf",
@@ -129,14 +129,14 @@
   "basic_rag": {
     "results": {
       "completion": {
-        "id": "chatcmpl-9uVOtJo8rSk4tOi3IxeXqdaX3fmvt",
+        "id": "chatcmpl-9uWMeUVJUdS0og9gsl4GXYOSa1Z5u",
         "choices": [
           {
             "finish_reason": "stop",
             "index": 0,
             "logprobs": null,
             "message": {
-              "content": "Uber did not make a profit in 2020. Instead, it reported a net loss attributable to Uber Technologies, Inc. of $6,768 million [4], [5], [9].",
+              "content": "Uber did not make a profit in 2020. Instead, the company reported a net loss attributable to Uber Technologies, Inc. of $6,768 million [4], [5], [9].",
               "refusal": null,
               "role": "assistant",
               "function_call": null,
@@ -144,15 +144,15 @@
             }
           }
         ],
-        "created": 1723254099,
+        "created": 1723257804,
         "model": "gpt-4o-2024-05-13",
         "object": "chat.completion",
         "service_tier": null,
         "system_fingerprint": "fp_3aa7262c27",
         "usage": {
-          "completion_tokens": 40,
+          "completion_tokens": 41,
           "prompt_tokens": 1483,
-          "total_tokens": 1523
+          "total_tokens": 1524
         }
       },
       "search_results": {
@@ -285,14 +285,14 @@
   "hybrid_rag": {
     "results": {
       "completion": {
-        "id": "chatcmpl-9uVOvTtA1lrBhk2xWopXzX3fe4fCU",
+        "id": "chatcmpl-9uWMgW2HSIGsKog3CKdOzF9suQ9aT",
         "choices": [
           {
             "finish_reason": "stop",
             "index": 0,
             "logprobs": null,
             "message": {
-              "content": "John Snow, referred to as \"Jon Snow\" in the provided context, is a character from the series \"Game of Thrones.\" He is described as Ned Stark\u2019s bastard son, who often feels like an outsider because Catelyn Stark is not his mother. Jon Snow is noted for being a highly capable swordsman and thinker, with a knack for piercing observations [4]. Additionally, he quickly becomes one of Samwell (Sam) Tarly\u2019s closest companions at the Wall [10].",
+              "content": "John Snow, referred to as \"Jon Snow\" in the provided context, is a fictional character from the \"Game of Thrones\" series. He is described as Ned Stark\u2019s bastard son, who often feels like an outsider because Catelyn Stark is not his mother. Jon Snow is noted for being a highly capable swordsman and thinker, with a knack for piercing observations [4]. He is also closely associated with Samwell (Sam) Tarly, who becomes one of his closest companions at the Wall [10].",
               "refusal": null,
               "role": "assistant",
               "function_call": null,
@@ -300,15 +300,15 @@
             }
           }
         ],
-        "created": 1723254101,
+        "created": 1723257806,
         "model": "gpt-4o-2024-05-13",
         "object": "chat.completion",
         "service_tier": null,
         "system_fingerprint": "fp_3aa7262c27",
         "usage": {
-          "completion_tokens": 98,
+          "completion_tokens": 104,
           "prompt_tokens": 808,
-          "total_tokens": 906
+          "total_tokens": 912
         }
       },
       "search_results": {

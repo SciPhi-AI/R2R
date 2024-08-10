@@ -19,46 +19,46 @@ class TestUserManagement(BaseTest):
         self.set_exclude_paths(
             "register_user",
             [
-                f"root['results']['{field}']"
+                f"root['{field}']"
                 for field in TestUserManagement.VARIABLE_USER_FIELDS
             ],
         )
         self.set_exclude_paths(
             "login_user",
             [
-                f"root['results']['{field}']"
+                f"root['{field}']"
                 for field in ["access_token", "refresh_token"]
             ],
         )
         self.set_exclude_paths(
             "user_info",
             [
-                f"root['results']['{field}']"
+                f"root['{field}']"
                 for field in TestUserManagement.VARIABLE_USER_FIELDS
             ],
         )
         self.set_exclude_paths(
             "change_password",
             [
-                f"root['results']['{field}']"
+                f"root['{field}']"
                 for field in TestUserManagement.VARIABLE_USER_FIELDS
             ],
         )
         self.set_exclude_paths(
             "update_profile",
             [
-                f"root['results']['{field}']"
+                f"root['{field}']"
                 for field in TestUserManagement.VARIABLE_USER_FIELDS
             ],
         )
         self.set_exclude_paths(
             "refresh_token",
             [
-                f"root['results']['{field}']"
+                f"root['{field}']"
                 for field in TestUserManagement.VARIABLE_USER_FIELDS
             ],
         )
-        self.user_id_string = uuid.uuid4()
+        self.user_id_string = str(uuid.uuid4()).split("-")[0]
 
     def get_test_cases(self):
         return {
@@ -80,23 +80,20 @@ class TestUserManagement(BaseTest):
 
     def register_user_test(self, client):
         try:
-            email = f"test@example.com"
+            email = f"test_{self.user_id_string}@example.com"
             password = "password123"
-            return client.register(email, password)
-        except:
-            pass
-
-        email = f"test_{self.user_id_string}@example.com"
-        password = "password123"
-        user = client.register(email, password)
-        self.user = user
-        return user
+            user = client.register(email, password)
+            self.user = user
+            return user
+        except Exception as e:
+            return {"results": str(e)}
 
     def login_user_test(self, client):
         try:
             email = f"test_{self.user_id_string}@example.com"
             password = "password123"
-            return client.login(email, password)
+            login = client.login(email, password)
+            return login
         except Exception as e:
             return {"results": str(e)}
 

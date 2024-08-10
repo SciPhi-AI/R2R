@@ -89,6 +89,7 @@ pytest-asyncio = "^0.23.6"
 pytest-dependency = "^0.6.0"
 pytest-mock = "^3.14.0"
 pytest-cov = "^5.0.0"
+colorama = "^0.4.6"
 
 [tool.poetry.scripts]
 r2r = "r2r.cli.cli:main"

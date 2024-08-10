@@ -2,13 +2,13 @@
   "ingest_sample_files": {
     "results": {
       "processed_documents": [
+        "Document 'pg_essay_1.html' processed successfully.",
         "Document 'got.txt' processed successfully.",
         "Document 'sample.mp3' processed successfully.",
         "Document 'uber_2021.pdf' processed successfully.",
         "Document 'sample2.mp3' processed successfully.",
         "Document 'aristotle_v2.txt' processed successfully.",
         "Document 'pg_essay_4.html' processed successfully.",
-        "Document 'pg_essay_1.html' processed successfully.",
         "Document 'pg_essay_5.html' processed successfully.",
         "Document 'lyft_2021.pdf' processed successfully.",
         "Document 'test.txt' processed successfully.",
@@ -53,8 +53,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "pg_essay_1.html",
-        "created_at": "2024-08-09T18:29:08.016305Z",
-        "updated_at": "2024-08-09T18:29:08.016305Z"
+        "created_at": "2024-08-09T19:39:57.250404Z",
+        "updated_at": "2024-08-09T19:39:57.250404Z"
       },
       {
         "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
@@ -65,8 +65,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "got.txt",
-        "created_at": "2024-08-09T18:29:08.016339Z",
-        "updated_at": "2024-08-09T18:29:08.016339Z"
+        "created_at": "2024-08-09T19:39:57.250542Z",
+        "updated_at": "2024-08-09T19:39:57.250542Z"
       },
       {
         "document_id": "bca7fd1c-bb71-5652-9734-620af8e3aafc",
@@ -77,8 +77,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "sample.mp3",
-        "created_at": "2024-08-09T18:29:08.016349Z",
-        "updated_at": "2024-08-09T18:29:08.016349Z"
+        "created_at": "2024-08-09T19:39:57.250554Z",
+        "updated_at": "2024-08-09T19:39:57.250554Z"
       },
       {
         "document_id": "e0c2de57-171d-5385-8081-b546a2c63ce3",
@@ -89,8 +89,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "uber_2021.pdf",
-        "created_at": "2024-08-09T18:29:08.016356Z",
-        "updated_at": "2024-08-09T18:29:08.016356Z"
+        "created_at": "2024-08-09T19:39:57.250562Z",
+        "updated_at": "2024-08-09T19:39:57.250562Z"
       },
       {
         "document_id": "7f39e670-a61b-5506-a622-1638b4c62e45",
@@ -101,8 +101,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "sample2.mp3",
-        "created_at": "2024-08-09T18:29:08.016363Z",
-        "updated_at": "2024-08-09T18:29:08.016363Z"
+        "created_at": "2024-08-09T19:39:57.250570Z",
+        "updated_at": "2024-08-09T19:39:57.250570Z"
       },
       {
         "document_id": "ad0f4c78-8e84-5201-8f35-fa83b3fcef06",
@@ -113,8 +113,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "aristotle_v2.txt",
-        "created_at": "2024-08-09T18:29:08.016370Z",
-        "updated_at": "2024-08-09T18:29:08.016370Z"
+        "created_at": "2024-08-09T19:39:57.250579Z",
+        "updated_at": "2024-08-09T19:39:57.250579Z"
       },
       {
         "document_id": "f17eac52-a22e-5c75-af8f-0b25b82d43f8",
@@ -125,8 +125,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "pg_essay_4.html",
-        "created_at": "2024-08-09T18:29:08.016377Z",
-        "updated_at": "2024-08-09T18:29:08.016377Z"
+        "created_at": "2024-08-09T19:39:57.250587Z",
+        "updated_at": "2024-08-09T19:39:57.250587Z"
       },
       {
         "document_id": "022fdff4-f87d-5b0c-82e4-95d53bcc4e60",
@@ -137,8 +137,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "pg_essay_5.html",
-        "created_at": "2024-08-09T18:29:08.016384Z",
-        "updated_at": "2024-08-09T18:29:08.016384Z"
+        "created_at": "2024-08-09T19:39:57.250594Z",
+        "updated_at": "2024-08-09T19:39:57.250594Z"
       },
       {
         "document_id": "c5b31b3a-06d2-553e-ac3e-47c56139b484",
@@ -149,8 +149,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "lyft_2021.pdf",
-        "created_at": "2024-08-09T18:29:08.016392Z",
-        "updated_at": "2024-08-09T18:29:08.016392Z"
+        "created_at": "2024-08-09T19:39:57.250602Z",
+        "updated_at": "2024-08-09T19:39:57.250602Z"
       },
       {
         "document_id": "97230d1c-33ae-5a9d-b93c-5c42dde68002",
@@ -161,8 +161,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "test.txt",
-        "created_at": "2024-08-09T18:29:08.016398Z",
-        "updated_at": "2024-08-09T18:29:08.016398Z"
+        "created_at": "2024-08-09T19:39:57.250608Z",
+        "updated_at": "2024-08-09T19:39:57.250608Z"
       },
       {
         "document_id": "b21a46a4-2906-5550-9529-087697da2944",
@@ -173,8 +173,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "pg_essay_2.html",
-        "created_at": "2024-08-09T18:29:08.016405Z",
-        "updated_at": "2024-08-09T18:29:08.016405Z"
+        "created_at": "2024-08-09T19:39:57.250615Z",
+        "updated_at": "2024-08-09T19:39:57.250615Z"
       },
       {
         "document_id": "93123a68-d668-51de-8291-92162730dc87",
@@ -185,8 +185,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "aristotle.txt",
-        "created_at": "2024-08-09T18:29:08.016412Z",
-        "updated_at": "2024-08-09T18:29:08.016412Z"
+        "created_at": "2024-08-09T19:39:57.250623Z",
+        "updated_at": "2024-08-09T19:39:57.250623Z"
       },
       {
         "document_id": "79145cf2-123a-5333-8bf4-ded6dde616fd",
@@ -197,8 +197,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "yc_companies.txt",
-        "created_at": "2024-08-09T18:29:08.016418Z",
-        "updated_at": "2024-08-09T18:29:08.016418Z"
+        "created_at": "2024-08-09T19:39:57.250630Z",
+        "updated_at": "2024-08-09T19:39:57.250630Z"
       },
       {
         "document_id": "6d5f8844-2da0-5558-8c17-b1d80906c175",
@@ -209,8 +209,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "screen_shot.png",
-        "created_at": "2024-08-09T18:29:08.016425Z",
-        "updated_at": "2024-08-09T18:29:08.016425Z"
+        "created_at": "2024-08-09T19:39:57.250636Z",
+        "updated_at": "2024-08-09T19:39:57.250636Z"
       },
       {
         "document_id": "b736292c-11e6-5453-9686-055da3edb866",
@@ -221,8 +221,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "pg_essay_3.html",
-        "created_at": "2024-08-09T18:29:08.016432Z",
-        "updated_at": "2024-08-09T18:29:08.016432Z"
+        "created_at": "2024-08-09T19:39:57.250643Z",
+        "updated_at": "2024-08-09T19:39:57.250643Z"
       }
     ]
   },
@@ -382,8 +382,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "pg_essay_1.html",
-        "created_at": "2024-08-09T18:29:08.016305Z",
-        "updated_at": "2024-08-09T18:29:08.016305Z"
+        "created_at": "2024-08-09T19:39:57.250404Z",
+        "updated_at": "2024-08-09T19:39:57.250404Z"
       },
       {
         "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
@@ -394,8 +394,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "got.txt",
-        "created_at": "2024-08-09T18:29:08.016339Z",
-        "updated_at": "2024-08-09T18:29:08.016339Z"
+        "created_at": "2024-08-09T19:39:57.250542Z",
+        "updated_at": "2024-08-09T19:39:57.250542Z"
       },
       {
         "document_id": "bca7fd1c-bb71-5652-9734-620af8e3aafc",
@@ -406,8 +406,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "sample.mp3",
-        "created_at": "2024-08-09T18:29:08.016349Z",
-        "updated_at": "2024-08-09T18:29:08.016349Z"
+        "created_at": "2024-08-09T19:39:57.250554Z",
+        "updated_at": "2024-08-09T19:39:57.250554Z"
       },
       {
         "document_id": "e0c2de57-171d-5385-8081-b546a2c63ce3",
@@ -418,8 +418,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "uber_2021.pdf",
-        "created_at": "2024-08-09T18:29:08.016356Z",
-        "updated_at": "2024-08-09T18:29:08.016356Z"
+        "created_at": "2024-08-09T19:39:57.250562Z",
+        "updated_at": "2024-08-09T19:39:57.250562Z"
       },
       {
         "document_id": "7f39e670-a61b-5506-a622-1638b4c62e45",
@@ -430,8 +430,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "sample2.mp3",
-        "created_at": "2024-08-09T18:29:08.016363Z",
-        "updated_at": "2024-08-09T18:29:08.016363Z"
+        "created_at": "2024-08-09T19:39:57.250570Z",
+        "updated_at": "2024-08-09T19:39:57.250570Z"
       },
       {
         "document_id": "ad0f4c78-8e84-5201-8f35-fa83b3fcef06",
@@ -442,8 +442,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "aristotle_v2.txt",
-        "created_at": "2024-08-09T18:29:08.016370Z",
-        "updated_at": "2024-08-09T18:29:08.016370Z"
+        "created_at": "2024-08-09T19:39:57.250579Z",
+        "updated_at": "2024-08-09T19:39:57.250579Z"
       },
       {
         "document_id": "f17eac52-a22e-5c75-af8f-0b25b82d43f8",
@@ -454,8 +454,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "pg_essay_4.html",
-        "created_at": "2024-08-09T18:29:08.016377Z",
-        "updated_at": "2024-08-09T18:29:08.016377Z"
+        "created_at": "2024-08-09T19:39:57.250587Z",
+        "updated_at": "2024-08-09T19:39:57.250587Z"
       },
       {
         "document_id": "022fdff4-f87d-5b0c-82e4-95d53bcc4e60",
@@ -466,8 +466,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "pg_essay_5.html",
-        "created_at": "2024-08-09T18:29:08.016384Z",
-        "updated_at": "2024-08-09T18:29:08.016384Z"
+        "created_at": "2024-08-09T19:39:57.250594Z",
+        "updated_at": "2024-08-09T19:39:57.250594Z"
       },
       {
         "document_id": "c5b31b3a-06d2-553e-ac3e-47c56139b484",
@@ -478,8 +478,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "lyft_2021.pdf",
-        "created_at": "2024-08-09T18:29:08.016392Z",
-        "updated_at": "2024-08-09T18:29:08.016392Z"
+        "created_at": "2024-08-09T19:39:57.250602Z",
+        "updated_at": "2024-08-09T19:39:57.250602Z"
       },
       {
         "document_id": "97230d1c-33ae-5a9d-b93c-5c42dde68002",
@@ -490,8 +490,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "test.txt",
-        "created_at": "2024-08-09T18:29:08.016398Z",
-        "updated_at": "2024-08-09T18:29:08.016398Z"
+        "created_at": "2024-08-09T19:39:57.250608Z",
+        "updated_at": "2024-08-09T19:39:57.250608Z"
       },
       {
         "document_id": "b21a46a4-2906-5550-9529-087697da2944",
@@ -502,8 +502,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "pg_essay_2.html",
-        "created_at": "2024-08-09T18:29:08.016405Z",
-        "updated_at": "2024-08-09T18:29:08.016405Z"
+        "created_at": "2024-08-09T19:39:57.250615Z",
+        "updated_at": "2024-08-09T19:39:57.250615Z"
       },
       {
         "document_id": "79145cf2-123a-5333-8bf4-ded6dde616fd",
@@ -514,8 +514,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "yc_companies.txt",
-        "created_at": "2024-08-09T18:29:08.016418Z",
-        "updated_at": "2024-08-09T18:29:08.016418Z"
+        "created_at": "2024-08-09T19:39:57.250630Z",
+        "updated_at": "2024-08-09T19:39:57.250630Z"
       },
       {
         "document_id": "6d5f8844-2da0-5558-8c17-b1d80906c175",
@@ -526,8 +526,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "screen_shot.png",
-        "created_at": "2024-08-09T18:29:08.016425Z",
-        "updated_at": "2024-08-09T18:29:08.016425Z"
+        "created_at": "2024-08-09T19:39:57.250636Z",
+        "updated_at": "2024-08-09T19:39:57.250636Z"
       },
       {
         "document_id": "93123a68-d668-51de-8291-92162730dc87",
@@ -538,8 +538,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "aristotle_v2.txt",
-        "created_at": "2024-08-09T18:29:08.016412Z",
-        "updated_at": "2024-08-09T18:32:35.062270Z"
+        "created_at": "2024-08-09T19:39:57.250623Z",
+        "updated_at": "2024-08-09T19:43:20.767237Z"
       }
     ]
   },

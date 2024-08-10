@@ -12,14 +12,12 @@ class TestDocumentManagement(BaseTest):
 
     def __init__(self, client):
         super().__init__(client)
-        self.set_exclude_paths(
-            "documents_overview",
-            [
-                f"root['results'][%i]['{field}']"
-                for field in ["created_at", "updated_at"]
-                for i in range(20)
-            ],
-        )
+        exclude_paths = [f"root[{i}]['created_at']" for i in range(20)] + [
+            f"root[{i}]['updated_at']" for i in range(20)
+        ]
+
+        self.set_exclude_paths("documents_overview", exclude_paths)
+        self.set_exclude_paths("rerun_documents_overview", exclude_paths)
 
     def get_test_cases(self):
         return {

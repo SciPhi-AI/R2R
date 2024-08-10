@@ -4,7 +4,7 @@ from tests.regression.test_cases.base import BaseTest
 class TestRetrieval(BaseTest):
     RAG_EXCLUSIONS = (
         [
-            f"root['results']['completion']['{field}']"
+            f"root['completion']['{field}']"
             for field in [
                 "id",
                 "system_fingerprint",
@@ -12,11 +12,8 @@ class TestRetrieval(BaseTest):
                 "created",
             ]
         ]
-        + ["root['results']['completion']['choices'][0]['message']['content']"]
-        + [
-            f"root['results']['search_results'][{i}]['score']"
-            for i in range(10)
-        ]
+        + ["root['completion']['choices'][0]['message']['content']"]
+        + [f"root['search_results'][{i}]['score']" for i in range(10)]
     )
 
     def __init__(self, client):
@@ -25,7 +22,7 @@ class TestRetrieval(BaseTest):
         self.set_exclude_paths(
             "search",
             [
-                f"root['results']['vector_search_results'][{i}]['score']"
+                f"root['vector_search_results'][{i}]['score']"
                 for i in range(10)
             ],
         )
