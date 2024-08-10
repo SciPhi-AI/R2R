@@ -115,7 +115,6 @@ class AuthService(Service):
     @telemetry_event("GetUserProfile")
     async def get_user_profile(self, user_id: uuid.UUID) -> User:
         user = self.providers.database.relational.get_user_by_id(user_id)
-        print("user = ", user)
         if not user:
             raise R2RException(status_code=404, message="User not found")
         return user

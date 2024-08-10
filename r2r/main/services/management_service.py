@@ -514,8 +514,6 @@ class ManagementService(Service):
     async def aupdate_group(
         self, group_id: uuid.UUID, name: str = None, description: str = None
     ) -> bool:
-        print("calling aupdate_group")
-        print("we should be calling update group below...")
         return self.providers.database.relational.update_group(
             group_id, name, description
         )
@@ -528,7 +526,6 @@ class ManagementService(Service):
     async def alist_groups(
         self, offset: int = 0, limit: int = 100
     ) -> list[dict]:
-        print(f"calling listgroups with offset = {offset} and limit = {limit}")
         return self.providers.database.relational.list_groups(
             offset=offset, limit=limit
         )

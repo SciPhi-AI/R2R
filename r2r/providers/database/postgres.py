@@ -830,7 +830,6 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def update_group(
         self, group_id: UUID, name: str = None, description: str = None
     ) -> bool:
-        print("in vector update ....")
         update_fields = []
         params = {"group_id": group_id}
         if name is not None:

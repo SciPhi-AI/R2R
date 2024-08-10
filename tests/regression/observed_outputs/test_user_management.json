@@ -1,10 +1,10 @@
 {
   "register_user": {
     "results": {
-      "email": "test_9bce6bf5@example.com",
-      "id": "b32b6866-2f09-5331-abff-177aa24699a4",
+      "email": "test_e2ca9c68@example.com",
+      "id": "a610b98f-99e4-5fff-a6ff-eea7e4806163",
       "group_ids": [],
-      "hashed_password": "$2b$12$xaKW2JkEFNCEiKC3y9lz2.vkilWckkrHLowqzJVdtS8UVXlSxsDW2",
+      "hashed_password": "$2b$12$84yo.ii2U.tA3ceVhLC35.OeewG/Kd6hig6z.Yl/Yn8nDAL6gNyxW",
       "is_superuser": false,
       "is_active": true,
       "is_verified": false,
@@ -12,28 +12,28 @@
       "name": null,
       "bio": null,
       "profile_picture": null,
-      "created_at": "2024-08-10T02:43:29.369022Z",
-      "updated_at": "2024-08-10T02:43:29.369022Z"
+      "created_at": "2024-08-10T03:01:19.663863Z",
+      "updated_at": "2024-08-10T03:01:19.663863Z"
     }
   },
   "login_user": {
     "results": {
       "access_token": {
-        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0XzliY2U2YmY1QGV4YW1wbGUuY29tIiwiZXhwIjoxNzIzMjYxNDA5LjkzOTk1NSwidG9rZW5fdHlwZSI6ImFjY2VzcyJ9.YsJPUIdIxj-UdC1Nvkv6m3FzUBcrC1ZISAt4eyi_vlY",
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0X2UyY2E5YzY4QGV4YW1wbGUuY29tIiwiZXhwIjoxNzIzMjYyNDgwLjMyNTE5NiwidG9rZW5fdHlwZSI6ImFjY2VzcyJ9.3JOKTUcNBJXMZEaBybeM459xcHkqV7KWF_IZcaaiJdM",
         "token_type": "access"
       },
       "refresh_token": {
-        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0XzliY2U2YmY1QGV4YW1wbGUuY29tIiwiZXhwIjoxNzIzODYyNjA5LCJ0b2tlbl90eXBlIjoicmVmcmVzaCJ9.GGIJ_K-cvTTzLMA7EH_jleJKOlAQd06QuvSYjZeZQCw",
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0X2UyY2E5YzY4QGV4YW1wbGUuY29tIiwiZXhwIjoxNzIzODYzNjgwLCJ0b2tlbl90eXBlIjoicmVmcmVzaCJ9.C1d_wHgLZ6Udc3QsC8TE9U6TjvnRvwJbp56zDRrM3O8",
         "token_type": "refresh"
       }
     }
   },
   "user_info": {
     "results": {
-      "email": "test_9bce6bf5@example.com",
-      "id": "b32b6866-2f09-5331-abff-177aa24699a4",
+      "email": "test_e2ca9c68@example.com",
+      "id": "a610b98f-99e4-5fff-a6ff-eea7e4806163",
       "group_ids": [],
-      "hashed_password": "$2b$12$xaKW2JkEFNCEiKC3y9lz2.vkilWckkrHLowqzJVdtS8UVXlSxsDW2",
+      "hashed_password": "$2b$12$84yo.ii2U.tA3ceVhLC35.OeewG/Kd6hig6z.Yl/Yn8nDAL6gNyxW",
       "is_superuser": false,
       "is_active": true,
       "is_verified": true,
@@ -41,8 +41,8 @@
       "name": null,
       "bio": null,
       "profile_picture": null,
-      "created_at": "2024-08-10T02:43:29.369022Z",
-      "updated_at": "2024-08-10T02:43:29.369022Z"
+      "created_at": "2024-08-10T03:01:19.663863Z",
+      "updated_at": "2024-08-10T03:01:19.663863Z"
     }
   },
   "change_password": {
@@ -52,8 +52,8 @@
   },
   "update_profile": {
     "results": {
-      "email": "test_9bce6bf5@example.com",
-      "id": "b32b6866-2f09-5331-abff-177aa24699a4",
+      "email": "test_e2ca9c68@example.com",
+      "id": "a610b98f-99e4-5fff-a6ff-eea7e4806163",
       "group_ids": [],
       "hashed_password": "null",
       "is_superuser": false,
@@ -63,18 +63,18 @@
       "name": "John Doe",
       "bio": "R2R enthusiast",
       "profile_picture": null,
-      "created_at": "2024-08-10T02:43:29.369022Z",
-      "updated_at": "2024-08-10T02:43:30.958302Z"
+      "created_at": "2024-08-10T03:01:19.663863Z",
+      "updated_at": "2024-08-10T03:01:21.374334Z"
     }
   },
   "refresh_token": {
     "results": {
       "access_token": {
-        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0XzliY2U2YmY1QGV4YW1wbGUuY29tIiwiZXhwIjoxNzIzMjYxNDExLjIzNjY4LCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0._8bsSdcpnlbz81aBs4QDhrYBAqNxydH2IQhrulelBM0",
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0X2UyY2E5YzY4QGV4YW1wbGUuY29tIiwiZXhwIjoxNzIzMjYyNDgxLjg3NDc1NSwidG9rZW5fdHlwZSI6ImFjY2VzcyJ9.PoIHwL1njH-xAvMzd1XS9OlmXsjIxYsAqE3MkLXqvMU",
         "token_type": "access"
       },
       "refresh_token": {
-        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0XzliY2U2YmY1QGV4YW1wbGUuY29tIiwiZXhwIjoxNzIzODYyNjExLCJ0b2tlbl90eXBlIjoicmVmcmVzaCJ9.oMxadLSLUjgPw19og7kcXbI-aBSNo433jgC1tRh17ug",
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0X2UyY2E5YzY4QGV4YW1wbGUuY29tIiwiZXhwIjoxNzIzODYzNjgxLCJ0b2tlbl90eXBlIjoicmVmcmVzaCJ9.TLMR6ZJPf3fdFfnPjsn_NaD_3Iv81lJ0S6N7YuT8b6U",
         "token_type": "refresh"
       }
     }

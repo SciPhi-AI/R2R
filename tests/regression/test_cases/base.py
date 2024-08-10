@@ -53,10 +53,6 @@ class RegressionTest:
         if diff:
             print(f"\nTest {self.name} failed. Differences found:")
             print(json.dumps(diff, indent=2))
-            # print("\nExpected output:")
-            # print(json.dumps(expected, indent=2))
-            # print("\nActual output:")
-            # print(json.dumps(actual, indent=2))
             return False
         return True
 

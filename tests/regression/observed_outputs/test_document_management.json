@@ -2,39 +2,27 @@
   "ingest_sample_files": {
     "results": {
       "processed_documents": [
-        "Document 'pg_essay_1.html' processed successfully.",
-        "Document 'got.txt' processed successfully.",
-        "Document 'sample.mp3' processed successfully.",
-        "Document 'uber_2021.pdf' processed successfully.",
-        "Document 'sample2.mp3' processed successfully.",
-        "Document 'aristotle_v2.txt' processed successfully.",
-        "Document 'pg_essay_4.html' processed successfully.",
-        "Document 'pg_essay_5.html' processed successfully.",
-        "Document 'lyft_2021.pdf' processed successfully.",
-        "Document 'test.txt' processed successfully.",
-        "Document 'pg_essay_2.html' processed successfully.",
         "Document 'aristotle.txt' processed successfully.",
-        "Document 'yc_companies.txt' processed successfully.",
-        "Document 'screen_shot.png' processed successfully.",
         "Document 'pg_essay_3.html' processed successfully."
       ],
       "failed_documents": [],
-      "skipped_documents": [],
+      "skipped_documents": [
+        "Document 'pg_essay_1.html' skipped since it already exists.",
+        "Document 'got.txt' skipped since it already exists.",
+        "Document 'sample.mp3' skipped since it already exists.",
+        "Document 'uber_2021.pdf' skipped since it already exists.",
+        "Document 'sample2.mp3' skipped since it already exists.",
+        "Document 'aristotle_v2.txt' skipped since it already exists.",
+        "Document 'pg_essay_4.html' skipped since it already exists.",
+        "Document 'pg_essay_5.html' skipped since it already exists.",
+        "Document 'lyft_2021.pdf' skipped since it already exists.",
+        "Document 'test.txt' skipped since it already exists.",
+        "Document 'pg_essay_2.html' skipped since it already exists.",
+        "Document 'yc_companies.txt' skipped since it already exists.",
+        "Document 'screen_shot.png' skipped since it already exists."
+      ],
       "successful_document_ids": [
-        "cafdf784-a1dc-5103-8098-5b0a97db1707",
-        "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
-        "bca7fd1c-bb71-5652-9734-620af8e3aafc",
-        "e0c2de57-171d-5385-8081-b546a2c63ce3",
-        "7f39e670-a61b-5506-a622-1638b4c62e45",
-        "ad0f4c78-8e84-5201-8f35-fa83b3fcef06",
-        "f17eac52-a22e-5c75-af8f-0b25b82d43f8",
-        "022fdff4-f87d-5b0c-82e4-95d53bcc4e60",
-        "c5b31b3a-06d2-553e-ac3e-47c56139b484",
-        "97230d1c-33ae-5a9d-b93c-5c42dde68002",
-        "b21a46a4-2906-5550-9529-087697da2944",
         "93123a68-d668-51de-8291-92162730dc87",
-        "79145cf2-123a-5333-8bf4-ded6dde616fd",
-        "6d5f8844-2da0-5558-8c17-b1d80906c175",
         "b736292c-11e6-5453-9686-055da3edb866"
       ]
     }
@@ -177,18 +165,6 @@
         "updated_at": "2024-08-09T19:39:57.250615Z"
       },
       {
-        "document_id": "93123a68-d668-51de-8291-92162730dc87",
-        "version": "v0",
-        "size_in_bytes": 73353,
-        "metadata": {},
-        "status": "success",
-        "group_ids": null,
-        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-        "title": "aristotle.txt",
-        "created_at": "2024-08-09T19:39:57.250623Z",
-        "updated_at": "2024-08-09T19:39:57.250623Z"
-      },
-      {
         "document_id": "79145cf2-123a-5333-8bf4-ded6dde616fd",
         "version": "v0",
         "size_in_bytes": 47209,
@@ -213,6 +189,18 @@
         "updated_at": "2024-08-09T19:39:57.250636Z"
       },
       {
+        "document_id": "93123a68-d668-51de-8291-92162730dc87",
+        "version": "v0",
+        "size_in_bytes": 73353,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "aristotle.txt",
+        "created_at": "2024-08-09T19:39:57.250623Z",
+        "updated_at": "2024-08-09T20:00:58.331809Z"
+      },
+      {
         "document_id": "b736292c-11e6-5453-9686-055da3edb866",
         "version": "v0",
         "size_in_bytes": 124915,
@@ -221,8 +209,8 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "pg_essay_3.html",
-        "created_at": "2024-08-09T19:39:57.250643Z",
-        "updated_at": "2024-08-09T19:39:57.250643Z"
+        "created_at": "2024-08-09T20:00:58.332416Z",
+        "updated_at": "2024-08-09T20:00:58.332416Z"
       }
     ]
   },
@@ -539,7 +527,7 @@
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "aristotle_v2.txt",
         "created_at": "2024-08-09T19:39:57.250623Z",
-        "updated_at": "2024-08-09T19:43:20.767237Z"
+        "updated_at": "2024-08-09T20:01:07.298658Z"
       }
     ]
   },

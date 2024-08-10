@@ -317,8 +317,6 @@ class ManagementRouter(BaseRouter):
                 raise R2RException(
                     "Only a superuser can list all groups.", 403
                 )
-            print("offset = ", offset)
-            print("limit = ", limit)
             return await self.engine.alist_groups(offset, limit)
 
         @self.router.post("/add_user_to_group")
