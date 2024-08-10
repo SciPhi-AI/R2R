@@ -15,8 +15,9 @@ class TestDocumentManagement(BaseTest):
         self.set_exclude_paths(
             "documents_overview",
             [
-                f"root['results'][0]['{field}']"
+                f"root['results'][%i]['{field}']"
                 for field in ["created_at", "updated_at"]
+                for i in range(20)
             ],
         )
 

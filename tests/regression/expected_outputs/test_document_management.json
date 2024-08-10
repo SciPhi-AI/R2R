@@ -1,21 +1,181 @@
 {
-  "ingest_sample_file": {
+  "ingest_sample_files": {
     "results": {
       "processed_documents": [
-        "Document 'aristotle.txt' processed successfully."
+        "Document 'pg_essay_1.html' processed successfully.",
+        "Document 'got.txt' processed successfully.",
+        "Document 'sample.mp3' processed successfully.",
+        "Document 'uber_2021.pdf' processed successfully.",
+        "Document 'sample2.mp3' processed successfully.",
+        "Document 'aristotle_v2.txt' processed successfully.",
+        "Document 'pg_essay_4.html' processed successfully.",
+        "Document 'pg_essay_5.html' processed successfully.",
+        "Document 'lyft_2021.pdf' processed successfully.",
+        "Document 'test.txt' processed successfully.",
+        "Document 'pg_essay_2.html' processed successfully.",
+        "Document 'aristotle.txt' processed successfully.",
+        "Document 'yc_companies.txt' processed successfully.",
+        "Document 'screen_shot.png' processed successfully.",
+        "Document 'pg_essay_3.html' processed successfully."
       ],
       "failed_documents": [],
       "skipped_documents": [],
       "successful_document_ids": [
-        "93123a68-d668-51de-8291-92162730dc87"
+        "cafdf784-a1dc-5103-8098-5b0a97db1707",
+        "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+        "bca7fd1c-bb71-5652-9734-620af8e3aafc",
+        "e0c2de57-171d-5385-8081-b546a2c63ce3",
+        "7f39e670-a61b-5506-a622-1638b4c62e45",
+        "ad0f4c78-8e84-5201-8f35-fa83b3fcef06",
+        "f17eac52-a22e-5c75-af8f-0b25b82d43f8",
+        "022fdff4-f87d-5b0c-82e4-95d53bcc4e60",
+        "c5b31b3a-06d2-553e-ac3e-47c56139b484",
+        "97230d1c-33ae-5a9d-b93c-5c42dde68002",
+        "b21a46a4-2906-5550-9529-087697da2944",
+        "93123a68-d668-51de-8291-92162730dc87",
+        "79145cf2-123a-5333-8bf4-ded6dde616fd",
+        "6d5f8844-2da0-5558-8c17-b1d80906c175",
+        "b736292c-11e6-5453-9686-055da3edb866"
       ]
     }
   },
   "reingest_sample_file": {
-    "results": "Document with ID 93123a68-d668-51de-8291-92162730dc87 was already successfully processed."
+    "results": "All provided documents already exist. Use the `update_documents` endpoint instead to update these documents."
   },
   "documents_overview": {
     "results": [
+      {
+        "document_id": "cafdf784-a1dc-5103-8098-5b0a97db1707",
+        "version": "v0",
+        "size_in_bytes": 131503,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "pg_essay_1.html",
+        "created_at": "2024-08-09T18:01:52.256953Z",
+        "updated_at": "2024-08-09T18:01:52.256953Z"
+      },
+      {
+        "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+        "version": "v0",
+        "size_in_bytes": 9491,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "got.txt",
+        "created_at": "2024-08-09T18:01:52.256998Z",
+        "updated_at": "2024-08-09T18:01:52.256998Z"
+      },
+      {
+        "document_id": "bca7fd1c-bb71-5652-9734-620af8e3aafc",
+        "version": "v0",
+        "size_in_bytes": 121671,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "sample.mp3",
+        "created_at": "2024-08-09T18:01:52.257008Z",
+        "updated_at": "2024-08-09T18:01:52.257008Z"
+      },
+      {
+        "document_id": "e0c2de57-171d-5385-8081-b546a2c63ce3",
+        "version": "v0",
+        "size_in_bytes": 1880483,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "uber_2021.pdf",
+        "created_at": "2024-08-09T18:01:52.257016Z",
+        "updated_at": "2024-08-09T18:01:52.257016Z"
+      },
+      {
+        "document_id": "7f39e670-a61b-5506-a622-1638b4c62e45",
+        "version": "v0",
+        "size_in_bytes": 72456,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "sample2.mp3",
+        "created_at": "2024-08-09T18:01:52.257040Z",
+        "updated_at": "2024-08-09T18:01:52.257040Z"
+      },
+      {
+        "document_id": "ad0f4c78-8e84-5201-8f35-fa83b3fcef06",
+        "version": "v0",
+        "size_in_bytes": 7443,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "aristotle_v2.txt",
+        "created_at": "2024-08-09T18:01:52.257047Z",
+        "updated_at": "2024-08-09T18:01:52.257047Z"
+      },
+      {
+        "document_id": "f17eac52-a22e-5c75-af8f-0b25b82d43f8",
+        "version": "v0",
+        "size_in_bytes": 118113,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "pg_essay_4.html",
+        "created_at": "2024-08-09T18:01:52.257054Z",
+        "updated_at": "2024-08-09T18:01:52.257054Z"
+      },
+      {
+        "document_id": "022fdff4-f87d-5b0c-82e4-95d53bcc4e60",
+        "version": "v0",
+        "size_in_bytes": 123779,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "pg_essay_5.html",
+        "created_at": "2024-08-09T18:01:52.257061Z",
+        "updated_at": "2024-08-09T18:01:52.257061Z"
+      },
+      {
+        "document_id": "c5b31b3a-06d2-553e-ac3e-47c56139b484",
+        "version": "v0",
+        "size_in_bytes": 1440303,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "lyft_2021.pdf",
+        "created_at": "2024-08-09T18:01:52.257068Z",
+        "updated_at": "2024-08-09T18:01:52.257068Z"
+      },
+      {
+        "document_id": "97230d1c-33ae-5a9d-b93c-5c42dde68002",
+        "version": "v0",
+        "size_in_bytes": 20,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "test.txt",
+        "created_at": "2024-08-09T18:01:52.257075Z",
+        "updated_at": "2024-08-09T18:01:52.257075Z"
+      },
+      {
+        "document_id": "b21a46a4-2906-5550-9529-087697da2944",
+        "version": "v0",
+        "size_in_bytes": 125112,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "pg_essay_2.html",
+        "created_at": "2024-08-09T18:01:52.257081Z",
+        "updated_at": "2024-08-09T18:01:52.257081Z"
+      },
       {
         "document_id": "93123a68-d668-51de-8291-92162730dc87",
         "version": "v0",
@@ -25,8 +185,174 @@
         "group_ids": null,
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "title": "aristotle.txt",
-        "created_at": "2024-08-09T15:12:22.448581Z",
-        "updated_at": "2024-08-09T15:12:22.448581Z"
+        "created_at": "2024-08-09T18:01:52.257088Z",
+        "updated_at": "2024-08-09T18:01:52.257088Z"
+      },
+      {
+        "document_id": "79145cf2-123a-5333-8bf4-ded6dde616fd",
+        "version": "v0",
+        "size_in_bytes": 47209,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "yc_companies.txt",
+        "created_at": "2024-08-09T18:01:52.257096Z",
+        "updated_at": "2024-08-09T18:01:52.257096Z"
+      },
+      {
+        "document_id": "6d5f8844-2da0-5558-8c17-b1d80906c175",
+        "version": "v0",
+        "size_in_bytes": 791764,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "screen_shot.png",
+        "created_at": "2024-08-09T18:01:52.257103Z",
+        "updated_at": "2024-08-09T18:01:52.257103Z"
+      },
+      {
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "version": "v0",
+        "size_in_bytes": 124915,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "pg_essay_3.html",
+        "created_at": "2024-08-09T18:01:52.257109Z",
+        "updated_at": "2024-08-09T18:01:52.257109Z"
+      }
+    ]
+  },
+  "document_chunks_test": {
+    "results": [
+      {
+        "text": "Crazy New Ideas",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "May 2021There's one kind of opinion I'd be very afraid to express publicly.\nIf someone I knew to be both a domain expert and a reasonable person\nproposed an idea that sounded preposterous, I'd be very reluctant\nto say \"That will never work.\"Anyone who has studied the history of ideas, and especially the\nhistory of science, knows that's how big things start. Someone\nproposes an idea that sounds crazy, most people dismiss it, then",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "it gradually takes over the world.Most implausible-sounding ideas are in fact bad and could be safely\ndismissed. But not when they're proposed by reasonable domain\nexperts. If the person proposing the idea is reasonable, then they\nknow how implausible it sounds. And yet they're proposing it anyway.\nThat suggests they know something you don't. And if they have deep\ndomain expertise, that's probably the source of it.\n[1]Such ideas are not merely unsafe to dismiss, but disproportionately",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "likely to be interesting. When the average person proposes an\nimplausible-sounding idea, its implausibility is evidence of their\nincompetence. But when a reasonable domain expert does it, the\nsituation is reversed. There's something like an efficient market\nhere: on average the ideas that seem craziest will, if correct,\nhave the biggest effect. So if you can eliminate the theory that\nthe person proposing an implausible-sounding idea is incompetent,",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "its implausibility switches from evidence that it's boring to\nevidence that it's exciting.\n[2]Such ideas are not guaranteed to work. But they don't have to be.\nThey just have to be sufficiently good bets \u2014 to have sufficiently\nhigh expected value. And I think on average they do. I think if you\nbet on the entire set of implausible-sounding ideas proposed by\nreasonable domain experts, you'd end up net ahead.The reason is that everyone is too conservative. The word \"paradigm\"",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "is overused, but this is a case where it's warranted. Everyone is\ntoo much in the grip of the current paradigm. Even the people who\nhave the new ideas undervalue them initially. Which means that\nbefore they reach the stage of proposing them publicly, they've\nalready subjected them to an excessively strict filter.\n[3]The wise response to such an idea is not to make statements, but\nto ask questions, because there's a real mystery here. Why has this",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "smart and reasonable person proposed an idea that seems so wrong?\nAre they mistaken, or are you? One of you has to be. If you're the\none who's mistaken, that would be good to know, because it means\nthere's a hole in your model of the world. But even if they're\nmistaken, it should be interesting to learn why. A trap that an\nexpert falls into is one you have to worry about too.This all seems pretty obvious. And yet there are clearly a lot of\npeople who don't share my fear of dismissing new ideas. Why do they",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "do it? Why risk looking like a jerk now and a fool later, instead\nof just reserving judgement?One reason they do it is envy. If you propose a radical new idea\nand it succeeds, your reputation (and perhaps also your wealth)\nwill increase proportionally. Some people would be envious if that\nhappened, and this potential envy propagates back into a conviction\nthat you must be wrong.Another reason people dismiss new ideas is that it's an easy way\nto seem sophisticated. When a new idea first emerges, it usually",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "seems pretty feeble. It's a mere hatchling. Received wisdom is a\nfull-grown eagle by comparison. So it's easy to launch a devastating\nattack on a new idea, and anyone who does will seem clever to those\nwho don't understand this asymmetry.This phenomenon is exacerbated by the difference between how those\nworking on new ideas and those attacking them are rewarded. The\nrewards for working on new ideas are weighted by the value of the\noutcome. So it's worth working on something that only has a 10%",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "chance of succeeding if it would make things more than 10x better.\nWhereas the rewards for attacking new ideas are roughly constant;\nsuch attacks seem roughly equally clever regardless of the target.People will also attack new ideas when they have a vested interest\nin the old ones. It's not surprising, for example, that some of\nDarwin's harshest critics were churchmen. People build whole careers\non some ideas. When someone claims they're false or obsolete, they",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "feel threatened.The lowest form of dismissal is mere factionalism: to automatically\ndismiss any idea associated with the opposing faction. The lowest\nform of all is to dismiss an idea because of who proposed it.But the main thing that leads reasonable people to dismiss new ideas\nis the same thing that holds people back from proposing them: the\nsheer pervasiveness of the current paradigm. It doesn't just affect\nthe way we think; it is the Lego blocks we build thoughts out of.",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "Popping out of the current paradigm is something only a few people\ncan do. And even they usually have to suppress their intuitions at\nfirst, like a pilot flying through cloud who has to trust his\ninstruments over his sense of balance.\n[4]Paradigms don't just define our present thinking. They also vacuum\nup the trail of crumbs that led to them, making our standards for\nnew ideas impossibly high. The current paradigm seems so perfect\nto us, its offspring, that we imagine it must have been accepted",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "completely as soon as it was discovered \u2014 that whatever the church thought\nof the heliocentric model, astronomers must have been convinced as\nsoon as Copernicus proposed it. Far, in fact, from it. Copernicus\npublished the heliocentric model in 1532, but it wasn't till the\nmid seventeenth century that the balance of scientific opinion\nshifted in its favor.\n[5]Few understand how feeble new ideas look when they first appear.\nSo if you want to have new ideas yourself, one of the most valuable",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "things you can do is to learn what they look like when they're born.\nRead about how new ideas happened, and try to get yourself into the\nheads of people at the time. How did things look to them, when the\nnew idea was only half-finished, and even the person who had it was\nonly half-convinced it was right?But you don't have to stop at history. You can observe big new ideas\nbeing born all around you right now. Just look for a reasonable",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "domain expert proposing something that sounds wrong.If you're nice, as well as wise, you won't merely resist attacking\nsuch people, but encourage them. Having new ideas is a lonely\nbusiness. Only those who've tried it know how lonely. These people\nneed your help. And if you help them, you'll probably learn something\nin the process.Notes[1]\nThis domain expertise could be in another field. Indeed,\nsuch crossovers tend to be particularly promising.[2]\nI'm not claiming this principle extends much beyond math,",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "engineering, and the hard sciences. In politics, for example,\ncrazy-sounding ideas generally are as bad as they sound. Though\narguably this is not an exception, because the people who propose\nthem are not in fact domain experts; politicians are domain experts\nin political tactics, like how to get elected and how to get\nlegislation passed, but not in the world that policy acts upon.\nPerhaps no one could be.[3]\nThis sense of \"paradigm\" was defined by Thomas Kuhn in his",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "Structure of Scientific Revolutions, but I also recommend his\nCopernican Revolution, where you can see him at work developing the\nidea.[4]\nThis is one reason people with a touch of Asperger's may have\nan advantage in discovering new ideas. They're always flying on\ninstruments.[5]\nHall, Rupert. From Galileo to Newton. Collins, 1963. This\nbook is particularly good at getting into contemporaries' heads.Thanks to Trevor Blackwell, Patrick Collison, Suhail Doshi, Daniel",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
+      },
+      {
+        "text": "Gackle, Jessica Livingston, and Robert Morris for reading drafts of this.",
+        "title": "pg_essay_3.html",
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "document_id": "b736292c-11e6-5453-9686-055da3edb866",
+        "extraction_id": "712cbc35-c6de-521b-b732-024e7ecf18a5"
       }
     ]
   },
@@ -43,9 +369,181 @@
     }
   },
   "delete_document": {
-    "results": "Documents ['93123a68-d668-51de-8291-92162730dc87'] deleted successfully."
+    "results": "Documents ['b736292c-11e6-5453-9686-055da3edb866'] deleted successfully."
   },
   "rerun_documents_overview": {
-    "results": []
+    "results": [
+      {
+        "document_id": "cafdf784-a1dc-5103-8098-5b0a97db1707",
+        "version": "v0",
+        "size_in_bytes": 131503,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "pg_essay_1.html",
+        "created_at": "2024-08-09T18:01:52.256953Z",
+        "updated_at": "2024-08-09T18:01:52.256953Z"
+      },
+      {
+        "document_id": "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+        "version": "v0",
+        "size_in_bytes": 9491,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "got.txt",
+        "created_at": "2024-08-09T18:01:52.256998Z",
+        "updated_at": "2024-08-09T18:01:52.256998Z"
+      },
+      {
+        "document_id": "bca7fd1c-bb71-5652-9734-620af8e3aafc",
+        "version": "v0",
+        "size_in_bytes": 121671,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "sample.mp3",
+        "created_at": "2024-08-09T18:01:52.257008Z",
+        "updated_at": "2024-08-09T18:01:52.257008Z"
+      },
+      {
+        "document_id": "e0c2de57-171d-5385-8081-b546a2c63ce3",
+        "version": "v0",
+        "size_in_bytes": 1880483,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "uber_2021.pdf",
+        "created_at": "2024-08-09T18:01:52.257016Z",
+        "updated_at": "2024-08-09T18:01:52.257016Z"
+      },
+      {
+        "document_id": "7f39e670-a61b-5506-a622-1638b4c62e45",
+        "version": "v0",
+        "size_in_bytes": 72456,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "sample2.mp3",
+        "created_at": "2024-08-09T18:01:52.257040Z",
+        "updated_at": "2024-08-09T18:01:52.257040Z"
+      },
+      {
+        "document_id": "ad0f4c78-8e84-5201-8f35-fa83b3fcef06",
+        "version": "v0",
+        "size_in_bytes": 7443,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "aristotle_v2.txt",
+        "created_at": "2024-08-09T18:01:52.257047Z",
+        "updated_at": "2024-08-09T18:01:52.257047Z"
+      },
+      {
+        "document_id": "f17eac52-a22e-5c75-af8f-0b25b82d43f8",
+        "version": "v0",
+        "size_in_bytes": 118113,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "pg_essay_4.html",
+        "created_at": "2024-08-09T18:01:52.257054Z",
+        "updated_at": "2024-08-09T18:01:52.257054Z"
+      },
+      {
+        "document_id": "022fdff4-f87d-5b0c-82e4-95d53bcc4e60",
+        "version": "v0",
+        "size_in_bytes": 123779,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "pg_essay_5.html",
+        "created_at": "2024-08-09T18:01:52.257061Z",
+        "updated_at": "2024-08-09T18:01:52.257061Z"
+      },
+      {
+        "document_id": "c5b31b3a-06d2-553e-ac3e-47c56139b484",
+        "version": "v0",
+        "size_in_bytes": 1440303,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "lyft_2021.pdf",
+        "created_at": "2024-08-09T18:01:52.257068Z",
+        "updated_at": "2024-08-09T18:01:52.257068Z"
+      },
+      {
+        "document_id": "97230d1c-33ae-5a9d-b93c-5c42dde68002",
+        "version": "v0",
+        "size_in_bytes": 20,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "test.txt",
+        "created_at": "2024-08-09T18:01:52.257075Z",
+        "updated_at": "2024-08-09T18:01:52.257075Z"
+      },
+      {
+        "document_id": "b21a46a4-2906-5550-9529-087697da2944",
+        "version": "v0",
+        "size_in_bytes": 125112,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "pg_essay_2.html",
+        "created_at": "2024-08-09T18:01:52.257081Z",
+        "updated_at": "2024-08-09T18:01:52.257081Z"
+      },
+      {
+        "document_id": "79145cf2-123a-5333-8bf4-ded6dde616fd",
+        "version": "v0",
+        "size_in_bytes": 47209,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "yc_companies.txt",
+        "created_at": "2024-08-09T18:01:52.257096Z",
+        "updated_at": "2024-08-09T18:01:52.257096Z"
+      },
+      {
+        "document_id": "6d5f8844-2da0-5558-8c17-b1d80906c175",
+        "version": "v0",
+        "size_in_bytes": 791764,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "screen_shot.png",
+        "created_at": "2024-08-09T18:01:52.257103Z",
+        "updated_at": "2024-08-09T18:01:52.257103Z"
+      },
+      {
+        "document_id": "93123a68-d668-51de-8291-92162730dc87",
+        "version": "v1",
+        "size_in_bytes": 7443,
+        "metadata": {},
+        "status": "success",
+        "group_ids": null,
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "title": "aristotle_v2.txt",
+        "created_at": "2024-08-09T18:01:52.257088Z",
+        "updated_at": "2024-08-09T18:05:12.363214Z"
+      }
+    ]
+  },
+  "rerun_document_chunks_test": {
+    "results": "No chunks found for the given document ID."
   }
 }

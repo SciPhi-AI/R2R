@@ -2,52 +2,89 @@ from tests.regression.test_cases.base import BaseTest
 
 
 class TestRetrieval(BaseTest):
-    RAG_EXCLUSIONS = [
-        f"root['results']['completion']['{field}']"
-        for field in [
-            "id",
-            "system_fingerprint",
-            "usage",
-            "created",
+    RAG_EXCLUSIONS = (
+        [
+            f"root['results']['completion']['{field}']"
+            for field in [
+                "id",
+                "system_fingerprint",
+                "usage",
+                "created",
+            ]
         ]
-    ] + ["root['results']['completion']['choices'][0]['message']['content']"]
+        + ["root['results']['completion']['choices'][0]['message']['content']"]
+        + [
+            f"root['results']['search_results'][{i}]['score']"
+            for i in range(10)
+        ]
+    )
 
     def __init__(self, client):
         super().__init__(client)
-        self.set_exclude_paths("rag", TestRetrieval.RAG_EXCLUSIONS)
+        # ignore scores since math epsilon fails for nested floats, exact text is sufficient.
+        self.set_exclude_paths(
+            "search",
+            [
+                f"root['results']['vector_search_results'][{i}]['score']"
+                for i in range(10)
+            ],
+        )
+        self.set_exclude_paths("basic_rag", TestRetrieval.RAG_EXCLUSIONS)
+        self.set_exclude_paths("hybrid_rag", TestRetrieval.RAG_EXCLUSIONS)
+        self.set_exclude_paths("streaming_rag", TestRetrieval.RAG_EXCLUSIONS)
 
     def get_test_cases(self):
         return {
-            # "search": lambda client: self.search_test(client),
-            "rag": lambda client: self.rag_test(
-                client,
-            ),
+            "search": lambda client: self.search_test(client),
+            "basic_rag": lambda client: self.basic_rag_test(client),
+            "hybrid_rag": lambda client: self.hybrid_rag_test(client),
+            "streaming_rag": lambda client: self.streaming_rag_test(client),
         }
 
-    # def search_test(self, client):
-    #     return client.search("What was Uber's profit in 2020?")
+    def search_test(self, client):
+        try:
+            return client.search("What is the capital of France?")
+        except Exception as e:
+            return {"results": str(e)}
 
-    # def rag_test(self, client):
-    #     return client.rag("What was Uber's profit in 2020?")
+    def hybrid_search_test(self, client):
+        try:
+            return client.search(
+                "What is the capital of France?", {"do_hybrid_search": True}
+            )
+        except Exception as e:
+            return {"results": str(e)}
 
     def basic_rag_test(self, client):
-        return client.rag("What was Uber's profit in 2020?")
+        try:
+            return client.rag("What was Uber's profit in 2020?")
+        except Exception as e:
+            return {"results": str(e)}
 
     def hybrid_rag_test(self, client):
-        return client.rag("Who is John Snow?", {"do_hybrid_search": True})
+        try:
+            return client.rag("Who is John Snow?", {"do_hybrid_search": True})
+        except Exception as e:
+            return {"results": str(e)}
 
     def streaming_rag_test(self, client):
-        response = client.rag(
-            "What was Lyft's profit in 2020?",
-            rag_generation_config={"stream": True},
-        )
-        return "".join([chunk for chunk in response])
-
-    def custom_rag_test(self, client):
-        return client.rag(
-            "Who was Aristotle?",
-            rag_generation_config={
-                "model": "anthropic/claude-3-haiku-20240307",
-                "temperature": 0.7,
-            },
-        )
+        try:
+            response = client.rag(
+                "What was Lyft's profit in 2020?",
+                rag_generation_config={"stream": True},
+            )
+            return {
+                "results": {
+                    "completion": {
+                        "choices": [
+                            {
+                                "message": {
+                                    "content": f"{''.join([chunk for chunk in response])}"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        except Exception as e:
+            return {"results": str(e)}

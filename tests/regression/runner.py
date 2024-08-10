@@ -13,9 +13,9 @@ class RegressionTestRunner:
         self.tests: List[BaseTest] = []
         self.test_order = [
             "TestDocumentManagement",
-            # "TestRetrieval",
-            # "TestUserManagement",
-            # Add other test classes in the desired order
+            "TestRetrieval",
+            "TestUserManagement",
+            # "TestObservability",
         ]
 
     def load_tests(self):

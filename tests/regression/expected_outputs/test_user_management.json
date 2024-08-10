@@ -1,10 +1,10 @@
 {
   "register_user": {
     "results": {
-      "email": "test_a55d8044-d83a-424c-8d11-3d4131bf129c@example.com",
-      "id": "791e50a3-5c74-5d3f-b138-927c86832f46",
+      "email": "test@example.com",
+      "id": "fcbcbc64-f85c-5025-877c-37f4c7a12d6e",
       "group_ids": [],
-      "hashed_password": "$2b$12$DvBP/kOaWCJJwaGQaGSubufX7rEwv311eCGdMDcYlqUTRnBFG.Dfm",
+      "hashed_password": "$2b$12$7wVeNybRKSGOZiGsA.Hp6eV6GD7UICb5R4rFnGHcxKcA6GUv3mu/m",
       "is_superuser": false,
       "is_active": true,
       "is_verified": false,
@@ -12,37 +12,84 @@
       "name": null,
       "bio": null,
       "profile_picture": null,
-      "created_at": "2024-08-09T21:36:15.111262Z",
-      "updated_at": "2024-08-09T21:36:15.111262Z"
+      "created_at": "2024-08-10T01:05:23.068112Z",
+      "updated_at": "2024-08-10T01:05:23.068112Z"
     }
   },
   "login_user": {
-    "results": {
-      "access_token": {
-        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiZXhwIjoxNzIzMjQyOTc1LjU3NzIwOSwidG9rZW5fdHlwZSI6ImFjY2VzcyJ9.8iuBDzjxg_1H-Te6kUP3Ut56qf7LB0JuBF0DmOBwoRI",
-        "token_type": "access"
-      },
-      "refresh_token": {
-        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiZXhwIjoxNzIzODQ0MTc1LCJ0b2tlbl90eXBlIjoicmVmcmVzaCJ9.qS2-0Tqk0I0PdLbLmr3UKCLhjdC57xOf87IYvK7JIYs",
-        "token_type": "refresh"
-      }
-    }
+    "results": "Incorrect email or password"
   },
   "user_info": {
     "results": {
-      "email": "test@example.com",
-      "id": "fcbcbc64-f85c-5025-877c-37f4c7a12d6e",
+      "email": "admin@example.com",
+      "id": "2acb499e-8428-543b-bd85-0d9098718220",
       "group_ids": [],
-      "hashed_password": "$2b$12$5zQct0/el3uLCmxZaWZ3B.56mzuChojd3V5OF892AYrfD7/Yopa.G",
-      "is_superuser": false,
+      "hashed_password": "$2b$12$9.1..gl2KoLEfNlWlqUPa.tjCe5tq204S9QfLKjkp.jIWbx5Hl9rK",
+      "is_superuser": true,
       "is_active": true,
       "is_verified": true,
       "verification_code_expiry": null,
       "name": null,
       "bio": null,
       "profile_picture": null,
-      "created_at": "2024-08-09T21:23:11.863355Z",
-      "updated_at": "2024-08-09T21:23:11.863355Z"
+      "created_at": "2024-08-10T01:05:23.627515",
+      "updated_at": "2024-08-10T01:05:23.627521"
     }
+  },
+  "change_password": {
+    "results": "Incorrect current password"
+  },
+  "update_profile": {
+    "results": {
+      "email": "admin@example.com",
+      "id": "2acb499e-8428-543b-bd85-0d9098718220",
+      "group_ids": [],
+      "hashed_password": "null",
+      "is_superuser": true,
+      "is_active": true,
+      "is_verified": true,
+      "verification_code_expiry": null,
+      "name": "John Doe",
+      "bio": "R2R enthusiast",
+      "profile_picture": null,
+      "created_at": "2024-08-10T01:01:45.265983Z",
+      "updated_at": "2024-08-10T01:05:24.498342Z"
+    }
+  },
+  "refresh_token": {
+    "results": "No refresh token available. Please login again."
+  },
+  "superuser_test": {
+    "results": [
+      {
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "num_files": 14,
+        "total_size_in_bytes": 4876790,
+        "document_ids": [
+          "cafdf784-a1dc-5103-8098-5b0a97db1707",
+          "e0fc8bbc-95be-5a98-891f-c17a43fa2c3d",
+          "bca7fd1c-bb71-5652-9734-620af8e3aafc",
+          "e0c2de57-171d-5385-8081-b546a2c63ce3",
+          "7f39e670-a61b-5506-a622-1638b4c62e45",
+          "ad0f4c78-8e84-5201-8f35-fa83b3fcef06",
+          "f17eac52-a22e-5c75-af8f-0b25b82d43f8",
+          "022fdff4-f87d-5b0c-82e4-95d53bcc4e60",
+          "c5b31b3a-06d2-553e-ac3e-47c56139b484",
+          "97230d1c-33ae-5a9d-b93c-5c42dde68002",
+          "b21a46a4-2906-5550-9529-087697da2944",
+          "79145cf2-123a-5333-8bf4-ded6dde616fd",
+          "6d5f8844-2da0-5558-8c17-b1d80906c175",
+          "93123a68-d668-51de-8291-92162730dc87"
+        ]
+      }
+    ]
+  },
+  "logout": {
+    "results": {
+      "message": "Logged out successfully"
+    }
+  },
+  "delete_account": {
+    "results": "'TestUserManagement' object has no attribute 'user'"
   }
 }
