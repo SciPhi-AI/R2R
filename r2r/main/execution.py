@@ -228,6 +228,7 @@ class R2RExecutionWrapper:
         use_kg_search: bool = False,
         kg_search_generation_config: Optional[dict] = None,
         kg_search_type: str = 'global',
+        kg_search_level: Optional[int] = None,
         entity_types: list = [],
         relationships: list = [],
     ):
@@ -243,6 +244,7 @@ class R2RExecutionWrapper:
                 KGSearchSettings(
                     use_kg_search=use_kg_search,
                     kg_search_type = kg_search_type,
+                    kg_search_level = kg_search_level,
                     entity_types = entity_types,
                     relationships = relationships,
                     kg_search_generation_config=GenerationConfig(
@@ -265,6 +267,7 @@ class R2RExecutionWrapper:
                         **(kg_search_generation_config or {})
                     ),
                     kg_search_type=kg_search_type,
+                    kg_search_level = kg_search_level,
                     entity_types = entity_types,
                     relationships = relationships,
                 ),

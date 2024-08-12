@@ -212,12 +212,13 @@ class LocalKGProvider(KGProvider):
         return triples
     
 
-    def get_communities(self) -> List[Community]:
+    def get_communities(self, level = None) -> List[Community]:
         communities = []
         for community_id in os.listdir(self.paths['communities']):
             filepath = os.path.join(self.paths['communities'], community_id)
-            with open(filepath, 'rb') as f:
-                community = pickle.load(f)
+            if level is None or community_id.split('_')[0] == str(level):
+                with open(filepath, 'rb') as f:
+                    community = pickle.load(f)
                 communities.append(community)
         return communities
     

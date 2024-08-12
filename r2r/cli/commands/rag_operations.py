@@ -96,6 +96,7 @@ def rag(
 )
 @click.option("--kg-search-model", default=None, help="Model for KG agent")
 @click.option("--kg-search-type", default='global', help="Local or Global")
+@click.option("--kg-search-level", default=None, help="Level of KG search")
 @click.pass_obj
 def search(
     obj,
@@ -107,6 +108,9 @@ def search(
     use_kg_search,
     kg_search_model,
     kg_search_type,
+    kg_search_level,
+    entity_types = [],
+    relationships = [],
 ):
     """Perform a search query."""
     kg_search_generation_config = {}
@@ -121,10 +125,11 @@ def search(
             search_limit = search_limit,
             do_hybrid_search = do_hybrid_search,
             use_kg_search = use_kg_search,
-            entity_types = [],
-            relationships = [],
+            entity_types = entity_types,
+            relationships = relationships,
             kg_search_type = kg_search_type,
             kg_search_generation_config = kg_search_generation_config,
+            kg_search_level = kg_search_level,
         )
 
         print("KG_Search Enabled", use_kg_search)

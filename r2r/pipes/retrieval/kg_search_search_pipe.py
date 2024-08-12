@@ -103,12 +103,28 @@ class KGSearchSearchPipe(GeneratorPipe):
             )
 
     def filter_responses(self, map_responses):
-        responses = [json.loads(response) for response in map_responses]
-        responses = [item for response in responses for item in response['points']]
-        responses = [response for response in responses if response['score'] > 0]
-        responses = sorted(responses, key=lambda x: x['score'], reverse=True)
+        filtered_responses = []
+        for response in map_responses:
+            try:
+                parsed_response = json.loads(response)
+                for item in parsed_response['points']:
+                    try:
+                        if item['score'] > 0:
+                            filtered_responses.append(item)
+                    except KeyError:
+                        # Skip this item if it doesn't have a 'score' key
+                        logger.warning(f"Item in response missing 'score' key")
+                        continue
+            except json.JSONDecodeError:
+                logger.warning(f"Response is not valid JSON: {response[:100]}...")
+                continue
+            except KeyError:
+                logger.warning(f"Response is missing 'points' key: {response[:100]}...")
+                continue
 
-        responses = "\n".join([response['description'] for response in responses])
+        filtered_responses = sorted(filtered_responses, key=lambda x: x['score'], reverse=True)
+
+        responses = "\n".join([response.get('description', '') for response in filtered_responses])
         return responses
     
     async def global_search(self,
@@ -122,17 +138,24 @@ class KGSearchSearchPipe(GeneratorPipe):
         # map reduce
         async for message in input.message:
             map_responses = []
-            communities = self.kg_provider.get_communities()
-            
-            async def process_community(community):
-                community_report = community.attributes['community_report'].choices[0].message.content
-                truncated_description = community_report[:kg_search_settings.max_community_description_length]
-                
+            communities = self.kg_provider.get_communities(level = kg_search_settings.kg_search_level)
+            async def preprocess_communities(communities):
+                merged_report = ""
+                for community in communities:
+                    community_report = community.attributes['community_report'].choices[0].message.content
+                    if len(merged_report) + len(community_report) > kg_search_settings.max_community_description_length:
+                        yield merged_report.strip()
+                        merged_report = ""
+                    merged_report += community_report + "\n\n"
+                if merged_report:
+                    yield merged_report.strip()
+
+            async def process_community(merged_report):
                 output = await self.llm_provider.aget_completion(
                     messages=self.prompt_provider._get_message_payload(
                         task_prompt_name="graphrag_map_system_prompt",
                         task_inputs={
-                            "context_data": truncated_description,
+                            "context_data": merged_report,
                             "input": message,
                         },
                     ),
@@ -140,10 +163,13 @@ class KGSearchSearchPipe(GeneratorPipe):
                 )
 
                 return output.choices[0].message.content
+            
+            preprocessed_reports = [merged_report async for merged_report in preprocess_communities(communities)]
 
-            # Use asyncio.gather to process all communities concurrently
-            map_responses = await asyncio.gather(*[process_community(community) for community in communities])
+            # Use asyncio.gather to process all preprocessed community reports concurrently
+            logger.info(f"Processing {len(communities)} communities, {len(preprocessed_reports)} reports")
 
+            map_responses = await asyncio.gather(*[process_community(report) for report in preprocessed_reports])
             # Filter only the relevant responses
             filtered_responses = self.filter_responses(map_responses)
 
