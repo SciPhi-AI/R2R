@@ -13,6 +13,7 @@ from r2r.main.api.routes.management.requests import (
     R2RDocumentsOverviewRequest,
     R2RLogsRequest,
     R2RPrintRelationshipsRequest,
+    R2RScoreCompletionRequest,
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
@@ -250,6 +251,15 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
             return await self.engine.aapp_settings()
+
+        @self.router.post("/score_completion")
+        @self.base_endpoint
+        async def score_completion(
+            request: R2RScoreCompletionRequest,
+        ):
+            return await self.engine.ascore_completion(
+                message_id=request.message_id, score=request.score
+            )
 
 
 class R2RExtractionRequest(BaseModel):

@@ -23,8 +23,8 @@ jobs:
           source venv/bin/activate
           poetry install
           pip install pre-commit
-          pre-commit install
-          pre-commit run --all-files
+          poetry run pre-commit install
+          poetry run pre-commit run --all-files
           deactivate
           rm -rf venv
 

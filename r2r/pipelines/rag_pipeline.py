@@ -114,5 +114,5 @@ class RAGPipeline(AsyncPipeline):
         *args,
         **kwargs,
     ) -> None:
-        logger.debug(f"Setting search pipeline for the RAGPipeline")
+        logger.debug("Setting search pipeline for the RAGPipeline")
         self._search_pipeline = _search_pipeline
