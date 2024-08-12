@@ -245,7 +245,6 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ):
-        logger.info(f"ingest_files received kwargs: {kwargs}")
         if not files:
             raise R2RException(
                 status_code=400, message="No files provided for ingestion."
