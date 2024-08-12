@@ -18,7 +18,7 @@ from r2r.pipelines import (
     IngestionPipeline,
     RAGPipeline,
     SearchPipeline,
-    KGPipeline
+    KGEnrichmentPipeline
 )
 
 from ..app import R2RApp
@@ -99,7 +99,7 @@ class R2RBuilder:
         self.rag_pipeline: Optional[RAGPipeline] = None
         self.streaming_rag_pipeline: Optional[RAGPipeline] = None
         self.eval_pipeline: Optional[EvalPipeline] = None
-        self.kg_pipeline: Optional[KGPipeline] = None
+        self.kg_pipeline: Optional[KGEnrichmentPipeline] = None
 
         # Agent overrides
         self.assistant_factory_override: Optional[R2RAgentFactory] = None
@@ -224,7 +224,7 @@ class R2RBuilder:
         self.streaming_rag_pipeline = pipeline
         return self
     
-    def with_kg_pipeline(self, pipeline: KGPipeline):
+    def with_kg_pipeline(self, pipeline: KGEnrichmentPipeline):
         self.kg_pipeline = pipeline
         return self
 

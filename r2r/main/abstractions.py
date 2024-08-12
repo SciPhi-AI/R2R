@@ -20,7 +20,7 @@ from r2r.pipelines import (
     IngestionPipeline,
     RAGPipeline,
     SearchPipeline,
-    KGPipeline
+    KGEnrichmentPipeline
 )
 
 
@@ -66,7 +66,7 @@ class R2RPipelines(BaseModel):
     search_pipeline: SearchPipeline
     rag_pipeline: RAGPipeline
     streaming_rag_pipeline: RAGPipeline
-    kg_pipeline: KGPipeline
+    kg_pipeline: KGEnrichmentPipeline
 
     class Config:
         arbitrary_types_allowed = True

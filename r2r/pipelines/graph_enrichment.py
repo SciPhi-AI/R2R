@@ -17,7 +17,7 @@ from ..base.pipes.base_pipe import AsyncPipe, AsyncState
 
 logger = logging.getLogger(__name__)
 
-class KGPipeline(AsyncPipeline):
+class KGEnrichmentPipeline(AsyncPipeline):
     """A pipeline for enhancing the graph with communities, connnected components etc."""
 
     pipeline_type: str = "other"
@@ -35,5 +35,5 @@ class KGPipeline(AsyncPipeline):
         *args,
         **kwargs,
     ) -> None:
-        logger.debug(f"Adding pipe {pipe.config.name} to the KGPipeline")
+        logger.debug(f"Adding pipe {pipe.config.name} to the KGEnrichmentPipeline")
         super().add_pipe(pipe, *args, **kwargs)

@@ -31,7 +31,7 @@ from r2r.pipelines import (
     IngestionPipeline,
     RAGPipeline,
     SearchPipeline,
-    KGPipeline
+    KGEnrichmentPipeline
 )
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -606,8 +606,8 @@ class R2RPipelineFactory:
         eval_pipeline.add_pipe(self.pipes.eval_pipe)
         return eval_pipeline
     
-    def create_kg_pipeline(self, *args, **kwargs) -> KGPipeline:
-        kg_pipeline = KGPipeline()
+    def create_kg_pipeline(self, *args, **kwargs) -> KGEnrichmentPipeline:
+        kg_pipeline = KGEnrichmentPipeline()
         kg_pipeline.add_pipe(self.pipes.kg_node_extraction_pipe)
         kg_pipeline.add_pipe(self.pipes.kg_node_description_pipe)
         kg_pipeline.add_pipe(self.pipes.kg_clustering_pipe)
@@ -621,7 +621,7 @@ class R2RPipelineFactory:
         rag_pipeline: Optional[RAGPipeline] = None,
         streaming_rag_pipeline: Optional[RAGPipeline] = None,
         eval_pipeline: Optional[EvalPipeline] = None,
-        kg_pipeline: Optional[KGPipeline] = None,
+        kg_pipeline: Optional[KGEnrichmentPipeline] = None,
         *args,
         **kwargs,
     ) -> R2RPipelines:
