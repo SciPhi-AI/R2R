@@ -35,10 +35,8 @@ from .abstractions.llm import (
 from .abstractions.prompt import Prompt
 from .abstractions.search import (
     AggregateSearchResult,
-    KGSearchRequest,
     KGSearchResult,
     KGSearchSettings,
-    VectorSearchRequest,
     VectorSearchResult,
     VectorSearchSettings,
 )
@@ -123,14 +121,12 @@ __all__ = [
     "VectorEntry",
     "VectorType",
     "Vector",
-    "VectorSearchRequest",
     "VectorSearchResult",
     "VectorSearchSettings",
     "Token",
     "TokenData",
     "User",
     "UserCreate",
-    "KGSearchRequest",
     "KGSearchResult",
     "KGSearchSettings",
     "AggregateSearchResult",

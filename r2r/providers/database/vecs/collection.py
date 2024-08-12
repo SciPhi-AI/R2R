@@ -43,7 +43,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.types import Float, UserDefinedType
 
-from .adapter import Adapter, AdapterContext, NoOp
+from .adapter import Adapter, AdapterContext, NoOp, Record
 from .exc import (
     ArgError,
     CollectionAlreadyExists,
@@ -55,12 +55,6 @@ from .exc import (
 
 if TYPE_CHECKING:
     from vecs.client import Client
-
-
-MetadataValues = Union[str, int, float, bool, List[str]]
-Metadata = Dict[str, MetadataValues]
-Numeric = Union[int, float, complex]
-Record = Tuple[str, Iterable[Numeric], Metadata]
 
 
 class IndexMethod(str, Enum):
@@ -231,7 +225,7 @@ class Collection:
         self.client = client
         self.name = name
         self.dimension = dimension
-        self.table = build_table(name, client.meta, dimension)
+        self.table = _build_table(name, client.meta, dimension)
         self._index: Optional[str] = None
         self.adapter = adapter or Adapter(steps=[NoOp(dimension=dimension)])
 
@@ -377,92 +371,16 @@ class Collection:
 
         return self
 
-    def copy(
-        self,
-        records: Iterable[Tuple[str, Any, Metadata]],
-        skip_adapter: bool = False,
-    ) -> None:
-        """
-        Copies records into the collection.
-
-        Args:
-            records (Iterable[Tuple[str, Any, Metadata]]): An iterable of content to copy.
-                Each record is a tuple where:
-                  - the first element is a unique string identifier
-                  - the second element is an iterable of numeric values or relevant input type for the
-                    adapter assigned to the collection
-                  - the third element is metadata associated with the vector
-
-            skip_adapter (bool): Should the adapter be skipped while copying. i.e. if vectors are being
-                provided, rather than a media type that needs to be transformed
-        """
-        import csv
-        import io
-        import json
-        import os
-
-        pipeline = flu(records)
-        for record in pipeline:
-            with psycopg2.connect(
-                database=os.getenv("POSTGRES_DBNAME"),
-                user=os.getenv("POSTGRES_USER"),
-                password=os.getenv("POSTGRES_PASSWORD"),
-                host=os.getenv("POSTGRES_HOST"),
-                port=os.getenv("POSTGRES_PORT"),
-            ) as conn:
-                with conn.cursor() as cur:
-                    f = io.StringIO()
-                    id, vec, metadata = record
-
-                    writer = csv.writer(f, delimiter=",", quotechar='"')
-                    writer.writerow(
-                        [
-                            str(id),
-                            [float(ele) for ele in vec],
-                            json.dumps(metadata),
-                        ]
-                    )
-                    f.seek(0)
-                    result = f.getvalue()
-
-                    writer_name = (
-                        f'vecs."{self.table.fullname.split(".")[-1]}"'
-                    )
-                    g = io.StringIO(result)
-                    cur.copy_expert(
-                        f"COPY {writer_name}(id, vec, metadata) FROM STDIN WITH (FORMAT csv)",
-                        g,
-                    )
-                    conn.commit()
-        cur.close()
-        conn.close()
-
     def upsert(
         self,
-        records: Iterable[Tuple[str, Any, Metadata]],
+        records: Iterable[Record],
         skip_adapter: bool = False,
     ) -> None:
-        """
-        Inserts or updates *vectors* records in the collection.
-
-        Args:
-            records (Iterable[Tuple[str, Any, Metadata]]): An iterable of content to upsert.
-                Each record is a tuple where:
-                  - the first element is a unique string identifier
-                  - the second element is an iterable of numeric values or relevant input type for the
-                    adapter assigned to the collection
-                  - the third element is metadata associated with the vector
-
-            skip_adapter (bool): Should the adapter be skipped while upserting. i.e. if vectors are being
-                provided, rather than a media type that needs to be transformed
-        """
-
         chunk_size = 512
 
         if skip_adapter:
             pipeline = flu(records).chunk(chunk_size)
         else:
-            # Construct a lazy pipeline of steps to transform and chunk user input
             pipeline = flu(
                 self.adapter(records, AdapterContext("upsert"))
             ).chunk(chunk_size)
@@ -470,37 +388,59 @@ class Collection:
         with self.client.Session() as sess:
             with sess.begin():
                 for chunk in pipeline:
-                    stmt = postgresql.insert(self.table).values(chunk)
+                    stmt = postgresql.insert(self.table).values(
+                        [
+                            {
+                                "fragment_id": record[0],
+                                "extraction_id": record[1],
+                                "document_id": record[2],
+                                "user_id": record[3],
+                                "group_ids": record[4],
+                                "vec": record[5],
+                                "text": record[6],
+                                "metadata": record[7],
+                            }
+                            for record in chunk
+                        ]
+                    )
                     stmt = stmt.on_conflict_do_update(
-                        index_elements=[self.table.c.id],
+                        index_elements=[self.table.c.fragment_id],
                         set_=dict(
+                            extraction_id=stmt.excluded.extraction_id,
+                            document_id=stmt.excluded.document_id,
+                            user_id=stmt.excluded.user_id,
+                            group_ids=stmt.excluded.group_ids,
                             vec=stmt.excluded.vec,
+                            text=stmt.excluded.text,
                             metadata=stmt.excluded.metadata,
                         ),
                     )
                     sess.execute(stmt)
         return None
 
-    def fetch(self, ids: Iterable[str]) -> List[Record]:
+    def fetch(self, fragment_ids: Iterable[uuid.UUID]) -> List[Record]:
         """
-        Fetches vectors from the collection by their identifiers.
+        Fetches vectors from the collection by their fragment identifiers.
 
         Args:
-            ids (Iterable[str]): An iterable of vector identifiers.
+            fragment_ids (Iterable[UUID]): An iterable of vector fragment identifiers.
 
         Returns:
             List[Record]: A list of the fetched vectors.
+
+        Raises:
+            ArgError: If fragment_ids is not an iterable of UUIDs.
         """
-        if isinstance(ids, str):
-            raise ArgError("ids must be a list of strings")
+        if isinstance(fragment_ids, (str, uuid.UUID)):
+            raise ArgError("fragment_ids must be an iterable of UUIDs")
 
         chunk_size = 12
         records = []
         with self.client.Session() as sess:
             with sess.begin():
-                for id_chunk in flu(ids).chunk(chunk_size):
+                for id_chunk in flu(fragment_ids).chunk(chunk_size):
                     stmt = select(self.table).where(
-                        self.table.c.id.in_(id_chunk)
+                        self.table.c.fragment_id.in_(id_chunk)
                     )
                     chunk_records = sess.execute(stmt)
                     records.extend(chunk_records)
@@ -508,78 +448,81 @@ class Collection:
 
     def delete(
         self,
-        ids: Optional[Iterable[str]] = None,
+        fragment_ids: Optional[Iterable[uuid.UUID]] = None,
         filters: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Dict[str, str]]:
         """
-        Deletes vectors from the collection by matching filters or ids.
+        Deletes vectors from the collection by matching filters or fragment_ids.
 
         Args:
-            ids (Iterable[str], optional): An iterable of vector identifiers.
+            fragment_ids (Optional[Iterable[UUID]], optional): An iterable of vector fragment identifiers.
             filters (Optional[Dict], optional): Filters to apply to the search. Defaults to None.
 
         Returns:
-            Dict[str, Dict[str, str]]: A dictionary of deleted records, where the key is the record ID
-            and the value is a dictionary containing 'document_id', 'extraction_id', and 'fragment_id'.
+            Dict[str, Dict[str, str]]: A dictionary of deleted records, where the key is the fragment_id
+            and the value is a dictionary containing 'document_id', 'extraction_id', 'fragment_id', and 'text'.
+
+        Raises:
+            ArgError: If neither fragment_ids nor filters are provided, or if both are provided.
         """
-        if ids is None and filters is None:
-            raise ArgError("Either ids or filters must be provided.")
+        if fragment_ids is None and filters is None:
+            raise ArgError("Either fragment_ids or filters must be provided.")
 
-        if ids is not None and filters is not None:
-            raise ArgError("Either ids or filters must be provided, not both.")
+        if fragment_ids is not None and filters is not None:
+            raise ArgError(
+                "Either fragment_ids or filters must be provided, not both."
+            )
 
-        if isinstance(ids, str):
-            raise ArgError("ids must be a list of strings")
+        if isinstance(fragment_ids, (str, uuid.UUID)):
+            raise ArgError("fragment_ids must be an iterable of UUIDs")
 
-        deleted_records = []
+        deleted_records = {}
 
         with self.client.Session() as sess:
             with sess.begin():
-                if ids:
-                    for id_chunk in flu(ids).chunk(12):
+                if fragment_ids:
+                    for id_chunk in flu(fragment_ids).chunk(12):
                         delete_stmt = (
                             delete(self.table)
-                            .where(self.table.c.id.in_(id_chunk))
-                            .returning(self.table.c.id, self.table.c.metadata)
+                            .where(self.table.c.fragment_id.in_(id_chunk))
+                            .returning(
+                                self.table.c.fragment_id,
+                                self.table.c.document_id,
+                                self.table.c.extraction_id,
+                                self.table.c.text,
+                            )
                         )
                         result = sess.execute(delete_stmt)
                         for row in result:
-                            record_id = str(row[0])
-                            metadata = row[1]
-                            deleted_records.append(
-                                {
-                                    "document_id": metadata.get(
-                                        "document_id", ""
-                                    ),
-                                    "extraction_id": metadata.get(
-                                        "extraction_id", ""
-                                    ),
-                                    "fragment_id": metadata.get(
-                                        "fragment_id", ""
-                                    ),
-                                }
-                            )
+                            fragment_id = str(row[0])
+                            deleted_records[fragment_id] = {
+                                "fragment_id": fragment_id,
+                                "document_id": str(row[1]),
+                                "extraction_id": str(row[2]),
+                                "text": row[3],
+                            }
 
                 if filters:
                     meta_filter = self._build_complex_filters(filters)
                     delete_stmt = (
                         delete(self.table)
                         .where(meta_filter)
-                        .returning(self.table.c.id, self.table.c.metadata)
+                        .returning(
+                            self.table.c.fragment_id,
+                            self.table.c.document_id,
+                            self.table.c.extraction_id,
+                            self.table.c.text,
+                        )
                     )
                     result = sess.execute(delete_stmt)
                     for row in result:
-                        record_id = str(row[0])
-                        metadata = row[1]
-                        deleted_records.append(
-                            {
-                                "document_id": metadata.get("document_id", ""),
-                                "extraction_id": metadata.get(
-                                    "extraction_id", ""
-                                ),
-                                "fragment_id": record_id,
-                            }
-                        )
+                        fragment_id = str(row[0])
+                        deleted_records[fragment_id] = {
+                            "fragment_id": fragment_id,
+                            "document_id": str(row[1]),
+                            "extraction_id": str(row[2]),
+                            "text": row[3],
+                        }
         return deleted_records
 
     def __getitem__(self, items):
@@ -617,7 +560,9 @@ class Collection:
         Executes a similarity search in the collection based on the new query structure.
 
         Args:
-            query (Dict[str, Any]): The query structure containing vector, metadata filters, and measure.
+            vector (list[float]): The query vector.
+            filters (Dict[str, Any], optional): Metadata filters to apply. Defaults to {}.
+            imeasure (IndexMeasure, optional): The distance measure to use. Defaults to IndexMeasure.cosine_distance.
             limit (int, optional): The maximum number of results to return. Defaults to 10.
             include_value (bool, optional): Whether to include the distance value in the results. Defaults to False.
             include_metadata (bool, optional): Whether to include the metadata in the results. Defaults to False.
@@ -626,6 +571,9 @@ class Collection:
 
         Returns:
             Union[List[Record], List[str]]: The result of the similarity search.
+
+        Raises:
+            ArgError: If the limit is greater than 1000 or if an invalid distance measure is provided.
         """
         if probes is None:
             probes = 10
@@ -649,8 +597,14 @@ class Collection:
 
         distance_clause = distance_lambda(self.table.c.vec)(vector)
 
-        cols = [self.table.c.id]
-
+        cols = [
+            self.table.c.fragment_id,
+            self.table.c.extraction_id,
+            self.table.c.document_id,
+            self.table.c.user_id,
+            self.table.c.group_ids,
+            self.table.c.text,
+        ]
         if include_value:
             cols.append(distance_clause)
 
@@ -1004,7 +958,7 @@ class Collection:
         return None
 
 
-def build_table(name: str, meta: MetaData, dimension: int) -> Table:
+def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
     """
     PRIVATE
 
@@ -1021,8 +975,17 @@ def build_table(name: str, meta: MetaData, dimension: int) -> Table:
     return Table(
         name,
         meta,
-        Column("id", String, primary_key=True),
+        Column("fragment_id", postgresql.UUID, primary_key=True),
+        Column("extraction_id", postgresql.UUID, nullable=False),
+        Column("document_id", postgresql.UUID, nullable=False),
+        Column("user_id", postgresql.UUID, nullable=False),
+        Column(
+            "group_ids", postgresql.ARRAY(postgresql.UUID), server_default="{}"
+        ),
         Column("vec", Vector(dimension), nullable=False),
+        Column(
+            "text", postgresql.TEXT, nullable=True
+        ),  # New standalone text column
         Column(
             "metadata",
             postgresql.JSONB,

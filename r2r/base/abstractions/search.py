@@ -8,43 +8,54 @@ from pydantic import BaseModel, Field
 from .llm import GenerationConfig
 
 
-class VectorSearchRequest(BaseModel):
-    """Request for a search operation."""
-
-    query: str
-    limit: int
-    filters: Optional[dict[str, Any]] = None
+class VectorSearchSettings(BaseModel):
+    use_vector_search: bool = True
+    filters: dict[str, Any] = Field(default_factory=dict)
+    search_limit: int = 10
+    do_hybrid_search: bool = False
 
 
 class VectorSearchResult(BaseModel):
     """Result of a search operation."""
 
-    id: uuid.UUID
+    fragment_id: uuid.UUID
+    extraction_id: uuid.UUID
+    document_id: uuid.UUID
+    user_id: Optional[uuid.UUID]
+    group_ids: List[uuid.UUID]
     score: float
+    text: str
     metadata: dict[str, Any]
 
     def __str__(self) -> str:
-        return f"VectorSearchResult(id={self.id}, score={self.score}, metadata={self.metadata})"
+        return f"VectorSearchResult(fragment_id={self.fragment_id}, extraction_id={self.extraction_id}, document_id={self.document_id}, score={self.score})"
 
     def __repr__(self) -> str:
-        return f"VectorSearchResult(id={self.id}, score={self.score}, metadata={self.metadata})"
+        return self.__str__()
 
     def dict(self) -> dict:
         return {
-            "id": self.id,
+            "fragment_id": self.fragment_id,
+            "extraction_id": self.extraction_id,
+            "document_id": self.document_id,
+            "user_id": self.user_id,
+            "group_ids": self.group_ids,
             "score": self.score,
+            "text": self.text,
             "metadata": self.metadata,
         }
 
 
-class KGSearchRequest(BaseModel):
-    """Request for a knowledge graph search operation."""
-
-    query: str
-
-
-# [query, ...]
 KGSearchResult = List[Tuple[str, List[Dict[str, Any]]]]
+
+
+class KGSearchSettings(BaseModel):
+    use_kg_search: bool = False
+    kg_search_generation_config: Optional[GenerationConfig] = Field(
+        default_factory=GenerationConfig
+    )
+    entity_types: list = []
+    relationships: list = []
 
 
 class AggregateSearchResult(BaseModel):
@@ -68,19 +79,3 @@ class AggregateSearchResult(BaseModel):
             ),
             "kg_search_results": self.kg_search_results or [],
         }
-
-
-class VectorSearchSettings(BaseModel):
-    use_vector_search: bool = True
-    filters: dict[str, Any] = Field(default_factory=dict)
-    search_limit: int = 10
-    do_hybrid_search: bool = False
-
-
-class KGSearchSettings(BaseModel):
-    use_kg_search: bool = False
-    kg_search_generation_config: Optional[GenerationConfig] = Field(
-        default_factory=GenerationConfig
-    )
-    entity_types: list = []
-    relationships: list = []

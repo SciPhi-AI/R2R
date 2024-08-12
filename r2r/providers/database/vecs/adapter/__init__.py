@@ -1,6 +1,6 @@
 from .base import Adapter, AdapterContext, AdapterStep
 from .markdown import MarkdownChunker
-from .noop import NoOp
+from .noop import NoOp, Record
 from .text import ParagraphChunker, TextEmbedding, TextEmbeddingModel
 
 __all__ = [
@@ -8,6 +8,7 @@ __all__ = [
     "AdapterContext",
     "AdapterStep",
     "NoOp",
+    "Record",
     "ParagraphChunker",
     "TextEmbedding",
     "TextEmbeddingModel",

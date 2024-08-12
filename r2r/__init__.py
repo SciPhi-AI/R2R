@@ -42,7 +42,6 @@ __all__ = [
     "VectorEntry",
     "VectorType",
     "Vector",
-    "VectorSearchRequest",
     "VectorSearchResult",
     "AsyncPipe",
     "PipeType",

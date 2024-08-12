@@ -38,29 +38,59 @@ class Vector:
 class VectorEntry:
     """A vector entry that can be stored directly in supported vector databases."""
 
-    def __init__(self, id: UUID, vector: Vector, metadata: dict[str, Any]):
+    def __init__(
+        self,
+        fragment_id: UUID,
+        extraction_id: UUID,
+        document_id: UUID,
+        user_id: UUID,
+        group_ids: list[UUID],
+        vector: Vector,
+        text: str,
+        metadata: dict[str, Any],
+    ):
         """Create a new VectorEntry object."""
+        self.fragment_id = fragment_id
+        self.extraction_id = extraction_id
+        self.document_id = document_id
+        self.user_id = user_id
+        self.group_ids = group_ids
         self.vector = vector
-        self.id = id
+        self.text = text
         self.metadata = metadata
 
-    def to_serializable(self) -> str:
+    def to_serializable(self) -> dict[str, Any]:
         """Return a serializable representation of the VectorEntry."""
-        metadata = self.metadata
+        metadata = self.metadata.copy()
 
-        for key in metadata:
-            if isinstance(metadata[key], UUID):
-                metadata[key] = str(metadata[key])
+        for key, value in metadata.items():
+            if isinstance(value, UUID):
+                metadata[key] = str(value)
+
         return {
-            "id": str(self.id),
+            "fragment_id": str(self.fragment_id),
+            "extraction_id": str(self.extraction_id),
+            "document_id": str(self.document_id),
+            "user_id": str(self.user_id),
+            "group_ids": [str(group_id) for group_id in self.group_ids],
             "vector": self.vector.data,
+            "text": self.text,
             "metadata": metadata,
         }
 
     def __str__(self) -> str:
         """Return a string representation of the VectorEntry."""
-        return f"VectorEntry(id={self.id}, vector={self.vector}, metadata={self.metadata})"
+        return (
+            f"VectorEntry(fragment_id={self.fragment_id}, "
+            f"extraction_id={self.extraction_id}, "
+            f"document_id={self.document_id}, "
+            f"user_id={self.user_id}, "
+            f"group_ids={self.group_ids}, "
+            f"vector={self.vector}, "
+            f"text={self.text}, "
+            f"metadata={self.metadata})"
+        )
 
     def __repr__(self) -> str:
         """Return an unambiguous string representation of the VectorEntry."""
-        return f"VectorEntry(id={self.id}, vector={self.vector}, metadata={self.metadata})"
+        return self.__str__()

@@ -35,7 +35,7 @@ class VectorDatabaseProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def copy(self, entry: VectorEntry, commit: bool = True) -> None:
+    def create_index(self, index_type, column_name, index_options):
         pass
 
     @abstractmethod
@@ -66,10 +66,6 @@ class VectorDatabaseProvider(Provider, ABC):
         *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
-        pass
-
-    @abstractmethod
-    def create_index(self, index_type, column_name, index_options):
         pass
 
     @abstractmethod

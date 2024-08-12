@@ -1,4 +1,5 @@
 import random
+import uuid
 
 import pytest
 from dotenv import load_dotenv
@@ -20,7 +21,14 @@ def generate_random_vector_entry(id: str, dimension: int) -> VectorEntry:
     vector = [random.random() for _ in range(dimension)]
     metadata = {"key": f"value_{id}"}
     return VectorEntry(
-        id=generate_id_from_label(id), vector=Vector(vector), metadata=metadata
+        fragment_id=generate_id_from_label(id),
+        extraction_id=uuid.uuid4(),
+        document_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        group_ids=[uuid.uuid4()],
+        vector=Vector(vector),
+        text=f"Sample text for {id}",
+        metadata=metadata,
     )
 
 
@@ -61,7 +69,7 @@ def test_db_copy_and_search(request, db_fixture):
     db.vector.upsert(sample_entries[0])
     results = db.vector.search(query_vector=sample_entries[0].vector.data)
     assert len(results) == 1
-    assert results[0].id == sample_entries[0].id
+    assert results[0].fragment_id == sample_entries[0].fragment_id
     assert results[0].score == pytest.approx(1.0, rel=1e-3)
 
 
@@ -71,7 +79,7 @@ def test_db_upsert_and_search(request, db_fixture):
     db.vector.upsert(sample_entries[0])
     results = db.vector.search(query_vector=sample_entries[0].vector.data)
     assert len(results) == 1
-    assert results[0].id == sample_entries[0].id
+    assert results[0].fragment_id == sample_entries[0].fragment_id
     assert results[0].score == pytest.approx(1.0, rel=1e-3)
 
 
@@ -82,7 +90,7 @@ def test_imperfect_match(request, db_fixture):
     query_vector = [val + 0.1 for val in sample_entries[0].vector.data]
     results = db.vector.search(query_vector=query_vector)
     assert len(results) == 1
-    assert results[0].id == sample_entries[0].id
+    assert results[0].fragment_id == sample_entries[0].fragment_id
     assert results[0].score < 1.0
 
 
@@ -95,7 +103,7 @@ def test_bulk_insert_and_search(request, db_fixture):
     query_vector = sample_entries[0].vector.data
     results = db.vector.search(query_vector=query_vector, limit=5)
     assert len(results) == 5
-    assert results[0].id == sample_entries[0].id
+    assert results[0].fragment_id == sample_entries[0].fragment_id
     assert results[0].score == pytest.approx(1.0, rel=1e-3)
 
 
@@ -111,7 +119,7 @@ def test_search_with_filters(request, db_fixture):
         query_vector=query_vector, filters={"key": filtered_id}
     )
     assert len(results) == 1
-    assert results[0].id == sample_entries[0].id
+    assert results[0].fragment_id == sample_entries[0].fragment_id
     assert results[0].metadata["key"] == filtered_id
 
 
@@ -133,13 +141,19 @@ def test_upsert(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     db.vector.upsert(sample_entries[0])
     modified_entry = VectorEntry(
-        id=sample_entries[0].id,
+        fragment_id=sample_entries[0].fragment_id,
+        extraction_id=sample_entries[0].extraction_id,
+        document_id=sample_entries[0].document_id,
+        user_id=sample_entries[0].user_id,
+        group_ids=sample_entries[0].group_ids,
         vector=Vector([0.5, 0.5, 0.5]),
+        text="Modified text",
         metadata={"key": "new_value"},
     )
     db.vector.upsert(modified_entry)
 
     results = db.vector.search(query_vector=[0.5, 0.5, 0.5])
     assert len(results) == 1
-    assert results[0].id == sample_entries[0].id
+    assert results[0].fragment_id == sample_entries[0].fragment_id
     assert results[0].metadata["key"] == "new_value"
+    assert results[0].text == "Modified text"

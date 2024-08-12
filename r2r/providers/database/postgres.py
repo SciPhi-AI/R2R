@@ -156,7 +156,7 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
         AS $$
         WITH full_text AS (
             SELECT
-                id,
+                fragment_id,
                 ROW_NUMBER() OVER (ORDER BY ts_rank(to_tsvector('english', metadata->>'text'), websearch_to_tsquery(query_text)) DESC) AS rank_ix
             FROM vecs."{self.collection_name}"
             WHERE to_tsvector('english', metadata->>'text') @@ websearch_to_tsquery(query_text)
@@ -166,7 +166,7 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
         ),
         semantic AS (
             SELECT
-                id,
+                fragment_id,
                 ROW_NUMBER() OVER (ORDER BY vec <#> query_embedding) AS rank_ix
             FROM vecs."{self.collection_name}"
             WHERE filter_condition IS NULL OR (metadata @> filter_condition)
@@ -178,9 +178,9 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
         FROM
             full_text
             FULL OUTER JOIN semantic
-                ON full_text.id = semantic.id
+                ON full_text.fragment_id = semantic.fragment_id
             JOIN vecs."{self.collection_name}"
-                ON vecs."{self.collection_name}".id = COALESCE(full_text.id, semantic.id)
+                ON vecs."{self.collection_name}".fragment_id = COALESCE(full_text.fragment_id, semantic.fragment_id)
         ORDER BY
             COALESCE(1.0 / (rrf_k + full_text.rank_ix), 0.0) * full_text_weight +
             COALESCE(1.0 / (rrf_k + semantic.rank_ix), 0.0) * semantic_weight
@@ -214,44 +214,7 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
                 "Failed to create hybrid search function after multiple attempts"
             )
 
-    def copy(self, entry: VectorEntry, commit=True) -> None:
-        if self.collection is None:
-            raise ValueError(
-                "Please call `initialize_collection` before attempting to run `copy`."
-            )
-
-        serializeable_entry = entry.to_serializable()
-
-        self.collection.copy(
-            records=[
-                (
-                    serializeable_entry["id"],
-                    serializeable_entry["vector"],
-                    serializeable_entry["metadata"],
-                )
-            ]
-        )
-
-    def copy_entries(
-        self, entries: list[VectorEntry], commit: bool = True
-    ) -> None:
-        if self.collection is None:
-            raise ValueError(
-                "Please call `initialize_collection` before attempting to run `copy_entries`."
-            )
-
-        self.collection.copy(
-            records=[
-                (
-                    str(entry.id),
-                    entry.vector.data,
-                    entry.to_serializable()["metadata"],
-                )
-                for entry in entries
-            ]
-        )
-
-    def upsert(self, entry: VectorEntry, commit=True) -> None:
+    def upsert(self, entry: VectorEntry) -> None:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `upsert`."
@@ -260,16 +223,19 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
         self.collection.upsert(
             records=[
                 (
-                    str(entry.id),
+                    entry.fragment_id,
+                    entry.extraction_id,
+                    entry.document_id,
+                    entry.user_id,
+                    entry.group_ids,
                     entry.vector.data,
-                    entry.to_serializable()["metadata"],
+                    entry.text,
+                    entry.metadata,
                 )
             ]
         )
 
-    def upsert_entries(
-        self, entries: list[VectorEntry], commit: bool = True
-    ) -> None:
+    def upsert_entries(self, entries: list[VectorEntry]) -> None:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `upsert_entries`."
@@ -278,55 +244,68 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
         self.collection.upsert(
             records=[
                 (
-                    str(entry.id),
+                    entry.fragment_id,
+                    entry.extraction_id,
+                    entry.document_id,
+                    entry.user_id,
+                    entry.group_ids,
                     entry.vector.data,
-                    entry.to_serializable()["metadata"],
+                    entry.text,
+                    entry.metadata,
                 )
                 for entry in entries
             ]
         )
 
-    def assign_document_to_group(
-        self, document_id: str, group_id: str
-    ) -> bool:
-        query = text(
-            f"""
-            UPDATE document_info_{self.collection_name}
-            SET group_ids = ARRAY(SELECT DISTINCT UNNEST(ARRAY_APPEND(group_ids, CAST(:group_id AS UUID))))
-            WHERE document_id = CAST(:document_id AS UUID)
-            RETURNING document_id
-        """
-        )
-        chunk_query = text(
-            f"""
-            UPDATE vecs."{self.collection_name}"
-            SET metadata = jsonb_set(
-                metadata,
-                '{{group_ids}}',
-                (
-                    SELECT COALESCE(jsonb_agg(DISTINCT value), '[]'::jsonb)
-                    FROM (
-                        SELECT jsonb_array_elements(COALESCE(metadata->'group_ids', '[]'::jsonb)) AS value
-                        UNION
-                        SELECT to_jsonb(CAST(:group_id AS UUID))
-                    ) AS unique_values
-                )
+    def search(
+        self,
+        query_vector: list[float],
+        filters: dict[str, Any] = {},
+        limit: int = 10,
+        measure: str = "cosine_distance",
+        *args,
+        **kwargs,
+    ) -> list[VectorSearchResult]:
+        if self.collection is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `search`."
             )
-            WHERE metadata->>'document_id' = CAST(:document_id AS TEXT)
-        """
+        results = self.collection.query(
+            vector=query_vector,
+            filters=filters,
+            limit=limit,
+            imeasure=measure,
+            include_value=True,
+            include_metadata=True,
         )
-        with self.vx.Session() as sess:
-            with sess.begin():
-                result = sess.execute(
-                    query, {"document_id": document_id, "group_id": group_id}
-                )
-                if result.rowcount > 0:
-                    sess.execute(
-                        chunk_query,
-                        {"document_id": document_id, "group_id": group_id},
-                    )
-                    return True
-        return False
+        return [
+            VectorSearchResult(
+                fragment_id=result[0],
+                extraction_id=UUID(result[1]["extraction_id"]),
+                document_id=UUID(result[1]["document_id"]),
+                user_id=(
+                    UUID(result[1]["user_id"])
+                    if result[1]["user_id"]
+                    else None
+                ),
+                group_ids=[UUID(gid) for gid in result[1]["group_ids"]],
+                score=1 - float(result[2]),
+                text=result[1]["text"],
+                metadata={
+                    k: v
+                    for k, v in result[1].items()
+                    if k
+                    not in [
+                        "extraction_id",
+                        "document_id",
+                        "user_id",
+                        "group_ids",
+                        "text",
+                    ]
+                },
+            )
+            for result in results
+        ]
 
     def get_document_groups(self, document_id: str) -> list[str]:
         query = text(
@@ -354,16 +333,27 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `search`."
             )
+        results = self.collection.query(
+            vector=query_vector,
+            filters=filters,
+            limit=limit,
+            imeasure=measure,
+            include_value=True,
+            include_metadata=True,
+        )
+        print(results)
         return [
-            VectorSearchResult(id=ele[0], score=float(1 - ele[1]), metadata=ele[2])  # type: ignore
-            for ele in self.collection.query(
-                vector=query_vector,
-                limit=limit,
-                filters=filters,
-                imeasure=measure,
-                include_value=True,
-                include_metadata=True,
+            VectorSearchResult(
+                fragment_id=result[0],
+                extraction_id=result[1],
+                document_id=result[2],
+                user_id=result[3],
+                group_ids=result[4],
+                text=result[5],
+                score=1 - float(result[6]),
+                metadata=result[7],
             )
+            for result in results
         ]
 
     def hybrid_search(
@@ -384,9 +374,7 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             )
 
         # Convert filters to a JSON-compatible format
-        filter_condition = None
-        if filters:
-            filter_condition = json.dumps(filters)
+        filter_condition = json.dumps(filters) if filters else None
 
         query = text(
             f"""
@@ -409,10 +397,20 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
         }
 
         with self.vx.Session() as session:
-            result = session.execute(query, params).fetchall()
+            results = session.execute(query, params).fetchall()
+
         return [
-            VectorSearchResult(id=row[0], score=1.0, metadata=row[-1])
-            for row in result
+            VectorSearchResult(
+                fragment_id=result[0],
+                extraction_id=result[1],
+                document_id=result[2],
+                user_id=result[3],
+                group_ids=result[4],
+                text=result[5],
+                score=1 - float(result[6]),
+                metadata=result[7],
+            )
+            for result in results
         ]
 
     def create_index(self, index_type, column_name, index_options):

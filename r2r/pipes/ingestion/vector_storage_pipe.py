@@ -22,7 +22,6 @@ class VectorStoragePipe(AsyncPipe):
         message: AsyncGenerator[
             Union[R2RDocumentProcessingError, VectorEntry], None
         ]
-        do_upsert: bool = True
 
     def __init__(
         self,
@@ -50,17 +49,13 @@ class VectorStoragePipe(AsyncPipe):
     async def store(
         self,
         vector_entries: list[VectorEntry],
-        do_upsert: bool = True,
     ) -> None:
         """
         Stores a batch of vector entries in the database.
         """
 
         try:
-            if do_upsert:
-                self.database_provider.vector.upsert_entries(vector_entries)
-            else:
-                self.database_provider.vector.copy_entries(vector_entries)
+            self.database_provider.vector.upsert_entries(vector_entries)
         except Exception as e:
             error_message = (
                 f"Failed to store vector entries in the database: {e}"
@@ -104,7 +99,7 @@ class VectorStoragePipe(AsyncPipe):
                 # Schedule the storage task
                 batch_tasks.append(
                     asyncio.create_task(
-                        self.store(vector_batch.copy(), input.do_upsert),
+                        self.store(vector_batch.copy()),
                         name=f"vector-store-{self.config.name}",
                     )
                 )
@@ -113,7 +108,7 @@ class VectorStoragePipe(AsyncPipe):
         if vector_batch:  # Process any remaining vectors
             batch_tasks.append(
                 asyncio.create_task(
-                    self.store(vector_batch.copy(), input.do_upsert),
+                    self.store(vector_batch.copy()),
                     name=f"vector-store-{self.config.name}",
                 )
             )

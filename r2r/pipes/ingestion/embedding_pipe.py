@@ -58,11 +58,13 @@ class EmbeddingPipe(AsyncPipe):
         vectors = await self.embed(fragment_batch)
         return [
             VectorEntry(
-                id=fragment.id,
+                fragment_id=fragment.id,
+                extraction_id=fragment.extraction_id,
+                document_id=fragment.document_id,
+                user_id=fragment.user_id,
+                group_ids=[],  # Assuming no group_ids are available on the fragment
                 vector=Vector(data=raw_vector),
                 metadata={
-                    "document_id": fragment.document_id,
-                    "extraction_id": fragment.extraction_id,
                     "text": fragment.data,
                     **fragment.metadata,
                 },
