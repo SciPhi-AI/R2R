@@ -344,8 +344,9 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
     def search(
         self,
         query_vector: list[float],
-        filters: dict[str, Union[bool, int, str]] = {},
+        filters: dict = {},
         limit: int = 10,
+        measure: str = "cosine_distance",
         *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
@@ -353,18 +354,13 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `search`."
             )
-        measure = kwargs.get("measure", "cosine_distance")
-        mapped_filters = {
-            key: {"$eq": value} for key, value in filters.items()
-        }
-
         return [
             VectorSearchResult(id=ele[0], score=float(1 - ele[1]), metadata=ele[2])  # type: ignore
             for ele in self.collection.query(
-                data=query_vector,
+                vector=query_vector,
                 limit=limit,
-                filters=mapped_filters,
-                measure=measure,
+                filters=filters,
+                imeasure=measure,
                 include_value=True,
                 include_metadata=True,
             )
@@ -422,39 +418,15 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
     def create_index(self, index_type, column_name, index_options):
         self.collection.create_index()
 
-    def delete_by_metadata(
+    def delete(
         self,
-        metadata_fields: list[str],
-        metadata_values: list[Union[bool, int, str]],
-        logic: Literal["AND", "OR"] = "AND",
+        filters: dict,
     ) -> list[str]:
-        if logic == "OR":
-            raise ValueError(
-                "OR logic is still being tested before official support for `delete_by_metadata` in pgvector."
-            )
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `delete_by_metadata`."
             )
 
-        if len(metadata_fields) != len(metadata_values):
-            raise ValueError(
-                "The number of metadata fields must match the number of metadata values."
-            )
-
-        # Construct the filter
-        if logic == "AND":
-            filters = {
-                k: {"$eq": v} for k, v in zip(metadata_fields, metadata_values)
-            }
-        else:  # OR logic
-            # TODO - Test 'or' logic and remove check above
-            filters = {
-                "$or": [
-                    {k: {"$eq": v}}
-                    for k, v in zip(metadata_fields, metadata_values)
-                ]
-            }
         return self.collection.delete(filters=filters)
 
     def get_metadatas(

@@ -551,7 +551,7 @@ class Collection:
             filters (Optional[Dict], optional): Filters to apply to the search. Defaults to None.
 
         Returns:
-            List[str]: A list of the document IDs of the deleted vectors.
+            List[str]: A list of the ids of the deleted vectors.
         """
         if ids is None and filters is None:
             raise ArgError("Either ids or filters must be provided.")
@@ -562,49 +562,31 @@ class Collection:
         if isinstance(ids, str):
             raise ArgError("ids must be a list of strings")
 
-        ids = ids or []
-        filters = filters or {}
-        del_document_ids = set([])
+        deleted_ids = []
 
         with self.client.Session() as sess:
             with sess.begin():
                 if ids:
                     for id_chunk in flu(ids).chunk(12):
-                        stmt = select(self.table.c.metadata).where(
-                            self.table.c.id.in_(id_chunk)
-                        )
-                        results = sess.execute(stmt).fetchall()
-                        for result in results:
-                            metadata_json = result[0]
-                            document_id = metadata_json.get("document_id")
-                            if document_id:
-                                del_document_ids.add(document_id)
-
                         delete_stmt = (
                             delete(self.table)
                             .where(self.table.c.id.in_(id_chunk))
                             .returning(self.table.c.id)
                         )
-                        sess.execute(delete_stmt)
+                        result = sess.execute(delete_stmt)
+                        deleted_ids.extend([str(row[0]) for row in result])
 
                 if filters:
-                    meta_filter = build_filters(self.table.c.metadata, filters)
-                    stmt = select(self.table.c.metadata).where(meta_filter)
-                    results = sess.execute(stmt).fetchall()
-                    for result in results:
-                        metadata_json = result[0]
-                        document_id = metadata_json.get("document_id")
-                        if document_id:
-                            del_document_ids.add(document_id)
-
+                    meta_filter = self._build_complex_filters(filters)
                     delete_stmt = (
                         delete(self.table)
                         .where(meta_filter)
                         .returning(self.table.c.id)
                     )
-                    sess.execute(delete_stmt)
+                    result = sess.execute(delete_stmt)
+                    deleted_ids.extend([str(row[0]) for row in result])
 
-        return list(del_document_ids)
+        return deleted_ids
 
     def __getitem__(self, items):
         """
@@ -627,57 +609,38 @@ class Collection:
 
     def query(
         self,
-        data: Union[Iterable[Numeric], Any],
+        vector: list[float],
+        filters: Dict[str, Any] = {},
+        imeasure: IndexMeasure = IndexMeasure.cosine_distance,
         limit: int = 10,
-        filters: Optional[Dict] = None,
-        measure: Union[IndexMeasure, str] = IndexMeasure.cosine_distance,
         include_value: bool = False,
         include_metadata: bool = False,
         *,
         probes: Optional[int] = None,
         ef_search: Optional[int] = None,
-        skip_adapter: bool = False,
     ) -> Union[List[Record], List[str]]:
         """
-        Executes a similarity search in the collection.
-
-        The return type is dependent on arguments *include_value* and *include_metadata*
+        Executes a similarity search in the collection based on the new query structure.
 
         Args:
-            data (Any): The vector to use as the query.
+            query (Dict[str, Any]): The query structure containing vector, metadata filters, and measure.
             limit (int, optional): The maximum number of results to return. Defaults to 10.
-            filters (Optional[Dict], optional): Filters to apply to the search. Defaults to None.
-            measure (Union[IndexMeasure, str], optional): The distance measure to use for the search. Defaults to 'cosine_distance'.
             include_value (bool, optional): Whether to include the distance value in the results. Defaults to False.
             include_metadata (bool, optional): Whether to include the metadata in the results. Defaults to False.
-            probes (Optional[Int], optional): Number of ivfflat index lists to query. Higher increases accuracy but decreases speed
-            ef_search (Optional[Int], optional): Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed
-            skip_adapter (bool, optional): When True, skips any associated adapter and queries using a literal vector provided to *data*
+            probes (Optional[int], optional): Number of ivfflat index lists to query.
+            ef_search (Optional[int], optional): Size of the dynamic candidate list for HNSW index search.
 
         Returns:
             Union[List[Record], List[str]]: The result of the similarity search.
         """
-
         if probes is None:
             probes = 10
 
         if ef_search is None:
             ef_search = 40
 
-        if not isinstance(probes, int):
-            raise ArgError("probes must be an integer")
-
-        if probes < 1:
-            raise ArgError("probes must be >= 1")
-
         if limit > 1000:
             raise ArgError("limit must be <= 1000")
-
-        # ValueError on bad input
-        try:
-            imeasure = IndexMeasure(measure)
-        except ValueError:
-            raise ArgError("Invalid index measure")
 
         if not self.is_indexed_for_measure(imeasure):
             warnings.warn(
@@ -686,31 +649,11 @@ class Collection:
                 )
             )
 
-        if skip_adapter:
-            adapted_query = [("", data, {})]
-        else:
-            # Adapt the query using the pipeline
-            adapted_query = [
-                x
-                for x in self.adapter(
-                    records=[("", data, {})],
-                    adapter_context=AdapterContext("query"),
-                )
-            ]
-
-        if len(adapted_query) != 1:
-            raise ArgError(
-                "Failed to produce exactly one query vector from input"
-            )
-
-        _, vec, _ = adapted_query[0]
-
         distance_lambda = INDEX_MEASURE_TO_SQLA_ACC.get(imeasure)
         if distance_lambda is None:
-            # unreachable
-            raise ArgError("invalid distance_measure")  # pragma: no cover
+            raise ArgError("invalid distance_measure")
 
-        distance_clause = distance_lambda(self.table.c.vec)(vec)
+        distance_clause = distance_lambda(self.table.c.vec)(vector)
 
         cols = [self.table.c.id]
 
@@ -721,17 +664,14 @@ class Collection:
             cols.append(self.table.c.metadata)
 
         stmt = select(*cols)
-        if filters:
-            stmt = stmt.filter(
-                build_filters(self.table.c.metadata, filters)  # type: ignore
-            )
+
+        stmt = stmt.filter(self._build_complex_filters(filters))
 
         stmt = stmt.order_by(distance_clause)
         stmt = stmt.limit(limit)
 
         with self.client.Session() as sess:
             with sess.begin():
-                # index ignored if greater than n_lists
                 sess.execute(
                     text("set local ivfflat.probes = :probes").bindparams(
                         probes=probes
@@ -746,6 +686,67 @@ class Collection:
                 if len(cols) == 1:
                     return [str(x) for x in sess.scalars(stmt).fetchall()]
                 return sess.execute(stmt).fetchall() or []
+
+    def _build_complex_filters(self, filters: Dict[str, Any]):
+        """
+        Builds complex filters for SQL query based on the new filter structure.
+
+        Args:
+            filters (Dict[str, Any]): The dictionary specifying filter conditions.
+
+        Returns:
+            The filter clause for the SQL query.
+        """
+
+        def parse_condition(key, condition):
+            if isinstance(condition, dict):
+                op = list(condition.keys())[0]
+                value = condition[op]
+                if op == "$eq":
+                    return self.table.c.metadata[key].astext == str(value)
+                elif op == "$ne":
+                    return self.table.c.metadata[key].astext != str(value)
+                elif op == "$gt":
+                    return (
+                        cast(self.table.c.metadata[key].astext, Float) > value
+                    )
+                elif op == "$gte":
+                    return (
+                        cast(self.table.c.metadata[key].astext, Float) >= value
+                    )
+                elif op == "$lt":
+                    return (
+                        cast(self.table.c.metadata[key].astext, Float) < value
+                    )
+                elif op == "$lte":
+                    return (
+                        cast(self.table.c.metadata[key].astext, Float) <= value
+                    )
+                elif op == "$in":
+                    return self.table.c.metadata[key].astext.in_(
+                        [str(v) for v in value]
+                    )
+                elif op == "$nin":
+                    return ~self.table.c.metadata[key].astext.in_(
+                        [str(v) for v in value]
+                    )
+                else:
+                    raise FilterError(f"Unsupported operator: {op}")
+            else:
+                return self.table.c.metadata[key].astext == str(condition)
+
+        def parse_filter(filter_dict):
+            conditions = []
+            for key, value in filter_dict.items():
+                if key == "$and":
+                    conditions.append(and_(*[parse_filter(f) for f in value]))
+                elif key == "$or":
+                    conditions.append(or_(*[parse_filter(f) for f in value]))
+                else:
+                    conditions.append(parse_condition(key, value))
+            return and_(*conditions)
+
+        return parse_filter(filters)
 
     @classmethod
     def _list_collections(cls, client: "Client") -> List["Collection"]:
@@ -1007,100 +1008,6 @@ class Collection:
                     )
 
         return None
-
-
-def build_filters(json_col: Column, filters: Dict):
-    """
-    Builds filters for SQL query based on provided dictionary.
-
-    Args:
-        json_col (Column): The column in the database table.
-        filters (Dict): The dictionary specifying filter conditions.
-
-    Raises:
-        FilterError: If filter conditions are not correctly formatted.
-
-    Returns:
-        The filter clause for the SQL query.
-    """
-    if not isinstance(filters, dict):
-        raise FilterError("filters must be a dict")
-
-    filter_clauses = []
-
-    for key, value in filters.items():
-        if not isinstance(key, str):
-            raise FilterError("*filters* keys must be strings")
-
-        if isinstance(value, dict):
-            if len(value) > 1:
-                raise FilterError("only one operator permitted per key")
-            for operator, clause in value.items():
-                if operator not in (
-                    "$eq",
-                    "$ne",
-                    "$lt",
-                    "$lte",
-                    "$gt",
-                    "$gte",
-                    "$in",
-                ):
-                    raise FilterError("unknown operator")
-
-                if operator == "$eq" and not hasattr(clause, "__len__"):
-                    contains_value = cast({key: clause}, postgresql.JSONB)
-                    filter_clauses.append(json_col.op("@>")(contains_value))
-                elif operator == "$in":
-                    if not isinstance(clause, list):
-                        raise FilterError(
-                            "argument to $in filter must be a list"
-                        )
-                    for elem in clause:
-                        if not isinstance(elem, (int, str, float)):
-                            raise FilterError(
-                                "argument to $in filter must be a list of scalars"
-                            )
-                    contains_value = [
-                        cast(elem, postgresql.JSONB) for elem in clause
-                    ]
-                    filter_clauses.append(
-                        json_col.op("->")(key).in_(contains_value)
-                    )
-                else:
-                    matches_value = cast(clause, postgresql.JSONB)
-                    if operator == "$eq":
-                        filter_clauses.append(
-                            json_col.op("->")(key) == matches_value
-                        )
-                    elif operator == "$ne":
-                        filter_clauses.append(
-                            json_col.op("->")(key) != matches_value
-                        )
-                    elif operator == "$lt":
-                        filter_clauses.append(
-                            json_col.op("->")(key) < matches_value
-                        )
-                    elif operator == "$lte":
-                        filter_clauses.append(
-                            json_col.op("->")(key) <= matches_value
-                        )
-                    elif operator == "$gt":
-                        filter_clauses.append(
-                            json_col.op("->")(key) > matches_value
-                        )
-                    elif operator == "$gte":
-                        filter_clauses.append(
-                            json_col.op("->")(key) >= matches_value
-                        )
-                    else:
-                        raise Unreachable()
-        else:
-            raise FilterError("Filter value must be a dict with an operator")
-
-    if len(filter_clauses) == 1:
-        return filter_clauses[0]
-    else:
-        return and_(*filter_clauses)
 
 
 def build_table(name: str, meta: MetaData, dimension: int) -> Table:

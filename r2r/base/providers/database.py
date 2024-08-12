@@ -73,7 +73,7 @@ class VectorDatabaseProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def delete_by_metadata(
+    def delete(
         self,
         metadata_fields: list[str],
         metadata_values: list[Union[bool, int, str]],

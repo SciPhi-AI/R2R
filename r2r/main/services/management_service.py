@@ -279,7 +279,7 @@ class ManagementService(Service):
         )
         values = [str(value) for value in values]
         logger.info(f"Deleting entries with metadata: {metadata}")
-        ids = self.providers.database.vector.delete_by_metadata(keys, values)
+        ids = self.providers.database.vector.delete(keys, values)
         if not ids:
             raise R2RException(
                 status_code=404, message="No entries found for deletion."
