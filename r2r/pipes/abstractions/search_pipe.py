@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class SearchPipe(AsyncPipe):
     class SearchConfig(AsyncPipe.PipeConfig):
         name: str = "default_vector_search"
-        search_filters: dict = {}
+        filters: dict = {}
         search_limit: int = 10
 
     class Input(AsyncPipe.Input):

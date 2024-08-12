@@ -222,7 +222,7 @@ class R2RExecutionWrapper:
         self,
         query: str,
         use_vector_search: bool = True,
-        search_filters: Optional[dict] = None,
+        filters: Optional[dict] = None,
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
@@ -233,7 +233,7 @@ class R2RExecutionWrapper:
                 query,
                 VectorSearchSettings(
                     use_vector_search=use_vector_search,
-                    search_filters=search_filters or {},
+                    filters=filters or {},
                     search_limit=search_limit,
                     do_hybrid_search=do_hybrid_search,
                 ),
@@ -249,7 +249,7 @@ class R2RExecutionWrapper:
                 query,
                 VectorSearchSettings(
                     use_vector_search=use_vector_search,
-                    search_filters=search_filters or {},
+                    filters=filters or {},
                     search_limit=search_limit,
                     do_hybrid_search=do_hybrid_search,
                 ),
@@ -265,7 +265,7 @@ class R2RExecutionWrapper:
         self,
         query: str,
         use_vector_search: bool = True,
-        search_filters: Optional[dict] = None,
+        filters: Optional[dict] = None,
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
@@ -278,7 +278,7 @@ class R2RExecutionWrapper:
                 query,
                 vector_search_settings=VectorSearchSettings(
                     use_vector_search=use_vector_search,
-                    search_filters=search_filters or {},
+                    filters=filters or {},
                     search_limit=search_limit,
                     do_hybrid_search=do_hybrid_search,
                 ),
@@ -303,7 +303,7 @@ class R2RExecutionWrapper:
                 query,
                 vector_search_settings=VectorSearchSettings(
                     use_vector_search=use_vector_search,
-                    search_filters=search_filters or {},
+                    filters=filters or {},
                     search_limit=search_limit,
                     do_hybrid_search=do_hybrid_search,
                 ),

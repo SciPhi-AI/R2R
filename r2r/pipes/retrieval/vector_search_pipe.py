@@ -49,9 +49,7 @@ class VectorSearchPipe(SearchPipe):
         await self.enqueue_log(
             run_id=run_id, key="search_query", value=message
         )
-        search_filters = (
-            vector_search_settings.search_filters or self.config.search_filters
-        )
+        filters = vector_search_settings.filters or self.config.filters
         search_limit = (
             vector_search_settings.search_limit or self.config.search_limit
         )
@@ -64,13 +62,13 @@ class VectorSearchPipe(SearchPipe):
             self.database_provider.vector.hybrid_search(
                 query_vector=query_vector,
                 query_text=message,
-                filters=search_filters,
+                filters=filters,
                 limit=search_limit,
             )
             if vector_search_settings.do_hybrid_search
             else self.database_provider.vector.search(
                 query_vector=query_vector,
-                filters=search_filters,
+                filters=filters,
                 limit=search_limit,
             )
         )

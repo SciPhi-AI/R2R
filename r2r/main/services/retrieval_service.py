@@ -80,11 +80,11 @@ class RetrievalService(Service):
                 )
 
             # TODO - Remove these transforms once we have a better way to handle this
-            for filter, value in vector_search_settings.search_filters.items():
+            for filter, value in vector_search_settings.filters.items():
                 if isinstance(value, uuid.UUID):
-                    vector_search_settings.search_filters[filter] = str(value)
+                    vector_search_settings.filters[filter] = str(value)
             if user and not user.is_superuser:
-                vector_search_settings.search_filters["user_id"] = str(user.id)
+                vector_search_settings.filters["user_id"] = str(user.id)
 
             results = await self.pipelines.search_pipeline.run(
                 input=to_async_generator([query]),
@@ -125,16 +125,12 @@ class RetrievalService(Service):
                 for (
                     filter,
                     value,
-                ) in vector_search_settings.search_filters.items():
+                ) in vector_search_settings.filters.items():
                     if isinstance(value, uuid.UUID):
-                        vector_search_settings.search_filters[filter] = str(
-                            value
-                        )
+                        vector_search_settings.filters[filter] = str(value)
 
                 if user and not user.is_superuser:
-                    vector_search_settings.search_filters["user_id"] = str(
-                        user.id
-                    )
+                    vector_search_settings.filters["user_id"] = str(user.id)
 
                 completion_start_time = datetime.now()
                 message_id = generate_id_from_label(
@@ -272,16 +268,12 @@ class RetrievalService(Service):
                 for (
                     filter,
                     value,
-                ) in vector_search_settings.search_filters.items():
+                ) in vector_search_settings.filters.items():
                     if isinstance(value, uuid.UUID):
-                        vector_search_settings.search_filters[filter] = str(
-                            value
-                        )
+                        vector_search_settings.filters[filter] = str(value)
 
                 if user and not user.is_superuser:
-                    vector_search_settings.search_filters["user_id"] = str(
-                        user.id
-                    )
+                    vector_search_settings.filters["user_id"] = str(user.id)
 
                 if rag_generation_config.stream:
                     t1 = time.time()
