@@ -1171,30 +1171,6 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     status_code=500, message="Failed to delete user"
                 )
 
-    def delete_document(self, document_id: str):
-        with self.vx.Session() as sess:
-            try:
-                sess.begin()
-
-                # Delete from document_info
-                sess.execute(
-                    text(
-                        f"DELETE FROM document_info_{self.collection_name} WHERE document_id = :doc_id"
-                    ),
-                    {"doc_id": document_id},
-                )
-
-                # Delete from vector database
-                self.vector_db.delete(document_id)
-
-                # Update user statistics
-                self.update_user_document_stats(document_id)
-
-                sess.commit()
-            except Exception as e:
-                sess.rollback()
-                logger.error(f"Error deleting document: {e}")
-
     def get_all_users(self) -> list[User]:
         query = text(
             f"""

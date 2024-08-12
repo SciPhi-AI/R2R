@@ -74,7 +74,6 @@ class IngestionRouter(BaseRouter):
             if is_superuser:
                 for idx, metadata in enumerate(request.metadatas or []):
                     if "group_ids" in metadata:
-                        print("ingestion_result = ", ingestion_result)
                         document_id = ingestion_result[
                             "successful_document_ids"
                         ][idx]

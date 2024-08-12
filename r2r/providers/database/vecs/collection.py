@@ -510,7 +510,7 @@ class Collection:
         self,
         ids: Optional[Iterable[str]] = None,
         filters: Optional[Dict[str, Any]] = None,
-    ) -> List[str]:
+    ) -> Dict[str, Dict[str, str]]:
         """
         Deletes vectors from the collection by matching filters or ids.
 
@@ -519,7 +519,8 @@ class Collection:
             filters (Optional[Dict], optional): Filters to apply to the search. Defaults to None.
 
         Returns:
-            List[str]: A list of the ids of the deleted vectors.
+            Dict[str, Dict[str, str]]: A dictionary of deleted records, where the key is the record ID
+            and the value is a dictionary containing 'document_id', 'extraction_id', and 'fragment_id'.
         """
         if ids is None and filters is None:
             raise ArgError("Either ids or filters must be provided.")
@@ -530,7 +531,7 @@ class Collection:
         if isinstance(ids, str):
             raise ArgError("ids must be a list of strings")
 
-        deleted_ids = []
+        deleted_records = []
 
         with self.client.Session() as sess:
             with sess.begin():
@@ -539,22 +540,47 @@ class Collection:
                         delete_stmt = (
                             delete(self.table)
                             .where(self.table.c.id.in_(id_chunk))
-                            .returning(self.table.c.id)
+                            .returning(self.table.c.id, self.table.c.metadata)
                         )
                         result = sess.execute(delete_stmt)
-                        deleted_ids.extend([str(row[0]) for row in result])
+                        for row in result:
+                            record_id = str(row[0])
+                            metadata = row[1]
+                            deleted_records.append(
+                                {
+                                    "document_id": metadata.get(
+                                        "document_id", ""
+                                    ),
+                                    "extraction_id": metadata.get(
+                                        "extraction_id", ""
+                                    ),
+                                    "fragment_id": metadata.get(
+                                        "fragment_id", ""
+                                    ),
+                                }
+                            )
 
                 if filters:
                     meta_filter = self._build_complex_filters(filters)
                     delete_stmt = (
                         delete(self.table)
                         .where(meta_filter)
-                        .returning(self.table.c.id)
+                        .returning(self.table.c.id, self.table.c.metadata)
                     )
                     result = sess.execute(delete_stmt)
-                    deleted_ids.extend([str(row[0]) for row in result])
-
-        return deleted_ids
+                    for row in result:
+                        record_id = str(row[0])
+                        metadata = row[1]
+                        deleted_records.append(
+                            {
+                                "document_id": metadata.get("document_id", ""),
+                                "extraction_id": metadata.get(
+                                    "extraction_id", ""
+                                ),
+                                "fragment_id": record_id,
+                            }
+                        )
+        return deleted_records
 
     def __getitem__(self, items):
         """

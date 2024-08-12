@@ -273,17 +273,35 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
+        """
+        Takes a list of filters like
+        "{key: {operator: value}, key: {operator: value}, ...}"
+        and deletes entries that match the filters.
+
+        Then, deletes the corresponding entries from the documents overview table.
+
+        NOTE: This method is not atomic and may result in orphaned entries in the documents overview table.
+        NOTE: This method assumes that filters delete entire contents of any touched documents.
+        """
         logger.info(f"Deleting entries with filters: {filters}")
-        ids = self.providers.database.vector.delete(filters)
-        if not ids:
+        results = self.providers.database.vector.delete(filters)
+        if not results:
             raise R2RException(
                 status_code=404, message="No entries found for deletion."
             )
-        for id in ids:
+
+        document_ids_to_purge = {
+            doc_id
+            for doc_id in [
+                result.get("document_id", None) for result in results
+            ]
+            if doc_id
+        }
+        for document_id in document_ids_to_purge:
             self.providers.database.relational.delete_from_documents_overview(
-                id
+                document_id
             )
-        return f"Documents {ids} deleted successfully."
+        return results
 
     @telemetry_event("DocumentsOverview")
     async def adocuments_overview(

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import string
 import unicodedata
 from io import BytesIO
@@ -6,6 +7,8 @@ from typing import AsyncGenerator
 
 from r2r.base.abstractions.document import DataType
 from r2r.base.parsers.base_parser import AsyncParser
+
+logger = logging.getLogger(__name__)
 
 
 class PDFParser(AsyncParser[DataType]):
@@ -113,8 +116,8 @@ class PDFParserUnstructured(AsyncParser[DataType]):
             self.partition_pdf = partition_pdf
 
         except ImportError as e:
-            print("PDFParserUnstructured ImportError :  ", e)
-            print(
+            logger.error("PDFParserUnstructured ImportError :  ", e)
+            logger.error(
                 """Please install missing modules using :
             pip install unstructured  unstructured_pytesseract  unstructured_inference
             pip install pdfplumber   matplotlib   pillow_heif  toml

@@ -136,35 +136,7 @@ class ManagementRouter(BaseRouter):
                 else None
             ),
         ):
-            if not auth_user.is_superuser and (
-                "user_id" in request.keys
-                and request.values[request.keys.index("user_id")]
-                != auth_user.id
-            ):
-                raise R2RException(
-                    "Only a superuser can delete arbitrary user data.", 403
-                )
-
-            if "user_id" not in request.keys:
-                request.keys.append("user_id")
-                request.values.append(auth_user.id)
-
-            return await self.engine.adelete(
-                keys=request.keys, values=request.values
-            )
-
-        @self.router.delete("/delete")
-        @self.base_endpoint
-        async def delete_app(
-            request: R2RDeleteRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
-        ):
             filters = request.filters or {}
-
             if not auth_user.is_superuser:
                 if "user_id" in filters:
                     user_id_filter = filters["user_id"]
@@ -184,7 +156,6 @@ class ManagementRouter(BaseRouter):
                         )
                 else:
                     filters["user_id"] = {"$eq": str(auth_user.id)}
-
             return await self.engine.adelete(filters=filters)
 
         @self.router.post("/document_chunks")
@@ -298,7 +269,6 @@ class ManagementRouter(BaseRouter):
             request: R2RCreateGroupRequest,
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
-            print(auth_user)
             if not auth_user.is_superuser:
                 raise R2RException("Only a superuser can create groups.", 403)
             return await self.engine.acreate_group(
