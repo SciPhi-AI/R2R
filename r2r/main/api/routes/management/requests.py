@@ -1,7 +1,7 @@
 import uuid
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from r2r.base import AnalysisTypes, FilterCriteria
 
@@ -13,8 +13,7 @@ class R2RUpdatePromptRequest(BaseModel):
 
 
 class R2RDeleteRequest(BaseModel):
-    keys: list[str]
-    values: list[Union[bool, int, str]]
+    filters: dict[str, Any] = Field(default_factory=dict)
 
 
 class R2RAnalyticsRequest(BaseModel):

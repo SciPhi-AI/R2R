@@ -50,18 +50,6 @@ def pg_vector_db():
 
 
 @pytest.mark.parametrize("db_fixture", ["pg_vector_db"])
-def test_get_metadatas(request, db_fixture):
-    db = request.getfixturevalue(db_fixture)
-    for entry in sample_entries:
-        db.vector.upsert(entry)
-
-    unique_metadatas = db.vector.get_metadatas(metadata_fields=["key"])
-    unique_values = set([ele["key"] for ele in unique_metadatas])
-    assert len(unique_values) == num_entries
-    assert all(f"value_id_{i}" in unique_values for i in range(num_entries))
-
-
-@pytest.mark.parametrize("db_fixture", ["pg_vector_db"])
 def test_db_initialization(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     assert isinstance(db, DatabaseProvider)
@@ -134,7 +122,7 @@ def test_delete(request, db_fixture):
         db.vector.upsert(entry)
 
     key_to_delete = sample_entries[0].metadata["key"]
-    db.vector.delete(metadata_fields=["key"], metadata_values=[key_to_delete])
+    db.vector.delete(filters={"key": {"$eq": key_to_delete}})
 
     results = db.vector.search(query_vector=sample_entries[0].vector.data)
     assert all(result.metadata["key"] != key_to_delete for result in results)

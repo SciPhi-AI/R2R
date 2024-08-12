@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from datetime import datetime, timedelta
-from typing import Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 from uuid import UUID
 
 from sqlalchemy import exc, text
@@ -344,7 +344,7 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
     def search(
         self,
         query_vector: list[float],
-        filters: dict = {},
+        filters: dict[str, Any] = {},
         limit: int = 10,
         measure: str = "cosine_distance",
         *args,
@@ -371,7 +371,7 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
         query_text: str,
         query_vector: list[float],
         limit: int = 10,
-        filters: Optional[dict[str, Union[bool, int, str]]] = None,
+        filters: dict[str, Any] = {},
         full_text_weight: float = 1.0,
         semantic_weight: float = 1.0,
         rrf_k: int = 20,
@@ -420,7 +420,7 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
 
     def delete(
         self,
-        filters: dict,
+        filters: dict[str, Any],
     ) -> list[str]:
         if self.collection is None:
             raise ValueError(
@@ -428,33 +428,6 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             )
 
         return self.collection.delete(filters=filters)
-
-    def get_metadatas(
-        self,
-        metadata_fields: list[str],
-        filter_field: Optional[str] = None,
-        filter_value: Optional[Union[bool, int, str]] = None,
-    ) -> list[dict]:
-        if self.collection is None:
-            raise ValueError(
-                "Please call `initialize_collection` before attempting to run `get_metadatas`."
-            )
-
-        results = {tuple(metadata_fields): {}}
-        for field in metadata_fields:
-            unique_values = self.collection.get_unique_metadata_values(
-                field=field,
-                filter_field=filter_field,
-                filter_value=filter_value,
-            )
-            for value in unique_values:
-                if value not in results:
-                    results[value] = {}
-                results[value][field] = value
-
-        return [
-            results[key] for key in results if key != tuple(metadata_fields)
-        ]
 
     def get_document_chunks(self, document_id: str) -> list[dict]:
         if not self.collection:

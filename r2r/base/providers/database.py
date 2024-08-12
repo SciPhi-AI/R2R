@@ -2,7 +2,7 @@ import logging
 import uuid
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from ..abstractions.document import DocumentInfo
 from ..abstractions.search import VectorSearchResult
@@ -73,36 +73,7 @@ class VectorDatabaseProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def delete(
-        self,
-        metadata_fields: list[str],
-        metadata_values: list[Union[bool, int, str]],
-    ) -> list[str]:
-        pass
-
-    @abstractmethod
-    def get_metadatas(
-        self,
-        metadata_fields: list[str],
-        filter_field: Optional[str] = None,
-        filter_value: Optional[str] = None,
-    ) -> list[str]:
-        pass
-
-    def upsert_entries(
-        self, entries: list[VectorEntry], commit: bool = True
-    ) -> None:
-        for entry in entries:
-            self.upsert(entry, commit=commit)
-
-    def copy_entries(
-        self, entries: list[VectorEntry], commit: bool = True
-    ) -> None:
-        for entry in entries:
-            self.copy(entry, commit=commit)
-
-    @abstractmethod
-    def get_document_chunks(self, document_id: str) -> list[dict]:
+    def delete(self, filters: dict[str, Any]) -> list[str]:
         pass
 
 

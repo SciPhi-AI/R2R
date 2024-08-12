@@ -269,17 +269,12 @@ class ManagementService(Service):
     @telemetry_event("Delete")
     async def delete(
         self,
-        keys: list[str],
-        values: list[Union[bool, int, str]],
+        filters: dict[str, Any],
         *args,
         **kwargs,
     ):
-        metadata = ", ".join(
-            f"{key}={value}" for key, value in zip(keys, values)
-        )
-        values = [str(value) for value in values]
-        logger.info(f"Deleting entries with metadata: {metadata}")
-        ids = self.providers.database.vector.delete(keys, values)
+        logger.info(f"Deleting entries with filters: {filters}")
+        ids = self.providers.database.vector.delete(filters)
         if not ids:
             raise R2RException(
                 status_code=404, message="No entries found for deletion."

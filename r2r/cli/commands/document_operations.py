@@ -5,16 +5,24 @@ from r2r.cli.utils.timer import timer
 
 
 @cli.command()
-@click.option("--keys", multiple=True, help="Keys for deletion")
-@click.option("--values", multiple=True, help="Values for deletion")
+@click.option(
+    "--filter",
+    "-f",
+    multiple=True,
+    help="Filters for deletion in the format key:operator:value",
+)
 @click.pass_obj
-def delete(obj, keys, values):
-    """Delete documents based on keys and values."""
-    if len(keys) != len(values):
-        raise click.UsageError("Number of keys must match number of values")
+def delete(obj, filter):
+    """Delete documents based on filters."""
+    filters = {}
+    for f in filter:
+        key, operator, value = f.split(":", 2)
+        if key not in filters:
+            filters[key] = {}
+        filters[key][f"${operator}"] = value
 
     with timer():
-        response = obj.delete(list(keys), list(values))
+        response = obj.delete(filters=filters)
 
     click.echo(response)
 

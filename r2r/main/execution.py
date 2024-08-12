@@ -352,13 +352,12 @@ class R2RExecutionWrapper:
 
     def delete(
         self,
-        keys: list[str],
-        values: list[str],
+        filters: Optional[dict] = None,
     ):
         if self.client_mode:
-            return self.client.delete(keys, values)["results"]
+            return self.client.delete(filters)["results"]
         else:
-            return self.app.delete(keys, values)
+            return self.app.delete(filters)
 
     def logs(
         self,

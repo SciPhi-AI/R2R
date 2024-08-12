@@ -451,12 +451,10 @@ class R2RClient:
         finally:
             loop.close()
 
-    def delete(
-        self, keys: list[str], values: list[Union[bool, int, str]]
-    ) -> dict:
+    def delete(self, filters: Optional[Dict[str, Any]] = None) -> dict:
         self._ensure_authenticated()
 
-        request = R2RDeleteRequest(keys=keys, values=values)
+        request = R2RDeleteRequest(filters=filters)
         return self._make_request(
             "DELETE", "delete", json=json.loads(request.model_dump_json())
         )

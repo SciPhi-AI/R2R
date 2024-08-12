@@ -563,7 +563,7 @@ async def test_token_blacklist_cleanup(auth_service, auth_provider):
 
 
 @pytest.mark.asyncio
-async def test_register_and_verify(auth_service):
+async def test_register_and_verify(auth_service, auth_provider):
     user = UserCreate(email="newuser@example.com", password="password123")
     new_user = await auth_service.register(user)
     assert new_user.email == "newuser@example.com"
@@ -571,19 +571,26 @@ async def test_register_and_verify(auth_service):
 
     # Mock verification code generation
     with patch.object(
-        auth_service.providers.auth.crypto_provider,
+        auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
+        await auth_service.register(user)
         verified = await auth_service.verify_email("123456")
         assert verified
 
 
 @pytest.mark.asyncio
-async def test_login_logout(auth_service):
+async def test_login_logout(auth_service, auth_provider):
     user = UserCreate(email="loginuser@example.com", password="password123")
-    await auth_service.register(user)
-    await auth_service.verify_email("123456")  # Assume verification
+    # Mock reset token generation
+    with patch.object(
+        auth_provider.crypto_provider,
+        "generate_verification_code",
+        return_value="123456",
+    ):
+        await auth_service.register(user)
+        await auth_service.verify_email("123456")
 
     tokens = await auth_service.login("loginuser@example.com", "password123")
     assert "access_token" in tokens
@@ -594,10 +601,16 @@ async def test_login_logout(auth_service):
 
 
 @pytest.mark.asyncio
-async def test_refresh_token(auth_service):
+async def test_refresh_token(auth_service, auth_provider):
     user = UserCreate(email="refreshuser@example.com", password="password123")
-    await auth_service.register(user)
-    await auth_service.verify_email("123456")  # Assume verification
+    # Mock reset token generation
+    with patch.object(
+        auth_provider.crypto_provider,
+        "generate_verification_code",
+        return_value="123456",
+    ):
+        await auth_service.register(user)
+        await auth_service.verify_email("123456")
 
     tokens = await auth_service.login("refreshuser@example.com", "password123")
     new_tokens = await auth_service.refresh_access_token(
