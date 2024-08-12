@@ -9,6 +9,7 @@ from typing import Any, Optional
 from fastapi import Form, UploadFile
 
 from r2r.base import (
+    ChunkingConfig,
     Document,
     DocumentInfo,
     DocumentType,
@@ -83,6 +84,22 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ):
+        chunking_config_override = kwargs.get("chunking_config_override")
+        chunking_provider = None
+        if chunking_config_override:
+            from r2r.providers import R2RChunkingProvider
+
+            if isinstance(chunking_config_override, ChunkingConfig):
+                chunking_provider = R2RChunkingProvider(
+                    chunking_config_override
+                )
+            elif isinstance(chunking_config_override, R2RChunkingProvider):
+                chunking_provider = chunking_config_override
+            else:
+                raise ValueError(
+                    f"Unexpected type for chunking_config_override: {type(chunking_config_override)}"
+                )
+
         if len(documents) == 0:
             raise R2RException(
                 status_code=400, message="No documents provided for ingestion."
@@ -205,6 +222,7 @@ class IngestionService(Service):
             versions=[info.version for info in document_infos],
             run_manager=self.run_manager,
             user=user,
+            chunking_provider=chunking_provider,
             *args,
             **kwargs,
         )
@@ -227,6 +245,7 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ):
+        logger.info(f"ingest_files received kwargs: {kwargs}")
         if not files:
             raise R2RException(
                 status_code=400, message="No files provided for ingestion."
@@ -257,7 +276,11 @@ class IngestionService(Service):
                 )
                 documents.append(document)
             return await self.ingest_documents(
-                documents, versions, *args, **kwargs, user=user
+                documents,
+                versions,
+                user=user,
+                *args,
+                **kwargs,
             )
 
         finally:

@@ -3,6 +3,7 @@ from typing import Any, AsyncGenerator, Optional, Union
 
 from r2r.base import (
     AsyncState,
+    ChunkingConfig,
     ChunkingProvider,
     Extraction,
     Fragment,
@@ -13,6 +14,7 @@ from r2r.base import (
     generate_id_from_label,
 )
 from r2r.base.pipes.base_pipe import AsyncPipe
+from r2r.providers import R2RChunkingProvider
 
 
 class ChunkingPipe(AsyncPipe):
@@ -45,10 +47,12 @@ class ChunkingPipe(AsyncPipe):
         input: Input,
         state: AsyncState,
         run_id: Any,
-        chunking_config_override: Optional[ChunkingProvider] = None,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Union[R2RDocumentProcessingError, Fragment], None]:
+        if chunking_provider is None:
+            chunking_provider = self.chunking_provider
+
         async for item in input.message:
             if isinstance(item, R2RDocumentProcessingError):
                 yield item
@@ -56,7 +60,7 @@ class ChunkingPipe(AsyncPipe):
 
             try:
                 iteration = 0
-                async for chunk in self.chunking_provider.chunk(item.data):
+                async for chunk in chunking_provider.chunk(item.data):
                     yield Fragment(
                         id=generate_id_from_label(f"{item.id}-{iteration}"),
                         type=FragmentType.TEXT,

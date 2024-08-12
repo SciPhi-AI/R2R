@@ -34,6 +34,7 @@ class IngestionRouter(BaseRouter):
             chunking_config_override = None
             if request.chunking_config_override:
                 config = ChunkingConfig(**request.chunking_config_override)
+                config.validate()
                 chunking_config_override = (
                     R2RProviderFactory.create_chunking_provider(config)
                 )

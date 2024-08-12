@@ -24,6 +24,10 @@ class ChunkingConfig(ProviderConfig):
     def validate(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} is not supported.")
+        if self.chunk_size <= 0:
+            raise ValueError("chunk_size must be greater than 0")
+        if self.chunk_overlap < 0:
+            raise ValueError("chunk_overlap must be non-negative")
 
     @property
     def supported_providers(self) -> list[str]:
