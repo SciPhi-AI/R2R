@@ -25,7 +25,7 @@ class ChunkingPipe(AsyncPipe):
 
     def __init__(
         self,
-        chunking_provider: ChunkingProvider,
+        chunking_provider: Optional[ChunkingProvider] = None,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[AsyncPipe.PipeConfig] = None,
@@ -40,7 +40,9 @@ class ChunkingPipe(AsyncPipe):
             *args,
             **kwargs,
         )
-        self.chunking_provider = chunking_provider
+        self.default_chunking_provider = (
+            chunking_provider or R2RChunkingProvider(ChunkingConfig())
+        )
 
     async def _run_logic(
         self,
@@ -50,8 +52,12 @@ class ChunkingPipe(AsyncPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Union[R2RDocumentProcessingError, Fragment], None]:
-        if chunking_provider is None:
-            chunking_provider = self.chunking_provider
+        chunking_provider = kwargs.get(
+            "chunking_provider", self.default_chunking_provider
+        )
+
+        print(f"Using chunking provider: {chunking_provider}")
+        print(f"Chunking with config: {chunking_provider.config}")
 
         async for item in input.message:
             if isinstance(item, R2RDocumentProcessingError):

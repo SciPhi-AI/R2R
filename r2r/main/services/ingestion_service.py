@@ -84,25 +84,18 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ):
-        chunking_config_override = kwargs.get("chunking_config_override")
-        chunking_provider = None
-        if chunking_config_override:
-            from r2r.providers import R2RChunkingProvider
-
-            if isinstance(chunking_config_override, ChunkingConfig):
-                chunking_provider = R2RChunkingProvider(
-                    chunking_config_override
-                )
-            elif isinstance(chunking_config_override, R2RChunkingProvider):
-                chunking_provider = chunking_config_override
-            else:
-                raise ValueError(
-                    f"Unexpected type for chunking_config_override: {type(chunking_config_override)}"
-                )
-
+        print("IngestDocuments")
         if len(documents) == 0:
             raise R2RException(
                 status_code=400, message="No documents provided for ingestion."
+            )
+
+        chunking_provider = kwargs.get("chunking_provider")
+        if chunking_provider is None:
+            print("No chunking provider specified. Using default.")
+        else:
+            print(
+                f"Using custom chunking provider: {type(chunking_provider).__name__}"
             )
 
         document_infos = []
@@ -166,6 +159,8 @@ class IngestionService(Service):
                     )
                 )
                 continue
+
+            print("gets here in ingest documents")
 
             now = datetime.now()
             document_info_metadata = document.metadata.copy()
@@ -245,6 +240,7 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ):
+        print("IngestFiles")
         if not files:
             raise R2RException(
                 status_code=400, message="No files provided for ingestion."
@@ -296,6 +292,7 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ):
+        print("UpdateFiles")
         if not files:
             raise R2RException(
                 status_code=400, message="No files provided for update."
