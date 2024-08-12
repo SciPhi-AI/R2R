@@ -188,7 +188,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             output = output.choices[0].message.content
 
-            yield (message, output)
+            yield {"query": message, "search_result": output}
 
     async def _run_logic(
         self,
@@ -207,5 +207,5 @@ class KGSearchSearchPipe(GeneratorPipe):
                 yield (query, result)
 
         else:
-            async for query, result in self.global_search(input, state, run_id, kg_search_settings):
-                yield (query, result)
+            async for item in self.global_search(input, state, run_id, kg_search_settings):
+                yield item

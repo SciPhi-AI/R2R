@@ -44,8 +44,7 @@ class KGSearchRequest(BaseModel):
 
 
 # [query, ...]
-KGSearchResult = Union[List[Tuple[str, List[Dict[str, Any]]]], Any]
-
+KGSearchResult = Union[List[Tuple[str, List[Dict[str, Any]]]], List[Dict[str, Any]]]
 
 class AggregateSearchResult(BaseModel):
     """Result of an aggregate search operation."""

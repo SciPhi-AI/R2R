@@ -1,5 +1,3 @@
-# TODO: Implement KGService
-
 import logging
 from typing import List, Dict, Any
 from ..assembly.config import R2RConfig
