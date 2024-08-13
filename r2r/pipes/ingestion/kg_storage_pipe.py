@@ -6,7 +6,7 @@ from typing import Any, AsyncGenerator, Optional
 from r2r.base import (
     AsyncState,
     EmbeddingProvider,
-    KGProvider,
+    KGDBProvider,
     PipeType,
     RunLoggingSingleton,
 )
@@ -23,7 +23,7 @@ class KGStoragePipe(AsyncPipe):
 
     def __init__(
         self,
-        kg_provider: KGProvider,
+        kg_provider: KGDBProvider,
         embedding_provider: Optional[EmbeddingProvider] = None,
         storage_batch_size: int = 1,
         pipe_logger: Optional[RunLoggingSingleton] = None,

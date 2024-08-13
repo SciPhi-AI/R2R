@@ -9,7 +9,7 @@ from r2r.base import (
     CryptoProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    KGProvider,
+    KGDBProvider,
     PromptProvider,
 )
 from r2r.pipelines import IngestionPipeline, RAGPipeline, SearchPipeline
@@ -75,7 +75,7 @@ class R2RBuilder:
         self.embedding_provider_override: Optional[EmbeddingProvider] = None
         self.llm_provider_override: Optional[CompletionProvider] = None
         self.prompt_provider_override: Optional[PromptProvider] = None
-        self.kg_provider_override: Optional[KGProvider] = None
+        self.kg_provider_override: Optional[KGDBProvider] = None
         self.crypto_provider_override: Optional[CryptoProvider] = None
 
         # Pipe overrides
@@ -136,7 +136,7 @@ class R2RBuilder:
         self.prompt_provider_override = provider
         return self
 
-    def with_kg_provider(self, provider: KGProvider):
+    def with_kg_provider(self, provider: KGDBProvider):
         self.kg_provider_override = provider
         return self
 

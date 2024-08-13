@@ -202,6 +202,14 @@ class Collection:
     Note: Some methods of this class can raise exceptions from the `vecs.exc` module if errors occur.
     """
 
+    COLUMN_VARS = [
+        "fragment_id",
+        "extraction_id",
+        "document_id",
+        "user_id",
+        "group_ids",
+    ]
+
     def __init__(
         self,
         name: str,
@@ -647,41 +655,66 @@ class Collection:
         """
 
         def parse_condition(key, condition):
-            if isinstance(condition, dict):
-                op = list(condition.keys())[0]
-                value = condition[op]
-                if op == "$eq":
-                    return self.table.c.metadata[key].astext == str(value)
-                elif op == "$ne":
-                    return self.table.c.metadata[key].astext != str(value)
-                elif op == "$gt":
-                    return (
-                        cast(self.table.c.metadata[key].astext, Float) > value
-                    )
-                elif op == "$gte":
-                    return (
-                        cast(self.table.c.metadata[key].astext, Float) >= value
-                    )
-                elif op == "$lt":
-                    return (
-                        cast(self.table.c.metadata[key].astext, Float) < value
-                    )
-                elif op == "$lte":
-                    return (
-                        cast(self.table.c.metadata[key].astext, Float) <= value
-                    )
-                elif op == "$in":
-                    return self.table.c.metadata[key].astext.in_(
-                        [str(v) for v in value]
-                    )
-                elif op == "$nin":
-                    return ~self.table.c.metadata[key].astext.in_(
-                        [str(v) for v in value]
-                    )
+            if key in self.COLUMN_VARS:
+                # Handle column-based filters
+                column = getattr(self.table.c, key)
+                if isinstance(condition, dict):
+                    op = list(condition.keys())[0]
+                    value = condition[op]
+                    if op == "$eq":
+                        return column == value
+                    elif op == "$ne":
+                        return column != value
+                    elif op == "$in":
+                        return column.in_(value)
+                    elif op == "$nin":
+                        return ~column.in_(value)
+                    else:
+                        raise FilterError(
+                            f"Unsupported operator for column {key}: {op}"
+                        )
                 else:
-                    raise FilterError(f"Unsupported operator: {op}")
+                    return column == condition
             else:
-                return self.table.c.metadata[key].astext == str(condition)
+                if isinstance(condition, dict):
+                    op = list(condition.keys())[0]
+                    value = condition[op]
+                    if op == "$eq":
+                        return self.table.c.metadata[key].astext == str(value)
+                    elif op == "$ne":
+                        return self.table.c.metadata[key].astext != str(value)
+                    elif op == "$gt":
+                        return (
+                            cast(self.table.c.metadata[key].astext, Float)
+                            > value
+                        )
+                    elif op == "$gte":
+                        return (
+                            cast(self.table.c.metadata[key].astext, Float)
+                            >= value
+                        )
+                    elif op == "$lt":
+                        return (
+                            cast(self.table.c.metadata[key].astext, Float)
+                            < value
+                        )
+                    elif op == "$lte":
+                        return (
+                            cast(self.table.c.metadata[key].astext, Float)
+                            <= value
+                        )
+                    elif op == "$in":
+                        return self.table.c.metadata[key].astext.in_(
+                            [str(v) for v in value]
+                        )
+                    elif op == "$nin":
+                        return ~self.table.c.metadata[key].astext.in_(
+                            [str(v) for v in value]
+                        )
+                    else:
+                        raise FilterError(f"Unsupported operator: {op}")
+                else:
+                    return self.table.c.metadata[key].astext == str(condition)
 
         def parse_filter(filter_dict):
             conditions = []

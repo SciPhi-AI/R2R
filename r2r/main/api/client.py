@@ -3,7 +3,7 @@ import json
 import os
 import uuid
 from contextlib import ExitStack
-from typing import Any, AsyncGenerator, Dict, Generator, Optional, Union
+from typing import Any, AsyncGenerator, Generator, Optional, Union
 
 import fire
 import httpx
@@ -14,11 +14,12 @@ from fastapi.testclient import TestClient
 from r2r.base import (
     AnalysisTypes,
     ChunkingConfig,
-    FilterCriteria,
     GenerationConfig,
     KGSearchSettings,
+    LogFilterCriteria,
     R2RException,
     UserCreate,
+    VectorDBFilterValue,
     VectorSearchSettings,
 )
 
@@ -451,7 +452,9 @@ class R2RClient:
         finally:
             loop.close()
 
-    def delete(self, filters: Optional[Dict[str, Any]] = None) -> dict:
+    def delete(
+        self, filters: Optional[dict[str, VectorDBFilterValue]] = None
+    ) -> dict:
         self._ensure_authenticated()
 
         request = R2RDeleteRequest(filters=filters)
@@ -498,13 +501,13 @@ class R2RClient:
 
     def analytics(
         self,
-        filter_criteria: Optional[Dict[str, Any]],
-        analysis_types: Optional[Dict[str, Any]],
+        filter_criteria: Optional[dict[str, Any]],
+        analysis_types: Optional[dict[str, Any]],
     ) -> dict:
         self._ensure_authenticated()
 
         request = R2RAnalyticsRequest(
-            filter_criteria=FilterCriteria(filters=filter_criteria),
+            filter_criteria=LogFilterCriteria(filters=filter_criteria),
             analysis_types=AnalysisTypes(analysis_types=analysis_types),
         )
         return self._make_request(

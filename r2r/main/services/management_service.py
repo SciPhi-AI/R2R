@@ -6,11 +6,13 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from r2r.base import (
     AnalysisTypes,
-    FilterCriteria,
+    LogFilterCriteria,
     LogProcessor,
     R2RException,
     RunLoggingSingleton,
     RunManager,
+    User,
+    VectorDBFilterValue,
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
@@ -117,7 +119,7 @@ class ManagementService(Service):
     @telemetry_event("Analytics")
     async def aanalytics(
         self,
-        filter_criteria: FilterCriteria,
+        filter_criteria: LogFilterCriteria,
         analysis_types: AnalysisTypes,
         *args,
         **kwargs,
@@ -269,7 +271,7 @@ class ManagementService(Service):
     @telemetry_event("Delete")
     async def delete(
         self,
-        filters: dict[str, Any],
+        filters: dict[str, VectorDBFilterValue],
         *args,
         **kwargs,
     ):

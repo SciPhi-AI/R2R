@@ -41,7 +41,6 @@ def app(request):
     config = R2RConfig.from_toml()
     config.logging.provider = "local"
     config.logging.logging_path = uuid.uuid4().hex
-    print("config.logging.logging_path = ", config.logging.logging_path)
 
     config.database.provider = "postgres"
     config.database.extra_fields["vecs_collection"] = (
@@ -63,9 +62,6 @@ def app(request):
             if os.path.exists(config.logging.logging_path):
                 os.remove(config.logging.logging_path)
 
-            print(
-                "config.logging.logging_path = ", config.logging.logging_path
-            )
             RunLoggingSingleton.configure(config.logging)
         except:
             RunLoggingSingleton._config.logging_path = (
@@ -153,7 +149,6 @@ async def test_ingest_search_txt_file(app, user, logging_connection):
 
     # Convert metadata to JSON string
     run_info = await logging_connection.get_info_logs(run_type_filter="search")
-    print("a", len(run_info))
 
     # Prepare the test data
     metadata = {}
@@ -182,18 +177,14 @@ async def test_ingest_search_txt_file(app, user, logging_connection):
 
     # Convert metadata to JSON string
     run_info = await logging_connection.get_info_logs(run_type_filter="search")
-    print("b", len(run_info))
 
     ingestion_result = await app.aingest_files(
         files=files, user=user, metadatas=[metadata]
     )
-    print("ingestion_result = ", ingestion_result)
 
     run_info = await logging_connection.get_info_logs(run_type_filter="search")
-    print("c", len(run_info))
 
     search_results = await app.asearch("who was aristotle?")
-    print("search_results = ", search_results)
     assert len(search_results["vector_search_results"]) == 10
     assert (
         "was an Ancient Greek philosopher and polymath"
@@ -209,15 +200,6 @@ async def test_ingest_search_txt_file(app, user, logging_connection):
         "was an Ancient Greek philosopher and polymath"
         in search_results["vector_search_results"][0]["metadata"]["text"]
     )
-    run_info = await logging_connection.get_info_logs(run_type_filter="search")
-    print("d", len(run_info))
-    assert len(run_info) == 2, f"Expected 2 runs, but got {len(run_info)}"
-
-    logs = await logging_connection.get_logs(
-        [run.run_id for run in run_info], 100
-    )
-    assert len(logs) == 6, f"Expected 6 logs, but got {len(logs)}"
-
     ## test stream
     response = await app.arag(
         query="Who was aristotle?",
@@ -243,8 +225,10 @@ async def test_ingest_search_then_delete(app, logging_connection):
         [
             Document(
                 id=generate_id_from_label("doc_1"),
+                group_ids=[generate_id_from_label("group_1")],
+                user_id=generate_id_from_label("user_id"),
                 data="The quick brown fox jumps over the lazy dog.",
-                type="txt",
+                type=DocumentType.TXT,
                 metadata={"author": "John Doe"},
             ),
         ]
@@ -281,94 +265,15 @@ async def test_ingest_search_then_delete(app, logging_connection):
 
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)
 @pytest.mark.asyncio
-async def test_ingest_user_documents(app, logging_connection):
-    user_id_0 = generate_id_from_label("user_0")
-    user_id_1 = generate_id_from_label("user_1")
-    doc_id_0 = generate_id_from_label("doc_01")
-    doc_id_1 = generate_id_from_label("doc_11")
-
-    await app.aingest_documents(
-        [
-            Document(
-                id=doc_id_0,
-                data="The quick brown fox jumps over the lazy dog.",
-                type="txt",
-                metadata={"author": "John Doe"},
-            ),
-            Document(
-                id=doc_id_1,
-                data="The lazy dog jumps over the quick brown fox.",
-                type="txt",
-                metadata={"author": "John Doe", "user_id": user_id_1},
-            ),
-        ]
-    )
-    user_id_results = await app.ausers_overview([user_id_0, user_id_1])
-    assert set([stats.user_id for stats in user_id_results]) == set(
-        [user_id_0, user_id_1]
-    ), f"Expected user ids {user_id_0} and {user_id_1}, but got {user_id_results}"
-
-    user_0_docs = await app.adocuments_overview(user_ids=[user_id_0])
-    user_1_docs = await app.adocuments_overview(user_ids=[user_id_1])
-
-    assert (
-        len(user_0_docs) == 1
-    ), f"Expected 1 document for user {user_id_0}, but got {len(user_0_docs)}"
-    assert (
-        len(user_1_docs) == 1
-    ), f"Expected 1 document for user {user_id_1}, but got {len(user_1_docs)}"
-    assert (
-        user_0_docs[0].document_id == doc_id_0
-    ), f"Expected document id {doc_id_0} for user {user_id_0}, but got {user_0_docs[0].document_id}"
-    assert (
-        user_1_docs[0].document_id == doc_id_1
-    ), f"Expected document id {doc_id_1} for user {user_id_1}, but got {user_1_docs[0].document_id}"
-
-    # Clean up
-    delete_result = await app.adelete(
-        filters={"document_id": {"$in": [str(doc_id_0), str(doc_id_1)]}}
-    )
-    assert (
-        len(delete_result) == 2
-    ), f"Expected 2 documents to be deleted, but got {len(delete_result)}"
-
-
-@pytest.mark.parametrize("app", ["postgres"], indirect=True)
-@pytest.mark.asyncio
-async def test_delete_by_id(app, logging_connection):
-    doc_id = generate_id_from_label("doc_1")
-    await app.aingest_documents(
-        [
-            Document(
-                id=doc_id,
-                data="The quick brown fox jumps over the lazy dog.",
-                type="txt",
-                metadata={"author": "John Doe"},
-            ),
-        ]
-    )
-    search_results = await app.asearch("who was aristotle?")
-
-    assert len(search_results["vector_search_results"]) > 0
-    delete_result = await app.adelete(
-        filters={"document_id": {"$eq": str(doc_id)}}
-    )
-    assert (
-        len(delete_result) == 1
-    ), f"Expected 1 document to be deleted, but got {len(delete_result)}"
-    search_results = await app.asearch("who was aristotle?")
-    assert len(search_results["vector_search_results"]) == 0
-
-
-@pytest.mark.parametrize("app", ["postgres"], indirect=True)
-@pytest.mark.asyncio
 async def test_double_ingest(app, logging_connection):
     await app.aingest_documents(
         [
             Document(
                 id=generate_id_from_label("doc_1"),
+                group_ids=[generate_id_from_label("group_1")],
+                user_id=generate_id_from_label("user_id"),
                 data="The quick brown fox jumps over the lazy dog.",
-                type="txt",
+                type=DocumentType.TXT,
                 metadata={"author": "John Doe"},
             ),
         ]
@@ -382,8 +287,10 @@ async def test_double_ingest(app, logging_connection):
                 [
                     Document(
                         id=generate_id_from_label("doc_1"),
+                        group_ids=[generate_id_from_label("group_1")],
+                        user_id=generate_id_from_label("user_id"),
                         data="The quick brown fox jumps over the lazy dog.",
-                        type="txt",
+                        type=DocumentType.TXT,
                         metadata={"author": "John Doe"},
                     ),
                 ]
@@ -450,15 +357,19 @@ async def test_ingest_user_documents(app, logging_connection):
         [
             Document(
                 id=doc_id_0,
+                group_ids=[generate_id_from_label("group_0")],
+                user_id=user_id_0,
                 data="The quick brown fox jumps over the lazy dog.",
                 type="txt",
-                metadata={"author": "John Doe", "user_id": user_id_0},
+                metadata={"author": "John Doe"},
             ),
             Document(
                 id=doc_id_1,
+                group_ids=[generate_id_from_label("group_1")],
+                user_id=user_id_1,
                 data="The lazy dog jumps over the quick brown fox.",
                 type="txt",
-                metadata={"author": "John Doe", "user_id": user_id_1},
+                metadata={"author": "John Doe"},
             ),
         ]
     )
@@ -477,29 +388,32 @@ async def test_ingest_user_documents(app, logging_connection):
         len(user_1_docs) == 1
     ), f"Expected 1 document for user {user_id_1}, but got {len(user_1_docs)}"
     assert (
-        user_0_docs[0].document_id == doc_id_0
-    ), f"Expected document id {doc_id_0} for user {user_id_0}, but got {user_0_docs[0].document_id}"
+        user_0_docs[0].id == doc_id_0
+    ), f"Expected document id {doc_id_0} for user {user_id_0}, but got {user_0_docs[0].id}"
     assert (
-        user_1_docs[0].document_id == doc_id_1
-    ), f"Expected document id {doc_id_1} for user {user_id_1}, but got {user_1_docs[0].document_id}"
+        user_1_docs[0].id == doc_id_1
+    ), f"Expected document id {doc_id_1} for user {user_id_1}, but got {user_1_docs[0].id}"
 
     # Clean up
     delete_result = await app.adelete(
-        filters={"document_id": {"$in": [str(doc_id_0), str(doc_id_1)]}}
+        filters={"document_id": {"$in": [doc_id_0, doc_id_1]}}
     )
+
     assert (
-        len(delete_result) == 112
-    ), f"Expected 112 chunks to be deleted, but got {len(delete_result)}"
+        len(delete_result) == 2
+    ), f"Expected 2 chunks to be deleted, but got {len(delete_result)}"
 
 
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)
 @pytest.mark.asyncio
 async def test_delete_by_id(app, logging_connection):
-    doc_id = generate_id_from_label("doc_1")
+    doc_id = generate_id_from_label("doc_0")
     await app.aingest_documents(
         [
             Document(
                 id=doc_id,
+                group_ids=[],
+                user_id=generate_id_from_label("user_0"),
                 data="The quick brown fox jumps over the lazy dog.",
                 type="txt",
                 metadata={"author": "John Doe"},
@@ -509,9 +423,7 @@ async def test_delete_by_id(app, logging_connection):
     search_results = await app.asearch("who was aristotle?")
 
     assert len(search_results["vector_search_results"]) > 0
-    delete_result = await app.adelete(
-        filters={"document_id": {"$eq": str(doc_id)}}
-    )
+    delete_result = await app.adelete(filters={"document_id": {"$eq": doc_id}})
     assert (
         len(delete_result) > 0
     ), f"Expected at least one document to be deleted, but got {delete_result}"

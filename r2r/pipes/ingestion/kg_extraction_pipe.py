@@ -8,7 +8,7 @@ from r2r.base import (
     ChunkingProvider,
     CompletionProvider,
     DocumentExtraction,
-    KGProvider,
+    KGDBProvider,
     PipeType,
     PromptProvider,
     R2RDocumentProcessingError,
@@ -39,7 +39,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
     def __init__(
         self,
-        kg_provider: KGProvider,
+        kg_provider: KGDBProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         chunking_provider: ChunkingProvider,

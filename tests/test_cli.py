@@ -201,7 +201,7 @@ def test_logs(runner, mock_r2r_execution_wrapper):
         }
     ]
 
-    result = runner.invoke(cli, ["logs", "--log-type-filter", "error"])
+    result = runner.invoke(cli, ["logs", "--run-type-filter", "error"])
     assert result.exit_code == 0
     assert "Run ID: test-run-id" in result.output
     assert "Run Type: test" in result.output

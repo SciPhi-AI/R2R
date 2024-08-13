@@ -12,6 +12,8 @@ from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 
+VectorDBFilterValue = Union[str, UUID]
+
 
 class DatabaseConfig(ProviderConfig):
     def __post_init__(self):
@@ -29,7 +31,7 @@ class DatabaseConfig(ProviderConfig):
         return ["postgres", None]
 
 
-class VectorDatabaseProvider(Provider, ABC):
+class VectorDBProvider(Provider, ABC):
     @abstractmethod
     def _initialize_vector_db(self, dimension: int) -> None:
         pass
@@ -46,7 +48,7 @@ class VectorDatabaseProvider(Provider, ABC):
     def search(
         self,
         query_vector: list[float],
-        filters: dict[str, Union[bool, int, str]] = {},
+        filters: dict[str, VectorDBFilterValue] = {},
         limit: int = 10,
         *args,
         **kwargs,
@@ -59,7 +61,7 @@ class VectorDatabaseProvider(Provider, ABC):
         query_text: str,
         query_vector: list[float],
         limit: int = 10,
-        filters: Optional[dict[str, Union[bool, int, str]]] = None,
+        filters: Optional[dict[str, VectorDBFilterValue]] = None,
         full_text_weight: float = 1.0,
         semantic_weight: float = 1.0,
         rrf_k: int = 20,
@@ -69,11 +71,11 @@ class VectorDatabaseProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def delete(self, filters: dict[str, Any]) -> list[str]:
+    def delete(self, filters: dict[str, VectorDBFilterValue]) -> list[str]:
         pass
 
 
-class RelationalDatabaseProvider(Provider, ABC):
+class RelationalDBProvider(Provider, ABC):
     @abstractmethod
     def _initialize_relational_db(self) -> None:
         pass
@@ -161,15 +163,15 @@ class DatabaseProvider(Provider):
             )
         logger.info(f"Initializing DatabaseProvider with config {config}.")
         super().__init__(config)
-        self.vector: VectorDatabaseProvider = self._initialize_vector_db()
-        self.relational: RelationalDatabaseProvider = (
+        self.vector: VectorDBProvider = self._initialize_vector_db()
+        self.relational: RelationalDBProvider = (
             self._initialize_relational_db()
         )
 
     @abstractmethod
-    def _initialize_vector_db(self) -> VectorDatabaseProvider:
+    def _initialize_vector_db(self) -> VectorDBProvider:
         pass
 
     @abstractmethod
-    def _initialize_relational_db(self) -> RelationalDatabaseProvider:
+    def _initialize_relational_db(self) -> RelationalDBProvider:
         pass

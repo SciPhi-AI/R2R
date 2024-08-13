@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
-from r2r.base import AnalysisTypes, FilterCriteria
+from r2r.base import AnalysisTypes, LogFilterCriteria, VectorDBFilterValue
 
 
 class R2RUpdatePromptRequest(BaseModel):
@@ -13,11 +13,11 @@ class R2RUpdatePromptRequest(BaseModel):
 
 
 class R2RDeleteRequest(BaseModel):
-    filters: dict[str, Any] = Field(default_factory=dict)
+    filters: dict[str, VectorDBFilterValue] = Field(default_factory=dict)
 
 
 class R2RAnalyticsRequest(BaseModel):
-    filter_criteria: FilterCriteria
+    filter_criteria: LogFilterCriteria
     analysis_types: AnalysisTypes
 
 

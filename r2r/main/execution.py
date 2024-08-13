@@ -12,11 +12,12 @@ from fastapi import UploadFile
 
 from r2r.base import (
     AnalysisTypes,
-    FilterCriteria,
+    GenerationConfig,
     KGSearchSettings,
+    LogFilterCriteria,
+    VectorDBFilterValue,
     VectorSearchSettings,
 )
-from r2r.base.abstractions.llm import GenerationConfig
 
 from .api.client import R2RClient
 from .assembly.builder import R2RBuilder
@@ -222,7 +223,7 @@ class R2RExecutionWrapper:
         self,
         query: str,
         use_vector_search: bool = True,
-        filters: Optional[dict] = None,
+        filters: Optional[dict[str, VectorDBFilterValue]] = None,
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
@@ -265,7 +266,7 @@ class R2RExecutionWrapper:
         self,
         query: str,
         use_vector_search: bool = True,
-        filters: Optional[dict] = None,
+        filters: Optional[dict[str, VectorDBFilterValue]] = None,
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
@@ -352,7 +353,7 @@ class R2RExecutionWrapper:
 
     def delete(
         self,
-        filters: Optional[dict] = None,
+        filters: Optional[dict[str, VectorDBFilterValue]] = None,
     ):
         if self.client_mode:
             return self.client.delete(filters)["results"]
@@ -399,7 +400,7 @@ class R2RExecutionWrapper:
                 analysis_types=analysis_types,
             )["results"]
 
-        filter_criteria = FilterCriteria(filters=filters)
+        filter_criteria = LogFilterCriteria(filters=filters)
         analysis_types_obj = AnalysisTypes(analysis_types=analysis_types)
         return self.app.analytics(
             filter_criteria=filter_criteria, analysis_types=analysis_types_obj

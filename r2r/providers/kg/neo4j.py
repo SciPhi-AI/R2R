@@ -1,5 +1,5 @@
 # abstractions are taken from LlamaIndex
-# Neo4jKGProvider is almost entirely taken from LlamaIndex Neo4jPropertyGraphStore
+# Neo4jKGDBProvider is almost entirely taken from LlamaIndex Neo4jPropertyGraphStore
 # https://github.com/run-llama/llama_index
 import json
 import os
@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from r2r.base import (
     EntityType,
     KGConfig,
-    KGProvider,
+    KGDBProvider,
     PromptProvider,
     format_entity_types,
     format_relations,
@@ -78,7 +78,7 @@ RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
 
-class Neo4jKGProvider(PropertyGraphStore, KGProvider):
+class Neo4jKGDBProvider(PropertyGraphStore, KGDBProvider):
     r"""
     Neo4j Property Graph Store.
 
@@ -110,10 +110,10 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
 
         ```python
         from llama_index.core.indices.property_graph import PropertyGraphIndex
-        from llama_index.graph_stores.neo4j import Neo4jKGProvider
+        from llama_index.graph_stores.neo4j import Neo4jKGDBProvider
 
-        # Create a Neo4jKGProvider instance
-        graph_store = Neo4jKGProvider(
+        # Create a Neo4jKGDBProvider instance
+        graph_store = Neo4jKGDBProvider(
             username="neo4j",
             password="neo4j",
             url="bolt://localhost:7687",
@@ -142,7 +142,7 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
     ) -> None:
         if config.provider != "neo4j":
             raise ValueError(
-                "Neo4jKGProvider must be initialized with config with `neo4j` provider."
+                "Neo4jKGDBProvider must be initialized with config with `neo4j` provider."
             )
 
         try:

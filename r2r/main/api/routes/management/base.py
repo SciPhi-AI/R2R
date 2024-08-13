@@ -116,27 +116,7 @@ class ManagementRouter(BaseRouter):
             request: R2RDeleteRequest,
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
-            filters = request.filters or {}
-            if not auth_user.is_superuser:
-                if "user_id" in filters:
-                    user_id_filter = filters["user_id"]
-                    if (
-                        isinstance(user_id_filter, dict)
-                        and "$eq" in user_id_filter
-                    ):
-                        if user_id_filter["$eq"] != str(auth_user.id):
-                            raise R2RException(
-                                "Non-superusers can only delete their own data.",
-                                403,
-                            )
-                    else:
-                        raise R2RException(
-                            "Invalid user_id filter format for non-superusers.",
-                            400,
-                        )
-                else:
-                    filters["user_id"] = {"$eq": str(auth_user.id)}
-            return await self.engine.adelete(filters=filters)
+            return await self.engine.adelete(filters=request.filters)
 
         @self.router.post("/document_chunks")
         @self.router.get("/document_chunks")

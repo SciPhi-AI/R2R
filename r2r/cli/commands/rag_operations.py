@@ -23,7 +23,7 @@ def inspect_knowledge_graph(obj, limit):
 @click.option(
     "--use-vector-search", is_flag=True, default=True, help="Use vector search"
 )
-@click.option("--search-filters", type=JSON, help="Search filters as JSON")
+@click.option("--filters", type=JSON, help="Search filters as JSON")
 @click.option(
     "--search-limit", default=10, help="Number of search results to return"
 )

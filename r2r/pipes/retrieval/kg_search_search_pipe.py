@@ -5,7 +5,7 @@ from typing import Any, Optional
 from r2r.base import (
     AsyncState,
     CompletionProvider,
-    KGProvider,
+    KGDBProvider,
     KGSearchSettings,
     PipeType,
     PromptProvider,
@@ -24,7 +24,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
     def __init__(
         self,
-        kg_provider: KGProvider,
+        kg_provider: KGDBProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         pipe_logger: Optional[RunLoggingSingleton] = None,

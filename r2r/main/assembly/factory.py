@@ -17,7 +17,7 @@ from r2r.base import (
     DatabaseProvider,
     EmbeddingConfig,
     EmbeddingProvider,
-    KGProvider,
+    KGDBProvider,
     ParsingConfig,
     ParsingProvider,
     PromptConfig,
@@ -215,9 +215,9 @@ class R2RProviderFactory:
     @staticmethod
     def create_kg_provider(kg_config, *args, **kwargs):
         if kg_config.provider == "neo4j":
-            from r2r.providers import Neo4jKGProvider
+            from r2r.providers import Neo4jKGDBProvider
 
-            return Neo4jKGProvider(kg_config)
+            return Neo4jKGDBProvider(kg_config)
         elif kg_config.provider is None:
             return None
         else:
@@ -230,7 +230,7 @@ class R2RProviderFactory:
         embedding_provider_override: Optional[EmbeddingProvider] = None,
         llm_provider_override: Optional[CompletionProvider] = None,
         prompt_provider_override: Optional[PromptProvider] = None,
-        kg_provider_override: Optional[KGProvider] = None,
+        kg_provider_override: Optional[KGDBProvider] = None,
         crypto_provider_override: Optional[CryptoProvider] = None,
         auth_provider_override: Optional[AuthProvider] = None,
         database_provider_override: Optional[DatabaseProvider] = None,

@@ -1,3 +1,3 @@
-from .neo4j import Neo4jKGProvider
+from .neo4j import Neo4jKGDBProvider
 
-__all__ = ["Neo4jKGProvider"]
+__all__ = ["Neo4jKGDBProvider"]

@@ -17,10 +17,10 @@ from r2r.base import (
     DocumentStatus,
     DocumentType,
     R2RException,
-    RelationalDatabaseProvider,
+    RelationalDBProvider,
     User,
     UserCreate,
-    VectorDatabaseProvider,
+    VectorDBProvider,
     VectorEntry,
     VectorSearchResult,
     generate_id_from_label,
@@ -32,7 +32,7 @@ from .vecs import Client, Collection, create_client
 logger = logging.getLogger(__name__)
 
 
-class PostgresVectorDBProvider(VectorDatabaseProvider):
+class PostgresVectorDBProvider(VectorDBProvider):
     def __init__(self, config: DatabaseConfig, *args, **kwargs):
         super().__init__(config)
         self.collection: Optional[Collection] = None
@@ -374,7 +374,7 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
     ) -> list[str]:
         if self.collection is None:
             raise ValueError(
-                "Please call `initialize_collection` before attempting to run `delete_by_metadata`."
+                "Please call `initialize_collection` before attempting to run `delete`."
             )
 
         return self.collection.delete(filters=filters)
@@ -400,7 +400,7 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             return [result[0] for result in results]
 
 
-class PostgresRelationalDBProvider(RelationalDatabaseProvider):
+class PostgresRelationalDBProvider(RelationalDBProvider):
     def __init__(
         self,
         config: DatabaseConfig,
@@ -656,7 +656,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 sess.commit()
 
             return {
-                "id": group_data[0],
+                "group_id": group_data[0],
                 "name": group_data[1],
                 "description": group_data[2],
                 "created_at": group_data[3],
@@ -1344,7 +1344,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
 
         return [
             {
-                "id": row[0],
+                "group_id": row[0],
                 "name": row[1],
                 "description": row[2],
                 "created_at": row[3],
@@ -1430,7 +1430,7 @@ class PostgresDBProvider(DatabaseProvider):
         self.crypto_provider = crypto_provider
         super().__init__(config)
 
-    def _initialize_vector_db(self) -> VectorDatabaseProvider:
+    def _initialize_vector_db(self) -> VectorDBProvider:
         return PostgresVectorDBProvider(
             self.config,
             vx=self.vx,
@@ -1438,7 +1438,7 @@ class PostgresDBProvider(DatabaseProvider):
             dimension=self.vector_db_dimension,
         )
 
-    def _initialize_relational_db(self) -> RelationalDatabaseProvider:
+    def _initialize_relational_db(self) -> RelationalDBProvider:
         return PostgresRelationalDBProvider(
             self.config,
             vx=self.vx,

@@ -10,7 +10,7 @@ from r2r.base import (
     CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    KGProvider,
+    KGDBProvider,
     ParsingProvider,
     PromptProvider,
 )
@@ -24,7 +24,7 @@ class R2RProviders(BaseModel):
     database: Optional[DatabaseProvider]
     embedding: Optional[EmbeddingProvider]
     prompt: Optional[PromptProvider]
-    kg: Optional[KGProvider]
+    kg: Optional[KGDBProvider]
     parsing: Optional[ParsingProvider]
 
     class Config:

@@ -40,9 +40,9 @@ from .abstractions.vector import Vector, VectorEntry, VectorType
 from .logging.base import RunType
 from .logging.log_processor import (
     AnalysisTypes,
-    FilterCriteria,
     LogAnalytics,
     LogAnalyticsConfig,
+    LogFilterCriteria,
     LogProcessor,
 )
 from .logging.run_logger import (
@@ -64,13 +64,14 @@ from .providers.crypto import CryptoConfig, CryptoProvider
 from .providers.database import (
     DatabaseConfig,
     DatabaseProvider,
-    RelationalDatabaseProvider,
-    VectorDatabaseProvider,
+    RelationalDBProvider,
+    VectorDBFilterValue,
+    VectorDBProvider,
 )
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
 from .providers.kg import (
     KGConfig,
-    KGProvider,
+    KGDBProvider,
     extract_entities,
     update_kg_prompt,
 )
@@ -174,15 +175,16 @@ __all__ = [
     "AuthProvider",
     "CryptoConfig",
     "CryptoProvider",
+    "VectorDBFilterValue",
     "DatabaseConfig",
     "DatabaseProvider",
-    "VectorDatabaseProvider",
-    "RelationalDatabaseProvider",
-    "KGProvider",
+    "VectorDBProvider",
+    "RelationalDBProvider",
+    "KGDBProvider",
     "KGConfig",
     "update_kg_prompt",
     # Other
-    "FilterCriteria",
+    "LogFilterCriteria",
     "TextSplitter",
     "RecursiveCharacterTextSplitter",
     "to_async_generator",

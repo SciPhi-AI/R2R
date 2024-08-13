@@ -121,8 +121,8 @@ class AuthRouter(BaseRouter):
         @self.router.post("/logout")
         @self.base_endpoint
         async def logout_app(
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
             token: str = Depends(oauth2_scheme),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             return await self.engine.alogout(token)
 

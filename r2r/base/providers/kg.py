@@ -41,13 +41,13 @@ class KGConfig(ProviderConfig):
         return [None, "neo4j"]
 
 
-class KGProvider(ABC):
+class KGDBProvider(ABC):
     """An abstract class to provide a common interface for Knowledge Graphs."""
 
     def __init__(self, config: KGConfig) -> None:
         if not isinstance(config, KGConfig):
             raise ValueError(
-                "KGProvider must be initialized with a `KGConfig`."
+                "KGDBProvider must be initialized with a `KGConfig`."
             )
         logger.info(f"Initializing KG provider with config: {config}")
         self.config = config

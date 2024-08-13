@@ -31,7 +31,7 @@ def app_settings(obj):
 
 
 @cli.command()
-@click.option("--log-type-filter", help="Filter for log types")
+@click.option("--run-type-filter", help="Filter for log types")
 @click.option(
     "--max-runs", default=100, help="Maximum number of runs to fetch"
 )
