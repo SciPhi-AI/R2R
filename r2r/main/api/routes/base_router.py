@@ -34,7 +34,6 @@ class BaseRouter:
                     key="pipeline_type",
                     value=pipeline_type,
                     user=auth_user,
-                    is_info_log=True,
                 )
 
                 try:
@@ -55,7 +54,6 @@ class BaseRouter:
                         log_id=run_id,
                         key="error",
                         value=str(e),
-                        is_info_log=False,
                     )
                     logger.error(f"{func.__name__}() - \n\n{str(e)})")
                     raise HTTPException(

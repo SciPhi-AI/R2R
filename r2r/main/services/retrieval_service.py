@@ -101,7 +101,6 @@ class RetrievalService(Service):
                 log_id=run_id,
                 key="search_latency",
                 value=latency,
-                is_info_log=False,
             )
 
             return results.dict()
@@ -190,7 +189,6 @@ class RetrievalService(Service):
                     log_id=run_id,
                     key="completion_record",
                     value=completion_record.to_json(),
-                    is_info_log=False,
                 )
 
                 # unpack the first result
@@ -273,7 +271,6 @@ class RetrievalService(Service):
                         log_id=run_id,
                         key="rag_agent_generation_latency",
                         value=latency,
-                        is_info_log=False,
                     )
 
                     async def stream_response():
@@ -311,7 +308,6 @@ class RetrievalService(Service):
                     log_id=run_id,
                     key="rag_agent_generation_latency",
                     value=latency,
-                    is_info_log=False,
                 )
                 return results
 

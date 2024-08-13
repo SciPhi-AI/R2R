@@ -55,7 +55,11 @@ class IngestionService(Service):
         )
 
     def _file_to_document(
-        self, file: UploadFile, document_id: uuid.UUID, metadata: dict
+        self,
+        file: UploadFile,
+        user: User,
+        document_id: uuid.UUID,
+        metadata: dict,
     ) -> Document:
         file_extension = file.filename.split(".")[-1].lower()
         if file_extension.upper() not in DocumentType.__members__:
@@ -69,6 +73,8 @@ class IngestionService(Service):
 
         return Document(
             id=document_id,
+            group_ids=metadata.get("group_ids", []),
+            user_id=user.id,
             type=DocumentType[file_extension.upper()],
             data=file.file.read(),
             metadata=metadata,
@@ -215,10 +221,10 @@ class IngestionService(Service):
     async def ingest_files(
         self,
         files: list[UploadFile],
+        user: User,
         metadatas: Optional[list[dict]] = None,
         document_ids: Optional[list[uuid.UUID]] = None,
         versions: Optional[list[str]] = None,
-        user: Optional[User] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -246,7 +252,7 @@ class IngestionService(Service):
                 )
 
                 document = self._file_to_document(
-                    file, document_id, document_metadata
+                    file, user, document_id, document_metadata
                 )
                 documents.append(document)
             return await self.ingest_documents(
@@ -261,6 +267,7 @@ class IngestionService(Service):
     async def update_files(
         self,
         files: list[UploadFile],
+        user: User,
         document_ids: list[uuid.UUID],
         metadatas: Optional[list[dict]] = None,
         *args: Any,
@@ -319,7 +326,7 @@ class IngestionService(Service):
                 )
 
                 document = self._file_to_document(
-                    file, doc_id, updated_metadata
+                    file, user, doc_id, updated_metadata
                 )
                 documents.append(document)
 
@@ -414,7 +421,6 @@ class IngestionService(Service):
                             log_id=run_id,
                             key="document_parse_result",
                             value=value,
-                            user_id=user_id,
                         )
 
         return results

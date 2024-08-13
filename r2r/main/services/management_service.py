@@ -65,7 +65,7 @@ class ManagementService(Service):
                 status_code=404, message="Logging provider not found."
             )
 
-        run_info = await self.logging_connection.get_run_info(
+        run_info = await self.logging_connection.get_info_logs(
             limit=max_runs_requested,
             log_type_filter=log_type_filter,
         )
@@ -122,7 +122,7 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        run_info = await self.logging_connection.get_run_info(limit=100)
+        run_info = await self.logging_connection.get_info_logs(limit=100)
         run_ids = [info.run_id for info in run_info]
 
         if not run_ids:
@@ -222,7 +222,7 @@ class ManagementService(Service):
                     status_code=404, message="Logging provider not found."
                 )
 
-            run_info = await self.logging_connection.get_run_info(
+            run_info = await self.logging_connection.get_info_logs(
                 limit=max_runs_requested,
                 log_type_filter=log_type_filter,
             )

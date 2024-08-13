@@ -15,7 +15,7 @@ from ..providers.base import Provider, ProviderConfig
 logger = logging.getLogger(__name__)
 
 
-class RunInfo(BaseModel):
+class RunInfoLog(BaseModel):
     run_id: UUID
     log_type: str
     timestamp: datetime
@@ -47,17 +47,7 @@ class KVLoggingProvider(Provider):
         log_id: UUID,
         key: str,
         value: str,
-        user_id: Optional[UUID] = None,
-        is_info_log: bool = False,
     ):
-        pass
-
-    @abstractmethod
-    async def get_run_info(
-        self,
-        limit: int = 10,
-        log_type_filter: Optional[str] = None,
-    ) -> list[RunInfo]:
         pass
 
     @abstractmethod
@@ -66,6 +56,24 @@ class KVLoggingProvider(Provider):
         run_ids: list[UUID],
         limit_per_run: int,
     ) -> list:
+        pass
+
+    @abstractmethod
+    async def info_log(
+        self,
+        log_id: UUID,
+        log_type: str,
+        user_id: UUID,
+    ):
+        pass
+
+    @abstractmethod
+    async def get_info_logs(
+        self,
+        limit: int = 10,
+        log_type_filter: Optional[str] = None,
+        user_ids: Optional[list[UUID]] = None,
+    ) -> list[RunInfoLog]:
         pass
 
     @abstractmethod
@@ -96,7 +104,7 @@ class LocalKVLoggingProvider(KVLoggingProvider):
                 "Please install aiosqlite to use the LocalKVLoggingProvider."
             )
 
-    async def init(self):
+    async def _init(self):
         self.conn = await self.aiosqlite.connect(self.logging_path)
         await self.conn.execute(
             f"""
@@ -104,7 +112,7 @@ class LocalKVLoggingProvider(KVLoggingProvider):
                 timestamp DATETIME,
                 log_id TEXT,
                 key TEXT,
-                value TEXT,
+                value TEXT
             )
             """
         )
@@ -120,14 +128,9 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         )
         await self.conn.commit()
 
-        # TODO: deprecated, remove in version 0.3.0
-        cursor = await self.conn.execute(
-            f"PRAGMA table_info({self.log_table})"
-        )
-
     async def __aenter__(self):
         if self.conn is None:
-            await self.init()
+            await self._init()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -143,42 +146,41 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         log_id: UUID,
         key: str,
         value: str,
-        user_id: Optional[UUID] = None,
-        is_info_log: bool = False,
     ):
-        collection = self.log_info_table if is_info_log else self.log_table
-
-        if is_info_log:
-            if "type" not in key:
-                raise ValueError("Info log keys must contain the text 'type'")
-            if not user_id:
-                raise ValueError("User ID is required for info logs.")
-            await self.conn.execute(
-                f"""
-                INSERT INTO {collection} (timestamp, log_id, log_type, user_id)
-                VALUES (datetime('now'), ?, ?, ?)
-                ON CONFLICT(log_id) DO UPDATE SET
-                timestamp = datetime('now'),
-                log_type = excluded.log_type,
-                user_id = excluded.user_id
-                """,
-                (str(log_id), value, str(user_id)),
-            )
-        else:
-            await self.conn.execute(
-                f"""
-                INSERT INTO {collection} (timestamp, log_id, key, value, user_id)
-                VALUES (datetime('now'), ?, ?, ?, ?)
-                """,
-                (str(log_id), key, value, str(user_id)),
-            )
+        await self.conn.execute(
+            f"""
+            INSERT INTO {self.log_table} (timestamp, log_id, key, value)
+            VALUES (datetime('now'), ?, ?, ?)
+            """,
+            (str(log_id), key, value),
+        )
         await self.conn.commit()
 
-    async def get_run_info(
+    async def info_log(
+        self,
+        log_id: UUID,
+        log_type: str,
+        user_id: UUID,
+    ):
+        await self.conn.execute(
+            f"""
+            INSERT INTO {self.log_info_table} (timestamp, log_id, log_type, user_id)
+            VALUES (datetime('now'), ?, ?, ?)
+            ON CONFLICT(log_id) DO UPDATE SET
+            timestamp = datetime('now'),
+            log_type = excluded.log_type,
+            user_id = excluded.user_id
+            """,
+            (str(log_id), log_type, str(user_id)),
+        )
+        await self.conn.commit()
+
+    async def get_info_logs(
         self,
         limit: int = 10,
         log_type_filter: Optional[str] = None,
-    ) -> list[RunInfo]:
+        user_ids: Optional[list[UUID]] = None,
+    ) -> list[RunInfoLog]:
         cursor = await self.conn.cursor()
         query = "SELECT log_id, log_type, timestamp, user_id"
         query += f" FROM {self.log_info_table}"
@@ -187,6 +189,9 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         if log_type_filter:
             conditions.append("log_type = ?")
             params.append(log_type_filter)
+        if user_ids:
+            conditions.append(f"user_id IN ({','.join(['?']*len(user_ids))})")
+            params.extend([str(user_id) for user_id in user_ids])
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
         query += " ORDER BY timestamp DESC LIMIT ?"
@@ -194,11 +199,11 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         await cursor.execute(query, params)
         rows = await cursor.fetchall()
         return [
-            RunInfo(
+            RunInfoLog(
                 run_id=UUID(row[0]),
                 log_type=row[1],
                 timestamp=datetime.fromisoformat(row[2]),
-                user_id=row[3],
+                user_id=UUID(row[3]),
             )
             for row in rows
         ]
@@ -212,24 +217,32 @@ class LocalKVLoggingProvider(KVLoggingProvider):
             raise ValueError("No run ids provided.")
         cursor = await self.conn.cursor()
         placeholders = ",".join(["?" for _ in run_ids])
-        query = "SELECT log_id, key, value, timestamp, user_id"
-
-        query += f"""
-        FROM (
-            SELECT *, ROW_NUMBER() OVER (PARTITION BY log_id ORDER BY timestamp DESC) as rn
-            FROM {self.log_table}
-            WHERE log_id IN ({placeholders})
-        )
-        WHERE rn <= ?
+        query = f"""
+        SELECT log_id, key, value, timestamp
+        FROM {self.log_table}
+        WHERE log_id IN ({placeholders})
         ORDER BY timestamp DESC
         """
 
-        params = [str(ele) for ele in run_ids] + [limit_per_run]
+        params = [str(run_id) for run_id in run_ids]
+
         await cursor.execute(query, params)
         rows = await cursor.fetchall()
-        return [
-            dict(zip([d[0] for d in cursor.description], row)) for row in rows
-        ]
+
+        # Post-process the results to limit per run_id and ensure only requested run_ids are included
+        result = []
+        run_id_count = {str(run_id): 0 for run_id in run_ids}
+        for row in rows:
+            row_dict = dict(zip([d[0] for d in cursor.description], row))
+            row_run_id = row_dict["log_id"]
+            if (
+                row_run_id in run_id_count
+                and run_id_count[row_run_id] < limit_per_run
+            ):
+                row_dict["log_id"] = UUID(row_dict["log_id"])
+                result.append(row_dict)
+                run_id_count[row_run_id] += 1
+        return result
 
     async def score_completion(
         self, log_id: UUID, message_id: UUID, score: float
@@ -321,7 +334,7 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
                 "Please set the environment variable POSTGRES_PORT."
             )
 
-    async def init(self):
+    async def _init(self):
         self.pool = await asyncpg.create_pool(
             database=os.getenv("POSTGRES_DBNAME"),
             user=os.getenv("POSTGRES_USER"),
@@ -337,8 +350,7 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
                     timestamp TIMESTAMPTZ,
                     log_id UUID,
                     key TEXT,
-                    value TEXT,
-                    user_id TEXT
+                    value TEXT
                 )
                 """
             )
@@ -348,19 +360,14 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
                     timestamp TIMESTAMPTZ,
                     log_id UUID UNIQUE,
                     log_type TEXT,
-                    user_id TEXT
+                    user_id UUID
                 )
             """
             )
 
-            # TODO: deprecated, remove in version 0.3.0
-            columns = await conn.fetch(
-                f"SELECT column_name FROM information_schema.columns WHERE table_name = '{self.log_table}'"
-            )
-
     async def __aenter__(self):
         if self.pool is None:
-            await self.init()
+            await self._init()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -376,51 +383,60 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
         log_id: UUID,
         key: str,
         value: str,
-        user_id: Optional[UUID] = None,
-        is_info_log: bool = False,
     ):
-        collection = self.log_info_table if is_info_log else self.log_table
-
-        if is_info_log:
-            if "type" not in key:
-                raise ValueError(
-                    "Info log key must contain the string `type`."
-                )
-            if user_id is None:
-                raise ValueError("user_id is required for info logs")
+        async with self.pool.acquire() as conn:
             await conn.execute(
-                f"INSERT INTO {collection} (timestamp, log_id, log_type, user_id) VALUES (NOW(), $1, $2, $3)",
+                f"INSERT INTO {self.log_table} (timestamp, log_id, key, value) VALUES (NOW(), $1, $2, $3)",
                 log_id,
+                key,
                 value,
+            )
+
+    async def info_log(
+        self,
+        log_id: UUID,
+        log_type: str,
+        user_id: UUID,
+    ):
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                f"INSERT INTO {self.log_info_table} (timestamp, log_id, log_type, user_id) VALUES (NOW(), $1, $2, $3)",
+                log_id,
+                log_type,
                 user_id,
             )
-        else:
-            async with self.pool.acquire() as conn:
-                await conn.execute(
-                    f"INSERT INTO {collection} (timestamp, log_id, key, value) VALUES (NOW(), $1, $2, $3)",
-                    log_id,
-                    key,
-                    value,
-                )
 
-    async def get_run_info(
-        self, limit: int = 10, log_type_filter: Optional[str] = None
-    ) -> list[RunInfo]:
-        query = "SELECT log_id, log_type, timestamp, user_id"
-        query += f" FROM {self.log_info_table}"
+    async def get_info_logs(
+        self,
+        limit: int = 10,
+        log_type_filter: Optional[str] = None,
+        user_ids: Optional[list[UUID]] = None,
+    ) -> list[RunInfoLog]:
+        query = f"SELECT log_id, log_type, timestamp, user_id FROM {self.log_info_table}"
         conditions = []
         params = []
+        param_count = 1
+
         if log_type_filter:
-            conditions.append("log_type = $1")
+            conditions.append(f"log_type = ${param_count}")
             params.append(log_type_filter)
+            param_count += 1
+
+        if user_ids:
+            conditions.append(f"user_id = ANY(${param_count}::uuid[])")
+            params.append(user_ids)
+            param_count += 1
+
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
-        query += " ORDER BY timestamp DESC LIMIT $2"
+
+        query += f" ORDER BY timestamp DESC LIMIT ${param_count}"
         params.append(limit)
+
         async with self.pool.acquire() as conn:
             rows = await conn.fetch(query, *params)
             return [
-                RunInfo(
+                RunInfoLog(
                     run_id=row["log_id"],
                     log_type=row["log_type"],
                     timestamp=row["timestamp"],
@@ -536,7 +552,6 @@ class RedisKVLoggingProvider(KVLoggingProvider):
         self.log_info_key = config.log_info_table
 
     async def __aenter__(self):
-        # TODO: deprecated, remove in version 0.3.0
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
@@ -550,8 +565,6 @@ class RedisKVLoggingProvider(KVLoggingProvider):
         log_id: UUID,
         key: str,
         value: str,
-        user_id: Optional[UUID] = None,
-        is_info_log: bool = False,
     ):
         timestamp = datetime.now().timestamp()
         log_entry = {
@@ -560,28 +573,36 @@ class RedisKVLoggingProvider(KVLoggingProvider):
             "key": key,
             "value": value,
         }
+        await self.redis.lpush(
+            f"{self.log_key}:{str(log_id)}", json.dumps(log_entry)
+        )
 
-        if is_info_log:
-            if "type" not in key:
-                raise ValueError("Info log keys must contain the text 'type'")
-            if user_id is None:
-                raise ValueError("user_id is required for info logs")
-            log_entry["log_type"] = value
-            log_entry["user_id"] = str(user_id)
-            await self.redis.hset(
-                self.log_info_key, str(log_id), json.dumps(log_entry)
-            )
-            await self.redis.zadd(
-                f"{self.log_info_key}_sorted", {str(log_id): timestamp}
-            )
-        else:
-            await self.redis.lpush(
-                f"{self.log_key}:{str(log_id)}", json.dumps(log_entry)
-            )
+    async def info_log(
+        self,
+        log_id: UUID,
+        log_type: str,
+        user_id: UUID,
+    ):
+        timestamp = datetime.now().timestamp()
+        log_entry = {
+            "timestamp": timestamp,
+            "log_id": str(log_id),
+            "log_type": log_type,
+            "user_id": str(user_id),
+        }
+        await self.redis.hset(
+            self.log_info_key, str(log_id), json.dumps(log_entry)
+        )
+        await self.redis.zadd(
+            f"{self.log_info_key}_sorted", {str(log_id): timestamp}
+        )
 
-    async def get_run_info(
-        self, limit: int = 10, log_type_filter: Optional[str] = None
-    ) -> list[RunInfo]:
+    async def get_info_logs(
+        self,
+        limit: int = 10,
+        log_type_filter: Optional[str] = None,
+        user_ids: Optional[list[UUID]] = None,
+    ) -> list[RunInfoLog]:
         run_info_list = []
         start = 0
         count_per_batch = 100  # Adjust batch size as needed
@@ -601,14 +622,22 @@ class RedisKVLoggingProvider(KVLoggingProvider):
                 log_entry = json.loads(
                     await self.redis.hget(self.log_info_key, log_id)
                 )
+
+                # Check if the log entry matches the filters
                 if (
-                    log_type_filter
-                    and log_entry["log_type"] == log_type_filter
-                ) or not log_type_filter:
+                    log_type_filter is None
+                    or log_entry["log_type"] == log_type_filter
+                ) and (
+                    user_ids is None or UUID(log_entry["user_id"]) in user_ids
+                ):
                     run_info_list.append(
-                        RunInfo(
+                        RunInfoLog(
                             run_id=UUID(log_entry["log_id"]),
                             log_type=log_entry["log_type"],
+                            timestamp=datetime.fromtimestamp(
+                                log_entry["timestamp"]
+                            ),
+                            user_id=UUID(log_entry["user_id"]),
                         )
                     )
 
@@ -698,32 +727,40 @@ class KVLoggingSingleton:
         log_id: UUID,
         key: str,
         value: str,
-        user_id: Optional[UUID] = None,
-        is_info_log: bool = False,
     ):
         try:
             async with cls.get_instance() as provider:
-                await provider.log(
-                    log_id,
-                    key,
-                    value,
-                    is_info_log=is_info_log,
-                )
+                await provider.log(log_id, key, value)
+        except Exception as e:
+            logger.error(f"Error logging data {(log_id, key, value)}: {e}")
+
+    @classmethod
+    async def info_log(
+        cls,
+        log_id: UUID,
+        log_type: str,
+        user_id: UUID,
+    ):
+        try:
+            async with cls.get_instance() as provider:
+                await provider.info_log(log_id, log_type, user_id)
         except Exception as e:
             logger.error(
-                f"Error logging data {(log_id, key, value, user_id)}: {e}"
+                f"Error logging info data {(log_id, log_type, user_id)}: {e}"
             )
 
     @classmethod
-    async def get_run_info(
+    async def get_info_logs(
         cls,
         limit: int = 10,
         log_type_filter: Optional[str] = None,
-    ) -> list[RunInfo]:
+        user_ids: Optional[list[UUID]] = None,
+    ) -> list[RunInfoLog]:
         async with cls.get_instance() as provider:
-            return await provider.get_run_info(
+            return await provider.get_info_logs(
                 limit,
                 log_type_filter=log_type_filter,
+                user_ids=user_ids,
             )
 
     @classmethod

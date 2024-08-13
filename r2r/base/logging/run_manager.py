@@ -30,7 +30,7 @@ class RunManager:
             token = run_id_var.set(run_id)
         return run_id, token
 
-    async def get_run_info(self):
+    async def get_info_logs(self):
         run_id = run_id_var.get()
         return self.run_info.get(run_id, None)
 
@@ -39,16 +39,16 @@ class RunManager:
         key: str,
         value: Any,
         user: User,
-        is_info_log: bool = True,
     ):
         if run_id := run_id_var.get():
-            await self.logger.log(
+            await self.logger.log_info(
                 log_id=run_id,
                 key=key,
                 value=value,
                 user_id=user.id,
-                is_info_log=is_info_log,
             )
+        else:
+            raise ValueError("No run ID set")
 
     async def clear_run_info(self, token: contextvars.Token):
         run_id = run_id_var.get()

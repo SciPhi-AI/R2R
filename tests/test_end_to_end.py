@@ -17,6 +17,7 @@ from r2r import (
     R2RPipeFactory,
     R2RPipelineFactory,
     R2RProviderFactory,
+    User,
     VectorSearchSettings,
     generate_id_from_label,
 )
@@ -38,7 +39,7 @@ async def cleanup_tasks():
 @pytest.fixture(scope="function")
 def app(request):
     config = R2RConfig.from_toml()
-    config.logging.provider = "postgres"
+    config.logging.provider = "local"
     config.logging.logging_path = uuid.uuid4().hex
     print("config.logging.logging_path = ", config.logging.logging_path)
 
@@ -82,6 +83,11 @@ def logging_connection():
     return KVLoggingSingleton()
 
 
+@pytest.fixture
+def user():
+    return User(email="test@test.com", hashed_password="test")
+
+
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_txt_document(app, logging_connection):
@@ -114,7 +120,7 @@ async def test_ingest_txt_document(app, logging_connection):
 
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)
 @pytest.mark.asyncio
-async def test_ingest_txt_file(app, logging_connection):
+async def test_ingest_txt_file(app, user):
     # Prepare the test data
     metadata = {"author": "John Doe"}
     files = [
@@ -138,16 +144,15 @@ async def test_ingest_txt_file(app, logging_connection):
         file.file.seek(0, 2)  # Move to the end of the file
         file.size = file.file.tell()  # Get the file size
         file.file.seek(0)  # Move back to the start of the file
-
-    await app.aingest_files(metadatas=[metadata], files=files)
+    await app.aingest_files(metadatas=[metadata], files=files, user=user)
 
 
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)
 @pytest.mark.asyncio
-async def test_ingest_search_txt_file(app, logging_connection):
+async def test_ingest_search_txt_file(app, user, logging_connection):
 
     # Convert metadata to JSON string
-    run_info = await logging_connection.get_run_info(log_type_filter="search")
+    run_info = await logging_connection.get_info_logs(log_type_filter="search")
     print("a", len(run_info))
 
     # Prepare the test data
@@ -176,15 +181,15 @@ async def test_ingest_search_txt_file(app, logging_connection):
         file.file.seek(0)  # Move back to the start of the file
 
     # Convert metadata to JSON string
-    run_info = await logging_connection.get_run_info(log_type_filter="search")
+    run_info = await logging_connection.get_info_logs(log_type_filter="search")
     print("b", len(run_info))
 
     ingestion_result = await app.aingest_files(
-        metadatas=[metadata], files=files
+        files=files, user=user, metadatas=[metadata]
     )
     print("ingestion_result = ", ingestion_result)
 
-    run_info = await logging_connection.get_run_info(log_type_filter="search")
+    run_info = await logging_connection.get_info_logs(log_type_filter="search")
     print("c", len(run_info))
 
     search_results = await app.asearch("who was aristotle?")
@@ -204,7 +209,7 @@ async def test_ingest_search_txt_file(app, logging_connection):
         "was an Ancient Greek philosopher and polymath"
         in search_results["vector_search_results"][0]["metadata"]["text"]
     )
-    run_info = await logging_connection.get_run_info(log_type_filter="search")
+    run_info = await logging_connection.get_info_logs(log_type_filter="search")
     print("d", len(run_info))
     assert len(run_info) == 2, f"Expected 2 runs, but got {len(run_info)}"
 
