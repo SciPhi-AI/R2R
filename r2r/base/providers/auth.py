@@ -42,7 +42,7 @@ class AuthProvider(Provider, ABC):
         self.admin_password = config.default_admin_password
         super().__init__(config)
 
-    def _get_default_admin_(self) -> User:
+    def _get_default_admin_user(self) -> User:
         return User(
             email=self.admin_email,
             hashed_password=self.crypto_provider.get_password_hash(

@@ -99,9 +99,9 @@ async def test_ingest_single_document(ingestion_service, mock_vector_db):
 
     result = await ingestion_service.ingest_documents([document])
 
-    assert result["processed_documents"] == [
-        f"Document '{document.id}' processed successfully."
-    ]
+    assert result["processed_documents"][0].id == generate_id_from_label(
+        "test_id"
+    )
     assert not result["failed_documents"]
     assert not result["skipped_documents"]
 
@@ -148,13 +148,12 @@ async def test_ingest_file(ingestion_service):
     file_mock.file.seek(0)
     file_mock.size = len(file_content)  # Set file size manually
 
+    user = User(email="email@test.com", hashed_password="password")
     ingestion_service.pipelines.ingestion_pipeline.run.return_value = {
         "embedding_pipeline_output": [
-            (generate_id_from_label("test.txt"), None)
+            (generate_id_from_label(f"test.txt-{user.id}"), None)
         ]
     }
-
-    user = User(email="email@test.com", hashed_password="password")
 
     result = await ingestion_service.ingest_files([file_mock], user=user)
 
@@ -206,11 +205,11 @@ async def test_ingest_mixed_success_and_failure(
 
     assert len(result["processed_documents"]) == 1
     assert len(result["failed_documents"]) == 1
-    assert documents[0].id in result["processed_documents"]
-    assert documents[1].id in result["failed_documents"].keys()
-    assert "Embedding failed" in str(
-        result["failed_documents"][documents[1].id]
-    )
+    assert documents[0].id in [doc.id for doc in result["processed_documents"]]
+    assert documents[1].id in [
+        doc["document_id"] for doc in result["failed_documents"]
+    ]
+    assert "Embedding failed" in str(result["failed_documents"][0]["result"])
 
     assert mock_vector_db.relational.upsert_documents_overview.call_count == 2
     upserted_docs = (
@@ -286,7 +285,9 @@ async def test_partial_ingestion_success(ingestion_service, mock_vector_db):
 
     assert len(result["processed_documents"]) == 2
     assert len(result["failed_documents"]) == 1
-    assert documents[1].id in result["failed_documents"].keys()
+    assert documents[1].id in [
+        doc["document_id"] for doc in result["failed_documents"]
+    ]
 
 
 @pytest.mark.asyncio
@@ -355,14 +356,10 @@ async def test_process_ingestion_results_error_handling(ingestion_service):
         ingestion_results,
         document_infos,
         [],
-        {document_infos[0].id: "test"},
-        user_id=generate_id_from_label("user_1"),
     )
 
     assert len(result["failed_documents"]) == 1
-    assert "Unexpected error" in str(
-        result["failed_documents"][document_infos[0].id]
-    )
+    assert "Unexpected error" in str(result["failed_documents"][0])
 
 
 @pytest.mark.asyncio

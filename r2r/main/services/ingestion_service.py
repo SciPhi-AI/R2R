@@ -142,11 +142,10 @@ class IngestionService(Service):
                         message=f"Document with ID {document.id} was already successfully processed.",
                     )
                 skipped_documents.append(
-                    (
-                        document.id,
-                        document.metadata.get("title", None)
-                        or str(document.id),
-                    )
+                    {
+                        "id": document.id,
+                        "title": document.metadata.get("title", "N/A"),
+                    }
                 )
                 continue
 
@@ -201,7 +200,7 @@ class IngestionService(Service):
                     doc
                     for doc in documents
                     if doc.id
-                    not in [skipped[0] for skipped in skipped_documents]
+                    not in [skipped["id"] for skipped in skipped_documents]
                 ],
             ),
             versions=[info.version for info in document_infos],
@@ -213,8 +212,6 @@ class IngestionService(Service):
             ingestion_results,
             document_infos,
             skipped_documents,
-            processed_documents,
-            user_id,
         )
 
     @telemetry_event("IngestFiles")
@@ -358,9 +355,7 @@ class IngestionService(Service):
         self,
         ingestion_results: dict,
         document_infos: list[DocumentInfo],
-        skipped_documents: list[tuple[str, str]],
-        processed_documents: dict,
-        user_id: str,
+        skipped_documents: list[dict[str, str]],
     ):
         skipped_ids = [ele[0] for ele in skipped_documents]
         failed_ids = []
@@ -394,17 +389,19 @@ class IngestionService(Service):
             self.providers.database.relational.upsert_documents_overview(
                 documents_to_upsert
             )
-
+        # TODO - modify ingestion service so that at end we write out number of vectors produced or the error message
+        # THEN, return updated document infos here
         results = {
-            "processed_documents": successful_ids,
-            "failed_documents": {
-                document_id: results[document_id] for document_id in failed_ids
-            },
-            "skipped_documents": [
-                f"Document '{filename}' skipped since it already exists."
-                for _, filename in skipped_documents
+            "processed_documents": [
+                document
+                for document in document_infos
+                if document.id in successful_ids
             ],
-            "successful_document_ids": successful_ids,
+            "failed_documents": [
+                {"document_id": document_id, "result": results[document_id]}
+                for document_id in failed_ids
+            ],
+            "skipped_documents": skipped_ids,
         }
 
         return results
