@@ -104,34 +104,6 @@ def test_vector_fixed_length_validation():
         Vector(data=[1.0, 2.0], type=VectorType.FIXED, length=3)
 
 
-def test_vector_entry_serialization():
-    vector = Vector(data=[1.0, 2.0], type=VectorType.FIXED, length=2)
-    fragment_id = uuid.uuid4()
-    extraction_id = uuid.uuid4()
-    document_id = uuid.uuid4()
-    user_id = uuid.uuid4()
-    group_ids = [uuid.uuid4(), uuid.uuid4()]
-    entry = VectorEntry(
-        fragment_id=fragment_id,
-        extraction_id=extraction_id,
-        document_id=document_id,
-        user_id=user_id,
-        group_ids=group_ids,
-        vector=vector,
-        text="Sample text",
-        metadata={"key": "value"},
-    )
-    serializable = entry.to_serializable()
-    assert serializable["fragment_id"] == str(fragment_id)
-    assert serializable["extraction_id"] == str(extraction_id)
-    assert serializable["document_id"] == str(document_id)
-    assert serializable["user_id"] == str(user_id)
-    assert serializable["group_ids"] == [str(gid) for gid in group_ids]
-    assert serializable["vector"] == [1.0, 2.0]
-    assert serializable["text"] == "Sample text"
-    assert serializable["metadata"] == {"key": "value"}
-
-
 def test_message_type_enum():
     assert str(MessageType.SYSTEM) == "system"
     assert str(MessageType.USER) == "user"

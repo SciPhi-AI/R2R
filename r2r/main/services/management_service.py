@@ -293,7 +293,7 @@ class ManagementService(Service):
         document_ids_to_purge = {
             doc_id
             for doc_id in [
-                result.get("document_id", None) for result in results
+                result.get("document_id", None) for result in results.values()
             ]
             if doc_id
         }

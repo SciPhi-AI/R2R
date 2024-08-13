@@ -293,7 +293,7 @@ async def test_ingest_user_documents(app, logging_connection):
                 id=doc_id_0,
                 data="The quick brown fox jumps over the lazy dog.",
                 type="txt",
-                metadata={"author": "John Doe", "user_id": user_id_0},
+                metadata={"author": "John Doe"},
             ),
             Document(
                 id=doc_id_1,
@@ -400,6 +400,8 @@ async def test_ingest_search_then_delete(app, logging_connection):
         [
             Document(
                 id=generate_id_from_label("doc_1"),
+                group_ids=[generate_id_from_label("group_1")],
+                user_id=generate_id_from_label("user_1"),
                 data="The quick brown fox jumps over the lazy dog.",
                 type="txt",
                 metadata={"author": "John Doe"},

@@ -99,7 +99,7 @@ class DocumentInfo(BaseModel):
         now = datetime.now()
 
         return {
-            "id": self.id,
+            "document_id": self.id,
             "group_ids": self.group_ids,
             "user_id": self.user_id,
             "type": self.type,

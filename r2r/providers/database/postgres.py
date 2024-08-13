@@ -437,7 +437,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 # Create the document info table if it doesn't exist
                 create_info_table_query = f"""
                 CREATE TABLE IF NOT EXISTS document_info_{self.collection_name} (
-                    id UUID PRIMARY KEY,
+                    document_id UUID PRIMARY KEY,
                     group_ids UUID[],
                     user_id UUID,
                     type TEXT,
@@ -455,7 +455,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 # Create the users table if it doesn't exist
                 create_collection_query = f"""
                 CREATE TABLE IF NOT EXISTS users_{self.collection_name} (
-                    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                    user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                     email TEXT UNIQUE NOT NULL,
                     hashed_password TEXT NOT NULL,
                     is_superuser BOOLEAN DEFAULT FALSE,
@@ -492,7 +492,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 # Create groups table
                 create_groups_table_query = f"""
                 CREATE TABLE IF NOT EXISTS groups_{self.collection_name} (
-                    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                    group_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                     name TEXT NOT NULL,
                     description TEXT,
                     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -519,9 +519,9 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             query = text(
                 f"""
                 INSERT INTO document_info_{self.collection_name}
-                (id, group_ids, user_id, type, metadata, title, version, size_in_bytes, status, created_at, updated_at)
-                VALUES (:id, :group_ids, :user_id, :type, :metadata, :title, :version, :size_in_bytes, :status, :created_at, :updated_at)
-                ON CONFLICT (id) DO UPDATE SET
+                (document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, status, created_at, updated_at)
+                VALUES (:document_id, :group_ids, :user_id, :type, :metadata, :title, :version, :size_in_bytes, :status, :created_at, :updated_at)
+                ON CONFLICT (document_id) DO UPDATE SET
                     group_ids = EXCLUDED.group_ids,
                     user_id = EXCLUDED.user_id,
                     type = EXCLUDED.type,
@@ -565,7 +565,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         params = {}
 
         if filter_document_ids:
-            conditions.append("id = ANY(:document_ids)")
+            conditions.append("document_id = ANY(:document_ids)")
             params["document_ids"] = filter_document_ids
 
         if filter_user_ids:
@@ -577,7 +577,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             params["group_ids"] = filter_group_ids
 
         query = f"""
-            SELECT id, group_ids, user_id, type, metadata, title, version, size_in_bytes, status, created_at, updated_at
+            SELECT document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, status, created_at, updated_at
             FROM document_info_{self.collection_name}
         """
         if conditions:
@@ -638,7 +638,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             f"""
             INSERT INTO groups_{self.collection_name} (name, description, created_at, updated_at)
             VALUES (:name, :description, :created_at, :updated_at)
-            RETURNING id, name, description, created_at, updated_at
+            RETURNING group_id, name, description, created_at, updated_at
             """
         )
         try:
@@ -669,9 +669,9 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def get_group(self, group_id: UUID) -> Optional[dict]:
         query = text(
             f"""
-            SELECT id, name, description, created_at, updated_at
+            SELECT group_id, name, description, created_at, updated_at
             FROM groups_{self.collection_name}
-            WHERE id = :group_id
+            WHERE group_id = :group_id
             """
         )
         with self.vx.Session() as sess:
@@ -709,7 +709,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             f"""
             UPDATE groups_{self.collection_name}
             SET {", ".join(update_fields)}, updated_at = NOW()
-            WHERE id = :group_id
+            WHERE group_id = :group_id
             """
         )
         with self.vx.Session() as sess:
@@ -727,7 +727,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 delete_group_query = text(
                     f"""
                     DELETE FROM groups_{self.collection_name}
-                    WHERE id = :group_id
+                    WHERE group_id = :group_id
                     """
                 )
                 result = sess.execute(
@@ -773,7 +773,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def list_groups(self, offset: int = 0, limit: int = 100) -> list[dict]:
         query = text(
             f"""
-            SELECT id, name, description, created_at, updated_at
+            SELECT group_id, name, description, created_at, updated_at
             FROM groups_{self.collection_name}
             ORDER BY name
             OFFSET :offset
@@ -792,8 +792,8 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             f"""
             UPDATE users_{self.collection_name}
             SET group_ids = array_append(group_ids, :group_id)
-            WHERE id = :user_id AND NOT (:group_id = ANY(group_ids))
-            RETURNING id
+            WHERE user_id = :user_id AND NOT (:group_id = ANY(group_ids))
+            RETURNING user_id
             """
         )
         with self.vx.Session() as sess:
@@ -810,8 +810,8 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             f"""
             UPDATE users_{self.collection_name}
             SET group_ids = array_remove(group_ids, :group_id)
-            WHERE id = :user_id AND :group_id = ANY(group_ids)
-            RETURNING id
+            WHERE user_id = :user_id AND :group_id = ANY(group_ids)
+            RETURNING user_id
             """
         )
         with self.vx.Session() as sess:
@@ -828,7 +828,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     ) -> list[User]:
         query = text(
             f"""
-            SELECT id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
             FROM users_{self.collection_name}
             WHERE :group_id = ANY(group_ids)
             ORDER BY email
@@ -859,10 +859,10 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def get_groups_for_user(self, user_id: UUID) -> list[dict]:
         query = text(
             f"""
-            SELECT g.id, g.name, g.description, g.created_at, g.updated_at
+            SELECT g.group_id, g.name, g.description, g.created_at, g.updated_at
             FROM groups_{self.collection_name} g
-            JOIN users_{self.collection_name} u ON g.id = ANY(u.group_ids)
-            WHERE u.id = :user_id
+            JOIN users_{self.collection_name} u ON g.group_id = ANY(u.group_ids)
+            WHERE u.user_id = :user_id
             ORDER BY g.name
             """
         )
@@ -877,9 +877,9 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         query = text(
             f"""
             INSERT INTO users_{self.collection_name}
-            (email, id, hashed_password, group_ids)
-            VALUES (:email, :id, :hashed_password, :group_ids)
-            RETURNING id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            (email, user_id, hashed_password, group_ids)
+            VALUES (:email, :user_id, :hashed_password, :group_ids)
+            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
             """
         )
 
@@ -888,7 +888,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 query,
                 {
                     "email": user.email,
-                    "id": generate_id_from_label(user.email),
+                    "user_id": generate_id_from_label(user.email),
                     "hashed_password": hashed_password,
                     "group_ids": [],
                 },
@@ -911,7 +911,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def get_user_by_email(self, email: str) -> Optional[User]:
         query = text(
             f"""
-            SELECT id, email, hashed_password, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            SELECT user_id, email, hashed_password, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
             FROM users_{self.collection_name}
             WHERE email = :email
             """
@@ -942,7 +942,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             f"""
         UPDATE users_{self.collection_name}
         SET verification_code = :code, verification_code_expiry = :expiry
-        WHERE id = :user_id
+        WHERE user_id = :user_id
         """
         )
 
@@ -962,7 +962,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     ) -> Optional[UUID]:
         query = text(
             f"""
-        SELECT id FROM users_{self.collection_name}
+        SELECT user_id FROM users_{self.collection_name}
         WHERE verification_code = :code AND verification_code_expiry > NOW()
         """
         )
@@ -978,7 +978,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             f"""
         UPDATE users_{self.collection_name}
         SET is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL
-        WHERE id = :user_id
+        WHERE user_id = :user_id
         """
         )
 
@@ -991,7 +991,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             f"""
         UPDATE users_{self.collection_name}
         SET is_superuser = TRUE, is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL
-        WHERE id = :user_id
+        WHERE user_id = :user_id
         """
         )
 
@@ -1017,7 +1017,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             f"""
             UPDATE users_{self.collection_name}
             SET group_ids = ARRAY[]::UUID[]
-            WHERE id = :user_id
+            WHERE user_id = :user_id
             """
         )
         with self.vx.Session() as sess:
@@ -1046,7 +1046,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             WHERE token IN (
                 SELECT token
                 FROM users_{self.collection_name}
-                WHERE id = :user_id
+                WHERE user_id = :user_id
             )
             """
         )
@@ -1068,7 +1068,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 # Delete user
                 result = sess.execute(
                     text(
-                        f"DELETE FROM users_{self.collection_name} WHERE id = :user_id"
+                        f"DELETE FROM users_{self.collection_name} WHERE user_id = :user_id"
                     ),
                     {"user_id": user_id},
                 )
@@ -1092,7 +1092,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def get_all_users(self) -> list[User]:
         query = text(
             f"""
-            SELECT id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
+            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
             FROM users_{self.collection_name}
             """
         )
@@ -1121,7 +1121,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             f"""
         UPDATE users_{self.collection_name}
         SET verification_code_expiry = NOW() - INTERVAL '365 day'
-        WHERE id = :user_id
+        WHERE user_id = :user_id
         """
         )
         with self.vx.Session() as sess:
@@ -1135,7 +1135,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             f"""
             UPDATE users_{self.collection_name}
             SET reset_token = :token, reset_token_expiry = :expiry
-            WHERE id = :user_id
+            WHERE user_id = :user_id
             """
         )
 
@@ -1153,7 +1153,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def get_user_id_by_reset_token(self, reset_token: str) -> Optional[UUID]:
         query = text(
             f"""
-            SELECT id FROM users_{self.collection_name}
+            SELECT user_id FROM users_{self.collection_name}
             WHERE reset_token = :token AND reset_token_expiry > NOW()
             """
         )
@@ -1169,7 +1169,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             f"""
             UPDATE users_{self.collection_name}
             SET reset_token = NULL, reset_token_expiry = NULL
-            WHERE id = :user_id
+            WHERE user_id = :user_id
             """
         )
 
@@ -1230,10 +1230,10 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
     def get_user_by_id(self, user_id: UUID) -> Optional[User]:
         query = text(
             f"""
-            SELECT id, email, hashed_password, is_superuser, is_active, is_verified,
+            SELECT user_id, email, hashed_password, is_superuser, is_active, is_verified,
                    created_at, updated_at, name, profile_picture, bio, group_ids
             FROM users_{self.collection_name}
-            WHERE id = :user_id
+            WHERE user_id = :user_id
             """
         )
 
@@ -1265,8 +1265,8 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             SET email = :email, is_superuser = :is_superuser, is_active = :is_active,
                 is_verified = :is_verified, updated_at = NOW(), name = :name,
                 profile_picture = :profile_picture, bio = :bio, group_ids = :group_ids
-            WHERE id = :user_id
-            RETURNING id, email, is_superuser, is_active, is_verified, created_at,
+            WHERE user_id = :user_id
+            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at,
                       updated_at, name, profile_picture, bio, group_ids
             """
         )
@@ -1309,7 +1309,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             f"""
             UPDATE users_{self.collection_name}
             SET hashed_password = :new_hashed_password, updated_at = NOW()
-            WHERE id = :user_id
+            WHERE user_id = :user_id
             """
         )
 
@@ -1327,13 +1327,13 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         group_ids_condition = ""
         params = {}
         if group_ids:
-            group_ids_condition = "WHERE id IN :group_ids"
+            group_ids_condition = "WHERE group_id IN :group_ids"
             params["group_ids"] = tuple(group_ids)
 
         query = text(
             f"""
-            SELECT id, name, description, created_at, updated_at,
-                (SELECT COUNT(*) FROM users_{self.collection_name} WHERE groups_{self.collection_name}.id = ANY(group_ids)) AS user_count
+            SELECT user_id, name, description, created_at, updated_at,
+                (SELECT COUNT(*) FROM users_{self.collection_name} WHERE groups_{self.collection_name}.group_id = ANY(group_ids)) AS user_count
             FROM groups_{self.collection_name}
             {group_ids_condition}
             """
