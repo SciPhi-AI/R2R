@@ -70,9 +70,9 @@ class IngestionRouter(BaseRouter):
             if is_superuser:
                 for idx, metadata in enumerate(request.metadatas or []):
                     if "group_ids" in metadata:
-                        document_id = ingestion_result[
-                            "successful_document_ids"
-                        ][idx]
+                        document_id = ingestion_result["processed_documents"][
+                            idx
+                        ]
                         for group_id in metadata["group_ids"]:
                             await self.engine.management_service.aassign_document_to_group(
                                 document_id, group_id

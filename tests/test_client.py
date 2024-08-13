@@ -134,7 +134,7 @@ def r2r_client(app_client):
 
 def test_health_check(r2r_client):
     response = r2r_client.health()
-    assert response == {"response": "ok"}
+    assert response["results"] == {"response": "ok"}
 
 
 def test_register_user(r2r_client, mock_db):

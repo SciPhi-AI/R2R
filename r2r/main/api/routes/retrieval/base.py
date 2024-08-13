@@ -1,7 +1,12 @@
 from fastapi import Depends
 from fastapi.responses import StreamingResponse
 
-from r2r.base import GenerationConfig, KGSearchSettings, VectorSearchSettings
+from r2r.base import (
+    GenerationConfig,
+    KGSearchSettings,
+    RunType,
+    VectorSearchSettings,
+)
 from r2r.main.api.routes.retrieval.requests import (
     R2RAgentRequest,
     R2RRAGRequest,
@@ -17,9 +22,12 @@ class RetrievalRouter(BaseRouter):
         super().__init__(engine)
         self.setup_routes()
 
+    def retrieval_endpoint(self, run_type: RunType = RunType.RETRIEVAL):
+        return self.base_endpoint(run_type)
+
     def setup_routes(self):
         @self.router.post("/search")
-        @self.base_endpoint
+        @self.retrieval_endpoint
         async def search_app(
             request: R2RSearchRequest,
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
@@ -52,7 +60,7 @@ class RetrievalRouter(BaseRouter):
             return results
 
         @self.router.post("/rag")
-        @self.base_endpoint
+        @self.retrieval_endpoint
         async def rag_app(
             request: R2RRAGRequest,
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
@@ -102,7 +110,7 @@ class RetrievalRouter(BaseRouter):
                 return response
 
         @self.router.post("/agent")
-        @self.base_endpoint
+        @self.retrieval_endpoint
         async def agent_app(
             request: R2RAgentRequest,
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),

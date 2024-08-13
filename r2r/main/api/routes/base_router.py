@@ -12,30 +12,23 @@ logger = logging.getLogger(__name__)
 
 
 class BaseRouter:
-    def __init__(self, engine):
+    def __init__(self, engine, run_type: RunType = RunType.UNSPECIFIED):
         self.engine = engine
+        self.run_type = run_type
         self.router = APIRouter()
 
-    def base_endpoint(self, func: callable, run_type: RunType):
+    def base_endpoint(self, func: callable):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             async with manage_run(
                 self.engine.run_manager, func.__name__
             ) as run_id:
                 auth_user = kwargs.get("auth_user")
-                if not auth_user:
-                    raise HTTPException(
-                        status_code=401,
-                        detail={
-                            "message": "Unauthorized",
-                            "error_type": "Unauthorized",
-                        },
+                if auth_user:
+                    await self.engine.run_manager.log_run_info(
+                        run_type=self.run_type,
+                        user=auth_user,
                     )
-                await self.engine.run_manager.log_run_info(
-                    key="run_type",
-                    value=run_type,
-                    user=auth_user,
-                )
 
                 try:
                     results = await func(*args, **kwargs)

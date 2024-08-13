@@ -37,15 +37,13 @@ class RunManager:
 
     async def log_run_info(
         self,
-        key: str,
-        value: Any,
+        run_type: RunType,
         user: User,
     ):
         if run_id := run_id_var.get():
-            await self.logger.log_info(
+            await self.logger.info_log(
                 run_id=run_id,
-                key=key,
-                value=value,
+                run_type=run_type,
                 user_id=user.id,
             )
         else:

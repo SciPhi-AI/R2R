@@ -63,7 +63,7 @@ class RunLoggingProvider(Provider):
     async def info_log(
         self,
         run_id: UUID,
-        run_type: str,
+        run_type: RunType,
         user_id: UUID,
     ):
         pass
@@ -160,7 +160,7 @@ class LocalRunLoggingProvider(RunLoggingProvider):
     async def info_log(
         self,
         run_id: UUID,
-        run_type: str,
+        run_type: RunType,
         user_id: UUID,
     ):
         await self.conn.execute(
@@ -396,7 +396,7 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
     async def info_log(
         self,
         run_id: UUID,
-        run_type: str,
+        run_type: RunType,
         user_id: UUID,
     ):
         async with self.pool.acquire() as conn:
@@ -581,7 +581,7 @@ class RedisRunLoggingProvider(RunLoggingProvider):
     async def info_log(
         self,
         run_id: UUID,
-        run_type: str,
+        run_type: RunType,
         user_id: UUID,
     ):
         timestamp = datetime.now().timestamp()
@@ -739,7 +739,7 @@ class RunLoggingSingleton:
     async def info_log(
         cls,
         run_id: UUID,
-        run_type: str,
+        run_type: RunType,
         user_id: UUID,
     ):
         try:

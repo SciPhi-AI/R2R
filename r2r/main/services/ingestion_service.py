@@ -115,7 +115,7 @@ class IngestionService(Service):
         )
 
         existing_document_info = {
-            doc_info.document_id: doc_info for doc_info in existing_documents
+            doc_info.id: doc_info for doc_info in existing_documents
         }
 
         for iteration, document in enumerate(documents):
@@ -267,8 +267,8 @@ class IngestionService(Service):
     async def update_files(
         self,
         files: list[UploadFile],
-        user: User,
         document_ids: list[uuid.UUID],
+        user: User,
         metadatas: Optional[list[dict]] = None,
         *args: Any,
         **kwargs: Any,
@@ -396,32 +396,16 @@ class IngestionService(Service):
             )
 
         results = {
-            "processed_documents": [
-                f"Document '{processed_documents[document_id]}' processed successfully."
-                for document_id in successful_ids
-            ],
-            "failed_documents": [
-                f"Document '{processed_documents[document_id]}': {results[document_id]}"
-                for document_id in failed_ids
-            ],
+            "processed_documents": successful_ids,
+            "failed_documents": {
+                document_id: results[document_id] for document_id in failed_ids
+            },
             "skipped_documents": [
                 f"Document '{filename}' skipped since it already exists."
                 for _, filename in skipped_documents
             ],
             "successful_document_ids": successful_ids,
         }
-
-        # TODO - Clean up logging for document parse results
-        if run_ids := list(self.run_manager.run_info.keys()):
-            run_id = run_ids[0]
-            for key in results:
-                if key in ["processed_documents", "failed_documents"]:
-                    for value in results[key]:
-                        await self.logging_connection.log(
-                            run_id=run_id,
-                            key="document_parse_result",
-                            value=value,
-                        )
 
         return results
 

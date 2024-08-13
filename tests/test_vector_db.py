@@ -1,5 +1,5 @@
 import random
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -27,40 +27,56 @@ def vector_db():
 def sample_entries(vector_db):
     entries = [
         VectorEntry(
-            id=str(uuid4()),
+            fragment_id=uuid4(),
+            extraction_id=uuid4(),
+            document_id=uuid4(),
+            user_id=uuid4(),
+            group_ids=[uuid4()],
             vector=Vector([0.1, 0.2, 0.3]),
+            text="Apple",
             metadata={
-                "text": "Apple",
                 "category": "fruit",
                 "color": "red",
                 "price": 1.0,
             },
         ),
         VectorEntry(
-            id=str(uuid4()),
+            fragment_id=uuid4(),
+            extraction_id=uuid4(),
+            document_id=uuid4(),
+            user_id=uuid4(),
+            group_ids=[uuid4()],
             vector=Vector([0.2, 0.3, 0.4]),
+            text="Banana",
             metadata={
-                "text": "Banana",
                 "category": "fruit",
                 "color": "yellow",
                 "price": 0.5,
             },
         ),
         VectorEntry(
-            id=str(uuid4()),
+            fragment_id=uuid4(),
+            extraction_id=uuid4(),
+            document_id=uuid4(),
+            user_id=uuid4(),
+            group_ids=[uuid4()],
             vector=Vector([0.3, 0.4, 0.5]),
+            text="Carrot",
             metadata={
-                "text": "Carrot",
                 "category": "vegetable",
                 "color": "orange",
                 "price": 0.75,
             },
         ),
         VectorEntry(
-            id=str(uuid4()),
+            fragment_id=uuid4(),
+            extraction_id=uuid4(),
+            document_id=uuid4(),
+            user_id=uuid4(),
+            group_ids=[uuid4()],
             vector=Vector([0.4, 0.5, 0.6]),
+            text="Durian",
             metadata={
-                "text": "Durian",
                 "category": "fruit",
                 "color": "green",
                 "price": 5.0,
@@ -102,7 +118,7 @@ def test_search_greater_than_filter(vector_db, sample_entries):
         filters={"price": {"$gt": 1.0}},
     )
     assert len(results) == 1
-    assert results[0].metadata["text"] == "Durian"
+    assert results[0].text == "Durian"
 
 
 def test_search_less_than_or_equal_filter(vector_db, sample_entries):
@@ -141,7 +157,7 @@ def test_search_complex_and_filter(vector_db, sample_entries):
         },
     )
     assert len(results) == 1
-    assert results[0].metadata["text"] == "Apple"
+    assert results[0].text == "Apple"
 
 
 def test_search_complex_or_filter(vector_db, sample_entries):

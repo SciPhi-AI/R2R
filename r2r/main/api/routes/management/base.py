@@ -6,7 +6,7 @@ import psutil
 from fastapi import Depends, Query
 from pydantic import BaseModel
 
-from r2r.base import R2RException
+from r2r.base import R2RException, RunType
 from r2r.main.api.routes.management.requests import (
     R2RAddUserToGroupRequest,
     R2RAnalyticsRequest,
@@ -38,6 +38,7 @@ class ManagementRouter(BaseRouter):
 
     def setup_routes(self):
         @self.router.get("/health")
+        @self.base_endpoint
         async def health_check():
             return {"response": "ok"}
 
