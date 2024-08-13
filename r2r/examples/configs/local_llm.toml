@@ -21,5 +21,12 @@ batch_size = 32
 add_title_as_prefix = true
 concurrent_request_limit = 32
 
-[ingestion]
+[parsing]
 excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
+
+[agent]
+system_instruction_name = "rag_agent"
+tool_names = ["search"]
+
+  [agent.generation_config]
+  model = "ollama/llama3.1"
