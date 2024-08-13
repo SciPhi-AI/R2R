@@ -153,15 +153,28 @@ class PostgresVectorDBProvider(VectorDBProvider):
             rrf_k INT = 50,
             filter_condition JSONB = NULL
         )
-        RETURNS SETOF vecs."{self.collection_name}"
+        RETURNS TABLE(
+            fragment_id UUID,
+            extraction_id UUID,
+            document_id UUID,
+            user_id UUID,
+            group_ids UUID[],
+            vec VECTOR(512),
+            text TEXT,
+            metadata JSONB,
+            rrf_score FLOAT,
+            semantic_score FLOAT,
+            full_text_score FLOAT
+        )
         LANGUAGE sql
         AS $$
         WITH full_text AS (
             SELECT
                 fragment_id,
-                ROW_NUMBER() OVER (ORDER BY ts_rank(to_tsvector('english', metadata->>'text'), websearch_to_tsquery(query_text)) DESC) AS rank_ix
+                ts_rank(to_tsvector('english', text), websearch_to_tsquery(query_text)) AS full_text_score,
+                ROW_NUMBER() OVER (ORDER BY ts_rank(to_tsvector('english', text), websearch_to_tsquery(query_text)) DESC) AS rank_ix
             FROM vecs."{self.collection_name}"
-            WHERE to_tsvector('english', metadata->>'text') @@ websearch_to_tsquery(query_text)
+            WHERE to_tsvector('english', text) @@ websearch_to_tsquery(query_text)
             AND (filter_condition IS NULL OR (metadata @> filter_condition))
             ORDER BY rank_ix
             LIMIT LEAST(match_limit, 30) * 2
@@ -169,6 +182,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         semantic AS (
             SELECT
                 fragment_id,
+                1 - (vec <#> query_embedding) AS semantic_score,
                 ROW_NUMBER() OVER (ORDER BY vec <#> query_embedding) AS rank_ix
             FROM vecs."{self.collection_name}"
             WHERE filter_condition IS NULL OR (metadata @> filter_condition)
@@ -176,7 +190,18 @@ class PostgresVectorDBProvider(VectorDBProvider):
             LIMIT LEAST(match_limit, 30) * 2
         )
         SELECT
-            vecs."{self.collection_name}".*
+            vecs."{self.collection_name}".fragment_id,
+            vecs."{self.collection_name}".extraction_id,
+            vecs."{self.collection_name}".document_id,
+            vecs."{self.collection_name}".user_id,
+            vecs."{self.collection_name}".group_ids,
+            vecs."{self.collection_name}".vec,
+            vecs."{self.collection_name}".text,
+            vecs."{self.collection_name}".metadata,
+            (COALESCE(1.0 / (rrf_k + full_text.rank_ix), 0.0) * full_text_weight +
+            COALESCE(1.0 / (rrf_k + semantic.rank_ix), 0.0) * semantic_weight) AS rrf_score,
+            COALESCE(semantic.semantic_score, 0) AS semantic_score,
+            COALESCE(full_text.full_text_score, 0) AS full_text_score
         FROM
             full_text
             FULL OUTER JOIN semantic
@@ -184,9 +209,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
             JOIN vecs."{self.collection_name}"
                 ON vecs."{self.collection_name}".fragment_id = COALESCE(full_text.fragment_id, semantic.fragment_id)
         ORDER BY
-            COALESCE(1.0 / (rrf_k + full_text.rank_ix), 0.0) * full_text_weight +
-            COALESCE(1.0 / (rrf_k + semantic.rank_ix), 0.0) * semantic_weight
-            DESC
+            rrf_score DESC
         LIMIT
             LEAST(match_limit, 30);
         $$;
@@ -350,7 +373,8 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         with self.vx.Session() as session:
             results = session.execute(query, params).fetchall()
-
+        print("results = ", results)
+        print("results[-1] = ", results[-1])
         return [
             VectorSearchResult(
                 fragment_id=result[0],
@@ -358,9 +382,14 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 document_id=result[2],
                 user_id=result[3],
                 group_ids=result[4],
-                text=result[5],
-                score=1 - float(result[6]),
-                metadata=result[7],
+                text=result[6],
+                # score=1 - float(result[6]),
+                metadata={
+                    **result[7],
+                    "semantic_score": -result[9] + 1,
+                    "full_text_score": result[10],
+                },
+                score=result[8],
             )
             for result in results
         ]
