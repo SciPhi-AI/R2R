@@ -26,11 +26,7 @@ class IngestionRouter(BaseRouter):
             request: R2RIngestFilesRequest = Depends(
                 IngestionService.parse_ingest_files_form_data
             ),
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             chunking_config_override = None
             if request.chunking_config_override:
@@ -91,11 +87,7 @@ class IngestionRouter(BaseRouter):
             request: R2RUpdateFilesRequest = Depends(
                 IngestionService.parse_update_files_form_data
             ),
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             chunking_config_override = None
             if request.chunking_config_override:

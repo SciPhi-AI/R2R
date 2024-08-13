@@ -7,15 +7,13 @@ import toml
 from pydantic import BaseModel
 
 from ...base.abstractions.agent import AgentConfig
-from ...base.abstractions.document import DocumentType
 from ...base.abstractions.llm import GenerationConfig
 from ...base.logging.kv_logger import LoggingConfig
 from ...base.providers.auth import AuthConfig
 from ...base.providers.chunking import ChunkingConfig
 from ...base.providers.crypto import CryptoConfig
-from ...base.providers.database import DatabaseConfig, ProviderConfig
+from ...base.providers.database import DatabaseConfig
 from ...base.providers.embedding import EmbeddingConfig
-from ...base.providers.eval import EvalConfig
 from ...base.providers.kg import KGConfig
 from ...base.providers.llm import CompletionConfig
 from ...base.providers.parsing import ParsingConfig
@@ -35,7 +33,6 @@ class R2RConfig:
             "batch_size",
             "add_title_as_prefix",
         ],
-        "eval": ["llm"],
         "kg": [
             "provider",
             "batch_size",
@@ -55,7 +52,6 @@ class R2RConfig:
     crypto: CryptoConfig
     database: DatabaseConfig
     embedding: EmbeddingConfig
-    eval: EvalConfig
     kg: KGConfig
     logging: LoggingConfig
     parsing: ParsingConfig
@@ -95,7 +91,6 @@ class R2RConfig:
         self.crypto = CryptoConfig.create(**self.crypto)
         self.database = DatabaseConfig.create(**self.database)
         self.embedding = EmbeddingConfig.create(**self.embedding)
-        self.eval = EvalConfig.create(**self.eval, llm=None)
         self.kg = KGConfig.create(**self.kg)
         self.logging = LoggingConfig.create(**self.logging)
         self.parsing = ParsingConfig.create(**self.parsing)

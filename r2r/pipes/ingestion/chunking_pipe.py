@@ -1,12 +1,10 @@
-import asyncio
 from typing import Any, AsyncGenerator, Optional, Union
 
 from r2r.base import (
     AsyncState,
     ChunkingProvider,
-    Extraction,
-    Fragment,
-    FragmentType,
+    DocumentExtraction,
+    DocumentFragment,
     KVLoggingSingleton,
     PipeType,
     R2RDocumentProcessingError,
@@ -18,7 +16,7 @@ from r2r.base.pipes.base_pipe import AsyncPipe
 class ChunkingPipe(AsyncPipe):
     class Input(AsyncPipe.Input):
         message: AsyncGenerator[
-            Union[Extraction, R2RDocumentProcessingError], None
+            Union[DocumentExtraction, R2RDocumentProcessingError], None
         ]
 
     def __init__(
@@ -48,7 +46,9 @@ class ChunkingPipe(AsyncPipe):
         chunking_config_override: Optional[ChunkingProvider] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[Union[R2RDocumentProcessingError, Fragment], None]:
+    ) -> AsyncGenerator[
+        Union[R2RDocumentProcessingError, DocumentFragment], None
+    ]:
         async for item in input.message:
             if isinstance(item, R2RDocumentProcessingError):
                 yield item
@@ -57,13 +57,14 @@ class ChunkingPipe(AsyncPipe):
             try:
                 iteration = 0
                 async for chunk in self.chunking_provider.chunk(item.data):
-                    yield Fragment(
+                    yield DocumentFragment(
                         id=generate_id_from_label(f"{item.id}-{iteration}"),
-                        type=FragmentType.TEXT,
-                        data=chunk,
-                        metadata=item.metadata,
                         extraction_id=item.id,
                         document_id=item.document_id,
+                        user_id=item.user_id,
+                        group_ids=item.group_ids,
+                        data=chunk,
+                        metadata=item.metadata,
                     )
                     iteration += 1
             except Exception as e:

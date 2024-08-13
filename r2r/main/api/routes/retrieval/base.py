@@ -4,7 +4,6 @@ from fastapi.responses import StreamingResponse
 from r2r.base import GenerationConfig, KGSearchSettings, VectorSearchSettings
 from r2r.main.api.routes.retrieval.requests import (
     R2RAgentRequest,
-    R2REvalRequest,
     R2RRAGRequest,
     R2RSearchRequest,
 )
@@ -23,11 +22,7 @@ class RetrievalRouter(BaseRouter):
         @self.base_endpoint
         async def search_app(
             request: R2RSearchRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             kg_search_settings = request.kg_search_settings or {}
 
@@ -60,11 +55,7 @@ class RetrievalRouter(BaseRouter):
         @self.base_endpoint
         async def rag_app(
             request: R2RRAGRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if (
                 request.kg_search_settings
@@ -114,11 +105,7 @@ class RetrievalRouter(BaseRouter):
         @self.base_endpoint
         async def agent_app(
             request: R2RAgentRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if (
                 request.kg_search_settings
@@ -165,21 +152,3 @@ class RetrievalRouter(BaseRouter):
                 )
             else:
                 return response
-
-        @self.router.post("/evaluate")
-        @self.base_endpoint
-        async def evaluate_app(
-            request: R2REvalRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
-        ):
-            results = await self.engine.aevaluate(
-                query=request.query,
-                context=request.context,
-                completion=request.completion,
-                user=auth_user,
-            )
-            return results

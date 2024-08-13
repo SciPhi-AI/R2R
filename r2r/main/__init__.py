@@ -12,11 +12,7 @@ from .api.routes.management.requests import (
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
-from .api.routes.retrieval.requests import (
-    R2REvalRequest,
-    R2RRAGRequest,
-    R2RSearchRequest,
-)
+from .api.routes.retrieval.requests import R2RRAGRequest, R2RSearchRequest
 from .app import R2RApp
 from .assembly.builder import R2RBuilder
 from .assembly.config import R2RConfig
@@ -40,7 +36,6 @@ __all__ = [
     "R2RUpdateFilesRequest",
     "R2RSearchRequest",
     "R2RRAGRequest",
-    "R2REvalRequest",
     "R2RDeleteRequest",
     "R2RAnalyticsRequest",
     "R2RUsersOverviewRequest",

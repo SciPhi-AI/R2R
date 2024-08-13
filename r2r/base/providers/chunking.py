@@ -1,10 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, AsyncGenerator, List, Optional
+from typing import AsyncGenerator, Optional
 
-from pydantic import BaseModel, Field
-
-from ..abstractions.document import Document, DocumentType
 from .base import Provider, ProviderConfig
 
 

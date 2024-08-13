@@ -1,7 +1,7 @@
 """Abstractions for search functionality."""
 
-import uuid
 from typing import Any, Dict, List, Optional, Tuple
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -18,11 +18,11 @@ class VectorSearchSettings(BaseModel):
 class VectorSearchResult(BaseModel):
     """Result of a search operation."""
 
-    fragment_id: uuid.UUID
-    extraction_id: uuid.UUID
-    document_id: uuid.UUID
-    user_id: Optional[uuid.UUID]
-    group_ids: List[uuid.UUID]
+    fragment_id: UUID
+    extraction_id: UUID
+    document_id: UUID
+    user_id: UUID
+    group_ids: List[UUID]
     score: float
     text: str
     metadata: dict[str, Any]

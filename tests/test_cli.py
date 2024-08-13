@@ -39,20 +39,27 @@ def test_delete_command(runner, mock_r2r_execution_wrapper):
     mock_instance = mock_r2r_execution_wrapper.return_value
     mock_instance.delete.return_value = "Deleted successfully"
 
+    result = runner.invoke(cli, ["delete", "--filter", "key1:eq:value1"])
+    assert result.exit_code == 0
+    assert "Deleted successfully" in result.output
+    mock_instance.delete.assert_called_once_with(
+        filters={"key1": {"$eq": "value1"}}
+    )
+
+
+def test_multiple_deletes(runner, mock_r2r_execution_wrapper):
+    mock_instance = mock_r2r_execution_wrapper.return_value
+    mock_instance.delete.return_value = "Deleted successfully"
+
     result = runner.invoke(
-        cli, ["delete", "--keys", "key1", "--values", "value1"]
+        cli,
+        ["delete", "--filter", "key1:eq:value1", "--filter", "key2:eq:value2"],
     )
     assert result.exit_code == 0
     assert "Deleted successfully" in result.output
-    mock_instance.delete.assert_called_once_with(["key1"], ["value1"])
-
-
-def test_delete_command_mismatched_keys_values(runner):
-    result = runner.invoke(
-        cli, ["delete", "--keys", "key1", "--values", "value1", "value2"]
+    mock_instance.delete.assert_called_once_with(
+        filters={"key1": {"$eq": "value1"}, "key2": {"$eq": "value2"}}
     )
-    assert result.exit_code != 0
-    assert "Got unexpected extra argument" in result.output
 
 
 def test_documents_overview(runner, mock_r2r_execution_wrapper):

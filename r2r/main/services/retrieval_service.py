@@ -19,7 +19,6 @@ from r2r.base import (
     manage_run,
     to_async_generator,
 )
-from r2r.pipes import EvalPipe
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
@@ -91,7 +90,6 @@ class RetrievalService(Service):
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
                 run_manager=self.run_manager,
-                user=user,
                 *args,
                 **kwargs,
             )
@@ -156,13 +154,6 @@ class RetrievalService(Service):
                         *args,
                         **kwargs,
                     )
-
-                await self.logging_connection.log(
-                    log_id=run_id,
-                    key="run_type",
-                    value="rag",
-                    is_info_log=True,
-                )
 
                 results = await self.pipelines.rag_pipeline.run(
                     input=to_async_generator([query]),
@@ -239,7 +230,6 @@ class RetrievalService(Service):
                     kg_search_settings=kg_search_settings,
                     rag_generation_config=rag_generation_config,
                     completion_record=completion_record,
-                    user=user,
                     *args,
                     **kwargs,
                 ):
@@ -297,7 +287,6 @@ class RetrievalService(Service):
                                 kg_search_settings=kg_search_settings,
                                 rag_generation_config=rag_generation_config,
                                 include_title_if_available=include_title_if_available,
-                                user=user,
                                 *args,
                                 **kwargs,
                             ):
@@ -312,7 +301,6 @@ class RetrievalService(Service):
                     kg_search_settings=kg_search_settings,
                     rag_generation_config=rag_generation_config,
                     include_title_if_available=include_title_if_available,
-                    user=user,
                     *args,
                     **kwargs,
                 )
@@ -337,27 +325,3 @@ class RetrievalService(Service):
                 raise R2RException(
                     status_code=500, message="Internal Server Error"
                 )
-
-    @telemetry_event("Evaluate")
-    async def evaluate(
-        self,
-        query: str,
-        context: str,
-        completion: str,
-        eval_generation_config: Optional[GenerationConfig],
-        user: Optional[User] = None,
-        *args,
-        **kwargs,
-    ):
-        eval_payload = EvalPipe.EvalPayload(
-            query=query,
-            context=context,
-            completion=completion,
-        )
-        return await self.eval_pipeline.run(
-            input=to_async_generator([eval_payload]),
-            run_manager=self.run_manager,
-            eval_generation_config=eval_generation_config,
-            *args,
-            **kwargs,
-        )

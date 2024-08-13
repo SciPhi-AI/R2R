@@ -8,7 +8,6 @@ from r2r.base import (
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
-    User,
     syncable,
 )
 
@@ -106,7 +105,6 @@ class R2RStreamingAgent(Agent):
         self,
         system_instruction: Optional[str] = None,
         messages: Optional[list[Message]] = None,
-        user: Optional[User] = None,
         *args,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
@@ -129,7 +127,7 @@ class R2RStreamingAgent(Agent):
                     generation_config,
                 )
                 async for chunk in self.process_llm_response(
-                    stream, user=user, *args, **kwargs
+                    stream, *args, **kwargs
                 ):
                     yield chunk
         finally:
@@ -144,7 +142,7 @@ class R2RStreamingAgent(Agent):
         )
 
     async def process_llm_response(
-        self, stream: LLMChatCompletionChunk, user, *args, **kwargs
+        self, stream: LLMChatCompletionChunk, *args, **kwargs
     ) -> AsyncGenerator[str, None]:
         function_name = None
         function_arguments = ""
@@ -196,7 +194,7 @@ class R2RStreamingAgent(Agent):
                 function_name = None
                 function_arguments = ""
 
-                self.arun(user=user, *args, **kwargs)
+                self.arun(*args, **kwargs)
 
             elif chunk.choices[0].finish_reason == "stop":
                 if content_buffer:

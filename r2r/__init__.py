@@ -48,12 +48,11 @@ __all__ = [
     "AsyncState",
     "Prompt",
     "DataType",
+    "DocumentStatus",
     "DocumentType",
     "Document",
-    "Extraction",
-    "ExtractionType",
-    "Fragment",
-    "FragmentType",
+    "DocumentExtraction",
+    "DocumentFragment",
     "SearchPipe",
     # Parsers
     "AsyncParser",
@@ -73,9 +72,6 @@ __all__ = [
     # Providers
     "EmbeddingConfig",
     "EmbeddingProvider",
-    "EvalConfig",
-    "EvalProvider",
-    "LLMEvalProvider",
     "PromptConfig",
     "PromptProvider",
     "GenerationConfig",
@@ -93,7 +89,6 @@ __all__ = [
     "R2REngine",
     # Pipes
     "EmbeddingPipe",
-    "EvalPipe",
     "ParsingPipe",
     "QueryTransformPipe",
     "SearchRAGPipe",

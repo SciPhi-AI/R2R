@@ -44,11 +44,7 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/server_stats")
         @self.base_endpoint
         async def server_stats(
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -68,11 +64,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def update_prompt_app(
             request: R2RUpdatePromptRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -89,11 +81,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def logs_app(
             request: R2RLogsRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -110,11 +98,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def get_analytics_app(
             request: R2RAnalyticsRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -130,11 +114,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def delete_app(
             request: R2RDeleteRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             filters = request.filters or {}
             if not auth_user.is_superuser:
@@ -163,11 +143,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def document_chunks_app(
             request: R2RDocumentChunksRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             chunks = await self.engine.adocument_chunks(request.document_id)
 
@@ -192,11 +168,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def users_overview_app(
             request: R2RUsersOverviewRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -211,11 +183,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def documents_overview_app(
             request: R2RDocumentsOverviewRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
 
             request_user_ids = (
@@ -232,11 +200,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def inspect_knowledge_graph(
             request: R2RPrintRelationshipsRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -250,11 +214,7 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/app_settings")
         @self.base_endpoint
         async def app_settings(
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -385,11 +345,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def groups_overview_app(
             request: R2RGroupsOverviewRequest,
-            auth_user=(
-                Depends(self.engine.providers.auth.auth_wrapper)
-                if self.engine.providers.auth
-                else None
-            ),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
                 raise R2RException(

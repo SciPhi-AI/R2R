@@ -292,7 +292,7 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
     return result
 
 
-class Document(Serializable):
+class SplitterDocument(Serializable):
     """Class for storing a piece of text and associated metadata."""
 
     page_content: str
@@ -356,8 +356,8 @@ class BaseDocumentTransformer(ABC):
 
     @abstractmethod
     def transform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
+        self, documents: Sequence[SplitterDocument], **kwargs: Any
+    ) -> Sequence[SplitterDocument]:
         """Transform a list of documents.
 
         Args:
@@ -368,8 +368,8 @@ class BaseDocumentTransformer(ABC):
         """
 
     async def atransform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
+        self, documents: Sequence[SplitterDocument], **kwargs: Any
+    ) -> Sequence[SplitterDocument]:
         """Asynchronously transform a list of documents.
 
         Args:
@@ -466,7 +466,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
     def create_documents(
         self, texts: List[str], metadatas: Optional[List[dict]] = None
-    ) -> List[Document]:
+    ) -> List[SplitterDocument]:
         """Create documents from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
@@ -480,11 +480,15 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                     index = text.find(chunk, max(0, offset))
                     metadata["start_index"] = index
                     previous_chunk_len = len(chunk)
-                new_doc = Document(page_content=chunk, metadata=metadata)
+                new_doc = SplitterDocument(
+                    page_content=chunk, metadata=metadata
+                )
                 documents.append(new_doc)
         return documents
 
-    def split_documents(self, documents: Iterable[Document]) -> List[Document]:
+    def split_documents(
+        self, documents: Iterable[SplitterDocument]
+    ) -> List[SplitterDocument]:
         """Split documents."""
         texts, metadatas = [], []
         for doc in documents:
@@ -615,8 +619,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         return cls(length_function=_tiktoken_encoder, **kwargs)
 
     def transform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
+        self, documents: Sequence[SplitterDocument], **kwargs: Any
+    ) -> Sequence[SplitterDocument]:
         """Transform sequence of documents by splitting them."""
         return self.split_documents(list(documents))
 
@@ -691,7 +695,7 @@ class MarkdownHeaderTextSplitter:
 
     def aggregate_lines_to_chunks(
         self, lines: List[LineType]
-    ) -> List[Document]:
+    ) -> List[SplitterDocument]:
         """Combine lines with common metadata into chunks
         Args:
             lines: Line of text / associated header metadata
@@ -730,11 +734,13 @@ class MarkdownHeaderTextSplitter:
                 aggregated_chunks.append(line)
 
         return [
-            Document(page_content=chunk["content"], metadata=chunk["metadata"])
+            SplitterDocument(
+                page_content=chunk["content"], metadata=chunk["metadata"]
+            )
             for chunk in aggregated_chunks
         ]
 
-    def split_text(self, text: str) -> List[Document]:
+    def split_text(self, text: str) -> List[SplitterDocument]:
         """Split markdown file
         Args:
             text: Markdown file"""
@@ -858,7 +864,7 @@ class MarkdownHeaderTextSplitter:
             return self.aggregate_lines_to_chunks(lines_with_metadata)
         else:
             return [
-                Document(
+                SplitterDocument(
                     page_content=chunk["content"], metadata=chunk["metadata"]
                 )
                 for chunk in lines_with_metadata
@@ -899,7 +905,7 @@ class HTMLHeaderTextSplitter:
 
     def aggregate_elements_to_chunks(
         self, elements: List[ElementType]
-    ) -> List[Document]:
+    ) -> List[SplitterDocument]:
         """Combine elements with common metadata into chunks
 
         Args:
@@ -921,11 +927,13 @@ class HTMLHeaderTextSplitter:
                 aggregated_chunks.append(element)
 
         return [
-            Document(page_content=chunk["content"], metadata=chunk["metadata"])
+            SplitterDocument(
+                page_content=chunk["content"], metadata=chunk["metadata"]
+            )
             for chunk in aggregated_chunks
         ]
 
-    def split_text_from_url(self, url: str) -> List[Document]:
+    def split_text_from_url(self, url: str) -> List[SplitterDocument]:
         """Split HTML from web URL
 
         Args:
@@ -934,7 +942,7 @@ class HTMLHeaderTextSplitter:
         r = requests.get(url)
         return self.split_text_from_file(BytesIO(r.content))
 
-    def split_text(self, text: str) -> List[Document]:
+    def split_text(self, text: str) -> List[SplitterDocument]:
         """Split HTML text string
 
         Args:
@@ -942,7 +950,7 @@ class HTMLHeaderTextSplitter:
         """
         return self.split_text_from_file(StringIO(text))
 
-    def split_text_from_file(self, file: Any) -> List[Document]:
+    def split_text_from_file(self, file: Any) -> List[SplitterDocument]:
         """Split HTML file
 
         Args:
@@ -1021,7 +1029,7 @@ class HTMLHeaderTextSplitter:
             return self.aggregate_elements_to_chunks(elements)
         else:
             return [
-                Document(
+                SplitterDocument(
                     page_content=chunk["content"], metadata=chunk["metadata"]
                 )
                 for chunk in elements
@@ -1965,7 +1973,7 @@ class RecursiveJsonSplitter:
         texts: List[Dict],
         convert_lists: bool = False,
         metadatas: Optional[List[dict]] = None,
-    ) -> List[Document]:
+    ) -> List[SplitterDocument]:
         """Create documents from a list of json objects (Dict)."""
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
@@ -1974,6 +1982,8 @@ class RecursiveJsonSplitter:
                 json_data=text, convert_lists=convert_lists
             ):
                 metadata = copy.deepcopy(_metadatas[i])
-                new_doc = Document(page_content=chunk, metadata=metadata)
+                new_doc = SplitterDocument(
+                    page_content=chunk, metadata=metadata
+                )
                 documents.append(new_doc)
         return documents

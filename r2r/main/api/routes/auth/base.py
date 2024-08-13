@@ -133,7 +133,7 @@ class AuthRouter(BaseRouter):
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if (
-                str(auth_user.id) != delete_request.user_id
+                auth_user.id != delete_request.user_id
                 and not auth_user.is_superuser
             ):
                 raise Exception("User ID does not match authenticated user")

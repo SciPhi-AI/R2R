@@ -59,25 +59,6 @@ class VectorEntry:
         self.text = text
         self.metadata = metadata
 
-    def to_serializable(self) -> dict[str, Any]:
-        """Return a serializable representation of the VectorEntry."""
-        metadata = self.metadata.copy()
-
-        for key, value in metadata.items():
-            if isinstance(value, UUID):
-                metadata[key] = str(value)
-
-        return {
-            "fragment_id": str(self.fragment_id),
-            "extraction_id": str(self.extraction_id),
-            "document_id": str(self.document_id),
-            "user_id": str(self.user_id),
-            "group_ids": [str(group_id) for group_id in self.group_ids],
-            "vector": self.vector.data,
-            "text": self.text,
-            "metadata": metadata,
-        }
-
     def __str__(self) -> str:
         """Return a string representation of the VectorEntry."""
         return (

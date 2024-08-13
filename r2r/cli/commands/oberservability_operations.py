@@ -1,6 +1,5 @@
-import json
-import uuid
 from typing import Any, Dict
+from uuid import UUID
 
 import click
 
@@ -66,9 +65,7 @@ def logs(obj, log_type_filter, max_runs):
 @click.pass_obj
 def users_overview(obj, user_ids):
     """Get an overview of users."""
-    user_ids = (
-        [uuid.UUID(user_id) for user_id in user_ids] if user_ids else None
-    )
+    user_ids = [UUID(user_id) for user_id in user_ids] if user_ids else None
 
     with timer():
         response = obj.users_overview(user_ids)

@@ -1,8 +1,8 @@
 import logging
-import uuid
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Optional, Union
+from uuid import UUID
 
 from ..abstractions.document import DocumentInfo
 from ..abstractions.search import VectorSearchResult
@@ -87,7 +87,7 @@ class RelationalDatabaseProvider(Provider, ABC):
     @abstractmethod
     def get_documents_overview(
         self,
-        filter_user_id: Optional[str] = None,
+        filter_user_ids: Optional[str] = None,
         filter_group_ids: Optional[list[str]] = None,
         filter_document_ids: Optional[list[str]] = None,
     ) -> list[DocumentInfo]:
@@ -113,22 +113,22 @@ class RelationalDatabaseProvider(Provider, ABC):
 
     @abstractmethod
     def store_verification_code(
-        self, user_id: uuid.UUID, verification_code: str, expiry: datetime
+        self, user_id: UUID, verification_code: str, expiry: datetime
     ):
         pass
 
     @abstractmethod
     def get_user_id_by_verification_code(
         self, verification_code: str
-    ) -> Optional[uuid.UUID]:
+    ) -> Optional[UUID]:
         pass
 
     @abstractmethod
-    def mark_user_as_verified(self, user_id: uuid.UUID):
+    def mark_user_as_verified(self, user_id: UUID):
         pass
 
     @abstractmethod
-    def mark_user_as_superuser(self, user_id: uuid.UUID):
+    def mark_user_as_superuser(self, user_id: UUID):
         pass
 
     @abstractmethod
@@ -136,7 +136,7 @@ class RelationalDatabaseProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def get_user_by_id(self, user_id: uuid.UUID) -> Optional[User]:
+    def get_user_by_id(self, user_id: UUID) -> Optional[User]:
         pass
 
     @abstractmethod
@@ -144,7 +144,7 @@ class RelationalDatabaseProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def delete_user(self, user_id: uuid.UUID):
+    def delete_user(self, user_id: UUID):
         pass
 
     @abstractmethod

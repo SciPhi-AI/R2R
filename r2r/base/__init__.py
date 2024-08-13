@@ -11,20 +11,15 @@ from .abstractions.completion import CompletionRecord, MessageType
 from .abstractions.document import (
     DataType,
     Document,
+    DocumentExtraction,
+    DocumentFragment,
     DocumentInfo,
+    DocumentStatus,
     DocumentType,
-    Entity,
-    Extraction,
-    ExtractionType,
-    Fragment,
-    FragmentType,
-    KGExtraction,
-    Triple,
-    extract_entities,
-    extract_triples,
 )
 from .abstractions.embedding import EmbeddingPurpose
 from .abstractions.exception import R2RDocumentProcessingError, R2RException
+from .abstractions.kg import Entity, KGExtraction, Triple, extract_triples
 from .abstractions.llama_abstractions import VectorStoreQuery
 from .abstractions.llm import (
     GenerationConfig,
@@ -60,7 +55,7 @@ from .logging.log_processor import (
 )
 from .logging.run_manager import RunManager, manage_run
 from .parsers import AsyncParser
-from .pipeline.base_pipeline import AsyncPipeline
+from .pipeline.base_pipeline import AsyncPipeline, PipelineTypes
 from .pipes.base_pipe import AsyncPipe, AsyncState, PipeType
 from .providers.auth import AuthConfig, AuthProvider
 from .providers.chunking import ChunkingConfig, ChunkingProvider
@@ -72,8 +67,12 @@ from .providers.database import (
     VectorDatabaseProvider,
 )
 from .providers.embedding import EmbeddingConfig, EmbeddingProvider
-from .providers.eval import EvalConfig, EvalProvider
-from .providers.kg import KGConfig, KGProvider, update_kg_prompt
+from .providers.kg import (
+    KGConfig,
+    KGProvider,
+    extract_entities,
+    update_kg_prompt,
+)
 from .providers.llm import CompletionConfig, CompletionProvider
 from .providers.parsing import ParsingConfig, ParsingProvider
 from .providers.prompt import PromptConfig, PromptProvider
@@ -137,12 +136,11 @@ __all__ = [
     "Prompt",
     "DataType",
     "DocumentType",
+    "DocumentStatus",
     "Document",
     "DocumentInfo",
-    "Extraction",
-    "ExtractionType",
-    "Fragment",
-    "FragmentType",
+    "DocumentExtraction",
+    "DocumentFragment",
     "extract_entities",
     "Entity",
     "extract_triples",
@@ -153,6 +151,7 @@ __all__ = [
     "KGExtraction",
     "UserStats",
     # Pipelines
+    "PipelineTypes",
     "AsyncPipeline",
     # Providers
     "ParsingConfig",
@@ -161,8 +160,6 @@ __all__ = [
     "ChunkingProvider",
     "EmbeddingConfig",
     "EmbeddingProvider",
-    "EvalConfig",
-    "EvalProvider",
     "PromptConfig",
     "PromptProvider",
     "GenerationConfig",

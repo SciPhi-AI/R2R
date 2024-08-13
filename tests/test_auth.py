@@ -565,19 +565,24 @@ async def test_token_blacklist_cleanup(auth_service, auth_provider):
 @pytest.mark.asyncio
 async def test_register_and_verify(auth_service, auth_provider):
     user = UserCreate(email="newuser@example.com", password="password123")
-    new_user = await auth_service.register(user)
-    assert new_user.email == "newuser@example.com"
-    assert not new_user.is_verified
-
+    # new_user = await auth_service.register(user)
     # Mock verification code generation
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
-        await auth_service.register(user)
-        verified = await auth_service.verify_email("123456")
-        assert verified
+        new_user = await auth_service.register(user)
+        assert new_user.email == "newuser@example.com"
+        assert not new_user.is_verified
+
+        await auth_service.verify_email("123456")
+
+    new_user = auth_provider.db_provider.relational.get_user_by_email(
+        "newuser@example.com"
+    )
+    assert new_user.email == "newuser@example.com"
+    assert new_user.is_verified
 
 
 @pytest.mark.asyncio

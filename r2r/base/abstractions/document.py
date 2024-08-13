@@ -2,16 +2,26 @@
 
 import json
 import logging
-import uuid
 from datetime import datetime
 from enum import Enum
 from typing import Optional, Union
+from uuid import NAMESPACE_DNS, UUID, uuid4
 
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
 DataType = Union[str, bytes]
+
+
+class DocumentStatus(str, Enum):
+    """Status of document processing."""
+
+    PROCESSING = "processing"
+    # TODO - Extend support for `partial-failure`
+    # PARTIAL_FAILURE = "partial-failure"
+    FAILURE = "failure"
+    SUCCESS = "success"
 
 
 class DocumentType(str, Enum):
@@ -36,7 +46,10 @@ class DocumentType(str, Enum):
 
 
 class Document(BaseModel):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4)
+    id: UUID = Field(default_factory=uuid4)
+    group_ids: list[UUID]
+    user_id: UUID
+
     type: DocumentType
     data: Union[str, bytes]
     metadata: dict
@@ -53,7 +66,7 @@ class Document(BaseModel):
                 data_str = data.decode("utf-8", errors="ignore")
             else:
                 data_str = data
-            data_hash = uuid.uuid5(uuid.NAMESPACE_DNS, data_str)
+            data_hash = uuid4(NAMESPACE_DNS, data_str)
             kwargs["id"] = data_hash  # Set the id based on the data hash
 
         super().__init__(*args, **kwargs)
@@ -61,33 +74,23 @@ class Document(BaseModel):
     class Config:
         arbitrary_types_allowed = True
         json_encoders = {
-            uuid.UUID: str,
+            UUID: str,
             bytes: lambda v: v.decode("utf-8", errors="ignore"),
         }
-
-
-class DocumentStatus(str, Enum):
-    """Status of document processing."""
-
-    PROCESSING = "processing"
-    # TODO - Extend support for `partial-failure`
-    # PARTIAL_FAILURE = "partial-failure"
-    FAILURE = "failure"
-    SUCCESS = "success"
 
 
 class DocumentInfo(BaseModel):
     """Base class for document information handling."""
 
-    document_id: uuid.UUID
+    id: UUID
+    group_ids: list[UUID]
+    user_id: UUID
+    type: DocumentType
+    metadata: dict
+    title: Optional[str] = None
     version: str
     size_in_bytes: int
-    metadata: dict
     status: DocumentStatus = DocumentStatus.PROCESSING
-
-    group_ids: Optional[list[uuid.UUID]] = None
-    user_id: Optional[uuid.UUID] = None
-    title: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -96,135 +99,38 @@ class DocumentInfo(BaseModel):
         now = datetime.now()
 
         return {
-            "document_id": str(self.document_id),
-            "title": self.title or "N/A",
-            "group_ids": json.dumps(self.group_ids),
+            "id": self.id,
+            "group_ids": self.group_ids,
             "user_id": self.user_id,
+            "type": self.type,
+            "metadata": json.dumps(self.metadata),
+            "title": self.title or "N/A",
             "version": self.version,
             "size_in_bytes": self.size_in_bytes,
-            "metadata": json.dumps(self.metadata),
+            "status": self.status,
             "created_at": self.created_at or now,
             "updated_at": self.updated_at or now,
-            "status": self.status,
         }
 
 
-class ExtractionType(Enum):
-    """Types of extractions that can be performed."""
-
-    TXT = "txt"
-    IMG = "img"
-    MOV = "mov"
-
-
-class Extraction(BaseModel):
+class DocumentExtraction(BaseModel):
     """An extraction from a document."""
 
-    id: uuid.UUID
-    type: ExtractionType = ExtractionType.TXT
+    id: UUID
+    document_id: UUID
+    group_ids: list[UUID]
+    user_id: UUID
     data: DataType
     metadata: dict
-    document_id: uuid.UUID
 
 
-class FragmentType(Enum):
-    """A type of fragment that can be extracted from a document."""
-
-    TEXT = "text"
-    IMAGE = "image"
-    TABLE = "table"
-
-
-class Fragment(BaseModel):
+class DocumentFragment(BaseModel):
     """A fragment extracted from a document."""
 
-    id: uuid.UUID
-    type: FragmentType
+    id: UUID
+    extraction_id: UUID
+    document_id: UUID
+    user_id: UUID
+    group_ids: list[UUID]
     data: DataType
     metadata: dict
-    document_id: uuid.UUID
-    extraction_id: uuid.UUID
-
-
-class Entity(BaseModel):
-    """An entity extracted from a document."""
-
-    category: str
-    subcategory: Optional[str] = None
-    value: str
-
-    def __str__(self):
-        return (
-            f"{self.category}:{self.subcategory}:{self.value}"
-            if self.subcategory
-            else f"{self.category}:{self.value}"
-        )
-
-
-class Triple(BaseModel):
-    """A triple extracted from a document."""
-
-    subject: str
-    predicate: str
-    object: str
-
-
-def extract_entities(llm_payload: list[str]) -> dict[str, Entity]:
-    entities = {}
-    for entry in llm_payload:
-        try:
-            if "], " in entry:  # Check if the entry is an entity
-                entry_val = entry.split("], ")[0] + "]"
-                entry = entry.split("], ")[1]
-                colon_count = entry.count(":")
-
-                if colon_count == 1:
-                    category, value = entry.split(":")
-                    subcategory = None
-                elif colon_count >= 2:
-                    parts = entry.split(":", 2)
-                    category, subcategory, value = (
-                        parts[0],
-                        parts[1],
-                        parts[2],
-                    )
-                else:
-                    raise ValueError("Unexpected entry format")
-
-                entities[entry_val] = Entity(
-                    category=category, subcategory=subcategory, value=value
-                )
-        except Exception as e:
-            logger.error(f"Error processing entity {entry}: {e}")
-            continue
-    return entities
-
-
-def extract_triples(
-    llm_payload: list[str], entities: dict[str, Entity]
-) -> list[Triple]:
-    triples = []
-    for entry in llm_payload:
-        try:
-            if "], " not in entry:  # Check if the entry is an entity
-                elements = entry.split(" ")
-                subject = elements[0]
-                predicate = elements[1]
-                object = " ".join(elements[2:])
-                subject = entities[subject].value  # Use entity.value
-                if "[" in object and "]" in object:
-                    object = entities[object].value  # Use entity.value
-                triples.append(
-                    Triple(subject=subject, predicate=predicate, object=object)
-                )
-        except Exception as e:
-            logger.error(f"Error processing triplet {entry}: {e}")
-            continue
-    return triples
-
-
-class KGExtraction(BaseModel):
-    """An extraction from a document that is part of a knowledge graph."""
-
-    entities: dict[str, Entity]
-    triples: list[Triple]

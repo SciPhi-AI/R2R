@@ -240,7 +240,7 @@ def test_completion_record_with_complex_search_results():
         fragment_id=uuid.uuid4(),
         extraction_id=uuid.uuid4(),
         document_id=uuid.uuid4(),
-        user_id=None,
+        user_id=uuid.uuid4(),
         group_ids=[],
         score=0.95,
         text="Sample text",
@@ -266,6 +266,6 @@ def test_completion_record_with_complex_search_results():
     assert "fragment_id" in result
     assert "extraction_id" in result
     assert "document_id" in result
+    assert "user_id" in result
     assert result["text"] == "Sample text"
-    assert result["user_id"] is None
     assert result["group_ids"] == []

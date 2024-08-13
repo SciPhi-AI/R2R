@@ -4,7 +4,6 @@ from typing import Any, Optional
 
 from r2r.agents import R2RRAGAgent, R2RStreamingRAGAgent
 from r2r.base import (
-    AgentConfig,
     AsyncPipe,
     AuthConfig,
     AuthProvider,
@@ -18,7 +17,6 @@ from r2r.base import (
     DatabaseProvider,
     EmbeddingConfig,
     EmbeddingProvider,
-    EvalProvider,
     KGProvider,
     KVLoggingSingleton,
     ParsingConfig,
@@ -26,12 +24,7 @@ from r2r.base import (
     PromptConfig,
     PromptProvider,
 )
-from r2r.pipelines import (
-    EvalPipeline,
-    IngestionPipeline,
-    RAGPipeline,
-    SearchPipeline,
-)
+from r2r.pipelines import IngestionPipeline, RAGPipeline, SearchPipeline
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from .config import R2RConfig
@@ -184,30 +177,6 @@ class R2RProviderFactory:
         return embedding_provider
 
     @staticmethod
-    def create_eval_provider(
-        eval_config, prompt_provider, *args, **kwargs
-    ) -> Optional[EvalProvider]:
-        if eval_config.provider == "local":
-            from r2r.providers import LLMEvalProvider
-
-            llm_provider = R2RProviderFactory.create_llm_provider(
-                eval_config.llm
-            )
-            eval_provider = LLMEvalProvider(
-                eval_config,
-                llm_provider=llm_provider,
-                prompt_provider=prompt_provider,
-            )
-        elif eval_config.provider is None:
-            eval_provider = None
-        else:
-            raise ValueError(
-                f"Eval provider {eval_config.provider} not supported."
-            )
-
-        return eval_provider
-
-    @staticmethod
     def create_llm_provider(
         llm_config: CompletionConfig, *args, **kwargs
     ) -> CompletionProvider:
@@ -259,7 +228,6 @@ class R2RProviderFactory:
     def create_providers(
         self,
         embedding_provider_override: Optional[EmbeddingProvider] = None,
-        eval_provider_override: Optional[EvalProvider] = None,
         llm_provider_override: Optional[CompletionProvider] = None,
         prompt_provider_override: Optional[PromptProvider] = None,
         kg_provider_override: Optional[KGProvider] = None,
@@ -281,12 +249,6 @@ class R2RProviderFactory:
             or self.create_embedding_provider(
                 self.config.embedding, *args, **kwargs
             )
-        )
-        eval_provider = eval_provider_override or self.create_eval_provider(
-            self.config.eval,
-            prompt_provider=prompt_provider,
-            *args,
-            **kwargs,
         )
 
         llm_provider = llm_provider_override or self.create_llm_provider(
@@ -330,7 +292,6 @@ class R2RProviderFactory:
             chunking=chunking_provider,
             database=database_provider,
             embedding=embedding_provider,
-            eval=eval_provider,
             llm=llm_provider,
             parsing=parsing_provider,
             prompt=prompt_provider,
@@ -354,7 +315,6 @@ class R2RPipeFactory:
         vector_search_pipe_override: Optional[AsyncPipe] = None,
         rag_pipe_override: Optional[AsyncPipe] = None,
         streaming_rag_pipe_override: Optional[AsyncPipe] = None,
-        eval_pipe_override: Optional[AsyncPipe] = None,
         chunking_pipe_override: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
@@ -382,24 +342,8 @@ class R2RPipeFactory:
             or self.create_rag_pipe(*args, **kwargs),
             streaming_rag_pipe=streaming_rag_pipe_override
             or self.create_rag_pipe(stream=True, *args, **kwargs),
-            eval_pipe=eval_pipe_override
-            or self.create_eval_pipe(*args, **kwargs),
             chunking_pipe=chunking_pipe_override
             or self.create_chunking_pipe(*args, **kwargs),
-        )
-
-    def create_parsing_pipe(
-        self,
-        excluded_parsers: Optional[list] = None,
-        override_parsers: Optional[list] = None,
-        *args,
-        **kwargs,
-    ) -> Any:
-        from r2r.pipes import ParsingPipe
-
-        return ParsingPipe(
-            excluded_parsers=excluded_parsers or [],
-            override_parsers=override_parsers or [],
         )
 
     def create_parsing_pipe(self, *args, **kwargs) -> Any:
@@ -416,7 +360,6 @@ class R2RPipeFactory:
         if self.config.embedding.provider is None:
             return None
 
-        from r2r.base import RecursiveCharacterTextSplitter
         from r2r.pipes import EmbeddingPipe
 
         return EmbeddingPipe(
@@ -448,9 +391,9 @@ class R2RPipeFactory:
         if self.config.kg.provider is None:
             return None
 
-        from r2r.pipes import KGExtractionPipe
+        from r2r.pipes import KGTriplesExtractionPipe
 
-        return KGExtractionPipe(
+        return KGTriplesExtractionPipe(
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
@@ -496,11 +439,6 @@ class R2RPipeFactory:
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
             )
-
-    def create_eval_pipe(self, *args, **kwargs) -> Any:
-        from r2r.pipes import EvalPipe
-
-        return EvalPipe(eval_provider=self.providers.eval)
 
 
 class R2RPipelineFactory:
@@ -576,18 +514,12 @@ class R2RPipelineFactory:
         rag_pipeline.add_pipe(rag_pipe)
         return rag_pipeline
 
-    def create_eval_pipeline(self, *args, **kwargs) -> EvalPipeline:
-        eval_pipeline = EvalPipeline()
-        eval_pipeline.add_pipe(self.pipes.eval_pipe)
-        return eval_pipeline
-
     def create_pipelines(
         self,
         ingestion_pipeline: Optional[IngestionPipeline] = None,
         search_pipeline: Optional[SearchPipeline] = None,
         rag_pipeline: Optional[RAGPipeline] = None,
         streaming_rag_pipeline: Optional[RAGPipeline] = None,
-        eval_pipeline: Optional[EvalPipeline] = None,
         *args,
         **kwargs,
     ) -> R2RPipelines:
@@ -616,8 +548,6 @@ class R2RPipelineFactory:
                 *args,
                 **kwargs,
             ),
-            eval_pipeline=eval_pipeline
-            or self.create_eval_pipeline(*args, **kwargs),
         )
 
     def configure_logging(self):

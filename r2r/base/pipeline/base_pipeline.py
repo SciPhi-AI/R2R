@@ -5,8 +5,6 @@ import logging
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional
 
-from r2r.base import User
-
 from ..logging.kv_logger import KVLoggingSingleton
 from ..logging.run_manager import RunManager, manage_run
 from ..pipes.base_pipe import AsyncPipe, AsyncState
@@ -16,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 class PipelineTypes(Enum):
     AGENT = "agent"
-    EVAL = "eval"
     INGESTION = "ingestion"
     OTHER = "other"
     RAG = "rag"
@@ -59,8 +56,6 @@ class AsyncPipeline:
         state: Optional[AsyncState] = None,
         stream: bool = False,
         run_manager: Optional[RunManager] = None,
-        log_run_info: bool = True,
-        user: Optional[User] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -77,13 +72,6 @@ class AsyncPipeline:
         self.state = state or AsyncState()
         current_input = input
         async with manage_run(run_manager, self.pipeline_type):
-            if log_run_info:
-                await run_manager.log_run_info(
-                    key="pipeline_type",
-                    value=self.pipeline_type,
-                    is_info_log=True,
-                    user=user,
-                )
             try:
                 for pipe_num in range(len(self.pipes)):
                     config_name = self.pipes[pipe_num].config.name
@@ -198,35 +186,6 @@ class AsyncPipeline:
             add_upstream_outputs, key=get_pipe_index, reverse=True
         )
         return sorted_outputs
-
-
-class EvalPipeline(AsyncPipeline):
-    """A pipeline for evaluation."""
-
-    pipeline_type: str = "eval"
-
-    async def run(
-        self,
-        input: Any,
-        state: Optional[AsyncState] = None,
-        stream: bool = False,
-        run_manager: Optional[RunManager] = None,
-        *args: Any,
-        **kwargs: Any,
-    ):
-        return await super().run(
-            input, state, stream, run_manager, *args, **kwargs
-        )
-
-    def add_pipe(
-        self,
-        pipe: AsyncPipe,
-        add_upstream_outputs: Optional[list[dict[str, str]]] = None,
-        *args,
-        **kwargs,
-    ) -> None:
-        logger.debug(f"Adding pipe {pipe.config.name} to the EvalPipeline")
-        return super().add_pipe(pipe, add_upstream_outputs, *args, **kwargs)
 
 
 async def dequeue_requests(queue: asyncio.Queue) -> AsyncGenerator:

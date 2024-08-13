@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from datetime import datetime, timedelta
-from typing import Any, Literal, Optional, Union
+from typing import Any, Optional
 from uuid import UUID
 
 from sqlalchemy import exc, text
@@ -14,6 +14,8 @@ from r2r.base import (
     DatabaseConfig,
     DatabaseProvider,
     DocumentInfo,
+    DocumentStatus,
+    DocumentType,
     R2RException,
     RelationalDatabaseProvider,
     User,
@@ -257,56 +259,6 @@ class PostgresVectorDBProvider(VectorDatabaseProvider):
             ]
         )
 
-    def search(
-        self,
-        query_vector: list[float],
-        filters: dict[str, Any] = {},
-        limit: int = 10,
-        measure: str = "cosine_distance",
-        *args,
-        **kwargs,
-    ) -> list[VectorSearchResult]:
-        if self.collection is None:
-            raise ValueError(
-                "Please call `initialize_collection` before attempting to run `search`."
-            )
-        results = self.collection.query(
-            vector=query_vector,
-            filters=filters,
-            limit=limit,
-            imeasure=measure,
-            include_value=True,
-            include_metadata=True,
-        )
-        return [
-            VectorSearchResult(
-                fragment_id=result[0],
-                extraction_id=UUID(result[1]["extraction_id"]),
-                document_id=UUID(result[1]["document_id"]),
-                user_id=(
-                    UUID(result[1]["user_id"])
-                    if result[1]["user_id"]
-                    else None
-                ),
-                group_ids=[UUID(gid) for gid in result[1]["group_ids"]],
-                score=1 - float(result[2]),
-                text=result[1]["text"],
-                metadata={
-                    k: v
-                    for k, v in result[1].items()
-                    if k
-                    not in [
-                        "extraction_id",
-                        "document_id",
-                        "user_id",
-                        "group_ids",
-                        "text",
-                    ]
-                },
-            )
-            for result in results
-        ]
-
     def get_document_groups(self, document_id: str) -> list[str]:
         query = text(
             f"""
@@ -483,24 +435,25 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     raise
 
                 # Create the document info table if it doesn't exist
-                create_table_query = f"""
+                create_info_table_query = f"""
                 CREATE TABLE IF NOT EXISTS document_info_{self.collection_name} (
-                    document_id UUID PRIMARY KEY,
+                    id UUID PRIMARY KEY,
+                    group_ids UUID[],
+                    user_id UUID,
+                    type TEXT,
+                    metadata JSONB,
                     title TEXT,
-                    user_id UUID NULL,
-                    group_ids UUID[] NULL,
                     version TEXT,
                     size_in_bytes INT,
+                    status TEXT DEFAULT 'processing',
                     created_at TIMESTAMPTZ DEFAULT NOW(),
-                    updated_at TIMESTAMPTZ DEFAULT NOW(),
-                    metadata JSONB,
-                    status TEXT DEFAULT 'processing'
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
                 );
                 """
-                sess.execute(text(create_table_query))
+                sess.execute(text(create_info_table_query))
 
                 # Create the users table if it doesn't exist
-                query = f"""
+                create_collection_query = f"""
                 CREATE TABLE IF NOT EXISTS users_{self.collection_name} (
                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                     email TEXT UNIQUE NOT NULL,
@@ -520,10 +473,10 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     updated_at TIMESTAMPTZ DEFAULT NOW()
                 );
                 """
-                sess.execute(text(query))
+                sess.execute(text(create_collection_query))
 
                 # Create blacklisted tokens table
-                query = f"""
+                create_blacklisted_tokens_query = f"""
                 CREATE TABLE IF NOT EXISTS blacklisted_tokens_{self.collection_name} (
                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                     token TEXT NOT NULL,
@@ -534,10 +487,10 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 CREATE INDEX IF NOT EXISTS idx_blacklisted_tokens_{self.collection_name}_blacklisted_at
                 ON blacklisted_tokens_{self.collection_name} (blacklisted_at);
                 """
-                sess.execute(text(query))
+                sess.execute(text(create_blacklisted_tokens_query))
 
                 # Create groups table
-                query = f"""
+                create_groups_table_query = f"""
                 CREATE TABLE IF NOT EXISTS groups_{self.collection_name} (
                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                     name TEXT NOT NULL,
@@ -546,7 +499,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                     updated_at TIMESTAMPTZ DEFAULT NOW()
                 );
                 """
-                sess.execute(text(query))
+                sess.execute(text(create_groups_table_query))
 
                 # Create the index on group_ids
                 create_index_query = f"""
@@ -563,35 +516,21 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
         for document_info in documents_overview:
             db_entry = document_info.convert_to_db_entry()
 
-            # Convert 'None' string to None type for user_id
-            if db_entry["user_id"] == "None":
-                db_entry["user_id"] = None
-
-            if (
-                db_entry["group_ids"] == "None"
-                or db_entry["group_ids"] == "[]"
-            ):
-                db_entry["group_ids"] = None
-            elif isinstance(db_entry["group_ids"], list):
-                # ensure group_ids are strings
-                db_entry["group_ids"] = [
-                    str(gid) for gid in db_entry["group_ids"]
-                ]
-
             query = text(
                 f"""
                 INSERT INTO document_info_{self.collection_name}
-                (document_id, title, user_id, group_ids, version, created_at, updated_at, size_in_bytes, metadata, status)
-                VALUES (:document_id, :title, :user_id, :group_ids, :version, :created_at, :updated_at, :size_in_bytes, :metadata, :status)
-                ON CONFLICT (document_id) DO UPDATE SET
-                    title = EXCLUDED.title,
-                    user_id = EXCLUDED.user_id,
+                (id, group_ids, user_id, type, metadata, title, version, size_in_bytes, status, created_at, updated_at)
+                VALUES (:id, :group_ids, :user_id, :type, :metadata, :title, :version, :size_in_bytes, :status, :created_at, :updated_at)
+                ON CONFLICT (id) DO UPDATE SET
                     group_ids = EXCLUDED.group_ids,
-                    version = EXCLUDED.version,
-                    updated_at = EXCLUDED.updated_at,
-                    size_in_bytes = EXCLUDED.size_in_bytes,
+                    user_id = EXCLUDED.user_id,
+                    type = EXCLUDED.type,
                     metadata = EXCLUDED.metadata,
-                    status = EXCLUDED.status;
+                    title = EXCLUDED.title,
+                    version = EXCLUDED.version,
+                    size_in_bytes = EXCLUDED.size_in_bytes,
+                    status = EXCLUDED.status,
+                    updated_at = EXCLUDED.updated_at;
             """
             )
             with self.vx.Session() as sess:
@@ -618,65 +557,46 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
 
     def get_documents_overview(
         self,
-        filter_document_ids: Optional[list[str]] = None,
-        filter_user_ids: Optional[list[str]] = None,
-        filter_group_ids: Optional[list[str]] = None,
+        filter_user_ids: Optional[list[UUID]] = None,
+        filter_document_ids: Optional[list[UUID]] = None,
+        filter_group_ids: Optional[list[UUID]] = None,
     ):
         conditions = []
         params = {}
 
         if filter_document_ids:
-            placeholders = ", ".join(
-                f":doc_id_{i}" for i in range(len(filter_document_ids))
-            )
-            conditions.append(f"document_id IN ({placeholders})")
-            params.update(
-                {
-                    f"doc_id_{i}": str(document_id)
-                    for i, document_id in enumerate(filter_document_ids)
-                }
-            )
+            conditions.append("id = ANY(:document_ids)")
+            params["document_ids"] = filter_document_ids
 
         if filter_user_ids:
-            placeholders = ", ".join(
-                f":user_id_{i}" for i in range(len(filter_user_ids))
-            )
-            conditions.append(f"user_id IN ({placeholders})")
-            params.update(
-                {
-                    f"user_id_{i}": str(user_id)
-                    for i, user_id in enumerate(filter_user_ids)
-                }
-            )
+            conditions.append("user_id = ANY(:user_ids)")
+            params["user_ids"] = filter_user_ids
 
         if filter_group_ids:
-            group_conditions = []
-            for i, group_id in enumerate(filter_group_ids):
-                group_conditions.append(f":group_id_{i} = ANY(group_ids)")
-                params[f"group_id_{i}"] = str(group_id)
-            conditions.append(f"({' OR '.join(group_conditions)})")
+            conditions.append("group_ids && :group_ids")
+            params["group_ids"] = filter_group_ids
 
         query = f"""
-            SELECT document_id, title, user_id, group_ids, version, size_in_bytes, created_at, updated_at, metadata, status
+            SELECT id, group_ids, user_id, type, metadata, title, version, size_in_bytes, status, created_at, updated_at
             FROM document_info_{self.collection_name}
         """
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
-
         with self.vx.Session() as sess:
             results = sess.execute(text(query), params).fetchall()
             return [
                 DocumentInfo(
-                    document_id=row[0],
-                    title=row[1],
+                    id=row[0],
+                    group_ids=row[1],
                     user_id=row[2],
-                    group_ids=row[3],
-                    version=row[4],
-                    size_in_bytes=row[5],
-                    created_at=row[6],
-                    updated_at=row[7],
-                    metadata=row[8],
-                    status=row[9],
+                    type=DocumentType(row[3]),
+                    metadata=row[4],
+                    title=row[5],
+                    version=row[6],
+                    size_in_bytes=row[7],
+                    status=DocumentStatus(row[8]),
+                    created_at=row[9],
+                    updated_at=row[10],
                 )
                 for row in results
             ]
@@ -1104,7 +1024,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
             sess.execute(query, {"user_id": user_id})
             sess.commit()
 
-    def handle_user_documents(self, user_id: UUID):
+    def _handle_user_documents(self, user_id: UUID):
         # For now, we'll just delete the user's documents
         # In the future, you might want to implement a transfer ownership feature
         query = text(
@@ -1143,7 +1063,7 @@ class PostgresRelationalDBProvider(RelationalDatabaseProvider):
                 self.remove_user_from_all_groups(user_id)
 
                 # Handle user's documents
-                self.handle_user_documents(user_id)
+                self._handle_user_documents(user_id)
 
                 # Delete user
                 result = sess.execute(

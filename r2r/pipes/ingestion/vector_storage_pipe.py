@@ -86,13 +86,10 @@ class VectorStoragePipe(AsyncPipe):
                 yield (msg.document_id, msg)
                 continue
 
-            document_id = msg.metadata.get("document_id", None)
-            if not document_id:
-                raise ValueError("Document ID not found in the metadata.")
-            if document_id not in document_counts:
-                document_counts[document_id] = 1
+            if msg.document_id not in document_counts:
+                document_counts[msg.document_id] = 1
             else:
-                document_counts[document_id] += 1
+                document_counts[msg.document_id] += 1
 
             vector_batch.append(msg)
             if len(vector_batch) >= self.storage_batch_size:

@@ -9,16 +9,10 @@ from r2r.base import (
     CryptoProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    EvalProvider,
     KGProvider,
     PromptProvider,
 )
-from r2r.pipelines import (
-    EvalPipeline,
-    IngestionPipeline,
-    RAGPipeline,
-    SearchPipeline,
-)
+from r2r.pipelines import IngestionPipeline, RAGPipeline, SearchPipeline
 
 from ..app import R2RApp
 from ..engine import R2REngine
@@ -79,7 +73,6 @@ class R2RBuilder:
         self.auth_provider_override: Optional[AuthProvider] = None
         self.database_provider_override: Optional[DatabaseProvider] = None
         self.embedding_provider_override: Optional[EmbeddingProvider] = None
-        self.eval_provider_override: Optional[EvalProvider] = None
         self.llm_provider_override: Optional[CompletionProvider] = None
         self.prompt_provider_override: Optional[PromptProvider] = None
         self.kg_provider_override: Optional[KGProvider] = None
@@ -92,7 +85,6 @@ class R2RBuilder:
         self.vector_search_pipe_override: Optional[AsyncPipe] = None
         self.rag_pipe_override: Optional[AsyncPipe] = None
         self.streaming_rag_pipe_override: Optional[AsyncPipe] = None
-        self.eval_pipe_override: Optional[AsyncPipe] = None
         self.kg_pipe_override: Optional[AsyncPipe] = None
         self.kg_storage_pipe_override: Optional[AsyncPipe] = None
         self.kg_search_pipe_override: Optional[AsyncPipe] = None
@@ -102,7 +94,6 @@ class R2RBuilder:
         self.search_pipeline: Optional[SearchPipeline] = None
         self.rag_pipeline: Optional[RAGPipeline] = None
         self.streaming_rag_pipeline: Optional[RAGPipeline] = None
-        self.eval_pipeline: Optional[EvalPipeline] = None
 
         # Agent overrides
         self.assistant_factory_override: Optional[R2RAgentFactory] = None
@@ -135,10 +126,6 @@ class R2RBuilder:
 
     def with_embedding_provider(self, provider: EmbeddingProvider):
         self.embedding_provider_override = provider
-        return self
-
-    def with_eval_provider(self, provider: EvalProvider):
-        self.eval_provider_override = provider
         return self
 
     def with_llm_provider(self, provider: CompletionProvider):
@@ -182,10 +169,6 @@ class R2RBuilder:
         self.streaming_rag_pipe_override = pipe
         return self
 
-    def with_eval_pipe(self, pipe: AsyncPipe):
-        self.eval_pipe_override = pipe
-        return self
-
     def with_kg_pipe(self, pipe: AsyncPipe):
         self.kg_pipe_override = pipe
         return self
@@ -215,10 +198,6 @@ class R2RBuilder:
         self.streaming_rag_pipeline = pipeline
         return self
 
-    def with_eval_pipeline(self, pipeline: EvalPipeline):
-        self.eval_pipeline = pipeline
-        return self
-
     def with_assistant_factory(self, factory: R2RAgentFactory):
         self.assistant_factory_override = factory
         return self
@@ -236,7 +215,6 @@ class R2RBuilder:
             auth_provider_override=self.auth_provider_override,
             database_provider_override=self.database_provider_override,
             embedding_provider_override=self.embedding_provider_override,
-            eval_provider_override=self.eval_provider_override,
             llm_provider_override=self.llm_provider_override,
             prompt_provider_override=self.prompt_provider_override,
             kg_provider_override=self.kg_provider_override,
@@ -252,7 +230,6 @@ class R2RBuilder:
             vector_search_pipe_override=self.vector_search_pipe_override,
             rag_pipe_override=self.rag_pipe_override,
             streaming_rag_pipe_override=self.streaming_rag_pipe_override,
-            eval_pipe_override=self.eval_pipe_override,
             kg_pipe_override=self.kg_pipe_override,
             kg_storage_pipe_override=self.kg_storage_pipe_override,
             kg_search_pipe_override=self.kg_search_pipe_override,
@@ -265,7 +242,6 @@ class R2RBuilder:
             search_pipeline=self.search_pipeline,
             rag_pipeline=self.rag_pipeline,
             streaming_rag_pipeline=self.streaming_rag_pipeline,
-            eval_pipeline=self.eval_pipeline,
             *args,
             **kwargs,
         )

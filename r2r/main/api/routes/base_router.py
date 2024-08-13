@@ -1,10 +1,11 @@
 import functools
+import inspect
 import logging
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from r2r.base import R2RException, manage_run
+from r2r.base import PipelineTypes, R2RException, manage_run
 
 logger = logging.getLogger(__name__)
 
@@ -14,12 +15,28 @@ class BaseRouter:
         self.engine = engine
         self.router = APIRouter()
 
-    def base_endpoint(self, func):
+    def base_endpoint(self, func: callable, pipeline_type: PipelineTypes):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             async with manage_run(
                 self.engine.run_manager, func.__name__
             ) as run_id:
+                auth_user = kwargs.get("auth_user")
+                if not auth_user:
+                    raise HTTPException(
+                        status_code=401,
+                        detail={
+                            "message": "Unauthorized",
+                            "error_type": "Unauthorized",
+                        },
+                    )
+                await self.engine.run_manager.log_run_info(
+                    key="pipeline_type",
+                    value=pipeline_type,
+                    user=auth_user,
+                    is_info_log=True,
+                )
+
                 try:
                     results = await func(*args, **kwargs)
                     if isinstance(results, StreamingResponse):
@@ -34,23 +51,6 @@ class BaseRouter:
                         },
                     )
                 except Exception as e:
-                    # Get the pipeline name based on the function name
-                    pipeline_name = f"{func.__name__.split('_')[0]}_pipeline"
-
-                    # Safely get the pipeline object and its type
-                    pipeline = getattr(
-                        self.engine.pipelines, pipeline_name, None
-                    )
-                    pipeline_type = getattr(
-                        pipeline, "pipeline_type", "unknown"
-                    )
-
-                    await self.engine.logging_connection.log(
-                        log_id=run_id,
-                        key="pipeline_type",
-                        value=pipeline_type,
-                        is_info_log=True,
-                    )
                     await self.engine.logging_connection.log(
                         log_id=run_id,
                         key="error",

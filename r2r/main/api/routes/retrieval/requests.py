@@ -20,12 +20,6 @@ class R2RRAGRequest(BaseModel):
     include_title_if_available: Optional[bool] = True
 
 
-class R2REvalRequest(BaseModel):
-    query: str
-    context: str
-    completion: str
-
-
 class R2RAgentRequest(BaseModel):
     messages: list[Message]
     vector_search_settings: Optional[dict] = None

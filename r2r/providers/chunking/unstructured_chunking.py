@@ -1,4 +1,4 @@
-from typing import Any, AsyncGenerator
+from typing import AsyncGenerator
 
 from r2r.base import ChunkingProvider
 

@@ -5,6 +5,9 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Optional, Tuple
 
+from r2r.base.abstractions.document import logger
+from r2r.base.abstractions.kg import Entity
+
 from ..abstractions.llama_abstractions import EntityNode, LabelledNode
 from ..abstractions.llama_abstractions import Relation as LlamaRelation
 from ..abstractions.llama_abstractions import VectorStoreQuery
@@ -193,3 +196,34 @@ def update_kg_prompt(
         template=escaped_template,
         input_types={"input": "str"},
     )
+
+
+def extract_entities(llm_payload: list[str]) -> dict[str, Entity]:
+    entities = {}
+    for entry in llm_payload:
+        try:
+            if "], " in entry:  # Check if the entry is an entity
+                entry_val = entry.split("], ")[0] + "]"
+                entry = entry.split("], ")[1]
+                colon_count = entry.count(":")
+
+                if colon_count == 1:
+                    category, value = entry.split(":")
+                    subcategory = None
+                elif colon_count >= 2:
+                    parts = entry.split(":", 2)
+                    category, subcategory, value = (
+                        parts[0],
+                        parts[1],
+                        parts[2],
+                    )
+                else:
+                    raise ValueError("Unexpected entry format")
+
+                entities[entry_val] = Entity(
+                    category=category, subcategory=subcategory, value=value
+                )
+        except Exception as e:
+            logger.error(f"Error processing entity {entry}: {e}")
+            continue
+    return entities

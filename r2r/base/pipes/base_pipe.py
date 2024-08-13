@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 class PipeType(Enum):
     INGESTOR = "ingestor"
-    EVAL = "eval"
     GENERATOR = "generator"
     SEARCH = "search"
     TRANSFORM = "transform"

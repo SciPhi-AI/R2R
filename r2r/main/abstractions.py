@@ -10,17 +10,11 @@ from r2r.base import (
     CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    EvalProvider,
     KGProvider,
     ParsingProvider,
     PromptProvider,
 )
-from r2r.pipelines import (
-    EvalPipeline,
-    IngestionPipeline,
-    RAGPipeline,
-    SearchPipeline,
-)
+from r2r.pipelines import IngestionPipeline, RAGPipeline, SearchPipeline
 
 
 class R2RProviders(BaseModel):
@@ -30,7 +24,6 @@ class R2RProviders(BaseModel):
     database: Optional[DatabaseProvider]
     embedding: Optional[EmbeddingProvider]
     prompt: Optional[PromptProvider]
-    eval: Optional[EvalProvider]
     kg: Optional[KGProvider]
     parsing: Optional[ParsingProvider]
 
@@ -46,7 +39,6 @@ class R2RPipes(BaseModel):
     vector_search_pipe: Optional[AsyncPipe]
     rag_pipe: Optional[AsyncPipe]
     streaming_rag_pipe: Optional[AsyncPipe]
-    eval_pipe: Optional[AsyncPipe]
     kg_pipe: Optional[AsyncPipe]
     kg_storage_pipe: Optional[AsyncPipe]
     kg_search_search_pipe: Optional[AsyncPipe]
@@ -56,7 +48,6 @@ class R2RPipes(BaseModel):
 
 
 class R2RPipelines(BaseModel):
-    eval_pipeline: EvalPipeline
     ingestion_pipeline: IngestionPipeline
     search_pipeline: SearchPipeline
     rag_pipeline: RAGPipeline

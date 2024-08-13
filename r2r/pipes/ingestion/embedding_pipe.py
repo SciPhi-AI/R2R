@@ -1,11 +1,10 @@
-import asyncio
 import logging
 from typing import Any, AsyncGenerator, Optional, Union
 
 from r2r.base import (
     AsyncState,
+    DocumentFragment,
     EmbeddingProvider,
-    Fragment,
     KVLoggingSingleton,
     PipeType,
     R2RDocumentProcessingError,
@@ -24,7 +23,7 @@ class EmbeddingPipe(AsyncPipe):
 
     class Input(AsyncPipe.Input):
         message: AsyncGenerator[
-            Union[Fragment, R2RDocumentProcessingError], None
+            Union[DocumentFragment, R2RDocumentProcessingError], None
         ]
 
     def __init__(
@@ -46,14 +45,14 @@ class EmbeddingPipe(AsyncPipe):
         self.embedding_provider = embedding_provider
         self.embedding_batch_size = embedding_batch_size
 
-    async def embed(self, fragments: list[Fragment]) -> list[float]:
+    async def embed(self, fragments: list[DocumentFragment]) -> list[float]:
         return await self.embedding_provider.async_get_embeddings(
             [fragment.data for fragment in fragments],
             EmbeddingProvider.PipeStage.BASE,
         )
 
     async def _process_batch(
-        self, fragment_batch: list[Fragment]
+        self, fragment_batch: list[DocumentFragment]
     ) -> list[VectorEntry]:
         vectors = await self.embed(fragment_batch)
         return [
@@ -62,8 +61,9 @@ class EmbeddingPipe(AsyncPipe):
                 extraction_id=fragment.extraction_id,
                 document_id=fragment.document_id,
                 user_id=fragment.user_id,
-                group_ids=[],  # Assuming no group_ids are available on the fragment
+                group_ids=fragment.group_ids,
                 vector=Vector(data=raw_vector),
+                text=fragment.data,
                 metadata={
                     "text": fragment.data,
                     **fragment.metadata,

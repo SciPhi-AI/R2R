@@ -7,6 +7,9 @@ from fastapi.datastructures import UploadFile
 
 from r2r import (
     Document,
+    DocumentInfo,
+    DocumentStatus,
+    DocumentType,
     GenerationConfig,
     KVLoggingSingleton,
     R2RConfig,
@@ -82,16 +85,31 @@ def logging_connection():
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_txt_document(app, logging_connection):
+    user_id = uuid.uuid4()
+    group_id = uuid.uuid4()
+    doc_id = uuid.uuid4()
     await app.aingest_documents(
         [
             Document(
-                id=generate_id_from_label("doc_1"),
+                id=doc_id,
+                group_ids=[group_id],
+                user_id=user_id,
                 data="The quick brown fox jumps over the lazy dog.",
-                type="txt",
+                type=DocumentType.TXT,
                 metadata={"author": "John Doe"},
             ),
         ]
     )
+
+    # Verify the document was ingested correctly
+    docs_overview = await app.adocuments_overview(document_ids=[doc_id])
+    assert len(docs_overview) == 1
+    assert docs_overview[0].id == doc_id
+    assert docs_overview[0].group_ids == [group_id]
+    assert docs_overview[0].user_id == user_id
+    assert docs_overview[0].type == DocumentType.TXT
+    assert docs_overview[0].metadata["author"] == "John Doe"
+    assert docs_overview[0].status == DocumentStatus.SUCCESS
 
 
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)
@@ -161,12 +179,16 @@ async def test_ingest_search_txt_file(app, logging_connection):
     run_info = await logging_connection.get_run_info(log_type_filter="search")
     print("b", len(run_info))
 
-    await app.aingest_files(metadatas=[metadata], files=files)
+    ingestion_result = await app.aingest_files(
+        metadatas=[metadata], files=files
+    )
+    print("ingestion_result = ", ingestion_result)
 
     run_info = await logging_connection.get_run_info(log_type_filter="search")
     print("c", len(run_info))
 
     search_results = await app.asearch("who was aristotle?")
+    print("search_results = ", search_results)
     assert len(search_results["vector_search_results"]) == 10
     assert (
         "was an Ancient Greek philosopher and polymath"

@@ -38,15 +38,15 @@ class RunManager:
         self,
         key: str,
         value: Any,
-        is_info_log: bool = False,
-        user: Optional[User] = None,
+        user: User,
+        is_info_log: bool = True,
     ):
         if run_id := run_id_var.get():
             await self.logger.log(
                 log_id=run_id,
                 key=key,
                 value=value,
-                user_id=user.id if user else None,
+                user_id=user.id,
                 is_info_log=is_info_log,
             )
 

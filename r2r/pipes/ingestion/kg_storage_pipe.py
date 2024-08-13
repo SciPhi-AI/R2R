@@ -6,11 +6,11 @@ from typing import Any, AsyncGenerator, Optional
 from r2r.base import (
     AsyncState,
     EmbeddingProvider,
-    KGExtraction,
     KGProvider,
     KVLoggingSingleton,
     PipeType,
 )
+from r2r.base.abstractions.kg import KGExtraction
 from r2r.base.abstractions.llama_abstractions import EntityNode, Relation
 from r2r.base.pipes.base_pipe import AsyncPipe
 

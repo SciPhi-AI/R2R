@@ -2,7 +2,7 @@ import json
 import logging
 import uuid
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 from r2r.base import (
     AnalysisTypes,
@@ -313,15 +313,9 @@ class ManagementService(Service):
         **kwargs: Any,
     ):
         return self.providers.database.relational.get_documents_overview(
-            filter_document_ids=(
-                [str(ele) for ele in document_ids] if document_ids else None
-            ),
-            filter_user_ids=(
-                [str(ele) for ele in user_ids] if user_ids else None
-            ),
-            filter_group_ids=(
-                [str(ele) for ele in group_ids] if group_ids else None
-            ),
+            filter_document_ids=document_ids,
+            filter_user_ids=user_ids,
+            filter_group_ids=group_ids,
         )
 
     @telemetry_event("DocumentChunks")

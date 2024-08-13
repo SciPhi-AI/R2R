@@ -38,7 +38,6 @@ class SearchPipeline(AsyncPipeline):
         state: Optional[AsyncState] = None,
         stream: bool = False,
         run_manager: Optional[RunManager] = None,
-        log_run_info: bool = True,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         user: Optional[User] = None,
@@ -56,14 +55,6 @@ class SearchPipeline(AsyncPipeline):
         )
         run_manager = run_manager or self.run_manager
         async with manage_run(run_manager, self.pipeline_type):
-            if log_run_info:
-                await run_manager.log_run_info(
-                    key="pipeline_type",
-                    value=self.pipeline_type,
-                    is_info_log=True,
-                    user=user,
-                )
-
             vector_search_queue = Queue()
             kg_queue = Queue()
 
@@ -88,7 +79,6 @@ class SearchPipeline(AsyncPipeline):
                         state,
                         stream,
                         run_manager,
-                        log_run_info=False,
                         vector_search_settings=vector_search_settings,
                         *args,
                         **kwargs,
@@ -102,7 +92,6 @@ class SearchPipeline(AsyncPipeline):
                         state,
                         stream,
                         run_manager,
-                        log_run_info=False,
                         kg_search_settings=kg_search_settings,
                         *args,
                         **kwargs,

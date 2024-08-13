@@ -1,4 +1,5 @@
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -17,5 +18,5 @@ class PasswordResetConfirmRequest(BaseModel):
 
 
 class DeleteUserRequest(BaseModel):
-    user_id: str
+    user_id: UUID
     password: Optional[str] = None

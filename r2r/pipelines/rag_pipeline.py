@@ -33,7 +33,6 @@ class RAGPipeline(AsyncPipeline):
         input: Any,
         state: Optional[AsyncState] = None,
         run_manager: Optional[RunManager] = None,
-        log_run_info=True,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         rag_generation_config: GenerationConfig = GenerationConfig(),
@@ -43,14 +42,6 @@ class RAGPipeline(AsyncPipeline):
     ):
         self.state = state or AsyncState()
         async with manage_run(run_manager, self.pipeline_type):
-            if log_run_info:
-                await run_manager.log_run_info(
-                    key="pipeline_type",
-                    value=self.pipeline_type,
-                    is_info_log=True,
-                    user=user,
-                )
-
             if not self._search_pipeline:
                 raise ValueError(
                     "`_search_pipeline` must be set before running the RAG pipeline"
@@ -65,7 +56,6 @@ class RAGPipeline(AsyncPipeline):
                             state=state,
                             stream=False,
                             run_manager=run_manager,
-                            log_run_info=False,
                             vector_search_settings=vector_search_settings,
                             kg_search_settings=kg_search_settings,
                             *args,
@@ -82,7 +72,6 @@ class RAGPipeline(AsyncPipeline):
                 state=state,
                 stream=rag_generation_config.stream,
                 run_manager=run_manager,
-                log_run_info=False,
                 rag_generation_config=rag_generation_config,
                 *args,
                 **kwargs,

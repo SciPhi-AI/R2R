@@ -2,19 +2,13 @@
 This module contains the `DocumentParsingPipe` class, which is responsible for parsing incoming documents into plaintext.
 """
 
-import asyncio
-import logging
-import time
 import uuid
 from typing import AsyncGenerator, Optional, Union
 
-from r2r import parsers
 from r2r.base import (
     AsyncState,
     Document,
-    DocumentType,
-    Extraction,
-    ExtractionType,
+    DocumentExtraction,
     KVLoggingSingleton,
     ParsingProvider,
     PipeType,
@@ -52,7 +46,9 @@ class ParsingPipe(AsyncPipe):
         document: Document,
         run_id: uuid.UUID,
         version: str,
-    ) -> AsyncGenerator[Union[R2RDocumentProcessingError, Extraction], None]:
+    ) -> AsyncGenerator[
+        Union[R2RDocumentProcessingError, DocumentExtraction], None
+    ]:
         try:
             async for extraction in self.parsing_provider.parse(document):
                 extraction_id = generate_id_from_label(
@@ -74,7 +70,7 @@ class ParsingPipe(AsyncPipe):
         versions: Optional[list[str]] = None,
         *args,
         **kwargs,
-    ) -> AsyncGenerator[Extraction, None]:
+    ) -> AsyncGenerator[DocumentExtraction, None]:
         async for document in input.message:
             version = versions[0] if versions else "v0"
             async for result in self._parse(document, run_id, version):

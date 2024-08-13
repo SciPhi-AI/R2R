@@ -34,7 +34,6 @@ class IngestionPipeline(AsyncPipeline):
         state: Optional[AsyncState] = None,
         stream: bool = False,
         run_manager: Optional[RunManager] = None,
-        log_run_info: bool = True,
         chunking_config_override: Optional[ChunkingProvider] = None,
         user: Optional[User] = None,
         *args: Any,
@@ -42,13 +41,6 @@ class IngestionPipeline(AsyncPipeline):
     ) -> None:
         self.state = state or AsyncState()
         async with manage_run(run_manager, self.pipeline_type):
-            if log_run_info:
-                await run_manager.log_run_info(
-                    key="pipeline_type",
-                    value=self.pipeline_type,
-                    is_info_log=True,
-                    user=user,
-                )
             if self.parsing_pipe is None:
                 raise ValueError(
                     "parsing_pipe must be set before running the ingestion pipeline"
@@ -107,7 +99,6 @@ class IngestionPipeline(AsyncPipeline):
                         state,
                         stream,
                         run_manager,
-                        log_run_info=False,
                         *args,
                         **kwargs,
                     )
@@ -121,7 +112,6 @@ class IngestionPipeline(AsyncPipeline):
                         state,
                         stream,
                         run_manager,
-                        log_run_info=False,
                         *args,
                         **kwargs,
                     )

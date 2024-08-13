@@ -79,7 +79,6 @@ class IngestionService(Service):
         self,
         documents: list[Document],
         versions: Optional[list[str]] = None,
-        user: Optional[User] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -92,12 +91,17 @@ class IngestionService(Service):
         skipped_documents = []
         processed_documents = {}
         duplicate_documents = defaultdict(list)
-        user_ids = [str(user.id)] if user else []
+
+        if not all(doc.id for doc in documents):
+            raise R2RException(
+                status_code=400, message="All documents must have an ID."
+            )
+        user_id = documents[0].user_id
 
         existing_documents = (
             (
                 self.providers.database.relational.get_documents_overview(
-                    filter_user_ids=user_ids
+                    filter_user_ids=[user_id]
                 )
             )
             if self.providers.database
@@ -110,21 +114,6 @@ class IngestionService(Service):
 
         for iteration, document in enumerate(documents):
             version = versions[iteration] if versions else "v0"
-
-            # Handle user management logic
-            if user:
-                if "user_id" in document.metadata:
-                    if document.metadata["user_id"] != str(user.id):
-                        raise R2RException(
-                            status_code=403,
-                            message="User ID in metadata does not match authenticated user.",
-                        )
-                else:
-                    document.metadata["user_id"] = str(user.id)
-
-            # Remove group_ids for non-superusers
-            if user and not user.is_superuser:
-                document.metadata.pop("group_ids", None)
 
             # Check for duplicates within the current batch
             if document.id in processed_documents:
@@ -157,25 +146,22 @@ class IngestionService(Service):
 
             now = datetime.now()
             document_info_metadata = document.metadata.copy()
-            title = document_info_metadata.pop("title", str(document.id))
-            user_id = document_info_metadata.pop("user_id", None)
+            title = document_info_metadata.pop("title", "N/A")
+
             document_infos.append(
                 DocumentInfo(
-                    document_id=document.id,
-                    version=version,
-                    size_in_bytes=len(document.data),
+                    id=document.id,
+                    user_id=document.user_id,
+                    group_ids=document.group_ids,
+                    type=document.type,
                     metadata=document_info_metadata,
                     title=title,
-                    user_id=user_id,
+                    version=version,
+                    size_in_bytes=len(document.data),
+                    status="processing",
                     created_at=now,
                     updated_at=now,
-                    status="processing",  # Set initial status to `processing`
-                    group_ids=[],
                 )
-            )
-
-            processed_documents[document.id] = document.metadata.get(
-                "title", str(document.id)
             )
 
             processed_documents[document.id] = document.metadata.get(
@@ -214,7 +200,6 @@ class IngestionService(Service):
             ),
             versions=[info.version for info in document_infos],
             run_manager=self.run_manager,
-            user=user,
             *args,
             **kwargs,
         )
@@ -223,7 +208,7 @@ class IngestionService(Service):
             document_infos,
             skipped_documents,
             processed_documents,
-            user=user,
+            user_id,
         )
 
     @telemetry_event("IngestFiles")
@@ -252,25 +237,8 @@ class IngestionService(Service):
 
                 document_metadata = metadatas[iteration] if metadatas else {}
 
-                # Handle user management logic
-                if user:
-                    if "user_id" in document_metadata:
-                        if document_metadata["user_id"] != str(user.id):
-                            raise R2RException(
-                                status_code=403,
-                                message="User ID in metadata does not match authenticated user.",
-                            )
-                    else:
-                        document_metadata["user_id"] = str(user.id)
+                id_label = f'{file.filename.split("/")[-1]}-{user.id}'
 
-                # Remove group_ids for non-superusers
-                if user and not user.is_superuser:
-                    document_metadata.pop("group_ids", None)
-
-                id_label = str(file.filename.split("/")[-1])
-                # Make user-level ids unique
-                if user:
-                    id_label += str(user.id)
                 document_id = (
                     document_ids[iteration]
                     if document_ids
@@ -282,7 +250,7 @@ class IngestionService(Service):
                 )
                 documents.append(document)
             return await self.ingest_documents(
-                documents, versions, *args, **kwargs, user=user
+                documents, versions, *args, **kwargs
             )
 
         finally:
@@ -295,7 +263,6 @@ class IngestionService(Service):
         files: list[UploadFile],
         document_ids: list[uuid.UUID],
         metadatas: Optional[list[dict]] = None,
-        user: Optional[User] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -318,9 +285,7 @@ class IngestionService(Service):
 
             documents_overview = (
                 self.providers.database.relational.get_documents_overview(
-                    filter_document_ids=[
-                        str(doc_id) for doc_id in document_ids
-                    ]
+                    filter_document_ids=document_ids
                 )
             )
 
@@ -342,15 +307,6 @@ class IngestionService(Service):
                         message=f"Document with id {doc_id} not found.",
                     )
 
-                user_id = doc_info.metadata.get("user_id", None)
-                if user:
-                    if user_id and user_id != str(user.id):
-                        raise R2RException(
-                            status_code=403,
-                            message="User ID in metadata does not match authenticated user.",
-                        )
-                    doc_info.metadata["user_id"] = str(user.id)
-
                 new_version = increment_version(doc_info.version)
                 new_versions.append(new_version)
 
@@ -368,7 +324,7 @@ class IngestionService(Service):
                 documents.append(document)
 
             ingestion_results = await self.ingest_documents(
-                documents, versions=new_versions, user=user, *args, **kwargs
+                documents, versions=new_versions, *args, **kwargs
             )
 
             for doc_id, old_version in zip(
@@ -377,9 +333,6 @@ class IngestionService(Service):
             ):
                 keys = ["document_id", "version"]
                 values = [str(doc_id), old_version]
-                if user:
-                    keys.append("user_id")
-                    values.append(str(user.id))
 
                 self.providers.database.vector.delete(
                     filter={"document_id": {"$eq": doc_id}}
@@ -400,7 +353,7 @@ class IngestionService(Service):
         document_infos: list[DocumentInfo],
         skipped_documents: list[tuple[str, str]],
         processed_documents: dict,
-        user: Optional[User] = None,
+        user_id: str,
     ):
         skipped_ids = [ele[0] for ele in skipped_documents]
         failed_ids = []
@@ -423,10 +376,10 @@ class IngestionService(Service):
 
         documents_to_upsert = []
         for document_info in document_infos:
-            if document_info.document_id not in skipped_ids:
-                if document_info.document_id in failed_ids:
+            if document_info.id not in skipped_ids:
+                if document_info.id in failed_ids:
                     document_info.status = "failure"
-                elif document_info.document_id in successful_ids:
+                elif document_info.id in successful_ids:
                     document_info.status = "success"
                 documents_to_upsert.append(document_info)
 
@@ -461,16 +414,9 @@ class IngestionService(Service):
                             log_id=run_id,
                             key="document_parse_result",
                             value=value,
-                            user_id=str(user.id) if user else None,
+                            user_id=user_id,
                         )
 
-        if not user:
-            # TODO: add in link to migration guide
-            warnings.warn(
-                "Logs excluding user ids are deprecated and will be removed in version 0.3.0. Please follow the migration guide here.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         return results
 
     @staticmethod

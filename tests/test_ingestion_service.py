@@ -113,12 +113,12 @@ async def test_ingest_duplicate_document(ingestion_service, mock_vector_db):
     )
     mock_vector_db.relational.get_documents_overview.return_value = [
         DocumentInfo(
-            document_id=document.id,
+            id=document.id,
             version="v0",
             size_in_bytes=len(document.data),
             metadata={},
             title=str(document.id),
-            user_id=None,
+            user_id=generate_id_from_label("user_1"),
             created_at=datetime.now(),
             updated_at=datetime.now(),
             status="success",
@@ -310,7 +310,7 @@ async def test_version_increment(ingestion_service, mock_vector_db):
     )
     mock_vector_db.relational.get_documents_overview.return_value = [
         DocumentInfo(
-            document_id=document.id,
+            id=document.id,
             version="v2",
             status="success",
             size_in_bytes=0,
@@ -332,7 +332,7 @@ async def test_version_increment(ingestion_service, mock_vector_db):
 async def test_process_ingestion_results_error_handling(ingestion_service):
     document_infos = [
         DocumentInfo(
-            document_id=uuid.uuid4(),
+            id=uuid.uuid4(),
             version="v0",
             status="processing",
             size_in_bytes=0,
@@ -342,10 +342,10 @@ async def test_process_ingestion_results_error_handling(ingestion_service):
     ingestion_results = {
         "embedding_pipeline_output": [
             (
-                document_infos[0].document_id,
+                document_infos[0].id,
                 R2RDocumentProcessingError(
                     "Unexpected error",
-                    document_id=document_infos[0].document_id,
+                    document_id=document_infos[0].id,
                 ),
             )
         ]
@@ -355,7 +355,7 @@ async def test_process_ingestion_results_error_handling(ingestion_service):
         ingestion_results,
         document_infos,
         [],
-        {document_infos[0].document_id: "test"},
+        {document_infos[0].id: "test"},
     )
 
     assert len(result["failed_documents"]) == 1
