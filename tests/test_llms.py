@@ -8,7 +8,6 @@ from r2r import CompletionConfig, GenerationConfig
 from r2r.base.abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
 from r2r.providers import LiteCompletionProvider, OpenAICompletionProvider
 
-
 class MockCompletionResponse:
     def __init__(self, content):
         self.id = "mock_id"

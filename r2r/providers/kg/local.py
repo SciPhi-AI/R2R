@@ -10,22 +10,10 @@ from r2r.base import (
     KGConfig,
     KGProvider,
     PromptProvider,
-    Relation,
+    RelationshipType,
     format_entity_types,
     format_relations,
     Community,
-)
-from r2r.base.abstractions.llama_abstractions import (
-    LIST_LIMIT,
-    ChunkNode,
-    EntityNode,
-    LabelledNode,
-    PropertyGraphStore,
-    Relation,
-    Triplet,
-    VectorStoreQuery,
-    clean_string_values,
-    value_sanitize,
 )
 
 from r2r.base.abstractions.graph import (
@@ -238,13 +226,13 @@ class LocalKGProvider(KGProvider):
         pass
 
 
-    def update_extraction_prompt(self, prompt_provider: Any, entity_types: list[Any], relations: list[Relation]):
+    def update_extraction_prompt(self, prompt_provider: Any, entity_types: list[Any], relations: list[RelationshipType]):
         return super().update_extraction_prompt(prompt_provider, entity_types, relations)
     
-    def update_kg_search_prompt(self, prompt_provider: Any, entity_types: list[Any], relations: list[Relation]):
+    def update_kg_search_prompt(self, prompt_provider: Any, entity_types: list[Any], relations: list[RelationshipType]):
         return super().update_kg_search_prompt(prompt_provider, entity_types, relations)
     
-    def vector_search(self, query: VectorStoreQuery) -> Tuple[List[EntityNode], List[float]]:
+    def vector_search(self, query) -> Tuple[List, List[float]]:
         return super().vector_search(query)
     
     def get_rel_map(self, subjs: list[str] | None = None, depth: int = 2, limit: int = 30) -> dict[str, list[list[str]]]:
@@ -253,5 +241,5 @@ class LocalKGProvider(KGProvider):
     def get_schema(self) -> dict[str, Any]:
         pass
 
-    def vector_query(self, query: VectorStoreQuery, **kwargs: Any) -> Tuple[list[LabelledNode], list[float]]:
+    def vector_query(self, query, **kwargs: Any) -> Tuple[list[Entity], list[float]]:
         pass

@@ -209,3 +209,4 @@ class KGSearchSearchPipe(GeneratorPipe):
         else:
             async for item in self.global_search(input, state, run_id, kg_search_settings):
                 yield item
+                

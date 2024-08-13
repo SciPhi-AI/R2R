@@ -11,7 +11,6 @@ from r2r.base import (
     KVLoggingSingleton,
     PipeType,
 )
-from r2r.base.abstractions.llama_abstractions import EntityNode, Relation
 from r2r.base.abstractions.graph import Entity, Triple
 from r2r.base.pipes.base_pipe import AsyncPipe
 

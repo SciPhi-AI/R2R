@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from dataclasses import dataclass
 from typing import Any
 import uuid
+from abc import ABC, abstractmethod
 
 logger = logging.getLogger(__name__)
 
@@ -25,24 +26,64 @@ class Named(Identified):
     title: str
     """The name/title of the item."""
 
+class EntityType(BaseModel):
+    id: str
+    name: str
+    description: str | None = None
+
+class RelationshipType(BaseModel):
+    id: str
+    name: str
+    description: str | None = None
+
+class Entity(BaseModel):
+    """An entity extracted from a document."""
+
+    id: str
+    category: str
+    subcategory: Optional[str] = None
+    value: str
+    description: Optional[str] = None
+    description_embedding: list[float] = None
+    name_embedding: list[float] = None
+    graph_embedding: list[float] = None
+    community_ids: list[str] = None
+    text_unit_ids: list[str] = None
+    document_ids: list[str] = None
+    rank: int | None = 1
+    attributes: dict[str, Any] = None
+
+    def __str__(self):
+        return (
+            f"{self.category}:{self.subcategory}:{self.value}"
+            if self.subcategory
+            else f"{self.category}:{self.value}"
+        )
+    
 class Triple(BaseModel):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
     id: str
 
-    subject: str
+    subject: str | None = None
     """The source entity name."""
 
-    object: str
+    predicate: str | None = None
+    """A description of the relationship (optional)."""
+
+    object: str | None = None
     """The target entity name."""
+
+    subject_id: str | None = None
+    """The source entity id."""
+
+    object_id: str | None = None
+    """The target entity ids."""
 
     weight: float | None = 1.0
     """The edge weight."""
 
     description: str | None = None
-    """A description of the relationship (optional)."""
-
-    predicate: str | None = None
     """A description of the relationship (optional)."""
 
     predicate_embedding: list[float] | None = None
@@ -86,29 +127,6 @@ class Triple(BaseModel):
             attributes=d.get(attributes_key),
         )
 
-class Entity(BaseModel):
-    """An entity extracted from a document."""
-
-    id: str
-    category: str
-    subcategory: Optional[str] = None
-    value: str
-    description: Optional[str] = None
-    description_embedding: list[float] = None
-    name_embedding: list[float] = None
-    graph_embedding: list[float] = None
-    community_ids: list[str] = None
-    text_unit_ids: list[str] = None
-    document_ids: list[str] = None
-    rank: int | None = 1
-    attributes: dict[str, Any] = None
-
-    def __str__(self):
-        return (
-            f"{self.category}:{self.subcategory}:{self.value}"
-            if self.subcategory
-            else f"{self.category}:{self.value}"
-        )
 
 
 @dataclass

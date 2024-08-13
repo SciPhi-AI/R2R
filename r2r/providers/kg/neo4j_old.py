@@ -14,18 +14,6 @@ from r2r.base import (
     format_relations,
     Community,
 )
-from r2r.base.abstractions.llama_abstractions import (
-    LIST_LIMIT,
-    ChunkNode,
-    EntityNode,
-    LabelledNode,
-    PropertyGraphStore,
-    Relation,
-    Triplet,
-    VectorStoreQuery,
-    clean_string_values,
-    value_sanitize,
-)
 
 from r2r.base.abstractions.graph import (
     Entity,
@@ -418,7 +406,7 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
                 param_map={"data": entity_dicts},
             )
 
-    def upsert_relations(self, relations: List[Relation]) -> None:
+    def upsert_relations(self, relations: List[RelationshipType]) -> None:
         """Add relations."""
         params = [r.dict() for r in relations]
 
@@ -1013,7 +1001,7 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
         self,
         prompt_provider: PromptProvider,
         entity_types: list[EntityType],
-        relations: list[Relation],
+        relationship_types: list[RelationshipType],
     ):
         # Fetch the kg extraction prompt with blank entity types and relations
         # Note - Assumes that for given prompt there is a `_with_spec` that can have entities + relations specified
@@ -1038,7 +1026,7 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
         self,
         prompt_provider: PromptProvider,
         entity_types: list[EntityType],
-        relations: list[Relation],
+        relationship_types: list[RelationshipType],
     ):
         # Fetch the kg extraction prompt with blank entity types and relations
         # Note - Assumes that for given prompt there is a `_with_spec` that can have entities + relations specified

@@ -5,16 +5,13 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Optional, Tuple
 
-from ..abstractions.llama_abstractions import EntityNode, LabelledNode
-from ..abstractions.llama_abstractions import Relation as LlamaRelation
-from ..abstractions.llama_abstractions import VectorStoreQuery
 from ..abstractions.graph import KGExtraction
 from .base import ProviderConfig
 from .prompt import PromptProvider
 
 if TYPE_CHECKING:
     from r2r.main import R2RClient
-from ...base.utils.base_utils import EntityType, Relation
+from ...base.utils.base_utils import EntityType, RelationshipType
 from ..abstractions.llm import GenerationConfig
 from ..abstractions.graph import Entity, Triple
 
@@ -25,7 +22,7 @@ class KGConfig(ProviderConfig):
     """A base KG config class"""
 
     provider: Optional[str] = None
-    batch_size: int = 1
+    batch_size: Optional[int] = 1
     kg_extraction_prompt: Optional[str] = "few_shot_ner_kg_extraction"
     kg_search_prompt: Optional[str] = "kg_search"
     kg_extraction_config: Optional[GenerationConfig] = None
@@ -77,21 +74,12 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    def retrieve_cache(
-        self,
-        cache_type: str,
-        cache_id: str,
-    ) -> bool:
-        """Abstract method to check if the entity is in the cache."""
-        pass
-
-    @abstractmethod
-    def upsert_nodes(self, nodes: list[Any], *args, **kwargs) -> None:
+    def upsert_entities(self, entities: list[Entity], *args, **kwargs) -> None:
         """Abstract method to add triplet."""
         pass
 
     @abstractmethod
-    def upsert_relations(self, relations: list[LlamaRelation]) -> None:
+    def upsert_triples(self, triples: list[Triple]) -> None:
         """Abstract method to add triplet."""
         pass
 
@@ -129,8 +117,8 @@ class KGProvider(ABC):
 
     @abstractmethod
     def vector_query(
-        self, query: VectorStoreQuery, **kwargs: Any
-    ) -> Tuple[list[LabelledNode], list[float]]:
+        self, query, **kwargs: Any
+    ) -> Tuple[list[Entity], list[float]]:
         """Abstract method to query the graph store with a vector store query."""
 
     # TODO - Type this method.
@@ -139,7 +127,7 @@ class KGProvider(ABC):
         self,
         prompt_provider: Any,
         entity_types: list[Any],
-        relations: list[Relation],
+        relationship_types: list[RelationshipType],
     ):
         """Abstract method to update the KG extraction prompt."""
         pass
@@ -150,7 +138,7 @@ class KGProvider(ABC):
         self,
         prompt_provider: Any,
         entity_types: list[Any],
-        relations: list[Relation],
+        relationship_types: list[RelationshipType],
     ):
         """Abstract method to update the KG agent prompt."""
         pass
@@ -171,7 +159,7 @@ def update_kg_prompt(
     r2r_prompts: PromptProvider,
     prompt_base: str,
     entity_types: list[EntityType],
-    relations: list[Relation],
+    relationship_types: list[RelationshipType],
 ) -> None:
     # TODO - DO NOT HARD CODE THIS!
     if len(entity_types) > 10:

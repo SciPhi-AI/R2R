@@ -1,4 +1,4 @@
-graphrag_triplet_extraction:
+graphrag_triplet_extraction_few_shot:
   template: >
     -Goal-
     Given a text document, identify all entities and their entity types from the text and all relationships among the identified entities.
@@ -22,7 +22,15 @@ graphrag_triplet_extraction:
     ######################
     text: {input}
     ######################
+
+    Only extract entities of the given types 
+    {entity_types}
+
+    Only extract relations of the given types
+    {relation_types}
     
   input_types:
     max_knowledge_triplets: int
     input: str
+    entity_types: list[str]
+    relation_types: list[str]

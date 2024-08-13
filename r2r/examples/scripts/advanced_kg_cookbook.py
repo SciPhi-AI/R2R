@@ -114,7 +114,7 @@ def main(
         Relation("FOUNDED"),
         # Company relations
         Relation("RAISED"),
-        Relation("REVENUE"),
+        Relation("REVENUE"),    
         Relation("TEAM_SIZE"),
         Relation("LOCATION"),
         Relation("ACQUIRED_BY"),
@@ -134,13 +134,9 @@ def main(
     client = R2RClient(base_url=base_url)
     r2r_prompts = R2RPromptProvider()
 
-    prompt_base = (
-        "zero_shot_ner_kg_extraction"
-        if local_mode
-        else "few_shot_ner_kg_extraction"
-    )
+    prompt = 'graphrag_triplet_extraction_few_shot'
 
-    update_kg_prompt(client, r2r_prompts, prompt_base, entity_types, relations)
+    update_kg_prompt(client, r2r_prompts, prompt, entity_types, relations)
 
     url_map = get_all_yc_co_directory_urls()
 
@@ -166,7 +162,9 @@ def main(
         except:
             continue
 
-    print(client.inspect_knowledge_graph(1_000)["results"])
+    print("Inspecting Knowledge Graph")
+    print(client.inspect_knowledge_graph(1000)["results"])
+
 
     if not local_mode:
 
@@ -174,18 +172,20 @@ def main(
             client, r2r_prompts, "kg_search", entity_types, relations
         )
 
+
+        # support local and global 
         result = client.search(
             query="Find up to 10 founders that worked at Google",
-            kg_search_settings={"use_kg_search": True},
+            kg_search_settings={"ause_kg_search": True},
         )["results"]
 
-        print("Search Result:\n", result["kg_search_results"])
+        # print("Search Result:\n", result["kg_search_results"])
 
-        result = client.rag(
-            query="Find up to 10 founders that worked at Google",
-            kg_search_settings={"use_kg_search": True},
-        )
-        print("RAG Result:\n", result)
+        # result = client.rag(
+        #     query="Find up to 10 founders that worked at Google",
+        #     kg_search_settings={"use_kg_search": True},
+        # )
+        # print("RAG Result:\n", result)
 
 
 if __name__ == "__main__":

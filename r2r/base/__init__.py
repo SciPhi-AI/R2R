@@ -21,6 +21,8 @@ from .abstractions.document import (
 
 from .abstractions.graph import (
     Entity,
+    EntityType,
+    RelationshipType,
     Community,
     CommunityReport,
     KGExtraction,
@@ -31,7 +33,6 @@ from .abstractions.graph import (
 
 from .abstractions.embedding import EmbeddingPurpose
 from .abstractions.exception import R2RDocumentProcessingError, R2RException
-from .abstractions.llama_abstractions import VectorStoreQuery
 from .abstractions.llm import (
     GenerationConfig,
     LLMChatCompletion,
@@ -86,9 +87,7 @@ from .providers.llm import CompletionConfig, CompletionProvider
 from .providers.parsing import ParsingConfig, ParsingProvider
 from .providers.prompt import PromptConfig, PromptProvider
 from .utils import (
-    EntityType,
     RecursiveCharacterTextSplitter,
-    Relation,
     TextSplitter,
     format_entity_types,
     format_relations,
@@ -178,7 +177,6 @@ __all__ = [
     "PromptProvider",
     "GenerationConfig",
     "RAGCompletion",
-    "VectorStoreQuery",
     "LLMChatCompletion",
     "LLMChatCompletionChunk",
     "CompletionConfig",
@@ -200,7 +198,7 @@ __all__ = [
     "RecursiveCharacterTextSplitter",
     "to_async_generator",
     "EntityType",
-    "Relation",
+    "RelationshipType",
     "format_entity_types",
     "format_relations",
     "increment_version",
