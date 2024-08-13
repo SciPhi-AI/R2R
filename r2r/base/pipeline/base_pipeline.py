@@ -5,34 +5,24 @@ import logging
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional
 
-from ..logging.kv_logger import KVLoggingSingleton
+from ..logging.run_logger import RunLoggingSingleton
 from ..logging.run_manager import RunManager, manage_run
 from ..pipes.base_pipe import AsyncPipe, AsyncState
 
 logger = logging.getLogger(__name__)
 
 
-class PipelineTypes(Enum):
-    AGENT = "agent"
-    INGESTION = "ingestion"
-    OTHER = "other"
-    RAG = "rag"
-    SEARCH = "search"
-
-
 class AsyncPipeline:
     """Pipeline class for running a sequence of pipes."""
 
-    pipeline_type: str = "other"
-
     def __init__(
         self,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         run_manager: Optional[RunManager] = None,
     ):
         self.pipes: list[AsyncPipe] = []
         self.upstream_outputs: list[list[dict[str, str]]] = []
-        self.pipe_logger = pipe_logger or KVLoggingSingleton()
+        self.pipe_logger = pipe_logger or RunLoggingSingleton()
         self.run_manager = run_manager or RunManager(self.pipe_logger)
         self.futures = {}
         self.level = 0
@@ -62,16 +52,9 @@ class AsyncPipeline:
         """Run the pipeline."""
         run_manager = run_manager or self.run_manager
 
-        try:
-            PipelineTypes(self.pipeline_type)
-        except ValueError as e:
-            raise ValueError(
-                f"Invalid pipeline type: {self.pipeline_type}, must be one of {PipelineTypes.__members__.keys()}"
-            ) from e
-
         self.state = state or AsyncState()
         current_input = input
-        async with manage_run(run_manager, self.pipeline_type):
+        async with manage_run(run_manager):
             try:
                 for pipe_num in range(len(self.pipes)):
                     config_name = self.pipes[pipe_num].config.name

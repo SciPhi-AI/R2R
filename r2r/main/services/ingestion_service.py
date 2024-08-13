@@ -12,9 +12,9 @@ from r2r.base import (
     Document,
     DocumentInfo,
     DocumentType,
-    KVLoggingSingleton,
     R2RDocumentProcessingError,
     R2RException,
+    RunLoggingSingleton,
     RunManager,
     User,
     generate_id_from_label,
@@ -43,7 +43,7 @@ class IngestionService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: KVLoggingSingleton,
+        logging_connection: RunLoggingSingleton,
     ):
         super().__init__(
             config,
@@ -418,7 +418,7 @@ class IngestionService(Service):
                 if key in ["processed_documents", "failed_documents"]:
                     for value in results[key]:
                         await self.logging_connection.log(
-                            log_id=run_id,
+                            run_id=run_id,
                             key="document_parse_result",
                             value=value,
                         )

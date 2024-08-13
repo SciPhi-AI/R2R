@@ -11,12 +11,12 @@ from r2r import (
     DocumentStatus,
     DocumentType,
     GenerationConfig,
-    KVLoggingSingleton,
     R2RConfig,
     R2REngine,
     R2RPipeFactory,
     R2RPipelineFactory,
     R2RProviderFactory,
+    RunLoggingSingleton,
     User,
     VectorSearchSettings,
     generate_id_from_label,
@@ -66,9 +66,9 @@ def app(request):
             print(
                 "config.logging.logging_path = ", config.logging.logging_path
             )
-            KVLoggingSingleton.configure(config.logging)
+            RunLoggingSingleton.configure(config.logging)
         except:
-            KVLoggingSingleton._config.logging_path = (
+            RunLoggingSingleton._config.logging_path = (
                 config.logging.logging_path
             )
 
@@ -80,7 +80,7 @@ def app(request):
 
 @pytest.fixture
 def logging_connection():
-    return KVLoggingSingleton()
+    return RunLoggingSingleton()
 
 
 @pytest.fixture
@@ -152,7 +152,7 @@ async def test_ingest_txt_file(app, user):
 async def test_ingest_search_txt_file(app, user, logging_connection):
 
     # Convert metadata to JSON string
-    run_info = await logging_connection.get_info_logs(log_type_filter="search")
+    run_info = await logging_connection.get_info_logs(run_type_filter="search")
     print("a", len(run_info))
 
     # Prepare the test data
@@ -181,7 +181,7 @@ async def test_ingest_search_txt_file(app, user, logging_connection):
         file.file.seek(0)  # Move back to the start of the file
 
     # Convert metadata to JSON string
-    run_info = await logging_connection.get_info_logs(log_type_filter="search")
+    run_info = await logging_connection.get_info_logs(run_type_filter="search")
     print("b", len(run_info))
 
     ingestion_result = await app.aingest_files(
@@ -189,7 +189,7 @@ async def test_ingest_search_txt_file(app, user, logging_connection):
     )
     print("ingestion_result = ", ingestion_result)
 
-    run_info = await logging_connection.get_info_logs(log_type_filter="search")
+    run_info = await logging_connection.get_info_logs(run_type_filter="search")
     print("c", len(run_info))
 
     search_results = await app.asearch("who was aristotle?")
@@ -209,7 +209,7 @@ async def test_ingest_search_txt_file(app, user, logging_connection):
         "was an Ancient Greek philosopher and polymath"
         in search_results["vector_search_results"][0]["metadata"]["text"]
     )
-    run_info = await logging_connection.get_info_logs(log_type_filter="search")
+    run_info = await logging_connection.get_info_logs(run_type_filter="search")
     print("d", len(run_info))
     assert len(run_info) == 2, f"Expected 2 runs, but got {len(run_info)}"
 

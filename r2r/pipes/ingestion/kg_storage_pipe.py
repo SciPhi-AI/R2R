@@ -7,8 +7,8 @@ from r2r.base import (
     AsyncState,
     EmbeddingProvider,
     KGProvider,
-    KVLoggingSingleton,
     PipeType,
+    RunLoggingSingleton,
 )
 from r2r.base.abstractions.kg import KGExtraction
 from r2r.base.abstractions.llama_abstractions import EntityNode, Relation
@@ -26,7 +26,7 @@ class KGStoragePipe(AsyncPipe):
         kg_provider: KGProvider,
         embedding_provider: Optional[EmbeddingProvider] = None,
         storage_batch_size: int = 1,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[AsyncPipe.PipeConfig] = None,
         *args,

@@ -7,9 +7,9 @@ from r2r.base import (
     CompletionProvider,
     KGProvider,
     KGSearchSettings,
-    KVLoggingSingleton,
     PipeType,
     PromptProvider,
+    RunLoggingSingleton,
 )
 
 from ..abstractions.generator_pipe import GeneratorPipe
@@ -27,7 +27,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         kg_provider: KGProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[GeneratorPipe.PipeConfig] = None,
         *args,

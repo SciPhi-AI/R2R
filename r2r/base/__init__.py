@@ -37,15 +37,7 @@ from .abstractions.search import (
 )
 from .abstractions.user import Token, TokenData, User, UserCreate, UserStats
 from .abstractions.vector import Vector, VectorEntry, VectorType
-from .logging.kv_logger import (
-    KVLoggingSingleton,
-    LocalKVLoggingProvider,
-    LoggingConfig,
-    PostgresKVLoggingProvider,
-    PostgresLoggingConfig,
-    RedisKVLoggingProvider,
-    RedisLoggingConfig,
-)
+from .logging.base import RunType
 from .logging.log_processor import (
     AnalysisTypes,
     FilterCriteria,
@@ -53,9 +45,18 @@ from .logging.log_processor import (
     LogAnalyticsConfig,
     LogProcessor,
 )
+from .logging.run_logger import (
+    LocalRunLoggingProvider,
+    LoggingConfig,
+    PostgresLoggingConfig,
+    PostgresRunLoggingProvider,
+    RedisLoggingConfig,
+    RedisRunLoggingProvider,
+    RunLoggingSingleton,
+)
 from .logging.run_manager import RunManager, manage_run
 from .parsers import AsyncParser
-from .pipeline.base_pipeline import AsyncPipeline, PipelineTypes
+from .pipeline.base_pipeline import AsyncPipeline
 from .pipes.base_pipe import AsyncPipe, AsyncState, PipeType
 from .providers.auth import AuthConfig, AuthProvider
 from .providers.chunking import ChunkingConfig, ChunkingProvider
@@ -99,9 +100,9 @@ __all__ = [
     "LogAnalyticsConfig",
     "LogProcessor",
     "LoggingConfig",
-    "LocalKVLoggingProvider",
+    "LocalRunLoggingProvider",
     "PostgresLoggingConfig",
-    "PostgresKVLoggingProvider",
+    "PostgresRunLoggingProvider",
     "RedisLoggingConfig",
     "AsyncSyncMeta",
     "syncable",
@@ -112,8 +113,9 @@ __all__ = [
     "Message",
     "MessageType",
     "Conversation",
-    "RedisKVLoggingProvider",
-    "KVLoggingSingleton",
+    "RedisRunLoggingProvider",
+    "RunLoggingSingleton",
+    "RunType",
     "RunManager",
     "manage_run",
     # Abstractions
@@ -151,7 +153,6 @@ __all__ = [
     "KGExtraction",
     "UserStats",
     # Pipelines
-    "PipelineTypes",
     "AsyncPipeline",
     # Providers
     "ParsingConfig",

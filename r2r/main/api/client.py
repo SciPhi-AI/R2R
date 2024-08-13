@@ -461,13 +461,13 @@ class R2RClient:
 
     def logs(
         self,
-        log_type_filter: Optional[str] = None,
+        run_type_filter: Optional[str] = None,
         max_runs: int = 100,
     ) -> dict:
         self._ensure_authenticated()
 
         request = R2RLogsRequest(
-            log_type_filter=log_type_filter,
+            run_type_filter=run_type_filter,
             max_runs_requested=max_runs,
         )
         return self._make_request(

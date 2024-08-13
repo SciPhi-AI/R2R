@@ -4,14 +4,15 @@ from contextlib import asynccontextmanager
 from typing import Any, Optional
 
 from r2r.base import User
+from r2r.base.logging.base import RunType
 
-from .kv_logger import KVLoggingSingleton
+from .run_logger import RunLoggingSingleton
 
 run_id_var = contextvars.ContextVar("run_id", default=None)
 
 
 class RunManager:
-    def __init__(self, logger: KVLoggingSingleton):
+    def __init__(self, logger: RunLoggingSingleton):
         self.logger = logger
         self.run_info = {}
 
@@ -19,13 +20,13 @@ class RunManager:
         return uuid.uuid4()
 
     async def set_run_info(
-        self, pipeline_type: str, run_id: Optional[uuid.UUID] = None
+        self, run_type: str, run_id: Optional[uuid.UUID] = None
     ):
         run_id = run_id or run_id_var.get()
         if run_id is None:
             run_id = self.generate_run_id()
             token = run_id_var.set(run_id)
-            self.run_info[run_id] = {"pipeline_type": pipeline_type}
+            self.run_info[run_id] = {"run_type": run_type}
         else:
             token = run_id_var.set(run_id)
         return run_id, token
@@ -42,7 +43,7 @@ class RunManager:
     ):
         if run_id := run_id_var.get():
             await self.logger.log_info(
-                log_id=run_id,
+                run_id=run_id,
                 key=key,
                 value=value,
                 user_id=user.id,
@@ -60,10 +61,10 @@ class RunManager:
 @asynccontextmanager
 async def manage_run(
     run_manager: RunManager,
-    pipeline_type: str,
+    run_type: RunType = RunType.UNSPECIFIED,
     run_id: Optional[uuid.UUID] = None,
 ):
-    run_id, token = await run_manager.set_run_info(pipeline_type, run_id)
+    run_id, token = await run_manager.set_run_info(run_type, run_id)
     try:
         yield run_id
     finally:

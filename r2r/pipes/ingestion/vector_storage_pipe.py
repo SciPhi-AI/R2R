@@ -6,8 +6,8 @@ from typing import Any, AsyncGenerator, Optional, Tuple, Union
 from r2r.base import (
     AsyncState,
     DatabaseProvider,
-    KVLoggingSingleton,
     PipeType,
+    RunLoggingSingleton,
     VectorEntry,
 )
 from r2r.base.pipes.base_pipe import AsyncPipe
@@ -27,7 +27,7 @@ class VectorStoragePipe(AsyncPipe):
         self,
         database_provider: DatabaseProvider,
         storage_batch_size: int = 128,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[AsyncPipe.PipeConfig] = None,
         *args,

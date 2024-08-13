@@ -8,10 +8,10 @@ from r2r.base import (
     CompletionRecord,
     GenerationConfig,
     KGSearchSettings,
-    KVLoggingSingleton,
     Message,
     MessageType,
     R2RException,
+    RunLoggingSingleton,
     RunManager,
     User,
     VectorSearchSettings,
@@ -36,7 +36,7 @@ class RetrievalService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: KVLoggingSingleton,
+        logging_connection: RunLoggingSingleton,
     ):
         super().__init__(
             config,
@@ -98,7 +98,7 @@ class RetrievalService(Service):
             latency = f"{t1 - t0:.2f}"
 
             await self.logging_connection.log(
-                log_id=run_id,
+                run_id=run_id,
                 key="search_latency",
                 value=latency,
             )
@@ -186,7 +186,7 @@ class RetrievalService(Service):
                 completion_record.completion_end_time = datetime.now()
 
                 await self.logging_connection.log(
-                    log_id=run_id,
+                    run_id=run_id,
                     key="completion_record",
                     value=completion_record.to_json(),
                 )
@@ -268,7 +268,7 @@ class RetrievalService(Service):
                     latency = f"{t1 - t0:.2f}"
 
                     await self.logging_connection.log(
-                        log_id=run_id,
+                        run_id=run_id,
                         key="rag_agent_generation_latency",
                         value=latency,
                     )
@@ -305,7 +305,7 @@ class RetrievalService(Service):
                 latency = f"{t1 - t0:.2f}"
 
                 await self.logging_connection.log(
-                    log_id=run_id,
+                    run_id=run_id,
                     key="rag_agent_generation_latency",
                     value=latency,
                 )

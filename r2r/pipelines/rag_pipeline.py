@@ -5,7 +5,7 @@ from typing import Any, Optional
 from ..base import User
 from ..base.abstractions.llm import GenerationConfig
 from ..base.abstractions.search import KGSearchSettings, VectorSearchSettings
-from ..base.logging.kv_logger import KVLoggingSingleton
+from ..base.logging.run_logger import RunLoggingSingleton
 from ..base.logging.run_manager import RunManager, manage_run
 from ..base.pipeline.base_pipeline import AsyncPipeline
 from ..base.pipes.base_pipe import AsyncPipe, AsyncState
@@ -17,11 +17,9 @@ logger = logging.getLogger(__name__)
 class RAGPipeline(AsyncPipeline):
     """A pipeline for RAG."""
 
-    pipeline_type: str = "rag"
-
     def __init__(
         self,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         run_manager: Optional[RunManager] = None,
     ):
         super().__init__(pipe_logger, run_manager)
@@ -41,7 +39,7 @@ class RAGPipeline(AsyncPipeline):
         **kwargs: Any,
     ):
         self.state = state or AsyncState()
-        async with manage_run(run_manager, self.pipeline_type):
+        async with manage_run(run_manager):
             if not self._search_pipeline:
                 raise ValueError(
                     "`_search_pipeline` must be set before running the RAG pipeline"

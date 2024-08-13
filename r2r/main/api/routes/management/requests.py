@@ -34,7 +34,7 @@ class R2RDocumentChunksRequest(BaseModel):
 
 
 class R2RLogsRequest(BaseModel):
-    log_type_filter: Optional[str] = (None,)
+    run_type_filter: Optional[str] = (None,)
     max_runs_requested: int = 100
 
 

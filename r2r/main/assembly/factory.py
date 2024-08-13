@@ -18,11 +18,11 @@ from r2r.base import (
     EmbeddingConfig,
     EmbeddingProvider,
     KGProvider,
-    KVLoggingSingleton,
     ParsingConfig,
     ParsingProvider,
     PromptConfig,
     PromptProvider,
+    RunLoggingSingleton,
 )
 from r2r.pipelines import IngestionPipeline, RAGPipeline, SearchPipeline
 
@@ -551,7 +551,7 @@ class R2RPipelineFactory:
         )
 
     def configure_logging(self):
-        KVLoggingSingleton.configure(self.config.logging)
+        RunLoggingSingleton.configure(self.config.logging)
 
 
 class R2RAgentFactory:

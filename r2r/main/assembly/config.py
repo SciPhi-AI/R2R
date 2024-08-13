@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from ...base.abstractions.agent import AgentConfig
 from ...base.abstractions.llm import GenerationConfig
-from ...base.logging.kv_logger import LoggingConfig
+from ...base.logging.run_logger import LoggingConfig
 from ...base.providers.auth import AuthConfig
 from ...base.providers.chunking import ChunkingConfig
 from ...base.providers.crypto import CryptoConfig

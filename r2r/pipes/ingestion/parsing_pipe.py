@@ -9,9 +9,9 @@ from r2r.base import (
     AsyncState,
     Document,
     DocumentExtraction,
-    KVLoggingSingleton,
     ParsingProvider,
     PipeType,
+    RunLoggingSingleton,
     generate_id_from_label,
 )
 from r2r.base.abstractions.exception import R2RDocumentProcessingError
@@ -25,7 +25,7 @@ class ParsingPipe(AsyncPipe):
     def __init__(
         self,
         parsing_provider: ParsingProvider,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[AsyncPipe.PipeConfig] = None,
         *args,

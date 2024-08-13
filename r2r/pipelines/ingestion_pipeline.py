@@ -4,7 +4,7 @@ from asyncio import Queue
 from typing import Any, Optional
 
 from r2r.base import User
-from r2r.base.logging.kv_logger import KVLoggingSingleton
+from r2r.base.logging.run_logger import RunLoggingSingleton
 from r2r.base.logging.run_manager import RunManager, manage_run
 from r2r.base.pipeline.base_pipeline import AsyncPipeline, dequeue_requests
 from r2r.base.pipes.base_pipe import AsyncPipe, AsyncState
@@ -16,11 +16,9 @@ logger = logging.getLogger(__name__)
 class IngestionPipeline(AsyncPipeline):
     """A pipeline for ingestion."""
 
-    pipeline_type: str = "ingestion"
-
     def __init__(
         self,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         run_manager: Optional[RunManager] = None,
     ):
         super().__init__(pipe_logger, run_manager)
@@ -40,7 +38,7 @@ class IngestionPipeline(AsyncPipeline):
         **kwargs: Any,
     ) -> None:
         self.state = state or AsyncState()
-        async with manage_run(run_manager, self.pipeline_type):
+        async with manage_run(run_manager):
             if self.parsing_pipe is None:
                 raise ValueError(
                     "parsing_pipe must be set before running the ingestion pipeline"

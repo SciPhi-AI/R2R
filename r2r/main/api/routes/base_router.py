@@ -5,7 +5,8 @@ import logging
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from r2r.base import PipelineTypes, R2RException, manage_run
+from r2r.base import R2RException, manage_run
+from r2r.base.logging.base import RunType
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class BaseRouter:
         self.engine = engine
         self.router = APIRouter()
 
-    def base_endpoint(self, func: callable, pipeline_type: PipelineTypes):
+    def base_endpoint(self, func: callable, run_type: RunType):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             async with manage_run(
@@ -31,8 +32,8 @@ class BaseRouter:
                         },
                     )
                 await self.engine.run_manager.log_run_info(
-                    key="pipeline_type",
-                    value=pipeline_type,
+                    key="run_type",
+                    value=run_type,
                     user=auth_user,
                 )
 
@@ -51,7 +52,7 @@ class BaseRouter:
                     )
                 except Exception as e:
                     await self.engine.logging_connection.log(
-                        log_id=run_id,
+                        run_id=run_id,
                         key="error",
                         value=str(e),
                     )

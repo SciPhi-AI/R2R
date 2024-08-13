@@ -9,10 +9,10 @@ from r2r.base import (
     CompletionProvider,
     DocumentExtraction,
     KGProvider,
-    KVLoggingSingleton,
     PipeType,
     PromptProvider,
     R2RDocumentProcessingError,
+    RunLoggingSingleton,
 )
 from r2r.base.abstractions.kg import KGExtraction, extract_triples
 from r2r.base.pipes.base_pipe import AsyncPipe
@@ -44,7 +44,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
         prompt_provider: PromptProvider,
         chunking_provider: ChunkingProvider,
         kg_batch_size: int = 1,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[AsyncPipe.PipeConfig] = None,
         *args,

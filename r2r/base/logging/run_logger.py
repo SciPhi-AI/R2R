@@ -11,13 +11,14 @@ import asyncpg
 from pydantic import BaseModel
 
 from ..providers.base import Provider, ProviderConfig
+from .base import RunType
 
 logger = logging.getLogger(__name__)
 
 
 class RunInfoLog(BaseModel):
     run_id: UUID
-    log_type: str
+    run_type: str
     timestamp: datetime
     user_id: UUID
 
@@ -36,7 +37,7 @@ class LoggingConfig(ProviderConfig):
         return ["local", "postgres", "redis"]
 
 
-class KVLoggingProvider(Provider):
+class RunLoggingProvider(Provider):
     @abstractmethod
     async def close(self):
         pass
@@ -44,7 +45,7 @@ class KVLoggingProvider(Provider):
     @abstractmethod
     async def log(
         self,
-        log_id: UUID,
+        run_id: UUID,
         key: str,
         value: str,
     ):
@@ -61,8 +62,8 @@ class KVLoggingProvider(Provider):
     @abstractmethod
     async def info_log(
         self,
-        log_id: UUID,
-        log_type: str,
+        run_id: UUID,
+        run_type: str,
         user_id: UUID,
     ):
         pass
@@ -71,19 +72,19 @@ class KVLoggingProvider(Provider):
     async def get_info_logs(
         self,
         limit: int = 10,
-        log_type_filter: Optional[str] = None,
+        run_type_filter: Optional[RunType] = None,
         user_ids: Optional[list[UUID]] = None,
     ) -> list[RunInfoLog]:
         pass
 
     @abstractmethod
     async def score_completion(
-        self, log_id: UUID, message_id: UUID, score: float
+        self, run_id: UUID, message_id: UUID, score: float
     ):
         pass
 
 
-class LocalKVLoggingProvider(KVLoggingProvider):
+class LocalRunLoggingProvider(RunLoggingProvider):
     def __init__(self, config: LoggingConfig):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
@@ -101,7 +102,7 @@ class LocalKVLoggingProvider(KVLoggingProvider):
             self.aiosqlite = aiosqlite
         except ImportError:
             raise ImportError(
-                "Please install aiosqlite to use the LocalKVLoggingProvider."
+                "Please install aiosqlite to use the LocalRunLoggingProvider."
             )
 
     async def _init(self):
@@ -110,7 +111,7 @@ class LocalKVLoggingProvider(KVLoggingProvider):
             f"""
             CREATE TABLE IF NOT EXISTS {self.log_table} (
                 timestamp DATETIME,
-                log_id TEXT,
+                run_id TEXT,
                 key TEXT,
                 value TEXT
             )
@@ -120,8 +121,8 @@ class LocalKVLoggingProvider(KVLoggingProvider):
             f"""
             CREATE TABLE IF NOT EXISTS {self.log_info_table} (
                 timestamp DATETIME,
-                log_id TEXT UNIQUE,
-                log_type TEXT,
+                run_id TEXT UNIQUE,
+                run_type TEXT,
                 user_id TEXT
             )
         """
@@ -143,52 +144,52 @@ class LocalKVLoggingProvider(KVLoggingProvider):
 
     async def log(
         self,
-        log_id: UUID,
+        run_id: UUID,
         key: str,
         value: str,
     ):
         await self.conn.execute(
             f"""
-            INSERT INTO {self.log_table} (timestamp, log_id, key, value)
+            INSERT INTO {self.log_table} (timestamp, run_id, key, value)
             VALUES (datetime('now'), ?, ?, ?)
             """,
-            (str(log_id), key, value),
+            (str(run_id), key, value),
         )
         await self.conn.commit()
 
     async def info_log(
         self,
-        log_id: UUID,
-        log_type: str,
+        run_id: UUID,
+        run_type: str,
         user_id: UUID,
     ):
         await self.conn.execute(
             f"""
-            INSERT INTO {self.log_info_table} (timestamp, log_id, log_type, user_id)
+            INSERT INTO {self.log_info_table} (timestamp, run_id, run_type, user_id)
             VALUES (datetime('now'), ?, ?, ?)
-            ON CONFLICT(log_id) DO UPDATE SET
+            ON CONFLICT(run_id) DO UPDATE SET
             timestamp = datetime('now'),
-            log_type = excluded.log_type,
+            run_type = excluded.run_type,
             user_id = excluded.user_id
             """,
-            (str(log_id), log_type, str(user_id)),
+            (str(run_id), run_type, str(user_id)),
         )
         await self.conn.commit()
 
     async def get_info_logs(
         self,
         limit: int = 10,
-        log_type_filter: Optional[str] = None,
+        run_type_filter: Optional[RunType] = None,
         user_ids: Optional[list[UUID]] = None,
     ) -> list[RunInfoLog]:
         cursor = await self.conn.cursor()
-        query = "SELECT log_id, log_type, timestamp, user_id"
+        query = "SELECT run_id, run_type, timestamp, user_id"
         query += f" FROM {self.log_info_table}"
         conditions = []
         params = []
-        if log_type_filter:
-            conditions.append("log_type = ?")
-            params.append(log_type_filter)
+        if run_type_filter:
+            conditions.append("run_type = ?")
+            params.append(run_type_filter)
         if user_ids:
             conditions.append(f"user_id IN ({','.join(['?']*len(user_ids))})")
             params.extend([str(user_id) for user_id in user_ids])
@@ -201,7 +202,7 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         return [
             RunInfoLog(
                 run_id=UUID(row[0]),
-                log_type=row[1],
+                run_type=row[1],
                 timestamp=datetime.fromisoformat(row[2]),
                 user_id=UUID(row[3]),
             )
@@ -218,9 +219,9 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         cursor = await self.conn.cursor()
         placeholders = ",".join(["?" for _ in run_ids])
         query = f"""
-        SELECT log_id, key, value, timestamp
+        SELECT run_id, key, value, timestamp
         FROM {self.log_table}
-        WHERE log_id IN ({placeholders})
+        WHERE run_id IN ({placeholders})
         ORDER BY timestamp DESC
         """
 
@@ -234,24 +235,24 @@ class LocalKVLoggingProvider(KVLoggingProvider):
         run_id_count = {str(run_id): 0 for run_id in run_ids}
         for row in rows:
             row_dict = dict(zip([d[0] for d in cursor.description], row))
-            row_run_id = row_dict["log_id"]
+            row_run_id = row_dict["run_id"]
             if (
                 row_run_id in run_id_count
                 and run_id_count[row_run_id] < limit_per_run
             ):
-                row_dict["log_id"] = UUID(row_dict["log_id"])
+                row_dict["run_id"] = UUID(row_dict["run_id"])
                 result.append(row_dict)
                 run_id_count[row_run_id] += 1
         return result
 
     async def score_completion(
-        self, log_id: UUID, message_id: UUID, score: float
+        self, run_id: UUID, message_id: UUID, score: float
     ):
         cursor = await self.conn.cursor()
 
         await cursor.execute(
-            f"SELECT value FROM {self.log_table} WHERE log_id = ? AND key = 'completion_record'",
-            (str(log_id),),
+            f"SELECT value FROM {self.log_table} WHERE run_id = ? AND key = 'completion_record'",
+            (str(run_id),),
         )
         row = await cursor.fetchone()
 
@@ -276,8 +277,8 @@ class LocalKVLoggingProvider(KVLoggingProvider):
                     ]
 
                 await cursor.execute(
-                    f"UPDATE {self.log_table} SET value = ? WHERE log_id = ? AND key = 'completion_record'",
-                    (json.dumps(completion_record), str(log_id)),
+                    f"UPDATE {self.log_table} SET value = ? WHERE run_id = ? AND key = 'completion_record'",
+                    (json.dumps(completion_record), str(run_id)),
                 )
                 await self.conn.commit()
                 return True
@@ -307,7 +308,7 @@ class PostgresLoggingConfig(LoggingConfig):
         return ["postgres"]
 
 
-class PostgresKVLoggingProvider(KVLoggingProvider):
+class PostgresRunLoggingProvider(RunLoggingProvider):
     def __init__(self, config: PostgresLoggingConfig):
         self.log_table = config.log_table
         self.log_info_table = config.log_info_table
@@ -348,7 +349,7 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
                 f"""
                 CREATE TABLE IF NOT EXISTS {self.log_table} (
                     timestamp TIMESTAMPTZ,
-                    log_id UUID,
+                    run_id UUID,
                     key TEXT,
                     value TEXT
                 )
@@ -358,8 +359,8 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
                 f"""
                 CREATE TABLE IF NOT EXISTS {self.log_info_table} (
                     timestamp TIMESTAMPTZ,
-                    log_id UUID UNIQUE,
-                    log_type TEXT,
+                    run_id UUID UNIQUE,
+                    run_type TEXT,
                     user_id UUID
                 )
             """
@@ -380,46 +381,46 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
 
     async def log(
         self,
-        log_id: UUID,
+        run_id: UUID,
         key: str,
         value: str,
     ):
         async with self.pool.acquire() as conn:
             await conn.execute(
-                f"INSERT INTO {self.log_table} (timestamp, log_id, key, value) VALUES (NOW(), $1, $2, $3)",
-                log_id,
+                f"INSERT INTO {self.log_table} (timestamp, run_id, key, value) VALUES (NOW(), $1, $2, $3)",
+                run_id,
                 key,
                 value,
             )
 
     async def info_log(
         self,
-        log_id: UUID,
-        log_type: str,
+        run_id: UUID,
+        run_type: str,
         user_id: UUID,
     ):
         async with self.pool.acquire() as conn:
             await conn.execute(
-                f"INSERT INTO {self.log_info_table} (timestamp, log_id, log_type, user_id) VALUES (NOW(), $1, $2, $3)",
-                log_id,
-                log_type,
+                f"INSERT INTO {self.log_info_table} (timestamp, run_id, run_type, user_id) VALUES (NOW(), $1, $2, $3)",
+                run_id,
+                run_type,
                 user_id,
             )
 
     async def get_info_logs(
         self,
         limit: int = 10,
-        log_type_filter: Optional[str] = None,
+        run_type_filter: Optional[RunType] = None,
         user_ids: Optional[list[UUID]] = None,
     ) -> list[RunInfoLog]:
-        query = f"SELECT log_id, log_type, timestamp, user_id FROM {self.log_info_table}"
+        query = f"SELECT run_id, run_type, timestamp, user_id FROM {self.log_info_table}"
         conditions = []
         params = []
         param_count = 1
 
-        if log_type_filter:
-            conditions.append(f"log_type = ${param_count}")
-            params.append(log_type_filter)
+        if run_type_filter:
+            conditions.append(f"run_type = ${param_count}")
+            params.append(run_type_filter)
             param_count += 1
 
         if user_ids:
@@ -437,8 +438,8 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
             rows = await conn.fetch(query, *params)
             return [
                 RunInfoLog(
-                    run_id=row["log_id"],
-                    log_type=row["log_type"],
+                    run_id=row["run_id"],
+                    run_type=row["run_type"],
                     timestamp=row["timestamp"],
                     user_id=row["user_id"],
                 )
@@ -454,9 +455,9 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
         placeholders = ",".join([f"${i + 1}" for i in range(len(run_ids))])
         query = f"""
         SELECT * FROM (
-            SELECT *, ROW_NUMBER() OVER (PARTITION BY log_id ORDER BY timestamp DESC) as rn
+            SELECT *, ROW_NUMBER() OVER (PARTITION BY run_id ORDER BY timestamp DESC) as rn
             FROM {self.log_table}
-            WHERE log_id::text IN ({placeholders})
+            WHERE run_id::text IN ({placeholders})
         ) sub
         WHERE sub.rn <= ${len(run_ids) + 1}
         ORDER BY sub.timestamp DESC
@@ -467,12 +468,12 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
             return [{key: row[key] for key in row.keys()} for row in rows]
 
     async def score_completion(
-        self, log_id: UUID, message_id: UUID, score: float
+        self, run_id: UUID, message_id: UUID, score: float
     ):
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow(
-                f"SELECT value FROM {self.log_table} WHERE log_id = $1 AND key = 'completion_record'",
-                log_id,
+                f"SELECT value FROM {self.log_table} WHERE run_id = $1 AND key = 'completion_record'",
+                run_id,
             )
 
             if row:
@@ -498,9 +499,9 @@ class PostgresKVLoggingProvider(KVLoggingProvider):
                         ]
 
                     await conn.execute(
-                        f"UPDATE {self.log_table} SET value = $1 WHERE log_id = $2 AND key = 'completion_record'",
+                        f"UPDATE {self.log_table} SET value = $1 WHERE run_id = $2 AND key = 'completion_record'",
                         json.dumps(completion_record),
-                        log_id,
+                        run_id,
                     )
                     return True
 
@@ -523,10 +524,10 @@ class RedisLoggingConfig(LoggingConfig):
         return ["redis"]
 
 
-class RedisKVLoggingProvider(KVLoggingProvider):
+class RedisRunLoggingProvider(RunLoggingProvider):
     def __init__(self, config: RedisLoggingConfig):
         logger.info(
-            f"Initializing RedisKVLoggingProvider with config: {config}"
+            f"Initializing RedisRunLoggingProvider with config: {config}"
         )
 
         if not all(
@@ -562,45 +563,45 @@ class RedisKVLoggingProvider(KVLoggingProvider):
 
     async def log(
         self,
-        log_id: UUID,
+        run_id: UUID,
         key: str,
         value: str,
     ):
         timestamp = datetime.now().timestamp()
         log_entry = {
             "timestamp": timestamp,
-            "log_id": str(log_id),
+            "run_id": str(run_id),
             "key": key,
             "value": value,
         }
         await self.redis.lpush(
-            f"{self.log_key}:{str(log_id)}", json.dumps(log_entry)
+            f"{self.log_key}:{str(run_id)}", json.dumps(log_entry)
         )
 
     async def info_log(
         self,
-        log_id: UUID,
-        log_type: str,
+        run_id: UUID,
+        run_type: str,
         user_id: UUID,
     ):
         timestamp = datetime.now().timestamp()
         log_entry = {
             "timestamp": timestamp,
-            "log_id": str(log_id),
-            "log_type": log_type,
+            "run_id": str(run_id),
+            "run_type": run_type,
             "user_id": str(user_id),
         }
         await self.redis.hset(
-            self.log_info_key, str(log_id), json.dumps(log_entry)
+            self.log_info_key, str(run_id), json.dumps(log_entry)
         )
         await self.redis.zadd(
-            f"{self.log_info_key}_sorted", {str(log_id): timestamp}
+            f"{self.log_info_key}_sorted", {str(run_id): timestamp}
         )
 
     async def get_info_logs(
         self,
         limit: int = 10,
-        log_type_filter: Optional[str] = None,
+        run_type_filter: Optional[RunType] = None,
         user_ids: Optional[list[UUID]] = None,
     ) -> list[RunInfoLog]:
         run_info_list = []
@@ -608,32 +609,32 @@ class RedisKVLoggingProvider(KVLoggingProvider):
         count_per_batch = 100  # Adjust batch size as needed
 
         while len(run_info_list) < limit:
-            log_ids = await self.redis.zrevrange(
+            run_ids = await self.redis.zrevrange(
                 f"{self.log_info_key}_sorted",
                 start,
                 start + count_per_batch - 1,
             )
-            if not log_ids:
+            if not run_ids:
                 break  # No more log IDs to process
 
             start += count_per_batch
 
-            for log_id in log_ids:
+            for run_id in run_ids:
                 log_entry = json.loads(
-                    await self.redis.hget(self.log_info_key, log_id)
+                    await self.redis.hget(self.log_info_key, run_id)
                 )
 
                 # Check if the log entry matches the filters
                 if (
-                    log_type_filter is None
-                    or log_entry["log_type"] == log_type_filter
+                    run_type_filter is None
+                    or log_entry["run_type"] == run_type_filter
                 ) and (
                     user_ids is None or UUID(log_entry["user_id"]) in user_ids
                 ):
                     run_info_list.append(
                         RunInfoLog(
-                            run_id=UUID(log_entry["log_id"]),
-                            log_type=log_entry["log_type"],
+                            run_id=UUID(log_entry["run_id"]),
+                            run_type=log_entry["run_type"],
                             timestamp=datetime.fromtimestamp(
                                 log_entry["timestamp"]
                             ),
@@ -656,14 +657,14 @@ class RedisKVLoggingProvider(KVLoggingProvider):
             )
             for raw_log in raw_logs:
                 json_log = json.loads(raw_log)
-                json_log["log_id"] = UUID(json_log["log_id"])
+                json_log["run_id"] = UUID(json_log["run_id"])
                 logs.append(json_log)
         return logs
 
     async def score_completion(
-        self, log_id: UUID, message_id: UUID, score: float
+        self, run_id: UUID, message_id: UUID, score: float
     ):
-        log_key = f"{self.log_key}:{str(log_id)}"
+        log_key = f"{self.log_key}:{str(run_id)}"
         logs = await self.redis.lrange(log_key, 0, -1)
 
         for i, log_entry in enumerate(logs):
@@ -697,14 +698,14 @@ class RedisKVLoggingProvider(KVLoggingProvider):
         return False
 
 
-class KVLoggingSingleton:
+class RunLoggingSingleton:
     _instance = None
     _is_configured = False
 
     SUPPORTED_PROVIDERS = {
-        "local": LocalKVLoggingProvider,
-        "postgres": PostgresKVLoggingProvider,
-        "redis": RedisKVLoggingProvider,
+        "local": LocalRunLoggingProvider,
+        "postgres": PostgresRunLoggingProvider,
+        "redis": RedisRunLoggingProvider,
     }
 
     @classmethod
@@ -719,47 +720,47 @@ class KVLoggingSingleton:
             cls._config = logging_config
             cls._is_configured = True
         else:
-            raise Exception("KVLoggingSingleton is already configured.")
+            raise Exception("RunLoggingSingleton is already configured.")
 
     @classmethod
     async def log(
         cls,
-        log_id: UUID,
+        run_id: UUID,
         key: str,
         value: str,
     ):
         try:
             async with cls.get_instance() as provider:
-                await provider.log(log_id, key, value)
+                await provider.log(run_id, key, value)
         except Exception as e:
-            logger.error(f"Error logging data {(log_id, key, value)}: {e}")
+            logger.error(f"Error logging data {(run_id, key, value)}: {e}")
 
     @classmethod
     async def info_log(
         cls,
-        log_id: UUID,
-        log_type: str,
+        run_id: UUID,
+        run_type: str,
         user_id: UUID,
     ):
         try:
             async with cls.get_instance() as provider:
-                await provider.info_log(log_id, log_type, user_id)
+                await provider.info_log(run_id, run_type, user_id)
         except Exception as e:
             logger.error(
-                f"Error logging info data {(log_id, log_type, user_id)}: {e}"
+                f"Error logging info data {(run_id, run_type, user_id)}: {e}"
             )
 
     @classmethod
     async def get_info_logs(
         cls,
         limit: int = 10,
-        log_type_filter: Optional[str] = None,
+        run_type_filter: Optional[RunType] = None,
         user_ids: Optional[list[UUID]] = None,
     ) -> list[RunInfoLog]:
         async with cls.get_instance() as provider:
             return await provider.get_info_logs(
                 limit,
-                log_type_filter=log_type_filter,
+                run_type_filter=run_type_filter,
                 user_ids=user_ids,
             )
 
@@ -774,7 +775,7 @@ class KVLoggingSingleton:
 
     @classmethod
     async def score_completion(
-        cls, log_id: UUID, message_id: UUID, score: float
+        cls, run_id: UUID, message_id: UUID, score: float
     ):
         async with cls.get_instance() as provider:
-            return await provider.score_completion(log_id, message_id, score)
+            return await provider.score_completion(run_id, message_id, score)

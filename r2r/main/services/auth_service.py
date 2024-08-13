@@ -3,8 +3,8 @@ from datetime import datetime
 from typing import Any, Optional
 
 from r2r.base import (
-    KVLoggingSingleton,
     R2RException,
+    RunLoggingSingleton,
     RunManager,
     Token,
     User,
@@ -25,7 +25,7 @@ class AuthService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: KVLoggingSingleton,
+        logging_connection: RunLoggingSingleton,
     ):
         super().__init__(
             config,

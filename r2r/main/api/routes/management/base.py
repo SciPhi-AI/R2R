@@ -89,7 +89,7 @@ class ManagementRouter(BaseRouter):
                 )
 
             return await self.engine.alogs(
-                log_type_filter=request.log_type_filter,
+                run_type_filter=request.run_type_filter,
                 max_runs_requested=request.max_runs_requested,
             )
 

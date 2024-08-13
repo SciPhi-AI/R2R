@@ -7,12 +7,12 @@ from uuid import UUID
 import pytest
 
 from r2r import (
-    LocalKVLoggingProvider,
+    LocalRunLoggingProvider,
     LoggingConfig,
-    PostgresKVLoggingProvider,
     PostgresLoggingConfig,
-    RedisKVLoggingProvider,
+    PostgresRunLoggingProvider,
     RedisLoggingConfig,
+    RedisRunLoggingProvider,
     generate_run_id,
 )
 
@@ -36,7 +36,9 @@ async def cleanup_tasks():
 async def local_provider():
     unique_id = str(uuid.uuid4())
     logging_path = f"test_{unique_id}.sqlite"
-    provider = LocalKVLoggingProvider(LoggingConfig(logging_path=logging_path))
+    provider = LocalRunLoggingProvider(
+        LoggingConfig(logging_path=logging_path)
+    )
     await provider._init()
     yield provider
     await provider.close()
@@ -48,7 +50,7 @@ async def local_provider():
 async def postgres_provider():
     log_table = f"logs_{str(uuid.uuid4()).replace('-', '_')}"
     log_info_table = f"log_info_{str(uuid.uuid4()).replace('-', '_')}"
-    provider = PostgresKVLoggingProvider(
+    provider = PostgresRunLoggingProvider(
         PostgresLoggingConfig(
             log_table=log_table, log_info_table=log_info_table
         )
@@ -94,16 +96,16 @@ async def test_multiple_log_entries(provider):
     assert len(logs) == 3, f"Expected 3 logs, got {len(logs)}"
 
     for log in logs:
-        log_id = log.get("log_id")
-        assert log_id is not None, f"Log entry is missing 'log_id': {log}"
+        run_id = log.get("run_id")
+        assert run_id is not None, f"Log entry is missing 'run_id': {log}"
 
-        if isinstance(log_id, str):
-            log_id = UUID(log_id)
+        if isinstance(run_id, str):
+            run_id = UUID(run_id)
 
-        matching_entries = [entry for entry in entries if entry[0] == log_id]
+        matching_entries = [entry for entry in entries if entry[0] == run_id]
         assert (
             len(matching_entries) == 1
-        ), f"No matching entry found for log_id {log_id}"
+        ), f"No matching entry found for run_id {run_id}"
 
         selected_entry = matching_entries[0]
         assert log["key"] == selected_entry[1]
@@ -112,9 +114,9 @@ async def test_multiple_log_entries(provider):
     # Additional check to ensure all entries were logged
     logged_ids = set(
         (
-            UUID(log["log_id"])
-            if isinstance(log["log_id"], str)
-            else log["log_id"]
+            UUID(log["run_id"])
+            if isinstance(log["run_id"], str)
+            else log["run_id"]
         )
         for log in logs
     )
@@ -141,17 +143,19 @@ async def test_log_retrieval_limit(provider):
 async def test_specific_run_type_retrieval(provider):
     run_id_0, run_id_1 = generate_run_id(), generate_run_id()
 
-    await provider.log(run_id_0, "pipeline_type", "search")
+    await provider.log(run_id_0, "run_type", "RETRIEVAL")
     await provider.log(run_id_0, "key_0", "value_0")
-    await provider.log(run_id_1, "pipeline_type", "rag")
+    await provider.log(run_id_1, "run_type", "MANAGEMENT")
     await provider.log(run_id_1, "key_1", "value_1")
 
     # Log info for both run IDs
-    await provider.info_log(run_id_0, "search", uuid.uuid4())
-    await provider.info_log(run_id_1, "rag", uuid.uuid4())
+    await provider.info_log(run_id_0, "RETRIEVAL", uuid.uuid4())
+    await provider.info_log(run_id_1, "MANAGEMENT", uuid.uuid4())
 
-    run_info = await provider.get_info_logs(log_type_filter="search")
-    assert len(run_info) == 1, f"Expected 1 'search' log, got {len(run_info)}"
+    run_info = await provider.get_info_logs(run_type_filter="RETRIEVAL")
+    assert (
+        len(run_info) == 1
+    ), f"Expected 1 'RETRIEVAL' log, got {len(run_info)}"
     assert (
         run_info[0].run_id == run_id_0
     ), f"Expected run_id {run_id_0}, got {run_info[0].run_id}"
@@ -159,12 +163,12 @@ async def test_specific_run_type_retrieval(provider):
     logs = await provider.get_logs([run.run_id for run in run_info])
     assert len(logs) == 2, f"Expected 2 logs for run_id_0, got {len(logs)}"
     assert all(
-        log["log_id"] == run_id_0 for log in logs
+        log["run_id"] == run_id_0 for log in logs
     ), "All logs should be for run_id_0"
     assert any(
-        log["key"] == "pipeline_type" and log["value"] == "search"
+        log["key"] == "run_type" and log["value"] == "RETRIEVAL"
         for log in logs
-    ), "Should have a 'pipeline_type' log"
+    ), "Should have a 'RETRIEVAL' log"
     assert any(
         log["key"] == "key_0" and log["value"] == "value_0" for log in logs
     ), "Should have a 'key_0' log"
@@ -175,12 +179,12 @@ async def test_specific_run_type_retrieval(provider):
 async def test_info_logging(provider):
     run_id = generate_run_id()
     user_id = uuid.uuid4()
-    log_type = "search"
-    await provider.info_log(run_id, log_type, user_id)
+    run_type = "RETRIEVAL"
+    await provider.info_log(run_id, run_type, user_id)
     info_logs = await provider.get_info_logs()
     assert len(info_logs) == 1
     assert info_logs[0].run_id == run_id
-    assert info_logs[0].log_type == log_type
+    assert info_logs[0].run_type == run_type
     assert info_logs[0].user_id == user_id
 
 
@@ -188,16 +192,16 @@ async def test_info_logging(provider):
 @pytest.mark.parametrize("provider", all_providers, indirect=True)
 async def test_get_info_logs_with_user_filter(provider):
     user_id_1, user_id_2 = uuid.uuid4(), uuid.uuid4()
-    await provider.info_log(generate_run_id(), "search", user_id_1)
-    await provider.info_log(generate_run_id(), "rag", user_id_2)
+    await provider.info_log(generate_run_id(), "RETRIEVAL", user_id_1)
+    await provider.info_log(generate_run_id(), "MANAGEMENT", user_id_2)
 
     info_logs = await provider.get_info_logs(user_ids=[user_id_1])
     assert len(info_logs) == 1
     assert info_logs[0].user_id == user_id_1
 
     info_logs = await provider.get_info_logs(
-        log_type_filter="rag", user_ids=[user_id_2]
+        run_type_filter="MANAGEMENT", user_ids=[user_id_2]
     )
     assert len(info_logs) == 1
     assert info_logs[0].user_id == user_id_2
-    assert info_logs[0].log_type == "rag"
+    assert info_logs[0].run_type == "MANAGEMENT"

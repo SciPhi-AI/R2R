@@ -5,9 +5,9 @@ from r2r.base import (
     ChunkingProvider,
     DocumentExtraction,
     DocumentFragment,
-    KVLoggingSingleton,
     PipeType,
     R2RDocumentProcessingError,
+    RunLoggingSingleton,
     generate_id_from_label,
 )
 from r2r.base.pipes.base_pipe import AsyncPipe
@@ -22,7 +22,7 @@ class ChunkingPipe(AsyncPipe):
     def __init__(
         self,
         chunking_provider: ChunkingProvider,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[AsyncPipe.PipeConfig] = None,
         *args,

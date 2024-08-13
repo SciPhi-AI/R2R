@@ -36,10 +36,10 @@ def app_settings(obj):
     "--max-runs", default=100, help="Maximum number of runs to fetch"
 )
 @click.pass_obj
-def logs(obj, log_type_filter, max_runs):
+def logs(obj, run_type_filter, max_runs):
     """Retrieve logs with optional type filter."""
     with timer():
-        response = obj.logs(log_type_filter, max_runs)
+        response = obj.logs(run_type_filter, max_runs)
 
     for log in response:
         click.echo(f"Run ID: {log['run_id']}")

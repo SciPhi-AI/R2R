@@ -7,9 +7,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from r2r.base import (
     AnalysisTypes,
     FilterCriteria,
-    KVLoggingSingleton,
     LogProcessor,
     R2RException,
+    RunLoggingSingleton,
     RunManager,
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event
@@ -29,7 +29,7 @@ class ManagementService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: KVLoggingSingleton,
+        logging_connection: RunLoggingSingleton,
     ):
         super().__init__(
             config,
@@ -55,7 +55,7 @@ class ManagementService(Service):
     @telemetry_event("Logs")
     async def alogs(
         self,
-        log_type_filter: Optional[str] = None,
+        run_type_filter: Optional[str] = None,
         max_runs_requested: int = 100,
         *args: Any,
         **kwargs: Any,
@@ -67,7 +67,7 @@ class ManagementService(Service):
 
         run_info = await self.logging_connection.get_info_logs(
             limit=max_runs_requested,
-            log_type_filter=log_type_filter,
+            run_type_filter=run_type_filter,
         )
         run_ids = [run.run_id for run in run_info]
         if len(run_ids) == 0:
@@ -79,7 +79,7 @@ class ManagementService(Service):
 
         for run in run_info:
             run_logs = [
-                log for log in logs if log["log_id"] == str(run.run_id)
+                log for log in logs if log["run_id"] == str(run.run_id)
             ]
             entries = [
                 {
@@ -94,7 +94,7 @@ class ManagementService(Service):
 
             log_entry = {
                 "run_id": run.run_id,
-                "run_type": run.log_type,
+                "run_type": run.run_type,
                 "entries": entries,
             }
 
@@ -211,7 +211,7 @@ class ManagementService(Service):
         self,
         message_id: uuid.UUID,
         score: float = 0.0,
-        log_type_filter: str = None,
+        run_type_filter: str = None,
         max_runs_requested: int = 100,
         *args: Any,
         **kwargs: Any,
@@ -224,7 +224,7 @@ class ManagementService(Service):
 
             run_info = await self.logging_connection.get_info_logs(
                 limit=max_runs_requested,
-                log_type_filter=log_type_filter,
+                run_type_filter=run_type_filter,
             )
             run_ids = [run.run_id for run in run_info]
 
@@ -242,8 +242,8 @@ class ManagementService(Service):
 
                 if completion_dict.get("message_id") == str(message_id):
                     bounded_score = round(min(max(score, -1.00), 1.00), 2)
-                    updated = await KVLoggingSingleton.score_completion(
-                        log["log_id"], message_id, bounded_score
+                    updated = await RunLoggingSingleton.score_completion(
+                        log["run_id"], message_id, bounded_score
                     )
                     if not updated:
                         logger.error(

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from r2r.base import KVLoggingSingleton, RunManager
+from r2r.base import RunLoggingSingleton, RunManager
 from r2r.base.abstractions.base import AsyncSyncMeta, syncable
 
 from .abstractions import R2RAgents, R2RPipelines, R2RProviders
@@ -20,14 +20,14 @@ class R2REngine(metaclass=AsyncSyncMeta):
         agents: R2RAgents,
         run_manager: Optional[RunManager] = None,
     ):
-        logging_connection = KVLoggingSingleton()
+        logging_connection = RunLoggingSingleton()
         run_manager = run_manager or RunManager(logging_connection)
 
         self.config = config
         self.providers = providers
         self.pipelines = pipelines
         self.agents = agents
-        self.logging_connection = KVLoggingSingleton()
+        self.logging_connection = RunLoggingSingleton()
         self.run_manager = run_manager
 
         self.ingestion_service = IngestionService(

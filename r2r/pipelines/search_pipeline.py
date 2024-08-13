@@ -9,7 +9,7 @@ from ..base.abstractions.search import (
     KGSearchSettings,
     VectorSearchSettings,
 )
-from ..base.logging.kv_logger import KVLoggingSingleton
+from ..base.logging.run_logger import RunLoggingSingleton
 from ..base.logging.run_manager import RunManager, manage_run
 from ..base.pipeline.base_pipeline import AsyncPipeline, dequeue_requests
 from ..base.pipes.base_pipe import AsyncPipe, AsyncState
@@ -20,11 +20,9 @@ logger = logging.getLogger(__name__)
 class SearchPipeline(AsyncPipeline):
     """A pipeline for search."""
 
-    pipeline_type: str = "search"
-
     def __init__(
         self,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         run_manager: Optional[RunManager] = None,
     ):
         super().__init__(pipe_logger, run_manager)
@@ -54,7 +52,7 @@ class SearchPipeline(AsyncPipeline):
             and kg_search_settings.use_kg_search
         )
         run_manager = run_manager or self.run_manager
-        async with manage_run(run_manager, self.pipeline_type):
+        async with manage_run(run_manager):
             vector_search_queue = Queue()
             kg_queue = Queue()
 
