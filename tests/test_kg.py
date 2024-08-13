@@ -49,15 +49,15 @@ def test_triples():
 
 def test_upsert_chunks(neo4j_kg_provider, test_chunks, clean_graph):
     neo4j_kg_provider.upsert_chunks(test_chunks)
-    chunks = neo4j_kg_provider.get_chunks()
-    print(chunks)
+    neo4j_output = neo4j_kg_provider.get_chunks()
+    chunks = [record['c']._properties for record in neo4j_output.records]
     assert len(chunks) == len(test_chunks)
     for chunk, test_chunk in zip(chunks, test_chunks):
-        assert chunk.id == test_chunk.id
-        assert chunk.data == test_chunk.data
-        assert json.loads(chunk.metadata) == test_chunk.metadata
-        assert chunk.document_id == test_chunk.document_id
-        assert chunk.extraction_id == test_chunk.extraction_id
+        assert chunk['id'] == str(test_chunk.id)
+        assert chunk['data'] == test_chunk.data
+        assert json.loads(chunk['metadata']) == test_chunk.metadata
+        assert chunk['document_id'] == str(test_chunk.document_id)
+        assert chunk['extraction_id'] == str(test_chunk.extraction_id)
 
 # def test_upsert_entities(neo4j_kg_provider, test_entities):
 #     neo4j_kg_provider.upsert_entities(test_entities)
