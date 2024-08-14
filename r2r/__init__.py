@@ -2,7 +2,7 @@ import logging
 
 # Keep '*' imports for enhanced development velocity
 # corresponding flake8 error codes are F403, F405
-from .agents import *
+from .agent import *
 from .base import *
 from .integrations import *
 from .main import *

@@ -5,8 +5,8 @@ from typing import Optional
 
 from fastapi import FastAPI
 
-from r2r import R2RBuilder, R2RConfig
-from r2r.main.execution import R2RExecutionWrapper
+from .assembly import R2RBuilder, R2RConfig
+from .execution import R2RExecutionWrapper
 
 logger = logging.getLogger(__name__)
 current_file_path = os.path.dirname(__file__)

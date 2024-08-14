@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from fastapi import Body, Depends, Path
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
@@ -20,8 +22,10 @@ from r2r.base.api.models.auth.responses import (
     WrappedUserResponse,
 )
 
-from ....engine import R2REngine
 from ..base_router import BaseRouter
+
+if TYPE_CHECKING:
+    from ....engine import R2REngine
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -35,7 +39,7 @@ def login_form_to_request(
 
 
 class AuthRouter(BaseRouter):
-    def __init__(self, engine: R2REngine):
+    def __init__(self, engine: "R2REngine"):
         super().__init__(engine)
         if self.engine.providers.auth:
             self.setup_routes()

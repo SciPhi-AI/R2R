@@ -13,19 +13,28 @@ from .parsing import R2RParsingProvider, UnstructuredParsingProvider
 from .prompts import R2RPromptProvider
 
 __all__ = [
+    # Auth
     "R2RAuthProvider",
+    # Chunking
+    "R2RChunkingProvider",
+    "UnstructuredChunkingProvider",
+    # Crypto
     "BCryptProvider",
     "BCryptConfig",
+    # Database
     "PostgresDBProvider",
+    # Embeddings
     "LiteLLMEmbeddingProvider",
     "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",
+    # KG
     "Neo4jKGDBProvider",
+    # LLM
     "OpenAICompletionProvider",
     "LiteCompletionProvider",
-    "R2RPromptProvider",
+    # Parsing
     "R2RParsingProvider",
     "UnstructuredParsingProvider",
-    "R2RChunkingProvider",
-    "UnstructuredChunkingProvider",
+    # Prompts
+    "R2RPromptProvider",
 ]

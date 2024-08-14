@@ -52,9 +52,7 @@ class PDFParser(AsyncParser[DataType]):
                             or "\u0E00" <= x <= "\u0E7F"  # Thai
                             or "\u3040" <= x <= "\u309F"  # Japanese Hiragana
                             or "\u30A0" <= x <= "\u30FF"  # Katakana
-                            or
-                            # Other printable characters
-                            x in string.printable
+                            or x in string.printable
                         ),
                         page_text,
                     )

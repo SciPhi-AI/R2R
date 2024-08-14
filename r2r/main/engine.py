@@ -1,20 +1,22 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from r2r.base import RunLoggingSingleton, RunManager
 from r2r.base.abstractions.base import AsyncSyncMeta, syncable
 
 from .abstractions import R2RAgents, R2RPipelines, R2RProviders
-from .assembly.config import R2RConfig
 from .services.auth_service import AuthService
 from .services.ingestion_service import IngestionService
 from .services.management_service import ManagementService
 from .services.retrieval_service import RetrievalService
 
+if TYPE_CHECKING:
+    from .assembly.config import R2RConfig
+
 
 class R2REngine(metaclass=AsyncSyncMeta):
     def __init__(
         self,
-        config: R2RConfig,
+        config: "R2RConfig",
         providers: R2RProviders,
         pipelines: R2RPipelines,
         agents: R2RAgents,

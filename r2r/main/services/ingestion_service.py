@@ -1,7 +1,6 @@
 import json
 import logging
 import uuid
-import warnings
 from collections import defaultdict
 from datetime import datetime
 from typing import Any, Optional
@@ -9,7 +8,6 @@ from typing import Any, Optional
 from fastapi import Form, UploadFile
 
 from r2r.base import (
-    ChunkingConfig,
     Document,
     DocumentInfo,
     DocumentType,
@@ -353,9 +351,6 @@ class IngestionService(Service):
                 document_ids,
                 [doc_info.version for doc_info in documents_overview],
             ):
-                keys = ["document_id", "version"]
-                values = [str(doc_id), old_version]
-
                 self.providers.database.vector.delete(
                     filters={"document_id": {"$eq": doc_id}}
                 )

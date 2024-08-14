@@ -1,57 +1,59 @@
-from ..base.api.models.ingestion.requests import (
-    R2RIngestFilesRequest,
-    R2RUpdateFilesRequest,
-)
-from ..base.api.models.management.requests import (
-    R2RAnalyticsRequest,
-    R2RDeleteRequest,
-    R2RDocumentChunksRequest,
-    R2RDocumentsOverviewRequest,
-    R2RUpdatePromptRequest,
-    R2RUsersOverviewRequest,
-)
-from ..base.api.models.retrieval.requests import (
-    R2RRAGRequest,
-    R2RSearchRequest,
-)
-from .abstractions import R2RAgents, R2RPipelines, R2RProviders
-from .api.client import R2RClient
+from .abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
+from .api import *
 from .app import R2RApp
-from .assembly.builder import R2RBuilder
-from .assembly.config import R2RConfig
-from .assembly.factory import (
-    R2RPipeFactory,
-    R2RPipelineFactory,
-    R2RProviderFactory,
-)
-from .assembly.factory_extensions import R2RPipeFactoryWithMultiSearch
+from .app_entry import r2r_app
+from .assembly import *
 from .engine import R2REngine
 from .execution import R2RExecutionWrapper
 from .r2r import R2R
+from .services import (
+    AuthService,
+    IngestionService,
+    ManagementService,
+    RetrievalService,
+)
 
 __all__ = [
-    "R2R",
-    "R2RPipelines",
+    ## R2R ABSTRACTIONS
     "R2RProviders",
+    "R2RPipes",
+    "R2RPipelines",
     "R2RAgents",
-    "R2RUpdatePromptRequest",
-    "R2RIngestFilesRequest",
-    "R2RUpdateFilesRequest",
-    "R2RSearchRequest",
-    "R2RRAGRequest",
-    "R2RDeleteRequest",
-    "R2RAnalyticsRequest",
-    "R2RUsersOverviewRequest",
-    "R2RDocumentsOverviewRequest",
-    "R2RDocumentChunksRequest",
-    "R2REngine",
-    "R2RExecutionWrapper",
-    "R2RConfig",
+    ## R2R API
+    # Client
     "R2RClient",
+    "handle_request_error",
+    # Routes
+    "AuthRouter",
+    "IngestionRouter",
+    "ManagementRouter",
+    "RetrievalRouter",
+    "BaseRouter",
+    ## R2R APP
+    "R2RApp",
+    ## R2R APP ENTRY
+    "r2r_app",
+    ## R2R ENGINE
+    "R2REngine",
+    ## R2R EXECUTION
+    "R2RExecutionWrapper",
+    ## R2R ASSEMBLY
+    # Builder
+    "R2RBuilder",
+    # Config
+    "R2RConfig",
+    # Factory
+    "R2RProviderFactory",
     "R2RPipeFactory",
     "R2RPipelineFactory",
-    "R2RProviderFactory",
+    "R2RAgentFactory",
+    # Factory Extensions
     "R2RPipeFactoryWithMultiSearch",
-    "R2RBuilder",
-    "R2RApp",
+    ## R2R
+    "R2R",
+    ## R2R SERVICES
+    "AuthService",
+    "IngestionService",
+    "ManagementService",
+    "RetrievalService",
 ]

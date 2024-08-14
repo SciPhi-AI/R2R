@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Generic, Optional, TypeVar
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel
 
 T = TypeVar("T")
 

@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Optional, Union
 from uuid import UUID
 
 from ..abstractions import DocumentInfo, VectorEntry, VectorSearchResult

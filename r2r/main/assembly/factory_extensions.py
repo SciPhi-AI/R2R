@@ -1,6 +1,7 @@
-from r2r.main import R2RPipeFactory
 from r2r.pipes.retrieval.multi_search import MultiSearchPipe
 from r2r.pipes.retrieval.query_transform_pipe import QueryTransformPipe
+
+from .factory import R2RPipeFactory
 
 
 class R2RPipeFactoryWithMultiSearch(R2RPipeFactory):

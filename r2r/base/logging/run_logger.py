@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import uuid
 from abc import abstractmethod
 from datetime import datetime
 from typing import Optional
