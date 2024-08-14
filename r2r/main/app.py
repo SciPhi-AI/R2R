@@ -1,10 +1,13 @@
+from typing import TYPE_CHECKING
+
 from fastapi import FastAPI
 
-from .engine import R2REngine
+if TYPE_CHECKING:
+    from .engine import R2REngine
 
 
 class R2RApp:
-    def __init__(self, engine: R2REngine):
+    def __init__(self, engine: "R2REngine"):
         self.engine = engine
         self._setup_routes()
         self._apply_cors()

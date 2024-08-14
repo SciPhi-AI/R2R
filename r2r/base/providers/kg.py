@@ -5,12 +5,11 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Optional, Tuple
 
-from r2r.base.abstractions.document import logger
 from r2r.base.abstractions.kg import Entity
+from r2r.base.abstractions.llama_abstractions import EntityNode, LabelledNode
+from r2r.base.abstractions.llama_abstractions import Relation as LlamaRelation
+from r2r.base.abstractions.llama_abstractions import VectorStoreQuery
 
-from ..abstractions.llama_abstractions import EntityNode, LabelledNode
-from ..abstractions.llama_abstractions import Relation as LlamaRelation
-from ..abstractions.llama_abstractions import VectorStoreQuery
 from .base import ProviderConfig
 from .prompt import PromptProvider
 

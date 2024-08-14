@@ -1,17 +1,10 @@
-from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
+from datetime import datetime
 from uuid import UUID
 
 import pytest
 
-from r2r import AuthConfig, CreateUserRequest, DatabaseConfig, R2RException
-from r2r.main.services import AuthService
-from r2r.providers import (
-    BCryptConfig,
-    BCryptProvider,
-    PostgresDBProvider,
-    R2RAuthProvider,
-)
+from r2r import CreateUserRequest, DatabaseConfig
+from r2r.providers import BCryptConfig, BCryptProvider, PostgresDBProvider
 
 
 # Fixture for PostgresDBProvider

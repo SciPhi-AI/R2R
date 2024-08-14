@@ -1,8 +1,9 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel
 
-from r2r.base import Message
+# Use absolute import here to avoid circular imports
+from r2r.base.agent.base import Message
 
 
 class R2RSearchRequest(BaseModel):
@@ -21,7 +22,7 @@ class R2RRAGRequest(BaseModel):
 
 
 class R2RAgentRequest(BaseModel):
-    messages: list[Message]
+    messages: list["Message"]
     vector_search_settings: Optional[dict] = None
     kg_search_settings: Optional[dict] = None
     rag_generation_config: Optional[dict] = None

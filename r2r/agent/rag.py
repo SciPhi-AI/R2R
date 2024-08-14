@@ -1,16 +1,14 @@
 import json
 
-from r2r.agents import R2RAgent, R2RStreamingAgent
-from r2r.base import (
-    AgentConfig,
-    CompletionProvider,
+from r2r.agent import R2RAgent, R2RStreamingAgent
+from r2r.base.abstractions import (
     KGSearchSettings,
-    PromptProvider,
-    Tool,
     VectorSearchResult,
     VectorSearchSettings,
-    to_async_generator,
 )
+from r2r.base.agent import AgentConfig, Tool
+from r2r.base.providers import CompletionProvider, PromptProvider
+from r2r.base.utils import to_async_generator
 from r2r.pipelines import SearchPipeline
 
 

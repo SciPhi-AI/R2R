@@ -1,7 +1,7 @@
 import os
 from typing import Optional, Type
 
-from r2r.agents import R2RRAGAgent
+from r2r.agent import R2RRAGAgent
 from r2r.base import (
     AsyncPipe,
     AuthProvider,

@@ -6,10 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 from typing import Any, Optional
 
-from ..abstractions.embedding import (
-    EmbeddingPurpose,
-    default_embedding_prefixes,
-)
+from ..abstractions import EmbeddingPurpose, default_embedding_prefixes
 from ..abstractions.search import VectorSearchResult
 from .base import Provider, ProviderConfig
 

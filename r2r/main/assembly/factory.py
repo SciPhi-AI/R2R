@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Any, Optional
 
-from r2r.agents import R2RRAGAgent, R2RStreamingRAGAgent
+from r2r.agent import R2RRAGAgent, R2RStreamingRAGAgent
 from r2r.base import (
     AsyncPipe,
     AuthConfig,

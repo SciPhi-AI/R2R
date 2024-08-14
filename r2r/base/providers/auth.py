@@ -5,10 +5,8 @@ from typing import Dict, Optional
 from fastapi import Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from ..abstractions.exception import R2RException
-from ..abstractions.user import Token, TokenData
-from ..api.models.auth.requests import CreateUserRequest
-from ..api.models.auth.responses import UserResponse
+from ..abstractions import R2RException, Token, TokenData
+from ..api.models import CreateUserRequest, UserResponse
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)

@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-from enum import Enum
 from typing import Any, AsyncGenerator, Optional
 
 from ..logging.run_logger import RunLoggingSingleton

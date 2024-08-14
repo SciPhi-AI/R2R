@@ -2,9 +2,9 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from r2r.agents import R2RRAGAgent, R2RStreamingRAGAgent
-from r2r.base import (
-    AsyncPipe,
+from r2r.agent import R2RRAGAgent, R2RStreamingRAGAgent
+from r2r.base.pipes import AsyncPipe
+from r2r.base.providers import (
     AuthProvider,
     ChunkingProvider,
     CompletionProvider,

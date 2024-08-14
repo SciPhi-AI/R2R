@@ -1,7 +1,7 @@
 import contextvars
 import uuid
 from contextlib import asynccontextmanager
-from typing import Any, Optional
+from typing import Optional
 
 from r2r.base.api.models.auth.responses import UserResponse
 from r2r.base.logging.base import RunType
