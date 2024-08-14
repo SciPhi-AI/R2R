@@ -23,7 +23,6 @@ from .assembly.builder import R2RBuilder
 from .assembly.config import R2RConfig
 from .r2r import R2R
 
-
 class R2RExecutionWrapper:
     """A demo class for the R2R library."""
 

@@ -42,8 +42,7 @@ class Entity(BaseModel):
 
     id: str
     category: str
-    subcategory: Optional[str] = None
-    value: str
+    name: str
     description: Optional[str] = None
     description_embedding: list[float] = None
     name_embedding: list[float] = None

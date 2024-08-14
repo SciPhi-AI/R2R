@@ -119,19 +119,21 @@ class KGExtractionPipe(AsyncPipe):
                         relationships = re.findall(relationship_pattern, response_str)
 
                         entities_dict = {}
+                        entity_ids = {}
                         for entity in entities: 
                             entity_value = entity[0]
                             entity_category = entity[1]
                             entity_description = entity[2]
                             entities_dict[entity_value] = Entity(
-                                id=str(uuid.uuid4()),
+                                id = entity_ids.get(entity_value, str(uuid.uuid4())),
                                 category=entity_category, 
                                 description=entity_description, 
-                                value=entity_value, 
+                                name=entity_value, 
                                 document_ids=[str(fragment.document_id)],
                                 text_unit_ids=[str(fragment.id)],
                                 attributes={"fragment_text": fragment.data}
                             )
+                            entity_ids[entity_value] = entities_dict[entity_value].id
 
                         relations_arr = []
                         for relationship in relationships:
@@ -140,10 +142,27 @@ class KGExtractionPipe(AsyncPipe):
                             predicate = relationship[2]
                             description = relationship[3]
                             weight = float(relationship[4])
+
+                            # check if subject and object are in entities_dict
+                            for entity in [subject, object]:
+                                if entity not in entities_dict:
+                                    entities_dict[entity] = Entity(
+                                        id = entity_ids.get(entity, str(uuid.uuid4())),
+                                        category="NA", 
+                                        description=entity, 
+                                        name=entity, 
+                                        document_ids=[str(fragment.document_id)],
+                                        text_unit_ids=[str(fragment.id)],
+                                        attributes={"fragment_text": fragment.data}
+                                    )
+                                    entity_ids[entity] = entities_dict[entity].id
+
                             relations_arr.append(Triple(
                                 id = str(uuid.uuid4()),
                                 subject = subject, 
+                                subject_id = entity_ids[subject], 
                                 predicate = predicate, 
+                                object_id = entity_ids[object], 
                                 object = object, 
                                 description = description, 
                                 weight = weight, 

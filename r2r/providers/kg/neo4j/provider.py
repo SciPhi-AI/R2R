@@ -175,7 +175,9 @@ class Neo4jKGProvider(KGProvider):
         """
         Get entities from the graph.
         """
-        return self.structured_query(GET_ENTITIES_QUERY, {"entity_ids": entity_ids})
+        neo4j_records = self.structured_query(GET_ENTITIES_QUERY, {"entity_ids": entity_ids})
+        entities = [Entity(**record['e']._properties) for record in neo4j_records.records]
+        return entities
     
 
     def upsert_nodes_and_relationships(self, kg_extractions: list[KGExtraction]) -> None:

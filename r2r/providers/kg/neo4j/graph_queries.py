@@ -1,13 +1,13 @@
 
 
 UNIQUE_CONSTRAINTS = [
-    "create constraint chunk_id if not exists for (c:__Chunk__) require c.id is unique;",
-    "create constraint document_id if not exists for (d:__Document__) require d.id is unique;",
-    "create constraint entity_id if not exists for (c:__Community__) require c.community is unique;",
-    "create constraint entity_id if not exists for (e:__Entity__) require e.id is unique;",
-    "create constraint entity_title if not exists for (e:__Entity__) require e.name is unique;",
-    "create constraint entity_title if not exists for (e:__Covariate__) require e.title is unique;",
-    "create constraint related_id if not exists for ()-[rel:RELATED]->() require rel.id is unique;"
+    # "create constraint chunk_id if not exists for (c:__Chunk__) require c.id is unique;",
+    # "create constraint document_id if not exists for (d:__Document__) require d.id is unique;",
+    # "create constraint entity_id if not exists for (c:__Community__) require c.community is unique;",
+    # "create constraint entity_id if not exists for (e:__Entity__) require e.id is unique;",
+    # "create constraint entity_title if not exists for (e:__Entity__) require e.name is unique;",
+    # "create constraint entity_title if not exists for (e:__Covariate__) require e.title is unique;",
+    # "create constraint related_id if not exists for ()-[rel:RELATED]->() require rel.id is unique;"
 ]
 
 GET_CHUNKS_QUERY = """
@@ -61,27 +61,21 @@ RETURN e
 """
 
 PUT_ENTITIES_QUERY = """
-MERGE (e:__Entity__ {id:value.id})
-SET e += value {.category, .subcategory, .value, .description, .rank, .attributes}
+CALL apoc.merge.node(['__Entity__', value.category], {name: value.name, id: value.id}) YIELD node as e
+SET e += value {.description, .rank, .attributes}
 WITH e, value
-CALL db.create.setNodeVectorProperty(e, "description_embedding", value.description_embedding)
-CALL db.create.setNodeVectorProperty(e, "name_embedding", value.name_embedding)
-CALL db.create.setNodeVectorProperty(e, "graph_embedding", value.graph_embedding)
-CALL db.create.setNodeDictionaryProperty(e, "attributes", value.attributes)
-CALL apoc.create.addLabels(e, [apoc.text.upperCamelCase(value.category)]) yield node
 UNWIND value.text_unit_ids AS text_unit
 MATCH (c:__Chunk__ {id:text_unit})
 MERGE (e)-[:APPEARS_IN_CHUNK]->(c)
 WITH e, value
 UNWIND value.document_ids AS document_id
-MATCH (d:__Document__ {id:document_id})
+MERGE (d:__Document__ {id:document_id})
 MERGE (e)-[:APPEARS_IN_DOCUMENT]->(d)
 WITH e, value
 UNWIND value.community_ids AS community_id
-MATCH (comm:__Community__ {community:community_id})
+MERGE (comm:__Community__ {community:community_id})
 MERGE (e)-[:BELONGS_TO_COMMUNITY]->(comm)
 """
-
 
 # class Triple(BaseModel):
 #     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
@@ -128,13 +122,12 @@ RETURN e1, rel, e2
 """
 
 PUT_TRIPLES_QUERY = """
-MERGE (source:__Entity__ {value: value.subject})
-MERGE (target:__Entity__ {value: value.object})
+MATCH (source:__Entity__ {name: value.subject})
+MATCH (target:__Entity__ {name: value.object})
 WITH source, target, value
-CALL apoc.create.relationship(source, value.predicate, {id: value.id}, target) YIELD rel
+CALL apoc.merge.relationship(source, value.predicate, {}, {}, target) YIELD rel
 SET rel += value {.weight, .description, .subject_id, .object_id, .attributes, .text_unit_ids, .document_ids}
 WITH rel, value
-CALL db.create.setRelationshipVectorProperty(rel, "predicate_embedding", value.predicate_embedding)
 RETURN count(*) as createdRels
 """
 
@@ -161,7 +154,7 @@ RETURN count(distinct c) as createdCommunities
 """
 
 GET_COMMUNITIES_REPORT_QUERY = """
-MATCH (c:__Community__ {community:value.community})
+MATCH (c:__Community__)
 RETURN c
 """
 
