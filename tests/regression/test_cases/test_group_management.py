@@ -10,7 +10,7 @@ class TestGroupManagement(BaseTest):
         self.admin_password = "change_me_immediately"
         self.user_password = "test_password"
 
-        keys_to_ignore = ["id", "created_at", "updated_at"]
+        keys_to_ignore = ["group_id", "created_at", "updated_at"]
         self.set_exclude_paths(
             "create_groups_test",
             [f"root['group_1']['results']['{key}']" for key in keys_to_ignore]
@@ -35,9 +35,9 @@ class TestGroupManagement(BaseTest):
             "create_groups": self.create_groups_test,
             "add_users_to_groups": self.add_users_to_groups_test,
             "group_based_document_access": self.group_based_document_access_test,
-            # "admin_ingest_documents": self.admin_ingest_documents_test,
-            # "user_ingest_and_search": self.user_ingest_and_search_test,
-            # "cleanup": self.cleanup_test
+            "admin_ingest_documents": self.admin_ingest_documents_test,
+            "user_ingest_and_search": self.user_ingest_and_search_test,
+            "cleanup": self.cleanup_test,
         }
 
     def create_groups_test(self, client):
@@ -51,8 +51,8 @@ class TestGroupManagement(BaseTest):
             group_2 = client.create_group(
                 group_name_2, "Another test group for permissions"
             )
-            self.group_id_1 = group_1["results"]["id"]
-            self.group_id_2 = group_2["results"]["id"]
+            self.group_id_1 = group_1["results"]["group_id"]
+            self.group_id_2 = group_2["results"]["group_id"]
             return {"group_1": group_1, "group_2": group_2}
         except Exception as e:
             return {"error": str(e)}

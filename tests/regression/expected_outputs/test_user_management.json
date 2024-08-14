@@ -111,6 +111,6 @@
     }
   },
   "delete_account": {
-    "results": "Incorrect password"
+    "results": "User account deleted successfully"
   }
 }

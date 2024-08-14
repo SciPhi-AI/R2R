@@ -59,6 +59,7 @@ class TestUserManagement(BaseTest):
             ],
         )
         self.user_id_string = str(uuid.uuid4()).split("-")[0]
+        self.user_id_string_2 = str(uuid.uuid4()).split("-")[0]
 
     def get_test_cases(self):
         return {
@@ -128,9 +129,11 @@ class TestUserManagement(BaseTest):
 
     def delete_user_test(self, client):
         try:
-            return client.delete_user(
-                self.user["results"]["id"], "password123"
-            )
+            email = f"test_{self.user_id_string_2}@example.com"
+            password = "password123"
+            user = client.register(email, password)
+
+            return client.delete_user(user["results"]["id"], "password123")
         except Exception as e:
             return {"results": str(e)}
 

@@ -149,14 +149,14 @@
   "basic_rag": {
     "results": {
       "completion": {
-        "id": "chatcmpl-9vw7m3tBWISbXJTEJmiRKE7WiuMIo",
+        "id": "chatcmpl-9vwee7AtlnR6nxgbSG60VOpb9bxtE",
         "choices": [
           {
             "finish_reason": "stop",
             "index": 0,
             "logprobs": null,
             "message": {
-              "content": "Uber did not make a profit in 2020. Instead, the company reported a net loss attributable to Uber Technologies, Inc. of $6,768 million [4], [5], [9].",
+              "content": "Uber did not make a profit in 2020. Instead, it reported a net loss attributable to Uber Technologies, Inc. of $6,768 million [4], [5], [9].",
               "refusal": null,
               "role": "assistant",
               "function_call": null,
@@ -164,15 +164,15 @@
             }
           }
         ],
-        "created": 1723595154,
+        "created": 1723597192,
         "model": "gpt-4o-2024-05-13",
         "object": "chat.completion",
         "service_tier": null,
         "system_fingerprint": "fp_3aa7262c27",
         "usage": {
-          "completion_tokens": 41,
+          "completion_tokens": 40,
           "prompt_tokens": 1483,
-          "total_tokens": 1524
+          "total_tokens": 1523
         }
       },
       "search_results": {
@@ -267,7 +267,7 @@
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "group_ids": [],
-            "score": 0.623127318807086,
+            "score": 0.62315821647644,
             "text": "issued to new investors in close proximity to the time of our transaction with Zomato. The transaction resulted in a gain on disposal of $154 millionrecognized\n in other income (expense), net in the consolidated statements of operations during the first quarter of 2020. The income tax effect of the sale was notmaterial.\n The divestiture  of Uber Eats India did not represent  a strategic  shift that would have had a major  effect  on our operations  and financial  results, andtherefore does not quali",
             "metadata": {
               "text": "issued to new investors in close proximity to the time of our transaction with Zomato. The transaction resulted in a gain on disposal of $154 millionrecognized\n in other income (expense), net in the consolidated statements of operations during the first quarter of 2020. The income tax effect of the sale was notmaterial.\n The divestiture  of Uber Eats India did not represent  a strategic  shift that would have had a major  effect  on our operations  and financial  results, andtherefore does not quali",
@@ -295,7 +295,7 @@
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "group_ids": [],
-            "score": 0.616815113019044,
+            "score": 0.6163432230744841,
             "text": "(458) (483) Other income (expense), net\n(1,625) 3,292 Loss before income taxes and loss from equity me\nthod investments(6,946) (1,025) Provision for (benefit fro\nm) income taxes(192) (492) Loss from equity method invest\nments(34) (37) Net loss including non-controlling interests\n(6,788) (570) Less: net loss attributab\nle to non-controlling interests, net of tax(20) (74) Net loss attributable to Uber Technologies, Inc.\n$ (6,768) $ (496) 54",
             "metadata": {
               "text": "(458) (483) Other income (expense), net\n(1,625) 3,292 Loss before income taxes and loss from equity me\nthod investments(6,946) (1,025) Provision for (benefit fro\nm) income taxes(192) (492) Loss from equity method invest\nments(34) (37) Net loss including non-controlling interests\n(6,788) (570) Less: net loss attributab\nle to non-controlling interests, net of tax(20) (74) Net loss attributable to Uber Technologies, Inc.\n$ (6,768) $ (496) 54",
@@ -325,14 +325,14 @@
   "hybrid_rag": {
     "results": {
       "completion": {
-        "id": "chatcmpl-9vw7oGk9J9ZJ76T9GMvheQcqgF5mt",
+        "id": "chatcmpl-9vwegy0zTZ75kT3Y52UopJ7QYeFFi",
         "choices": [
           {
             "finish_reason": "stop",
             "index": 0,
             "logprobs": null,
             "message": {
-              "content": "John Snow, referred to as \"Jon Snow\" in the provided context, is a character from the fictional world of \"Game of Thrones.\" He is described as Ned Stark\u2019s bastard son who feels like an outsider because Catelyn Stark is not his mother. Jon Snow is noted for being a highly capable swordsman and thinker with a knack for piercing observations [4]. He is also closely associated with Samwell (Sam) Tarly, a new recruit to the Night\u2019s Watch who becomes one of Jon Snow\u2019s closest companions at the Wall [10].",
+              "content": "John Snow, referred to as Jon Snow in the context, is Ned Stark\u2019s bastard son. Since Catelyn is not his mother, he is not considered a proper member of the Stark family, which often makes him feel like an outsider. He is also a highly capable swordsman and thinker, known for his piercing observations [1].",
               "refusal": null,
               "role": "assistant",
               "function_call": null,
@@ -340,86 +340,32 @@
             }
           }
         ],
-        "created": 1723595156,
+        "created": 1723597194,
         "model": "gpt-4o-2024-05-13",
         "object": "chat.completion",
         "service_tier": null,
         "system_fingerprint": "fp_3aa7262c27",
         "usage": {
-          "completion_tokens": 111,
-          "prompt_tokens": 808,
-          "total_tokens": 919
+          "completion_tokens": 68,
+          "prompt_tokens": 1147,
+          "total_tokens": 1215
         }
       },
       "search_results": {
         "vector_search_results": [
-          {
-            "fragment_id": "af5c8fb1-4563-5980-b907-7e3ab36c869c",
-            "extraction_id": "8edf5123-0a5c-568c-bf97-654b6adaf8dc",
-            "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
-            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.0476190476190476,
-            "text": "In the Early Modern period, scientists such as William Harvey in England and Galileo Galilei in Italy reacted against the theories of Aristotle and other classical era thinkers like Galen, establishing new theories based to some degree on observation and experiment. Harvey demonstrated the circulation of the blood, establishing that the heart functioned as a pump rather than being the seat of the soul and the controller of the body's heat, as Aristotle thought.[184] Galileo used more doubtful arguments to",
-            "metadata": {
-              "text": "In the Early Modern period, scientists such as William Harvey in England and Galileo Galilei in Italy reacted against the theories of Aristotle and other classical era thinkers like Galen, establishing new theories based to some degree on observation and experiment. Harvey demonstrated the circulation of the blood, establishing that the heart functioned as a pump rather than being the seat of the soul and the controller of the body's heat, as Aristotle thought.[184] Galileo used more doubtful arguments to",
-              "title": "aristotle.txt",
-              "semantic_score": 0.376063086029108,
-              "semantic_rank": 1,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
-            }
-          },
-          {
-            "fragment_id": "6fcc9949-914d-5e8d-9d5f-de2c3a04c023",
-            "extraction_id": "8edf5123-0a5c-568c-bf97-654b6adaf8dc",
-            "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
-            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.0454545454545455,
-            "text": "William Harvey's De Motu Cordis, 1628, showed that the blood circulated, contrary to classical era thinking.",
-            "metadata": {
-              "text": "William Harvey's De Motu Cordis, 1628, showed that the blood circulated, contrary to classical era thinking.",
-              "title": "aristotle.txt",
-              "semantic_score": 0.335097014904022,
-              "semantic_rank": 2,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
-            }
-          },
-          {
-            "fragment_id": "7c62c39f-1e2e-5ba3-9ddc-878814da7530",
-            "extraction_id": "8edf5123-0a5c-568c-bf97-654b6adaf8dc",
-            "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
-            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.0434782608695652,
-            "text": "Early Modern science",
-            "metadata": {
-              "text": "Early Modern science",
-              "title": "aristotle.txt",
-              "semantic_score": 0.297374027810933,
-              "semantic_rank": 3,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
-            }
-          },
           {
             "fragment_id": "378da9e2-4ba7-503f-b3a5-bbb0c3095f55",
             "extraction_id": "866f85a0-b3d6-5fc5-9ca0-dbd2373eac58",
             "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "group_ids": [],
-            "score": 0.0416666666666667,
+            "score": 0.0476190476190476,
             "text": "Jon Snow\nNed Stark\u2019s bastard son. Since Catelyn is not his mother, he is not a proper member of the Stark family, and he often feels himself an outsider. He is also a highly capable swordsman and thinker, with a knack for piercing observations.\nTyrion (The Imp) Lannister\nA small man with a giant intellect and sharp tongue. Tyrion does not pity himself but rather accepts his shortcomings as a little person and turns them to his advantage. He loves his family but recognizes their greed and ambition.",
             "metadata": {
               "text": "Jon Snow\nNed Stark\u2019s bastard son. Since Catelyn is not his mother, he is not a proper member of the Stark family, and he often feels himself an outsider. He is also a highly capable swordsman and thinker, with a knack for piercing observations.\nTyrion (The Imp) Lannister\nA small man with a giant intellect and sharp tongue. Tyrion does not pity himself but rather accepts his shortcomings as a little person and turns them to his advantage. He loves his family but recognizes their greed and ambition.",
               "title": "got.txt",
               "semantic_score": 0.289943260553881,
-              "semantic_rank": 4,
+              "semantic_rank": 1,
               "full_text_score": 0.0,
               "full_text_rank": null,
               "associatedQuery": "Who is John Snow?"
@@ -431,85 +377,13 @@
             "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "group_ids": [],
-            "score": 0.04,
+            "score": 0.0454545454545455,
             "text": "Maester Aemon\nThe chief man of learning at Castle Black. Despite his blind white eyes, Maester Aemon sees and speaks the truth in cryptic ways. Though few people realize it, Aemon is one of the few surviving members of the Targaryen family, but he has always put his vows to the Night\u2019s Watch ahead of any family loyalties.\nSamwell (Sam) Tarly",
             "metadata": {
               "text": "Maester Aemon\nThe chief man of learning at Castle Black. Despite his blind white eyes, Maester Aemon sees and speaks the truth in cryptic ways. Though few people realize it, Aemon is one of the few surviving members of the Targaryen family, but he has always put his vows to the Night\u2019s Watch ahead of any family loyalties.\nSamwell (Sam) Tarly",
               "title": "got.txt",
               "semantic_score": 0.285634236671582,
-              "semantic_rank": 5,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
-            }
-          },
-          {
-            "fragment_id": "1dd0355c-64c6-5ec4-b6f8-0447d9fd227a",
-            "extraction_id": "8edf5123-0a5c-568c-bf97-654b6adaf8dc",
-            "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
-            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.0384615384615385,
-            "text": "Scientific style",
-            "metadata": {
-              "text": "Scientific style",
-              "title": "aristotle.txt",
-              "semantic_score": 0.285280466079712,
-              "semantic_rank": 6,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
-            }
-          },
-          {
-            "fragment_id": "17433ec0-4a4a-5371-a7fb-58e3f33e1213",
-            "extraction_id": "8edf5123-0a5c-568c-bf97-654b6adaf8dc",
-            "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
-            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.037037037037037,
-            "text": "specialized knowledge, such as beekeepers and fishermen, and less accurate accounts provided by travellers from overseas.[65] His apparent emphasis on animals rather than plants is a historical accident: his works on botany have been lost, but two books on plants by his pupil Theophrastus have survived.[66]",
-            "metadata": {
-              "text": "specialized knowledge, such as beekeepers and fishermen, and less accurate accounts provided by travellers from overseas.[65] His apparent emphasis on animals rather than plants is a historical accident: his works on botany have been lost, but two books on plants by his pupil Theophrastus have survived.[66]",
-              "title": "aristotle.txt",
-              "semantic_score": 0.280345261096954,
-              "semantic_rank": 7,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
-            }
-          },
-          {
-            "fragment_id": "72c431e0-1282-5e4d-aaa2-5644960b4aed",
-            "extraction_id": "8edf5123-0a5c-568c-bf97-654b6adaf8dc",
-            "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
-            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.0357142857142857,
-            "text": "was a keen systematic collector of riddles, folklore, and proverbs; he and his school had a special interest in the riddles of the Delphic Oracle and studied the fables of Aesop.[141]",
-            "metadata": {
-              "text": "was a keen systematic collector of riddles, folklore, and proverbs; he and his school had a special interest in the riddles of the Delphic Oracle and studied the fables of Aesop.[141]",
-              "title": "aristotle.txt",
-              "semantic_score": 0.271067269774296,
-              "semantic_rank": 8,
-              "full_text_score": 0.0,
-              "full_text_rank": null,
-              "associatedQuery": "Who is John Snow?"
-            }
-          },
-          {
-            "fragment_id": "cd07a16f-975e-5e99-a939-6f40ef018a55",
-            "extraction_id": "8edf5123-0a5c-568c-bf97-654b6adaf8dc",
-            "document_id": "db02076e-989a-59cd-98d5-e24e15a0bd27",
-            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "group_ids": [],
-            "score": 0.0344827586206897,
-            "text": "Instead, he practiced a different style of science: systematically gathering data, discovering patterns common to whole groups of animals, and inferring possible causal explanations from these.[78][79] This style is common in modern biology when large amounts of data become available in a new field, such as genomics. It does not result in the same certainty as experimental science, but it sets out testable hypotheses and constructs a narrative explanation of what is observed. In this sense, Aristotle's",
-            "metadata": {
-              "text": "Instead, he practiced a different style of science: systematically gathering data, discovering patterns common to whole groups of animals, and inferring possible causal explanations from these.[78][79] This style is common in modern biology when large amounts of data become available in a new field, such as genomics. It does not result in the same certainty as experimental science, but it sets out testable hypotheses and constructs a narrative explanation of what is observed. In this sense, Aristotle's",
-              "title": "aristotle.txt",
-              "semantic_score": 0.268198533761589,
-              "semantic_rank": 9,
+              "semantic_rank": 2,
               "full_text_score": 0.0,
               "full_text_rank": null,
               "associatedQuery": "Who is John Snow?"
@@ -521,12 +395,138 @@
             "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "group_ids": [],
-            "score": 0.0333333333333333,
+            "score": 0.0434782608695652,
             "text": "Samwell (Sam) Tarly\nA new recruit to the Night\u2019s Watch who is fat and cowardly but very smart. Sam loves to read and eat but hates to fight, and he quickly becomes one of Jon Snow\u2019s closest companions at the Wall.\nSer Allister Thorne\nCastle Black\u2019s resentful master-at-arms. He hard on the new recruits to the Night\u2019s Watch and seems to enjoy making them suffer, causing Jon to rebel against him. During Robert\u2019s rebellion against the former king, he was a Targaryen loyalist.\nIllyrio Mopatis",
             "metadata": {
               "text": "Samwell (Sam) Tarly\nA new recruit to the Night\u2019s Watch who is fat and cowardly but very smart. Sam loves to read and eat but hates to fight, and he quickly becomes one of Jon Snow\u2019s closest companions at the Wall.\nSer Allister Thorne\nCastle Black\u2019s resentful master-at-arms. He hard on the new recruits to the Night\u2019s Watch and seems to enjoy making them suffer, causing Jon to rebel against him. During Robert\u2019s rebellion against the former king, he was a Targaryen loyalist.\nIllyrio Mopatis",
               "title": "got.txt",
               "semantic_score": 0.264474719762802,
+              "semantic_rank": 3,
+              "full_text_score": 0.0,
+              "full_text_rank": null,
+              "associatedQuery": "Who is John Snow?"
+            }
+          },
+          {
+            "fragment_id": "7f3f6e6f-9ec5-5ae0-8879-e89c5a892fcc",
+            "extraction_id": "866f85a0-b3d6-5fc5-9ca0-dbd2373eac58",
+            "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "group_ids": [],
+            "score": 0.0416666666666667,
+            "text": "Ser Jorah Mormont\nAn exiled knight who serves unofficially as Daenerys\u2019s chief advisor. Though he was exiled by Ned Stark for selling slaves, he is intelligent, valiant, and a great fighter. He swears allegiance to Viserys as true king of Westeros, but he also feeds information about the Targaryens back to Varys.\nViserys Targaryen",
+            "metadata": {
+              "text": "Ser Jorah Mormont\nAn exiled knight who serves unofficially as Daenerys\u2019s chief advisor. Though he was exiled by Ned Stark for selling slaves, he is intelligent, valiant, and a great fighter. He swears allegiance to Viserys as true king of Westeros, but he also feeds information about the Targaryens back to Varys.\nViserys Targaryen",
+              "title": "got.txt",
+              "semantic_score": 0.259267091751099,
+              "semantic_rank": 4,
+              "full_text_score": 0.0,
+              "full_text_rank": null,
+              "associatedQuery": "Who is John Snow?"
+            }
+          },
+          {
+            "fragment_id": "b732d643-eb13-5ed3-a31b-ae2ef7877428",
+            "extraction_id": "866f85a0-b3d6-5fc5-9ca0-dbd2373eac58",
+            "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "group_ids": [],
+            "score": 0.04,
+            "text": "Daenerys Stormborn Targaryen\nThe Dothraki khaleesi (queen) and Targaryen princess. She and her brother are the only surviving members of the Targaryen family, and she grows from a frightened girl to a confident ruler, while still maintaining her kindness, over the course of the novel.\nJon Snow",
+            "metadata": {
+              "text": "Daenerys Stormborn Targaryen\nThe Dothraki khaleesi (queen) and Targaryen princess. She and her brother are the only surviving members of the Targaryen family, and she grows from a frightened girl to a confident ruler, while still maintaining her kindness, over the course of the novel.\nJon Snow",
+              "title": "got.txt",
+              "semantic_score": 0.253841363237027,
+              "semantic_rank": 5,
+              "full_text_score": 0.0,
+              "full_text_rank": null,
+              "associatedQuery": "Who is John Snow?"
+            }
+          },
+          {
+            "fragment_id": "2252087b-54d3-5df8-9e0f-f3718e7f42e3",
+            "extraction_id": "866f85a0-b3d6-5fc5-9ca0-dbd2373eac58",
+            "document_id": "716fea3a-826b-5b27-8e59-ffbd1a35455a",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "group_ids": [],
+            "score": 0.0384615384615385,
+            "text": "Robert Baratheon\nThe corpulent king of Westeros. He loves to fight, drink, and sleep with women, and he hates the duties of ruling. He and Ned are long-time friends, and he was engaged to Ned\u2019s sister until she died.\nSer Jorah Mormont",
+            "metadata": {
+              "text": "Robert Baratheon\nThe corpulent king of Westeros. He loves to fight, drink, and sleep with women, and he hates the duties of ruling. He and Ned are long-time friends, and he was engaged to Ned\u2019s sister until she died.\nSer Jorah Mormont",
+              "title": "got.txt",
+              "semantic_score": 0.23582898080349,
+              "semantic_rank": 6,
+              "full_text_score": 0.0,
+              "full_text_rank": null,
+              "associatedQuery": "Who is John Snow?"
+            }
+          },
+          {
+            "fragment_id": "fe72ba41-30c1-5b96-b0ce-d6eebf137d38",
+            "extraction_id": "9caef060-01ee-51f0-a342-4852adb0ad43",
+            "document_id": "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "group_ids": [],
+            "score": 0.037037037037037,
+            "text": "allowed them to work on problems they only half understood (they\nwere literally described as \"clowns\" by one eminent insider), and\ntheir impatience and competitiveness got them to the answer ahead\nof two other groups that would otherwise have found it within the\nnext year, if not the next several months.\n[2]The idea that there could be fierce nerds is an unfamiliar one not\njust to many normal people but even to some young nerds. Especially\nearly on, nerds spend so much of their time in ordinary social",
+            "metadata": {
+              "text": "allowed them to work on problems they only half understood (they\nwere literally described as \"clowns\" by one eminent insider), and\ntheir impatience and competitiveness got them to the answer ahead\nof two other groups that would otherwise have found it within the\nnext year, if not the next several months.\n[2]The idea that there could be fierce nerds is an unfamiliar one not\njust to many normal people but even to some young nerds. Especially\nearly on, nerds spend so much of their time in ordinary social",
+              "title": "pg_essay_2.html",
+              "semantic_score": 0.234802625620444,
+              "semantic_rank": 7,
+              "full_text_score": 0.0,
+              "full_text_rank": null,
+              "associatedQuery": "Who is John Snow?"
+            }
+          },
+          {
+            "fragment_id": "d7ed83c7-0a72-5346-bca9-dc1cb0e956ea",
+            "extraction_id": "8ee4678a-1fa8-58a6-8d6f-ec88cf10a6dc",
+            "document_id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "group_ids": [],
+            "score": 0.0357142857142857,
+            "text": "Structure of Scientific Revolutions, but I also recommend his\nCopernican Revolution, where you can see him at work developing the\nidea.[4]\nThis is one reason people with a touch of Asperger's may have\nan advantage in discovering new ideas. They're always flying on\ninstruments.[5]\nHall, Rupert. From Galileo to Newton. Collins, 1963. This\nbook is particularly good at getting into contemporaries' heads.Thanks to Trevor Blackwell, Patrick Collison, Suhail Doshi, Daniel",
+            "metadata": {
+              "text": "Structure of Scientific Revolutions, but I also recommend his\nCopernican Revolution, where you can see him at work developing the\nidea.[4]\nThis is one reason people with a touch of Asperger's may have\nan advantage in discovering new ideas. They're always flying on\ninstruments.[5]\nHall, Rupert. From Galileo to Newton. Collins, 1963. This\nbook is particularly good at getting into contemporaries' heads.Thanks to Trevor Blackwell, Patrick Collison, Suhail Doshi, Daniel",
+              "title": "pg_essay_3.html",
+              "semantic_score": 0.230954363942146,
+              "semantic_rank": 8,
+              "full_text_score": 0.0,
+              "full_text_rank": null,
+              "associatedQuery": "Who is John Snow?"
+            }
+          },
+          {
+            "fragment_id": "0de20d43-9e29-5686-9033-3e184a60cf6a",
+            "extraction_id": "06e9714f-4805-5dc8-a72f-61ecd0241b49",
+            "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "group_ids": [],
+            "score": 0.0344827586206897,
+            "text": "to  economic,  social,  weather,  and  regulatory  conditions  or  other  circumstances  in  each  of  these  large  metropolitan  areas.  Outbreaks  of  contagiousdiseases\n or other viruses, such as COVID-19, could lead to a sustained decline in the desirability of living, working and congregating in metropolitan areas inwhich we operate. Any short-term o\nr long-term shifts in the travel patterns of consumers away from metropolitan areas, due to health concerns regarding epidemicsor",
+            "metadata": {
+              "text": "to  economic,  social,  weather,  and  regulatory  conditions  or  other  circumstances  in  each  of  these  large  metropolitan  areas.  Outbreaks  of  contagiousdiseases\n or other viruses, such as COVID-19, could lead to a sustained decline in the desirability of living, working and congregating in metropolitan areas inwhich we operate. Any short-term o\nr long-term shifts in the travel patterns of consumers away from metropolitan areas, due to health concerns regarding epidemicsor",
+              "title": "uber_2021.pdf",
+              "semantic_score": 0.22635568537448,
+              "semantic_rank": 9,
+              "full_text_score": 0.0,
+              "full_text_rank": null,
+              "associatedQuery": "Who is John Snow?"
+            }
+          },
+          {
+            "fragment_id": "78e0fcac-92e2-571f-a5bd-54d8c6da69ee",
+            "extraction_id": "8ee4678a-1fa8-58a6-8d6f-ec88cf10a6dc",
+            "document_id": "5b1bd54f-4d70-56b9-a017-a618bc75f94c",
+            "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+            "group_ids": [],
+            "score": 0.0333333333333333,
+            "text": "completely as soon as it was discovered \u2014 that whatever the church thought\nof the heliocentric model, astronomers must have been convinced as\nsoon as Copernicus proposed it. Far, in fact, from it. Copernicus\npublished the heliocentric model in 1532, but it wasn't till the\nmid seventeenth century that the balance of scientific opinion\nshifted in its favor.\n[5]Few understand how feeble new ideas look when they first appear.\nSo if you want to have new ideas yourself, one of the most valuable",
+            "metadata": {
+              "text": "completely as soon as it was discovered \u2014 that whatever the church thought\nof the heliocentric model, astronomers must have been convinced as\nsoon as Copernicus proposed it. Far, in fact, from it. Copernicus\npublished the heliocentric model in 1532, but it wasn't till the\nmid seventeenth century that the balance of scientific opinion\nshifted in its favor.\n[5]Few understand how feeble new ideas look when they first appear.\nSo if you want to have new ideas yourself, one of the most valuable",
+              "title": "pg_essay_3.html",
+              "semantic_score": 0.224857065098637,
               "semantic_rank": 10,
               "full_text_score": 0.0,
               "full_text_rank": null,
@@ -544,7 +544,7 @@
         "choices": [
           {
             "message": {
-              "content": "<search>\"{\\\"fragment_id\\\":\\\"14745860-73d2-5d40-81aa-9f7085c52d25\\\",\\\"extraction_id\\\":\\\"a1ba66bf-a034-5cc6-b88b-0df6f1c38dbc\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.761505768388855,\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Operations\\\\n(in thousands, except for per share data\\\\n) Year Ended December 31,\\\\n2021\\\\n2020 2019 Revenue\\\\n$ 3,208,323 $ 2,364,681 $ 3,615,960 Costs and expenses\\\\nCost of revenue\\\\n1,649,532 1,447,516 2,176,469 Operations and support\\\\n402,233 453,963 636,116 Research and development\\\\n911,946 909,126 1,505,640 Sales and marketing\\\\n411,406 416,331 814,122 General and administrative\\\\n915,638 946,127 1,186,093 Total costs and expenses\\\\n4,290,755 4,173,063 6,318,440 Loss from operations\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Operations\\\\n(in thousands, except for per share data\\\\n) Year Ended December 31,\\\\n2021\\\\n2020 2019 Revenue\\\\n$ 3,208,323 $ 2,364,681 $ 3,615,960 Costs and expenses\\\\nCost of revenue\\\\n1,649,532 1,447,516 2,176,469 Operations and support\\\\n402,233 453,963 636,116 Research and development\\\\n911,946 909,126 1,505,640 Sales and marketing\\\\n411,406 416,331 814,122 General and administrative\\\\n915,638 946,127 1,186,093 Total costs and expenses\\\\n4,290,755 4,173,063 6,318,440 Loss from operations\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"14478ac4-8f43-5f09-bbe3-7b1ddfdece40\\\",\\\"extraction_id\\\":\\\"12cff898-f0fe-59b8-929b-00d3d56fd73d\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.6930165290832571,\\\"text\\\":\\\"was  attributable  to  the  divestiture  of  certain  assets  related  to  the  Level  5  division  and  how  much  was  attributable  to  the  commercial  agreements  for  theutilization\\\\n of Lyft rideshare and fleet data. For the year ended December 31, 2021, the Company recognized a $119.3 million pre-tax gain for the divestiture of certainassets\\\",\\\"metadata\\\":{\\\"text\\\":\\\"was  attributable  to  the  divestiture  of  certain  assets  related  to  the  Level  5  division  and  how  much  was  attributable  to  the  commercial  agreements  for  theutilization\\\\n of Lyft rideshare and fleet data. For the year ended December 31, 2021, the Company recognized a $119.3 million pre-tax gain for the divestiture of certainassets\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"1a76991f-fa85-59b2-b522-700d47b2d809\\\",\\\"extraction_id\\\":\\\"0773cd62-b39f-517f-b6f1-be788b38374d\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.683758657202642,\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Cash Flows\\\\n(in thousands)\\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Cash flows from operating activities\\\\nNet loss\\\\n$ (1,009,359) $ (1,752,857) $ (2,602,241) Adjustments to reconcile net loss to net cash used in operating activities\\\\nDepreciation and amortization\\\\n139,347 157,353 108,429 Stock-based compensation\\\\n724,560 565,807 1,599,311 Amortization of premium on marketable securities\\\\n4,100 6,461 597 Accretion of discount on marketable securities\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Cash Flows\\\\n(in thousands)\\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Cash flows from operating activities\\\\nNet loss\\\\n$ (1,009,359) $ (1,752,857) $ (2,602,241) Adjustments to reconcile net loss to net cash used in operating activities\\\\nDepreciation and amortization\\\\n139,347 157,353 108,429 Stock-based compensation\\\\n724,560 565,807 1,599,311 Amortization of premium on marketable securities\\\\n4,100 6,461 597 Accretion of discount on marketable securities\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"bfc29c59-2925-5621-951a-645df5c892b2\\\",\\\"extraction_id\\\":\\\"94c562ae-c5cc-5622-b91c-34a0effcb6e1\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.671474019972923,\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Comprehensive Loss\\\\n(in thousands) \\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Net loss\\\\n$ (1,009,359) $ (1,752,857) $ (2,602,241) Other comprehensive incom\\\\ne (loss)Foreign currency transla\\\\ntion adjustment(931) (2,187) 162 Unrealized gain (loss) on m\\\\narketable securities, net of taxes(1,107) (1,011) 2,430 Other comprehensive incom\\\\ne (loss)(2,038) (3,198) 2,592 Comprehensive loss\\\\n$ (1,011,397) $ (1,756,055) $ (2,599,649) The accompanying notes are\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Comprehensive Loss\\\\n(in thousands) \\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Net loss\\\\n$ (1,009,359) $ (1,752,857) $ (2,602,241) Other comprehensive incom\\\\ne (loss)Foreign currency transla\\\\ntion adjustment(931) (2,187) 162 Unrealized gain (loss) on m\\\\narketable securities, net of taxes(1,107) (1,011) 2,430 Other comprehensive incom\\\\ne (loss)(2,038) (3,198) 2,592 Comprehensive loss\\\\n$ (1,011,397) $ (1,756,055) $ (2,599,649) The accompanying notes are\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"dbd5427c-f5ef-5fa6-83ae-a4a8ddbb48c2\\\",\\\"extraction_id\\\":\\\"14b08757-0819-5105-af37-509686dd6d01\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.663984238861582,\\\"text\\\":\\\"Lyft, Inc.Consolidated Balance Sheets\\\\n(in thousands, except for share and per share da\\\\nta) December 31,\\\\n2021\\\\n2020 Assets\\\\nCurrent assets\\\\nCash and cash equivalents\\\\n$ 457,325 $ 319,734 Short-term investments\\\\n1,796,533 1,931,334 Prepaid expenses and other cur\\\\nrent assets522,212 343,070 Total current assets\\\\n2,776,070 2,594,138 Restricted cash and cash equ\\\\nivalents73,205 118,559 Restricted investments\\\\n1,044,855 1,101,712 Other investments\\\\n80,411 10,000 Property and equipment, net\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Consolidated Balance Sheets\\\\n(in thousands, except for share and per share da\\\\nta) December 31,\\\\n2021\\\\n2020 Assets\\\\nCurrent assets\\\\nCash and cash equivalents\\\\n$ 457,325 $ 319,734 Short-term investments\\\\n1,796,533 1,931,334 Prepaid expenses and other cur\\\\nrent assets522,212 343,070 Total current assets\\\\n2,776,070 2,594,138 Restricted cash and cash equ\\\\nivalents73,205 118,559 Restricted investments\\\\n1,044,855 1,101,712 Other investments\\\\n80,411 10,000 Property and equipment, net\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"ba4bdf94-9b0d-5548-b3b0-b28595c39b2a\\\",\\\"extraction_id\\\":\\\"12cff898-f0fe-59b8-929b-00d3d56fd73d\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.65748991623582,\\\"text\\\":\\\"Lyft rideshare and fleet data. The Company will receive, in total, approximately $515 million in cash in connection with this transaction, with $165 million paid upfrontand\\\\n $350  million  to  be  paid  over  a  five-year  period.  As  the  transaction  included  multiple  elements,  management  had  to  estimate  how  much  of  the  arrangementconsideration\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft rideshare and fleet data. The Company will receive, in total, approximately $515 million in cash in connection with this transaction, with $165 million paid upfrontand\\\\n $350  million  to  be  paid  over  a  five-year  period.  As  the  transaction  included  multiple  elements,  management  had  to  estimate  how  much  of  the  arrangementconsideration\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"68519877-163f-545b-a96f-77e2595ef720\\\",\\\"extraction_id\\\":\\\"9e45b68a-e773-5903-a9e7-05f860a05cf5\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.644275665283208,\\\"text\\\":\\\"Lyft, Inc.Notes to Consolidated Financial Statements\\\\n1. Description of Business and Basis of Presentation\\\\nOrganization and Description of Business\\\\nLyft,\\\\n Inc.  (the  Company  or  Lyft)  is  incorporated  in  Delaware  with  its  headquarters  in  San  Francisco,  California.  The  Company  operates  multimodaltransportation\\\\n networks  in  the  United  States  and  Canada  that  offer  access  to  a  variety  of  transportation  options  through  the  Companys  platform  and  mobile-basedapplications.\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Notes to Consolidated Financial Statements\\\\n1. Description of Business and Basis of Presentation\\\\nOrganization and Description of Business\\\\nLyft,\\\\n Inc.  (the  Company  or  Lyft)  is  incorporated  in  Delaware  with  its  headquarters  in  San  Francisco,  California.  The  Company  operates  multimodaltransportation\\\\n networks  in  the  United  States  and  Canada  that  offer  access  to  a  variety  of  transportation  options  through  the  Companys  platform  and  mobile-basedapplications.\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"05ddcc28-fd4b-5318-9224-6f2cd3d16c5c\\\",\\\"extraction_id\\\":\\\"7ce2fcae-d65b-5a4c-b45d-dcd87c4df38e\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.642528734056439,\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Cash Flows\\\\n(in thousands)\\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Reconciliation of cash, cash equivalents and restricted cash and cash equivalents to the consolidated balance sheets\\\\nCash and cash equivalents\\\\n$ 457,325 $ 319,734 $ 358,319 Restricted cash and cash equivalents\\\\n73,205 118,559 204,976 Restricted cash, included in prepaid expenses and other current \\\\nassets663 192 1,170 Total cash, cash equivalents and restricted cash and cash equivalents\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Cash Flows\\\\n(in thousands)\\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Reconciliation of cash, cash equivalents and restricted cash and cash equivalents to the consolidated balance sheets\\\\nCash and cash equivalents\\\\n$ 457,325 $ 319,734 $ 358,319 Restricted cash and cash equivalents\\\\n73,205 118,559 204,976 Restricted cash, included in prepaid expenses and other current \\\\nassets663 192 1,170 Total cash, cash equivalents and restricted cash and cash equivalents\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"e89d60be-9148-52f1-8907-03187fdd2b65\\\",\\\"extraction_id\\\":\\\"ac9c9f74-c545-586e-8acf-5545cf0864d5\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.633270062999134,\\\"text\\\":\\\"Lyft,  Inc.  for  the  fiscal  year  ended  December  31,  2021  fully  complies  with  the  requirements  of  Section  13(a)  or  15(d)  of  the  Securities  Exchange  Act  of  1934,  asamended,\\\\n and that the information contained in such Annual Report on Form 10-K fairly presents, in all material respects, the financial condition and results of operationsof Lyft, Inc.\\\\nDate:\\\\nFebruary 28, 2022 By: /s/ Logan Green Name:\\\\nLogan Green Title:\\\\nChief Executive Officer (Principal Executive Officer)\\\\nI, Elaine\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft,  Inc.  for  the  fiscal  year  ended  December  31,  2021  fully  complies  with  the  requirements  of  Section  13(a)  or  15(d)  of  the  Securities  Exchange  Act  of  1934,  asamended,\\\\n and that the information contained in such Annual Report on Form 10-K fairly presents, in all material respects, the financial condition and results of operationsof Lyft, Inc.\\\\nDate:\\\\nFebruary 28, 2022 By: /s/ Logan Green Name:\\\\nLogan Green Title:\\\\nChief Executive Officer (Principal Executive Officer)\\\\nI, Elaine\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"b230ec93-1003-5382-98e3-15505dc5bdba\\\",\\\"extraction_id\\\":\\\"9f117275-9d93-5b4a-97d8-bb270db8b94e\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.62224208514251,\\\"text\\\":\\\"PART IItem 1. Business.\\\\nOur Mission\\\\nImprove peoples lives with \\\\nthe worlds best transportation.Overview\\\\nLyft,\\\\n Inc  (the  Company  or  Lyft)  started  a  movement  to  revolutionize  transportation.  In  2012,  we  launched  our  peer-to-peer  marketplace  for  on-demandridesharing\\\\n and have continued to pioneer innovations aligned with our mission. Today, Lyft is one of the largest multimodal transportation networks in the United Statesand Canada.\\\\nWe\\\",\\\"metadata\\\":{\\\"text\\\":\\\"PART IItem 1. Business.\\\\nOur Mission\\\\nImprove peoples lives with \\\\nthe worlds best transportation.Overview\\\\nLyft,\\\\n Inc  (the  Company  or  Lyft)  started  a  movement  to  revolutionize  transportation.  In  2012,  we  launched  our  peer-to-peer  marketplace  for  on-demandridesharing\\\\n and have continued to pioneer innovations aligned with our mission. Today, Lyft is one of the largest multimodal transportation networks in the United Statesand Canada.\\\\nWe\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\"</search><completion>Lyft did not make a profit in 2020. Instead, the company reported a net loss of $1,752,857,000 for the year ended December 31, 2020 [3], [4].</completion>"
+              "content": "<search>\"{\\\"fragment_id\\\":\\\"14745860-73d2-5d40-81aa-9f7085c52d25\\\",\\\"extraction_id\\\":\\\"a1ba66bf-a034-5cc6-b88b-0df6f1c38dbc\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.761440396308899,\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Operations\\\\n(in thousands, except for per share data\\\\n) Year Ended December 31,\\\\n2021\\\\n2020 2019 Revenue\\\\n$ 3,208,323 $ 2,364,681 $ 3,615,960 Costs and expenses\\\\nCost of revenue\\\\n1,649,532 1,447,516 2,176,469 Operations and support\\\\n402,233 453,963 636,116 Research and development\\\\n911,946 909,126 1,505,640 Sales and marketing\\\\n411,406 416,331 814,122 General and administrative\\\\n915,638 946,127 1,186,093 Total costs and expenses\\\\n4,290,755 4,173,063 6,318,440 Loss from operations\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Operations\\\\n(in thousands, except for per share data\\\\n) Year Ended December 31,\\\\n2021\\\\n2020 2019 Revenue\\\\n$ 3,208,323 $ 2,364,681 $ 3,615,960 Costs and expenses\\\\nCost of revenue\\\\n1,649,532 1,447,516 2,176,469 Operations and support\\\\n402,233 453,963 636,116 Research and development\\\\n911,946 909,126 1,505,640 Sales and marketing\\\\n411,406 416,331 814,122 General and administrative\\\\n915,638 946,127 1,186,093 Total costs and expenses\\\\n4,290,755 4,173,063 6,318,440 Loss from operations\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"14478ac4-8f43-5f09-bbe3-7b1ddfdece40\\\",\\\"extraction_id\\\":\\\"12cff898-f0fe-59b8-929b-00d3d56fd73d\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.69296767157509,\\\"text\\\":\\\"was  attributable  to  the  divestiture  of  certain  assets  related  to  the  Level  5  division  and  how  much  was  attributable  to  the  commercial  agreements  for  theutilization\\\\n of Lyft rideshare and fleet data. For the year ended December 31, 2021, the Company recognized a $119.3 million pre-tax gain for the divestiture of certainassets\\\",\\\"metadata\\\":{\\\"text\\\":\\\"was  attributable  to  the  divestiture  of  certain  assets  related  to  the  Level  5  division  and  how  much  was  attributable  to  the  commercial  agreements  for  theutilization\\\\n of Lyft rideshare and fleet data. For the year ended December 31, 2021, the Company recognized a $119.3 million pre-tax gain for the divestiture of certainassets\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"1a76991f-fa85-59b2-b522-700d47b2d809\\\",\\\"extraction_id\\\":\\\"0773cd62-b39f-517f-b6f1-be788b38374d\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.683727383613586,\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Cash Flows\\\\n(in thousands)\\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Cash flows from operating activities\\\\nNet loss\\\\n$ (1,009,359) $ (1,752,857) $ (2,602,241) Adjustments to reconcile net loss to net cash used in operating activities\\\\nDepreciation and amortization\\\\n139,347 157,353 108,429 Stock-based compensation\\\\n724,560 565,807 1,599,311 Amortization of premium on marketable securities\\\\n4,100 6,461 597 Accretion of discount on marketable securities\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Cash Flows\\\\n(in thousands)\\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Cash flows from operating activities\\\\nNet loss\\\\n$ (1,009,359) $ (1,752,857) $ (2,602,241) Adjustments to reconcile net loss to net cash used in operating activities\\\\nDepreciation and amortization\\\\n139,347 157,353 108,429 Stock-based compensation\\\\n724,560 565,807 1,599,311 Amortization of premium on marketable securities\\\\n4,100 6,461 597 Accretion of discount on marketable securities\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"bfc29c59-2925-5621-951a-645df5c892b2\\\",\\\"extraction_id\\\":\\\"94c562ae-c5cc-5622-b91c-34a0effcb6e1\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.671545108304772,\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Comprehensive Loss\\\\n(in thousands) \\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Net loss\\\\n$ (1,009,359) $ (1,752,857) $ (2,602,241) Other comprehensive incom\\\\ne (loss)Foreign currency transla\\\\ntion adjustment(931) (2,187) 162 Unrealized gain (loss) on m\\\\narketable securities, net of taxes(1,107) (1,011) 2,430 Other comprehensive incom\\\\ne (loss)(2,038) (3,198) 2,592 Comprehensive loss\\\\n$ (1,011,397) $ (1,756,055) $ (2,599,649) The accompanying notes are\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Comprehensive Loss\\\\n(in thousands) \\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Net loss\\\\n$ (1,009,359) $ (1,752,857) $ (2,602,241) Other comprehensive incom\\\\ne (loss)Foreign currency transla\\\\ntion adjustment(931) (2,187) 162 Unrealized gain (loss) on m\\\\narketable securities, net of taxes(1,107) (1,011) 2,430 Other comprehensive incom\\\\ne (loss)(2,038) (3,198) 2,592 Comprehensive loss\\\\n$ (1,011,397) $ (1,756,055) $ (2,599,649) The accompanying notes are\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"dbd5427c-f5ef-5fa6-83ae-a4a8ddbb48c2\\\",\\\"extraction_id\\\":\\\"14b08757-0819-5105-af37-509686dd6d01\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.6639652450074329,\\\"text\\\":\\\"Lyft, Inc.Consolidated Balance Sheets\\\\n(in thousands, except for share and per share da\\\\nta) December 31,\\\\n2021\\\\n2020 Assets\\\\nCurrent assets\\\\nCash and cash equivalents\\\\n$ 457,325 $ 319,734 Short-term investments\\\\n1,796,533 1,931,334 Prepaid expenses and other cur\\\\nrent assets522,212 343,070 Total current assets\\\\n2,776,070 2,594,138 Restricted cash and cash equ\\\\nivalents73,205 118,559 Restricted investments\\\\n1,044,855 1,101,712 Other investments\\\\n80,411 10,000 Property and equipment, net\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Consolidated Balance Sheets\\\\n(in thousands, except for share and per share da\\\\nta) December 31,\\\\n2021\\\\n2020 Assets\\\\nCurrent assets\\\\nCash and cash equivalents\\\\n$ 457,325 $ 319,734 Short-term investments\\\\n1,796,533 1,931,334 Prepaid expenses and other cur\\\\nrent assets522,212 343,070 Total current assets\\\\n2,776,070 2,594,138 Restricted cash and cash equ\\\\nivalents73,205 118,559 Restricted investments\\\\n1,044,855 1,101,712 Other investments\\\\n80,411 10,000 Property and equipment, net\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"ba4bdf94-9b0d-5548-b3b0-b28595c39b2a\\\",\\\"extraction_id\\\":\\\"12cff898-f0fe-59b8-929b-00d3d56fd73d\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.657470505539123,\\\"text\\\":\\\"Lyft rideshare and fleet data. The Company will receive, in total, approximately $515 million in cash in connection with this transaction, with $165 million paid upfrontand\\\\n $350  million  to  be  paid  over  a  five-year  period.  As  the  transaction  included  multiple  elements,  management  had  to  estimate  how  much  of  the  arrangementconsideration\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft rideshare and fleet data. The Company will receive, in total, approximately $515 million in cash in connection with this transaction, with $165 million paid upfrontand\\\\n $350  million  to  be  paid  over  a  five-year  period.  As  the  transaction  included  multiple  elements,  management  had  to  estimate  how  much  of  the  arrangementconsideration\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"68519877-163f-545b-a96f-77e2595ef720\\\",\\\"extraction_id\\\":\\\"9e45b68a-e773-5903-a9e7-05f860a05cf5\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.644272885067888,\\\"text\\\":\\\"Lyft, Inc.Notes to Consolidated Financial Statements\\\\n1. Description of Business and Basis of Presentation\\\\nOrganization and Description of Business\\\\nLyft,\\\\n Inc.  (the  Company  or  Lyft)  is  incorporated  in  Delaware  with  its  headquarters  in  San  Francisco,  California.  The  Company  operates  multimodaltransportation\\\\n networks  in  the  United  States  and  Canada  that  offer  access  to  a  variety  of  transportation  options  through  the  Companys  platform  and  mobile-basedapplications.\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Notes to Consolidated Financial Statements\\\\n1. Description of Business and Basis of Presentation\\\\nOrganization and Description of Business\\\\nLyft,\\\\n Inc.  (the  Company  or  Lyft)  is  incorporated  in  Delaware  with  its  headquarters  in  San  Francisco,  California.  The  Company  operates  multimodaltransportation\\\\n networks  in  the  United  States  and  Canada  that  offer  access  to  a  variety  of  transportation  options  through  the  Companys  platform  and  mobile-basedapplications.\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"05ddcc28-fd4b-5318-9224-6f2cd3d16c5c\\\",\\\"extraction_id\\\":\\\"7ce2fcae-d65b-5a4c-b45d-dcd87c4df38e\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.642513496576135,\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Cash Flows\\\\n(in thousands)\\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Reconciliation of cash, cash equivalents and restricted cash and cash equivalents to the consolidated balance sheets\\\\nCash and cash equivalents\\\\n$ 457,325 $ 319,734 $ 358,319 Restricted cash and cash equivalents\\\\n73,205 118,559 204,976 Restricted cash, included in prepaid expenses and other current \\\\nassets663 192 1,170 Total cash, cash equivalents and restricted cash and cash equivalents\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft, Inc.Consolidated Statements of Cash Flows\\\\n(in thousands)\\\\nYear Ended December 31,\\\\n2021\\\\n2020 2019 Reconciliation of cash, cash equivalents and restricted cash and cash equivalents to the consolidated balance sheets\\\\nCash and cash equivalents\\\\n$ 457,325 $ 319,734 $ 358,319 Restricted cash and cash equivalents\\\\n73,205 118,559 204,976 Restricted cash, included in prepaid expenses and other current \\\\nassets663 192 1,170 Total cash, cash equivalents and restricted cash and cash equivalents\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"e89d60be-9148-52f1-8907-03187fdd2b65\\\",\\\"extraction_id\\\":\\\"ac9c9f74-c545-586e-8acf-5545cf0864d5\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.633240878582001,\\\"text\\\":\\\"Lyft,  Inc.  for  the  fiscal  year  ended  December  31,  2021  fully  complies  with  the  requirements  of  Section  13(a)  or  15(d)  of  the  Securities  Exchange  Act  of  1934,  asamended,\\\\n and that the information contained in such Annual Report on Form 10-K fairly presents, in all material respects, the financial condition and results of operationsof Lyft, Inc.\\\\nDate:\\\\nFebruary 28, 2022 By: /s/ Logan Green Name:\\\\nLogan Green Title:\\\\nChief Executive Officer (Principal Executive Officer)\\\\nI, Elaine\\\",\\\"metadata\\\":{\\\"text\\\":\\\"Lyft,  Inc.  for  the  fiscal  year  ended  December  31,  2021  fully  complies  with  the  requirements  of  Section  13(a)  or  15(d)  of  the  Securities  Exchange  Act  of  1934,  asamended,\\\\n and that the information contained in such Annual Report on Form 10-K fairly presents, in all material respects, the financial condition and results of operationsof Lyft, Inc.\\\\nDate:\\\\nFebruary 28, 2022 By: /s/ Logan Green Name:\\\\nLogan Green Title:\\\\nChief Executive Officer (Principal Executive Officer)\\\\nI, Elaine\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\",\"{\\\"fragment_id\\\":\\\"b230ec93-1003-5382-98e3-15505dc5bdba\\\",\\\"extraction_id\\\":\\\"9f117275-9d93-5b4a-97d8-bb270db8b94e\\\",\\\"document_id\\\":\\\"2f576170-c4f9-5141-a910-a0924f341de4\\\",\\\"user_id\\\":\\\"2acb499e-8428-543b-bd85-0d9098718220\\\",\\\"group_ids\\\":[],\\\"score\\\":0.621775843010894,\\\"text\\\":\\\"PART IItem 1. Business.\\\\nOur Mission\\\\nImprove peoples lives with \\\\nthe worlds best transportation.Overview\\\\nLyft,\\\\n Inc  (the  Company  or  Lyft)  started  a  movement  to  revolutionize  transportation.  In  2012,  we  launched  our  peer-to-peer  marketplace  for  on-demandridesharing\\\\n and have continued to pioneer innovations aligned with our mission. Today, Lyft is one of the largest multimodal transportation networks in the United Statesand Canada.\\\\nWe\\\",\\\"metadata\\\":{\\\"text\\\":\\\"PART IItem 1. Business.\\\\nOur Mission\\\\nImprove peoples lives with \\\\nthe worlds best transportation.Overview\\\\nLyft,\\\\n Inc  (the  Company  or  Lyft)  started  a  movement  to  revolutionize  transportation.  In  2012,  we  launched  our  peer-to-peer  marketplace  for  on-demandridesharing\\\\n and have continued to pioneer innovations aligned with our mission. Today, Lyft is one of the largest multimodal transportation networks in the United Statesand Canada.\\\\nWe\\\",\\\"title\\\":\\\"lyft_2021.pdf\\\",\\\"associatedQuery\\\":\\\"What was Lyft's profit in 2020?\\\"}}\"</search><completion>Lyft did not make a profit in 2020. Instead, the company reported a net loss of $1,752,857,000 for the year ended December 31, 2020 [3], [4].</completion>"
             }
           }
         ]
