@@ -1,10 +1,8 @@
-from .abstractions import R2RAgents, R2RPipelines, R2RProviders
-from .api.client import R2RClient
-from .api.routes.ingestion.requests import (
+from ..base.api.models.ingestion.requests import (
     R2RIngestFilesRequest,
     R2RUpdateFilesRequest,
 )
-from .api.routes.management.requests import (
+from ..base.api.models.management.requests import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
@@ -12,7 +10,12 @@ from .api.routes.management.requests import (
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
-from .api.routes.retrieval.requests import R2RRAGRequest, R2RSearchRequest
+from ..base.api.models.retrieval.requests import (
+    R2RRAGRequest,
+    R2RSearchRequest,
+)
+from .abstractions import R2RAgents, R2RPipelines, R2RProviders
+from .api.client import R2RClient
 from .app import R2RApp
 from .assembly.builder import R2RBuilder
 from .assembly.config import R2RConfig

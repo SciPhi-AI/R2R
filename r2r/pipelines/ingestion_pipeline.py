@@ -3,7 +3,7 @@ import logging
 from asyncio import Queue
 from typing import Any, Optional
 
-from r2r.base import User
+from r2r.base.api.models.auth.responses import UserResponse
 from r2r.base.logging.run_logger import RunLoggingSingleton
 from r2r.base.logging.run_manager import RunManager, manage_run
 from r2r.base.pipeline.base_pipeline import AsyncPipeline, dequeue_requests
@@ -33,7 +33,7 @@ class IngestionPipeline(AsyncPipeline):
         stream: bool = False,
         run_manager: Optional[RunManager] = None,
         chunking_config_override: Optional[ChunkingProvider] = None,
-        user: Optional[User] = None,
+        user: Optional[UserResponse] = None,
         *args: Any,
         **kwargs: Any,
     ) -> None:

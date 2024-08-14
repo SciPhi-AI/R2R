@@ -7,7 +7,7 @@ from r2r.base import (
     RunType,
     VectorSearchSettings,
 )
-from r2r.main.api.routes.retrieval.requests import (
+from r2r.base.api.models.retrieval.requests import (
     R2RAgentRequest,
     R2RRAGRequest,
     R2RSearchRequest,

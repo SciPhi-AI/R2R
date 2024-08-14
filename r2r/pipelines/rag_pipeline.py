@@ -2,9 +2,9 @@ import asyncio
 import logging
 from typing import Any, Optional
 
-from ..base import User
 from ..base.abstractions.llm import GenerationConfig
 from ..base.abstractions.search import KGSearchSettings, VectorSearchSettings
+from ..base.api.models.auth.responses import UserResponse
 from ..base.logging.run_logger import RunLoggingSingleton
 from ..base.logging.run_manager import RunManager, manage_run
 from ..base.pipeline.base_pipeline import AsyncPipeline
@@ -34,7 +34,7 @@ class RAGPipeline(AsyncPipeline):
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         rag_generation_config: GenerationConfig = GenerationConfig(),
-        user: Optional[User] = None,
+        user: Optional[UserResponse] = None,
         *args: Any,
         **kwargs: Any,
     ):

@@ -11,7 +11,6 @@ from r2r.base import (
     R2RException,
     RunLoggingSingleton,
     RunManager,
-    User,
     VectorDBFilterValue,
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event

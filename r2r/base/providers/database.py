@@ -6,8 +6,9 @@ from uuid import UUID
 
 from ..abstractions.document import DocumentInfo
 from ..abstractions.search import VectorSearchResult
-from ..abstractions.user import User, UserCreate, UserResponse
 from ..abstractions.vector import VectorEntry
+from ..api.models.auth.requests import CreateUserRequest
+from ..api.models.auth.responses import UserResponse
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -106,11 +107,11 @@ class RelationalDBProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def create_user(self, user: UserCreate) -> User:
+    def create_user(self, user: CreateUserRequest) -> UserResponse:
         pass
 
     @abstractmethod
-    def get_user_by_email(self, email: str) -> Optional[User]:
+    def get_user_by_email(self, email: str) -> Optional[UserResponse]:
         pass
 
     @abstractmethod
@@ -138,11 +139,11 @@ class RelationalDBProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def get_user_by_id(self, user_id: UUID) -> Optional[User]:
+    def get_user_by_id(self, user_id: UUID) -> Optional[UserResponse]:
         pass
 
     @abstractmethod
-    def update_user(self, user: User) -> User:
+    def update_user(self, user: UserResponse) -> UserResponse:
         pass
 
     @abstractmethod

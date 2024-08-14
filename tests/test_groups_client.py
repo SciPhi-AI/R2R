@@ -8,21 +8,21 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.testclient import TestClient
 
 from r2r import (
+    CreateUserRequest,
     R2RApp,
     R2RBuilder,
     R2RClient,
     R2REngine,
     R2RException,
     Token,
-    User,
-    UserCreate,
+    UserResponse,
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-def create_superuser(user_create: UserCreate):
-    return User(
+def create_superuser(user_create: CreateUserRequest):
+    return UserResponse(
         id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
         email=user_create.email,
         hashed_password="hashed_" + user_create.password,
@@ -40,7 +40,7 @@ def create_superuser(user_create: UserCreate):
 @pytest.fixture(scope="function")
 def mock_auth_wrapper():
     def auth_wrapper(token: str = Depends(oauth2_scheme)):
-        return User(
+        return UserResponse(
             id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
             email="admin@example.com",
             is_active=True,
@@ -59,11 +59,11 @@ def mock_db():
     )
     db.relational.create_user.side_effect = create_superuser
     db.relational.get_user_by_id.return_value = create_superuser(
-        UserCreate(email="admin@example.com", password="adminpassword")
+        CreateUserRequest(email="admin@example.com", password="adminpassword")
     )
 
     def mock_update_user(user):
-        return User(
+        return UserResponse(
             id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
             email=user.email,
             hashed_password="hashed_password",
@@ -113,7 +113,7 @@ def authenticate_superuser(r2r_client, mock_db):
     r2r_client.register(**user_data)
 
     # Create a superuser
-    superuser = User(
+    superuser = UserResponse(
         id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
         email=user_data["email"],
         hashed_password="hashed_" + user_data["password"],

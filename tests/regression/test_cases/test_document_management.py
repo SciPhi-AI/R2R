@@ -1,6 +1,6 @@
 import os
 
-from r2r import R2RException, User
+from r2r import R2RException
 from tests.regression.test_cases.base import BaseTest
 
 
@@ -97,8 +97,6 @@ class TestDocumentManagement(BaseTest):
                 "data",
                 "aristotle_v2.txt",
             )
-            user = User(email="email@test.com", hashed_password="password")
-
             update_response = client.update_files(
                 [file_path], [TestDocumentManagement.UPDATE_FILE_ID]
             )

@@ -35,8 +35,25 @@ from .abstractions.search import (
     VectorSearchResult,
     VectorSearchSettings,
 )
-from .abstractions.user import Token, TokenData, User, UserCreate, UserStats
+from .abstractions.user import Token, TokenData, UserStats
 from .abstractions.vector import Vector, VectorEntry, VectorType
+from .api.models.auth.requests import (
+    CreateUserRequest,
+    DeleteUserRequest,
+    LoginRequest,
+    LogoutRequest,
+    PasswordChangeRequest,
+    PasswordResetConfirmRequest,
+    PasswordResetRequest,
+    RefreshTokenRequest,
+    UserPutRequest,
+    VerifyEmailRequest,
+)
+from .api.models.auth.responses import (
+    GenericMessageResponse,
+    TokenResponse,
+    UserResponse,
+)
 from .logging.base import RunType
 from .logging.log_processor import (
     AnalysisTypes,
@@ -93,6 +110,21 @@ from .utils import (
 )
 
 __all__ = [
+    # Auth Requests
+    "CreateUserRequest",
+    "VerifyEmailRequest",
+    "LoginRequest",
+    "UserPutRequest",
+    "RefreshTokenRequest",
+    "PasswordChangeRequest",
+    "PasswordResetRequest",
+    "PasswordResetConfirmRequest",
+    "LogoutRequest",
+    "DeleteUserRequest",
+    # Auth Responses
+    "TokenResponse",
+    "UserResponse",
+    "GenericMessageResponse",
     # Logging
     "AsyncParser",
     "AnalysisTypes",
@@ -127,8 +159,6 @@ __all__ = [
     "VectorSearchSettings",
     "Token",
     "TokenData",
-    "User",
-    "UserCreate",
     "KGSearchResult",
     "KGSearchSettings",
     "AggregateSearchResult",

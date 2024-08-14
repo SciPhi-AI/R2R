@@ -3,7 +3,7 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import Any, Optional
 
-from r2r.base import User
+from r2r.base.api.models.auth.responses import UserResponse
 from r2r.base.logging.base import RunType
 
 from .run_logger import RunLoggingSingleton
@@ -38,7 +38,7 @@ class RunManager:
     async def log_run_info(
         self,
         run_type: RunType,
-        user: User,
+        user: UserResponse,
     ):
         if run_id := run_id_var.get():
             await self.logger.info_log(

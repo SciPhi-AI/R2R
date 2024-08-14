@@ -18,14 +18,14 @@ from r2r.base import (
     DocumentType,
     R2RException,
     RelationalDBProvider,
-    User,
-    UserCreate,
     VectorDBProvider,
     VectorEntry,
     VectorSearchResult,
     generate_id_from_label,
 )
 from r2r.base.abstractions.user import UserStats
+from r2r.base.api.models.auth.requests import CreateUserRequest
+from r2r.base.api.models.auth.responses import UserResponse
 
 from .vecs import Client, Collection, create_client
 
@@ -867,7 +867,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
 
     def get_users_in_group(
         self, group_id: UUID, offset: int = 0, limit: int = 100
-    ) -> list[User]:
+    ) -> list[UserResponse]:
         query = text(
             f"""
             SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
@@ -884,7 +884,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             )
             users_data = result.fetchall()
         return [
-            User(
+            UserResponse(
                 id=user_data[0],
                 email=user_data[1],
                 hashed_password="null",
@@ -914,7 +914,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             groups = result.fetchall()
         return [dict(zip(columns, group)) for group in groups]
 
-    def create_user(self, user: UserCreate) -> User:
+    def create_user(self, user: CreateUserRequest) -> UserResponse:
         hashed_password = self.crypto_provider.get_password_hash(user.password)
         query = text(
             f"""
@@ -938,7 +938,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             user_data = result.fetchone()
             sess.commit()
 
-        return User(
+        return UserResponse(
             id=user_data[0],
             email=user_data[1],
             is_superuser=user_data[2],
@@ -950,7 +950,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             hashed_password=hashed_password,
         )
 
-    def get_user_by_email(self, email: str) -> Optional[User]:
+    def get_user_by_email(self, email: str) -> Optional[UserResponse]:
         query = text(
             f"""
             SELECT user_id, email, hashed_password, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
@@ -964,7 +964,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             user_data = result.fetchone()
 
         if user_data:
-            return User(
+            return UserResponse(
                 id=user_data[0],
                 email=user_data[1],
                 hashed_password=user_data[2],
@@ -1131,7 +1131,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
                     status_code=500, message="Failed to delete user"
                 )
 
-    def get_all_users(self) -> list[User]:
+    def get_all_users(self) -> list[UserResponse]:
         query = text(
             f"""
             SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, group_ids
@@ -1144,7 +1144,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             users_data = result.fetchall()
 
         return [
-            User(
+            UserResponse(
                 id=user_data[0],
                 email=user_data[1],
                 hashed_password="null",
@@ -1269,7 +1269,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             sess.commit()
 
     # Modify existing methods to include new profile fields
-    def get_user_by_id(self, user_id: UUID) -> Optional[User]:
+    def get_user_by_id(self, user_id: UUID) -> Optional[UserResponse]:
         query = text(
             f"""
             SELECT user_id, email, hashed_password, is_superuser, is_active, is_verified,
@@ -1284,7 +1284,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             user_data = result.fetchone()
 
         if user_data:
-            return User(
+            return UserResponse(
                 id=user_data[0],
                 email=user_data[1],
                 hashed_password=user_data[2],
@@ -1300,7 +1300,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             )
         return None
 
-    def update_user(self, user: User) -> User:
+    def update_user(self, user: UserResponse) -> UserResponse:
         query = text(
             f"""
             UPDATE users_{self.collection_name}
@@ -1331,7 +1331,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             updated_user_data = result.fetchone()
             sess.commit()
 
-        return User(
+        return UserResponse(
             id=updated_user_data[0],
             email=updated_user_data[1],
             hashed_password="null",

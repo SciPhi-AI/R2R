@@ -17,7 +17,7 @@ from r2r import (
     R2RPipelineFactory,
     R2RProviderFactory,
     RunLoggingSingleton,
-    User,
+    UserResponse,
     VectorSearchSettings,
     generate_id_from_label,
 )
@@ -81,7 +81,11 @@ def logging_connection():
 
 @pytest.fixture
 def user():
-    return User(email="test@test.com", hashed_password="test")
+    return UserResponse(
+        id=generate_id_from_label("user"),
+        email="test@test.com",
+        hashed_password="test",
+    )
 
 
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)

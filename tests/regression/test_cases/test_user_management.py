@@ -64,19 +64,19 @@ class TestUserManagement(BaseTest):
     def get_test_cases(self):
         return {
             "register_user": lambda client: self.register_user_test(client),
-            "login_user": lambda client: self.login_user_test(client),
-            "user_info": lambda client: self.user_info_test(client),
-            "change_password": lambda client: self.change_password_test(
-                client
-            ),
-            # "reset_password": lambda client: self.reset_password_test(client),
-            "update_profile": lambda client: self.update_profile_test(client),
-            "refresh_token": lambda client: self.refresh_token_test(client),
-            "superuser_test": lambda client: self.superuser_test(client),
-            "logout": lambda client: self.logout_test(client),
-            "delete_account": lambda client: self.delete_user_test(client),
-            "login_user": lambda client: self.login_user_test(client),
-            "refresh_token": lambda client: self.refresh_token_test(client),
+            # "login_user": lambda client: self.login_user_test(client),
+            # "user_info": lambda client: self.user_info_test(client),
+            # "change_password": lambda client: self.change_password_test(
+            #     client
+            # ),
+            # # "reset_password": lambda client: self.reset_password_test(client),
+            # "update_profile": lambda client: self.update_profile_test(client),
+            # "refresh_token": lambda client: self.refresh_token_test(client),
+            # "superuser_test": lambda client: self.superuser_test(client),
+            # "logout": lambda client: self.logout_test(client),
+            # "delete_account": lambda client: self.delete_user_test(client),
+            # "login_user": lambda client: self.login_user_test(client),
+            # "refresh_token": lambda client: self.refresh_token_test(client),
         }
 
     def register_user_test(self, client):

@@ -7,7 +7,7 @@ from fastapi import Depends, Query
 from pydantic import BaseModel
 
 from r2r.base import R2RException, RunType
-from r2r.main.api.routes.management.requests import (
+from r2r.base.api.models.management.requests import (
     R2RAddUserToGroupRequest,
     R2RAnalyticsRequest,
     R2RAssignDocumentToGroupRequest,

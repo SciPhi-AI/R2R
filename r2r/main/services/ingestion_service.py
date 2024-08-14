@@ -17,18 +17,18 @@ from r2r.base import (
     R2RException,
     RunLoggingSingleton,
     RunManager,
-    User,
     generate_id_from_label,
     increment_version,
     to_async_generator,
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
-from ..api.routes.ingestion.requests import (
+from ...base.api.models.auth.responses import UserResponse
+from ...base.api.models.ingestion.requests import (
     R2RIngestFilesRequest,
     R2RUpdateFilesRequest,
 )
+from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
 from ..assembly.config import R2RConfig
 from .base import Service
 
@@ -58,7 +58,7 @@ class IngestionService(Service):
     def _file_to_document(
         self,
         file: UploadFile,
-        user: User,
+        user: UserResponse,
         document_id: uuid.UUID,
         metadata: dict,
     ) -> Document:
@@ -230,7 +230,7 @@ class IngestionService(Service):
     async def ingest_files(
         self,
         files: list[UploadFile],
-        user: User,
+        user: UserResponse,
         metadatas: Optional[list[dict]] = None,
         document_ids: Optional[list[uuid.UUID]] = None,
         versions: Optional[list[str]] = None,
@@ -282,7 +282,7 @@ class IngestionService(Service):
         self,
         files: list[UploadFile],
         document_ids: list[uuid.UUID],
-        user: User,
+        user: UserResponse,
         metadatas: Optional[list[dict]] = None,
         *args: Any,
         **kwargs: Any,

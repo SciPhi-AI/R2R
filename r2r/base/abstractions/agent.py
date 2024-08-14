@@ -13,8 +13,9 @@ from typing import (
 
 from pydantic import BaseModel
 
-from ..providers.llm import CompletionProvider, GenerationConfig
-from ..providers.prompt import PromptProvider
+from r2r.base.providers.llm import CompletionProvider, GenerationConfig
+from r2r.base.providers.prompt import PromptProvider
+
 from .completion import MessageType
 from .llm import LLMChatCompletion
 

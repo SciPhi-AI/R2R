@@ -2,14 +2,9 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-from r2r.base import (
-    R2RException,
-    RunLoggingSingleton,
-    RunManager,
-    Token,
-    User,
-    UserCreate,
-)
+from r2r.base import R2RException, RunLoggingSingleton, RunManager, Token
+from r2r.base.api.models.auth.requests import CreateUserRequest
+from r2r.base.api.models.auth.responses import UserResponse
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
@@ -37,7 +32,7 @@ class AuthService(Service):
         )
 
     @telemetry_event("RegisterUser")
-    async def register(self, user: UserCreate) -> User:
+    async def register(self, user: CreateUserRequest) -> UserResponse:
         return self.providers.auth.register(user)
 
     @telemetry_event("VerifyEmail")
@@ -60,14 +55,14 @@ class AuthService(Service):
         self.providers.database.relational.remove_verification_code(
             verification_code
         )
-        return True
+        return {"message": f"User account {user_id} verified successfully."}
 
     @telemetry_event("Login")
     async def login(self, email: str, password: str) -> dict[str, Token]:
         return self.providers.auth.login(email, password)
 
     @telemetry_event("GetCurrentUser")
-    async def user(self, token: str) -> User:
+    async def user(self, token: str) -> UserResponse:
         token_data = self.providers.auth.decode_token(token)
         user = self.providers.database.relational.get_user_by_email(
             token_data.email
@@ -88,7 +83,7 @@ class AuthService(Service):
 
     @telemetry_event("ChangePassword")
     async def change_password(
-        self, user: User, current_password: str, new_password: str
+        self, user: UserResponse, current_password: str, new_password: str
     ) -> dict[str, str]:
         if not user:
             raise R2RException(status_code=404, message="User not found")
@@ -113,7 +108,7 @@ class AuthService(Service):
         return self.providers.auth.logout(token)
 
     @telemetry_event("GetUserProfile")
-    async def get_user_profile(self, user_id: uuid.UUID) -> User:
+    async def get_user_profile(self, user_id: uuid.UUID) -> UserResponse:
         user = self.providers.database.relational.get_user_by_id(user_id)
         if not user:
             raise R2RException(status_code=404, message="User not found")
@@ -122,7 +117,7 @@ class AuthService(Service):
     @telemetry_event("UpdateUserProfile")
     async def update_user(
         self, user_id: uuid.UUID, user_data: dict[str, Any]
-    ) -> User:
+    ) -> UserResponse:
         user = self.providers.database.relational.get_user_by_id(user_id)
         if not user:
             raise R2RException(status_code=404, message="User not found")
@@ -148,7 +143,7 @@ class AuthService(Service):
         ):
             raise R2RException(status_code=400, message="Incorrect password")
         self.providers.database.relational.delete_user(user_id)
-        return {"message": "User account deleted successfully"}
+        return {"message": f"User account {user_id} deleted successfully."}
 
     @telemetry_event("CleanExpiredBlacklistedTokens")
     async def clean_expired_blacklisted_tokens(

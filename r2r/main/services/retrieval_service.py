@@ -13,12 +13,12 @@ from r2r.base import (
     R2RException,
     RunLoggingSingleton,
     RunManager,
-    User,
     VectorSearchSettings,
     generate_id_from_label,
     manage_run,
     to_async_generator,
 )
+from r2r.base.api.models.auth.responses import UserResponse
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
@@ -53,7 +53,7 @@ class RetrievalService(Service):
         query: str,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
-        user: Optional[User] = None,
+        user: Optional[UserResponse] = None,
         *args,
         **kwargs,
     ):
@@ -112,7 +112,7 @@ class RetrievalService(Service):
         rag_generation_config: GenerationConfig,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
-        user: Optional[User] = None,
+        user: Optional[UserResponse] = None,
         *args,
         **kwargs,
     ):
@@ -242,7 +242,7 @@ class RetrievalService(Service):
         rag_generation_config: GenerationConfig,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
-        user: Optional[User] = None,
+        user: Optional[UserResponse] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
         *args,

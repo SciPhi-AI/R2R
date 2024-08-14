@@ -1,7 +1,7 @@
 from fastapi import Depends, File, UploadFile
 
 from r2r.base import ChunkingConfig, R2RException
-from r2r.main.api.routes.ingestion.requests import (
+from r2r.base.api.models.ingestion.requests import (
     R2RIngestFilesRequest,
     R2RUpdateFilesRequest,
 )

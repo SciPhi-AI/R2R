@@ -4,7 +4,7 @@ from uuid import UUID
 
 import pytest
 
-from r2r import AuthConfig, DatabaseConfig, R2RException, UserCreate
+from r2r import AuthConfig, CreateUserRequest, DatabaseConfig, R2RException
 from r2r.main.services import AuthService
 from r2r.providers import (
     BCryptConfig,
@@ -43,7 +43,7 @@ def test_group(pg_db):
 # Improvement: Use a fixture for creating a test user
 @pytest.fixture
 def test_user(pg_db):
-    user = UserCreate(
+    user = CreateUserRequest(
         email=f"test_{datetime.now().timestamp()}@example.com",
         password="password",
     )

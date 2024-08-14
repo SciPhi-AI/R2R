@@ -8,21 +8,21 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.testclient import TestClient
 
 from r2r import (
+    CreateUserRequest,
     R2RApp,
     R2RBuilder,
     R2RClient,
     R2REngine,
     R2RException,
     Token,
-    User,
-    UserCreate,
+    UserResponse,
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-def create_user(user_create: UserCreate):
-    return User(
+def create_user(user_create: CreateUserRequest):
+    return UserResponse(
         id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
         email=user_create.email,
         hashed_password="hashed_" + user_create.password,
@@ -60,12 +60,12 @@ def mock_db():
 
     db.relational.create_user.side_effect = create_user
     db.relational.get_user_by_id.return_value = create_user(
-        UserCreate(email="test@example.com", password="password")
+        CreateUserRequest(email="test@example.com", password="password")
     )
 
     def update_user(user):
         updated_user = create_user(
-            UserCreate(email=user.email, password="password")
+            CreateUserRequest(email=user.email, password="password")
         )
         updated_user.name = user.name
         updated_user.bio = user.bio

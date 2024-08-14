@@ -19,16 +19,16 @@ from r2r.base import (
     KGSearchSettings,
     LogFilterCriteria,
     R2RException,
-    UserCreate,
     VectorDBFilterValue,
     VectorSearchSettings,
 )
 
-from .routes.ingestion.requests import (
+from ...base.api.models.auth.requests import CreateUserRequest
+from ...base.api.models.ingestion.requests import (
     R2RIngestFilesRequest,
     R2RUpdateFilesRequest,
 )
-from .routes.management.requests import (
+from ...base.api.models.management.requests import (
     R2RAnalyticsRequest,
     R2RDeleteRequest,
     R2RDocumentChunksRequest,
@@ -39,7 +39,7 @@ from .routes.management.requests import (
     R2RUpdatePromptRequest,
     R2RUsersOverviewRequest,
 )
-from .routes.retrieval.requests import (
+from ...base.api.models.retrieval.requests import (
     R2RAgentRequest,
     R2RRAGRequest,
     R2RSearchRequest,
@@ -113,7 +113,7 @@ class R2RClient:
         return {"Authorization": f"Bearer {self.access_token}"}
 
     def register(self, email: str, password: str) -> dict:
-        user = UserCreate(email=email, password=password)
+        user = CreateUserRequest(email=email, password=password)
         return self._make_request("POST", "register", json=user.dict())
 
     def verify_email(self, verification_code: str) -> dict:
