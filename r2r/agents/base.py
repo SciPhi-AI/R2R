@@ -2,14 +2,13 @@ import asyncio
 from abc import ABCMeta
 from typing import AsyncGenerator, Generator, Optional
 
-from r2r.base import (
-    Agent,
+from r2r.base.abstractions import (
     AsyncSyncMeta,
     LLMChatCompletion,
     LLMChatCompletionChunk,
-    Message,
     syncable,
 )
+from r2r.base.agent import Agent, Message
 
 
 class CombinedMeta(AsyncSyncMeta, ABCMeta):

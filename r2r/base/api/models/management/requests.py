@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
-from r2r.base import AnalysisTypes, LogFilterCriteria, VectorDBFilterValue
+from r2r.base.logging.log_processor import AnalysisTypes, LogFilterCriteria
 
 
 class R2RUpdatePromptRequest(BaseModel):

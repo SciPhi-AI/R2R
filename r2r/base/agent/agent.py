@@ -13,37 +13,14 @@ from typing import (
 
 from pydantic import BaseModel
 
-from r2r.base.providers.llm import CompletionProvider, GenerationConfig
-from r2r.base.providers.prompt import PromptProvider
+from r2r.base.abstractions import (
+    GenerationConfig,
+    LLMChatCompletion,
+    MessageType,
+)
+from r2r.base.providers import CompletionProvider, PromptProvider
 
-from .completion import MessageType
-from .llm import LLMChatCompletion
-
-
-class Tool(BaseModel):
-    name: str
-    description: str
-    results_function: Callable
-    llm_format_function: Callable
-    stream_function: Optional[Callable] = None
-    parameters: Optional[Dict[str, Any]] = None
-
-    class Config:
-        arbitrary_types_allowed = True
-
-
-class ToolResult(BaseModel):
-    raw_result: Any
-    llm_formatted_result: str
-    stream_result: Optional[str] = None
-
-
-class Message(BaseModel):
-    role: Union[MessageType, str]
-    content: Optional[str] = None
-    name: Optional[str] = None
-    function_call: Optional[Dict[str, Any]] = None
-    tool_calls: Optional[List[Dict[str, Any]]] = None
+from .base import Message, Tool, ToolResult
 
 
 class Conversation:

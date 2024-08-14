@@ -6,8 +6,8 @@ from typing import Any
 import toml
 from pydantic import BaseModel
 
-from ...base.abstractions.agent import AgentConfig
 from ...base.abstractions.llm import GenerationConfig
+from ...base.agent.agent import AgentConfig
 from ...base.logging.run_logger import LoggingConfig
 from ...base.providers.auth import AuthConfig
 from ...base.providers.chunking import ChunkingConfig
