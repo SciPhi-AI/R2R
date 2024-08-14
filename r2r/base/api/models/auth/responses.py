@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from r2r.base.abstractions import Token
+
 T = TypeVar("T")
 
 
@@ -12,9 +14,8 @@ class ResultsWrapper(BaseModel, Generic[T]):
 
 
 class TokenResponse(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str
+    access_token: Token
+    refresh_token: Token
 
 
 class UserResponse(BaseModel):

@@ -30,79 +30,297 @@ logger.addHandler(ch)
 # Optional: Prevent propagation to the root logger
 logger.propagate = False
 
+
+# TODO - Cleanup export strategy && slimmify release
 __all__ = [
+    ## AGENT
+    # Base
+    "R2RAgent",
+    "R2RStreamingAgent",
+    # RAG Agents
+    "R2RRAGAgent",
+    "R2RStreamingRAGAgent",
+    ## BASE
+    # Base abstractions
+    "AsyncSyncMeta",
+    "syncable",
+    # Completion abstractions
+    "CompletionRecord",
+    "MessageType",
+    # Document abstractions
+    "DataType",
+    "Document",
+    "DocumentExtraction",
+    "DocumentFragment",
+    "DocumentInfo",
+    "DocumentStatus",
+    "DocumentType",
+    # Embedding abstractions
+    "EmbeddingPurpose",
+    "default_embedding_prefixes",
+    # Exception abstractions
+    "R2RDocumentProcessingError",
     "R2RException",
-    "LoggingConfig",
+    # KG abstractions
+    "Entity",
+    "KGExtraction",
+    "Triple",
+    "extract_triples",
+    # Llama abstractions
+    "VectorStoreQuery",
+    # LLM abstractions
+    "GenerationConfig",
+    "LLMChatCompletion",
+    "LLMChatCompletionChunk",
+    "RAGCompletion",
+    # Prompt abstractions
+    "Prompt",
+    # Search abstractions
+    "AggregateSearchResult",
+    "KGSearchResult",
+    "KGSearchSettings",
+    "VectorSearchResult",
+    "VectorSearchSettings",
+    # User abstractions
+    "Token",
+    "TokenData",
+    "UserStats",
+    # Vector abstractions
+    "Vector",
+    "VectorEntry",
+    "VectorType",
+    ## AGENT
+    # Agent abstractions
+    "Agent",
+    "AgentConfig",
+    "Conversation",
+    "Message",
+    "Tool",
+    "ToolResult",
+    ## API
+    # Auth Requests
+    "CreateUserRequest",
+    "DeleteUserRequest",
+    "LoginRequest",
+    "LogoutRequest",
+    "PasswordChangeRequest",
+    "PasswordResetConfirmRequest",
+    "PasswordResetRequest",
+    "RefreshTokenRequest",
+    "UserPutRequest",
+    "VerifyEmailRequest",
+    # Auth Responses
+    "GenericMessageResponse",
+    "TokenResponse",
+    "UserResponse",
+    # Ingestion Requests
+    "R2RUpdateFilesRequest",
+    "R2RIngestFilesRequest",
+    # Management Requests
+    "R2RUpdatePromptRequest",
+    "R2RDeleteRequest",
+    "R2RAnalyticsRequest",
+    "R2RUsersOverviewRequest",
+    "R2RDocumentsOverviewRequest",
+    "R2RDocumentChunksRequest",
+    "R2RLogsRequest",
+    "R2RPrintRelationshipsRequest",
+    "R2RCreateGroupRequest",
+    "R2RUpdateGroupRequest",
+    "R2RAddUserToGroupRequest",
+    "R2RRemoveUserFromGroupRequest",
+    "R2RGroupsOverviewRequest",
+    "R2RScoreCompletionRequest",
+    "R2RAssignDocumentToGroupRequest",
+    "R2RRemoveDocumentFromGroupRequest",
+    # Retrieval Requests
+    "R2RSearchRequest",
+    "R2RRAGRequest",
+    "R2RAgentRequest",
+    ## LOGGING
+    # Basic types
+    "RunType",
+    "AnalysisTypes",
+    "LogAnalytics",
+    "LogAnalyticsConfig",
+    "LogFilterCriteria",
+    "LogProcessor",
+    # Logging Providers
     "LocalRunLoggingProvider",
+    "LoggingConfig",
     "PostgresLoggingConfig",
     "PostgresRunLoggingProvider",
     "RedisLoggingConfig",
     "RedisRunLoggingProvider",
     "RunLoggingSingleton",
-    "VectorEntry",
-    "VectorType",
-    "Vector",
-    "VectorSearchResult",
-    "AsyncPipe",
-    "PipeType",
-    "AsyncState",
-    "Prompt",
-    "DataType",
-    "DocumentStatus",
-    "DocumentType",
-    "Document",
-    "DocumentExtraction",
-    "DocumentFragment",
-    "SearchPipe",
-    # Parsers
+    # Run Manager
+    "RunManager",
+    "manage_run",
+    ## PARSERS
+    # Base parser
     "AsyncParser",
-    "CSVParser",
-    "CSVParserAdvanced",
-    "DOCXParser",
-    "HTMLParser",
-    "JSONParser",
-    "MDParser",
-    "PDFParser",
-    "PDFParserUnstructured",
-    "PPTParser",
-    "TextParser",
-    "XLSXParser",
-    "XSLXParserAdvanced",
+    ## PIPELINE
+    # Base pipeline
     "AsyncPipeline",
-    # Providers
-    "EmbeddingConfig",
-    "EmbeddingProvider",
-    "PromptConfig",
-    "PromptProvider",
-    "GenerationConfig",
-    "LLMChatCompletion",
-    "LLMChatCompletionChunk",
-    "CompletionConfig",
-    "CompletionProvider",
+    ## PIPES
+    "AsyncPipe",
+    "AsyncState",
+    "PipeType",
+    ## PROVIDERS
+    # Base provider classes
+    "Provider",
+    "ProviderConfig",
+    # Auth provider
+    "AuthConfig",
+    "AuthProvider",
+    # Chunking provider
+    "ChunkingConfig",
+    "ChunkingProvider",
+    "Method",
+    # Crypto provider
+    "CryptoConfig",
+    "CryptoProvider",
+    # Database providers
     "DatabaseConfig",
     "DatabaseProvider",
-    "R2RConfig",
-    "TextSplitter",
+    "RelationalDBProvider",
+    "VectorDBProvider",
+    "VectorDBFilterValue",
+    # Embedding provider
+    "EmbeddingConfig",
+    "EmbeddingProvider",
+    # Knowledge Graph provider
+    "KGConfig",
+    "KGDBProvider",
+    "update_kg_prompt",
+    "extract_entities",
+    # LLM provider
+    "CompletionConfig",
+    "CompletionProvider",
+    # Parsing provider
+    "ParsingConfig",
+    "ParsingProvider",
+    "OverrideParser",
+    # Prompt provider
+    "PromptConfig",
+    "PromptProvider",
+    ## UTILS
     "RecursiveCharacterTextSplitter",
+    "TextSplitter",
+    "run_pipeline",
+    "to_async_generator",
     "generate_run_id",
     "generate_id_from_label",
+    "increment_version",
+    "EntityType",
+    "Relation",
+    "format_entity_types",
+    "format_relations",
+    ## MAIN
+    ## R2R ABSTRACTIONS
+    "R2RProviders",
+    "R2RPipes",
+    "R2RPipelines",
+    "R2RAgents",
+    ## R2R API
+    # Client
+    "R2RClient",
+    "handle_request_error",
+    # Routes
+    "AuthRouter",
+    "IngestionRouter",
+    "ManagementRouter",
+    "RetrievalRouter",
+    "BaseRouter",
+    ## R2R APP
+    "R2RApp",
+    ## R2R APP ENTRY
+    "r2r_app",
+    ## R2R ENGINE
     "R2REngine",
-    # Pipes
+    ## R2R EXECUTION
+    "R2RExecutionWrapper",
+    ## R2R ASSEMBLY
+    # Builder
+    "R2RBuilder",
+    # Config
+    "R2RConfig",
+    # Factory
+    "R2RProviderFactory",
+    "R2RPipeFactory",
+    "R2RPipelineFactory",
+    "R2RAgentFactory",
+    # Factory Extensions
+    "R2RPipeFactoryWithMultiSearch",
+    ## R2R
+    "R2R",
+    ## R2R SERVICES
+    "AuthService",
+    "IngestionService",
+    "ManagementService",
+    "RetrievalService",
+    ## PARSERS
+    # Media parsers
+    "AudioParser",
+    "DOCXParser",
+    "ImageParser",
+    "MovieParser",
+    "PDFParser",
+    "PDFParserUnstructured",
+    "PDFParserMarker",
+    "PPTParser",
+    # Structured parsers
+    "CSVParser",
+    "CSVParserAdvanced",
+    "JSONParser",
+    "XLSXParser",
+    "XLSXParserAdvanced",
+    # Text parsers
+    "MDParser",
+    "HTMLParser",
+    "TextParser",
+    ## PIPELINES
+    "IngestionPipeline",
+    "SearchPipeline",
+    "RAGPipeline",
+    ## PIPES
+    "SearchPipe",
     "EmbeddingPipe",
+    "KGTriplesExtractionPipe",
     "ParsingPipe",
+    "ChunkingPipe",
     "QueryTransformPipe",
     "SearchRAGPipe",
     "StreamingSearchRAGPipe",
     "VectorSearchPipe",
     "VectorStoragePipe",
-    "R2RPromptProvider",
     "WebSearchPipe",
-    "R2RBuilder",
-    "R2R",
     "KGSearchSearchPipe",
-    # Prebuilts
+    "KGStoragePipe",
     "MultiSearchPipe",
-    "R2RPipeFactoryWithMultiSearch",
-    # Integrations
-    "SerperClient",
+    ## PROVIDERS
+    # Auth
+    "R2RAuthProvider",
+    # Chunking
+    "R2RChunkingProvider",
+    "UnstructuredChunkingProvider",
+    # Crypto
+    "BCryptProvider",
+    "BCryptConfig",
+    # Database
+    "PostgresDBProvider",
+    # Embeddings
+    "LiteLLMEmbeddingProvider",
+    "OllamaEmbeddingProvider",
+    "OpenAIEmbeddingProvider",
+    # KG
+    "Neo4jKGDBProvider",
+    # LLM
+    "OpenAICompletionProvider",
+    "LiteCompletionProvider",
+    # Parsing
+    "R2RParsingProvider",
+    "UnstructuredParsingProvider",
+    # Prompts
+    "R2RPromptProvider",
 ]

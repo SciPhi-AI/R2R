@@ -38,6 +38,12 @@ def login_form_to_request(
     )
 
 
+def logout_form_to_request(
+    token: str = Depends(oauth2_scheme),
+) -> LogoutRequest:
+    return LogoutRequest(token=token)
+
+
 class AuthRouter(BaseRouter):
     def __init__(self, engine: "R2REngine"):
         super().__init__(engine)
@@ -113,7 +119,7 @@ class AuthRouter(BaseRouter):
                 password_change.current_password,
                 password_change.new_password,
             )
-            return WrappedGenericMessageResponse(message=result["message"])
+            return GenericMessageResponse(message=result["message"])
 
         @self.router.post(
             "/request_password_reset",
@@ -126,7 +132,7 @@ class AuthRouter(BaseRouter):
             result = await self.engine.arequest_password_reset(
                 reset_request.email
             )
-            return WrappedGenericMessageResponse(message=result["message"])
+            return GenericMessageResponse(message=result["message"])
 
         @self.router.post(
             "/reset_password/{reset_token}",
@@ -140,18 +146,18 @@ class AuthRouter(BaseRouter):
             result = await self.engine.aconfirm_password_reset(
                 reset_token, reset_confirm.new_password
             )
-            return WrappedGenericMessageResponse(message=result["message"])
+            return GenericMessageResponse(message=result["message"])
 
         @self.router.post(
             "/logout", response_model=WrappedGenericMessageResponse
         )
         @self.base_endpoint
         async def logout_app(
-            request: LogoutRequest,
+            request: LogoutRequest = Depends(logout_form_to_request),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             result = await self.engine.alogout(request.token)
-            return WrappedGenericMessageResponse(message=result["message"])
+            return GenericMessageResponse(message=result["message"])
 
         @self.router.delete(
             "/user", response_model=WrappedGenericMessageResponse

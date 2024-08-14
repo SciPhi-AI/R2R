@@ -192,7 +192,7 @@ def user_id():
 
 @pytest.mark.asyncio
 async def test_user_profile(r2r_client, mock_db):
-    user_data = UserCreate(
+    user_data = CreateUserRequest(
         email="profile@example.com", password="password123"
     ).dict()  # create_superuser(UserCreate(email="profile@example.com", password="password123")).dict()
     r2r_client.register(**user_data)

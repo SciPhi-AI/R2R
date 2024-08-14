@@ -40,7 +40,7 @@ def create_user(user_create: CreateUserRequest):
 @pytest.fixture(scope="function")
 def mock_auth_wrapper():
     def auth_wrapper(token: str = Depends(oauth2_scheme)):
-        return User(
+        return UserResponse(
             id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
             email="test@example.com",
             is_active=True,
@@ -152,7 +152,7 @@ def test_login_user(r2r_client, mock_db):
     mock_db.relational.get_user_by_email.return_value = None
     response = r2r_client.register(**user_data)
 
-    mock_db.relational.get_user_by_email.return_value = User(
+    mock_db.relational.get_user_by_email.return_value = UserResponse(
         id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
         email=user_data["email"],
         hashed_password="hashed_" + user_data["password"],
