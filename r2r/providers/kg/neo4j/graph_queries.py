@@ -123,15 +123,18 @@ MERGE (e)-[:BELONGS_TO_COMMUNITY]->(comm)
 
 
 GET_TRIPLES_QUERY = """
-MATCH (e:__Entity__ {value:replace(value.name,'"','')})
-RETURN e
+MATCH (e1)-[rel]->(e2)
+RETURN e1, rel, e2
 """
 
 PUT_TRIPLES_QUERY = """
-MATCH (source:__Entity__ {value:replace(value.source,'"','')})
-MATCH (target:__Entity__ {value:replace(value.target,'"','')})
-MERGE (source)-[rel:RELATED {id: value.id}]->(target)
-SET rel += value {.weight, description, }
+MERGE (source:__Entity__ {value: value.subject})
+MERGE (target:__Entity__ {value: value.object})
+WITH source, target, value
+CALL apoc.create.relationship(source, value.predicate, {id: value.id}, target) YIELD rel
+SET rel += value {.weight, .description, .subject_id, .object_id, .attributes, .text_unit_ids, .document_ids}
+WITH rel, value
+CALL db.create.setRelationshipVectorProperty(rel, "predicate_embedding", value.predicate_embedding)
 RETURN count(*) as createdRels
 """
 

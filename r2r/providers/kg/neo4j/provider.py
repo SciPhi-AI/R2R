@@ -13,12 +13,12 @@ from .graph_queries import (
     GET_CHUNKS_QUERY,
     UNIQUE_CONSTRAINTS, 
     PUT_ENTITIES_QUERY, 
-    PUT_RELATIONS_QUERY, 
+    PUT_TRIPLES_QUERY, 
     PUT_COMMUNITIES_QUERY, 
     PUT_COMMUNITIES_REPORT_QUERY,
     PUT_COVARIATES_QUERY,
     GET_ENTITIES_QUERY,
-    GET_RELATIONS_QUERY,
+    GET_TRIPLES_QUERY,
     GET_COMMUNITIES_QUERY,
     GET_COMMUNITIES_REPORT_QUERY,
     GET_COVARIATES_QUERY
@@ -44,12 +44,10 @@ from r2r.base.abstractions.graph import (
 )
 
 
-
 class Neo4jKGProvider(KGProvider):
 
     def __init__(self, config: KGConfig, *args: Any, **kwargs: Any) -> None:
 
-        
         try:
             import neo4j
         except ImportError:
@@ -150,20 +148,20 @@ class Neo4jKGProvider(KGProvider):
         """
         Upsert chunks into the graph.
         """
-        self.batched_import(PUT_CHUNKS_QUERY, chunks)
+        return self.batched_import(PUT_CHUNKS_QUERY, chunks)
 
         # create constraints, idempotent operation
     def upsert_entities(self, entities: List[Entity]):
         """
         Upsert entities into the graph.
         """
-        self.batched_import(PUT_ENTITIES_QUERY, entities)
+        return self.batched_import(PUT_ENTITIES_QUERY, entities)
 
     def upsert_triples(self, triples: List[Triple]):
         """
         Upsert relations into the graph.
         """
-        self.batched_import(PUT_RELATIONS_QUERY, triples)
+        return self.batched_import(PUT_TRIPLES_QUERY, triples)
 
 
     def upsert_communities(self, communities: List[Community]):
@@ -203,9 +201,13 @@ class Neo4jKGProvider(KGProvider):
         """
         Get triples from the graph.
         """
-        # return self.db_query(GET_TRIPLES_QUERY, triple_ids)
-        pass
-
+        neo4j_records = self.structured_query(GET_TRIPLES_QUERY, {"triple_ids": triple_ids})
+        triples = [Triple(subject=record['e1']._properties['value'],
+                          predicate=record['rel'].type,
+                          object=record['e2']._properties['value'],
+                          **record['rel']._properties)
+                   for record in neo4j_records.records]
+        return triples
 
     def update_extraction_prompt(self, prompt_provider: Any, entity_types: list[Any], relations: list[RelationshipType]) -> None:
         pass

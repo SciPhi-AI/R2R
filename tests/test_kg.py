@@ -5,7 +5,6 @@ from r2r.base.providers.kg import KGConfig
 from r2r.base.abstractions.document import Fragment, FragmentType
 from r2r.base.abstractions.graph import Entity, Triple
 import uuid
-import json
 
 @pytest.fixture
 def neo4j_kg_provider():
@@ -57,34 +56,43 @@ def test_entities():
 @pytest.fixture
 def test_triples():
     return [
-        Triple(id=get_uuid(), subject=get_uuid(), predicate="test_predicate", object=get_uuid(), weight=1.0, document_ids=[get_uuid()], text_unit_ids=[get_uuid()], attributes={"testkey": "testvalue"})
+        Triple(id=get_uuid(), 
+               subject=get_uuid(), 
+               predicate="test_predicate", 
+               object=get_uuid(), 
+               weight=1.0, 
+               description="Test triple description",
+               predicate_embedding=[1.0, 2.0, 3.0],
+               text_unit_ids=[get_uuid()], 
+               document_ids=[get_uuid()], 
+               attributes={"testkey": "testvalue"})
     ]
 
-# def test_upsert_chunks(neo4j_kg_provider, test_chunks, clean_graph):
-#     neo4j_kg_provider.upsert_chunks(test_chunks)
-#     neo4j_output = neo4j_kg_provider.get_chunks()
-#     chunks = [record['c']._properties for record in neo4j_output.records]
-#     assert len(chunks) == len(test_chunks)
-#     for chunk, test_chunk in zip(chunks, test_chunks):
-#         assert chunk['id'] == str(test_chunk.id)
-#         assert chunk['data'] == test_chunk.data
-#         assert json.loads(chunk['metadata']) == test_chunk.metadata
-#         assert chunk['document_id'] == str(test_chunk.document_id)
-#         assert chunk['extraction_id'] == str(test_chunk.extraction_id)
+def test_upsert_chunks(neo4j_kg_provider, test_chunks, clean_graph):
+    neo4j_kg_provider.upsert_chunks(test_chunks)
+    neo4j_output = neo4j_kg_provider.get_chunks()
+    chunks = [record['c']._properties for record in neo4j_output.records]
+    assert len(chunks) == len(test_chunks)
+    for chunk, test_chunk in zip(chunks, test_chunks):
+        assert chunk['id'] == str(test_chunk.id)
+        assert chunk['data'] == test_chunk.data
+        assert json.loads(chunk['metadata']) == test_chunk.metadata
+        assert chunk['document_id'] == str(test_chunk.document_id)
+        assert chunk['extraction_id'] == str(test_chunk.extraction_id)
 
-# def test_upsert_entities(neo4j_kg_provider, test_entities):
-#     neo4j_kg_provider.upsert_entities(test_entities)
-#     neo4j_output = neo4j_kg_provider.get_entities()
-#     entities = [record['e']._properties for record in neo4j_output.records]
-#     assert len(entities) == len(test_entities)
-#     for entity, test_entity in zip(entities, test_entities):
-#         assert entity['id'] == test_entity.id
-#         assert entity['category'] == test_entity.category
-#         assert entity['value'] == test_entity.value
-#         assert entity['description'] == test_entity.description
+def test_upsert_entities(neo4j_kg_provider, test_entities):
+    neo4j_kg_provider.upsert_entities(test_entities)
+    neo4j_output = neo4j_kg_provider.get_entities()
+    entities = [record['e']._properties for record in neo4j_output.records]
+    assert len(entities) == len(test_entities)
+    for entity, test_entity in zip(entities, test_entities):
+        assert entity['id'] == test_entity.id
+        assert entity['category'] == test_entity.category
+        assert entity['value'] == test_entity.value
+        assert entity['description'] == test_entity.description
 
 def test_upsert_triples(neo4j_kg_provider, test_triples):
-    neo4j_kg_provider.upsert_triples(test_triples)
+    triples_count = neo4j_kg_provider.upsert_triples(test_triples)
     triples = neo4j_kg_provider.get_triples()
     assert len(triples) == len(test_triples)
     for triple, test_triple in zip(triples, test_triples):
@@ -93,7 +101,7 @@ def test_upsert_triples(neo4j_kg_provider, test_triples):
         assert triple.predicate == test_triple.predicate
         assert triple.object == test_triple.object
 
-def upsert_communities(neo4j_kg_provider, test_communities):
+def test_upsert_communities(neo4j_kg_provider, test_communities):
     neo4j_kg_provider.upsert_communities(test_communities)
     neo4j_output = neo4j_kg_provider.get_communities()
     communities = [record['c']._properties for record in neo4j_output.records]

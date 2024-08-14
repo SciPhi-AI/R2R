@@ -1,3 +1,4 @@
+import json 
 import logging
 from typing import Optional, Any, Union
 from pydantic import BaseModel 
@@ -60,6 +61,11 @@ class Entity(BaseModel):
             else f"{self.category}:{self.value}"
         )
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if isinstance(self.attributes, str):
+            self.attributes = json.loads(self.attributes)
+
 class Triple(BaseModel):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
@@ -86,17 +92,23 @@ class Triple(BaseModel):
     description: str | None = None
     """A description of the relationship (optional)."""
 
-    predicate_embedding: list[float] | None = None
+    predicate_embedding: list[float] = []
     """The semantic embedding for the relationship description (optional)."""
 
-    text_unit_ids: list[str] | None = None
+    text_unit_ids: list[str] = []
     """List of text unit IDs in which the relationship appears (optional)."""
 
-    document_ids: list[str] | None = None
+    document_ids: list[str] = []
     """List of document IDs in which the relationship appears (optional)."""
 
-    attributes: dict[str, Any] | None = None
+    attributes: dict[str, Any] | str = None
     """Additional attributes associated with the relationship (optional). To be included in the search prompt"""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if isinstance(self.attributes, str):
+            self.attributes = json.loads(self.attributes)
+
 
     @classmethod
     def from_dict(
@@ -114,6 +126,7 @@ class Triple(BaseModel):
         attributes_key: str = "attributes",
     ) -> "Relationship":
         """Create a new relationship from the dict data."""
+
         return Triple(
             id=d[id_key],
             short_id=d.get(short_id_key),
@@ -124,7 +137,7 @@ class Triple(BaseModel):
             weight=d.get(weight_key, 1.0),
             text_unit_ids=d.get(text_unit_ids_key),
             document_ids=d.get(document_ids_key),
-            attributes=d.get(attributes_key),
+            attributes=d.get(attributes_key, {}),
         )
 
 
@@ -147,6 +160,11 @@ class Community(Named):
 
     attributes: dict[str, Any] | None = None
     """A dictionary of additional attributes associated with the community (optional). To be included in the search prompt."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if isinstance(self.attributes, str):
+            self.attributes = json.loads(self.attributes)
 
     @classmethod
     def from_dict(
@@ -198,6 +216,11 @@ class CommunityReport(Named):
     attributes: dict[str, Any] | None = None
     """A dictionary of additional attributes associated with the report (optional)."""
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if isinstance(self.attributes, str):
+            self.attributes = json.loads(self.attributes)
+
     @classmethod
     def from_dict(
         cls,
@@ -226,6 +249,8 @@ class CommunityReport(Named):
             full_content_embedding=d.get(full_content_embedding_key),
             attributes=d.get(attributes_key),
         )
+    
+
 
 @dataclass
 class Covariate(Identified):
@@ -252,6 +277,11 @@ class Covariate(Identified):
     """List of document IDs in which the covariate info appears (optional)."""
 
     attributes: dict[str, Any] | None = None
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if isinstance(self.attributes, str):
+            self.attributes = json.loads(self.attributes)
 
     @classmethod
     def from_dict(
@@ -306,6 +336,13 @@ class TextUnit(Identified):
 
     attributes: dict[str, Any] | None = None
     """A dictionary of additional attributes associated with the text unit (optional)."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if isinstance(self.attributes, str):
+            self.attributes = json.loads(self.attributes)
+        if isinstance(self.covariate_ids, str):
+            self.covariate_ids = json.loads(self.covariate_ids)        
 
     @classmethod
     def from_dict(

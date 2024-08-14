@@ -82,7 +82,7 @@ class LocalKGProvider(KGProvider):
                 pickle.dump(community, f)
 
 
-    def upsert_nodes(self, entities: List[Entity], *args, **kwargs) -> Any:
+    def upsert_entities(self, entities: List[Entity], *args, **kwargs) -> Any:
 
         # Ensure the directory exists
         if 'with_description' in kwargs and kwargs['with_description']:
@@ -104,7 +104,7 @@ class LocalKGProvider(KGProvider):
         else:
             return None
 
-    def upsert_relations(self, triples: List[Triple]) -> None:
+    def upsert_triples(self, triples: List[Triple]) -> None:
 
         for triple in triples:
             filepath = os.path.join(self.paths['triples'], f"{triple.id}.pkl")
