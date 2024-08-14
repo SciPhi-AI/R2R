@@ -1,7 +1,8 @@
 from .abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from .api import *
 from .app import R2RApp
-from .app_entry import r2r_app
+
+# from .app_entry import r2r_app
 from .assembly import *
 from .engine import R2REngine
 from .execution import R2RExecutionWrapper
@@ -32,7 +33,7 @@ __all__ = [
     ## R2R APP
     "R2RApp",
     ## R2R APP ENTRY
-    "r2r_app",
+    # "r2r_app",
     ## R2R ENGINE
     "R2REngine",
     ## R2R EXECUTION

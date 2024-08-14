@@ -95,9 +95,9 @@ class IngestionService(Service):
 
         chunking_provider = kwargs.get("chunking_provider")
         if chunking_provider is None:
-            print("No chunking provider specified. Using default.")
+            logger.info("No chunking provider specified. Using default.")
         else:
-            print(
+            logger.info(
                 f"Using custom chunking provider: {type(chunking_provider).__name__}"
             )
 

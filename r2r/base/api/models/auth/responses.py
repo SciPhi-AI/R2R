@@ -1,16 +1,11 @@
 from datetime import datetime
-from typing import Generic, Optional, TypeVar
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from r2r.base.abstractions import Token
-
-T = TypeVar("T")
-
-
-class ResultsWrapper(BaseModel, Generic[T]):
-    results: T
+from r2r.base.api.models.base import ResultsWrapper
 
 
 class TokenResponse(BaseModel):

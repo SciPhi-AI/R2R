@@ -235,7 +235,7 @@ __all__ = [
     ## R2R APP
     "R2RApp",
     ## R2R APP ENTRY
-    "r2r_app",
+    # "r2r_app",
     ## R2R ENGINE
     "R2REngine",
     ## R2R EXECUTION

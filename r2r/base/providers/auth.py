@@ -1,12 +1,14 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Optional
+from uuid import UUID
 
 from fastapi import Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from ..abstractions import R2RException, Token, TokenData
 from ..api.models import CreateUserRequest, UserResponse
+from ..utils import generate_id_from_label
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -44,6 +46,7 @@ class AuthProvider(Provider, ABC):
 
     def _get_default_admin_user(self) -> UserResponse:
         return UserResponse(
+            id=generate_id_from_label(self.admin_email),
             email=self.admin_email,
             hashed_password=self.crypto_provider.get_password_hash(
                 self.admin_password

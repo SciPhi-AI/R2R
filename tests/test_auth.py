@@ -746,7 +746,7 @@ async def test_delete_user_account(auth_service):
     new_user = await auth_service.register(user)
 
     result = await auth_service.delete_user(new_user.id, "password123")
-    assert result["message"] == "User account deleted successfully"
+    assert result["message"] == "User account deleted successfully."
 
     with pytest.raises(R2RException):
         await auth_service.login("deleteuser@example.com", "password123")

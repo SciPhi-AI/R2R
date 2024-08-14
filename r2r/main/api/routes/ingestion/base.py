@@ -5,6 +5,7 @@ from r2r.base.api.models.ingestion.requests import (
     R2RIngestFilesRequest,
     R2RUpdateFilesRequest,
 )
+from r2r.base.api.models.ingestion.responses import WrappedIngestionResponse
 
 from ....assembly.factory import R2RProviderFactory
 from ....engine import R2REngine
@@ -19,7 +20,9 @@ class IngestionRouter(BaseRouter):
 
     def setup_routes(self):
 
-        @self.router.post("/ingest_files")
+        @self.router.post(
+            "/ingest_files", response_model=WrappedIngestionResponse
+        )
         @self.base_endpoint
         async def ingest_files_app(
             files: list[UploadFile] = File(...),
@@ -83,7 +86,9 @@ class IngestionRouter(BaseRouter):
 
             return ingestion_result
 
-        @self.router.post("/update_files")
+        @self.router.post(
+            "/update_files", response_model=WrappedIngestionResponse
+        )
         @self.base_endpoint
         async def update_files_app(
             files: list[UploadFile] = File(...),
