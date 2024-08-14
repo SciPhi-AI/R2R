@@ -1229,12 +1229,21 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         separators: Optional[List[str]] = None,
         keep_separator: bool = True,
         is_separator_regex: bool = False,
+        chunk_size: int = 4000,
+        chunk_overlap: int = 200,
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
-        super().__init__(keep_separator=keep_separator, **kwargs)
+        super().__init__(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            keep_separator=keep_separator,
+            **kwargs,
+        )
         self._separators = separators or ["\n\n", "\n", " ", ""]
         self._is_separator_regex = is_separator_regex
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
 
     def _split_text(self, text: str, separators: List[str]) -> List[str]:
         """Split incoming text and return chunks."""

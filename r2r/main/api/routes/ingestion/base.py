@@ -28,12 +28,15 @@ class IngestionRouter(BaseRouter):
             ),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
-            chunking_config_override = None
+            kwargs = {}
             if request.chunking_config_override:
                 config = ChunkingConfig(**request.chunking_config_override)
-                chunking_config_override = (
+                config.validate()
+                kwargs["chunking_provider"] = (
                     R2RProviderFactory.create_chunking_provider(config)
                 )
+            else:
+                print("No chunking config override provided. Using default.")
 
             # Check if the user is a superuser
             is_superuser = auth_user and auth_user.is_superuser
@@ -62,8 +65,8 @@ class IngestionRouter(BaseRouter):
                 metadatas=request.metadatas,
                 document_ids=request.document_ids,
                 versions=request.versions,
-                chunking_config_override=chunking_config_override,
                 user=auth_user,
+                **kwargs
             )
 
             # If superuser, assign documents to groups

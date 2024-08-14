@@ -59,7 +59,7 @@ from .parsers import AsyncParser
 from .pipeline.base_pipeline import AsyncPipeline
 from .pipes.base_pipe import AsyncPipe, AsyncState, PipeType
 from .providers.auth import AuthConfig, AuthProvider
-from .providers.chunking import ChunkingConfig, ChunkingProvider
+from .providers.chunking import ChunkingConfig, ChunkingProvider, Method
 from .providers.crypto import CryptoConfig, CryptoProvider
 from .providers.database import (
     DatabaseConfig,
@@ -160,6 +160,7 @@ __all__ = [
     "ParsingProvider",
     "ChunkingConfig",
     "ChunkingProvider",
+    "Method",
     "EmbeddingConfig",
     "EmbeddingProvider",
     "PromptConfig",
