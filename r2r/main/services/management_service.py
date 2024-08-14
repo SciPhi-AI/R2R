@@ -327,9 +327,7 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return self.providers.database.vector.get_document_chunks(
-            str(document_id)
-        )
+        return self.providers.database.vector.get_document_chunks(document_id)
 
     @telemetry_event("UsersOverview")
     async def users_overview(

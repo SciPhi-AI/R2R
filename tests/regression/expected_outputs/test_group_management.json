@@ -1,0 +1,11 @@
+{
+  "create_groups": {
+    "error": "'id'"
+  },
+  "add_users_to_groups": {
+    "error": "'TestGroupManagement' object has no attribute 'group_id_1'"
+  },
+  "group_based_document_access": {
+    "error": "'TestGroupManagement' object has no attribute 'group_id_1'"
+  }
+}

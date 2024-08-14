@@ -339,7 +339,7 @@ class IngestionService(Service):
                 values = [str(doc_id), old_version]
 
                 self.providers.database.vector.delete(
-                    filter={"document_id": {"$eq": doc_id}}
+                    filters={"document_id": {"$eq": doc_id}}
                 )
                 self.providers.database.relational.delete_from_documents_overview(
                     doc_id, old_version

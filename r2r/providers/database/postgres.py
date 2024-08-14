@@ -376,7 +376,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         with self.vx.Session() as session:
             results = session.execute(query, params).fetchall()
-        print("results = ", results)
         return [
             VectorSearchResult(
                 fragment_id=result[0],
@@ -418,9 +417,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
         table_name = self.collection.table.name
         query = text(
             f"""
-            SELECT metadata
+            SELECT fragment_id, extraction_id, document_id, user_id, group_ids, text, metadata
             FROM vecs."{table_name}"
-            WHERE metadata->>'document_id' = :document_id
+            WHERE document_id = :document_id
             ORDER BY CAST(metadata->>'chunk_order' AS INTEGER)
         """
         )
@@ -429,7 +428,18 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         with self.vx.Session() as sess:
             results = sess.execute(query, params).fetchall()
-            return [result[0] for result in results]
+            return [
+                {
+                    "fragment_id": result[0],
+                    "extraction_id": result[1],
+                    "document_id": result[2],
+                    "user_id": result[3],
+                    "group_ids": result[4],
+                    "text": result[5],
+                    "metadata": result[6],
+                }
+                for result in results
+            ]
 
 
 class PostgresRelationalDBProvider(RelationalDBProvider):

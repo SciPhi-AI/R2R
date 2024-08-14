@@ -6,9 +6,9 @@ from tests.regression.test_cases.base import BaseTest
 
 class TestDocumentManagement(BaseTest):
 
-    CHUNKS_FILE_ID = "b736292c-11e6-5453-9686-055da3edb866"
-    UPDATE_FILE_ID = "93123a68-d668-51de-8291-92162730dc87"
-    DELETE_FILE_ID = "b736292c-11e6-5453-9686-055da3edb866"
+    CHUNKS_FILE_ID = "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+    UPDATE_FILE_ID = "db02076e-989a-59cd-98d5-e24e15a0bd27"
+    DELETE_FILE_ID = "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
 
     def __init__(self, client):
         super().__init__(client)
@@ -33,13 +33,13 @@ class TestDocumentManagement(BaseTest):
             "document_chunks_test": lambda client: self.document_chunks_test(
                 client
             ),
-            "update_document": lambda client: self.update_document_test(
+            "update_document_test": lambda client: self.update_document_test(
                 client
             ),
-            "delete_document": lambda client: self.delete_document_test(
+            "delete_document_test": lambda client: self.delete_document_test(
                 client
             ),
-            "rerun_documents_overview": lambda client: self.documents_overview_test(
+            "rerun_documents_overview_test": lambda client: self.documents_overview_test(
                 client
             ),
             "rerun_document_chunks_test": lambda client: self.document_chunks_test(
@@ -100,7 +100,7 @@ class TestDocumentManagement(BaseTest):
             user = User(email="email@test.com", hashed_password="password")
 
             update_response = client.update_files(
-                [file_path], [TestDocumentManagement.UPDATE_FILE_ID], user=user
+                [file_path], [TestDocumentManagement.UPDATE_FILE_ID]
             )
             return update_response
         except R2RException as e:
@@ -110,7 +110,7 @@ class TestDocumentManagement(BaseTest):
         try:
             # Now delete the file
             delete_response = client.delete(
-                ["document_id"], [TestDocumentManagement.DELETE_FILE_ID]
+                {"document_id": {"$eq": TestDocumentManagement.DELETE_FILE_ID}}
             )
             return delete_response
         except R2RException as e:

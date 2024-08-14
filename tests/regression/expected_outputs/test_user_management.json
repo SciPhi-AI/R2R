@@ -1,0 +1,116 @@
+{
+  "register_user": {
+    "results": {
+      "email": "test_72231655@example.com",
+      "id": "f36f0a8a-9f12-5979-9416-1fbb7d28a80b",
+      "group_ids": [],
+      "hashed_password": "$2b$12$uXTZiDl4gRWPueHa1IEC3OCVRsxZFUJjIgOkajwSFDKFzyRcL2ge.",
+      "is_superuser": false,
+      "is_active": true,
+      "is_verified": false,
+      "verification_code_expiry": null,
+      "name": null,
+      "bio": null,
+      "profile_picture": null,
+      "created_at": "2024-08-14T00:26:00.833888Z",
+      "updated_at": "2024-08-14T00:26:00.833888Z"
+    }
+  },
+  "login_user": {
+    "results": {
+      "access_token": {
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0XzcyMjMxNjU1QGV4YW1wbGUuY29tIiwiZXhwIjoxNzIzNTk4NzYxLjE5OTA1NCwidG9rZW5fdHlwZSI6ImFjY2VzcyJ9.FN2W4wEKQA8X1OLYFVfjUUJ46f6FsZdCjShsYbiIX_o",
+        "token_type": "access"
+      },
+      "refresh_token": {
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0XzcyMjMxNjU1QGV4YW1wbGUuY29tIiwiZXhwIjoxNzI0MTk5OTYxLCJ0b2tlbl90eXBlIjoicmVmcmVzaCJ9.ZvX9ASi6RZvKSn8O1t-ZDoJm_dgdtcch9EPT9RSvmtY",
+        "token_type": "refresh"
+      }
+    }
+  },
+  "user_info": {
+    "results": {
+      "email": "test_72231655@example.com",
+      "id": "f36f0a8a-9f12-5979-9416-1fbb7d28a80b",
+      "group_ids": [],
+      "hashed_password": "$2b$12$uXTZiDl4gRWPueHa1IEC3OCVRsxZFUJjIgOkajwSFDKFzyRcL2ge.",
+      "is_superuser": false,
+      "is_active": true,
+      "is_verified": true,
+      "verification_code_expiry": null,
+      "name": null,
+      "bio": null,
+      "profile_picture": null,
+      "created_at": "2024-08-14T00:26:00.833888Z",
+      "updated_at": "2024-08-14T00:26:00.833888Z"
+    }
+  },
+  "change_password": {
+    "results": {
+      "message": "Password changed successfully"
+    }
+  },
+  "update_profile": {
+    "results": {
+      "email": "test_72231655@example.com",
+      "id": "f36f0a8a-9f12-5979-9416-1fbb7d28a80b",
+      "group_ids": [],
+      "hashed_password": "null",
+      "is_superuser": false,
+      "is_active": true,
+      "is_verified": true,
+      "verification_code_expiry": null,
+      "name": "John Doe",
+      "bio": "R2R enthusiast",
+      "profile_picture": null,
+      "created_at": "2024-08-14T00:26:00.833888Z",
+      "updated_at": "2024-08-14T00:26:01.991559Z"
+    }
+  },
+  "refresh_token": {
+    "results": {
+      "access_token": {
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0XzcyMjMxNjU1QGV4YW1wbGUuY29tIiwiZXhwIjoxNzIzNTk4NzYyLjEzNDQ1NiwidG9rZW5fdHlwZSI6ImFjY2VzcyJ9.zaXBVSgktzEB1BWrg2W9rsjmTW_uw1tEqHJEJ5diPRs",
+        "token_type": "access"
+      },
+      "refresh_token": {
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0XzcyMjMxNjU1QGV4YW1wbGUuY29tIiwiZXhwIjoxNzI0MTk5OTYyLCJ0b2tlbl90eXBlIjoicmVmcmVzaCJ9.09YDDLWNVPrWJAzFaXai3Kul5RJ7W8iNTKmkq-0y4n4",
+        "token_type": "refresh"
+      }
+    }
+  },
+  "superuser_test": {
+    "results": [
+      {
+        "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+        "num_files": 15,
+        "total_size_in_bytes": 5067615,
+        "document_ids": [
+          "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+          "716fea3a-826b-5b27-8e59-ffbd1a35455a",
+          "52e12576-090f-59db-91f4-6d4b2e29ae6c",
+          "3e157b3a-8469-51db-90d9-52e7d896b49b",
+          "01d514a4-5cb1-5c86-be8c-0c5c312a02c9",
+          "c3291abf-8a4e-5d9d-80fd-232ef6fd8526",
+          "e797da22-8c5d-54e5-bed5-a55954cf6bf9",
+          "7c1105fc-8f62-5a8f-ac81-fe88f3ec9e4c",
+          "2f576170-c4f9-5141-a910-a0924f341de4",
+          "30f950f0-c692-57c5-b6ec-ff78ccf5ccdc",
+          "57eec3df-cf68-5559-a80d-ae3fb55b9af1",
+          "db02076e-989a-59cd-98d5-e24e15a0bd27",
+          "d421207a-d799-5806-8d67-46b2005b15d4",
+          "451adbbd-e24e-5c9b-80a8-f424b6c7accb",
+          "5b1bd54f-4d70-56b9-a017-a618bc75f94c"
+        ]
+      }
+    ]
+  },
+  "logout": {
+    "results": {
+      "message": "Logged out successfully"
+    }
+  },
+  "delete_account": {
+    "results": "Incorrect password"
+  }
+}

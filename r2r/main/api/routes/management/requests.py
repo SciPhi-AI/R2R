@@ -13,7 +13,7 @@ class R2RUpdatePromptRequest(BaseModel):
 
 
 class R2RDeleteRequest(BaseModel):
-    filters: dict[str, VectorDBFilterValue] = Field(default_factory=dict)
+    filters: dict[str, Any] = Field(default_factory=dict)
 
 
 class R2RAnalyticsRequest(BaseModel):

@@ -4,6 +4,7 @@ import os
 import uuid
 from contextlib import ExitStack
 from typing import Any, AsyncGenerator, Generator, Optional, Union
+from uuid import UUID
 
 import fire
 import httpx
@@ -238,7 +239,7 @@ class R2RClient:
 
         request = R2RUpdateFilesRequest(
             metadatas=metadatas,
-            document_ids=document_ids,
+            document_ids=[UUID(document_id) for document_id in document_ids],
             chunking_config_override=chunking_config_override,
         )
         with ExitStack() as stack:
