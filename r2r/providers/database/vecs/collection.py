@@ -361,6 +361,27 @@ class Collection:
                     """
                 )
             )
+
+            # Create trigger to update fts column
+            sess.execute(
+                text(
+                    f"""
+                CREATE TRIGGER tsvector_update_{unique_string} BEFORE INSERT OR UPDATE
+                ON vecs."{self.table.name}" FOR EACH ROW EXECUTE FUNCTION
+                tsvector_update_trigger(fts, 'pg_catalog.english', text);
+            """
+                )
+            )
+
+            # Create index on fts column
+            sess.execute(
+                text(
+                    f"""
+                CREATE INDEX ix_fts_{unique_string} ON vecs."{self.table.name}" USING GIN (fts);
+            """
+                )
+            )
+
         return self
 
     def _drop(self):
@@ -1025,5 +1046,11 @@ def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
             server_default=text("'{}'::jsonb"),
             nullable=False,
         ),
+        Column(
+            "fts",
+            postgresql.TSVECTOR,
+            server_default=text("to_tsvector('english', '')"),
+            nullable=False,
+        ),  # New FTS column
         extend_existing=True,
     )

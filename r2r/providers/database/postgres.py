@@ -164,17 +164,19 @@ class PostgresVectorDBProvider(VectorDBProvider):
             metadata JSONB,
             rrf_score FLOAT,
             semantic_score FLOAT,
-            full_text_score FLOAT
+            full_text_score FLOAT,
+            rank_semantic INT,
+            rank_full_text INT
         )
         LANGUAGE sql
         AS $$
         WITH full_text AS (
             SELECT
                 fragment_id,
-                ts_rank(to_tsvector('english', text), websearch_to_tsquery(query_text)) AS full_text_score,
-                ROW_NUMBER() OVER (ORDER BY ts_rank(to_tsvector('english', text), websearch_to_tsquery(query_text)) DESC) AS rank_ix
+                ts_rank_cd(to_tsvector('english', text), websearch_to_tsquery('english', query_text), 1 | 2 | 4 | 8 | 16 | 32 | 64) * 10000 AS full_text_score,
+                ROW_NUMBER() OVER (ORDER BY ts_rank_cd(to_tsvector('english', text), websearch_to_tsquery('english', query_text), 1 | 2 | 4 | 8 | 16 | 32 | 64) DESC) AS rank_ix
             FROM vecs."{self.collection_name}"
-            WHERE to_tsvector('english', text) @@ websearch_to_tsquery(query_text)
+            WHERE to_tsvector('english', text) @@ websearch_to_tsquery('english', query_text)
             AND (filter_condition IS NULL OR (metadata @> filter_condition))
             ORDER BY rank_ix
             LIMIT LEAST(match_limit, 30) * 2
@@ -182,8 +184,8 @@ class PostgresVectorDBProvider(VectorDBProvider):
         semantic AS (
             SELECT
                 fragment_id,
-                1 - (vec <#> query_embedding) AS semantic_score,
-                ROW_NUMBER() OVER (ORDER BY vec <#> query_embedding) AS rank_ix
+                1 - (vec <=> query_embedding) AS semantic_score,
+                ROW_NUMBER() OVER (ORDER BY (vec <=> query_embedding)) AS rank_ix
             FROM vecs."{self.collection_name}"
             WHERE filter_condition IS NULL OR (metadata @> filter_condition)
             ORDER BY rank_ix
@@ -201,7 +203,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
             (COALESCE(1.0 / (rrf_k + full_text.rank_ix), 0.0) * full_text_weight +
             COALESCE(1.0 / (rrf_k + semantic.rank_ix), 0.0) * semantic_weight) AS rrf_score,
             COALESCE(semantic.semantic_score, 0) AS semantic_score,
-            COALESCE(full_text.full_text_score, 0) AS full_text_score
+            COALESCE(full_text.full_text_score, 0) AS full_text_score,
+            semantic.rank_ix AS rank_semantic,
+            full_text.rank_ix AS rank_full_text
         FROM
             full_text
             FULL OUTER JOIN semantic
@@ -316,7 +320,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
             include_value=True,
             include_metadata=True,
         )
-        print(results)
         return [
             VectorSearchResult(
                 fragment_id=result[0],
@@ -374,7 +377,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
         with self.vx.Session() as session:
             results = session.execute(query, params).fetchall()
         print("results = ", results)
-        print("results[-1] = ", results[-1])
         return [
             VectorSearchResult(
                 fragment_id=result[0],
@@ -383,11 +385,12 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 user_id=result[3],
                 group_ids=result[4],
                 text=result[6],
-                # score=1 - float(result[6]),
                 metadata={
                     **result[7],
-                    "semantic_score": -result[9] + 1,
+                    "semantic_score": result[9],
+                    "semantic_rank": result[11],
                     "full_text_score": result[10],
+                    "full_text_rank": result[12],
                 },
                 score=result[8],
             )
