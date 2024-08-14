@@ -111,7 +111,7 @@ class Neo4jKGProvider(KGProvider):
         elif isinstance(value, Decimal):
             return float(value)
         elif isinstance(value, list):
-            return json.dumps(value)
+            return value
         elif isinstance(value, dict):
             return json.dumps(value)
         else:
@@ -173,11 +173,11 @@ class Neo4jKGProvider(KGProvider):
         self.batched_import(PUT_COMMUNITIES_QUERY, communities)
 
 
-    def get_entities(self, entity_ids: List[str]) -> List[Entity]:
+    def get_entities(self, entity_ids: List[str] = []) -> List[Entity]:
         """
         Get entities from the graph.
         """
-        return self.db_query(GET_ENTITIES_QUERY, entity_ids)
+        return self.structured_query(GET_ENTITIES_QUERY, {"entity_ids": entity_ids})
     
 
     def upsert_nodes_and_relationships(self, kg_extractions: list[KGExtraction]) -> None:

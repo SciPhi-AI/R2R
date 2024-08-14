@@ -54,10 +54,9 @@ MERGE (n)-[:PART_OF_DOCUMENT]->(d)
 #         else f"{self.category}:{self.value}"
 #     )
 
-
 GET_ENTITIES_QUERY = """
-MATCH (e:__Entity__ {id:value.id})
-WHERE $id IS NULL OR e.id = $id
+MATCH (e:__Entity__)
+WHERE size($entity_ids) = 0 OR e.id IN $entity_ids
 RETURN e
 """
 
@@ -68,32 +67,71 @@ WITH e, value
 CALL db.create.setNodeVectorProperty(e, "description_embedding", value.description_embedding)
 CALL db.create.setNodeVectorProperty(e, "name_embedding", value.name_embedding)
 CALL db.create.setNodeVectorProperty(e, "graph_embedding", value.graph_embedding)
+CALL db.create.setNodeDictionaryProperty(e, "attributes", value.attributes)
 CALL apoc.create.addLabels(e, [apoc.text.upperCamelCase(value.category)]) yield node
 UNWIND value.text_unit_ids AS text_unit
 MATCH (c:__Chunk__ {id:text_unit})
-MERGE (c)-[:HAS_ENTITY]->(e)
+MERGE (e)-[:APPEARS_IN_CHUNK]->(c)
 WITH e, value
 UNWIND value.document_ids AS document_id
 MATCH (d:__Document__ {id:document_id})
-MERGE (e)-[:APPEARS_IN]->(d)
+MERGE (e)-[:APPEARS_IN_DOCUMENT]->(d)
 WITH e, value
 UNWIND value.community_ids AS community_id
 MATCH (comm:__Community__ {community:community_id})
-MERGE (e)-[:BELONGS_TO]->(comm)
+MERGE (e)-[:BELONGS_TO_COMMUNITY]->(comm)
 """
 
 
-GET_RELATIONS_QUERY = """
-MATCH (e:__Entity__ {name:replace(value.name,'"','')})
+# class Triple(BaseModel):
+#     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
+
+#     id: str
+
+#     subject: str | None = None
+#     """The source entity name."""
+
+#     predicate: str | None = None
+#     """A description of the relationship (optional)."""
+
+#     object: str | None = None
+#     """The target entity name."""
+
+#     subject_id: str | None = None
+#     """The source entity id."""
+
+#     object_id: str | None = None
+#     """The target entity ids."""
+
+#     weight: float | None = 1.0
+#     """The edge weight."""
+
+#     description: str | None = None
+#     """A description of the relationship (optional)."""
+
+#     predicate_embedding: list[float] | None = None
+#     """The semantic embedding for the relationship description (optional)."""
+
+#     text_unit_ids: list[str] | None = None
+#     """List of text unit IDs in which the relationship appears (optional)."""
+
+#     document_ids: list[str] | None = None
+#     """List of document IDs in which the relationship appears (optional)."""
+
+#     attributes: dict[str, Any] | None = None
+#     """Additional attributes associated with the relationship (optional). To be included in the search prompt"""
+
+
+GET_TRIPLES_QUERY = """
+MATCH (e:__Entity__ {value:replace(value.name,'"','')})
 RETURN e
 """
 
-PUT_RELATIONS_QUERY = """
-MATCH (source:__Entity__ {name:replace(value.source,'"','')})
-MATCH (target:__Entity__ {name:replace(value.target,'"','')})
-// not necessary to merge on id as there is only one relationship per pair
+PUT_TRIPLES_QUERY = """
+MATCH (source:__Entity__ {value:replace(value.source,'"','')})
+MATCH (target:__Entity__ {value:replace(value.target,'"','')})
 MERGE (source)-[rel:RELATED {id: value.id}]->(target)
-SET rel += value {.rank, .weight, .human_readable_id, .description, .text_unit_ids}
+SET rel += value {.weight, description, }
 RETURN count(*) as createdRels
 """
 
