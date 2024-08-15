@@ -85,7 +85,7 @@ KnowledgeGraphResponse = str
 
 
 class GroupResponse(BaseModel):
-    id: UUID
+    group_id: UUID
     name: str
     description: Optional[str]
     created_at: datetime
@@ -93,7 +93,7 @@ class GroupResponse(BaseModel):
 
 
 class GroupOverviewResponse(BaseModel):
-    id: UUID
+    group_id: UUID
     name: str
     description: Optional[str]
     created_at: datetime

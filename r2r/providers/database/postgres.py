@@ -698,13 +698,15 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
                 group_data = result.fetchone()
                 sess.commit()
 
-            return {
-                "group_id": group_data[0],
-                "name": group_data[1],
-                "description": group_data[2],
-                "created_at": group_data[3],
-                "updated_at": group_data[4],
-            }
+            return GroupResponse(
+                **{
+                    "group_id": group_data[0],
+                    "name": group_data[1],
+                    "description": group_data[2],
+                    "created_at": group_data[3],
+                    "updated_at": group_data[4],
+                }
+            )
         except Exception as e:
             logger.error(f"Error creating group: {e}")
             raise
@@ -720,6 +722,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
         with self.vx.Session() as sess:
             result = sess.execute(query, {"group_id": group_id})
             group_data = result.fetchone()
+            print("group_data = ", group_data)
         return (
             GroupResponse(**dict(zip(result.keys(), group_data)))
             if group_data

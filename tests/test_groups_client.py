@@ -82,7 +82,7 @@ def mock_db():
 
     def mock_create_group(**kwargs):
         return GroupResponse(
-            id=uuid.uuid4(),
+            group_id=uuid.uuid4(),
             name=kwargs.get("name", "Test Group"),
             description=kwargs.get("description", "A test group"),
             created_at=datetime.utcnow(),
@@ -93,7 +93,7 @@ def mock_db():
 
     def mock_get_group(group_id):
         return GroupResponse(
-            id=group_id,
+            group_id=group_id,
             name="Test Group",
             description="A test group",
             created_at=datetime.utcnow(),
@@ -104,7 +104,7 @@ def mock_db():
 
     def mock_update_group(group_id, name, description):
         return GroupResponse(
-            id=group_id,
+            group_id=group_id,
             name=name,
             description=description,
             created_at=datetime.utcnow(),
@@ -118,7 +118,7 @@ def mock_db():
     def mock_list_groups(offset=0, limit=100):
         return [
             GroupResponse(
-                id=uuid.uuid4(),
+                group_id=uuid.uuid4(),
                 name=f"Group {i}",
                 description=f"Description {i}",
                 created_at=datetime.utcnow(),

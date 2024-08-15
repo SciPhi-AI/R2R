@@ -30,7 +30,7 @@ def test_group(pg_db):
         "Test Group", "This is a test group."
     )
     yield group
-    pg_db.relational.delete_group(group["group_id"])
+    pg_db.relational.delete_group(group.group_id)
 
 
 # Improvement: Use a fixture for creating a test user
@@ -51,20 +51,16 @@ def test_create_group(pg_db):
     group = pg_db.relational.create_group(
         name=group_name, description=group_description
     )
-    assert isinstance(group["group_id"], UUID)
-    assert group["name"] == group_name
-    assert group["description"] == group_description
+    assert isinstance(group.group_id, UUID)
+    assert group.name == group_name
+    assert group.description == group_description
     # Improvement: Check for created_at and updated_at fields
-    assert isinstance(group["created_at"], datetime)
-    assert isinstance(group["updated_at"], datetime)
+    assert isinstance(group.created_at, datetime)
+    assert isinstance(group.updated_at, datetime)
 
 
 def test_get_group(pg_db, test_group):
-    fetched_group = pg_db.relational.get_group(test_group["group_id"])
-    print("test_group = ", test_group)
-    print(
-        "fetched_group = ", pg_db.relational.get_group(test_group["group_id"])
-    )
+    fetched_group = pg_db.relational.get_group(test_group.group_id)
     assert fetched_group == test_group
 
 
@@ -72,23 +68,23 @@ def test_update_group(pg_db, test_group):
     new_name = "Updated Group"
     new_description = "This is an updated test group."
     updated = pg_db.relational.update_group(
-        test_group["group_id"], name=new_name, description=new_description
+        test_group.group_id, name=new_name, description=new_description
     )
     assert updated
-    fetched_group = pg_db.relational.get_group(test_group["group_id"])
-    assert fetched_group["name"] == new_name
-    assert fetched_group["description"] == new_description
+    fetched_group = pg_db.relational.get_group(test_group.group_id)
+    assert fetched_group.name == new_name
+    assert fetched_group.description == new_description
     # Improvement: Check that updated_at has changed
-    assert fetched_group["updated_at"] > test_group["updated_at"]
+    assert fetched_group.updated_at > test_group.updated_at
 
 
 def test_delete_group(pg_db):
     group = pg_db.relational.create_group(
         "Temporary Group", "This group will be deleted"
     )
-    deleted = pg_db.relational.delete_group(group["group_id"])
+    deleted = pg_db.relational.delete_group(group.group_id)
     assert deleted
-    fetched_group = pg_db.relational.get_group(group["group_id"])
+    fetched_group = pg_db.relational.get_group(group.group_id)
     assert fetched_group is None
 
 
@@ -101,10 +97,8 @@ def test_list_groups(pg_db, test_group):
     # Now test listing groups
     groups = pg_db.relational.list_groups()
     assert len(groups) >= 2
-    assert any(group["group_id"] == test_group["group_id"] for group in groups)
-    assert any(
-        group["group_id"] == second_group["group_id"] for group in groups
-    )
+    assert any(group.group_id == test_group.group_id for group in groups)
+    assert any(group.group_id == second_group.group_id for group in groups)
 
     # Test pagination
     first_page = pg_db.relational.list_groups(limit=1)
@@ -120,7 +114,7 @@ def test_list_groups(pg_db, test_group):
     assert len(all_groups) >= 2
 
     # Clean up the second group
-    pg_db.relational.delete_group(second_group["group_id"])
+    pg_db.relational.delete_group(second_group.group_id)
 
     # Check required fields
     required_fields = [
@@ -136,42 +130,40 @@ def test_list_groups(pg_db, test_group):
 
 def test_add_user_to_group(pg_db, test_group, test_user):
     added = pg_db.relational.add_user_to_group(
-        test_user.id, test_group["group_id"]
+        test_user.id, test_group.group_id
     )
     assert added
     user_groups = pg_db.relational.get_groups_for_user(test_user.id)
-    assert any(g["group_id"] == test_group["group_id"] for g in user_groups)
+    assert any(g["group_id"] == test_group.group_id for g in user_groups)
     # Improvement: Test adding the same user twice
     re_added = pg_db.relational.add_user_to_group(
-        test_user.id, test_group["group_id"]
+        test_user.id, test_group.group_id
     )
     assert not re_added  # Should return False for already added user
 
 
 def test_remove_user_from_group(pg_db, test_group, test_user):
-    pg_db.relational.add_user_to_group(test_user.id, test_group["group_id"])
+    pg_db.relational.add_user_to_group(test_user.id, test_group.group_id)
     removed = pg_db.relational.remove_user_from_group(
-        test_user.id, test_group["group_id"]
+        test_user.id, test_group.group_id
     )
     assert removed
     user_groups = pg_db.relational.get_groups_for_user(test_user.id)
-    assert all(g["group_id"] != test_group["group_id"] for g in user_groups)
+    assert all(g["group_id"] != test_group.group_id for g in user_groups)
     # Improvement: Test removing a user that's not in the group
     re_removed = pg_db.relational.remove_user_from_group(
-        test_user.id, test_group["group_id"]
+        test_user.id, test_group.group_id
     )
     assert not re_removed  # Should return False for user not in group
 
 
 def test_get_users_in_group(pg_db, test_group, test_user):
-    pg_db.relational.add_user_to_group(test_user.id, test_group["group_id"])
-    users_in_group = pg_db.relational.get_users_in_group(
-        test_group["group_id"]
-    )
+    pg_db.relational.add_user_to_group(test_user.id, test_group.group_id)
+    users_in_group = pg_db.relational.get_users_in_group(test_group.group_id)
     assert any(u.id == test_user.id for u in users_in_group)
     # Improvement: Test pagination
     first_page = pg_db.relational.get_users_in_group(
-        test_group["group_id"], limit=1
+        test_group.group_id, limit=1
     )
     assert len(first_page) == 1
 
