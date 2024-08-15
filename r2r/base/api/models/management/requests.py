@@ -16,11 +16,6 @@ class R2RDeleteRequest(BaseModel):
     filters: dict[str, Any] = Field(default_factory=dict)
 
 
-class R2RAnalyticsRequest(BaseModel):
-    filter_criteria: LogFilterCriteria
-    analysis_types: AnalysisTypes
-
-
 class R2RUsersOverviewRequest(BaseModel):
     user_ids: Optional[list[uuid.UUID]]
 
@@ -35,11 +30,7 @@ class R2RDocumentChunksRequest(BaseModel):
 
 class R2RLogsRequest(BaseModel):
     run_type_filter: Optional[str] = (None,)
-    max_runs_requested: int = 100
-
-
-class R2RPrintRelationshipsRequest(BaseModel):
-    limit: int = 100
+    max_runs: int = 100
 
 
 class R2RCreateGroupRequest(BaseModel):
@@ -60,10 +51,6 @@ class R2RAddUserToGroupRequest(BaseModel):
 class R2RRemoveUserFromGroupRequest(BaseModel):
     user_id: uuid.UUID
     group_id: uuid.UUID
-
-
-class R2RGroupsOverviewRequest(BaseModel):
-    group_ids: Optional[list[uuid.UUID]]
 
 
 class R2RScoreCompletionRequest(BaseModel):

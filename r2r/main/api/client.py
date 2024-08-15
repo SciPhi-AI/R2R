@@ -13,11 +13,9 @@ import requests
 from fastapi.testclient import TestClient
 
 from r2r.base import (
-    AnalysisTypes,
     ChunkingConfig,
     GenerationConfig,
     KGSearchSettings,
-    LogFilterCriteria,
     R2RException,
     VectorDBFilterValue,
     VectorSearchSettings,
@@ -29,15 +27,8 @@ from ...base.api.models.ingestion.requests import (
     R2RUpdateFilesRequest,
 )
 from ...base.api.models.management.requests import (
-    R2RAnalyticsRequest,
-    R2RDeleteRequest,
-    R2RDocumentChunksRequest,
-    R2RDocumentsOverviewRequest,
-    R2RLogsRequest,
-    R2RPrintRelationshipsRequest,
     R2RScoreCompletionRequest,
     R2RUpdatePromptRequest,
-    R2RUsersOverviewRequest,
 )
 from ...base.api.models.retrieval.requests import (
     R2RAgentRequest,
@@ -46,6 +37,11 @@ from ...base.api.models.retrieval.requests import (
 )
 
 nest_asyncio.apply()
+
+
+# The empty args become necessary after a recent modification to `base_endpoint`
+# TODO - Remove the explicitly empty args
+EMPTY_ARGS = {"args": "", "kwargs": "{}"}
 
 
 def handle_request_error(response):
@@ -95,13 +91,18 @@ class R2RClient:
             "verify_email",
         ]:
             headers.update(self._get_auth_header())
+        params = kwargs.pop("params", {})
+        params = {
+            **params,
+            **EMPTY_ARGS,
+        }  # TOOD - Why do we need the empty args?
         if isinstance(self.client, TestClient):
             response = getattr(self.client, method.lower())(
-                url, headers=headers, **kwargs
+                url, headers=headers, **kwargs, params=params
             )
         else:
             response = self.client.request(
-                method, url, headers=headers, **kwargs
+                method, url, headers=headers, **kwargs, params=params
             )
 
         handle_request_error(response)
@@ -165,8 +166,13 @@ class R2RClient:
         request = R2RUpdatePromptRequest(
             name=name, template=template, input_types=input_types
         )
+        # return self._make_request(
+        #     "POST", "update_prompt", json=json.loads(request.model_dump_json())
+        # )
         return self._make_request(
-            "POST", "update_prompt", json=json.loads(request.model_dump_json())
+            "POST",
+            "update_prompt",
+            json=request.model_dump(exclude_none=True),
         )
 
     def ingest_files(
@@ -458,9 +464,12 @@ class R2RClient:
     ) -> dict:
         self._ensure_authenticated()
 
-        request = R2RDeleteRequest(filters=filters)
+        params = {"filters": json.dumps(filters)} if filters else {}
+
         return self._make_request(
-            "DELETE", "delete", json=json.loads(request.model_dump_json())
+            "DELETE",
+            "delete",
+            params=params,
         )
 
     def logs(
@@ -470,13 +479,11 @@ class R2RClient:
     ) -> dict:
         self._ensure_authenticated()
 
-        request = R2RLogsRequest(
-            run_type_filter=run_type_filter,
-            max_runs_requested=max_runs,
-        )
-        return self._make_request(
-            "GET", "logs", json=json.loads(request.model_dump_json())
-        )
+        params = {
+            "run_type_filter": run_type_filter,
+            "max_runs": max_runs,
+        }
+        return self._make_request("GET", "logs", params=params)
 
     def app_settings(self) -> dict:
         self._ensure_authenticated()
@@ -502,27 +509,33 @@ class R2RClient:
 
     def analytics(
         self,
-        filter_criteria: Optional[dict[str, Any]],
-        analysis_types: Optional[dict[str, Any]],
+        filter_criteria: Optional[Union[dict, str]] = None,
+        analysis_types: Optional[Union[dict, str]] = None,
     ) -> dict:
         self._ensure_authenticated()
 
-        request = R2RAnalyticsRequest(
-            filter_criteria=LogFilterCriteria(filters=filter_criteria),
-            analysis_types=AnalysisTypes(analysis_types=analysis_types),
-        )
-        return self._make_request(
-            "GET", "analytics", json=request.model_dump(exclude_none=True)
-        )
+        params = {}
+        if filter_criteria:
+            if isinstance(filter_criteria, dict):
+                params["filter_criteria"] = json.dumps(filter_criteria)
+            else:
+                params["filter_criteria"] = filter_criteria
+        if analysis_types:
+            if isinstance(analysis_types, dict):
+                params["analysis_types"] = json.dumps(analysis_types)
+            else:
+                params["analysis_types"] = analysis_types
+
+        return self._make_request("GET", "analytics", params=params)
 
     def users_overview(
         self, user_ids: Optional[list[uuid.UUID]] = None
     ) -> dict:
         self._ensure_authenticated()
 
-        request = R2RUsersOverviewRequest(user_ids=user_ids)
+        # request = R2RUsersOverviewRequest(user_ids=user_ids)
         return self._make_request(
-            "GET", "users_overview", json=json.loads(request.model_dump_json())
+            "GET", "users_overview", params={"user_ids": user_ids}
         )
 
     def documents_overview(
@@ -531,37 +544,26 @@ class R2RClient:
     ) -> dict:
         self._ensure_authenticated()
 
-        request = R2RDocumentsOverviewRequest(
-            document_ids=(
-                [uuid.UUID(did) for did in document_ids]
-                if document_ids
-                else None
-            )
-        )
         return self._make_request(
             "GET",
             "documents_overview",
-            json=json.loads(request.model_dump_json()),
+            params={"document_ids": [str(ele) for ele in document_ids]},
         )
 
     def document_chunks(self, document_id: str) -> dict:
         self._ensure_authenticated()
 
-        request = R2RDocumentChunksRequest(document_id=document_id)
         return self._make_request(
-            "GET",
-            "document_chunks",
-            json=json.loads(request.model_dump_json()),
+            "GET", "document_chunks", params={"document_id": document_id}
         )
 
     def inspect_knowledge_graph(self, limit: int = 100) -> str:
         self._ensure_authenticated()
 
-        request = R2RPrintRelationshipsRequest(limit=limit)
         return self._make_request(
-            "POST",
+            "GET",
             "inspect_knowledge_graph",
-            json=json.loads(request.model_dump_json()),
+            params={"limit": limit},
         )
 
     def change_password(

@@ -66,5 +66,9 @@ async def manage_run(
     try:
         yield run_id
     finally:
-        # Note: Do not clear the run info to ensure the run ID remains the same
-        run_id_var.reset(token)
+        # Check if we're in a test environment
+        if isinstance(token, contextvars.Token):
+            run_id_var.reset(token)
+        else:
+            # We're in a test environment, just reset the run_id_var
+            run_id_var.set(None)

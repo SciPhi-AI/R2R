@@ -79,7 +79,7 @@ class RunLoggingProvider(Provider):
     @abstractmethod
     async def score_completion(
         self, run_id: UUID, message_id: UUID, score: float
-    ):
+    ) -> str:
         pass
 
 
@@ -280,9 +280,9 @@ class LocalRunLoggingProvider(RunLoggingProvider):
                     (json.dumps(completion_record), str(run_id)),
                 )
                 await self.conn.commit()
-                return True
+                return {"message": "Score updated successfully."}
 
-        return False
+        return {"message": "Score not updated."}
 
 
 class PostgresLoggingConfig(LoggingConfig):
@@ -502,9 +502,9 @@ class PostgresRunLoggingProvider(RunLoggingProvider):
                         json.dumps(completion_record),
                         run_id,
                     )
-                    return True
+                    return {"message": "Score updated successfully."}
 
-        return False
+        return {"message": "Score not updated."}
 
 
 class RedisLoggingConfig(LoggingConfig):
@@ -692,9 +692,9 @@ class RedisRunLoggingProvider(RunLoggingProvider):
 
                     log_data["value"] = json.dumps(completion_record)
                     await self.redis.lset(log_key, i, json.dumps(log_data))
-                    return True
+                    return {"message": "Score updated successfully."}
 
-        return False
+        return {"message": "Score not updated."}
 
 
 class RunLoggingSingleton:

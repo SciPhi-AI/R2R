@@ -26,6 +26,7 @@ from r2r.base import (
 from r2r.base.abstractions.user import UserStats
 from r2r.base.api.models.auth.requests import CreateUserRequest
 from r2r.base.api.models.auth.responses import UserResponse
+from r2r.base.api.models.management.responses import GroupResponse
 
 from .vecs import Client, Collection, create_client
 
@@ -708,7 +709,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             logger.error(f"Error creating group: {e}")
             raise
 
-    def get_group(self, group_id: UUID) -> Optional[dict]:
+    def get_group(self, group_id: UUID) -> Optional[GroupResponse]:
         query = text(
             f"""
             SELECT group_id, name, description, created_at, updated_at
@@ -719,7 +720,11 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
         with self.vx.Session() as sess:
             result = sess.execute(query, {"group_id": group_id})
             group_data = result.fetchone()
-        return dict(zip(result.keys(), group_data)) if group_data else None
+        return (
+            GroupResponse(**dict(zip(result.keys(), group_data)))
+            if group_data
+            else None
+        )
 
     def get_group_count(self) -> int:
         query = text(
@@ -734,7 +739,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
 
     def update_group(
         self, group_id: UUID, name: str = None, description: str = None
-    ) -> bool:
+    ) -> GroupResponse:
         update_fields = []
         params = {"group_id": group_id}
         if name is not None:
@@ -757,7 +762,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
         with self.vx.Session() as sess:
             result = sess.execute(query, params)
             sess.commit()
-        return result.rowcount > 0
+        return GroupResponse(**params)
 
     def delete_group(self, group_id: UUID) -> bool:
         with self.vx.Session() as sess:

@@ -55,11 +55,7 @@ class ManagementService(Service):
 
     @telemetry_event("Logs")
     async def alogs(
-        self,
-        run_type_filter: Optional[str] = None,
-        max_runs_requested: int = 100,
-        *args: Any,
-        **kwargs: Any,
+        self, run_type_filter: Optional[str] = None, max_runs: int = 100
     ):
         if self.logging_connection is None:
             raise R2RException(
@@ -67,7 +63,7 @@ class ManagementService(Service):
             )
 
         run_info = await self.logging_connection.get_info_logs(
-            limit=max_runs_requested,
+            limit=max_runs,
             run_type_filter=run_type_filter,
         )
         run_ids = [run.run_id for run in run_info]
@@ -213,7 +209,7 @@ class ManagementService(Service):
         message_id: uuid.UUID,
         score: float = 0.0,
         run_type_filter: str = None,
-        max_runs_requested: int = 100,
+        max_runs: int = 100,
         *args: Any,
         **kwargs: Any,
     ):
@@ -224,7 +220,7 @@ class ManagementService(Service):
                 )
 
             run_info = await self.logging_connection.get_info_logs(
-                limit=max_runs_requested,
+                limit=max_runs,
                 run_type_filter=run_type_filter,
             )
             run_ids = [run.run_id for run in run_info]
