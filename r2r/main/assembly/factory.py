@@ -493,6 +493,7 @@ class R2RPipeFactory:
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
+            embedding_provider=self.providers.embedding,
         )
 
     def create_rag_pipe(self, stream: bool = False, *args, **kwargs) -> Any:

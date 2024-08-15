@@ -11,6 +11,7 @@ from r2r.base import (
     KVLoggingSingleton,
     PipeType,
     PromptProvider,
+    EmbeddingProvider,
 )
 
 import asyncio
@@ -29,6 +30,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         kg_provider: KGProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
+        embedding_provider: EmbeddingProvider,
         pipe_logger: Optional[KVLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[GeneratorPipe.PipeConfig] = None,
@@ -53,54 +55,8 @@ class KGSearchSearchPipe(GeneratorPipe):
         self.kg_provider = kg_provider
         self.llm_provider = llm_provider
         self.prompt_provider = prompt_provider
+        self.embedding_provider = embedding_provider
         self.pipe_run_info = None
-
-    async def local_search(self,
-        input: GeneratorPipe.Input,
-        state: AsyncState,
-        run_id: uuid.UUID,
-        kg_search_settings: KGSearchSettings,
-        *args: Any,
-        **kwargs: Any,
-    ):
-        async for message in input.message:
-
-            if not kg_search_settings.entity_types:
-                messages = self.prompt_provider._get_message_payload(
-                    task_prompt_name="kg_search",
-                    task_inputs={"input": message},
-                )
-            else:
-                messages = self.prompt_provider._get_message_payload(
-                    task_prompt_name="kg_search_with_spec",
-                    task_inputs={
-                        "input": message,
-                        "entity_types": str(kg_search_settings.entity_types),
-                        "relations": str(kg_search_settings.relationships),
-                    },
-                )
-
-            result = await self.llm_provider.aget_completion(
-                messages=messages,
-                generation_config=kg_search_settings.kg_search_generation_config,
-            )
-
-            extraction = result.choices[0].message.content
-            query = extraction.split("```cypher")[1].split("```")[0]
-            result = self.kg_provider.structured_query(query)
-            yield (query, result)
-
-            await self.enqueue_log(
-                run_id=run_id,
-                key="kg_search_response",
-                value=extraction,
-            )
-
-            await self.enqueue_log(
-                run_id=run_id,
-                key="kg_search_execution_result",
-                value=result,
-            )
 
     def filter_responses(self, map_responses):
         filtered_responses = []
@@ -127,6 +83,32 @@ class KGSearchSearchPipe(GeneratorPipe):
         responses = "\n".join([response.get('description', '') for response in filtered_responses])
         return responses
     
+    async def local_search(self,
+        input: GeneratorPipe.Input, 
+        state: AsyncState,
+        run_id: uuid.UUID,
+        kg_search_settings: KGSearchSettings,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        # search over communities and         
+        # do 3 searches. One over entities, one over relationships, one over communities
+
+        async for message in input.message: 
+            query_embedding = await self.embedding_provider.async_get_embedding(message)
+                
+            all_search_results = []
+            for search_type in ['__Entity__', "__Relationship__", "__Community__"]:
+                search_result = self.kg_provider.vector_query(input, 
+                                    search_type = search_type, 
+                                    search_type_limits = kg_search_settings.local_search_limits[search_type], 
+                                    query_embedding = query_embedding
+                        )
+                all_search_results.append(search_result)
+    
+                import pdb; pdb.set_trace() 
+            yield (message, all_search_results)
+
     async def global_search(self,
         input: GeneratorPipe.Input,
         state: AsyncState,
@@ -188,7 +170,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             output = output.choices[0].message.content
 
-            yield {"query": message, "search_result": output}
+            yield (message, output)
 
     async def _run_logic(
         self,
@@ -202,11 +184,12 @@ class KGSearchSearchPipe(GeneratorPipe):
 
         logger.info("Performing global search")
         kg_search_type = kg_search_settings.kg_search_type
+
         if kg_search_type == 'local':
             async for query, result in self.local_search(input, state, run_id, kg_search_settings):
                 yield (query, result)
 
         else:
-            async for item in self.global_search(input, state, run_id, kg_search_settings):
-                yield item
+            async for query, result in self.global_search(input, state, run_id, kg_search_settings):
+                yield (query, result)
                 

@@ -86,4 +86,6 @@ class KGSearchSettings(BaseModel):
     entity_types: list = []
     relationships: list = []
     max_community_description_length: int = 4096 * 4
+    max_llm_queries_for_global_search: int = 10
+    local_search_limits: dict[str, int] = {'__Entity__': 10, '__Relationship__': 10, '__Community__': 10}
 

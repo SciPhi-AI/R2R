@@ -285,6 +285,17 @@ class Neo4jKGProvider(KGProvider):
         return self._driver
     
 
+    def create_vector_index(self, node_type: str, node_property: str) -> None:
+        
+        query = f"""
+        CREATE VECTOR INDEX `{node_type}_{node_property}` IF NOT EXISTS
+
+        FOR (n:{node_type}) ON n.{node_property}
+        OPTIONS {{indexConfig: {{`vector.similarity_function`: 'cosine', `vector.dimensions`:{self.embedding_provider.config.base_dimension}}}}}"""    
+
+        self.structured_query(query)
+
+
     def get_rel_map(self, graph_nodes: Any, depth: int = 2, limit: int = 30, ignore_rels: Optional[List[str]] = None) -> List[Triple]:
         pass
 
@@ -296,5 +307,51 @@ class Neo4jKGProvider(KGProvider):
         return False
     
 
-    def vector_query(self, query, **kwargs: Any) -> Tuple[list[Entity], list[float]]:
-        pass
+    def vector_query(self, query, **kwargs: Any) -> Dict[str, Any]:
+                
+        query_embedding = kwargs.get('query_embedding', None)
+        search_type = kwargs.get('search_type', '__Entity__')
+        embedding_type = kwargs.get('embedding_type', 'description_embedding')
+        property_names = kwargs.get('property_names', ['name', 'description', 'summary'])
+        limit = kwargs.get('limit', 10)
+
+
+        if search_type == "__Relationship__":
+            
+            query = f"""
+                MATCH () - [e] -> ()
+                WHERE e.{embedding_type} IS NOT NULL AND size(e.{embedding_type}) = $dimension
+                WITH e, vector.similarity.cosine(e.{embedding_type}, $embedding) AS score
+                ORDER BY score DESC LIMIT toInteger($limit)
+                RETURN e, score
+            """
+
+            query_params = {"embedding": query_embedding, "dimension": len(query_embedding), "limit": limit}
+
+        else:
+            query = f"""
+                MATCH (e:{search_type})
+                WHERE e.{embedding_type} IS NOT NULL AND size(e.{embedding_type}) = $dimension
+                WITH e, vector.similarity.cosine(e.{embedding_type}, $embedding) AS score
+                ORDER BY score DESC LIMIT toInteger($limit)
+                RETURN e, score
+            """
+            query_params = {"embedding": query_embedding, "dimension": len(query_embedding), "limit": limit, "search_type": search_type}
+
+        
+        neo4j_results = self.structured_query(query, query_params)
+
+        
+        # get the descriptions from the neo4j results
+        # descriptions = [record['e']._properties[property_name] for record in neo4j_results.records for property_name in property_names]
+        # return descriptions, scores
+
+        ret = {}
+        for record in neo4j_results.records:
+            ret[record['e']._properties['name']] = {}
+
+            for property_name in property_names:
+                if property_name in record['e']._properties:
+                    ret[record['e']._properties['name']][property_name] = record['e']._properties[property_name]
+
+        return ret

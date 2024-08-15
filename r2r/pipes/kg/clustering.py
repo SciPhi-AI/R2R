@@ -237,3 +237,12 @@ class KGClusteringPipe(AsyncPipe):
 
         async for community in self.cluster_kg(triples):
             yield community
+
+
+        # then finally create vector indexes for communities
+        self.kg_provider.create_vector_index("__ENTITY__", "name_embedding")
+        self.kg_provider.create_vector_index("__ENTITY__", "description_embedding")
+        
+        self.kg_provider.create_vector_index("__RELATIONSHIP__", "description")
+
+        self.kg_provider.create_vector_index("__Community__", "summary_embedding")
