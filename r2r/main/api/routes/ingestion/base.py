@@ -209,6 +209,7 @@ result = client.ingest_files(
                 user=auth_user,
                 **kwargs,
             )
+
             # If superuser, assign documents to groups
             if is_superuser:
                 for idx, metadata in enumerate(metadatas or []):

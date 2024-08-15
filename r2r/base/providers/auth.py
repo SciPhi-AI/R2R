@@ -1,7 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Optional
-from uuid import UUID
 
 from fastapi import Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer

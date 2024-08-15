@@ -483,12 +483,12 @@ class R2RClient:
 
     def score_completion(
         self,
-        message_id: str,
+        message_id: uuid.UUID,
         score: float,
     ) -> dict:
         self._ensure_authenticated()
         data = {
-            "message_id": message_id,
+            "message_id": str(message_id),
             "score": score,
         }
         return self._make_request(
