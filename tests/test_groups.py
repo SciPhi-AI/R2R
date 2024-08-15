@@ -3,7 +3,7 @@ from uuid import UUID
 
 import pytest
 
-from r2r import CreateUserRequest, DatabaseConfig, R2RException
+from r2r import DatabaseConfig, R2RException
 from r2r.providers import BCryptConfig, BCryptProvider, PostgresDBProvider
 
 
@@ -36,11 +36,11 @@ def test_group(pg_db):
 # Improvement: Use a fixture for creating a test user
 @pytest.fixture
 def test_user(pg_db):
-    user = CreateUserRequest(
+
+    created_user = pg_db.relational.create_user(
         email=f"test_{datetime.now().timestamp()}@example.com",
         password="password",
     )
-    created_user = pg_db.relational.create_user(user)
     yield created_user
     pg_db.relational.delete_user(created_user.id)
 
@@ -106,7 +106,7 @@ def test_list_groups(pg_db, test_group):
     assert len(second_page) == 1
 
     # Ensure first and second pages are different
-    assert first_page[0]["group_id"] != second_page[0]["group_id"]
+    assert first_page[0].group_id != second_page[0].group_id
 
     # Test requesting more groups than exist
     all_groups = pg_db.relational.list_groups(limit=1000)
@@ -114,17 +114,6 @@ def test_list_groups(pg_db, test_group):
 
     # Clean up the second group
     pg_db.relational.delete_group(second_group.group_id)
-
-    # Check required fields
-    required_fields = [
-        "group_id",
-        "name",
-        "description",
-        "created_at",
-        "updated_at",
-    ]
-    for group in groups:
-        assert all(field in group for field in required_fields)
 
 
 def test_add_user_to_group(pg_db, test_group, test_user):

@@ -65,9 +65,7 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
                     if iteration >= 1:
                         yield ","
                     yield json.dumps(result.json())
-                    context += (
-                        f"{iteration + 1}:\n{result.metadata['text']}\n\n"
-                    )
+                    context += f"{iteration + 1}:\n{result.text}\n\n"
                     iteration += 1
 
             yield f"</{self.SEARCH_STREAM_MARKER}>"

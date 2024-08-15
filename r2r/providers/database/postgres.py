@@ -24,7 +24,6 @@ from r2r.base import (
     generate_id_from_label,
 )
 from r2r.base.abstractions.user import UserStats
-from r2r.base.api.models.auth.requests import CreateUserRequest
 from r2r.base.api.models.auth.responses import UserResponse
 from r2r.base.api.models.management.responses import GroupResponse
 
@@ -675,7 +674,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
         ]
 
     # Group management methods
-    def create_group(self, name: str, description: str = "") -> dict:
+    def create_group(self, name: str, description: str = "") -> GroupResponse:
         current_time = datetime.utcnow()
         query = text(
             f"""
@@ -831,7 +830,9 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
                     f"Failed to delete group: {str(e)}", status_code=500
                 )
 
-    def list_groups(self, offset: int = 0, limit: int = 100) -> list[dict]:
+    def list_groups(
+        self, offset: int = 0, limit: int = 100
+    ) -> list[GroupResponse]:
         query = text(
             f"""
             SELECT group_id, name, description, created_at, updated_at
@@ -845,7 +846,7 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             result = sess.execute(query, {"offset": offset, "limit": limit})
             columns = result.keys()
             groups = result.fetchall()
-        return [dict(zip(columns, group)) for group in groups]
+        return [GroupResponse(**dict(zip(columns, group))) for group in groups]
 
     # User-Group management methods
     def add_user_to_group(self, user_id: UUID, group_id: UUID) -> bool:
@@ -944,8 +945,8 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             groups = result.fetchall()
         return [dict(zip(columns, group)) for group in groups]
 
-    def create_user(self, user: CreateUserRequest) -> UserResponse:
-        hashed_password = self.crypto_provider.get_password_hash(user.password)
+    def create_user(self, email: str, password: str) -> UserResponse:
+        hashed_password = self.crypto_provider.get_password_hash(password)
         query = text(
             f"""
             INSERT INTO users_{self.collection_name}
@@ -959,8 +960,8 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             result = sess.execute(
                 query,
                 {
-                    "email": user.email,
-                    "user_id": generate_id_from_label(user.email),
+                    "email": email,
+                    "user_id": generate_id_from_label(email),
                     "hashed_password": hashed_password,
                     "group_ids": [],
                 },

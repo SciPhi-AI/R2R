@@ -3,8 +3,7 @@ import json
 import os
 import uuid
 from contextlib import ExitStack
-from typing import Any, AsyncGenerator, Generator, Optional, Union
-from uuid import UUID
+from typing import AsyncGenerator, Generator, Optional, Union
 
 import fire
 import httpx
@@ -19,12 +18,6 @@ from r2r.base import (
     R2RException,
     VectorDBFilterValue,
     VectorSearchSettings,
-)
-
-from ...base.api.models.auth.requests import CreateUserRequest
-from ...base.api.models.management.requests import (
-    R2RScoreCompletionRequest,
-    R2RUpdatePromptRequest,
 )
 
 nest_asyncio.apply()
@@ -132,8 +125,8 @@ class R2RClient:
         return {"Authorization": f"Bearer {self.access_token}"}
 
     def register(self, email: str, password: str) -> dict:
-        user = CreateUserRequest(email=email, password=password)
-        return self._make_request("POST", "register", json=user.dict())
+        user = {"email": email, "password": password}
+        return self._make_request("POST", "register", json=user)
 
     def verify_email(self, verification_code: str) -> dict:
         return self._make_request("POST", f"verify_email/{verification_code}")
@@ -181,16 +174,11 @@ class R2RClient:
         input_types: Optional[dict] = None,
     ) -> dict:
         self._ensure_authenticated()
-        request = R2RUpdatePromptRequest(
-            name=name, template=template, input_types=input_types
-        )
-        # return self._make_request(
-        #     "POST", "update_prompt", json=json.loads(request.model_dump_json())
-        # )
+        data = {"name": name, "template": template, "input_types": input_types}
         return self._make_request(
             "POST",
             "update_prompt",
-            json=request.model_dump(exclude_none=True),
+            json={k: v for k, v in data.items() if v is not None},
         )
 
     def ingest_files(
@@ -495,19 +483,18 @@ class R2RClient:
 
     def score_completion(
         self,
-        message_id: str = None,
-        score: float = None,
+        message_id: str,
+        score: float,
     ) -> dict:
         self._ensure_authenticated()
-
-        request = R2RScoreCompletionRequest(
-            message_id=message_id,
-            score=score,
-        )
+        data = {
+            "message_id": message_id,
+            "score": score,
+        }
         return self._make_request(
             "POST",
             "score_completion",
-            json=json.loads(request.model_dump_json()),
+            json=data,
         )
 
     def analytics(
@@ -536,7 +523,6 @@ class R2RClient:
     ) -> dict:
         self._ensure_authenticated()
 
-        # request = R2RUsersOverviewRequest(user_ids=user_ids)
         return self._make_request(
             "GET", "users_overview", params={"user_ids": user_ids}
         )
@@ -590,7 +576,10 @@ class R2RClient:
 
     def request_password_reset(self, email: str) -> dict:
         return self._make_request(
-            "POST", "request_password_reset", json={"email": email}
+            "POST",
+            "request_password_reset",
+            data=email,
+            headers={"Content-Type": "text/plain"},
         )
 
     def confirm_password_reset(
@@ -599,7 +588,8 @@ class R2RClient:
         return self._make_request(
             "POST",
             f"reset_password/{reset_token}",
-            json={"new_password": new_password},
+            data=new_password,
+            headers={"Content-Type": "text/plain"},
         )
 
     def logout(self) -> dict:
@@ -609,8 +599,20 @@ class R2RClient:
         self._refresh_token = None
         return response
 
-    def update_user(self, user_data: dict) -> dict:
-        self._ensure_authenticated()
+    def update_user(
+        self,
+        email: Optional[str] = None,
+        name: Optional[str] = None,
+        bio: Optional[str] = None,
+        profile_picture: Optional[str] = None,
+    ) -> dict:
+        user_data = {
+            "email": email,
+            "name": name,
+            "bio": bio,
+            "profile_picture": profile_picture,
+        }
+        user_data = {k: v for k, v in user_data.items() if v is not None}
         return self._make_request("PUT", "user", json=user_data)
 
     def delete_user(self, user_id: str, password: str) -> dict:
@@ -622,49 +624,61 @@ class R2RClient:
         self._refresh_token = None
         return response
 
-    def create_group(self, name: str, description: str = "") -> dict:
-        request = {"name": name, "description": description}
-        return self._make_request("POST", "create_group", json=request)
-
     def get_group(self, group_id: uuid.UUID) -> dict:
+        self._ensure_authenticated()
         return self._make_request("GET", f"get_group/{group_id}")
 
+    def create_group(self, name: str, description: str = "") -> dict:
+        self._ensure_authenticated()
+        data = {"name": name, "description": description}
+        return self._make_request("POST", "create_group", json=data)
+
     def update_group(
-        self, group_id: uuid.UUID, name: str = None, description: str = None
+        self,
+        group_id: uuid.UUID,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
     ) -> dict:
-        request = {"name": name, "description": description}
-        return self._make_request(
-            "PUT", f"update_group/{group_id}", json=request
-        )
-
-    def delete_group(self, group_id: uuid.UUID) -> dict:
-        return self._make_request("DELETE", f"delete_group/{group_id}")
-
-    def list_groups(self, offset: int = 0, limit: int = 100) -> dict:
-        return self._make_request(
-            "GET", f"list_groups?offset={offset}&limit={limit}"
-        )
+        self._ensure_authenticated()
+        data = {
+            "name": name,
+            "description": description,
+            "group_id": str(group_id),
+        }
+        data = {k: v for k, v in data.items() if v is not None}
+        return self._make_request("PUT", f"update_group", json=data)
 
     def add_user_to_group(
         self, user_id: uuid.UUID, group_id: uuid.UUID
     ) -> dict:
-        request = {"user_id": str(user_id), "group_id": str(group_id)}
-        return self._make_request("POST", "add_user_to_group", json=request)
+        self._ensure_authenticated()
+        data = {"user_id": str(user_id), "group_id": str(group_id)}
+        return self._make_request("POST", "add_user_to_group", json=data)
 
     def remove_user_from_group(
         self, user_id: uuid.UUID, group_id: uuid.UUID
     ) -> dict:
-        request = {"user_id": str(user_id), "group_id": str(group_id)}
+        self._ensure_authenticated()
+        data = {"user_id": str(user_id), "group_id": str(group_id)}
+        return self._make_request("POST", "remove_user_from_group", json=data)
+
+    def delete_group(self, group_id: uuid.UUID) -> dict:
+        self._ensure_authenticated()
+        return self._make_request("DELETE", f"delete_group/{group_id}")
+
+    def list_groups(self, offset: int = 0, limit: int = 100) -> dict:
+        self._ensure_authenticated()
         return self._make_request(
-            "POST", "remove_user_from_group", json=request
+            "GET", f"list_groups?offset={offset}&limit={limit}"
         )
 
     def get_users_in_group(
         self, group_id: uuid.UUID, offset: int = 0, limit: int = 100
     ) -> dict:
+        self._ensure_authenticated()
         return self._make_request(
             "GET",
-            f"get_users_in_group/{group_id}?offset={offset}&limit={limit}",
+            f"get_users_in_group/{group_id}/{offset}/{limit}",
         )
 
     def get_groups_for_user(self, user_id: uuid.UUID) -> dict:
@@ -673,10 +687,11 @@ class R2RClient:
     def groups_overview(
         self, group_ids: Optional[list[uuid.UUID]] = None
     ) -> dict:
-        request = {
-            "group_ids": [str(gid) for gid in group_ids] if group_ids else None
-        }
-        return self._make_request("POST", "groups_overview", json=request)
+        self._ensure_authenticated()
+        params = {}
+        if group_ids:
+            params["group_ids"] = [str(gid) for gid in group_ids]
+        return self._make_request("GET", "groups_overview", params=params)
 
 
 if __name__ == "__main__":

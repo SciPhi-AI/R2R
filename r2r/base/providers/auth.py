@@ -7,7 +7,7 @@ from fastapi import Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from ..abstractions import R2RException, Token, TokenData
-from ..api.models import CreateUserRequest, UserResponse
+from ..api.models import UserResponse
 from ..utils import generate_id_from_label
 from .base import Provider, ProviderConfig
 
@@ -79,7 +79,7 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def register(self, user: CreateUserRequest) -> Dict[str, str]:
+    def register(self, email: str, password: str) -> Dict[str, str]:
         pass
 
     @abstractmethod

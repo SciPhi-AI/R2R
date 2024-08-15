@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Any, Optional
 
 from r2r.base import R2RException, RunLoggingSingleton, RunManager, Token
-from r2r.base.api.models.auth.requests import CreateUserRequest
 from r2r.base.api.models.auth.responses import UserResponse
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
@@ -32,8 +31,8 @@ class AuthService(Service):
         )
 
     @telemetry_event("RegisterUser")
-    async def register(self, user: CreateUserRequest) -> UserResponse:
-        return self.providers.auth.register(user)
+    async def register(self, email: str, password: str) -> UserResponse:
+        return self.providers.auth.register(email, password)
 
     @telemetry_event("VerifyEmail")
     async def verify_email(self, verification_code: str) -> bool:
@@ -116,13 +115,24 @@ class AuthService(Service):
 
     @telemetry_event("UpdateUserProfile")
     async def update_user(
-        self, user_id: uuid.UUID, user_data: dict[str, Any]
+        self,
+        user_id: uuid.UUID,
+        email: Optional[str] = None,
+        name: Optional[str] = None,
+        bio: Optional[str] = None,
+        profile_picture: Optional[str] = None,
     ) -> UserResponse:
         user = self.providers.database.relational.get_user_by_id(user_id)
         if not user:
             raise R2RException(status_code=404, message="User not found")
-        for key, value in user_data.items():
-            setattr(user, key, value)
+        if email:
+            setattr(user, "email", email)
+        if name:
+            setattr(user, "name", name)
+        if bio:
+            setattr(user, "bio", bio)
+        if profile_picture:
+            setattr(user, "profile_picture", profile_picture)
         return self.providers.database.relational.update_user(user)
 
     @telemetry_event("DeleteUserAccount")

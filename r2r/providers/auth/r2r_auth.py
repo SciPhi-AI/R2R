@@ -16,7 +16,6 @@ from r2r.base import (
     Token,
     TokenData,
 )
-from r2r.base.api.models.auth.requests import CreateUserRequest
 from r2r.base.api.models.auth.responses import UserResponse
 
 logger = logging.getLogger(__name__)
@@ -49,9 +48,7 @@ class R2RAuthProvider(AuthProvider):
         )
         try:
             user = self.register(
-                CreateUserRequest(
-                    email=self.admin_email, password=self.admin_password
-                )
+                email=self.admin_email, password=self.admin_password
             )
             self.db_provider.relational.mark_user_as_superuser(user.id)
 
@@ -120,15 +117,15 @@ class R2RAuthProvider(AuthProvider):
             raise R2RException(status_code=400, message="Inactive user")
         return current_user
 
-    def register(self, user: CreateUserRequest) -> Dict[str, str]:
+    def register(self, email: str, password: str) -> Dict[str, str]:
         # Check if user already exists
-        if self.db_provider.relational.get_user_by_email(user.email):
+        if self.db_provider.relational.get_user_by_email(email):
             raise R2RException(
                 status_code=400, message="Email already registered"
             )
 
         # Create new user
-        new_user = self.db_provider.relational.create_user(user)
+        new_user = self.db_provider.relational.create_user(email, password)
 
         if self.config.require_email_verification:
             # Generate verification code and send email

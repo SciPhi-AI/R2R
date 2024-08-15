@@ -181,6 +181,7 @@ result = client.search(
                 kg_search_settings=kg_search_settings,
                 user=auth_user,
             )
+            print("Returning Results:", results)
             return results
 
         @self.router.post(

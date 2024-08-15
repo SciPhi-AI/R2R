@@ -5,7 +5,7 @@ from typing import Optional, Union
 from uuid import UUID
 
 from ..abstractions import DocumentInfo, VectorEntry, VectorSearchResult
-from ..api.models import CreateUserRequest, UserResponse
+from ..api.models import UserResponse
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -104,7 +104,7 @@ class RelationalDBProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def create_user(self, user: CreateUserRequest) -> UserResponse:
+    def create_user(self, email: str, password: str) -> UserResponse:
         pass
 
     @abstractmethod
@@ -140,7 +140,14 @@ class RelationalDBProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def update_user(self, user: UserResponse) -> UserResponse:
+    def update_user(
+        self,
+        user_id: UUID,
+        email: Optional[str],
+        name: Optional[str],
+        bio: Optional[str],
+        profile_picture: Optional[str],
+    ) -> UserResponse:
         pass
 
     @abstractmethod

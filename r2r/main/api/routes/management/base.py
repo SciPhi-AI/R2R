@@ -5,20 +5,10 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import psutil
-from fastapi import Depends, Query
+from fastapi import Body, Depends, Path, Query
 from pydantic import BaseModel
 
 from r2r.base import R2RException
-from r2r.base.api.models.management.requests import (
-    R2RAddUserToGroupRequest,
-    R2RAssignDocumentToGroupRequest,
-    R2RCreateGroupRequest,
-    R2RRemoveDocumentFromGroupRequest,
-    R2RRemoveUserFromGroupRequest,
-    R2RScoreCompletionRequest,
-    R2RUpdateGroupRequest,
-    R2RUpdatePromptRequest,
-)
 from r2r.base.api.models.management.responses import (
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
@@ -35,7 +25,6 @@ from r2r.base.api.models.management.responses import (
     WrappedServerStatsResponse,
     WrappedUserOverviewResponse,
 )
-from r2r.base.logging.log_processor import AnalysisTypes, LogFilterCriteria
 
 from ....engine import R2REngine
 from ..base_router import BaseRouter
@@ -45,7 +34,7 @@ class ManagementRouter(BaseRouter):
     def __init__(self, engine: R2REngine):
         super().__init__(engine)
         self.start_time = datetime.now(timezone.utc)
-        # self.setup_routes()
+        self.setup_routes()
 
     def setup_routes(self):
         @self.router.get("/health")
@@ -75,7 +64,13 @@ class ManagementRouter(BaseRouter):
         @self.router.post("/update_prompt")
         @self.base_endpoint
         async def update_prompt_app(
-            request: R2RUpdatePromptRequest,
+            name: str = Body(..., description="Prompt name"),
+            template: Optional[str] = Body(
+                None, description="Prompt template"
+            ),
+            input_types: Optional[dict[str, str]] = Body(
+                {}, description="Input types"
+            ),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedPromptResponse:
             if not auth_user.is_superuser:
@@ -85,7 +80,7 @@ class ManagementRouter(BaseRouter):
                 )
 
             result = await self.engine.aupdate_prompt(
-                request.name, request.template, request.input_types
+                name, template, input_types
             )
             return result
 
@@ -230,19 +225,20 @@ class ManagementRouter(BaseRouter):
         @self.router.post("/create_group")
         @self.base_endpoint
         async def create_group_app(
-            request: R2RCreateGroupRequest,
+            name: str = Body(..., description="Group name"),
+            description: Optional[str] = Body(
+                "", description="Group description"
+            ),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupResponse:
             if not auth_user.is_superuser:
                 raise R2RException("Only a superuser can create groups.", 403)
-            return await self.engine.acreate_group(
-                request.name, request.description
-            )
+            return await self.engine.acreate_group(name, description)
 
         @self.router.get("/get_group/{group_id}")
         @self.base_endpoint
         async def get_group_app(
-            group_id: uuid.UUID,
+            group_id: uuid.UUID = Path(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupResponse:
             if not auth_user.is_superuser:
@@ -253,30 +249,31 @@ class ManagementRouter(BaseRouter):
             print(result)
             return result
 
-        @self.router.put("/update_group/{group_id}")
+        @self.router.put("/update_group")
         @self.base_endpoint
         async def update_group_app(
-            group_id: uuid.UUID,
-            request: R2RUpdateGroupRequest,
+            group_id: uuid.UUID = Body(..., description="Group ID"),
+            name: Optional[str] = Body(None, description="Updated group name"),
+            description: Optional[str] = Body(
+                None, description="Updated group description"
+            ),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupResponse:
             if not auth_user.is_superuser:
                 raise R2RException("Only a superuser can update groups.", 403)
-            return await self.engine.aupdate_group(
-                group_id, request.name, request.description
-            )
+            return await self.engine.aupdate_group(group_id, name, description)
 
         @self.router.delete("/delete_group/{group_id}")
         @self.base_endpoint
         async def delete_group_app(
-            group_id: uuid.UUID,
+            group_id: uuid.UUID = Path(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupResponse:
             if not auth_user.is_superuser:
                 raise R2RException("Only a superuser can delete groups.", 403)
             return await self.engine.adelete_group(group_id)
 
-        @self.router.get("/list_groups/")
+        @self.router.get("/list_groups")
         @self.base_endpoint
         async def list_groups_app(
             offset: int = Query(0, ge=0),
@@ -292,39 +289,38 @@ class ManagementRouter(BaseRouter):
         @self.router.post("/add_user_to_group")
         @self.base_endpoint
         async def add_user_to_group_app(
-            request: R2RAddUserToGroupRequest,
+            user_id: uuid.UUID = Body(..., description="User ID"),
+            group_id: uuid.UUID = Body(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can add users to groups.", 403
                 )
-            return await self.engine.aadd_user_to_group(
-                request.user_id, request.group_id
-            )
+            return await self.engine.aadd_user_to_group(user_id, group_id)
 
         @self.router.post("/remove_user_from_group")
         @self.base_endpoint
         async def remove_user_from_group_app(
-            request: R2RRemoveUserFromGroupRequest,
+            user_id: uuid.UUID = Body(..., description="User ID"),
+            group_id: uuid.UUID = Body(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can remove users from groups.", 403
                 )
-            return await self.engine.aremove_user_from_group(
-                request.user_id, request.group_id
-            )
+            return await self.engine.aremove_user_from_group(user_id, group_id)
 
-        @self.router.get("/get_users_in_group/{group_id}")
+        # TODO - Proivde response model
+        @self.router.get("/get_users_in_group/{group_id}/{offset}/{limit}")
         @self.base_endpoint
         async def get_users_in_group_app(
-            group_id: uuid.UUID,
-            offset: int = 0,
-            limit: int = 100,
+            group_id: uuid.UUID = Path(..., description="Group ID"),
+            offset: int = Path(..., description="Offset"),
+            limit: int = Path(..., description="limit"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
-        ) -> WrappedUserOverviewResponse:
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can get users in a group.", 403
@@ -336,7 +332,7 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/get_groups_for_user/{user_id}")
         @self.base_endpoint
         async def get_groups_for_user_app(
-            user_id: uuid.UUID,
+            user_id: uuid.UUID = Path(..., description="User ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupListResponse:
             if not auth_user.is_superuser and auth_user.id != user_id:
@@ -349,7 +345,7 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/groups_overview")
         @self.base_endpoint
         async def groups_overview_app(
-            group_ids: Optional[list[uuid.UUID]],
+            group_ids: Optional[list[uuid.UUID]] = Query(None),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupOverviewResponse:
             if not auth_user.is_superuser:
@@ -363,16 +359,19 @@ class ManagementRouter(BaseRouter):
         @self.router.post("/score_completion")
         @self.base_endpoint
         async def score_completion(
-            request: R2RScoreCompletionRequest,
+            message_id: uuid.UUID = Body(..., description="Message ID"),
+            score: float = Body(..., description="Completion score"),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedScoreCompletionResponse:
             return await self.engine.ascore_completion(
-                message_id=request.message_id, score=request.score
+                message_id=message_id, score=score
             )
 
         @self.router.post("/assign_document_to_group")
         @self.base_endpoint
         async def assign_document_to_group_app(
-            request: R2RAssignDocumentToGroupRequest,
+            document_id: str = Body(..., description="Document ID"),
+            group_id: uuid.UUID = Body(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupResponse:
             if not auth_user.is_superuser:
@@ -380,13 +379,14 @@ class ManagementRouter(BaseRouter):
                     "Only a superuser can assign documents to groups.", 403
                 )
             return await self.engine.aassign_document_to_group(
-                request.document_id, request.group_id
+                document_id, group_id
             )
 
         @self.router.post("/remove_document_from_group")
         @self.base_endpoint
         async def remove_document_from_group_app(
-            request: R2RRemoveDocumentFromGroupRequest,
+            document_id: str = Body(..., description="Document ID"),
+            group_id: uuid.UUID = Body(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupResponse:
             if not auth_user.is_superuser:
@@ -394,13 +394,13 @@ class ManagementRouter(BaseRouter):
                     "Only a superuser can remove documents from groups.", 403
                 )
             return await self.engine.aremove_document_from_group(
-                request.document_id, request.group_id
+                document_id, group_id
             )
 
         @self.router.get("/get_document_groups/{document_id}")
         @self.base_endpoint
         async def get_document_groups_app(
-            document_id: str,
+            document_id: str = Path(..., description="Document ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupListResponse:
             return await self.engine.aget_document_groups(document_id)

@@ -7,26 +7,17 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.testclient import TestClient
 
-from r2r import (
-    CreateUserRequest,
-    R2RApp,
-    R2RBuilder,
-    R2RClient,
-    R2REngine,
-    R2RException,
-    Token,
-    UserResponse,
-)
+from r2r import R2RApp, R2RBuilder, R2RClient, R2REngine, Token, UserResponse
 from r2r.base import GroupResponse
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-def create_superuser(user_create: CreateUserRequest):
+def create_superuser(email: str, password: str):
     return UserResponse(
         id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
-        email=user_create.email,
-        hashed_password="hashed_" + user_create.password,
+        email=email,
+        hashed_password="hashed_" + password,
         is_active=True,
         is_superuser=True,
         is_verified=True,
@@ -60,7 +51,7 @@ def mock_db():
     )
     db.relational.create_user.side_effect = create_superuser
     db.relational.get_user_by_id.return_value = create_superuser(
-        CreateUserRequest(email="admin@example.com", password="adminpassword")
+        email="admin@example.com", password="adminpassword"
     )
 
     def mock_update_user(user):
@@ -160,7 +151,7 @@ def mock_db():
     def mock_groups_overview(group_ids):
         return [
             {
-                "id": str(uuid.uuid4()),
+                "group_id": str(uuid.uuid4()),
                 "name": f"Group {i}",
                 "description": f"Description {i}",
                 "created_at": datetime.utcnow(),
@@ -268,15 +259,10 @@ def user_id():
 
 @pytest.mark.asyncio
 async def test_user_profile(r2r_client, mock_db):
-    user_data = CreateUserRequest(
-        email="profile@example.com", password="password123"
-    ).dict()  # create_superuser(UserCreate(email="profile@example.com", password="password123")).dict()
-    r2r_client.register(**user_data)
-    r2r_client.login(**user_data)
+    r2r_client.register(email="profile@example.com", password="password123")
+    r2r_client.login(email="profile@example.com", password="password123")
 
-    updated_profile = r2r_client.update_user(
-        {"name": "John Doe", "bio": "Test bio"}
-    )
+    updated_profile = r2r_client.update_user(name="John Doe", bio="Test bio")
     assert updated_profile["results"]["name"] == "John Doe"
     assert updated_profile["results"]["bio"] == "Test bio"
 
@@ -298,7 +284,7 @@ async def test_get_group(r2r_client, mock_db, group_id):
     authenticate_superuser(r2r_client, mock_db)
     response = r2r_client.get_group(group_id)
     assert "results" in response
-    assert response["results"]["id"] == str(group_id)
+    assert response["results"]["group_id"] == str(group_id)
     assert response["results"]["name"] == "Test Group"
     mock_db.relational.get_group.assert_called_once_with(group_id)
 

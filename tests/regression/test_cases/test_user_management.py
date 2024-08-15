@@ -121,9 +121,7 @@ class TestUserManagement(BaseTest):
 
     def update_profile_test(self, client):
         try:
-            return client.update_user(
-                {"name": "John Doe", "bio": "R2R enthusiast"}
-            )
+            return client.update_user(name="John Doe", bio="R2R enthusiast")
         except Exception as e:
             return {"results": str(e)}
 

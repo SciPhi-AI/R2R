@@ -98,35 +98,10 @@ __all__ = [
     "Tool",
     "ToolResult",
     ## API
-    # Auth Requests
-    "CreateUserRequest",
-    "DeleteUserRequest",
-    "LoginRequest",
-    "LogoutRequest",
-    "PasswordChangeRequest",
-    "PasswordResetConfirmRequest",
-    "PasswordResetRequest",
-    "RefreshTokenRequest",
-    "UserPutRequest",
-    "VerifyEmailRequest",
     # Auth Responses
     "GenericMessageResponse",
     "TokenResponse",
     "UserResponse",
-    # Management Requests
-    "R2RUpdatePromptRequest",
-    "R2RDeleteRequest",
-    "R2RUsersOverviewRequest",
-    "R2RDocumentsOverviewRequest",
-    "R2RDocumentChunksRequest",
-    "R2RLogsRequest",
-    "R2RCreateGroupRequest",
-    "R2RUpdateGroupRequest",
-    "R2RAddUserToGroupRequest",
-    "R2RRemoveUserFromGroupRequest",
-    "R2RScoreCompletionRequest",
-    "R2RAssignDocumentToGroupRequest",
-    "R2RRemoveDocumentFromGroupRequest",
     ## LOGGING
     # Basic types
     "RunType",

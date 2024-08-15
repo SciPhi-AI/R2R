@@ -189,10 +189,11 @@ async def test_ingest_search_txt_file(app, user, logging_connection):
     run_info = await logging_connection.get_info_logs(run_type_filter="search")
 
     search_results = await app.asearch("who was aristotle?")
+    print("search results = ", search_results["vector_search_results"][0])
     assert len(search_results["vector_search_results"]) == 10
     assert (
         "was an Ancient Greek philosopher and polymath"
-        in search_results["vector_search_results"][0]["metadata"]["text"]
+        in search_results["vector_search_results"][0]["text"]
     )
 
     search_results = await app.asearch(
@@ -202,7 +203,7 @@ async def test_ingest_search_txt_file(app, user, logging_connection):
     assert len(search_results["vector_search_results"]) == 20
     assert (
         "was an Ancient Greek philosopher and polymath"
-        in search_results["vector_search_results"][0]["metadata"]["text"]
+        in search_results["vector_search_results"][0]["text"]
     )
     ## test stream
     response = await app.arag(
@@ -219,52 +220,6 @@ async def test_ingest_search_txt_file(app, user, logging_connection):
     assert "philosopher" in collector
     assert "polymath" in collector
     assert "Ancient" in collector
-
-
-@pytest.mark.parametrize("app", ["postgres"], indirect=True)
-@pytest.mark.asyncio
-async def test_ingest_search_then_delete(app, logging_connection):
-    # Ingest a document
-    await app.aingest_documents(
-        [
-            Document(
-                id=generate_id_from_label("doc_1"),
-                group_ids=[generate_id_from_label("group_1")],
-                user_id=generate_id_from_label("user_id"),
-                data="The quick brown fox jumps over the lazy dog.",
-                type=DocumentType.TXT,
-                metadata={"author": "John Doe"},
-            ),
-        ]
-    )
-
-    # Search for the document
-    search_results = await app.asearch("who was aristotle?")
-
-    # Verify that the search results are not empty
-    assert (
-        len(search_results["vector_search_results"]) > 0
-    ), "Expected search results, but got none"
-    assert (
-        search_results["vector_search_results"][0]["metadata"]["text"]
-        == "The quick brown fox jumps over the lazy dog."
-    )
-
-    # Delete the document
-    delete_result = await app.adelete(filters={"author": {"$eq": "John Doe"}})
-
-    # Verify the deletion was successful
-    assert (
-        len(delete_result) > 0
-    ), f"Expected at least one document to be deleted, but got {delete_result}"
-
-    # Search for the document again
-    search_results_2 = await app.asearch("who was aristotle?")
-
-    # Verify that the search results are empty
-    assert (
-        len(search_results_2["vector_search_results"]) == 0
-    ), f"Expected no search results, but got {search_results_2['vector_search_results']}"
 
 
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)
@@ -328,7 +283,7 @@ async def test_ingest_search_then_delete(app, logging_connection):
         len(search_results["vector_search_results"]) > 0
     ), "Expected search results, but got none"
     assert (
-        search_results["vector_search_results"][0]["metadata"]["text"]
+        search_results["vector_search_results"][0]["text"]
         == "The quick brown fox jumps over the lazy dog."
     )
 
