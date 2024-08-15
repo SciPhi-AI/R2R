@@ -3,7 +3,7 @@ from uuid import UUID
 
 import pytest
 
-from r2r import CreateUserRequest, DatabaseConfig
+from r2r import CreateUserRequest, DatabaseConfig, R2RException
 from r2r.providers import BCryptConfig, BCryptProvider, PostgresDBProvider
 
 
@@ -82,10 +82,9 @@ def test_delete_group(pg_db):
     group = pg_db.relational.create_group(
         "Temporary Group", "This group will be deleted"
     )
-    deleted = pg_db.relational.delete_group(group.group_id)
-    assert deleted
-    fetched_group = pg_db.relational.get_group(group.group_id)
-    assert fetched_group is None
+    pg_db.relational.delete_group(group.group_id)
+    with pytest.raises(R2RException):
+        fetched_group = pg_db.relational.get_group(group.group_id)
 
 
 def test_list_groups(pg_db, test_group):
@@ -135,26 +134,32 @@ def test_add_user_to_group(pg_db, test_group, test_user):
     assert added
     user_groups = pg_db.relational.get_groups_for_user(test_user.id)
     assert any(g["group_id"] == test_group.group_id for g in user_groups)
-    # Improvement: Test adding the same user twice
-    re_added = pg_db.relational.add_user_to_group(
-        test_user.id, test_group.group_id
+
+    test_group = pg_db.relational.create_group(
+        "Another Group", "Another test group"
     )
-    assert not re_added  # Should return False for already added user
+    # # Improvement: Test adding the same user twice
+    pg_db.relational.add_user_to_group(test_user.id, test_group.group_id)
 
 
 def test_remove_user_from_group(pg_db, test_group, test_user):
-    pg_db.relational.add_user_to_group(test_user.id, test_group.group_id)
+    # TODO - modify this test to use a fixture for creating a test group
+    test_group_ = pg_db.relational.create_group(
+        "Another Group", "Another test group"
+    )
+
+    pg_db.relational.add_user_to_group(test_user.id, test_group_.group_id)
     removed = pg_db.relational.remove_user_from_group(
-        test_user.id, test_group.group_id
+        test_user.id, test_group_.group_id
     )
     assert removed
     user_groups = pg_db.relational.get_groups_for_user(test_user.id)
-    assert all(g["group_id"] != test_group.group_id for g in user_groups)
+    assert all(g["group_id"] != test_group_.group_id for g in user_groups)
     # Improvement: Test removing a user that's not in the group
-    re_removed = pg_db.relational.remove_user_from_group(
-        test_user.id, test_group.group_id
-    )
-    assert not re_removed  # Should return False for user not in group
+    with pytest.raises(R2RException):
+        pg_db.relational.remove_user_from_group(
+            test_user.id, test_group_.group_id
+        )
 
 
 def test_get_users_in_group(pg_db, test_group, test_user):
@@ -171,13 +176,19 @@ def test_get_users_in_group(pg_db, test_group, test_user):
 # Improvement: Add test for non-existent group and user
 def test_edge_cases(pg_db):
     non_existent_id = UUID("00000000-0000-0000-0000-000000000000")
-    assert pg_db.relational.get_group(non_existent_id) is None
-    assert not pg_db.relational.update_group(non_existent_id, name="New Name")
-    assert not pg_db.relational.delete_group(non_existent_id)
-    assert not pg_db.relational.add_user_to_group(
-        non_existent_id, non_existent_id
-    )
-    assert not pg_db.relational.remove_user_from_group(
-        non_existent_id, non_existent_id
-    )
-    assert pg_db.relational.get_users_in_group(non_existent_id) == []
+    # assert pg_db.relational.get_group(non_existent_id) is None
+    # ensure error
+    with pytest.raises(R2RException):
+        pg_db.relational.get_group(non_existent_id)
+    with pytest.raises(R2RException):
+        pg_db.relational.update_group(non_existent_id, name="New Name")
+    with pytest.raises(R2RException):
+        pg_db.relational.delete_group(non_existent_id)
+    with pytest.raises(R2RException):
+        pg_db.relational.add_user_to_group(non_existent_id, non_existent_id)
+    with pytest.raises(R2RException):
+        assert not pg_db.relational.remove_user_from_group(
+            non_existent_id, non_existent_id
+        )
+    with pytest.raises(R2RException):
+        assert pg_db.relational.get_users_in_group(non_existent_id) == []

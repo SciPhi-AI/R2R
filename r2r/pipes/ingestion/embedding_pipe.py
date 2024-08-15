@@ -65,7 +65,6 @@ class EmbeddingPipe(AsyncPipe):
                 vector=Vector(data=raw_vector),
                 text=fragment.data,
                 metadata={
-                    "text": fragment.data,
                     **fragment.metadata,
                 },
             )

@@ -1,7 +1,7 @@
-from typing import Any, Dict, Generic, List, TypeVar
+from typing import Any, List, TypeVar
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from r2r.base.api.models.base import ResultsWrapper
 
@@ -19,9 +19,58 @@ class FailedDocument(BaseModel):
 
 
 class IngestionResponse(BaseModel):
-    processed_documents: List[ProcessedDocument]
-    failed_documents: List[FailedDocument]
-    skipped_documents: List[UUID]
+    processed_documents: List[ProcessedDocument] = Field(
+        ...,
+        description="List of successfully processed documents",
+        example=[
+            {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "title": "Document 1",
+            },
+            {
+                "id": "223e4567-e89b-12d3-a456-426614174000",
+                "title": "Document 2",
+            },
+        ],
+    )
+    failed_documents: List[FailedDocument] = Field(
+        ...,
+        description="List of documents that failed to process",
+        example=[
+            {
+                "document_id": "323e4567-e89b-12d3-a456-426614174000",
+                "result": "Error: Invalid format",
+            }
+        ],
+    )
+    skipped_documents: List[UUID] = Field(
+        ...,
+        description="List of document IDs that were skipped during processing",
+        example=["423e4567-e89b-12d3-a456-426614174000"],
+    )
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "processed_documents": [
+                    {
+                        "id": "123e4567-e89b-12d3-a456-426614174000",
+                        "title": "Document 1",
+                    },
+                    {
+                        "id": "223e4567-e89b-12d3-a456-426614174000",
+                        "title": "Document 2",
+                    },
+                ],
+                "failed_documents": [
+                    {
+                        "document_id": "323e4567-e89b-12d3-a456-426614174000",
+                        "result": "Error: Invalid format",
+                    }
+                ],
+                "skipped_documents": ["423e4567-e89b-12d3-a456-426614174000"],
+            }
+        }
 
 
 # Create wrapped version of the response

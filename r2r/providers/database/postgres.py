@@ -722,12 +722,11 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
         with self.vx.Session() as sess:
             result = sess.execute(query, {"group_id": group_id})
             group_data = result.fetchone()
-            print("group_data = ", group_data)
-        return (
-            GroupResponse(**dict(zip(result.keys(), group_data)))
-            if group_data
-            else None
-        )
+
+        if group_data:
+            return GroupResponse(**dict(zip(result.keys(), group_data)))
+        else:
+            raise R2RException("Group not found", status_code=404)
 
     def get_group_count(self) -> int:
         query = text(
@@ -760,14 +759,26 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             UPDATE groups_{self.collection_name}
             SET {", ".join(update_fields)}, updated_at = NOW()
             WHERE group_id = :group_id
+            RETURNING group_id, name, description, created_at, updated_at
             """
         )
         with self.vx.Session() as sess:
             result = sess.execute(query, params)
+            updated_group = result.fetchone()
             sess.commit()
-        return GroupResponse(**params)
 
-    def delete_group(self, group_id: UUID) -> bool:
+        if updated_group:
+            return GroupResponse(
+                group_id=updated_group[0],
+                name=updated_group[1],
+                description=updated_group[2],
+                created_at=updated_group[3],
+                updated_at=updated_group[4],
+            )
+        else:
+            raise R2RException("Group not found", status_code=404)
+
+    def delete_group(self, group_id: UUID) -> None:
         with self.vx.Session() as sess:
             try:
                 # Start a transaction
@@ -785,9 +796,9 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
                 )
 
                 if result.rowcount == 0:
-                    # Group not found, rollback and return False
+                    # Group not found, rollback and raise an exception
                     sess.rollback()
-                    return False
+                    raise R2RException("Group not found", status_code=404)
 
                 # Update users' group_ids
                 update_users_query = text(
@@ -812,13 +823,13 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
                 # Commit the transaction
                 sess.commit()
 
-                return True
-
             except Exception as e:
-                # If any error occurs, rollback the transaction
+                # If any error occurs, rollback the transaction and raise an exception
                 sess.rollback()
                 logger.error(f"Error deleting group: {e}")
-                return False
+                raise R2RException(
+                    f"Failed to delete group: {str(e)}", status_code=500
+                )
 
     def list_groups(self, offset: int = 0, limit: int = 100) -> list[dict]:
         query = text(
@@ -854,6 +865,10 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             if updated:
                 sess.commit()
                 return updated
+            else:
+                raise R2RException(
+                    "Either the user or group was not found", status_code=404
+                )
 
     def remove_user_from_group(self, user_id: UUID, group_id: UUID) -> bool:
         query = text(
@@ -871,7 +886,11 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
             updated = result.fetchone() is not None
             if updated:
                 sess.commit()
-            return updated
+                return updated
+            else:
+                raise R2RException(
+                    "Either the user or group was not found", status_code=404
+                )
 
     def get_users_in_group(
         self, group_id: UUID, offset: int = 0, limit: int = 100
@@ -891,20 +910,23 @@ class PostgresRelationalDBProvider(RelationalDBProvider):
                 query, {"group_id": group_id, "offset": offset, "limit": limit}
             )
             users_data = result.fetchall()
-        return [
-            UserResponse(
-                id=user_data[0],
-                email=user_data[1],
-                hashed_password="null",
-                is_superuser=user_data[2],
-                is_active=user_data[3],
-                is_verified=user_data[4],
-                created_at=user_data[5],
-                updated_at=user_data[6],
-                group_ids=user_data[7],
-            )
-            for user_data in users_data
-        ]
+        if users_data:
+            return [
+                UserResponse(
+                    id=user_data[0],
+                    email=user_data[1],
+                    hashed_password="null",
+                    is_superuser=user_data[2],
+                    is_active=user_data[3],
+                    is_verified=user_data[4],
+                    created_at=user_data[5],
+                    updated_at=user_data[6],
+                    group_ids=user_data[7],
+                )
+                for user_data in users_data
+            ]
+        else:
+            raise R2RException("No users found in the group", status_code=404)
 
     def get_groups_for_user(self, user_id: UUID) -> list[dict]:
         query = text(

@@ -47,8 +47,7 @@ def logout_form_to_request(
 class AuthRouter(BaseRouter):
     def __init__(self, engine: "R2REngine"):
         super().__init__(engine)
-        if self.engine.providers.auth:
-            self.setup_routes()
+        # self.setup_routes()
 
     def setup_routes(self):
         @self.router.post("/register", response_model=WrappedUserResponse)

@@ -31,8 +31,8 @@ class SampleDataIngestor:
             os.path.join(examples_dir, "data", "pg_essay_5.html"),
             os.path.join(examples_dir, "data", "lyft_2021.pdf"),
             os.path.join(examples_dir, "data", "uber_2021.pdf"),
-            os.path.join(examples_dir, "data", "sample.mp3"),
-            os.path.join(examples_dir, "data", "sample2.mp3"),
+            # os.path.join(examples_dir, "data", "sample.mp3"),
+            # os.path.join(examples_dir, "data", "sample2.mp3"),
         ]
         if no_media:
             excluded_types = ["jpeg", "jpg", "png", "svg", "mp3", "mp4"]

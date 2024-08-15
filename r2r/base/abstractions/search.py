@@ -9,10 +9,23 @@ from .llm import GenerationConfig
 
 
 class VectorSearchSettings(BaseModel):
-    use_vector_search: bool = True
-    filters: dict[str, Any] = Field(default_factory=dict)
-    search_limit: int = 10
-    do_hybrid_search: bool = False
+    use_vector_search: bool = Field(
+        default=True, description="Whether to use vector search"
+    )
+    filters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Filters to apply to the vector search",
+    )
+    search_limit: int = Field(
+        default=10,
+        description="Maximum number of results to return",
+        ge=1,
+        le=100,
+    )
+    do_hybrid_search: bool = Field(
+        default=False,
+        description="Whether to perform a hybrid search (combining vector and keyword search)",
+    )
 
 
 class VectorSearchResult(BaseModel):
@@ -44,6 +57,23 @@ class VectorSearchResult(BaseModel):
             "text": self.text,
             "metadata": self.metadata,
         }
+
+    class Config:
+        schema_extra = [
+            {
+                "fragment_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+                "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+                "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+                "group_ids": [],
+                "score": 0.23943702876567796,
+                "text": "Example text from the document",
+                "metadata": {
+                    "title": "example_document.pdf",
+                    "associatedQuery": "What is the capital of France?",
+                },
+            }
+        ]
 
 
 KGSearchResult = List[Tuple[str, List[Dict[str, Any]]]]

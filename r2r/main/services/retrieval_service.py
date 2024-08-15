@@ -18,6 +18,7 @@ from r2r.base import (
     manage_run,
     to_async_generator,
 )
+from r2r.base.api.models import RAGResponse, SearchResponse
 from r2r.base.api.models.auth.responses import UserResponse
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
@@ -56,7 +57,7 @@ class RetrievalService(Service):
         user: Optional[UserResponse] = None,
         *args,
         **kwargs,
-    ):
+    ) -> SearchResponse:
         async with manage_run(self.run_manager, "search_app") as run_id:
             t0 = time.time()
 
@@ -115,7 +116,7 @@ class RetrievalService(Service):
         user: Optional[UserResponse] = None,
         *args,
         **kwargs,
-    ):
+    ) -> RAGResponse:
         async with manage_run(self.run_manager, "rag_app") as run_id:
             try:
                 # TODO - Remove these transforms once we have a better way to handle this

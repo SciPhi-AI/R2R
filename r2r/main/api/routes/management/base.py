@@ -45,7 +45,7 @@ class ManagementRouter(BaseRouter):
     def __init__(self, engine: R2REngine):
         super().__init__(engine)
         self.start_time = datetime.now(timezone.utc)
-        self.setup_routes()
+        # self.setup_routes()
 
     def setup_routes(self):
         @self.router.get("/health")
@@ -152,10 +152,10 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/document_chunks")
         @self.base_endpoint
         async def document_chunks_app(
-            document_ids: list[uuid.UUID] = Query([]),
+            document_id: uuid.UUID = Query(...),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedDocumentChunkResponse:
-            chunks = await self.engine.adocument_chunks(document_ids)
+            chunks = await self.engine.adocument_chunks(document_id)
 
             if not chunks:
                 raise R2RException(

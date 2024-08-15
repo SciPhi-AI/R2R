@@ -5,7 +5,7 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any, Optional
 
-from fastapi import Form, UploadFile
+from fastapi import UploadFile
 
 from r2r.base import (
     Document,
@@ -19,13 +19,10 @@ from r2r.base import (
     increment_version,
     to_async_generator,
 )
+from r2r.base.api.models import IngestionResponse
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from ...base.api.models.auth.responses import UserResponse
-from ...base.api.models.ingestion.requests import (
-    R2RIngestFilesRequest,
-    R2RUpdateFilesRequest,
-)
 from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
 from ..assembly.config import R2RConfig
 from .base import Service
@@ -87,7 +84,6 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ):
-        print("IngestDocuments")
         if len(documents) == 0:
             raise R2RException(
                 status_code=400, message="No documents provided for ingestion."
@@ -156,8 +152,6 @@ class IngestionService(Service):
                     }
                 )
                 continue
-
-            print("gets here in ingest documents")
 
             now = datetime.now()
             document_info_metadata = document.metadata.copy()
@@ -234,8 +228,7 @@ class IngestionService(Service):
         versions: Optional[list[str]] = None,
         *args: Any,
         **kwargs: Any,
-    ):
-        print("IngestFiles")
+    ) -> IngestionResponse:
         if not files:
             raise R2RException(
                 status_code=400, message="No files provided for ingestion."
@@ -284,7 +277,7 @@ class IngestionService(Service):
         metadatas: Optional[list[dict]] = None,
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> IngestionResponse:
         print("UpdateFiles")
         if not files:
             raise R2RException(
@@ -295,7 +288,6 @@ class IngestionService(Service):
                 status_code=501,
                 message="Database provider is not available for updating documents.",
             )
-
         try:
             if len(document_ids) != len(files):
                 raise R2RException(
@@ -370,7 +362,7 @@ class IngestionService(Service):
         document_infos: list[DocumentInfo],
         skipped_documents: list[dict[str, str]],
     ):
-        skipped_ids = [ele[0] for ele in skipped_documents]
+        skipped_ids = [ele["id"] for ele in skipped_documents]
         failed_ids = []
         successful_ids = []
 
@@ -418,110 +410,3 @@ class IngestionService(Service):
         }
 
         return results
-
-    @staticmethod
-    def parse_ingest_files_form_data(
-        metadatas: Optional[str] = Form(None),
-        document_ids: str = Form(None),
-        versions: Optional[str] = Form(None),
-        chunking_config_override: Optional[str] = Form(None),
-    ) -> R2RIngestFilesRequest:
-        try:
-            parsed_metadatas = (
-                json.loads(metadatas)
-                if metadatas and metadatas != "null"
-                else None
-            )
-            if parsed_metadatas is not None and not isinstance(
-                parsed_metadatas, list
-            ):
-                raise ValueError("metadatas must be a list of dictionaries")
-
-            parsed_document_ids = (
-                json.loads(document_ids)
-                if document_ids and document_ids != "null"
-                else None
-            )
-            if parsed_document_ids is not None:
-                parsed_document_ids = [
-                    uuid.UUID(doc_id) for doc_id in parsed_document_ids
-                ]
-
-            parsed_versions = (
-                json.loads(versions)
-                if versions and versions != "null"
-                else None
-            )
-            chunking_config_override = (
-                json.loads(chunking_config_override)
-                if chunking_config_override
-                and chunking_config_override != "null"
-                else None
-            )
-            request_data = {
-                "metadatas": parsed_metadatas,
-                "document_ids": parsed_document_ids,
-                "versions": parsed_versions,
-                "chunking_config_override": chunking_config_override,
-            }
-            return R2RIngestFilesRequest(**request_data)
-        except json.JSONDecodeError as e:
-            raise R2RException(
-                status_code=400, message=f"Invalid JSON in form data: {e}"
-            )
-        except ValueError as e:
-            raise R2RException(status_code=400, message=str(e))
-        except Exception as e:
-            raise R2RException(
-                status_code=400, message=f"Error processing form data: {e}"
-            )
-
-    @staticmethod
-    def parse_update_files_form_data(
-        metadatas: Optional[str] = Form(None),
-        document_ids: str = Form(...),
-        chunking_config_override: Optional[str] = Form(None),
-    ) -> R2RUpdateFilesRequest:
-        try:
-            parsed_metadatas = (
-                json.loads(metadatas)
-                if metadatas and metadatas != "null"
-                else None
-            )
-            if parsed_metadatas is not None and not isinstance(
-                parsed_metadatas, list
-            ):
-                raise ValueError("metadatas must be a list of dictionaries")
-
-            if not document_ids or document_ids == "null":
-                raise ValueError("document_ids is required and cannot be null")
-
-            parsed_document_ids = json.loads(document_ids)
-            if not isinstance(parsed_document_ids, list):
-                raise ValueError("document_ids must be a list")
-            parsed_document_ids = [
-                uuid.UUID(doc_id) for doc_id in parsed_document_ids
-            ]
-            chunking_config_override = (
-                json.loads(chunking_config_override)
-                if chunking_config_override
-                and chunking_config_override != "null"
-                else None
-            )
-
-            request_data = {
-                "metadatas": parsed_metadatas,
-                "document_ids": parsed_document_ids,
-                "chunking_config_override": chunking_config_override,
-            }
-            return R2RUpdateFilesRequest(**request_data)
-        except json.JSONDecodeError as e:
-            raise R2RException(
-                status_code=400, message=f"Invalid JSON in form data: {e}"
-            )
-        except ValueError as e:
-            raise R2RException(status_code=400, message=str(e))
-        except Exception as e:
-            raise R2RException(
-                status_code=400, message=f"Error processing form data: {e}"
-            )

@@ -170,7 +170,9 @@ class R2RExecutionWrapper:
                         document_ids=document_ids,
                         metadatas=metadatas,
                         versions=versions,
-                    )["results"]
+                    )
+                    print("results = ", results)
+                    results["results"]
                 else:
                     results = self.app.ingest_files(
                         files=files,

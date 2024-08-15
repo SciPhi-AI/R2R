@@ -22,18 +22,9 @@ from r2r.base import (
 )
 
 from ...base.api.models.auth.requests import CreateUserRequest
-from ...base.api.models.ingestion.requests import (
-    R2RIngestFilesRequest,
-    R2RUpdateFilesRequest,
-)
 from ...base.api.models.management.requests import (
     R2RScoreCompletionRequest,
     R2RUpdatePromptRequest,
-)
-from ...base.api.models.retrieval.requests import (
-    R2RAgentRequest,
-    R2RRAGRequest,
-    R2RSearchRequest,
 )
 
 nest_asyncio.apply()
@@ -60,6 +51,33 @@ def handle_request_error(response):
             message = str(error_content)
     except json.JSONDecodeError:
         message = response.text
+
+    raise R2RException(
+        status_code=response.status_code,
+        message=message,
+    )
+
+
+async def handle_request_error_async(response):
+    if response.status_code < 400:
+        return
+
+    try:
+        if response.headers.get("content-type") == "application/json":
+            error_content = await response.json()
+        else:
+            error_content = await response.text()
+
+        if isinstance(error_content, dict) and "detail" in error_content:
+            detail = error_content["detail"]
+            if isinstance(detail, dict):
+                message = detail.get("message", str(error_content))
+            else:
+                message = str(detail)
+        else:
+            message = str(error_content)
+    except Exception:
+        message = await response.text()
 
     raise R2RException(
         status_code=response.status_code,
@@ -95,7 +113,7 @@ class R2RClient:
         params = {
             **params,
             **EMPTY_ARGS,
-        }  # TOOD - Why do we need the empty args?
+        }  # TODO - Why do we need the empty args?
         if isinstance(self.client, TestClient):
             response = getattr(self.client, method.lower())(
                 url, headers=headers, **kwargs, params=params
@@ -186,12 +204,9 @@ class R2RClient:
         self._ensure_authenticated()
 
         if isinstance(chunking_config_override, ChunkingConfig):
-            chunking_config_override = json.loads(
-                chunking_config_override.model_dump_json()
-            )
+            chunking_config_override = chunking_config_override.model_dump()
 
         all_file_paths = []
-
         for path in file_paths:
             if os.path.isdir(path):
                 for root, _, files in os.walk(path):
@@ -201,38 +216,37 @@ class R2RClient:
             else:
                 all_file_paths.append(path)
 
-        files_to_upload = [
-            (
-                "files",
+        with ExitStack() as stack:
+            files = [
                 (
-                    os.path.basename(file),
-                    open(file, "rb"),
-                    "application/octet-stream",
+                    "files",
+                    (
+                        os.path.basename(file),
+                        stack.enter_context(open(file, "rb")),
+                        "application/octet-stream",
+                    ),
+                )
+                for file in all_file_paths
+            ]
+
+            data = {
+                "metadatas": json.dumps(metadatas) if metadatas else None,
+                "document_ids": (
+                    json.dumps([str(doc_id) for doc_id in document_ids])
+                    if document_ids
+                    else None
                 ),
-            )
-            for file in all_file_paths
-        ]
-        request = R2RIngestFilesRequest(
-            metadatas=metadatas,
-            document_ids=(
-                [str(ele) for ele in document_ids] if document_ids else None
-            ),
-            versions=versions,
-            chunking_config_override=chunking_config_override,
-        )
-        try:
+                "versions": json.dumps(versions) if versions else None,
+                "chunking_config_override": (
+                    json.dumps(chunking_config_override)
+                    if chunking_config_override
+                    else None
+                ),
+            }
+
             return self._make_request(
-                "POST",
-                "ingest_files",
-                data={
-                    k: json.dumps(v)
-                    for k, v in json.loads(request.model_dump_json()).items()
-                },
-                files=files_to_upload,
+                "POST", "ingest_files", data=data, files=files
             )
-        finally:
-            for _, file_tuple in files_to_upload:
-                file_tuple[1].close()
 
     def update_files(
         self,
@@ -243,30 +257,36 @@ class R2RClient:
     ) -> dict:
         self._ensure_authenticated()
 
-        request = R2RUpdateFilesRequest(
-            metadatas=metadatas,
-            document_ids=[UUID(document_id) for document_id in document_ids],
-            chunking_config_override=chunking_config_override,
-        )
+        if isinstance(chunking_config_override, ChunkingConfig):
+            chunking_config_override = chunking_config_override.model_dump()
+
         with ExitStack() as stack:
-            return self._make_request(
-                "POST",
-                "update_files",
-                data={
-                    k: json.dumps(v)
-                    for k, v in json.loads(request.model_dump_json()).items()
-                },
-                files=[
+            files = [
+                (
+                    "files",
                     (
-                        "files",
-                        (
-                            path.split("/")[-1],
-                            stack.enter_context(open(path, "rb")),
-                            "application/octet-stream",
-                        ),
-                    )
-                    for path in file_paths
-                ],
+                        os.path.basename(path),
+                        stack.enter_context(open(path, "rb")),
+                        "application/octet-stream",
+                    ),
+                )
+                for path in file_paths
+            ]
+
+            data = {
+                "document_ids": json.dumps(
+                    [str(doc_id) for doc_id in document_ids]
+                ),
+                "metadatas": json.dumps(metadatas) if metadatas else None,
+                "chunking_config_override": (
+                    json.dumps(chunking_config_override)
+                    if chunking_config_override
+                    else None
+                ),
+            }
+
+            return self._make_request(
+                "POST", "update_files", data=data, files=files
             )
 
     def search(
@@ -278,27 +298,23 @@ class R2RClient:
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
     ) -> dict:
         self._ensure_authenticated()
-        if vector_search_settings and isinstance(
-            vector_search_settings, VectorSearchSettings
-        ):
-            vector_search_settings = json.loads(
-                vector_search_settings.model_dump_json()
-            )
-        if kg_search_settings and isinstance(
-            kg_search_settings, KGSearchSettings
-        ):
-            kg_search_settings = json.loads(
-                kg_search_settings.model_dump_json()
-            )
 
-        request = R2RSearchRequest(
-            query=query,
-            vector_search_settings=vector_search_settings,
-            kg_search_settings=kg_search_settings,
-        )
-        return self._make_request(
-            "POST", "search", json=json.loads(request.model_dump_json())
-        )
+        # Convert Pydantic models to dictionaries if necessary
+        if isinstance(vector_search_settings, VectorSearchSettings):
+            vector_search_settings = vector_search_settings.model_dump()
+        if isinstance(kg_search_settings, KGSearchSettings):
+            kg_search_settings = kg_search_settings.model_dump()
+
+        # Prepare the JSON payload
+        json_data = {
+            "query": query,
+            "vector_search_settings": vector_search_settings,
+            "kg_search_settings": kg_search_settings,
+        }
+
+        # Remove None values
+        json_data = {k: v for k, v in json_data.items() if v is not None}
+        return self._make_request("POST", "search", json=json_data)
 
     def rag(
         self,
@@ -309,63 +325,52 @@ class R2RClient:
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
         rag_generation_config: Optional[Union[dict, GenerationConfig]] = None,
         task_prompt_override: Optional[str] = None,
-        include_title_if_available: Optional[bool] = None,
     ) -> dict:
         self._ensure_authenticated()
 
+        # Convert Pydantic models to dictionaries if necessary
         if isinstance(vector_search_settings, VectorSearchSettings):
-            vector_search_settings = json.loads(
-                vector_search_settings.model_dump_json()
-            )
+            vector_search_settings = vector_search_settings.model_dump()
         if isinstance(kg_search_settings, KGSearchSettings):
-            kg_search_settings = json.loads(
-                kg_search_settings.model_dump_json()
-            )
+            kg_search_settings = kg_search_settings.model_dump()
         if isinstance(rag_generation_config, GenerationConfig):
-            rag_generation_config = json.loads(
-                rag_generation_config.model_dump_json()
-            )
+            rag_generation_config = rag_generation_config.model_dump()
 
-        request = R2RRAGRequest(
-            query=query,
-            vector_search_settings=vector_search_settings,
-            kg_search_settings=kg_search_settings,
-            rag_generation_config=rag_generation_config or {"stream": False},
-            task_prompt_override=task_prompt_override,
-            include_title_if_available=include_title_if_available,
-        )
+        # Prepare the JSON payload
+        json_data = {
+            "query": query,
+            "vector_search_settings": vector_search_settings,
+            "kg_search_settings": kg_search_settings,
+            "rag_generation_config": rag_generation_config,
+            "task_prompt_override": task_prompt_override,
+        }
+
+        # Remove None values
+        json_data = {k: v for k, v in json_data.items() if v is not None}
 
         if rag_generation_config and rag_generation_config.get(
             "stream", False
         ):
-            return self._stream_rag_sync(request)
+            return self._stream_rag_sync(json_data)
         else:
-            return self._make_request(
-                "POST", "rag", json=json.loads(request.model_dump_json())
-            )
+            return self._make_request("POST", "rag", json=json_data)
 
-    async def _stream_rag(
-        self, rag_request: R2RRAGRequest
-    ) -> AsyncGenerator[str, None]:
+    async def _stream_rag(self, rag_data: dict) -> AsyncGenerator[str, None]:
         url = f"{self.base_url}{self.prefix}/rag"
         async with httpx.AsyncClient() as client:
             async with client.stream(
                 "POST",
                 url,
-                json=json.loads(
-                    rag_request.model_dump_json(),
-                ),
+                json=rag_data,
                 timeout=self.timeout,
             ) as response:
-                handle_request_error(response)
+                await handle_request_error_async(response)
                 async for chunk in response.aiter_text():
                     yield chunk
 
-    def _stream_rag_sync(
-        self, rag_request: R2RRAGRequest
-    ) -> Generator[str, None, None]:
+    def _stream_rag_sync(self, rag_data: dict) -> Generator[str, None, None]:
         async def run_async_generator():
-            async for chunk in self._stream_rag(rag_request):
+            async for chunk in self._stream_rag(rag_data):
                 yield chunk
 
         loop = asyncio.new_event_loop()
@@ -390,60 +395,58 @@ class R2RClient:
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
         rag_generation_config: Optional[Union[dict, GenerationConfig]] = None,
         task_prompt_override: Optional[str] = None,
+        include_title_if_available: Optional[bool] = True,
     ) -> dict:
         self._ensure_authenticated()
 
+        # Convert Pydantic models to dictionaries if necessary
         if isinstance(vector_search_settings, VectorSearchSettings):
-            vector_search_settings = json.loads(
-                vector_search_settings.model_dump_json()
-            )
+            vector_search_settings = vector_search_settings.model_dump()
         if isinstance(kg_search_settings, KGSearchSettings):
-            kg_search_settings = json.loads(
-                kg_search_settings.model_dump_json()
-            )
+            kg_search_settings = kg_search_settings.model_dump()
         if isinstance(rag_generation_config, GenerationConfig):
-            rag_generation_config = json.loads(
-                rag_generation_config.model_dump_json()
-            )
-        request = R2RAgentRequest(
-            messages=messages,
-            vector_search_settings=vector_search_settings,
-            kg_search_settings=kg_search_settings,
-            rag_generation_config=rag_generation_config,
-            task_prompt_override=task_prompt_override,
-        )
+            rag_generation_config = rag_generation_config.model_dump()
+
+        # Prepare the JSON payload
+        json_data = {
+            "messages": messages,
+            "vector_search_settings": vector_search_settings,
+            "kg_search_settings": kg_search_settings,
+            "rag_generation_config": rag_generation_config,
+            "task_prompt_override": task_prompt_override,
+            "include_title_if_available": include_title_if_available,
+        }
+
+        # Remove None values
+        json_data = {k: v for k, v in json_data.items() if v is not None}
 
         if rag_generation_config and rag_generation_config.get(
             "stream", False
         ):
-            return self._stream_agent_sync(request)
+            return self._stream_agent_sync(json_data)
         else:
-            return self._make_request(
-                "POST", "agent", json=json.loads(request.model_dump_json())
-            )
+            return self._make_request("POST", "agent", json=json_data)
 
     async def _stream_agent(
-        self, rag_agent_request: R2RAgentRequest
+        self, agent_data: dict
     ) -> AsyncGenerator[str, None]:
         url = f"{self.base_url}{self.prefix}/agent"
         async with httpx.AsyncClient() as client:
             async with client.stream(
                 "POST",
                 url,
-                json=json.loads(
-                    rag_agent_request.model_dump_json(),
-                ),
+                json=agent_data,
                 timeout=self.timeout,
             ) as response:
-                handle_request_error(response)
+                await handle_request_error(response)
                 async for chunk in response.aiter_text():
                     yield chunk
 
     def _stream_agent_sync(
-        self, rag_agent_request: R2RAgentRequest
+        self, agent_data: dict
     ) -> Generator[str, None, None]:
         async def run_async_generator():
-            async for chunk in self._stream_agent(rag_agent_request):
+            async for chunk in self._stream_agent(agent_data):
                 yield chunk
 
         loop = asyncio.new_event_loop()
@@ -547,7 +550,13 @@ class R2RClient:
         return self._make_request(
             "GET",
             "documents_overview",
-            params={"document_ids": [str(ele) for ele in document_ids]},
+            params={
+                "document_ids": (
+                    [str(ele) for ele in document_ids]
+                    if document_ids
+                    else None
+                )
+            },
         )
 
     def document_chunks(self, document_id: str) -> dict:

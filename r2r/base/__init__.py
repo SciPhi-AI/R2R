@@ -82,9 +82,6 @@ __all__ = [
     "GenericMessageResponse",
     "TokenResponse",
     "UserResponse",
-    # Ingestion Requests
-    "R2RUpdateFilesRequest",
-    "R2RIngestFilesRequest",
     # Management Requests
     "R2RUpdatePromptRequest",
     "R2RDeleteRequest",
@@ -99,10 +96,6 @@ __all__ = [
     "R2RScoreCompletionRequest",
     "R2RAssignDocumentToGroupRequest",
     "R2RRemoveDocumentFromGroupRequest",
-    # Retrieval Requests
-    "R2RSearchRequest",
-    "R2RRAGRequest",
-    "R2RAgentRequest",
     ## LOGGING
     # Basic types
     "RunType",

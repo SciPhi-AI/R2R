@@ -42,10 +42,11 @@ def documents_overview(obj, document_ids):
 
 
 @cli.command()
-@click.argument("document_id")
+@click.argument("document-id")
 @click.pass_obj
 def document_chunks(obj, document_id):
     """Get chunks of a specific document."""
+    print(document_id)
     with timer():
         response = obj.document_chunks(document_id)
 

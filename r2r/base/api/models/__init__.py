@@ -11,7 +11,6 @@ from .auth.requests import (
     VerifyEmailRequest,
 )
 from .auth.responses import GenericMessageResponse, TokenResponse, UserResponse
-from .ingestion.requests import R2RIngestFilesRequest, R2RUpdateFilesRequest
 from .ingestion.responses import (
     FailedDocument,
     IngestionResponse,
@@ -62,10 +61,13 @@ from .management.responses import (
     WrappedServerStatsResponse,
     WrappedUserOverviewResponse,
 )
-from .retrieval.requests import (
-    R2RAgentRequest,
-    R2RRAGRequest,
-    R2RSearchRequest,
+from .retrieval.responses import (
+    RAGAgentResponse,
+    RAGResponse,
+    SearchResponse,
+    WrappedRAGAgentResponse,
+    WrappedRAGResponse,
+    WrappedSearchResponse,
 )
 
 __all__ = [
@@ -84,9 +86,6 @@ __all__ = [
     "GenericMessageResponse",
     "TokenResponse",
     "UserResponse",
-    # Ingestion Requests
-    "R2RUpdateFilesRequest",
-    "R2RIngestFilesRequest",
     # Ingestion Responses
     "ProcessedDocument",
     "FailedDocument",
@@ -134,8 +133,11 @@ __all__ = [
     "WrappedGroupResponse",
     "WrappedGroupListResponse",
     "WrappedGroupOverviewResponse",
-    # Retrieval Requests
-    "R2RSearchRequest",
-    "R2RRAGRequest",
-    "R2RAgentRequest",
+    # Retrieval Responses
+    "SearchResponse",
+    "RAGResponse",
+    "RAGAgentResponse",
+    "WrappedSearchResponse",
+    "WrappedRAGResponse",
+    "WrappedRAGAgentResponse",
 ]
