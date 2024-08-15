@@ -106,8 +106,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                         )
                 all_search_results.append(search_result)
     
-                import pdb; pdb.set_trace() 
-            yield (message, all_search_results)
+            yield message, all_search_results
 
     async def global_search(self,
         input: GeneratorPipe.Input,
@@ -124,7 +123,7 @@ class KGSearchSearchPipe(GeneratorPipe):
             async def preprocess_communities(communities):
                 merged_report = ""
                 for community in communities:
-                    community_report = community.attributes['community_report'].choices[0].message.content
+                    community_report = community.summary
                     if len(merged_report) + len(community_report) > kg_search_settings.max_community_description_length:
                         yield merged_report.strip()
                         merged_report = ""
@@ -170,7 +169,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             output = output.choices[0].message.content
 
-            yield (message, output)
+            yield message, [{'output': output}]
 
     async def _run_logic(
         self,

@@ -144,7 +144,6 @@ def search(
                 click.echo(result)
 
         if "kg_search_results" in results and results["kg_search_results"]:
-            import pdb; pdb.set_trace()
             click.echo("KG search results:")
             for result in results["kg_search_results"]:
                 click.echo(result)

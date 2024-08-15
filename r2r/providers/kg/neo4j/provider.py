@@ -250,11 +250,13 @@ class Neo4jKGProvider(KGProvider):
     def update_kg_search_prompt(self, prompt_provider: Any, entity_types: list[Any], relations: list[RelationshipType]) -> None:
         pass
 
-    def get_communities(self) -> List[Community]:
+    def get_communities(self, level: int = -1) -> List[Community]:
         """
         Get communities from the graph.
         """
-        return self.db_query(GET_COMMUNITIES_QUERY)
+        neo4j_records = self.structured_query(GET_COMMUNITIES_QUERY, {"level": level})
+        communities = [Community(**record['c']._properties) for record in neo4j_records.records]
+        return communities
     
 
     def delete_all_nodes(self):
@@ -341,7 +343,7 @@ class Neo4jKGProvider(KGProvider):
         
         neo4j_results = self.structured_query(query, query_params)
 
-        
+
         # get the descriptions from the neo4j results
         # descriptions = [record['e']._properties[property_name] for record in neo4j_results.records for property_name in property_names]
         # return descriptions, scores
