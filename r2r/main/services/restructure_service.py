@@ -8,7 +8,7 @@ from typing import Iterable
 
 
 logger = logging.getLogger(__name__)
-class KGService(Service):
+class RestructureService(Service):
     def __init__(
         self,
         config: R2RConfig,

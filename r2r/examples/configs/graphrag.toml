@@ -37,7 +37,7 @@ kg_store_path = "/Users/shreyas/r2rr2r/graph_data"
   add_generation_kwargs = { }
 
 # [kg]
-# provider = "neo4j"
+# provider = "local"
 # batch_size = 256
 # kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
 

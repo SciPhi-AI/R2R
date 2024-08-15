@@ -7,7 +7,7 @@ from .abstractions import R2RAgents, R2RPipelines, R2RProviders
 from .assembly.config import R2RConfig
 from .services.auth_service import AuthService
 from .services.ingestion_service import IngestionService
-from .services.kg_service import KGService
+from .services.restructure_service import RestructureService
 from .services.management_service import ManagementService
 from .services.retrieval_service import RetrievalService
 
@@ -40,7 +40,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
             logging_connection,
         )
 
-        self.kg_service = KGService(
+        self.kg_service = RestructureService(
             config,
             providers,
             pipelines,

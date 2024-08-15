@@ -2,7 +2,7 @@ from fastapi import Depends
 
 from r2r.main.api.routes.base_router import BaseRouter
 from r2r.main.engine import R2REngine
-from r2r.main.services.kg_service import KGService
+from r2r.main.services.restructure_service import RestructureService
 
 
 class KGRouter(BaseRouter):
