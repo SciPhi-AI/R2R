@@ -304,7 +304,7 @@ class R2RClient:
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
         rag_generation_config: Optional[Union[dict, GenerationConfig]] = None,
         task_prompt_override: Optional[str] = None,
-        include_title_if_available: Optional[bool] = None,
+        include_title_if_available: Optional[bool] = None
     ) -> dict:
         self._ensure_authenticated()
 

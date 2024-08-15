@@ -23,6 +23,7 @@ from r2r.base import (
     CompletionProvider,
     PromptProvider,
     GenerationConfig,
+    EmbeddingProvider,
 )
 from r2r.base.pipes.base_pipe import AsyncPipe
 
@@ -38,6 +39,7 @@ class KGClusteringPipe(AsyncPipe):
         kg_provider: KGProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
+        embedding_provider: EmbeddingProvider,
         cluster_batch_size: int = 100,
         max_cluster_size: int = 10,
         use_lcc: bool = True,
@@ -61,6 +63,7 @@ class KGClusteringPipe(AsyncPipe):
         self.max_cluster_size = max_cluster_size
         self.use_lcc = use_lcc
         self.prompt_provider = prompt_provider
+        self.embedding_provider = embedding_provider
 
     def _compute_leiden_communities(
         self,
@@ -104,7 +107,7 @@ class KGClusteringPipe(AsyncPipe):
 
         G = nx.Graph()
         for triple in triples:
-            G.add_edge(triple.subject, triple.object, weight=triple.weight, description=triple.description, id = triple.id, predicate=triple.predicate)
+            G.add_edge(triple.subject, triple.object, weight=triple.weight, description=triple.description, predicate=triple.predicate, id = f"{triple.subject}->{triple.predicate}->{triple.object}")
 
         hierarchical_communities = self._compute_leiden_communities(G)
 
@@ -152,10 +155,10 @@ class KGClusteringPipe(AsyncPipe):
             """
 
             entities_info = self.kg_provider.get_entities(community.entity_ids)
-            entities_info = "\n".join([f"{entity.id}, {entity.name}, {entity.description}" for entity in entities_info])
+            entities_info = "\n".join([f"{entity.name}, {entity.description}" for entity in entities_info])
 
             relationships_info = self.kg_provider.get_triples(community.relationship_ids)
-            relationships_info = "\n".join([f"{relationship.id}, {relationship.subject}, {relationship.object}, {relationship.predicate}, {relationship.description}" for relationship in relationships_info])
+            relationships_info = "\n".join([f"{relationship.subject}, {relationship.object}, {relationship.predicate}, {relationship.description}" for relationship in relationships_info])
 
             input_text = input_text.format(entities=entities_info, relationships=relationships_info)
 
@@ -171,10 +174,14 @@ class KGClusteringPipe(AsyncPipe):
                 )
             )
 
+            description = description.choices[0].message.content
+
             logger.info(f"Community description: {description}")
 
-            community.attributes['community_report'] = description
-
+            community.summary = description
+        
+            summary_embedding = await self.embedding_provider.async_get_embedding(community.summary)
+            community.summary_embedding = summary_embedding
             self.kg_provider.upsert_communities([community])
             return community
 
@@ -225,7 +232,7 @@ class KGClusteringPipe(AsyncPipe):
         async for node in input.message:
             all_nodes.append(node)
 
-        triples = self.kg_provider.get_triplets()
+        triples = self.kg_provider.get_triples()
         # create a networkx graph
 
         async for community in self.cluster_kg(triples):

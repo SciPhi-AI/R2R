@@ -17,11 +17,13 @@ from .graph_queries import (
     PUT_COMMUNITIES_QUERY, 
     PUT_COMMUNITIES_REPORT_QUERY,
     PUT_COVARIATES_QUERY,
+    GET_TRIPLES_BY_SUBJECT_AND_OBJECT_QUERY,
     GET_ENTITIES_QUERY,
     GET_TRIPLES_QUERY,
     GET_COMMUNITIES_QUERY,
     GET_COMMUNITIES_REPORT_QUERY,
-    GET_COVARIATES_QUERY
+    GET_COVARIATES_QUERY,
+    PUT_ENTITIES_EMBEDDINGS_QUERY
 )
 
 from r2r.base import (
@@ -121,6 +123,23 @@ class Neo4jKGProvider(KGProvider):
             for item in model_list
         ]
 
+    def get_entity_map(self, entity_names: list[str] | None = None) -> dict[str, list[Any]]:
+        entities = self.get(entity_names)
+        triples = self.get_triples(entity_names)
+        entity_map = {}
+        for entity in entities:
+            if entity.name not in entity_map:
+                entity_map[entity.name] = {'entities': [], 'triples': []}
+            entity_map[entity.name]['entities'].append(entity)
+
+        for triple in triples:
+            if triple.subject in entity_map:
+                entity_map[triple.subject]['triples'].append(triple)
+            if triple.object in entity_map:
+                entity_map[triple.object]['triples'].append(triple)    
+        return entity_map
+
+
     def batched_import(self, statement, df, batch_size=1000):
         """
         Import a dataframe into Neo4j using a batched approach.
@@ -151,11 +170,14 @@ class Neo4jKGProvider(KGProvider):
         return self.batched_import(PUT_CHUNKS_QUERY, chunks)
 
         # create constraints, idempotent operation
-    def upsert_entities(self, entities: List[Entity]):
+    def upsert_entities(self, entities: List[Entity], with_embeddings: bool = False):
         """
         Upsert entities into the graph.
         """
-        return self.batched_import(PUT_ENTITIES_QUERY, entities)
+        if with_embeddings:
+            return self.batched_import(PUT_ENTITIES_EMBEDDINGS_QUERY, entities)
+        else:
+            return self.batched_import(PUT_ENTITIES_QUERY, entities)
 
     def upsert_triples(self, triples: List[Triple]):
         """
@@ -176,7 +198,7 @@ class Neo4jKGProvider(KGProvider):
         Get entities from the graph.
         """
         neo4j_records = self.structured_query(GET_ENTITIES_QUERY, {"entity_ids": entity_ids})
-        entities = [Entity(**record['e']._properties) for record in neo4j_records.records]
+        entities = [Entity(category = ", ".join(list(record['e']._labels)[1:]), **record['e']._properties) for record in neo4j_records.records]
         return entities
     
 
@@ -197,16 +219,26 @@ class Neo4jKGProvider(KGProvider):
         """
         Get entities from the graph.
         """
-        return self.db_query(GET_ENTITIES_QUERY, entity_name)
+        if entity_name is None:
+            return self.get_entities()
+        else:
+            return self.get_entities(entity_ids=[entity_name])
     
     def get_triples(self, triple_ids: list[str] | None = None) -> list[Triple]:
         """
         Get triples from the graph.
         """
-        neo4j_records = self.structured_query(GET_TRIPLES_QUERY, {"triple_ids": triple_ids})
-        triples = [Triple(subject=record['e1']._properties['value'],
+
+        if triple_ids is None:
+            neo4j_records = self.structured_query(GET_TRIPLES_QUERY)
+        else:
+            triple_ids = [triple_id.split('->') for triple_id in triple_ids]
+            triple_ids = [{'subject': triple_id[0], 'predicate': triple_id[1], 'object': triple_id[2]} for triple_id in triple_ids]
+            neo4j_records = self.structured_query(GET_TRIPLES_BY_SUBJECT_AND_OBJECT_QUERY, {"triples": triple_ids})
+
+        triples = [Triple(subject=record['e1']._properties['name'],
                           predicate=record['rel'].type,
-                          object=record['e2']._properties['value'],
+                          object=record['e2']._properties['name'],
                           **record['rel']._properties)
                    for record in neo4j_records.records]
         return triples
@@ -261,7 +293,7 @@ class Neo4jKGProvider(KGProvider):
     
 
     def retrieve_cache(self, cache_type: str, cache_id: str) -> bool:
-        return super().retrieve_cache(cache_type, cache_id)
+        return False
     
 
     def vector_query(self, query, **kwargs: Any) -> Tuple[list[Entity], list[float]]:

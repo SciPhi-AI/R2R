@@ -522,11 +522,11 @@ class R2RPipeFactory:
     
     def create_kg_node_description_pipe(self, *args, **kwargs) -> Any:
         from r2r.pipes import KGNodeDescriptionPipe
-        return KGNodeDescriptionPipe(kg_provider=self.providers.kg, llm_provider=self.providers.llm, prompt_provider = self.providers.prompt)
+        return KGNodeDescriptionPipe(kg_provider=self.providers.kg, llm_provider=self.providers.llm, prompt_provider = self.providers.prompt, embedding_provider = self.providers.embedding)
     
     def create_kg_clustering_pipe(self, *args, **kwargs) -> Any:
         from r2r.pipes import KGClusteringPipe
-        return KGClusteringPipe(kg_provider=self.providers.kg, llm_provider=self.providers.llm, prompt_provider = self.providers.prompt)
+        return KGClusteringPipe(kg_provider=self.providers.kg, llm_provider=self.providers.llm, prompt_provider = self.providers.prompt, embedding_provider = self.providers.embedding)
 
 class R2RPipelineFactory:
     def __init__(self, config: R2RConfig, pipes: R2RPipes):

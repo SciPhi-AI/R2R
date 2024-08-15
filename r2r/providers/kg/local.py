@@ -129,7 +129,7 @@ class LocalKGProvider(KGProvider):
         # values contain dictionary of entities and triples
 
         entities = self.get(entity_names)
-        triples = self.get_triplets(entity_names)
+        triples = self.get_triples(entity_names)
         entity_map = {}
         for entity in entities:
             if entity.id not in entity_map:
@@ -175,7 +175,7 @@ class LocalKGProvider(KGProvider):
         # values contain dictionary of entities and triples
 
         entities = self.get(entity_names)
-        triples = self.get_triplets(entity_names)
+        triples = self.get_triples(entity_names)
         entity_map = {}
         for entity in entities:
             if entity.id not in entity_map:
@@ -189,7 +189,7 @@ class LocalKGProvider(KGProvider):
                 entity_map[triple.object]['triples'].append(triple)
         return entity_map
 
-    def get_triplets(self, entity_names: List[str] = None) -> List[Triple]:
+    def get_triples(self, entity_names: List[str] = None) -> List[Triple]:
         triples = []
         for triple_id in os.listdir(self.paths['triples']):
             filepath = os.path.join(self.paths['triples'], triple_id)

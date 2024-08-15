@@ -33,100 +33,96 @@ MERGE (d:__Document__ {id:value.document_id})
 MERGE (n)-[:PART_OF_DOCUMENT]->(d)
 """
 
-# id: str
-# category: str
-# subcategory: Optional[str] = None
-# value: str
-# description: Optional[str] = None
-# description_embedding: list[float] = None
-# name_embedding: list[float] = None
-# graph_embedding: list[float] = None
-# community_ids: list[str] = None
-# text_unit_ids: list[str] = None
-# document_ids: list[str] = None
-# rank: int | None = 1
-# attributes: dict[str, Any] = None
-
-# def __str__(self):
-#     return (
-#         f"{self.category}:{self.subcategory}:{self.value}"
-#         if self.subcategory
-#         else f"{self.category}:{self.value}"
-#     )
-
+# searching by entity_name
 GET_ENTITIES_QUERY = """
 MATCH (e:__Entity__)
-WHERE size($entity_ids) = 0 OR e.id IN $entity_ids
+WHERE size($entity_ids) = 0 OR e.name IN $entity_ids
 RETURN e
 """
 
 PUT_ENTITIES_QUERY = """
-CALL apoc.merge.node(['__Entity__', value.category], {name: value.name, id: value.id}) YIELD node as e
-SET e += value {.description, .rank, .attributes}
-WITH e, value
+WITH value, apoc.text.capitalize(value.category) AS upperCamelCategory
+MERGE (e:__Entity__ {name: value.name})
+ON CREATE SET e:__Entity__
+ON MATCH SET e:__Entity__
+WITH e, upperCamelCategory, value
+CALL apoc.create.addLabels(e, [upperCamelCategory]) YIELD node
+SET node.description = CASE 
+    WHEN node.description IS NULL THEN value.description
+    ELSE node.description + '\n\n' + value.description
+END,
+node.rank = CASE
+    WHEN node.rank IS NULL THEN value.rank
+    ELSE CASE WHEN value.rank > node.rank THEN value.rank ELSE node.rank END
+END,
+node.attributes = CASE
+    WHEN node.attributes IS NULL THEN value.attributes
+    ELSE node.attributes + '\n\n' + value.attributes
+END
+WITH node as e, value
 UNWIND value.text_unit_ids AS text_unit
 MATCH (c:__Chunk__ {id:text_unit})
 MERGE (e)-[:APPEARS_IN_CHUNK]->(c)
 WITH e, value
 UNWIND value.document_ids AS document_id
-MERGE (d:__Document__ {id:document_id})
+MATCH (d:__Document__ {id:document_id})
 MERGE (e)-[:APPEARS_IN_DOCUMENT]->(d)
 WITH e, value
 UNWIND value.community_ids AS community_id
-MERGE (comm:__Community__ {community:community_id})
+MATCH (comm:__Community__ {community:community_id})
 MERGE (e)-[:BELONGS_TO_COMMUNITY]->(comm)
 """
 
-# class Triple(BaseModel):
-#     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
+# use this after PUT_ENTITIES_QUERY when you have embeddings. 
+PUT_ENTITIES_EMBEDDINGS_QUERY = """
+MATCH (e:__Entity__ {name: value.name})
+SET e += value {.description}
+WITH e, value
+CALL db.create.setNodeVectorProperty(e, "name_embedding", value.name_embedding)
+CALL db.create.setNodeVectorProperty(e, "description_embedding", value.description_embedding)
+"""
 
-#     id: str
-
-#     subject: str | None = None
-#     """The source entity name."""
-
-#     predicate: str | None = None
-#     """A description of the relationship (optional)."""
-
-#     object: str | None = None
-#     """The target entity name."""
-
-#     subject_id: str | None = None
-#     """The source entity id."""
-
-#     object_id: str | None = None
-#     """The target entity ids."""
-
-#     weight: float | None = 1.0
-#     """The edge weight."""
-
-#     description: str | None = None
-#     """A description of the relationship (optional)."""
-
-#     predicate_embedding: list[float] | None = None
-#     """The semantic embedding for the relationship description (optional)."""
-
-#     text_unit_ids: list[str] | None = None
-#     """List of text unit IDs in which the relationship appears (optional)."""
-
-#     document_ids: list[str] | None = None
-#     """List of document IDs in which the relationship appears (optional)."""
-
-#     attributes: dict[str, Any] | None = None
-#     """Additional attributes associated with the relationship (optional). To be included in the search prompt"""
-
-
+## get triples by subject and object
 GET_TRIPLES_QUERY = """
-MATCH (e1)-[rel]->(e2)
-RETURN e1, rel, e2
+    MATCH (e1)-[rel]->(e2)
+    RETURN e1, rel, e2
+"""
+
+GET_TRIPLES_BY_SUBJECT_AND_OBJECT_QUERY = """
+UNWIND $triples AS triple
+    MATCH (e1:__Entity__)-[rel]->(e2:__Entity__)
+    WHERE e1.name = triple.subject 
+      AND e2.name = triple.object
+      AND type(rel) = triple.predicate
+    RETURN e1, rel, e2
 """
 
 PUT_TRIPLES_QUERY = """
+WITH value, apoc.text.capitalize(value.predicate) AS upperCamelPredicate
 MATCH (source:__Entity__ {name: value.subject})
 MATCH (target:__Entity__ {name: value.object})
-WITH source, target, value
-CALL apoc.merge.relationship(source, value.predicate, {}, {}, target) YIELD rel
-SET rel += value {.weight, .description, .subject_id, .object_id, .attributes, .text_unit_ids, .document_ids}
+WITH source, target, value, upperCamelPredicate
+CALL apoc.merge.relationship(source, upperCamelPredicate, {}, {}, target) YIELD rel
+SET rel.weight = CASE 
+    WHEN rel.weight IS NULL THEN value.weight 
+    ELSE CASE WHEN value.weight > rel.weight THEN value.weight ELSE rel.weight END
+END,
+rel.description = CASE 
+    WHEN rel.description IS NULL THEN value.description
+    ELSE rel.description + '\n\n' + value.description
+END,
+rel.attributes = CASE
+    WHEN rel.attributes IS NULL THEN value.attributes
+    ELSE rel.attributes + '\n\n' + value.attributes
+END,
+rel.text_unit_ids = CASE 
+    WHEN rel.text_unit_ids IS NULL THEN value.text_unit_ids
+    ELSE rel.text_unit_ids + value.text_unit_ids
+END,
+rel.document_ids = CASE 
+    WHEN rel.document_ids IS NULL THEN value.document_ids
+    ELSE rel.document_ids + value.document_ids
+END
 WITH rel, value
 RETURN count(*) as createdRels
 """
@@ -138,19 +134,10 @@ RETURN c
 
 PUT_COMMUNITIES_QUERY = """
 MERGE (c:__Community__ {community:value.id})
-SET c += value {.level, .title}
-/*
-UNWIND value.text_unit_ids as text_unit_id
-MATCH (t:__Chunk__ {id:text_unit_id})
-MERGE (c)-[:HAS_CHUNK]->(t)
-WITH distinct c, value
-*/
-WITH *
-UNWIND value.relationship_ids as rel_id
-MATCH (start:__Entity__)-[:RELATED {id:rel_id}]->(end:__Entity__)
-MERGE (start)-[:IN_COMMUNITY]->(c)
-MERGE (end)-[:IN_COMMUNITY]->(c)
-RETURN count(distinct c) as createdCommunities
+SET c += value {.level, .rank, .summary}
+WITH c, value
+CALL db.create.setNodeVectorProperty(c, "summary_embedding", value.summary_embedding)
+RETURN count(*) as createdCommunities
 """
 
 GET_COMMUNITIES_REPORT_QUERY = """

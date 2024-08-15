@@ -485,7 +485,7 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
         communities = np.load("/Users/shreyas/r2rr2r/communities.npy")
         return communities
 
-    def get_triplets(
+    def get_triples(
         self,
         entity_names: Optional[List[str]] = None,
         relation_names: Optional[List[str]] = None,

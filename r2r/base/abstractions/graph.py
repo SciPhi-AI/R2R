@@ -40,7 +40,6 @@ class RelationshipType(BaseModel):
 class Entity(BaseModel):
     """An entity extracted from a document."""
 
-    id: str
     category: str
     name: str
     description: Optional[str] = None
@@ -51,7 +50,7 @@ class Entity(BaseModel):
     text_unit_ids: list[str] = None
     document_ids: list[str] = None
     rank: int | None = 1
-    attributes: dict[str, Any] = None
+    attributes: dict[str, Any] | str = None
 
     def __str__(self):
         return (
@@ -63,12 +62,14 @@ class Entity(BaseModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if isinstance(self.attributes, str):
-            self.attributes = json.loads(self.attributes)
+            try:
+                self.attributes = json.loads(self.attributes)
+            except Exception as e:
+                logger.error(f"Error loading attributes: {e}")
+                pass
 
 class Triple(BaseModel):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
-
-    id: str
 
     subject: str | None = None
     """The source entity name."""
@@ -78,12 +79,6 @@ class Triple(BaseModel):
 
     object: str | None = None
     """The target entity name."""
-
-    subject_id: str | None = None
-    """The source entity id."""
-
-    object_id: str | None = None
-    """The target entity ids."""
 
     weight: float | None = 1.0
     """The edge weight."""
@@ -142,8 +137,11 @@ class Triple(BaseModel):
 
 
 @dataclass
-class Community(Named):
+class Community(BaseModel):
     """A protocol for a community in the system."""
+
+    id: str
+    """The ID of the community."""
 
     level: str = ""
     """Community level."""
@@ -159,6 +157,22 @@ class Community(Named):
 
     attributes: dict[str, Any] | None = None
     """A dictionary of additional attributes associated with the community (optional). To be included in the search prompt."""
+
+    summary: str = ""
+    """Summary of the report."""
+
+    full_content: str = ""
+    """Full content of the report."""
+
+    rank: float | None = 1.0
+    """Rank of the report, used for sorting (optional). Higher means more important"""
+
+    summary_embedding: list[float] | None = None
+    """The semantic (i.e. text) embedding of the report summary (optional)."""
+
+    full_content_embedding: list[float] | None = None
+    """The semantic (i.e. text) embedding of the full report content (optional)."""
+
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -248,7 +262,6 @@ class CommunityReport(Named):
             full_content_embedding=d.get(full_content_embedding_key),
             attributes=d.get(attributes_key),
         )
-    
 
 
 @dataclass
