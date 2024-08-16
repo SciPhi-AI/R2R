@@ -12,7 +12,6 @@ from r2r.cli.commands import (
 cli.add_command(server_operations.docker_down)
 cli.add_command(server_operations.generate_report)
 cli.add_command(server_operations.health)
-cli.add_command(server_operations.migrate)
 cli.add_command(server_operations.serve)
 cli.add_command(server_operations.update)
 cli.add_command(server_operations.version)

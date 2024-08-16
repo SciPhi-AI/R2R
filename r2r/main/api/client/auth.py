@@ -6,7 +6,6 @@ from r2r.base.api.models.auth.responses import UserResponse
 
 
 class AuthMethods:
-
     @staticmethod
     async def register(client, email: str, password: str) -> UserResponse:
         data = {"email": email, "password": password}
