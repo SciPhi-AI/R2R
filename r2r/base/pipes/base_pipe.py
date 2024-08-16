@@ -7,7 +7,7 @@ from typing import Any, AsyncGenerator, Optional
 
 from pydantic import BaseModel
 
-from r2r.base.logging.kv_logger import KVLoggingSingleton
+from r2r.base.logging.run_logger import RunLoggingSingleton
 from r2r.base.logging.run_manager import RunManager, manage_run
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 class PipeType(Enum):
     INGESTOR = "ingestor"
-    EVAL = "eval"
     GENERATOR = "generator"
     SEARCH = "search"
     TRANSFORM = "transform"
@@ -89,12 +88,12 @@ class AsyncPipe:
         self,
         type: PipeType = PipeType.OTHER,
         config: Optional[PipeConfig] = None,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         run_manager: Optional[RunManager] = None,
     ):
         self._config = config or self.PipeConfig()
         self._type = type
-        self.pipe_logger = pipe_logger or KVLoggingSingleton()
+        self.pipe_logger = pipe_logger or RunLoggingSingleton()
         self.log_queue = asyncio.Queue()
         self.log_worker_task = None
         self._run_manager = run_manager or RunManager(self.pipe_logger)

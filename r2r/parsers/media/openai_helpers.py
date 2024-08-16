@@ -55,4 +55,4 @@ def process_audio_with_openai(
     )
     transcription = transcription_response.json()
 
-    return transcription["text"]
+    return transcription.text

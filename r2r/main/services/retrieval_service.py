@@ -8,18 +8,18 @@ from r2r.base import (
     CompletionRecord,
     GenerationConfig,
     KGSearchSettings,
-    KVLoggingSingleton,
     Message,
     MessageType,
     R2RException,
+    RunLoggingSingleton,
     RunManager,
-    User,
     VectorSearchSettings,
     generate_id_from_label,
     manage_run,
     to_async_generator,
 )
-from r2r.pipes import EvalPipe
+from r2r.base.api.models import RAGResponse, SearchResponse
+from r2r.base.api.models.auth.responses import UserResponse
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
@@ -37,7 +37,7 @@ class RetrievalService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: KVLoggingSingleton,
+        logging_connection: RunLoggingSingleton,
     ):
         super().__init__(
             config,
@@ -54,10 +54,10 @@ class RetrievalService(Service):
         query: str,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
-        user: Optional[User] = None,
+        user: Optional[UserResponse] = None,
         *args,
         **kwargs,
-    ):
+    ) -> SearchResponse:
         async with manage_run(self.run_manager, "search_app") as run_id:
             t0 = time.time()
 
@@ -80,18 +80,15 @@ class RetrievalService(Service):
                 )
 
             # TODO - Remove these transforms once we have a better way to handle this
-            for filter, value in vector_search_settings.search_filters.items():
+            for filter, value in vector_search_settings.filters.items():
                 if isinstance(value, uuid.UUID):
-                    vector_search_settings.search_filters[filter] = str(value)
-            if user and not user.is_superuser:
-                vector_search_settings.search_filters["user_id"] = str(user.id)
+                    vector_search_settings.filters[filter] = str(value)
 
             results = await self.pipelines.search_pipeline.run(
                 input=to_async_generator([query]),
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
                 run_manager=self.run_manager,
-                user=user,
                 *args,
                 **kwargs,
             )
@@ -100,10 +97,9 @@ class RetrievalService(Service):
             latency = f"{t1 - t0:.2f}"
 
             await self.logging_connection.log(
-                log_id=run_id,
+                run_id=run_id,
                 key="search_latency",
                 value=latency,
-                is_info_log=False,
             )
 
             return results.dict()
@@ -115,26 +111,19 @@ class RetrievalService(Service):
         rag_generation_config: GenerationConfig,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
-        user: Optional[User] = None,
+        user: Optional[UserResponse] = None,
         *args,
         **kwargs,
-    ):
+    ) -> RAGResponse:
         async with manage_run(self.run_manager, "rag_app") as run_id:
             try:
                 # TODO - Remove these transforms once we have a better way to handle this
                 for (
                     filter,
                     value,
-                ) in vector_search_settings.search_filters.items():
+                ) in vector_search_settings.filters.items():
                     if isinstance(value, uuid.UUID):
-                        vector_search_settings.search_filters[filter] = str(
-                            value
-                        )
-
-                if user and not user.is_superuser:
-                    vector_search_settings.search_filters["user_id"] = str(
-                        user.id
-                    )
+                        vector_search_settings.filters[filter] = str(value)
 
                 completion_start_time = datetime.now()
                 message_id = generate_id_from_label(
@@ -160,13 +149,6 @@ class RetrievalService(Service):
                         *args,
                         **kwargs,
                     )
-
-                await self.logging_connection.log(
-                    log_id=run_id,
-                    key="run_type",
-                    value="rag",
-                    is_info_log=True,
-                )
 
                 results = await self.pipelines.rag_pipeline.run(
                     input=to_async_generator([query]),
@@ -200,10 +182,9 @@ class RetrievalService(Service):
                 completion_record.completion_end_time = datetime.now()
 
                 await self.logging_connection.log(
-                    log_id=run_id,
+                    run_id=run_id,
                     key="completion_record",
                     value=completion_record.to_json(),
-                    is_info_log=False,
                 )
 
                 # unpack the first result
@@ -243,7 +224,6 @@ class RetrievalService(Service):
                     kg_search_settings=kg_search_settings,
                     rag_generation_config=rag_generation_config,
                     completion_record=completion_record,
-                    user=user,
                     *args,
                     **kwargs,
                 ):
@@ -258,7 +238,7 @@ class RetrievalService(Service):
         rag_generation_config: GenerationConfig,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
-        user: Optional[User] = None,
+        user: Optional[UserResponse] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
         *args,
@@ -272,26 +252,18 @@ class RetrievalService(Service):
                 for (
                     filter,
                     value,
-                ) in vector_search_settings.search_filters.items():
+                ) in vector_search_settings.filters.items():
                     if isinstance(value, uuid.UUID):
-                        vector_search_settings.search_filters[filter] = str(
-                            value
-                        )
-
-                if user and not user.is_superuser:
-                    vector_search_settings.search_filters["user_id"] = str(
-                        user.id
-                    )
+                        vector_search_settings.filters[filter] = str(value)
 
                 if rag_generation_config.stream:
                     t1 = time.time()
                     latency = f"{t1 - t0:.2f}"
 
                     await self.logging_connection.log(
-                        log_id=run_id,
+                        run_id=run_id,
                         key="rag_agent_generation_latency",
                         value=latency,
-                        is_info_log=False,
                     )
 
                     async def stream_response():
@@ -305,7 +277,6 @@ class RetrievalService(Service):
                                 kg_search_settings=kg_search_settings,
                                 rag_generation_config=rag_generation_config,
                                 include_title_if_available=include_title_if_available,
-                                user=user,
                                 *args,
                                 **kwargs,
                             ):
@@ -320,7 +291,6 @@ class RetrievalService(Service):
                     kg_search_settings=kg_search_settings,
                     rag_generation_config=rag_generation_config,
                     include_title_if_available=include_title_if_available,
-                    user=user,
                     *args,
                     **kwargs,
                 )
@@ -328,10 +298,9 @@ class RetrievalService(Service):
                 latency = f"{t1 - t0:.2f}"
 
                 await self.logging_connection.log(
-                    log_id=run_id,
+                    run_id=run_id,
                     key="rag_agent_generation_latency",
                     value=latency,
-                    is_info_log=False,
                 )
                 return results
 
@@ -345,27 +314,3 @@ class RetrievalService(Service):
                 raise R2RException(
                     status_code=500, message="Internal Server Error"
                 )
-
-    @telemetry_event("Evaluate")
-    async def evaluate(
-        self,
-        query: str,
-        context: str,
-        completion: str,
-        eval_generation_config: Optional[GenerationConfig],
-        user: Optional[User] = None,
-        *args,
-        **kwargs,
-    ):
-        eval_payload = EvalPipe.EvalPayload(
-            query=query,
-            context=context,
-            completion=completion,
-        )
-        return await self.eval_pipeline.run(
-            input=to_async_generator([eval_payload]),
-            run_manager=self.run_manager,
-            eval_generation_config=eval_generation_config,
-            *args,
-            **kwargs,
-        )

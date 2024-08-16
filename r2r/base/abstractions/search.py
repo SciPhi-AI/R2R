@@ -1,49 +1,62 @@
 """Abstractions for search functionality."""
 
-import uuid
+import json
 from typing import Any, Dict, List, Optional, Tuple
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from .llm import GenerationConfig
 
 
-class VectorSearchRequest(BaseModel):
-    """Request for a search operation."""
-
-    query: str
-    limit: int
-    filters: Optional[dict[str, Any]] = None
-
-
 class VectorSearchResult(BaseModel):
     """Result of a search operation."""
 
-    id: uuid.UUID
+    fragment_id: UUID
+    extraction_id: UUID
+    document_id: UUID
+    user_id: UUID
+    group_ids: List[UUID]
     score: float
+    text: str
     metadata: dict[str, Any]
 
     def __str__(self) -> str:
-        return f"VectorSearchResult(id={self.id}, score={self.score}, metadata={self.metadata})"
+        return f"VectorSearchResult(fragment_id={self.fragment_id}, extraction_id={self.extraction_id}, document_id={self.document_id}, score={self.score})"
 
     def __repr__(self) -> str:
-        return f"VectorSearchResult(id={self.id}, score={self.score}, metadata={self.metadata})"
+        return self.__str__()
 
     def dict(self) -> dict:
         return {
-            "id": self.id,
+            "fragment_id": self.fragment_id,
+            "extraction_id": self.extraction_id,
+            "document_id": self.document_id,
+            "user_id": self.user_id,
+            "group_ids": self.group_ids,
             "score": self.score,
+            "text": self.text,
             "metadata": self.metadata,
         }
 
+    class Config:
+        schema_extra = [
+            {
+                "fragment_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+                "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+                "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+                "group_ids": [],
+                "score": 0.23943702876567796,
+                "text": "Example text from the document",
+                "metadata": {
+                    "title": "example_document.pdf",
+                    "associatedQuery": "What is the capital of France?",
+                },
+            }
+        ]
 
-class KGSearchRequest(BaseModel):
-    """Request for a knowledge graph search operation."""
 
-    query: str
-
-
-# [query, ...]
 KGSearchResult = List[Tuple[str, List[Dict[str, Any]]]]
 
 
@@ -71,16 +84,52 @@ class AggregateSearchResult(BaseModel):
 
 
 class VectorSearchSettings(BaseModel):
-    use_vector_search: bool = True
-    search_filters: dict[str, Any] = Field(default_factory=dict)
-    search_limit: int = 10
-    do_hybrid_search: bool = False
+    use_vector_search: bool = Field(
+        default=True, description="Whether to use vector search"
+    )
+    filters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Filters to apply to the vector search",
+    )
+    search_limit: int = Field(
+        default=10,
+        description="Maximum number of results to return",
+        ge=1,
+        le=100,
+    )
+    do_hybrid_search: bool = Field(
+        default=False,
+        description="Whether to perform a hybrid search (combining vector and keyword search)",
+    )
+    selected_group_ids: List[UUID] = Field(
+        default_factory=list,
+        description="Group IDs to search for",
+    )
+
+    class Config:
+        json_encoders = {UUID: str}
+
+    def model_dump(self, *args, **kwargs):
+        dump = super().model_dump(*args, **kwargs)
+        dump["selected_group_ids"] = [
+            str(uuid) for uuid in dump["selected_group_ids"]
+        ]
+        return dump
 
 
 class KGSearchSettings(BaseModel):
     use_kg_search: bool = False
+    kg_search_type: str = "global"  # 'global' or 'local'
+    kg_search_level: Optional[int] = None
     kg_search_generation_config: Optional[GenerationConfig] = Field(
         default_factory=GenerationConfig
     )
     entity_types: list = []
     relationships: list = []
+    max_community_description_length: int = 4096 * 4
+    max_llm_queries_for_global_search: int = 10
+    local_search_limits: dict[str, int] = {
+        "__Entity__": 10,
+        "__Relationship__": 10,
+        "__Community__": 10,
+    }

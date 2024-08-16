@@ -2,10 +2,10 @@ import asyncio
 import logging
 from typing import Any, Optional
 
-from ..base import User
 from ..base.abstractions.llm import GenerationConfig
 from ..base.abstractions.search import KGSearchSettings, VectorSearchSettings
-from ..base.logging.kv_logger import KVLoggingSingleton
+from ..base.api.models.auth.responses import UserResponse
+from ..base.logging.run_logger import RunLoggingSingleton
 from ..base.logging.run_manager import RunManager, manage_run
 from ..base.pipeline.base_pipeline import AsyncPipeline
 from ..base.pipes.base_pipe import AsyncPipe, AsyncState
@@ -17,11 +17,9 @@ logger = logging.getLogger(__name__)
 class RAGPipeline(AsyncPipeline):
     """A pipeline for RAG."""
 
-    pipeline_type: str = "rag"
-
     def __init__(
         self,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         run_manager: Optional[RunManager] = None,
     ):
         super().__init__(pipe_logger, run_manager)
@@ -33,24 +31,15 @@ class RAGPipeline(AsyncPipeline):
         input: Any,
         state: Optional[AsyncState] = None,
         run_manager: Optional[RunManager] = None,
-        log_run_info=True,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         rag_generation_config: GenerationConfig = GenerationConfig(),
-        user: Optional[User] = None,
+        user: Optional[UserResponse] = None,
         *args: Any,
         **kwargs: Any,
     ):
         self.state = state or AsyncState()
-        async with manage_run(run_manager, self.pipeline_type):
-            if log_run_info:
-                await run_manager.log_run_info(
-                    key="pipeline_type",
-                    value=self.pipeline_type,
-                    is_info_log=True,
-                    user=user,
-                )
-
+        async with manage_run(run_manager):
             if not self._search_pipeline:
                 raise ValueError(
                     "`_search_pipeline` must be set before running the RAG pipeline"
@@ -65,7 +54,6 @@ class RAGPipeline(AsyncPipeline):
                             state=state,
                             stream=False,
                             run_manager=run_manager,
-                            log_run_info=False,
                             vector_search_settings=vector_search_settings,
                             kg_search_settings=kg_search_settings,
                             *args,
@@ -82,7 +70,6 @@ class RAGPipeline(AsyncPipeline):
                 state=state,
                 stream=rag_generation_config.stream,
                 run_manager=run_manager,
-                log_run_info=False,
                 rag_generation_config=rag_generation_config,
                 *args,
                 **kwargs,

@@ -1,14 +1,13 @@
-import asyncio
 import logging
 from typing import Any, AsyncGenerator, Optional, Union
 
 from r2r.base import (
     AsyncState,
+    DocumentFragment,
     EmbeddingProvider,
-    Fragment,
-    KVLoggingSingleton,
     PipeType,
     R2RDocumentProcessingError,
+    RunLoggingSingleton,
     Vector,
     VectorEntry,
 )
@@ -24,14 +23,14 @@ class EmbeddingPipe(AsyncPipe):
 
     class Input(AsyncPipe.Input):
         message: AsyncGenerator[
-            Union[Fragment, R2RDocumentProcessingError], None
+            Union[DocumentFragment, R2RDocumentProcessingError], None
         ]
 
     def __init__(
         self,
         embedding_provider: EmbeddingProvider,
         embedding_batch_size: int = 1,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
@@ -46,24 +45,26 @@ class EmbeddingPipe(AsyncPipe):
         self.embedding_provider = embedding_provider
         self.embedding_batch_size = embedding_batch_size
 
-    async def embed(self, fragments: list[Fragment]) -> list[float]:
+    async def embed(self, fragments: list[DocumentFragment]) -> list[float]:
         return await self.embedding_provider.async_get_embeddings(
             [fragment.data for fragment in fragments],
             EmbeddingProvider.PipeStage.BASE,
         )
 
     async def _process_batch(
-        self, fragment_batch: list[Fragment]
+        self, fragment_batch: list[DocumentFragment]
     ) -> list[VectorEntry]:
         vectors = await self.embed(fragment_batch)
         return [
             VectorEntry(
-                id=fragment.id,
+                fragment_id=fragment.id,
+                extraction_id=fragment.extraction_id,
+                document_id=fragment.document_id,
+                user_id=fragment.user_id,
+                group_ids=fragment.group_ids,
                 vector=Vector(data=raw_vector),
+                text=fragment.data,
                 metadata={
-                    "document_id": fragment.document_id,
-                    "extraction_id": fragment.extraction_id,
-                    "text": fragment.data,
                     **fragment.metadata,
                 },
             )

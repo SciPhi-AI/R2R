@@ -50,7 +50,7 @@ class XLSXParserAdvanced(AsyncParser[DataType]):
 
     def connected_components(self, arr):
         g = self.nx.grid_2d_graph(len(arr), len(arr[0]))
-        empty_cell_indices = list(zip(*self.np.where(arr == None)))
+        empty_cell_indices = list(zip(*self.np.where(arr is None)))
         g.remove_nodes_from(empty_cell_indices)
         components = self.nx.connected_components(g)
         for component in components:
@@ -80,7 +80,7 @@ class XLSXParserAdvanced(AsyncParser[DataType]):
                 if len(table) <= 1:
                     continue
 
-                num_cols, num_rows = len(table[0]), len(table)
+                num_rows = len(table)
                 num_rows_per_chunk = num_col_times_num_rows // num_rows
                 headers = ", ".join(table[0])
                 # add header to each one

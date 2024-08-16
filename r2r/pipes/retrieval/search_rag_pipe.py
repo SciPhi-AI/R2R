@@ -92,7 +92,7 @@ class SearchRAGPipe(GeneratorPipe):
             context += f"Vector Search Results({iteration}):\n"
             it = total_results + 1
             for result in results.vector_search_results:
-                context += f"[{it}]: {result.metadata['text']}\n\n"
+                context += f"[{it}]: {result.text}\n\n"
                 it += 1
             total_results = (
                 it - 1

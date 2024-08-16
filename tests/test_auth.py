@@ -12,7 +12,6 @@ from r2r import (
     PostgresDBProvider,
     R2RAuthProvider,
     R2RException,
-    UserCreate,
 )
 from r2r.main.services import AuthService
 
@@ -86,9 +85,9 @@ def auth_service(auth_provider, auth_config, pg_vector_db):
 
 @pytest.mark.asyncio
 async def test_create_user(auth_service, auth_provider):
-    # Register a new user
-    user = UserCreate(email="create@example.com", password="password123")
-    new_user = await auth_service.register(user)
+    new_user = await auth_service.register(
+        email="create@example.com", password="password123"
+    )
     assert new_user.email == "create@example.com"
     assert not new_user.is_verified
     fetched_user = auth_provider.db_provider.relational.get_user_by_email(
@@ -100,26 +99,17 @@ async def test_create_user(auth_service, auth_provider):
     assert fetched_user.is_active == new_user.is_active
 
 
-# @pytest.mark.asyncio
-# async def test_create_user_twice(auth_service, auth_provider):
-#     # Register a new user
-#     user = UserCreate(email="create@example.com", password="password123")
-#     new_user = await auth_service.register(user)
-#     with pytest.raises(R2RException) as exc_info:
-#         await auth_service.register(user)
-
-
 @pytest.mark.asyncio
 async def test_verify_user(auth_service, auth_provider):
-    # Register a new user
-    user = UserCreate(email="verify@example.com", password="password123")
     # Mock the generate_verification_code method to return a known value
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
-        new_user = await auth_service.register(user)
+        new_user = await auth_service.register(
+            email="verify@example.com", password="password123"
+        )
 
         # mock verification
         assert new_user.email == "verify@example.com"
@@ -140,15 +130,14 @@ async def test_verify_user(auth_service, auth_provider):
 @pytest.mark.asyncio
 async def test_login_success(auth_service, auth_provider):
     # Register a new user
-    user = UserCreate(
-        email="login_test@example.com", password="correct_password"
-    )
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
-        new_user = await auth_service.register(user)
+        new_user = await auth_service.register(
+            email="login_test@example.com", password="correct_password"
+        )
 
     # Verify the user
     auth_provider.verify_email("123456")
@@ -167,15 +156,14 @@ async def test_login_success(auth_service, auth_provider):
 @pytest.mark.asyncio
 async def test_login_failure_wrong_password(auth_service, auth_provider):
     # Register a new user
-    user = UserCreate(
-        email="login_fail@example.com", password="correct_password"
-    )
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
-        new_user = await auth_service.register(user)
+        new_user = await auth_service.register(
+            email="login_fail@example.com", password="correct_password"
+        )
 
     # Verify the user
     auth_provider.verify_email("123456")
@@ -191,8 +179,9 @@ async def test_login_failure_wrong_password(auth_service, auth_provider):
 @pytest.mark.asyncio
 async def test_login_failure_unverified_user(auth_service, auth_provider):
     # Register a new user but don't verify
-    user = UserCreate(email="unverified@example.com", password="password123")
-    await auth_service.register(user)
+    await auth_service.register(
+        email="unverified@example.com", password="password123"
+    )
 
     # Attempt login with correct password but unverified account
     with pytest.raises(R2RException) as exc_info:
@@ -221,15 +210,14 @@ async def test_login_with_non_existent_user(auth_service):
 
 @pytest.mark.asyncio
 async def test_verify_email_with_expired_code(auth_service, auth_provider):
-    user = UserCreate(
-        email="verify_expired@example.com", password="password123"
-    )
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
-        new_user = await auth_service.register(user)
+        new_user = await auth_service.register(
+            email="verify_expired@example.com", password="password123"
+        )
 
         # Get the verification code
 
@@ -246,13 +234,14 @@ async def test_verify_email_with_expired_code(auth_service, auth_provider):
 @pytest.mark.asyncio
 async def test_refresh_token_flow(auth_service, auth_provider):
     # Register and verify a user
-    user = UserCreate(email="refresh@example.com", password="password123")
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
-        new_user = await auth_service.register(user)
+        new_user = await auth_service.register(
+            email="refresh@example.com", password="password123"
+        )
 
     await auth_service.verify_email("123456")
 
@@ -271,22 +260,22 @@ async def test_refresh_token_flow(auth_service, auth_provider):
 
 @pytest.mark.asyncio
 async def test_refresh_token_with_wrong_user(auth_service, auth_provider):
-    # Register and verify two users
-    user1 = UserCreate(email="user1@example.com", password="password123")
-    user2 = UserCreate(email="user2@example.com", password="password123")
-
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
-        new_user1 = await auth_service.register(user1)
+        new_user1 = await auth_service.register(
+            email="user1@example.com", password="password123"
+        )
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="1234567",
     ):
-        new_user2 = await auth_service.register(user2)
+        new_user2 = await auth_service.register(
+            email="user2@example.com", password="password123"
+        )
 
     await auth_service.verify_email("123456")
     await auth_service.verify_email("1234567")
@@ -307,15 +296,14 @@ async def test_refresh_token_with_wrong_user(auth_service, auth_provider):
 async def test_get_current_user_with_expired_token(
     auth_service, auth_provider
 ):
-    user = UserCreate(
-        email="expired_token@example.com", password="password123"
-    )
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
-        new_user = await auth_service.register(user)
+        new_user = await auth_service.register(
+            email="expired_token@example.com", password="password123"
+        )
 
     await auth_service.verify_email("123456")
 
@@ -343,15 +331,14 @@ async def test_get_current_user_with_expired_token(
 @pytest.mark.asyncio
 async def test_change_password(auth_service, auth_provider):
     # Register and verify a user
-    user = UserCreate(
-        email="change_password@example.com", password="old_password"
-    )
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
-        new_user = await auth_service.register(user)
+        new_user = await auth_service.register(
+            email="change_password@example.com", password="old_password"
+        )
     await auth_service.verify_email("123456")
 
     # Change password
@@ -375,16 +362,14 @@ async def test_change_password(auth_service, auth_provider):
 async def test_reset_password_flow(
     auth_service, auth_provider, mock_email_provider
 ):
-    # Register and verify a user
-    user = UserCreate(
-        email="reset_password@example.com", password="old_password"
-    )
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
-        new_user = await auth_service.register(user)
+        new_user = await auth_service.register(
+            email="reset_password@example.com", password="old_password"
+        )
     await auth_service.verify_email("123456")
 
     # Request password reset
@@ -418,13 +403,14 @@ async def test_reset_password_flow(
 @pytest.mark.asyncio
 async def test_logout(auth_service, auth_provider):
     # Register and verify a user
-    user = UserCreate(email="logout@example.com", password="password123")
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
-        new_user = await auth_service.register(user)
+        new_user = await auth_service.register(
+            email="logout@example.com", password="password123"
+        )
     await auth_service.verify_email("123456")
 
     # Login to get tokens
@@ -443,13 +429,14 @@ async def test_logout(auth_service, auth_provider):
 @pytest.mark.asyncio
 async def test_get_user_profile(auth_service, auth_provider):
     # Register and verify a user
-    user = UserCreate(email="profile@example.com", password="password123")
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
-        new_user = await auth_service.register(user)
+        new_user = await auth_service.register(
+            email="profile@example.com", password="password123"
+        )
     await auth_service.verify_email("123456")
 
     # Get user profile
@@ -462,25 +449,22 @@ async def test_get_user_profile(auth_service, auth_provider):
 @pytest.mark.asyncio
 async def test_update_user_profile(auth_service, auth_provider):
     # Register and verify a user
-    user = UserCreate(
-        email="update_profile@example.com", password="password123"
-    )
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
-        new_user = await auth_service.register(user)
+        new_user = await auth_service.register(
+            email="update_profile@example.com", password="password123"
+        )
     await auth_service.verify_email("123456")
 
     # Update user profile
     updated_profile = await auth_service.update_user(
         new_user.id,
-        {
-            "name": "John Doe",
-            "bio": "Test bio",
-            "profile_picture": "http://example.com/pic.jpg",
-        },
+        name="John Doe",
+        bio="Test bio",
+        profile_picture="http://example.com/pic.jpg",
     )
     assert updated_profile.name == "John Doe"
     assert updated_profile.bio == "Test bio"
@@ -496,13 +480,14 @@ async def test_update_user_profile(auth_service, auth_provider):
 @pytest.mark.asyncio
 async def test_delete_user_account(auth_service, auth_provider):
     # Register and verify a user
-    user = UserCreate(email="delete_user@example.com", password="password123")
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
-        new_user = await auth_service.register(user)
+        new_user = await auth_service.register(
+            email="delete_user@example.com", password="password123"
+        )
     await auth_service.verify_email("123456")
 
     # Delete user account
@@ -522,13 +507,14 @@ async def test_delete_user_account(auth_service, auth_provider):
 @pytest.mark.asyncio
 async def test_token_blacklist_cleanup(auth_service, auth_provider):
     # Register and verify a user
-    user = UserCreate(email="cleanup@example.com", password="password123")
     with patch.object(
         auth_provider.crypto_provider,
         "generate_verification_code",
         return_value="123456",
     ):
-        await auth_service.register(user)
+        await auth_service.register(
+            email="cleanup@example.com", password="password123"
+        )
     await auth_service.verify_email("123456")
 
     # Login and logout to create a blacklisted token
@@ -560,3 +546,161 @@ async def test_token_blacklist_cleanup(auth_service, auth_provider):
     assert auth_provider.db_provider.relational.is_token_blacklisted(
         access_token
     )
+
+
+@pytest.mark.asyncio
+async def test_register_and_verify(auth_service, auth_provider):
+    # new_user = await auth_service.register(user)
+    # Mock verification code generation
+    with patch.object(
+        auth_provider.crypto_provider,
+        "generate_verification_code",
+        return_value="123456",
+    ):
+        new_user = await auth_service.register(
+            email="newuser@example.com", password="password123"
+        )
+        assert new_user.email == "newuser@example.com"
+        assert not new_user.is_verified
+
+        await auth_service.verify_email("123456")
+
+    new_user = auth_provider.db_provider.relational.get_user_by_email(
+        "newuser@example.com"
+    )
+    assert new_user.email == "newuser@example.com"
+    assert new_user.is_verified
+
+
+@pytest.mark.asyncio
+async def test_login_logout(auth_service, auth_provider):
+    # Mock reset token generation
+    with patch.object(
+        auth_provider.crypto_provider,
+        "generate_verification_code",
+        return_value="123456",
+    ):
+        await auth_service.register(
+            email="loginuser@example.com", password="password123"
+        )
+        await auth_service.verify_email("123456")
+
+    tokens = await auth_service.login("loginuser@example.com", "password123")
+    assert "access_token" in tokens
+    assert "refresh_token" in tokens
+
+    logout_result = await auth_service.logout(tokens["access_token"].token)
+    assert logout_result["message"] == "Logged out successfully"
+
+
+@pytest.mark.asyncio
+async def test_refresh_token(auth_service, auth_provider):
+    # Mock reset token generation
+    with patch.object(
+        auth_provider.crypto_provider,
+        "generate_verification_code",
+        return_value="123456",
+    ):
+        await auth_service.register(
+            email="refreshuser@example.com", password="password123"
+        )
+        await auth_service.verify_email("123456")
+
+    tokens = await auth_service.login("refreshuser@example.com", "password123")
+    new_tokens = await auth_service.refresh_access_token(
+        "refreshuser@example.com", tokens["refresh_token"].token
+    )
+    assert new_tokens["access_token"].token != tokens["access_token"].token
+
+
+@pytest.mark.asyncio
+async def test_change_password(auth_service, auth_provider):
+    with patch.object(
+        auth_provider.crypto_provider,
+        "generate_verification_code",
+        return_value="123456",
+    ):
+        new_user = await auth_service.register(
+            email="changepass@example.com", password="oldpassword"
+        )
+    await auth_service.verify_email("123456")
+
+    result = await auth_service.change_password(
+        new_user, "oldpassword", "newpassword"
+    )
+    assert result["message"] == "Password changed successfully"
+
+    with pytest.raises(R2RException):
+        await auth_service.login("changepass@example.com", "oldpassword")
+
+    tokens = await auth_service.login("changepass@example.com", "newpassword")
+    assert "access_token" in tokens
+
+
+@pytest.mark.asyncio
+async def test_request_reset_password(auth_service):
+    await auth_service.register(
+        email="resetpass@example.com", password="password123"
+    )
+
+    result = await auth_service.request_password_reset("resetpass@example.com")
+    assert (
+        result["message"] == "If the email exists, a reset link has been sent"
+    )
+
+
+@pytest.mark.asyncio
+async def test_confirm_reset_password(auth_service, auth_provider):
+    # Mock reset token generation
+    with patch.object(
+        auth_provider.crypto_provider,
+        "generate_verification_code",
+        return_value="123456",
+    ):
+        await auth_service.register(
+            email="confirmreset@example.com", password="oldpassword"
+        )
+        await auth_service.verify_email("123456")
+        await auth_service.request_password_reset("confirmreset@example.com")
+        result = await auth_service.confirm_password_reset(
+            "123456", "newpassword"
+        )
+        assert result["message"] == "Password reset successfully"
+
+    tokens = await auth_service.login(
+        "confirmreset@example.com", "newpassword"
+    )
+    assert "access_token" in tokens
+
+
+@pytest.mark.asyncio
+async def test_get_user_profile(auth_service):
+    new_user = await auth_service.register(
+        email="profile@example.com", password="password123"
+    )
+
+    profile = await auth_service.get_user_profile(new_user.id)
+    assert profile.email == "profile@example.com"
+
+
+@pytest.mark.asyncio
+async def test_update_user_profile(auth_service):
+    new_user = await auth_service.register(
+        email="updateprofile@example.com", password="password123"
+    )
+
+    updated_user = await auth_service.update_user(new_user.id, name="John Doe")
+    assert updated_user.name == "John Doe"
+
+
+@pytest.mark.asyncio
+async def test_delete_user_account_2(auth_service):
+    new_user = await auth_service.register(
+        email="deleteuser@example.com", password="password123"
+    )
+
+    result = await auth_service.delete_user(new_user.id, "password123")
+    assert "deleted" in result["message"]
+
+    with pytest.raises(R2RException):
+        await auth_service.login("deleteuser@example.com", "password123")

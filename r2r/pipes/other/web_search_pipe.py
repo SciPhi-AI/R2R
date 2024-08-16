@@ -55,12 +55,17 @@ class WebSearchPipe(SearchPipe):
         for result in results:
             if result.get("snippet") is None:
                 continue
-            result["text"] = result.pop("snippet")
+            result.text = result.pop("snippet")
             search_result = VectorSearchResult(
-                id=generate_id_from_label(str(result)),
+                fragment_id=generate_id_from_label(str(result)),
+                extraction_id=uuid.uuid4(),  # Generate a new UUID for extraction_id
+                document_id=uuid.uuid4(),  # Generate a new UUID for document_id
+                user_id=None,  # Web search results don't have a user_id
+                group_ids=[],  # Web search results don't belong to any group
                 score=result.get(
                     "score", 0
                 ),  # TODO - Consider dynamically generating scores based on similarity
+                text=result.text,
                 metadata=result,
             )
             search_results.append(search_result)
@@ -69,7 +74,7 @@ class WebSearchPipe(SearchPipe):
         await self.enqueue_log(
             run_id=run_id,
             key="search_results",
-            value=json.dumps([ele.json() for ele in search_results]),
+            value=json.dumps([ele.dict() for ele in search_results]),
         )
 
     async def _run_logic(

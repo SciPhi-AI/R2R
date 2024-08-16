@@ -1,7 +1,7 @@
 import os
 from typing import Optional, Type
 
-from r2r.agents import R2RRAGAgent
+from r2r.agent import R2RRAGAgent
 from r2r.base import (
     AsyncPipe,
     AuthProvider,
@@ -9,13 +9,12 @@ from r2r.base import (
     CryptoProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    EvalProvider,
     KGProvider,
     PromptProvider,
 )
 from r2r.pipelines import (
-    EvalPipeline,
     IngestionPipeline,
+    KGEnrichmentPipeline,
     RAGPipeline,
     SearchPipeline,
 )
@@ -37,20 +36,14 @@ class R2RBuilder:
     config_root = os.path.join(
         current_file_path, "..", "..", "examples", "configs"
     )
-    CONFIG_OPTIONS = {
-        "default": None,
-        "local_llm": os.path.join(config_root, "local_llm.toml"),
-        "local_llm_rerank": os.path.join(config_root, "local_llm_rerank.toml"),
-        "neo4j_kg": os.path.join(config_root, "neo4j_kg.toml"),
-        "neo4j_kg_no_vector_postgres": os.path.join(
-            config_root, "neo4j_kg_no_vector_postgres.toml"
-        ),
-        "local_llm_neo4j_kg": os.path.join(
-            config_root, "local_llm_neo4j_kg.toml"
-        ),
-        "postgres_logging": os.path.join(config_root, "postgres_logging.toml"),
-        "auth": os.path.join(config_root, "auth.toml"),
-    }
+
+    CONFIG_OPTIONS = {}
+    for file in os.listdir(config_root):
+        if file.endswith(".toml"):
+            CONFIG_OPTIONS[file.removesuffix(".toml")] = os.path.join(
+                config_root, file
+            )
+    CONFIG_OPTIONS["default"] = None
 
     @staticmethod
     def _get_config(config_name):
@@ -79,7 +72,6 @@ class R2RBuilder:
         self.auth_provider_override: Optional[AuthProvider] = None
         self.database_provider_override: Optional[DatabaseProvider] = None
         self.embedding_provider_override: Optional[EmbeddingProvider] = None
-        self.eval_provider_override: Optional[EvalProvider] = None
         self.llm_provider_override: Optional[CompletionProvider] = None
         self.prompt_provider_override: Optional[PromptProvider] = None
         self.kg_provider_override: Optional[KGProvider] = None
@@ -92,17 +84,19 @@ class R2RBuilder:
         self.vector_search_pipe_override: Optional[AsyncPipe] = None
         self.rag_pipe_override: Optional[AsyncPipe] = None
         self.streaming_rag_pipe_override: Optional[AsyncPipe] = None
-        self.eval_pipe_override: Optional[AsyncPipe] = None
         self.kg_pipe_override: Optional[AsyncPipe] = None
         self.kg_storage_pipe_override: Optional[AsyncPipe] = None
         self.kg_search_pipe_override: Optional[AsyncPipe] = None
+        self.kg_node_extraction_pipe_override: Optional[AsyncPipe] = None
+        self.kg_node_description_pipe_override: Optional[AsyncPipe] = None
+        self.kg_clustering_pipe_override: Optional[AsyncPipe] = None
 
         # Pipeline overrides
         self.ingestion_pipeline: Optional[IngestionPipeline] = None
         self.search_pipeline: Optional[SearchPipeline] = None
         self.rag_pipeline: Optional[RAGPipeline] = None
         self.streaming_rag_pipeline: Optional[RAGPipeline] = None
-        self.eval_pipeline: Optional[EvalPipeline] = None
+        self.kg_pipeline: Optional[KGEnrichmentPipeline] = None
 
         # Agent overrides
         self.assistant_factory_override: Optional[R2RAgentFactory] = None
@@ -135,10 +129,6 @@ class R2RBuilder:
 
     def with_embedding_provider(self, provider: EmbeddingProvider):
         self.embedding_provider_override = provider
-        return self
-
-    def with_eval_provider(self, provider: EvalProvider):
-        self.eval_provider_override = provider
         return self
 
     def with_llm_provider(self, provider: CompletionProvider):
@@ -182,10 +172,6 @@ class R2RBuilder:
         self.streaming_rag_pipe_override = pipe
         return self
 
-    def with_eval_pipe(self, pipe: AsyncPipe):
-        self.eval_pipe_override = pipe
-        return self
-
     def with_kg_pipe(self, pipe: AsyncPipe):
         self.kg_pipe_override = pipe
         return self
@@ -196,6 +182,18 @@ class R2RBuilder:
 
     def with_kg_search_pipe(self, pipe: AsyncPipe):
         self.kg_search_pipe_override = pipe
+        return self
+
+    def with_kg_node_extraction_pipe(self, pipe: AsyncPipe):
+        self.kg_node_extraction_pipe_override = pipe
+        return self
+
+    def with_kg_clustering_pipe(self, pipe: AsyncPipe):
+        self.kg_clustering_pipe_override = pipe
+        return self
+
+    def with_kg_node_description_pipe(self, pipe: AsyncPipe):
+        self.kg_node_description_pipe_override = pipe
         return self
 
     # Pipeline override methods
@@ -215,8 +213,8 @@ class R2RBuilder:
         self.streaming_rag_pipeline = pipeline
         return self
 
-    def with_eval_pipeline(self, pipeline: EvalPipeline):
-        self.eval_pipeline = pipeline
+    def with_kg_pipeline(self, pipeline: KGEnrichmentPipeline):
+        self.kg_pipeline = pipeline
         return self
 
     def with_assistant_factory(self, factory: R2RAgentFactory):
@@ -236,7 +234,6 @@ class R2RBuilder:
             auth_provider_override=self.auth_provider_override,
             database_provider_override=self.database_provider_override,
             embedding_provider_override=self.embedding_provider_override,
-            eval_provider_override=self.eval_provider_override,
             llm_provider_override=self.llm_provider_override,
             prompt_provider_override=self.prompt_provider_override,
             kg_provider_override=self.kg_provider_override,
@@ -244,7 +241,6 @@ class R2RBuilder:
             *args,
             **kwargs,
         )
-
         pipes = pipe_factory(self.config, providers).create_pipes(
             parsing_pipe_override=self.parsing_pipe_override,
             embedding_pipe_override=self.embedding_pipe_override,
@@ -252,10 +248,12 @@ class R2RBuilder:
             vector_search_pipe_override=self.vector_search_pipe_override,
             rag_pipe_override=self.rag_pipe_override,
             streaming_rag_pipe_override=self.streaming_rag_pipe_override,
-            eval_pipe_override=self.eval_pipe_override,
             kg_pipe_override=self.kg_pipe_override,
             kg_storage_pipe_override=self.kg_storage_pipe_override,
             kg_search_pipe_override=self.kg_search_pipe_override,
+            kg_node_extraction_pipe=self.kg_node_extraction_pipe_override,
+            kg_node_description_pipe=self.kg_node_description_pipe_override,
+            kg_clustering_pipe=self.kg_clustering_pipe_override,
             *args,
             **kwargs,
         )
@@ -265,7 +263,7 @@ class R2RBuilder:
             search_pipeline=self.search_pipeline,
             rag_pipeline=self.rag_pipeline,
             streaming_rag_pipeline=self.streaming_rag_pipeline,
-            eval_pipeline=self.eval_pipeline,
+            kg_pipeline=self.kg_pipeline,
             *args,
             **kwargs,
         )

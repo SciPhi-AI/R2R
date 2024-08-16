@@ -15,9 +15,8 @@ from r2r.base import (
     R2RException,
     Token,
     TokenData,
-    User,
-    UserCreate,
 )
+from r2r.base.api.models.auth.responses import UserResponse
 
 logger = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -49,9 +48,7 @@ class R2RAuthProvider(AuthProvider):
         )
         try:
             user = self.register(
-                UserCreate(
-                    email=self.admin_email, password=self.admin_password
-                )
+                email=self.admin_email, password=self.admin_password
             )
             self.db_provider.relational.mark_user_as_superuser(user.id)
 
@@ -104,7 +101,7 @@ class R2RAuthProvider(AuthProvider):
         except jwt.InvalidTokenError as e:
             raise R2RException(status_code=401, message="Invalid token") from e
 
-    def user(self, token: str = Depends(oauth2_scheme)) -> User:
+    def user(self, token: str = Depends(oauth2_scheme)) -> UserResponse:
         token_data = self.decode_token(token)
         user = self.db_provider.relational.get_user_by_email(token_data.email)
         if user is None:
@@ -114,21 +111,21 @@ class R2RAuthProvider(AuthProvider):
         return user
 
     def get_current_active_user(
-        self, current_user: User = Depends(user)
-    ) -> User:
+        self, current_user: UserResponse = Depends(user)
+    ) -> UserResponse:
         if not current_user.is_active:
             raise R2RException(status_code=400, message="Inactive user")
         return current_user
 
-    def register(self, user: UserCreate) -> Dict[str, str]:
+    def register(self, email: str, password: str) -> Dict[str, str]:
         # Check if user already exists
-        if self.db_provider.relational.get_user_by_email(user.email):
+        if self.db_provider.relational.get_user_by_email(email):
             raise R2RException(
                 status_code=400, message="Email already registered"
             )
 
         # Create new user
-        new_user = self.db_provider.relational.create_user(user)
+        new_user = self.db_provider.relational.create_user(email, password)
 
         if self.config.require_email_verification:
             # Generate verification code and send email
@@ -205,7 +202,6 @@ class R2RAuthProvider(AuthProvider):
             logger.warning(f"Unverified user attempted login: {email}")
             raise R2RException(status_code=401, message="Email not verified")
 
-        logger.info(f"Successful login for user: {email}")
         access_token = self.create_access_token(data={"sub": user.email})
         refresh_token = self.create_refresh_token(data={"sub": user.email})
         return {
@@ -244,7 +240,7 @@ class R2RAuthProvider(AuthProvider):
         }
 
     def change_password(
-        self, user: User, current_password: str, new_password: str
+        self, user: UserResponse, current_password: str, new_password: str
     ) -> Dict[str, str]:
         if not self.crypto_provider.verify_password(
             current_password, user.hashed_password

@@ -1,33 +1,36 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from r2r.base import KVLoggingSingleton, RunManager
+from r2r.base import RunLoggingSingleton, RunManager
 from r2r.base.abstractions.base import AsyncSyncMeta, syncable
 
 from .abstractions import R2RAgents, R2RPipelines, R2RProviders
-from .assembly.config import R2RConfig
 from .services.auth_service import AuthService
 from .services.ingestion_service import IngestionService
 from .services.management_service import ManagementService
+from .services.restructure_service import RestructureService
 from .services.retrieval_service import RetrievalService
+
+if TYPE_CHECKING:
+    from .assembly.config import R2RConfig
 
 
 class R2REngine(metaclass=AsyncSyncMeta):
     def __init__(
         self,
-        config: R2RConfig,
+        config: "R2RConfig",
         providers: R2RProviders,
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: Optional[RunManager] = None,
     ):
-        logging_connection = KVLoggingSingleton()
+        logging_connection = RunLoggingSingleton()
         run_manager = run_manager or RunManager(logging_connection)
 
         self.config = config
         self.providers = providers
         self.pipelines = pipelines
         self.agents = agents
-        self.logging_connection = KVLoggingSingleton()
+        self.logging_connection = RunLoggingSingleton()
         self.run_manager = run_manager
 
         self.ingestion_service = IngestionService(
@@ -38,6 +41,16 @@ class R2REngine(metaclass=AsyncSyncMeta):
             run_manager,
             logging_connection,
         )
+
+        self.kg_service = RestructureService(
+            config,
+            providers,
+            pipelines,
+            agents,
+            run_manager,
+            logging_connection,
+        )
+
         self.retrieval_service = RetrievalService(
             config,
             providers,
@@ -79,6 +92,10 @@ class R2REngine(metaclass=AsyncSyncMeta):
     @syncable
     async def aupdate_files(self, *args, **kwargs):
         return await self.ingestion_service.update_files(*args, **kwargs)
+
+    @syncable
+    async def aenrich_graph(self, *args, **kwargs):
+        return await self.kg_service.enrich_graph(*args, **kwargs)
 
     @syncable
     async def asearch(self, *args, **kwargs):
@@ -189,3 +206,51 @@ class R2REngine(metaclass=AsyncSyncMeta):
         return await self.auth_service.clean_expired_blacklisted_tokens(
             *args, **kwargs
         )
+
+    @syncable
+    async def acreate_group(self, *args, **kwargs):
+        return await self.management_service.acreate_group(*args, **kwargs)
+
+    @syncable
+    async def aget_group(self, *args, **kwargs):
+        return await self.management_service.aget_group(*args, **kwargs)
+
+    @syncable
+    async def aupdate_group(self, *args, **kwargs):
+        return await self.management_service.aupdate_group(*args, **kwargs)
+
+    @syncable
+    async def adelete_group(self, *args, **kwargs):
+        return await self.management_service.adelete_group(*args, **kwargs)
+
+    @syncable
+    async def alist_groups(self, *args, **kwargs):
+        return await self.management_service.alist_groups(*args, **kwargs)
+
+    @syncable
+    async def aadd_user_to_group(self, *args, **kwargs):
+        return await self.management_service.aadd_user_to_group(
+            *args, **kwargs
+        )
+
+    @syncable
+    async def aremove_user_from_group(self, *args, **kwargs):
+        return await self.management_service.aremove_user_from_group(
+            *args, **kwargs
+        )
+
+    @syncable
+    async def aget_users_in_group(self, *args, **kwargs):
+        return await self.management_service.aget_users_in_group(
+            *args, **kwargs
+        )
+
+    @syncable
+    async def aget_groups_for_user(self, *args, **kwargs):
+        return await self.management_service.aget_groups_for_user(
+            *args, **kwargs
+        )
+
+    @syncable
+    async def agroups_overview(self, *args, **kwargs):
+        return await self.management_service.agroups_overview(*args, **kwargs)

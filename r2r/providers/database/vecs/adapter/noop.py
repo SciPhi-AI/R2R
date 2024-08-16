@@ -8,7 +8,7 @@ All public classes, enums, and functions are re-exported by `vecs.adapters` modu
 
 from typing import Any, Dict, Generator, Iterable, Optional, Tuple
 
-from .base import AdapterContext, AdapterStep
+from .base import AdapterContext, AdapterStep, Record
 
 
 class NoOp(AdapterStep):
@@ -38,18 +38,27 @@ class NoOp(AdapterStep):
 
     def __call__(
         self,
-        records: Iterable[Tuple[str, Any, Optional[Dict]]],
+        records: Iterable[Record],
         adapter_context: AdapterContext,
-    ) -> Generator[Tuple[str, Any, Dict], None, None]:
-        """
-        Yields the input records without any modification.
-
-        Args:
-            records: Iterable of tuples each containing an id, a media and an optional dict.
-            adapter_context: Context of the adapter.
-
-        Yields:
-            Tuple[str, Any, Dict]: The input record.
-        """
-        for id, media, metadata in records:
-            yield (id, media, metadata or {})
+    ) -> Generator[Record, None, None]:
+        for record in records:
+            (
+                fragment_id,
+                extraction_id,
+                document_id,
+                user_id,
+                group_ids,
+                vec,
+                text,
+                metadata,
+            ) = record
+            yield (
+                str(fragment_id),
+                str(extraction_id),
+                str(document_id),
+                str(user_id),
+                [str(gid) for gid in group_ids],
+                vec,
+                text,
+                metadata or {},
+            )

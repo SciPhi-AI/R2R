@@ -43,7 +43,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.types import Float, UserDefinedType
 
-from .adapter import Adapter, AdapterContext, NoOp
+from .adapter import Adapter, AdapterContext, NoOp, Record
 from .exc import (
     ArgError,
     CollectionAlreadyExists,
@@ -55,12 +55,6 @@ from .exc import (
 
 if TYPE_CHECKING:
     from vecs.client import Client
-
-
-MetadataValues = Union[str, int, float, bool, List[str]]
-Metadata = Dict[str, MetadataValues]
-Numeric = Union[int, float, complex]
-Record = Tuple[str, Iterable[Numeric], Metadata]
 
 
 class IndexMethod(str, Enum):
@@ -208,6 +202,14 @@ class Collection:
     Note: Some methods of this class can raise exceptions from the `vecs.exc` module if errors occur.
     """
 
+    COLUMN_VARS = [
+        "fragment_id",
+        "extraction_id",
+        "document_id",
+        "user_id",
+        "group_ids",
+    ]
+
     def __init__(
         self,
         name: str,
@@ -231,7 +233,7 @@ class Collection:
         self.client = client
         self.name = name
         self.dimension = dimension
-        self.table = build_table(name, client.meta, dimension)
+        self.table = _build_table(name, client.meta, dimension)
         self._index: Optional[str] = None
         self.adapter = adapter or Adapter(steps=[NoOp(dimension=dimension)])
 
@@ -359,6 +361,27 @@ class Collection:
                     """
                 )
             )
+
+            # Create trigger to update fts column
+            sess.execute(
+                text(
+                    f"""
+                CREATE TRIGGER tsvector_update_{unique_string} BEFORE INSERT OR UPDATE
+                ON vecs."{self.table.name}" FOR EACH ROW EXECUTE FUNCTION
+                tsvector_update_trigger(fts, 'pg_catalog.english', text);
+            """
+                )
+            )
+
+            # Create index on fts column
+            sess.execute(
+                text(
+                    f"""
+                CREATE INDEX ix_fts_{unique_string} ON vecs."{self.table.name}" USING GIN (fts);
+            """
+                )
+            )
+
         return self
 
     def _drop(self):
@@ -377,124 +400,16 @@ class Collection:
 
         return self
 
-    def get_unique_metadata_values(
-        self,
-        field: str,
-        filter_field: Optional[str] = None,
-        filter_value: Optional[MetadataValues] = None,
-    ) -> List[MetadataValues]:
-        """
-        Fetches all unique metadata values of a specific field, optionally filtered by another metadata field.
-        Args:
-            field (str): The metadata field for which to fetch unique values.
-            filter_field (Optional[str], optional): The metadata field to filter on. Defaults to None.
-            filter_value (Optional[MetadataValues], optional): The value to filter the metadata field with. Defaults to None.
-        Returns:
-            List[MetadataValues]: A list of unique metadata values for the specified field.
-        """
-        with self.client.Session() as sess:
-            with sess.begin():
-                stmt = select(
-                    distinct(self.table.c.metadata[field].astext)
-                ).where(self.table.c.metadata[field] != None)
-
-                if filter_field is not None and filter_value is not None:
-                    stmt = stmt.where(
-                        self.table.c.metadata[filter_field].astext
-                        == str(filter_value)
-                    )
-
-                result = sess.execute(stmt)
-                unique_values = result.scalars().all()
-
-        return unique_values
-
-    def copy(
-        self,
-        records: Iterable[Tuple[str, Any, Metadata]],
-        skip_adapter: bool = False,
-    ) -> None:
-        """
-        Copies records into the collection.
-
-        Args:
-            records (Iterable[Tuple[str, Any, Metadata]]): An iterable of content to copy.
-                Each record is a tuple where:
-                  - the first element is a unique string identifier
-                  - the second element is an iterable of numeric values or relevant input type for the
-                    adapter assigned to the collection
-                  - the third element is metadata associated with the vector
-
-            skip_adapter (bool): Should the adapter be skipped while copying. i.e. if vectors are being
-                provided, rather than a media type that needs to be transformed
-        """
-        import csv
-        import io
-        import json
-        import os
-
-        pipeline = flu(records)
-        for record in pipeline:
-            with psycopg2.connect(
-                database=os.getenv("POSTGRES_DBNAME"),
-                user=os.getenv("POSTGRES_USER"),
-                password=os.getenv("POSTGRES_PASSWORD"),
-                host=os.getenv("POSTGRES_HOST"),
-                port=os.getenv("POSTGRES_PORT"),
-            ) as conn:
-                with conn.cursor() as cur:
-                    f = io.StringIO()
-                    id, vec, metadata = record
-
-                    writer = csv.writer(f, delimiter=",", quotechar='"')
-                    writer.writerow(
-                        [
-                            str(id),
-                            [float(ele) for ele in vec],
-                            json.dumps(metadata),
-                        ]
-                    )
-                    f.seek(0)
-                    result = f.getvalue()
-
-                    writer_name = (
-                        f'vecs."{self.table.fullname.split(".")[-1]}"'
-                    )
-                    g = io.StringIO(result)
-                    cur.copy_expert(
-                        f"COPY {writer_name}(id, vec, metadata) FROM STDIN WITH (FORMAT csv)",
-                        g,
-                    )
-                    conn.commit()
-        cur.close()
-        conn.close()
-
     def upsert(
         self,
-        records: Iterable[Tuple[str, Any, Metadata]],
+        records: Iterable[Record],
         skip_adapter: bool = False,
     ) -> None:
-        """
-        Inserts or updates *vectors* records in the collection.
-
-        Args:
-            records (Iterable[Tuple[str, Any, Metadata]]): An iterable of content to upsert.
-                Each record is a tuple where:
-                  - the first element is a unique string identifier
-                  - the second element is an iterable of numeric values or relevant input type for the
-                    adapter assigned to the collection
-                  - the third element is metadata associated with the vector
-
-            skip_adapter (bool): Should the adapter be skipped while upserting. i.e. if vectors are being
-                provided, rather than a media type that needs to be transformed
-        """
-
         chunk_size = 512
 
         if skip_adapter:
             pipeline = flu(records).chunk(chunk_size)
         else:
-            # Construct a lazy pipeline of steps to transform and chunk user input
             pipeline = flu(
                 self.adapter(records, AdapterContext("upsert"))
             ).chunk(chunk_size)
@@ -502,37 +417,59 @@ class Collection:
         with self.client.Session() as sess:
             with sess.begin():
                 for chunk in pipeline:
-                    stmt = postgresql.insert(self.table).values(chunk)
+                    stmt = postgresql.insert(self.table).values(
+                        [
+                            {
+                                "fragment_id": record[0],
+                                "extraction_id": record[1],
+                                "document_id": record[2],
+                                "user_id": record[3],
+                                "group_ids": record[4],
+                                "vec": record[5],
+                                "text": record[6],
+                                "metadata": record[7],
+                            }
+                            for record in chunk
+                        ]
+                    )
                     stmt = stmt.on_conflict_do_update(
-                        index_elements=[self.table.c.id],
+                        index_elements=[self.table.c.fragment_id],
                         set_=dict(
+                            extraction_id=stmt.excluded.extraction_id,
+                            document_id=stmt.excluded.document_id,
+                            user_id=stmt.excluded.user_id,
+                            group_ids=stmt.excluded.group_ids,
                             vec=stmt.excluded.vec,
+                            text=stmt.excluded.text,
                             metadata=stmt.excluded.metadata,
                         ),
                     )
                     sess.execute(stmt)
         return None
 
-    def fetch(self, ids: Iterable[str]) -> List[Record]:
+    def fetch(self, fragment_ids: Iterable[uuid.UUID]) -> List[Record]:
         """
-        Fetches vectors from the collection by their identifiers.
+        Fetches vectors from the collection by their fragment identifiers.
 
         Args:
-            ids (Iterable[str]): An iterable of vector identifiers.
+            fragment_ids (Iterable[UUID]): An iterable of vector fragment identifiers.
 
         Returns:
             List[Record]: A list of the fetched vectors.
+
+        Raises:
+            ArgError: If fragment_ids is not an iterable of UUIDs.
         """
-        if isinstance(ids, str):
-            raise ArgError("ids must be a list of strings")
+        if isinstance(fragment_ids, (str, uuid.UUID)):
+            raise ArgError("fragment_ids must be an iterable of UUIDs")
 
         chunk_size = 12
         records = []
         with self.client.Session() as sess:
             with sess.begin():
-                for id_chunk in flu(ids).chunk(chunk_size):
+                for id_chunk in flu(fragment_ids).chunk(chunk_size):
                     stmt = select(self.table).where(
-                        self.table.c.id.in_(id_chunk)
+                        self.table.c.fragment_id.in_(id_chunk)
                     )
                     chunk_records = sess.execute(stmt)
                     records.extend(chunk_records)
@@ -540,71 +477,82 @@ class Collection:
 
     def delete(
         self,
-        ids: Optional[Iterable[str]] = None,
+        fragment_ids: Optional[Iterable[uuid.UUID]] = None,
         filters: Optional[Dict[str, Any]] = None,
-    ) -> List[str]:
+    ) -> Dict[str, Dict[str, str]]:
         """
-        Deletes vectors from the collection by matching filters or ids.
+        Deletes vectors from the collection by matching filters or fragment_ids.
 
         Args:
-            ids (Iterable[str], optional): An iterable of vector identifiers.
+            fragment_ids (Optional[Iterable[UUID]], optional): An iterable of vector fragment identifiers.
             filters (Optional[Dict], optional): Filters to apply to the search. Defaults to None.
 
         Returns:
-            List[str]: A list of the document IDs of the deleted vectors.
+            Dict[str, Dict[str, str]]: A dictionary of deleted records, where the key is the fragment_id
+            and the value is a dictionary containing 'document_id', 'extraction_id', 'fragment_id', and 'text'.
+
+        Raises:
+            ArgError: If neither fragment_ids nor filters are provided, or if both are provided.
         """
-        if ids is None and filters is None:
-            raise ArgError("Either ids or filters must be provided.")
+        if fragment_ids is None and filters is None:
+            raise ArgError("Either fragment_ids or filters must be provided.")
 
-        if ids is not None and filters is not None:
-            raise ArgError("Either ids or filters must be provided, not both.")
+        if fragment_ids is not None and filters is not None:
+            raise ArgError(
+                "Either fragment_ids or filters must be provided, not both."
+            )
 
-        if isinstance(ids, str):
-            raise ArgError("ids must be a list of strings")
+        if isinstance(fragment_ids, (str, uuid.UUID)):
+            raise ArgError("fragment_ids must be an iterable of UUIDs")
 
-        ids = ids or []
-        filters = filters or {}
-        del_document_ids = set([])
+        deleted_records = {}
 
         with self.client.Session() as sess:
             with sess.begin():
-                if ids:
-                    for id_chunk in flu(ids).chunk(12):
-                        stmt = select(self.table.c.metadata).where(
-                            self.table.c.id.in_(id_chunk)
-                        )
-                        results = sess.execute(stmt).fetchall()
-                        for result in results:
-                            metadata_json = result[0]
-                            document_id = metadata_json.get("document_id")
-                            if document_id:
-                                del_document_ids.add(document_id)
-
+                if fragment_ids:
+                    for id_chunk in flu(fragment_ids).chunk(12):
                         delete_stmt = (
                             delete(self.table)
-                            .where(self.table.c.id.in_(id_chunk))
-                            .returning(self.table.c.id)
+                            .where(self.table.c.fragment_id.in_(id_chunk))
+                            .returning(
+                                self.table.c.fragment_id,
+                                self.table.c.document_id,
+                                self.table.c.extraction_id,
+                                self.table.c.text,
+                            )
                         )
-                        sess.execute(delete_stmt)
+                        result = sess.execute(delete_stmt)
+                        for row in result:
+                            fragment_id = str(row[0])
+                            deleted_records[fragment_id] = {
+                                "fragment_id": fragment_id,
+                                "document_id": str(row[1]),
+                                "extraction_id": str(row[2]),
+                                "text": row[3],
+                            }
 
                 if filters:
-                    meta_filter = build_filters(self.table.c.metadata, filters)
-                    stmt = select(self.table.c.metadata).where(meta_filter)
-                    results = sess.execute(stmt).fetchall()
-                    for result in results:
-                        metadata_json = result[0]
-                        document_id = metadata_json.get("document_id")
-                        if document_id:
-                            del_document_ids.add(document_id)
-
+                    meta_filter = self._build_complex_filters(filters)
                     delete_stmt = (
                         delete(self.table)
                         .where(meta_filter)
-                        .returning(self.table.c.id)
+                        .returning(
+                            self.table.c.fragment_id,
+                            self.table.c.document_id,
+                            self.table.c.extraction_id,
+                            self.table.c.text,
+                        )
                     )
-                    sess.execute(delete_stmt)
-
-        return list(del_document_ids)
+                    result = sess.execute(delete_stmt)
+                    for row in result:
+                        fragment_id = str(row[0])
+                        deleted_records[fragment_id] = {
+                            "fragment_id": fragment_id,
+                            "document_id": str(row[1]),
+                            "extraction_id": str(row[2]),
+                            "text": row[3],
+                        }
+        return deleted_records
 
     def __getitem__(self, items):
         """
@@ -627,57 +575,43 @@ class Collection:
 
     def query(
         self,
-        data: Union[Iterable[Numeric], Any],
+        vector: list[float],
+        filters: Dict[str, Any] = {},
+        imeasure: IndexMeasure = IndexMeasure.cosine_distance,
         limit: int = 10,
-        filters: Optional[Dict] = None,
-        measure: Union[IndexMeasure, str] = IndexMeasure.cosine_distance,
         include_value: bool = False,
         include_metadata: bool = False,
         *,
         probes: Optional[int] = None,
         ef_search: Optional[int] = None,
-        skip_adapter: bool = False,
     ) -> Union[List[Record], List[str]]:
         """
-        Executes a similarity search in the collection.
-
-        The return type is dependent on arguments *include_value* and *include_metadata*
+        Executes a similarity search in the collection based on the new query structure.
 
         Args:
-            data (Any): The vector to use as the query.
+            vector (list[float]): The query vector.
+            filters (Dict[str, Any], optional): Metadata filters to apply. Defaults to {}.
+            imeasure (IndexMeasure, optional): The distance measure to use. Defaults to IndexMeasure.cosine_distance.
             limit (int, optional): The maximum number of results to return. Defaults to 10.
-            filters (Optional[Dict], optional): Filters to apply to the search. Defaults to None.
-            measure (Union[IndexMeasure, str], optional): The distance measure to use for the search. Defaults to 'cosine_distance'.
             include_value (bool, optional): Whether to include the distance value in the results. Defaults to False.
             include_metadata (bool, optional): Whether to include the metadata in the results. Defaults to False.
-            probes (Optional[Int], optional): Number of ivfflat index lists to query. Higher increases accuracy but decreases speed
-            ef_search (Optional[Int], optional): Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed
-            skip_adapter (bool, optional): When True, skips any associated adapter and queries using a literal vector provided to *data*
+            probes (Optional[int], optional): Number of ivfflat index lists to query.
+            ef_search (Optional[int], optional): Size of the dynamic candidate list for HNSW index search.
 
         Returns:
             Union[List[Record], List[str]]: The result of the similarity search.
-        """
 
+        Raises:
+            ArgError: If the limit is greater than 1000 or if an invalid distance measure is provided.
+        """
         if probes is None:
             probes = 10
 
         if ef_search is None:
             ef_search = 40
 
-        if not isinstance(probes, int):
-            raise ArgError("probes must be an integer")
-
-        if probes < 1:
-            raise ArgError("probes must be >= 1")
-
         if limit > 1000:
             raise ArgError("limit must be <= 1000")
-
-        # ValueError on bad input
-        try:
-            imeasure = IndexMeasure(measure)
-        except ValueError:
-            raise ArgError("Invalid index measure")
 
         if not self.is_indexed_for_measure(imeasure):
             warnings.warn(
@@ -686,34 +620,20 @@ class Collection:
                 )
             )
 
-        if skip_adapter:
-            adapted_query = [("", data, {})]
-        else:
-            # Adapt the query using the pipeline
-            adapted_query = [
-                x
-                for x in self.adapter(
-                    records=[("", data, {})],
-                    adapter_context=AdapterContext("query"),
-                )
-            ]
-
-        if len(adapted_query) != 1:
-            raise ArgError(
-                "Failed to produce exactly one query vector from input"
-            )
-
-        _, vec, _ = adapted_query[0]
-
         distance_lambda = INDEX_MEASURE_TO_SQLA_ACC.get(imeasure)
         if distance_lambda is None:
-            # unreachable
-            raise ArgError("invalid distance_measure")  # pragma: no cover
+            raise ArgError("invalid distance_measure")
 
-        distance_clause = distance_lambda(self.table.c.vec)(vec)
+        distance_clause = distance_lambda(self.table.c.vec)(vector)
 
-        cols = [self.table.c.id]
-
+        cols = [
+            self.table.c.fragment_id,
+            self.table.c.extraction_id,
+            self.table.c.document_id,
+            self.table.c.user_id,
+            self.table.c.group_ids,
+            self.table.c.text,
+        ]
         if include_value:
             cols.append(distance_clause)
 
@@ -721,17 +641,14 @@ class Collection:
             cols.append(self.table.c.metadata)
 
         stmt = select(*cols)
-        if filters:
-            stmt = stmt.filter(
-                build_filters(self.table.c.metadata, filters)  # type: ignore
-            )
+
+        stmt = stmt.filter(self._build_complex_filters(filters))
 
         stmt = stmt.order_by(distance_clause)
         stmt = stmt.limit(limit)
 
         with self.client.Session() as sess:
             with sess.begin():
-                # index ignored if greater than n_lists
                 sess.execute(
                     text("set local ivfflat.probes = :probes").bindparams(
                         probes=probes
@@ -746,6 +663,94 @@ class Collection:
                 if len(cols) == 1:
                     return [str(x) for x in sess.scalars(stmt).fetchall()]
                 return sess.execute(stmt).fetchall() or []
+
+    def _build_complex_filters(self, filters: Dict[str, Any]):
+        """
+        Builds complex filters for SQL query based on the new filter structure.
+
+        Args:
+            filters (Dict[str, Any]): The dictionary specifying filter conditions.
+
+        Returns:
+            The filter clause for the SQL query.
+        """
+
+        def parse_condition(key, condition):
+            if key in self.COLUMN_VARS:
+                # Handle column-based filters
+                column = getattr(self.table.c, key)
+                if isinstance(condition, dict):
+                    op = list(condition.keys())[0]
+                    value = condition[op]
+                    if op == "$eq":
+                        return column == value
+                    elif op == "$ne":
+                        return column != value
+                    elif op == "$in":
+                        return column.in_(value)
+                    elif op == "$nin":
+                        return ~column.in_(value)
+                    elif op == "$overlap":
+                        return column.overlap(value)
+                    else:
+                        raise FilterError(
+                            f"Unsupported operator for column {key}: {op}"
+                        )
+                else:
+                    return column == condition
+            else:
+                if isinstance(condition, dict):
+                    op = list(condition.keys())[0]
+                    value = condition[op]
+                    if op == "$eq":
+                        return self.table.c.metadata[key].astext == str(value)
+                    elif op == "$ne":
+                        return self.table.c.metadata[key].astext != str(value)
+                    elif op == "$gt":
+                        return (
+                            cast(self.table.c.metadata[key].astext, Float)
+                            > value
+                        )
+                    elif op == "$gte":
+                        return (
+                            cast(self.table.c.metadata[key].astext, Float)
+                            >= value
+                        )
+                    elif op == "$lt":
+                        return (
+                            cast(self.table.c.metadata[key].astext, Float)
+                            < value
+                        )
+                    elif op == "$lte":
+                        return (
+                            cast(self.table.c.metadata[key].astext, Float)
+                            <= value
+                        )
+                    elif op == "$in":
+                        return self.table.c.metadata[key].astext.in_(
+                            [str(v) for v in value]
+                        )
+                    elif op == "$nin":
+                        return ~self.table.c.metadata[key].astext.in_(
+                            [str(v) for v in value]
+                        )
+                    else:
+                        raise FilterError(f"Unsupported operator: {op}")
+                else:
+                    return self.table.c.metadata[key].astext == str(condition)
+
+        def parse_filter(filter_dict):
+            conditions = []
+            for key, value in filter_dict.items():
+                if key == "$and":
+                    conditions.append(and_(*[parse_filter(f) for f in value]))
+                elif key == "$or":
+                    conditions.append(or_(*[parse_filter(f) for f in value]))
+                else:
+                    conditions.append(parse_condition(key, value))
+            return and_(*conditions)
+
+        return parse_filter(filters)
 
     @classmethod
     def _list_collections(cls, client: "Client") -> List["Collection"]:
@@ -1009,101 +1014,7 @@ class Collection:
         return None
 
 
-def build_filters(json_col: Column, filters: Dict):
-    """
-    Builds filters for SQL query based on provided dictionary.
-
-    Args:
-        json_col (Column): The column in the database table.
-        filters (Dict): The dictionary specifying filter conditions.
-
-    Raises:
-        FilterError: If filter conditions are not correctly formatted.
-
-    Returns:
-        The filter clause for the SQL query.
-    """
-    if not isinstance(filters, dict):
-        raise FilterError("filters must be a dict")
-
-    filter_clauses = []
-
-    for key, value in filters.items():
-        if not isinstance(key, str):
-            raise FilterError("*filters* keys must be strings")
-
-        if isinstance(value, dict):
-            if len(value) > 1:
-                raise FilterError("only one operator permitted per key")
-            for operator, clause in value.items():
-                if operator not in (
-                    "$eq",
-                    "$ne",
-                    "$lt",
-                    "$lte",
-                    "$gt",
-                    "$gte",
-                    "$in",
-                ):
-                    raise FilterError("unknown operator")
-
-                if operator == "$eq" and not hasattr(clause, "__len__"):
-                    contains_value = cast({key: clause}, postgresql.JSONB)
-                    filter_clauses.append(json_col.op("@>")(contains_value))
-                elif operator == "$in":
-                    if not isinstance(clause, list):
-                        raise FilterError(
-                            "argument to $in filter must be a list"
-                        )
-                    for elem in clause:
-                        if not isinstance(elem, (int, str, float)):
-                            raise FilterError(
-                                "argument to $in filter must be a list of scalars"
-                            )
-                    contains_value = [
-                        cast(elem, postgresql.JSONB) for elem in clause
-                    ]
-                    filter_clauses.append(
-                        json_col.op("->")(key).in_(contains_value)
-                    )
-                else:
-                    matches_value = cast(clause, postgresql.JSONB)
-                    if operator == "$eq":
-                        filter_clauses.append(
-                            json_col.op("->")(key) == matches_value
-                        )
-                    elif operator == "$ne":
-                        filter_clauses.append(
-                            json_col.op("->")(key) != matches_value
-                        )
-                    elif operator == "$lt":
-                        filter_clauses.append(
-                            json_col.op("->")(key) < matches_value
-                        )
-                    elif operator == "$lte":
-                        filter_clauses.append(
-                            json_col.op("->")(key) <= matches_value
-                        )
-                    elif operator == "$gt":
-                        filter_clauses.append(
-                            json_col.op("->")(key) > matches_value
-                        )
-                    elif operator == "$gte":
-                        filter_clauses.append(
-                            json_col.op("->")(key) >= matches_value
-                        )
-                    else:
-                        raise Unreachable()
-        else:
-            raise FilterError("Filter value must be a dict with an operator")
-
-    if len(filter_clauses) == 1:
-        return filter_clauses[0]
-    else:
-        return and_(*filter_clauses)
-
-
-def build_table(name: str, meta: MetaData, dimension: int) -> Table:
+def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
     """
     PRIVATE
 
@@ -1120,13 +1031,28 @@ def build_table(name: str, meta: MetaData, dimension: int) -> Table:
     return Table(
         name,
         meta,
-        Column("id", String, primary_key=True),
+        Column("fragment_id", postgresql.UUID, primary_key=True),
+        Column("extraction_id", postgresql.UUID, nullable=False),
+        Column("document_id", postgresql.UUID, nullable=False),
+        Column("user_id", postgresql.UUID, nullable=False),
+        Column(
+            "group_ids", postgresql.ARRAY(postgresql.UUID), server_default="{}"
+        ),
         Column("vec", Vector(dimension), nullable=False),
+        Column(
+            "text", postgresql.TEXT, nullable=True
+        ),  # New standalone text column
         Column(
             "metadata",
             postgresql.JSONB,
             server_default=text("'{}'::jsonb"),
             nullable=False,
         ),
+        Column(
+            "fts",
+            postgresql.TSVECTOR,
+            server_default=text("to_tsvector('english', '')"),
+            nullable=False,
+        ),  # New FTS column
         extend_existing=True,
     )

@@ -1,134 +1,223 @@
+import uuid
+from typing import TYPE_CHECKING
+
 from fastapi import Body, Depends, Path
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel
+from pydantic import EmailStr
 
-from r2r.base import Token, User, UserCreate
-from r2r.main.api.routes.auth.requests import (
-    PasswordChangeRequest,
-    PasswordResetConfirmRequest,
-    PasswordResetRequest,
+from r2r.base.api.models.auth.responses import (
+    GenericMessageResponse,
+    WrappedGenericMessageResponse,
+    WrappedTokenResponse,
+    WrappedUserResponse,
 )
 
-from ....engine import R2REngine
 from ..base_router import BaseRouter
+
+if TYPE_CHECKING:
+    from ....engine import R2REngine
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-class UserResponse(BaseModel):
-    results: User
-
-
-class TokenResponse(BaseModel):
-    results: dict[str, Token]
-
-
-class UserProfileUpdate(BaseModel):
-    email: str | None = None
-    name: str | None = None
-    bio: str | None = None
-    profile_picture: str | None = None
-
-
 class AuthRouter(BaseRouter):
-    def __init__(self, engine: R2REngine):
+    def __init__(self, engine: "R2REngine"):
         super().__init__(engine)
-        if self.engine.providers.auth:
-            self.setup_routes()
+        self.setup_routes()
 
     def setup_routes(self):
-        @self.router.post("/register", response_model=UserResponse)
+        @self.router.post("/register", response_model=WrappedUserResponse)
         @self.base_endpoint
-        async def register_app(user: UserCreate):
-            return await self.engine.aregister(user)
+        async def register_app(
+            email: EmailStr = Body(..., description="User's email address"),
+            password: str = Body(..., description="User's password"),
+        ):
+            """
+            Register a new user.
+            """
+            result = await self.engine.aregister(email, password)
+            return result
 
-        @self.router.post("/verify_email/{verification_code}")
+        @self.router.post(
+            "/verify_email", response_model=WrappedGenericMessageResponse
+        )
         @self.base_endpoint
-        async def verify_email_app(verification_code: str):
-            return await self.engine.averify_email(verification_code)
+        async def verify_email_app(
+            verification_code: str = Body(
+                ..., description="Email verification code"
+            )
+        ):
+            """
+            Verify a user's email address.
 
-        @self.router.post("/login", response_model=TokenResponse)
+            This endpoint is used to confirm a user's email address using the verification code
+            sent to their email after registration.
+            """
+            result = await self.engine.averify_email(verification_code)
+            return GenericMessageResponse(message=result["message"])
+
+        @self.router.post("/login", response_model=WrappedTokenResponse)
         @self.base_endpoint
-        async def login_app(form_data: OAuth2PasswordRequestForm = Depends()):
+        async def login_app(
+            form_data: OAuth2PasswordRequestForm = Depends(),
+        ):
+            """
+            Authenticate a user and provide access tokens.
+
+            This endpoint authenticates a user using their email (username) and password,
+            and returns access and refresh tokens upon successful authentication.
+            """
             login_result = await self.engine.alogin(
                 form_data.username, form_data.password
             )
             return login_result
 
-        @self.router.get("/user", response_model=UserResponse)
+        @self.router.get("/user", response_model=WrappedUserResponse)
         @self.base_endpoint
         async def get_user_app(
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
+            """
+            Get the current user's profile information.
+
+            This endpoint returns the profile information of the currently authenticated user.
+            """
             return auth_user
 
-        @self.router.put("/user", response_model=UserResponse)
+        @self.router.put("/user", response_model=WrappedUserResponse)
         @self.base_endpoint
         async def put_user_app(
-            profile_update: UserProfileUpdate,
+            email: EmailStr | None = Body(
+                None, description="Updated email address"
+            ),
+            name: str | None = Body(None, description="Updated user name"),
+            bio: str | None = Body(None, description="Updated user bio"),
+            profile_picture: str | None = Body(
+                None, description="Updated profile picture URL"
+            ),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
+            """
+            Update the current user's profile information.
+
+            This endpoint allows the authenticated user to update their profile information.
+            """
             return await self.engine.aupdate_user(
-                auth_user.id, profile_update.dict(exclude_unset=True)
+                user_id=auth_user.id,
+                email=email,
+                name=name,
+                bio=bio,
+                profile_picture=profile_picture,
             )
 
         @self.router.post(
-            "/refresh_access_token", response_model=TokenResponse
+            "/refresh_access_token", response_model=WrappedTokenResponse
         )
         @self.base_endpoint
         async def refresh_access_token_app(
-            refresh_token: str = Body(..., embed=True),
+            refresh_token: str = Body(..., description="Refresh token"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
+            """
+            Refresh the access token using a refresh token.
+
+            This endpoint allows users to obtain a new access token using their refresh token.
+            """
             refresh_result = await self.engine.arefresh_access_token(
                 user_email=auth_user.email,
                 refresh_token=refresh_token,
             )
             return refresh_result
 
-        @self.router.post("/change_password")
+        @self.router.post(
+            "/change_password", response_model=WrappedGenericMessageResponse
+        )
         @self.base_endpoint
         async def change_password_app(
-            password_change: PasswordChangeRequest,
+            current_password: str = Body(..., description="Current password"),
+            new_password: str = Body(..., description="New password"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
-            return await self.engine.achange_password(
-                auth_user,
-                password_change.current_password,
-                password_change.new_password,
-            )
+            """
+            Change the authenticated user's password.
 
-        @self.router.post("/request_password_reset")
+            This endpoint allows users to change their password by providing their current password
+            and a new password.
+            """
+            result = await self.engine.achange_password(
+                auth_user,
+                current_password,
+                new_password,
+            )
+            return GenericMessageResponse(message=result["message"])
+
+        @self.router.post(
+            "/request_password_reset",
+            response_model=WrappedGenericMessageResponse,
+        )
         @self.base_endpoint
         async def request_password_reset_app(
-            reset_request: PasswordResetRequest,
+            email: EmailStr = Body(..., description="User's email address")
         ):
-            return await self.engine.arequest_password_reset(
-                reset_request.email
-            )
+            """
+            Request a password reset for a user.
 
-        @self.router.post("/reset_password/{reset_token}")
+            This endpoint initiates the password reset process by sending a reset link
+            to the specified email address.
+            """
+            result = await self.engine.arequest_password_reset(email)
+            return GenericMessageResponse(message=result["message"])
+
+        @self.router.post(
+            "/reset_password/{reset_token}",
+            response_model=WrappedGenericMessageResponse,
+        )
         @self.base_endpoint
         async def reset_password_app(
-            reset_token: str = Path(...),
-            reset_confirm: PasswordResetConfirmRequest = Body(...),
+            reset_token: str = Path(..., description="Password reset token"),
+            new_password: str = Body(..., description="New password"),
         ):
-            return await self.engine.aconfirm_password_reset(
-                reset_token, reset_confirm.new_password
+            result = await self.engine.aconfirm_password_reset(
+                reset_token, new_password
             )
+            return GenericMessageResponse(message=result["message"])
 
-        @self.router.post("/logout")
+        @self.router.post(
+            "/logout", response_model=WrappedGenericMessageResponse
+        )
         @self.base_endpoint
         async def logout_app(
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
             token: str = Depends(oauth2_scheme),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
-            return await self.engine.alogout(token)
+            """
+            Log out the current user.
 
-        @self.router.delete("/user")
+            This endpoint invalidates the user's current access token, effectively logging them out.
+            """
+            result = await self.engine.alogout(token)
+            return GenericMessageResponse(message=result["message"])
+
+        @self.router.delete(
+            "/user", response_model=WrappedGenericMessageResponse
+        )
         @self.base_endpoint
         async def delete_user_app(
-            password: str = Body(..., embed=True),
+            user_id: uuid.UUID = Body(
+                ..., description="ID of the user to delete"
+            ),
+            password: str | None = Body(
+                None, description="User's current password"
+            ),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
-            return await self.engine.adelete_user(auth_user.id, password)
+            """
+            Delete a user account.
+
+            This endpoint allows users to delete their own account or, for superusers,
+            to delete any user account.
+            """
+            if auth_user.id != user_id and not auth_user.is_superuser:
+                raise Exception("User ID does not match authenticated user")
+            result = await self.engine.adelete_user(user_id, password)
+            return GenericMessageResponse(message=result["message"])

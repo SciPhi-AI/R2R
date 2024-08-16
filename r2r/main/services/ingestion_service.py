@@ -1,33 +1,28 @@
-import json
 import logging
 import uuid
-import warnings
 from collections import defaultdict
 from datetime import datetime
 from typing import Any, Optional
 
-from fastapi import Form, UploadFile
+from fastapi import UploadFile
 
 from r2r.base import (
     Document,
     DocumentInfo,
     DocumentType,
-    KVLoggingSingleton,
     R2RDocumentProcessingError,
     R2RException,
+    RunLoggingSingleton,
     RunManager,
-    User,
     generate_id_from_label,
     increment_version,
     to_async_generator,
 )
+from r2r.base.api.models import IngestionResponse
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
+from ...base.api.models.auth.responses import UserResponse
 from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
-from ..api.routes.ingestion.requests import (
-    R2RIngestFilesRequest,
-    R2RUpdateFilesRequest,
-)
 from ..assembly.config import R2RConfig
 from .base import Service
 
@@ -43,7 +38,7 @@ class IngestionService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: KVLoggingSingleton,
+        logging_connection: RunLoggingSingleton,
     ):
         super().__init__(
             config,
@@ -55,7 +50,11 @@ class IngestionService(Service):
         )
 
     def _file_to_document(
-        self, file: UploadFile, document_id: uuid.UUID, metadata: dict
+        self,
+        file: UploadFile,
+        user: UserResponse,
+        document_id: uuid.UUID,
+        metadata: dict,
     ) -> Document:
         file_extension = file.filename.split(".")[-1].lower()
         if file_extension.upper() not in DocumentType.__members__:
@@ -69,6 +68,8 @@ class IngestionService(Service):
 
         return Document(
             id=document_id,
+            group_ids=metadata.get("group_ids", []),
+            user_id=user.id,
             type=DocumentType[file_extension.upper()],
             data=file.file.read(),
             metadata=metadata,
@@ -79,7 +80,6 @@ class IngestionService(Service):
         self,
         documents: list[Document],
         versions: Optional[list[str]] = None,
-        user: Optional[User] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -88,16 +88,29 @@ class IngestionService(Service):
                 status_code=400, message="No documents provided for ingestion."
             )
 
+        chunking_provider = kwargs.get("chunking_provider")
+        if chunking_provider is None:
+            logger.info("No chunking provider specified. Using default.")
+        else:
+            logger.info(
+                f"Using custom chunking provider: {type(chunking_provider).__name__}"
+            )
+
         document_infos = []
         skipped_documents = []
         processed_documents = {}
         duplicate_documents = defaultdict(list)
-        user_ids = [str(user.id)] if user else []
+
+        if not all(doc.id for doc in documents):
+            raise R2RException(
+                status_code=400, message="All documents must have an ID."
+            )
+        user_id = documents[0].user_id
 
         existing_documents = (
             (
                 self.providers.database.relational.get_documents_overview(
-                    filter_user_ids=user_ids
+                    filter_user_ids=[user_id]
                 )
             )
             if self.providers.database
@@ -105,21 +118,11 @@ class IngestionService(Service):
         )
 
         existing_document_info = {
-            doc_info.document_id: doc_info for doc_info in existing_documents
+            doc_info.id: doc_info for doc_info in existing_documents
         }
 
         for iteration, document in enumerate(documents):
             version = versions[iteration] if versions else "v0"
-
-            # Check if user ID has already been provided, and if it matches the authenticated user
-            user_id = document.metadata.get("user_id", None)
-            if user:
-                if user_id and user_id != str(user.id):
-                    raise R2RException(
-                        status_code=403,
-                        message="User ID in metadata does not match authenticated user.",
-                    )
-                document.metadata["user_id"] = str(user.id)
 
             # Check for duplicates within the current batch
             if document.id in processed_documents:
@@ -142,29 +145,30 @@ class IngestionService(Service):
                         message=f"Document with ID {document.id} was already successfully processed.",
                     )
                 skipped_documents.append(
-                    (
-                        document.id,
-                        document.metadata.get("title", None)
-                        or str(document.id),
-                    )
+                    {
+                        "id": document.id,
+                        "title": document.metadata.get("title", "N/A"),
+                    }
                 )
                 continue
 
             now = datetime.now()
             document_info_metadata = document.metadata.copy()
-            title = document_info_metadata.pop("title", str(document.id))
-            user_id = document_info_metadata.pop("user_id", None)
+            title = document_info_metadata.pop("title", "N/A")
+
             document_infos.append(
                 DocumentInfo(
-                    document_id=document.id,
-                    version=version,
-                    size_in_bytes=len(document.data),
+                    id=document.id,
+                    user_id=document.user_id,
+                    group_ids=document.group_ids,
+                    type=document.type,
                     metadata=document_info_metadata,
                     title=title,
-                    user_id=user_id,
+                    version=version,
+                    size_in_bytes=len(document.data),
+                    status="processing",
                     created_at=now,
                     updated_at=now,
-                    status="processing",  # Set initial status to `processing`
                 )
             )
 
@@ -199,34 +203,42 @@ class IngestionService(Service):
                     doc
                     for doc in documents
                     if doc.id
-                    not in [skipped[0] for skipped in skipped_documents]
+                    not in [skipped["id"] for skipped in skipped_documents]
                 ],
             ),
             versions=[info.version for info in document_infos],
             run_manager=self.run_manager,
-            user=user,
             *args,
             **kwargs,
         )
+
+        # enrich using graphrag
+        # get triples from the graph
+
+        # self.graph_rag = True
+        # if self.graph_rag:
+
+        #     graphrag_results = await self.pipelines.kg_cluster_pipeline.run(
+        #         input = to_async_generator()
+        #     )
+
         return await self._process_ingestion_results(
             ingestion_results,
             document_infos,
             skipped_documents,
-            processed_documents,
-            user=user,
         )
 
     @telemetry_event("IngestFiles")
     async def ingest_files(
         self,
         files: list[UploadFile],
+        user: UserResponse,
         metadatas: Optional[list[dict]] = None,
         document_ids: Optional[list[uuid.UUID]] = None,
         versions: Optional[list[str]] = None,
-        user: Optional[User] = None,
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> IngestionResponse:
         if not files:
             raise R2RException(
                 status_code=400, message="No files provided for ingestion."
@@ -242,22 +254,27 @@ class IngestionService(Service):
 
                 document_metadata = metadatas[iteration] if metadatas else {}
 
-                id_label = str(file.filename.split("/")[-1])
-                # Make user-level ids unique
-                if user:
-                    id_label += str(user.id)
+                id_label = f'{file.filename.split("/")[-1]}-{user.id}'
+
                 document_id = (
                     document_ids[iteration]
                     if document_ids
                     else generate_id_from_label(id_label)
                 )
 
+                print("user.id = ", user.id)
+                print("document_id = ", document_id)
+
                 document = self._file_to_document(
-                    file, document_id, document_metadata
+                    file, user, document_id, document_metadata
                 )
                 documents.append(document)
             return await self.ingest_documents(
-                documents, versions, *args, **kwargs, user=user
+                documents,
+                versions,
+                user=user,
+                *args,
+                **kwargs,
             )
 
         finally:
@@ -269,11 +286,12 @@ class IngestionService(Service):
         self,
         files: list[UploadFile],
         document_ids: list[uuid.UUID],
+        user: UserResponse,
         metadatas: Optional[list[dict]] = None,
-        user: Optional[User] = None,
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> IngestionResponse:
+        print("UpdateFiles")
         if not files:
             raise R2RException(
                 status_code=400, message="No files provided for update."
@@ -283,7 +301,6 @@ class IngestionService(Service):
                 status_code=501,
                 message="Database provider is not available for updating documents.",
             )
-
         try:
             if len(document_ids) != len(files):
                 raise R2RException(
@@ -293,9 +310,7 @@ class IngestionService(Service):
 
             documents_overview = (
                 self.providers.database.relational.get_documents_overview(
-                    filter_document_ids=[
-                        str(doc_id) for doc_id in document_ids
-                    ]
+                    filter_document_ids=document_ids
                 )
             )
 
@@ -317,15 +332,6 @@ class IngestionService(Service):
                         message=f"Document with id {doc_id} not found.",
                     )
 
-                user_id = doc_info.metadata.get("user_id", None)
-                if user:
-                    if user_id and user_id != str(user.id):
-                        raise R2RException(
-                            status_code=403,
-                            message="User ID in metadata does not match authenticated user.",
-                        )
-                    doc_info.metadata["user_id"] = str(user.id)
-
                 new_version = increment_version(doc_info.version)
                 new_versions.append(new_version)
 
@@ -338,25 +344,21 @@ class IngestionService(Service):
                 )
 
                 document = self._file_to_document(
-                    file, doc_id, updated_metadata
+                    file, user, doc_id, updated_metadata
                 )
                 documents.append(document)
 
             ingestion_results = await self.ingest_documents(
-                documents, versions=new_versions, user=user, *args, **kwargs
+                documents, versions=new_versions, *args, **kwargs
             )
 
             for doc_id, old_version in zip(
                 document_ids,
                 [doc_info.version for doc_info in documents_overview],
             ):
-                keys = ["document_id", "version"]
-                values = [str(doc_id), old_version]
-                if user:
-                    keys.append("user_id")
-                    values.append(str(user.id))
-
-                self.providers.database.vector.delete_by_metadata(keys, values)
+                self.providers.database.vector.delete(
+                    filters={"document_id": {"$eq": doc_id}}
+                )
                 self.providers.database.relational.delete_from_documents_overview(
                     doc_id, old_version
                 )
@@ -371,11 +373,9 @@ class IngestionService(Service):
         self,
         ingestion_results: dict,
         document_infos: list[DocumentInfo],
-        skipped_documents: list[tuple[str, str]],
-        processed_documents: dict,
-        user: Optional[User] = None,
+        skipped_documents: list[dict[str, str]],
     ):
-        skipped_ids = [ele[0] for ele in skipped_documents]
+        skipped_ids = [ele["id"] for ele in skipped_documents]
         failed_ids = []
         successful_ids = []
 
@@ -396,10 +396,10 @@ class IngestionService(Service):
 
         documents_to_upsert = []
         for document_info in document_infos:
-            if document_info.document_id not in skipped_ids:
-                if document_info.document_id in failed_ids:
+            if document_info.id not in skipped_ids:
+                if document_info.id in failed_ids:
                     document_info.status = "failure"
-                elif document_info.document_id in successful_ids:
+                elif document_info.id in successful_ids:
                     document_info.status = "success"
                 documents_to_upsert.append(document_info)
 
@@ -407,147 +407,19 @@ class IngestionService(Service):
             self.providers.database.relational.upsert_documents_overview(
                 documents_to_upsert
             )
-
+        # TODO - modify ingestion service so that at end we write out number of vectors produced or the error message
+        # THEN, return updated document infos here
         results = {
             "processed_documents": [
-                f"Document '{processed_documents[document_id]}' processed successfully."
-                for document_id in successful_ids
+                document
+                for document in document_infos
+                if document.id in successful_ids
             ],
             "failed_documents": [
-                f"Document '{processed_documents[document_id]}': {results[document_id]}"
+                {"document_id": document_id, "result": results[document_id]}
                 for document_id in failed_ids
             ],
-            "skipped_documents": [
-                f"Document '{filename}' skipped since it already exists."
-                for _, filename in skipped_documents
-            ],
+            "skipped_documents": skipped_ids,
         }
 
-        # TODO - Clean up logging for document parse results
-        if run_ids := list(self.run_manager.run_info.keys()):
-            run_id = run_ids[0]
-            for key in results:
-                if key in ["processed_documents", "failed_documents"]:
-                    for value in results[key]:
-                        await self.logging_connection.log(
-                            log_id=run_id,
-                            key="document_parse_result",
-                            value=value,
-                            user_id=str(user.id) if user else None,
-                        )
-
-        if not user:
-            # TODO: add in link to migration guide
-            warnings.warn(
-                "Logs excluding user ids are deprecated and will be removed in version 0.3.0. Please follow the migration guide here.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         return results
-
-    @staticmethod
-    def parse_ingest_files_form_data(
-        metadatas: Optional[str] = Form(None),
-        document_ids: str = Form(None),
-        versions: Optional[str] = Form(None),
-        chunking_config_override: Optional[str] = Form(None),
-    ) -> R2RIngestFilesRequest:
-        try:
-            parsed_metadatas = (
-                json.loads(metadatas)
-                if metadatas and metadatas != "null"
-                else None
-            )
-            if parsed_metadatas is not None and not isinstance(
-                parsed_metadatas, list
-            ):
-                raise ValueError("metadatas must be a list of dictionaries")
-
-            parsed_document_ids = (
-                json.loads(document_ids)
-                if document_ids and document_ids != "null"
-                else None
-            )
-            if parsed_document_ids is not None:
-                parsed_document_ids = [
-                    uuid.UUID(doc_id) for doc_id in parsed_document_ids
-                ]
-
-            parsed_versions = (
-                json.loads(versions)
-                if versions and versions != "null"
-                else None
-            )
-            chunking_config_override = (
-                json.loads(chunking_config_override)
-                if chunking_config_override
-                and chunking_config_override != "null"
-                else None
-            )
-            request_data = {
-                "metadatas": parsed_metadatas,
-                "document_ids": parsed_document_ids,
-                "versions": parsed_versions,
-                "chunking_config_override": chunking_config_override,
-            }
-            return R2RIngestFilesRequest(**request_data)
-        except json.JSONDecodeError as e:
-            raise R2RException(
-                status_code=400, message=f"Invalid JSON in form data: {e}"
-            )
-        except ValueError as e:
-            raise R2RException(status_code=400, message=str(e))
-        except Exception as e:
-            raise R2RException(
-                status_code=400, message=f"Error processing form data: {e}"
-            )
-
-    @staticmethod
-    def parse_update_files_form_data(
-        metadatas: Optional[str] = Form(None),
-        document_ids: str = Form(...),
-        chunking_config_override: Optional[str] = Form(None),
-    ) -> R2RUpdateFilesRequest:
-        try:
-            parsed_metadatas = (
-                json.loads(metadatas)
-                if metadatas and metadatas != "null"
-                else None
-            )
-            if parsed_metadatas is not None and not isinstance(
-                parsed_metadatas, list
-            ):
-                raise ValueError("metadatas must be a list of dictionaries")
-
-            if not document_ids or document_ids == "null":
-                raise ValueError("document_ids is required and cannot be null")
-
-            parsed_document_ids = json.loads(document_ids)
-            if not isinstance(parsed_document_ids, list):
-                raise ValueError("document_ids must be a list")
-            parsed_document_ids = [
-                uuid.UUID(doc_id) for doc_id in parsed_document_ids
-            ]
-            chunking_config_override = (
-                json.loads(chunking_config_override)
-                if chunking_config_override
-                and chunking_config_override != "null"
-                else None
-            )
-
-            request_data = {
-                "metadatas": parsed_metadatas,
-                "document_ids": parsed_document_ids,
-                "chunking_config_override": chunking_config_override,
-            }
-            return R2RUpdateFilesRequest(**request_data)
-        except json.JSONDecodeError as e:
-            raise R2RException(
-                status_code=400, message=f"Invalid JSON in form data: {e}"
-            )
-        except ValueError as e:
-            raise R2RException(status_code=400, message=str(e))
-        except Exception as e:
-            raise R2RException(
-                status_code=400, message=f"Error processing form data: {e}"
-            )

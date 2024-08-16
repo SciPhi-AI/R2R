@@ -3,13 +3,13 @@ import logging
 from asyncio import Queue
 from typing import Any, Optional
 
-from ..base import User
 from ..base.abstractions.search import (
     AggregateSearchResult,
     KGSearchSettings,
     VectorSearchSettings,
 )
-from ..base.logging.kv_logger import KVLoggingSingleton
+from ..base.api.models.auth.responses import UserResponse
+from ..base.logging.run_logger import RunLoggingSingleton
 from ..base.logging.run_manager import RunManager, manage_run
 from ..base.pipeline.base_pipeline import AsyncPipeline, dequeue_requests
 from ..base.pipes.base_pipe import AsyncPipe, AsyncState
@@ -20,11 +20,9 @@ logger = logging.getLogger(__name__)
 class SearchPipeline(AsyncPipeline):
     """A pipeline for search."""
 
-    pipeline_type: str = "search"
-
     def __init__(
         self,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         run_manager: Optional[RunManager] = None,
     ):
         super().__init__(pipe_logger, run_manager)
@@ -38,10 +36,9 @@ class SearchPipeline(AsyncPipeline):
         state: Optional[AsyncState] = None,
         stream: bool = False,
         run_manager: Optional[RunManager] = None,
-        log_run_info: bool = True,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
-        user: Optional[User] = None,
+        user: Optional[UserResponse] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -55,15 +52,7 @@ class SearchPipeline(AsyncPipeline):
             and kg_search_settings.use_kg_search
         )
         run_manager = run_manager or self.run_manager
-        async with manage_run(run_manager, self.pipeline_type):
-            if log_run_info:
-                await run_manager.log_run_info(
-                    key="pipeline_type",
-                    value=self.pipeline_type,
-                    is_info_log=True,
-                    user=user,
-                )
-
+        async with manage_run(run_manager):
             vector_search_queue = Queue()
             kg_queue = Queue()
 
@@ -88,7 +77,6 @@ class SearchPipeline(AsyncPipeline):
                         state,
                         stream,
                         run_manager,
-                        log_run_info=False,
                         vector_search_settings=vector_search_settings,
                         *args,
                         **kwargs,
@@ -102,7 +90,6 @@ class SearchPipeline(AsyncPipeline):
                         state,
                         stream,
                         run_manager,
-                        log_run_info=False,
                         kg_search_settings=kg_search_settings,
                         *args,
                         **kwargs,

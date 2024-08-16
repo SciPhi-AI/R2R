@@ -1,16 +1,16 @@
 import logging
-import uuid
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Optional, Union
+from uuid import UUID
 
-from ..abstractions.document import DocumentInfo
-from ..abstractions.search import VectorSearchResult
-from ..abstractions.user import User, UserCreate, UserResponse
-from ..abstractions.vector import VectorEntry
+from ..abstractions import DocumentInfo, VectorEntry, VectorSearchResult
+from ..api.models import UserResponse
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
+
+VectorDBFilterValue = Union[str, UUID]
 
 
 class DatabaseConfig(ProviderConfig):
@@ -29,13 +29,13 @@ class DatabaseConfig(ProviderConfig):
         return ["postgres", None]
 
 
-class VectorDatabaseProvider(Provider, ABC):
+class VectorDBProvider(Provider, ABC):
     @abstractmethod
     def _initialize_vector_db(self, dimension: int) -> None:
         pass
 
     @abstractmethod
-    def copy(self, entry: VectorEntry, commit: bool = True) -> None:
+    def create_index(self, index_type, column_name, index_options):
         pass
 
     @abstractmethod
@@ -46,7 +46,7 @@ class VectorDatabaseProvider(Provider, ABC):
     def search(
         self,
         query_vector: list[float],
-        filters: dict[str, Union[bool, int, str]] = {},
+        filters: dict[str, VectorDBFilterValue] = {},
         limit: int = 10,
         *args,
         **kwargs,
@@ -59,7 +59,7 @@ class VectorDatabaseProvider(Provider, ABC):
         query_text: str,
         query_vector: list[float],
         limit: int = 10,
-        filters: Optional[dict[str, Union[bool, int, str]]] = None,
+        filters: Optional[dict[str, VectorDBFilterValue]] = None,
         full_text_weight: float = 1.0,
         semantic_weight: float = 1.0,
         rrf_k: int = 20,
@@ -69,44 +69,11 @@ class VectorDatabaseProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def create_index(self, index_type, column_name, index_options):
-        pass
-
-    @abstractmethod
-    def delete_by_metadata(
-        self,
-        metadata_fields: list[str],
-        metadata_values: list[Union[bool, int, str]],
-    ) -> list[str]:
-        pass
-
-    @abstractmethod
-    def get_metadatas(
-        self,
-        metadata_fields: list[str],
-        filter_field: Optional[str] = None,
-        filter_value: Optional[str] = None,
-    ) -> list[str]:
-        pass
-
-    def upsert_entries(
-        self, entries: list[VectorEntry], commit: bool = True
-    ) -> None:
-        for entry in entries:
-            self.upsert(entry, commit=commit)
-
-    def copy_entries(
-        self, entries: list[VectorEntry], commit: bool = True
-    ) -> None:
-        for entry in entries:
-            self.copy(entry, commit=commit)
-
-    @abstractmethod
-    def get_document_chunks(self, document_id: str) -> list[dict]:
+    def delete(self, filters: dict[str, VectorDBFilterValue]) -> list[str]:
         pass
 
 
-class RelationalDatabaseProvider(Provider, ABC):
+class RelationalDBProvider(Provider, ABC):
     @abstractmethod
     def _initialize_relational_db(self) -> None:
         pass
@@ -120,8 +87,9 @@ class RelationalDatabaseProvider(Provider, ABC):
     @abstractmethod
     def get_documents_overview(
         self,
+        filter_user_ids: Optional[str] = None,
+        filter_group_ids: Optional[list[str]] = None,
         filter_document_ids: Optional[list[str]] = None,
-        filter_user_ids: Optional[list[str]] = None,
     ) -> list[DocumentInfo]:
         pass
 
@@ -136,31 +104,31 @@ class RelationalDatabaseProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def create_user(self, user: UserCreate) -> User:
+    def create_user(self, email: str, password: str) -> UserResponse:
         pass
 
     @abstractmethod
-    def get_user_by_email(self, email: str) -> Optional[User]:
+    def get_user_by_email(self, email: str) -> Optional[UserResponse]:
         pass
 
     @abstractmethod
     def store_verification_code(
-        self, user_id: uuid.UUID, verification_code: str, expiry: datetime
+        self, user_id: UUID, verification_code: str, expiry: datetime
     ):
         pass
 
     @abstractmethod
     def get_user_id_by_verification_code(
         self, verification_code: str
-    ) -> Optional[uuid.UUID]:
+    ) -> Optional[UUID]:
         pass
 
     @abstractmethod
-    def mark_user_as_verified(self, user_id: uuid.UUID):
+    def mark_user_as_verified(self, user_id: UUID):
         pass
 
     @abstractmethod
-    def mark_user_as_superuser(self, user_id: uuid.UUID):
+    def mark_user_as_superuser(self, user_id: UUID):
         pass
 
     @abstractmethod
@@ -168,15 +136,22 @@ class RelationalDatabaseProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def get_user_by_id(self, user_id: uuid.UUID) -> Optional[User]:
+    def get_user_by_id(self, user_id: UUID) -> Optional[UserResponse]:
         pass
 
     @abstractmethod
-    def update_user(self, user: User) -> User:
+    def update_user(
+        self,
+        user_id: UUID,
+        email: Optional[str],
+        name: Optional[str],
+        bio: Optional[str],
+        profile_picture: Optional[str],
+    ) -> UserResponse:
         pass
 
     @abstractmethod
-    def delete_user(self, user_id: uuid.UUID):
+    def delete_user(self, user_id: UUID):
         pass
 
     @abstractmethod
@@ -193,21 +168,15 @@ class DatabaseProvider(Provider):
             )
         logger.info(f"Initializing DatabaseProvider with config {config}.")
         super().__init__(config)
-        self.vector: VectorDatabaseProvider = self._initialize_vector_db()
-        self.relational: RelationalDatabaseProvider = (
+        self.vector: VectorDBProvider = self._initialize_vector_db()
+        self.relational: RelationalDBProvider = (
             self._initialize_relational_db()
         )
 
     @abstractmethod
-    def _initialize_vector_db(self) -> VectorDatabaseProvider:
+    def _initialize_vector_db(self) -> VectorDBProvider:
         pass
 
     @abstractmethod
-    def _initialize_relational_db(self) -> RelationalDatabaseProvider:
+    def _initialize_relational_db(self) -> RelationalDBProvider:
         pass
-
-
-# Example usage:
-# db_provider = DatabaseProvider(config)
-# db_provider.vector.search(...)
-# db_provider.relational.get_documents_overview(...)

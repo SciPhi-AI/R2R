@@ -5,9 +5,8 @@ from typing import Any, AsyncGenerator
 from r2r import parsers
 from r2r.base import (
     Document,
+    DocumentExtraction,
     DocumentType,
-    Extraction,
-    ExtractionType,
     ParsingConfig,
     ParsingProvider,
     R2RDocumentProcessingError,
@@ -68,7 +67,7 @@ class R2RParsingProvider(ParsingProvider):
 
     async def parse(
         self, document: Document
-    ) -> AsyncGenerator[Extraction, None]:
+    ) -> AsyncGenerator[DocumentExtraction, None]:
         if document.type not in self.parsers:
             yield R2RDocumentProcessingError(
                 document_id=document.id,
@@ -78,24 +77,17 @@ class R2RParsingProvider(ParsingProvider):
 
         parser = self.parsers[document.type]
         texts = parser.ingest(document.data)
-        extraction_type = ExtractionType.TXT
         t0 = time.time()
-
-        if document.type in self.IMAGE_TYPES:
-            extraction_type = ExtractionType.IMG
-            document.metadata["image_type"] = document.type.value
-        elif document.type == DocumentType.MP4:
-            extraction_type = ExtractionType.MOV
-            document.metadata["audio_type"] = document.type.value
 
         iteration = 0
         async for text in texts:
-            extraction = Extraction(
+            extraction = DocumentExtraction(
                 id=generate_id_from_label(f"{document.id}-{iteration}"),
+                document_id=document.id,
+                user_id=document.user_id,
+                group_ids=document.group_ids,
                 data=text,
                 metadata=document.metadata,
-                document_id=document.id,
-                type=extraction_type,
             )
             yield extraction
             iteration += 1

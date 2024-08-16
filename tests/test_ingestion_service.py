@@ -15,6 +15,7 @@ from r2r.base import (
     R2RDocumentProcessingError,
     R2RException,
     RunManager,
+    UserResponse,
     generate_id_from_label,
 )
 from r2r.main import R2RPipelines, R2RProviders
@@ -82,8 +83,10 @@ def ingestion_service(mock_vector_db, mock_embedding_model):
 async def test_ingest_single_document(ingestion_service, mock_vector_db):
     document = Document(
         id=generate_id_from_label("test_id"),
-        data="Test content",
+        group_ids=[],
+        user_id=generate_id_from_label("user_1"),
         type="txt",
+        data="Test content",
         metadata={},
     )
 
@@ -96,9 +99,9 @@ async def test_ingest_single_document(ingestion_service, mock_vector_db):
 
     result = await ingestion_service.ingest_documents([document])
 
-    assert result["processed_documents"] == [
-        f"Document '{document.id}' processed successfully."
-    ]
+    assert result["processed_documents"][0].id == generate_id_from_label(
+        "test_id"
+    )
     assert not result["failed_documents"]
     assert not result["skipped_documents"]
 
@@ -107,18 +110,22 @@ async def test_ingest_single_document(ingestion_service, mock_vector_db):
 async def test_ingest_duplicate_document(ingestion_service, mock_vector_db):
     document = Document(
         id=generate_id_from_label("test_id"),
-        data="Test content",
+        group_ids=[],
+        user_id=generate_id_from_label("user_1"),
         type="txt",
+        data="Test content",
         metadata={},
     )
     mock_vector_db.relational.get_documents_overview.return_value = [
         DocumentInfo(
-            document_id=document.id,
+            id=document.id,
+            group_ids=[],
+            user_id=generate_id_from_label("user_1"),
             version="v0",
             size_in_bytes=len(document.data),
             metadata={},
             title=str(document.id),
-            user_id=None,
+            type="txt",
             created_at=datetime.now(),
             updated_at=datetime.now(),
             status="success",
@@ -141,13 +148,18 @@ async def test_ingest_file(ingestion_service):
     file_mock.file.seek(0)
     file_mock.size = len(file_content)  # Set file size manually
 
+    user = UserResponse(
+        id=generate_id_from_label("user1"),
+        email="email@test.com",
+        hashed_password="password",
+    )
     ingestion_service.pipelines.ingestion_pipeline.run.return_value = {
         "embedding_pipeline_output": [
-            (generate_id_from_label("test.txt"), None)
+            (generate_id_from_label(f"test.txt-{user.id}"), None)
         ]
     }
 
-    result = await ingestion_service.ingest_files([file_mock])
+    result = await ingestion_service.ingest_files([file_mock], user=user)
 
     assert len(result["processed_documents"]) == 1
     assert not result["failed_documents"]
@@ -162,6 +174,8 @@ async def test_ingest_mixed_success_and_failure(
         Document(
             id=generate_id_from_label("success_id"),
             data="Success content",
+            group_ids=[],
+            user_id=generate_id_from_label("user_1"),
             type="txt",
             metadata={},
         ),
@@ -169,6 +183,8 @@ async def test_ingest_mixed_success_and_failure(
             id=generate_id_from_label("failure_id"),
             data="Failure content",
             type="txt",
+            group_ids=[],
+            user_id=generate_id_from_label("user_1"),
             metadata={},
         ),
     ]
@@ -193,18 +209,20 @@ async def test_ingest_mixed_success_and_failure(
 
     assert len(result["processed_documents"]) == 1
     assert len(result["failed_documents"]) == 1
-    assert str(documents[0].id) in result["processed_documents"][0]
-    assert str(documents[1].id) in result["failed_documents"][0]
-    assert "Embedding failed" in result["failed_documents"][0]
+    assert documents[0].id in [doc.id for doc in result["processed_documents"]]
+    assert documents[1].id in [
+        doc["document_id"] for doc in result["failed_documents"]
+    ]
+    assert "Embedding failed" in str(result["failed_documents"][0]["result"])
 
     assert mock_vector_db.relational.upsert_documents_overview.call_count == 2
     upserted_docs = (
         mock_vector_db.relational.upsert_documents_overview.call_args[0][0]
     )
     assert len(upserted_docs) == 2
-    assert upserted_docs[0].document_id == documents[0].id
+    assert upserted_docs[0].id == documents[0].id
     assert upserted_docs[0].status == "success"
-    assert upserted_docs[1].document_id == documents[1].id
+    assert upserted_docs[1].id == documents[1].id
     assert upserted_docs[1].status == "failure"
 
 
@@ -216,44 +234,16 @@ async def test_ingest_unsupported_file_type(ingestion_service):
     file_mock.file.seek(0)
     file_mock.size = 12  # Set file size manually
 
+    user = UserResponse(
+        id=generate_id_from_label("user1"),
+        email="email@test.com",
+        hashed_password="password",
+    )
+
     with pytest.raises(R2RException) as exc_info:
-        await ingestion_service.ingest_files([file_mock])
+        await ingestion_service.ingest_files([file_mock], user=user)
 
     assert "is not a valid DocumentType" in str(exc_info.value)
-
-
-# @pytest.mark.asyncio
-# async def test_ingest_large_file(ingestion_service):
-#     large_content = b"Large content" * 1000000  # 12MB content
-#     file_mock = UploadFile(
-#         filename="large_file.txt", file=io.BytesIO(large_content)
-#     )
-#     file_mock.file.seek(0)
-#     file_mock.size = len(large_content)  # Set file size manually
-
-#     ingestion_service.config.app.get.return_value = (
-#         10  # Set max file size to 10MB
-#     )
-
-#     with pytest.raises(R2RException) as exc_info:
-#         await ingestion_service.ingest_files([file_mock])
-
-#     assert "File size exceeds maximum allowed size" in str(exc_info.value)
-
-
-# @pytest.mark.asyncio
-# async def test_concurrent_ingestion(ingestion_service, mock_vector_db):
-#     document = Document(id=generate_id_from_label("test_id"), data="Test content", type="txt", metadata={})
-
-#     async def ingestion_task():
-#         return await ingestion_service.ingest_documents([document])
-
-#     # Simulate concurrent ingestion attempts
-#     results = await asyncio.gather(ingestion_task(), ingestion_task(), ingestion_task())
-
-#     # Check that only one ingestion succeeded and others were skipped
-#     assert sum(len(r["processed_documents"]) for r in results) == 1
-#     assert sum(len(r["skipped_documents"]) for r in results) == 2
 
 
 @pytest.mark.asyncio
@@ -262,18 +252,24 @@ async def test_partial_ingestion_success(ingestion_service, mock_vector_db):
         Document(
             id=generate_id_from_label("success_1"),
             data="Success content 1",
+            group_ids=[],
+            user_id=generate_id_from_label("user_1"),
             type="txt",
             metadata={},
         ),
         Document(
             id=generate_id_from_label("fail"),
             data="Fail content",
+            group_ids=[],
+            user_id=generate_id_from_label("user_1"),
             type="txt",
             metadata={},
         ),
         Document(
             id=generate_id_from_label("success_2"),
             data="Success content 2",
+            group_ids=[],
+            user_id=generate_id_from_label("user_1"),
             type="txt",
             metadata={},
         ),
@@ -297,20 +293,34 @@ async def test_partial_ingestion_success(ingestion_service, mock_vector_db):
 
     assert len(result["processed_documents"]) == 2
     assert len(result["failed_documents"]) == 1
-    assert str(documents[1].id) in result["failed_documents"][0]
+    assert documents[1].id in [
+        doc["document_id"] for doc in result["failed_documents"]
+    ]
 
 
 @pytest.mark.asyncio
 async def test_version_increment(ingestion_service, mock_vector_db):
+
+    user = UserResponse(
+        id=generate_id_from_label("user1"),
+        email="email@test.com",
+        hashed_password="password",
+    )
+
     document = Document(
         id=generate_id_from_label("test_id"),
         data="Test content",
+        group_ids=[],
+        user_id=generate_id_from_label("user_1"),
         type="txt",
         metadata={},
     )
     mock_vector_db.relational.get_documents_overview.return_value = [
         DocumentInfo(
-            document_id=document.id,
+            id=document.id,
+            group_ids=[],
+            user_id=generate_id_from_label("user_1"),
+            type="txt",
             version="v2",
             status="success",
             size_in_bytes=0,
@@ -321,7 +331,7 @@ async def test_version_increment(ingestion_service, mock_vector_db):
     file_mock = UploadFile(
         filename="test.txt", file=io.BytesIO(b"Updated content")
     )
-    await ingestion_service.update_files([file_mock], [document.id])
+    await ingestion_service.update_files([file_mock], [document.id], user=user)
 
     calls = mock_vector_db.relational.upsert_documents_overview.call_args_list
     assert len(calls) == 2
@@ -332,7 +342,10 @@ async def test_version_increment(ingestion_service, mock_vector_db):
 async def test_process_ingestion_results_error_handling(ingestion_service):
     document_infos = [
         DocumentInfo(
-            document_id=uuid.uuid4(),
+            id=uuid.uuid4(),
+            group_ids=[],
+            user_id=generate_id_from_label("user_1"),
+            type="txt",
             version="v0",
             status="processing",
             size_in_bytes=0,
@@ -342,10 +355,10 @@ async def test_process_ingestion_results_error_handling(ingestion_service):
     ingestion_results = {
         "embedding_pipeline_output": [
             (
-                document_infos[0].document_id,
+                document_infos[0].id,
                 R2RDocumentProcessingError(
                     "Unexpected error",
-                    document_id=document_infos[0].document_id,
+                    document_id=document_infos[0].id,
                 ),
             )
         ]
@@ -355,40 +368,10 @@ async def test_process_ingestion_results_error_handling(ingestion_service):
         ingestion_results,
         document_infos,
         [],
-        {document_infos[0].document_id: "test"},
     )
 
     assert len(result["failed_documents"]) == 1
-    assert "Unexpected error" in result["failed_documents"][0]
-
-
-# @pytest.mark.asyncio
-# async def test_file_size_limit_edge_cases(ingestion_service):
-#     ingestion_service.config.app.get.return_value = 1  # 1MB limit
-
-#     just_under_limit = b"x" * (1024 * 1024 - 1)
-#     at_limit = b"x" * (1024 * 1024)
-#     over_limit = b"x" * (1024 * 1024 + 1)
-
-#     file_under = UploadFile(
-#         filename="under.txt",
-#         file=io.BytesIO(just_under_limit),
-#         size=1024 * 1024 - 1,
-#     )
-#     file_at = UploadFile(
-#         filename="at.txt", file=io.BytesIO(at_limit), size=1024 * 1024
-#     )
-#     file_over = UploadFile(
-#         filename="over.txt", file=io.BytesIO(over_limit), size=1024 * 1024 + 1
-#     )
-
-#     await ingestion_service.ingest_files([file_under])  # Should succeed
-#     await ingestion_service.ingest_files([file_at])  # Should succeed
-
-#     with pytest.raises(
-#         R2RException, match="File size exceeds maximum allowed size"
-#     ):
-#         await ingestion_service.ingest_files([file_over])
+    assert "Unexpected error" in str(result["failed_documents"][0])
 
 
 @pytest.mark.asyncio
@@ -398,6 +381,8 @@ async def test_document_status_update_after_ingestion(
     document = Document(
         id=generate_id_from_label("test_id"),
         data="Test content",
+        group_ids=[],
+        user_id=generate_id_from_label("user_1"),
         type="txt",
         metadata={},
     )
@@ -421,5 +406,5 @@ async def test_document_status_update_after_ingestion(
         ][0]
     )
     assert len(second_call_args) == 1
-    assert second_call_args[0].document_id == document.id
+    assert second_call_args[0].id == document.id
     assert second_call_args[0].status == "success"

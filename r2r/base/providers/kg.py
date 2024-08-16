@@ -1,21 +1,13 @@
 """Base classes for knowledge graph providers."""
 
-import json
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional, Tuple
+from typing import Any, Optional, Tuple
 
-from ..abstractions.llama_abstractions import EntityNode, LabelledNode
-from ..abstractions.llama_abstractions import Relation as LlamaRelation
-from ..abstractions.llama_abstractions import VectorStoreQuery
-from .base import ProviderConfig
-from .prompt import PromptProvider
-
-if TYPE_CHECKING:
-    from r2r.main import R2RClient
-
-from ...base.utils.base_utils import EntityType, Relation
+from ...base.utils.base_utils import RelationshipType
+from ..abstractions.graph import Entity, KGExtraction, Triple
 from ..abstractions.llm import GenerationConfig
+from .base import ProviderConfig
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +16,11 @@ class KGConfig(ProviderConfig):
     """A base KG config class"""
 
     provider: Optional[str] = None
-    batch_size: int = 1
+    batch_size: Optional[int] = 1
     kg_extraction_prompt: Optional[str] = "few_shot_ner_kg_extraction"
     kg_search_prompt: Optional[str] = "kg_search"
     kg_extraction_config: Optional[GenerationConfig] = None
+    kg_store_path: Optional[str] = None
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:
@@ -35,7 +28,7 @@ class KGConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return [None, "neo4j"]
+        return [None, "neo4j", "local"]
 
 
 class KGProvider(ABC):
@@ -75,12 +68,33 @@ class KGProvider(ABC):
         pass
 
     @abstractmethod
-    def upsert_nodes(self, nodes: list[EntityNode]) -> None:
+    def upsert_entities(self, entities: list[Entity], *args, **kwargs) -> None:
         """Abstract method to add triplet."""
         pass
 
     @abstractmethod
-    def upsert_relations(self, relations: list[LlamaRelation]) -> None:
+    def upsert_triples(self, triples: list[Triple]) -> None:
+        """Abstract method to add triplet."""
+        pass
+
+    @abstractmethod
+    def get_entities(
+        self,
+        entity_ids: list[str] | None = None,
+        with_description: bool = False,
+    ) -> list[Entity]:
+        """Abstract method to get entities."""
+        pass
+
+    @abstractmethod
+    def get_triples(self, triple_ids: list[str] | None = None) -> list[Triple]:
+        """Abstract method to get triples."""
+        pass
+
+    @abstractmethod
+    def upsert_nodes_and_relationships(
+        self, kg_extractions: list[KGExtraction]
+    ) -> None:
         """Abstract method to add triplet."""
         pass
 
@@ -103,8 +117,8 @@ class KGProvider(ABC):
 
     @abstractmethod
     def vector_query(
-        self, query: VectorStoreQuery, **kwargs: Any
-    ) -> Tuple[list[LabelledNode], list[float]]:
+        self, query, **kwargs: Any
+    ) -> Tuple[list[Entity], list[float]]:
         """Abstract method to query the graph store with a vector store query."""
 
     # TODO - Type this method.
@@ -113,7 +127,7 @@ class KGProvider(ABC):
         self,
         prompt_provider: Any,
         entity_types: list[Any],
-        relations: list[Relation],
+        relationship_types: list[RelationshipType],
     ):
         """Abstract method to update the KG extraction prompt."""
         pass
@@ -124,7 +138,7 @@ class KGProvider(ABC):
         self,
         prompt_provider: Any,
         entity_types: list[Any],
-        relations: list[Relation],
+        relationship_types: list[RelationshipType],
     ):
         """Abstract method to update the KG agent prompt."""
         pass
@@ -137,59 +151,3 @@ def escape_braces(s: str) -> str:
     """
     # Implement your escape_braces logic here
     return s.replace("{", "{{").replace("}", "}}")
-
-
-# TODO - Make this more configurable / intelligent
-def update_kg_prompt(
-    client: "R2RClient",
-    r2r_prompts: PromptProvider,
-    prompt_base: str,
-    entity_types: list[EntityType],
-    relations: list[Relation],
-) -> None:
-    # TODO - DO NOT HARD CODE THIS!
-    if len(entity_types) > 10:
-        raise ValueError(
-            "Too many entity types to update prompt, limited to 10"
-        )
-    if len(relations) > 20:
-        raise ValueError("Too many relations to update prompt, limited to 20")
-    # Get the default extraction template
-    template_name: str = f"{prompt_base}_with_spec"
-
-    new_template: str = r2r_prompts.get_prompt(
-        template_name,
-        {
-            "entity_types": json.dumps(
-                {
-                    "entity_types": [
-                        str(entity.name.replace(" ", "_").upper())
-                        for entity in entity_types
-                    ]
-                },
-                indent=4,
-            ),
-            "relations": json.dumps(
-                {
-                    "predicates": [
-                        str(relation.name.replace(" ", "_").upper())
-                        for relation in relations
-                    ]
-                },
-                indent=4,
-            ),
-            "input": """\n{input}""",
-        },
-    )
-
-    # Escape all braces in the template, except for the {input} placeholder, for formatting
-    escaped_template: str = escape_braces(new_template).replace(
-        """{{input}}""", """{input}"""
-    )
-
-    # Update the client's prompt
-    client.update_prompt(
-        prompt_base,
-        template=escaped_template,
-        input_types={"input": "str"},
-    )

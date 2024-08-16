@@ -14,18 +14,17 @@ from r2r import (
     R2REngine,
     R2RException,
     Token,
-    User,
-    UserCreate,
+    UserResponse,
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-def create_user(user_create: UserCreate):
-    return User(
+def create_user(email: str, password: str):
+    return UserResponse(
         id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
-        email=user_create.email,
-        hashed_password="hashed_" + user_create.password,
+        email=email,
+        hashed_password="hashed_" + password,
         is_active=True,
         is_superuser=False,
         is_verified=False,
@@ -40,7 +39,7 @@ def create_user(user_create: UserCreate):
 @pytest.fixture(scope="function")
 def mock_auth_wrapper():
     def auth_wrapper(token: str = Depends(oauth2_scheme)):
-        return User(
+        return UserResponse(
             id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
             email="test@example.com",
             is_active=True,
@@ -60,13 +59,11 @@ def mock_db():
 
     db.relational.create_user.side_effect = create_user
     db.relational.get_user_by_id.return_value = create_user(
-        UserCreate(email="test@example.com", password="password")
+        email="test@example.com", password="password"
     )
 
     def update_user(user):
-        updated_user = create_user(
-            UserCreate(email=user.email, password="password")
-        )
+        updated_user = create_user(email=user.email, password="password")
         updated_user.name = user.name
         updated_user.bio = user.bio
         updated_user.profile_picture = user.profile_picture
@@ -81,10 +78,44 @@ async def mock_asearch(*args, **kwargs):
     return {
         "vector_search_results": [
             {
-                "id": "doc1",
-                "metadata": {"text": "Sample search result"},
-                "score": 0.95,
-            }
+                "fragment_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+                "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+                "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+                "group_ids": [],
+                "score": 0.23943702876567796,
+                "text": "Alternate Base Rate means, for any day, a rate per annum  equal to the greatest of (i) the Prime Rate in effect on such day, (ii) the Federal Funds Effective Rate in effect on such day \nplus  \u00bd of 1% and (iii) the sum of (a) the Adjusted LIBO Rate that would be payable onsuch day for a Eurodollar Borrowing with a one-month interest period",
+                "metadata": {
+                    "title": "uber_2021.pdf",
+                    "associatedQuery": "What is the capital of France?",
+                },
+            },
+            {
+                "fragment_id": "f0b40c99-e200-507b-a4b9-e931e0b5f321",
+                "extraction_id": "0348ae71-bccb-58d1-8b5f-36810e46245a",
+                "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+                "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+                "group_ids": [],
+                "score": 0.22033508121967305,
+                "text": "s, could also restrict our future access to the capital markets.ITEM 1B. UNRESOLVED STAFF\n COMMENTSNot applicable.\nITEM 2. PROPERTIES\nAs\n of December 31, 2021, we leased and owned office facilities around the world totaling 10.6 million square feet, including 2.6 million square feet for ourcorporate headquarte\nrs in the San Francisco Bay Area, California.We",
+                "metadata": {
+                    "title": "uber_2021.pdf",
+                    "associatedQuery": "What is the capital of France?",
+                },
+            },
+            {
+                "fragment_id": "967c4291-0629-55b6-9323-e2291de8730d",
+                "extraction_id": "7595cdf2-d1b0-5f13-b853-8ce6857ca5f5",
+                "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+                "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
+                "group_ids": [],
+                "score": 0.21763332188129403,
+                "text": "RFR means, for any RFR Loan denominated in (a) British Pounds, SONIA and (b) Swiss Francs, SARON. \nRFR Borrowing means, as to any Borrowing, the RFR Loans comprising such Borrowing. \nRFR Business Day means, for any Loan denominated in (a) British Pounds, any day except for (i) a Saturday, (ii) a Sunday or (iii) a day on which banks are closed for general business in London and (b) Swiss Francs, any day except for (i) a Saturday, (ii) a Sunday or",
+                "metadata": {
+                    "title": "uber_2021.pdf",
+                    "associatedQuery": "What is the capital of France?",
+                },
+            },
         ]
     }
 
@@ -134,7 +165,7 @@ def r2r_client(app_client):
 
 def test_health_check(r2r_client):
     response = r2r_client.health()
-    assert response == {"response": "ok"}
+    assert response["results"] == {"response": "ok"}
 
 
 def test_register_user(r2r_client, mock_db):
@@ -147,31 +178,12 @@ def test_register_user(r2r_client, mock_db):
     mock_db.relational.create_user.assert_called_once()
 
 
-# def test_register_existing_user(r2r_client, mock_db):
-#     user_data = {"email": "existing@example.com", "password": "testpassword"}
-
-#     mock_db.relational.get_user_by_email.return_value = User(
-#         id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
-#         email=user_data["email"],
-#         hashed_password="hashed_password",
-#         is_active=True,
-#         is_superuser=False,
-#         verification_code_expiry=None,
-#     )
-
-#     with pytest.raises(R2RException) as exc_info:
-#         r2r_client.register(**user_data)
-
-#     assert exc_info.value.status_code == 400
-#     assert "Email already registered" in str(exc_info.value)
-
-
 def test_login_user(r2r_client, mock_db):
     user_data = {"email": "login_test@example.com", "password": "testpassword"}
     mock_db.relational.get_user_by_email.return_value = None
     response = r2r_client.register(**user_data)
 
-    mock_db.relational.get_user_by_email.return_value = User(
+    mock_db.relational.get_user_by_email.return_value = UserResponse(
         id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
         email=user_data["email"],
         hashed_password="hashed_" + user_data["password"],
@@ -200,12 +212,15 @@ def test_authenticated_search(r2r_client, mock_db):
     results = search_response["results"]
     assert "vector_search_results" in results
     assert len(results["vector_search_results"]) > 0
-    assert results["vector_search_results"][0]["id"] == "doc1"
     assert (
-        results["vector_search_results"][0]["metadata"]["text"]
-        == "Sample search result"
+        results["vector_search_results"][0]["fragment_id"]
+        == "c68dc72e-fc23-5452-8f49-d7bd46088a96"
     )
-    assert results["vector_search_results"][0]["score"] == 0.95
+    assert (
+        results["vector_search_results"][0]["text"]
+        == "Alternate Base Rate means, for any day, a rate per annum  equal to the greatest of (i) the Prime Rate in effect on such day, (ii) the Federal Funds Effective Rate in effect on such day \nplus  \u00bd of 1% and (iii) the sum of (a) the Adjusted LIBO Rate that would be payable onsuch day for a Eurodollar Borrowing with a one-month interest period"
+    )
+    assert results["vector_search_results"][0]["score"] == 0.23943702876567796
 
 
 @pytest.mark.asyncio
@@ -290,29 +305,6 @@ async def test_user_profile(r2r_client, mock_db):
     # assert profile["results"]["email"] == "profile@example.com"
 
     # Update user profile
-    updated_profile = r2r_client.update_user(
-        {"name": "John Doe", "bio": "Test bio"}
-    )
+    updated_profile = r2r_client.update_user(name="John Doe", bio="Test bio")
     assert updated_profile["results"]["name"] == "John Doe"
     assert updated_profile["results"]["bio"] == "Test bio"
-
-
-# TODO - Fix this test
-# @pytest.mark.asyncio
-# async def test_delete_user(r2r_client, mock_db):
-#     # Register and login
-#     user_data = {"email": "delete@example.com", "password": "password123"}
-#     r2r_client.register(**user_data)
-#     r2r_client.login(**user_data)
-
-#     # Delete account
-#     delete_response = r2r_client.delete_user("password123")
-#     assert "message" in delete_response["results"]
-
-#     # Ensure client's tokens are cleared
-#     assert r2r_client.access_token is None
-#     assert r2r_client._refresh_token is None
-
-#     # Try to login with deleted account (should fail)
-#     with pytest.raises(R2RException):
-#         r2r_client.login(**user_data)

@@ -1,13 +1,12 @@
 import logging
 import time
 from io import BytesIO
-from typing import Any, AsyncGenerator
+from typing import AsyncGenerator
 
 from r2r.base import (
     Document,
+    DocumentExtraction,
     DocumentType,
-    Extraction,
-    ExtractionType,
     ParsingProvider,
     generate_id_from_label,
 )
@@ -33,7 +32,7 @@ class UnstructuredParsingProvider(ParsingProvider):
 
     async def parse(
         self, document: Document
-    ) -> AsyncGenerator[Extraction, None]:
+    ) -> AsyncGenerator[DocumentExtraction, None]:
         data = document.data
         if isinstance(data, bytes):
             data = BytesIO(data)
@@ -44,17 +43,13 @@ class UnstructuredParsingProvider(ParsingProvider):
         elements = self.partition(file=data)
 
         for iteration, element in enumerate(elements):
-            extraction_type = ExtractionType.TXT
-
-            # You might want to add logic here to determine if the element
-            # is an image, video, etc., and set the extraction_type accordingly
-
-            extraction = Extraction(
+            extraction = DocumentExtraction(
                 id=generate_id_from_label(f"{document.id}-{iteration}"),
-                data=element.text,  # Convert element to string
-                metadata=document.metadata,
                 document_id=document.id,
-                type=extraction_type,
+                user_id=document.user_id,
+                group_ids=document.group_ids,
+                data=element.text,
+                metadata=document.metadata,
             )
             yield extraction
 

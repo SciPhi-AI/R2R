@@ -1,4 +1,4 @@
-rag_context_eval:
+rag_context:
   template: >+
     ### Instruction:
 

@@ -2,15 +2,16 @@ import json
 import logging
 import uuid
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 from r2r.base import (
     AnalysisTypes,
-    FilterCriteria,
-    KVLoggingSingleton,
+    LogFilterCriteria,
     LogProcessor,
     R2RException,
+    RunLoggingSingleton,
     RunManager,
+    VectorDBFilterValue,
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
@@ -29,7 +30,7 @@ class ManagementService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: KVLoggingSingleton,
+        logging_connection: RunLoggingSingleton,
     ):
         super().__init__(
             config,
@@ -54,20 +55,16 @@ class ManagementService(Service):
 
     @telemetry_event("Logs")
     async def alogs(
-        self,
-        log_type_filter: Optional[str] = None,
-        max_runs_requested: int = 100,
-        *args: Any,
-        **kwargs: Any,
+        self, run_type_filter: Optional[str] = None, max_runs: int = 100
     ):
         if self.logging_connection is None:
             raise R2RException(
                 status_code=404, message="Logging provider not found."
             )
 
-        run_info = await self.logging_connection.get_run_info(
-            limit=max_runs_requested,
-            log_type_filter=log_type_filter,
+        run_info = await self.logging_connection.get_info_logs(
+            limit=max_runs,
+            run_type_filter=run_type_filter,
         )
         run_ids = [run.run_id for run in run_info]
         if len(run_ids) == 0:
@@ -79,7 +76,7 @@ class ManagementService(Service):
 
         for run in run_info:
             run_logs = [
-                log for log in logs if log["log_id"] == str(run.run_id)
+                log for log in logs if log["run_id"] == str(run.run_id)
             ]
             entries = [
                 {
@@ -94,7 +91,7 @@ class ManagementService(Service):
 
             log_entry = {
                 "run_id": run.run_id,
-                "run_type": run.log_type,
+                "run_type": run.run_type,
                 "entries": entries,
             }
 
@@ -117,12 +114,12 @@ class ManagementService(Service):
     @telemetry_event("Analytics")
     async def aanalytics(
         self,
-        filter_criteria: FilterCriteria,
+        filter_criteria: LogFilterCriteria,
         analysis_types: AnalysisTypes,
         *args,
         **kwargs,
     ):
-        run_info = await self.logging_connection.get_run_info(limit=100)
+        run_info = await self.logging_connection.get_info_logs(limit=100)
         run_ids = [info.run_id for info in run_info]
 
         if not run_ids:
@@ -211,8 +208,8 @@ class ManagementService(Service):
         self,
         message_id: uuid.UUID,
         score: float = 0.0,
-        log_type_filter: str = None,
-        max_runs_requested: int = 100,
+        run_type_filter: str = None,
+        max_runs: int = 100,
         *args: Any,
         **kwargs: Any,
     ):
@@ -222,9 +219,9 @@ class ManagementService(Service):
                     status_code=404, message="Logging provider not found."
                 )
 
-            run_info = await self.logging_connection.get_run_info(
-                limit=max_runs_requested,
-                log_type_filter=log_type_filter,
+            run_info = await self.logging_connection.get_info_logs(
+                limit=max_runs,
+                run_type_filter=run_type_filter,
             )
             run_ids = [run.run_id for run in run_info]
 
@@ -242,8 +239,8 @@ class ManagementService(Service):
 
                 if completion_dict.get("message_id") == str(message_id):
                     bounded_score = round(min(max(score, -1.00), 1.00), 2)
-                    updated = await KVLoggingSingleton.score_completion(
-                        log["log_id"], message_id, bounded_score
+                    updated = await RunLoggingSingleton.score_completion(
+                        log["run_id"], message_id, bounded_score
                     )
                     if not updated:
                         logger.error(
@@ -269,42 +266,53 @@ class ManagementService(Service):
     @telemetry_event("Delete")
     async def delete(
         self,
-        keys: list[str],
-        values: list[Union[bool, int, str]],
+        filters: dict[str, VectorDBFilterValue],
         *args,
         **kwargs,
     ):
-        metadata = ", ".join(
-            f"{key}={value}" for key, value in zip(keys, values)
-        )
-        values = [str(value) for value in values]
-        logger.info(f"Deleting entries with metadata: {metadata}")
-        ids = self.providers.database.vector.delete_by_metadata(keys, values)
-        if not ids:
+        """
+        Takes a list of filters like
+        "{key: {operator: value}, key: {operator: value}, ...}"
+        and deletes entries that match the filters.
+
+        Then, deletes the corresponding entries from the documents overview table.
+
+        NOTE: This method is not atomic and may result in orphaned entries in the documents overview table.
+        NOTE: This method assumes that filters delete entire contents of any touched documents.
+        """
+        logger.info(f"Deleting entries with filters: {filters}")
+        results = self.providers.database.vector.delete(filters)
+        if not results:
             raise R2RException(
                 status_code=404, message="No entries found for deletion."
             )
-        for id in ids:
+
+        document_ids_to_purge = {
+            doc_id
+            for doc_id in [
+                result.get("document_id", None) for result in results.values()
+            ]
+            if doc_id
+        }
+        for document_id in document_ids_to_purge:
             self.providers.database.relational.delete_from_documents_overview(
-                id
+                document_id
             )
-        return f"Documents {ids} deleted successfully."
+        return results
 
     @telemetry_event("DocumentsOverview")
     async def adocuments_overview(
         self,
-        document_ids: Optional[list[uuid.UUID]] = None,
         user_ids: Optional[list[uuid.UUID]] = None,
+        group_ids: Optional[list[uuid.UUID]] = None,
+        document_ids: Optional[list[uuid.UUID]] = None,
         *args: Any,
         **kwargs: Any,
     ):
         return self.providers.database.relational.get_documents_overview(
-            filter_document_ids=(
-                [str(ele) for ele in document_ids] if document_ids else None
-            ),
-            filter_user_ids=(
-                [str(ele) for ele in user_ids] if user_ids else None
-            ),
+            filter_document_ids=document_ids,
+            filter_user_ids=user_ids,
+            filter_group_ids=group_ids,
         )
 
     @telemetry_event("DocumentChunks")
@@ -314,9 +322,7 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return self.providers.database.vector.get_document_chunks(
-            str(document_id)
-        )
+        return self.providers.database.vector.get_document_chunks(document_id)
 
     @telemetry_event("UsersOverview")
     async def users_overview(
@@ -370,6 +376,43 @@ class ManagementService(Service):
                 status_code=500,
                 message=f"An error occurred while fetching relationships: {str(e)}",
             )
+
+    @telemetry_event("AssignDocumentToGroup")
+    async def aassign_document_to_group(
+        self, document_id: str, group_id: uuid.UUID
+    ):
+
+        success = self.providers.database.vector.assign_document_to_group(
+            document_id, group_id
+        )
+        if success:
+            return {"message": "Document assigned to group successfully"}
+        else:
+            raise R2RException(
+                status_code=404,
+                message="Document not found or assignment failed",
+            )
+
+    @telemetry_event("RemoveDocumentFromGroup")
+    async def aremove_document_from_group(
+        self, document_id: str, group_id: uuid.UUID
+    ):
+        success = self.providers.database.vector.remove_document_from_group(
+            document_id, group_id
+        )
+        if success:
+            return {"message": "Document removed from group successfully"}
+        else:
+            raise R2RException(
+                status_code=404, message="Document not found or removal failed"
+            )
+
+    @telemetry_event("GetDocumentGroups")
+    async def aget_document_groups(self, document_id: str):
+        group_ids = self.providers.database.vector.get_document_groups(
+            document_id
+        )
+        return {"group_ids": [str(group_id) for group_id in group_ids]}
 
     def process_relationships(
         self, relationships: List[Tuple[str, str, str]]
@@ -456,3 +499,74 @@ class ManagementService(Service):
                 name: prompt.dict() for name, prompt in prompts.items()
             },
         }
+
+    @telemetry_event("CreateGroup")
+    async def acreate_group(
+        self, name: str, description: str = ""
+    ) -> uuid.UUID:
+        return self.providers.database.relational.create_group(
+            name, description
+        )
+
+    @telemetry_event("GetGroup")
+    async def aget_group(self, group_id: uuid.UUID) -> Optional[dict]:
+        return self.providers.database.relational.get_group(group_id)
+
+    @telemetry_event("UpdateGroup")
+    async def aupdate_group(
+        self, group_id: uuid.UUID, name: str = None, description: str = None
+    ) -> bool:
+        return self.providers.database.relational.update_group(
+            group_id, name, description
+        )
+
+    @telemetry_event("DeleteGroup")
+    async def adelete_group(self, group_id: uuid.UUID) -> bool:
+        return self.providers.database.relational.delete_group(group_id)
+
+    @telemetry_event("ListGroups")
+    async def alist_groups(
+        self, offset: int = 0, limit: int = 100
+    ) -> list[dict]:
+        return self.providers.database.relational.list_groups(
+            offset=offset, limit=limit
+        )
+
+    @telemetry_event("AddUserToGroup")
+    async def aadd_user_to_group(
+        self, user_id: uuid.UUID, group_id: uuid.UUID
+    ) -> bool:
+        return self.providers.database.relational.add_user_to_group(
+            user_id, group_id
+        )
+
+    @telemetry_event("RemoveUserFromGroup")
+    async def aremove_user_from_group(
+        self, user_id: uuid.UUID, group_id: uuid.UUID
+    ) -> bool:
+        return self.providers.database.relational.remove_user_from_group(
+            user_id, group_id
+        )
+
+    @telemetry_event("GetUsersInGroup")
+    async def aget_users_in_group(
+        self, group_id: uuid.UUID, offset: int = 0, limit: int = 100
+    ) -> list[dict]:
+        return self.providers.database.relational.get_users_in_group(
+            group_id, offset, limit
+        )
+
+    @telemetry_event("GetGroupsForUser")
+    async def aget_groups_for_user(self, user_id: uuid.UUID) -> list[dict]:
+        return self.providers.database.relational.get_groups_for_user(user_id)
+
+    @telemetry_event("GroupsOverview")
+    async def agroups_overview(
+        self,
+        group_ids: Optional[list[uuid.UUID]] = None,
+        *args,
+        **kwargs,
+    ):
+        return self.providers.database.relational.get_groups_overview(
+            [str(ele) for ele in group_ids] if group_ids else None
+        )

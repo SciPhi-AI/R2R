@@ -10,7 +10,7 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 
-class FilterCriteria(BaseModel):
+class LogFilterCriteria(BaseModel):
     filters: Optional[dict[str, str]] = None
 
 

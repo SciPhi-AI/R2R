@@ -5,9 +5,9 @@ from typing import Any, AsyncGenerator, Optional
 from r2r.base import (
     AsyncState,
     CompletionProvider,
-    KVLoggingSingleton,
     PipeType,
     PromptProvider,
+    RunLoggingSingleton,
 )
 from r2r.base.abstractions.llm import GenerationConfig
 from r2r.base.pipes.base_pipe import AsyncPipe
@@ -25,7 +25,7 @@ class GeneratorPipe(AsyncPipe):
         prompt_provider: PromptProvider,
         type: PipeType = PipeType.GENERATOR,
         config: Optional[Config] = None,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         *args,
         **kwargs,
     ):

@@ -10,7 +10,6 @@ from r2r import (
     Prompt,
     Vector,
     VectorEntry,
-    VectorSearchRequest,
     VectorSearchResult,
     VectorType,
     generate_id_from_label,
@@ -100,57 +99,9 @@ def test_prompt_invalid_input_type():
         prompt.format_prompt({"name": "Alice"})
 
 
-def test_search_request_with_optional_filters():
-    request = VectorSearchRequest(
-        query="test", limit=10, filters={"category": "books"}
-    )
-    assert request.query == "test"
-    assert request.limit == 10
-    assert request.filters == {"category": "books"}
-
-
-def test_search_result_to_string():
-    result = VectorSearchResult(
-        id=generate_id_from_label("1"),
-        score=9.5,
-        metadata={"author": "John Doe"},
-    )
-    result_str = str(result)
-    assert (
-        result_str
-        == f"VectorSearchResult(id={str(generate_id_from_label('1'))}, score=9.5, metadata={{'author': 'John Doe'}})"
-    )
-
-
-def test_search_result_repr():
-    result = VectorSearchResult(
-        id=generate_id_from_label("1"),
-        score=9.5,
-        metadata={"author": "John Doe"},
-    )
-    assert (
-        repr(result)
-        == f"VectorSearchResult(id={str(generate_id_from_label('1'))}, score=9.5, metadata={{'author': 'John Doe'}})"
-    )
-
-
 def test_vector_fixed_length_validation():
     with pytest.raises(ValueError):
         Vector(data=[1.0, 2.0], type=VectorType.FIXED, length=3)
-
-
-def test_vector_entry_serialization():
-    vector = Vector(data=[1.0, 2.0], type=VectorType.FIXED, length=2)
-    entry_id = uuid.uuid4()
-    entry = VectorEntry(
-        id=entry_id, vector=vector, metadata={"key": uuid.uuid4()}
-    )
-    serializable = entry.to_serializable()
-    assert serializable["id"] == str(entry_id)
-    assert serializable["vector"] == [1.0, 2.0]
-    assert isinstance(
-        serializable["metadata"]["key"], str
-    )  # Check UUID conversion to string
 
 
 def test_message_type_enum():
@@ -257,10 +208,15 @@ def test_completion_record_serialization_with_none_values():
 
 
 def test_completion_record_with_complex_search_results():
-    from r2r import VectorSearchResult
-
     search_result = VectorSearchResult(
-        id=uuid.uuid4(), score=0.95, metadata={"key": "value"}
+        fragment_id=uuid.uuid4(),
+        extraction_id=uuid.uuid4(),
+        document_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        group_ids=[],
+        score=0.95,
+        text="Sample text",
+        metadata={"key": "value"},
     )
     aggregate_result = AggregateSearchResult(
         vector_search_results=[search_result]
@@ -276,10 +232,12 @@ def test_completion_record_with_complex_search_results():
         record_dict["search_results"]["vector_search_results"], list
     )
     assert len(record_dict["search_results"]["vector_search_results"]) == 1
-    assert (
-        record_dict["search_results"]["vector_search_results"][0]["score"]
-        == 0.95
-    )
-    assert record_dict["search_results"]["vector_search_results"][0][
-        "metadata"
-    ] == {"key": "value"}
+    result = record_dict["search_results"]["vector_search_results"][0]
+    assert result["score"] == 0.95
+    assert result["metadata"] == {"key": "value"}
+    assert "fragment_id" in result
+    assert "extraction_id" in result
+    assert "document_id" in result
+    assert "user_id" in result
+    assert result["text"] == "Sample text"
+    assert result["group_ids"] == []

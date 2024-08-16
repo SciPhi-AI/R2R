@@ -6,8 +6,8 @@ from typing import Any, AsyncGenerator, Optional, Tuple, Union
 from r2r.base import (
     AsyncState,
     DatabaseProvider,
-    KVLoggingSingleton,
     PipeType,
+    RunLoggingSingleton,
     VectorEntry,
 )
 from r2r.base.pipes.base_pipe import AsyncPipe
@@ -22,13 +22,12 @@ class VectorStoragePipe(AsyncPipe):
         message: AsyncGenerator[
             Union[R2RDocumentProcessingError, VectorEntry], None
         ]
-        do_upsert: bool = True
 
     def __init__(
         self,
         database_provider: DatabaseProvider,
         storage_batch_size: int = 128,
-        pipe_logger: Optional[KVLoggingSingleton] = None,
+        pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.INGESTOR,
         config: Optional[AsyncPipe.PipeConfig] = None,
         *args,
@@ -50,17 +49,13 @@ class VectorStoragePipe(AsyncPipe):
     async def store(
         self,
         vector_entries: list[VectorEntry],
-        do_upsert: bool = True,
     ) -> None:
         """
         Stores a batch of vector entries in the database.
         """
 
         try:
-            if do_upsert:
-                self.database_provider.vector.upsert_entries(vector_entries)
-            else:
-                self.database_provider.vector.copy_entries(vector_entries)
+            self.database_provider.vector.upsert_entries(vector_entries)
         except Exception as e:
             error_message = (
                 f"Failed to store vector entries in the database: {e}"
@@ -91,20 +86,17 @@ class VectorStoragePipe(AsyncPipe):
                 yield (msg.document_id, msg)
                 continue
 
-            document_id = msg.metadata.get("document_id", None)
-            if not document_id:
-                raise ValueError("Document ID not found in the metadata.")
-            if document_id not in document_counts:
-                document_counts[document_id] = 1
+            if msg.document_id not in document_counts:
+                document_counts[msg.document_id] = 1
             else:
-                document_counts[document_id] += 1
+                document_counts[msg.document_id] += 1
 
             vector_batch.append(msg)
             if len(vector_batch) >= self.storage_batch_size:
                 # Schedule the storage task
                 batch_tasks.append(
                     asyncio.create_task(
-                        self.store(vector_batch.copy(), input.do_upsert),
+                        self.store(vector_batch.copy()),
                         name=f"vector-store-{self.config.name}",
                     )
                 )
@@ -113,7 +105,7 @@ class VectorStoragePipe(AsyncPipe):
         if vector_batch:  # Process any remaining vectors
             batch_tasks.append(
                 asyncio.create_task(
-                    self.store(vector_batch.copy(), input.do_upsert),
+                    self.store(vector_batch.copy()),
                     name=f"vector-store-{self.config.name}",
                 )
             )

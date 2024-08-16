@@ -1,6 +1,5 @@
-import json
-import uuid
 from typing import Any, Dict
+from uuid import UUID
 
 import click
 
@@ -32,15 +31,15 @@ def app_settings(obj):
 
 
 @cli.command()
-@click.option("--log-type-filter", help="Filter for log types")
+@click.option("--run-type-filter", help="Filter for log types")
 @click.option(
     "--max-runs", default=100, help="Maximum number of runs to fetch"
 )
 @click.pass_obj
-def logs(obj, log_type_filter, max_runs):
+def logs(obj, run_type_filter, max_runs):
     """Retrieve logs with optional type filter."""
     with timer():
-        response = obj.logs(log_type_filter, max_runs)
+        response = obj.logs(run_type_filter, max_runs)
 
     for log in response:
         click.echo(f"Run ID: {log['run_id']}")
@@ -66,9 +65,7 @@ def logs(obj, log_type_filter, max_runs):
 @click.pass_obj
 def users_overview(obj, user_ids):
     """Get an overview of users."""
-    user_ids = (
-        [uuid.UUID(user_id) for user_id in user_ids] if user_ids else None
-    )
+    user_ids = [UUID(user_id) for user_id in user_ids] if user_ids else None
 
     with timer():
         response = obj.users_overview(user_ids)

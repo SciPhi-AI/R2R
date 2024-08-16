@@ -2,22 +2,21 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from r2r.agents import R2RRAGAgent, R2RStreamingRAGAgent
-from r2r.base import (
-    AsyncPipe,
+from r2r.agent import R2RRAGAgent, R2RStreamingRAGAgent
+from r2r.base.pipes import AsyncPipe
+from r2r.base.providers import (
     AuthProvider,
     ChunkingProvider,
     CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    EvalProvider,
     KGProvider,
     ParsingProvider,
     PromptProvider,
 )
 from r2r.pipelines import (
-    EvalPipeline,
     IngestionPipeline,
+    KGEnrichmentPipeline,
     RAGPipeline,
     SearchPipeline,
 )
@@ -30,7 +29,6 @@ class R2RProviders(BaseModel):
     database: Optional[DatabaseProvider]
     embedding: Optional[EmbeddingProvider]
     prompt: Optional[PromptProvider]
-    eval: Optional[EvalProvider]
     kg: Optional[KGProvider]
     parsing: Optional[ParsingProvider]
 
@@ -46,21 +44,24 @@ class R2RPipes(BaseModel):
     vector_search_pipe: Optional[AsyncPipe]
     rag_pipe: Optional[AsyncPipe]
     streaming_rag_pipe: Optional[AsyncPipe]
-    eval_pipe: Optional[AsyncPipe]
     kg_pipe: Optional[AsyncPipe]
     kg_storage_pipe: Optional[AsyncPipe]
     kg_search_search_pipe: Optional[AsyncPipe]
+    kg_node_extraction_pipe: Optional[AsyncPipe]
+    kg_node_description_pipe: Optional[AsyncPipe]
+    kg_clustering_pipe: Optional[AsyncPipe]
+    chunking_pipe: Optional[AsyncPipe]
 
     class Config:
         arbitrary_types_allowed = True
 
 
 class R2RPipelines(BaseModel):
-    eval_pipeline: EvalPipeline
     ingestion_pipeline: IngestionPipeline
     search_pipeline: SearchPipeline
     rag_pipeline: RAGPipeline
     streaming_rag_pipeline: RAGPipeline
+    kg_pipeline: KGEnrichmentPipeline
 
     class Config:
         arbitrary_types_allowed = True

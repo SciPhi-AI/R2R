@@ -2,6 +2,8 @@ import asyncio
 import uuid
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
 
+from ..abstractions.graph import EntityType, RelationshipType
+
 if TYPE_CHECKING:
     from ..pipeline.base_pipeline import AsyncPipeline
 
@@ -40,21 +42,11 @@ def increment_version(version: str) -> str:
     return f"{prefix}{suffix + 1}"
 
 
-class EntityType:
-    def __init__(self, name: str):
-        self.name = name
-
-
-class Relation:
-    def __init__(self, name: str):
-        self.name = name
-
-
 def format_entity_types(entity_types: list[EntityType]) -> str:
     lines = [entity.name for entity in entity_types]
     return "\n".join(lines)
 
 
-def format_relations(predicates: list[Relation]) -> str:
+def format_relations(predicates: list[RelationshipType]) -> str:
     lines = [predicate.name for predicate in predicates]
     return "\n".join(lines)

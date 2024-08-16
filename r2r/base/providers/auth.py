@@ -5,8 +5,9 @@ from typing import Dict, Optional
 from fastapi import Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from ..abstractions.exception import R2RException
-from ..abstractions.user import Token, TokenData, User, UserCreate
+from ..abstractions import R2RException, Token, TokenData
+from ..api.models import UserResponse
+from ..utils import generate_id_from_label
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -42,8 +43,9 @@ class AuthProvider(Provider, ABC):
         self.admin_password = config.default_admin_password
         super().__init__(config)
 
-    def _get_default_admin_user(self) -> User:
-        return User(
+    def _get_default_admin_user(self) -> UserResponse:
+        return UserResponse(
+            id=generate_id_from_label(self.admin_email),
             email=self.admin_email,
             hashed_password=self.crypto_provider.get_password_hash(
                 self.admin_password
@@ -66,15 +68,17 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def user(self, token: str) -> User:
+    def user(self, token: str) -> UserResponse:
         pass
 
     @abstractmethod
-    def get_current_active_user(self, current_user: User) -> User:
+    def get_current_active_user(
+        self, current_user: UserResponse
+    ) -> UserResponse:
         pass
 
     @abstractmethod
-    def register(self, user: UserCreate) -> Dict[str, str]:
+    def register(self, email: str, password: str) -> Dict[str, str]:
         pass
 
     @abstractmethod
@@ -93,7 +97,7 @@ class AuthProvider(Provider, ABC):
 
     async def auth_wrapper(
         self, auth: Optional[HTTPAuthorizationCredentials] = Security(security)
-    ) -> User:
+    ) -> UserResponse:
         if not self.config.require_authentication and auth is None:
             return self._get_default_admin_user()
 

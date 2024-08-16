@@ -5,41 +5,48 @@ from r2r.cli.utils.timer import timer
 
 
 @cli.command()
-@click.option("--keys", multiple=True, help="Keys for deletion")
-@click.option("--values", multiple=True, help="Values for deletion")
+@click.option(
+    "--filter",
+    "-f",
+    multiple=True,
+    help="Filters for deletion in the format key:operator:value",
+)
 @click.pass_obj
-def delete(obj, keys, values):
-    """Delete documents based on keys and values."""
-    if len(keys) != len(values):
-        raise click.UsageError("Number of keys must match number of values")
+def delete(obj, filter):
+    """Delete documents based on filters."""
+    filters = {}
+    for f in filter:
+        key, operator, value = f.split(":", 2)
+        if key not in filters:
+            filters[key] = {}
+        filters[key][f"${operator}"] = value
 
     with timer():
-        response = obj.delete(list(keys), list(values))
+        response = obj.delete(filters=filters)
 
     click.echo(response)
 
 
 @cli.command()
 @click.option("--document-ids", multiple=True, help="Document IDs to overview")
-@click.option("--user-ids", multiple=True, help="User IDs to overview")
 @click.pass_obj
-def documents_overview(obj, document_ids, user_ids):
+def documents_overview(obj, document_ids):
     """Get an overview of documents."""
     document_ids = list(document_ids) if document_ids else None
-    user_ids = list(user_ids) if user_ids else None
 
     with timer():
-        response = obj.documents_overview(document_ids, user_ids)
+        response = obj.documents_overview(document_ids)
 
     for document in response:
         click.echo(document)
 
 
 @cli.command()
-@click.argument("document_id")
+@click.argument("document-id")
 @click.pass_obj
 def document_chunks(obj, document_id):
     """Get chunks of a specific document."""
+    print(document_id)
     with timer():
         response = obj.document_chunks(document_id)
 
