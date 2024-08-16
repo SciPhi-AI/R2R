@@ -8,7 +8,6 @@ from .ingestion.responses import (
 from .management.responses import (
     AnalyticsResponse,
     AppSettingsResponse,
-    DeleteResponse,
     DocumentChunkResponse,
     DocumentOverviewResponse,
     GroupOverviewResponse,
@@ -61,7 +60,6 @@ __all__ = [
     "AppSettingsResponse",
     "ScoreCompletionResponse",
     "UserOverviewResponse",
-    "DeleteResponse",
     "DocumentOverviewResponse",
     "DocumentChunkResponse",
     "KnowledgeGraphResponse",
