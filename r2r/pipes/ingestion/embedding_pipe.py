@@ -79,6 +79,17 @@ class EmbeddingPipe(AsyncPipe):
         **kwargs: Any,
     ) -> AsyncGenerator[Union[R2RDocumentProcessingError, VectorEntry], None]:
         fragment_batch = []
+        tasks = []
+
+        async def process_batch(batch):
+            try:
+                return await self._process_batch(batch)
+            except Exception as e:
+                logger.error(f"Error processing batch: {e}")
+                return R2RDocumentProcessingError(
+                    error_message=str(e),
+                    document_id=batch[0].document_id,
+                )
 
         async for item in input.message:
             if isinstance(item, R2RDocumentProcessingError):
@@ -87,27 +98,18 @@ class EmbeddingPipe(AsyncPipe):
 
             fragment_batch.append(item)
             if len(fragment_batch) >= self.embedding_batch_size:
-                try:
-                    for vector_entry in await self._process_batch(
-                        fragment_batch
-                    ):
-                        yield vector_entry
-                except Exception as e:
-                    logger.error(f"Error processing batch: {e}")
-                    yield R2RDocumentProcessingError(
-                        error_message=str(e),
-                        document_id=fragment_batch[0].document_id,
-                    )
-                finally:
-                    fragment_batch.clear()
+                task = asyncio.create_task(process_batch(fragment_batch.copy()))
+                tasks.append(task)
+                fragment_batch.clear()
 
         if fragment_batch:
-            try:
-                for vector_entry in await self._process_batch(fragment_batch):
+            task = asyncio.create_task(process_batch(fragment_batch))
+            tasks.append(task)
+
+        for task in asyncio.as_completed(tasks):
+            result = await task
+            if isinstance(result, R2RDocumentProcessingError):
+                yield result
+            else:
+                for vector_entry in result:
                     yield vector_entry
-            except Exception as e:
-                logger.error(f"Error processing final batch: {e}")
-                yield R2RDocumentProcessingError(
-                    error_message=str(e),
-                    document_id=fragment_batch[0].document_id,
-                )
