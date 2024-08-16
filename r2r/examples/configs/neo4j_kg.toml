@@ -24,7 +24,7 @@ excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
 provider = "neo4j"
 batch_size = 256
 kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
-
+max_knowledge_triples = 100
 
   [kg.kg_extraction_config]
   model = "gpt-4o-mini"

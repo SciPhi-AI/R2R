@@ -34,7 +34,6 @@ __all__ = [
     "Entity",
     "KGExtraction",
     "Triple",
-    "extract_triples",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",
@@ -124,7 +123,6 @@ __all__ = [
     # Knowledge Graph provider
     "KGConfig",
     "KGProvider",
-    "extract_entities",
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",

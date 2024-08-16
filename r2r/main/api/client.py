@@ -694,6 +694,10 @@ class R2RClient:
         return self._make_request("GET", "groups_overview", params=params)
 
 
+    def enrich_graph(self, **kwargs) -> dict:
+        self._ensure_authenticated()
+        return self._make_request("POST", "enrich_graph", json=kwargs)
+
 if __name__ == "__main__":
     client = R2RClient(base_url="http://localhost:8000")
     fire.Fire(client)

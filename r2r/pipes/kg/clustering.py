@@ -85,25 +85,6 @@ class KGClusteringPipe(AsyncPipe):
         Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm.
         """
 
-        #         for record in data:
-        #     source = EntityNode(
-        #         name=record["source_id"],
-        #         label=record["source_type"],
-        #         properties=remove_empty_values(record["source_properties"]),
-        #     )
-        #     target = EntityNode(
-        #         name=record["target_id"],
-        #         label=record["target_type"],
-        #         properties=remove_empty_values(record["target_properties"]),
-        #     )
-        #     rel = Relation(
-        #         source_id=record["source_id"],
-        #         target_id=record["target_id"],
-        #         label=record["type"],
-        #     )
-        #     triples.append([source, rel, target])
-        # return triples
-
         G = nx.Graph()
         for triple in triples:
             G.add_edge(
@@ -138,9 +119,6 @@ class KGClusteringPipe(AsyncPipe):
                 community_details[f"{level}_{cluster}"].entity_ids.append(node)
                 for neighbor in G.neighbors(node):
                     edge_info = G.get_edge_data(node, neighbor)
-                    logger.info(f"Node: {node}")
-                    logger.info(f"Neighbor: {neighbor}")
-                    logger.info(f"Edge info: {edge_info}")
                     if edge_info and edge_info.get("id"):
                         community_details[
                             f"{level}_{cluster}"
@@ -196,11 +174,7 @@ class KGClusteringPipe(AsyncPipe):
             )
 
             description = description.choices[0].message.content
-
-            logger.info(f"Community description: {description}")
-
             community.summary = description
-
             summary_embedding = (
                 await self.embedding_provider.async_get_embedding(
                     community.summary
@@ -223,12 +197,6 @@ class KGClusteringPipe(AsyncPipe):
         for completed_task in asyncio.as_completed(tasks):
             yield await completed_task
 
-    async def _process_batch(self, triples: list[Triple]) -> list[Community]:
-        """
-        Processes a batch of triples and returns the resulting communities.
-        """
-        return await self.cluster_kg(triples)
-
     async def _run_logic(
         self,
         input: AsyncPipe.Input,
@@ -240,43 +208,19 @@ class KGClusteringPipe(AsyncPipe):
         """
         Executes the KG clustering pipe: clustering entities and triples into communities.
         """
-        # batch_tasks = []
-        # triple_batch = []
 
-        # async for triple in input.message:
-        #     triple_batch.append(triple)
-        #     if len(triple_batch) >= self.cluster_batch_size:
-        #         batch_tasks.append(self._process_batch(triple_batch.copy()))
-        #         triple_batch.clear()
-
-        # if triple_batch:  # Process any remaining triples
-        #     batch_tasks.append(self._process_batch(triple_batch))
-
-        # for task in asyncio.as_completed(batch_tasks):
-        #     communities = await task
-        #     for community in communities:
-        #         yield community
-
-        # store all inputs
+        base_dimension = self.embedding_provider.config.base_dimension
+        vector_index_fn = self.kg_provider.create_vector_index
+        vector_index_fn("__ENTITY__", "name_embedding", base_dimension)
+        vector_index_fn("__ENTITY__", "description_embedding", base_dimension)
+        vector_index_fn("__RELATIONSHIP__", "description", base_dimension)
+        vector_index_fn("__Community__", "summary_embedding", base_dimension)
 
         all_nodes = []
         async for node in input.message:
             all_nodes.append(node)
 
         triples = self.kg_provider.get_triples()
-        # create a networkx graph
 
         async for community in self.cluster_kg(triples):
             yield community
-
-        # then finally create vector indexes for communities
-        self.kg_provider.create_vector_index("__ENTITY__", "name_embedding")
-        self.kg_provider.create_vector_index(
-            "__ENTITY__", "description_embedding"
-        )
-
-        self.kg_provider.create_vector_index("__RELATIONSHIP__", "description")
-
-        self.kg_provider.create_vector_index(
-            "__Community__", "summary_embedding"
-        )

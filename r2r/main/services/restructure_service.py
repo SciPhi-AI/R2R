@@ -44,7 +44,7 @@ class RestructureService(Service):
         """
         try:
             # Assuming there's a graph enrichment pipeline
-            enrichment_results = await self.pipelines.kg_pipeline.run(
+            enrichment_results = await self.pipelines.kg_enrichment_pipeline.run(
                 input=[],
                 run_manager=self.run_manager,
             )

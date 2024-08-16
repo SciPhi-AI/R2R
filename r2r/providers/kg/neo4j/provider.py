@@ -320,13 +320,13 @@ class Neo4jKGProvider(KGProvider):
     def client(self):
         return self._driver
 
-    def create_vector_index(self, node_type: str, node_property: str) -> None:
+    def create_vector_index(self, node_type: str, node_property: str, dimension: int) -> None:
 
         query = f"""
         CREATE VECTOR INDEX `{node_type}_{node_property}` IF NOT EXISTS
 
         FOR (n:{node_type}) ON n.{node_property}
-        OPTIONS {{indexConfig: {{`vector.similarity_function`: 'cosine', `vector.dimensions`:{self.embedding_provider.config.base_dimension}}}}}"""
+        OPTIONS {{indexConfig: {{`vector.similarity_function`: 'cosine', `vector.dimensions`:{dimension}}}}}"""
 
         self.structured_query(query)
 
