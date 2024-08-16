@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import traceback
 from typing import Any, AsyncGenerator, Optional
 
 from ..logging.run_logger import RunLoggingSingleton
@@ -73,7 +74,10 @@ class AsyncPipeline:
                     else await self._consume_all(current_input)
                 )
             except Exception as error:
-                logger.error(f"Pipeline failed with error: {error}")
+                error_trace = traceback.format_exc()
+                logger.error(
+                    f"Pipeline failed with error: {error}\n\nStack trace:\n{error_trace}"
+                )
                 raise error
 
     async def _consume_all(self, gen: AsyncGenerator) -> list[Any]:
@@ -145,6 +149,7 @@ class AsyncPipeline:
                 ]
 
         # Handle the pipe generator
+
         async for ele in await pipe.run(
             pipe.Input(**input_dict),
             self.state,

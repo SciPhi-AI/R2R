@@ -10,7 +10,7 @@ from .database import (
     VectorDBProvider,
 )
 from .embedding import EmbeddingConfig, EmbeddingProvider
-from .kg import KGConfig, KGDBProvider, extract_entities, update_kg_prompt
+from .kg import KGConfig, KGProvider
 from .llm import CompletionConfig, CompletionProvider
 from .parsing import OverrideParser, ParsingConfig, ParsingProvider
 from .prompt import PromptConfig, PromptProvider
@@ -40,9 +40,7 @@ __all__ = [
     "EmbeddingProvider",
     # Knowledge Graph provider
     "KGConfig",
-    "KGDBProvider",
-    "update_kg_prompt",
-    "extract_entities",
+    "KGProvider",
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",

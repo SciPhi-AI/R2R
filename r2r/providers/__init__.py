@@ -7,7 +7,7 @@ from .embeddings import (
     OllamaEmbeddingProvider,
     OpenAIEmbeddingProvider,
 )
-from .kg import Neo4jKGDBProvider
+from .kg import Neo4jKGProvider
 from .llm import LiteCompletionProvider, OpenAICompletionProvider
 from .parsing import R2RParsingProvider, UnstructuredParsingProvider
 from .prompts import R2RPromptProvider
@@ -28,7 +28,7 @@ __all__ = [
     "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",
     # KG
-    "Neo4jKGDBProvider",
+    "Neo4jKGProvider",
     # LLM
     "OpenAICompletionProvider",
     "LiteCompletionProvider",

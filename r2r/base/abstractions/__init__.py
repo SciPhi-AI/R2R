@@ -11,8 +11,17 @@ from .document import (
 )
 from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import R2RDocumentProcessingError, R2RException
-from .kg import Entity, KGExtraction, Triple, extract_triples
-from .llama_abstractions import VectorStoreQuery
+from .graph import (
+    Community,
+    CommunityReport,
+    Entity,
+    EntityType,
+    KGExtraction,
+    RelationshipType,
+    Triple,
+    extract_entities,
+    extract_triples,
+)
 from .llm import (
     GenerationConfig,
     LLMChatCompletion,
@@ -51,13 +60,16 @@ __all__ = [
     # Exception abstractions
     "R2RDocumentProcessingError",
     "R2RException",
-    # KG abstractions
+    # Graph abstractions
     "Entity",
+    "EntityType",
+    "RelationshipType",
+    "Community",
+    "CommunityReport",
     "KGExtraction",
     "Triple",
+    "extract_entities",
     "extract_triples",
-    # Llama abstractions
-    "VectorStoreQuery",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",

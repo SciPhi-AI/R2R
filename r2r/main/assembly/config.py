@@ -102,8 +102,11 @@ class R2RConfig:
     ):
         if section not in config_data:
             raise ValueError(f"Missing '{section}' section in config")
-        if not all(key in config_data[section] for key in keys):
-            raise ValueError(f"Missing required keys in '{section}' config")
+        missing_keys = [key for key in keys if key not in config_data[section]]
+        if missing_keys:
+            raise ValueError(
+                f"Missing required keys in '{section}' config: {', '.join(missing_keys)}"
+            )
 
     @classmethod
     def from_toml(cls, config_path: str = None) -> "R2RConfig":
