@@ -201,6 +201,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def inspect_knowledge_graph(
             limit: int = 100,
+            print_descriptions: bool = False,
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedKnowledgeGraphResponse:
             if not auth_user.is_superuser:
@@ -208,7 +209,7 @@ class ManagementRouter(BaseRouter):
                     "Only a superuser can call the `inspect_knowledge_graph` endpoint.",
                     403,
                 )
-            return await self.engine.ainspect_knowledge_graph(limit=limit)
+            return await self.engine.ainspect_knowledge_graph(limit=limit, print_descriptions=print_descriptions)
 
         @self.router.get("/app_settings")
         @self.base_endpoint

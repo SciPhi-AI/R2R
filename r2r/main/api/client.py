@@ -552,13 +552,13 @@ class R2RClient:
             "GET", "document_chunks", params={"document_id": document_id}
         )
 
-    def inspect_knowledge_graph(self, limit: int = 100) -> str:
+    def inspect_knowledge_graph(self, limit: int = 100, print_descriptions: bool = False) -> str:
         self._ensure_authenticated()
 
         return self._make_request(
             "GET",
             "inspect_knowledge_graph",
-            params={"limit": limit},
+            params={"limit": limit, "print_descriptions": print_descriptions},
         )
 
     def change_password(

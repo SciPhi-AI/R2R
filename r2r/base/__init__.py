@@ -142,6 +142,7 @@ __all__ = [
     "generate_id_from_label",
     "increment_version",
     "EntityType",
+    "RelationshipType",
     "format_entity_types",
     "format_relations",
 ]

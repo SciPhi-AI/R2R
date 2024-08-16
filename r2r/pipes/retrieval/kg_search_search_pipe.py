@@ -195,7 +195,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                     task_prompt_name="graphrag_reduce_system_prompt",
                     task_inputs={
                         "response_type": "multiple paragraphs",
-                        "report_data": filtered_responses[:2048],
+                        "report_data": filtered_responses,
                         "input": message,
                     },
                 ),

@@ -4,7 +4,7 @@ import fire
 import requests
 from bs4 import BeautifulSoup, Comment
 
-from r2r import EntityType, R2RClient, R2RPromptProvider, update_kg_prompt
+from r2r import EntityType, R2RClient, R2RPromptProvider, RelationshipType
 
 
 def escape_braces(text):
@@ -103,34 +103,32 @@ def main(
     # Specify the relations for the KG construction
     relations = [
         # Founder Relations
-        Relation("EDUCATED_AT"),
-        Relation("WORKED_AT"),
-        Relation("FOUNDED"),
+        RelationshipType("EDUCATED_AT"),
+        RelationshipType("WORKED_AT"),
+        RelationshipType("FOUNDED"),
         # Company relations
-        Relation("RAISED"),
-        Relation("REVENUE"),
-        Relation("TEAM_SIZE"),
-        Relation("LOCATION"),
-        Relation("ACQUIRED_BY"),
-        Relation("ANNOUNCED"),
-        Relation("INDUSTRY"),
+        RelationshipType("RAISED"),
+        RelationshipType("REVENUE"),
+        RelationshipType("TEAM_SIZE"),
+        RelationshipType("LOCATION"),
+        RelationshipType("ACQUIRED_BY"),
+        RelationshipType("ANNOUNCED"),
+        RelationshipType("INDUSTRY"),
         # Product relations
-        Relation("PRODUCT"),
-        Relation("FEATURES"),
-        Relation("TECHNOLOGY"),
+        RelationshipType("PRODUCT"),
+        RelationshipType("FEATURES"),
+        RelationshipType("TECHNOLOGY"),
         # Additional relations
-        Relation("HAS"),
-        Relation("AS_OF"),
-        Relation("PARTICIPATED"),
-        Relation("ASSOCIATED"),
+        RelationshipType("HAS"),
+        RelationshipType("AS_OF"),
+        RelationshipType("PARTICIPATED"),
+        RelationshipType("ASSOCIATED"),
     ]
 
     client = R2RClient(base_url=base_url)
     r2r_prompts = R2RPromptProvider()
 
     prompt = "graphrag_triplet_extraction_few_shot"
-
-    update_kg_prompt(client, r2r_prompts, prompt, entity_types, relations)
 
     url_map = get_all_yc_co_directory_urls()
 
@@ -157,13 +155,9 @@ def main(
             continue
 
     print("Inspecting Knowledge Graph")
-    print(client.inspect_knowledge_graph(1000)["results"])
+    print(client.inspect_knowledge_graph(1000, print_descriptions=True)["results"])
 
     if not local_mode:
-
-        update_kg_prompt(
-            client, r2r_prompts, "kg_search", entity_types, relations
-        )
 
         # support local and global
         result = client.search(

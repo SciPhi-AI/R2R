@@ -9,11 +9,14 @@ from r2r.cli.utils.timer import timer
 @click.option(
     "--limit", default=100, help="Limit the number of relationships returned"
 )
+@click.option(
+    "--print-descriptions", is_flag=True, help="Print descriptions of entities and relationships"
+)
 @click.pass_obj
-def inspect_knowledge_graph(obj, limit):
+def inspect_knowledge_graph(obj, limit, print_descriptions):
     """Print relationships from the knowledge graph."""
     with timer():
-        response = obj.inspect_knowledge_graph(limit)
+        response = obj.inspect_knowledge_graph(limit, print_descriptions)
 
     click.echo(response)
 

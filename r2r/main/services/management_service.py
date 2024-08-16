@@ -337,7 +337,7 @@ class ManagementService(Service):
 
     @telemetry_event("InspectKnowledgeGraph")
     async def inspect_knowledge_graph(
-        self, limit=10000, *args: Any, **kwargs: Any
+        self, limit=10000, print_descriptions: bool = False, *args: Any, **kwargs: Any
     ):
         if self.providers.kg is None:
             raise R2RException(
@@ -346,19 +346,37 @@ class ManagementService(Service):
 
         rel_query = f"""
         MATCH (n1)-[r]->(n2)
-        RETURN n1.id AS subject, type(r) AS relation, n2.id AS object
+        return n1.name AS subject, n1.description AS subject_description, n2.name AS object, n2.description AS object_description, type(r) AS relation, r.description AS relation_description
         LIMIT {limit}
         """
 
         try:
-            with self.providers.kg.client.session(
-                database=self.providers.kg._database
-            ) as session:
-                results = session.run(rel_query)
-                relationships = [
-                    (record["subject"], record["relation"], record["object"])
-                    for record in results
-                ]
+            neo4j_results = self.providers.kg.structured_query(rel_query).records
+
+            relationships_raw = [{
+                "subject": {
+                    "name": record["subject"],
+                    "description": record["subject_description"],
+                },
+                "relation": {
+                    "name": record["relation"],
+                    "description": record["relation_description"],
+                },
+                "object": {
+                    "name": record["object"],
+                    "description": record["object_description"],
+                    },
+                }
+                for record in neo4j_results
+            ]
+
+            descriptions_dict = {}
+            relationships = []
+            for relationship in relationships_raw:
+                descriptions_dict[relationship["subject"]["name"]] = relationship["subject"]["description"]
+                descriptions_dict[relationship["object"]["name"]] = relationship["object"]["description"]
+                descriptions_dict[relationship["relation"]["name"]] = relationship["relation"]["description"]
+                relationships.append((relationship["subject"]["name"], relationship["relation"]["name"], relationship["object"]["name"]))
 
             # Create graph representation and group relationships
             graph, grouped_relationships = self.process_relationships(
@@ -366,12 +384,12 @@ class ManagementService(Service):
             )
 
             # Generate output
-            output = self.generate_output(grouped_relationships, graph)
+            output = self.generate_output(grouped_relationships, graph, descriptions_dict, print_descriptions)
 
             return "\n".join(output)
 
         except Exception as e:
-            logger.error(f"Error printing relationships: {str(e)}")
+            logger.error("Error printing relationships", exc_info=True)
             raise R2RException(
                 status_code=500,
                 message=f"An error occurred while fetching relationships: {str(e)}",
@@ -430,17 +448,29 @@ class ManagementService(Service):
         self,
         grouped_relationships: Dict[str, Dict[str, List[str]]],
         graph: Dict[str, List[str]],
+        descriptions_dict: Dict[str, str], 
+        print_descriptions: bool = True
     ) -> List[str]:
         output = []
-
         # Print grouped relationships
         for subject, relations in grouped_relationships.items():
-            output.append(f"\n== {subject} ==")
+            output.append(f"\n== [ENTITY] {subject} ==")
+            if print_descriptions:
+                description = descriptions_dict[subject].replace('\n', ' ')
+                output.append(f"    {description[:80]}")
+                if len(description) > 80:
+                    for i in range(80, len(description), 80):
+                        output.append(f"    {description[i:i+80]}")
             for relation, objects in relations.items():
-                output.append(f"  {relation}:")
+                output.append(f"  [RELATIONSHIP] {relation}:")
                 for obj in objects:
-                    output.append(f"    - {obj}")
-
+                    output.append(f"    • [RELATED ENTITY] {obj}")
+                    if print_descriptions:
+                        obj_description = descriptions_dict[obj].replace('\n', ' ')
+                        output.append(f"        {obj_description[:76]}")
+                        if len(obj_description) > 76:
+                            for i in range(76, len(obj_description), 76):
+                                output.append(f"        {obj_description[i:i+76]}")
         # Print basic graph statistics
         output.append("\n== Graph Statistics ==")
         output.append(f"Number of nodes: {len(graph)}")

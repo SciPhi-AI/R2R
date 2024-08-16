@@ -7,6 +7,7 @@ import asyncio
 import logging
 import uuid
 from typing import Any, AsyncGenerator, Optional
+import json
 
 import networkx as nx
 from graspologic.partition import hierarchical_leiden
@@ -182,7 +183,11 @@ class KGClusteringPipe(AsyncPipe):
             )
             community.summary_embedding = summary_embedding
             self.kg_provider.upsert_communities([community])
-            return community
+            try:
+                summary = json.loads(community.summary)
+            except:
+                summary = {"title": "_"}
+            return { 'id': community.id, 'title': summary['title'] }
 
         tasks = []
         async for community_key, community in async_iterate_dict(
