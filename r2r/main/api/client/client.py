@@ -123,7 +123,7 @@ class R2RAsyncClient:
 
         if isinstance(self.client, TestClient):
             response = getattr(self.client, method.lower())(
-                url, headers=headers, **kwargs
+                url, headers=headers, params=params, **kwargs
             )
             return response.json()
         else:

@@ -12,6 +12,7 @@ class AuthMethods:
         data = {"email": email, "password": password}
         return await client._make_request("POST", "register", json=data)
 
+    @staticmethod
     async def verify_email(client, verification_code: str) -> dict:
         return await client._make_request(
             "POST",
@@ -19,6 +20,7 @@ class AuthMethods:
             json={"verification_code": verification_code},
         )
 
+    @staticmethod
     async def login(client, email: str, password: str) -> dict[str, Token]:
         data = {"username": email, "password": password}
         response = await client._make_request("POST", "login", data=data)
@@ -26,9 +28,11 @@ class AuthMethods:
         client._refresh_token = response["results"]["refresh_token"]["token"]
         return response
 
+    @staticmethod
     async def user(client) -> UserResponse:
         return await client._make_request("GET", "user")
 
+    @staticmethod
     async def refresh_access_token(client) -> dict[str, Token]:
         data = {"refresh_token": client._refresh_token}
         response = await client._make_request(
@@ -38,6 +42,7 @@ class AuthMethods:
         client._refresh_token = response["results"]["refresh_token"]["token"]
         return response
 
+    @staticmethod
     async def change_password(
         client, current_password: str, new_password: str
     ) -> dict:
@@ -47,24 +52,27 @@ class AuthMethods:
         }
         return await client._make_request("POST", "change_password", json=data)
 
+    @staticmethod
     async def request_password_reset(client, email: str) -> dict:
-        print("email = ", email)
         return await client._make_request(
             "POST", "request_password_reset", json=email
         )
 
+    @staticmethod
     async def confirm_password_reset(
         client, reset_token: str, new_password: str
     ) -> dict:
         data = {"reset_token": reset_token, "new_password": new_password}
         return await client._make_request("POST", "reset_password", json=data)
 
+    @staticmethod
     async def logout(client) -> dict:
         response = await client._make_request("POST", "logout")
         client.access_token = None
         client._refresh_token = None
         return response
 
+    @staticmethod
     async def update_user(
         client,
         email: Optional[str] = None,
@@ -81,6 +89,7 @@ class AuthMethods:
         data = {k: v for k, v in data.items() if v is not None}
         return await client._make_request("PUT", "user", json=data)
 
+    @staticmethod
     async def delete_user(
         client, user_id: uuid.UUID, password: Optional[str] = None
     ) -> dict:

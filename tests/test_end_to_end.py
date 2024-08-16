@@ -307,8 +307,13 @@ async def test_ingest_search_then_delete(app, logging_connection):
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_user_documents(app, logging_connection):
-    user_id_0 = generate_id_from_label("user_0")
-    user_id_1 = generate_id_from_label("user_1")
+
+    # user_id_0 = generate_id_from_label("user_0")
+    # user_id_1 = generate_id_from_label("user_1")
+    user_0 = app.register("user_0@test.com", "password")
+    user_id_0 = user_0.id
+    user_1 = app.register("user_1@test.com", "password")
+    user_id_1 = user_1.id
     doc_id_0 = generate_id_from_label("doc_01")
     doc_id_1 = generate_id_from_label("doc_11")
 
@@ -332,9 +337,12 @@ async def test_ingest_user_documents(app, logging_connection):
             ),
         ]
     )
-    user_id_results = await app.ausers_overview([user_id_0, user_id_1])
-    assert set([stats.user_id for stats in user_id_results]) == set(
-        [user_id_0, user_id_1]
+    user_stats_results = await app.ausers_overview([user_id_0, user_id_1])
+    print("user_stats_results = ", user_stats_results)
+    user_id_results = [stats.user_id for stats in user_stats_results]
+    print("user_id_results = ", user_stats_results)
+    assert set([user_id_0, user_id_1]) == set(
+        user_id_results
     ), f"Expected user ids {user_id_0} and {user_id_1}, but got {user_id_results}"
 
     user_0_docs = await app.adocuments_overview(user_ids=[user_id_0])

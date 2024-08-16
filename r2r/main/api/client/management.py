@@ -1,5 +1,6 @@
+import json
 import uuid
-from typing import Optional
+from typing import Any, Optional, Union
 
 from r2r.base import VectorDBFilterValue
 
@@ -100,7 +101,7 @@ class ManagementMethods:
         document_id: uuid.UUID,
     ) -> dict:
         return await client._make_request(
-            "GET", f"document_chunks/{document_id}"
+            "GET", "document_chunks", params={"document_id": document_id}
         )
 
     @staticmethod
@@ -258,10 +259,15 @@ class ManagementMethods:
     async def groups_overview(
         client,
         group_ids: Optional[list[uuid.UUID]] = None,
+        limit: int = 100,
+        offset: int = 0,
     ) -> dict:
         params = {
-            "group_ids": [str(gid) for gid in group_ids] if group_ids else None
+            "limit": limit,
+            "offset": offset,
         }
+        if group_ids is not None:
+            params["group_ids"] = [str(gid) for gid in group_ids]
         return await client._make_request(
             "GET", "groups_overview", params=params
         )
@@ -280,3 +286,23 @@ class ManagementMethods:
         return await client._make_request(
             "GET", f"group/{group_id}/documents", params=params
         )
+
+    @staticmethod
+    async def analytics(
+        client,
+        filter_criteria: Optional[Union[dict, str]] = None,
+        analysis_types: Optional[Union[dict, str]] = None,
+    ) -> dict:
+        params = {}
+        if filter_criteria:
+            if isinstance(filter_criteria, dict):
+                params["filter_criteria"] = json.dumps(filter_criteria)
+            else:
+                params["filter_criteria"] = filter_criteria
+        if analysis_types:
+            if isinstance(analysis_types, dict):
+                params["analysis_types"] = json.dumps(analysis_types)
+            else:
+                params["analysis_types"] = analysis_types
+
+        return await client._make_request("GET", "analytics", params=params)

@@ -118,12 +118,6 @@ class R2RAuthProvider(AuthProvider):
         return current_user
 
     def register(self, email: str, password: str) -> Dict[str, str]:
-        # Check if user already exists
-        if self.db_provider.relational.get_user_by_email(email):
-            raise R2RException(
-                status_code=400, message="Email already registered"
-            )
-
         # Create new user
         new_user = self.db_provider.relational.create_user(email, password)
 

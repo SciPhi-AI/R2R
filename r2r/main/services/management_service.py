@@ -564,11 +564,15 @@ class ManagementService(Service):
     async def agroups_overview(
         self,
         group_ids: Optional[list[uuid.UUID]] = None,
+        offset: int = 0,
+        limit: int = 100,
         *args,
         **kwargs,
     ):
         return self.providers.database.relational.get_groups_overview(
-            [str(ele) for ele in group_ids] if group_ids else None
+            [str(ele) for ele in group_ids] if group_ids else None,
+            offset,
+            limit,
         )
 
     @telemetry_event("GetDocumentsInGroup")

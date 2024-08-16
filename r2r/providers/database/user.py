@@ -4,7 +4,7 @@ from uuid import UUID
 
 from sqlalchemy import text
 
-from r2r.base.abstractions import R2RException
+from r2r.base.abstractions import R2RException, UserStats
 from r2r.base.api.models.auth.responses import UserResponse
 from r2r.base.utils import generate_id_from_label
 
@@ -77,7 +77,7 @@ class UserMixin(DatabaseMixin):
             else None
         )
 
-    def get_user_by_email(self, email: str) -> Optional[UserResponse]:
+    def get_user_by_email(self, email: str) -> UserResponse:
         query, params = (
             QueryBuilder(self._get_table_name("users"))
             .select(
@@ -100,30 +100,34 @@ class UserMixin(DatabaseMixin):
             .build()
         )
         result = self.execute_query(query, params).fetchone()
-        return (
-            UserResponse(
-                id=result[0],
-                email=result[1],
-                hashed_password=result[2],
-                is_superuser=result[3],
-                is_active=result[4],
-                is_verified=result[5],
-                created_at=result[6],
-                updated_at=result[7],
-                name=result[8],
-                profile_picture=result[9],
-                bio=result[10],
-                group_ids=result[11],
-            )
-            if result
-            else None
+        if not result:
+            raise R2RException(status_code=404, message="User not found")
+
+        return UserResponse(
+            id=result[0],
+            email=result[1],
+            hashed_password=result[2],
+            is_superuser=result[3],
+            is_active=result[4],
+            is_verified=result[5],
+            created_at=result[6],
+            updated_at=result[7],
+            name=result[8],
+            profile_picture=result[9],
+            bio=result[10],
+            group_ids=result[11],
         )
 
     def create_user(self, email: str, password: str) -> UserResponse:
-        if self.get_user_by_email(email):
-            raise R2RException(
-                status_code=400, message="User with this email already exists"
-            )
+        try:
+            if self.get_user_by_email(email):
+                raise R2RException(
+                    status_code=400,
+                    message="User with this email already exists",
+                )
+        except R2RException as e:
+            if e.status_code != 404:
+                raise e
 
         hashed_password = self.crypto_provider.get_password_hash(password)
         query = f"""
@@ -430,3 +434,58 @@ class UserMixin(DatabaseMixin):
 
         if not result.rowcount:
             raise R2RException(status_code=404, message="User not found")
+
+    def get_users_overview(
+        self,
+        user_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> list[UserStats]:
+        query = f"""
+            WITH user_docs AS (
+                SELECT
+                    u.user_id,
+                    u.email,
+                    u.is_superuser,
+                    u.is_active,
+                    u.is_verified,
+                    u.created_at,
+                    u.updated_at,
+                    u.group_ids,
+                    COUNT(d.document_id) AS num_files,
+                    COALESCE(SUM(d.size_in_bytes), 0) AS total_size_in_bytes,
+                    ARRAY_AGG(d.document_id) FILTER (WHERE d.document_id IS NOT NULL) AS document_ids
+                FROM {self._get_table_name('users')} u
+                LEFT JOIN {self._get_table_name('document_info')} d ON u.user_id = d.user_id
+                {f"WHERE u.user_id = ANY(CAST(:user_ids AS UUID[]))" if user_ids else ""}
+                GROUP BY u.user_id, u.email, u.is_superuser, u.is_active, u.is_verified, u.created_at, u.updated_at, u.group_ids
+            )
+            SELECT *
+            FROM user_docs
+            ORDER BY email
+            OFFSET :offset
+            LIMIT :limit
+        """
+
+        params = {"offset": offset, "limit": limit}
+        if user_ids:
+            params["user_ids"] = [str(ele) for ele in user_ids]
+
+        results = self.execute_query(query, params).fetchall()
+
+        return [
+            UserStats(
+                user_id=row[0],
+                email=row[1],
+                is_superuser=row[2],
+                is_active=row[3],
+                is_verified=row[4],
+                created_at=row[5],
+                updated_at=row[6],
+                group_ids=row[7],
+                num_files=row[8],
+                total_size_in_bytes=row[9],
+                document_ids=row[10],
+            )
+            for row in results
+        ]

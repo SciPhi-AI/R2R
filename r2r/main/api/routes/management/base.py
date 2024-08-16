@@ -315,12 +315,12 @@ class ManagementRouter(BaseRouter):
             return await self.engine.aremove_user_from_group(user_id, group_id)
 
         # TODO - Proivde response model
-        @self.router.get("/get_users_in_group/{group_id}/{offset}/{limit}")
+        @self.router.get("/get_users_in_group/{group_id}")
         @self.base_endpoint
         async def get_users_in_group_app(
             group_id: uuid.UUID = Path(..., description="Group ID"),
-            offset: int = Path(..., description="Offset"),
-            limit: int = Path(..., description="limit"),
+            offset: int = Body(..., description="Offset"),
+            limit: int = Body(..., description="limit"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
@@ -348,15 +348,20 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def groups_overview_app(
             group_ids: Optional[list[uuid.UUID]] = Query(None),
+            limit: Optional[int] = Query(100, ge=1, le=1000),
+            offset: Optional[int] = Query(0, ge=0),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupOverviewResponse:
+            print("... group_ids = ", group_ids)
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `groups_overview` endpoint.",
                     403,
                 )
 
-            return await self.engine.agroups_overview(group_ids=group_ids)
+            return await self.engine.agroups_overview(
+                group_ids=group_ids, limit=limit, offset=offset
+            )
 
         @self.router.post("/score_completion")
         @self.base_endpoint

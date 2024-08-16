@@ -262,6 +262,8 @@ class GroupMixin(DatabaseMixin):
     def get_documents_in_group(
         self, group_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[DocumentInfo]:
+        if not self.group_exists(group_id):
+            raise R2RException(status_code=404, message="Group not found")
         query = f"""
             SELECT d.document_id, d.user_id, d.type, d.metadata, d.title, d.version, d.size_in_bytes, d.status, d.created_at, d.updated_at
             FROM {self._get_table_name('document_info')} d

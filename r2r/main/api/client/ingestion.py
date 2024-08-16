@@ -4,40 +4,10 @@ import uuid
 from contextlib import ExitStack
 from typing import List, Optional, Union
 
-from r2r.base import ChunkingConfig, Document, DocumentType
+from r2r.base import ChunkingConfig
 
 
 class IngestionMethods:
-    @staticmethod
-    async def ingest_documents(
-        client,
-        documents: List[Document],
-        versions: Optional[List[str]] = None,
-        chunking_config_override: Optional[Union[dict, ChunkingConfig]] = None,
-    ) -> dict:
-        """
-        Ingest a list of documents into the system.
-
-        Args:
-            documents (List[Document]): List of Document objects to ingest.
-            versions (Optional[List[str]]): List of version strings for each document.
-            chunking_config_override (Optional[Union[dict, ChunkingConfig]]): Custom chunking configuration.
-
-        Returns:
-            dict: Ingestion results containing processed, failed, and skipped documents.
-        """
-        data = {
-            "documents": [doc.dict() for doc in documents],
-            "versions": versions,
-            "chunking_config_override": (
-                chunking_config_override.dict()
-                if isinstance(chunking_config_override, ChunkingConfig)
-                else chunking_config_override
-            ),
-        }
-        return await client._make_request(
-            "POST", "ingest_documents", json=data
-        )
 
     @staticmethod
     async def ingest_files(
@@ -162,69 +132,3 @@ class IngestionMethods:
             return await client._make_request(
                 "POST", "update_files", data=data, files=files
             )
-
-    @staticmethod
-    async def get_document_info(client, document_id: str) -> dict:
-        """
-        Retrieve information about a specific document.
-
-        Args:
-            document_id (str): The ID of the document to retrieve information for.
-
-        Returns:
-            dict: Document information including metadata, status, and version.
-        """
-        return await client._make_request(
-            "GET", f"document_info/{document_id}"
-        )
-
-    @staticmethod
-    async def delete_document(client, document_id: str) -> dict:
-        """
-        Delete a specific document from the system.
-
-        Args:
-            document_id (str): The ID of the document to delete.
-
-        Returns:
-            dict: Confirmation of document deletion.
-        """
-        return await client._make_request(
-            "DELETE", f"delete_document/{document_id}"
-        )
-
-    @staticmethod
-    async def list_documents(
-        client,
-        user_id: Optional[str] = None,
-        group_ids: Optional[List[str]] = None,
-        document_type: Optional[DocumentType] = None,
-        status: Optional[str] = None,
-        page: int = 1,
-        page_size: int = 50,
-    ) -> dict:
-        """
-        List documents based on various filters.
-
-        Args:
-            user_id (Optional[str]): Filter by user ID.
-            group_ids (Optional[List[str]]): Filter by group IDs.
-            document_type (Optional[DocumentType]): Filter by document type.
-            status (Optional[str]): Filter by document status.
-            page (int): Page number for pagination.
-            page_size (int): Number of items per page.
-
-        Returns:
-            dict: List of documents matching the specified filters.
-        """
-        params = {
-            "user_id": user_id,
-            "group_ids": json.dumps(group_ids) if group_ids else None,
-            "document_type": document_type.value if document_type else None,
-            "status": status,
-            "page": page,
-            "page_size": page_size,
-        }
-        return await client._make_request(
-            "GET", "list_documents", params=params
-        )
