@@ -15,7 +15,6 @@ from .base import DatabaseMixin, QueryBuilder
 
 class GroupMixin(DatabaseMixin):
     def create_table(self) -> None:
-        print("creating group table = ", self._get_table_name("groups"))
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('groups')} (
             group_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

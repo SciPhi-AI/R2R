@@ -1,8 +1,11 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Union
+from datetime import datetime
+from typing import Optional, Union
 from uuid import UUID
 
+from ..abstractions import DocumentInfo, VectorEntry, VectorSearchResult
+from ..api.models import UserResponse
 from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)

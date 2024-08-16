@@ -113,10 +113,18 @@ jobs:
         echo "Docker Down"
         r2r docker-down
 
-        echo "Clean up Virtual Environment"
-        deactivate
-        rm -rf venv
-        docker stop $(docker ps -a -q)
+  cleanup:
+    needs: build-and-test
+    runs-on: [ self-hosted, Linux ]
+    if: always()
+    steps:
+    - name: Clean up Virtual Environment
+      run: |
+        if [ -d "venv" ]; then
+          deactivate || true
+          rm -rf venv
+        fi
+        docker stop $(docker ps -a -q) || true
         docker system prune -af --volumes
         docker network prune --force
-        docker volume rm $(docker volume ls -qf dangling=true)
+        docker volume rm $(docker volume ls -qf dangling=true) || true

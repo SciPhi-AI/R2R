@@ -428,6 +428,44 @@ class ManagementRouter(BaseRouter):
                 group_id, offset, limit
             )
 
+        @self.router.post("/assign_document_to_group")
+        @self.base_endpoint
+        async def assign_document_to_group_app(
+            document_id: str = Body(..., description="Document ID"),
+            group_id: uuid.UUID = Body(..., description="Group ID"),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ) -> WrappedGroupResponse:
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can assign documents to groups.", 403
+                )
+            return await self.engine.aassign_document_to_group(
+                document_id, group_id
+            )
+
+        @self.router.post("/remove_document_from_group")
+        @self.base_endpoint
+        async def remove_document_from_group_app(
+            document_id: str = Body(..., description="Document ID"),
+            group_id: uuid.UUID = Body(..., description="Group ID"),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ) -> WrappedGroupResponse:
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can remove documents from groups.", 403
+                )
+            return await self.engine.aremove_document_from_group(
+                document_id, group_id
+            )
+
+        @self.router.get("/get_document_groups/{document_id}")
+        @self.base_endpoint
+        async def get_document_groups_app(
+            document_id: str = Path(..., description="Document ID"),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ) -> WrappedGroupListResponse:
+            return await self.engine.aget_document_groups(document_id)
+
 
 class R2RExtractionRequest(BaseModel):
     entity_types: list[str]

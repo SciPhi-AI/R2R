@@ -6,7 +6,6 @@ from r2r.base.api.models.auth.responses import UserResponse
 
 
 class AuthMethods:
-
     @staticmethod
     async def register(client, email: str, password: str) -> UserResponse:
         data = {"email": email, "password": password}
@@ -55,7 +54,7 @@ class AuthMethods:
     @staticmethod
     async def request_password_reset(client, email: str) -> dict:
         return await client._make_request(
-            "POST", "request_password_reset", json=email
+            "POST", "request_password_reset", json={"email": email}
         )
 
     @staticmethod

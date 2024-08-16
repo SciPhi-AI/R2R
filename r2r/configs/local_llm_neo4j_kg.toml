@@ -17,7 +17,7 @@ base_dimension = 1_024
 batch_size = 32
 add_title_as_prefix = true
 
-[ingestion]
+[parsing]
 excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
 
 [kg]

@@ -118,7 +118,7 @@ class RetrievalMethods:
         ]
 
         data = {
-            "messages": [msg.dict() for msg in messages],
+            "messages": [msg.model_dump() for msg in messages],
             "rag_generation_config": rag_generation_config.dict(),
             "vector_search_settings": (
                 vector_search_settings.dict()
