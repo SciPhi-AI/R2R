@@ -106,13 +106,6 @@ class AuthService(Service):
     async def logout(self, token: str) -> dict[str, str]:
         return self.providers.auth.logout(token)
 
-    @telemetry_event("GetUserProfile")
-    async def get_user_profile(self, user_id: uuid.UUID) -> UserResponse:
-        user = self.providers.database.relational.get_user_by_id(user_id)
-        if not user:
-            raise R2RException(status_code=404, message="User not found")
-        return user
-
     @telemetry_event("UpdateUserProfile")
     async def update_user(
         self,

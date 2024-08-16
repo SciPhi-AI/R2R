@@ -41,7 +41,7 @@ class RestructureMethods:
         )
 
     @staticmethod
-    async def get_graph_statistics(self) -> Dict[str, Any]:
+    async def get_graph_statistics(client) -> Dict[str, Any]:
         """
         Get statistics about the knowledge graph.
 

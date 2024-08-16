@@ -125,6 +125,7 @@ class R2RAsyncClient:
             response = getattr(self.client, method.lower())(
                 url, headers=headers, **kwargs
             )
+            return response.json()
         else:
             try:
                 response = await self.client.request(

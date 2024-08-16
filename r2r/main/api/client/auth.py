@@ -24,7 +24,7 @@ class AuthMethods:
         response = await client._make_request("POST", "login", data=data)
         client.access_token = response["results"]["access_token"]["token"]
         client._refresh_token = response["results"]["refresh_token"]["token"]
-        return response["results"]
+        return response
 
     async def user(client) -> UserResponse:
         return await client._make_request("GET", "user")
@@ -36,7 +36,7 @@ class AuthMethods:
         )
         client.access_token = response["results"]["access_token"]["token"]
         client._refresh_token = response["results"]["refresh_token"]["token"]
-        return response["results"]
+        return response
 
     async def change_password(
         client, current_password: str, new_password: str
@@ -48,8 +48,9 @@ class AuthMethods:
         return await client._make_request("POST", "change_password", json=data)
 
     async def request_password_reset(client, email: str) -> dict:
+        print("email = ", email)
         return await client._make_request(
-            "POST", "request_password_reset", json={"email": email}
+            "POST", "request_password_reset", json=email
         )
 
     async def confirm_password_reset(
@@ -63,9 +64,6 @@ class AuthMethods:
         client.access_token = None
         client._refresh_token = None
         return response
-
-    async def get_user_profile(client, user_id: uuid.UUID) -> UserResponse:
-        return await client._make_request("GET", f"user/{user_id}")
 
     async def update_user(
         client,

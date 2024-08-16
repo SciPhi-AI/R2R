@@ -570,3 +570,11 @@ class ManagementService(Service):
         return self.providers.database.relational.get_groups_overview(
             [str(ele) for ele in group_ids] if group_ids else None
         )
+
+    @telemetry_event("GetDocumentsInGroup")
+    async def aget_documents_in_group(
+        self, group_id: uuid.UUID, offset: int = 0, limit: int = 100
+    ) -> list[dict]:
+        return self.providers.database.relational.get_documents_in_group(
+            group_id, offset, limit
+        )

@@ -265,3 +265,18 @@ class ManagementMethods:
         return await client._make_request(
             "GET", "groups_overview", params=params
         )
+
+    @staticmethod
+    async def get_documents_in_group(
+        client,
+        group_id: uuid.UUID,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> dict:
+        params = {
+            "offset": offset,
+            "limit": limit,
+        }
+        return await client._make_request(
+            "GET", f"group/{group_id}/documents", params=params
+        )

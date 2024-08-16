@@ -207,13 +207,6 @@ class GroupMixin(DatabaseMixin):
                 message="User is not a member of the specified group",
             )
 
-    def get_group_count(self) -> int:
-        query = f"""
-            SELECT COUNT(*) FROM {self._get_table_name('groups')}
-        """
-        result = self.execute_query(query).fetchone()
-        return result[0]
-
     def get_users_in_group(
         self, group_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[UserResponse]:
@@ -269,26 +262,8 @@ class GroupMixin(DatabaseMixin):
     def get_documents_in_group(
         self, group_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[DocumentInfo]:
-        """
-        Get all documents in a specific group with pagination.
-
-        Args:
-            group_id (UUID): The ID of the group to get documents from.
-            offset (int): The number of documents to skip.
-            limit (int): The maximum number of documents to return.
-
-        Returns:
-            List[DocumentInfo]: A list of DocumentInfo objects representing the documents in the group.
-
-        Raises:
-            R2RException: If the group doesn't exist.
-        """
-        if not self.group_exists(group_id):
-            raise R2RException(status_code=404, message="Group not found")
-
         query = f"""
-            SELECT d.document_id, d.group_ids, d.user_id, d.type, d.metadata, d.title,
-                   d.version, d.size_in_bytes, d.status, d.created_at, d.updated_at
+            SELECT d.document_id, d.user_id, d.type, d.metadata, d.title, d.version, d.size_in_bytes, d.status, d.created_at, d.updated_at
             FROM {self._get_table_name('document_info')} d
             WHERE :group_id = ANY(d.group_ids)
             ORDER BY d.created_at DESC
@@ -298,20 +273,19 @@ class GroupMixin(DatabaseMixin):
         results = self.execute_query(
             query, {"group_id": group_id, "offset": offset, "limit": limit}
         ).fetchall()
-
         return [
             DocumentInfo(
                 id=row[0],
-                group_ids=row[1],
-                user_id=row[2],
-                type=DocumentType(row[3]),
-                metadata=row[4],
-                title=row[5],
-                version=row[6],
-                size_in_bytes=row[7],
-                status=DocumentStatus(row[8]),
-                created_at=row[9],
-                updated_at=row[10],
+                user_id=row[1],
+                type=DocumentType(row[2]),
+                metadata=row[3],
+                title=row[4],
+                version=row[5],
+                size_in_bytes=row[6],
+                status=DocumentStatus(row[7]),
+                created_at=row[8],
+                updated_at=row[9],
+                group_ids=[group_id],
             )
             for row in results
         ]

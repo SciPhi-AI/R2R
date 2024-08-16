@@ -407,6 +407,22 @@ class ManagementRouter(BaseRouter):
         ) -> WrappedGroupListResponse:
             return await self.engine.aget_document_groups(document_id)
 
+        @self.router.get("/group/{group_id}/documents")
+        @self.base_endpoint
+        async def get_documents_in_group_app(
+            group_id: uuid.UUID = Path(..., description="Group ID"),
+            offset: int = Query(0, ge=0),
+            limit: int = Query(100, ge=1, le=1000),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ) -> WrappedDocumentOverviewResponse:
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can get documents in a group.", 403
+                )
+            return await self.engine.aget_documents_in_group(
+                group_id, offset, limit
+            )
+
 
 class R2RExtractionRequest(BaseModel):
     entity_types: list[str]

@@ -40,7 +40,7 @@ class RetrievalMethods:
             ),
         }
         response = await client._make_request("POST", "search", json=data)
-        return SearchResponse(**response["results"])
+        return response
 
     @staticmethod
     async def rag(
@@ -87,7 +87,7 @@ class RetrievalMethods:
             return stream_response()
         else:
             response = await client._make_request("POST", "rag", json=data)
-            return RAGResponse(**response["results"])
+            return response
 
     @staticmethod
     async def agent(
@@ -143,4 +143,4 @@ class RetrievalMethods:
             return stream_response()
         else:
             response = await client._make_request("POST", "agent", json=data)
-            return [Message(**msg) for msg in response["results"]]
+            return response
