@@ -17,7 +17,7 @@ class SearchResponse(BaseModel):
     )
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "vector_search_results": [
                     {
@@ -50,7 +50,7 @@ class RAGResponse(BaseModel):
     )
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "completion": {
                     "id": "chatcmpl-example123",
@@ -104,7 +104,7 @@ class RAGAgentResponse(BaseModel):
     )
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "completion": {
                     "id": "chatcmpl-example456",

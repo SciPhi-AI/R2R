@@ -164,36 +164,6 @@ class IngestionMethods:
             )
 
     @staticmethod
-    async def get_document_info(client, document_id: str) -> dict:
-        """
-        Retrieve information about a specific document.
-
-        Args:
-            document_id (str): The ID of the document to retrieve information for.
-
-        Returns:
-            dict: Document information including metadata, status, and version.
-        """
-        return await client._make_request(
-            "GET", f"document_info/{document_id}"
-        )
-
-    @staticmethod
-    async def delete_document(client, document_id: str) -> dict:
-        """
-        Delete a specific document from the system.
-
-        Args:
-            document_id (str): The ID of the document to delete.
-
-        Returns:
-            dict: Confirmation of document deletion.
-        """
-        return await client._make_request(
-            "DELETE", f"delete_document/{document_id}"
-        )
-
-    @staticmethod
     async def list_documents(
         client,
         user_id: Optional[str] = None,

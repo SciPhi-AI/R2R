@@ -4,6 +4,8 @@ import uuid
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 
+import toml
+
 from r2r.base import (
     AnalysisTypes,
     LogFilterCriteria,
@@ -41,18 +43,6 @@ class ManagementService(Service):
             logging_connection,
         )
 
-    @telemetry_event("UpdatePrompt")
-    async def update_prompt(
-        self,
-        name: str,
-        template: Optional[str] = None,
-        input_types: Optional[dict[str, str]] = {},
-        *args,
-        **kwargs,
-    ):
-        self.providers.prompt.update_prompt(name, template, input_types)
-        return f"Prompt '{name}' added successfully."
-
     @telemetry_event("Logs")
     async def alogs(
         self, run_type_filter: Optional[str] = None, max_runs: int = 100
@@ -72,7 +62,6 @@ class ManagementService(Service):
         logs = await self.logging_connection.get_logs(run_ids)
 
         aggregated_logs = []
-        warning_shown = False
 
         for run in run_info:
             run_logs = [
@@ -98,14 +87,8 @@ class ManagementService(Service):
             if run.timestamp:
                 log_entry["timestamp"] = run.timestamp.isoformat()
 
-            if hasattr(run, "user_id"):
-                if run.user_id is not None:
-                    log_entry["user_id"] = run.user_id
-            elif not warning_shown:
-                logger.warning(
-                    "Logs are missing user ids. This may be due to an outdated database schema. Please run `r2r migrate` to run database migrations."
-                )
-                warning_shown = True
+            if hasattr(run, "user_id") and run.user_id is not None:
+                log_entry["user_id"] = run.user_id
 
             aggregated_logs.append(log_entry)
 
@@ -196,8 +179,10 @@ class ManagementService(Service):
     @telemetry_event("AppSettings")
     async def aapp_settings(self, *args: Any, **kwargs: Any):
         prompts = self.providers.prompt.get_all_prompts()
+        config_toml = self.config.to_toml()
+        config_dict = toml.loads(config_toml)
         return {
-            "config": self.config.to_toml(),
+            "config": config_dict,
             "prompts": {
                 name: prompt.dict() for name, prompt in prompts.items()
             },
@@ -298,7 +283,7 @@ class ManagementService(Service):
             self.providers.database.relational.delete_from_documents_overview(
                 document_id
             )
-        return results
+        return {}
 
     @telemetry_event("DocumentsOverview")
     async def adocuments_overview(
@@ -382,10 +367,9 @@ class ManagementService(Service):
         self, document_id: str, group_id: uuid.UUID
     ):
 
-        success = self.providers.database.vector.assign_document_to_group(
+        if self.providers.database.vector.assign_document_to_group(
             document_id, group_id
-        )
-        if success:
+        ):
             return {"message": "Document assigned to group successfully"}
         else:
             raise R2RException(
@@ -397,10 +381,9 @@ class ManagementService(Service):
     async def aremove_document_from_group(
         self, document_id: str, group_id: uuid.UUID
     ):
-        success = self.providers.database.vector.remove_document_from_group(
+        if self.providers.database.vector.remove_document_from_group(
             document_id, group_id
-        )
-        if success:
+        ):
             return {"message": "Document removed from group successfully"}
         else:
             raise R2RException(
@@ -435,27 +418,39 @@ class ManagementService(Service):
 
         # Print grouped relationships
         for subject, relations in grouped_relationships.items():
-            output.append(f"\n== {subject} ==")
-            for relation, objects in relations.items():
-                output.append(f"  {relation}:")
-                for obj in objects:
-                    output.append(f"    - {obj}")
+            output.extend(
+                [
+                    f"\n== {subject} ==",
+                    *(f"  {relation}:" for relation in relations),
+                    *(
+                        f"    - {obj}"
+                        for objects in relations.values()
+                        for obj in objects
+                    ),
+                ]
+            )
 
         # Print basic graph statistics
-        output.append("\n== Graph Statistics ==")
-        output.append(f"Number of nodes: {len(graph)}")
-        output.append(
-            f"Number of edges: {sum(len(neighbors) for neighbors in graph.values())}"
-        )
-        output.append(
-            f"Number of connected components: {self.count_connected_components(graph)}"
+        output.extend(
+            [
+                "\n== Graph Statistics ==",
+                f"Number of nodes: {len(graph)}",
+                f"Number of edges: {sum(len(neighbors) for neighbors in graph.values())}",
+                f"Number of connected components: {self.count_connected_components(graph)}",
+            ]
         )
 
         # Find central nodes
         central_nodes = self.get_central_nodes(graph)
-        output.append("\n== Most Central Nodes ==")
-        for node, centrality in central_nodes:
-            output.append(f"  {node}: {centrality:.4f}")
+        output.extend(
+            [
+                "\n== Most Central Nodes ==",
+                *(
+                    f"  {node}: {centrality:.4f}"
+                    for node, centrality in central_nodes
+                ),
+            ]
+        )
 
         return output
 

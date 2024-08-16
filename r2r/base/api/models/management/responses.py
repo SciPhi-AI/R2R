@@ -53,13 +53,6 @@ class UserOverviewResponse(BaseModel):
     document_ids: List[UUID]
 
 
-class DeleteResponse(BaseModel):
-    fragment_id: UUID
-    document_id: UUID
-    extraction_id: UUID
-    text: str
-
-
 class DocumentOverviewResponse(BaseModel):
     id: UUID
     title: str
@@ -114,7 +107,6 @@ WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
 WrappedAppSettingsResponse = ResultsWrapper[AppSettingsResponse]
 WrappedScoreCompletionResponse = ResultsWrapper[ScoreCompletionResponse]
 WrappedUserOverviewResponse = ResultsWrapper[List[UserOverviewResponse]]
-WrappedDeleteResponse = ResultsWrapper[dict[str, DeleteResponse]]
 WrappedDocumentOverviewResponse = ResultsWrapper[
     List[DocumentOverviewResponse]
 ]

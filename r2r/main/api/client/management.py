@@ -14,8 +14,11 @@ class ManagementMethods:
         client,
         name: str,
         template: Optional[str] = None,
-        input_types: Optional[dict[str, str]] = {},
+        input_types: Optional[dict[str, str]] = None,
     ) -> dict:
+        if input_types is None:
+            input_types = {}
+
         data = {
             "name": name,
             "template": template,

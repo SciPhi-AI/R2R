@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import psutil
-from fastapi import Body, Depends, Path, Query
+from fastapi import Body, Depends, Path, Query, Response
 from pydantic import BaseModel
 
 from r2r.base import R2RException
@@ -13,7 +13,6 @@ from r2r.base.api.models.management.responses import (
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
-    WrappedDeleteResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
     WrappedGroupListResponse,
@@ -136,14 +135,14 @@ class ManagementRouter(BaseRouter):
                     f"Invalid data in query parameters: {str(e)}", 400
                 )
 
-        @self.router.delete("/delete")
+        @self.router.delete("/delete", status_code=204)
         @self.base_endpoint
         async def delete_app(
             filters: Optional[str] = Query("{}"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
-        ) -> WrappedDeleteResponse:
+        ) -> None:
             filters_dict = json.loads(filters) if filters else None
-            return await self.engine.adelete(filters=filters_dict)
+            await self.engine.adelete(filters=filters_dict)
 
         @self.router.get("/document_chunks")
         @self.base_endpoint
@@ -190,7 +189,7 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedDocumentOverviewResponse:
             request_user_ids = (
-                [auth_user.id] if not auth_user.is_superuser else None
+                None if auth_user.is_superuser else [auth_user.id]
             )
             return await self.engine.adocuments_overview(
                 user_ids=request_user_ids,
