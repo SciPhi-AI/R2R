@@ -86,7 +86,7 @@ def rag(
 @click.option(
     "--use-vector-search", is_flag=True, default=True, help="Use vector search"
 )
-@click.option("--search-filters", type=JSON, help="Search filters as JSON")
+@click.option("--filters", type=JSON, help="Search filters as JSON")
 @click.option(
     "--search-limit", default=10, help="Number of search results to return"
 )
@@ -102,7 +102,7 @@ def search(
     obj,
     query,
     use_vector_search,
-    search_filters,
+    filters,
     search_limit,
     do_hybrid_search,
     use_kg_search,
@@ -121,7 +121,7 @@ def search(
         results = obj.search(
             query,
             use_vector_search=use_vector_search,
-            search_filters=search_filters,
+            filters=filters,
             search_limit=search_limit,
             do_hybrid_search=do_hybrid_search,
             use_kg_search=use_kg_search,

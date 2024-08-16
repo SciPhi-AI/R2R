@@ -690,6 +690,8 @@ class Collection:
                         return column.in_(value)
                     elif op == "$nin":
                         return ~column.in_(value)
+                    elif op == "$overlap":
+                        return column.overlap(value)
                     else:
                         raise FilterError(
                             f"Unsupported operator for column {key}: {op}"

@@ -100,6 +100,10 @@ class VectorSearchSettings(BaseModel):
         default=False,
         description="Whether to perform a hybrid search (combining vector and keyword search)",
     )
+    selected_group_ids: List[str] = Field(
+        default_factory=list,
+        description="Group IDs to search for",
+    )
 
 
 class KGSearchSettings(BaseModel):

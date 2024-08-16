@@ -171,8 +171,20 @@ result = client.search(
             Filters can be applied to various fields such as document_id, and internal metadata values.
             Allowed operators include eq, neq, gt, gte, lt, lte, like, ilike, in, and nin.
 
-
             """
+
+            user_groups = set(auth_user.group_ids)
+            selected_groups = set(vector_search_settings.selected_group_ids)
+            allowed_groups = user_groups.intersection(selected_groups)
+
+            vector_search_settings.filters = {
+                "$or": [
+                    {"user_id": str(auth_user.id)},
+                    {"group_ids": {"$overlap": list(allowed_groups)}},
+                ],
+                "$and": vector_search_settings.filters,
+            }
+
             results = await self.engine.asearch(
                 query=query,
                 vector_search_settings=vector_search_settings,
@@ -350,6 +362,15 @@ result = client.rag(
 
             The generation process can be customized using the rag_generation_config parameter.
             """
+            allowed_groups = set(auth_user.group_ids)
+            vector_search_settings.filters = {
+                "$or": [
+                    {"user_id": str(auth_user.id)},
+                    {"group_ids": {"$overlap": list(allowed_groups)}},
+                ],
+                "$and": vector_search_settings.filters,
+            }
+
             response = await self.engine.arag(
                 query=query,
                 vector_search_settings=vector_search_settings,
@@ -559,6 +580,14 @@ result = client.agent(
             The agent's behavior can be customized using the rag_generation_config and
             task_prompt_override parameters.
             """
+            allowed_groups = set(auth_user.group_ids)
+            vector_search_settings.filters = {
+                "$or": [
+                    {"user_id": str(auth_user.id)},
+                    {"group_ids": {"$overlap": list(allowed_groups)}},
+                ],
+                "$and": vector_search_settings.filters,
+            }
 
             response = await self.engine.arag_agent(
                 messages=messages,
