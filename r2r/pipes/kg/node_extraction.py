@@ -3,17 +3,15 @@
 import asyncio
 import logging
 import uuid
-from typing import Any, AsyncGenerator, Optional, Union
+from typing import Any, AsyncGenerator, Optional
 
 from r2r.base import (
     AsyncState,
     CompletionProvider,
     EmbeddingProvider,
-    KGExtraction,
     KGProvider,
     PipeType,
     PromptProvider,
-    R2RDocumentProcessingError,
     RunLoggingSingleton,
 )
 from r2r.base.abstractions.graph import Entity, Triple

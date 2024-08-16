@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from r2r.base import R2RException
 from r2r.base.api.models.management.responses import (
+    WrappedAddUserResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
     WrappedDeleteResponse,
@@ -292,12 +293,13 @@ class ManagementRouter(BaseRouter):
             user_id: uuid.UUID = Body(..., description="User ID"),
             group_id: uuid.UUID = Body(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
-        ) -> WrappedGroupResponse:
+        ) -> WrappedAddUserResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can add users to groups.", 403
                 )
-            return await self.engine.aadd_user_to_group(user_id, group_id)
+            result = await self.engine.aadd_user_to_group(user_id, group_id)
+            return {"result": result}
 
         @self.router.post("/remove_user_from_group")
         @self.base_endpoint

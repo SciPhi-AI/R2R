@@ -102,6 +102,10 @@ class GroupOverviewResponse(BaseModel):
     document_count: int
 
 
+class AddUserResponse(BaseModel):
+    result: bool
+
+
 # Create wrapped versions of each response
 WrappedPromptResponse = ResultsWrapper[PromptResponse]
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
@@ -119,3 +123,4 @@ WrappedKnowledgeGraphResponse = ResultsWrapper[KnowledgeGraphResponse]
 WrappedGroupResponse = ResultsWrapper[GroupResponse]
 WrappedGroupListResponse = ResultsWrapper[List[GroupResponse]]
 WrappedGroupOverviewResponse = ResultsWrapper[List[GroupOverviewResponse]]
+WrappedAddUserResponse = ResultsWrapper[AddUserResponse]

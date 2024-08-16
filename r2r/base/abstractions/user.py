@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -38,4 +38,4 @@ class UserStats(BaseModel):
     user_id: UUID
     num_files: int
     total_size_in_bytes: int
-    document_ids: List[UUID]
+    document_ids: list[UUID]

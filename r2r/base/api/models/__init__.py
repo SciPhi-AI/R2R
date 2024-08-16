@@ -19,6 +19,7 @@ from .management.responses import (
     ScoreCompletionResponse,
     ServerStats,
     UserOverviewResponse,
+    WrappedAddUserResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
     WrappedDeleteResponse,
@@ -80,6 +81,7 @@ __all__ = [
     "WrappedKnowledgeGraphResponse",
     "WrappedGroupResponse",
     "WrappedGroupListResponse",
+    "WrappedAddUserResponse",
     "WrappedGroupOverviewResponse",
     # Retrieval Responses
     "SearchResponse",

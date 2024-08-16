@@ -1,5 +1,6 @@
 """Abstractions for search functionality."""
 
+import json
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
@@ -100,10 +101,20 @@ class VectorSearchSettings(BaseModel):
         default=False,
         description="Whether to perform a hybrid search (combining vector and keyword search)",
     )
-    selected_group_ids: List[str] = Field(
+    selected_group_ids: List[UUID] = Field(
         default_factory=list,
         description="Group IDs to search for",
     )
+
+    class Config:
+        json_encoders = {UUID: str}
+
+    def model_dump(self, *args, **kwargs):
+        dump = super().model_dump(*args, **kwargs)
+        dump["selected_group_ids"] = [
+            str(uuid) for uuid in dump["selected_group_ids"]
+        ]
+        return dump
 
 
 class KGSearchSettings(BaseModel):
