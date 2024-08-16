@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 class R2RPromptProvider(PromptProvider):
     def __init__(self, config: PromptConfig = PromptConfig()):
         self.prompts: dict[str, Prompt] = {}
-        self._load_prompts_from_toml_directory(directory_path=config.file_path)
+        self._load_prompts_from_yaml_directory(directory_path=config.file_path)
         super().__init__(config)
 
-    def _load_prompts_from_toml_directory(
+    def _load_prompts_from_yaml_directory(
         self, directory_path: Optional[Path] = None
     ):
         if not directory_path:
@@ -47,7 +47,7 @@ class R2RPromptProvider(PromptProvider):
                 logger.error(error_msg)
                 raise ValueError(error_msg)
             except KeyError as e:
-                error_msg = f"Missing key in TOML file {toml_file}: {e}"
+                error_msg = f"Missing key in TOML file {yaml_file}: {e}"
                 logger.error(error_msg)
                 raise ValueError(error_msg)
 

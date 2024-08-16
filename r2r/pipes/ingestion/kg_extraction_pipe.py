@@ -8,15 +8,18 @@ from r2r.base import (
     ChunkingProvider,
     CompletionProvider,
     DocumentExtraction,
-    KGDBProvider,
+    KGProvider,
     PipeType,
     PromptProvider,
     R2RDocumentProcessingError,
     RunLoggingSingleton,
 )
-from r2r.base.abstractions.kg import KGExtraction, extract_triples
+from r2r.base.abstractions.graph import (
+    KGExtraction,
+    extract_entities,
+    extract_triples,
+)
 from r2r.base.pipes.base_pipe import AsyncPipe
-from r2r.base.providers.kg import extract_entities
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +42,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
     def __init__(
         self,
-        kg_provider: KGDBProvider,
+        kg_provider: KGProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         chunking_provider: ChunkingProvider,

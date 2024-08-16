@@ -1,9 +1,7 @@
 from typing import Optional
 
-from fastapi import Body, Depends, Form
-from fastapi.openapi.models import Example
+from fastapi import Body, Depends
 from fastapi.responses import StreamingResponse
-from pydantic import TypeAdapter
 
 from r2r.base import (
     GenerationConfig,

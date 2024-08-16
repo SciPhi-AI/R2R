@@ -17,14 +17,19 @@ from r2r.base import (
     DatabaseProvider,
     EmbeddingConfig,
     EmbeddingProvider,
-    KGDBProvider,
+    KGProvider,
     ParsingConfig,
     ParsingProvider,
     PromptConfig,
     PromptProvider,
     RunLoggingSingleton,
 )
-from r2r.pipelines import IngestionPipeline, RAGPipeline, SearchPipeline
+from r2r.pipelines import (
+    IngestionPipeline,
+    KGEnrichmentPipeline,
+    RAGPipeline,
+    SearchPipeline,
+)
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from .config import R2RConfig
@@ -216,9 +221,9 @@ class R2RProviderFactory:
     @staticmethod
     def create_kg_provider(kg_config, *args, **kwargs):
         if kg_config.provider == "neo4j":
-            from r2r.providers import Neo4jKGDBProvider
+            from r2r.providers import Neo4jKGProvider
 
-            return Neo4jKGDBProvider(kg_config)
+            return Neo4jKGProvider(kg_config)
         elif kg_config.provider is None:
             return None
         else:
@@ -231,7 +236,7 @@ class R2RProviderFactory:
         embedding_provider_override: Optional[EmbeddingProvider] = None,
         llm_provider_override: Optional[CompletionProvider] = None,
         prompt_provider_override: Optional[PromptProvider] = None,
-        kg_provider_override: Optional[KGDBProvider] = None,
+        kg_provider_override: Optional[KGProvider] = None,
         crypto_provider_override: Optional[CryptoProvider] = None,
         auth_provider_override: Optional[AuthProvider] = None,
         database_provider_override: Optional[DatabaseProvider] = None,
@@ -316,6 +321,9 @@ class R2RPipeFactory:
         vector_search_pipe_override: Optional[AsyncPipe] = None,
         rag_pipe_override: Optional[AsyncPipe] = None,
         streaming_rag_pipe_override: Optional[AsyncPipe] = None,
+        kg_node_extraction_pipe: Optional[AsyncPipe] = None,
+        kg_node_description_pipe: Optional[AsyncPipe] = None,
+        kg_clustering_pipe: Optional[AsyncPipe] = None,
         chunking_pipe_override: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
@@ -343,6 +351,12 @@ class R2RPipeFactory:
             or self.create_rag_pipe(*args, **kwargs),
             streaming_rag_pipe=streaming_rag_pipe_override
             or self.create_rag_pipe(stream=True, *args, **kwargs),
+            kg_node_extraction_pipe=kg_node_extraction_pipe
+            or self.create_kg_node_extraction_pipe(*args, **kwargs),
+            kg_node_description_pipe=kg_node_description_pipe
+            or self.create_kg_node_description_pipe(*args, **kwargs),
+            kg_clustering_pipe=kg_clustering_pipe
+            or self.create_kg_clustering_pipe(*args, **kwargs),
             chunking_pipe=chunking_pipe_override
             or self.create_chunking_pipe(*args, **kwargs),
         )
@@ -423,6 +437,7 @@ class R2RPipeFactory:
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
             prompt_provider=self.providers.prompt,
+            embedding_provider=self.providers.embedding,
         )
 
     def create_rag_pipe(self, stream: bool = False, *args, **kwargs) -> Any:
@@ -440,6 +455,35 @@ class R2RPipeFactory:
                 llm_provider=self.providers.llm,
                 prompt_provider=self.providers.prompt,
             )
+
+    def create_kg_node_extraction_pipe(self, *args, **kwargs) -> Any:
+        from r2r.pipes import KGNodeExtractionPipe
+
+        return KGNodeExtractionPipe(
+            kg_provider=self.providers.kg,
+            llm_provider=self.providers.llm,
+            prompt_provider=self.providers.prompt,
+        )
+
+    def create_kg_node_description_pipe(self, *args, **kwargs) -> Any:
+        from r2r.pipes import KGNodeDescriptionPipe
+
+        return KGNodeDescriptionPipe(
+            kg_provider=self.providers.kg,
+            llm_provider=self.providers.llm,
+            prompt_provider=self.providers.prompt,
+            embedding_provider=self.providers.embedding,
+        )
+
+    def create_kg_clustering_pipe(self, *args, **kwargs) -> Any:
+        from r2r.pipes import KGClusteringPipe
+
+        return KGClusteringPipe(
+            kg_provider=self.providers.kg,
+            llm_provider=self.providers.llm,
+            prompt_provider=self.providers.prompt,
+            embedding_provider=self.providers.embedding,
+        )
 
 
 class R2RPipelineFactory:
@@ -515,12 +559,21 @@ class R2RPipelineFactory:
         rag_pipeline.add_pipe(rag_pipe)
         return rag_pipeline
 
+    def create_kg_pipeline(self, *args, **kwargs) -> KGEnrichmentPipeline:
+        kg_pipeline = KGEnrichmentPipeline()
+        kg_pipeline.add_pipe(self.pipes.kg_node_extraction_pipe)
+        kg_pipeline.add_pipe(self.pipes.kg_node_description_pipe)
+        kg_pipeline.add_pipe(self.pipes.kg_clustering_pipe)
+
+        return kg_pipeline
+
     def create_pipelines(
         self,
         ingestion_pipeline: Optional[IngestionPipeline] = None,
         search_pipeline: Optional[SearchPipeline] = None,
         rag_pipeline: Optional[RAGPipeline] = None,
         streaming_rag_pipeline: Optional[RAGPipeline] = None,
+        kg_pipeline: Optional[KGEnrichmentPipeline] = None,
         *args,
         **kwargs,
     ) -> R2RPipelines:
@@ -549,6 +602,8 @@ class R2RPipelineFactory:
                 *args,
                 **kwargs,
             ),
+            kg_pipeline=kg_pipeline
+            or self.create_kg_pipeline(*args, **kwargs),
         )
 
     def configure_logging(self):

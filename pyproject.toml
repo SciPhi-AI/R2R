@@ -69,6 +69,7 @@ alembic = "^1.13.2"
 # unstructured = {version = "^0.15.0"}
 psutil = "^6.0.0"
 deepdiff = "^7.0.1"
+graspologic = "^3.4.1"
 
 [tool.poetry.extras]
 all = ["moviepy", "opencv-python"]

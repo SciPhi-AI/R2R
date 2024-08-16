@@ -6,13 +6,12 @@ from typing import Any, AsyncGenerator, Optional
 from r2r.base import (
     AsyncState,
     EmbeddingProvider,
-    KGDBProvider,
+    KGExtraction,
     PipeType,
     RunLoggingSingleton,
 )
-from r2r.base.abstractions.kg import KGExtraction
-from r2r.base.abstractions.llama_abstractions import EntityNode, Relation
 from r2r.base.pipes.base_pipe import AsyncPipe
+from r2r.base.providers import KGProvider
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,7 @@ class KGStoragePipe(AsyncPipe):
 
     def __init__(
         self,
-        kg_provider: KGDBProvider,
+        kg_provider: KGProvider,
         embedding_provider: Optional[EmbeddingProvider] = None,
         storage_batch_size: int = 1,
         pipe_logger: Optional[RunLoggingSingleton] = None,
@@ -58,37 +57,7 @@ class KGStoragePipe(AsyncPipe):
         Stores a batch of knowledge graph extractions in the graph database.
         """
         try:
-            nodes = []
-            relations = []
-            for extraction in kg_extractions:
-                for entity in extraction.entities.values():
-                    embedding = None
-                    if self.embedding_provider:
-                        embedding = self.embedding_provider.get_embedding(
-                            f"Entity:\n{entity.value}\nLabel:\n{entity.category}\nSubcategory:\n{entity.subcategory}"
-                        )
-                    nodes.append(
-                        EntityNode(
-                            name=entity.value,
-                            label=entity.category,
-                            embedding=embedding,
-                            properties=(
-                                {"subcategory": entity.subcategory}
-                                if entity.subcategory
-                                else {}
-                            ),
-                        )
-                    )
-                for triple in extraction.triples:
-                    relations.append(
-                        Relation(
-                            source_id=triple.subject,
-                            target_id=triple.object,
-                            label=triple.predicate,
-                        )
-                    )
-            self.kg_provider.upsert_nodes(nodes)
-            self.kg_provider.upsert_relations(relations)
+            self.kg_provider.upsert_nodes_and_relationships(kg_extractions)
         except Exception as e:
             error_message = f"Failed to store knowledge graph extractions in the database: {e}"
             logger.error(error_message)

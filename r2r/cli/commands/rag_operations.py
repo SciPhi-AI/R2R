@@ -86,7 +86,7 @@ def rag(
 @click.option(
     "--use-vector-search", is_flag=True, default=True, help="Use vector search"
 )
-@click.option("--filters", type=JSON, help="Search filters as JSON")
+@click.option("--search-filters", type=JSON, help="Search filters as JSON")
 @click.option(
     "--search-limit", default=10, help="Number of search results to return"
 )
@@ -95,16 +95,22 @@ def rag(
     "--use-kg-search", is_flag=True, help="Use knowledge graph search"
 )
 @click.option("--kg-search-model", default=None, help="Model for KG agent")
+@click.option("--kg-search-type", default="global", help="Local or Global")
+@click.option("--kg-search-level", default=None, help="Level of KG search")
 @click.pass_obj
 def search(
     obj,
     query,
     use_vector_search,
-    filters,
+    search_filters,
     search_limit,
     do_hybrid_search,
     use_kg_search,
     kg_search_model,
+    kg_search_type,
+    kg_search_level,
+    entity_types=[],
+    relationships=[],
 ):
     """Perform a search query."""
     kg_search_generation_config = {}
@@ -114,13 +120,20 @@ def search(
     with timer():
         results = obj.search(
             query,
-            use_vector_search,
-            filters,
-            search_limit,
-            do_hybrid_search,
-            use_kg_search,
-            kg_search_generation_config,
+            use_vector_search=use_vector_search,
+            search_filters=search_filters,
+            search_limit=search_limit,
+            do_hybrid_search=do_hybrid_search,
+            use_kg_search=use_kg_search,
+            entity_types=entity_types,
+            relationships=relationships,
+            kg_search_type=kg_search_type,
+            kg_search_generation_config=kg_search_generation_config,
+            kg_search_level=kg_search_level,
         )
+
+        print("KG_Search Enabled", use_kg_search)
+        print("KG_Search Type", kg_search_type)
 
         if isinstance(results, dict) and "results" in results:
             results = results["results"]
@@ -129,6 +142,7 @@ def search(
             click.echo("Vector search results:")
             for result in results["vector_search_results"]:
                 click.echo(result)
+
         if "kg_search_results" in results and results["kg_search_results"]:
             click.echo("KG search results:")
             for result in results["kg_search_results"]:

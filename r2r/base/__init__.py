@@ -35,8 +35,6 @@ __all__ = [
     "KGExtraction",
     "Triple",
     "extract_triples",
-    # Llama abstractions
-    "VectorStoreQuery",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",
@@ -125,8 +123,7 @@ __all__ = [
     "EmbeddingProvider",
     # Knowledge Graph provider
     "KGConfig",
-    "KGDBProvider",
-    "update_kg_prompt",
+    "KGProvider",
     "extract_entities",
     # LLM provider
     "CompletionConfig",
@@ -147,7 +144,6 @@ __all__ = [
     "generate_id_from_label",
     "increment_version",
     "EntityType",
-    "Relation",
     "format_entity_types",
     "format_relations",
 ]

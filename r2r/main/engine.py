@@ -7,6 +7,7 @@ from .abstractions import R2RAgents, R2RPipelines, R2RProviders
 from .services.auth_service import AuthService
 from .services.ingestion_service import IngestionService
 from .services.management_service import ManagementService
+from .services.restructure_service import RestructureService
 from .services.retrieval_service import RetrievalService
 
 if TYPE_CHECKING:
@@ -40,6 +41,16 @@ class R2REngine(metaclass=AsyncSyncMeta):
             run_manager,
             logging_connection,
         )
+
+        self.kg_service = RestructureService(
+            config,
+            providers,
+            pipelines,
+            agents,
+            run_manager,
+            logging_connection,
+        )
+
         self.retrieval_service = RetrievalService(
             config,
             providers,
@@ -81,6 +92,10 @@ class R2REngine(metaclass=AsyncSyncMeta):
     @syncable
     async def aupdate_files(self, *args, **kwargs):
         return await self.ingestion_service.update_files(*args, **kwargs)
+
+    @syncable
+    async def aenrich_graph(self, *args, **kwargs):
+        return await self.kg_service.enrich_graph(*args, **kwargs)
 
     @syncable
     async def asearch(self, *args, **kwargs):

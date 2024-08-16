@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional
 
 from r2r.base import R2RException, RunLoggingSingleton, RunManager, Token
 from r2r.base.api.models.auth.responses import UserResponse

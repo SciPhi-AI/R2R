@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+from typing import List, Optional
 
 from fastapi import Depends, File, Form, UploadFile
 from fastapi.openapi.models import Example
@@ -13,8 +14,6 @@ from ....engine import R2REngine
 from ..base_router import BaseRouter
 
 logger = logging.getLogger(__name__)
-
-from typing import List, Optional
 
 
 class IngestionRouter(BaseRouter):

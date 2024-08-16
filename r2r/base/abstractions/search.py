@@ -8,26 +8,6 @@ from pydantic import BaseModel, Field
 from .llm import GenerationConfig
 
 
-class VectorSearchSettings(BaseModel):
-    use_vector_search: bool = Field(
-        default=True, description="Whether to use vector search"
-    )
-    filters: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Filters to apply to the vector search",
-    )
-    search_limit: int = Field(
-        default=10,
-        description="Maximum number of results to return",
-        ge=1,
-        le=100,
-    )
-    do_hybrid_search: bool = Field(
-        default=False,
-        description="Whether to perform a hybrid search (combining vector and keyword search)",
-    )
-
-
 class VectorSearchResult(BaseModel):
     """Result of a search operation."""
 
@@ -79,15 +59,6 @@ class VectorSearchResult(BaseModel):
 KGSearchResult = List[Tuple[str, List[Dict[str, Any]]]]
 
 
-class KGSearchSettings(BaseModel):
-    use_kg_search: bool = False
-    kg_search_generation_config: Optional[GenerationConfig] = Field(
-        default_factory=GenerationConfig
-    )
-    entity_types: list = []
-    relationships: list = []
-
-
 class AggregateSearchResult(BaseModel):
     """Result of an aggregate search operation."""
 
@@ -109,3 +80,41 @@ class AggregateSearchResult(BaseModel):
             ),
             "kg_search_results": self.kg_search_results or [],
         }
+
+
+class VectorSearchSettings(BaseModel):
+    use_vector_search: bool = Field(
+        default=True, description="Whether to use vector search"
+    )
+    filters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Filters to apply to the vector search",
+    )
+    search_limit: int = Field(
+        default=10,
+        description="Maximum number of results to return",
+        ge=1,
+        le=100,
+    )
+    do_hybrid_search: bool = Field(
+        default=False,
+        description="Whether to perform a hybrid search (combining vector and keyword search)",
+    )
+
+
+class KGSearchSettings(BaseModel):
+    use_kg_search: bool = False
+    kg_search_type: str = "global"  # 'global' or 'local'
+    kg_search_level: Optional[int] = None
+    kg_search_generation_config: Optional[GenerationConfig] = Field(
+        default_factory=GenerationConfig
+    )
+    entity_types: list = []
+    relationships: list = []
+    max_community_description_length: int = 4096 * 4
+    max_llm_queries_for_global_search: int = 10
+    local_search_limits: dict[str, int] = {
+        "__Entity__": 10,
+        "__Relationship__": 10,
+        "__Community__": 10,
+    }

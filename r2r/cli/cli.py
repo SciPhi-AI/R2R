@@ -2,6 +2,7 @@ from r2r.cli.command_group import cli
 from r2r.cli.commands import (
     auth_operations,
     document_operations,
+    kg_operations,
     oberservability_operations,
     rag_operations,
     server_operations,
@@ -38,6 +39,8 @@ cli.add_command(oberservability_operations.analytics)
 cli.add_command(oberservability_operations.app_settings)
 cli.add_command(oberservability_operations.logs)
 cli.add_command(oberservability_operations.users_overview)
+
+cli.add_command(kg_operations.enrich_graph)
 
 
 def main():

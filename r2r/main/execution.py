@@ -230,6 +230,10 @@ class R2RExecutionWrapper:
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
         kg_search_generation_config: Optional[dict] = None,
+        kg_search_type: str = "global",
+        kg_search_level: Optional[int] = None,
+        entity_types: list = [],
+        relationships: list = [],
     ):
         if self.client_mode:
             return self.client.search(
@@ -242,6 +246,10 @@ class R2RExecutionWrapper:
                 ),
                 KGSearchSettings(
                     use_kg_search=use_kg_search,
+                    kg_search_type=kg_search_type,
+                    kg_search_level=kg_search_level,
+                    entity_types=entity_types,
+                    relationships=relationships,
                     kg_search_generation_config=GenerationConfig(
                         **(kg_search_generation_config or {})
                     ),
@@ -261,6 +269,10 @@ class R2RExecutionWrapper:
                     kg_search_generation_config=GenerationConfig(
                         **(kg_search_generation_config or {})
                     ),
+                    kg_search_type=kg_search_type,
+                    kg_search_level=kg_search_level,
+                    entity_types=entity_types,
+                    relationships=relationships,
                 ),
             )
 
@@ -352,6 +364,12 @@ class R2RExecutionWrapper:
             return self.client.documents_overview(document_ids)["results"]
         else:
             return self.app.documents_overview(document_ids)
+
+    def enrich_graph(self):
+        if self.client_mode:
+            return self.client.enrich_graph()
+        else:
+            return self.app.enrich_graph()
 
     def delete(
         self,

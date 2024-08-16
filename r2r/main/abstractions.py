@@ -10,11 +10,16 @@ from r2r.base.providers import (
     CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
-    KGDBProvider,
+    KGProvider,
     ParsingProvider,
     PromptProvider,
 )
-from r2r.pipelines import IngestionPipeline, RAGPipeline, SearchPipeline
+from r2r.pipelines import (
+    IngestionPipeline,
+    KGEnrichmentPipeline,
+    RAGPipeline,
+    SearchPipeline,
+)
 
 
 class R2RProviders(BaseModel):
@@ -24,7 +29,7 @@ class R2RProviders(BaseModel):
     database: Optional[DatabaseProvider]
     embedding: Optional[EmbeddingProvider]
     prompt: Optional[PromptProvider]
-    kg: Optional[KGDBProvider]
+    kg: Optional[KGProvider]
     parsing: Optional[ParsingProvider]
 
     class Config:
@@ -42,6 +47,10 @@ class R2RPipes(BaseModel):
     kg_pipe: Optional[AsyncPipe]
     kg_storage_pipe: Optional[AsyncPipe]
     kg_search_search_pipe: Optional[AsyncPipe]
+    kg_node_extraction_pipe: Optional[AsyncPipe]
+    kg_node_description_pipe: Optional[AsyncPipe]
+    kg_clustering_pipe: Optional[AsyncPipe]
+    chunking_pipe: Optional[AsyncPipe]
 
     class Config:
         arbitrary_types_allowed = True
@@ -52,6 +61,7 @@ class R2RPipelines(BaseModel):
     search_pipeline: SearchPipeline
     rag_pipeline: RAGPipeline
     streaming_rag_pipeline: RAGPipeline
+    kg_pipeline: KGEnrichmentPipeline
 
     class Config:
         arbitrary_types_allowed = True
