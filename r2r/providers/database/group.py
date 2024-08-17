@@ -261,6 +261,17 @@ class GroupMixin(DatabaseMixin):
     def get_documents_in_group(
         self, group_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[DocumentInfo]:
+        """
+        Get all documents in a specific group with pagination.
+        Args:
+            group_id (UUID): The ID of the group to get documents from.
+            offset (int): The number of documents to skip.
+            limit (int): The maximum number of documents to return.
+        Returns:
+            List[DocumentInfo]: A list of DocumentInfo objects representing the documents in the group.
+        Raises:
+            R2RException: If the group doesn't exist.
+        """
         if not self.group_exists(group_id):
             raise R2RException(status_code=404, message="Group not found")
         query = f"""

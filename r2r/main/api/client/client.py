@@ -53,7 +53,7 @@ async def handle_request_error_async(response):
         if response.headers.get("content-type") == "application/json":
             error_content = await response.json()
         else:
-            error_content = await response.text()
+            error_content = await response.text
 
         if isinstance(error_content, dict) and "detail" in error_content:
             detail = error_content["detail"]
@@ -64,7 +64,7 @@ async def handle_request_error_async(response):
         else:
             message = str(error_content)
     except Exception:
-        message = response.text()
+        message = response.text
 
     raise R2RException(
         status_code=response.status_code,

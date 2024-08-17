@@ -318,8 +318,8 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def get_users_in_group_app(
             group_id: uuid.UUID = Path(..., description="Group ID"),
-            offset: int = Body(..., description="Offset"),
-            limit: int = Body(..., description="limit"),
+            offset: int = Query(..., description="Offset"),
+            limit: int = Query(..., description="limit"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
