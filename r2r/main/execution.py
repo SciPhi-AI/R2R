@@ -287,6 +287,8 @@ class R2RExecutionWrapper:
         kg_search_generation_config: Optional[dict] = None,
         stream: bool = False,
         rag_generation_config: Optional[dict] = None,
+        kg_search_type: str = "global",
+        kg_search_level: Optional[str] = None,
     ):
         if self.client_mode:
             response = self.client.rag(
@@ -302,6 +304,8 @@ class R2RExecutionWrapper:
                     kg_search_generation_config=GenerationConfig(
                         **(kg_search_generation_config or {})
                     ),
+                    kg_search_type=kg_search_type,
+                    kg_search_level=kg_search_level,
                 ),
                 rag_generation_config=GenerationConfig(
                     **(rag_generation_config or {})

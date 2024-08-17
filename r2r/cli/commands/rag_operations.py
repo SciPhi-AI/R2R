@@ -37,6 +37,8 @@ def inspect_knowledge_graph(obj, limit, print_descriptions):
 @click.option("--kg-search-model", default=None, help="Model for KG agent")
 @click.option("--stream", is_flag=True, help="Stream the RAG response")
 @click.option("--rag-model", default=None, help="Model for RAG")
+@click.option("--kg-search-level", default=None, help="Level of cluster to use for Global KG search") 
+@click.option("--kg-search-type", default="global", help="Local or Global")
 @click.pass_obj
 def rag(
     obj,
@@ -49,6 +51,8 @@ def rag(
     kg_search_model,
     stream,
     rag_model,
+    kg_search_type, 
+    kg_search_level,
 ):
     """Perform a RAG query."""
     kg_search_generation_config = {}
@@ -69,6 +73,8 @@ def rag(
             kg_search_generation_config,
             stream,
             rag_generation_config,
+            kg_search_type,
+            kg_search_level,
         )
         if stream:
             for chunk in response:
