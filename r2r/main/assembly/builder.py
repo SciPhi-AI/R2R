@@ -33,9 +33,7 @@ from .factory import (
 
 class R2RBuilder:
     current_file_path = os.path.dirname(__file__)
-    config_root = os.path.join(
-        current_file_path, "..", "..", "examples", "configs"
-    )
+    config_root = os.path.join(current_file_path, "..", "..", "configs")
 
     CONFIG_OPTIONS = {}
     for file in os.listdir(config_root):

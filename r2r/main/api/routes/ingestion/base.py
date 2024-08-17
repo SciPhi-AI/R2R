@@ -182,19 +182,20 @@ result = client.ingest_files(
             # Handle user management logic at the request level
             if not auth_user:
                 for metadata in metadatas or []:
-                    if "user_id" in metadata and (
-                        not is_superuser
-                        and metadata["user_id"] != str(auth_user.id)
-                    ):
-                        raise R2RException(
-                            status_code=403,
-                            message="Non-superusers cannot set user_id in metadata.",
-                        )
-                    if "group_ids" in metadata and not is_superuser:
-                        raise R2RException(
-                            status_code=403,
-                            message="Non-superusers cannot set group_ids in metadata.",
-                        )
+                    if "user_id" in metadata:
+                        if not is_superuser and metadata["user_id"] != str(
+                            auth_user.id
+                        ):
+                            raise R2RException(
+                                status_code=403,
+                                message="Non-superusers cannot set user_id in metadata.",
+                            )
+                    if "group_ids" in metadata:
+                        if not is_superuser:
+                            raise R2RException(
+                                status_code=403,
+                                message="Non-superusers cannot set group_ids in metadata.",
+                            )
 
                 # If user is not a superuser, set user_id in metadata
                 metadata["user_id"] = str(auth_user.id)

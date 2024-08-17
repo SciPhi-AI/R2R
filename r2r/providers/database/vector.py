@@ -41,9 +41,11 @@ class PostgresVectorDBProvider(VectorDBProvider):
             )
 
         # Check if a complete Postgres URI is provided
-        if postgres_uri := self.config.extra_fields.get(
+        postgres_uri = self.config.extra_fields.get(
             "postgres_uri"
-        ) or os.getenv("POSTGRES_URI"):
+        ) or os.getenv("POSTGRES_URI")
+
+        if postgres_uri:
             # Log loudly that Postgres URI is being used
             logger.warning("=" * 50)
             logger.warning(
@@ -351,7 +353,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
 
         params = {
-            "query_text": query_text,
+            "query_text": str(query_text),
             "query_embedding": list(query_vector),
             "match_limit": limit,
             "full_text_weight": full_text_weight,

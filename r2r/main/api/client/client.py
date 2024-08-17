@@ -53,7 +53,7 @@ async def handle_request_error_async(response):
         if response.headers.get("content-type") == "application/json":
             error_content = await response.json()
         else:
-            error_content = await response.text()
+            error_content = await response.text
 
         if isinstance(error_content, dict) and "detail" in error_content:
             detail = error_content["detail"]
@@ -123,19 +123,20 @@ class R2RAsyncClient:
 
         if isinstance(self.client, TestClient):
             response = getattr(self.client, method.lower())(
-                url, headers=headers, **kwargs
+                url, headers=headers, params=params, **kwargs
             )
+            return response.json() if response.content else None
         else:
             try:
                 response = await self.client.request(
                     method, url, headers=headers, params=params, **kwargs
                 )
                 await handle_request_error_async(response)
-                return response.json()
+                return response.json() if response.content else None
             except httpx.RequestError as e:
                 raise R2RException(
                     status_code=500, message=f"Request failed: {str(e)}"
-                ) from e
+                )
 
     def _get_auth_header(self) -> dict:
         if not self.access_token:

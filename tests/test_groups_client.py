@@ -148,7 +148,7 @@ def mock_db():
     )
     db.relational.get_groups_for_user = MagicMock(side_effect=mock_list_groups)
 
-    def mock_groups_overview(group_ids):
+    def mock_groups_overview(group_ids, offset=0, limit=100):
         return [
             {
                 "group_id": str(uuid.uuid4()),
@@ -355,7 +355,9 @@ async def test_groups_overview(r2r_client, mock_db):
     assert "results" in response
     assert len(response["results"]) == 2
     # assert response["results"] == mock_overview
-    mock_db.relational.get_groups_overview.assert_called_once_with(None)
+    mock_db.relational.get_groups_overview.assert_called_once_with(
+        None, 0, 100
+    )
 
 
 @pytest.mark.asyncio
@@ -367,10 +369,10 @@ async def test_groups_overview_with_ids(r2r_client, mock_db):
     #     {"id": str(group_ids[1]), "name": "Group 2", "member_count": 3},
     # ]
     # mock_db.relational.get_groups_overview.return_value = mock_overview
-    response = r2r_client.groups_overview(group_ids)
+    response = r2r_client.groups_overview(group_ids, 10, 100)
     assert "results" in response
     assert len(response["results"]) == 2
     # assert response["results"] == mock_overview
     mock_db.relational.get_groups_overview.assert_called_once_with(
-        [str(gid) for gid in group_ids]
+        [str(gid) for gid in group_ids], 100, 10
     )

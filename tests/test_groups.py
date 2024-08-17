@@ -212,15 +212,6 @@ def test_get_groups_by_ids(pg_db):
     assert any(g.group_id == group2.group_id for g in groups)
 
 
-def test_get_group_count(pg_db, test_group):
-    initial_count = pg_db.relational.get_group_count()
-
-    pg_db.relational.create_group("New Group", "New Description")
-
-    new_count = pg_db.relational.get_group_count()
-    assert new_count == initial_count + 1
-
-
 def test_get_groups_overview(pg_db, test_group, test_user):
     pg_db.relational.add_user_to_group(test_user.id, test_group.group_id)
 

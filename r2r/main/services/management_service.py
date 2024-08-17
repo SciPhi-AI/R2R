@@ -4,8 +4,6 @@ import uuid
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 
-import toml
-
 from r2r.base import (
     AnalysisTypes,
     LogFilterCriteria,
@@ -283,7 +281,7 @@ class ManagementService(Service):
             self.providers.database.relational.delete_from_documents_overview(
                 document_id
             )
-        return {}
+        return None
 
     @telemetry_event("DocumentsOverview")
     async def adocuments_overview(
@@ -367,9 +365,10 @@ class ManagementService(Service):
         self, document_id: str, group_id: uuid.UUID
     ):
 
-        if self.providers.database.vector.assign_document_to_group(
+        success = self.providers.database.vector.assign_document_to_group(
             document_id, group_id
-        ):
+        )
+        if success:
             return {"message": "Document assigned to group successfully"}
         else:
             raise R2RException(
@@ -381,9 +380,10 @@ class ManagementService(Service):
     async def aremove_document_from_group(
         self, document_id: str, group_id: uuid.UUID
     ):
-        if self.providers.database.vector.remove_document_from_group(
+        success = self.providers.database.vector.remove_document_from_group(
             document_id, group_id
-        ):
+        )
+        if success:
             return {"message": "Document removed from group successfully"}
         else:
             raise R2RException(
@@ -559,9 +559,21 @@ class ManagementService(Service):
     async def agroups_overview(
         self,
         group_ids: Optional[list[uuid.UUID]] = None,
+        offset: int = 0,
+        limit: int = 100,
         *args,
         **kwargs,
     ):
         return self.providers.database.relational.get_groups_overview(
-            [str(ele) for ele in group_ids] if group_ids else None
+            [str(ele) for ele in group_ids] if group_ids else None,
+            offset,
+            limit,
+        )
+
+    @telemetry_event("GetDocumentsInGroup")
+    async def aget_documents_in_group(
+        self, group_id: uuid.UUID, offset: int = 0, limit: int = 100
+    ) -> list[dict]:
+        return self.providers.database.relational.get_documents_in_group(
+            group_id, offset, limit
         )

@@ -8,6 +8,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.testclient import TestClient
 
 from r2r import (
+    DocumentInfo,
     R2RApp,
     R2RBuilder,
     R2RClient,
@@ -51,6 +52,34 @@ def mock_auth_wrapper():
 
 
 @pytest.fixture(scope="function")
+def mock_auth_wrapper():
+    def auth_wrapper(token: str = Depends(oauth2_scheme)):
+        return UserResponse(
+            id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
+            email="test@example.com",
+            is_active=True,
+            hashed_password="xxx",
+            is_superuser=True,
+        )
+
+    return auth_wrapper
+
+
+@pytest.fixture(scope="function")
+def mock_super_auth_wrapper():
+    def auth_wrapper(token: str = Depends(oauth2_scheme)):
+        return UserResponse(
+            id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
+            email="test@example.com",
+            is_active=True,
+            hashed_password="xxx",
+            is_superuser=True,
+        )
+
+    return auth_wrapper
+
+
+@pytest.fixture(scope="function")
 def mock_db():
     db = MagicMock()
     db.relational.get_user_by_email.return_value = (
@@ -70,6 +99,21 @@ def mock_db():
         return updated_user
 
     db.relational.update_user.side_effect = update_user
+    db.relational.get_documents_in_group.return_value = [
+        DocumentInfo(
+            user_id=uuid.uuid4(),
+            id=uuid.uuid4(),
+            title=f"Document {i}",
+            type="txt",
+            group_ids=[uuid.uuid4()],
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+            version="1",
+            metadata={},
+            size_in_bytes=1000,
+        )
+        for i in range(100)
+    ]
 
     return db
 
@@ -255,6 +299,7 @@ async def test_password_reset_flow(r2r_client, mock_db):
     reset_response = r2r_client.request_password_reset(
         "reset_pass@example.com"
     )
+    print("reset_response = ", reset_response)
     assert "message" in reset_response["results"]
 
     # Confirm password reset (we'll need to mock the reset token)
@@ -308,3 +353,24 @@ async def test_user_profile(r2r_client, mock_db):
     updated_profile = r2r_client.update_user(name="John Doe", bio="Test bio")
     assert updated_profile["results"]["name"] == "John Doe"
     assert updated_profile["results"]["bio"] == "Test bio"
+
+
+@pytest.mark.asyncio
+async def test_get_documents_in_group(r2r_client, mock_db):
+    # Register and login as a superuser
+    user_data = {"email": "superuser@example.com", "password": "password123"}
+    r2r_client.register(**user_data)
+
+    # Set the mock user as a superuser
+    # mock_db.relational.get_user_by_email.return_value.is_superuser = True
+
+    r2r_client.login(**user_data)
+
+    # Get documents in group
+    group_id = uuid.uuid4()
+    response = r2r_client.get_documents_in_group(group_id)
+
+    assert "results" in response
+    assert len(response["results"]) == 100  # Default limit
+    assert response["results"][0]["title"] == "Document 0"
+    assert response["results"][0]["type"] == "txt"

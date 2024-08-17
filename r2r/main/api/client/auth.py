@@ -25,7 +25,7 @@ class AuthMethods:
         response = await client._make_request("POST", "login", data=data)
         client.access_token = response["results"]["access_token"]["token"]
         client._refresh_token = response["results"]["refresh_token"]["token"]
-        return response["results"]
+        return response
 
     @staticmethod
     async def user(client) -> UserResponse:
@@ -39,7 +39,7 @@ class AuthMethods:
         )
         client.access_token = response["results"]["access_token"]["token"]
         client._refresh_token = response["results"]["refresh_token"]["token"]
-        return response["results"]
+        return response
 
     @staticmethod
     async def change_password(
@@ -70,10 +70,6 @@ class AuthMethods:
         client.access_token = None
         client._refresh_token = None
         return response
-
-    @staticmethod
-    async def get_user_profile(client, user_id: uuid.UUID) -> UserResponse:
-        return await client._make_request("GET", f"user/{user_id}")
 
     @staticmethod
     async def update_user(
