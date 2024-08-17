@@ -13,7 +13,6 @@ from r2r.base.api.models.management.responses import (
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
-    WrappedDeleteResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentOverviewResponse,
     WrappedGroupListResponse,
@@ -136,12 +135,12 @@ class ManagementRouter(BaseRouter):
                     f"Invalid data in query parameters: {str(e)}", 400
                 )
 
-        @self.router.delete("/delete")
+        @self.router.delete("/delete", status_code=204)
         @self.base_endpoint
         async def delete_app(
             filters: Optional[str] = Query("{}"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
-        ) -> WrappedDeleteResponse:
+        ) -> None:
             filters_dict = json.loads(filters) if filters else None
             return await self.engine.adelete(filters=filters_dict)
 
@@ -465,8 +464,3 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupListResponse:
             return await self.engine.aget_document_groups(document_id)
-
-
-class R2RExtractionRequest(BaseModel):
-    entity_types: list[str]
-    relations: list[str]
