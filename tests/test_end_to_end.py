@@ -291,10 +291,7 @@ async def test_ingest_search_then_delete(app, logging_connection):
     delete_result = await app.adelete(filters={"author": {"$eq": "John Doe"}})
 
     # Verify the deletion was successful
-    assert (
-        len(delete_result) > 0
-    ), f"Expected at least one document to be deleted, but got {delete_result}"
-
+    assert delete_result is None
     # Search for the document again
     search_results_2 = await app.asearch("who was aristotle?")
 
@@ -366,9 +363,7 @@ async def test_ingest_user_documents(app, logging_connection):
         filters={"document_id": {"$in": [doc_id_0, doc_id_1]}}
     )
 
-    assert (
-        len(delete_result) == 2
-    ), f"Expected 2 chunks to be deleted, but got {len(delete_result)}"
+    assert delete_result is None
 
 
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)
@@ -391,8 +386,6 @@ async def test_delete_by_id(app, logging_connection):
 
     assert len(search_results["vector_search_results"]) > 0
     delete_result = await app.adelete(filters={"document_id": {"$eq": doc_id}})
-    assert (
-        len(delete_result) > 0
-    ), f"Expected at least one document to be deleted, but got {delete_result}"
+    assert delete_result is None
     search_results = await app.asearch("who was aristotle?")
     assert len(search_results["vector_search_results"]) == 0

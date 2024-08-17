@@ -125,14 +125,14 @@ class R2RAsyncClient:
             response = getattr(self.client, method.lower())(
                 url, headers=headers, params=params, **kwargs
             )
-            return response.json()
+            return response.json() if response.content else None
         else:
             try:
                 response = await self.client.request(
                     method, url, headers=headers, params=params, **kwargs
                 )
                 await handle_request_error_async(response)
-                return response.json()
+                return response.json() if response.content else None
             except httpx.RequestError as e:
                 raise R2RException(
                     status_code=500, message=f"Request failed: {str(e)}"

@@ -307,7 +307,6 @@ async def test_password_reset_flow(r2r_client, mock_db):
     confirm_response = r2r_client.confirm_password_reset(
         mock_reset_token, "new_password"
     )
-    print("confirm_response = ", confirm_response)
     assert (
         confirm_response["results"]["message"] == "Password reset successfully"
     )

@@ -138,7 +138,7 @@ class ManagementRouter(BaseRouter):
         @self.router.delete("/delete", status_code=204)
         @self.base_endpoint
         async def delete_app(
-            filters: Optional[str] = Query("{}"),
+            filters: str = Query(..., description="JSON-encoded filters"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> None:
             filters_dict = json.loads(filters) if filters else None

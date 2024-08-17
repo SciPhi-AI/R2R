@@ -71,9 +71,11 @@ class ManagementMethods:
         client,
         filters: dict[str, VectorDBFilterValue],
     ) -> dict:
+        filters_json = json.dumps(filters)
+
         return await client._make_request(
-            "DELETE", "delete", json={"filters": filters}
-        )
+            "DELETE", "delete", params={"filters": filters_json}
+        ) or {"results": {}}
 
     @staticmethod
     async def documents_overview(
