@@ -282,15 +282,16 @@ class Neo4jKGProvider(KGProvider):
     ) -> None:
         pass
 
-    def get_communities(self, level: int = -1) -> List[Community]:
+    def get_communities(self, level: str = None) -> List[Community]:
         """
         Get communities from the graph.
         """
         neo4j_records = self.structured_query(
             GET_COMMUNITIES_QUERY, {"level": level}
         )
+        
         communities = [
-            Community(**record["c"]._properties)
+            Community(**record["c"]._properties, id=record["c"]["community"])
             for record in neo4j_records.records
         ]
         return communities

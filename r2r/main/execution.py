@@ -231,7 +231,7 @@ class R2RExecutionWrapper:
         use_kg_search: bool = False,
         kg_search_generation_config: Optional[dict] = None,
         kg_search_type: str = "global",
-        kg_search_level: Optional[int] = None,
+        kg_search_level: Optional[str] = None,
         entity_types: list = [],
         relationships: list = [],
     ):

@@ -68,7 +68,6 @@ class Entity(BaseModel):
             try:
                 self.attributes = json.loads(self.attributes)
             except Exception as e:
-                # Not an error, custom logic for merging attribute dicts
                 self.attributes = self.attributes
                 pass
 

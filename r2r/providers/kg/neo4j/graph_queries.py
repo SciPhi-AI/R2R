@@ -127,7 +127,7 @@ RETURN count(*) as createdRels
 
 GET_COMMUNITIES_QUERY = """
 MATCH (c:__Community__)
-where $level = -1 OR c.level = $level
+WHERE $level IS NULL OR c.level = $level
 RETURN c
 """
 

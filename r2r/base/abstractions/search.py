@@ -109,16 +109,16 @@ class VectorSearchSettings(BaseModel):
 class KGSearchSettings(BaseModel):
     use_kg_search: bool = False
     kg_search_type: str = "global"  # 'global' or 'local'
-    kg_search_level: Optional[int] = None
+    kg_search_level: Optional[str] = None
     kg_search_generation_config: Optional[GenerationConfig] = Field(
         default_factory=GenerationConfig
     )
     entity_types: list = []
     relationships: list = []
     max_community_description_length: int = 4096 * 4
-    max_llm_queries_for_global_search: int = 10
+    max_llm_queries_for_global_search: int = 250
     local_search_limits: dict[str, int] = {
-        "__Entity__": 10,
-        "__Relationship__": 10,
-        "__Community__": 10,
+        "__Entity__": 20,
+        "__Relationship__": 20,
+        "__Community__": 20,
     }

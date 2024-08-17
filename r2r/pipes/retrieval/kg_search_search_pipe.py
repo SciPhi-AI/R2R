@@ -180,11 +180,11 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # Use asyncio.gather to process all preprocessed community reports concurrently
             logger.info(
-                f"Processing {len(communities)} communities, {len(preprocessed_reports)} reports"
+                f"Processing {len(communities)} communities, {len(preprocessed_reports)} reports, Max LLM queries = {kg_search_settings.max_llm_queries_for_global_search}"
             )
 
             map_responses = await asyncio.gather(
-                *[process_community(report) for report in preprocessed_reports]
+                *[process_community(report) for report in preprocessed_reports[:kg_search_settings.max_llm_queries_for_global_search]]
             )
             # Filter only the relevant responses
             filtered_responses = self.filter_responses(map_responses)
