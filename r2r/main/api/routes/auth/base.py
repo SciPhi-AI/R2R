@@ -165,6 +165,7 @@ class AuthRouter(BaseRouter):
             This endpoint initiates the password reset process by sending a reset link
             to the specified email address.
             """
+            print("email = ", email)
             result = await self.engine.arequest_password_reset(email)
             return GenericMessageResponse(message=result["message"])
 
