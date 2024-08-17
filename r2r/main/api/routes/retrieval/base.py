@@ -174,8 +174,16 @@ result = client.search(
             """
 
             user_groups = set(auth_user.group_ids)
+            print("user_groups = ", user_groups)
             selected_groups = set(vector_search_settings.selected_group_ids)
+            print("selected_groups = ", selected_groups)
             allowed_groups = user_groups.intersection(selected_groups)
+            print("allowed_groups = ", allowed_groups)
+            if selected_groups - allowed_groups != set():
+                raise ValueError(
+                    "User does not have access to the specified group(s): "
+                    f"{selected_groups - allowed_groups}"
+                )
 
             vector_search_settings.filters = {
                 "$or": [
@@ -184,6 +192,7 @@ result = client.search(
                 ],
                 "$and": vector_search_settings.filters,
             }
+            print("filters = ", vector_search_settings)
 
             results = await self.engine.asearch(
                 query=query,
@@ -588,7 +597,7 @@ result = client.agent(
                 ],
                 "$and": vector_search_settings.filters,
             }
-
+            print("filters = ", vector_search_settings)
             response = await self.engine.arag_agent(
                 messages=messages,
                 vector_search_settings=vector_search_settings,

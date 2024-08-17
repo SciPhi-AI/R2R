@@ -53,13 +53,6 @@ class UserOverviewResponse(BaseModel):
     document_ids: List[UUID]
 
 
-class DeleteResponse(BaseModel):
-    fragment_id: UUID
-    document_id: UUID
-    extraction_id: UUID
-    text: str
-
-
 class DocumentOverviewResponse(BaseModel):
     id: UUID
     title: str
@@ -102,6 +95,10 @@ class GroupOverviewResponse(BaseModel):
     document_count: int
 
 
+class AddUserResponse(BaseModel):
+    result: bool
+
+
 # Create wrapped versions of each response
 WrappedPromptResponse = ResultsWrapper[PromptResponse]
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
@@ -110,7 +107,6 @@ WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
 WrappedAppSettingsResponse = ResultsWrapper[AppSettingsResponse]
 WrappedScoreCompletionResponse = ResultsWrapper[ScoreCompletionResponse]
 WrappedUserOverviewResponse = ResultsWrapper[List[UserOverviewResponse]]
-WrappedDeleteResponse = ResultsWrapper[dict[str, DeleteResponse]]
 WrappedDocumentOverviewResponse = ResultsWrapper[
     List[DocumentOverviewResponse]
 ]
@@ -119,3 +115,4 @@ WrappedKnowledgeGraphResponse = ResultsWrapper[KnowledgeGraphResponse]
 WrappedGroupResponse = ResultsWrapper[GroupResponse]
 WrappedGroupListResponse = ResultsWrapper[List[GroupResponse]]
 WrappedGroupOverviewResponse = ResultsWrapper[List[GroupOverviewResponse]]
+WrappedAddUserResponse = ResultsWrapper[AddUserResponse]

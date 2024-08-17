@@ -39,7 +39,7 @@ class VectorSearchResult(BaseModel):
         }
 
     class Config:
-        schema_extra = [
+        json_schema_extra = [
             {
                 "fragment_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
                 "extraction_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
@@ -100,10 +100,20 @@ class VectorSearchSettings(BaseModel):
         default=False,
         description="Whether to perform a hybrid search (combining vector and keyword search)",
     )
-    selected_group_ids: List[str] = Field(
+    selected_group_ids: List[UUID] = Field(
         default_factory=list,
         description="Group IDs to search for",
     )
+
+    class Config:
+        json_encoders = {UUID: str}
+
+    def model_dump(self, *args, **kwargs):
+        dump = super().model_dump(*args, **kwargs)
+        dump["selected_group_ids"] = [
+            str(uuid) for uuid in dump["selected_group_ids"]
+        ]
+        return dump
 
 
 class KGSearchSettings(BaseModel):

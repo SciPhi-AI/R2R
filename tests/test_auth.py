@@ -197,15 +197,15 @@ async def test_login_failure_nonexistent_user(auth_service):
     with pytest.raises(R2RException) as exc_info:
         await auth_service.login("nonexistent@example.com", "password123")
 
-    assert exc_info.value.status_code == 401
-    assert exc_info.value.message == "Incorrect email or password"
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.message == "User not found"
 
 
 @pytest.mark.asyncio
 async def test_login_with_non_existent_user(auth_service):
     with pytest.raises(R2RException) as exc_info:
         await auth_service.login("nonexistent@example.com", "password123")
-    assert "Incorrect email or password" in str(exc_info.value)
+    assert "User not found" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -427,26 +427,6 @@ async def test_logout(auth_service, auth_provider):
 
 
 @pytest.mark.asyncio
-async def test_get_user_profile(auth_service, auth_provider):
-    # Register and verify a user
-    with patch.object(
-        auth_provider.crypto_provider,
-        "generate_verification_code",
-        return_value="123456",
-    ):
-        new_user = await auth_service.register(
-            email="profile@example.com", password="password123"
-        )
-    await auth_service.verify_email("123456")
-
-    # Get user profile
-    profile = await auth_service.get_user_profile(new_user.id)
-    assert profile.email == "profile@example.com"
-    assert profile.name is None
-    assert profile.bio is None
-
-
-@pytest.mark.asyncio
 async def test_update_user_profile(auth_service, auth_provider):
     # Register and verify a user
     with patch.object(
@@ -470,12 +450,6 @@ async def test_update_user_profile(auth_service, auth_provider):
     assert updated_profile.bio == "Test bio"
     assert updated_profile.profile_picture == "http://example.com/pic.jpg"
 
-    # Verify that the profile was updated
-    profile = await auth_service.get_user_profile(new_user.id)
-    assert profile.name == "John Doe"
-    assert profile.bio == "Test bio"
-    assert profile.profile_picture == "http://example.com/pic.jpg"
-
 
 @pytest.mark.asyncio
 async def test_delete_user_account(auth_service, auth_provider):
@@ -495,13 +469,15 @@ async def test_delete_user_account(auth_service, auth_provider):
 
     # Try to get the deleted user's profile
     with pytest.raises(R2RException) as exc_info:
-        await auth_service.get_user_profile(new_user.id)
+        result = auth_provider.db_provider.relational.get_user_by_email(
+            "delete_user@example.com"
+        )
     assert exc_info.value.status_code == 404
 
     # Try to login with deleted account
     with pytest.raises(R2RException) as exc_info:
         await auth_service.login("delete_user@example.com", "password123")
-    assert exc_info.value.status_code == 401
+    assert exc_info.value.status_code == 404
 
 
 @pytest.mark.asyncio
@@ -674,12 +650,14 @@ async def test_confirm_reset_password(auth_service, auth_provider):
 
 
 @pytest.mark.asyncio
-async def test_get_user_profile(auth_service):
-    new_user = await auth_service.register(
+async def test_get_user_profile(auth_service, auth_provider):
+    await auth_service.register(
         email="profile@example.com", password="password123"
     )
 
-    profile = await auth_service.get_user_profile(new_user.id)
+    profile = auth_provider.db_provider.relational.get_user_by_email(
+        "profile@example.com"
+    )
     assert profile.email == "profile@example.com"
 
 

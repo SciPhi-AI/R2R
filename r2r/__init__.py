@@ -185,7 +185,6 @@ __all__ = [
     ## R2R API
     # Client
     "R2RClient",
-    "handle_request_error",
     # Routes
     "AuthRouter",
     "IngestionRouter",

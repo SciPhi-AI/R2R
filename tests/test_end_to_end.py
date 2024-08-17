@@ -291,10 +291,7 @@ async def test_ingest_search_then_delete(app, logging_connection):
     delete_result = await app.adelete(filters={"author": {"$eq": "John Doe"}})
 
     # Verify the deletion was successful
-    assert (
-        len(delete_result) > 0
-    ), f"Expected at least one document to be deleted, but got {delete_result}"
-
+    assert delete_result is None
     # Search for the document again
     search_results_2 = await app.asearch("who was aristotle?")
 
@@ -307,8 +304,13 @@ async def test_ingest_search_then_delete(app, logging_connection):
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)
 @pytest.mark.asyncio
 async def test_ingest_user_documents(app, logging_connection):
-    user_id_0 = generate_id_from_label("user_0")
-    user_id_1 = generate_id_from_label("user_1")
+
+    # user_id_0 = generate_id_from_label("user_0")
+    # user_id_1 = generate_id_from_label("user_1")
+    user_0 = app.register("user_0@test.com", "password")
+    user_id_0 = user_0.id
+    user_1 = app.register("user_1@test.com", "password")
+    user_id_1 = user_1.id
     doc_id_0 = generate_id_from_label("doc_01")
     doc_id_1 = generate_id_from_label("doc_11")
 
@@ -332,9 +334,12 @@ async def test_ingest_user_documents(app, logging_connection):
             ),
         ]
     )
-    user_id_results = await app.ausers_overview([user_id_0, user_id_1])
-    assert set([stats.user_id for stats in user_id_results]) == set(
-        [user_id_0, user_id_1]
+    user_stats_results = await app.ausers_overview([user_id_0, user_id_1])
+    print("user_stats_results = ", user_stats_results)
+    user_id_results = [stats.user_id for stats in user_stats_results]
+    print("user_id_results = ", user_stats_results)
+    assert set([user_id_0, user_id_1]) == set(
+        user_id_results
     ), f"Expected user ids {user_id_0} and {user_id_1}, but got {user_id_results}"
 
     user_0_docs = await app.adocuments_overview(user_ids=[user_id_0])
@@ -358,9 +363,7 @@ async def test_ingest_user_documents(app, logging_connection):
         filters={"document_id": {"$in": [doc_id_0, doc_id_1]}}
     )
 
-    assert (
-        len(delete_result) == 2
-    ), f"Expected 2 chunks to be deleted, but got {len(delete_result)}"
+    assert delete_result is None
 
 
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)
@@ -383,8 +386,6 @@ async def test_delete_by_id(app, logging_connection):
 
     assert len(search_results["vector_search_results"]) > 0
     delete_result = await app.adelete(filters={"document_id": {"$eq": doc_id}})
-    assert (
-        len(delete_result) > 0
-    ), f"Expected at least one document to be deleted, but got {delete_result}"
+    assert delete_result is None
     search_results = await app.asearch("who was aristotle?")
     assert len(search_results["vector_search_results"]) == 0

@@ -1,0 +1,45 @@
+[completion]
+provider = "litellm"
+concurrent_request_limit = 256
+
+  [completion.generation_config]
+  model = "gpt-4o-mini"
+  temperature = 0.1
+  top_p = 1
+  max_tokens_to_sample = 1_024
+  stream = false
+  add_generation_kwargs = { }
+
+[embedding]
+provider = "openai"
+base_model = "text-embedding-3-small"
+base_dimension = 1_536
+batch_size = 256
+add_title_as_prefix = true
+
+[ingestion]
+excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
+
+[kg]
+provider = "neo4j"
+batch_size = 256
+kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
+
+
+  [kg.kg_extraction_config]
+  model = "gpt-4o-mini"
+  temperature = 1
+  top_p = 1
+  max_tokens_to_sample = 1_024
+  stream = false
+  add_generation_kwargs = { }
+
+[database]
+provider = "postgres"
+
+[agent]
+system_instruction_name = "rag_agent"
+tool_names = ["search"]
+
+  [agent.generation_config]
+  model = "gpt-4o-mini"
