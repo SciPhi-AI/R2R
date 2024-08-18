@@ -12,7 +12,7 @@ from r2r.base import (
 )
 from r2r.base.pipes.base_pipe import AsyncPipe
 
-from ...base.abstractions.exception import R2RDocumentProcessingError
+from r2r.base.abstractions.exception import R2RDocumentProcessingError
 
 logger = logging.getLogger(__name__)
 

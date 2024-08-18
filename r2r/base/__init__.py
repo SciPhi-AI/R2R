@@ -34,7 +34,6 @@ __all__ = [
     "Entity",
     "KGExtraction",
     "Triple",
-    "extract_triples",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",
@@ -124,7 +123,6 @@ __all__ = [
     # Knowledge Graph provider
     "KGConfig",
     "KGProvider",
-    "extract_entities",
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",
@@ -144,6 +142,7 @@ __all__ = [
     "generate_id_from_label",
     "increment_version",
     "EntityType",
+    "RelationshipType",
     "format_entity_types",
     "format_relations",
 ]

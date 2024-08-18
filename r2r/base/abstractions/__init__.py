@@ -19,8 +19,6 @@ from .graph import (
     KGExtraction,
     RelationshipType,
     Triple,
-    extract_entities,
-    extract_triples,
 )
 from .llm import (
     GenerationConfig,
@@ -68,8 +66,6 @@ __all__ = [
     "CommunityReport",
     "KGExtraction",
     "Triple",
-    "extract_entities",
-    "extract_triples",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",

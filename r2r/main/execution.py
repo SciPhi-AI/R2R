@@ -231,7 +231,7 @@ class R2RExecutionWrapper:
         use_kg_search: bool = False,
         kg_search_generation_config: Optional[dict] = None,
         kg_search_type: str = "global",
-        kg_search_level: Optional[int] = None,
+        kg_search_level: Optional[str] = None,
         entity_types: list = [],
         relationships: list = [],
     ):
@@ -287,6 +287,8 @@ class R2RExecutionWrapper:
         kg_search_generation_config: Optional[dict] = None,
         stream: bool = False,
         rag_generation_config: Optional[dict] = None,
+        kg_search_type: str = "global",
+        kg_search_level: Optional[str] = None,
     ):
         if self.client_mode:
             response = self.client.rag(
@@ -302,6 +304,8 @@ class R2RExecutionWrapper:
                     kg_search_generation_config=GenerationConfig(
                         **(kg_search_generation_config or {})
                     ),
+                    kg_search_type=kg_search_type,
+                    kg_search_level=kg_search_level,
                 ),
                 rag_generation_config=GenerationConfig(
                     **(rag_generation_config or {})
@@ -446,11 +450,11 @@ class R2RExecutionWrapper:
         sample_ingestor = SampleDataIngestor(self)
         return sample_ingestor.ingest_sample_files(no_media=no_media)
 
-    def inspect_knowledge_graph(self, limit: int = 100) -> str:
+    def inspect_knowledge_graph(self, limit: int = 100, print_descriptions: bool = False) -> str:
         if self.client_mode:
-            return self.client.inspect_knowledge_graph(limit)["results"]
+            return self.client.inspect_knowledge_graph(limit, print_descriptions)["results"]
         else:
-            return self.engine.inspect_knowledge_graph(limit)
+            return self.engine.inspect_knowledge_graph(limit, print_descriptions)
 
     def health(self) -> str:
         if self.client_mode:

@@ -44,12 +44,10 @@ class RestructureService(Service):
         """
         try:
             # Assuming there's a graph enrichment pipeline
-            enrichment_results = await self.pipelines.kg_pipeline.run(
+            return self.pipelines.kg_enrichment_pipeline.run(
                 input=[],
                 run_manager=self.run_manager,
             )
-
-            return enrichment_results
 
         except Exception as e:
             logger.error(f"Error during graph enrichment: {str(e)}")

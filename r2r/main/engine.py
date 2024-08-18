@@ -42,7 +42,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
             logging_connection,
         )
 
-        self.kg_service = RestructureService(
+        self.restructure_service = RestructureService(
             config,
             providers,
             pipelines,
@@ -95,7 +95,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
 
     @syncable
     async def aenrich_graph(self, *args, **kwargs):
-        return await self.kg_service.enrich_graph(*args, **kwargs)
+        return await self.restructure_service.enrich_graph(*args, **kwargs)
 
     @syncable
     async def asearch(self, *args, **kwargs):

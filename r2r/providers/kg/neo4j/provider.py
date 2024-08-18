@@ -282,15 +282,16 @@ class Neo4jKGProvider(KGProvider):
     ) -> None:
         pass
 
-    def get_communities(self, level: int = -1) -> List[Community]:
+    def get_communities(self, level: str = None) -> List[Community]:
         """
         Get communities from the graph.
         """
         neo4j_records = self.structured_query(
             GET_COMMUNITIES_QUERY, {"level": level}
         )
+        
         communities = [
-            Community(**record["c"]._properties)
+            Community(**record["c"]._properties, id=record["c"]["community"])
             for record in neo4j_records.records
         ]
         return communities
@@ -320,13 +321,13 @@ class Neo4jKGProvider(KGProvider):
     def client(self):
         return self._driver
 
-    def create_vector_index(self, node_type: str, node_property: str) -> None:
+    def create_vector_index(self, node_type: str, node_property: str, dimension: int) -> None:
 
         query = f"""
         CREATE VECTOR INDEX `{node_type}_{node_property}` IF NOT EXISTS
 
         FOR (n:{node_type}) ON n.{node_property}
-        OPTIONS {{indexConfig: {{`vector.similarity_function`: 'cosine', `vector.dimensions`:{self.embedding_provider.config.base_dimension}}}}}"""
+        OPTIONS {{indexConfig: {{`vector.similarity_function`: 'cosine', `vector.dimensions`:{dimension}}}}}"""
 
         self.structured_query(query)
 

@@ -559,13 +559,13 @@ class R2RPipelineFactory:
         rag_pipeline.add_pipe(rag_pipe)
         return rag_pipeline
 
-    def create_kg_pipeline(self, *args, **kwargs) -> KGEnrichmentPipeline:
-        kg_pipeline = KGEnrichmentPipeline()
-        kg_pipeline.add_pipe(self.pipes.kg_node_extraction_pipe)
-        kg_pipeline.add_pipe(self.pipes.kg_node_description_pipe)
-        kg_pipeline.add_pipe(self.pipes.kg_clustering_pipe)
+    def create_kg_enrichment_pipeline(self, *args, **kwargs) -> KGEnrichmentPipeline:
+        kg_enrichment_pipeline = KGEnrichmentPipeline()
+        kg_enrichment_pipeline.add_pipe(self.pipes.kg_node_extraction_pipe)
+        kg_enrichment_pipeline.add_pipe(self.pipes.kg_node_description_pipe)
+        kg_enrichment_pipeline.add_pipe(self.pipes.kg_clustering_pipe)
 
-        return kg_pipeline
+        return kg_enrichment_pipeline
 
     def create_pipelines(
         self,
@@ -573,7 +573,7 @@ class R2RPipelineFactory:
         search_pipeline: Optional[SearchPipeline] = None,
         rag_pipeline: Optional[RAGPipeline] = None,
         streaming_rag_pipeline: Optional[RAGPipeline] = None,
-        kg_pipeline: Optional[KGEnrichmentPipeline] = None,
+        kg_enrichment_pipeline: Optional[KGEnrichmentPipeline] = None,
         *args,
         **kwargs,
     ) -> R2RPipelines:
@@ -602,8 +602,8 @@ class R2RPipelineFactory:
                 *args,
                 **kwargs,
             ),
-            kg_pipeline=kg_pipeline
-            or self.create_kg_pipeline(*args, **kwargs),
+            kg_enrichment_pipeline=kg_enrichment_pipeline
+            or self.create_kg_enrichment_pipeline(*args, **kwargs),
         )
 
     def configure_logging(self):
