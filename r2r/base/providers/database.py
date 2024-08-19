@@ -10,8 +10,6 @@ from .base import Provider, ProviderConfig
 
 logger = logging.getLogger(__name__)
 
-VectorDBFilterValue = Union[str, UUID]
-
 
 class DatabaseConfig(ProviderConfig):
     def __post_init__(self):

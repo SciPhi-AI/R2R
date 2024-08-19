@@ -98,20 +98,14 @@ class IngestionRouter(BaseRouter):
             # Handle user management logic at the request level
             if not auth_user:
                 for metadata in metadatas or []:
-                    if "user_id" in metadata:
-                        if not is_superuser and metadata["user_id"] != str(
-                            auth_user.id
-                        ):
-                            raise R2RException(
-                                status_code=403,
-                                message="Non-superusers cannot set user_id in metadata.",
-                            )
-                    if "group_ids" in metadata:
-                        if not is_superuser:
-                            raise R2RException(
-                                status_code=403,
-                                message="Non-superusers cannot set group_ids in metadata.",
-                            )
+                    if "user_id" in metadata and (
+                        not is_superuser
+                        and metadata["user_id"] != str(auth_user.id)
+                    ):
+                        raise R2RException(
+                            status_code=403,
+                            message="Non-superusers cannot set user_id in metadata.",
+                        )
 
                 # If user is not a superuser, set user_id in metadata
                 metadata["user_id"] = str(auth_user.id)
@@ -254,13 +248,13 @@ class IngestionRouter(BaseRouter):
         except json.JSONDecodeError as e:
             raise R2RException(
                 status_code=400, message=f"Invalid JSON in form data: {e}"
-            )
+            ) from e
         except ValueError as e:
-            raise R2RException(status_code=400, message=str(e))
+            raise R2RException(status_code=400, message=str(e)) from e
         except Exception as e:
             raise R2RException(
                 status_code=400, message=f"Error processing form data: {e}"
-            )
+            ) from e
 
     @staticmethod
     def parse_update_files_form_data(
@@ -311,10 +305,10 @@ class IngestionRouter(BaseRouter):
         except json.JSONDecodeError as e:
             raise R2RException(
                 status_code=400, message=f"Invalid JSON in form data: {e}"
-            )
+            ) from e
         except ValueError as e:
-            raise R2RException(status_code=400, message=str(e))
+            raise R2RException(status_code=400, message=str(e)) from e
         except Exception as e:
             raise R2RException(
                 status_code=400, message=f"Error processing form data: {e}"
-            )
+            ) from e

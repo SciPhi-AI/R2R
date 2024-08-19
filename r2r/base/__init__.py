@@ -116,7 +116,6 @@ __all__ = [
     "DatabaseProvider",
     "RelationalDBProvider",
     "VectorDBProvider",
-    "VectorDBFilterValue",
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",

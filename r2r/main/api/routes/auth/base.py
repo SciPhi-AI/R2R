@@ -33,7 +33,7 @@ class AuthRouter(BaseRouter):
             password: str = Body(..., description="User's password"),
         ):
             """
-            Register a new user.
+            Register a new user with the given email and password.
             """
             result = await self.engine.aregister(email, password)
             return result
@@ -71,6 +71,22 @@ class AuthRouter(BaseRouter):
                 form_data.username, form_data.password
             )
             return login_result
+
+        @self.router.post(
+            "/logout", response_model=WrappedGenericMessageResponse
+        )
+        @self.base_endpoint
+        async def logout_app(
+            token: str = Depends(oauth2_scheme),
+            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+        ):
+            """
+            Log out the current user.
+
+            This endpoint invalidates the user's current access token, effectively logging them out.
+            """
+            result = await self.engine.alogout(token)
+            return GenericMessageResponse(message=result["message"])
 
         @self.router.get("/user", response_model=WrappedUserResponse)
         @self.base_endpoint
@@ -183,28 +199,12 @@ class AuthRouter(BaseRouter):
             )
             return GenericMessageResponse(message=result["message"])
 
-        @self.router.post(
-            "/logout", response_model=WrappedGenericMessageResponse
-        )
-        @self.base_endpoint
-        async def logout_app(
-            token: str = Depends(oauth2_scheme),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
-        ):
-            """
-            Log out the current user.
-
-            This endpoint invalidates the user's current access token, effectively logging them out.
-            """
-            result = await self.engine.alogout(token)
-            return GenericMessageResponse(message=result["message"])
-
         @self.router.delete(
             "/user", response_model=WrappedGenericMessageResponse
         )
         @self.base_endpoint
         async def delete_user_app(
-            user_id: UUID = Body(..., description="ID of the user to delete"),
+            user_id: str = Body(..., description="ID of the user to delete"),
             password: str | None = Body(
                 None, description="User's current password"
             ),
@@ -218,5 +218,6 @@ class AuthRouter(BaseRouter):
             """
             if auth_user.id != user_id and not auth_user.is_superuser:
                 raise Exception("User ID does not match authenticated user")
-            result = await self.engine.adelete_user(user_id, password)
+            user_uuid = uuid.UUID(user_id)
+            result = await self.engine.adelete_user(user_uuid, password)
             return GenericMessageResponse(message=result["message"])

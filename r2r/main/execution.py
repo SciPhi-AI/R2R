@@ -15,7 +15,6 @@ from r2r.base import (
     GenerationConfig,
     KGSearchSettings,
     LogFilterCriteria,
-    VectorDBFilterValue,
     VectorSearchSettings,
 )
 
@@ -225,7 +224,7 @@ class R2RExecutionWrapper:
         self,
         query: str,
         use_vector_search: bool = True,
-        filters: Optional[dict[str, VectorDBFilterValue]] = None,
+        filters: Optional[dict[str, str]] = None,
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
@@ -280,7 +279,7 @@ class R2RExecutionWrapper:
         self,
         query: str,
         use_vector_search: bool = True,
-        filters: Optional[dict[str, VectorDBFilterValue]] = None,
+        filters: Optional[dict[str, str]] = None,
         search_limit: int = 10,
         do_hybrid_search: bool = False,
         use_kg_search: bool = False,
@@ -377,7 +376,7 @@ class R2RExecutionWrapper:
 
     def delete(
         self,
-        filters: Optional[dict[str, VectorDBFilterValue]] = None,
+        filters: Optional[dict[str, str]] = None,
     ):
         if self.client_mode:
             return self.client.delete(filters)["results"]

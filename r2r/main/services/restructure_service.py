@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List
 
-from r2r.base import Document, R2RException, RunLoggingSingleton, RunManager
+from r2r.base import R2RException, RunLoggingSingleton, RunManager
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
 from ..assembly.config import R2RConfig
@@ -32,7 +32,7 @@ class RestructureService(Service):
 
     async def enrich_graph(self) -> Dict[str, Any]:
         """
-        Perform graph enrichment on the given documents.
+        Perform graph enrichment.
 
         Returns:
             Dict[str, Any]: Results of the graph enrichment process.

@@ -4,6 +4,7 @@ from r2r.main.api.routes.base_router import BaseRouter
 from r2r.main.engine import R2REngine
 
 
+# TODO: Botched by Claude
 class RestructureRouter(BaseRouter):
     def __init__(self, engine: R2REngine):
         super().__init__(engine)
