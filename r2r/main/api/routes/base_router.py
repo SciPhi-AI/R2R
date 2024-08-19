@@ -1,5 +1,6 @@
 import functools
 import logging
+from abc import abstractmethod
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -15,6 +16,10 @@ class BaseRouter:
         self.engine = engine
         self.run_type = run_type
         self.router = APIRouter()
+
+    @abstractmethod
+    def load_openapi_extras(self):
+        pass
 
     def base_endpoint(self, func: callable):
         @functools.wraps(func)

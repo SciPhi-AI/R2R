@@ -1,10 +1,10 @@
 import json
 import os
 import time
-import uuid
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 
 from r2r.base import (
     KGConfig,
@@ -97,7 +97,7 @@ class Neo4jKGProvider(KGProvider):
             return value
         elif isinstance(value, (datetime, date)):
             return value.isoformat()
-        elif isinstance(value, uuid.UUID):
+        elif isinstance(value, UUID):
             return str(value)
         elif isinstance(value, Decimal):
             return float(value)

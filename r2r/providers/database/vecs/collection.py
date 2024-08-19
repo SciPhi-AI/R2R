@@ -8,7 +8,6 @@ All public classes, enums, and functions are re-exported by the top level `vecs`
 from __future__ import annotations
 
 import math
-import uuid
 import warnings
 from dataclasses import dataclass
 from enum import Enum
@@ -22,6 +21,7 @@ from typing import (
     Tuple,
     Union,
 )
+from uuid import UUID
 
 import psycopg2
 from flupy import flu
@@ -447,7 +447,7 @@ class Collection:
                     sess.execute(stmt)
         return None
 
-    def fetch(self, fragment_ids: Iterable[uuid.UUID]) -> List[Record]:
+    def fetch(self, fragment_ids: Iterable[UUID]) -> List[Record]:
         """
         Fetches vectors from the collection by their fragment identifiers.
 
@@ -460,7 +460,7 @@ class Collection:
         Raises:
             ArgError: If fragment_ids is not an iterable of UUIDs.
         """
-        if isinstance(fragment_ids, (str, uuid.UUID)):
+        if isinstance(fragment_ids, (str, UUID)):
             raise ArgError("fragment_ids must be an iterable of UUIDs")
 
         chunk_size = 12
@@ -477,7 +477,7 @@ class Collection:
 
     def delete(
         self,
-        fragment_ids: Optional[Iterable[uuid.UUID]] = None,
+        fragment_ids: Optional[Iterable[UUID]] = None,
         filters: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Dict[str, str]]:
         """
@@ -502,7 +502,7 @@ class Collection:
                 "Either fragment_ids or filters must be provided, not both."
             )
 
-        if isinstance(fragment_ids, (str, uuid.UUID)):
+        if isinstance(fragment_ids, (str, UUID)):
             raise ArgError("fragment_ids must be an iterable of UUIDs")
 
         deleted_records = {}

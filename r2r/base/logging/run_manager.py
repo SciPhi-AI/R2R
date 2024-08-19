@@ -1,10 +1,11 @@
 import contextvars
-import uuid
 from contextlib import asynccontextmanager
 from typing import Optional
+from uuid import UUID
 
 from r2r.base.api.models.auth.responses import UserResponse
 from r2r.base.logging.base import RunType
+from r2r.base.utils import generate_run_id
 
 from .run_logger import RunLoggingSingleton
 
@@ -16,15 +17,10 @@ class RunManager:
         self.logger = logger
         self.run_info = {}
 
-    def generate_run_id(self) -> uuid.UUID:
-        return uuid.uuid4()
-
-    async def set_run_info(
-        self, run_type: str, run_id: Optional[uuid.UUID] = None
-    ):
+    async def set_run_info(self, run_type: str, run_id: Optional[UUID] = None):
         run_id = run_id or run_id_var.get()
         if run_id is None:
-            run_id = self.generate_run_id()
+            run_id = generate_run_id()
             token = run_id_var.set(run_id)
             self.run_info[run_id] = {"run_type": run_type}
         else:
@@ -60,7 +56,7 @@ class RunManager:
 async def manage_run(
     run_manager: RunManager,
     run_type: RunType = RunType.UNSPECIFIED,
-    run_id: Optional[uuid.UUID] = None,
+    run_id: Optional[UUID] = None,
 ):
     run_id, token = await run_manager.set_run_info(run_type, run_id)
     try:

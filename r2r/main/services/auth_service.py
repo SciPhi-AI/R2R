@@ -1,6 +1,6 @@
-import uuid
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 from r2r.base import R2RException, RunLoggingSingleton, RunManager, Token
 from r2r.base.api.models.auth.responses import UserResponse
@@ -109,7 +109,7 @@ class AuthService(Service):
     @telemetry_event("UpdateUserProfile")
     async def update_user(
         self,
-        user_id: uuid.UUID,
+        user_id: UUID,
         email: Optional[str] = None,
         name: Optional[str] = None,
         bio: Optional[str] = None,
@@ -131,7 +131,7 @@ class AuthService(Service):
     @telemetry_event("DeleteUserAccount")
     async def delete_user(
         self,
-        user_id: uuid.UUID,
+        user_id: UUID,
         password: Optional[str] = None,
         is_superuser: bool = False,
     ) -> dict[str, str]:

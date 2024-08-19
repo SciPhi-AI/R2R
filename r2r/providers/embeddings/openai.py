@@ -51,7 +51,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 "OpenAIEmbeddingProvider does not support separate reranking."
             )
 
-        if "openai/" in config.base_model:
+        if config.base_model and "openai/" in config.base_model:
             self.base_model = config.base_model.split("/")[-1]
         else:
             self.base_model = config.base_model

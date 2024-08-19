@@ -4,8 +4,8 @@ import json
 import os
 import threading
 import time
-import uuid
 from typing import Any, Dict, Optional, Union
+from uuid import UUID
 
 import click
 from fastapi import UploadFile
@@ -111,7 +111,7 @@ class R2RExecutionWrapper:
         self,
         file_paths: list[str],
         metadatas: Optional[list[dict]] = None,
-        document_ids: Optional[list[Union[uuid.UUID, str]]] = None,
+        document_ids: Optional[list[Union[UUID, str]]] = None,
         versions: Optional[list[str]] = None,
     ):
         if isinstance(file_paths, str):
@@ -395,7 +395,7 @@ class R2RExecutionWrapper:
             return self.app.logs(run_type_filter, max_runs)
 
     def document_chunks(self, document_id: str):
-        doc_uuid = uuid.UUID(document_id)
+        doc_uuid = UUID(document_id)
         if self.client_mode:
             return self.client.document_chunks(doc_uuid)["results"]
         else:
@@ -407,7 +407,7 @@ class R2RExecutionWrapper:
         else:
             return self.app.app_settings()
 
-    def users_overview(self, user_ids: Optional[list[uuid.UUID]] = None):
+    def users_overview(self, user_ids: Optional[list[UUID]] = None):
         if self.client_mode:
             return self.client.users_overview(user_ids)["results"]
         else:

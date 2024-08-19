@@ -6,8 +6,8 @@
 import asyncio
 import json
 import logging
-import uuid
 from typing import Any, AsyncGenerator, Optional
+from uuid import UUID
 
 import networkx as nx
 from graspologic.partition import hierarchical_leiden
@@ -206,7 +206,7 @@ class KGClusteringPipe(AsyncPipe):
         self,
         input: AsyncPipe.Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Community, None]:

@@ -1,6 +1,6 @@
 import json
-import uuid
-from typing import Any, Optional, Union
+from typing import Optional, Union
+from uuid import UUID
 
 from r2r.base import VectorDBFilterValue
 
@@ -43,7 +43,7 @@ class ManagementMethods:
     @staticmethod
     async def score_completion(
         client,
-        message_id: uuid.UUID,
+        message_id: UUID,
         score: float = 0.0,
     ) -> dict:
         data = {
@@ -57,7 +57,7 @@ class ManagementMethods:
     @staticmethod
     async def users_overview(
         client,
-        user_ids: Optional[list[uuid.UUID]] = None,
+        user_ids: Optional[list[UUID]] = None,
     ) -> dict:
         params = {
             "user_ids": [str(uid) for uid in user_ids] if user_ids else None
@@ -80,9 +80,9 @@ class ManagementMethods:
     @staticmethod
     async def documents_overview(
         client,
-        user_ids: Optional[list[uuid.UUID]] = None,
-        group_ids: Optional[list[uuid.UUID]] = None,
-        document_ids: Optional[list[uuid.UUID]] = None,
+        user_ids: Optional[list[UUID]] = None,
+        group_ids: Optional[list[UUID]] = None,
+        document_ids: Optional[list[UUID]] = None,
     ) -> dict:
         params = {
             "user_ids": [str(uid) for uid in user_ids] if user_ids else None,
@@ -100,7 +100,7 @@ class ManagementMethods:
     @staticmethod
     async def document_chunks(
         client,
-        document_id: uuid.UUID,
+        document_id: UUID,
     ) -> dict:
         return await client._make_request(
             "GET", "document_chunks", params={"document_id": document_id}
@@ -120,7 +120,7 @@ class ManagementMethods:
     async def assign_document_to_group(
         client,
         document_id: str,
-        group_id: uuid.UUID,
+        group_id: UUID,
     ) -> dict:
         data = {
             "document_id": document_id,
@@ -134,7 +134,7 @@ class ManagementMethods:
     async def remove_document_from_group(
         client,
         document_id: str,
-        group_id: uuid.UUID,
+        group_id: UUID,
     ) -> dict:
         data = {
             "document_id": document_id,
@@ -168,14 +168,14 @@ class ManagementMethods:
     @staticmethod
     async def get_group(
         client,
-        group_id: uuid.UUID,
+        group_id: UUID,
     ) -> dict:
         return await client._make_request("GET", f"get_group/{group_id}")
 
     @staticmethod
     async def update_group(
         client,
-        group_id: uuid.UUID,
+        group_id: UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> dict:
@@ -189,7 +189,7 @@ class ManagementMethods:
     @staticmethod
     async def delete_group(
         client,
-        group_id: uuid.UUID,
+        group_id: UUID,
     ) -> dict:
         return await client._make_request("DELETE", f"delete_group/{group_id}")
 
@@ -208,8 +208,8 @@ class ManagementMethods:
     @staticmethod
     async def add_user_to_group(
         client,
-        user_id: uuid.UUID,
-        group_id: uuid.UUID,
+        user_id: UUID,
+        group_id: UUID,
     ) -> dict:
         data = {
             "user_id": str(user_id),
@@ -222,8 +222,8 @@ class ManagementMethods:
     @staticmethod
     async def remove_user_from_group(
         client,
-        user_id: uuid.UUID,
-        group_id: uuid.UUID,
+        user_id: UUID,
+        group_id: UUID,
     ) -> dict:
         data = {
             "user_id": str(user_id),
@@ -236,7 +236,7 @@ class ManagementMethods:
     @staticmethod
     async def get_users_in_group(
         client,
-        group_id: uuid.UUID,
+        group_id: UUID,
         offset: int = 0,
         limit: int = 100,
     ) -> dict:
@@ -251,7 +251,7 @@ class ManagementMethods:
     @staticmethod
     async def get_groups_for_user(
         client,
-        user_id: uuid.UUID,
+        user_id: UUID,
     ) -> dict:
         return await client._make_request(
             "GET", f"get_groups_for_user/{user_id}"
@@ -260,7 +260,7 @@ class ManagementMethods:
     @staticmethod
     async def groups_overview(
         client,
-        group_ids: Optional[list[uuid.UUID]] = None,
+        group_ids: Optional[list[UUID]] = None,
         limit: int = 100,
         offset: int = 0,
     ) -> dict:
@@ -277,7 +277,7 @@ class ManagementMethods:
     @staticmethod
     async def get_documents_in_group(
         client,
-        group_id: uuid.UUID,
+        group_id: UUID,
         offset: int = 0,
         limit: int = 100,
     ) -> dict:

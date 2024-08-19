@@ -1,8 +1,8 @@
 import asyncio
 import json
 import logging
-import uuid
 from typing import Any, Optional
+from uuid import UUID
 
 from r2r.base import (
     AsyncState,
@@ -98,7 +98,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         self,
         input: GeneratorPipe.Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,
@@ -133,7 +133,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         self,
         input: GeneratorPipe.Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,
@@ -215,7 +215,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         self,
         input: GeneratorPipe.Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,

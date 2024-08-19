@@ -1,8 +1,10 @@
 import json
 import logging
-import uuid
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
+from uuid import UUID
+
+import toml
 
 from r2r.base import (
     AnalysisTypes,
@@ -189,7 +191,7 @@ class ManagementService(Service):
     @telemetry_event("ScoreCompletion")
     async def ascore_completion(
         self,
-        message_id: uuid.UUID,
+        message_id: UUID,
         score: float = 0.0,
         run_type_filter: str = None,
         max_runs: int = 100,
@@ -238,7 +240,7 @@ class ManagementService(Service):
     @telemetry_event("UsersOverview")
     async def ausers_overview(
         self,
-        user_ids: Optional[list[uuid.UUID]] = None,
+        user_ids: Optional[list[UUID]] = None,
         *args,
         **kwargs,
     ):
@@ -286,9 +288,9 @@ class ManagementService(Service):
     @telemetry_event("DocumentsOverview")
     async def adocuments_overview(
         self,
-        user_ids: Optional[list[uuid.UUID]] = None,
-        group_ids: Optional[list[uuid.UUID]] = None,
-        document_ids: Optional[list[uuid.UUID]] = None,
+        user_ids: Optional[list[UUID]] = None,
+        group_ids: Optional[list[UUID]] = None,
+        document_ids: Optional[list[UUID]] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -301,7 +303,7 @@ class ManagementService(Service):
     @telemetry_event("DocumentChunks")
     async def document_chunks(
         self,
-        document_id: uuid.UUID,
+        document_id: UUID,
         *args,
         **kwargs,
     ):
@@ -310,7 +312,7 @@ class ManagementService(Service):
     @telemetry_event("UsersOverview")
     async def users_overview(
         self,
-        user_ids: Optional[list[uuid.UUID]],
+        user_ids: Optional[list[UUID]],
         *args,
         **kwargs,
     ):
@@ -404,7 +406,7 @@ class ManagementService(Service):
 
     @telemetry_event("AssignDocumentToGroup")
     async def aassign_document_to_group(
-        self, document_id: str, group_id: uuid.UUID
+        self, document_id: str, group_id: UUID
     ):
 
         success = self.providers.database.vector.assign_document_to_group(
@@ -420,7 +422,7 @@ class ManagementService(Service):
 
     @telemetry_event("RemoveDocumentFromGroup")
     async def aremove_document_from_group(
-        self, document_id: str, group_id: uuid.UUID
+        self, document_id: str, group_id: UUID
     ):
         success = self.providers.database.vector.remove_document_from_group(
             document_id, group_id
@@ -539,27 +541,25 @@ class ManagementService(Service):
         }
 
     @telemetry_event("CreateGroup")
-    async def acreate_group(
-        self, name: str, description: str = ""
-    ) -> uuid.UUID:
+    async def acreate_group(self, name: str, description: str = "") -> UUID:
         return self.providers.database.relational.create_group(
             name, description
         )
 
     @telemetry_event("GetGroup")
-    async def aget_group(self, group_id: uuid.UUID) -> Optional[dict]:
+    async def aget_group(self, group_id: UUID) -> Optional[dict]:
         return self.providers.database.relational.get_group(group_id)
 
     @telemetry_event("UpdateGroup")
     async def aupdate_group(
-        self, group_id: uuid.UUID, name: str = None, description: str = None
+        self, group_id: UUID, name: str = None, description: str = None
     ) -> bool:
         return self.providers.database.relational.update_group(
             group_id, name, description
         )
 
     @telemetry_event("DeleteGroup")
-    async def adelete_group(self, group_id: uuid.UUID) -> bool:
+    async def adelete_group(self, group_id: UUID) -> bool:
         return self.providers.database.relational.delete_group(group_id)
 
     @telemetry_event("ListGroups")
@@ -571,16 +571,14 @@ class ManagementService(Service):
         )
 
     @telemetry_event("AddUserToGroup")
-    async def aadd_user_to_group(
-        self, user_id: uuid.UUID, group_id: uuid.UUID
-    ) -> bool:
+    async def aadd_user_to_group(self, user_id: UUID, group_id: UUID) -> bool:
         return self.providers.database.relational.add_user_to_group(
             user_id, group_id
         )
 
     @telemetry_event("RemoveUserFromGroup")
     async def aremove_user_from_group(
-        self, user_id: uuid.UUID, group_id: uuid.UUID
+        self, user_id: UUID, group_id: UUID
     ) -> bool:
         return self.providers.database.relational.remove_user_from_group(
             user_id, group_id
@@ -588,20 +586,20 @@ class ManagementService(Service):
 
     @telemetry_event("GetUsersInGroup")
     async def aget_users_in_group(
-        self, group_id: uuid.UUID, offset: int = 0, limit: int = 100
+        self, group_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
         return self.providers.database.relational.get_users_in_group(
             group_id, offset, limit
         )
 
     @telemetry_event("GetGroupsForUser")
-    async def aget_groups_for_user(self, user_id: uuid.UUID) -> list[dict]:
+    async def aget_groups_for_user(self, user_id: UUID) -> list[dict]:
         return self.providers.database.relational.get_groups_for_user(user_id)
 
     @telemetry_event("GroupsOverview")
     async def agroups_overview(
         self,
-        group_ids: Optional[list[uuid.UUID]] = None,
+        group_ids: Optional[list[UUID]] = None,
         offset: int = 0,
         limit: int = 100,
         *args,
@@ -615,7 +613,7 @@ class ManagementService(Service):
 
     @telemetry_event("GetDocumentsInGroup")
     async def aget_documents_in_group(
-        self, group_id: uuid.UUID, offset: int = 0, limit: int = 100
+        self, group_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
         return self.providers.database.relational.get_documents_in_group(
             group_id, offset, limit

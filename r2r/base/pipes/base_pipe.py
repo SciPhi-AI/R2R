@@ -1,9 +1,9 @@
 import asyncio
 import logging
-import uuid
 from abc import abstractmethod
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -117,7 +117,7 @@ class AsyncPipe:
             await self.pipe_logger.log(run_id, key, value)
             self.log_queue.task_done()
 
-    async def enqueue_log(self, run_id: uuid.UUID, key: str, value: str):
+    async def enqueue_log(self, run_id: UUID, key: str, value: str):
         if self.log_queue.qsize() < self.config.max_log_queue_size:
             await self.log_queue.put((run_id, key, value))
 
@@ -155,7 +155,7 @@ class AsyncPipe:
         self,
         input: Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:

@@ -1,7 +1,7 @@
 import asyncio
 import logging
-import uuid
 from typing import Any, AsyncGenerator, Optional, Tuple, Union
+from uuid import UUID
 
 from r2r.base import (
     AsyncState,
@@ -66,11 +66,11 @@ class VectorStoragePipe(AsyncPipe):
         self,
         input: Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[
-        Tuple[uuid.UUID, Union[str, R2RDocumentProcessingError]], None
+        Tuple[UUID, Union[str, R2RDocumentProcessingError]], None
     ]:
         vector_batch = []
         document_counts = {}

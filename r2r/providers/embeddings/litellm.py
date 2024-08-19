@@ -94,12 +94,12 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
             )
 
         task = {
-            "text": text,
+            "texts": [text],
             "stage": stage,
             "purpose": purpose,
             "kwargs": kwargs,
         }
-        return await self._execute_with_backoff_async(task)
+        return (await self._execute_with_backoff_async(task))[0]
 
     def get_embedding(
         self,
@@ -114,12 +114,12 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
             )
 
         task = {
-            "text": text,
+            "texts": [text],
             "stage": stage,
             "purpose": purpose,
             "kwargs": kwargs,
         }
-        return self._execute_with_backoff_sync(task)
+        return self._execute_with_backoff_sync(task)[0]
 
     async def async_get_embeddings(
         self,
@@ -153,16 +153,13 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
                 "LiteLLMEmbeddingProvider only supports search stage."
             )
 
-        tasks = [
-            {
-                "text": text,
-                "stage": stage,
-                "purpose": purpose,
-                "kwargs": kwargs,
-            }
-            for text in texts
-        ]
-        return [self._execute_with_backoff_sync(task) for task in tasks]
+        task = {
+            "texts": texts,
+            "stage": stage,
+            "purpose": purpose,
+            "kwargs": kwargs,
+        }
+        return self._execute_with_backoff_sync(task)
 
     def rerank(
         self,

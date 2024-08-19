@@ -1,5 +1,5 @@
-import uuid
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from fastapi import Body, Depends, Path
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -204,9 +204,7 @@ class AuthRouter(BaseRouter):
         )
         @self.base_endpoint
         async def delete_user_app(
-            user_id: uuid.UUID = Body(
-                ..., description="ID of the user to delete"
-            ),
+            user_id: UUID = Body(..., description="ID of the user to delete"),
             password: str | None = Body(
                 None, description="User's current password"
             ),

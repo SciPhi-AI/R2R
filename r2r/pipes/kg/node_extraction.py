@@ -2,18 +2,16 @@
 
 import asyncio
 import logging
-import uuid
-from typing import Any, AsyncGenerator, Optional, Union
+from typing import Any, AsyncGenerator, Optional
+from uuid import UUID
 
 from r2r.base import (
     AsyncState,
     CompletionProvider,
     EmbeddingProvider,
-    KGExtraction,
     KGProvider,
     PipeType,
     PromptProvider,
-    R2RDocumentProcessingError,
     RunLoggingSingleton,
 )
 from r2r.base.abstractions.graph import Entity, Triple
@@ -56,7 +54,7 @@ class KGNodeExtractionPipe(AsyncPipe):
         self,
         input: Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         *args,
         **kwargs,
     ) -> AsyncGenerator[Any, None]:
@@ -103,7 +101,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
         self,
         input: Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:

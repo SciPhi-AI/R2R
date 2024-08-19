@@ -3,8 +3,8 @@ This module contains the `DocumentParsingPipe` class, which is responsible for p
 """
 
 import logging
-import uuid
 from typing import AsyncGenerator, Optional, Union
+from uuid import UUID
 
 from r2r.base import (
     AsyncState,
@@ -47,7 +47,7 @@ class ParsingPipe(AsyncPipe):
     async def _parse(
         self,
         document: Document,
-        run_id: uuid.UUID,
+        run_id: UUID,
         version: str,
     ) -> AsyncGenerator[
         Union[R2RDocumentProcessingError, DocumentExtraction], None
@@ -69,7 +69,7 @@ class ParsingPipe(AsyncPipe):
         self,
         input: Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         versions: Optional[list[str]] = None,
         *args,
         **kwargs,

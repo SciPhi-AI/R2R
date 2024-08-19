@@ -1,6 +1,6 @@
 import logging
-import uuid
 from typing import Any, AsyncGenerator, Optional
+from uuid import UUID
 
 from r2r.base import (
     AsyncPipe,
@@ -48,7 +48,7 @@ class QueryTransformPipe(GeneratorPipe):
         self,
         input: AsyncPipe.Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         query_transform_generation_config: GenerationConfig,
         num_query_xf_outputs: int = 3,
         *args: Any,
