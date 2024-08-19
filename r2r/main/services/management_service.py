@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
@@ -13,7 +14,6 @@ from r2r.base import (
     R2RException,
     RunLoggingSingleton,
     RunManager,
-    VectorDBFilterValue,
 )
 from r2r.telemetry.telemetry_decorator import telemetry_event
 
@@ -57,7 +57,7 @@ class ManagementService(Service):
             run_type_filter=run_type_filter,
         )
         run_ids = [run.run_id for run in run_info]
-        if len(run_ids) == 0:
+        if not run_ids:
             return []
         logs = await self.logging_connection.get_logs(run_ids)
 
@@ -251,7 +251,7 @@ class ManagementService(Service):
     @telemetry_event("Delete")
     async def delete(
         self,
-        filters: dict[str, VectorDBFilterValue],
+        filters: dict[str, str],
         *args,
         **kwargs,
     ):
@@ -409,10 +409,9 @@ class ManagementService(Service):
         self, document_id: str, group_id: UUID
     ):
 
-        success = self.providers.database.vector.assign_document_to_group(
+        if self.providers.database.vector.assign_document_to_group(
             document_id, group_id
-        )
-        if success:
+        ):
             return {"message": "Document assigned to group successfully"}
         else:
             raise R2RException(
@@ -424,10 +423,9 @@ class ManagementService(Service):
     async def aremove_document_from_group(
         self, document_id: str, group_id: UUID
     ):
-        success = self.providers.database.vector.remove_document_from_group(
+        if self.providers.database.vector.remove_document_from_group(
             document_id, group_id
-        )
-        if success:
+        ):
             return {"message": "Document removed from group successfully"}
         else:
             raise R2RException(

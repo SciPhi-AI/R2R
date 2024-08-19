@@ -2,7 +2,6 @@ import json
 import os
 from contextlib import ExitStack
 from typing import Optional, Union
-from uuid import UUID
 
 from r2r.base import ChunkingConfig
 
@@ -13,18 +12,18 @@ class IngestionMethods:
     async def ingest_files(
         client,
         file_paths: list[str],
-        document_ids: Optional[list[UUID]] = None,
-        versions: Optional[list[str]] = None,
         metadatas: Optional[list[dict]] = None,
+        document_ids: Optional[list[str]] = None,
+        versions: Optional[list[str]] = None,
         chunking_config_override: Optional[Union[dict, ChunkingConfig]] = None,
     ) -> dict:
         """
-        Ingest files into the system.
+        Ingest files into your R2R deployment
 
         Args:
             file_paths (List[str]): List of file paths to ingest.
             metadatas (Optional[List[dict]]): List of metadata dictionaries for each file.
-            document_ids (Optional[List[Union[UUID, str]]]): List of document IDs.
+            document_ids (Optional[List[str]]): List of document IDs.
             versions (Optional[List[str]]): List of version strings for each file.
             chunking_config_override (Optional[Union[dict, ChunkingConfig]]): Custom chunking configuration.
 
@@ -80,12 +79,12 @@ class IngestionMethods:
     async def update_files(
         client,
         file_paths: list[str],
-        document_ids: Optional[list[UUID]] = None,
+        document_ids: Optional[list[str]] = None,
         metadatas: Optional[list[dict]] = None,
         chunking_config_override: Optional[Union[dict, ChunkingConfig]] = None,
     ) -> dict:
         """
-        Update existing files in the system.
+        Update existing files in your R2R deployment.
 
         Args:
             file_paths (List[str]): List of file paths to update.

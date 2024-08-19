@@ -47,7 +47,7 @@ class IngestionRouter(BaseRouter):
             files: List[UploadFile] = File(
                 ..., description=ingest_files_descriptions.get("files")
             ),
-            document_ids: Optional[list[UUID]] = Form(
+            document_ids: Optional[list[str]] = Form(
                 None,
                 description=ingest_files_descriptions.get("document_ids"),
             ),
@@ -98,20 +98,14 @@ class IngestionRouter(BaseRouter):
             # Handle user management logic at the request level
             if not auth_user:
                 for metadata in metadatas or []:
-                    if "user_id" in metadata:
-                        if not is_superuser and metadata["user_id"] != str(
-                            auth_user.id
-                        ):
-                            raise R2RException(
-                                status_code=403,
-                                message="Non-superusers cannot set user_id in metadata.",
-                            )
-                    if "group_ids" in metadata:
-                        if not is_superuser:
-                            raise R2RException(
-                                status_code=403,
-                                message="Non-superusers cannot set group_ids in metadata.",
-                            )
+                    if "user_id" in metadata and (
+                        not is_superuser
+                        and metadata["user_id"] != str(auth_user.id)
+                    ):
+                        raise R2RException(
+                            status_code=403,
+                            message="Non-superusers cannot set user_id in metadata.",
+                        )
 
                 # If user is not a superuser, set user_id in metadata
                 metadata["user_id"] = str(auth_user.id)
@@ -153,7 +147,7 @@ class IngestionRouter(BaseRouter):
             files: List[UploadFile] = File(
                 ..., description=update_files_descriptions.get("files")
             ),
-            document_ids: Optional[list[UUID]] = Form(
+            document_ids: Optional[list[str]] = Form(
                 None, description=update_files_descriptions.get("document_ids")
             ),
             metadatas: Optional[list[dict]] = Form(
@@ -254,21 +248,21 @@ class IngestionRouter(BaseRouter):
         except json.JSONDecodeError as e:
             raise R2RException(
                 status_code=400, message=f"Invalid JSON in form data: {e}"
-            )
+            ) from e
         except ValueError as e:
-            raise R2RException(status_code=400, message=str(e))
+            raise R2RException(status_code=400, message=str(e)) from e
         except Exception as e:
             raise R2RException(
                 status_code=400, message=f"Error processing form data: {e}"
-            )
+            ) from e
 
     @staticmethod
     def parse_update_files_form_data(
         metadatas: Optional[list[dict]],
-        document_ids: Optional[list[UUID]],
+        document_ids: Optional[list[str]],
         chunking_config_override: Optional[str],
         filenames: list[str],
-        user_id: UUID,
+        user_id: str,
     ):
         try:
             parsed_metadatas = (
@@ -292,7 +286,7 @@ class IngestionRouter(BaseRouter):
                 ]
             else:
                 parsed_document_ids = [
-                    generate_user_document_id(filename, user_id)
+                    generate_user_document_id(filename, UUID(user_id))
                     for filename in filenames
                 ]
 
@@ -311,10 +305,10 @@ class IngestionRouter(BaseRouter):
         except json.JSONDecodeError as e:
             raise R2RException(
                 status_code=400, message=f"Invalid JSON in form data: {e}"
-            )
+            ) from e
         except ValueError as e:
-            raise R2RException(status_code=400, message=str(e))
+            raise R2RException(status_code=400, message=str(e)) from e
         except Exception as e:
             raise R2RException(
                 status_code=400, message=f"Error processing form data: {e}"
-            )
+            ) from e

@@ -8,7 +8,6 @@ from fastapi.testclient import TestClient
 
 from r2r.base import R2RException
 
-# Import the new client modules
 from .auth import AuthMethods
 from .ingestion import IngestionMethods
 from .management import ManagementMethods

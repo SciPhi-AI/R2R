@@ -6,7 +6,6 @@ from .database import (
     DatabaseConfig,
     DatabaseProvider,
     RelationalDBProvider,
-    VectorDBFilterValue,
     VectorDBProvider,
 )
 from .embedding import EmbeddingConfig, EmbeddingProvider
@@ -34,7 +33,6 @@ __all__ = [
     "DatabaseProvider",
     "RelationalDBProvider",
     "VectorDBProvider",
-    "VectorDBFilterValue",
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",
