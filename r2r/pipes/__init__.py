@@ -4,7 +4,7 @@ from .ingestion.embedding_pipe import EmbeddingPipe
 from .ingestion.parsing_pipe import ParsingPipe
 from .ingestion.vector_storage_pipe import VectorStoragePipe
 from .kg.clustering import KGClusteringPipe
-from .kg.extraction import KGExtractionPipe
+from .kg.extraction import KGTriplesExtractionPipe
 from .kg.node_extraction import KGNodeDescriptionPipe, KGNodeExtractionPipe
 from .kg.storage import KGStoragePipe
 from .other.web_search_pipe import WebSearchPipe
@@ -18,7 +18,7 @@ from .retrieval.vector_search_pipe import VectorSearchPipe
 __all__ = [
     "SearchPipe",
     "EmbeddingPipe",
-    "KGExtractionPipe",
+    "KGTriplesExtractionPipe",
     "KGNodeExtractionPipe",
     "KGNodeDescriptionPipe",
     "ParsingPipe",

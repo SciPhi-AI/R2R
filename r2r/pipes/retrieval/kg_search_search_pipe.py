@@ -1,8 +1,8 @@
 import asyncio
 import json
 import logging
-import uuid
 from typing import Any, Optional
+from uuid import UUID
 
 from r2r.base import (
     AsyncState,
@@ -98,7 +98,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         self,
         input: GeneratorPipe.Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,
@@ -133,7 +133,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         self,
         input: GeneratorPipe.Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,
@@ -180,11 +180,16 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # Use asyncio.gather to process all preprocessed community reports concurrently
             logger.info(
-                f"Processing {len(communities)} communities, {len(preprocessed_reports)} reports"
+                f"Processing {len(communities)} communities, {len(preprocessed_reports)} reports, Max LLM queries = {kg_search_settings.max_llm_queries_for_global_search}"
             )
 
             map_responses = await asyncio.gather(
-                *[process_community(report) for report in preprocessed_reports]
+                *[
+                    process_community(report)
+                    for report in preprocessed_reports[
+                        : kg_search_settings.max_llm_queries_for_global_search
+                    ]
+                ]
             )
             # Filter only the relevant responses
             filtered_responses = self.filter_responses(map_responses)
@@ -195,7 +200,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                     task_prompt_name="graphrag_reduce_system_prompt",
                     task_inputs={
                         "response_type": "multiple paragraphs",
-                        "report_data": filtered_responses[:2048],
+                        "report_data": filtered_responses,
                         "input": message,
                     },
                 ),
@@ -210,7 +215,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         self,
         input: GeneratorPipe.Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,

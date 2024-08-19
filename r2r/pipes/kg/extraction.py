@@ -19,8 +19,6 @@ from r2r.base import (
     R2RDocumentProcessingError,
     RunLoggingSingleton,
     Triple,
-    extract_entities,
-    extract_triples,
 )
 from r2r.base.pipes.base_pipe import AsyncPipe
 
@@ -33,7 +31,7 @@ class ClientError(Exception):
     pass
 
 
-class KGExtractionPipe(AsyncPipe):
+class KGTriplesExtractionPipe(AsyncPipe):
     """
     Extracts knowledge graph information from document extractions.
     """
@@ -89,8 +87,9 @@ class KGExtractionPipe(AsyncPipe):
         """
 
         task_inputs = {"input": fragment.data}
-        if self.graph_rag:
-            task_inputs["max_knowledge_triplets"] = 100
+        task_inputs["max_knowledge_triples"] = (
+            self.kg_provider.config.max_knowledge_triples
+        )
 
         messages = self.prompt_provider._get_message_payload(
             task_prompt_name=self.kg_provider.config.kg_extraction_prompt,
@@ -105,87 +104,62 @@ class KGExtractionPipe(AsyncPipe):
                 )
 
                 kg_extraction = response.choices[0].message.content
+                entity_pattern = (
+                    r'\("entity"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\)'
+                )
+                relationship_pattern = r'\("relationship"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\${4}(\d+(?:\.\d+)?)\)'
 
-                if self.graph_rag:
-
-                    entity_pattern = (
-                        r'\("entity"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\)'
+                def parse_fn(response_str: str) -> Any:
+                    entities = re.findall(entity_pattern, response_str)
+                    relationships = re.findall(
+                        relationship_pattern, response_str
                     )
-                    relationship_pattern = r'\("relationship"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\${4}(\d+(?:\.\d+)?)\)'
 
-                    def parse_fn(response_str: str) -> Any:
-                        entities = re.findall(entity_pattern, response_str)
-                        relationships = re.findall(
-                            relationship_pattern, response_str
+                    entities_dict = {}
+                    for entity in entities:
+                        logger.info(f"Entity: {entity}")
+                        entity_value = entity[0]
+                        entity_category = entity[1]
+                        entity_description = entity[2]
+                        entities_dict[entity_value] = Entity(
+                            category=entity_category,
+                            description=entity_description,
+                            name=entity_value,
+                            document_ids=[str(fragment.document_id)],
+                            text_unit_ids=[str(fragment.id)],
+                            attributes={"fragment_text": fragment.data},
                         )
 
-                        entities_dict = {}
-                        for entity in entities:
-                            logger.info(f"Entity: {entity}")
-                            entity_value = entity[0]
-                            entity_category = entity[1]
-                            entity_description = entity[2]
-                            entities_dict[entity_value] = Entity(
-                                category=entity_category,
-                                description=entity_description,
-                                name=entity_value,
+                    relations_arr = []
+                    for relationship in relationships:
+                        logger.info(f"Relationship: {relationship}")
+                        subject = relationship[0]
+                        object = relationship[1]
+                        predicate = relationship[2]
+                        description = relationship[3]
+                        weight = float(relationship[4])
+
+                        # check if subject and object are in entities_dict
+                        relations_arr.append(
+                            Triple(
+                                id=str(uuid.uuid4()),
+                                subject=subject,
+                                predicate=predicate,
+                                object=object,
+                                description=description,
+                                weight=weight,
                                 document_ids=[str(fragment.document_id)],
                                 text_unit_ids=[str(fragment.id)],
                                 attributes={"fragment_text": fragment.data},
                             )
-
-                        relations_arr = []
-                        for relationship in relationships:
-                            logger.info(f"Relationship: {relationship}")
-                            subject = relationship[0]
-                            object = relationship[1]
-                            predicate = relationship[2]
-                            description = relationship[3]
-                            weight = float(relationship[4])
-
-                            # check if subject and object are in entities_dict
-                            relations_arr.append(
-                                Triple(
-                                    id=str(uuid.uuid4()),
-                                    subject=subject,
-                                    predicate=predicate,
-                                    object=object,
-                                    description=description,
-                                    weight=weight,
-                                    document_ids=[str(fragment.document_id)],
-                                    text_unit_ids=[str(fragment.id)],
-                                    attributes={
-                                        "fragment_text": fragment.data
-                                    },
-                                )
-                            )
-
-                        return entities_dict, relations_arr
-
-                    entities, triples = parse_fn(kg_extraction)
-                    return KGExtraction(
-                        entities=list(entities.values()), triples=triples
-                    )
-
-                else:
-                    # Parsing JSON from the response
-                    kg_json = (
-                        json.loads(
-                            kg_extraction.split("```json")[1].split("```")[0]
                         )
-                        if "```json" in kg_extraction
-                        else json.loads(kg_extraction)
-                    )
-                    llm_payload = kg_json.get("entities_and_triples", {})
 
-                    # Extract triples with detailed logging
-                    entities = extract_entities(llm_payload)
-                    triples = extract_triples(llm_payload, entities)
+                    return entities_dict, relations_arr
 
-                    # Create KG extraction object
-                    return KGExtraction(
-                        entities=entities.values(), triples=triples
-                    )
+                entities, triples = parse_fn(kg_extraction)
+                return KGExtraction(
+                    entities=list(entities.values()), triples=triples
+                )
 
             except (
                 ClientError,

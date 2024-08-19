@@ -94,7 +94,7 @@ class R2RBuilder:
         self.search_pipeline: Optional[SearchPipeline] = None
         self.rag_pipeline: Optional[RAGPipeline] = None
         self.streaming_rag_pipeline: Optional[RAGPipeline] = None
-        self.kg_pipeline: Optional[KGEnrichmentPipeline] = None
+        self.kg_enrichment_pipeline: Optional[KGEnrichmentPipeline] = None
 
         # Agent overrides
         self.assistant_factory_override: Optional[R2RAgentFactory] = None
@@ -211,8 +211,8 @@ class R2RBuilder:
         self.streaming_rag_pipeline = pipeline
         return self
 
-    def with_kg_pipeline(self, pipeline: KGEnrichmentPipeline):
-        self.kg_pipeline = pipeline
+    def with_kg_enrichment_pipeline(self, pipeline: KGEnrichmentPipeline):
+        self.kg_enrichment_pipeline = pipeline
         return self
 
     def with_assistant_factory(self, factory: R2RAgentFactory):
@@ -261,7 +261,7 @@ class R2RBuilder:
             search_pipeline=self.search_pipeline,
             rag_pipeline=self.rag_pipeline,
             streaming_rag_pipeline=self.streaming_rag_pipeline,
-            kg_pipeline=self.kg_pipeline,
+            kg_enrichment_pipeline=self.kg_enrichment_pipeline,
             *args,
             **kwargs,
         )

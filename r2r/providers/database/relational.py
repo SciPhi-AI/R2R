@@ -40,7 +40,6 @@ class PostgresRelationalDBProvider(
 
                 # Call create_table for each mixin
                 for base_class in self.__class__.__bases__:
-                    print("base_class", base_class)
                     if issubclass(base_class, DatabaseMixin):
                         base_class.create_table(self)
 

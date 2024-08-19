@@ -1,7 +1,8 @@
 import json
 import os
 from contextlib import ExitStack
-from typing import List, Optional, Union
+from typing import Optional, Union
+from uuid import UUID
 
 from r2r.base import ChunkingConfig
 
@@ -71,7 +72,6 @@ class IngestionMethods:
                     else None
                 ),
             }
-
             return await client._make_request(
                 "POST", "ingest_files", data=data, files=files
             )
@@ -79,9 +79,9 @@ class IngestionMethods:
     @staticmethod
     async def update_files(
         client,
-        file_paths: List[str],
-        document_ids: List[str],
-        metadatas: Optional[List[dict]] = None,
+        file_paths: list[str],
+        document_ids: Optional[list[UUID]] = None,
+        metadatas: Optional[list[dict]] = None,
         chunking_config_override: Optional[Union[dict, ChunkingConfig]] = None,
     ) -> dict:
         """
@@ -89,14 +89,14 @@ class IngestionMethods:
 
         Args:
             file_paths (List[str]): List of file paths to update.
-            document_ids (List[str]): List of document IDs to update.
+            document_ids (Optional[List[str]): An optional list of document IDs to update.
             metadatas (Optional[List[dict]]): List of updated metadata dictionaries for each file.
             chunking_config_override (Optional[Union[dict, ChunkingConfig]]): Custom chunking configuration.
 
         Returns:
             dict: Update results containing processed, failed, and skipped documents.
         """
-        if len(file_paths) != len(document_ids):
+        if document_ids and len(file_paths) != len(document_ids):
             raise ValueError(
                 "Number of file paths must match number of document IDs."
             )
@@ -115,11 +115,15 @@ class IngestionMethods:
             ]
 
             data = {
-                "document_ids": json.dumps(document_ids),
                 "metadatas": json.dumps(metadatas) if metadatas else None,
+                "document_ids": (
+                    json.dumps([str(doc_id) for doc_id in document_ids])
+                    if document_ids
+                    else None
+                ),
                 "chunking_config_override": (
                     json.dumps(
-                        chunking_config_override.dict()
+                        chunking_config_override.model_dump()
                         if isinstance(chunking_config_override, ChunkingConfig)
                         else chunking_config_override
                     )
@@ -127,7 +131,6 @@ class IngestionMethods:
                     else None
                 ),
             }
-
             return await client._make_request(
                 "POST", "update_files", data=data, files=files
             )

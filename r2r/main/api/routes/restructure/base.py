@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from fastapi import Depends
 
 from r2r.main.api.routes.base_router import BaseRouter
@@ -15,23 +13,16 @@ class RestructureRouter(BaseRouter):
         @self.router.post("/enrich_graph")
         @self.base_endpoint
         async def enrich_graph(
-            query: str,
-            entity_types: Optional[List[str]] = None,
-            relationships: Optional[List[str]] = None,
-            generation_config: Optional[dict] = None,
             auth_user=(
                 Depends(self.engine.providers.auth.auth_wrapper)
                 if self.engine.providers.auth
                 else None
             ),
         ):
-            request = {
-                "query": query,
-                "entity_types": entity_types,
-                "relationships": relationships,
-                "generation_config": generation_config,
-            }
-            return await self.engine.enrich_graph(request)
+            """
+            Perform graph enrichment, e.g. GraphRAG, over the ingested documents.
 
-
-# ... existing code ...
+            Returns:
+                Dict[str, Any]: Results of the graph enrichment process.
+            """
+            return await self.engine.aenrich_graph()

@@ -21,6 +21,7 @@ class KGConfig(ProviderConfig):
     kg_search_prompt: Optional[str] = "kg_search"
     kg_extraction_config: Optional[GenerationConfig] = None
     kg_store_path: Optional[str] = None
+    max_knowledge_triples: Optional[int] = 100
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:
@@ -141,6 +142,13 @@ class KGProvider(ABC):
         relationship_types: list[RelationshipType],
     ):
         """Abstract method to update the KG agent prompt."""
+        pass
+
+    @abstractmethod
+    def create_vector_index(
+        self, node_type: str, node_property: str, dimension: int
+    ) -> None:
+        """Abstract method to create a vector index."""
         pass
 
 

@@ -4,8 +4,8 @@ import json
 import os
 import threading
 import time
-import uuid
 from typing import Any, Dict, Optional, Union
+from uuid import UUID
 
 import click
 from fastapi import UploadFile
@@ -111,7 +111,7 @@ class R2RExecutionWrapper:
         self,
         file_paths: list[str],
         metadatas: Optional[list[dict]] = None,
-        document_ids: Optional[list[Union[uuid.UUID, str]]] = None,
+        document_ids: Optional[list[Union[UUID, str]]] = None,
         versions: Optional[list[str]] = None,
     ):
         if isinstance(file_paths, str):
@@ -231,7 +231,7 @@ class R2RExecutionWrapper:
         use_kg_search: bool = False,
         kg_search_generation_config: Optional[dict] = None,
         kg_search_type: str = "global",
-        kg_search_level: Optional[int] = None,
+        kg_search_level: Optional[str] = None,
         entity_types: list = [],
         relationships: list = [],
     ):
@@ -287,6 +287,8 @@ class R2RExecutionWrapper:
         kg_search_generation_config: Optional[dict] = None,
         stream: bool = False,
         rag_generation_config: Optional[dict] = None,
+        kg_search_type: str = "global",
+        kg_search_level: Optional[str] = None,
     ):
         if self.client_mode:
             response = self.client.rag(
@@ -302,6 +304,8 @@ class R2RExecutionWrapper:
                     kg_search_generation_config=GenerationConfig(
                         **(kg_search_generation_config or {})
                     ),
+                    kg_search_type=kg_search_type,
+                    kg_search_level=kg_search_level,
                 ),
                 rag_generation_config=GenerationConfig(
                     **(rag_generation_config or {})
@@ -391,7 +395,7 @@ class R2RExecutionWrapper:
             return self.app.logs(run_type_filter, max_runs)
 
     def document_chunks(self, document_id: str):
-        doc_uuid = uuid.UUID(document_id)
+        doc_uuid = UUID(document_id)
         if self.client_mode:
             return self.client.document_chunks(doc_uuid)["results"]
         else:
@@ -403,7 +407,7 @@ class R2RExecutionWrapper:
         else:
             return self.app.app_settings()
 
-    def users_overview(self, user_ids: Optional[list[uuid.UUID]] = None):
+    def users_overview(self, user_ids: Optional[list[UUID]] = None):
         if self.client_mode:
             return self.client.users_overview(user_ids)["results"]
         else:
@@ -446,11 +450,17 @@ class R2RExecutionWrapper:
         sample_ingestor = SampleDataIngestor(self)
         return sample_ingestor.ingest_sample_files(no_media=no_media)
 
-    def inspect_knowledge_graph(self, limit: int = 100) -> str:
+    def inspect_knowledge_graph(
+        self, limit: int = 100, print_descriptions: bool = False
+    ) -> str:
         if self.client_mode:
-            return self.client.inspect_knowledge_graph(limit)["results"]
+            return self.client.inspect_knowledge_graph(
+                limit, print_descriptions
+            )["results"]
         else:
-            return self.engine.inspect_knowledge_graph(limit)
+            return self.engine.inspect_knowledge_graph(
+                limit, print_descriptions
+            )
 
     def health(self) -> str:
         if self.client_mode:
