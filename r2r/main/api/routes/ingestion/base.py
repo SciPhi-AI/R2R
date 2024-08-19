@@ -6,7 +6,6 @@ from uuid import UUID
 
 import yaml
 from fastapi import Depends, File, Form, UploadFile
-from fastapi.openapi.models import Example
 
 from r2r.base import ChunkingConfig, R2RException
 from r2r.base.api.models.ingestion.responses import WrappedIngestionResponse
@@ -30,26 +29,6 @@ class IngestionRouter(BaseRouter):
         with open(yaml_path, "r") as yaml_file:
             yaml_content = yaml.safe_load(yaml_file)
         return yaml_content
-
-        # paths = yaml_content.get("paths", {})
-
-        # def extract_descriptions(endpoint):
-        #     params = endpoint.get("requestBody", {}).get("content", {}).get("multipart/form-data", {}).get("schema", {}).get("properties", {})
-        #     return {k: v.get("description", "") for k, v in params.items()}
-
-        # ingest_files = paths.get("/v1/ingest_files", {})
-        # # update_files = paths.get("/v1/update_files", {}).get("post", {})
-
-        # return {
-        #     "ingest_files": {
-        #         # "descriptions": extract_descriptions(ingest_files),
-        #         # "operation": ingest_files
-        #     },
-        #     # "update_files": {
-        #     #     "descriptions": extract_descriptions(update_files),
-        #     #     "operation": update_files
-        #     # }
-        # }
 
     def setup_routes(self):
         # Note, we use the following verbose input parameters because FastAPI struggles to handle `File` input and `Body` inputs
