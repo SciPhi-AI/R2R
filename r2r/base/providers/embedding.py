@@ -2,7 +2,6 @@ import asyncio
 import logging
 import time
 from abc import abstractmethod
-from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 from typing import Any, Optional
 
@@ -52,9 +51,7 @@ class EmbeddingProvider(Provider):
         super().__init__(config)
         self.config: EmbeddingConfig = config
         self.semaphore = asyncio.Semaphore(config.concurrent_request_limit)
-        self.thread_pool = ThreadPoolExecutor(
-            max_workers=config.concurrent_request_limit
-        )
+        self.current_requests = 0
 
     async def _execute_with_backoff_async(self, task: dict[str, Any]):
         retries = 0
@@ -129,33 +126,25 @@ class EmbeddingProvider(Provider):
         stage: PipeStage = PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ):
-        tasks = [
-            {
-                "text": text,
-                "stage": stage,
-                "purpose": purpose,
-            }
-            for text in texts
-        ]
-        return await asyncio.gather(
-            *[self._execute_with_backoff_async(task) for task in tasks]
-        )
+        task = {
+            "texts": texts,
+            "stage": stage,
+            "purpose": purpose,
+        }
+        return await self._execute_with_backoff_async(task)
 
     def get_embeddings(
         self,
         texts: list[str],
         stage: PipeStage = PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
-    ):
-        tasks = [
-            {
-                "text": text,
-                "stage": stage,
-                "purpose": purpose,
-            }
-            for text in texts
-        ]
-        return [self._execute_with_backoff_sync(task) for task in tasks]
+    ) -> list[list[float]]:
+        task = {
+            "texts": texts,
+            "stage": stage,
+            "purpose": purpose,
+        }
+        return self._execute_with_backoff_sync(task)
 
     @abstractmethod
     def rerank(

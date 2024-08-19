@@ -1,6 +1,6 @@
-import uuid
 from copy import copy
 from typing import Any, AsyncGenerator, Optional
+from uuid import UUID
 
 from r2r.base.abstractions.llm import GenerationConfig
 from r2r.base.abstractions.search import VectorSearchResult
@@ -49,7 +49,7 @@ class MultiSearchPipe(AsyncPipe):
         self,
         input: Any,
         state: Any,
-        run_id: uuid.UUID,
+        run_id: UUID,
         query_transform_generation_config: Optional[GenerationConfig] = None,
         *args: Any,
         **kwargs: Any,

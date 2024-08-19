@@ -1,6 +1,6 @@
-import uuid
 from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional
+from uuid import UUID
 
 from r2r.base import (
     AsyncState,
@@ -44,7 +44,7 @@ class GeneratorPipe(AsyncPipe):
         self,
         input: AsyncPipe.Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         rag_generation_config: GenerationConfig,
         *args: Any,
         **kwargs: Any,

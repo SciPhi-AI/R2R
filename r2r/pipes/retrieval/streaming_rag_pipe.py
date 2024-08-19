@@ -1,8 +1,8 @@
 import json
 import logging
-import uuid
 from datetime import datetime
 from typing import Any, AsyncGenerator, Generator, Optional
+from uuid import UUID
 
 from r2r.base import (
     AsyncState,
@@ -108,7 +108,7 @@ class StreamingSearchRAGPipe(SearchRAGPipe):
         return chunk.choices[0].delta.content or ""
 
     async def log_completion_record(
-        self, run_id: uuid.UUID, completion_record: CompletionRecord
+        self, run_id: UUID, completion_record: CompletionRecord
     ):
         await self.enqueue_log(
             run_id=run_id,

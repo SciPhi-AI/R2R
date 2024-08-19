@@ -1,8 +1,8 @@
 import asyncio
 import json
 import logging
-import uuid
 from typing import Any, Optional
+from uuid import UUID
 
 from r2r.base import (
     AsyncState,
@@ -98,7 +98,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         self,
         input: GeneratorPipe.Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,
@@ -133,7 +133,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         self,
         input: GeneratorPipe.Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,
@@ -184,7 +184,12 @@ class KGSearchSearchPipe(GeneratorPipe):
             )
 
             map_responses = await asyncio.gather(
-                *[process_community(report) for report in preprocessed_reports[:kg_search_settings.max_llm_queries_for_global_search]]
+                *[
+                    process_community(report)
+                    for report in preprocessed_reports[
+                        : kg_search_settings.max_llm_queries_for_global_search
+                    ]
+                ]
             )
             # Filter only the relevant responses
             filtered_responses = self.filter_responses(map_responses)
@@ -210,7 +215,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         self,
         input: GeneratorPipe.Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,

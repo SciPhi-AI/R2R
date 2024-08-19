@@ -1,8 +1,8 @@
 # TODO - Cleanup the handling for non-auth configurations
 import json
-import uuid
 from datetime import datetime, timezone
 from typing import Optional
+from uuid import UUID
 
 import psutil
 from fastapi import Body, Depends, Path, Query
@@ -147,7 +147,7 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/document_chunks")
         @self.base_endpoint
         async def document_chunks_app(
-            document_id: uuid.UUID = Query(...),
+            document_id: UUID = Query(...),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedDocumentChunkResponse:
             chunks = await self.engine.adocument_chunks(document_id)
@@ -171,7 +171,7 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/users_overview")
         @self.base_endpoint
         async def users_overview_app(
-            user_ids: list[uuid.UUID] = Query([]),
+            user_ids: list[UUID] = Query([]),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedUserOverviewResponse:
             if not auth_user.is_superuser:
@@ -185,7 +185,7 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/documents_overview")
         @self.base_endpoint
         async def documents_overview_app(
-            document_id: list[uuid.UUID] = Query([]),
+            document_id: list[UUID] = Query([]),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedDocumentOverviewResponse:
             request_user_ids = (
@@ -239,7 +239,7 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/get_group/{group_id}")
         @self.base_endpoint
         async def get_group_app(
-            group_id: uuid.UUID = Path(..., description="Group ID"),
+            group_id: UUID = Path(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupResponse:
             if not auth_user.is_superuser:
@@ -253,7 +253,7 @@ class ManagementRouter(BaseRouter):
         @self.router.put("/update_group")
         @self.base_endpoint
         async def update_group_app(
-            group_id: uuid.UUID = Body(..., description="Group ID"),
+            group_id: UUID = Body(..., description="Group ID"),
             name: Optional[str] = Body(None, description="Updated group name"),
             description: Optional[str] = Body(
                 None, description="Updated group description"
@@ -267,7 +267,7 @@ class ManagementRouter(BaseRouter):
         @self.router.delete("/delete_group/{group_id}")
         @self.base_endpoint
         async def delete_group_app(
-            group_id: uuid.UUID = Path(..., description="Group ID"),
+            group_id: UUID = Path(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupResponse:
             if not auth_user.is_superuser:
@@ -290,8 +290,8 @@ class ManagementRouter(BaseRouter):
         @self.router.post("/add_user_to_group")
         @self.base_endpoint
         async def add_user_to_group_app(
-            user_id: uuid.UUID = Body(..., description="User ID"),
-            group_id: uuid.UUID = Body(..., description="Group ID"),
+            user_id: UUID = Body(..., description="User ID"),
+            group_id: UUID = Body(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedAddUserResponse:
             if not auth_user.is_superuser:
@@ -304,8 +304,8 @@ class ManagementRouter(BaseRouter):
         @self.router.post("/remove_user_from_group")
         @self.base_endpoint
         async def remove_user_from_group_app(
-            user_id: uuid.UUID = Body(..., description="User ID"),
-            group_id: uuid.UUID = Body(..., description="Group ID"),
+            user_id: UUID = Body(..., description="User ID"),
+            group_id: UUID = Body(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupResponse:
             if not auth_user.is_superuser:
@@ -318,7 +318,7 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/get_users_in_group/{group_id}")
         @self.base_endpoint
         async def get_users_in_group_app(
-            group_id: uuid.UUID = Path(..., description="Group ID"),
+            group_id: UUID = Path(..., description="Group ID"),
             offset: int = Query(..., description="Offset"),
             limit: int = Query(..., description="limit"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
@@ -334,7 +334,7 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/get_groups_for_user/{user_id}")
         @self.base_endpoint
         async def get_groups_for_user_app(
-            user_id: uuid.UUID = Path(..., description="User ID"),
+            user_id: UUID = Path(..., description="User ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupListResponse:
             if not auth_user.is_superuser and auth_user.id != user_id:
@@ -347,7 +347,7 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/groups_overview")
         @self.base_endpoint
         async def groups_overview_app(
-            group_ids: Optional[list[uuid.UUID]] = Query(None),
+            group_ids: Optional[list[UUID]] = Query(None),
             limit: Optional[int] = Query(100, ge=1, le=1000),
             offset: Optional[int] = Query(0, ge=0),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
@@ -366,7 +366,7 @@ class ManagementRouter(BaseRouter):
         @self.router.post("/score_completion")
         @self.base_endpoint
         async def score_completion(
-            message_id: uuid.UUID = Body(..., description="Message ID"),
+            message_id: UUID = Body(..., description="Message ID"),
             score: float = Body(..., description="Completion score"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedScoreCompletionResponse:
@@ -378,7 +378,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def assign_document_to_group_app(
             document_id: str = Body(..., description="Document ID"),
-            group_id: uuid.UUID = Body(..., description="Group ID"),
+            group_id: UUID = Body(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupResponse:
             if not auth_user.is_superuser:
@@ -393,7 +393,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def remove_document_from_group_app(
             document_id: str = Body(..., description="Document ID"),
-            group_id: uuid.UUID = Body(..., description="Group ID"),
+            group_id: UUID = Body(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupResponse:
             if not auth_user.is_superuser:
@@ -415,7 +415,7 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/group/{group_id}/documents")
         @self.base_endpoint
         async def get_documents_in_group_app(
-            group_id: uuid.UUID = Path(..., description="Group ID"),
+            group_id: UUID = Path(..., description="Group ID"),
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
@@ -432,7 +432,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def assign_document_to_group_app(
             document_id: str = Body(..., description="Document ID"),
-            group_id: uuid.UUID = Body(..., description="Group ID"),
+            group_id: UUID = Body(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupResponse:
             if not auth_user.is_superuser:
@@ -447,7 +447,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def remove_document_from_group_app(
             document_id: str = Body(..., description="Document ID"),
-            group_id: uuid.UUID = Body(..., description="Group ID"),
+            group_id: UUID = Body(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupResponse:
             if not auth_user.is_superuser:

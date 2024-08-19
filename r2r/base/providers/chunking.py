@@ -30,6 +30,26 @@ class ChunkingConfig(ProviderConfig):
     def supported_providers(self) -> list[str]:
         return ["r2r", "unstructured", None]
 
+    class Config:
+        json_schema_extra = {
+            "type": "object",
+            "properties": {
+                "provider": {"type": "string"},
+                "method": {"type": "string"},
+                "chunk_size": {"type": "integer"},
+                "chunk_overlap": {"type": "integer"},
+                "max_chunk_size": {"type": "integer"},
+            },
+            "required": ["provider", "method", "chunk_size", "chunk_overlap"],
+            "example": {
+                "provider": "r2r",
+                "method": "recursive",
+                "chunk_size": 512,
+                "chunk_overlap": 20,
+                "max_chunk_size": 1024,
+            },
+        }
+
 
 class ChunkingProvider(Provider, ABC):
     def __init__(self, config: ChunkingConfig):

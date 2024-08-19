@@ -1,8 +1,8 @@
 import logging
 import time
-import uuid
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 from r2r.base import (
     CompletionRecord,
@@ -81,7 +81,7 @@ class RetrievalService(Service):
 
             # TODO - Remove these transforms once we have a better way to handle this
             for filter, value in vector_search_settings.filters.items():
-                if isinstance(value, uuid.UUID):
+                if isinstance(value, UUID):
                     vector_search_settings.filters[filter] = str(value)
 
             results = await self.pipelines.search_pipeline.run(
@@ -122,7 +122,7 @@ class RetrievalService(Service):
                     filter,
                     value,
                 ) in vector_search_settings.filters.items():
-                    if isinstance(value, uuid.UUID):
+                    if isinstance(value, UUID):
                         vector_search_settings.filters[filter] = str(value)
 
                 completion_start_time = datetime.now()
@@ -253,7 +253,7 @@ class RetrievalService(Service):
                     filter,
                     value,
                 ) in vector_search_settings.filters.items():
-                    if isinstance(value, uuid.UUID):
+                    if isinstance(value, UUID):
                         vector_search_settings.filters[filter] = str(value)
 
                 if rag_generation_config.stream:

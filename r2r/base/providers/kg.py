@@ -144,11 +144,13 @@ class KGProvider(ABC):
         """Abstract method to update the KG agent prompt."""
         pass
 
-
     @abstractmethod
-    def create_vector_index(self, node_type: str, node_property: str, dimension: int) -> None:
+    def create_vector_index(
+        self, node_type: str, node_property: str, dimension: int
+    ) -> None:
         """Abstract method to create a vector index."""
         pass
+
 
 def escape_braces(s: str) -> str:
     """
