@@ -20,9 +20,8 @@ class R2RApp:
     def _setup_routes(self):
         from .api.routes.auth import base as auth_base
         from .api.routes.ingestion import base as ingestion_base
-        from .api.routes.kg import base as kg_base
         from .api.routes.management import base as management_base
-        from .api.routes.restructure import base as kg_base
+        from .api.routes.restructure import base as restructure_base
         from .api.routes.retrieval import base as retrieval_base
 
         self.app = FastAPI()
@@ -39,14 +38,16 @@ class R2RApp:
         )
         auth_router = auth_base.AuthRouter.build_router(self.engine)
 
-        kg_router = kg_base.RestructureRouter.build_router(self.engine)
+        restructure_router = restructure_base.RestructureRouter.build_router(
+            self.engine
+        )
 
         # Include routers in the app
         self.app.include_router(ingestion_router, prefix="/v1")
         self.app.include_router(management_router, prefix="/v1")
         self.app.include_router(retrieval_router, prefix="/v1")
         self.app.include_router(auth_router, prefix="/v1")
-        self.app.include_router(kg_router, prefix="/v1")
+        self.app.include_router(restructure_router, prefix="/v1")
 
         @self.app.router.get("/v1/openapi_spec")
         async def openapi_spec():
