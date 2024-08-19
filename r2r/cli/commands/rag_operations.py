@@ -10,7 +10,9 @@ from r2r.cli.utils.timer import timer
     "--limit", default=100, help="Limit the number of relationships returned"
 )
 @click.option(
-    "--print-descriptions", is_flag=True, help="Print descriptions of entities and relationships"
+    "--print-descriptions",
+    is_flag=True,
+    help="Print descriptions of entities and relationships",
 )
 @click.pass_obj
 def inspect_knowledge_graph(obj, limit, print_descriptions):
@@ -37,7 +39,11 @@ def inspect_knowledge_graph(obj, limit, print_descriptions):
 @click.option("--kg-search-model", default=None, help="Model for KG agent")
 @click.option("--stream", is_flag=True, help="Stream the RAG response")
 @click.option("--rag-model", default=None, help="Model for RAG")
-@click.option("--kg-search-level", default=None, help="Level of cluster to use for Global KG search") 
+@click.option(
+    "--kg-search-level",
+    default=None,
+    help="Level of cluster to use for Global KG search",
+)
 @click.option("--kg-search-type", default="global", help="Local or Global")
 @click.pass_obj
 def rag(
@@ -51,7 +57,7 @@ def rag(
     kg_search_model,
     stream,
     rag_model,
-    kg_search_type, 
+    kg_search_type,
     kg_search_level,
 ):
     """Perform a RAG query."""

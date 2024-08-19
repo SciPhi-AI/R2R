@@ -1,10 +1,10 @@
 import json
 import os
 import time
-import uuid
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 
 from r2r.base import (
     KGConfig,
@@ -97,7 +97,7 @@ class Neo4jKGProvider(KGProvider):
             return value
         elif isinstance(value, (datetime, date)):
             return value.isoformat()
-        elif isinstance(value, uuid.UUID):
+        elif isinstance(value, UUID):
             return str(value)
         elif isinstance(value, Decimal):
             return float(value)
@@ -289,7 +289,7 @@ class Neo4jKGProvider(KGProvider):
         neo4j_records = self.structured_query(
             GET_COMMUNITIES_QUERY, {"level": level}
         )
-        
+
         communities = [
             Community(**record["c"]._properties, id=record["c"]["community"])
             for record in neo4j_records.records
@@ -321,7 +321,9 @@ class Neo4jKGProvider(KGProvider):
     def client(self):
         return self._driver
 
-    def create_vector_index(self, node_type: str, node_property: str, dimension: int) -> None:
+    def create_vector_index(
+        self, node_type: str, node_property: str, dimension: int
+    ) -> None:
 
         query = f"""
         CREATE VECTOR INDEX `{node_type}_{node_property}` IF NOT EXISTS

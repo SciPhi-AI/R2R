@@ -155,7 +155,11 @@ def main(
             continue
 
     print("Inspecting Knowledge Graph")
-    print(client.inspect_knowledge_graph(1000, print_descriptions=True)["results"])
+    print(
+        client.inspect_knowledge_graph(1000, print_descriptions=True)[
+            "results"
+        ]
+    )
 
     if not local_mode:
 

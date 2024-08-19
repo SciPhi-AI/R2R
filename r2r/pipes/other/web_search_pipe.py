@@ -1,7 +1,7 @@
 import json
 import logging
-import uuid
 from typing import Any, AsyncGenerator, Optional
+from uuid import UUID
 
 from r2r.base import (
     AsyncPipe,
@@ -37,7 +37,7 @@ class WebSearchPipe(SearchPipe):
     async def search(
         self,
         message: str,
-        run_id: uuid.UUID,
+        run_id: UUID,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorSearchResult, None]:
@@ -81,7 +81,7 @@ class WebSearchPipe(SearchPipe):
         self,
         input: AsyncPipe.Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         *args: Any,
         **kwargs,
     ) -> AsyncGenerator[VectorSearchResult, None]:

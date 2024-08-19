@@ -331,7 +331,9 @@ async def test_version_increment(ingestion_service, mock_vector_db):
     file_mock = UploadFile(
         filename="test.txt", file=io.BytesIO(b"Updated content")
     )
-    await ingestion_service.update_files([file_mock], [document.id], user=user)
+    await ingestion_service.update_files(
+        files=[file_mock], document_ids=[document.id], user=user
+    )
 
     calls = mock_vector_db.relational.upsert_documents_overview.call_args_list
     assert len(calls) == 2
