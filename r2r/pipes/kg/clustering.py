@@ -4,10 +4,10 @@
 """A module for clustering entities and triples into communities using hierarchical Leiden algorithm."""
 
 import asyncio
+import json
 import logging
 import uuid
 from typing import Any, AsyncGenerator, Optional
-import json
 
 import networkx as nx
 from graspologic.partition import hierarchical_leiden
@@ -187,7 +187,7 @@ class KGClusteringPipe(AsyncPipe):
                 summary = json.loads(community.summary)
             except:
                 summary = {"title": "_"}
-            return { 'id': community.id, 'title': summary['title'] }
+            return {"id": community.id, "title": summary["title"]}
 
         tasks = []
         async for community_key, community in async_iterate_dict(

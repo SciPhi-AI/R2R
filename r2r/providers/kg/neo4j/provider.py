@@ -289,7 +289,7 @@ class Neo4jKGProvider(KGProvider):
         neo4j_records = self.structured_query(
             GET_COMMUNITIES_QUERY, {"level": level}
         )
-        
+
         communities = [
             Community(**record["c"]._properties, id=record["c"]["community"])
             for record in neo4j_records.records
@@ -321,7 +321,9 @@ class Neo4jKGProvider(KGProvider):
     def client(self):
         return self._driver
 
-    def create_vector_index(self, node_type: str, node_property: str, dimension: int) -> None:
+    def create_vector_index(
+        self, node_type: str, node_property: str, dimension: int
+    ) -> None:
 
         query = f"""
         CREATE VECTOR INDEX `{node_type}_{node_property}` IF NOT EXISTS

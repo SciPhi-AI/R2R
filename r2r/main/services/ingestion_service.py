@@ -262,9 +262,6 @@ class IngestionService(Service):
                     else generate_id_from_label(id_label)
                 )
 
-                print("user.id = ", user.id)
-                print("document_id = ", document_id)
-
                 document = self._file_to_document(
                     file, user, document_id, document_metadata
                 )

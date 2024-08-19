@@ -43,7 +43,6 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
 
         self.base_model = config.base_model
         self.base_dimension = config.base_dimension
-        self.semaphore = asyncio.Semaphore(config.concurrent_request_limit)
 
     def _get_embedding_kwargs(self, **kwargs):
         embedding_kwargs = {
@@ -53,30 +52,32 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         embedding_kwargs.update(kwargs)
         return embedding_kwargs
 
-    async def _execute_task(self, task: dict[str, Any]) -> List[float]:
-        text = task["text"]
+    async def _execute_task(self, task: dict[str, Any]) -> List[List[float]]:
+        texts = task["texts"]
         kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
+
         try:
+            print(f"Getting embeddings for {len(texts)} texts")
             response = await self.litellm_aembedding(
-                input=[text],
+                input=texts,
                 **kwargs,
             )
-            return response.data[0]["embedding"]
+            print(f"Got embeddings for {len(texts)} texts")
+            return [data["embedding"] for data in response.data]
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"
             logger.error(error_msg)
             raise R2RException(error_msg, 400)
 
-    def _execute_task_sync(self, task: dict[str, Any]) -> List[float]:
-        text = task["text"]
+    def _execute_task_sync(self, task: dict[str, Any]) -> List[List[float]]:
+        texts = task["texts"]
         kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
         try:
-            return self.litellm_embedding(
-                input=[text],
+            response = self.litellm_embedding(
+                input=texts,
                 **kwargs,
-            ).data[
-                0
-            ]["embedding"]
+            )
+            return [data["embedding"] for data in response.data]
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"
             logger.error(error_msg)
@@ -134,18 +135,13 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
                 "LiteLLMEmbeddingProvider only supports search stage."
             )
 
-        tasks = [
-            {
-                "text": text,
-                "stage": stage,
-                "purpose": purpose,
-                "kwargs": kwargs,
-            }
-            for text in texts
-        ]
-        return await asyncio.gather(
-            *[self._execute_with_backoff_async(task) for task in tasks]
-        )
+        task = {
+            "texts": texts,
+            "stage": stage,
+            "purpose": purpose,
+            "kwargs": kwargs,
+        }
+        return await self._execute_with_backoff_async(task)
 
     def get_embeddings(
         self,

@@ -320,7 +320,11 @@ class ManagementService(Service):
 
     @telemetry_event("InspectKnowledgeGraph")
     async def inspect_knowledge_graph(
-        self, limit=10000, print_descriptions: bool = False, *args: Any, **kwargs: Any
+        self,
+        limit=10000,
+        print_descriptions: bool = False,
+        *args: Any,
+        **kwargs: Any,
     ):
         if self.providers.kg is None:
             raise R2RException(
@@ -334,20 +338,23 @@ class ManagementService(Service):
         """
 
         try:
-            neo4j_results = self.providers.kg.structured_query(rel_query).records
+            neo4j_results = self.providers.kg.structured_query(
+                rel_query
+            ).records
 
-            relationships_raw = [{
-                "subject": {
-                    "name": record["subject"],
-                    "description": record["subject_description"],
-                },
-                "relation": {
-                    "name": record["relation"],
-                    "description": record["relation_description"],
-                },
-                "object": {
-                    "name": record["object"],
-                    "description": record["object_description"],
+            relationships_raw = [
+                {
+                    "subject": {
+                        "name": record["subject"],
+                        "description": record["subject_description"],
+                    },
+                    "relation": {
+                        "name": record["relation"],
+                        "description": record["relation_description"],
+                    },
+                    "object": {
+                        "name": record["object"],
+                        "description": record["object_description"],
                     },
                 }
                 for record in neo4j_results
@@ -356,10 +363,22 @@ class ManagementService(Service):
             descriptions_dict = {}
             relationships = []
             for relationship in relationships_raw:
-                descriptions_dict[relationship["subject"]["name"]] = relationship["subject"]["description"]
-                descriptions_dict[relationship["object"]["name"]] = relationship["object"]["description"]
-                descriptions_dict[relationship["relation"]["name"]] = relationship["relation"]["description"]
-                relationships.append((relationship["subject"]["name"], relationship["relation"]["name"], relationship["object"]["name"]))
+                descriptions_dict[relationship["subject"]["name"]] = (
+                    relationship["subject"]["description"]
+                )
+                descriptions_dict[relationship["object"]["name"]] = (
+                    relationship["object"]["description"]
+                )
+                descriptions_dict[relationship["relation"]["name"]] = (
+                    relationship["relation"]["description"]
+                )
+                relationships.append(
+                    (
+                        relationship["subject"]["name"],
+                        relationship["relation"]["name"],
+                        relationship["object"]["name"],
+                    )
+                )
 
             # Create graph representation and group relationships
             graph, grouped_relationships = self.process_relationships(
@@ -367,7 +386,12 @@ class ManagementService(Service):
             )
 
             # Generate output
-            output = self.generate_output(grouped_relationships, graph, descriptions_dict, print_descriptions)
+            output = self.generate_output(
+                grouped_relationships,
+                graph,
+                descriptions_dict,
+                print_descriptions,
+            )
 
             return "\n".join(output)
 
@@ -431,8 +455,8 @@ class ManagementService(Service):
         self,
         grouped_relationships: Dict[str, Dict[str, List[str]]],
         graph: Dict[str, List[str]],
-        descriptions_dict: Dict[str, str], 
-        print_descriptions: bool = True
+        descriptions_dict: Dict[str, str],
+        print_descriptions: bool = True,
     ) -> List[str]:
         output = []
         # Print grouped relationships

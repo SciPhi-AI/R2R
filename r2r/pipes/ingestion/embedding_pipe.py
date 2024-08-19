@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any, AsyncGenerator, Optional, Union
 
@@ -78,8 +79,13 @@ class EmbeddingPipe(AsyncPipe):
         run_id: Any,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[Union[R2RDocumentProcessingError, VectorEntry], None]:
+    ):
         fragment_batch = []
+        tasks = []
+        batch_size = self.embedding_batch_size
+        concurrent_limit = (
+            self.embedding_provider.config.concurrent_request_limit
+        )
 
         async for item in input.message:
             if isinstance(item, R2RDocumentProcessingError):
@@ -87,28 +93,48 @@ class EmbeddingPipe(AsyncPipe):
                 continue
 
             fragment_batch.append(item)
-            if len(fragment_batch) >= self.embedding_batch_size:
-                try:
-                    for vector_entry in await self._process_batch(
-                        fragment_batch
-                    ):
+
+            if len(fragment_batch) >= batch_size:
+                tasks.append(self._process_batch(fragment_batch))
+                fragment_batch = []
+
+            if len(tasks) >= concurrent_limit:
+                results = await asyncio.gather(*tasks)
+                for result in results:
+                    for vector_entry in result:
                         yield vector_entry
-                except Exception as e:
-                    logger.error(f"Error processing batch: {e}")
-                    yield R2RDocumentProcessingError(
-                        error_message=str(e),
-                        document_id=fragment_batch[0].document_id,
-                    )
-                finally:
-                    fragment_batch.clear()
+                tasks.clear()
 
         if fragment_batch:
-            try:
-                for vector_entry in await self._process_batch(fragment_batch):
+            tasks.append(self._process_batch(fragment_batch))
+
+        if tasks:
+            results = await asyncio.gather(*tasks)
+            for result in results:
+                for vector_entry in result:
                     yield vector_entry
-            except Exception as e:
-                logger.error(f"Error processing final batch: {e}")
-                yield R2RDocumentProcessingError(
-                    error_message=str(e),
-                    document_id=fragment_batch[0].document_id,
-                )
+
+    async def _process_fragment(
+        self, fragment: DocumentFragment
+    ) -> Union[VectorEntry, R2RDocumentProcessingError]:
+        try:
+            vectors = await self.embedding_provider.async_get_embeddings(
+                [fragment.data],
+                EmbeddingProvider.PipeStage.BASE,
+            )
+            return VectorEntry(
+                fragment_id=fragment.id,
+                extraction_id=fragment.extraction_id,
+                document_id=fragment.document_id,
+                user_id=fragment.user_id,
+                group_ids=fragment.group_ids,
+                vector=Vector(data=vectors[0]),
+                text=fragment.data,
+                metadata={**fragment.metadata},
+            )
+        except Exception as e:
+            logger.error(f"Error processing fragment: {e}")
+            return R2RDocumentProcessingError(
+                error_message=str(e),
+                document_id=fragment.document_id,
+            )

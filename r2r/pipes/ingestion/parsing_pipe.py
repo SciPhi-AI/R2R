@@ -77,5 +77,4 @@ class ParsingPipe(AsyncPipe):
         async for document in input.message:
             version = versions[0] if versions else "v0"
             async for result in self._parse(document, run_id, version):
-                logger.info(f"Parsing pipe result for document, {document.id}")
                 yield result
