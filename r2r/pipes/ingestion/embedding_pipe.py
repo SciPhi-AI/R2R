@@ -81,11 +81,14 @@ class EmbeddingPipe(AsyncPipe):
         **kwargs: Any,
     ):
         fragment_batch = []
-        tasks = []
         batch_size = self.embedding_batch_size
         concurrent_limit = (
             self.embedding_provider.config.concurrent_request_limit
         )
+        tasks = []
+
+        async def process_batch(batch):
+            return await self._process_batch(batch)
 
         async for item in input.message:
             if isinstance(item, R2RDocumentProcessingError):
@@ -95,24 +98,25 @@ class EmbeddingPipe(AsyncPipe):
             fragment_batch.append(item)
 
             if len(fragment_batch) >= batch_size:
-                tasks.append(self._process_batch(fragment_batch))
+                tasks.append(
+                    asyncio.create_task(process_batch(fragment_batch))
+                )
                 fragment_batch = []
 
-            if len(tasks) >= concurrent_limit:
-                results = await asyncio.gather(*tasks)
-                for result in results:
-                    for vector_entry in result:
+            while len(tasks) >= concurrent_limit:
+                done, tasks = await asyncio.wait(
+                    tasks, return_when=asyncio.FIRST_COMPLETED
+                )
+                for task in done:
+                    for vector_entry in await task:
                         yield vector_entry
-                tasks.clear()
 
         if fragment_batch:
-            tasks.append(self._process_batch(fragment_batch))
+            tasks.append(asyncio.create_task(process_batch(fragment_batch)))
 
-        if tasks:
-            results = await asyncio.gather(*tasks)
-            for result in results:
-                for vector_entry in result:
-                    yield vector_entry
+        for task in asyncio.as_completed(tasks):
+            for vector_entry in await task:
+                yield vector_entry
 
     async def _process_fragment(
         self, fragment: DocumentFragment
