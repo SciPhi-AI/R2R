@@ -110,8 +110,9 @@ class ManagementMethods:
     async def inspect_knowledge_graph(
         client,
         limit: int = 10000,
+        print_descriptions: bool = False,
     ) -> str:
-        params = {"limit": limit}
+        params = {"limit": limit, "print_descriptions": print_descriptions}
         return await client._make_request(
             "GET", "inspect_knowledge_graph", params=params
         )

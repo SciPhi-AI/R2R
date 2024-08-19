@@ -440,11 +440,9 @@ class ManagementService(Service):
             output.extend(
                 [
                     f"\n== {subject} ==",
-                    *(f"  {relation}:" for relation in relations),
                     *(
-                        f"    - {obj}"
-                        for objects in relations.values()
-                        for obj in objects
+                        f"  {relation}:\n" + "\n".join(f"    - {obj}" for obj in relations[relation])
+                        for relation in relations
                     ),
                 ]
             )
