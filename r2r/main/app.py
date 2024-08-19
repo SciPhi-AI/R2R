@@ -22,7 +22,7 @@ class R2RApp:
         from .api.routes.ingestion import base as ingestion_base
         from .api.routes.restructure import base as kg_base
         from .api.routes.management import base as management_base
-        from .api.routes.restructure import base as kg_base
+        from .api.routes.restructure import base as restructure_base
         from .api.routes.retrieval import base as retrieval_base
 
         self.app = FastAPI()
@@ -39,7 +39,7 @@ class R2RApp:
         )
         auth_router = auth_base.AuthRouter.build_router(self.engine)
 
-        kg_router = kg_base.RestructureRouter.build_router(self.engine)
+        kg_router = restructure_base.RestructureRouter.build_router(self.engine)
 
         # Include routers in the app
         self.app.include_router(ingestion_router, prefix="/v1")
