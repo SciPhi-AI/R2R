@@ -2,7 +2,6 @@ import json
 import os
 from contextlib import ExitStack
 from typing import Optional, Union
-from uuid import UUID
 
 from r2r.base import ChunkingConfig
 
@@ -12,10 +11,10 @@ class IngestionMethods:
     @staticmethod
     async def ingest_files(
         client,
-        file_paths: List[str],
-        metadatas: Optional[List[dict]] = None,
-        document_ids: Optional[List[str]] = None,
-        versions: Optional[List[str]] = None,
+        file_paths: list[str],
+        metadatas: Optional[list[dict]] = None,
+        document_ids: Optional[list[str]] = None,
+        versions: Optional[list[str]] = None,
         chunking_config_override: Optional[Union[dict, ChunkingConfig]] = None,
     ) -> dict:
         """
@@ -80,7 +79,7 @@ class IngestionMethods:
     async def update_files(
         client,
         file_paths: list[str],
-        document_ids: Optional[list[UUID]] = None,
+        document_ids: Optional[list[str]] = None,
         metadatas: Optional[list[dict]] = None,
         chunking_config_override: Optional[Union[dict, ChunkingConfig]] = None,
     ) -> dict:

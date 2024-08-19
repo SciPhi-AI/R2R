@@ -1,5 +1,4 @@
 from typing import Optional
-from uuid import UUID
 
 from r2r.base import Token
 from r2r.base.api.models.auth.responses import UserResponse

@@ -47,7 +47,7 @@ class IngestionRouter(BaseRouter):
             files: List[UploadFile] = File(
                 ..., description=ingest_files_descriptions.get("files")
             ),
-            document_ids: Optional[list[UUID]] = Form(
+            document_ids: Optional[list[str]] = Form(
                 None,
                 description=ingest_files_descriptions.get("document_ids"),
             ),
@@ -147,7 +147,7 @@ class IngestionRouter(BaseRouter):
             files: List[UploadFile] = File(
                 ..., description=update_files_descriptions.get("files")
             ),
-            document_ids: Optional[list[UUID]] = Form(
+            document_ids: Optional[list[str]] = Form(
                 None, description=update_files_descriptions.get("document_ids")
             ),
             metadatas: Optional[list[dict]] = Form(
@@ -259,10 +259,10 @@ class IngestionRouter(BaseRouter):
     @staticmethod
     def parse_update_files_form_data(
         metadatas: Optional[list[dict]],
-        document_ids: Optional[list[UUID]],
+        document_ids: Optional[list[str]],
         chunking_config_override: Optional[str],
         filenames: list[str],
-        user_id: UUID,
+        user_id: str,
     ):
         try:
             parsed_metadatas = (
@@ -286,7 +286,7 @@ class IngestionRouter(BaseRouter):
                 ]
             else:
                 parsed_document_ids = [
-                    generate_user_document_id(filename, user_id)
+                    generate_user_document_id(filename, UUID(user_id))
                     for filename in filenames
                 ]
 
