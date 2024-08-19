@@ -6,12 +6,12 @@ import pytest
 from fastapi import Body, Depends
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.testclient import TestClient
+from r2r_python_sdk import R2RClient
 
 from r2r import (
     DocumentInfo,
     R2RApp,
     R2RBuilder,
-    R2RClient,
     R2REngine,
     R2RException,
     Token,

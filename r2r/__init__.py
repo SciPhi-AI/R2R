@@ -182,8 +182,6 @@ __all__ = [
     "R2RPipelines",
     "R2RAgents",
     ## R2R API
-    # Client
-    "R2RClient",
     # Routes
     "AuthRouter",
     "IngestionRouter",

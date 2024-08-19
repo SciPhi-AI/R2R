@@ -1,6 +1,6 @@
 """Abstractions for search functionality."""
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -15,7 +15,7 @@ class VectorSearchResult(BaseModel):
     extraction_id: UUID
     document_id: UUID
     user_id: UUID
-    group_ids: List[UUID]
+    group_ids: list[UUID]
     score: float
     text: str
     metadata: dict[str, Any]
@@ -54,13 +54,13 @@ class VectorSearchResult(BaseModel):
         }
 
 
-KGSearchResult = List[Tuple[str, List[Dict[str, Any]]]]
+KGSearchResult = list[Tuple[str, list[Dict[str, Any]]]]
 
 
 class AggregateSearchResult(BaseModel):
     """Result of an aggregate search operation."""
 
-    vector_search_results: Optional[List[VectorSearchResult]]
+    vector_search_results: Optional[list[VectorSearchResult]]
     kg_search_results: Optional[KGSearchResult] = None
 
     def __str__(self) -> str:
@@ -98,7 +98,7 @@ class VectorSearchSettings(BaseModel):
         default=False,
         description="Whether to perform a hybrid search (combining vector and keyword search)",
     )
-    selected_group_ids: List[UUID] = Field(
+    selected_group_ids: list[UUID] = Field(
         default_factory=list,
         description="Group IDs to search for",
     )

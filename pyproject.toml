@@ -9,11 +9,12 @@ description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
 readme = "README.md"
-include = ["r2r.toml", "compose.yaml", "compose.neo4j.yaml", "compose.ollama.yaml", "compose.postgres.yaml", "pyproject.toml", "alembic.ini"]
+include = ["r2r.toml", "compose.yaml", "compose.neo4j.yaml", "compose.ollama.yaml", "compose.postgres.yaml", "pyproject.toml"]
 
 [tool.poetry.dependencies]
 # Python Versions
 python = ">=3.9,<3.13"
+r2r_python_sdk = {path = "r2r-python-sdk", develop = true}
 
 # Required dependencies
 
@@ -95,6 +96,21 @@ r2r = "r2r.cli.cli:main"
 
 [tool.black]
 line-length = 79
+target-version = ['py39']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
 
 [tool.mypy]
 ignore_missing_imports = true

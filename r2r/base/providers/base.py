@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import Any, Optional, Type
 
 from pydantic import BaseModel
@@ -20,7 +20,7 @@ class ProviderConfig(BaseModel, ABC):
 
     @classmethod
     def create(cls: Type["ProviderConfig"], **kwargs: Any) -> "ProviderConfig":
-        base_args = cls.__fields__.keys()
+        base_args = cls.model_fields.keys()
         filtered_kwargs = {
             k: v if v != "None" else None
             for k, v in kwargs.items()
@@ -32,8 +32,8 @@ class ProviderConfig(BaseModel, ABC):
                 instance.extra_fields[k] = v
         return instance
 
-    @abstractproperty
     @property
+    @abstractmethod
     def supported_providers(self) -> list[str]:
         """Define a list of supported providers."""
         pass
