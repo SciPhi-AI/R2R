@@ -19,3 +19,12 @@ coverage.xml
 
 node_modules/
 dist/
+
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+go.work
+go.work.sum

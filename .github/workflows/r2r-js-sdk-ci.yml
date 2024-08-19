@@ -3,12 +3,20 @@ name: R2R JS SDK Integration CI
 on:
   push:
     branches: [main]
+    paths:
+      - 'r2r-js-sdk/**'
   pull_request:
     branches: [main]
+    paths:
+      - 'r2r-js-sdk/**'
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: r2r-js-sdk
 
     steps:
       - uses: actions/checkout@v2
