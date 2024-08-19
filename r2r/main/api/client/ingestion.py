@@ -18,7 +18,7 @@ class IngestionMethods:
         chunking_config_override: Optional[Union[dict, ChunkingConfig]] = None,
     ) -> dict:
         """
-        Ingest files into the system.
+        Ingest files into your R2R deployment
 
         Args:
             file_paths (List[str]): List of file paths to ingest.
@@ -85,7 +85,7 @@ class IngestionMethods:
         chunking_config_override: Optional[Union[dict, ChunkingConfig]] = None,
     ) -> dict:
         """
-        Update existing files in the system.
+        Update existing files in your R2R deployment.
 
         Args:
             file_paths (List[str]): List of file paths to update.
