@@ -92,9 +92,6 @@ class VectorStoragePipe(AsyncPipe):
                 connection_attempts += 1
                 try:
                     await self.store(vector_batch)
-                    logger.info(
-                        f"Stored batch of {len(vector_batch)} vectors. Connection attempt: {connection_attempts}. Time since last vector: {asyncio.get_event_loop().time() - last_vector_received:.3f}s"
-                    )
                 except Exception as e:
                     logger.error(f"Failed to store vector batch: {e}")
                 vector_batch.clear()
@@ -103,9 +100,6 @@ class VectorStoragePipe(AsyncPipe):
             connection_attempts += 1
             try:
                 await self.store(vector_batch)
-                logger.info(
-                    f"Stored final batch of {len(vector_batch)} vectors. Connection attempt: {connection_attempts}. Time since last vector: {asyncio.get_event_loop().time() - last_vector_received:.3f}s"
-                )
             except Exception as e:
                 logger.error(f"Failed to store final vector batch: {e}")
 

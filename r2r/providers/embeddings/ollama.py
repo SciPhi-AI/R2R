@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 from typing import Any, List
@@ -43,6 +42,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self.aclient = AsyncClient(host=self.base_url)
 
         self.set_prefixes(config.prefixes or {}, self.base_model)
+        self.batch_size = config.batch_size or 32
 
     def _get_embedding_kwargs(self, **kwargs):
         embedding_kwargs = {
@@ -58,12 +58,15 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
 
         try:
             embeddings = []
-            for text in texts:
-                prefixed_text = self.prefixes.get(purpose, "") + text
-                response = await self.aclient.embeddings(
-                    prompt=prefixed_text, **kwargs
+            for i in range(0, len(texts), self.batch_size):
+                batch = texts[i : i + self.batch_size]
+                prefixed_batch = [
+                    self.prefixes.get(purpose, "") + text for text in batch
+                ]
+                response = await self.aclient.embed(
+                    input=prefixed_batch, **kwargs
                 )
-                embeddings.append(response["embedding"])
+                embeddings.extend(response["embeddings"])
             return embeddings
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"
@@ -77,12 +80,15 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
 
         try:
             embeddings = []
-            for text in texts:
-                prefixed_text = self.prefixes.get(purpose, "") + text
-                response = self.client.embeddings(
-                    prompt=prefixed_text, **kwargs
+            for i in range(0, len(texts), self.batch_size):
+                batch = texts[i : i + self.batch_size]
+                prefixed_batch = [
+                    self.prefixes.get(purpose, "") + text for text in batch
+                ]
+                response = self.client.embed(
+                    model=kwargs["model"], input=prefixed_batch, **kwargs
                 )
-                embeddings.append(response["embedding"])
+                embeddings.extend(response["embeddings"])
             return embeddings
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"
