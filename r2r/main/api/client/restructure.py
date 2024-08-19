@@ -23,27 +23,3 @@ class RestructureMethods:
             )
         }
         return await client._make_request("POST", "enrich_graph", json=data)
-
-    @staticmethod
-    async def query_graph(client, query: str) -> Dict[str, Any]:
-        """
-        Query the knowledge graph.
-
-        Args:
-            query (str): The query to run against the knowledge graph.
-
-        Returns:
-            Dict[str, Any]: Results of the graph query.
-        """
-        params = {"query": query}
-        return await client._make_request("GET", "query_graph", params=params)
-
-    @staticmethod
-    async def get_graph_statistics(client) -> Dict[str, Any]:
-        """
-        Get statistics about the knowledge graph.
-
-        Returns:
-            Dict[str, Any]: Statistics about the knowledge graph.
-        """
-        return await client._make_request("GET", "graph_statistics")

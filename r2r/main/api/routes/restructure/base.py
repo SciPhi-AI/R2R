@@ -32,6 +32,3 @@ class RestructureRouter(BaseRouter):
                 "generation_config": generation_config,
             }
             return await self.engine.enrich_graph(request)
-
-
-# ... existing code ...
