@@ -31,16 +31,15 @@ class RetrievalMethods:
         data = {
             "query": query,
             "vector_search_settings": (
-                vector_search_settings.dict()
+                vector_search_settings.model_dump()
                 if vector_search_settings
                 else None
             ),
             "kg_search_settings": (
-                kg_search_settings.dict() if kg_search_settings else None
+                kg_search_settings.model_dump() if kg_search_settings else None
             ),
         }
-        response = await client._make_request("POST", "search", json=data)
-        return response
+        return await client._make_request("POST", "search", json=data)
 
     @staticmethod
     async def rag(
@@ -65,14 +64,14 @@ class RetrievalMethods:
 
         data = {
             "query": query,
-            "rag_generation_config": rag_generation_config.dict(),
+            "rag_generation_config": rag_generation_config.model_dump(),
             "vector_search_settings": (
-                vector_search_settings.dict()
+                vector_search_settings.model_dump()
                 if vector_search_settings
                 else None
             ),
             "kg_search_settings": (
-                kg_search_settings.dict() if kg_search_settings else None
+                kg_search_settings.model_dump() if kg_search_settings else None
             ),
         }
 
@@ -86,8 +85,7 @@ class RetrievalMethods:
 
             return stream_response()
         else:
-            response = await client._make_request("POST", "rag", json=data)
-            return response
+            return await client._make_request("POST", "rag", json=data)
 
     @staticmethod
     async def agent(
@@ -119,14 +117,14 @@ class RetrievalMethods:
 
         data = {
             "messages": [msg.model_dump() for msg in messages],
-            "rag_generation_config": rag_generation_config.dict(),
+            "rag_generation_config": rag_generation_config.model_dump(),
             "vector_search_settings": (
-                vector_search_settings.dict()
+                vector_search_settings.model_dump()
                 if vector_search_settings
                 else None
             ),
             "kg_search_settings": (
-                kg_search_settings.dict() if kg_search_settings else None
+                kg_search_settings.model_dump() if kg_search_settings else None
             ),
             "task_prompt_override": task_prompt_override,
             "include_title_if_available": include_title_if_available,
@@ -142,5 +140,4 @@ class RetrievalMethods:
 
             return stream_response()
         else:
-            response = await client._make_request("POST", "agent", json=data)
-            return response
+            return await client._make_request("POST", "agent", json=data)

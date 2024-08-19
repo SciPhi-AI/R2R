@@ -1,4 +1,3 @@
-import uuid
 from typing import Optional
 
 from r2r.base import Token
@@ -90,9 +89,11 @@ class AuthMethods:
 
     @staticmethod
     async def delete_user(
-        client, user_id: uuid.UUID, password: Optional[str] = None
+        client, user_id: str, password: Optional[str] = None
     ) -> dict:
-        data = {"user_id": str(user_id), "password": password}
+        data = {"user_id": user_id}
+        if password:
+            data["password"] = password
         response = await client._make_request("DELETE", "user", json=data)
         client.access_token = None
         client._refresh_token = None

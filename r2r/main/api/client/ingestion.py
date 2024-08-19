@@ -1,6 +1,5 @@
 import json
 import os
-import uuid
 from contextlib import ExitStack
 from typing import List, Optional, Union
 
@@ -14,7 +13,7 @@ class IngestionMethods:
         client,
         file_paths: List[str],
         metadatas: Optional[List[dict]] = None,
-        document_ids: Optional[List[Union[uuid.UUID, str]]] = None,
+        document_ids: Optional[List[str]] = None,
         versions: Optional[List[str]] = None,
         chunking_config_override: Optional[Union[dict, ChunkingConfig]] = None,
     ) -> dict:
@@ -24,7 +23,7 @@ class IngestionMethods:
         Args:
             file_paths (List[str]): List of file paths to ingest.
             metadatas (Optional[List[dict]]): List of metadata dictionaries for each file.
-            document_ids (Optional[List[Union[uuid.UUID, str]]]): List of document IDs.
+            document_ids (Optional[List[str]]): List of document IDs.
             versions (Optional[List[str]]): List of version strings for each file.
             chunking_config_override (Optional[Union[dict, ChunkingConfig]]): Custom chunking configuration.
 
@@ -64,7 +63,7 @@ class IngestionMethods:
                 "versions": json.dumps(versions) if versions else None,
                 "chunking_config_override": (
                     json.dumps(
-                        chunking_config_override.dict()
+                        chunking_config_override.model_dump()
                         if isinstance(chunking_config_override, ChunkingConfig)
                         else chunking_config_override
                     )
