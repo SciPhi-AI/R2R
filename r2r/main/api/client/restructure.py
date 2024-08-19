@@ -22,7 +22,7 @@ class RestructureMethods:
                 [doc.model_dump() for doc in documents] if documents else None
             )
         }
-        return await client._make_request("POST", "kg/enrich_graph", json=data)
+        return await client._make_request("POST", "enrich_graph", json=data)
 
     @staticmethod
     async def query_graph(client, query: str) -> Dict[str, Any]:
@@ -36,9 +36,7 @@ class RestructureMethods:
             Dict[str, Any]: Results of the graph query.
         """
         params = {"query": query}
-        return await client._make_request(
-            "GET", "kg/query_graph", params=params
-        )
+        return await client._make_request("GET", "query_graph", params=params)
 
     @staticmethod
     async def get_graph_statistics(client) -> Dict[str, Any]:
@@ -48,4 +46,4 @@ class RestructureMethods:
         Returns:
             Dict[str, Any]: Statistics about the knowledge graph.
         """
-        return await client._make_request("GET", "kg/graph_statistics")
+        return await client._make_request("GET", "graph_statistics")
