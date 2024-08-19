@@ -57,12 +57,10 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
 
         try:
-            print(f"Getting embeddings for {len(texts)} texts")
             response = await self.litellm_aembedding(
                 input=texts,
                 **kwargs,
             )
-            print(f"Got embeddings for {len(texts)} texts")
             return [data["embedding"] for data in response.data]
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"

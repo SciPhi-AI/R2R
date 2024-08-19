@@ -85,7 +85,7 @@ class EmbeddingPipe(AsyncPipe):
         concurrent_limit = (
             self.embedding_provider.config.concurrent_request_limit
         )
-        tasks = []
+        tasks = set()
 
         async def process_batch(batch):
             return await self._process_batch(batch)
@@ -98,9 +98,7 @@ class EmbeddingPipe(AsyncPipe):
             fragment_batch.append(item)
 
             if len(fragment_batch) >= batch_size:
-                tasks.append(
-                    asyncio.create_task(process_batch(fragment_batch))
-                )
+                tasks.add(asyncio.create_task(process_batch(fragment_batch)))
                 fragment_batch = []
 
             while len(tasks) >= concurrent_limit:
@@ -112,7 +110,7 @@ class EmbeddingPipe(AsyncPipe):
                         yield vector_entry
 
         if fragment_batch:
-            tasks.append(asyncio.create_task(process_batch(fragment_batch)))
+            tasks.add(asyncio.create_task(process_batch(fragment_batch)))
 
         for task in asyncio.as_completed(tasks):
             for vector_entry in await task:

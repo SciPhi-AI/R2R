@@ -59,17 +59,7 @@ class EmbeddingProvider(Provider):
         while retries < self.config.max_retries:
             try:
                 async with self.semaphore:
-                    self.current_requests += 1  # Increment the counter
-                    logger.info(
-                        f"Current concurrent requests: {self.current_requests}"
-                    )
-                    try:
-                        return await self._execute_task(task)
-                    finally:
-                        self.current_requests -= 1  # Decrement the counter
-                        logger.info(
-                            f"Current concurrent requests after completion: {self.current_requests}"
-                        )
+                    return await self._execute_task(task)
             except Exception as e:
                 logger.warning(
                     f"Request failed (attempt {retries + 1}): {str(e)}"

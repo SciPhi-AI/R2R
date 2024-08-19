@@ -44,31 +44,46 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
 
         self.set_prefixes(config.prefixes or {}, self.base_model)
 
-    async def _execute_task(self, task: dict[str, Any]) -> List[float]:
-        text = task["text"]
+    def _get_embedding_kwargs(self, **kwargs):
+        embedding_kwargs = {
+            "model": self.base_model,
+        }
+        embedding_kwargs.update(kwargs)
+        return embedding_kwargs
+
+    async def _execute_task(self, task: dict[str, Any]) -> List[List[float]]:
+        texts = task["texts"]
         purpose = task.get("purpose", EmbeddingPurpose.INDEX)
-        text = self.prefixes.get(purpose, "") + text
+        kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
 
         try:
-            response = await self.aclient.embeddings(
-                prompt=text, model=self.base_model
-            )
-            return response["embedding"]
+            embeddings = []
+            for text in texts:
+                prefixed_text = self.prefixes.get(purpose, "") + text
+                response = await self.aclient.embeddings(
+                    prompt=prefixed_text, **kwargs
+                )
+                embeddings.append(response["embedding"])
+            return embeddings
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"
             logger.error(error_msg)
             raise R2RException(error_msg, 400)
 
-    def _execute_task_sync(self, task: dict[str, Any]) -> List[float]:
-        text = task["text"]
+    def _execute_task_sync(self, task: dict[str, Any]) -> List[List[float]]:
+        texts = task["texts"]
         purpose = task.get("purpose", EmbeddingPurpose.INDEX)
-        text = self.prefixes.get(purpose, "") + text
+        kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
 
         try:
-            response = self.client.embeddings(
-                prompt=text, model=self.base_model
-            )
-            return response["embedding"]
+            embeddings = []
+            for text in texts:
+                prefixed_text = self.prefixes.get(purpose, "") + text
+                response = self.client.embeddings(
+                    prompt=prefixed_text, **kwargs
+                )
+                embeddings.append(response["embedding"])
+            return embeddings
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"
             logger.error(error_msg)
@@ -79,6 +94,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         text: str,
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
+        **kwargs,
     ) -> List[float]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
@@ -86,17 +102,20 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             )
 
         task = {
-            "text": text,
+            "texts": [text],
             "stage": stage,
             "purpose": purpose,
+            "kwargs": kwargs,
         }
-        return await self._execute_with_backoff_async(task)
+        result = await self._execute_with_backoff_async(task)
+        return result[0]
 
     def get_embedding(
         self,
         text: str,
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
+        **kwargs,
     ) -> List[float]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
@@ -104,55 +123,53 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             )
 
         task = {
-            "text": text,
+            "texts": [text],
             "stage": stage,
             "purpose": purpose,
+            "kwargs": kwargs,
         }
-        return self._execute_with_backoff_sync(task)
+        result = self._execute_with_backoff_sync(task)
+        return result[0]
 
     async def async_get_embeddings(
         self,
         texts: List[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
+        **kwargs,
     ) -> List[List[float]]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OllamaEmbeddingProvider only supports search stage."
             )
 
-        tasks = [
-            {
-                "text": text,
-                "stage": stage,
-                "purpose": purpose,
-            }
-            for text in texts
-        ]
-        return await asyncio.gather(
-            *[self._execute_with_backoff_async(task) for task in tasks]
-        )
+        task = {
+            "texts": texts,
+            "stage": stage,
+            "purpose": purpose,
+            "kwargs": kwargs,
+        }
+        return await self._execute_with_backoff_async(task)
 
     def get_embeddings(
         self,
         texts: List[str],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
+        **kwargs,
     ) -> List[List[float]]:
         if stage != EmbeddingProvider.PipeStage.BASE:
             raise ValueError(
                 "OllamaEmbeddingProvider only supports search stage."
             )
 
-        tasks = [
-            {
-                "text": text,
-                "stage": stage,
-                "purpose": purpose,
-            }
-            for text in texts
-        ]
-        return [self._execute_with_backoff_sync(task) for task in tasks]
+        task = {
+            "texts": texts,
+            "stage": stage,
+            "purpose": purpose,
+            "kwargs": kwargs,
+        }
+        return self._execute_with_backoff_sync(task)
 
     def rerank(
         self,
