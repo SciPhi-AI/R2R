@@ -20,7 +20,7 @@ class R2RApp:
     def _setup_routes(self):
         from .api.routes.auth import base as auth_base
         from .api.routes.ingestion import base as ingestion_base
-        from .api.routes.kg import base as kg_base
+        from .api.routes.restructure import base as kg_base
         from .api.routes.management import base as management_base
         from .api.routes.restructure import base as kg_base
         from .api.routes.retrieval import base as retrieval_base
