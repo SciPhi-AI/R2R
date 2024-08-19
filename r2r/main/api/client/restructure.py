@@ -1,13 +1,14 @@
 from typing import Any, Dict, List, Optional
 
 from r2r.base import Document
+from r2r.base.api.models import KGEnrichementResponse
 
 
 class RestructureMethods:
     @staticmethod
     async def enrich_graph(
         client, documents: Optional[List[Document]] = None
-    ) -> Dict[str, Any]:
+    ) -> KGEnrichementResponse:
         """
         Perform graph enrichment on the given documents.
 
