@@ -3,7 +3,7 @@ from typing import Any, AsyncGenerator
 
 import pytest
 
-from r2r import AsyncPipe, AsyncPipeline, PipeType
+from r2r_core import AsyncPipe, AsyncPipeline, PipeType
 
 
 class MultiplierPipe(AsyncPipe):

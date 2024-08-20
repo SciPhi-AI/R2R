@@ -4,15 +4,15 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from r2r.parsers.media.docx_parser import DOCXParser
-from r2r.parsers.media.pdf_parser import PDFParser
-from r2r.parsers.media.ppt_parser import PPTParser
-from r2r.parsers.structured.csv_parser import CSVParser
-from r2r.parsers.structured.json_parser import JSONParser
-from r2r.parsers.structured.xlsx_parser import XLSXParser
-from r2r.parsers.text.html_parser import HTMLParser
-from r2r.parsers.text.md_parser import MDParser
-from r2r.parsers.text.text_parser import TextParser
+from r2r_core.parsers.media.docx_parser import DOCXParser
+from r2r_core.parsers.media.pdf_parser import PDFParser
+from r2r_core.parsers.media.ppt_parser import PPTParser
+from r2r_core.parsers.structured.csv_parser import CSVParser
+from r2r_core.parsers.structured.json_parser import JSONParser
+from r2r_core.parsers.structured.xlsx_parser import XLSXParser
+from r2r_core.parsers.text.html_parser import HTMLParser
+from r2r_core.parsers.text.md_parser import MDParser
+from r2r_core.parsers.text.text_parser import TextParser
 
 
 @pytest.fixture(scope="session", autouse=True)

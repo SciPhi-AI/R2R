@@ -3,8 +3,8 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from r2r.base import DatabaseConfig, Vector, VectorEntry
-from r2r.providers import PostgresDBProvider
+from r2r_core.base import DatabaseConfig, Vector, VectorEntry
+from r2r_core.providers import PostgresDBProvider
 
 
 @pytest.fixture
