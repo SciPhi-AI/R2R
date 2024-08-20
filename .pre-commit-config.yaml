@@ -15,11 +15,11 @@ repos:
         entry: poetry run isort
         language: system
         types: [python]
-        args: ["--check", "--diff"]
+        args: ["--profile", "black", "--filter-files"]
 
       - id: black
         name: black
         entry: poetry run black
         language: system
         types: [python]
-        args: ["--check", "--diff"]
+        exclude: ^(.venv|venv|env)/

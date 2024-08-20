@@ -3,20 +3,21 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi import Body, Depends
-from fastapi.security import OAuth2PasswordBearer
-from fastapi.testclient import TestClient
-
-from r2r import (
+from core import (
     DocumentInfo,
     R2RApp,
     R2RBuilder,
-    R2RClient,
     R2REngine,
     R2RException,
     Token,
     UserResponse,
 )
+from fastapi import Body, Depends
+from fastapi.security import OAuth2PasswordBearer
+from fastapi.testclient import TestClient
+
+# TODO: need to import this from the package, not from the local directory
+from r2r_python_sdk.sdk.client import R2RClient
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 

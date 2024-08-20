@@ -5,8 +5,7 @@ import uuid
 from uuid import UUID
 
 import pytest
-
-from r2r import (
+from core import (
     LocalRunLoggingProvider,
     LoggingConfig,
     PostgresLoggingConfig,

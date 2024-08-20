@@ -2,8 +2,7 @@ import asyncio
 from typing import Any, AsyncGenerator
 
 import pytest
-
-from r2r import AsyncPipe, AsyncPipeline, PipeType
+from core import AsyncPipe, AsyncPipeline, PipeType
 
 
 class MultiplierPipe(AsyncPipe):

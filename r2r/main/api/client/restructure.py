@@ -24,3 +24,4 @@ class RestructureMethods:
             )
         }
         return await client._make_request("POST", "enrich_graph", json=data)
+    

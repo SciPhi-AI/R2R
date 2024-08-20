@@ -3,9 +3,8 @@ from unittest.mock import patch
 import click
 import pytest
 from click.testing import CliRunner
-
-from r2r.cli.cli import cli
-from r2r.cli.utils.param_types import JSON
+from core.cli.cli import cli
+from core.cli.utils.param_types import JSON
 
 
 @pytest.fixture
@@ -242,11 +241,14 @@ def test_json_param_type():
 
 
 def test_docker_down_command(runner):
-    with patch(
-        "r2r.cli.commands.server_operations.bring_down_docker_compose"
-    ) as mock_bring_down, patch(
-        "r2r.cli.commands.server_operations.remove_r2r_network"
-    ) as mock_remove_network:
+    with (
+        patch(
+            "r2r.cli.commands.server_operations.bring_down_docker_compose"
+        ) as mock_bring_down,
+        patch(
+            "r2r.cli.commands.server_operations.remove_r2r_network"
+        ) as mock_remove_network,
+    ):
 
         mock_bring_down.return_value = 0
         result = runner.invoke(cli, ["docker-down"])
@@ -271,15 +273,14 @@ def test_docker_down_command(runner):
 
 def test_generate_report_command():
     runner = CliRunner()
-    with patch("subprocess.check_output") as mock_check_output, patch(
-        "platform.system"
-    ) as mock_system, patch("platform.release") as mock_release, patch(
-        "platform.version"
-    ) as mock_version, patch(
-        "platform.machine"
-    ) as mock_machine, patch(
-        "platform.processor"
-    ) as mock_processor:
+    with (
+        patch("subprocess.check_output") as mock_check_output,
+        patch("platform.system") as mock_system,
+        patch("platform.release") as mock_release,
+        patch("platform.version") as mock_version,
+        patch("platform.machine") as mock_machine,
+        patch("platform.processor") as mock_processor,
+    ):
 
         mock_check_output.side_effect = [
             "container1\tname1\tUp 2 hours\n",
