@@ -6,7 +6,8 @@ from typing import Any, Callable, Dict, Optional
 from colorama import Fore, Style, init
 from deepdiff import DeepDiff
 
-from r2r.main.api.client import R2RClient
+# TODO: need to import this from the package, not from the local directory
+from r2r_python_sdk.r2r.client import R2RClient
 
 
 def _to_snake_case(name: str) -> str:

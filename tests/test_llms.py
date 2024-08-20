@@ -4,9 +4,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from r2r import CompletionConfig, GenerationConfig
-from r2r.base.abstractions.llm import LLMChatCompletion, LLMChatCompletionChunk
-from r2r.providers import LiteCompletionProvider, OpenAICompletionProvider
+from r2r_core import CompletionConfig, GenerationConfig
+from r2r_core.base.abstractions.llm import (
+    LLMChatCompletion,
+    LLMChatCompletionChunk,
+)
+from r2r_core.providers import LiteCompletionProvider, OpenAICompletionProvider
 
 
 class MockCompletionResponse:
