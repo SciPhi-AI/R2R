@@ -4,7 +4,7 @@ from unittest.mock import Mock, mock_open, patch
 import pytest
 import toml
 
-from r2r import DocumentType, R2RConfig
+from r2r_core import DocumentType, R2RConfig
 
 
 @pytest.fixture(scope="session", autouse=True)

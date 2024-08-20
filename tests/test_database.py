@@ -4,14 +4,14 @@ import uuid
 import pytest
 from dotenv import load_dotenv
 
-from r2r import (
+from r2r_core import (
     DatabaseConfig,
     DatabaseProvider,
     Vector,
     VectorEntry,
     generate_id_from_label,
 )
-from r2r.providers import PostgresDBProvider
+from r2r_core.providers import PostgresDBProvider
 
 load_dotenv()
 

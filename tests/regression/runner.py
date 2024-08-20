@@ -4,7 +4,7 @@ import os
 from typing import List
 
 from colorama import Fore, Style, init
-from r2r_python_sdk import R2RClient
+from r2r import R2RClient
 from test_cases.base import BaseTest, RegressionTest
 
 

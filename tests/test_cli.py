@@ -4,8 +4,8 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from r2r.cli.cli import cli
-from r2r.cli.utils.param_types import JSON
+from r2r_core.cli.cli import cli
+from r2r_core.cli.utils.param_types import JSON
 
 
 @pytest.fixture

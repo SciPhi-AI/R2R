@@ -4,11 +4,11 @@ on:
   push:
     branches: [main]
     paths:
-      - 'r2r-js-sdk/**'
+      - 'r2r_js_sdk/**'
   pull_request:
     branches: [main]
     paths:
-      - 'r2r-js-sdk/**'
+      - 'r2r_js_sdk/**'
 
 jobs:
   test:
@@ -16,7 +16,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: r2r-js-sdk
+        working-directory: r2r_js_sdk
 
     steps:
       - uses: actions/checkout@v2

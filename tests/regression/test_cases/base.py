@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, Optional
 
 from colorama import Fore, Style, init
 from deepdiff import DeepDiff
-from r2r_python_sdk import R2RClient
+from r2r import R2RClient
 
 
 def _to_snake_case(name: str) -> str:

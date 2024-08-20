@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from r2r import (
+from r2r_core import (
     AuthConfig,
     BCryptConfig,
     BCryptProvider,
@@ -13,7 +13,7 @@ from r2r import (
     R2RAuthProvider,
     R2RException,
 )
-from r2r.main.services import AuthService
+from r2r_core.main.services import AuthService
 
 
 # Fixture for PostgresDBProvider

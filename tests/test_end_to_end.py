@@ -5,7 +5,7 @@ import uuid
 import pytest
 from fastapi.datastructures import UploadFile
 
-from r2r import (
+from r2r_core import (
     Document,
     DocumentInfo,
     DocumentStatus,

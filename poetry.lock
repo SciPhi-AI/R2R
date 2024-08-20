@@ -3664,7 +3664,7 @@ nest-asyncio = "^1.6.0"
 
 [package.source]
 type = "directory"
-url = "r2r-python-sdk"
+url = "r2r_python_sdk"
 
 [[package]]
 name = "redis"

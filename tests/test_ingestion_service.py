@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, MagicMock, Mock
 import pytest
 from fastapi import UploadFile
 
-from r2r import R2RAgents
-from r2r.base import (
+from r2r_core import R2RAgents
+from r2r_core.base import (
     Document,
     DocumentInfo,
     R2RDocumentProcessingError,
@@ -18,8 +18,8 @@ from r2r.base import (
     UserResponse,
     generate_id_from_label,
 )
-from r2r.main import R2RPipelines, R2RProviders
-from r2r.main.services.ingestion_service import IngestionService
+from r2r_core.main import R2RPipelines, R2RProviders
+from r2r_core.main.services.ingestion_service import IngestionService
 
 logger = logging.getLogger(__name__)
 
