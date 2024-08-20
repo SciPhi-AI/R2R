@@ -4,10 +4,10 @@
 
 # import pytest
 
-# from r2r.base.abstractions.document import DocumentFragment
-# from r2r.base.abstractions.graph import Entity, Triple
-# from r2r.base.providers.kg import KGConfig
-# from r2r.providers.kg.neo4j.provider import Neo4jKGProvider
+# from r2r_core.base.abstractions.document import DocumentFragment
+# from r2r_core.base.abstractions.graph import Entity, Triple
+# from r2r_core.base.providers.kg import KGConfig
+# from r2r_core.providers.kg.neo4j.provider import Neo4jKGProvider
 
 
 # @pytest.fixture

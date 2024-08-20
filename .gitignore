@@ -1,3 +1,4 @@
+**/.DS_Store
 .env
 .DS_Store
 *.gguf
@@ -15,3 +16,15 @@ coverage.xml
 
 **/*.sqlite*
 **/*.sqlite3*
+
+node_modules/
+dist/
+
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+go.work
+go.work.sum
