@@ -134,7 +134,7 @@ class R2RAsyncClient:
             except httpx.RequestError as e:
                 raise R2RException(
                     status_code=500, message=f"Request failed: {str(e)}"
-                )
+                ) from e
 
 
     async def _make_streaming_request(self, method: str, endpoint: str, **kwargs) -> AsyncGenerator[str, None]:
