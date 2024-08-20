@@ -42,6 +42,11 @@ from .retrieval.responses import (
     WrappedSearchResponse,
 )
 
+from .restructure.responses import (
+    KGEnrichementResponse,
+    WrappedKGEnrichementResponse,
+)
+
 __all__ = [
     # Auth Responses
     "GenericMessageResponse",
@@ -52,6 +57,9 @@ __all__ = [
     "FailedDocument",
     "IngestionResponse",
     "WrappedIngestionResponse",
+    # Restructure Responses
+    "KGEnrichementResponse",
+    "WrappedKGEnrichementResponse",
     # Management Responses
     "PromptResponse",
     "ServerStats",

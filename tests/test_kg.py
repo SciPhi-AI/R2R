@@ -1,139 +1,151 @@
-# import json
-# import uuid
-# from unittest.mock import Mock, patch
+import pytest
+import asyncio
+from unittest.mock import AsyncMock, MagicMock
+from core.pipes.kg.extraction import KGTriplesExtractionPipe
+from core.pipes.kg.clustering import KGClusteringPipe
+from core.base import DocumentFragment, KGExtraction, Entity, Triple, Community
+from uuid import uuid4
 
-# import pytest
+@pytest.fixture
+def kg_extraction_pipe():
+    return KGTriplesExtractionPipe(
+        kg_provider=MagicMock(),
+        llm_provider=MagicMock(),
+        prompt_provider=MagicMock(),
+        chunking_provider=MagicMock()
+    )
 
-# from r2r_core.base.abstractions.document import DocumentFragment
-# from r2r_core.base.abstractions.graph import Entity, Triple
-# from r2r_core.base.providers.kg import KGConfig
-# from r2r_core.providers.kg.neo4j.provider import Neo4jKGProvider
+@pytest.fixture
+def document_fragment():
+    return DocumentFragment(
+        id=uuid4(),
+        extraction_id=uuid4(),
+        document_id=uuid4(),
+        user_id=uuid4(),
+        group_ids=[uuid4()],
+        data="Test data",
+        metadata={}
+    )
+@pytest.mark.asyncio
+async def test_extract_kg_success(kg_extraction_pipe, document_fragment):
+    kg_extraction_pipe.llm_provider.aget_completion = AsyncMock(return_value=MagicMock(
+        choices=[MagicMock(message=MagicMock(content=(
+            '("entity"$$$$Entity1$$$$Category1$$$$Description1)'
+            '("relationship"$$$$Entity1$$$$Entity2$$$$Predicate$$$$Description$$$$0.8)'
+        )))]
+    ))
+    result = await kg_extraction_pipe.extract_kg(document_fragment)
+    
+    assert isinstance(result, KGExtraction)
+    assert len(result.entities) == 1
+    assert len(result.triples) == 1
+    assert result.entities[0].name == "Entity1"
+    assert result.triples[0].subject == "Entity1"
+    assert result.triples[0].object == "Entity2"
 
+@pytest.mark.asyncio
+async def test_run_logic(kg_extraction_pipe, document_fragment):
+    async def mock_input_generator():
+        for _ in range(2):
+            yield document_fragment
+    
+    input_mock = MagicMock()
+    input_mock.message = mock_input_generator()
+    
+    kg_extraction_pipe.extract_kg = AsyncMock(return_value=KGExtraction(
+        entities=[Entity(name="TestEntity", category="TestCategory", description="TestDescription")],
+        triples=[Triple(subject="TestSubject", predicate="TestPredicate", object="TestObject")]
+    ))
+    
+    results = [result async for result in kg_extraction_pipe._run_logic(input_mock, MagicMock(), "run_id")]
+    
+    assert len(results) == 2
+    for result in results:
+        assert isinstance(result, KGExtraction)
+        assert len(result.entities) == 1
+        assert len(result.triples) == 1
 
-# @pytest.fixture
-# def neo4j_kg_provider():
-#     extra_fields = {
-#         "user": "neo4j",
-#         "password": "ineedastrongerpassword",
-#         "url": "bolt://localhost:7688",
-#         "database": "neo4j",
-#     }
-#     config = KGConfig(provider="neo4j", extra_fields=extra_fields)
-#     return Neo4jKGProvider(config)
+@pytest.fixture
+def mock_kg_provider(mocker):
+    provider = mocker.Mock()
+    provider.get_all_entities.return_value = [
+        Entity(name=f"Entity{i}", category=f"Category{i%2+1}", description=f"Description{i}")
+        for i in range(1, 4)
+    ]
 
+    provider.get_entities.return_value = [
+        Entity(name=f"Entity{i}", category=f"Category{i%2+1}", description=f"Description{i}")
+        for i in range(1, 4)
+    ]
 
-# @pytest.fixture(autouse=True)
-# def clean_graph(neo4j_kg_provider):
-#     neo4j_kg_provider.delete_all_nodes()
-#     yield
-#     neo4j_kg_provider.delete_all_nodes()
+    provider.get_triples.return_value = [
+        Triple(subject=f"Entity{i}", predicate=f"Predicate{i%2+1}", object=f"Entity{i+1}")
+        for i in range(1, 4)
+    ]
 
+    provider.get_communities.return_value = [
+        Community(id=f"Community{i}", level=f"Level{i%2+1}", short_id=f"Short{i}", title=f"Title{i}", entity_ids=[f"Entity{i}"], relationship_ids=[f"Relationship{i}"])
+        for i in range(1, 4)
+    ]
 
-# def get_uuid():
-#     return str(uuid.uuid4())
+    return provider
 
+@pytest.fixture
+def mock_embedding_provider(mocker):
+    provider = mocker.Mock()
+    provider.get_embeddings.return_value = [
+        [0.1*i, 0.2*i, 0.3*i] for i in range(1, 4)
+    ]
+    provider.async_get_embedding = AsyncMock(return_value=[0.1, 0.2, 0.3])
+    return provider
 
-# @pytest.fixture
-# def test_chunks():
-#     return [
-#         DocumentFragment(
-#             id=get_uuid(),
-#             data="Test chunk 1",
-#             metadata={"testkey": "testvalue"},
-#             document_id=get_uuid(),
-#             extraction_id=get_uuid(),
-#         ),
-#         DocumentFragment(
-#             id=get_uuid(),
-#             data="Test chunk 2",
-#             metadata={"testkey": "testvalue"},
-#             document_id=get_uuid(),
-#             extraction_id=get_uuid(),
-#         ),
-#     ]
+@pytest.fixture
+def mock_completion_provider(mocker):
+    provider = mocker.Mock()
+    
+    async def mock_aget_completion(*args, **kwargs):
+        return mocker.Mock(
+            choices=[mocker.Mock(message=mocker.Mock(content="Cluster summary"))]
+        )
+    
+    provider.aget_completion = mock_aget_completion
+    return provider
 
+@pytest.fixture
+def mock_prompt_provider(mocker):
+    provider = mocker.Mock()
+    provider.get_message_payload.return_value = mocker.Mock(
+        task_prompt_name="graphrag_community_reports",
+        task_inputs={"input_text": "Test input text"}
+    )
+    provider._get_message_payload.return_value = {
+        "task_prompt_name": "graphrag_community_reports",
+        "task_inputs": {"input_text": "Test input text"}
+    }
+    return provider
 
-# @pytest.fixture
-# def test_entities():
-#     return [
-#         Entity(
-#             id=get_uuid(),
-#             category="Test category 1",
-#             subcategory=None,
-#             value="Test entity 1",
-#             description="Test entity 1 description",
-#             description_embedding=[1.0, 2.0, 3.0],
-#             name_embedding=[1.0, 2.0, 3.0],
-#             graph_embedding=[1.0, 2.0, 3.0],
-#             community_ids=[get_uuid()],
-#             text_unit_ids=[get_uuid()],
-#             document_ids=[get_uuid(), get_uuid()],
-#             rank=1,
-#             attributes={"testkey": "testvalue"},
-#         ),
-#         # Entity(id=get_uuid(), category="Test category 2", subcategory=None, value="Test entity 2", description="Test entity 2 description", description_embedding=[1.0, 2.0, 3.0], name_embedding=[1.0, 2.0, 3.0], graph_embedding=[1.0, 2.0, 3.0], community_ids=[get_uuid()], text_unit_ids=[get_uuid()], document_ids=[get_uuid(), get_uuid()], rank=1, attributes={"testkey": "testvalue"})
-#     ]
+@pytest.fixture
+def kg_clustering_pipe(mocker, mock_kg_provider, mock_embedding_provider, mock_completion_provider, mock_prompt_provider):
+    return KGClusteringPipe(
+        kg_provider=mock_kg_provider,
+        embedding_provider=mock_embedding_provider,
+        llm_provider=mock_completion_provider,
+        prompt_provider=mock_prompt_provider,
+        n_clusters=2
+    )
 
+@pytest.mark.asyncio
+async def test_cluster_kg(kg_clustering_pipe):
+    triples = [
+        Triple(subject="Entity1", predicate="relatedTo", object="Entity2"),
+        Triple(subject="Entity2", predicate="relatedTo", object="Entity3"),
+        Triple(subject="Entity3", predicate="relatedTo", object="Entity1")
+    ]
 
-# @pytest.fixture
-# def test_triples():
-#     return [
-#         Triple(
-#             id=get_uuid(),
-#             subject=get_uuid(),
-#             predicate="test_predicate",
-#             object=get_uuid(),
-#             weight=1.0,
-#             description="Test triple description",
-#             predicate_embedding=[1.0, 2.0, 3.0],
-#             text_unit_ids=[get_uuid()],
-#             document_ids=[get_uuid()],
-#             attributes={"testkey": "testvalue"},
-#         )
-#     ]
+    result = []
+    async for community in kg_clustering_pipe.cluster_kg(triples):
+        result.append(community)
 
-
-# def test_upsert_chunks(neo4j_kg_provider, test_chunks, clean_graph):
-#     neo4j_kg_provider.upsert_chunks(test_chunks)
-#     neo4j_output = neo4j_kg_provider.get_chunks()
-#     chunks = [record["c"]._properties for record in neo4j_output.records]
-#     assert len(chunks) == len(test_chunks)
-#     for chunk, test_chunk in zip(chunks, test_chunks):
-#         assert chunk["id"] == str(test_chunk.id)
-#         assert chunk["data"] == test_chunk.data
-#         assert json.loads(chunk["metadata"]) == test_chunk.metadata
-#         assert chunk["document_id"] == str(test_chunk.document_id)
-#         assert chunk["extraction_id"] == str(test_chunk.extraction_id)
-
-
-# def test_upsert_entities(neo4j_kg_provider, test_entities):
-#     neo4j_kg_provider.upsert_entities(test_entities)
-#     neo4j_output = neo4j_kg_provider.get_entities()
-#     entities = [record["e"]._properties for record in neo4j_output.records]
-#     assert len(entities) == len(test_entities)
-#     for entity, test_entity in zip(entities, test_entities):
-#         assert entity["id"] == test_entity.id
-#         assert entity["category"] == test_entity.category
-#         assert entity["value"] == test_entity.value
-#         assert entity["description"] == test_entity.description
-
-
-# def test_upsert_triples(neo4j_kg_provider, test_triples):
-#     triples_count = neo4j_kg_provider.upsert_triples(test_triples)
-#     triples = neo4j_kg_provider.get_triples()
-#     assert len(triples) == len(test_triples)
-#     for triple, test_triple in zip(triples, test_triples):
-#         assert triple.id == test_triple.id
-#         assert triple.subject == test_triple.subject
-#         assert triple.predicate == test_triple.predicate
-#         assert triple.object == test_triple.object
-
-
-# def test_upsert_communities(neo4j_kg_provider, test_communities):
-#     neo4j_kg_provider.upsert_communities(test_communities)
-#     neo4j_output = neo4j_kg_provider.get_communities()
-#     communities = [record["c"]._properties for record in neo4j_output.records]
-#     assert len(communities) == len(test_communities)
-#     for community, test_community in zip(communities, test_communities):
-#         assert community["id"] == test_community.id
-#         assert community["name"] == test_community.name
+    assert len(result) == 1
+    assert result[0]['id'] == '0_0'
+    assert result[0]['title'] == '_'
