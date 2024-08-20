@@ -1,4 +1,4 @@
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Union
 
 from core.base import ChunkingProvider, Method
 from core.base.abstractions.document import DocumentExtraction
@@ -23,7 +23,7 @@ class UnstructuredChunkingProvider(ChunkingProvider):
             )
         super().__init__(config)
 
-    async def chunk(self, parsed_document: DocumentExtraction) -> AsyncGenerator[str, None]:
+    async def chunk(self, parsed_document: Union[str, DocumentExtraction]) -> AsyncGenerator[str, None]:
 
         # as unstructured has already partitioned the document, we can yield the text directly
         if parsed_document.metadata.get('partitioned_by_unstructured', False):
