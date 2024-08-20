@@ -246,7 +246,7 @@ class R2RProviderFactory:
         auth_provider_override: Optional[AuthProvider] = None,
         database_provider_override: Optional[DatabaseProvider] = None,
         parsing_provider_override: Optional[ParsingProvider] = None,
-        chunking_config_override: Optional[ChunkingProvider] = None,
+        chunking_settings: Optional[ChunkingProvider] = None,
         *args,
         **kwargs,
     ) -> R2RProviders:
@@ -292,7 +292,7 @@ class R2RProviderFactory:
             )
         )
         chunking_provider = (
-            chunking_config_override
+            chunking_settings
             or self.create_chunking_provider(
                 self.config.chunking, *args, **kwargs
             )

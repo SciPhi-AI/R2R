@@ -196,16 +196,17 @@ class ManagementRouter(BaseRouter):
             document_uuids = [
                 UUID(document_id) for document_id in document_ids
             ]
-            return await self.engine.adocuments_overview(
+            result = await self.engine.adocuments_overview(
                 user_ids=request_user_ids,
                 group_ids=auth_user.group_ids,
                 document_ids=document_uuids,
             )
+            return result
 
-        @self.router.get("/document_chunks")
+        @self.router.get("/document_chunks/{document_id}")
         @self.base_endpoint
         async def document_chunks_app(
-            document_id: str = Query(...),
+            document_id: str = Path(...),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedDocumentChunkResponse:
             document_uuid = UUID(document_id)

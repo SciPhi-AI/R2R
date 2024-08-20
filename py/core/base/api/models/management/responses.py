@@ -61,6 +61,7 @@ class DocumentOverviewResponse(BaseModel):
     updated_at: datetime
     status: str
     version: str
+    metadata: Dict[str, Any]
 
 
 class DocumentChunkResponse(BaseModel):

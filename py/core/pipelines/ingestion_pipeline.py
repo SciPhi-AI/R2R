@@ -32,7 +32,7 @@ class IngestionPipeline(AsyncPipeline):
         state: Optional[AsyncState] = None,
         stream: bool = False,
         run_manager: Optional[RunManager] = None,
-        chunking_config_override: Optional[ChunkingProvider] = None,
+        chunking_settings: Optional[ChunkingProvider] = None,
         user: Optional[UserResponse] = None,
         *args: Any,
         **kwargs: Any,
@@ -74,7 +74,7 @@ class IngestionPipeline(AsyncPipeline):
                     ),
                     state,
                     run_manager,
-                    chunking_config_override=chunking_config_override,
+                    chunking_settings=chunking_settings,
                     *args,
                     **kwargs,
                 ):

@@ -1,3 +1,4 @@
+from uuid import UUID
 import json
 from typing import Optional, Union
 
@@ -147,7 +148,7 @@ class ManagementMethods:
     @staticmethod
     async def delete(
         client,
-        filters: dict[str, str],
+        filters: dict,
     ) -> dict:
         """
         Delete data from the database given a set of filters.
@@ -167,7 +168,7 @@ class ManagementMethods:
     @staticmethod
     async def documents_overview(
         client,
-        document_ids: Optional[list[str]] = None,
+        document_ids: Optional[list[Union[UUID,str]]] = None,
     ) -> dict:
         """
         Get an overview of documents in the R2R deployment.
@@ -179,6 +180,7 @@ class ManagementMethods:
             dict: The overview of documents in the system.
         """
         params = {}
+        document_ids = [str(doc_id) for doc_id in document_ids] if document_ids else None
         if document_ids:
             params["document_ids"] = document_ids
 
