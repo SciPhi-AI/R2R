@@ -87,7 +87,8 @@ class RAGResponse(BaseModel):
             }
         }
 
+RAGAgentResponse = list[Message]
 # Create wrapped versions of the responses
 WrappedSearchResponse = ResultsWrapper[SearchResponse]
 WrappedRAGResponse = ResultsWrapper[RAGResponse]
-WrappedRAGAgentResponse = ResultsWrapper[list[Message]]
+WrappedRAGAgentResponse = ResultsWrapper[RAGAgentResponse]
