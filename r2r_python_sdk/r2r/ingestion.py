@@ -3,7 +3,7 @@ import os
 from contextlib import ExitStack
 from typing import Optional, Union
 
-from models import ChunkingConfig
+from .models import ChunkingConfig
 
 
 class IngestionMethods:

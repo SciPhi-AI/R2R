@@ -14,7 +14,6 @@ include = ["r2r.toml", "compose.yaml", "compose.neo4j.yaml", "compose.ollama.yam
 [tool.poetry.dependencies]
 # Python Versions
 python = ">=3.9,<3.13"
-r2r = {path = "r2r_python_sdk", develop = true}
 
 # Required dependencies
 
@@ -92,7 +91,7 @@ pytest-cov = "^5.0.0"
 colorama = "^0.4.6"
 
 [tool.poetry.scripts]
-r2r = "r2r.cli.cli:main"
+r2r = "r2r_core.cli.cli:main"
 
 [tool.black]
 line-length = 79

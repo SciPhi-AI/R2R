@@ -2,8 +2,7 @@ import logging
 import time
 from typing import Any, AsyncGenerator
 
-from r2r import parsers
-
+from r2r_core import parsers
 from r2r_core.base import (
     Document,
     DocumentExtraction,

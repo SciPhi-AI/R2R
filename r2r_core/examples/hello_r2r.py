@@ -1,4 +1,4 @@
-from r2r import R2R, Document, GenerationConfig
+from r2r_core import R2R, Document, GenerationConfig
 
 app = R2R()  # You may pass a custom configuration to `R2R` with config=...
 

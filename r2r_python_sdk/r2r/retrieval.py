@@ -1,6 +1,9 @@
 from typing import AsyncGenerator, Optional, Union
 
-from models import (
+from r2r_core.base import VectorSearchSettings
+from r2r_core.base.api.models import RAGResponse, SearchResponse
+
+from .models import (
     GenerationConfig,
     KGSearchSettings,
     Message,
@@ -8,9 +11,6 @@ from models import (
     SearchResponse,
     VectorSearchSettings,
 )
-
-from r2r_core.base import VectorSearchSettings
-from r2r_core.base.api.models import RAGResponse, SearchResponse
 
 
 class RetrievalMethods:

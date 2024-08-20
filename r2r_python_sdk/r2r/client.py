@@ -5,11 +5,11 @@ import json
 import httpx
 import nest_asyncio
 from fastapi.testclient import TestClient
-from models import R2RException
 
 from .auth import AuthMethods
 from .ingestion import IngestionMethods
 from .management import ManagementMethods
+from .models import R2RException
 from .restructure import RestructureMethods
 from .retrieval import RetrievalMethods
 

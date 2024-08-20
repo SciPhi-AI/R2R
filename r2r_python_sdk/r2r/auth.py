@@ -1,6 +1,6 @@
 from typing import Optional
 
-from models import Token, UserResponse
+from .models import Token, UserResponse
 
 
 class AuthMethods:

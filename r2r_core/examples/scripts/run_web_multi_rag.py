@@ -1,6 +1,6 @@
 import fire
-from r2r import R2RBuilder, SerperClient, WebSearchPipe
 
+from r2r_core import R2RBuilder, SerperClient, WebSearchPipe
 from r2r_core.base.abstractions.llm import GenerationConfig
 from r2r_core.main.assembly.factory_extensions import (
     R2RPipeFactoryWithMultiSearch,

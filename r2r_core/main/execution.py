@@ -18,7 +18,9 @@ from r2r_core.base import (
     VectorSearchSettings,
 )
 
-from .api.client import R2RClient
+# TODO: need to import this from the package, not from the local directory
+from r2r_python_sdk.r2r.client import R2RClient
+
 from .assembly.builder import R2RBuilder
 from .assembly.config import R2RConfig
 from .r2r import R2R
