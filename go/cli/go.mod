@@ -2,7 +2,7 @@ module r2r-cli
 
 go 1.23.0
 
-replace github.com/yourusername/r2r_go_sdk => ../r2r_go_sdk
+replace github.com/yourusername/r2r_go_sdk => ../sdk
 
 require (
 	github.com/spf13/cobra v1.8.1

@@ -23,7 +23,6 @@ from core.base import (
     RunLoggingSingleton,
     Triple,
 )
-# from graspologic.partition import hierarchical_leiden
 
 logger = logging.getLogger(__name__)
 
@@ -70,15 +69,20 @@ class KGClusteringPipe(AsyncPipe):
         seed: int = 0xDEADBEEF,
     ) -> dict[int, dict[str, int]]:
         """Compute Leiden communities."""
-        community_mapping = hierarchical_leiden(
-            graph, max_cluster_size=self.max_cluster_size, random_seed=seed
-        )
-        results: dict[int, dict[str, int]] = {}
-        for partition in community_mapping:
-            results[partition.level] = results.get(partition.level, {})
-            results[partition.level][partition.node] = partition.cluster
+        try:
+            from graspologic.partition import hierarchical_leiden
 
-        return results
+            community_mapping = hierarchical_leiden(
+                graph, max_cluster_size=self.max_cluster_size, random_seed=seed
+            )
+            results: dict[int, dict[str, int]] = {}
+            for partition in community_mapping:
+                results[partition.level] = results.get(partition.level, {})
+                results[partition.level][partition.node] = partition.cluster
+
+            return results
+        except ImportError as e:
+            raise ImportError("Please install the graspologic package.") from e
 
     async def cluster_kg(self, triples: list[Triple]) -> list[Community]:
         """
