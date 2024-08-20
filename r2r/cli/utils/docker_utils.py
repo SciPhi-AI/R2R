@@ -350,7 +350,7 @@ def build_docker_command(
     os.environ["TRAEFIK_PORT"] = str(available_port + 1)
 
     os.environ["CONFIG_PATH"] = (
-        os.path.basename(config_path) if config_path else ""
+        os.path.abspath(config_path) if config_path else ""
     )
 
     os.environ["R2R_IMAGE"] = image or ""
