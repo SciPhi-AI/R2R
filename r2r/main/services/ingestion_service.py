@@ -385,7 +385,7 @@ class IngestionService(Service):
             for doc_id, error in results.items():
                 if isinstance(error, R2RDocumentProcessingError):
                     logger.error(
-                        f"Error processing document with ID {error.document_id}: {error.message}"
+                        f"Error processing document with ID {error.document_id}: {error.message}", exc_info=True
                     )
                     failed_ids.append(error.document_id)
                 elif isinstance(error, Exception):

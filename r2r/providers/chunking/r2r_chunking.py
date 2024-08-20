@@ -8,6 +8,7 @@ from r2r.base import (
     TextSplitter,
 )
 
+from r2r.base.abstractions.document import DocumentExtraction
 
 class R2RChunkingProvider(ChunkingProvider):
     def __init__(self, config: ChunkingConfig):
@@ -44,6 +45,10 @@ class R2RChunkingProvider(ChunkingProvider):
             self.text_splitter = self._initialize_text_splitter()
 
     async def chunk(self, parsed_document: Any) -> AsyncGenerator[Any, None]:
+
+        if isinstance(parsed_document, DocumentExtraction):
+            parsed_document = parsed_document.data
+
         if isinstance(parsed_document, str):
             chunks = self.text_splitter.create_documents([parsed_document])
         else:

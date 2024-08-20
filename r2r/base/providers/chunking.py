@@ -3,7 +3,7 @@ from enum import Enum
 from typing import AsyncGenerator, Optional
 
 from .base import Provider, ProviderConfig
-
+from ..abstractions.document import DocumentExtraction
 
 class Method(str, Enum):
     BY_TITLE = "by_title"
@@ -37,6 +37,6 @@ class ChunkingProvider(Provider, ABC):
         self.config = config
 
     @abstractmethod
-    async def chunk(self, parsed_document: str) -> AsyncGenerator[str, None]:
+    async def chunk(self, parsed_document: DocumentExtraction) -> AsyncGenerator[str, None]:
         """Chunk the parsed document using the configured chunking strategy."""
         pass
