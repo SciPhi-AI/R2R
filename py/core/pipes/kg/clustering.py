@@ -23,7 +23,7 @@ from core.base import (
     RunLoggingSingleton,
     Triple,
 )
-from graspologic.partition import hierarchical_leiden
+# from graspologic.partition import hierarchical_leiden
 
 logger = logging.getLogger(__name__)
 

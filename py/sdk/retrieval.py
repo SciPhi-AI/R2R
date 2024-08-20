@@ -103,16 +103,14 @@ class RetrievalMethods:
         }
 
         if rag_generation_config.stream:
-
-            async def stream_response():
-                async for chunk in await client._make_request(
-                    "POST", "rag", json=data, stream=True
-                ):
-                    yield RAGResponse(**chunk)
-
-            return stream_response()
+            return client._make_streaming_request(
+            "POST",
+            "rag",
+            json=data
+        )
         else:
             return await client._make_request("POST", "rag", json=data)
+        
 
     @staticmethod
     async def agent(
@@ -172,13 +170,23 @@ class RetrievalMethods:
         }
 
         if rag_generation_config.stream:
-
-            async def stream_response():
-                async for chunk in await client._make_request(
-                    "POST", "agent", json=data, stream=True
-                ):
-                    yield Message(**chunk)
-
-            return stream_response()
+            return client._make_streaming_request(
+                "POST",
+                "agent",
+                json=data
+            )
         else:
-            return await client._make_request("POST", "agent", json=data)
+            return await client._make_request("POST", "rag", json=data)
+
+
+        # if rag_generation_config.stream:
+
+        #     async def stream_response():
+        #         async for chunk in await client._make_request(
+        #             "POST", "agent", json=data, stream=True
+        #         ):
+        #             yield Message(**chunk)
+
+        #     return stream_response()
+        # else:
+        #     return await client._make_request("POST", "agent", json=data)
