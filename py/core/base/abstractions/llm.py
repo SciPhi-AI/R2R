@@ -1,7 +1,8 @@
 """Abstractions for the LLM model."""
 
-from typing import TYPE_CHECKING, ClassVar, Optional
+from typing import TYPE_CHECKING, ClassVar, Optional, Union, Any
 
+from enum import Enum
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from pydantic import BaseModel, Field
 
@@ -99,4 +100,30 @@ class GenerationConfig(BaseModel):
             "tools": None,
             "add_generation_kwargs": None,
             "api_base": None,
+        }
+
+class MessageType(Enum):
+    SYSTEM = "system"
+    USER = "user"
+    ASSISTANT = "assistant"
+    FUNCTION = "function"
+    TOOL = "tool"
+
+    def __str__(self):
+        return self.value
+    
+class Message(BaseModel):
+    role: Union[MessageType, str]
+    content: Optional[str] = None
+    name: Optional[str] = None
+    function_call: Optional[dict[str, Any]] = None
+    tool_calls: Optional[list[dict[str, Any]]] = None
+
+    class Config:
+        json_schema_extra = {
+            "role": "user",
+            "content": "This is a test message.",
+            "name": None,
+            "function_call": None,
+            "tool_calls": None,
         }

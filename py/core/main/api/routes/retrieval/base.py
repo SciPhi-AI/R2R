@@ -155,7 +155,6 @@ class RetrievalRouter(BaseRouter):
             )
 
             if rag_generation_config.stream:
-
                 async def stream_generator():
                     async for chunk in response:
                         yield chunk
