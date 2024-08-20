@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from core.base.abstractions import KGSearchResult, VectorSearchResult, Message
+from core.base.abstractions import KGSearchResult, Message, VectorSearchResult
 from core.base.api.models.base import ResultsWrapper
 from pydantic import BaseModel, Field
 
@@ -86,6 +86,7 @@ class RAGResponse(BaseModel):
                 },
             }
         }
+
 
 RAGAgentResponse = list[Message]
 # Create wrapped versions of the responses

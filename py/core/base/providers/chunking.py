@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import AsyncGenerator, Optional, Union
 
-from .base import Provider, ProviderConfig
 from ..abstractions.document import DocumentExtraction
+from .base import Provider, ProviderConfig
+
 
 class Method(str, Enum):
     BY_TITLE = "by_title"
@@ -57,6 +58,8 @@ class ChunkingProvider(Provider, ABC):
         self.config = config
 
     @abstractmethod
-    async def chunk(self, parsed_document: Union[str, DocumentExtraction]) -> AsyncGenerator[str, None]:
+    async def chunk(
+        self, parsed_document: Union[str, DocumentExtraction]
+    ) -> AsyncGenerator[str, None]:
         """Chunk the parsed document using the configured chunking strategy."""
         pass

@@ -1,3 +1,4 @@
+import logging
 from typing import Any, AsyncGenerator, Union
 
 from core.base import (
@@ -7,22 +8,20 @@ from core.base import (
     RecursiveCharacterTextSplitter,
     TextSplitter,
 )
-
-from core.base import ChunkingProvider, Method
 from core.base.abstractions.document import DocumentExtraction
+
+logger = logging.getLogger(__name__)
+
 
 class R2RChunkingProvider(ChunkingProvider):
     def __init__(self, config: ChunkingConfig):
         super().__init__(config)
         self.text_splitter = self._initialize_text_splitter()
-        print(
+        logger.info(
             f"R2RChunkingProvider initialized with config: {self.config}"
-        )  # Debug log
+        )
 
     def _initialize_text_splitter(self) -> TextSplitter:
-        print(
-            f"Initializing text splitter with method: {self.config.method}"
-        )  # Debug log
         if self.config.method == Method.RECURSIVE:
             return RecursiveCharacterTextSplitter(
                 chunk_size=self.config.chunk_size,
@@ -45,7 +44,9 @@ class R2RChunkingProvider(ChunkingProvider):
             self.config = config_override
             self.text_splitter = self._initialize_text_splitter()
 
-    async def chunk(self, parsed_document: Union[str, DocumentExtraction]) -> AsyncGenerator[Any, None]:
+    async def chunk(
+        self, parsed_document: Union[str, DocumentExtraction]
+    ) -> AsyncGenerator[Any, None]:
 
         if isinstance(parsed_document, DocumentExtraction):
             parsed_document = parsed_document.data
@@ -62,7 +63,9 @@ class R2RChunkingProvider(ChunkingProvider):
             )
 
     async def chunk_with_override(
-        self, parsed_document: Union[str, DocumentExtraction], config_override: ChunkingConfig
+        self,
+        parsed_document: Union[str, DocumentExtraction],
+        config_override: ChunkingConfig,
     ) -> AsyncGenerator[Any, None]:
         original_config = self.config
         original_splitter = self.text_splitter

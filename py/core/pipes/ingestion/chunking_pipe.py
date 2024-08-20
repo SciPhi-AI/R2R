@@ -17,6 +17,7 @@ from core.providers import R2RChunkingProvider
 
 logger = logging.getLogger(__name__)
 
+
 class ChunkingPipe(AsyncPipe):
     class Input(AsyncPipe.Input):
         message: AsyncGenerator[

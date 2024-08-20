@@ -93,7 +93,9 @@ class R2RConfig:
         self.embedding = EmbeddingConfig.create(**self.embedding)
         self.kg = KGConfig.create(**self.kg)
         self.logging = LoggingConfig.create(**self.logging)
-        self.parsing = ParsingConfig.create(chunking_config=self.chunking, **self.parsing)
+        self.parsing = ParsingConfig.create(
+            chunking_config=self.chunking, **self.parsing
+        )
         self.prompt = PromptConfig.create(**self.prompt)
         self.agent = AgentConfig.create(**self.agent)
 
@@ -114,8 +116,6 @@ class R2RConfig:
         if config_path is None:
             # Get the root directory of the project
             file_dir = os.path.dirname(os.path.abspath(__file__))
-            print(file_dir)
-            print(os.path.join(file_dir, "..", "..", "..", "r2r.toml"))
             config_path = os.path.join(
                 file_dir, "..", "..", "..", "..", "r2r.toml"
             )

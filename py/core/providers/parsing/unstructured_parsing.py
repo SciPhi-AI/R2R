@@ -1,9 +1,8 @@
 import logging
+import os
 import time
 from io import BytesIO
 from typing import AsyncGenerator
-import os
-
 
 from core.base import (
     Document,
@@ -33,19 +32,27 @@ class UnstructuredParsingProvider(ParsingProvider):
 
         self.use_api = use_api
         if self.use_api:
-            from unstructured_client import UnstructuredClient
-            from unstructured_client.models import shared, operations
-            from unstructured_client.models.errors import SDKError
             from unstructured.staging.base import dict_to_elements
+            from unstructured_client import UnstructuredClient
+            from unstructured_client.models import operations, shared
+            from unstructured_client.models.errors import SDKError
 
             try:
                 self.unstructured_api_auth = os.environ["UNSTRUCTURED_API_KEY"]
             except KeyError:
-                raise ValueError("UNSTRUCTURED_API_KEY environment variable is not set")
+                raise ValueError(
+                    "UNSTRUCTURED_API_KEY environment variable is not set"
+                )
 
-            self.unstructured_api_url = os.environ.get("UNSTRUCTURED_API_URL", "https://api.unstructured.io/general/v0/general")
+            self.unstructured_api_url = os.environ.get(
+                "UNSTRUCTURED_API_URL",
+                "https://api.unstructured.io/general/v0/general",
+            )
 
-            self.client = UnstructuredClient(api_key_auth=self.unstructured_api_auth, server_url=self.unstructured_api_url)
+            self.client = UnstructuredClient(
+                api_key_auth=self.unstructured_api_auth,
+                server_url=self.unstructured_api_url,
+            )
             self.shared = shared
             self.operations = operations
             self.dict_to_elements = dict_to_elements
@@ -65,7 +72,7 @@ class UnstructuredParsingProvider(ParsingProvider):
             logger.info(f"Using API to parse document {document.id}")
             files = self.shared.Files(
                 content=data.read() if isinstance(data, BytesIO) else data,
-                file_name=document.metadata.get('filename', 'unknown_file')
+                file_name=document.metadata.get("filename", "unknown_file"),
             )
 
             req = self.operations.PartitionRequest(
@@ -73,15 +80,19 @@ class UnstructuredParsingProvider(ParsingProvider):
                     files=files,
                     split_pdf_page=True,
                     split_pdf_allow_failed=True,
-                    split_pdf_concurrency_level=15
+                    split_pdf_concurrency_level=15,
                 )
             )
             elements = self.client.general.partition(req)
             elements = [element for element in elements.elements]
 
         else:
-            logger.info(f"Using local unstructured to parse document {document.id}")
-            elements = self.partition(file=data, **self.config.chunking_config.dict())
+            logger.info(
+                f"Using local unstructured to parse document {document.id}"
+            )
+            elements = self.partition(
+                file=data, **self.config.chunking_config.dict()
+            )
 
         for iteration, element in enumerate(elements):
 
@@ -90,7 +101,7 @@ class UnstructuredParsingProvider(ParsingProvider):
 
             for key, value in element.items():
                 if key != "text":
-                    if key == 'metadata':
+                    if key == "metadata":
                         for k, v in value.items():
                             if k not in document.metadata:
                                 document.metadata[k] = v
@@ -105,7 +116,7 @@ class UnstructuredParsingProvider(ParsingProvider):
 
             # indicate that the document was chunked using unstructured
             # nullifies the need for chunking in the pipeline
-            document.metadata['partitioned_by_unstructured'] = True
+            document.metadata["partitioned_by_unstructured"] = True
 
             # creating the text extraction
             extraction = DocumentExtraction(

@@ -11,7 +11,7 @@ from .pipelines import *
 from .pipes import *
 from .providers import *
 
-logger = logging.getLogger("r2r")
+logger = logging.getLogger("core")
 logger.setLevel(logging.INFO)
 
 # Create a console handler and set the level to info

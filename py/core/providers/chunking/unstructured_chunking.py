@@ -23,20 +23,22 @@ class UnstructuredChunkingProvider(ChunkingProvider):
             )
         super().__init__(config)
 
-    async def chunk(self, parsed_document: Union[str, DocumentExtraction]) -> AsyncGenerator[str, None]:
+    async def chunk(
+        self, parsed_document: Union[str, DocumentExtraction]
+    ) -> AsyncGenerator[str, None]:
 
         # as unstructured has already partitioned the document, we can yield the text directly
-        if parsed_document.metadata.get('partitioned_by_unstructured', False):
+        if parsed_document.metadata.get("partitioned_by_unstructured", False):
             yield parsed_document.data
 
         else:
             if self.config.method == Method.BY_TITLE:
                 chunks = self.chunk_by_title(
-                [self.Text(text=parsed_document.data)],
-                max_characters=self.config.chunk_size,
-                new_after_n_chars=self.config.max_chunk_size
-                or self.config.chunk_size,
-                overlap=self.config.chunk_overlap,
+                    [self.Text(text=parsed_document.data)],
+                    max_characters=self.config.chunk_size,
+                    new_after_n_chars=self.config.max_chunk_size
+                    or self.config.chunk_size,
+                    overlap=self.config.chunk_overlap,
                 )
             else:
                 chunks = self.chunk_elements(
