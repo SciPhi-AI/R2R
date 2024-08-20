@@ -66,9 +66,10 @@ core = [
     "uvicorn", "aiosqlite", "asyncpg", "redis", "beautifulsoup4", "openpyxl",
     "markdown", "pypdf", "python-pptx", "python-docx", "vecs", "litellm", "openai",
     "fsspec", "posthog", "sqlalchemy", "ollama", "neo4j", "passlib", "bcrypt",
-    "pyjwt", "toml", "pyyaml", "poppler-utils", "psutil", "deepdiff", "graspologic"
+    "pyjwt", "toml", "pyyaml", "poppler-utils", "psutil", "deepdiff",
 ]
 ingest-movies = ["opencv-python", "moviepy"]
+kgs = ["graspologic"]
 all = ["core", "ingest-movies"]
 
 [tool.poetry.group.dev.dependencies]
