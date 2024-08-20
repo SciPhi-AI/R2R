@@ -85,7 +85,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
                     self.prefixes.get(purpose, "") + text for text in batch
                 ]
                 response = self.client.embed(
-                    model=kwargs["model"], input=prefixed_batch, **kwargs
+                    input=prefixed_batch, **kwargs
                 )
                 embeddings.extend(response["embeddings"])
             return embeddings

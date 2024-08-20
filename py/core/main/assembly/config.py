@@ -114,8 +114,6 @@ class R2RConfig:
         if config_path is None:
             # Get the root directory of the project
             file_dir = os.path.dirname(os.path.abspath(__file__))
-            print(file_dir)
-            print(os.path.join(file_dir, "..", "..", "..", "r2r.toml"))
             config_path = os.path.join(
                 file_dir, "..", "..", "..", "..", "r2r.toml"
             )

@@ -1,3 +1,4 @@
+import logging 
 from typing import Any, AsyncGenerator
 
 from core.base import (
@@ -8,19 +9,17 @@ from core.base import (
     TextSplitter,
 )
 
+logger = logging.getLogger(__name__)
 
 class R2RChunkingProvider(ChunkingProvider):
     def __init__(self, config: ChunkingConfig):
         super().__init__(config)
         self.text_splitter = self._initialize_text_splitter()
-        print(
+        logger.info(
             f"R2RChunkingProvider initialized with config: {self.config}"
-        )  # Debug log
+        )
 
     def _initialize_text_splitter(self) -> TextSplitter:
-        print(
-            f"Initializing text splitter with method: {self.config.method}"
-        )  # Debug log
         if self.config.method == Method.RECURSIVE:
             return RecursiveCharacterTextSplitter(
                 chunk_size=self.config.chunk_size,
