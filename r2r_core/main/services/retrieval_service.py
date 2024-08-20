@@ -79,6 +79,15 @@ class RetrievalService(Service):
                     message="Vector search is not enabled in the configuration.",
                 )
 
+            if (
+                vector_search_settings.use_vector_search
+                and vector_search_settings.use_hybrid_search
+                and not vector_search_settings.hybrid_search_settings
+            ):
+                raise R2RException(
+                    status_code=400,
+                    message="Hybrid search settings must be specified in the input configuration.",
+                )
             # TODO - Remove these transforms once we have a better way to handle this
             for filter, value in vector_search_settings.filters.items():
                 if isinstance(value, UUID):
@@ -111,7 +120,6 @@ class RetrievalService(Service):
         rag_generation_config: GenerationConfig,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
-        user: Optional[UserResponse] = None,
         *args,
         **kwargs,
     ) -> RAGResponse:
@@ -140,12 +148,10 @@ class RetrievalService(Service):
                 if rag_generation_config.stream:
                     return await self.stream_rag_response(
                         query,
-                        run_id,
                         completion_record,
                         rag_generation_config,
                         vector_search_settings,
                         kg_search_settings,
-                        user,
                         *args,
                         **kwargs,
                     )
@@ -195,7 +201,7 @@ class RetrievalService(Service):
                 if "NoneType" in str(e):
                     raise R2RException(
                         status_code=502,
-                        message="Ollama server not reachable or returned an invalid response",
+                        message="Remote server not reachable or returned an invalid response",
                     )
                 raise R2RException(
                     status_code=500, message="Internal Server Error"
@@ -204,12 +210,10 @@ class RetrievalService(Service):
     async def stream_rag_response(
         self,
         query,
-        run_id,
         completion_record,
         rag_generation_config,
         vector_search_settings,
         kg_search_settings,
-        user,
         *args,
         **kwargs,
     ):
@@ -238,7 +242,6 @@ class RetrievalService(Service):
         rag_generation_config: GenerationConfig,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
-        user: Optional[UserResponse] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
         *args,

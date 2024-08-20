@@ -58,6 +58,8 @@ class ParsingPipe(AsyncPipe):
                     f"{extraction.id}-{version}"
                 )
                 extraction.id = extraction_id
+                # Add version to metadata
+                extraction.metadata["version"] = version
                 yield extraction
         except Exception as e:
             yield R2RDocumentProcessingError(

@@ -3,6 +3,7 @@ import os
 import fire
 import requests
 from bs4 import BeautifulSoup, Comment
+
 from r2r import EntityType, R2RClient, R2RPromptProvider, RelationshipType
 
 
@@ -159,22 +160,6 @@ def main(
             "results"
         ]
     )
-
-    if not local_mode:
-
-        # support local and global
-        result = client.search(
-            query="Find up to 10 founders that worked at Google",
-            kg_search_settings={"ause_kg_search": True},
-        )["results"]
-
-        # print("Search Result:\n", result["kg_search_results"])
-
-        # result = client.rag(
-        #     query="Find up to 10 founders that worked at Google",
-        #     kg_search_settings={"use_kg_search": True},
-        # )
-        # print("RAG Result:\n", result)
 
 
 if __name__ == "__main__":

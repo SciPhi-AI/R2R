@@ -37,7 +37,6 @@ class R2RApp:
             self.engine
         )
         auth_router = auth_base.AuthRouter.build_router(self.engine)
-
         restructure_router = restructure_base.RestructureRouter.build_router(
             self.engine
         )

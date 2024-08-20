@@ -1,5 +1,6 @@
 """Abstractions for search functionality."""
 
+from enum import Enum
 from typing import Any, Dict, Optional, Tuple
 from uuid import UUID
 
@@ -80,9 +81,45 @@ class AggregateSearchResult(BaseModel):
         }
 
 
+# TODO - stop duplication of this enum, move collections primitives to 'abstractions'
+class IndexMeasure(str, Enum):
+    """
+    An enum representing the types of distance measures available for indexing.
+
+    Attributes:
+        cosine_distance (str): The cosine distance measure for indexing.
+        l2_distance (str): The Euclidean (L2) distance measure for indexing.
+        max_inner_product (str): The maximum inner product measure for indexing.
+    """
+
+    cosine_distance = "cosine_distance"
+    l2_distance = "l2_distance"
+    max_inner_product = "max_inner_product"
+
+
+class HybridSearchSettings(BaseModel):
+    full_text_weight: float = Field(
+        default=1.0, description="Weight to apply to full text search"
+    )
+    semantic_weight: float = Field(
+        default=5.0, description="Weight to apply to semantic search"
+    )
+    full_text_limit: int = Field(
+        default=200,
+        description="Maximum number of results to return from full text search",
+    )
+    rrf_k: int = Field(
+        default=50, description="K-value for RRF (Rank Reciprocal Fusion)"
+    )
+
+
 class VectorSearchSettings(BaseModel):
     use_vector_search: bool = Field(
         default=True, description="Whether to use vector search"
+    )
+    use_hybrid_search: bool = Field(
+        default=False,
+        description="Whether to perform a hybrid search (combining vector and keyword search)",
     )
     filters: dict[str, Any] = Field(
         default_factory=dict,
@@ -92,19 +129,59 @@ class VectorSearchSettings(BaseModel):
         default=10,
         description="Maximum number of results to return",
         ge=1,
-        le=100,
-    )
-    do_hybrid_search: bool = Field(
-        default=False,
-        description="Whether to perform a hybrid search (combining vector and keyword search)",
+        le=1_000,
     )
     selected_group_ids: list[UUID] = Field(
         default_factory=list,
         description="Group IDs to search for",
     )
+    index_measure: IndexMeasure = Field(
+        default=IndexMeasure.cosine_distance,
+        description="The distance measure to use for indexing",
+    )
+    include_values: bool = Field(
+        default=True,
+        description="Whether to include search score values in the search results",
+    )
+    include_metadatas: bool = Field(
+        default=True,
+        description="Whether to include element metadata in the search results",
+    )
+    probes: Optional[int] = Field(
+        default=10,
+        description="Number of ivfflat index lists to query. Higher increases accuracy but decreases speed.",
+    )
+    ef_search: Optional[int] = Field(
+        default=40,
+        description="Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed.",
+    )
+    hybrid_search_settings: Optional[HybridSearchSettings] = Field(
+        default=HybridSearchSettings(),
+        description="Settings for hybrid search",
+    )
 
     class Config:
         json_encoders = {UUID: str}
+        json_schema_extra = {
+            "use_vector_search": True,
+            "use_hybrid_search": True,
+            "filters": {"category": "technology"},
+            "search_limit": 20,
+            "selected_group_ids": [
+                "2acb499e-8428-543b-bd85-0d9098718220",
+                "3e157b3a-8469-51db-90d9-52e7d896b49b",
+            ],
+            "index_measure": "cosine_distance",
+            "include_metadata": True,
+            "probes": 10,
+            "ef_search": 40,
+            "hybrid_search_settings": {
+                "full_text_weight": 1.0,
+                "semantic_weight": 5.0,
+                "full_text_limit": 200,
+                "rrf_k": 50,
+            },
+        }
 
     def model_dump(self, *args, **kwargs):
         dump = super().model_dump(*args, **kwargs)
@@ -130,3 +207,21 @@ class KGSearchSettings(BaseModel):
         "__Relationship__": 20,
         "__Community__": 20,
     }
+
+    class Config:
+        json_encoders = {UUID: str}
+        json_schema_extra = {
+            "use_kg_search": True,
+            "kg_search_type": "global",
+            "kg_search_level": "global",
+            "kg_search_generation_config": GenerationConfig.Config.json_schema_extra,
+            "entity_types": ["Person", "Organization"],
+            "relationships": ["founder", "CEO"],
+            "max_community_description_length": 4096 * 4,
+            "max_llm_queries_for_global_search": 250,
+            "local_search_limits": {
+                "__Entity__": 20,
+                "__Relationship__": 20,
+                "__Community__": 20,
+            },
+        }

@@ -49,8 +49,10 @@ class VectorSearchPipe(SearchPipe):
         await self.enqueue_log(
             run_id=run_id, key="search_query", value=message
         )
-        filters = vector_search_settings.filters or self.config.filters
-        search_limit = (
+        vector_search_settings.filters = (
+            vector_search_settings.filters or self.config.filters
+        )
+        vector_search_settings.search_limit = (
             vector_search_settings.search_limit or self.config.search_limit
         )
         results = []
@@ -62,18 +64,18 @@ class VectorSearchPipe(SearchPipe):
             self.database_provider.vector.hybrid_search(
                 query_vector=query_vector,
                 query_text=message,
-                filters=filters,
-                limit=search_limit,
+                search_settings=vector_search_settings,
             )
-            if vector_search_settings.do_hybrid_search
-            else self.database_provider.vector.search(
+            if vector_search_settings.use_hybrid_search
+            else self.database_provider.vector.semantic_search(
                 query_vector=query_vector,
-                filters=filters,
-                limit=search_limit,
+                search_settings=vector_search_settings,
             )
         )
         reranked_results = self.embedding_provider.rerank(
-            query=message, results=search_results, limit=search_limit
+            query=message,
+            results=search_results,
+            limit=vector_search_settings.search_limit,
         )
         include_title_if_available = kwargs.get(
             "include_title_if_available", False

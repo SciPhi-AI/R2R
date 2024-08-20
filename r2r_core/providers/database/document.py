@@ -109,3 +109,16 @@ class DocumentMixin(DatabaseMixin):
             )
             for row in results
         ]
+
+    def get_document_groups(self, document_id: str) -> list[str]:
+        query = f"""
+            SELECT group_ids
+            FROM {self._get_table_name('document_info')}
+            WHERE document_id = :document_id
+        """
+        params = {"document_id": document_id}
+        result = self.execute_query(query, params).fetchone()
+
+        if result and result[0]:
+            return [str(group_id) for group_id in result[0]]
+        return []
