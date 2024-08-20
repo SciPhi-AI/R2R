@@ -172,17 +172,4 @@ class RetrievalMethods:
                 json=data
             )
         else:
-            return await client._make_request("POST", "rag", json=data)
-
-
-        # if rag_generation_config.stream:
-
-        #     async def stream_response():
-        #         async for chunk in await client._make_request(
-        #             "POST", "agent", json=data, stream=True
-        #         ):
-        #             yield Message(**chunk)
-
-        #     return stream_response()
-        # else:
-        #     return await client._make_request("POST", "agent", json=data)
+            return await client._make_request("POST", "agent", json=data)
