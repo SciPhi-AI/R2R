@@ -60,7 +60,6 @@ class UnstructuredParsingProvider(ParsingProvider):
             data = BytesIO(data)
 
         # TODO - Include check on excluded parsers here.
-        import pdb; pdb.set_trace()
         t0 = time.time()
         if self.use_api:
             logger.info(f"Using API to parse document {document.id}")
