@@ -9,6 +9,7 @@ from .models import (
     VectorSearchSettings,
 )
 
+
 class RetrievalMethods:
     @staticmethod
     async def search(
@@ -82,15 +83,10 @@ class RetrievalMethods:
             "kg_search_settings": kg_search_settings,
         }
 
-        if rag_generation_config.get('stream', False):
-            return client._make_streaming_request(
-            "POST",
-            "rag",
-            json=data
-        )
+        if rag_generation_config.get("stream", False):
+            return client._make_streaming_request("POST", "rag", json=data)
         else:
             return await client._make_request("POST", "rag", json=data)
-        
 
     @staticmethod
     async def agent(
@@ -141,11 +137,7 @@ class RetrievalMethods:
             "include_title_if_available": include_title_if_available,
         }
 
-        if rag_generation_config.get('stream', False):
-            return client._make_streaming_request(
-                "POST",
-                "agent",
-                json=data
-            )
+        if rag_generation_config.get("stream", False):
+            return client._make_streaming_request("POST", "agent", json=data)
         else:
             return await client._make_request("POST", "agent", json=data)

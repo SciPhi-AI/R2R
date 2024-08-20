@@ -91,10 +91,15 @@ class R2RProviderFactory:
             from core.providers import R2RParsingProvider
 
             return R2RParsingProvider(parsing_config)
-        elif parsing_config.provider == "unstructured":
+        elif (
+            parsing_config.provider == "unstructured"
+            or parsing_config.provider == "unstructured_api"
+        ):
             from core.providers import UnstructuredParsingProvider
 
-            return UnstructuredParsingProvider(parsing_config)
+            return UnstructuredParsingProvider(
+                parsing_config.provider == "unstructured_api", parsing_config
+            )
         else:
             raise ValueError(
                 f"Parsing provider {parsing_config.provider} not supported"

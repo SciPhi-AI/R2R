@@ -43,6 +43,7 @@ class R2RExecutionWrapper:
 
         if self.client_mode:
             from sdk.client import R2RClient
+
             self.client = R2RClient(base_url)
             self.app = None
         else:

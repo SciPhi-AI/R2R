@@ -1,8 +1,8 @@
 """Abstractions for the LLM model."""
 
-from typing import TYPE_CHECKING, ClassVar, Optional, Union, Any
-
 from enum import Enum
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Union
+
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from pydantic import BaseModel, Field
 
@@ -102,6 +102,7 @@ class GenerationConfig(BaseModel):
             "api_base": None,
         }
 
+
 class MessageType(Enum):
     SYSTEM = "system"
     USER = "user"
@@ -111,7 +112,8 @@ class MessageType(Enum):
 
     def __str__(self):
         return self.value
-    
+
+
 class Message(BaseModel):
     role: Union[MessageType, str]
     content: Optional[str] = None
