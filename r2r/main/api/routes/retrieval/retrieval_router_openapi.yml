@@ -14,7 +14,7 @@ search:
                   "use_vector_search": True,
                   "filters": {"document_id": {"eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
                   "search_limit": 20,
-                  "do_hybrid_search": True
+                  "use_hybrid_search": True
               }
           )
       - lang: Shell
@@ -28,7 +28,7 @@ search:
                 "use_vector_search": true,
                 "filters": {"document_id": {"eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
                 "search_limit": 20,
-                "do_hybrid_search": true
+                "use_hybrid_search": true
               }
             }'
 
@@ -53,7 +53,7 @@ rag:
                   "use_vector_search": True,
                   "filters": {"document_id": {"eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
                   "search_limit": 20,
-                  "do_hybrid_search": True
+                  "use_hybrid_search": True
               },
               rag_generation_config={
                   "stream": False,
@@ -72,7 +72,7 @@ rag:
                 "use_vector_search": true,
                 "filters": {"document_id": {"eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
                 "search_limit": 20,
-                "do_hybrid_search": true
+                "use_hybrid_search": true
               },
               "rag_generation_config": {
                 "stream": false,
@@ -108,7 +108,7 @@ agent:
                   "use_vector_search": True,
                   "filters": {"document_id": {"eq": "5e157b3a-8469-51db-90d9-52e7d896b49b"}},
                   "search_limit": 20,
-                  "do_hybrid_search": True
+                  "use_hybrid_search": True
               },
               rag_generation_config={
                   "stream": False,
@@ -132,7 +132,7 @@ agent:
                 "use_vector_search": true,
                 "filters": {"document_id": {"eq": "5e157b3a-8469-51db-90d9-52e7d896b49b"}},
                 "search_limit": 20,
-                "do_hybrid_search": true
+                "use_hybrid_search": true
               },
               "rag_generation_config": {
                 "stream": false,

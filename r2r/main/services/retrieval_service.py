@@ -111,7 +111,6 @@ class RetrievalService(Service):
         rag_generation_config: GenerationConfig,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
-        user: Optional[UserResponse] = None,
         *args,
         **kwargs,
     ) -> RAGResponse:
@@ -145,7 +144,6 @@ class RetrievalService(Service):
                         rag_generation_config,
                         vector_search_settings,
                         kg_search_settings,
-                        user,
                         *args,
                         **kwargs,
                     )
@@ -195,7 +193,7 @@ class RetrievalService(Service):
                 if "NoneType" in str(e):
                     raise R2RException(
                         status_code=502,
-                        message="Ollama server not reachable or returned an invalid response",
+                        message="Remote server not reachable or returned an invalid response",
                     )
                 raise R2RException(
                     status_code=500, message="Internal Server Error"
@@ -209,7 +207,6 @@ class RetrievalService(Service):
         rag_generation_config,
         vector_search_settings,
         kg_search_settings,
-        user,
         *args,
         **kwargs,
     ):
@@ -238,7 +235,6 @@ class RetrievalService(Service):
         rag_generation_config: GenerationConfig,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
-        user: Optional[UserResponse] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
         *args,

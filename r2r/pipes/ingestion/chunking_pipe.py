@@ -65,6 +65,7 @@ class ChunkingPipe(AsyncPipe):
             try:
                 iteration = 0
                 async for chunk in chunking_provider.chunk(item.data):
+                    item.metadata["chunk_order"] = iteration
                     yield DocumentFragment(
                         id=generate_id_from_label(f"{item.id}-{iteration}"),
                         extraction_id=item.id,

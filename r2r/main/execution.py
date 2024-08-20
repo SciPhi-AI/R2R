@@ -171,7 +171,6 @@ class R2RExecutionWrapper:
                         metadatas=metadatas,
                         versions=versions,
                     )
-                    print("results = ", results)
                     results["results"]
                 else:
                     results = self.app.ingest_files(
@@ -227,7 +226,7 @@ class R2RExecutionWrapper:
         use_vector_search: bool = True,
         filters: Optional[dict[str, VectorDBFilterValue]] = None,
         search_limit: int = 10,
-        do_hybrid_search: bool = False,
+        use_hybrid_search: bool = False,
         use_kg_search: bool = False,
         kg_search_generation_config: Optional[dict] = None,
         kg_search_type: str = "global",
@@ -242,7 +241,7 @@ class R2RExecutionWrapper:
                     use_vector_search=use_vector_search,
                     filters=filters or {},
                     search_limit=search_limit,
-                    do_hybrid_search=do_hybrid_search,
+                    use_hybrid_search=use_hybrid_search,
                 ),
                 KGSearchSettings(
                     use_kg_search=use_kg_search,
@@ -262,7 +261,7 @@ class R2RExecutionWrapper:
                     use_vector_search=use_vector_search,
                     filters=filters or {},
                     search_limit=search_limit,
-                    do_hybrid_search=do_hybrid_search,
+                    use_hybrid_search=use_hybrid_search,
                 ),
                 KGSearchSettings(
                     use_kg_search=use_kg_search,
@@ -282,7 +281,7 @@ class R2RExecutionWrapper:
         use_vector_search: bool = True,
         filters: Optional[dict[str, VectorDBFilterValue]] = None,
         search_limit: int = 10,
-        do_hybrid_search: bool = False,
+        use_hybrid_search: bool = False,
         use_kg_search: bool = False,
         kg_search_generation_config: Optional[dict] = None,
         stream: bool = False,
@@ -297,7 +296,7 @@ class R2RExecutionWrapper:
                     use_vector_search=use_vector_search,
                     filters=filters or {},
                     search_limit=search_limit,
-                    do_hybrid_search=do_hybrid_search,
+                    use_hybrid_search=use_hybrid_search,
                 ),
                 kg_search_settings=KGSearchSettings(
                     use_kg_search=use_kg_search,
@@ -324,7 +323,7 @@ class R2RExecutionWrapper:
                     use_vector_search=use_vector_search,
                     filters=filters or {},
                     search_limit=search_limit,
-                    do_hybrid_search=do_hybrid_search,
+                    use_hybrid_search=use_hybrid_search,
                 ),
                 kg_search_settings=KGSearchSettings(
                     use_kg_search=use_kg_search,

@@ -91,7 +91,6 @@ class IngestionService(Service):
             return await self.ingest_documents(
                 documents,
                 versions,
-                user=user,
                 chunking_provider=chunking_provider,
                 *args,
                 **kwargs,

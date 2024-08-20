@@ -436,7 +436,7 @@ class ManagementService(Service):
 
     @telemetry_event("GetDocumentGroups")
     async def aget_document_groups(self, document_id: str):
-        group_ids = self.providers.database.vector.get_document_groups(
+        group_ids = self.providers.database.relational.get_document_groups(
             document_id
         )
         return {"group_ids": [str(group_id) for group_id in group_ids]}

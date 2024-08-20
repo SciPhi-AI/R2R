@@ -21,7 +21,7 @@ from typing import (
     Tuple,
     Union,
 )
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import psycopg2
 from flupy import flu
@@ -350,7 +350,7 @@ class Collection:
             )
         self.table.create(self.client.engine)
 
-        unique_string = str(uuid.uuid4()).replace("-", "_")[0:7]
+        unique_string = str(uuid4()).replace("-", "_")[0:7]
         with self.client.Session() as sess:
             sess.execute(
                 text(
@@ -532,7 +532,7 @@ class Collection:
                             }
 
                 if filters:
-                    meta_filter = self._build_complex_filters(filters)
+                    meta_filter = self.build_filters(filters)
                     delete_stmt = (
                         delete(self.table)
                         .where(meta_filter)
@@ -575,54 +575,69 @@ class Collection:
 
     def query(
         self,
-        vector: list[float],
-        filters: Dict[str, Any] = {},
-        imeasure: IndexMeasure = IndexMeasure.cosine_distance,
+        vector: Any,
         limit: int = 10,
+        filters: Optional[Dict] = None,
+        imeasure: Union[IndexMeasure, str] = IndexMeasure.cosine_distance,
         include_value: bool = False,
         include_metadata: bool = False,
         *,
         probes: Optional[int] = None,
         ef_search: Optional[int] = None,
+        skip_adapter: bool = False,
     ) -> Union[List[Record], List[str]]:
         """
-        Executes a similarity search in the collection based on the new query structure.
+        Executes a similarity search in the collection.
+
+        The return type is dependent on arguments *include_value* and *include_metadata*
 
         Args:
-            vector (list[float]): The query vector.
-            filters (Dict[str, Any], optional): Metadata filters to apply. Defaults to {}.
-            imeasure (IndexMeasure, optional): The distance measure to use. Defaults to IndexMeasure.cosine_distance.
+            data (Any): The vector to use as the query.
             limit (int, optional): The maximum number of results to return. Defaults to 10.
+            filters (Optional[Dict], optional): Filters to apply to the search. Defaults to None.
+            measure (Union[IndexMeasure, str], optional): The distance measure to use for the search. Defaults to 'cosine_distance'.
             include_value (bool, optional): Whether to include the distance value in the results. Defaults to False.
             include_metadata (bool, optional): Whether to include the metadata in the results. Defaults to False.
-            probes (Optional[int], optional): Number of ivfflat index lists to query.
-            ef_search (Optional[int], optional): Size of the dynamic candidate list for HNSW index search.
+            probes (Optional[Int], optional): Number of ivfflat index lists to query. Higher increases accuracy but decreases speed
+            ef_search (Optional[Int], optional): Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed
+            skip_adapter (bool, optional): When True, skips any associated adapter and queries using a literal vector provided to *data*
 
         Returns:
             Union[List[Record], List[str]]: The result of the similarity search.
-
-        Raises:
-            ArgError: If the limit is greater than 1000 or if an invalid distance measure is provided.
         """
+
         if probes is None:
             probes = 10
 
         if ef_search is None:
             ef_search = 40
 
+        if not isinstance(probes, int):
+            raise ArgError("probes must be an integer")
+
+        if probes < 1:
+            raise ArgError("probes must be >= 1")
+
         if limit > 1000:
             raise ArgError("limit must be <= 1000")
 
-        if not self.is_indexed_for_measure(imeasure):
+        # ValueError on bad input
+        try:
+            imeasure_obj = IndexMeasure(imeasure)
+        except ValueError:
+            raise ArgError("Invalid index measure")
+
+        if not self.is_indexed_for_measure(imeasure_obj):
             warnings.warn(
                 UserWarning(
-                    f"Query does not have a covering index for {imeasure}. See Collection.create_index"
+                    f"Query does not have a covering index for {imeasure_obj}. See Collection.create_index"
                 )
             )
 
-        distance_lambda = INDEX_MEASURE_TO_SQLA_ACC.get(imeasure)
+        distance_lambda = INDEX_MEASURE_TO_SQLA_ACC.get(imeasure_obj)
         if distance_lambda is None:
-            raise ArgError("invalid distance_measure")
+            # unreachable
+            raise ArgError("invalid distance_measure")  # pragma: no cover
 
         distance_clause = distance_lambda(self.table.c.vec)(vector)
 
@@ -642,13 +657,16 @@ class Collection:
 
         stmt = select(*cols)
 
-        stmt = stmt.filter(self._build_complex_filters(filters))
+        # if filters:
+        stmt = stmt.filter(self.build_filters(filters))  # type: ignore
 
+        print("stmt = ", stmt)
         stmt = stmt.order_by(distance_clause)
         stmt = stmt.limit(limit)
 
         with self.client.Session() as sess:
             with sess.begin():
+                # index ignored if greater than n_lists
                 sess.execute(
                     text("set local ivfflat.probes = :probes").bindparams(
                         probes=probes
@@ -662,82 +680,294 @@ class Collection:
                     )
                 if len(cols) == 1:
                     return [str(x) for x in sess.scalars(stmt).fetchall()]
+                print("stmt = ", stmt)
                 return sess.execute(stmt).fetchall() or []
 
-    def _build_complex_filters(self, filters: Dict[str, Any]):
+    # def query(
+    #     self,
+    #     vector: list[float],
+    #     filters: Dict[str, Any] = {},
+    #     imeasure: IndexMeasure = IndexMeasure.cosine_distance,
+    #     limit: int = 10,
+    #     include_value: bool = False,
+    #     include_metadata: bool = False,
+    #     *,
+    #     probes: Optional[int] = None,
+    #     ef_search: Optional[int] = None,
+    # ) -> Union[List[Record], List[str]]:
+    #     """
+    #     Executes a similarity search in the collection based on the new query structure.
+
+    #     Args:
+    #         vector (list[float]): The query vector.
+    #         filters (Dict[str, Any], optional): Metadata filters to apply. Defaults to {}.
+    #         imeasure (IndexMeasure, optional): The distance measure to use. Defaults to IndexMeasure.cosine_distance.
+    #         limit (int, optional): The maximum number of results to return. Defaults to 10.
+    #         include_value (bool, optional): Whether to include the distance value in the results. Defaults to False.
+    #         include_metadata (bool, optional): Whether to include the metadata in the results. Defaults to False.
+    #         probes (Optional[int], optional): Number of ivfflat index lists to query.
+    #         ef_search (Optional[int], optional): Size of the dynamic candidate list for HNSW index search.
+
+    #     Returns:
+    #         Union[List[Record], List[str]]: The result of the similarity search.
+
+    #     Raises:
+    #         ArgError: If the limit is greater than 1000 or if an invalid distance measure is provided.
+    #     """
+    #     if probes is None:
+    #         probes = 10
+
+    #     if ef_search is None:
+    #         ef_search = 40
+
+    #     if limit > 1000:
+    #         raise ArgError("limit must be <= 1000")
+
+    #     if not self.is_indexed_for_measure(imeasure):
+    #         warnings.warn(
+    #             UserWarning(
+    #                 f"Query does not have a covering index for {imeasure}. See Collection.create_index"
+    #             )
+    #         )
+
+    #     distance_lambda = INDEX_MEASURE_TO_SQLA_ACC.get(imeasure)
+    #     if distance_lambda is None:
+    #         raise ArgError("invalid distance_measure")
+
+    #     distance_clause = distance_lambda(self.table.c.vec)(vector)
+
+    #     cols = [
+    #         self.table.c.fragment_id,
+    #         self.table.c.extraction_id,
+    #         self.table.c.document_id,
+    #         self.table.c.user_id,
+    #         self.table.c.group_ids,
+    #         self.table.c.text,
+    #     ]
+    #     if include_value:
+    #         cols.append(distance_clause)
+
+    #     if include_metadata:
+    #         cols.append(self.table.c.metadata)
+
+    #     stmt = select(*cols)
+
+    #     print('self._build_complex_filters(filters) = ', self._build_complex_filters(filters))
+    #     stmt = stmt.filter(self._build_complex_filters(filters))
+
+    #     stmt = stmt.order_by(distance_clause)
+    #     stmt = stmt.limit(limit)
+
+    #     with self.client.Session() as sess:
+    #         with sess.begin():
+    #             sess.execute(
+    #                 text("set local ivfflat.probes = :probes").bindparams(
+    #                     probes=probes
+    #                 )
+    #             )
+    #             if self.client._supports_hnsw():
+    #                 sess.execute(
+    #                     text(
+    #                         "set local hnsw.ef_search = :ef_search"
+    #                     ).bindparams(ef_search=ef_search)
+    #                 )
+    #             if len(cols) == 1:
+    #                 return [str(x) for x in sess.scalars(stmt).fetchall()]
+    #             print('stmt = ', stmt)
+    #             return sess.execute(stmt).fetchall() or []
+
+    # def _build_complex_filters(self, filters: Dict[str, Any]):
+    #     """
+    #     Builds complex filters for SQL query based on the new filter structure.
+
+    #     Args:
+    #         filters (Dict[str, Any]): The dictionary specifying filter conditions.
+
+    #     Returns:
+    #         The filter clause for the SQL query.
+    #     """
+
+    #     def parse_condition(key, condition):
+    #         if key in self.COLUMN_VARS:
+    #             # Handle column-based filters
+    #             column = getattr(self.table.c, key)
+    #             if isinstance(condition, dict):
+    #                 op = list(condition.keys())[0]
+    #                 value = condition[op]
+    #                 if op == "$eq":
+    #                     return column == value
+    #                 elif op == "$ne":
+    #                     return column != value
+    #                 elif op == "$in":
+    #                     return column.in_(value)
+    #                 elif op == "$nin":
+    #                     return ~column.in_(value)
+    #                 elif op == "$overlap":
+    #                     return column.overlap(value)
+    #                 else:
+    #                     raise FilterError(
+    #                         f"Unsupported operator for column {key}: {op}"
+    #                     )
+    #             else:
+    #                 return column == condition
+    #         else:
+    #             if isinstance(condition, dict):
+    #                 op = list(condition.keys())[0]
+    #                 value = condition[op]
+    #                 if op == "$eq":
+    #                     return self.table.c.metadata[key].astext == str(value)
+    #                 elif op == "$ne":
+    #                     return self.table.c.metadata[key].astext != str(value)
+    #                 elif op == "$gt":
+    #                     return (
+    #                         cast(self.table.c.metadata[key].astext, Float)
+    #                         > value
+    #                     )
+    #                 elif op == "$gte":
+    #                     return (
+    #                         cast(self.table.c.metadata[key].astext, Float)
+    #                         >= value
+    #                     )
+    #                 elif op == "$lt":
+    #                     return (
+    #                         cast(self.table.c.metadata[key].astext, Float)
+    #                         < value
+    #                     )
+    #                 elif op == "$lte":
+    #                     return (
+    #                         cast(self.table.c.metadata[key].astext, Float)
+    #                         <= value
+    #                     )
+    #                 elif op == "$in":
+    #                     return self.table.c.metadata[key].astext.in_(
+    #                         [str(v) for v in value]
+    #                     )
+    #                 elif op == "$nin":
+    #                     return ~self.table.c.metadata[key].astext.in_(
+    #                         [str(v) for v in value]
+    #                     )
+    #                 else:
+    #                     raise FilterError(f"Unsupported operator: {op}")
+    #             else:
+    #                 return self.table.c.metadata[key].astext == str(condition)
+
+    #     def parse_filter(filter_dict):
+    #         conditions = []
+    #         for key, value in filter_dict.items():
+    #             if key == "$and":
+    #                 conditions.append(and_(*[parse_filter(f) for f in value]))
+    #             elif key == "$or":
+    #                 conditions.append(or_(*[parse_filter(f) for f in value]))
+    #             else:
+    #                 conditions.append(parse_condition(key, value))
+    #         return and_(*conditions)
+
+    #     return parse_filter(filters)
+
+    def build_filters(self, filters: Dict):
         """
-        Builds complex filters for SQL query based on the new filter structure.
+        PUBLIC
+
+        Builds filters for SQL query based on provided dictionary.
 
         Args:
-            filters (Dict[str, Any]): The dictionary specifying filter conditions.
+            table: The SQLAlchemy table object.
+            filters (Dict): The dictionary specifying filter conditions.
+
+        Raises:
+            FilterError: If filter conditions are not correctly formatted.
 
         Returns:
             The filter clause for the SQL query.
         """
 
-        def parse_condition(key, condition):
-            if key in self.COLUMN_VARS:
+        if not isinstance(filters, dict):
+            raise FilterError("filters must be a dict")
+
+        def parse_condition(key, value):
+            if key in Collection.COLUMN_VARS:
                 # Handle column-based filters
                 column = getattr(self.table.c, key)
-                if isinstance(condition, dict):
-                    op = list(condition.keys())[0]
-                    value = condition[op]
+                if isinstance(value, dict):
+                    op, clause = next(iter(value.items()))
                     if op == "$eq":
-                        return column == value
+                        return column == clause
                     elif op == "$ne":
-                        return column != value
+                        return column != clause
                     elif op == "$in":
-                        return column.in_(value)
+                        return column.in_(clause)
                     elif op == "$nin":
-                        return ~column.in_(value)
+                        return ~column.in_(clause)
                     elif op == "$overlap":
-                        return column.overlap(value)
+                        return column.overlap(clause)
                     else:
                         raise FilterError(
                             f"Unsupported operator for column {key}: {op}"
                         )
                 else:
-                    return column == condition
+                    return column == value
             else:
-                if isinstance(condition, dict):
-                    op = list(condition.keys())[0]
-                    value = condition[op]
-                    if op == "$eq":
-                        return self.table.c.metadata[key].astext == str(value)
-                    elif op == "$ne":
-                        return self.table.c.metadata[key].astext != str(value)
-                    elif op == "$gt":
-                        return (
-                            cast(self.table.c.metadata[key].astext, Float)
-                            > value
+                # Handle JSON-based filters
+                json_col = self.table.c.metadata
+                if isinstance(value, dict):
+                    if len(value) > 1:
+                        raise FilterError("only one operator permitted")
+                    operator, clause = next(iter(value.items()))
+                    if operator not in (
+                        "$eq",
+                        "$ne",
+                        "$lt",
+                        "$lte",
+                        "$gt",
+                        "$gte",
+                        "$in",
+                        "$contains",
+                    ):
+                        raise FilterError("unknown operator")
+
+                    if operator == "$eq" and not hasattr(clause, "__len__"):
+                        contains_value = cast({key: clause}, postgresql.JSONB)
+                        return json_col.op("@>")(contains_value)
+
+                    if operator == "$in":
+                        if not isinstance(clause, list):
+                            raise FilterError(
+                                "argument to $in filter must be a list"
+                            )
+                        for elem in clause:
+                            if not isinstance(elem, (int, str, float)):
+                                raise FilterError(
+                                    "argument to $in filter must be a list of scalars"
+                                )
+                        contains_value = [
+                            cast(elem, postgresql.JSONB) for elem in clause
+                        ]
+                        return json_col.op("->")(key).in_(contains_value)
+
+                    matches_value = cast(clause, postgresql.JSONB)
+
+                    if operator == "$contains":
+                        if not isinstance(clause, (int, str, float)):
+                            raise FilterError(
+                                "argument to $contains filter must be a scalar"
+                            )
+                        return and_(
+                            json_col.op("->")(key).contains(matches_value),
+                            func.jsonb_typeof(json_col.op("->")(key))
+                            == "array",
                         )
-                    elif op == "$gte":
-                        return (
-                            cast(self.table.c.metadata[key].astext, Float)
-                            >= value
-                        )
-                    elif op == "$lt":
-                        return (
-                            cast(self.table.c.metadata[key].astext, Float)
-                            < value
-                        )
-                    elif op == "$lte":
-                        return (
-                            cast(self.table.c.metadata[key].astext, Float)
-                            <= value
-                        )
-                    elif op == "$in":
-                        return self.table.c.metadata[key].astext.in_(
-                            [str(v) for v in value]
-                        )
-                    elif op == "$nin":
-                        return ~self.table.c.metadata[key].astext.in_(
-                            [str(v) for v in value]
-                        )
-                    else:
-                        raise FilterError(f"Unsupported operator: {op}")
+
+                    return {
+                        "$eq": json_col.op("->")(key) == matches_value,
+                        "$ne": json_col.op("->")(key) != matches_value,
+                        "$lt": json_col.op("->")(key) < matches_value,
+                        "$lte": json_col.op("->")(key) <= matches_value,
+                        "$gt": json_col.op("->")(key) > matches_value,
+                        "$gte": json_col.op("->")(key) >= matches_value,
+                    }[operator]
                 else:
-                    return self.table.c.metadata[key].astext == str(condition)
+                    contains_value = cast({key: value}, postgresql.JSONB)
+                    return json_col.op("@>")(contains_value)
 
         def parse_filter(filter_dict):
             conditions = []
@@ -951,7 +1181,7 @@ class Collection:
         if ops is None:
             raise ArgError("Unknown index measure")
 
-        unique_string = str(uuid.uuid4()).replace("-", "_")[0:7]
+        unique_string = str(uuid4()).replace("-", "_")[0:7]
 
         with self.client.Session() as sess:
             with sess.begin():

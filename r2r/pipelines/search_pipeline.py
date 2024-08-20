@@ -8,7 +8,6 @@ from ..base.abstractions.search import (
     KGSearchSettings,
     VectorSearchSettings,
 )
-from ..base.api.models.auth.responses import UserResponse
 from ..base.logging.run_logger import RunLoggingSingleton
 from ..base.logging.run_manager import RunManager, manage_run
 from ..base.pipeline.base_pipeline import AsyncPipeline, dequeue_requests
@@ -38,7 +37,6 @@ class SearchPipeline(AsyncPipeline):
         run_manager: Optional[RunManager] = None,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
-        user: Optional[UserResponse] = None,
         *args: Any,
         **kwargs: Any,
     ):

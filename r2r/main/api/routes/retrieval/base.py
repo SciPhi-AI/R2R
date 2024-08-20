@@ -53,12 +53,6 @@ class RetrievalRouter(BaseRouter):
             vector_search_settings: VectorSearchSettings = Body(
                 default_factory=VectorSearchSettings,
                 description=search_descriptions.get("vector_search_settings"),
-                example={
-                    "use_vector_search": True,
-                    "filters": {"category": "technology"},
-                    "search_limit": 20,
-                    "do_hybrid_search": True,
-                },
             ),
             kg_search_settings: KGSearchSettings = Body(
                 default_factory=KGSearchSettings,
@@ -73,7 +67,7 @@ class RetrievalRouter(BaseRouter):
             Filters can be applied to various fields such as document_id, and internal metadata values.
 
 
-            Allowed filtered operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+            Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
 
             """
 
@@ -86,18 +80,21 @@ class RetrievalRouter(BaseRouter):
                     f"{selected_groups - allowed_groups}"
                 )
 
-            vector_search_settings.filters = {
+            filters = {
                 "$or": [
                     {"user_id": str(auth_user.id)},
                     {"group_ids": {"$overlap": list(allowed_groups)}},
-                ],
-                "$and": vector_search_settings.filters,
+                ]
             }
+            if vector_search_settings.filters != {}:
+                filters = {"$and": [filters, vector_search_settings.filters]}
+
+            vector_search_settings.filters = filters
+
             results = await self.engine.asearch(
                 query=query,
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
-                user=auth_user,
             )
             return results
 
@@ -138,13 +135,16 @@ class RetrievalRouter(BaseRouter):
             The generation process can be customized using the rag_generation_config parameter.
             """
             allowed_groups = set(auth_user.group_ids)
-            vector_search_settings.filters = {
+            filters = {
                 "$or": [
                     {"user_id": str(auth_user.id)},
                     {"group_ids": {"$overlap": list(allowed_groups)}},
-                ],
-                "$and": vector_search_settings.filters,
+                ]
             }
+            if vector_search_settings.filters != {}:
+                filters = {"$and": [filters, vector_search_settings.filters]}
+
+            vector_search_settings.filters = filters
 
             response = await self.engine.arag(
                 query=query,
@@ -152,7 +152,6 @@ class RetrievalRouter(BaseRouter):
                 kg_search_settings=kg_search_settings,
                 rag_generation_config=rag_generation_config,
                 task_prompt_override=task_prompt_override,
-                user=auth_user,
             )
 
             if rag_generation_config.stream:
@@ -213,14 +212,18 @@ class RetrievalRouter(BaseRouter):
             The agent's behavior can be customized using the rag_generation_config and
             task_prompt_override parameters.
             """
+            # TODO - Don't just copy paste the same code, refactor this
             allowed_groups = set(auth_user.group_ids)
-            vector_search_settings.filters = {
+            filters = {
                 "$or": [
                     {"user_id": str(auth_user.id)},
                     {"group_ids": {"$overlap": list(allowed_groups)}},
-                ],
-                "$and": vector_search_settings.filters,
+                ]
             }
+            if vector_search_settings.filters != {}:
+                filters = {"$and": [filters, vector_search_settings.filters]}
+
+            vector_search_settings.filters = filters
             response = await self.engine.arag_agent(
                 messages=messages,
                 vector_search_settings=vector_search_settings,
@@ -228,7 +231,6 @@ class RetrievalRouter(BaseRouter):
                 rag_generation_config=rag_generation_config,
                 task_prompt_override=task_prompt_override,
                 include_title_if_available=include_title_if_available,
-                user=auth_user,
             )
 
             if rag_generation_config.stream:

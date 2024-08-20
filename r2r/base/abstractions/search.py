@@ -84,6 +84,10 @@ class VectorSearchSettings(BaseModel):
     use_vector_search: bool = Field(
         default=True, description="Whether to use vector search"
     )
+    use_hybrid_search: bool = Field(
+        default=False,
+        description="Whether to perform a hybrid search (combining vector and keyword search)",
+    )
     filters: dict[str, Any] = Field(
         default_factory=dict,
         description="Filters to apply to the vector search",
@@ -92,11 +96,7 @@ class VectorSearchSettings(BaseModel):
         default=10,
         description="Maximum number of results to return",
         ge=1,
-        le=100,
-    )
-    do_hybrid_search: bool = Field(
-        default=False,
-        description="Whether to perform a hybrid search (combining vector and keyword search)",
+        le=1_000,
     )
     selected_group_ids: List[UUID] = Field(
         default_factory=list,
@@ -105,6 +105,16 @@ class VectorSearchSettings(BaseModel):
 
     class Config:
         json_encoders = {UUID: str}
+        json_schema_extra = {
+            "use_vector_search": True,
+            "use_hybrid_search": True,
+            "filters": {"category": "technology"},
+            "search_limit": 20,
+            "selected_group_ids": [
+                "2acb499e-8428-543b-bd85-0d9098718220",
+                "3e157b3a-8469-51db-90d9-52e7d896b49b",
+            ],
+        }
 
     def model_dump(self, *args, **kwargs):
         dump = super().model_dump(*args, **kwargs)
@@ -130,3 +140,21 @@ class KGSearchSettings(BaseModel):
         "__Relationship__": 20,
         "__Community__": 20,
     }
+
+    class Config:
+        json_encoders = {UUID: str}
+        json_schema_extra = {
+            "use_kg_search": True,
+            "kg_search_type": "global",
+            "kg_search_level": "global",
+            "kg_search_generation_config": GenerationConfig.Config.json_schema_extra,
+            "entity_types": ["Person", "Organization"],
+            "relationships": ["founder", "CEO"],
+            "max_community_description_length": 4096 * 4,
+            "max_llm_queries_for_global_search": 250,
+            "local_search_limits": {
+                "__Entity__": 20,
+                "__Relationship__": 20,
+                "__Community__": 20,
+            },
+        }

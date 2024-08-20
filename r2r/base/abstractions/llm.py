@@ -87,3 +87,16 @@ class GenerationConfig(BaseModel):
             super().__init__(model=model, **data)
         else:
             super().__init__(**data)
+
+    class Config:
+        json_schema_extra = {
+            "model": "openai/gpt-4o",
+            "temperature": 0.1,
+            "top_p": 1.0,
+            "max_tokens_to_sample": 1024,
+            "stream": False,
+            "functions": None,
+            "tools": None,
+            "add_generation_kwargs": None,
+            "api_base": None,
+        }

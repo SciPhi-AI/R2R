@@ -32,7 +32,9 @@ def inspect_knowledge_graph(obj, limit, print_descriptions):
 @click.option(
     "--search-limit", default=10, help="Number of search results to return"
 )
-@click.option("--do-hybrid-search", is_flag=True, help="Perform hybrid search")
+@click.option(
+    "--use-hybrid-search", is_flag=True, help="Perform hybrid search"
+)
 @click.option(
     "--use-kg-search", is_flag=True, help="Use knowledge graph search"
 )
@@ -52,7 +54,7 @@ def rag(
     use_vector_search,
     filters,
     search_limit,
-    do_hybrid_search,
+    use_hybrid_search,
     use_kg_search,
     kg_search_model,
     stream,
@@ -74,7 +76,7 @@ def rag(
             use_vector_search,
             filters,
             search_limit,
-            do_hybrid_search,
+            use_hybrid_search,
             use_kg_search,
             kg_search_generation_config,
             stream,
@@ -105,7 +107,9 @@ def rag(
 @click.option(
     "--search-limit", default=10, help="Number of search results to return"
 )
-@click.option("--do-hybrid-search", is_flag=True, help="Perform hybrid search")
+@click.option(
+    "--use-hybrid-search", is_flag=True, help="Perform hybrid search"
+)
 @click.option(
     "--use-kg-search", is_flag=True, help="Use knowledge graph search"
 )
@@ -119,7 +123,7 @@ def search(
     use_vector_search,
     filters,
     search_limit,
-    do_hybrid_search,
+    use_hybrid_search,
     use_kg_search,
     kg_search_model,
     kg_search_type,
@@ -138,7 +142,7 @@ def search(
             use_vector_search=use_vector_search,
             filters=filters,
             search_limit=search_limit,
-            do_hybrid_search=do_hybrid_search,
+            use_hybrid_search=use_hybrid_search,
             use_kg_search=use_kg_search,
             entity_types=entity_types,
             relationships=relationships,

@@ -120,7 +120,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         self.collection: Optional[Collection] = None
         self._initialize_vector_db(dimension)
-        self._create_hybrid_search_function()
         logger.info(
             f"Successfully initialized PGVectorDB with collection: {self.collection_name}"
         )
@@ -129,107 +128,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
         self.collection = self.vx.get_or_create_collection(
             name=self.collection_name, dimension=dimension
         )
-
-    def _create_hybrid_search_function(self):
-        hybrid_search_function = f"""
-        CREATE OR REPLACE FUNCTION hybrid_search_{self.collection_name}(
-            query_text TEXT,
-            query_embedding VECTOR(512),
-            match_limit INT,
-            full_text_weight FLOAT = 1,
-            semantic_weight FLOAT = 1,
-            rrf_k INT = 50,
-            filter_condition JSONB = NULL
-        )
-        RETURNS TABLE(
-            fragment_id UUID,
-            extraction_id UUID,
-            document_id UUID,
-            user_id UUID,
-            group_ids UUID[],
-            vec VECTOR(512),
-            text TEXT,
-            metadata JSONB,
-            rrf_score FLOAT,
-            semantic_score FLOAT,
-            full_text_score FLOAT,
-            rank_semantic INT,
-            rank_full_text INT
-        )
-        LANGUAGE sql
-        AS $$
-        WITH full_text AS (
-            SELECT
-                fragment_id,
-                ts_rank_cd(to_tsvector('english', text), websearch_to_tsquery('english', query_text), 1 | 2 | 4 | 8 | 16 | 32 | 64) * 10000 AS full_text_score,
-                ROW_NUMBER() OVER (ORDER BY ts_rank_cd(to_tsvector('english', text), websearch_to_tsquery('english', query_text), 1 | 2 | 4 | 8 | 16 | 32 | 64) DESC) AS rank_ix
-            FROM vecs."{self.collection_name}"
-            WHERE to_tsvector('english', text) @@ websearch_to_tsquery('english', query_text)
-            AND (filter_condition IS NULL OR (metadata @> filter_condition))
-            ORDER BY rank_ix
-            LIMIT LEAST(match_limit, 30) * 2
-        ),
-        semantic AS (
-            SELECT
-                fragment_id,
-                1 - (vec <=> query_embedding) AS semantic_score,
-                ROW_NUMBER() OVER (ORDER BY (vec <=> query_embedding)) AS rank_ix
-            FROM vecs."{self.collection_name}"
-            WHERE filter_condition IS NULL OR (metadata @> filter_condition)
-            ORDER BY rank_ix
-            LIMIT LEAST(match_limit, 30) * 2
-        )
-        SELECT
-            vecs."{self.collection_name}".fragment_id,
-            vecs."{self.collection_name}".extraction_id,
-            vecs."{self.collection_name}".document_id,
-            vecs."{self.collection_name}".user_id,
-            vecs."{self.collection_name}".group_ids,
-            vecs."{self.collection_name}".vec,
-            vecs."{self.collection_name}".text,
-            vecs."{self.collection_name}".metadata,
-            (COALESCE(1.0 / (rrf_k + full_text.rank_ix), 0.0) * full_text_weight +
-            COALESCE(1.0 / (rrf_k + semantic.rank_ix), 0.0) * semantic_weight) AS rrf_score,
-            COALESCE(semantic.semantic_score, 0) AS semantic_score,
-            COALESCE(full_text.full_text_score, 0) AS full_text_score,
-            semantic.rank_ix AS rank_semantic,
-            full_text.rank_ix AS rank_full_text
-        FROM
-            full_text
-            FULL OUTER JOIN semantic
-                ON full_text.fragment_id = semantic.fragment_id
-            JOIN vecs."{self.collection_name}"
-                ON vecs."{self.collection_name}".fragment_id = COALESCE(full_text.fragment_id, semantic.fragment_id)
-        ORDER BY
-            rrf_score DESC
-        LIMIT
-            LEAST(match_limit, 30);
-        $$;
-        """
-        retry_attempts = 5
-        for attempt in range(retry_attempts):
-            try:
-                with self.vx.Session() as sess:
-                    # Acquire an advisory lock
-                    sess.execute(text("SELECT pg_advisory_lock(123456789)"))
-                    try:
-                        sess.execute(text(hybrid_search_function))
-                        sess.commit()
-                    finally:
-                        # Release the advisory lock
-                        sess.execute(
-                            text("SELECT pg_advisory_unlock(123456789)")
-                        )
-                break  # Break the loop if successful
-            except exc.InternalError as e:
-                if "tuple concurrently updated" in str(e):
-                    time.sleep(2**attempt)  # Exponential backoff
-                else:
-                    raise  # Re-raise the exception if it's not a concurrency issue
-        else:
-            raise RuntimeError(
-                "Failed to create hybrid search function after multiple attempts"
-            )
 
     def upsert(self, entry: VectorEntry) -> None:
         if self.collection is None:
@@ -287,18 +185,16 @@ class PostgresVectorDBProvider(VectorDBProvider):
             group_ids = result.scalar()
         return [str(group_id) for group_id in (group_ids or [])]
 
-    def search(
+    def semantic_search(
         self,
         query_vector: list[float],
         filters: dict[str, Any] = {},
         limit: int = 10,
         measure: str = "cosine_distance",
-        *args,
-        **kwargs,
     ) -> list[VectorSearchResult]:
         if self.collection is None:
             raise ValueError(
-                "Please call `initialize_collection` before attempting to run `search`."
+                "Please call `initialize_collection` before attempting to run `semantic_search`."
             )
         results = self.collection.query(
             vector=query_vector,
@@ -322,66 +218,167 @@ class PostgresVectorDBProvider(VectorDBProvider):
             for result in results
         ]
 
+    def full_text_search(
+        self,
+        query_text: str,
+        filters: dict[str, Any] = {},
+        limit: int = 100,
+    ) -> list[VectorSearchResult]:
+        if self.collection is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `full_text_search`."
+            )
+        from sqlalchemy import func, select
+        from sqlalchemy.sql.expression import or_
+
+        full_text_query = (
+            select(
+                self.collection.table.c.fragment_id,
+                self.collection.table.c.extraction_id,
+                self.collection.table.c.document_id,
+                self.collection.table.c.user_id,
+                self.collection.table.c.group_ids,
+                self.collection.table.c.text,
+                self.collection.table.c.metadata,
+                func.ts_rank_cd(
+                    func.to_tsvector("english", self.collection.table.c.text),
+                    func.websearch_to_tsquery("english", query_text),
+                    1 | 2 | 4 | 8 | 16 | 32 | 64,
+                ).label("rank"),
+                func.ts_headline(
+                    "english",
+                    self.collection.table.c.text,
+                    func.websearch_to_tsquery("english", query_text),
+                    "StartSel = <b>, StopSel = </b>, MaxWords=35, MinWords=15",
+                ).label("headline"),
+            )
+            .where(
+                or_(
+                    func.to_tsvector(
+                        "english", self.collection.table.c.text
+                    ).op("@@")(
+                        func.websearch_to_tsquery("english", query_text)
+                    ),
+                    func.similarity(self.collection.table.c.text, query_text)
+                    > 0.3,
+                )
+            )
+            .order_by(
+                func.ts_rank_cd(
+                    func.to_tsvector("english", self.collection.table.c.text),
+                    func.websearch_to_tsquery("english", query_text),
+                    1 | 2 | 4 | 8 | 16 | 32 | 64,
+                ).desc()
+            )
+            .limit(limit)
+        )
+
+        if filters:
+            full_text_query = full_text_query.where(
+                self.collection.build_filters(filters)
+            )
+
+        with self.vx.Session() as session:
+            results = session.execute(full_text_query).fetchall()
+
+        return [
+            VectorSearchResult(
+                fragment_id=result.fragment_id,
+                extraction_id=result.extraction_id,
+                document_id=result.document_id,
+                user_id=result.user_id,
+                group_ids=result.group_ids,
+                text=result.text,
+                score=float(result.rank),
+                metadata={**result.metadata, "headline": result.headline},
+            )
+            for result in results
+        ]
+
     def hybrid_search(
         self,
         query_text: str,
         query_vector: list[float],
-        limit: int = 10,
+        semantic_limit: int = 10,
+        full_text_limit: int = 100,
         filters: dict[str, Any] = {},
         full_text_weight: float = 1.0,
-        semantic_weight: float = 1.0,
-        rrf_k: int = 20,
+        semantic_weight: float = 5.0,
+        rrf_k: int = 50,
         *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
-        if self.collection is None:
-            raise ValueError(
-                "Please call `initialize_collection` before attempting to run `hybrid_search`."
-            )
-
-        # Convert filters to a JSON-compatible format
-        filter_condition = json.dumps(filters) if filters else None
-
-        query = text(
-            f"""
-            SELECT * FROM hybrid_search_{self.collection_name}(
-                cast(:query_text as TEXT), cast(:query_embedding as VECTOR), cast(:match_limit as INT),
-                cast(:full_text_weight as FLOAT), cast(:semantic_weight as FLOAT), cast(:rrf_k as INT),
-                cast(:filter_condition as JSONB)
-            )
-        """
+        semantic_results = self.semantic_search(
+            query_vector=query_vector,
+            filters=filters,
+            limit=semantic_limit * 2,
+        )
+        full_text_results = self.full_text_search(
+            query_text=query_text,
+            filters=filters,
+            limit=full_text_limit * 2,
         )
 
-        params = {
-            "query_text": str(query_text),
-            "query_embedding": list(query_vector),
-            "match_limit": limit,
-            "full_text_weight": full_text_weight,
-            "semantic_weight": semantic_weight,
-            "rrf_k": rrf_k,
-            "filter_condition": filter_condition,
+        # Combine results using RRF
+        combined_results = {}
+        for rank, result in enumerate(semantic_results, 1):
+            combined_results[result.fragment_id] = {
+                "semantic_rank": rank,
+                "full_text_rank": full_text_limit,
+                "data": result,
+            }
+
+        for rank, result in enumerate(full_text_results, 1):
+            if result.fragment_id in combined_results:
+                combined_results[result.fragment_id]["full_text_rank"] = rank
+            else:
+                combined_results[result.fragment_id] = {
+                    "semantic_rank": semantic_limit,
+                    "full_text_rank": rank,
+                    "data": result,
+                }
+
+        # Filter out non-overlapping results
+        combined_results = {
+            k: v
+            for k, v in combined_results.items()
+            if v["semantic_rank"] <= semantic_limit * 2
+            and v["full_text_rank"] <= full_text_limit * 2
         }
 
-        with self.vx.Session() as session:
-            results = session.execute(query, params).fetchall()
+        # Calculate RRF scores
+        for result in combined_results.values():
+            semantic_score = 1 / (rrf_k + result["semantic_rank"])
+            full_text_score = 1 / (rrf_k + result["full_text_rank"])
+            result["rrf_score"] = (
+                semantic_score * semantic_weight
+                + full_text_score * full_text_weight
+            ) / (semantic_weight + full_text_weight)
+
+        # Sort by RRF score and convert to VectorSearchResult
+        limit = min(semantic_limit, full_text_limit)
+        sorted_results = sorted(
+            combined_results.values(),
+            key=lambda x: x["rrf_score"],
+            reverse=True,
+        )[:limit]
+
         return [
             VectorSearchResult(
-                fragment_id=result[0],
-                extraction_id=result[1],
-                document_id=result[2],
-                user_id=result[3],
-                group_ids=result[4],
-                text=result[6],
+                fragment_id=result["data"].fragment_id,
+                extraction_id=result["data"].extraction_id,
+                document_id=result["data"].document_id,
+                user_id=result["data"].user_id,
+                group_ids=result["data"].group_ids,
+                text=result["data"].text,
+                score=result["rrf_score"],
                 metadata={
-                    **result[7],
-                    "semantic_score": result[9],
-                    "semantic_rank": result[11],
-                    "full_text_score": result[10],
-                    "full_text_rank": result[12],
+                    **result["data"].metadata,
+                    "semantic_rank": result["semantic_rank"],
+                    "full_text_rank": result["full_text_rank"],
                 },
-                score=result[8],
             )
-            for result in results
+            for result in sorted_results
         ]
 
     def create_index(self, index_type, column_name, index_options):
