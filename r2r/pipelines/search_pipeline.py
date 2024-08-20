@@ -41,7 +41,7 @@ class SearchPipeline(AsyncPipeline):
         **kwargs: Any,
     ):
         self.state = state or AsyncState()
-        do_vector_search = (
+        use_vector_search = (
             self._vector_search_pipeline is not None
             and vector_search_settings.use_vector_search
         )
@@ -56,7 +56,7 @@ class SearchPipeline(AsyncPipeline):
 
             async def enqueue_requests():
                 async for message in input:
-                    if do_vector_search:
+                    if use_vector_search:
                         await vector_search_queue.put(message)
                     if do_kg:
                         await kg_queue.put(message)
@@ -68,7 +68,7 @@ class SearchPipeline(AsyncPipeline):
             enqueue_task = asyncio.create_task(enqueue_requests())
 
             # Start the embedding and KG pipelines in parallel
-            if do_vector_search:
+            if use_vector_search:
                 vector_search_task = asyncio.create_task(
                     self._vector_search_pipeline.run(
                         dequeue_requests(vector_search_queue),
@@ -97,7 +97,7 @@ class SearchPipeline(AsyncPipeline):
         await enqueue_task
 
         vector_search_results = (
-            await vector_search_task if do_vector_search else None
+            await vector_search_task if use_vector_search else None
         )
         kg_results = await kg_task if do_kg else None
 

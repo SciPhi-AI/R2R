@@ -14,6 +14,7 @@ from r2r.base import (
     VectorSearchResult,
     generate_id_from_label,
 )
+from r2r.base.abstractions import VectorSearchSettings
 
 from .vecs import Client, Collection, create_client
 
@@ -186,23 +187,14 @@ class PostgresVectorDBProvider(VectorDBProvider):
         return [str(group_id) for group_id in (group_ids or [])]
 
     def semantic_search(
-        self,
-        query_vector: list[float],
-        filters: dict[str, Any] = {},
-        limit: int = 10,
-        measure: str = "cosine_distance",
+        self, query_vector: list[float], search_settings: VectorSearchSettings
     ) -> list[VectorSearchResult]:
         if self.collection is None:
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `semantic_search`."
             )
         results = self.collection.query(
-            vector=query_vector,
-            filters=filters,
-            limit=limit,
-            imeasure=measure,
-            include_value=True,
-            include_metadata=True,
+            vector=query_vector, search_settings=search_settings
         )
         return [
             VectorSearchResult(
@@ -219,10 +211,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         ]
 
     def full_text_search(
-        self,
-        query_text: str,
-        filters: dict[str, Any] = {},
-        limit: int = 100,
+        self, query_text: str, search_settings: VectorSearchSettings
     ) -> list[VectorSearchResult]:
         if self.collection is None:
             raise ValueError(
@@ -270,12 +259,12 @@ class PostgresVectorDBProvider(VectorDBProvider):
                     1 | 2 | 4 | 8 | 16 | 32 | 64,
                 ).desc()
             )
-            .limit(limit)
+            .limit(search_settings.hybrid_search_settings.full_text_limit)
         )
 
-        if filters:
+        if search_settings.filters:
             full_text_query = full_text_query.where(
-                self.collection.build_filters(filters)
+                self.collection.build_filters(search_settings.filters)
             )
 
         with self.vx.Session() as session:
@@ -299,26 +288,38 @@ class PostgresVectorDBProvider(VectorDBProvider):
         self,
         query_text: str,
         query_vector: list[float],
-        semantic_limit: int = 10,
-        full_text_limit: int = 100,
-        filters: dict[str, Any] = {},
-        full_text_weight: float = 1.0,
-        semantic_weight: float = 5.0,
-        rrf_k: int = 50,
+        search_settings: VectorSearchSettings,
         *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
-        semantic_results = self.semantic_search(
-            query_vector=query_vector,
-            filters=filters,
-            limit=semantic_limit * 2,
-        )
+        if search_settings.hybrid_search_settings is None:
+            raise ValueError(
+                "Please provide a valid `hybrid_search_settings` in the `search_settings`."
+            )
+        if (
+            search_settings.hybrid_search_settings.full_text_limit
+            < search_settings.search_limit
+        ):
+            raise ValueError(
+                "The `full_text_limit` must be greater than or equal to the `search_limit`."
+            )
+        semantic_results = self.semantic_search(query_vector, search_settings)
         full_text_results = self.full_text_search(
-            query_text=query_text,
-            filters=filters,
-            limit=full_text_limit * 2,
+            query_text,
+            search_settings,
         )
 
+        semantic_limit = search_settings.search_limit
+        full_text_limit = (
+            search_settings.hybrid_search_settings.full_text_limit
+        )
+        semantic_weight = (
+            search_settings.hybrid_search_settings.semantic_weight
+        )
+        full_text_weight = (
+            search_settings.hybrid_search_settings.full_text_weight
+        )
+        rrf_k = search_settings.hybrid_search_settings.rrf_k
         # Combine results using RRF
         combined_results = {}
         for rank, result in enumerate(semantic_results, 1):

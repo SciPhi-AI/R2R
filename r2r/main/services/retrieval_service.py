@@ -79,6 +79,15 @@ class RetrievalService(Service):
                     message="Vector search is not enabled in the configuration.",
                 )
 
+            if (
+                vector_search_settings.use_vector_search
+                and vector_search_settings.use_hybrid_search
+                and not vector_search_settings.hybrid_search_settings
+            ):
+                raise R2RException(
+                    status_code=400,
+                    message="Hybrid search settings must be specified in the input configuration.",
+                )
             # TODO - Remove these transforms once we have a better way to handle this
             for filter, value in vector_search_settings.filters.items():
                 if isinstance(value, UUID):
@@ -139,7 +148,6 @@ class RetrievalService(Service):
                 if rag_generation_config.stream:
                     return await self.stream_rag_response(
                         query,
-                        run_id,
                         completion_record,
                         rag_generation_config,
                         vector_search_settings,
@@ -202,7 +210,6 @@ class RetrievalService(Service):
     async def stream_rag_response(
         self,
         query,
-        run_id,
         completion_record,
         rag_generation_config,
         vector_search_settings,

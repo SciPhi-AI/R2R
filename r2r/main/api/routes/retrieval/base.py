@@ -224,6 +224,7 @@ class RetrievalRouter(BaseRouter):
                 filters = {"$and": [filters, vector_search_settings.filters]}
 
             vector_search_settings.filters = filters
+
             response = await self.engine.arag_agent(
                 messages=messages,
                 vector_search_settings=vector_search_settings,
