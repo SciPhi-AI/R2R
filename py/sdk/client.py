@@ -12,7 +12,7 @@ from .management import ManagementMethods
 from .models import R2RException
 from .restructure import RestructureMethods
 from .retrieval import RetrievalMethods
-
+from typing import AsyncGenerator, Generator
 nest_asyncio.apply()
 
 # The empty args become necessary after a recent modification to `base_endpoint`
@@ -76,7 +76,7 @@ class R2RAsyncClient:
         base_url: str = "http://localhost:8000",
         prefix: str = "/v1",
         custom_client=None,
-        timeout: float = 60.0,
+        timeout: float = 300.0,
     ):
         self.base_url = base_url
         self.prefix = prefix
@@ -136,6 +136,19 @@ class R2RAsyncClient:
                     status_code=500, message=f"Request failed: {str(e)}"
                 )
 
+
+    async def _make_streaming_request(self, method: str, endpoint: str, **kwargs) -> AsyncGenerator[str, None]:
+        url = f"{self.base_url}{self.prefix}/{endpoint}"
+        headers = kwargs.pop("headers", {})
+        if self.access_token and endpoint not in ["register", "login", "verify_email"]:
+            headers.update(self._get_auth_header())
+        
+        async with httpx.AsyncClient() as client:
+            async with client.stream(method, url, headers=headers, timeout=self.timeout, **kwargs) as response:
+                handle_request_error(response)
+                async for chunk in response.aiter_text():
+                    yield chunk
+
     def _get_auth_header(self) -> dict:
         if not self.access_token:
             return {}
@@ -175,15 +188,26 @@ class R2RClient:
     def __init__(self, *args, **kwargs):
         self.async_client = R2RAsyncClient(*args, **kwargs)
 
+    def _sync_generator(self, async_gen: AsyncGenerator) -> Generator:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        try:
+            while True:
+                yield loop.run_until_complete(async_gen.__anext__())
+        except StopAsyncIteration:
+            pass
+        finally:
+            loop.close()
+
     def __getattr__(self, name):
         async_attr = getattr(self.async_client, name)
         if callable(async_attr):
-
             def sync_wrapper(*args, **kwargs):
-                return asyncio.get_event_loop().run_until_complete(
-                    async_attr(*args, **kwargs)
-                )
-
+                result = asyncio.get_event_loop().run_until_complete(async_attr(*args, **kwargs))
+                if isinstance(result, AsyncGenerator):
+                    return self._sync_generator(result)
+                return result
             return sync_wrapper
         return async_attr
 
