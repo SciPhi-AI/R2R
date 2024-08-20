@@ -363,16 +363,16 @@ class ManagementService(Service):
 
             descriptions_dict = {}
             relationships = []
+            
             for relationship in relationships_raw:
-                descriptions_dict[relationship["subject"]["name"]] = (
-                    relationship["subject"]["description"]
-                )
-                descriptions_dict[relationship["object"]["name"]] = (
-                    relationship["object"]["description"]
-                )
-                descriptions_dict[relationship["relation"]["name"]] = (
-                    relationship["relation"]["description"]
-                )
+                if print_descriptions:
+                    descriptions_dict[relationship["subject"]["name"]] = (
+                        relationship["subject"]["description"]
+                    )
+                    descriptions_dict[relationship["object"]["name"]] = (
+                        relationship["object"]["description"]
+                    )
+        
                 relationships.append(
                     (
                         relationship["subject"]["name"],
@@ -460,15 +460,15 @@ class ManagementService(Service):
         output = []
         # Print grouped relationships
         for subject, relations in grouped_relationships.items():
-            output.extend(
-                [
-                    f"\n== {subject} ==",
-                    *(
-                        f"  {relation}:\n" + "\n".join(f"    - {obj}" for obj in relations[relation])
-                        for relation in relations
-                    ),
-                ]
-            )
+            output.append(f"\n== {subject} ==")
+            if print_descriptions and subject in descriptions_dict:
+                output.append(f"\tDescription: {descriptions_dict[subject]}")
+            for relation, objects in relations.items():
+                output.append(f"  {relation}:")
+                for obj in objects:
+                    output.append(f"    - {obj}")
+                    if print_descriptions and obj in descriptions_dict:
+                        output.append(f"      Description: {descriptions_dict[obj]}")
 
         # Print basic graph statistics
         output.extend(
