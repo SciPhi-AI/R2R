@@ -1,4 +1,4 @@
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, Union
 
 from core.base import (
     ChunkingConfig,
@@ -8,6 +8,8 @@ from core.base import (
     TextSplitter,
 )
 
+from core.base import ChunkingProvider, Method
+from core.base.abstractions.document import DocumentExtraction
 
 class R2RChunkingProvider(ChunkingProvider):
     def __init__(self, config: ChunkingConfig):
@@ -43,7 +45,11 @@ class R2RChunkingProvider(ChunkingProvider):
             self.config = config_override
             self.text_splitter = self._initialize_text_splitter()
 
-    async def chunk(self, parsed_document: Any) -> AsyncGenerator[Any, None]:
+    async def chunk(self, parsed_document: Union[str, DocumentExtraction]) -> AsyncGenerator[Any, None]:
+
+        if isinstance(parsed_document, DocumentExtraction):
+            parsed_document = parsed_document.data
+
         if isinstance(parsed_document, str):
             chunks = self.text_splitter.create_documents([parsed_document])
         else:
@@ -56,7 +62,7 @@ class R2RChunkingProvider(ChunkingProvider):
             )
 
     async def chunk_with_override(
-        self, parsed_document: Any, config_override: ChunkingConfig
+        self, parsed_document: Union[str, DocumentExtraction], config_override: ChunkingConfig
     ) -> AsyncGenerator[Any, None]:
         original_config = self.config
         original_splitter = self.text_splitter

@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from ..abstractions.document import Document, DocumentType
 from .base import Provider, ProviderConfig
+from .chunking import ChunkingConfig
 
 
 class OverrideParser(BaseModel):
@@ -16,10 +17,11 @@ class ParsingConfig(ProviderConfig):
     provider: str = "r2r"
     excluded_parsers: List[DocumentType] = Field(default_factory=list)
     override_parsers: List[OverrideParser] = Field(default_factory=list)
+    chunking_config: ChunkingConfig = Field(default_factory=ChunkingConfig)
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["r2r", "unstructured", None]
+        return ["r2r", "unstructured", 'unstructured_api', None]
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:
