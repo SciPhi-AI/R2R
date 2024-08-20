@@ -1,7 +1,7 @@
 import logging
-import uuid
 from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional, Union
+from uuid import UUID
 
 from r2r.base import (
     AsyncPipe,
@@ -55,7 +55,7 @@ class SearchPipe(AsyncPipe):
         self,
         input: Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         *args: Any,
         **kwargs,
     ) -> AsyncGenerator[VectorSearchResult, None]:

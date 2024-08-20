@@ -6,10 +6,10 @@ a collection using media types other than vectors.
 All public classes, enums, and functions are re-exported by `vecs.adapters` module.
 """
 
-import uuid
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Dict, Generator, Iterable, Optional, Tuple, Union
+from uuid import UUID
 
 from vecs.exc import ArgError
 
@@ -18,11 +18,11 @@ Metadata = Dict[str, MetadataValues]
 Numeric = Union[int, float, complex]
 
 Record = Tuple[
-    uuid.UUID,
-    uuid.UUID,
-    uuid.UUID,
-    uuid.UUID,
-    list[uuid.UUID],
+    UUID,
+    UUID,
+    UUID,
+    UUID,
+    list[UUID],
     Iterable[Numeric],
     str,
     Metadata,

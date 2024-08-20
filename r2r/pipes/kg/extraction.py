@@ -87,7 +87,9 @@ class KGTriplesExtractionPipe(AsyncPipe):
         """
 
         task_inputs = {"input": fragment.data}
-        task_inputs["max_knowledge_triples"] = self.kg_provider.config.max_knowledge_triples
+        task_inputs["max_knowledge_triples"] = (
+            self.kg_provider.config.max_knowledge_triples
+        )
 
         messages = self.prompt_provider._get_message_payload(
             task_prompt_name=self.kg_provider.config.kg_extraction_prompt,
@@ -148,9 +150,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
                                 weight=weight,
                                 document_ids=[str(fragment.document_id)],
                                 text_unit_ids=[str(fragment.id)],
-                                attributes={
-                                    "fragment_text": fragment.data
-                                },
+                                attributes={"fragment_text": fragment.data},
                             )
                         )
 

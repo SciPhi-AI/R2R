@@ -1,5 +1,5 @@
-import uuid
 from typing import Optional
+from uuid import UUID
 
 from r2r.base import Token
 from r2r.base.api.models.auth.responses import UserResponse
@@ -90,7 +90,7 @@ class AuthMethods:
 
     @staticmethod
     async def delete_user(
-        client, user_id: uuid.UUID, password: Optional[str] = None
+        client, user_id: UUID, password: Optional[str] = None
     ) -> dict:
         data = {"user_id": str(user_id), "password": password}
         response = await client._make_request("DELETE", "user", json=data)

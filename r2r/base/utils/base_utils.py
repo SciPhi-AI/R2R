@@ -1,6 +1,6 @@
 import asyncio
-import uuid
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
+from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.graph import EntityType, RelationshipType
 
@@ -8,12 +8,19 @@ if TYPE_CHECKING:
     from ..pipeline.base_pipeline import AsyncPipeline
 
 
-def generate_run_id() -> uuid.UUID:
-    return uuid.uuid4()
+def generate_run_id() -> UUID:
+    return uuid5(NAMESPACE_DNS, str(uuid4()))
 
 
-def generate_id_from_label(label: str) -> uuid.UUID:
-    return uuid.uuid5(uuid.NAMESPACE_DNS, label)
+def generate_id_from_label(label: str) -> UUID:
+    return uuid5(NAMESPACE_DNS, label)
+
+
+def generate_user_document_id(filename: str, user_id: UUID) -> UUID:
+    """
+    Generates a unique document id from a given filename and user id
+    """
+    return generate_id_from_label(f'{filename.split("/")[-1]}-{str(user_id)}')
 
 
 async def to_async_generator(

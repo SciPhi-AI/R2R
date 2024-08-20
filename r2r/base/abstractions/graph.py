@@ -394,6 +394,7 @@ class TextUnit(Identified):
 
 TextEmbedder = Callable[[str], list[float]]
 
+
 class KGExtraction(BaseModel):
     """An extraction from a document that is part of a knowledge graph."""
 

@@ -1,7 +1,7 @@
 import asyncio
 import logging
-import uuid
 from typing import Any, AsyncGenerator, Optional, Tuple, Union
+from uuid import UUID
 
 from r2r.base import (
     AsyncState,
@@ -10,9 +10,8 @@ from r2r.base import (
     RunLoggingSingleton,
     VectorEntry,
 )
-from r2r.base.pipes.base_pipe import AsyncPipe
-
 from r2r.base.abstractions.exception import R2RDocumentProcessingError
+from r2r.base.pipes.base_pipe import AsyncPipe
 
 logger = logging.getLogger(__name__)
 
@@ -67,51 +66,44 @@ class VectorStoragePipe(AsyncPipe):
         self,
         input: Input,
         state: AsyncState,
-        run_id: uuid.UUID,
+        run_id: UUID,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[
-        Tuple[uuid.UUID, Union[str, R2RDocumentProcessingError]], None
+        Tuple[UUID, Union[str, R2RDocumentProcessingError]], None
     ]:
-        """
-        Executes the async vector storage pipe: storing embeddings in the vector database.
-        """
-        batch_tasks = []
         vector_batch = []
         document_counts = {}
-        i = 0
+        connection_attempts = 0
+        last_vector_received = None
+
         async for msg in input.message:
-            i += 1
+            last_vector_received = asyncio.get_event_loop().time()
             if isinstance(msg, R2RDocumentProcessingError):
                 yield (msg.document_id, msg)
                 continue
 
-            if msg.document_id not in document_counts:
-                document_counts[msg.document_id] = 1
-            else:
-                document_counts[msg.document_id] += 1
-
             vector_batch.append(msg)
-            if len(vector_batch) >= self.storage_batch_size:
-                # Schedule the storage task
-                batch_tasks.append(
-                    asyncio.create_task(
-                        self.store(vector_batch.copy()),
-                        name=f"vector-store-{self.config.name}",
-                    )
-                )
-                vector_batch.clear()
-
-        if vector_batch:  # Process any remaining vectors
-            batch_tasks.append(
-                asyncio.create_task(
-                    self.store(vector_batch.copy()),
-                    name=f"vector-store-{self.config.name}",
-                )
+            document_counts[msg.document_id] = (
+                document_counts.get(msg.document_id, 0) + 1
             )
 
-        # Wait for all storage tasks to complete
-        await asyncio.gather(*batch_tasks)
+            if len(vector_batch) >= self.storage_batch_size:
+                connection_attempts += 1
+                try:
+                    await self.store(vector_batch)
+                except Exception as e:
+                    logger.error(f"Failed to store vector batch: {e}")
+                vector_batch.clear()
+
+        if vector_batch:
+            connection_attempts += 1
+            try:
+                await self.store(vector_batch)
+            except Exception as e:
+                logger.error(f"Failed to store final vector batch: {e}")
+
+        logger.info(f"Total connection attempts: {connection_attempts}")
 
         for document_id, count in document_counts.items():
             yield (

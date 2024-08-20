@@ -3,10 +3,10 @@ Abstractions for LLM completions.
 """
 
 import json
-import uuid
 from datetime import datetime
 from enum import Enum
 from typing import List, Optional
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -25,7 +25,7 @@ class MessageType(Enum):
 
 
 class CompletionRecord(BaseModel):
-    message_id: uuid.UUID
+    message_id: UUID
     message_type: MessageType
     timestamp: datetime = datetime.now()
     feedback: Optional[List[str]] = None
@@ -41,7 +41,7 @@ class CompletionRecord(BaseModel):
 
     def to_dict(self):
         def serialize(obj):
-            if isinstance(obj, uuid.UUID):
+            if isinstance(obj, UUID):
                 return str(obj)
             elif isinstance(obj, datetime):
                 return obj.isoformat()

@@ -559,7 +559,9 @@ class R2RPipelineFactory:
         rag_pipeline.add_pipe(rag_pipe)
         return rag_pipeline
 
-    def create_kg_enrichment_pipeline(self, *args, **kwargs) -> KGEnrichmentPipeline:
+    def create_kg_enrichment_pipeline(
+        self, *args, **kwargs
+    ) -> KGEnrichmentPipeline:
         kg_enrichment_pipeline = KGEnrichmentPipeline()
         kg_enrichment_pipeline.add_pipe(self.pipes.kg_node_extraction_pipe)
         kg_enrichment_pipeline.add_pipe(self.pipes.kg_node_description_pipe)
