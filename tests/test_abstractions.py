@@ -3,8 +3,7 @@ import uuid
 from datetime import datetime
 
 import pytest
-
-from r2r_core import (
+from core import (
     AsyncPipe,
     AsyncState,
     Prompt,
@@ -14,8 +13,8 @@ from r2r_core import (
     VectorType,
     generate_id_from_label,
 )
-from r2r_core.base.abstractions.completion import CompletionRecord, MessageType
-from r2r_core.base.abstractions.search import AggregateSearchResult
+from core.base.abstractions.completion import CompletionRecord, MessageType
+from core.base.abstractions.search import AggregateSearchResult
 
 
 @pytest.fixture(scope="session", autouse=True)

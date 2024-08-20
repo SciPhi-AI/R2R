@@ -3,9 +3,7 @@ import os
 import uuid
 
 import pytest
-from fastapi.datastructures import UploadFile
-
-from r2r_core import (
+from core import (
     Document,
     DocumentInfo,
     DocumentStatus,
@@ -21,6 +19,7 @@ from r2r_core import (
     VectorSearchSettings,
     generate_id_from_label,
 )
+from fastapi.datastructures import UploadFile
 
 
 @pytest.fixture(scope="session", autouse=True)

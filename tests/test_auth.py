@@ -3,8 +3,7 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 import pytest
-
-from r2r_core import (
+from core import (
     AuthConfig,
     BCryptConfig,
     BCryptProvider,
@@ -13,7 +12,7 @@ from r2r_core import (
     R2RAuthProvider,
     R2RException,
 )
-from r2r_core.main.services import AuthService
+from core.main.services import AuthService
 
 
 # Fixture for PostgresDBProvider

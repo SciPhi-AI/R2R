@@ -2,8 +2,7 @@ import asyncio
 from unittest.mock import patch
 
 import pytest
-
-from r2r_core import EmbeddingConfig
+from core import EmbeddingConfig
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -19,7 +18,7 @@ async def cleanup_tasks():
     await asyncio.gather(*tasks, return_exceptions=True)
 
 
-from r2r_core.providers import LiteLLMEmbeddingProvider
+from core.providers import LiteLLMEmbeddingProvider
 
 
 @pytest.fixture
@@ -200,7 +199,7 @@ async def test_litellm_async_get_embedding_error_handling(mocker):
         await provider.async_get_embedding("test")
 
 
-from r2r_core.providers import OpenAIEmbeddingProvider
+from core.providers import OpenAIEmbeddingProvider
 
 
 @pytest.fixture
@@ -321,7 +320,7 @@ def test_openai_rerank_model_not_supported():
         OpenAIEmbeddingProvider(config)
 
 
-from r2r_core.providers import OllamaEmbeddingProvider
+from core.providers import OllamaEmbeddingProvider
 
 
 @pytest.fixture

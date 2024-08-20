@@ -3,9 +3,8 @@ from unittest.mock import patch
 import click
 import pytest
 from click.testing import CliRunner
-
-from r2r_core.cli.cli import cli
-from r2r_core.cli.utils.param_types import JSON
+from core.cli.cli import cli
+from core.cli.utils.param_types import JSON
 
 
 @pytest.fixture

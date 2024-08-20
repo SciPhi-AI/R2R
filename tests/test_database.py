@@ -2,16 +2,15 @@ import random
 import uuid
 
 import pytest
-from dotenv import load_dotenv
-
-from r2r_core import (
+from core import (
     DatabaseConfig,
     DatabaseProvider,
     Vector,
     VectorEntry,
     generate_id_from_label,
 )
-from r2r_core.providers import PostgresDBProvider
+from core.providers import PostgresDBProvider
+from dotenv import load_dotenv
 
 load_dotenv()
 

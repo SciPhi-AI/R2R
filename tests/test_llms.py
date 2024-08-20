@@ -3,13 +3,12 @@ import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
-from r2r_core import CompletionConfig, GenerationConfig
-from r2r_core.base.abstractions.llm import (
+from core import CompletionConfig, GenerationConfig
+from core.base.abstractions.llm import (
     LLMChatCompletion,
     LLMChatCompletionChunk,
 )
-from r2r_core.providers import LiteCompletionProvider, OpenAICompletionProvider
+from core.providers import LiteCompletionProvider, OpenAICompletionProvider
 
 
 class MockCompletionResponse:

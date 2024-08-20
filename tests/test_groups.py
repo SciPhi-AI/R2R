@@ -3,14 +3,9 @@ from datetime import datetime
 from uuid import UUID
 
 import pytest
-
-from r2r_core import DatabaseConfig, R2RException
-from r2r_core.base.abstractions import (
-    DocumentInfo,
-    DocumentStatus,
-    DocumentType,
-)
-from r2r_core.providers import BCryptConfig, BCryptProvider, PostgresDBProvider
+from core import DatabaseConfig, R2RException
+from core.base.abstractions import DocumentInfo, DocumentStatus, DocumentType
+from core.providers import BCryptConfig, BCryptProvider, PostgresDBProvider
 
 
 # Add this fixture to create test documents

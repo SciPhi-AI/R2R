@@ -3,19 +3,11 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
+from core import R2RApp, R2RBuilder, R2RClient, R2REngine, Token, UserResponse
+from core.base import GroupResponse
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.testclient import TestClient
-
-from r2r_core import (
-    R2RApp,
-    R2RBuilder,
-    R2RClient,
-    R2REngine,
-    Token,
-    UserResponse,
-)
-from r2r_core.base import GroupResponse
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
