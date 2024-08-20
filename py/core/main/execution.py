@@ -16,7 +16,6 @@ from core.base import (
     VectorSearchSettings,
 )
 from fastapi import UploadFile
-from sdk.client import R2RClient
 
 from .assembly.builder import R2RBuilder
 from .assembly.config import R2RConfig
@@ -43,6 +42,7 @@ class R2RExecutionWrapper:
         self.base_url = base_url
 
         if self.client_mode:
+            from sdk.client import R2RClient
             self.client = R2RClient(base_url)
             self.app = None
         else:
