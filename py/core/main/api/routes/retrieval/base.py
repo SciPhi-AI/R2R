@@ -6,6 +6,7 @@ from core.base import (
     GenerationConfig,
     KGSearchSettings,
     Message,
+    R2RException,
     RunType,
     VectorSearchSettings,
 )
@@ -224,23 +225,26 @@ class RetrievalRouter(BaseRouter):
 
             vector_search_settings.filters = filters
 
-            response = await self.engine.arag_agent(
-                messages=messages,
-                vector_search_settings=vector_search_settings,
-                kg_search_settings=kg_search_settings,
-                rag_generation_config=rag_generation_config,
-                task_prompt_override=task_prompt_override,
-                include_title_if_available=include_title_if_available,
-            )
-
-            if rag_generation_config.stream:
-
-                async def stream_generator():
-                    async for chunk in response:
-                        yield chunk
-
-                return StreamingResponse(
-                    stream_generator(), media_type="application/json"
+            try:
+                response = await self.engine.arag_agent(
+                    messages=messages,
+                    vector_search_settings=vector_search_settings,
+                    kg_search_settings=kg_search_settings,
+                    rag_generation_config=rag_generation_config,
+                    task_prompt_override=task_prompt_override,
+                    include_title_if_available=include_title_if_available,
                 )
-            else:
-                return response
+
+                if rag_generation_config.stream:
+
+                    async def stream_generator():
+                        async for chunk in response:
+                            yield chunk
+
+                    return StreamingResponse(
+                        stream_generator(), media_type="application/json"
+                    )
+                else:
+                    return response
+            except Exception as e:
+                raise R2RException(str(e), 500)

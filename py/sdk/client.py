@@ -134,7 +134,7 @@ class R2RAsyncClient:
             except httpx.RequestError as e:
                 raise R2RException(
                     status_code=500, message=f"Request failed: {str(e)}"
-                )
+                ) from e
 
     def _get_auth_header(self) -> dict:
         if not self.access_token:

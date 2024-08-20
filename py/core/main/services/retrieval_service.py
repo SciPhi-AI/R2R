@@ -306,7 +306,6 @@ class RetrievalService(Service):
                     value=latency,
                 )
                 return results
-
             except Exception as e:
                 logger.error(f"Pipeline error: {str(e)}")
                 if "NoneType" in str(e):

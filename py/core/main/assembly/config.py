@@ -102,8 +102,9 @@ class R2RConfig:
     ):
         if section not in config_data:
             raise ValueError(f"Missing '{section}' section in config")
-        missing_keys = [key for key in keys if key not in config_data[section]]
-        if missing_keys:
+        if missing_keys := [
+            key for key in keys if key not in config_data[section]
+        ]:
             raise ValueError(
                 f"Missing required keys in '{section}' config: {', '.join(missing_keys)}"
             )
@@ -171,13 +172,11 @@ class R2RConfig:
             return config_section.value
         elif isinstance(config_section, BaseModel):
             return R2RConfig._serialize_config(
-                config_section.dict(exclude_none=True)
+                config_section.model_dump(exclude_none=True)
             )
         else:
             return config_section
 
     @staticmethod
     def _serialize_key(key: Any) -> str:
-        if isinstance(key, Enum):
-            return key.value
-        return str(key)
+        return key.value if isinstance(key, Enum) else str(key)
