@@ -70,7 +70,7 @@ def ingest_files(obj, file_paths, document_ids, metadatas, versions):
         versions = list(versions) if versions else None
 
         response = obj.ingest_files(
-            file_paths, document_ids, metadatas, versions
+            file_paths, metadatas, document_ids, versions
         )
     click.echo(response)
 
