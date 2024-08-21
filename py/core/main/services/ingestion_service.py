@@ -104,7 +104,7 @@ class IngestionService(Service):
         self,
         files: list[UploadFile],
         user: UserResponse,
-        document_ids: list[UUID],
+        document_ids: Optional[list[UUID]],
         metadatas: Optional[list[dict]] = None,
         chunking_provider: Optional[ChunkingProvider] = None,
         *args: Any,
@@ -120,12 +120,16 @@ class IngestionService(Service):
                 message="Database provider is not available for updating documents.",
             )
         try:
-            if len(document_ids) != len(files):
-                raise R2RException(
-                    status_code=400,
-                    message="Number of ids does not match number of files.",
-                )
-
+            if document_ids:
+                if len(document_ids) != len(files):
+                    raise R2RException(
+                        status_code=400,
+                        message="Number of ids does not match number of files.",
+                    )
+            else:
+                document_ids = [generate_user_document_id(file.filename, user.id) for file in files]
+            print('user_id = ', user.id)
+            print('document_ids = ', document_ids)
             # Only superusers can modify arbitrary document ids, which this gate guarantees in conjuction with the check that follows
             documents_overview = (
                 (

@@ -9,6 +9,7 @@ from core.base import ChunkingConfig, R2RException
 from core.base.api.models.ingestion.responses import WrappedIngestionResponse
 from core.base.utils import generate_user_document_id
 from fastapi import Depends, File, Form, UploadFile
+from pydantic import Json
 
 from ....assembly.factory import R2RProviderFactory
 from ....engine import R2REngine
@@ -46,21 +47,19 @@ class IngestionRouter(BaseRouter):
             files: List[UploadFile] = File(
                 ..., description=ingest_files_descriptions.get("files")
             ),
-            document_ids: Optional[list[str]] = Form(
+            document_ids: Optional[Json[list[UUID]]] = Form(
                 None,
                 description=ingest_files_descriptions.get("document_ids"),
             ),
-            versions: Optional[list[str]] = Form(
+            versions: Optional[Json[list[str]]] = Form(
                 None, description=ingest_files_descriptions.get("versions")
             ),
-            metadatas: Optional[list[dict]] = Form(
+            metadatas: Optional[Json[list[dict]]] = Form(
                 None, description=ingest_files_descriptions.get("metadatas")
             ),
-            chunking_config_override: Optional[ChunkingConfig] = Form(
+            chunking_settings: Optional[ChunkingConfig] = Form(
                 None,
-                description=ingest_files_descriptions.get(
-                    "chunking_config_override"
-                ),
+                description=ingest_files_descriptions.get("chunking_settings"),
             ),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedIngestionResponse:
@@ -71,19 +70,12 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access. More expansive group permissioning is under development.
             """
-            try:
-                parsed_data = self.parse_ingest_files_form_data(
-                    metadatas, document_ids, versions, chunking_config_override
-                )
-            except R2RException as e:
-                raise e
-
             chunking_provider = None
-            if chunking_config_override:
-                chunking_config_override.validate()
+            if chunking_settings:
+                chunking_settings.validate()
                 chunking_provider = (
                     R2RProviderFactory.create_chunking_provider(
-                        chunking_config_override
+                        chunking_settings
                     )
                 )
             else:
@@ -111,9 +103,9 @@ class IngestionRouter(BaseRouter):
 
             ingestion_result = await self.engine.aingest_files(
                 files=files,
-                metadatas=parsed_data["metadatas"],
-                document_ids=parsed_data["document_ids"],
-                versions=parsed_data["versions"],
+                metadatas=metadatas,
+                document_ids=document_ids,
+                versions=versions,
                 user=auth_user,
                 chunking_provider=chunking_provider,
             )
@@ -146,17 +138,16 @@ class IngestionRouter(BaseRouter):
             files: List[UploadFile] = File(
                 ..., description=update_files_descriptions.get("files")
             ),
-            document_ids: Optional[list[str]] = Form(
-                None, description=update_files_descriptions.get("document_ids")
-            ),
-            metadatas: Optional[list[dict]] = Form(
-                None, description=update_files_descriptions.get("metadatas")
-            ),
-            chunking_config_override: Optional[str] = Form(
+            document_ids: Optional[Json[list[UUID]]] = Form(
                 None,
-                description=update_files_descriptions.get(
-                    "chunking_config_override"
-                ),
+                description=ingest_files_descriptions.get("document_ids"),
+            ),
+            metadatas: Optional[Json[list[dict]]] = Form(
+                None, description=ingest_files_descriptions.get("metadatas")
+            ),
+            chunking_settings: Optional[ChunkingConfig] = Form(
+                None,
+                description=ingest_files_descriptions.get("chunking_settings"),
             ),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedIngestionResponse:
@@ -171,143 +162,17 @@ class IngestionRouter(BaseRouter):
             A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive group permissioning is under development.
             """
 
-            try:
-                parsed_data = self.parse_update_files_form_data(
-                    metadatas,
-                    document_ids,
-                    chunking_config_override,
-                    [file.filename for file in files],
-                    auth_user.id,
-                )
-            except R2RException as e:
-                raise e
-
             chunking_provider = None
-            if chunking_config_override:
-                config = ChunkingConfig(**chunking_config_override)
+            if chunking_settings:
+                config = ChunkingConfig(**chunking_settings)
                 chunking_provider = (
                     R2RProviderFactory.create_chunking_provider(config)
                 )
 
             return await self.engine.aupdate_files(
                 files=files,
-                metadatas=parsed_data["metadatas"],
-                document_ids=parsed_data["document_ids"],
+                metadatas=metadatas,
+                document_ids=document_ids,
                 chunking_provider=chunking_provider,
                 user=auth_user,
             )
-
-    @staticmethod
-    def parse_ingest_files_form_data(
-        metadatas: Optional[str],
-        document_ids: Optional[str],
-        versions: Optional[str],
-        chunking_config_override: Optional[str],
-    ) -> dict:
-        try:
-            parsed_metadatas = (
-                json.loads(metadatas)
-                if metadatas and metadatas != "null"
-                else None
-            )
-            if parsed_metadatas is not None and not isinstance(
-                parsed_metadatas, list
-            ):
-                raise ValueError("metadatas must be a list of dictionaries")
-
-            parsed_document_ids = (
-                json.loads(document_ids)
-                if document_ids and document_ids != "null"
-                else None
-            )
-            if parsed_document_ids is not None:
-                parsed_document_ids = [
-                    UUID(doc_id) for doc_id in parsed_document_ids
-                ]
-
-            parsed_versions = (
-                json.loads(versions)
-                if versions and versions != "null"
-                else None
-            )
-
-            parsed_chunking_config = (
-                json.loads(chunking_config_override)
-                if chunking_config_override
-                and chunking_config_override != "null"
-                else None
-            )
-
-            return {
-                "metadatas": parsed_metadatas,
-                "document_ids": parsed_document_ids,
-                "versions": parsed_versions,
-                "chunking_config_override": parsed_chunking_config,
-            }
-        except json.JSONDecodeError as e:
-            raise R2RException(
-                status_code=400, message=f"Invalid JSON in form data: {e}"
-            ) from e
-        except ValueError as e:
-            raise R2RException(status_code=400, message=str(e)) from e
-        except Exception as e:
-            raise R2RException(
-                status_code=400, message=f"Error processing form data: {e}"
-            ) from e
-
-    @staticmethod
-    def parse_update_files_form_data(
-        metadatas: Optional[list[dict]],
-        document_ids: Optional[list[str]],
-        chunking_config_override: Optional[str],
-        filenames: list[str],
-        user_id: str,
-    ):
-        try:
-            parsed_metadatas = (
-                json.loads(metadatas)
-                if metadatas and metadatas != "null"
-                else None
-            )
-            if parsed_metadatas is not None and not isinstance(
-                parsed_metadatas, list
-            ):
-                raise ValueError("metadatas must be a list of dictionaries")
-
-            parsed_document_ids = (
-                json.loads(document_ids)
-                if document_ids and document_ids != "null"
-                else None
-            )
-            if parsed_document_ids is not None:
-                parsed_document_ids = [
-                    UUID(doc_id) for doc_id in parsed_document_ids
-                ]
-            else:
-                parsed_document_ids = [
-                    generate_user_document_id(filename, UUID(user_id))
-                    for filename in filenames
-                ]
-
-            parsed_chunking_config = (
-                json.loads(chunking_config_override)
-                if chunking_config_override
-                and chunking_config_override != "null"
-                else None
-            )
-
-            return {
-                "metadatas": parsed_metadatas,
-                "document_ids": parsed_document_ids,
-                "chunking_config_override": parsed_chunking_config,
-            }
-        except json.JSONDecodeError as e:
-            raise R2RException(
-                status_code=400, message=f"Invalid JSON in form data: {e}"
-            ) from e
-        except ValueError as e:
-            raise R2RException(status_code=400, message=str(e)) from e
-        except Exception as e:
-            raise R2RException(
-                status_code=400, message=f"Error processing form data: {e}"
-            ) from e

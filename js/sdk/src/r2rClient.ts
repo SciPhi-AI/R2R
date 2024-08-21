@@ -403,7 +403,7 @@ export class r2rClient {
       document_ids?: string[];
       user_ids?: (string | null)[];
       versions?: string[];
-      chunking_config_override?: Record<string, any>;
+      chunking_settings?: Record<string, any>;
       skip_document_info?: boolean;
     } = {},
   ): Promise<any> {
@@ -468,8 +468,8 @@ export class r2rClient {
         : undefined,
       user_ids: options.user_ids ? JSON.stringify(options.user_ids) : undefined,
       versions: options.versions ? JSON.stringify(options.versions) : undefined,
-      chunking_config_override: options.chunking_config_override
-        ? JSON.stringify(options.chunking_config_override)
+      chunking_settings: options.chunking_settings
+        ? JSON.stringify(options.chunking_settings)
         : undefined,
       skip_document_info:
         options.skip_document_info !== undefined
@@ -511,7 +511,7 @@ export class r2rClient {
     options: {
       document_ids: string[];
       metadatas?: Record<string, any>[];
-      chunking_config_override?: Record<string, any>;
+      chunking_settings?: Record<string, any>;
     },
   ): Promise<any> {
     this._ensureAuthenticated();
@@ -549,8 +549,8 @@ export class r2rClient {
       metadatas: options.metadatas
         ? JSON.stringify(options.metadatas)
         : undefined,
-      chunking_config_override: options.chunking_config_override
-        ? JSON.stringify(options.chunking_config_override)
+      chunking_settings: options.chunking_settings
+        ? JSON.stringify(options.chunking_settings)
         : undefined,
     };
 

@@ -84,7 +84,7 @@ func (i *Ingestion) IngestFiles(
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling chunking config: %w", err)
 		}
-		writer.WriteField("chunking_config_override", string(chunkingConfigJSON))
+		writer.WriteField("chunking_settings", string(chunkingConfigJSON))
 	}
 
 	err := writer.Close()
@@ -167,7 +167,7 @@ func (i *Ingestion) UpdateFiles(
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling chunking config: %w", err)
 		}
-		writer.WriteField("chunking_config_override", string(chunkingConfigJSON))
+		writer.WriteField("chunking_settings", string(chunkingConfigJSON))
 	}
 
 	err = writer.Close()

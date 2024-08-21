@@ -91,7 +91,7 @@ class AuthProvider(Provider, ABC):
 
     @abstractmethod
     def refresh_access_token(
-        self, user_email: str, refresh_access_token: str
+        self, user_email: str, refresh_token: str
     ) -> Dict[str, str]:
         pass
 

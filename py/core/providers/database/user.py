@@ -481,10 +481,10 @@ class UserMixin(DatabaseMixin):
                 is_verified=row[4],
                 created_at=row[5],
                 updated_at=row[6],
-                group_ids=row[7],
+                group_ids=row[7] or [],
                 num_files=row[8],
                 total_size_in_bytes=row[9],
-                document_ids=row[10],
+                document_ids=row[10] or [],
             )
             for row in results
         ]

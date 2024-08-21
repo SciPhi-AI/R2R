@@ -230,7 +230,7 @@ class VectorSearchSettings(BaseModel):
         ge=1,
         le=100,
     )
-    do_hybrid_search: bool = Field(
+    use_hybrid_search: bool = Field(
         default=False,
         description="Whether to perform a hybrid search (combining vector and keyword search)",
     )

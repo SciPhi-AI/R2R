@@ -12,8 +12,8 @@ license = "MIT"
 include = ["r2r.toml", "compose.yaml", "compose.neo4j.yaml", "compose.ollama.yaml", "compose.postgres.yaml", "pyproject.toml"]
 packages = [
     { include = "r2r", from = "." },
-    { include = "cli", from  = "." },
     { include = "core", from = "." },
+    { include = "cli", from = "." },
     { include = "sdk", from = "." },
 ]
 

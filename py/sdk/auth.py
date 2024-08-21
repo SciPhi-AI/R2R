@@ -31,7 +31,7 @@ class AuthMethods:
         return await client._make_request(
             "POST",
             "verify_email",
-            json={"verification_code": verification_code},
+            json=verification_code,
         )
 
     @staticmethod
@@ -102,6 +102,7 @@ class AuthMethods:
             "profile_picture": profile_picture,
         }
         data = {k: v for k, v in data.items() if v is not None}
+        print("data = ", data)
         return await client._make_request("PUT", "user", json=data)
 
     @staticmethod
@@ -112,9 +113,8 @@ class AuthMethods:
         Returns:
             dict[str, Token]: The access and refresh tokens from the server.
         """
-        data = {"refresh_token": client._refresh_token}
         response = await client._make_request(
-            "POST", "refresh_access_token", json=data
+            "POST", "refresh_access_token", json=client._refresh_token
         )
         client.access_token = response["results"]["access_token"]["token"]
         client._refresh_token = response["results"]["refresh_token"]["token"]
@@ -152,7 +152,7 @@ class AuthMethods:
             dict: The response from the server.
         """
         return await client._make_request(
-            "POST", "request_password_reset", json={"email": email}
+            "POST", "request_password_reset", json=email
         )
 
     @staticmethod
@@ -173,9 +173,7 @@ class AuthMethods:
         return await client._make_request("POST", "reset_password", json=data)
 
     @staticmethod
-    async def delete_user(
-        client, user_id: str, password: Optional[str] = None
-    ) -> dict:
+    async def delete_user(client, user_id: str, password: str = None) -> dict:
         """
         Deletes the user with the given user ID.
 
@@ -186,9 +184,7 @@ class AuthMethods:
         Returns:
             dict: The response from the server.
         """
-        data = {"user_id": user_id}
-        if password:
-            data["password"] = password
+        data = {"user_id": user_id, "password": password}
         response = await client._make_request("DELETE", "user", json=data)
         client.access_token = None
         client._refresh_token = None

@@ -95,7 +95,7 @@ const ragResult = await client.rag({
   use_vector_search: true,
   search_filters: {},
   search_limit: 10,
-  do_hybrid_search: false,
+  use_hybrid_search: false,
   use_kg_search: false,
   kg_generation_config: {},
   rag_generation_config: {

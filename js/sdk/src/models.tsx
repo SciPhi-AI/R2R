@@ -37,7 +37,7 @@ export interface VectorSearchSettings {
   use_vector_search?: boolean;
   filters?: Record<string, any>;
   search_limit?: number;
-  do_hybrid_search?: boolean;
+  use_hybrid_search?: boolean;
 }
 
 export interface KGSearchSettings {
