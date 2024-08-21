@@ -1,3 +1,4 @@
+import logging
 from typing import Any, AsyncGenerator, Optional, Union
 
 from core.base import (
@@ -13,6 +14,8 @@ from core.base import (
 )
 from core.base.pipes.base_pipe import AsyncPipe
 from core.providers import R2RChunkingProvider
+
+logger = logging.getLogger(__name__)
 
 
 class ChunkingPipe(AsyncPipe):
@@ -64,7 +67,7 @@ class ChunkingPipe(AsyncPipe):
 
             try:
                 iteration = 0
-                async for chunk in chunking_provider.chunk(item.data):
+                async for chunk in chunking_provider.chunk(item):
                     item.metadata["chunk_order"] = iteration
                     yield DocumentFragment(
                         id=generate_id_from_label(f"{item.id}-{iteration}"),
@@ -77,6 +80,8 @@ class ChunkingPipe(AsyncPipe):
                     )
                     iteration += 1
             except Exception as e:
+                logger.error(f"Error chunking document: {str(e)}")
+                # print the traceback
                 yield R2RDocumentProcessingError(
                     document_id=item.document_id,
                     error_message=f"Error chunking document: {str(e)}",

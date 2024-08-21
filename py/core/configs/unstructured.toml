@@ -1,0 +1,8 @@
+[parsing]
+provider = "unstructured_api"
+
+[chunking]
+provider = "unstructured"
+method = "recursive"
+chunk_size = 512
+chunk_overlap = 50

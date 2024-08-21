@@ -24,6 +24,7 @@ from .llm import (
     GenerationConfig,
     LLMChatCompletion,
     LLMChatCompletionChunk,
+    Message,
     RAGCompletion,
 )
 from .prompt import Prompt
@@ -70,6 +71,7 @@ __all__ = [
     "GenerationConfig",
     "LLMChatCompletion",
     "LLMChatCompletionChunk",
+    "Message",
     "RAGCompletion",
     # Prompt abstractions
     "Prompt",
