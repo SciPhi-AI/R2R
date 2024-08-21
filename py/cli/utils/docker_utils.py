@@ -111,8 +111,12 @@ def run_docker_serve(
     if config_path:
         config = R2RConfig.from_toml(config_path)
     else:
+        if hasattr(client, "config_name"):
+            config_name = client.config_name
+        else:
+            config_name = "default"
         config = R2RConfig.from_toml(
-            R2RBuilder.CONFIG_OPTIONS[client.config_name or "default"]
+            R2RBuilder.CONFIG_OPTIONS[config_name]
         )
 
     completion_provider = config.completion.provider

@@ -73,7 +73,6 @@ logger.info(f"Environment PIPELINE_TYPE: {pipeline_type}")
 app = r2r_app(
     config_name=config_name,
     config_path=config_path,
-    client_mode=client_mode,
     base_url=base_url,
     pipeline_type=PipelineType(pipeline_type),
 )
