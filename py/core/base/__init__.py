@@ -47,6 +47,8 @@ __all__ = [
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
+    # Restructure abstractions
+    "KGEnrichmentSettings",
     # User abstractions
     "Token",
     "TokenData",

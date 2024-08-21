@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 from core.base import Document
-from core.base.api.models import KGEnrichementResponse
+from core.base.api.models import KGEnrichementResponse, KGEnrichmentSettings
 
 
 class RestructureMethods:

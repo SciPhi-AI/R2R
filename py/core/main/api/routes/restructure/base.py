@@ -2,6 +2,7 @@ from core.main.api.routes.base_router import BaseRouter
 from core.main.engine import R2REngine
 from fastapi import Depends
 
+from core.base import KGEnrichmentSettings
 
 # TODO: Botched by Claude
 class RestructureRouter(BaseRouter):
@@ -13,6 +14,10 @@ class RestructureRouter(BaseRouter):
         @self.router.post("/enrich_graph")
         @self.base_endpoint
         async def enrich_graph(
+            KGEnrichmentSettings: Union[dict, KGEnrichmentSettings] = Body(
+                ...,
+                description="Settings for knowledge graph enrichment",
+            ),
             auth_user=(
                 Depends(self.engine.providers.auth.auth_wrapper)
                 if self.engine.providers.auth
