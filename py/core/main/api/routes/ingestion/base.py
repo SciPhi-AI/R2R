@@ -168,7 +168,6 @@ class IngestionRouter(BaseRouter):
                 chunking_provider = (
                     R2RProviderFactory.create_chunking_provider(config)
                 )
-            print("input metadatas = ", metadatas)
 
             return await self.engine.aupdate_files(
                 files=files,

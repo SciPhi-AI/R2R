@@ -18,6 +18,7 @@ def mock_r2r_execution_wrapper():
     # yield mock
     pass
 
+
 def test_cli_group(runner):
     result = runner.invoke(cli, ["--help"])
     assert result.exit_code == 0
