@@ -34,8 +34,8 @@ from .management.responses import (
     WrappedUserOverviewResponse,
 )
 from .restructure.responses import (
-    KGEnrichementResponse,
-    WrappedKGEnrichementResponse,
+    KGEnrichmentResponse,
+    WrappedKGEnrichmentResponse,
 )
 from .retrieval.responses import (
     RAGAgentResponse,
@@ -57,8 +57,8 @@ __all__ = [
     "IngestionResponse",
     "WrappedIngestionResponse",
     # Restructure Responses
-    "KGEnrichementResponse",
-    "WrappedKGEnrichementResponse",
+    "KGEnrichmentResponse",
+    "WrappedKGEnrichmentResponse",
     # Management Responses
     "PromptResponse",
     "ServerStats",

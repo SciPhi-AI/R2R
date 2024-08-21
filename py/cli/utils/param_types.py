@@ -8,6 +8,8 @@ class JsonParamType(click.ParamType):
     name = "json"
 
     def convert(self, value, param, ctx) -> Dict[str, Any]:
+        if value is None:
+            return None
         if isinstance(value, dict):
             return value
         try:

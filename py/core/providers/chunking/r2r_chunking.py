@@ -22,14 +22,14 @@ class R2RChunkingProvider(ChunkingProvider):
         )
 
     def _initialize_text_splitter(self) -> TextSplitter:
-        if self.config.method == Method.RECURSIVE:
+        logger.info(
+            f"Initializing text splitter with method: {self.config.method}"
+        )  # Debug log
+        if self.config.method == Method.RECURSIVE or self.config.method == Method.BASIC:
             return RecursiveCharacterTextSplitter(
                 chunk_size=self.config.chunk_size,
                 chunk_overlap=self.config.chunk_overlap,
             )
-        elif self.config.method == Method.BASIC:
-            # Implement basic method
-            raise NotImplementedError("Basic method not implemented yet")
         elif self.config.method == Method.BY_TITLE:
             # Implement by_title method
             raise NotImplementedError("By_title method not implemented yet")
