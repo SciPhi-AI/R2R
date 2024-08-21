@@ -13,6 +13,7 @@ include = ["r2r.toml", "compose.yaml", "compose.neo4j.yaml", "compose.ollama.yam
 packages = [
     { include = "r2r", from = "." },
     { include = "core", from = "." },
+    { include = "cli", from = "." },
     { include = "sdk", from = "." },
 ]
 
@@ -87,7 +88,7 @@ pytest-cov = "^5.0.0"
 colorama = "^0.4.6"
 
 [tool.poetry.scripts]
-r2r = "core.cli.cli:main"
+r2r = "cli.cli:main"
 
 [tool.black]
 line-length = 79
