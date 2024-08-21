@@ -37,7 +37,9 @@ class KGProvider(ABC):
 
     def __init__(self, config: KGConfig) -> None:
         if not isinstance(config, KGConfig):
-            raise ValueError("KGProvider must be initialized with a `KGConfig`.")
+            raise ValueError(
+                "KGProvider must be initialized with a `KGConfig`."
+            )
         logger.info(f"Initializing KG provider with config: {config}")
         self.config = config
         self.validate_config()
@@ -116,7 +118,9 @@ class KGProvider(ABC):
             param_map = {}
 
     @abstractmethod
-    def vector_query(self, query, **kwargs: Any) -> Tuple[list[Entity], list[float]]:
+    def vector_query(
+        self, query, **kwargs: Any
+    ) -> Tuple[list[Entity], list[float]]:
         """Abstract method to query the graph store with a vector store query."""
 
     # TODO - Type this method.

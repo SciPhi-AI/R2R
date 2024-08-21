@@ -38,7 +38,10 @@ def r2r_app(
             raise ValueError(f"Invalid config name: {config_name}")
         config = R2RConfig.from_toml(R2RBuilder.CONFIG_OPTIONS[config_name])
 
-    if config.embedding.provider == "openai" and "OPENAI_API_KEY" not in os.environ:
+    if (
+        config.embedding.provider == "openai"
+        and "OPENAI_API_KEY" not in os.environ
+    ):
         raise ValueError(
             "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
         )

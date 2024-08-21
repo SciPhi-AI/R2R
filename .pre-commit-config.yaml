@@ -19,7 +19,7 @@ repos:
 
       - id: black
         name: black
-        entry: bash -c 'cd py && poetry run black $(git diff --cached --name-only --diff-filter=ACM | grep ".py$" | xargs -I {} echo ../{})'
+        entry: bash -c 'cd py && poetry run black .'
         language: system
         types: [python]
         pass_filenames: false
