@@ -31,11 +31,9 @@ class R2RChunkingProvider(ChunkingProvider):
                 chunk_overlap=self.config.chunk_overlap,
             )
         elif self.config.method == Method.BASIC:
-            # Implement basic method
-            pass
+            raise NotImplementedError("Basic method not implemented")
         elif self.config.method == Method.BY_TITLE:
-            # Implement by_title method
-            pass
+            raise NotImplementedError("By title method not implemented")
         else:
             raise ValueError(f"Unsupported method type: {self.config.method}")
 
