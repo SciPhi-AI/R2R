@@ -1,5 +1,5 @@
 [build-system]
-requires = ["poetry-core", "setuptools", "wheel"]
+requires = ["poetry-core", "setuptools", "wheel", "nltk"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
@@ -87,6 +87,9 @@ pytest-dependency = "^0.6.0"
 pytest-mock = "^3.14.0"
 pytest-cov = "^5.0.0"
 colorama = "^0.4.6"
+
+[tool.poetry.build]
+script = "setup.py"
 
 [tool.poetry.scripts]
 r2r = "cli.cli:main"
