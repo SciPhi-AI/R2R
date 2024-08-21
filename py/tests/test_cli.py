@@ -2,9 +2,9 @@ from unittest.mock import patch
 
 import click
 import pytest
-from click.testing import CliRunner
 from cli.cli import cli
 from cli.utils.param_types import JSON
+from click.testing import CliRunner
 
 
 @pytest.fixture
