@@ -7,7 +7,7 @@ from colorama import Fore, Style, init
 from deepdiff import DeepDiff
 
 # TODO: need to import this from the package, not from the local directory
-from r2r_python_sdk.sdk.client import R2RClient
+from r2r import R2RClient
 
 
 def _to_snake_case(name: str) -> str:

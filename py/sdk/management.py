@@ -138,9 +138,9 @@ class ManagementMethods:
         Returns:
             dict: The overview of users in the system.
         """
-        params = {
-            "user_ids": [str(uid) for uid in user_ids] if user_ids else None
-        }
+        params = (
+            {"user_ids": [str(uid) for uid in user_ids]} if user_ids else None
+        )
         return await client._make_request(
             "GET", "users_overview", params=params
         )
@@ -168,7 +168,7 @@ class ManagementMethods:
     @staticmethod
     async def documents_overview(
         client,
-        document_ids: Optional[list[Union[UUID,str]]] = None,
+        document_ids: Optional[list[Union[UUID, str]]] = None,
     ) -> dict:
         """
         Get an overview of documents in the R2R deployment.
@@ -180,7 +180,9 @@ class ManagementMethods:
             dict: The overview of documents in the system.
         """
         params = {}
-        document_ids = [str(doc_id) for doc_id in document_ids] if document_ids else None
+        document_ids = (
+            [str(doc_id) for doc_id in document_ids] if document_ids else None
+        )
         if document_ids:
             params["document_ids"] = document_ids
 

@@ -291,11 +291,8 @@ class R2RProviderFactory:
                 self.config.parsing, *args, **kwargs
             )
         )
-        chunking_provider = (
-            chunking_settings
-            or self.create_chunking_provider(
-                self.config.chunking, *args, **kwargs
-            )
+        chunking_provider = chunking_settings or self.create_chunking_provider(
+            self.config.chunking, *args, **kwargs
         )
 
         return R2RProviders(

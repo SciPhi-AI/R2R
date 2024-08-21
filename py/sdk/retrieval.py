@@ -33,7 +33,9 @@ class RetrievalMethods:
         Returns:
             SearchResponse: The search response.
         """
-        if vector_search_settings and not isinstance(vector_search_settings, dict):
+        if vector_search_settings and not isinstance(
+            vector_search_settings, dict
+        ):
             vector_search_settings = vector_search_settings.model_dump()
         if kg_search_settings and not isinstance(kg_search_settings, dict):
             kg_search_settings = kg_search_settings.model_dump()
@@ -69,9 +71,13 @@ class RetrievalMethods:
         Returns:
             Union[RAGResponse, AsyncGenerator[RAGResponse, None]]: The RAG response
         """
-        if rag_generation_config and not isinstance(rag_generation_config, dict):
+        if rag_generation_config and not isinstance(
+            rag_generation_config, dict
+        ):
             rag_generation_config = rag_generation_config.model_dump()
-        if vector_search_settings and not isinstance(vector_search_settings, dict):
+        if vector_search_settings and not isinstance(
+            vector_search_settings, dict
+        ):
             vector_search_settings = vector_search_settings.model_dump()
         if kg_search_settings and not isinstance(kg_search_settings, dict):
             kg_search_settings = kg_search_settings.model_dump()
@@ -83,7 +89,9 @@ class RetrievalMethods:
             "kg_search_settings": kg_search_settings,
         }
 
-        if rag_generation_config and rag_generation_config.get("stream", False):
+        if rag_generation_config and rag_generation_config.get(
+            "stream", False
+        ):
             return client._make_streaming_request("POST", "rag", json=data)
         else:
             return await client._make_request("POST", "rag", json=data)
@@ -116,9 +124,13 @@ class RetrievalMethods:
         Returns:
             Union[List[Message], AsyncGenerator[Message, None]]: The agent response.
         """
-        if rag_generation_config and not isinstance(rag_generation_config, dict):
+        if rag_generation_config and not isinstance(
+            rag_generation_config, dict
+        ):
             rag_generation_config = rag_generation_config.model_dump()
-        if vector_search_settings and not isinstance(vector_search_settings, dict):
+        if vector_search_settings and not isinstance(
+            vector_search_settings, dict
+        ):
             vector_search_settings = vector_search_settings.model_dump()
         if kg_search_settings and not isinstance(kg_search_settings, dict):
             kg_search_settings = kg_search_settings.model_dump()
@@ -137,7 +149,9 @@ class RetrievalMethods:
             "include_title_if_available": include_title_if_available,
         }
 
-        if rag_generation_config and rag_generation_config.get("stream", False):
+        if rag_generation_config and rag_generation_config.get(
+            "stream", False
+        ):
             return client._make_streaming_request("POST", "agent", json=data)
         else:
             return await client._make_request("POST", "agent", json=data)

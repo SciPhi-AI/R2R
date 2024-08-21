@@ -14,7 +14,7 @@ def runner():
 
 @pytest.fixture
 def mock_r2r_execution_wrapper():
-    with patch("r2r.cli.command_group.R2RExecutionWrapper") as mock:
+    with patch("core.cli.command_group.R2RExecutionWrapper") as mock:
         yield mock
 
 
@@ -243,10 +243,10 @@ def test_json_param_type():
 def test_docker_down_command(runner):
     with (
         patch(
-            "r2r.cli.commands.server_operations.bring_down_docker_compose"
+            "core.cli.commands.server_operations.bring_down_docker_compose"
         ) as mock_bring_down,
         patch(
-            "r2r.cli.commands.server_operations.remove_r2r_network"
+            "core.cli.commands.server_operations.remove_r2r_network"
         ) as mock_remove_network,
     ):
 

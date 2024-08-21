@@ -32,7 +32,7 @@ class ServerStats(BaseModel):
 
 
 class AnalyticsResponse(BaseModel):
-    analytics_data: Any
+    analytics_data: Optional[dict] = None
     filtered_logs: Dict[str, Any]
 
 

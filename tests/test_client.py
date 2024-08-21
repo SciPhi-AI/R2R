@@ -17,7 +17,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.testclient import TestClient
 
 # TODO: need to import this from the package, not from the local directory
-from r2r_python_sdk.sdk.client import R2RClient
+from r2r import R2RClient
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 

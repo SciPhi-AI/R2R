@@ -3,9 +3,10 @@ import json
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
-
+from pydantic import Json
 import psutil
 from core.base import R2RException
+from core.base.logging import LogFilterCriteria, AnalysisTypes
 from core.base.api.models.management.responses import (
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
@@ -86,8 +87,8 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/analytics")
         @self.base_endpoint
         async def get_analytics_app(
-            filter_criteria: Optional[str] = Query("{}"),
-            analysis_types: Optional[str] = Query("{}"),
+            filter_criteria: Optional[Json[dict]] = Query({}),
+            analysis_types: Optional[Json[dict]] = Query({}),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedAnalyticsResponse:
             if not auth_user.is_superuser:
@@ -96,18 +97,11 @@ class ManagementRouter(BaseRouter):
                 )
 
             try:
-                # Parse the query parameters
-                filter_criteria_dict = (
-                    json.loads(filter_criteria) if filter_criteria else {}
+                result = await self.engine.aanalytics(
+                    filter_criteria=LogFilterCriteria(**filter_criteria),
+                    analysis_types=AnalysisTypes(**analysis_types),
                 )
-                analysis_types_dict = (
-                    json.loads(analysis_types) if analysis_types else {}
-                )
-
-                return await self.engine.aanalytics(
-                    filter_criteria=filter_criteria_dict,
-                    analysis_types=analysis_types_dict,
-                )
+                return result
             except json.JSONDecodeError as e:
                 raise R2RException(
                     f"Invalid JSON in query parameters: {str(e)}", 400
@@ -162,7 +156,7 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/users_overview")
         @self.base_endpoint
         async def users_overview_app(
-            user_ids: list[str] = Query([]),
+            user_ids: Optional[list[str]] = Query([]),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedUserOverviewResponse:
             if not auth_user.is_superuser:
@@ -171,7 +165,9 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
 
-            user_uuids = [UUID(user_id) for user_id in user_ids]
+            user_uuids = (
+                [UUID(user_id) for user_id in user_ids] if user_ids else None
+            )
 
             return await self.engine.ausers_overview(user_ids=user_uuids)
 

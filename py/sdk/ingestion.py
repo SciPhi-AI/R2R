@@ -6,6 +6,7 @@ from typing import Optional, Union
 from .models import ChunkingConfig
 from uuid import UUID
 
+
 class IngestionMethods:
 
     @staticmethod
@@ -54,7 +55,6 @@ class IngestionMethods:
             ]
 
             data = {
-
                 "metadatas": json.dumps(metadatas) if metadatas else None,
                 "document_ids": (
                     json.dumps([str(doc_id) for doc_id in document_ids])

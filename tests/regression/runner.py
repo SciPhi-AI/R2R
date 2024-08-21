@@ -6,7 +6,7 @@ from typing import List
 from colorama import Fore, Style, init
 
 # TODO: need to import this from the package, not from the local directory
-from r2r_python_sdk.sdk.client import R2RClient
+from r2r import R2RClient
 from test_cases.base import BaseTest, RegressionTest
 
 

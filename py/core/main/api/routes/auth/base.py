@@ -130,6 +130,7 @@ class AuthRouter(BaseRouter):
         )
         @self.base_endpoint
         async def refresh_access_token_app(
+            # request = Body(None, description="Refresh token"),
             refresh_token: str = Body(..., description="Refresh token"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):

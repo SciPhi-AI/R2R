@@ -58,9 +58,7 @@ class IngestionRouter(BaseRouter):
             ),
             chunking_settings: Optional[ChunkingConfig] = Form(
                 None,
-                description=ingest_files_descriptions.get(
-                    "chunking_settings"
-                ),
+                description=ingest_files_descriptions.get("chunking_settings"),
             ),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedIngestionResponse:
@@ -148,9 +146,7 @@ class IngestionRouter(BaseRouter):
             ),
             chunking_settings: Optional[ChunkingConfig] = Form(
                 None,
-                description=ingest_files_descriptions.get(
-                    "chunking_settings"
-                ),
+                description=ingest_files_descriptions.get("chunking_settings"),
             ),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedIngestionResponse:

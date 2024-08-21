@@ -3,8 +3,9 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
-from core import R2RApp, R2RBuilder, R2RClient, R2REngine, Token, UserResponse
+from core import R2RApp, R2RBuilder, R2REngine, Token, UserResponse
 from core.base import GroupResponse
+from r2r import R2RClient
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.testclient import TestClient
