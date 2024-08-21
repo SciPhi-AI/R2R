@@ -25,17 +25,14 @@ class R2RChunkingProvider(ChunkingProvider):
         logger.info(
             f"Initializing text splitter with method: {self.config.method}"
         )  # Debug log
-        if self.config.method == Method.RECURSIVE:
+        if self.config.method == Method.RECURSIVE or self.config.method == Method.BASIC:
             return RecursiveCharacterTextSplitter(
                 chunk_size=self.config.chunk_size,
                 chunk_overlap=self.config.chunk_overlap,
             )
-        elif self.config.method == Method.BASIC:
-            # Implement basic method
-            pass
         elif self.config.method == Method.BY_TITLE:
             # Implement by_title method
-            pass
+            raise NotImplementedError("By_title method not implemented yet")
         else:
             raise ValueError(f"Unsupported method type: {self.config.method}")
 
