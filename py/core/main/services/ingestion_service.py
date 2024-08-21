@@ -131,8 +131,6 @@ class IngestionService(Service):
                     generate_user_document_id(file.filename, user.id)
                     for file in files
                 ]
-            print("user_id = ", user.id)
-            print("document_ids = ", document_ids)
             # Only superusers can modify arbitrary document ids, which this gate guarantees in conjuction with the check that follows
             documents_overview = (
                 (
@@ -193,7 +191,10 @@ class IngestionService(Service):
                 [doc_info.version for doc_info in documents_overview],
             ):
                 self.providers.database.vector.delete(
-                    filters={"document_id": {"$eq": doc_id}}
+                    filters={
+                        "document_id": {"$eq": doc_id},
+                        "version": {"$eq": old_version},
+                    }
                 )
                 self.providers.database.relational.delete_from_documents_overview(
                     doc_id, old_version
@@ -415,7 +416,7 @@ class IngestionService(Service):
         # TODO - modify ingestion service so that at end we write out number
         # of vectors produced or the error message to document info
         # THEN, return updated document infos here
-        results = {
+        return {
             "processed_documents": [
                 document
                 for document in document_infos
@@ -427,5 +428,3 @@ class IngestionService(Service):
             ],
             "skipped_documents": skipped_ids,
         }
-
-        return results
