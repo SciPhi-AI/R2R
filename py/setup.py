@@ -12,3 +12,6 @@ setup(
         'install': lambda _: download_nltk_data(),
     },
 )
+
+if __name__ == '__main__':
+    download_nltk_data()
