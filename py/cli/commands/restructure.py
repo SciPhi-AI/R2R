@@ -13,6 +13,6 @@ def enrich_graph(client):
     Perform graph enrichment over the entire graph.
     """
     with timer():
-        response = client.restructure()
+        response = client.enrich_graph()
 
     click.echo(response)
