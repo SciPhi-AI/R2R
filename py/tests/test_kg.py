@@ -1,10 +1,11 @@
-import pytest
 import asyncio
 from unittest.mock import AsyncMock, MagicMock
-from core.pipes.kg.extraction import KGTriplesExtractionPipe
-from core.pipes.kg.clustering import KGClusteringPipe
-from core.base import DocumentFragment, KGExtraction, Entity, Triple, Community
 from uuid import uuid4
+
+import pytest
+from core.base import Community, DocumentFragment, Entity, KGExtraction, Triple
+from core.pipes.kg.clustering import KGClusteringPipe
+from core.pipes.kg.extraction import KGTriplesExtractionPipe
 
 
 @pytest.fixture
