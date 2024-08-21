@@ -99,7 +99,7 @@ class IngestionMethods:
     async def update_files(
         client,
         file_paths: list[str],
-        document_ids: Optional[list[str]] = None,
+        document_ids: Optional[list[Union[str, UUID]]] = None,
         metadatas: Optional[list[dict]] = None,
         chunking_settings: Optional[Union[dict, ChunkingConfig]] = None,
     ) -> dict:
@@ -139,7 +139,9 @@ class IngestionMethods:
 
             data = {}
             if document_ids:
-                data["document_ids"] = json.dumps(document_ids)
+                data["document_ids"] = json.dumps(
+                    [str(doc_id) for doc_id in document_ids]
+                )
             if metadatas:
                 data["metadatas"] = json.dumps(metadatas)
             if chunking_settings:

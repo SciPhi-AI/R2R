@@ -62,6 +62,7 @@ poppler-utils = { version = "^0.1.0", optional = true }
 psutil = { version = "^6.0.0", optional = true }
 deepdiff = { version = "^7.0.1", optional = true }
 graspologic = { version = "^3.4.1", optional = true }
+nltk = "^3.9.1"
 
 [tool.poetry.extras]
 core = [
@@ -86,9 +87,6 @@ pytest-dependency = "^0.6.0"
 pytest-mock = "^3.14.0"
 pytest-cov = "^5.0.0"
 colorama = "^0.4.6"
-
-[tool.poetry.scripts]
-r2r = "cli.cli:main"
 
 [tool.black]
 line-length = 79
@@ -116,6 +114,10 @@ exclude = 'playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*'
 module = "yaml"
 ignore_missing_imports = true
 
+[tool.poetry.scripts]
+r2r = "cli.cli:main"
+download-nltk-data = "scripts.download_nltk_data:download_nltk_data"
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 addopts = "--cov=r2r --cov-report=term-missing --cov-report=xml"
@@ -126,3 +128,4 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
+
