@@ -10,7 +10,7 @@ WORKDIR /app
 RUN pip install --no-cache-dir poetry
 
 # Copy the dependencies files
-COPY pyproject.toml poetry.lock* ./
+COPY py/pyproject.toml py/poetry.lock* ./
 
 # Install the dependencies, including gunicorn and uvicorn
 RUN poetry config virtualenvs.create false \
@@ -32,9 +32,9 @@ COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy the application and config
-COPY r2r /app/r2r
-COPY r2r.toml /app/r2r.toml
-COPY pyproject.toml /app/pyproject.toml
+COPY py/r2r /app/py/r2r
+COPY r2r.toml /app/py/r2r.toml
+COPY py/pyproject.toml /app/py/pyproject.toml
 
 # Expose the port
 ARG PORT=8000
