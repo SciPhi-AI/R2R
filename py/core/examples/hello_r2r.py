@@ -12,7 +12,7 @@ rag_response = client.rag(
     query="Who is john",
     rag_generation_config={"model": "gpt-3.5-turbo", "temperature": 0.0},
 )
-results = rag_response["results"]
+results = rag_response['results']
 print(f"Search Results:\n{results['search_results']}")
 print(f"Completion:\n{results['completion']}")
 

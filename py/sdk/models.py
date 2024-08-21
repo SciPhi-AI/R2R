@@ -248,8 +248,7 @@ class VectorSearchSettings(BaseModel):
             str(uuid) for uuid in dump["selected_group_ids"]
         ]
         return dump
-
-
+    
 class KGEnrichmentSettings(BaseModel):
     max_knowledge_triples: int = Field(
         default=100,
@@ -264,10 +263,8 @@ class KGEnrichmentSettings(BaseModel):
         description="The parameters for the Leiden algorithm.",
     )
 
-
 class KGEnrichementResponse(BaseModel):
     enriched_content: Dict[str, Any]
-
 
 class UserResponse(BaseModel):
     id: UUID

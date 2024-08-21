@@ -1,15 +1,12 @@
 from typing import Any, Dict, List, Optional, Union
 
 from core.base import Document
-
-from .models import KGEnrichementResponse, KGEnrichmentSettings
-
+from .models import KGEnrichmentSettings, KGEnrichementResponse
 
 class RestructureMethods:
     @staticmethod
     async def enrich_graph(
-        client,
-        KGEnrichmentSettings: KGEnrichmentSettings = KGEnrichmentSettings(),
+        client, KGEnrichmentSettings: KGEnrichmentSettings = KGEnrichmentSettings()
     ) -> KGEnrichementResponse:
         """
         Perform graph enrichment over the entire graph.

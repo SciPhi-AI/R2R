@@ -23,9 +23,7 @@ from cli.utils.timer import timer
 @click.option(
     "--search-limit", default=None, help="Number of search results to return"
 )
-@click.option(
-    "--use-hybrid-search", is_flag=True, help="Perform hybrid search"
-)
+@click.option("--use-hybrid-search", is_flag=True, help="Perform hybrid search")
 @click.option(
     "--selected-group-ids", type=JSON, help="Group IDs to search for as a JSON"
 )
@@ -124,9 +122,7 @@ def search(client, query, **kwargs):
 @click.option(
     "--search-limit", default=10, help="Number of search results to return"
 )
-@click.option(
-    "--use-hybrid-search", is_flag=True, help="Perform hybrid search"
-)
+@click.option("--use-hybrid-search", is_flag=True, help="Perform hybrid search")
 @click.option(
     "--selected-group-ids", type=JSON, help="Group IDs to search for as a JSON"
 )

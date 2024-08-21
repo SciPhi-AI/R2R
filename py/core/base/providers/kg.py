@@ -23,9 +23,7 @@ class KGConfig(ProviderConfig):
     kg_extraction_config: Optional[GenerationConfig] = None
     kg_search_config: Optional[GenerationConfig] = None
     kg_store_path: Optional[str] = None
-    kg_enrichment_settings: Optional[KGEnrichmentSettings] = (
-        KGEnrichmentSettings()
-    )
+    kg_enrichment_settings: Optional[KGEnrichmentSettings] = KGEnrichmentSettings()
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:

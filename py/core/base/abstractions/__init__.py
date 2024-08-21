@@ -28,7 +28,6 @@ from .llm import (
     RAGCompletion,
 )
 from .prompt import Prompt
-from .restructure import KGEnrichmentSettings
 from .search import (
     AggregateSearchResult,
     KGSearchResult,
@@ -36,6 +35,7 @@ from .search import (
     VectorSearchResult,
     VectorSearchSettings,
 )
+from .restructure import KGEnrichmentSettings
 from .user import Token, TokenData, UserStats
 from .vector import Vector, VectorEntry, VectorType
 
