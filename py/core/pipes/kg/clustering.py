@@ -22,6 +22,7 @@ from core.base import (
     PromptProvider,
     RunLoggingSingleton,
     Triple,
+    KGEnrichmentSettings,
 )
 
 logger = logging.getLogger(__name__)

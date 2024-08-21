@@ -8,6 +8,11 @@ from .llm import GenerationConfig
 class KGEnrichmentSettings(BaseModel):
     """Settings for knowledge graph enrichment."""
 
+    max_knowledge_triples: int = Field(
+        default=100,
+        description="The maximum number of knowledge triples to extract from each chunk.",
+    )
+
     generation_config: GenerationConfig = Field(
         default_factory=GenerationConfig,
         description="Configuration for text generation during graph enrichment.",

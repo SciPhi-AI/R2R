@@ -7,6 +7,7 @@ from typing import Any, Optional, Tuple
 from ...base.utils.base_utils import RelationshipType
 from ..abstractions.graph import Entity, KGExtraction, Triple
 from ..abstractions.llm import GenerationConfig
+from ..abstractions.restructure import KGEnrichmentSettings
 from .base import ProviderConfig
 
 logger = logging.getLogger(__name__)
@@ -20,10 +21,9 @@ class KGConfig(ProviderConfig):
     kg_extraction_prompt: Optional[str] = "few_shot_ner_kg_extraction"
     kg_search_prompt: Optional[str] = "kg_search"
     kg_extraction_config: Optional[GenerationConfig] = None
-    kg_enrichment_config: Optional[KGEnrichmentConfig] = None
     kg_search_config: Optional[GenerationConfig] = None
     kg_store_path: Optional[str] = None
-    max_knowledge_triples: Optional[int] = 100
+    kg_enrichment_settings: Optional[KGEnrichmentSettings] = KGEnrichmentSettings()
 
     def validate(self) -> None:
         if self.provider not in self.supported_providers:

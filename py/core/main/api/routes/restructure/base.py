@@ -1,10 +1,9 @@
 from core.base import KGEnrichmentSettings
 from core.main.api.routes.base_router import BaseRouter
 from core.main.engine import R2REngine
-from fastapi import Depends
+from typing import Union
+from fastapi import Body, Depends
 
-
-# TODO: Botched by Claude
 class RestructureRouter(BaseRouter):
     def __init__(self, engine: R2REngine):
         super().__init__(engine)
