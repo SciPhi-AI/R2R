@@ -87,7 +87,7 @@ pytest-cov = "^5.0.0"
 colorama = "^0.4.6"
 
 [tool.poetry.scripts]
-r2r = "core.cli.cli:main"
+r2r = "cli.cli:main"
 
 [tool.black]
 line-length = 79
