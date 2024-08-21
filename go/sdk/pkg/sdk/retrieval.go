@@ -39,7 +39,7 @@ type VectorSearchSettings struct {
 	UseVectorSearch  bool                   `json:"use_vector_search"`
 	Filters          map[string]interface{} `json:"filters"`
 	SearchLimit      int                    `json:"search_limit"`
-	DoHybridSearch   bool                   `json:"do_hybrid_search"`
+	DoHybridSearch   bool                   `json:"use_hybrid_search"`
 	SelectedGroupIDs []string               `json:"selected_group_ids"`
 }
 
