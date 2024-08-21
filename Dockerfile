@@ -14,7 +14,7 @@ COPY py/pyproject.toml py/poetry.lock* ./
 
 # Install the dependencies, including gunicorn and uvicorn
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-dev --no-root \
+    && poetry install --only main --no-root \
     && pip install --no-cache-dir gunicorn uvicorn
 
 # Create the final image
@@ -32,9 +32,9 @@ COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy the application and config
-COPY py/r2r /app/py/r2r
-COPY r2r.toml /app/py/r2r.toml
-COPY py/pyproject.toml /app/py/pyproject.toml
+COPY py/core /app/core
+COPY r2r.toml /app/r2r.toml
+COPY py/pyproject.toml /app/pyproject.toml
 
 # Expose the port
 ARG PORT=8000
@@ -43,4 +43,4 @@ ENV PORT=$PORT HOST=$HOST
 EXPOSE $PORT
 
 # Run the application
-CMD ["sh", "-c", "uvicorn r2r.main.app_entry:app --host $HOST --port $PORT"]
+CMD ["sh", "-c", "uvicorn core.main.app_entry:app --host $HOST --port $PORT"]

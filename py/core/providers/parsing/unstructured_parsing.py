@@ -24,10 +24,15 @@ class UnstructuredParsingProvider(ParsingProvider):
 
         self.use_api = use_api
         if self.use_api:
-            from unstructured.staging.base import dict_to_elements
-            from unstructured_client import UnstructuredClient
-            from unstructured_client.models import operations, shared
-            from unstructured_client.models.errors import SDKError
+            try:
+                from unstructured_client import UnstructuredClient
+                from unstructured_client.models import operations, shared
+                from unstructured_client.models.errors import SDKError
+
+            except ImportError:
+                raise ImportError(
+                    "Please install the unstructured package to use the unstructured parsing provider."
+                )
 
             try:
                 self.unstructured_api_auth = os.environ["UNSTRUCTURED_API_KEY"]
@@ -47,7 +52,6 @@ class UnstructuredParsingProvider(ParsingProvider):
             )
             self.shared = shared
             self.operations = operations
-            self.dict_to_elements = dict_to_elements
 
         else:
             try:
