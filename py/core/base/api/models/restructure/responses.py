@@ -6,8 +6,8 @@ from core.base.api.models.base import ResultsWrapper
 from pydantic import BaseModel
 
 
-class KGEnrichementResponse(BaseModel):
+class KGEnrichmentResponse(BaseModel):
     enriched_content: Dict[str, Any]
 
 
-WrappedKGEnrichementResponse = ResultsWrapper[KGEnrichementResponse]
+WrappedKGEnrichmentResponse = ResultsWrapper[KGEnrichmentResponse]
