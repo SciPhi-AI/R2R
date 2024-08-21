@@ -83,7 +83,7 @@ def run_local_serve(
         )
         sys.exit(1)
 
-    r2r_instance = R2R(config_path=config_path)
+    r2r_instance = R2R()
     llm_provider = r2r_instance.config.completion.provider
     llm_model = r2r_instance.config.completion.generation_config.model
     model_provider = llm_model.split("/")[0]
