@@ -17,12 +17,12 @@ from core.base import (
     CompletionProvider,
     EmbeddingProvider,
     GenerationConfig,
+    KGEnrichmentSettings,
     KGProvider,
     PipeType,
     PromptProvider,
     RunLoggingSingleton,
     Triple,
-    KGEnrichmentSettings,
 )
 
 logger = logging.getLogger(__name__)
@@ -80,7 +80,9 @@ class KGClusteringPipe(AsyncPipe):
             raise ImportError("Please install the graspologic package.") from e
 
     async def cluster_kg(
-        self, triples: list[Triple], settings: KGEnrichmentSettings = KGEnrichmentSettings()
+        self,
+        triples: list[Triple],
+        settings: KGEnrichmentSettings = KGEnrichmentSettings(),
     ) -> list[Community]:
         """
         Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm.
@@ -202,7 +204,9 @@ class KGClusteringPipe(AsyncPipe):
         total_tasks = len(tasks)
         for i, completed_task in enumerate(asyncio.as_completed(tasks), 1):
             result = await completed_task
-            logger.info(f"Progress: {i}/{total_tasks} communities completed ({i/total_tasks*100:.2f}%)")
+            logger.info(
+                f"Progress: {i}/{total_tasks} communities completed ({i/total_tasks*100:.2f}%)"
+            )
             yield result
 
     async def _run_logic(
@@ -230,5 +234,7 @@ class KGClusteringPipe(AsyncPipe):
 
         triples = self.kg_provider.get_triples()
 
-        async for community in self.cluster_kg(triples, self.kg_provider.config.kg_enrichment_settings):
+        async for community in self.cluster_kg(
+            triples, self.kg_provider.config.kg_enrichment_settings
+        ):
             yield community

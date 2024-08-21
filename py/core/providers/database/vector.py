@@ -1,7 +1,5 @@
-import json
 import logging
 import os
-import time
 from typing import Any, Optional
 
 from core.base import (
@@ -9,10 +7,9 @@ from core.base import (
     VectorDBProvider,
     VectorEntry,
     VectorSearchResult,
-    generate_id_from_label,
 )
 from core.base.abstractions import VectorSearchSettings
-from sqlalchemy import exc, text
+from sqlalchemy import text
 from sqlalchemy.engine.url import make_url
 
 from .vecs import Client, Collection, create_client
@@ -41,11 +38,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
             )
 
         # Check if a complete Postgres URI is provided
-        postgres_uri = self.config.extra_fields.get(
+        if postgres_uri := self.config.extra_fields.get(
             "postgres_uri"
-        ) or os.getenv("POSTGRES_URI")
-
-        if postgres_uri:
+        ) or os.getenv("POSTGRES_URI"):
             # Log loudly that Postgres URI is being used
             logger.warning("=" * 50)
             logger.warning(
@@ -66,7 +61,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 sanitized_uri = parsed_uri.set(password="*****")
                 logger.info(f"Connecting using URI: {sanitized_uri}")
             except Exception as e:
-                raise ValueError(f"Invalid Postgres URI provided: {e}")
+                raise ValueError(f"Invalid Postgres URI provided: {e}") from e
         else:
             # Fall back to existing logic for individual connection parameters
             user = self.config.extra_fields.get("user", None) or os.getenv(
@@ -108,7 +103,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         except Exception as e:
             raise ValueError(
                 f"Error {e} occurred while attempting to connect to the pgvector provider with {DB_CONNECTION}."
-            )
+            ) from e
 
         self.collection_name = self.config.extra_fields.get(
             "vecs_collection"
@@ -320,13 +315,14 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
         rrf_k = search_settings.hybrid_search_settings.rrf_k
         # Combine results using RRF
-        combined_results = {}
-        for rank, result in enumerate(semantic_results, 1):
-            combined_results[result.fragment_id] = {
+        combined_results = {
+            result.fragment_id: {
                 "semantic_rank": rank,
                 "full_text_rank": full_text_limit,
                 "data": result,
             }
+            for rank, result in enumerate(semantic_results, 1)
+        }
 
         for rank, result in enumerate(full_text_results, 1):
             if result.fragment_id in combined_results:

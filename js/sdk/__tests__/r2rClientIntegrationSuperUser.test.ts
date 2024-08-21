@@ -3,6 +3,12 @@ const fs = require("fs");
 
 const baseUrl = "http://localhost:8000";
 
+/**
+ * raskolnikov.txt should have an id of `f9f61fc8-079c-52d0-910a-c657958e385b`
+ * karamozov.txt should have an id of `73749580-1ade-50c6-8fbe-a5e9e87783c8`
+ * myshkin.txt should have an id of `2e05b285-2746-5778-9e4a-e293db92f3be`
+ */
+
 describe("r2rClient Integration Tests", () => {
   let client: r2rClient;
 
@@ -43,17 +49,17 @@ describe("r2rClient Integration Tests", () => {
     await expect(client.ingestFiles(files)).resolves.not.toThrow();
   });
 
-  // test("Update files", async () => {
-  //   const updated_file = [
-  //     { path: "examples/data/folder/myshkin.txt", name: "super_myshkin.txt" },
-  //   ];
-  //   await expect(
-  //     client.updateFiles(updated_file, {
-  //       document_ids: ["2e05b285-2746-5778-9e4a-e293db92f3be"],
-  //       metadatas: [{ title: "updated_karamozov.txt" }],
-  //     }),
-  //   ).resolves.not.toThrow();
-  // });
+  test("Update files", async () => {
+    const updated_file = [
+      { path: "examples/data/folder/myshkin.txt", name: "super_myshkin.txt" },
+    ];
+    await expect(
+      client.updateFiles(updated_file, {
+        document_ids: ["2e05b285-2746-5778-9e4a-e293db92f3be"],
+        metadatas: [{ title: "updated_karamozov.txt" }],
+      }),
+    ).resolves.not.toThrow();
+  });
 
   test("Search documents", async () => {
     await expect(client.search("test")).resolves.not.toThrow();
@@ -111,6 +117,7 @@ describe("r2rClient Integration Tests", () => {
   //   expect(fullResponse.length).toBeGreaterThan(0);
   // }, 30000);
 
+  // Deletes raskolnikov.txt
   test("Delete document", async () => {
     await expect(
       client.delete({
@@ -124,33 +131,31 @@ describe("r2rClient Integration Tests", () => {
   //   await expect(client.logs()).resolves.not.toThrow();
   // });
 
-  // TODO: verfiy that this works, blocked by R2R logging issues
-  // test("App settings", async () => {
-  //   await expect(client.appSettings()).resolves.not.toThrow();
-  // });
+  test("App settings", async () => {
+    await expect(client.appSettings()).resolves.not.toThrow();
+  });
 
-  // test("Get analytics", async () => {
-  //   const filterCriteria: Record<string, any> | string = {
-  //     filters: {
-  //       search_latencies: "search_latency",
-  //     },
-  //   };
+  test("Get analytics", async () => {
+    const filterCriteria: Record<string, any> | string = {
+      filters: {
+        search_latencies: "search_latency",
+      },
+    };
 
-  //   const analysisTypes: Record<string, any> | string = {
-  //     analysis_types: {
-  //       search_latencies: ["basic_statistics", "search_latency"],
-  //     },
-  //   };
+    const analysisTypes: Record<string, any> | string = {
+      analysis_types: {
+        search_latencies: ["basic_statistics", "search_latency"],
+      },
+    };
 
-  //   await expect(
-  //     client.analytics(filterCriteria, analysisTypes),
-  //   ).resolves.not.toThrow();
-  // });
+    await expect(
+      client.analytics(filterCriteria, analysisTypes),
+    ).resolves.not.toThrow();
+  });
 
-  // TODO: Fix in R2R, 'PostgresRelationalDBProvider' object has no attribute 'get_users_overview')
-  // test("Get users overview", async () => {
-  //   await expect(client.usersOverview()).resolves.not.toThrow();
-  // });
+  test("Get users overview", async () => {
+    await expect(client.usersOverview()).resolves.not.toThrow();
+  });
 
   test("Get documents overview", async () => {
     await expect(client.documentsOverview()).resolves.not.toThrow();
@@ -163,10 +168,13 @@ describe("r2rClient Integration Tests", () => {
   });
 
   test("Clean up remaining documents", async () => {
+    // Deletes karamozov.txt
     await expect(
       client.delete({ document_id: "73749580-1ade-50c6-8fbe-a5e9e87783c8" }),
     ).resolves.toBe("");
 
+
+    // Deletes myshkin.txt
     await expect(
       client.delete({ document_id: "2e05b285-2746-5778-9e4a-e293db92f3be" }),
     ).resolves.toBe("");
