@@ -57,7 +57,7 @@ class IngestionRouter(BaseRouter):
             metadatas: Optional[Json[list[dict]]] = Form(
                 None, description=ingest_files_descriptions.get("metadatas")
             ),
-            chunking_settings: Optional[ChunkingConfig] = Form(
+            chunking_settings: Optional[Json[ChunkingConfig]] = Form(
                 None,
                 description=ingest_files_descriptions.get("chunking_settings"),
             ),
@@ -145,7 +145,7 @@ class IngestionRouter(BaseRouter):
             metadatas: Optional[Json[list[dict]]] = Form(
                 None, description=ingest_files_descriptions.get("metadatas")
             ),
-            chunking_settings: Optional[ChunkingConfig] = Form(
+            chunking_settings: Optional[Json[ChunkingConfig]] = Form(
                 None,
                 description=ingest_files_descriptions.get("chunking_settings"),
             ),

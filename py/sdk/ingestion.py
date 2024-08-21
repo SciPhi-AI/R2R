@@ -43,10 +43,12 @@ class IngestionMethods:
             raise ValueError(
                 "Number of versions must match number of document IDs."
             )
-        if chunking_settings is not None and chunking_settings is not ChunkingConfig:
+        if (
+            chunking_settings is not None
+            and chunking_settings is not ChunkingConfig
+        ):
             # check if the provided dict maps to a ChunkingConfig
             ChunkingConfig(**chunking_settings)
-        
 
         all_file_paths = []
         for path in file_paths:
@@ -97,7 +99,7 @@ class IngestionMethods:
     async def update_files(
         client,
         file_paths: list[str],
-        document_ids: Optional[list[str]] = None,
+        document_ids: Optional[list[Union[str, UUID]]] = None,
         metadatas: Optional[list[dict]] = None,
         chunking_settings: Optional[Union[dict, ChunkingConfig]] = None,
     ) -> dict:
@@ -121,7 +123,6 @@ class IngestionMethods:
             raise ValueError(
                 "Number of file paths must match number of document IDs."
             )
-        
 
         with ExitStack() as stack:
             files = [
@@ -138,7 +139,9 @@ class IngestionMethods:
 
             data = {}
             if document_ids:
-                data["document_ids"] = json.dumps(document_ids)
+                data["document_ids"] = json.dumps(
+                    [str(doc_id) for doc_id in document_ids]
+                )
             if metadatas:
                 data["metadatas"] = json.dumps(metadatas)
             if chunking_settings:

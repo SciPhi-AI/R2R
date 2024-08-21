@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import uuid
 from urllib.parse import urlparse
 
 import click
@@ -75,28 +76,44 @@ def update_files(client, file_paths, document_ids, metadatas):
 
 def ingest_files_from_urls(client, urls):
     """Download and ingest files from given URLs."""
-    ingested_files = []
-    for url in urls:
-        filename = os.path.basename(urlparse(url).path)
+    files_to_ingest = []
+    metadatas = []
+    document_ids = []
+    temp_files = []
 
-        with tempfile.NamedTemporaryFile(
-            mode="w+", delete=False, suffix=f"_{filename}"
-        ) as temp_file:
+    try:
+        for url in urls:
+            filename = os.path.basename(urlparse(url).path)
+            is_pdf = filename.lower().endswith(".pdf")
+
+            temp_file = tempfile.NamedTemporaryFile(
+                mode="wb" if is_pdf else "w+",
+                delete=False,
+                suffix=f"_{filename}",
+            )
+            temp_files.append(temp_file)
+
             response = requests.get(url)
             response.raise_for_status()
-            temp_file.write(response.text)
-            temp_file_path = temp_file.name
+            if is_pdf:
+                temp_file.write(response.content)
+            else:
+                temp_file.write(response.text)
+            temp_file.close()
 
-        try:
-            response = client.ingest_files([temp_file_path])
-            click.echo(
-                f"File '{filename}' ingested successfully. Response: {response}"
-            )
-            ingested_files.append(filename)
-        finally:
-            os.unlink(temp_file_path)
+            files_to_ingest.append(temp_file.name)
+            metadatas.append({"title": filename})
+            document_ids.append(uuid.uuid5(uuid.NAMESPACE_DNS, url))
 
-    return ingested_files
+        response = client.ingest_files(
+            files_to_ingest, metadatas=metadatas, document_ids=document_ids
+        )
+
+        return response["results"]
+    finally:
+        # Clean up temporary files
+        for temp_file in temp_files:
+            os.unlink(temp_file.name)
 
 
 @cli.command()
@@ -106,10 +123,9 @@ def ingest_sample_file(client):
     sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/r2r/examples/data/aristotle.txt"
 
     with timer():
-        ingested_files = ingest_files_from_urls(client, [sample_file_url])
-
+        response = ingest_files_from_urls(client, [sample_file_url])
     click.echo(
-        f"Sample file ingestion completed. Ingested files: {', '.join(ingested_files)}"
+        f"Sample file ingestion completed. Ingest files response:\n\n{response}"
     )
 
 
@@ -120,10 +136,17 @@ def ingest_sample_files(client):
     urls = [
         "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/r2r/examples/data/aristotle.txt",
         "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/r2r/examples/data/got.txt",
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/r2r/examples/data/pg_essay_1.html",
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/r2r/examples/data/pg_essay_2.html",
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/r2r/examples/data/pg_essay_3.html",
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/r2r/examples/data/pg_essay_4.html",
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/r2r/examples/data/pg_essay_5.html",
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/r2r/examples/data/lyft_2021.pdf",
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/r2r/examples/data/uber_2021.pdf",
     ]
     with timer():
-        ingested_files = ingest_files_from_urls(client, urls)
+        response = ingest_files_from_urls(client, urls)
 
     click.echo(
-        f"Sample files ingestion completed. Ingested files: {', '.join(ingested_files)}"
+        f"Sample file ingestion completed. Ingest files response:\n\n{response}"
     )

@@ -1,7 +1,6 @@
 import os
 
 from core import R2RException
-
 from tests.regression.test_cases.base import BaseTest
 
 
