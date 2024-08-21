@@ -63,6 +63,7 @@ class R2RBuilder:
         self.provider_factory_override: Optional[Type[R2RProviderFactory]] = (
             None
         )
+
         self.pipe_factory_override: Optional[R2RPipeFactory] = None
         self.pipeline_factory_override: Optional[R2RPipelineFactory] = None
 

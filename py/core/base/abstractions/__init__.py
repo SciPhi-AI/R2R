@@ -35,6 +35,7 @@ from .search import (
     VectorSearchResult,
     VectorSearchSettings,
 )
+from .restructure import KGEnrichmentSettings
 from .user import Token, TokenData, UserStats
 from .vector import Vector, VectorEntry, VectorType
 
@@ -81,6 +82,8 @@ __all__ = [
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
+    # Restructure abstractions
+    "KGEnrichmentSettings",
     # User abstractions
     "Token",
     "TokenData",

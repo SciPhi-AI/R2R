@@ -88,6 +88,17 @@ class KGSearchSettings(BaseModel):
     }
 
 
+class KGEnrichmentSettings(BaseModel):
+    leiden_params: dict = Field(
+        default_factory=dict,
+        description="Parameters for the Leiden algorithm.",
+    )
+    generation_config: GenerationConfig = Field(
+        default_factory=GenerationConfig,
+        description="Configuration for text generation during graph enrichment.",
+    )
+
+
 class ProviderConfig(BaseModel, ABC):
     """A base provider configuration class"""
 
@@ -237,7 +248,23 @@ class VectorSearchSettings(BaseModel):
             str(uuid) for uuid in dump["selected_group_ids"]
         ]
         return dump
+    
+class KGEnrichmentSettings(BaseModel):
+    max_knowledge_triples: int = Field(
+        default=100,
+        description="The maximum number of knowledge triples to extract from each chunk.",
+    )
+    generation_config: GenerationConfig = Field(
+        default_factory=GenerationConfig,
+        description="The generation configuration for the KG enrichment.",
+    )
+    leiden_params: dict = Field(
+        default_factory=dict,
+        description="The parameters for the Leiden algorithm.",
+    )
 
+class KGEnrichementResponse(BaseModel):
+    enriched_content: Dict[str, Any]
 
 class UserResponse(BaseModel):
     id: UUID

@@ -22,6 +22,7 @@ from core.base import (
     PromptProvider,
     RunLoggingSingleton,
     Triple,
+    KGEnrichmentSettings,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,9 +39,6 @@ class KGClusteringPipe(AsyncPipe):
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
-        cluster_batch_size: int = 100,
-        max_cluster_size: int = 10,
-        use_lcc: bool = True,
         pipe_logger: Optional[RunLoggingSingleton] = None,
         type: PipeType = PipeType.OTHER,
         config: Optional[AsyncPipe.PipeConfig] = None,
@@ -57,23 +55,20 @@ class KGClusteringPipe(AsyncPipe):
         )
         self.kg_provider = kg_provider
         self.llm_provider = llm_provider
-        self.cluster_batch_size = cluster_batch_size
-        self.max_cluster_size = max_cluster_size
-        self.use_lcc = use_lcc
         self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
     def _compute_leiden_communities(
         self,
         graph: nx.Graph,
-        seed: int = 0xDEADBEEF,
+        settings: KGEnrichmentSettings,
     ) -> dict[int, dict[str, int]]:
         """Compute Leiden communities."""
         try:
             from graspologic.partition import hierarchical_leiden
 
             community_mapping = hierarchical_leiden(
-                graph, max_cluster_size=self.max_cluster_size, random_seed=seed
+                graph, **settings.leiden_params
             )
             results: dict[int, dict[str, int]] = {}
             for partition in community_mapping:
@@ -84,7 +79,9 @@ class KGClusteringPipe(AsyncPipe):
         except ImportError as e:
             raise ImportError("Please install the graspologic package.") from e
 
-    async def cluster_kg(self, triples: list[Triple]) -> list[Community]:
+    async def cluster_kg(
+        self, triples: list[Triple], settings: KGEnrichmentSettings = KGEnrichmentSettings()
+    ) -> list[Community]:
         """
         Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm.
         """
@@ -100,7 +97,9 @@ class KGClusteringPipe(AsyncPipe):
                 id=f"{triple.subject}->{triple.predicate}->{triple.object}",
             )
 
-        hierarchical_communities = self._compute_leiden_communities(G)
+        hierarchical_communities = self._compute_leiden_communities(
+            G, settings=settings
+        )
 
         community_details = {}
 
@@ -172,9 +171,7 @@ class KGClusteringPipe(AsyncPipe):
                         "input_text": input_text,
                     },
                 ),
-                generation_config=GenerationConfig(
-                    model="gpt-4o-mini",
-                ),
+                generation_config=settings.generation_config,
             )
 
             description = description.choices[0].message.content
@@ -202,8 +199,11 @@ class KGClusteringPipe(AsyncPipe):
                 )
             )
 
-        for completed_task in asyncio.as_completed(tasks):
-            yield await completed_task
+        total_tasks = len(tasks)
+        for i, completed_task in enumerate(asyncio.as_completed(tasks), 1):
+            result = await completed_task
+            logger.info(f"Progress: {i}/{total_tasks} communities completed ({i/total_tasks*100:.2f}%)")
+            yield result
 
     async def _run_logic(
         self,
@@ -230,5 +230,5 @@ class KGClusteringPipe(AsyncPipe):
 
         triples = self.kg_provider.get_triples()
 
-        async for community in self.cluster_kg(triples):
+        async for community in self.cluster_kg(triples, self.kg_provider.config.kg_enrichment_settings):
             yield community
