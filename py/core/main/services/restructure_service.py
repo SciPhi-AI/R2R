@@ -32,7 +32,7 @@ class RestructureService(Service):
         )
 
     async def enrich_graph(
-        self, enrich_graph_settings: KGEnrichmentSettings
+        self, enrich_graph_settings: KGEnrichmentSettings = KGEnrichmentSettings()
     ) -> Dict[str, Any]:
         """
         Perform graph enrichment.

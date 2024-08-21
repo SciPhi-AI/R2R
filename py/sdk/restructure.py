@@ -6,7 +6,7 @@ from .models import KGEnrichmentSettings, KGEnrichementResponse
 class RestructureMethods:
     @staticmethod
     async def enrich_graph(
-        client, KGEnrichmentSettings: KGEnrichmentSettings
+        client, KGEnrichmentSettings: KGEnrichmentSettings = KGEnrichmentSettings()
     ) -> KGEnrichementResponse:
         """
         Perform graph enrichment over the entire graph.
