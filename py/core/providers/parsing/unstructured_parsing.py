@@ -91,7 +91,7 @@ class UnstructuredParsingProvider(ParsingProvider):
                 )
             )
             elements = self.client.general.partition(req)
-            elements = [element for element in elements.elements]
+            elements = list(elements.elements)
 
         else:
             logger.info(
