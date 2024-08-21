@@ -58,7 +58,6 @@ config_name = os.getenv("CONFIG_NAME", None)
 config_path = os.getenv("CONFIG_PATH", None)
 if not config_path and not config_name:
     config_name = "default"
-client_mode = os.getenv("CLIENT_MODE", "false").lower() == "true"
 base_url = os.getenv("BASE_URL")
 host = os.getenv("HOST", "0.0.0.0")
 port = int(os.getenv("PORT", "8000"))
@@ -66,14 +65,12 @@ pipeline_type = os.getenv("PIPELINE_TYPE", "qna")
 
 logger.info(f"Environment CONFIG_NAME: {config_name}")
 logger.info(f"Environment CONFIG_PATH: {config_path}")
-logger.info(f"Environment CLIENT_MODE: {client_mode}")
 logger.info(f"Environment BASE_URL: {base_url}")
 logger.info(f"Environment PIPELINE_TYPE: {pipeline_type}")
 
 app = r2r_app(
     config_name=config_name,
     config_path=config_path,
-    client_mode=client_mode,
     base_url=base_url,
     pipeline_type=PipelineType(pipeline_type),
 )
