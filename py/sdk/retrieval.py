@@ -9,14 +9,13 @@ from .models import (
     VectorSearchSettings,
 )
 
+
 class RetrievalMethods:
     @staticmethod
     async def search(
         client,
         query: str,
-        vector_search_settings: Optional[
-            Union[dict, VectorSearchSettings]
-        ] = None,
+        vector_search_settings: Optional[Union[dict, VectorSearchSettings]] = None,
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
         *args,
         **kwargs,
@@ -33,18 +32,14 @@ class RetrievalMethods:
             SearchResponse: The search response.
         """
         if isinstance(vector_search_settings, dict):
-            vector_search_settings = VectorSearchSettings(
-                **vector_search_settings
-            )
+            vector_search_settings = VectorSearchSettings(**vector_search_settings)
         if isinstance(kg_search_settings, dict):
             kg_search_settings = KGSearchSettings(**kg_search_settings)
 
         data = {
             "query": query,
             "vector_search_settings": (
-                vector_search_settings.model_dump()
-                if vector_search_settings
-                else None
+                vector_search_settings.model_dump() if vector_search_settings else None
             ),
             "kg_search_settings": (
                 kg_search_settings.model_dump() if kg_search_settings else None
@@ -57,9 +52,7 @@ class RetrievalMethods:
         client,
         query: str,
         rag_generation_config: Union[dict, GenerationConfig],
-        vector_search_settings: Optional[
-            Union[dict, VectorSearchSettings]
-        ] = None,
+        vector_search_settings: Optional[Union[dict, VectorSearchSettings]] = None,
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
         *args,
         **kwargs,
@@ -79,9 +72,7 @@ class RetrievalMethods:
         if isinstance(rag_generation_config, dict):
             rag_generation_config = GenerationConfig(**rag_generation_config)
         if isinstance(vector_search_settings, dict):
-            vector_search_settings = VectorSearchSettings(
-                **vector_search_settings
-            )
+            vector_search_settings = VectorSearchSettings(**vector_search_settings)
         if isinstance(kg_search_settings, dict):
             kg_search_settings = KGSearchSettings(**kg_search_settings)
 
@@ -89,9 +80,7 @@ class RetrievalMethods:
             "query": query,
             "rag_generation_config": rag_generation_config.model_dump(),
             "vector_search_settings": (
-                vector_search_settings.model_dump()
-                if vector_search_settings
-                else None
+                vector_search_settings.model_dump() if vector_search_settings else None
             ),
             "kg_search_settings": (
                 kg_search_settings.model_dump() if kg_search_settings else None
@@ -99,23 +88,16 @@ class RetrievalMethods:
         }
 
         if rag_generation_config.stream:
-            return client._make_streaming_request(
-            "POST",
-            "rag",
-            json=data
-        )
+            return client._make_streaming_request("POST", "rag", json=data)
         else:
             return await client._make_request("POST", "rag", json=data)
-        
 
     @staticmethod
     async def agent(
         client,
         messages: list[Union[dict, Message]],
         rag_generation_config: Union[dict, GenerationConfig],
-        vector_search_settings: Optional[
-            Union[dict, VectorSearchSettings]
-        ] = None,
+        vector_search_settings: Optional[Union[dict, VectorSearchSettings]] = None,
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
@@ -139,24 +121,19 @@ class RetrievalMethods:
         if isinstance(rag_generation_config, dict):
             rag_generation_config = GenerationConfig(**rag_generation_config)
         if isinstance(vector_search_settings, dict):
-            vector_search_settings = VectorSearchSettings(
-                **vector_search_settings
-            )
+            vector_search_settings = VectorSearchSettings(**vector_search_settings)
         if isinstance(kg_search_settings, dict):
             kg_search_settings = KGSearchSettings(**kg_search_settings)
 
         messages = [
-            Message(**msg) if isinstance(msg, dict) else msg
-            for msg in messages
+            Message(**msg) if isinstance(msg, dict) else msg for msg in messages
         ]
 
         data = {
             "messages": [msg.model_dump() for msg in messages],
             "rag_generation_config": rag_generation_config.model_dump(),
             "vector_search_settings": (
-                vector_search_settings.model_dump()
-                if vector_search_settings
-                else None
+                vector_search_settings.model_dump() if vector_search_settings else None
             ),
             "kg_search_settings": (
                 kg_search_settings.model_dump() if kg_search_settings else None
@@ -166,14 +143,9 @@ class RetrievalMethods:
         }
 
         if rag_generation_config.stream:
-            return client._make_streaming_request(
-                "POST",
-                "agent",
-                json=data
-            )
+            return client._make_streaming_request("POST", "agent", json=data)
         else:
             return await client._make_request("POST", "rag", json=data)
-
 
         # if rag_generation_config.stream:
 

@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import json
+from typing import AsyncGenerator, Generator
 
 import httpx
 import nest_asyncio
@@ -12,7 +13,8 @@ from .management import ManagementMethods
 from .models import R2RException
 from .restructure import RestructureMethods
 from .retrieval import RetrievalMethods
-from typing import AsyncGenerator, Generator
+from .server import ServerMethods
+
 nest_asyncio.apply()
 
 # The empty args become necessary after a recent modification to `base_endpoint`
@@ -87,23 +89,23 @@ class R2RAsyncClient:
 
         # Initialize method groups
         self._auth = AuthMethods
-        self._retrieval = RetrievalMethods
         self._ingestion = IngestionMethods
-        self._restructure = RestructureMethods
         self._management = ManagementMethods
+        self._restructure = RestructureMethods
+        self._retrieval = RetrievalMethods
+        self._server = ServerMethods
 
         # Collect all methods from the method groups
         self._methods = {}
         for group in [
             self._auth,
-            self._retrieval,
             self._ingestion,
-            self._restructure,
             self._management,
+            self._restructure,
+            self._retrieval,
+            self._server,
         ]:
-            for name, method in inspect.getmembers(
-                group, predicate=inspect.isfunction
-            ):
+            for name, method in inspect.getmembers(group, predicate=inspect.isfunction):
                 if not name.startswith("_"):
                     self._methods[name] = method
 
@@ -136,15 +138,22 @@ class R2RAsyncClient:
                     status_code=500, message=f"Request failed: {str(e)}"
                 ) from e
 
-
-    async def _make_streaming_request(self, method: str, endpoint: str, **kwargs) -> AsyncGenerator[str, None]:
+    async def _make_streaming_request(
+        self, method: str, endpoint: str, **kwargs
+    ) -> AsyncGenerator[str, None]:
         url = f"{self.base_url}{self.prefix}/{endpoint}"
         headers = kwargs.pop("headers", {})
-        if self.access_token and endpoint not in ["register", "login", "verify_email"]:
+        if self.access_token and endpoint not in [
+            "register",
+            "login",
+            "verify_email",
+        ]:
             headers.update(self._get_auth_header())
-        
+
         async with httpx.AsyncClient() as client:
-            async with client.stream(method, url, headers=headers, timeout=self.timeout, **kwargs) as response:
+            async with client.stream(
+                method, url, headers=headers, timeout=self.timeout, **kwargs
+            ) as response:
                 handle_request_error(response)
                 async for chunk in response.aiter_text():
                     yield chunk
@@ -161,9 +170,6 @@ class R2RAsyncClient:
                 message="Not authenticated. Please login first.",
             )
 
-    async def health(self) -> dict:
-        return await self._make_request("GET", "health")
-
     async def close(self):
         await self.client.aclose()
 
@@ -175,9 +181,7 @@ class R2RAsyncClient:
 
     def __getattr__(self, name):
         if name in self._methods:
-            return lambda *args, **kwargs: self._methods[name](
-                self, *args, **kwargs
-            )
+            return lambda *args, **kwargs: self._methods[name](self, *args, **kwargs)
         raise AttributeError(f"'R2RClient' object has no attribute '{name}'")
 
     def __dir__(self):
@@ -203,11 +207,15 @@ class R2RClient:
     def __getattr__(self, name):
         async_attr = getattr(self.async_client, name)
         if callable(async_attr):
+
             def sync_wrapper(*args, **kwargs):
-                result = asyncio.get_event_loop().run_until_complete(async_attr(*args, **kwargs))
+                result = asyncio.get_event_loop().run_until_complete(
+                    async_attr(*args, **kwargs)
+                )
                 if isinstance(result, AsyncGenerator):
                     return self._sync_generator(result)
                 return result
+
             return sync_wrapper
         return async_attr
 

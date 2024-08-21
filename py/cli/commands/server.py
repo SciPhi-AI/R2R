@@ -5,15 +5,59 @@ import subprocess
 import sys
 
 import click
-from core.cli.command_group import cli
-from core.cli.utils.docker_utils import (
+from cli.command_group import cli
+from cli.utils.docker_utils import (
     bring_down_docker_compose,
     remove_r2r_network,
     run_docker_serve,
     run_local_serve,
 )
-from core.cli.utils.timer import timer
+from cli.utils.timer import timer
 from dotenv import load_dotenv
+
+
+@cli.command()
+@click.pass_obj
+def health(client):
+    """Check the health of the server."""
+    with timer():
+        response = client.health()
+
+    click.echo(response)
+
+
+@cli.command()
+@click.pass_obj
+def server_stats(client):
+    """Check the server stats."""
+    with timer():
+        response = client.server_stats()
+
+    click.echo(response)
+
+
+@cli.command()
+@click.option("--run-type-filter", help="Filter for log types")
+@click.option(
+    "--max-runs", default=None, help="Maximum number of runs to fetch"
+)
+@click.pass_obj
+def logs(client, run_type_filter, max_runs):
+    """Retrieve logs with optional type filter."""
+    with timer():
+        response = client.logs(run_type_filter, max_runs)
+
+    for log in response["results"]:
+        click.echo(f"Run ID: {log['run_id']}")
+        click.echo(f"Run Type: {log['run_type']}")
+        click.echo(f"Timestamp: {log['timestamp']}")
+        click.echo(f"User ID: {log['user_id']}")
+        click.echo("Entries:")
+        for entry in log["entries"]:
+            click.echo(f"  - {entry['key']}: {entry['value'][:100]}")
+        click.echo("---")
+
+    click.echo(f"Total runs: {len(response)}")
 
 
 @cli.command()
@@ -29,7 +73,7 @@ from dotenv import load_dotenv
 )
 @click.option("--project-name", default="r2r", help="Project name for Docker")
 @click.pass_context
-def docker_down(ctx, volumes, remove_orphans, project_name):
+def docker_down(volumes, remove_orphans, project_name):
     """Bring down the Docker Compose setup and attempt to remove the network if necessary."""
     result = bring_down_docker_compose(project_name, volumes, remove_orphans)
     remove_r2r_network()
@@ -122,16 +166,6 @@ def generate_report():
 
 
 @cli.command()
-@click.pass_obj
-def health(obj):
-    """Check the health of the server."""
-    with timer():
-        response = obj.health()
-
-    click.echo(response)
-
-
-@cli.command()
 @click.option("--host", default="0.0.0.0", help="Host to run the server on")
 @click.option("--port", default=8000, help="Port to run the server on")
 @click.option("--docker", is_flag=True, help="Run using Docker")
@@ -148,9 +182,10 @@ def health(obj):
 )
 @click.option("--project-name", default="r2r", help="Project name for Docker")
 @click.option("--image", help="Docker image to use")
+@click.option("--config-path", help="Path to the configuration file")
 @click.pass_obj
 def serve(
-    obj,
+    client,
     host,
     port,
     docker,
@@ -159,12 +194,13 @@ def serve(
     exclude_postgres,
     project_name,
     image,
+    config_path,
 ):
     """Start the R2R server."""
     load_dotenv()
 
-    if obj["config_path"]:
-        config_path = os.path.abspath(obj["config_path"])
+    if config_path:
+        config_path = os.path.abspath(config_path)
 
         # For Windows, convert backslashes to forward slashes and prepend /host_mnt/
         if platform.system() == "Windows":
@@ -172,11 +208,9 @@ def serve(
                 "\\", "/"
             ).replace(":", "")
 
-        obj["config_path"] = config_path
-
     if docker:
         run_docker_serve(
-            obj,
+            client,
             host,
             port,
             exclude_neo4j,
@@ -205,7 +239,7 @@ def serve(
             click.echo(f"Opening browser to {url}")
             webbrowser.open(url)
     else:
-        run_local_serve(obj, host, port)
+        run_local_serve(client, host, port)
 
 
 @cli.command()

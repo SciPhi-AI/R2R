@@ -20,10 +20,10 @@ class UnstructuredParsingProvider(ParsingProvider):
             from unstructured.partition.auto import partition
 
             self.partition = partition
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "Please install the unstructured package to use the unstructured parsing provider."
-            )
+            ) from e
         if config.excluded_parsers:
             logger.warning(
                 "Excluded parsers are not supported by the unstructured parsing provider."
@@ -43,7 +43,7 @@ class UnstructuredParsingProvider(ParsingProvider):
         elements = self.partition(file=data)
 
         for iteration, element in enumerate(elements):
-            extraction = DocumentExtraction(
+            yield DocumentExtraction(
                 id=generate_id_from_label(f"{document.id}-{iteration}"),
                 document_id=document.id,
                 user_id=document.user_id,
@@ -51,7 +51,6 @@ class UnstructuredParsingProvider(ParsingProvider):
                 data=element.text,
                 metadata=document.metadata,
             )
-            yield extraction
 
         logger.debug(
             f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "

@@ -82,9 +82,7 @@ class R2RConfig:
             setattr(self, section, default_config[section])
         self.completion = CompletionConfig.create(**self.completion)
         # override GenerationConfig defaults
-        GenerationConfig.set_default(
-            **self.completion.generation_config.dict()
-        )
+        GenerationConfig.set_default(**self.completion.generation_config.dict())
 
         self.auth = AuthConfig.create(**self.auth)
         self.chunking = ChunkingConfig.create(**self.chunking)
@@ -102,9 +100,7 @@ class R2RConfig:
     ):
         if section not in config_data:
             raise ValueError(f"Missing '{section}' section in config")
-        if missing_keys := [
-            key for key in keys if key not in config_data[section]
-        ]:
+        if missing_keys := [key for key in keys if key not in config_data[section]]:
             raise ValueError(
                 f"Missing required keys in '{section}' config: {', '.join(missing_keys)}"
             )
@@ -114,11 +110,7 @@ class R2RConfig:
         if config_path is None:
             # Get the root directory of the project
             file_dir = os.path.dirname(os.path.abspath(__file__))
-            print(file_dir)
-            print(os.path.join(file_dir, "..", "..", "..", "r2r.toml"))
-            config_path = os.path.join(
-                file_dir, "..", "..", "..", "..", "r2r.toml"
-            )
+            config_path = os.path.join(file_dir, "..", "..", "..", "..", "r2r.toml")
 
         # Load configuration from TOML file
         with open(config_path) as f:
@@ -140,9 +132,7 @@ class R2RConfig:
     def load_from_redis(cls, redis_client: Any, key: str) -> "R2RConfig":
         config_data = redis_client.get(f"R2RConfig:{key}")
         if config_data is None:
-            raise ValueError(
-                f"Configuration not found in Redis with key '{key}'"
-            )
+            raise ValueError(f"Configuration not found in Redis with key '{key}'")
         config_data = toml.loads(config_data)
         return cls(config_data)
 
@@ -150,9 +140,7 @@ class R2RConfig:
     def load_default_config(cls) -> dict:
         # Get the root directory of the project
         file_dir = os.path.dirname(os.path.abspath(__file__))
-        default_config_path = os.path.join(
-            file_dir, "..", "..", "..", "..", "r2r.toml"
-        )
+        default_config_path = os.path.join(file_dir, "..", "..", "..", "..", "r2r.toml")
         # Load default configuration from TOML file
         with open(default_config_path) as f:
             return toml.load(f)
@@ -165,9 +153,7 @@ class R2RConfig:
                 for k, v in config_section.items()
             }
         elif isinstance(config_section, (list, tuple)):
-            return [
-                R2RConfig._serialize_config(item) for item in config_section
-            ]
+            return [R2RConfig._serialize_config(item) for item in config_section]
         elif isinstance(config_section, Enum):
             return config_section.value
         elif isinstance(config_section, BaseModel):
