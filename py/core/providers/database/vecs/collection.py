@@ -24,10 +24,15 @@ from typing import (
 from uuid import UUID, uuid4
 
 import psycopg2
+import sqlalchemy as sa
+from core.base import VectorSearchResult
 from core.base.abstractions import VectorSearchSettings
 from flupy import flu
+from nltk.corpus import wordnet
+from nltk.stem import SnowballStemmer
 from sqlalchemy import (
     Column,
+    Index,
     MetaData,
     String,
     Table,
@@ -373,16 +378,6 @@ class Collection:
             """
                 )
             )
-
-            # Create index on fts column
-            sess.execute(
-                text(
-                    f"""
-                CREATE INDEX ix_fts_{unique_string} ON vecs."{self.table.name}" USING GIN (fts);
-            """
-                )
-            )
-
         return self
 
     def _drop(self):
@@ -425,6 +420,7 @@ class Collection:
                                 "vec": record[5],
                                 "text": record[6],
                                 "metadata": record[7],
+                                "fts": func.to_tsvector(record[6]),
                             }
                             for record in chunk
                         ]
@@ -439,6 +435,7 @@ class Collection:
                             vec=stmt.excluded.vec,
                             text=stmt.excluded.text,
                             metadata=stmt.excluded.metadata,
+                            fts=stmt.excluded.fts,
                         ),
                     )
                     sess.execute(stmt)
@@ -646,6 +643,102 @@ class Collection:
                 if len(cols) == 1:
                     return [str(x) for x in sess.scalars(stmt).fetchall()]
                 return sess.execute(stmt).fetchall() or []
+
+    def full_text_search(
+        self, query_text: str, search_settings: VectorSearchSettings
+    ) -> List[VectorSearchResult]:
+
+        stemmer = SnowballStemmer("english")
+
+        def expand_query(query: str) -> str:
+            words = query.split()
+            expanded_words = set()
+            for word in words:
+                stemmed = stemmer.stem(word)
+                expanded_words.update([word, stemmed])
+                for syn in wordnet.synsets(word):
+                    for lemma in syn.lemmas():
+                        expanded_words.add(lemma.name())
+            return " | ".join(expanded_words)
+
+        expanded_query = expand_query(query_text)
+        ts_query = sa.func.to_tsquery("english", expanded_query)
+
+        phrase_rank = (
+            sa.func.ts_rank_cd(
+                sa.func.to_tsvector("english", self.table.c.text),
+                sa.func.phraseto_tsquery("english", query_text),
+                32,
+            )
+            * 2
+        )  # Give higher weight to exact phrases
+
+        partial_match_rank = sa.func.ts_rank_cd(
+            sa.func.to_tsvector("english", self.table.c.text),
+            sa.func.to_tsquery(
+                "english",
+                " & ".join(f"{word}:*" for word in query_text.split()),
+            ),
+            32,
+        )
+
+        combined_rank = (
+            phrase_rank
+            + partial_match_rank
+            + sa.func.ts_rank_cd(
+                sa.func.to_tsvector("english", self.table.c.text), ts_query, 32
+            )
+            * (sa.func.similarity(self.table.c.text, query_text) + 0.1)
+        ).label("rank")
+
+        stmt = (
+            sa.select(
+                self.table.c.fragment_id,
+                self.table.c.extraction_id,
+                self.table.c.document_id,
+                self.table.c.user_id,
+                self.table.c.group_ids,
+                self.table.c.text,
+                self.table.c.metadata,
+                combined_rank,
+            )
+            .where(
+                sa.or_(
+                    self.table.c.fts.op("@@")(ts_query),
+                    sa.func.similarity(self.table.c.text, query_text) > 0.1,
+                    self.table.c.fts.op("@@")(
+                        sa.func.phraseto_tsquery("english", query_text)
+                    ),
+                    self.table.c.fts.op("@@")(
+                        sa.func.to_tsquery(
+                            "english",
+                            " & ".join(
+                                f"{word}:*" for word in query_text.split()
+                            ),
+                        )
+                    ),
+                )
+            )
+            .order_by(sa.desc("rank"))
+            .limit(search_settings.hybrid_search_settings.full_text_limit)
+        )
+
+        with self.client.Session() as sess:
+            results = sess.execute(stmt).fetchall()
+
+        return [
+            VectorSearchResult(
+                fragment_id=str(r.fragment_id),
+                extraction_id=str(r.extraction_id),
+                document_id=str(r.document_id),
+                user_id=str(r.user_id),
+                group_ids=r.group_ids,
+                text=r.text,
+                score=float(r.rank),
+                metadata=r.metadata,
+            )
+            for r in results
+        ]
 
     def build_filters(self, filters: Dict):
         """
@@ -1028,20 +1121,7 @@ class Collection:
 
 
 def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
-    """
-    PRIVATE
-
-    Builds a SQLAlchemy model underpinning a `vecs.Collection`.
-
-    Args:
-        name (str): The name of the table.
-        meta (MetaData): MetaData instance associated with the SQL database.
-        dimension: The dimension of the vectors in the collection.
-
-    Returns:
-        Table: The constructed SQL table.
-    """
-    return Table(
+    table = Table(
         name,
         meta,
         Column("fragment_id", postgresql.UUID, primary_key=True),
@@ -1052,20 +1132,28 @@ def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
             "group_ids", postgresql.ARRAY(postgresql.UUID), server_default="{}"
         ),
         Column("vec", Vector(dimension), nullable=False),
+        Column("text", postgresql.TEXT, nullable=True),
         Column(
-            "text", postgresql.TEXT, nullable=True
-        ),  # New standalone text column
+            "fts",
+            postgresql.TSVECTOR,
+            nullable=False,
+            server_default=text("to_tsvector('english'::regconfig, '')"),
+        ),
         Column(
             "metadata",
             postgresql.JSONB,
             server_default=text("'{}'::jsonb"),
             nullable=False,
         ),
-        Column(
-            "fts",
-            postgresql.TSVECTOR,
-            server_default=text("to_tsvector('english', '')"),
-            nullable=False,
-        ),  # New FTS column
         extend_existing=True,
     )
+
+    # Add GIN index for full-text search and trigram similarity
+    Index(
+        f"idx_{name}_fts_trgm",
+        table.c.fts,
+        table.c.text,
+        postgresql_using="gin",
+        postgresql_ops={"text": "gin_trgm_ops"},  # Remove gin_tsvector_ops
+    )
+    return table

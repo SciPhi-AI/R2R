@@ -93,8 +93,13 @@ def document_chunks(client, document_id):
     with timer():
         response = client.document_chunks(document_id)
 
-    for chunk in response:
-        click.echo(chunk)
+    chunks = response.get("results", [])
+    click.echo(f"\nNumber of chunks: {len(chunks)}")
+    for index, chunk in enumerate(chunks, 1):
+        click.echo(f"\nChunk {index}:")
+        click.echo(f"Fragment ID: {chunk['fragment_id']}")
+        click.echo(f"Text: {chunk['text'][:100]}...")
+        click.echo(f"Metadata: {chunk['metadata']}")
 
 
 @cli.command()

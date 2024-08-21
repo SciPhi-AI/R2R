@@ -1,7 +1,5 @@
-import json
 import logging
 import os
-import time
 from typing import Any, Optional
 
 from core.base import (
@@ -9,10 +7,9 @@ from core.base import (
     VectorDBProvider,
     VectorEntry,
     VectorSearchResult,
-    generate_id_from_label,
 )
 from core.base.abstractions import VectorSearchSettings
-from sqlalchemy import exc, text
+from sqlalchemy import text
 from sqlalchemy.engine.url import make_url
 
 from .vecs import Client, Collection, create_client
@@ -41,11 +38,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
             )
 
         # Check if a complete Postgres URI is provided
-        postgres_uri = self.config.extra_fields.get(
+        if postgres_uri := self.config.extra_fields.get(
             "postgres_uri"
-        ) or os.getenv("POSTGRES_URI")
-
-        if postgres_uri:
+        ) or os.getenv("POSTGRES_URI"):
             # Log loudly that Postgres URI is being used
             logger.warning("=" * 50)
             logger.warning(
@@ -66,7 +61,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 sanitized_uri = parsed_uri.set(password="*****")
                 logger.info(f"Connecting using URI: {sanitized_uri}")
             except Exception as e:
-                raise ValueError(f"Invalid Postgres URI provided: {e}")
+                raise ValueError(f"Invalid Postgres URI provided: {e}") from e
         else:
             # Fall back to existing logic for individual connection parameters
             user = self.config.extra_fields.get("user", None) or os.getenv(
@@ -108,7 +103,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         except Exception as e:
             raise ValueError(
                 f"Error {e} occurred while attempting to connect to the pgvector provider with {DB_CONNECTION}."
-            )
+            ) from e
 
         self.collection_name = self.config.extra_fields.get(
             "vecs_collection"
@@ -125,9 +120,18 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
 
     def _initialize_vector_db(self, dimension: int) -> None:
+        # Create extension for trigram similarity
+        with self.vx.Session() as sess:
+            sess.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
+            sess.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gin;"))
+            sess.commit()
+
         self.collection = self.vx.get_or_create_collection(
             name=self.collection_name, dimension=dimension
         )
+        self.collection.create_index(measure="cosine_distance")
+        self.collection.create_index(measure="l2_distance")
+        self.collection.create_index(measure="max_inner_product")
 
     def upsert(self, entry: VectorEntry) -> None:
         if self.collection is None:
@@ -216,72 +220,69 @@ class PostgresVectorDBProvider(VectorDBProvider):
             raise ValueError(
                 "Please call `initialize_collection` before attempting to run `full_text_search`."
             )
-        from sqlalchemy import func, select
-        from sqlalchemy.sql.expression import or_
-
-        full_text_query = (
-            select(
-                self.collection.table.c.fragment_id,
-                self.collection.table.c.extraction_id,
-                self.collection.table.c.document_id,
-                self.collection.table.c.user_id,
-                self.collection.table.c.group_ids,
-                self.collection.table.c.text,
-                self.collection.table.c.metadata,
-                func.ts_rank_cd(
-                    func.to_tsvector("english", self.collection.table.c.text),
-                    func.websearch_to_tsquery("english", query_text),
-                    1 | 2 | 4 | 8 | 16 | 32 | 64,
-                ).label("rank"),
-                func.ts_headline(
-                    "english",
-                    self.collection.table.c.text,
-                    func.websearch_to_tsquery("english", query_text),
-                    "StartSel = <b>, StopSel = </b>, MaxWords=35, MinWords=15",
-                ).label("headline"),
-            )
-            .where(
-                or_(
-                    func.to_tsvector(
-                        "english", self.collection.table.c.text
-                    ).op("@@")(
-                        func.websearch_to_tsquery("english", query_text)
-                    ),
-                    func.similarity(self.collection.table.c.text, query_text)
-                    > 0.3,
-                )
-            )
-            .order_by(
-                func.ts_rank_cd(
-                    func.to_tsvector("english", self.collection.table.c.text),
-                    func.websearch_to_tsquery("english", query_text),
-                    1 | 2 | 4 | 8 | 16 | 32 | 64,
-                ).desc()
-            )
-            .limit(search_settings.hybrid_search_settings.full_text_limit)
+        results = self.collection.full_text_search(
+            query_text=query_text, search_settings=search_settings
         )
+        print("results = ", results)
+        return results
+        # from sqlalchemy import func, select
+        # from sqlalchemy.sql.expression import or_
 
-        if search_settings.filters:
-            full_text_query = full_text_query.where(
-                self.collection.build_filters(search_settings.filters)
-            )
+        # words = query_text.split()
+        # similarity_threshold = 0.3  # Adjust this value to control fuzziness
 
-        with self.vx.Session() as session:
-            results = session.execute(full_text_query).fetchall()
+        # full_text_query = (
+        #     select(
+        #         self.collection.table.c.fragment_id,
+        #         self.collection.table.c.extraction_id,
+        #         self.collection.table.c.document_id,
+        #         self.collection.table.c.user_id,
+        #         self.collection.table.c.group_ids,
+        #         self.collection.table.c.text,
+        #         self.collection.table.c.metadata,
+        #         (func.ts_rank(
+        #             func.to_tsvector('english', self.collection.table.c.text),
+        #             func.plainto_tsquery('english', query_text),
+        #         ) +
+        #         func.similarity(self.collection.table.c.text, query_text)).label("rank"),
+        #         func.ts_headline(
+        #             'english',
+        #             self.collection.table.c.text,
+        #             func.plainto_tsquery('english', query_text),
+        #             "StartSel = <b>, StopSel = </b>, MaxWords=35, MinWords=15"
+        #         ).label("headline"),
+        #     )
+        #     .where(
+        #         or_(
+        #             func.to_tsvector('english', self.collection.table.c.text).op('@@')(
+        #                 func.plainto_tsquery('english', query_text)
+        #             ),
+        #             func.similarity(self.collection.table.c.text, query_text) > similarity_threshold
+        #         )
+        #     )
+        #     .order_by(text("rank DESC"))
+        #     .limit(search_settings.hybrid_search_settings.full_text_limit)
+        # )
 
-        return [
-            VectorSearchResult(
-                fragment_id=result.fragment_id,
-                extraction_id=result.extraction_id,
-                document_id=result.document_id,
-                user_id=result.user_id,
-                group_ids=result.group_ids,
-                text=result.text,
-                score=float(result.rank),
-                metadata={**result.metadata, "headline": result.headline},
-            )
-            for result in results
-        ]
+        # print(f"Full-text query: {full_text_query}")
+
+        # with self.vx.Session() as session:
+        #     results = session.execute(full_text_query).fetchall()
+        #     print('results = ', results)
+
+        # return [
+        #     VectorSearchResult(
+        #         fragment_id=result.fragment_id,
+        #         extraction_id=result.extraction_id,
+        #         document_id=result.document_id,
+        #         user_id=result.user_id,
+        #         group_ids=result.group_ids,
+        #         text=result.text,
+        #         score=float(result.rank),
+        #         metadata={**result.metadata, "headline": result.headline},
+        #     )
+        #     for result in results
+        # ]
 
     def hybrid_search(
         self,
@@ -307,7 +308,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
             query_text,
             search_settings,
         )
-
         semantic_limit = search_settings.search_limit
         full_text_limit = (
             search_settings.hybrid_search_settings.full_text_limit
@@ -320,13 +320,14 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
         rrf_k = search_settings.hybrid_search_settings.rrf_k
         # Combine results using RRF
-        combined_results = {}
-        for rank, result in enumerate(semantic_results, 1):
-            combined_results[result.fragment_id] = {
+        combined_results = {
+            result.fragment_id: {
                 "semantic_rank": rank,
                 "full_text_rank": full_text_limit,
                 "data": result,
             }
+            for rank, result in enumerate(semantic_results, 1)
+        }
 
         for rank, result in enumerate(full_text_results, 1):
             if result.fragment_id in combined_results:
