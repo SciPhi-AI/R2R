@@ -138,7 +138,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
         self.collection.create_index(measure="l2_distance")
         self.collection.create_index(measure="max_inner_product")
 
-
     def upsert(self, entry: VectorEntry) -> None:
         if self.collection is None:
             raise ValueError(

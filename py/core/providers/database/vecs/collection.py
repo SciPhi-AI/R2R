@@ -740,52 +740,6 @@ class Collection:
             for r in results
         ]
 
-    # def full_text_search(self, query_text: str, limit: int = 100) -> List[Dict[str, Any]]:
-    #     """
-    #     Perform a full-text search on the collection.
-
-    #     Args:
-    #         query_text (str): The text to search for.
-    #         limit (int): The maximum number of results to return.
-
-    #     Returns:
-    #         List[Dict[str, Any]]: A list of matching records.
-    #     """
-    #     ts_query = func.websearch_to_tsquery('english', query_text)
-
-    #     stmt = (
-    #         select(
-    #             self.table.c.fragment_id,
-    #             self.table.c.extraction_id,
-    #             self.table.c.document_id,
-    #             self.table.c.user_id,
-    #             self.table.c.group_ids,
-    #             self.table.c.text,
-    #             self.table.c.metadata,
-    #             func.ts_rank(self.table.c.fts, ts_query).label('rank')
-    #         )
-    #         .where(self.table.c.fts.op('@@')(ts_query))
-    #         .order_by(text('rank DESC'))
-    #         .limit(limit)
-    #     )
-
-    #     with self.client.Session() as sess:
-    #         results = sess.execute(stmt).fetchall()
-
-    #     return [
-    #         {
-    #             'fragment_id': str(r.fragment_id),
-    #             'extraction_id': str(r.extraction_id),
-    #             'document_id': str(r.document_id),
-    #             'user_id': str(r.user_id),
-    #             'group_ids': r.group_ids,
-    #             'text': r.text,
-    #             'metadata': r.metadata,
-    #             'rank': float(r.rank)
-    #         }
-    #         for r in results
-    #     ]
-
     def build_filters(self, filters: Dict):
         """
         PUBLIC
