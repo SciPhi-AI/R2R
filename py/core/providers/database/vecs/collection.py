@@ -1200,6 +1200,6 @@ def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
         table.c.fts,
         table.c.text,
         postgresql_using="gin",
-        postgresql_ops={"fts": "gin_tsvector_ops", "text": "gin_trgm_ops"},
+        postgresql_ops={"text": "gin_trgm_ops"},  # Remove gin_tsvector_ops
     )
     return table

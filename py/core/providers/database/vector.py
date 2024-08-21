@@ -125,6 +125,12 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
 
     def _initialize_vector_db(self, dimension: int) -> None:
+        # Create extension for trigram similarity
+        with self.vx.Session() as sess:
+            sess.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
+            sess.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gin;"))
+            sess.commit()
+
         self.collection = self.vx.get_or_create_collection(
             name=self.collection_name, dimension=dimension
         )
@@ -132,10 +138,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
         self.collection.create_index(measure="l2_distance")
         self.collection.create_index(measure="max_inner_product")
 
-        # Create extension for trigram similarity
-        with self.vx.Session() as sess:
-            sess.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
-            sess.commit()
 
     def upsert(self, entry: VectorEntry) -> None:
         if self.collection is None:
@@ -308,13 +310,10 @@ class PostgresVectorDBProvider(VectorDBProvider):
                 "The `full_text_limit` must be greater than or equal to the `search_limit`."
             )
         semantic_results = self.semantic_search(query_vector, search_settings)
-        print("search_settings = ", search_settings)
         full_text_results = self.full_text_search(
             query_text,
             search_settings,
         )
-        print("full_text_results = ", full_text_results)
-
         semantic_limit = search_settings.search_limit
         full_text_limit = (
             search_settings.hybrid_search_settings.full_text_limit
