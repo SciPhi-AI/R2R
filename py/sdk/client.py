@@ -105,7 +105,9 @@ class R2RAsyncClient:
             self._retrieval,
             self._server,
         ]:
-            for name, method in inspect.getmembers(group, predicate=inspect.isfunction):
+            for name, method in inspect.getmembers(
+                group, predicate=inspect.isfunction
+            ):
                 if not name.startswith("_"):
                     self._methods[name] = method
 
@@ -181,7 +183,9 @@ class R2RAsyncClient:
 
     def __getattr__(self, name):
         if name in self._methods:
-            return lambda *args, **kwargs: self._methods[name](self, *args, **kwargs)
+            return lambda *args, **kwargs: self._methods[name](
+                self, *args, **kwargs
+            )
         raise AttributeError(f"'R2RClient' object has no attribute '{name}'")
 
     def __dir__(self):

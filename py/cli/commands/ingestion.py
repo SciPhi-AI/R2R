@@ -11,9 +11,15 @@ from cli.utils.timer import timer
 
 
 @cli.command()
-@click.argument("file_paths", nargs=-1, required=True, type=click.Path(exists=True))
-@click.option("--document-ids", multiple=True, help="Document IDs for ingestion")
-@click.option("--metadatas", type=JSON, help="Metadatas for ingestion as a JSON string")
+@click.argument(
+    "file_paths", nargs=-1, required=True, type=click.Path(exists=True)
+)
+@click.option(
+    "--document-ids", multiple=True, help="Document IDs for ingestion"
+)
+@click.option(
+    "--metadatas", type=JSON, help="Metadatas for ingestion as a JSON string"
+)
 @click.option(
     "--versions",
     multiple=True,
@@ -27,18 +33,24 @@ def ingest_files(client, file_paths, document_ids, metadatas, versions):
         document_ids = list(document_ids) if document_ids else None
         versions = list(versions) if versions else None
 
-        response = client.ingest_files(file_paths, metadatas, document_ids, versions)
+        response = client.ingest_files(
+            file_paths, metadatas, document_ids, versions
+        )
     click.echo(json.dumps(response, indent=2))
 
 
 @cli.command()
-@click.argument("file-paths", nargs=-1, required=True, type=click.Path(exists=True))
+@click.argument(
+    "file-paths", nargs=-1, required=True, type=click.Path(exists=True)
+)
 @click.option(
     "--document-ids",
     required=True,
     help="Document IDs to update (comma-separated)",
 )
-@click.option("--metadatas", type=JSON, help="Metadatas for updating as a JSON string")
+@click.option(
+    "--metadatas", type=JSON, help="Metadatas for updating as a JSON string"
+)
 @click.pass_obj
 def update_files(client, file_paths, document_ids, metadatas):
     """Update existing files in R2R."""
@@ -77,7 +89,9 @@ def ingest_files_from_urls(client, urls):
 
         try:
             response = client.ingest_files([temp_file_path])
-            click.echo(f"File '{filename}' ingested successfully. Response: {response}")
+            click.echo(
+                f"File '{filename}' ingested successfully. Response: {response}"
+            )
             ingested_files.append(filename)
         finally:
             os.unlink(temp_file_path)

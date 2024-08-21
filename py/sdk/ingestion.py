@@ -34,7 +34,9 @@ class IngestionMethods:
         for path in file_paths:
             if os.path.isdir(path):
                 for root, _, files in os.walk(path):
-                    all_file_paths.extend(os.path.join(root, file) for file in files)
+                    all_file_paths.extend(
+                        os.path.join(root, file) for file in files
+                    )
             else:
                 all_file_paths.append(path)
 
@@ -94,7 +96,9 @@ class IngestionMethods:
             dict: Update results containing processed, failed, and skipped documents.
         """
         if len(file_paths) != len(document_ids):
-            raise ValueError("Number of file paths must match number of document IDs.")
+            raise ValueError(
+                "Number of file paths must match number of document IDs."
+            )
 
         with ExitStack() as stack:
             files = [
