@@ -5,7 +5,6 @@ from .app import R2RApp
 # from .app_entry import r2r_app
 from .assembly import *
 from .engine import R2REngine
-from .execution import R2RExecutionWrapper
 from .r2r import R2R
 from .services import (
     AuthService,
@@ -33,8 +32,6 @@ __all__ = [
     # "r2r_app",
     ## R2R ENGINE
     "R2REngine",
-    ## R2R EXECUTION
-    "R2RExecutionWrapper",
     ## R2R ASSEMBLY
     # Builder
     "R2RBuilder",

@@ -2,9 +2,9 @@ from unittest.mock import patch
 
 import click
 import pytest
+from cli.cli import cli
+from cli.utils.param_types import JSON
 from click.testing import CliRunner
-from core.cli.cli import cli
-from core.cli.utils.param_types import JSON
 
 
 @pytest.fixture
@@ -28,10 +28,7 @@ def test_generate_private_key(runner):
     result = runner.invoke(cli, ["generate-private-key"])
     assert result.exit_code == 0
     assert "Generated Private Key:" in result.output
-    assert (
-        "Keep this key secure and use it as your R2R_SECRET_KEY."
-        in result.output
-    )
+    assert "Keep this key secure and use it as your R2R_SECRET_KEY." in result.output
 
 
 def test_delete_command(runner, mock_r2r_execution_wrapper):
@@ -41,9 +38,7 @@ def test_delete_command(runner, mock_r2r_execution_wrapper):
     result = runner.invoke(cli, ["delete", "--filter", "key1:eq:value1"])
     assert result.exit_code == 0
     assert "Deleted successfully" in result.output
-    mock_instance.delete.assert_called_once_with(
-        filters={"key1": {"$eq": "value1"}}
-    )
+    mock_instance.delete.assert_called_once_with(filters={"key1": {"$eq": "value1"}})
 
 
 def test_multiple_deletes(runner, mock_r2r_execution_wrapper):
@@ -124,15 +119,11 @@ def test_ingest_sample_file(runner, mock_r2r_execution_wrapper):
     mock_instance = mock_r2r_execution_wrapper.return_value
     mock_instance.ingest_sample_file.return_value = "Sample file ingested"
 
-    result = runner.invoke(
-        cli, ["ingest-sample-file", "--no-media", "--option", "1"]
-    )
+    result = runner.invoke(cli, ["ingest-sample-file", "--no-media", "--option", "1"])
     print(f"Output: {result.output}")
     assert result.exit_code == 0
     assert "Sample file ingested" in result.output
-    mock_instance.ingest_sample_file.assert_called_once_with(
-        no_media=True, option=1
-    )
+    mock_instance.ingest_sample_file.assert_called_once_with(no_media=True, option=1)
 
 
 def test_update_files(runner, mock_r2r_execution_wrapper):
@@ -254,8 +245,7 @@ def test_docker_down_command(runner):
         result = runner.invoke(cli, ["docker-down"])
         assert result.exit_code == 0
         assert (
-            "Docker Compose setup has been successfully brought down."
-            in result.output
+            "Docker Compose setup has been successfully brought down." in result.output
         )
         mock_bring_down.assert_called_once()
         mock_remove_network.assert_called_once()

@@ -61,10 +61,7 @@ class RetrievalService(Service):
         async with manage_run(self.run_manager, "search_app") as run_id:
             t0 = time.time()
 
-            if (
-                kg_search_settings.use_kg_search
-                and self.config.kg.provider is None
-            ):
+            if kg_search_settings.use_kg_search and self.config.kg.provider is None:
                 raise R2RException(
                     status_code=400,
                     message="Knowledge Graph search is not enabled in the configuration.",
@@ -167,13 +164,9 @@ class RetrievalService(Service):
                 )
 
                 if len(results) == 0:
-                    raise R2RException(
-                        status_code=404, message="No results found"
-                    )
+                    raise R2RException(status_code=404, message="No results found")
                 if len(results) > 1:
-                    logger.warning(
-                        f"Multiple results found for query: {query}"
-                    )
+                    logger.warning(f"Multiple results found for query: {query}")
 
                 completion_record.search_results = (
                     results[0].search_results
@@ -181,9 +174,7 @@ class RetrievalService(Service):
                     else None
                 )
                 completion_record.llm_response = (
-                    results[0].completion
-                    if hasattr(results[0], "completion")
-                    else None
+                    results[0].completion if hasattr(results[0], "completion") else None
                 )
                 completion_record.completion_end_time = datetime.now()
 
@@ -202,10 +193,10 @@ class RetrievalService(Service):
                     raise R2RException(
                         status_code=502,
                         message="Remote server not reachable or returned an invalid response",
-                    )
+                    ) from e
                 raise R2RException(
                     status_code=500, message="Internal Server Error"
-                )
+                ) from e
 
     async def stream_rag_response(
         self,
@@ -219,9 +210,7 @@ class RetrievalService(Service):
     ):
         async def stream_response():
             async with manage_run(self.run_manager, "arag"):
-                async for (
-                    chunk
-                ) in await self.pipelines.streaming_rag_pipeline.run(
+                async for chunk in await self.pipelines.streaming_rag_pipeline.run(
                     input=to_async_generator([query]),
                     run_manager=self.run_manager,
                     vector_search_settings=vector_search_settings,
@@ -271,9 +260,7 @@ class RetrievalService(Service):
 
                     async def stream_response():
                         async with manage_run(self.run_manager, "arag_agent"):
-                            async for (
-                                chunk
-                            ) in self.agents.streaming_rag_agent.arun(
+                            async for chunk in self.agents.streaming_rag_agent.arun(
                                 messages=messages,
                                 system_instruction=task_prompt_override,
                                 vector_search_settings=vector_search_settings,
@@ -313,6 +300,4 @@ class RetrievalService(Service):
                         status_code=502,
                         message="Ollama server not reachable or returned an invalid response",
                     )
-                raise R2RException(
-                    status_code=500, message="Internal Server Error"
-                )
+                raise R2RException(status_code=500, message="Internal Server Error")

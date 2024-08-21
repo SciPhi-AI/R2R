@@ -1,7 +1,7 @@
 import secrets
 
 import click
-from core.cli.command_group import cli
+from cli.command_group import cli
 
 
 @cli.command()

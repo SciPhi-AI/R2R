@@ -31,7 +31,6 @@ logger.addHandler(ch)
 logger.propagate = False
 
 
-# TODO - Cleanup export strategy && slimmify release
 __all__ = [
     ## AGENT
     # Base
@@ -194,8 +193,6 @@ __all__ = [
     # "r2r_app",
     ## R2R ENGINE
     "R2REngine",
-    ## R2R EXECUTION
-    "R2RExecutionWrapper",
     ## R2R ASSEMBLY
     # Builder
     "R2RBuilder",

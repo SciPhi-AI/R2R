@@ -13,6 +13,7 @@ from .management import ManagementMethods
 from .models import R2RException
 from .restructure import RestructureMethods
 from .retrieval import RetrievalMethods
+from .server import ServerMethods
 
 nest_asyncio.apply()
 
@@ -88,23 +89,23 @@ class R2RAsyncClient:
 
         # Initialize method groups
         self._auth = AuthMethods
-        self._retrieval = RetrievalMethods
         self._ingestion = IngestionMethods
-        self._restructure = RestructureMethods
         self._management = ManagementMethods
+        self._restructure = RestructureMethods
+        self._retrieval = RetrievalMethods
+        self._server = ServerMethods
 
         # Collect all methods from the method groups
         self._methods = {}
         for group in [
             self._auth,
-            self._retrieval,
             self._ingestion,
-            self._restructure,
             self._management,
+            self._restructure,
+            self._retrieval,
+            self._server,
         ]:
-            for name, method in inspect.getmembers(
-                group, predicate=inspect.isfunction
-            ):
+            for name, method in inspect.getmembers(group, predicate=inspect.isfunction):
                 if not name.startswith("_"):
                     self._methods[name] = method
 
@@ -169,9 +170,6 @@ class R2RAsyncClient:
                 message="Not authenticated. Please login first.",
             )
 
-    async def health(self) -> dict:
-        return await self._make_request("GET", "health")
-
     async def close(self):
         await self.client.aclose()
 
@@ -183,9 +181,7 @@ class R2RAsyncClient:
 
     def __getattr__(self, name):
         if name in self._methods:
-            return lambda *args, **kwargs: self._methods[name](
-                self, *args, **kwargs
-            )
+            return lambda *args, **kwargs: self._methods[name](self, *args, **kwargs)
         raise AttributeError(f"'R2RClient' object has no attribute '{name}'")
 
     def __dir__(self):
