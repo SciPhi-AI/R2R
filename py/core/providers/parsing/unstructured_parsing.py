@@ -17,14 +17,6 @@ logger = logging.getLogger(__name__)
 
 class UnstructuredParsingProvider(ParsingProvider):
     def __init__(self, use_api, config):
-        try:
-            from unstructured.partition.auto import partition
-
-            self.partition = partition
-        except ImportError:
-            raise ImportError(
-                "Please install the unstructured package to use the unstructured parsing provider."
-            )
         if config.excluded_parsers:
             logger.warning(
                 "Excluded parsers are not supported by the unstructured parsing provider."
@@ -56,6 +48,17 @@ class UnstructuredParsingProvider(ParsingProvider):
             self.shared = shared
             self.operations = operations
             self.dict_to_elements = dict_to_elements
+
+        else:
+            try:
+                from unstructured.partition.auto import partition
+                self.partition = partition
+
+            except ImportError:
+                raise ImportError(
+                    "Please install the unstructured package to use the unstructured parsing provider."
+                    )
+
 
         super().__init__(config)
 

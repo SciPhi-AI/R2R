@@ -20,6 +20,8 @@ class KGConfig(ProviderConfig):
     kg_extraction_prompt: Optional[str] = "few_shot_ner_kg_extraction"
     kg_search_prompt: Optional[str] = "kg_search"
     kg_extraction_config: Optional[GenerationConfig] = None
+    kg_enrichment_config: Optional[KGEnrichmentConfig] = None
+    kg_search_config: Optional[GenerationConfig] = None
     kg_store_path: Optional[str] = None
     max_knowledge_triples: Optional[int] = 100
 

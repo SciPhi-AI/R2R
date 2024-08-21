@@ -12,7 +12,6 @@ from core.base.abstractions.document import DocumentExtraction
 
 logger = logging.getLogger(__name__)
 
-
 class R2RChunkingProvider(ChunkingProvider):
     def __init__(self, config: ChunkingConfig):
         super().__init__(config)
@@ -22,6 +21,9 @@ class R2RChunkingProvider(ChunkingProvider):
         )
 
     def _initialize_text_splitter(self) -> TextSplitter:
+        logger.info(
+            f"Initializing text splitter with method: {self.config.method}"
+        )  # Debug log
         if self.config.method == Method.RECURSIVE:
             return RecursiveCharacterTextSplitter(
                 chunk_size=self.config.chunk_size,
@@ -29,10 +31,10 @@ class R2RChunkingProvider(ChunkingProvider):
             )
         elif self.config.method == Method.BASIC:
             # Implement basic method
-            raise NotImplementedError("Basic method not implemented yet")
+            pass
         elif self.config.method == Method.BY_TITLE:
             # Implement by_title method
-            raise NotImplementedError("By_title method not implemented yet")
+            pass
         else:
             raise ValueError(f"Unsupported method type: {self.config.method}")
 
