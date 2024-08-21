@@ -756,11 +756,14 @@ export class r2rClient {
   async documentsOverview(document_ids?: string[]): Promise<any> {
     this._ensureAuthenticated();
 
-    return this._makeRequest("GET", "documents_overview", {
-      params: {
-        document_ids: document_ids ? JSON.stringify(document_ids) : undefined,
-      },
-    });
+    let params: Record<string, string> = {};
+    if (document_ids) {
+      params = {
+        document_ids: JSON.stringify(document_ids),
+      };
+    }
+
+    return this._makeRequest("GET", "documents_overview", params);
   }
 
   /**
@@ -774,7 +777,7 @@ export class r2rClient {
 
     return this._makeRequest(
       "GET",
-      `document_chunks?document_id=${document_id}`,
+      `document_chunks/${document_id}`,
       {
         headers: {
           "Content-Type": "application/json",
