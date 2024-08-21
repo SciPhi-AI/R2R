@@ -3,7 +3,6 @@ from core.main.engine import R2REngine
 from fastapi import Depends
 
 
-# TODO: Botched by Claude
 class RestructureRouter(BaseRouter):
     def __init__(self, engine: R2REngine):
         super().__init__(engine)

@@ -13,6 +13,7 @@ from .management import ManagementMethods
 from .models import R2RException
 from .restructure import RestructureMethods
 from .retrieval import RetrievalMethods
+from .server import ServerMethods
 
 nest_asyncio.apply()
 
@@ -88,19 +89,21 @@ class R2RAsyncClient:
 
         # Initialize method groups
         self._auth = AuthMethods
-        self._retrieval = RetrievalMethods
         self._ingestion = IngestionMethods
-        self._restructure = RestructureMethods
         self._management = ManagementMethods
+        self._restructure = RestructureMethods
+        self._retrieval = RetrievalMethods
+        self._server = ServerMethods
 
         # Collect all methods from the method groups
         self._methods = {}
         for group in [
             self._auth,
-            self._retrieval,
             self._ingestion,
-            self._restructure,
             self._management,
+            self._restructure,
+            self._retrieval,
+            self._server,
         ]:
             for name, method in inspect.getmembers(
                 group, predicate=inspect.isfunction
@@ -176,9 +179,6 @@ class R2RAsyncClient:
                 status_code=401,
                 message="Not authenticated. Please login first.",
             )
-
-    async def health(self) -> dict:
-        return await self._make_request("GET", "health")
 
     async def close(self):
         await self.client.aclose()

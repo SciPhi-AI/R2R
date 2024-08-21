@@ -202,10 +202,10 @@ class RetrievalService(Service):
                     raise R2RException(
                         status_code=502,
                         message="Remote server not reachable or returned an invalid response",
-                    )
+                    ) from e
                 raise R2RException(
                     status_code=500, message="Internal Server Error"
-                )
+                ) from e
 
     async def stream_rag_response(
         self,

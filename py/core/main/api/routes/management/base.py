@@ -3,10 +3,9 @@ import json
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
-from pydantic import Json
+
 import psutil
 from core.base import R2RException
-from core.base.logging import LogFilterCriteria, AnalysisTypes
 from core.base.api.models.management.responses import (
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
@@ -23,7 +22,9 @@ from core.base.api.models.management.responses import (
     WrappedServerStatsResponse,
     WrappedUserOverviewResponse,
 )
+from core.base.logging import AnalysisTypes, LogFilterCriteria
 from fastapi import Body, Depends, Path, Query
+from pydantic import Json
 
 from ....engine import R2REngine
 from ..base_router import BaseRouter
@@ -228,6 +229,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def inspect_knowledge_graph(
             limit: int = 100,
+            print_descriptions: bool = False,
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedKnowledgeGraphResponse:
             if not auth_user.is_superuser:
@@ -235,7 +237,9 @@ class ManagementRouter(BaseRouter):
                     "Only a superuser can call the `inspect_knowledge_graph` endpoint.",
                     403,
                 )
-            return await self.engine.ainspect_knowledge_graph(limit=limit)
+            return await self.engine.ainspect_knowledge_graph(
+                limit=limit, print_descriptions=print_descriptions
+            )
 
         @self.router.get("/groups_overview")
         @self.base_endpoint

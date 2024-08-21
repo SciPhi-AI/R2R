@@ -6,7 +6,7 @@ from typing import Optional
 from fastapi import FastAPI
 
 from .assembly import R2RBuilder, R2RConfig
-from .execution import R2RExecutionWrapper
+from .r2r import R2R
 
 logger = logging.getLogger(__name__)
 current_file_path = os.path.dirname(__file__)
@@ -22,7 +22,6 @@ class PipelineType(Enum):
 def r2r_app(
     config_name: Optional[str] = "default",
     config_path: Optional[str] = None,
-    client_mode: bool = False,
     base_url: Optional[str] = None,
     pipeline_type: PipelineType = PipelineType.QNA,
 ) -> FastAPI:
@@ -31,8 +30,7 @@ def r2r_app(
     if config_path and config_name:
         raise ValueError("Cannot specify both config and config_name")
 
-    config_path = os.getenv("CONFIG_PATH") or config_path
-    if config_path:
+    if config_path := os.getenv("CONFIG_PATH") or config_path:
         config = R2RConfig.from_toml(config_path)
     else:
         config_name = os.getenv("CONFIG_NAME") or config_name
@@ -48,14 +46,10 @@ def r2r_app(
             "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
         )
 
-    wrapper = R2RExecutionWrapper(
-        config_name=config_name,
-        config_path=config_path,
-        client_mode=client_mode,
-        base_url=base_url,
-    )
+    r2r_deployment = R2R(config=config)
 
-    return wrapper.get_app()
+    # Return the FastAPI app
+    return r2r_deployment.app.app
 
 
 logging.basicConfig(level=logging.INFO)

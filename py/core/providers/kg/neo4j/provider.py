@@ -150,8 +150,6 @@ class Neo4jKGProvider(KGProvider):
                 rows=batch,
                 database_=self._database,
             )
-            print(result.summary.counters)
-        print(f"{total} rows in { time.time() - start_s} s.")
         return total
 
     def get_chunks(

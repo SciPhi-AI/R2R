@@ -3,12 +3,13 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 from uuid import UUID
-from pydantic import Json
+
 import yaml
 from core.base import ChunkingConfig, R2RException
 from core.base.api.models.ingestion.responses import WrappedIngestionResponse
 from core.base.utils import generate_user_document_id
 from fastapi import Depends, File, Form, UploadFile
+from pydantic import Json
 
 from ....assembly.factory import R2RProviderFactory
 from ....engine import R2REngine

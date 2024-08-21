@@ -5,12 +5,13 @@ import socket
 import subprocess
 import sys
 import time
+from typing import Optional
 
 import click
 import requests
 from core.main import R2RBuilder, R2RConfig
-from core.main.execution import R2RExecutionWrapper
 from requests.exceptions import RequestException
+from sdk import R2RClient
 
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
@@ -71,38 +72,49 @@ def remove_r2r_network():
     )
 
 
-def run_local_serve(obj, host, port):
-    wrapper = R2RExecutionWrapper(**obj, client_mode=False)
-    llm_provider = wrapper.app.config.completion.provider
-    llm_model = wrapper.app.config.completion.generation_config.model
+def run_local_serve(
+    obj: R2RClient, host: str, port: int, config_path: Optional[str] = None
+):
+    try:
+        from r2r import R2R
+    except ImportError:
+        click.echo(
+            "You must install the `r2r core` package to run the R2R server locally."
+        )
+        sys.exit(1)
+
+    r2r_instance = R2R()
+    llm_provider = r2r_instance.config.completion.provider
+    llm_model = r2r_instance.config.completion.generation_config.model
     model_provider = llm_model.split("/")[0]
 
     available_port = find_available_port(port)
 
     check_llm_reqs(llm_provider, model_provider, include_ollama=True)
-    wrapper.serve(host, available_port)
+    r2r_instance.serve(host, available_port)
 
 
 def run_docker_serve(
-    obj,
-    host,
-    port,
-    exclude_neo4j,
-    exclude_ollama,
-    exclude_postgres,
-    project_name,
-    image,
+    client: R2RClient,
+    host: str,
+    port: int,
+    exclude_neo4j: bool,
+    exclude_ollama: bool,
+    exclude_postgres: bool,
+    project_name: str,
+    image: str,
+    config_path: Optional[str] = None,
 ):
     check_set_docker_env_vars(exclude_neo4j, exclude_postgres)
-    set_config_env_vars(obj)
     set_ollama_api_base(exclude_ollama)
-    config = (
-        R2RConfig.from_toml(obj["config_path"])
-        if obj["config_path"]
-        else R2RConfig.from_toml(
-            R2RBuilder.CONFIG_OPTIONS[obj["config_name"] or "default"]
+
+    if config_path:
+        config = R2RConfig.from_toml(config_path)
+    else:
+        config = R2RConfig.from_toml(
+            R2RBuilder.CONFIG_OPTIONS[client.config_name or "default"]
         )
-    )
+
     completion_provider = config.completion.provider
     completion_model = config.completion.generation_config.model
     completion_model_provider = completion_model.split("/")[0]
@@ -139,7 +151,7 @@ def run_docker_serve(
         exclude_ollama,
         exclude_postgres,
         project_name,
-        obj["config_path"],
+        config_path,
         image,
     )
 

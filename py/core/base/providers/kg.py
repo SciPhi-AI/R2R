@@ -111,10 +111,11 @@ class KGProvider(ABC):
 
     @abstractmethod
     def structured_query(
-        self, query: str, param_map: Optional[dict[str, Any]] = {}
+        self, query: str, param_map: Optional[dict[str, Any]] = None
     ) -> Any:
         """Abstract method to query the graph store with statement and parameters."""
-        pass
+        if param_map is None:
+            param_map = {}
 
     @abstractmethod
     def vector_query(

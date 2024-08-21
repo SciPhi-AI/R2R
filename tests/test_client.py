@@ -17,7 +17,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.testclient import TestClient
 
 # TODO: need to import this from the package, not from the local directory
-from r2r import R2RClient
+from sdk.client import R2RClient
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -26,15 +26,15 @@ def create_user(email: str, password: str):
     return UserResponse(
         id=uuid.UUID("12345678-1234-5678-1234-567812345678"),
         email=email,
-        hashed_password="hashed_" + password,
+        hashed_password=f"hashed_{password}",
         is_active=True,
         is_superuser=False,
         is_verified=False,
         name="Test User",
         bio="Test Bio",
         profile_picture="http://example.com/pic.jpg",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(datetime.UTC),
+        updated_at=datetime.now(datetime.UTC),
     )
 
 
@@ -83,9 +83,7 @@ def mock_super_auth_wrapper():
 @pytest.fixture(scope="function")
 def mock_db():
     db = MagicMock()
-    db.relational.get_user_by_email.return_value = (
-        None  # Simulate empty database
-    )
+    db.relational.get_user_by_email.return_value = None  # Simulate empty database
 
     db.relational.create_user.side_effect = create_user
     db.relational.get_user_by_id.return_value = create_user(
@@ -107,8 +105,8 @@ def mock_db():
             title=f"Document {i}",
             type="txt",
             group_ids=[uuid.uuid4()],
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(datetime.UTC),
+            updated_at=datetime.now(datetime.UTC),
             version="1",
             metadata={},
             size_in_bytes=1000,
@@ -297,9 +295,7 @@ async def test_password_reset_flow(r2r_client, mock_db):
     r2r_client.register(**user_data)
 
     # Request password reset
-    reset_response = r2r_client.request_password_reset(
-        "reset_pass@example.com"
-    )
+    reset_response = r2r_client.request_password_reset("reset_pass@example.com")
     print("reset_response = ", reset_response)
     assert "message" in reset_response["results"]
 
@@ -308,9 +304,7 @@ async def test_password_reset_flow(r2r_client, mock_db):
     confirm_response = r2r_client.confirm_password_reset(
         mock_reset_token, "new_password"
     )
-    assert (
-        confirm_response["results"]["message"] == "Password reset successfully"
-    )
+    assert confirm_response["results"]["message"] == "Password reset successfully"
 
     # Try logging in with new password
     login_response = r2r_client.login(
