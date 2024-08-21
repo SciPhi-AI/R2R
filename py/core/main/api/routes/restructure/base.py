@@ -1,8 +1,8 @@
+from core.base import KGEnrichmentSettings
 from core.main.api.routes.base_router import BaseRouter
 from core.main.engine import R2REngine
 from fastapi import Depends
 
-from core.base import KGEnrichmentSettings
 
 # TODO: Botched by Claude
 class RestructureRouter(BaseRouter):

@@ -12,6 +12,7 @@ from core.base.abstractions.document import DocumentExtraction
 
 logger = logging.getLogger(__name__)
 
+
 class R2RChunkingProvider(ChunkingProvider):
     def __init__(self, config: ChunkingConfig):
         super().__init__(config)

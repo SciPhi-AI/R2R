@@ -52,13 +52,13 @@ class UnstructuredParsingProvider(ParsingProvider):
         else:
             try:
                 from unstructured.partition.auto import partition
+
                 self.partition = partition
 
             except ImportError:
                 raise ImportError(
                     "Please install the unstructured package to use the unstructured parsing provider."
-                    )
-
+                )
 
         super().__init__(config)
 

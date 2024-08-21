@@ -66,7 +66,9 @@ class KGClusteringPipe(AsyncPipe):
         try:
             from graspologic.partition import hierarchical_leiden
 
-            community_mapping = hierarchical_leiden(graph, **settings.leiden_params)
+            community_mapping = hierarchical_leiden(
+                graph, **settings.leiden_params
+            )
             results: dict[int, dict[str, int]] = {}
             for partition in community_mapping:
                 results[partition.level] = results.get(partition.level, {})
@@ -76,7 +78,9 @@ class KGClusteringPipe(AsyncPipe):
         except ImportError as e:
             raise ImportError("Please install the graspologic package.") from e
 
-    async def cluster_kg(self, triples: list[Triple], settings: KGEnrichmentSettings) -> list[Community]:
+    async def cluster_kg(
+        self, triples: list[Triple], settings: KGEnrichmentSettings
+    ) -> list[Community]:
         """
         Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm.
         """
@@ -92,7 +96,9 @@ class KGClusteringPipe(AsyncPipe):
                 id=f"{triple.subject}->{triple.predicate}->{triple.object}",
             )
 
-        hierarchical_communities = self._compute_leiden_communities(G, settings=settings)
+        hierarchical_communities = self._compute_leiden_communities(
+            G, settings=settings
+        )
 
         community_details = {}
 

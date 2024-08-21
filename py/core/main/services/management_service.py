@@ -363,7 +363,7 @@ class ManagementService(Service):
 
             descriptions_dict = {}
             relationships = []
-            
+
             for relationship in relationships_raw:
                 if print_descriptions:
                     descriptions_dict[relationship["subject"]["name"]] = (
@@ -372,7 +372,7 @@ class ManagementService(Service):
                     descriptions_dict[relationship["object"]["name"]] = (
                         relationship["object"]["description"]
                     )
-        
+
                 relationships.append(
                     (
                         relationship["subject"]["name"],
@@ -468,7 +468,9 @@ class ManagementService(Service):
                 for obj in objects:
                     output.append(f"    - {obj}")
                     if print_descriptions and obj in descriptions_dict:
-                        output.append(f"      Description: {descriptions_dict[obj]}")
+                        output.append(
+                            f"      Description: {descriptions_dict[obj]}"
+                        )
 
         # Print basic graph statistics
         output.extend(

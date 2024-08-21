@@ -1,8 +1,8 @@
 import logging
 from typing import Any, Dict, List
-from core.main.assembly.config import EnrichGraphSettings
 
 from core.base import R2RException, RunLoggingSingleton, RunManager
+from core.main.assembly.config import EnrichGraphSettings
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
 from ..assembly.config import R2RConfig
@@ -31,7 +31,9 @@ class RestructureService(Service):
             logging_connection,
         )
 
-    async def enrich_graph(self, enrich_graph_settings: EnrichGraphSettings) -> Dict[str, Any]:
+    async def enrich_graph(
+        self, enrich_graph_settings: EnrichGraphSettings
+    ) -> Dict[str, Any]:
         """
         Perform graph enrichment.
 

@@ -87,9 +87,16 @@ class KGSearchSettings(BaseModel):
         "__Community__": 20,
     }
 
+
 class KGEnrichmentSettings(BaseModel):
-    leiden_params: dict = Field(default_factory=dict, description="Parameters for the Leiden algorithm.")
-    generation_config: GenerationConfig = Field(default_factory=GenerationConfig, description="Configuration for text generation during graph enrichment.")
+    leiden_params: dict = Field(
+        default_factory=dict,
+        description="Parameters for the Leiden algorithm.",
+    )
+    generation_config: GenerationConfig = Field(
+        default_factory=GenerationConfig,
+        description="Configuration for text generation during graph enrichment.",
+    )
 
 
 class ProviderConfig(BaseModel, ABC):
