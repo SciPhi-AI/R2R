@@ -44,7 +44,7 @@ def mock_r2r_client():
 
         yield mock_client
 
-        cli.callback = None
+        cli.callback = original_callback
 
 
 def test_enrich_graph(runner, mock_r2r_client):

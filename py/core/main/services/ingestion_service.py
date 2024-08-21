@@ -127,9 +127,12 @@ class IngestionService(Service):
                         message="Number of ids does not match number of files.",
                     )
             else:
-                document_ids = [generate_user_document_id(file.filename, user.id) for file in files]
-            print('user_id = ', user.id)
-            print('document_ids = ', document_ids)
+                document_ids = [
+                    generate_user_document_id(file.filename, user.id)
+                    for file in files
+                ]
+            print("user_id = ", user.id)
+            print("document_ids = ", document_ids)
             # Only superusers can modify arbitrary document ids, which this gate guarantees in conjuction with the check that follows
             documents_overview = (
                 (

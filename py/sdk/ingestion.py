@@ -43,10 +43,12 @@ class IngestionMethods:
             raise ValueError(
                 "Number of versions must match number of document IDs."
             )
-        if chunking_settings is not None and chunking_settings is not ChunkingConfig:
+        if (
+            chunking_settings is not None
+            and chunking_settings is not ChunkingConfig
+        ):
             # check if the provided dict maps to a ChunkingConfig
             ChunkingConfig(**chunking_settings)
-        
 
         all_file_paths = []
         for path in file_paths:
@@ -121,7 +123,6 @@ class IngestionMethods:
             raise ValueError(
                 "Number of file paths must match number of document IDs."
             )
-        
 
         with ExitStack() as stack:
             files = [

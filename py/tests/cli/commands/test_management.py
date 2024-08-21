@@ -145,7 +145,7 @@ def test_delete_invalid_filter(runner, mock_r2r_client):
     assert result.exit_code != 0
 
 
-def test_documents_overview_with_document_id(runner, mock_r2r_client):
+def test_documents_overview_without_document_id(runner, mock_r2r_client):
     result = runner.invoke(
         cli,
         [
