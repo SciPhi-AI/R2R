@@ -120,10 +120,18 @@ class R2RAsyncClient:
             "verify_email",
         ]:
             headers.update(self._get_auth_header())
-        params = kwargs.pop("params", {})
-        params = {**params, **EMPTY_ARGS}
+        if (
+            kwargs.get("params", None) == {}
+            or kwargs.get("params", None) == None
+        ):
+            if "params" in kwargs:
+                kwargs.pop("params")
 
         if isinstance(self.client, TestClient):
+            # Weird mocking fix...
+            params = kwargs.pop("params", {})
+            params = {**params, **EMPTY_ARGS}
+
             response = getattr(self.client, method.lower())(
                 url, headers=headers, params=params, **kwargs
             )
@@ -131,7 +139,7 @@ class R2RAsyncClient:
         else:
             try:
                 response = await self.client.request(
-                    method, url, headers=headers, params=params, **kwargs
+                    method, url, headers=headers, **kwargs
                 )
                 await handle_request_error_async(response)
                 return response.json() if response.content else None

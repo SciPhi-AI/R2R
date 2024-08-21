@@ -22,7 +22,9 @@ from core.base.api.models.management.responses import (
     WrappedServerStatsResponse,
     WrappedUserOverviewResponse,
 )
+from core.base.logging import AnalysisTypes, LogFilterCriteria
 from fastapi import Body, Depends, Path, Query
+from pydantic import Json
 
 from ....engine import R2REngine
 from ..base_router import BaseRouter
@@ -86,8 +88,8 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/analytics")
         @self.base_endpoint
         async def get_analytics_app(
-            filter_criteria: Optional[str] = Query("{}"),
-            analysis_types: Optional[str] = Query("{}"),
+            filter_criteria: Optional[Json[dict]] = Query({}),
+            analysis_types: Optional[Json[dict]] = Query({}),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedAnalyticsResponse:
             if not auth_user.is_superuser:
@@ -96,18 +98,11 @@ class ManagementRouter(BaseRouter):
                 )
 
             try:
-                # Parse the query parameters
-                filter_criteria_dict = (
-                    json.loads(filter_criteria) if filter_criteria else {}
+                result = await self.engine.aanalytics(
+                    filter_criteria=LogFilterCriteria(**filter_criteria),
+                    analysis_types=AnalysisTypes(**analysis_types),
                 )
-                analysis_types_dict = (
-                    json.loads(analysis_types) if analysis_types else {}
-                )
-
-                return await self.engine.aanalytics(
-                    filter_criteria=filter_criteria_dict,
-                    analysis_types=analysis_types_dict,
-                )
+                return result
             except json.JSONDecodeError as e:
                 raise R2RException(
                     f"Invalid JSON in query parameters: {str(e)}", 400
@@ -162,7 +157,7 @@ class ManagementRouter(BaseRouter):
         @self.router.get("/users_overview")
         @self.base_endpoint
         async def users_overview_app(
-            user_ids: list[str] = Query([]),
+            user_ids: Optional[list[str]] = Query([]),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedUserOverviewResponse:
             if not auth_user.is_superuser:
@@ -171,7 +166,9 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
 
-            user_uuids = [UUID(user_id) for user_id in user_ids]
+            user_uuids = (
+                [UUID(user_id) for user_id in user_ids] if user_ids else None
+            )
 
             return await self.engine.ausers_overview(user_ids=user_uuids)
 
@@ -196,16 +193,17 @@ class ManagementRouter(BaseRouter):
             document_uuids = [
                 UUID(document_id) for document_id in document_ids
             ]
-            return await self.engine.adocuments_overview(
+            result = await self.engine.adocuments_overview(
                 user_ids=request_user_ids,
                 group_ids=auth_user.group_ids,
                 document_ids=document_uuids,
             )
+            return result
 
-        @self.router.get("/document_chunks")
+        @self.router.get("/document_chunks/{document_id}")
         @self.base_endpoint
         async def document_chunks_app(
-            document_id: str = Query(...),
+            document_id: str = Path(...),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedDocumentChunkResponse:
             document_uuid = UUID(document_id)

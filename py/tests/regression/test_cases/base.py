@@ -3,11 +3,11 @@ import os
 import re
 from typing import Any, Callable, Dict, Optional
 
-from colorama import Fore, Style
+from colorama import Fore, Style, init
 from deepdiff import DeepDiff
 
 # TODO: need to import this from the package, not from the local directory
-from sdk.client import R2RClient
+from r2r import R2RClient
 
 
 def _to_snake_case(name: str) -> str:
@@ -47,7 +47,9 @@ class RegressionTest:
         with open(self.expected_output_file, "w") as f:
             json.dump(output, f, indent=2)
 
-    def _compare_output(self, actual: Dict[str, Any], expected: Dict[str, Any]) -> bool:
+    def _compare_output(
+        self, actual: Dict[str, Any], expected: Dict[str, Any]
+    ) -> bool:
         diff = self._custom_diff(expected, actual)
         if diff:
             print(f"\nTest {self.name} failed. Differences found:")
@@ -65,7 +67,9 @@ class RegressionTest:
 
         if "completion" in expected_results and "completion" in actual_results:
             # Custom comparison for content field
-            expected_completion = self._get_completion_content(expected_results)
+            expected_completion = self._get_completion_content(
+                expected_results
+            )
             actual_completion = self._get_completion_content(actual_results)
             if (
                 expected_completion
@@ -88,7 +92,9 @@ class RegressionTest:
                     exclude_paths=self.exclude_paths,
                 )
                 if deep_diff:
-                    diff["other_differences"] = self._serialize_deep_diff(deep_diff)
+                    diff["other_differences"] = self._serialize_deep_diff(
+                        deep_diff
+                    )
                     # Print the specific fields that are different
                     for change_type, changes in deep_diff.items():
                         if change_type == "values_changed":
@@ -98,9 +104,13 @@ class RegressionTest:
                                 print(f"  Actual: {change['new_value']}")
 
             except Exception as e:
-                diff["deepdiff_error"] = f"Error in DeepDiff comparison: {str(e)}"
+                diff["deepdiff_error"] = (
+                    f"Error in DeepDiff comparison: {str(e)}"
+                )
                 return diff
-        elif "completion" in expected_results or "completion" in actual_results:
+        elif (
+            "completion" in expected_results or "completion" in actual_results
+        ):
             diff["content_mismatch"] = {
                 "expected_results": expected_results,
                 "actual_results": actual_results,
@@ -115,7 +125,9 @@ class RegressionTest:
             )
 
             if deep_diff:
-                diff["other_differences"] = self._serialize_deep_diff(deep_diff)
+                diff["other_differences"] = self._serialize_deep_diff(
+                    deep_diff
+                )
                 # Print the specific fields that are different
                 for change_type, changes in deep_diff.items():
                     if change_type == "values_changed":
@@ -158,7 +170,9 @@ class RegressionTest:
         expected_words = set(re.findall(r"\w+", expected.lower()))
         actual_words = set(re.findall(r"\w+", actual.lower()))
         common_words = expected_words.intersection(actual_words)
-        similarity = len(common_words) / max(len(expected_words), len(actual_words))
+        similarity = len(common_words) / max(
+            len(expected_words), len(actual_words)
+        )
         return similarity >= threshold
 
 
@@ -219,9 +233,13 @@ class BaseTest:
                 observed_outputs.get(snake_case_name, {}),
                 expected_outputs.get(snake_case_name, {}),
             ):
-                print(f"{Fore.GREEN}  Test {snake_case_name} passed ✓{Style.RESET_ALL}")
+                print(
+                    f"{Fore.GREEN}  Test {snake_case_name} passed ✓{Style.RESET_ALL}"
+                )
             else:
-                print(f"{Fore.RED}  Test {snake_case_name} failed ✗{Style.RESET_ALL}")
+                print(
+                    f"{Fore.RED}  Test {snake_case_name} failed ✗{Style.RESET_ALL}"
+                )
                 all_passed = False
 
         return all_passed
@@ -247,7 +265,9 @@ class BaseTest:
         self.exclude_paths_map[_to_snake_case(test_name)] = exclude_paths
 
     def get_test_cases(self) -> Dict[str, callable]:
-        raise NotImplementedError("Subclasses must implement get_test_cases method")
+        raise NotImplementedError(
+            "Subclasses must implement get_test_cases method"
+        )
 
     def _load_expected_outputs(self) -> Dict[str, Any]:
         with open(self.expected_outputs_file, "r") as f:

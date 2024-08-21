@@ -1,5 +1,5 @@
 # TODO: need to import this from the package, not from the local directory
-from r2r_python_sdk.sdk.client import R2RClient
+from r2r import R2RClient
 
 if __name__ == "__main__":
     client = R2RClient(
@@ -7,7 +7,7 @@ if __name__ == "__main__":
     )  # Replace with your R2R deployment URL
 
     # Register a new user
-    user_result = client.register("user1@test.com", "password123")
+    user_result = client.register("user11123@test.com", "password123")
     print(user_result)
 
     # # Uncomment when running with authentication
@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # print(verify_result)
 
     # Login immediately (assuming email verification is disabled)
-    login_result = client.login("user1@test.com", "password123")
+    login_result = client.login("user11123@test.com", "password123")
     print(login_result)
 
     # Refresh access token
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     print(logout_result)
     # {'results': {'message': 'Logged out successfully'}}
 
-    # Login as admin
+    # # Login as admin
     login_result = client.login("admin@example.com", "change_me_immediately")
 
     # Now you can access superuser features, for example:

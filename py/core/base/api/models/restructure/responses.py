@@ -1,9 +1,9 @@
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
-from pydantic import BaseModel
-from datetime import datetime
 
 from core.base.api.models.base import ResultsWrapper
+from pydantic import BaseModel
 
 
 class KGEnrichementResponse(BaseModel):

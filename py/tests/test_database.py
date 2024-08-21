@@ -7,6 +7,7 @@ from core import (
     DatabaseProvider,
     Vector,
     VectorEntry,
+    VectorSearchSettings,
     generate_id_from_label,
 )
 from core.providers import PostgresDBProvider
@@ -66,7 +67,10 @@ def test_db_initialization(request, db_fixture):
 def test_db_copy_and_search(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     db.vector.upsert(sample_entries[0])
-    results = db.vector.search(query_vector=sample_entries[0].vector.data)
+    results = db.vector.semantic_search(
+        query_vector=sample_entries[0].vector.data,
+        search_settings=VectorSearchSettings(),
+    )
     assert len(results) == 1
     assert results[0].fragment_id == sample_entries[0].fragment_id
     assert results[0].score == pytest.approx(1.0, rel=1e-3)
@@ -76,7 +80,10 @@ def test_db_copy_and_search(request, db_fixture):
 def test_db_upsert_and_search(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     db.vector.upsert(sample_entries[0])
-    results = db.vector.search(query_vector=sample_entries[0].vector.data)
+    results = db.vector.semantic_search(
+        query_vector=sample_entries[0].vector.data,
+        search_settings=VectorSearchSettings(),
+    )
     assert len(results) == 1
     assert results[0].fragment_id == sample_entries[0].fragment_id
     assert results[0].score == pytest.approx(1.0, rel=1e-3)
@@ -87,7 +94,9 @@ def test_imperfect_match(request, db_fixture):
     db = request.getfixturevalue(db_fixture)
     db.vector.upsert(sample_entries[0])
     query_vector = [val + 0.1 for val in sample_entries[0].vector.data]
-    results = db.vector.search(query_vector=query_vector)
+    results = db.vector.semantic_search(
+        query_vector=query_vector, search_settings=VectorSearchSettings()
+    )
     assert len(results) == 1
     assert results[0].fragment_id == sample_entries[0].fragment_id
     assert results[0].score < 1.0
@@ -100,7 +109,10 @@ def test_bulk_insert_and_search(request, db_fixture):
         db.vector.upsert(entry)
 
     query_vector = sample_entries[0].vector.data
-    results = db.vector.search(query_vector=query_vector, limit=5)
+    results = db.vector.semantic_search(
+        query_vector=query_vector,
+        search_settings=VectorSearchSettings(search_limit=5),
+    )
     assert len(results) == 5
     assert results[0].fragment_id == sample_entries[0].fragment_id
     assert results[0].score == pytest.approx(1.0, rel=1e-3)
@@ -114,8 +126,9 @@ def test_search_with_filters(request, db_fixture):
 
     filtered_id = sample_entries[0].metadata["key"]
     query_vector = sample_entries[0].vector.data
-    results = db.vector.search(
-        query_vector=query_vector, filters={"key": filtered_id}
+    results = db.vector.semantic_search(
+        query_vector=query_vector,
+        search_settings=VectorSearchSettings(filters={"key": filtered_id}),
     )
     assert len(results) == 1
     assert results[0].fragment_id == sample_entries[0].fragment_id
@@ -131,7 +144,10 @@ def test_delete(request, db_fixture):
     key_to_delete = sample_entries[0].metadata["key"]
     db.vector.delete(filters={"key": {"$eq": key_to_delete}})
 
-    results = db.vector.search(query_vector=sample_entries[0].vector.data)
+    results = db.vector.semantic_search(
+        query_vector=sample_entries[0].vector.data,
+        search_settings=VectorSearchSettings(),
+    )
     assert all(result.metadata["key"] != key_to_delete for result in results)
 
 
@@ -151,7 +167,9 @@ def test_upsert(request, db_fixture):
     )
     db.vector.upsert(modified_entry)
 
-    results = db.vector.search(query_vector=[0.5, 0.5, 0.5])
+    results = db.vector.semantic_search(
+        query_vector=[0.5, 0.5, 0.5], search_settings=VectorSearchSettings()
+    )
     assert len(results) == 1
     assert results[0].fragment_id == sample_entries[0].fragment_id
     assert results[0].metadata["key"] == "new_value"

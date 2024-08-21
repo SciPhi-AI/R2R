@@ -171,6 +171,7 @@ class IngestionService(Service):
                 document = self._file_to_document(
                     file, user, doc_id, updated_metadata
                 )
+                print("document = ", document)
                 documents.append(document)
 
             ingestion_results = await self.ingest_documents(

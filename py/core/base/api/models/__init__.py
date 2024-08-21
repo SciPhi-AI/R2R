@@ -33,6 +33,10 @@ from .management.responses import (
     WrappedServerStatsResponse,
     WrappedUserOverviewResponse,
 )
+from .restructure.responses import (
+    KGEnrichementResponse,
+    WrappedKGEnrichementResponse,
+)
 from .retrieval.responses import (
     RAGAgentResponse,
     RAGResponse,
@@ -40,11 +44,6 @@ from .retrieval.responses import (
     WrappedRAGAgentResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
-)
-
-from .restructure.responses import (
-    KGEnrichementResponse,
-    WrappedKGEnrichementResponse,
 )
 
 __all__ = [

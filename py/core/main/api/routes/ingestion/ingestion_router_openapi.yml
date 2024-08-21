@@ -30,7 +30,7 @@ ingest_files:
     metadatas: "An optional list of JSON metadata to affix to each file"
     document_ids: "An optional list of document ids for each file. If not provided, the system will generate a unique document id via the `generate_user_document_id` method."
     versions: "An optional list of versions for each file. If not provided, the system will default to the tag `v1`."
-    chunking_config_override: "An optional dictionary to override the default chunking configuration for the ingestion process. If not provided, the system will use the default server-side chunking configuration."
+    chunking_settings: "An optional dictionary to override the default chunking configuration for the ingestion process. If not provided, the system will use the default server-side chunking configuration."
 
 update_files:
   openapi_extra:
@@ -58,4 +58,4 @@ update_files:
     files: "The list of paths of input files to update in the system."
     document_ids: "An optional list of document ids for each file. If not provided, the system will attempt to generate the corresponding unique from the `generate_user_document_id` method."
     metadatas: "An optional list of JSON metadata to affix to each file"
-    chunking_config_override: "JSON string for chunking configuration override"
+    chunking_settings: "JSON string for chunking configuration override"
