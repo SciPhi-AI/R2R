@@ -116,7 +116,6 @@ def run_docker_serve(
         else:
             config_name = "default"
         
-        config = 'unstructured'
         config = R2RConfig.from_toml(
             R2RBuilder.CONFIG_OPTIONS[config_name]
         )
