@@ -239,7 +239,9 @@ class ManagementRouter(BaseRouter):
                     "Only a superuser can call the `inspect_knowledge_graph` endpoint.",
                     403,
                 )
-            return await self.engine.ainspect_knowledge_graph(limit=limit, print_descriptions=print_descriptions)
+            return await self.engine.ainspect_knowledge_graph(
+                limit=limit, print_descriptions=print_descriptions
+            )
 
         @self.router.get("/groups_overview")
         @self.base_endpoint

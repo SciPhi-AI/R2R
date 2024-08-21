@@ -33,6 +33,12 @@ class RetrievalMethods:
         Returns:
             SearchResponse: The search response.
         """
+        if isinstance(vector_search_settings, dict):
+            vector_search_settings = VectorSearchSettings(
+                **vector_search_settings
+            )
+        if isinstance(kg_search_settings, dict):
+            kg_search_settings = KGSearchSettings(**kg_search_settings)
         if not isinstance(vector_search_settings, dict):
             vector_search_settings = vector_search_settings.model_dump()
         if not isinstance(kg_search_settings, dict):

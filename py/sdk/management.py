@@ -4,16 +4,6 @@ from typing import Optional, Union
 
 class ManagementMethods:
     @staticmethod
-    async def server_stats(client) -> dict:
-        """
-        Get statistics about the server, including the start time, uptime, CPU usage, and memory usage.
-
-        Returns:
-            dict: The server statistics.
-        """
-        return await client._make_request("GET", "server_stats")
-
-    @staticmethod
     async def update_prompt(
         client,
         name: str,
@@ -70,29 +60,6 @@ class ManagementMethods:
         return await client._make_request("GET", "analytics", params=params)
 
     @staticmethod
-    async def logs(
-        client,
-        run_type_filter: Optional[str] = None,
-        max_runs: int = None,
-    ) -> dict:
-        """
-        Get logs from the server.
-
-        Args:
-            run_type_filter (Optional[str]): The run type to filter by.
-            max_runs (int): Specifies the maximum number of runs to return. Values outside the range of 1 to 1000 will be adjusted to the nearest valid value with a default of 100.
-
-        Returns:
-            dict: The logs from the server.
-        """
-        params = {}
-        if run_type_filter is not None:
-            params["run_type_filter"] = run_type_filter
-        if max_runs is not None:
-            params["max_runs"] = max_runs
-        return await client._make_request("GET", "logs", params=params)
-
-    @staticmethod
     async def app_settings(client) -> dict:
         """
         Get the configuration settings for the app.
@@ -119,9 +86,7 @@ class ManagementMethods:
             dict: The response from the server.
         """
         data = {"message_id": message_id, "score": score}
-        return await client._make_request(
-            "POST", "score_completion", json=data
-        )
+        return await client._make_request("POST", "score_completion", json=data)
 
     @staticmethod
     async def users_overview(
@@ -137,12 +102,10 @@ class ManagementMethods:
         Returns:
             dict: The overview of users in the system.
         """
-        params = {
-            "user_ids": [str(uid) for uid in user_ids] if user_ids else None
-        }
-        return await client._make_request(
-            "GET", "users_overview", params=params
-        )
+        params = {}
+        if user_ids is not None:
+            params["user_ids"] = [str(uid) for uid in user_ids]
+        return await client._make_request("GET", "users_overview", params=params)
 
     @staticmethod
     async def delete(
@@ -182,9 +145,7 @@ class ManagementMethods:
         if document_ids:
             params["document_ids"] = document_ids
 
-        return await client._make_request(
-            "GET", "documents_overview", params=params
-        )
+        return await client._make_request("GET", "documents_overview", params=params)
 
     @staticmethod
     async def document_chunks(
@@ -200,9 +161,7 @@ class ManagementMethods:
         Returns:
             dict: The chunks for the document.
         """
-        return await client._make_request(
-            "GET", f"document_chunks/{document_id}"
-        )
+        return await client._make_request("GET", f"document_chunks/{document_id}")
 
     @staticmethod
     async def inspect_knowledge_graph(
@@ -250,9 +209,7 @@ class ManagementMethods:
             params["limit"] = limit
         if offset:
             params["offset"] = offset
-        return await client._make_request(
-            "GET", "groups_overview", params=params
-        )
+        return await client._make_request("GET", "groups_overview", params=params)
 
     @staticmethod
     async def create_group(
@@ -377,9 +334,7 @@ class ManagementMethods:
             "user_id": user_id,
             "group_id": group_id,
         }
-        return await client._make_request(
-            "POST", "add_user_to_group", json=data
-        )
+        return await client._make_request("POST", "add_user_to_group", json=data)
 
     @staticmethod
     async def remove_user_from_group(
@@ -401,9 +356,7 @@ class ManagementMethods:
             "user_id": user_id,
             "group_id": group_id,
         }
-        return await client._make_request(
-            "POST", "remove_user_from_group", json=data
-        )
+        return await client._make_request("POST", "remove_user_from_group", json=data)
 
     @staticmethod
     async def get_users_in_group(
@@ -446,9 +399,7 @@ class ManagementMethods:
         Returns:
             dict: The list of groups that the user is a member of.
         """
-        return await client._make_request(
-            "GET", f"get_groups_for_user/{user_id}"
-        )
+        return await client._make_request("GET", f"get_groups_for_user/{user_id}")
 
     @staticmethod
     async def assign_document_to_group(
@@ -470,9 +421,7 @@ class ManagementMethods:
             "document_id": document_id,
             "group_id": group_id,
         }
-        return await client._make_request(
-            "POST", "assign_document_to_group", json=data
-        )
+        return await client._make_request("POST", "assign_document_to_group", json=data)
 
     # TODO: Verify that this method is implemented, also, should be a PUT request
     @staticmethod
@@ -513,9 +462,7 @@ class ManagementMethods:
         Returns:
             dict: The list of groups that the document is assigned to.
         """
-        return await client._make_request(
-            "GET", f"get_document_groups/{document_id}"
-        )
+        return await client._make_request("GET", f"get_document_groups/{document_id}")
 
     @staticmethod
     async def get_documents_in_group(

@@ -21,10 +21,10 @@ class UnstructuredParsingProvider(ParsingProvider):
             from unstructured.partition.auto import partition
 
             self.partition = partition
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "Please install the unstructured package to use the unstructured parsing provider."
-            )
+            ) from e
         if config.excluded_parsers:
             logger.warning(
                 "Excluded parsers are not supported by the unstructured parsing provider."

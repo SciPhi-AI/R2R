@@ -6,7 +6,7 @@ from typing import List
 from colorama import Fore, Style, init
 
 # TODO: need to import this from the package, not from the local directory
-from r2r_python_sdk.sdk.client import R2RClient
+from sdk.client import R2RClient
 from test_cases.base import BaseTest, RegressionTest
 
 
@@ -32,11 +32,7 @@ class RegressionTestRunner:
         if not check_only:
             self.outputs_dir = os.path.join(
                 os.path.dirname(__file__),
-                (
-                    "expected_outputs"
-                    if self.update_expected
-                    else "observed_outputs"
-                ),
+                ("expected_outputs" if self.update_expected else "observed_outputs"),
             )
             os.makedirs(self.outputs_dir, exist_ok=True)
 
@@ -71,20 +67,12 @@ class RegressionTestRunner:
         observed_outputs_dir = os.path.join(
             os.path.dirname(__file__), "observed_outputs"
         )
-        print(
-            f"\n{Fore.CYAN}Comparing results for test suites:{Style.RESET_ALL}"
-        )
+        print(f"\n{Fore.CYAN}Comparing results for test suites:{Style.RESET_ALL}")
         for test in self.tests:
-            if test.compare_outputs(
-                observed_outputs_dir, expected_outputs_dir
-            ):
-                print(
-                    f"{Fore.GREEN}{test.__class__.__name__} ✓{Style.RESET_ALL}"
-                )
+            if test.compare_outputs(observed_outputs_dir, expected_outputs_dir):
+                print(f"{Fore.GREEN}{test.__class__.__name__} ✓{Style.RESET_ALL}")
             else:
-                print(
-                    f"{Fore.RED}{test.__class__.__name__} ✗{Style.RESET_ALL}"
-                )
+                print(f"{Fore.RED}{test.__class__.__name__} ✗{Style.RESET_ALL}")
                 all_passed = False
         return all_passed
 
