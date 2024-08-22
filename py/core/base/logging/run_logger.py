@@ -147,8 +147,6 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         key: str,
         value: str,
     ):
-        print(f"Run ID: {run_id}, Key: {key}, Value: {value}")
-        
         await self.conn.execute(
             f"""
             INSERT INTO {self.log_table} (timestamp, run_id, key, value)
@@ -164,8 +162,6 @@ class LocalRunLoggingProvider(RunLoggingProvider):
         run_type: RunType,
         user_id: UUID,
     ):
-        print(f"Run ID: {run_id}, Type: {run_type}, UserID: {user_id}")
-
         await self.conn.execute(
             f"""
             INSERT INTO {self.log_info_table} (timestamp, run_id, run_type, user_id)
@@ -732,7 +728,6 @@ class RunLoggingSingleton:
         key: str,
         value: str,
     ):
-        print(f"Run ID: {run_id}, Key: {key}, Value: {value}")
         try:
             async with cls.get_instance() as provider:
                 await provider.log(run_id, key, value)
