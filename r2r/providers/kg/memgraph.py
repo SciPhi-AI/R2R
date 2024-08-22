@@ -49,24 +49,26 @@ YIELD nodeType, nodeLabels, mandatory, propertyName, propertyTypes
 WITH nodeLabels, collect({property: propertyName, type: propertyTypes}) AS properties
 RETURN {labels: nodeLabels, properties: properties} AS output;
 """
+
 # TODO(@DavIvek): Figure out alternative to APOC
 rel_properties_query = """
-CALL apoc.meta.data()
-YIELD label, other, elementType, type, property
-WHERE NOT type = "RELATIONSHIP" AND elementType = "relationship"
-      AND NOT label in $EXCLUDED_LABELS
-WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
-RETURN {type: nodeLabels, properties: properties} AS output
+CALL schema.rel_type_properties()
+YIELD relType, mandatory, propertyName, propertyTypes
+WITH relType, collect({property: propertyName, type: propertyTypes}) AS properties
+RETURN {type: relType, properties: properties} AS output;
 """
+
 # TODO(@DavIvek): Figure out alternative to APOC
 rel_query = """
-CALL apoc.meta.data()
-YIELD label, other, elementType, type, property
-WHERE type = "RELATIONSHIP" AND elementType = "node"
-UNWIND other AS other_node
-WITH * WHERE NOT label IN $EXCLUDED_LABELS
-    AND NOT other_node IN $EXCLUDED_LABELS
-RETURN {start: label, type: property, end: toString(other_node)} AS output
+MATCH (startNode)-[rel]->(endNode)
+WITH DISTINCT
+  labels(startNode) AS startLabels,
+  type(rel) AS relationshipType,
+  labels(endNode) AS endLabels
+RETURN
+  startLabels AS start,
+  relationshipType AS type,
+  endLabels AS end
 """
 
 
@@ -180,36 +182,21 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
     def client(self):
         return self._driver
 
-    # TODO(@DavIvek): Implement schema
+    # TODO(@DavIvek): Implement schema -> Do we have to return data in a specific format?
     def refresh_schema(self) -> None:
         """Refresh the schema."""
         node_query_results = self.structured_query(
             node_properties_query,
         )
-        node_properties = (
-            [el["output"] for el in node_query_results]
-            if node_query_results
-            else []
-        )
 
         rels_query_result = self.structured_query(
             rel_properties_query, 
-        )
-        rel_properties = (
-            [el["output"] for el in rels_query_result]
-            if rels_query_result
-            else []
         )
 
         rel_objs_query_result = self.structured_query(
             rel_query,
         )
-        relationships = (
-            [el["output"] for el in rel_objs_query_result]
-            if rel_objs_query_result
-            else []
-        )
-
+        
         # Get constraints & indexes
         try:
             constraint = self.structured_query("SHOW CONSTRAINT INFO")
@@ -223,62 +210,80 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
         self.structured_schema = {"node_props": {}, "rel_props": {}, "relationships": {}, "metadata": {}}
         
         # memgraph sends labels as a list, if we have multiple labels on a node we need to iterate over them 
-        for el in node_properties:
+        for el in node_query_results:
             for label in el["labels"]:
-                self.structured_schema["node_props"][label] = el["properties"]
+                if not self.structured_schema["node_props"].get(label):
+                    self.structured_schema["node_props"][label] = set() # set of dictionaries
+                for prop in el["properties"]:
+                    self.structured_schema["node_props"][label].add(frozenset(prop.items()))
         
-        self.structured_schema = {
-            "node_props": {
-                el["labels"]: el["properties"] for el in node_properties
-            },
-            "rel_props": {
-                el["type"]: el["properties"] for el in rel_properties
-            },
-            "relationships": relationships,
-            "metadata": {"constraint": constraint, "index": index},
-        }
-        schema_counts = self.structured_query(
-            "CALL apoc.meta.graphSample() YIELD nodes, relationships "
-            "RETURN nodes, [rel in relationships | {name:apoc.any.property"
-            "(rel, 'type'), count: apoc.any.property(rel, 'count')}]"
-            " AS relationships"
-        )
-        # Update node info
-        for node in schema_counts[0].get("nodes", []):
-            node_props = self.structured_schema["node_props"].get(node["name"])
-            if not node_props:  # The node has no properties
+        self.structured_schema["rel_props"] = {el["type"]: el["properties"] for el in rels_query_result} # same as neo4j
+        
+        self.structured_schema["relationships"] = []
+        for el in rel_objs_query_result:
+            rel_objs_query_result.append({"start": el["start"], "type": el["type"], "end": el["end"]})
+        
+        self.structured_schema["metadata"] = {"constraint": constraint, "index": index}
+        
+        # schema_counts = self.structured_query(
+        #     "CALL apoc.meta.graphSample() YIELD nodes, relationships "
+        #     "RETURN nodes, [rel in relationships | {name:apoc.any.property"
+        #     "(rel, 'type'), count: apoc.any.property(rel, 'count')}]"
+        #     " AS relationships"
+        # )
+        # # Update node info
+        # for node in schema_counts[0].get("nodes", []):
+        #     node_props = self.structured_schema["node_props"].get(node["name"])
+        #     if not node_props:  # The node has no properties
+        #         continue
+        #     enhanced_cypher = self._enhanced_schema_cypher(
+        #         node["name"],
+        #         node_props,
+        #         node["count"] < EXHAUSTIVE_SEARCH_LIMIT,
+        #     )
+        #     enhanced_info = self.structured_query(enhanced_cypher)[0]["output"]
+        #     for prop in node_props:
+        #         if prop["property"] in enhanced_info:
+        #             prop.update(enhanced_info[prop["property"]])
+        
+        
+        # # Update rel info
+        # for rel in schema_counts[0].get("relationships", []):
+        #     rel_props = self.structured_schema["rel_props"].get(rel["name"])
+        #     if not rel_props:  # The rel has no properties
+        #         continue
+        #     enhanced_cypher = self._enhanced_schema_cypher(
+        #         rel["name"],
+        #         rel_props,
+        #         rel["count"] < EXHAUSTIVE_SEARCH_LIMIT,
+        #         is_relationship=True,
+        #     )
+        #     try:
+        #         enhanced_info = self.structured_query(enhanced_cypher)[0][
+        #             "output"
+        #         ]
+        #         for prop in rel_props:
+        #             if prop["property"] in enhanced_info:
+        #                 prop.update(enhanced_info[prop["property"]])
+        #     except self.neo4j.exceptions.ClientError:
+        #         # Sometimes the types are not consistent in the db
+        #         pass
+        
+        for label, props in self.structured_schema["node_props"].items():
+            if not props:
                 continue
+            list_of_props = [dict(prop) for prop in props]
             enhanced_cypher = self._enhanced_schema_cypher(
-                node["name"],
-                node_props,
-                node["count"] < EXHAUSTIVE_SEARCH_LIMIT,
+                label, list_of_props, len(list_of_props) < EXHAUSTIVE_SEARCH_LIMIT
             )
             enhanced_info = self.structured_query(enhanced_cypher)[0]["output"]
-            for prop in node_props:
+            for prop in list_of_props:
                 if prop["property"] in enhanced_info:
                     prop.update(enhanced_info[prop["property"]])
-        # Update rel info
-        for rel in schema_counts[0].get("relationships", []):
-            rel_props = self.structured_schema["rel_props"].get(rel["name"])
-            if not rel_props:  # The rel has no properties
-                continue
-            enhanced_cypher = self._enhanced_schema_cypher(
-                rel["name"],
-                rel_props,
-                rel["count"] < EXHAUSTIVE_SEARCH_LIMIT,
-                is_relationship=True,
-            )
-            try:
-                enhanced_info = self.structured_query(enhanced_cypher)[0][
-                    "output"
-                ]
-                for prop in rel_props:
-                    if prop["property"] in enhanced_info:
-                        prop.update(enhanced_info[prop["property"]])
-            except self.neo4j.exceptions.ClientError:
-                # Sometimes the types are not consistent in the db
-                pass
+            self.structured_schema["node_props"][label] = list_of_props # not the best way to do this, but it works for now
 
+        
+                   
     # TODO(@antejavor): Implement the upsert_nodes
     def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
         # Lists to hold separated types
