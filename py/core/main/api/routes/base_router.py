@@ -28,10 +28,15 @@ class BaseRouter:
             ) as run_id:
                 auth_user = kwargs.get("auth_user")
                 if auth_user:
-                    await self.engine.run_manager.log_run_info(
-                        run_type=self.run_type,
-                        user=auth_user,
-                    )
+                    if (
+                        run_id
+                        and self.run_type != RunType.UNSPECIFIED
+                        and self.run_type != RunType.MANAGEMENT
+                    ):
+                        await self.engine.run_manager.log_run_info(
+                            run_type=self.run_type,
+                            user=auth_user,
+                        )
 
                 try:
                     results = await func(*args, **kwargs)

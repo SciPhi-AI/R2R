@@ -54,7 +54,7 @@ def logs(client, run_type_filter, max_runs):
         click.echo(f"User ID: {log['user_id']}")
         click.echo("Entries:")
         for entry in log["entries"]:
-            click.echo(f"  - {entry['key']}: {entry['value'][:100]}")
+            click.echo(f"  - {entry['key']}: {entry['value'][:1_024]}")
         click.echo("---")
 
     click.echo(f"Total runs: {len(response)}")

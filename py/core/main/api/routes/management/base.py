@@ -31,7 +31,9 @@ from ..base_router import BaseRouter, RunType
 
 
 class ManagementRouter(BaseRouter):
-    def __init__(self, engine: R2REngine, run_type: RunType = RunType.MANAGEMENT):
+    def __init__(
+        self, engine: R2REngine, run_type: RunType = RunType.MANAGEMENT
+    ):
         super().__init__(engine, run_type)
         self.start_time = datetime.now(timezone.utc)
         self.setup_routes()

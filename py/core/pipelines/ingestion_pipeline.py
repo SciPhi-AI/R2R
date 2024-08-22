@@ -38,96 +38,95 @@ class IngestionPipeline(AsyncPipeline):
         **kwargs: Any,
     ) -> None:
         self.state = state or AsyncState()
-        async with manage_run(run_manager):
-            if self.parsing_pipe is None:
-                raise ValueError(
-                    "parsing_pipe must be set before running the ingestion pipeline"
-                )
-            if self.chunking_pipe is None:
-                raise ValueError(
-                    "chunking_pipe must be set before running the ingestion pipeline"
-                )
-            if self.embedding_pipeline is None and self.kg_pipeline is None:
-                raise ValueError(
-                    "At least one of embedding_pipeline or kg_pipeline must be set before running the ingestion pipeline"
-                )
+        if self.parsing_pipe is None:
+            raise ValueError(
+                "parsing_pipe must be set before running the ingestion pipeline"
+            )
+        if self.chunking_pipe is None:
+            raise ValueError(
+                "chunking_pipe must be set before running the ingestion pipeline"
+            )
+        if self.embedding_pipeline is None and self.kg_pipeline is None:
+            raise ValueError(
+                "At least one of embedding_pipeline or kg_pipeline must be set before running the ingestion pipeline"
+            )
 
-            # Use queues to pass data between pipes and duplicate for each pipeline
-            parsing_to_chunking_queue = Queue()
-            embedding_queue = Queue()
-            kg_queue = Queue()
+        # Use queues to pass data between pipes and duplicate for each pipeline
+        parsing_to_chunking_queue = Queue()
+        embedding_queue = Queue()
+        kg_queue = Queue()
 
-            async def process_documents():
-                async for parsed_doc in await self.parsing_pipe.run(
-                    self.parsing_pipe.Input(message=input),
+        async def process_documents():
+            async for parsed_doc in await self.parsing_pipe.run(
+                self.parsing_pipe.Input(message=input),
+                state,
+                run_manager,
+                *args,
+                **kwargs,
+            ):
+                await parsing_to_chunking_queue.put(parsed_doc)
+            await parsing_to_chunking_queue.put(None)
+
+            async for chunked_doc in await self.chunking_pipe.run(
+                self.chunking_pipe.Input(
+                    message=dequeue_requests(parsing_to_chunking_queue)
+                ),
+                state,
+                run_manager,
+                chunking_settings=chunking_settings,
+                *args,
+                **kwargs,
+            ):
+                if self.embedding_pipeline:
+                    await embedding_queue.put(chunked_doc)
+                if self.kg_pipeline:
+                    await kg_queue.put(chunked_doc)
+            await embedding_queue.put(None)
+            await kg_queue.put(None)
+
+        # Start the document processing
+        process_task = asyncio.create_task(process_documents())
+
+        # Start the embedding and KG pipelines in parallel
+        tasks = []
+        if self.embedding_pipeline:
+            embedding_task = asyncio.create_task(
+                self.embedding_pipeline.run(
+                    dequeue_requests(embedding_queue),
                     state,
+                    stream,
                     run_manager,
                     *args,
                     **kwargs,
-                ):
-                    await parsing_to_chunking_queue.put(parsed_doc)
-                await parsing_to_chunking_queue.put(None)
+                )
+            )
+            tasks.append(embedding_task)
 
-                async for chunked_doc in await self.chunking_pipe.run(
-                    self.chunking_pipe.Input(
-                        message=dequeue_requests(parsing_to_chunking_queue)
-                    ),
+        if self.kg_pipeline:
+            kg_task = asyncio.create_task(
+                self.kg_pipeline.run(
+                    dequeue_requests(kg_queue),
                     state,
+                    stream,
                     run_manager,
-                    chunking_settings=chunking_settings,
                     *args,
                     **kwargs,
-                ):
-                    if self.embedding_pipeline:
-                        await embedding_queue.put(chunked_doc)
-                    if self.kg_pipeline:
-                        await kg_queue.put(chunked_doc)
-                await embedding_queue.put(None)
-                await kg_queue.put(None)
-
-            # Start the document processing
-            process_task = asyncio.create_task(process_documents())
-
-            # Start the embedding and KG pipelines in parallel
-            tasks = []
-            if self.embedding_pipeline:
-                embedding_task = asyncio.create_task(
-                    self.embedding_pipeline.run(
-                        dequeue_requests(embedding_queue),
-                        state,
-                        stream,
-                        run_manager,
-                        *args,
-                        **kwargs,
-                    )
                 )
-                tasks.append(embedding_task)
+            )
+            tasks.append(kg_task)
 
-            if self.kg_pipeline:
-                kg_task = asyncio.create_task(
-                    self.kg_pipeline.run(
-                        dequeue_requests(kg_queue),
-                        state,
-                        stream,
-                        run_manager,
-                        *args,
-                        **kwargs,
-                    )
-                )
-                tasks.append(kg_task)
+        # Wait for all tasks to complete
+        await process_task
+        results = await asyncio.gather(*tasks)
 
-            # Wait for all tasks to complete
-            await process_task
-            results = await asyncio.gather(*tasks)
-
-            return {
-                "embedding_pipeline_output": (
-                    results[0] if self.embedding_pipeline else None
-                ),
-                "kg_pipeline_output": (
-                    results[-1] if self.kg_pipeline else None
-                ),
-            }
+        return {
+            "embedding_pipeline_output": (
+                results[0] if self.embedding_pipeline else None
+            ),
+            "kg_pipeline_output": (
+                results[-1] if self.kg_pipeline else None
+            ),
+        }
 
     def add_pipe(
         self,
