@@ -262,7 +262,8 @@ class IngestionService(Service):
 
             if (
                 document.id in existing_document_info
-                and existing_document_info[document.id].version == version
+                # apply `geq` check to prevent re-ingestion of updated documents
+                and (existing_document_info[document.id].version >= version)
                 and existing_document_info[document.id].status == "success"
             ):
                 logger.error(
