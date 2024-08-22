@@ -4,7 +4,7 @@ from core.base.abstractions.llm import GenerationConfig
 from core.main.assembly.factory_extensions import R2RPipeFactoryWithMultiSearch
 
 
-def run_rag_pipeline(query="Who was Aristotle?"):
+def run_rag_pipeline():
     # Initialize a web search pipe
     web_search_pipe = WebSearchPipe(serper_client=SerperClient())
 
@@ -37,17 +37,7 @@ def run_rag_pipeline(query="Who was Aristotle?"):
             multi_inner_search_pipe_override=web_search_pipe,
             query_generation_template_override=synthetic_query_generation_template,
         )
-    )
-
-    # Run the RAG pipeline through the R2R application
-    result = app.rag(
-        query,
-        rag_generation_config=GenerationConfig(model="gpt-4o"),
-    )
-
-    print(f"Search Results:\n\n{result.search_results}")
-    print(f"RAG Results:\n\n{result.completion}")
-
+    ).serve()
 
 if __name__ == "__main__":
     fire.Fire(run_rag_pipeline)

@@ -15,7 +15,7 @@ class VectorSearchResult(BaseModel):
     fragment_id: UUID
     extraction_id: UUID
     document_id: UUID
-    user_id: UUID
+    user_id: Optional[UUID]
     group_ids: list[UUID]
     score: float
     text: str
