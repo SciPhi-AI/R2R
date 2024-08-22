@@ -16,7 +16,6 @@ async function main() {
   console.log("Ingesting file...");
   const ingestResult = await client.ingestFiles(files, {
     metadatas: [{ title: "raskolnikov.txt" }],
-    skip_document_info: false,
   });
   console.log("Ingest result:", JSON.stringify(ingestResult, null, 2));
 

@@ -75,7 +75,6 @@ const ingestResult = await client.ingestFiles(files, {
     "123e4567-e89b-12d3-a456-426614174000",
     "123e4567-e89b-12d3-a456-426614174000",
   ],
-  skip_document_info: false,
 });
 console.log(ingestResult);
 ```

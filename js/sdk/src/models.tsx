@@ -35,9 +35,16 @@ export interface GenerationConfig {
 
 export interface VectorSearchSettings {
   use_vector_search?: boolean;
+  use_hybrid_search?: boolean;
   filters?: Record<string, any>;
   search_limit?: number;
-  use_hybrid_search?: boolean;
+  selected_group_ids?: string[];
+  // TODO: add index measure
+  // TODO: add include vars
+  // TODO: add include metadatas
+  // TODO: add include probes
+  // TODO: add ef_search
+  // TODO: add hybrid_search_settings
 }
 
 export interface KGSearchSettings {

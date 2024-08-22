@@ -407,9 +407,7 @@ export class r2rClient {
       metadatas?: Record<string, any>[];
       document_ids?: string[];
       user_ids?: (string | null)[];
-      versions?: string[];
       chunking_settings?: Record<string, any>;
-      skip_document_info?: boolean;
     } = {},
   ): Promise<any> {
     this._ensureAuthenticated();
@@ -472,14 +470,9 @@ export class r2rClient {
         ? JSON.stringify(options.document_ids)
         : undefined,
       user_ids: options.user_ids ? JSON.stringify(options.user_ids) : undefined,
-      versions: options.versions ? JSON.stringify(options.versions) : undefined,
       chunking_settings: options.chunking_settings
         ? JSON.stringify(options.chunking_settings)
         : undefined,
-      skip_document_info:
-        options.skip_document_info !== undefined
-          ? JSON.stringify(options.skip_document_info)
-          : undefined,
     };
 
     Object.entries(data).forEach(([key, value]) => {

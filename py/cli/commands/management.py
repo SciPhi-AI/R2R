@@ -8,7 +8,6 @@ from cli.utils.timer import timer
 # TODO: Implement update_prompt
 
 
-# TODO: Update
 @cli.command()
 @click.option("--filters", type=JSON, help="Filters for analytics as JSON")
 @click.option("--analysis-types", type=JSON, help="Analysis types as JSON")
