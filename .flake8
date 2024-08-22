@@ -1,3 +1,0 @@
-[flake8]
-exclude = playground/*,web/*,chat/*,docs/*,r2r/examples/,r2r/providers/database/vecs,r2r/providers/database/vecs/*,tests
-ignore = E501, E722, W503, E203, F541, W293, W291, E266, F601, F403, F405
