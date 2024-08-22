@@ -122,6 +122,9 @@ export class r2rClient {
         config.data = JSON.stringify(options.data);
         if (method !== "DELETE") {
           config.headers["Content-Type"] = "application/json";
+        } else {
+          config.headers["Content-Type"] = "application/json";
+          config.data = JSON.stringify(options.data);
         }
       } else {
         config.data = options.data;
@@ -203,9 +206,9 @@ export class r2rClient {
    * @returns A promise that resolves to the response from the server.
    */
   @feature("verifyEmail")
-  async verifyEmail(verification_code: string): Promise<Record<string, any>> {
+  async verifyEmail(verification_code: string): Promise<any> {
     return await this._makeRequest("POST", "verify_email", {
-      json: { verification_code: verification_code },
+      data: { verification_code },
     });
   }
 
@@ -367,19 +370,21 @@ export class r2rClient {
 
   /**
    * Deletes the user with the given user ID.
-   * @param user_id The ID of the user to delete.
+   * @param user_id The ID of the user to delete, defaults to the currently authenticated user.
    * @param password The password of the user to delete.
    * @returns A promise that resolves to the response from the server.
    */
   @feature("deleteUser")
-  async deleteUser(user_id: string, password?: string): Promise<any> {
+  async deleteUser(userId: string, password?: string): Promise<any> {
     this._ensureAuthenticated();
-    const response = await this._makeRequest("DELETE", "user", {
-      data: { user_id, password },
-    });
-    this.accessToken = null;
-    this.refreshToken = null;
-    return response;
+
+    const data: Record<string, any> = { user_id: userId };
+
+    if (password) {
+      data.password = password;
+    }
+
+    return await this._makeRequest("DELETE", "user", { data });
   }
 
   // -----------------------------------------------------------------------------
@@ -640,16 +645,16 @@ export class r2rClient {
 
     if (filter_criteria) {
       params.filter_criteria =
-        typeof filter_criteria === "object"
-          ? JSON.stringify(filter_criteria)
-          : filter_criteria;
+        typeof filter_criteria === "string"
+          ? filter_criteria
+          : JSON.stringify(filter_criteria);
     }
 
     if (analysis_types) {
       params.analysis_types =
-        typeof analysis_types === "object"
-          ? JSON.stringify(analysis_types)
-          : analysis_types;
+        typeof analysis_types === "string"
+          ? analysis_types
+          : JSON.stringify(analysis_types);
     }
 
     return this._makeRequest("GET", "analytics", { params });
@@ -775,15 +780,11 @@ export class r2rClient {
   async documentChunks(document_id: string): Promise<any> {
     this._ensureAuthenticated();
 
-    return this._makeRequest(
-      "GET",
-      `document_chunks/${document_id}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
+    return this._makeRequest("GET", `document_chunks/${document_id}`, {
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+    });
   }
 
   /**
