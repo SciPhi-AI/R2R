@@ -7,7 +7,9 @@ from fastapi import Body, Depends
 
 
 class RestructureRouter(BaseRouter):
-    def __init__(self, engine: R2REngine, run_type: RunType = RunType.RESTRUCTURE):
+    def __init__(
+        self, engine: R2REngine, run_type: RunType = RunType.RESTRUCTURE
+    ):
         super().__init__(engine, run_type)
         self.setup_routes()
 

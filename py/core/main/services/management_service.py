@@ -63,9 +63,7 @@ class ManagementService(Service):
         aggregated_logs = []
 
         for run in run_info:
-            run_logs = [
-                log for log in logs if log["run_id"] == run.run_id
-            ]
+            run_logs = [log for log in logs if log["run_id"] == run.run_id]
             entries = [
                 {
                     "key": log["key"],
@@ -73,7 +71,9 @@ class ManagementService(Service):
                     "timestamp": log["timestamp"],
                 }
                 for log in run_logs
-            ][::-1]  # Reverse order so that earliest logged values appear first.
+            ][
+                ::-1
+            ]  # Reverse order so that earliest logged values appear first.
 
             log_entry = {
                 "run_id": str(run.run_id),

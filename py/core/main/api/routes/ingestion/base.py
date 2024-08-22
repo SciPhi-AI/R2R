@@ -19,7 +19,9 @@ logger = logging.getLogger(__name__)
 
 
 class IngestionRouter(BaseRouter):
-    def __init__(self, engine: R2REngine, run_type: RunType = RunType.INGESTION):
+    def __init__(
+        self, engine: R2REngine, run_type: RunType = RunType.INGESTION
+    ):
         super().__init__(engine, run_type)
         self.openapi_extras = self.load_openapi_extras()
         self.setup_routes()

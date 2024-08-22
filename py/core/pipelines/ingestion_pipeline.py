@@ -123,9 +123,7 @@ class IngestionPipeline(AsyncPipeline):
             "embedding_pipeline_output": (
                 results[0] if self.embedding_pipeline else None
             ),
-            "kg_pipeline_output": (
-                results[-1] if self.kg_pipeline else None
-            ),
+            "kg_pipeline_output": (results[-1] if self.kg_pipeline else None),
         }
 
     def add_pipe(
