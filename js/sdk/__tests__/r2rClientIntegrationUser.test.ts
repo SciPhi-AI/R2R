@@ -40,7 +40,6 @@ describe("r2rClient Integration Tests", () => {
     await expect(
       client.ingestFiles(files, {
         metadatas: [{ title: "raskolnikov.txt" }],
-        skip_document_info: false,
       }),
     ).resolves.not.toThrow();
   });
