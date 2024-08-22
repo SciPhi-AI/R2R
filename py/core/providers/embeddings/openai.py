@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 from typing import Any, List
@@ -91,12 +90,10 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         )
 
     def _get_embedding_kwargs(self, **kwargs):
-        embedding_kwargs = {
+        return {
             "model": self.base_model,
             "dimensions": self._get_dimensions(),
-        }
-        embedding_kwargs.update(kwargs)
-        return embedding_kwargs
+        } | kwargs
 
     async def _execute_task(self, task: dict[str, Any]) -> List[List[float]]:
         texts = task["texts"]
@@ -115,7 +112,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     def _execute_task_sync(self, task: dict[str, Any]) -> List[List[float]]:
         texts = task["texts"]
@@ -133,7 +130,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg) from e
 
     async def async_get_embedding(
         self,
@@ -229,10 +226,10 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     def tokenize_string(self, text: str, model: str) -> list[int]:
         try:
             import tiktoken
-        except ImportError:
+        except ImportError as e:
             raise ValueError(
                 "Must download tiktoken library to run `tokenize_string`."
-            )
+            ) from e
         if model not in OpenAIEmbeddingProvider.MODEL_TO_TOKENIZER:
             raise ValueError(f"OpenAI embedding model {model} not supported.")
         encoding = tiktoken.get_encoding(
