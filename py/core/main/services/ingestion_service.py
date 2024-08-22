@@ -176,9 +176,11 @@ class IngestionService(Service):
                 )
                 documents.append(document)
 
+
             ingestion_results = await self.ingest_documents(
                 documents,
                 chunking_provider=chunking_provider,
+                versions=new_versions,
                 *args,
                 **kwargs,
             )
@@ -206,6 +208,7 @@ class IngestionService(Service):
     async def ingest_documents(
         self,
         documents: list[Document],
+        versions: Optional[list[str]] = None,
         chunking_provider: Optional[ChunkingProvider] = None,
         *args: Any,
         **kwargs: Any,
@@ -248,7 +251,7 @@ class IngestionService(Service):
         }
 
         for iteration, document in enumerate(documents):
-            version = STARTING_VERSION
+            version = versions[iteration] if versions else STARTING_VERSION
 
             # Check for duplicates within the current batch
             if document.id in processed_documents:
@@ -301,9 +304,8 @@ class IngestionService(Service):
             processed_documents[document.id] = document.metadata.get(
                 "title", str(document.id)
             )
-            print('document.metadata = ', document.metadata)
+            # Add version to metadata to propagate through pipeline
             document.metadata["version"] = version
-            print('.... success')
 
 
         if duplicate_documents:

@@ -72,13 +72,9 @@ class ParsingPipe(AsyncPipe):
         input: Input,
         state: AsyncState,
         run_id: UUID,
-        versions: list[str] = None,
         *args,
         **kwargs,
     ) -> AsyncGenerator[DocumentExtraction, None]:
-        it = 0
         async for document in input.message:
-            version = versions[it]
-            async for result in self._parse(document, run_id, version):
+            async for result in self._parse(document, run_id, document.metadata.get("version", "1.0")):
                 yield result
-            it += 1
