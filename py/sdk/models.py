@@ -209,6 +209,10 @@ class VectorSearchSettings(BaseModel):
     use_vector_search: bool = Field(
         default=True, description="Whether to use vector search"
     )
+    use_hybrid_search: bool = Field(
+        default=False,
+        description="Whether to perform a hybrid search (combining vector and keyword search)",
+    )
     filters: dict[str, Any] = Field(
         default_factory=dict,
         description="Filters to apply to the vector search",
@@ -217,19 +221,59 @@ class VectorSearchSettings(BaseModel):
         default=10,
         description="Maximum number of results to return",
         ge=1,
-        le=100,
-    )
-    use_hybrid_search: bool = Field(
-        default=False,
-        description="Whether to perform a hybrid search (combining vector and keyword search)",
+        le=1_000,
     )
     selected_group_ids: list[UUID] = Field(
         default_factory=list,
         description="Group IDs to search for",
     )
+    index_measure: IndexMeasure = Field(
+        default=IndexMeasure.cosine_distance,
+        description="The distance measure to use for indexing",
+    )
+    include_values: bool = Field(
+        default=True,
+        description="Whether to include search score values in the search results",
+    )
+    include_metadatas: bool = Field(
+        default=True,
+        description="Whether to include element metadata in the search results",
+    )
+    probes: Optional[int] = Field(
+        default=10,
+        description="Number of ivfflat index lists to query. Higher increases accuracy but decreases speed.",
+    )
+    ef_search: Optional[int] = Field(
+        default=40,
+        description="Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed.",
+    )
+    hybrid_search_settings: Optional[HybridSearchSettings] = Field(
+        default=HybridSearchSettings(),
+        description="Settings for hybrid search",
+    )
 
     class Config:
         json_encoders = {UUID: str}
+        json_schema_extra = {
+            "use_vector_search": True,
+            "use_hybrid_search": True,
+            "filters": {"category": "technology"},
+            "search_limit": 20,
+            "selected_group_ids": [
+                "2acb499e-8428-543b-bd85-0d9098718220",
+                "3e157b3a-8469-51db-90d9-52e7d896b49b",
+            ],
+            "index_measure": "cosine_distance",
+            "include_metadata": True,
+            "probes": 10,
+            "ef_search": 40,
+            "hybrid_search_settings": {
+                "full_text_weight": 1.0,
+                "semantic_weight": 5.0,
+                "full_text_limit": 200,
+                "rrf_k": 50,
+            },
+        }
 
     def model_dump(self, *args, **kwargs):
         dump = super().model_dump(*args, **kwargs)
