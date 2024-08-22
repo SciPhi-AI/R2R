@@ -15,7 +15,6 @@ class IngestionMethods:
         file_paths: list[str],
         document_ids: Optional[list[Union[str, UUID]]] = None,
         metadatas: Optional[list[dict]] = None,
-        versions: Optional[list[str]] = None,
         chunking_settings: Optional[Union[dict, ChunkingConfig]] = None,
     ) -> dict:
         """
@@ -25,7 +24,6 @@ class IngestionMethods:
             file_paths (List[str]): List of file paths to ingest.
             document_ids (Optional[List[str]]): List of document IDs.
             metadatas (Optional[List[dict]]): List of metadata dictionaries for each file.
-            versions (Optional[List[str]]): List of version strings for each file.
             chunking_settings (Optional[Union[dict, ChunkingConfig]]): Custom chunking configuration.
 
         Returns:
@@ -38,10 +36,6 @@ class IngestionMethods:
         if metadatas is not None and len(file_paths) != len(metadatas):
             raise ValueError(
                 "Number of metadatas must match number of document IDs."
-            )
-        if versions is not None and len(file_paths) != len(versions):
-            raise ValueError(
-                "Number of versions must match number of document IDs."
             )
         if (
             chunking_settings is not None
@@ -80,7 +74,6 @@ class IngestionMethods:
                     if document_ids
                     else None
                 ),
-                "versions": json.dumps(versions) if versions else None,
                 "chunking_settings": (
                     json.dumps(
                         chunking_settings.model_dump()

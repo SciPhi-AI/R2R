@@ -28,7 +28,7 @@ from .base import Service
 
 logger = logging.getLogger(__name__)
 MB_CONVERSION_FACTOR = 1024 * 1024
-
+STARTING_VERSION = "v0"
 
 class IngestionService(Service):
     def __init__(
@@ -56,7 +56,6 @@ class IngestionService(Service):
         user: UserResponse,
         metadatas: Optional[list[dict]] = None,
         document_ids: Optional[list[UUID]] = None,
-        versions: Optional[list[str]] = None,
         chunking_provider: Optional[ChunkingProvider] = None,
         *args: Any,
         **kwargs: Any,
@@ -89,7 +88,6 @@ class IngestionService(Service):
             # ingests all documents in parallel
             return await self.ingest_documents(
                 documents,
-                versions,
                 chunking_provider=chunking_provider,
                 *args,
                 **kwargs,
@@ -178,10 +176,11 @@ class IngestionService(Service):
                 )
                 documents.append(document)
 
+
             ingestion_results = await self.ingest_documents(
                 documents,
-                versions=new_versions,
                 chunking_provider=chunking_provider,
+                versions=new_versions,
                 *args,
                 **kwargs,
             )
@@ -252,7 +251,7 @@ class IngestionService(Service):
         }
 
         for iteration, document in enumerate(documents):
-            version = versions[iteration] if versions else "v0"
+            version = versions[iteration] if versions else STARTING_VERSION
 
             # Check for duplicates within the current batch
             if document.id in processed_documents:
@@ -263,7 +262,8 @@ class IngestionService(Service):
 
             if (
                 document.id in existing_document_info
-                and existing_document_info[document.id].version == version
+                # apply `geq` check to prevent re-ingestion of updated documents
+                and (existing_document_info[document.id].version >= version)
                 and existing_document_info[document.id].status == "success"
             ):
                 logger.error(
@@ -305,6 +305,9 @@ class IngestionService(Service):
             processed_documents[document.id] = document.metadata.get(
                 "title", str(document.id)
             )
+            # Add version to metadata to propagate through pipeline
+            document.metadata["version"] = version
+
 
         if duplicate_documents:
             duplicate_details = [
@@ -336,7 +339,6 @@ class IngestionService(Service):
                     not in [skipped["id"] for skipped in skipped_documents]
                 ],
             ),
-            versions=[info.version for info in document_infos],
             run_manager=self.run_manager,
             *args,
             **kwargs,
