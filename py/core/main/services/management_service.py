@@ -1,6 +1,5 @@
 import json
 import logging
-import uuid
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
@@ -63,9 +62,7 @@ class ManagementService(Service):
         aggregated_logs = []
 
         for run in run_info:
-            run_logs = [
-                log for log in logs if log["run_id"] == run.run_id
-            ]
+            run_logs = [log for log in logs if log["run_id"] == run.run_id]
             entries = [
                 {
                     "key": log["key"],
@@ -73,7 +70,9 @@ class ManagementService(Service):
                     "timestamp": log["timestamp"],
                 }
                 for log in run_logs
-            ][::-1]  # Reverse order so that earliest logged values appear first.
+            ][
+                ::-1
+            ]  # Reverse order so that earliest logged values appear first.
 
             log_entry = {
                 "run_id": str(run.run_id),
@@ -133,8 +132,8 @@ class ManagementService(Service):
                 )
 
         filtered_logs = dict(log_processor.populations.items())
-        results = {"filtered_logs": filtered_logs}
 
+        analytics_data = {}
         if analysis_types and analysis_types.analysis_types:
             for (
                 filter_key,
@@ -144,14 +143,14 @@ class ManagementService(Service):
                     analysis_type = analysis_config[0]
                     if analysis_type == "bar_chart":
                         extract_key = analysis_config[1]
-                        results[filter_key] = (
+                        analytics_data[filter_key] = (
                             AnalysisTypes.generate_bar_chart_data(
                                 filtered_logs[filter_key], extract_key
                             )
                         )
                     elif analysis_type == "basic_statistics":
                         extract_key = analysis_config[1]
-                        results[filter_key] = (
+                        analytics_data[filter_key] = (
                             AnalysisTypes.calculate_basic_statistics(
                                 filtered_logs[filter_key], extract_key
                             )
@@ -159,7 +158,7 @@ class ManagementService(Service):
                     elif analysis_type == "percentile":
                         extract_key = analysis_config[1]
                         percentile = int(analysis_config[2])
-                        results[filter_key] = (
+                        analytics_data[filter_key] = (
                             AnalysisTypes.calculate_percentile(
                                 filtered_logs[filter_key],
                                 extract_key,
@@ -171,7 +170,10 @@ class ManagementService(Service):
                             f"Unknown analysis type for filter key '{filter_key}': {analysis_type}"
                         )
 
-        return results
+        return {
+            "analytics_data": analytics_data or None,
+            "filtered_logs": filtered_logs,
+        }
 
     @telemetry_event("AppSettings")
     async def aapp_settings(self, *args: Any, **kwargs: Any):

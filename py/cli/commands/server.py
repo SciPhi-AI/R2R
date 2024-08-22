@@ -182,7 +182,14 @@ def generate_report():
 )
 @click.option("--project-name", default="r2r", help="Project name for Docker")
 @click.option("--image", help="Docker image to use")
-@click.option("--config-path", help="Path to the configuration file")
+@click.option(
+    "--config-name", default=None, help="Name of the R2R configuration to use"
+)
+@click.option(
+    "--config-path",
+    default=None,
+    help="Path to a custom R2R configuration file",
+)
 @click.pass_obj
 def serve(
     client,
@@ -194,6 +201,7 @@ def serve(
     exclude_postgres,
     project_name,
     image,
+    config_name,
     config_path,
 ):
     """Start the R2R server."""
@@ -239,7 +247,7 @@ def serve(
             click.echo(f"Opening browser to {url}")
             webbrowser.open(url)
     else:
-        run_local_serve(client, host, port)
+        run_local_serve(host, port, config_name, config_path)
 
 
 @cli.command()
