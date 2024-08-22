@@ -376,3 +376,35 @@ class GroupMixin(DatabaseMixin):
             )
             for row in results
         ]
+
+    def assign_document_to_group(self, document_id: UUID, group_id: UUID) -> None:
+        """
+        Assign a document to a group.
+
+        Args:
+            document_id (UUID): The ID of the document to assign.
+            group_id (UUID): The ID of the group to assign the document to.
+
+        Raises:
+            R2RException: If the group doesn't exist or if the document is not found.
+        """
+        if not self.group_exists(group_id):
+            raise R2RException(status_code=404, message="Group not found")
+
+        query = f"""
+            UPDATE {self._get_table_name('document_info')}
+            SET group_ids = array_append(group_ids, :group_id)
+            WHERE document_id = :document_id AND NOT (:group_id = ANY(group_ids))
+            RETURNING document_id
+        """
+        result = self.execute_query(
+            query, {"document_id": document_id, "group_id": group_id}
+        ).fetchone()
+
+
+        if not result:
+            raise R2RException(
+                status_code=404,
+                message="Document not found or already assigned to the group"
+            )
+  

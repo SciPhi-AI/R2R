@@ -13,7 +13,7 @@ class ImageParser(AsyncParser[DataType]):
         self,
         model: str = "gpt-4o",
         max_tokens: int = 2_048,
-        api_base: str = "https://api.openai.com/v1/chat/completions",
+        api_base: str = "https://api.openai.com/v2/chat/completions",
     ):
         self.model = model
         self.max_tokens = max_tokens

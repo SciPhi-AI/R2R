@@ -176,19 +176,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
             ]
         )
 
-    def get_document_groups(self, document_id: str) -> list[str]:
-        query = text(
-            f"""
-            SELECT group_ids
-            FROM document_info_{self.collection_name}
-            WHERE document_id = :document_id
-        """
-        )
-        with self.vx.Session() as sess:
-            result = sess.execute(query, {"document_id": document_id})
-            group_ids = result.scalar()
-        return [str(group_id) for group_id in (group_ids or [])]
-
     def semantic_search(
         self, query_vector: list[float], search_settings: VectorSearchSettings
     ) -> list[VectorSearchResult]:
@@ -336,6 +323,72 @@ class PostgresVectorDBProvider(VectorDBProvider):
             )
 
         return self.collection.delete(filters=filters)
+
+    def assign_document_to_group(self, document_id: str, group_id: str) -> None:
+        """
+        Assign a document to a group in the vector database.
+
+        Args:
+            document_id (str): The ID of the document to assign.
+            group_id (str): The ID of the group to assign the document to.
+
+        Raises:
+            ValueError: If the collection is not initialized.
+        """
+        if self.collection is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `assign_document_to_group`."
+            )
+
+        table_name = self.collection.table.name
+        query = text(
+            f"""
+            UPDATE vecs."{table_name}"
+            SET group_ids = array_append(group_ids, :group_id)
+            WHERE document_id = :document_id AND NOT (:group_id = ANY(group_ids))
+            RETURNING document_id
+            """
+        )
+
+        with self.vx.Session() as sess:
+            result = sess.execute(query, {"document_id": document_id, "group_id": group_id})
+            sess.commit()
+
+        if result.rowcount == 0:
+            logger.warning(f"Document {document_id} not found or already assigned to group {group_id}")
+
+    def remove_document_from_group(self, document_id: str, group_id: str) -> None:
+        """
+        Remove a document from a group in the vector database.
+
+        Args:
+            document_id (str): The ID of the document to remove.
+            group_id (str): The ID of the group to remove the document from.
+
+        Raises:
+            ValueError: If the collection is not initialized.
+        """
+        if self.collection is None:
+            raise ValueError(
+                "Please call `initialize_collection` before attempting to run `remove_document_from_group`."
+            )
+
+        table_name = self.collection.table.name
+        query = text(
+            f"""
+            UPDATE vecs."{table_name}"
+            SET group_ids = array_remove(group_ids, :group_id)
+            WHERE document_id = :document_id AND :group_id = ANY(group_ids)
+            RETURNING document_id
+            """
+        )
+
+        with self.vx.Session() as sess:
+            result = sess.execute(query, {"document_id": document_id, "group_id": group_id})
+            sess.commit()
+
+        if result.rowcount == 0:
+            logger.warning(f"Document {document_id} not found in group {group_id} or already removed")
 
     def get_document_chunks(self, document_id: str) -> list[dict]:
         if not self.collection:

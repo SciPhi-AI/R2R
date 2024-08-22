@@ -471,7 +471,7 @@ class ManagementMethods:
         )
 
     @staticmethod
-    async def get_document_groups(
+    async def document_groups(
         client,
         document_id: str,
     ) -> dict:
@@ -485,7 +485,7 @@ class ManagementMethods:
             dict: The list of groups that the document is assigned to.
         """
         return await client._make_request(
-            "GET", f"get_document_groups/{document_id}"
+            "GET", f"document_groups/{document_id}"
         )
 
     @staticmethod

@@ -408,32 +408,29 @@ class ManagementService(Service):
         self, document_id: str, group_id: UUID
     ):
 
-        if self.providers.database.vector.assign_document_to_group(
+        self.providers.database.relational.assign_document_to_group(
             document_id, group_id
-        ):
-            return {"message": "Document assigned to group successfully"}
-        else:
-            raise R2RException(
-                status_code=404,
-                message="Document not found or assignment failed",
-            )
+        )
+        self.providers.database.vector.assign_document_to_group(
+            document_id, group_id
+        )
+        return {"message": "Document assigned to group successfully"}
 
     @telemetry_event("RemoveDocumentFromGroup")
     async def aremove_document_from_group(
         self, document_id: str, group_id: UUID
     ):
-        if self.providers.database.vector.remove_document_from_group(
+        self.providers.database.relational.remove_document_from_group(
             document_id, group_id
-        ):
-            return {"message": "Document removed from group successfully"}
-        else:
-            raise R2RException(
-                status_code=404, message="Document not found or removal failed"
-            )
+        )
+        self.providers.database.vector.remove_document_from_group(
+            document_id, group_id
+        )
+        return {"message": "Document removed from group successfully"}
 
-    @telemetry_event("GetDocumentGroups")
-    async def aget_document_groups(self, document_id: str):
-        group_ids = self.providers.database.relational.get_document_groups(
+    @telemetry_event("DocumentGroups")
+    async def adocument_groups(self, document_id: str):
+        group_ids = self.providers.database.relational.document_groups(
             document_id
         )
         return {"group_ids": [str(group_id) for group_id in group_ids]}
@@ -615,3 +612,7 @@ class ManagementService(Service):
         return self.providers.database.relational.get_documents_in_group(
             group_id, offset, limit
         )
+
+    @telemetry_event("DocumentGroups")
+    async def adocument_groups(self, document_id: str) -> list[str]:
+        return self.providers.database.relational.document_groups(document_id)

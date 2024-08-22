@@ -153,7 +153,7 @@ def inspect_knowledge_graph(client, limit):
 ## TODO: Implement remove_document_from_group
 
 
-## TODO: Implement get_document_groups
+## TODO: Implement document_groups
 
 
 ## TODO: Implement get_documents_in_group

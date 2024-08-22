@@ -42,13 +42,13 @@ class R2RApp:
         )
 
         # Include routers in the app
-        self.app.include_router(ingestion_router, prefix="/v1")
-        self.app.include_router(management_router, prefix="/v1")
-        self.app.include_router(retrieval_router, prefix="/v1")
-        self.app.include_router(auth_router, prefix="/v1")
-        self.app.include_router(restructure_router, prefix="/v1")
+        self.app.include_router(ingestion_router, prefix="/v2")
+        self.app.include_router(management_router, prefix="/v2")
+        self.app.include_router(retrieval_router, prefix="/v2")
+        self.app.include_router(auth_router, prefix="/v2")
+        self.app.include_router(restructure_router, prefix="/v2")
 
-        @self.app.router.get("/v1/openapi_spec")
+        @self.app.router.get("/v2/openapi_spec")
         async def openapi_spec():
             from fastapi.openapi.utils import get_openapi
 

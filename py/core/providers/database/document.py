@@ -1,7 +1,8 @@
 from typing import Optional
 from uuid import UUID
 
-from core.base import DocumentInfo, DocumentStatus, DocumentType
+from core.base import DocumentInfo, DocumentStatus, DocumentType, R2RException
+from core.base.api.models.management.responses import GroupResponse
 
 from .base import DatabaseMixin
 
@@ -109,16 +110,54 @@ class DocumentMixin(DatabaseMixin):
             )
             for row in results
         ]
-
-    def get_document_groups(self, document_id: str) -> list[str]:
+    
+    def document_groups(self, document_id: UUID) -> list[GroupResponse]:
         query = f"""
-            SELECT group_ids
-            FROM {self._get_table_name('document_info')}
-            WHERE document_id = :document_id
+            SELECT g.group_id, g.name, g.description, g.created_at, g.updated_at
+            FROM {self._get_table_name('groups')} g
+            JOIN {self._get_table_name('document_info')} d ON g.group_id = ANY(d.group_ids)
+            WHERE d.document_id = :document_id
         """
         params = {"document_id": document_id}
-        result = self.execute_query(query, params).fetchone()
+        results = self.execute_query(query, params).fetchall()
 
-        if result and result[0]:
-            return [str(group_id) for group_id in result[0]]
-        return []
+        return [
+            GroupResponse(
+                group_id=row[0],
+                name=row[1],
+                description=row[2],
+                created_at=row[3],
+                updated_at=row[4],
+            )
+            for row in results
+        ]
+        
+    def remove_document_from_group(self, document_id: UUID, group_id: UUID) -> None:
+        """
+        Remove a document from a group.
+
+        Args:
+            document_id (UUID): The ID of the document to remove.
+            group_id (UUID): The ID of the group to remove the document from.
+
+        Raises:
+            R2RException: If the group doesn't exist or if the document is not in the group.
+        """
+        if not self.group_exists(group_id):
+            raise R2RException(status_code=404, message="Group not found")
+
+        query = f"""
+            UPDATE {self._get_table_name('document_info')}
+            SET group_ids = array_remove(group_ids, :group_id)
+            WHERE document_id = :document_id AND :group_id = ANY(group_ids)
+            RETURNING document_id
+        """
+        result = self.execute_query(
+            query, {"document_id": document_id, "group_id": group_id}
+        ).fetchone()
+
+        if not result:
+            raise R2RException(
+                status_code=404,
+                message="Document not found in the specified group"
+            )    

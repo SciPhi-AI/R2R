@@ -61,6 +61,7 @@ class DocumentOverviewResponse(BaseModel):
     updated_at: datetime
     status: str
     version: str
+    group_ids: list[UUID]
     metadata: Dict[str, Any]
 
 

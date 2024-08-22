@@ -362,16 +362,17 @@ class ManagementRouter(BaseRouter):
             user_id: str = Body(..., description="User ID"),
             group_id: str = Body(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
-        ) -> WrappedGroupResponse:
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can remove users from groups.", 403
                 )
             user_uuid = UUID(user_id)
             group_uuid = UUID(group_id)
-            return await self.engine.aremove_user_from_group(
+            await self.engine.aremove_user_from_group(
                 user_uuid, group_uuid
             )
+            return None
 
         # TODO - Proivde response model
         @self.router.get("/get_users_in_group/{group_id}")
@@ -414,7 +415,7 @@ class ManagementRouter(BaseRouter):
             document_id: str = Body(..., description="Document ID"),
             group_id: str = Body(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
-        ) -> WrappedGroupResponse:
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can assign documents to groups.", 403
@@ -431,24 +432,25 @@ class ManagementRouter(BaseRouter):
             document_id: str = Body(..., description="Document ID"),
             group_id: str = Body(..., description="Group ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
-        ) -> WrappedGroupResponse:
+        ) -> None:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can remove documents from groups.", 403
                 )
             document_uuid = UUID(document_id)
             group_uuid = UUID(group_id)
-            return await self.engine.aremove_document_from_group(
+            await self.engine.aremove_document_from_group(
                 document_uuid, group_uuid
             )
+            return None
 
-        @self.router.get("/get_document_groups/{document_id}")
+        @self.router.get("/document_groups/{document_id}")
         @self.base_endpoint
-        async def get_document_groups_app(
+        async def document_groups_app(
             document_id: str = Path(..., description="Document ID"),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedGroupListResponse:
-            return await self.engine.aget_document_groups(document_id)
+            return await self.engine.adocument_groups(document_id)
 
         @self.router.get("/group/{group_id}/documents")
         @self.base_endpoint

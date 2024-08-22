@@ -1,4 +1,3 @@
-# TODO: need to import this from the package, not from the local directory
 from r2r import R2RClient
 
 if __name__ == "__main__":

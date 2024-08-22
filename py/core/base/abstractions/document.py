@@ -26,10 +26,10 @@ class DocumentStatus(str, Enum):
 
 class DocumentType(str, Enum):
     """Types of documents that can be stored."""
-
     CSV = "csv"
     DOCX = "docx"
     HTML = "html"
+    HTM = "htm"
     JSON = "json"
     MD = "md"
     PDF = "pdf"
