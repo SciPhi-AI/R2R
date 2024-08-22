@@ -52,6 +52,9 @@ jobs:
           tags: |
             type=raw,value=${{ steps.version.outputs.RELEASE_VERSION }}
             type=raw,value=latest
+          tags_unstructured: |
+            type=raw,value=${{ steps.version.outputs.RELEASE_VERSION }}
+            type=raw,value=latest-unstructured
 
       - name: Build and Push Docker Image (Standard)
         uses: docker/build-push-action@v5
@@ -71,8 +74,8 @@ jobs:
           context: .
           file: ./Dockerfile.unstructured
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags_unstructured }}
+          labels: ${{ steps.meta.outputs.labels_unstructured }}
           platforms: linux/amd64,linux/arm64
           build-args: |
             CACHE_BUST=${{ steps.cache-buster.outputs.CACHE_BUSTER }}
