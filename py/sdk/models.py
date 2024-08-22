@@ -205,6 +205,37 @@ class Token(BaseModel):
     token_type: str
 
 
+class IndexMeasure(str, Enum):
+    """
+    An enum representing the types of distance measures available for indexing.
+
+    Attributes:
+        cosine_distance (str): The cosine distance measure for indexing.
+        l2_distance (str): The Euclidean (L2) distance measure for indexing.
+        max_inner_product (str): The maximum inner product measure for indexing.
+    """
+
+    cosine_distance = "cosine_distance"
+    l2_distance = "l2_distance"
+    max_inner_product = "max_inner_product"
+
+
+
+class HybridSearchSettings(BaseModel):
+    full_text_weight: float = Field(
+        default=1.0, description="Weight to apply to full text search"
+    )
+    semantic_weight: float = Field(
+        default=5.0, description="Weight to apply to semantic search"
+    )
+    full_text_limit: int = Field(
+        default=200,
+        description="Maximum number of results to return from full text search",
+    )
+    rrf_k: int = Field(
+        default=50, description="K-value for RRF (Rank Reciprocal Fusion)"
+    )
+
 class VectorSearchSettings(BaseModel):
     use_vector_search: bool = Field(
         default=True, description="Whether to use vector search"

@@ -34,7 +34,7 @@ class IngestionRouter(BaseRouter):
 
     def setup_routes(self):
         # Note, we use the following verbose input parameters because FastAPI struggles to handle `File` input and `Body` inputs
-        # at the same time. Therefore, we must ues `Form` inputs for the metadata, document_ids, and versions inputs.
+        # at the same time. Therefore, we must ues `Form` inputs for the metadata, document_ids
         ingest_files_extras = self.openapi_extras.get("ingest_files", {})
         ingest_files_descriptions = ingest_files_extras.get(
             "input_descriptions", {}
@@ -52,9 +52,6 @@ class IngestionRouter(BaseRouter):
             document_ids: Optional[Json[list[UUID]]] = Form(
                 None,
                 description=ingest_files_descriptions.get("document_ids"),
-            ),
-            versions: Optional[Json[list[str]]] = Form(
-                None, description=ingest_files_descriptions.get("versions")
             ),
             metadatas: Optional[Json[list[dict]]] = Form(
                 None, description=ingest_files_descriptions.get("metadatas")
@@ -107,7 +104,6 @@ class IngestionRouter(BaseRouter):
                 files=files,
                 metadatas=metadatas,
                 document_ids=document_ids,
-                versions=versions,
                 user=auth_user,
                 chunking_provider=chunking_provider,
             )
