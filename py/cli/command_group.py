@@ -15,7 +15,7 @@ from sdk.client import R2RClient
 @click.option(
     "--base-url",
     default="http://localhost:8000",
-    help="Base URL for client mode",
+    help="The base URL of the R2R server",
 )
 @click.pass_context
 def cli(ctx, config_path, config_name, base_url):
