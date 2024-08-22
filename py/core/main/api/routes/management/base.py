@@ -101,8 +101,10 @@ class ManagementRouter(BaseRouter):
 
             try:
                 result = await self.engine.aanalytics(
-                    filter_criteria=LogFilterCriteria(**filter_criteria),
-                    analysis_types=AnalysisTypes(**analysis_types),
+                    filter_criteria=LogFilterCriteria(filters=filter_criteria),
+                    analysis_types=AnalysisTypes(
+                        analysis_types=analysis_types
+                    ),
                 )
                 return result
             except json.JSONDecodeError as e:
