@@ -74,7 +74,7 @@ class QueryTransformPipe(GeneratorPipe):
                 messages=query_transform_request,
                 generation_config=query_transform_generation_config,
             )
-            content = self.llm_provider.extract_content(response)
+            content = response.choices[0].message.content
             outputs = content.split("\n")
             outputs = [
                 output.strip() for output in outputs if output.strip() != ""

@@ -1,7 +1,7 @@
 import json
 import logging
 from typing import Any, AsyncGenerator, Optional
-from uuid import UUID
+import uuid
 
 from core.base import (
     AsyncPipe,
@@ -37,7 +37,7 @@ class WebSearchPipe(SearchPipe):
     async def search(
         self,
         message: str,
-        run_id: UUID,
+        run_id: uuid.UUID,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorSearchResult, None]:
@@ -55,17 +55,17 @@ class WebSearchPipe(SearchPipe):
         for result in results:
             if result.get("snippet") is None:
                 continue
-            result.text = result.pop("snippet")
+            text = result.pop("snippet")
             search_result = VectorSearchResult(
                 fragment_id=generate_id_from_label(str(result)),
-                extraction_id=uuid.uuid4(),  # Generate a new UUID for extraction_id
-                document_id=uuid.uuid4(),  # Generate a new UUID for document_id
+                extraction_id=uuid.uuid5(uuid.NAMESPACE_DNS, str(uuid.uuid4())),  # Generate a new UUID for extraction_id
+                document_id=uuid.uuid5(uuid.NAMESPACE_DNS, str(uuid.uuid4())),  # Generate a new UUID for document_id
                 user_id=None,  # Web search results don't have a user_id
                 group_ids=[],  # Web search results don't belong to any group
                 score=result.get(
                     "score", 0
                 ),  # TODO - Consider dynamically generating scores based on similarity
-                text=result.text,
+                text=text,
                 metadata=result,
             )
             search_results.append(search_result)
@@ -74,14 +74,14 @@ class WebSearchPipe(SearchPipe):
         await self.enqueue_log(
             run_id=run_id,
             key="search_results",
-            value=json.dumps([ele.dict() for ele in search_results]),
+            value=json.dumps([ele.json() for ele in search_results]),
         )
 
     async def _run_logic(
         self,
         input: AsyncPipe.Input,
         state: AsyncState,
-        run_id: UUID,
+        run_id: uuid.UUID,
         *args: Any,
         **kwargs,
     ) -> AsyncGenerator[VectorSearchResult, None]:
