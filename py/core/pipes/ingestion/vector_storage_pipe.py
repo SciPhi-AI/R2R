@@ -74,11 +74,8 @@ class VectorStoragePipe(AsyncPipe):
     ]:
         vector_batch = []
         document_counts = {}
-        connection_attempts = 0
-        last_vector_received = None
 
         async for msg in input.message:
-            last_vector_received = asyncio.get_event_loop().time()
             if isinstance(msg, R2RDocumentProcessingError):
                 yield (msg.document_id, msg)
                 continue
@@ -89,7 +86,6 @@ class VectorStoragePipe(AsyncPipe):
             )
 
             if len(vector_batch) >= self.storage_batch_size:
-                connection_attempts += 1
                 try:
                     await self.store(vector_batch)
                 except Exception as e:
@@ -97,13 +93,10 @@ class VectorStoragePipe(AsyncPipe):
                 vector_batch.clear()
 
         if vector_batch:
-            connection_attempts += 1
             try:
                 await self.store(vector_batch)
             except Exception as e:
                 logger.error(f"Failed to store final vector batch: {e}")
-
-        logger.info(f"Total connection attempts: {connection_attempts}")
 
         for document_id, count in document_counts.items():
             yield (

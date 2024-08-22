@@ -13,14 +13,14 @@ from pydantic import Json
 
 from ....assembly.factory import R2RProviderFactory
 from ....engine import R2REngine
-from ..base_router import BaseRouter
+from ..base_router import BaseRouter, RunType
 
 logger = logging.getLogger(__name__)
 
 
 class IngestionRouter(BaseRouter):
-    def __init__(self, engine: R2REngine):
-        super().__init__(engine)
+    def __init__(self, engine: R2REngine, run_type: RunType = RunType.INGESTION):
+        super().__init__(engine, run_type)
         self.openapi_extras = self.load_openapi_extras()
         self.setup_routes()
 

@@ -23,8 +23,8 @@ from ..base_router import BaseRouter
 
 
 class RetrievalRouter(BaseRouter):
-    def __init__(self, engine: R2REngine):
-        super().__init__(engine)
+    def __init__(self, engine: R2REngine, run_type: RunType = RunType.RETRIEVAL):
+        super().__init__(engine, run_type)
         self.openapi_extras = self.load_openapi_extras()
         self.setup_routes()
 

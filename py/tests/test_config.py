@@ -72,7 +72,6 @@ def mock_file():
                 "rerank_model": "None",
                 "concurrent_request_limit": 256,
             },
-            "eval": {"provider": "None"},
             "ingestion": {
                 "excluded_parsers": ["mp4"],
                 "override_parsers": [
@@ -143,7 +142,6 @@ def test_r2r_config_deserialization(mock_file, mock_redis_client):
             "concurrent_request_limit": 256,
         },
         "kg": {"provider": "None"},
-        "eval": {"provider": "None"},
         "parsing": {"provider": "r2r"},
         "chunking": {"provider": "r2r"},
         "completion": {"provider": "litellm"},
