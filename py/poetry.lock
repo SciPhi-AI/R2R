@@ -291,18 +291,20 @@ tests-mypy = ["mypy (>=1.11.1)", "pytest-mypy-plugins"]
 
 [[package]]
 name = "autograd"
-version = "1.6.2"
-description = "Efficiently computes derivatives of numpy code."
+version = "1.7.0"
+description = "Efficiently computes derivatives of NumPy code."
 optional = true
-python-versions = "*"
+python-versions = ">=3.8"
 files = [
-    {file = "autograd-1.6.2-py3-none-any.whl", hash = "sha256:208dde2a938e63b4f8f5049b1985505139e529068b0d26f8cd7771fd3eb145d5"},
-    {file = "autograd-1.6.2.tar.gz", hash = "sha256:8731e08a0c4e389d8695a40072ada4512641c113b6cace8f4cfbe8eb7e9aedeb"},
+    {file = "autograd-1.7.0-py3-none-any.whl", hash = "sha256:49680300f842f3a8722b060ac0d3ed7aca071d1ad4d3d38c9fdadafdcc73c30b"},
+    {file = "autograd-1.7.0.tar.gz", hash = "sha256:de743fd368d6df523cd37305dcd171861a9752a144493677d2c9f5a56983ff2f"},
 ]
 
 [package.dependencies]
-future = ">=0.15.2"
-numpy = ">=1.12"
+numpy = "*"
+
+[package.extras]
+scipy = ["scipy"]
 
 [[package]]
 name = "backoff"
@@ -1166,17 +1168,6 @@ test-full = ["adlfs", "aiohttp (!=4.0.0a0,!=4.0.0a1)", "cloudpickle", "dask", "d
 tqdm = ["tqdm"]
 
 [[package]]
-name = "future"
-version = "1.0.0"
-description = "Clean single-source support for Python 3 and 2"
-optional = true
-python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
-files = [
-    {file = "future-1.0.0-py3-none-any.whl", hash = "sha256:929292d34f5872e70396626ef385ec22355a1fae8ad29e1a734c3e43f9fbc216"},
-    {file = "future-1.0.0.tar.gz", hash = "sha256:bd2968309307861edae1458a4f8a4f3598c03be43b97521076aebf5d94c07b05"},
-]
-
-[[package]]
 name = "gensim"
 version = "4.3.3"
 description = "Python framework for fast Vector Space Modelling"
@@ -1855,13 +1846,13 @@ files = [
 
 [[package]]
 name = "litellm"
-version = "1.44.1"
+version = "1.44.2"
 description = "Library to easily interface with LLM API providers"
 optional = true
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.44.1-py3-none-any.whl", hash = "sha256:6367cfafbdd5d6a5125cefd21375df89f0b8a0d77044616cd88462be77d05564"},
-    {file = "litellm-1.44.1.tar.gz", hash = "sha256:b9013df8b255335a08df1e9e7ac589dab97b7fe8adb0c614e2ef4b65adcc33fb"},
+    {file = "litellm-1.44.2-py3-none-any.whl", hash = "sha256:7c94618f06c5990f8103b65a6752c7713da334524f9c0334346b8f63df5cdfb5"},
+    {file = "litellm-1.44.2.tar.gz", hash = "sha256:b9290b1414caf6a955a5a493fb1b1dce95b2710a934e968c9ab04d0a3fba804c"},
 ]
 
 [package.dependencies]
