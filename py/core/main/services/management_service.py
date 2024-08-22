@@ -234,7 +234,7 @@ class ManagementService(Service):
         except Exception as e:
             logger.error(f"An error occurred in ascore_completion: {e}")
 
-        return "ok"
+        return {"message": "Completion scored successfully"}
 
     @telemetry_event("UsersOverview")
     async def ausers_overview(

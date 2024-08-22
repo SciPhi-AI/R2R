@@ -85,15 +85,14 @@ describe("r2rClient Integration Tests", () => {
     await expect(client.agent(messages)).resolves.not.toThrow();
   }, 30000);
 
-  // TODO: Fix this test
-  // test("Score completion", async () => {
-  //   const message_id = "4173d5f9-f62e-5981-8e35-5154b9883c7f";
-  //   const score = 0.5;
+  test("Score completion", async () => {
+    const message_id = "906bb0a8-e6f6-5474-a5d4-7d7f28937f41";
+    const score = 0.5;
 
-  //   await expect(
-  //     client.scoreCompletion(message_id, score),
-  //   ).resolves.not.toThrow();
-  // });
+    await expect(
+      client.scoreCompletion(message_id, score),
+    ).resolves.not.toThrow();
+  });
 
   // TOOD: Fix in R2R, table logs has no column named run_id
   // test("Agentic RAG response with streaming", async () => {
@@ -126,10 +125,9 @@ describe("r2rClient Integration Tests", () => {
     ).resolves.toBe("");
   });
 
-  // TODO: verfiy that this works, blocked by R2R logging issues
-  // test("Get logs", async () => {
-  //   await expect(client.logs()).resolves.not.toThrow();
-  // });
+  test("Get logs", async () => {
+    await expect(client.logs()).resolves.not.toThrow();
+  });
 
   test("App settings", async () => {
     await expect(client.appSettings()).resolves.not.toThrow();
@@ -137,15 +135,11 @@ describe("r2rClient Integration Tests", () => {
 
   test("Get analytics", async () => {
     const filterCriteria: Record<string, any> | string = {
-      filters: {
-        search_latencies: "search_latency",
-      },
+      search_latencies: "search_latency",
     };
 
     const analysisTypes: Record<string, any> | string = {
-      analysis_types: {
-        search_latencies: ["basic_statistics", "search_latency"],
-      },
+      search_latencies: ["basic_statistics", "search_latency"],
     };
 
     await expect(
@@ -172,7 +166,6 @@ describe("r2rClient Integration Tests", () => {
     await expect(
       client.delete({ document_id: "73749580-1ade-50c6-8fbe-a5e9e87783c8" }),
     ).resolves.toBe("");
-
 
     // Deletes myshkin.txt
     await expect(
