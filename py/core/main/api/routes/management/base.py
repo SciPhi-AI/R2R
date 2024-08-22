@@ -27,12 +27,12 @@ from fastapi import Body, Depends, Path, Query
 from pydantic import Json
 
 from ....engine import R2REngine
-from ..base_router import BaseRouter
+from ..base_router import BaseRouter, RunType
 
 
 class ManagementRouter(BaseRouter):
-    def __init__(self, engine: R2REngine):
-        super().__init__(engine)
+    def __init__(self, engine: R2REngine, run_type: RunType = RunType.MANAGEMENT):
+        super().__init__(engine, run_type)
         self.start_time = datetime.now(timezone.utc)
         self.setup_routes()
 

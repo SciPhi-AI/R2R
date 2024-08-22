@@ -64,7 +64,7 @@ class ManagementService(Service):
 
         for run in run_info:
             run_logs = [
-                log for log in logs if log["run_id"] == str(run.run_id)
+                log for log in logs if log["run_id"] == run.run_id
             ]
             entries = [
                 {
@@ -73,12 +73,10 @@ class ManagementService(Service):
                     "timestamp": log["timestamp"],
                 }
                 for log in run_logs
-            ][
-                ::-1
-            ]  # Reverse order so that earliest logged values appear first.
+            ][::-1]  # Reverse order so that earliest logged values appear first.
 
             log_entry = {
-                "run_id": run.run_id,
+                "run_id": str(run.run_id),
                 "run_type": run.run_type,
                 "entries": entries,
             }
@@ -87,7 +85,7 @@ class ManagementService(Service):
                 log_entry["timestamp"] = run.timestamp.isoformat()
 
             if hasattr(run, "user_id") and run.user_id is not None:
-                log_entry["user_id"] = run.user_id
+                log_entry["user_id"] = str(run.user_id)
 
             aggregated_logs.append(log_entry)
 
