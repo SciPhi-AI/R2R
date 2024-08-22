@@ -45,7 +45,7 @@ jobs:
         run: echo "CACHE_BUSTER=$(date +%s)" >> $GITHUB_OUTPUT
 
       - name: Extract metadata (tags, labels) for Docker
-        id: meta
+        id: docker_extract
         uses: docker/metadata-action@v5
         with:
           images: ragtoriches/prod
@@ -60,10 +60,10 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: ./py/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.docker_extract.outputs.tags }}
+          labels: ${{ steps.docker_extract.outputs.labels }}
           platforms: linux/amd64,linux/arm64
           build-args: |
             CACHE_BUST=${{ steps.cache-buster.outputs.CACHE_BUSTER }}
@@ -72,21 +72,10 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.unstructured
+          file: ./py/Dockerfile.unstructured
           push: true
-          tags: ${{ steps.meta.outputs.tags_unstructured }}
-          labels: ${{ steps.meta.outputs.labels_unstructured }}
+          tags: ${{ steps.docker_extract.outputs.tags_unstructured }}
+          labels: ${{ steps.docker_extract.outputs.labels_unstructured }}
           platforms: linux/amd64,linux/arm64
           build-args: |
             CACHE_BUST=${{ steps.cache-buster.outputs.CACHE_BUSTER }}
-
-      - name: Modify and Push Unstructured Tags
-        run: |
-          for tag in ${{ steps.meta.outputs.tags }}; do
-            IFS=':' read -ra PARTS <<< "$tag"
-            REPO="${PARTS[0]}"
-            VERSION="${PARTS[1]}"
-            NEW_TAG="${REPO}:${VERSION}-unstructured"
-            docker tag $tag $NEW_TAG
-            docker push $NEW_TAG
-          done
