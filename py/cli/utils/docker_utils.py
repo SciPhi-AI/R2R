@@ -124,7 +124,7 @@ def run_docker_serve(
 
         config = R2RConfig.from_toml(R2RBuilder.CONFIG_OPTIONS[config_name])
 
-    if config.parsing_config.provider == "unstructured" and not image:
+    if config.parsing.provider == "unstructured" and not image:
         image = "ragtoriches/prod_unstructured"
 
     completion_provider = config.completion.provider
