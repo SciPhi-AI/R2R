@@ -1,0 +1,25 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-yaml
+
+  - repo: local
+    hooks:
+      - id: isort
+        name: isort
+        entry: bash -c 'cd py && poetry run isort $(git diff --cached --name-only --diff-filter=ACM | grep ".py$" | xargs -I {} echo ../{}) || true'
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: black
+        name: black
+        entry: bash -c 'cd py && poetry run black .'
+        language: system
+        types: [python]
+        pass_filenames: false
