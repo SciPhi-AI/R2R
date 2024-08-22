@@ -20,7 +20,9 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 class AuthRouter(BaseRouter):
-    def __init__(self, engine: "R2REngine", run_type: RunType = RunType.INGESTION):
+    def __init__(
+        self, engine: "R2REngine", run_type: RunType = RunType.INGESTION
+    ):
         super().__init__(engine, run_type)
         self.setup_routes()
 
