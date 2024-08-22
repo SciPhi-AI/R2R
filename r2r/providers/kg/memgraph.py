@@ -38,24 +38,16 @@ def remove_empty_values(input_dict):
     # Create a new dictionary excluding empty values
     return {key: value for key, value in input_dict.items() if value}
 
-
-# TODO(@DavIvek): Figure out the labels and entities
-BASE_ENTITY_LABEL = "__Entity__"
-EXCLUDED_LABELS = ["_Bloom_Perspective_", "_Bloom_Scene_"]
-EXCLUDED_RELS = ["_Bloom_HAS_SCENE_"]
 EXHAUSTIVE_SEARCH_LIMIT = 10000
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
 
 # TODO(@DavIvek): Figure out alternative to APOC
 node_properties_query = """
-CALL apoc.meta.data()
-YIELD label, other, elementType, type, property
-WHERE NOT type = "RELATIONSHIP" AND elementType = "node"
-  AND NOT label IN $EXCLUDED_LABELS
-WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
-RETURN {labels: nodeLabels, properties: properties} AS output
-
+CALL schema.node_type_properties()
+YIELD nodeType, nodeLabels, mandatory, propertyName, propertyTypes
+WITH nodeLabels, collect({property: propertyName, type: propertyTypes}) AS properties
+RETURN {labels: nodeLabels, properties: properties} AS output;
 """
 # TODO(@DavIvek): Figure out alternative to APOC
 rel_properties_query = """
@@ -193,9 +185,6 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
         """Refresh the schema."""
         node_query_results = self.structured_query(
             node_properties_query,
-            param_map={
-                "EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]
-            },
         )
         node_properties = (
             [el["output"] for el in node_query_results]
@@ -204,7 +193,7 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
         )
 
         rels_query_result = self.structured_query(
-            rel_properties_query, param_map={"EXCLUDED_LABELS": EXCLUDED_RELS}
+            rel_properties_query, 
         )
         rel_properties = (
             [el["output"] for el in rels_query_result]
@@ -214,9 +203,6 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
 
         rel_objs_query_result = self.structured_query(
             rel_query,
-            param_map={
-                "EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]
-            },
         )
         relationships = (
             [el["output"] for el in rel_objs_query_result]
@@ -226,18 +212,21 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
 
         # Get constraints & indexes
         try:
-            constraint = self.structured_query("SHOW CONSTRAINTS")
-            index = self.structured_query(
-                "CALL apoc.schema.nodes() YIELD label, properties, type, size, "
-                "valuesSelectivity WHERE type = 'RANGE' RETURN *, "
-                "size * valuesSelectivity as distinctValues"
-            )
+            constraint = self.structured_query("SHOW CONSTRAINT INFO")
+            index = self.structured_query("SHOW INDEX INFO")
         except (
             self.neo4j.exceptions.ClientError
         ):  # Read-only user might not have access to schema information
             constraint = []
             index = []
 
+        self.structured_schema = {"node_props": {}, "rel_props": {}, "relationships": {}, "metadata": {}}
+        
+        # memgraph sends labels as a list, if we have multiple labels on a node we need to iterate over them 
+        for el in node_properties:
+            for label in el["labels"]:
+                self.structured_schema["node_props"][label] = el["properties"]
+        
         self.structured_schema = {
             "node_props": {
                 el["labels"]: el["properties"] for el in node_properties
@@ -256,9 +245,6 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
         )
         # Update node info
         for node in schema_counts[0].get("nodes", []):
-            # Skip bloom labels
-            if node["name"] in EXCLUDED_LABELS:
-                continue
             node_props = self.structured_schema["node_props"].get(node["name"])
             if not node_props:  # The node has no properties
                 continue
@@ -273,9 +259,6 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
                     prop.update(enhanced_info[prop["property"]])
         # Update rel info
         for rel in schema_counts[0].get("relationships", []):
-            # Skip bloom labels
-            if rel["name"] in EXCLUDED_RELS:
-                continue
             rel_props = self.structured_schema["rel_props"].get(rel["name"])
             if not rel_props:  # The rel has no properties
                 continue
@@ -564,7 +547,7 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
 
         return triples
 
-    # TODO(@DavIvek): Implement the structured_query
+    # TODO(@DavIvek): Implement the structured_query - I believe that we can use this one
     def structured_query(
         self, query: str, param_map: Optional[Dict[str, Any]] = None
     ) -> Any:

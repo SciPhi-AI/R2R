@@ -26,7 +26,6 @@ from r2r.base.abstractions.llama_abstractions import (
     value_sanitize,
 )
 
-
 def remove_empty_values(input_dict):
     """
     Remove entries with empty values from the dictionary.
