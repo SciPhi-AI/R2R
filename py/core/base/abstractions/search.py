@@ -55,7 +55,22 @@ class VectorSearchResult(BaseModel):
         }
 
 
-KGSearchResult = list[Tuple[str, list[Dict[str, Any]]]]
+class KGSearchResult(BaseModel):
+    """Result of a knowledge graph search operation."""
+    query: str
+    search_result: list[Dict[str, Any]]
+
+    def __str__(self) -> str:
+        return f"KGSearchResult(query={self.query}, search_result={self.search_result})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    def dict(self) -> dict:
+        return {
+            "query": self.query,
+            "search_result": self.search_result,
+        }
 
 
 class AggregateSearchResult(BaseModel):
