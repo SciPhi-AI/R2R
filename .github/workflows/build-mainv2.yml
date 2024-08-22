@@ -45,7 +45,7 @@ jobs:
         run: echo "CACHE_BUSTER=$(date +%s)" >> $GITHUB_OUTPUT
 
       - name: Extract metadata (tags, labels) for Docker
-        id: docker_extract
+        id: meta
         uses: docker/metadata-action@v5
         with:
           images: ragtoriches/prod
@@ -62,8 +62,8 @@ jobs:
           context: .
           file: ./py/Dockerfile
           push: true
-          tags: ${{ steps.docker_extract.outputs.tags }}
-          labels: ${{ steps.docker_extract.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
           build-args: |
             CACHE_BUST=${{ steps.cache-buster.outputs.CACHE_BUSTER }}
@@ -74,8 +74,8 @@ jobs:
           context: .
           file: ./py/Dockerfile.unstructured
           push: true
-          tags: ${{ steps.docker_extract.outputs.tags_unstructured }}
-          labels: ${{ steps.docker_extract.outputs.labels_unstructured }}
+          tags: ${{ steps.meta.outputs.tags_unstructured }}
+          labels: ${{ steps.meta.outputs.labels_unstructured }}
           platforms: linux/amd64,linux/arm64
           build-args: |
             CACHE_BUST=${{ steps.cache-buster.outputs.CACHE_BUSTER }}
