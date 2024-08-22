@@ -55,6 +55,10 @@ jobs:
           tags_unstructured: |
             type=raw,value=${{ steps.version.outputs.RELEASE_VERSION }}
             type=raw,value=latest-unstructured
+          labels: |
+            type=raw,value=latest
+          labels_unstructured: |
+            type=raw,value=latest-unstructured
 
       - name: Build and Push Docker Image (Standard)
         uses: docker/build-push-action@v5
