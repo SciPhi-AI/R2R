@@ -21,21 +21,15 @@ from cli.utils.timer import timer
 @click.option(
     "--metadatas", type=JSON, help="Metadatas for ingestion as a JSON string"
 )
-@click.option(
-    "--versions",
-    multiple=True,
-    help="Starting version for ingested files (e.g. `v1`)",
-)
 @click.pass_obj
-def ingest_files(client, file_paths, document_ids, metadatas, versions):
+def ingest_files(client, file_paths, document_ids, metadatas):
     """Ingest files into R2R."""
     with timer():
         file_paths = list(file_paths)
         document_ids = list(document_ids) if document_ids else None
-        versions = list(versions) if versions else None
 
         response = client.ingest_files(
-            file_paths, metadatas, document_ids, versions
+            file_paths, metadatas, document_ids
         )
     click.echo(json.dumps(response, indent=2))
 

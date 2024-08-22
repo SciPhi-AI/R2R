@@ -9,3 +9,4 @@ class RunType(str, Enum):
     INGESTION = "INGESTION"
     AUTH = "AUTH"
     UNSPECIFIED = "UNSPECIFIED"
+    RESTRUCTURE = "RESTRUCTURE"

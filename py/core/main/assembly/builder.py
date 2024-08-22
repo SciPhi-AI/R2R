@@ -44,7 +44,9 @@ class R2RBuilder:
     CONFIG_OPTIONS["default"] = None
 
     @staticmethod
-    def _get_config(config_name):
+    def _get_config(config_name, config_path=None):
+        if config_path:
+            return R2RConfig.from_toml(config_path)
         if config_name is None:
             return R2RConfig.from_toml()
         if config_name in R2RBuilder.CONFIG_OPTIONS:
@@ -55,10 +57,15 @@ class R2RBuilder:
         self,
         config: Optional[R2RConfig] = None,
         config_name: Optional[str] = None,
+        config_path: Optional[str] = None,
     ):
-        if config and config_name:
-            raise ValueError("Cannot specify both config and config_name")
-        self.config = config or R2RBuilder._get_config(config_name)
+        if sum(x is not None for x in [config, config_name, config_path]) > 1:
+            raise ValueError(
+                "Specify only one of config, config_name, or config_path"
+            )
+        self.config = config or R2RBuilder._get_config(
+            config_name, config_path
+        )
         self.r2r_app_override: Optional[Type[R2REngine]] = None
         self.provider_factory_override: Optional[Type[R2RProviderFactory]] = (
             None

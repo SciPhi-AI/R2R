@@ -22,7 +22,6 @@ class PipelineType(Enum):
 def r2r_app(
     config_name: Optional[str] = "default",
     config_path: Optional[str] = None,
-    base_url: Optional[str] = None,
     pipeline_type: PipelineType = PipelineType.QNA,
 ) -> FastAPI:
     if pipeline_type != PipelineType.QNA:
@@ -58,19 +57,16 @@ config_name = os.getenv("CONFIG_NAME", None)
 config_path = os.getenv("CONFIG_PATH", None)
 if not config_path and not config_name:
     config_name = "default"
-base_url = os.getenv("BASE_URL")
 host = os.getenv("HOST", "0.0.0.0")
 port = int(os.getenv("PORT", "8000"))
 pipeline_type = os.getenv("PIPELINE_TYPE", "qna")
 
 logger.info(f"Environment CONFIG_NAME: {config_name}")
 logger.info(f"Environment CONFIG_PATH: {config_path}")
-logger.info(f"Environment BASE_URL: {base_url}")
 logger.info(f"Environment PIPELINE_TYPE: {pipeline_type}")
 
 app = r2r_app(
     config_name=config_name,
     config_path=config_path,
-    base_url=base_url,
     pipeline_type=PipelineType(pipeline_type),
 )

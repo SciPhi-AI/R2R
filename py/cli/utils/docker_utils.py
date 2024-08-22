@@ -73,8 +73,11 @@ def remove_r2r_network():
 
 
 def run_local_serve(
-    obj: R2RClient, host: str, port: int, config_path: Optional[str] = None
-):
+    host: str,
+    port: int,
+    config_name: Optional[str] = None,
+    config_path: Optional[str] = None,
+) -> None:
     try:
         from r2r import R2R
     except ImportError:
@@ -83,14 +86,17 @@ def run_local_serve(
         )
         sys.exit(1)
 
-    r2r_instance = R2R()
-    llm_provider = r2r_instance.config.completion.provider
-    llm_model = r2r_instance.config.completion.generation_config.model
-    model_provider = llm_model.split("/")[0]
+    r2r_instance = R2R(config_name=config_name, config_path=config_path)
+
+    if config_name or config_path:
+        completion_config = r2r_instance.config.completion
+        llm_provider = completion_config.provider
+        llm_model = completion_config.generation_config.model
+        model_provider = llm_model.split("/")[0]
+        check_llm_reqs(llm_provider, model_provider, include_ollama=True)
 
     available_port = find_available_port(port)
 
-    check_llm_reqs(llm_provider, model_provider, include_ollama=True)
     r2r_instance.serve(host, available_port)
 
 
@@ -115,10 +121,8 @@ def run_docker_serve(
             config_name = client.config_name
         else:
             config_name = "default"
-        
-        config = R2RConfig.from_toml(
-            R2RBuilder.CONFIG_OPTIONS[config_name]
-        )
+
+        config = R2RConfig.from_toml(R2RBuilder.CONFIG_OPTIONS[config_name])
 
     completion_provider = config.completion.provider
     completion_model = config.completion.generation_config.model

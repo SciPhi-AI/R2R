@@ -40,9 +40,6 @@ add_title_as_prefix = false
 rerank_model = "None"
 concurrent_request_limit = 256
 
-[eval]
-provider = "None"
-
 [kg]
 provider = "None"
 

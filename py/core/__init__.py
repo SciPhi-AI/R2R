@@ -174,6 +174,9 @@ __all__ = [
     "RelationshipType",
     "format_entity_types",
     "format_relations",
+    ## INTEGRATIONS
+    # Serper
+    "SerperClient",
     ## MAIN
     ## R2R ABSTRACTIONS
     "R2RProviders",

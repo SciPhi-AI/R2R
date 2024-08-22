@@ -51,7 +51,7 @@ class OpenAICompletionProvider(CompletionProvider):
 
         logger.debug(f"Executing async OpenAI task with args: {args}")
         try:
-            response = await self.async_client.chat.completion.create(**args)
+            response = await self.async_client.chat.completions.create(**args)
             logger.debug("Async OpenAI task executed successfully")
             return response
         except Exception as e:
@@ -69,7 +69,7 @@ class OpenAICompletionProvider(CompletionProvider):
 
         logger.debug(f"Executing sync OpenAI task with args: {args}")
         try:
-            response = self.client.chat.completion.create(**args)
+            response = self.client.chat.completions.create(**args)
             logger.debug("Sync OpenAI task executed successfully")
             return response
         except Exception as e:
