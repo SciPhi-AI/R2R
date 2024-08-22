@@ -1,7 +1,3 @@
-from typing import Any, Dict, List, Optional, Union
-
-from core.base import Document
-
 from .models import KGEnrichmentResponse, KGEnrichmentSettings
 
 
@@ -13,6 +9,9 @@ class RestructureMethods:
     ) -> KGEnrichmentResponse:
         """
         Perform graph enrichment over the entire graph.
+
+        Args:
+            KGEnrichmentSettings (KGEnrichmentSettings): Settings for the graph enrichment process.
 
         Returns:
             KGEnrichmentResponse: Results of the graph enrichment process.
