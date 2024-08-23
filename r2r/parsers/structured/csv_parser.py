@@ -1,4 +1,4 @@
-from typing import IO, AsyncGenerator, Union
+from typing import IO, AsyncGenerator, Optional, Union
 
 from r2r.base.abstractions.document import DataType
 from r2r.base.parsers.base_parser import AsyncParser
@@ -36,7 +36,7 @@ class CSVParserAdvanced(AsyncParser[DataType]):
         self.StringIO = StringIO
 
     def get_delimiter(
-        self, file_path: str | None = None, file: IO[bytes] | None = None
+        self, file_path: Optional[str] = None, file: Optional[IO[bytes]] = None
     ):
 
         sniffer = self.csv.Sniffer()
