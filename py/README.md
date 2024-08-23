@@ -6,7 +6,7 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-purple.svg" alt="License: MIT"></a>
 </p>
 
-<img src="https://raw.githubusercontent.com/SciPhi-AI/R2R/dev/assets/r2r.png" alt="R2R Answer Engine">
+<img width="1041" alt="r2r" src="https://github.com/user-attachments/assets/b6ee6a78-5d37-496d-ae10-ce18eee7a1d6">
 <h3 align="center">
 Build, scale, and manage user-facing Retrieval-Augmented Generation applications in production.
 </h3>
@@ -82,7 +82,7 @@ r2r --config-name=default serve
 - Auth & Admin Features
   - [Web Development](https://r2r-docs.sciphi.ai/cookbooks/web-dev): Building webapps using R2R
   - [User Auth](https://r2r-docs.sciphi.ai/cookbooks/user-auth): Authenticating users
-  - [User Auth](https://r2r-docs.sciphi.ai/cookbooks/groups): Group permissions
+  - [Group Permissions](https://r2r-docs.sciphi.ai/cookbooks/groups): Group permissions
   - [Analytics & Observability](https://r2r-docs.sciphi.ai/cookbooks/observability): End-to-end logging and analytics
   - [Web Application](https://r2r-docs.sciphi.ai/cookbooks/application): Connecting with the R2R Application
 
