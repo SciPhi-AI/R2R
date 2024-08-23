@@ -51,6 +51,26 @@ export interface KGSearchSettings {
   max_llm_queries_for_global_search?: number;
   local_search_limits?: Record<string, number>;
 }
+
+export interface KGLocalSearchResult {
+  query: string;
+  entities: any[];
+  relationships: any[];
+  communities: any[];
+}
+
+export interface KGGlobalSearchResult {
+  query: string;
+  search_result: string[];
+}
+
+export interface KGSearchResult {
+  local_result?: KGLocalSearchResult;
+  global_result?: KGGlobalSearchResult;
+}
+
+
+
 export interface Message {
   role: string;
   content: string;
