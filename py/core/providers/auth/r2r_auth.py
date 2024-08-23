@@ -197,24 +197,17 @@ class R2RAuthProvider(AuthProvider):
             raise R2RException(status_code=401, message="Email not verified")
 
         access_token = self.create_access_token(data={"sub": user.email})
-        refresh_token = self.create_refresh_token(data={"sub": user.email})
+        refresh_token = self.create_refresh_token()
         return {
             "access_token": Token(token=access_token, token_type="access"),
             "refresh_token": Token(token=refresh_token, token_type="refresh"),
         }
 
-    def refresh_access_token(
-        self, user_email: str, refresh_token: str
-    ) -> Dict[str, Token]:
+    def refresh_access_token(self, refresh_token: str) -> Dict[str, Token]:
         token_data = self.decode_token(refresh_token)
         if token_data.token_type != "refresh":
             raise R2RException(
                 status_code=401, message="Invalid refresh token"
-            )
-        if token_data.email != user_email:
-            raise R2RException(
-                status_code=402,
-                message="Invalid email address attached to token",
             )
 
         # Invalidate the old refresh token and create a new one
@@ -223,9 +216,7 @@ class R2RAuthProvider(AuthProvider):
         new_access_token = self.create_access_token(
             data={"sub": token_data.email}
         )
-        new_refresh_token = self.create_refresh_token(
-            data={"sub": token_data.email}
-        )
+        new_refresh_token = self.create_refresh_token()
         return {
             "access_token": Token(token=new_access_token, token_type="access"),
             "refresh_token": Token(
