@@ -117,7 +117,7 @@ class R2RConfig:
             # Get the root directory of the project
             file_dir = os.path.dirname(os.path.abspath(__file__))
             config_path = os.path.join(
-                file_dir, "..", "..", "..", "..", "r2r.toml"
+                file_dir, "..", "..", "..", "r2r.toml"
             )
 
         # Load configuration from TOML file
@@ -151,7 +151,7 @@ class R2RConfig:
         # Get the root directory of the project
         file_dir = os.path.dirname(os.path.abspath(__file__))
         default_config_path = os.path.join(
-            file_dir, "..", "..", "..", "..", "r2r.toml"
+            file_dir, "..", "..", "..", "r2r.toml"
         )
         # Load default configuration from TOML file
         with open(default_config_path) as f:
