@@ -11,7 +11,7 @@ describe("R2RClient", () => {
     mockAxiosInstance = {
       post: jest.fn(),
       request: jest.fn(),
-      defaults: { baseURL: "http://0.0.0.0:8000/v1" },
+      defaults: { baseURL: "http://0.0.0.0:8000/v2" },
     };
 
     (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
@@ -22,7 +22,7 @@ describe("R2RClient", () => {
   describe("Mocked Tests", () => {
     test("should correctly set the baseURL with prefix", () => {
       expect((client as any).axiosInstance.defaults.baseURL).toBe(
-        "http://0.0.0.0:8000/v1",
+        "http://0.0.0.0:8000/v2",
       );
     });
 

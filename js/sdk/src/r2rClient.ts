@@ -57,7 +57,7 @@ export class r2rClient {
   private accessToken: string | null;
   private refreshToken: string | null;
 
-  constructor(baseURL: string, prefix: string = "/v1") {
+  constructor(baseURL: string, prefix: string = "/v2") {
     this.baseUrl = `${baseURL}${prefix}`;
     this.accessToken = null;
     this.refreshToken = null;

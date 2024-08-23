@@ -52,7 +52,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile
+        file: ./py/Dockerfile
         push: true
         tags: ragtoriches/dev:latest
         platforms: linux/amd64
@@ -60,6 +60,7 @@ jobs:
         pull: true
 
     - name: Run cloud LLM integration tests in Docker
+      working-directory: ./py
       run: |
         python3 -m venv venv
         source venv/bin/activate
