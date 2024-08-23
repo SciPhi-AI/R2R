@@ -155,7 +155,7 @@ def main(
 
     print("Inspecting Knowledge Graph")
     print(
-        client.inspect_knowledge_graph(1000, print_descriptions=True)[
+        client.inspect_knowledge_graph(0, 1000, print_descriptions=True)[
             "results"
         ]
     )

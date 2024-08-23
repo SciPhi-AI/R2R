@@ -1,5 +1,5 @@
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from core.base.api.models.auth.responses import (
     GenericMessageResponse,
@@ -7,7 +7,7 @@ from core.base.api.models.auth.responses import (
     WrappedTokenResponse,
     WrappedUserResponse,
 )
-from fastapi import Body, Depends
+from fastapi import Path, Body, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import EmailStr
 
@@ -200,13 +200,17 @@ class AuthRouter(BaseRouter):
             return GenericMessageResponse(message=result["message"])
 
         @self.router.delete(
-            "/user", response_model=WrappedGenericMessageResponse
+            "/user/{user_id}", response_model=WrappedGenericMessageResponse
         )
         @self.base_endpoint
         async def delete_user_app(
-            user_id: str = Body(..., description="ID of the user to delete"),
-            password: str | None = Body(
+            user_id: str = Path(..., description="ID of the user to delete"),
+            password: Optional[str] = Body(
                 None, description="User's current password"
+            ),
+            delete_vector_data: Optional[bool] = Body(
+                False,
+                description="Whether to delete the user's vector data",
             ),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ):
@@ -218,6 +222,8 @@ class AuthRouter(BaseRouter):
             """
             if auth_user.id != user_id and not auth_user.is_superuser:
                 raise Exception("User ID does not match authenticated user")
+            if not auth_user.is_superuser and not password:
+                raise Exception("Password is required for non-superusers")
             user_uuid = uuid.UUID(user_id)
-            result = await self.engine.adelete_user(user_uuid, password)
+            result = await self.engine.adelete_user(user_uuid, password, delete_vector_data)
             return GenericMessageResponse(message=result["message"])

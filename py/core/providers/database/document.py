@@ -1,7 +1,8 @@
 from typing import Optional
 from uuid import UUID
 
-from core.base import DocumentInfo, DocumentStatus, DocumentType
+from core.base import DocumentInfo, DocumentStatus, DocumentType, R2RException
+from core.base.api.models.management.responses import GroupResponse
 
 from .base import DatabaseMixin
 
@@ -69,9 +70,11 @@ class DocumentMixin(DatabaseMixin):
         filter_user_ids: Optional[list[UUID]] = None,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_group_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = 100,
     ):
         conditions = []
-        params = {}
+        params = {"offset": offset, "limit": limit}
 
         if filter_document_ids:
             conditions.append("document_id = ANY(:document_ids)")
@@ -92,8 +95,15 @@ class DocumentMixin(DatabaseMixin):
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
 
+        query += """
+            ORDER BY created_at DESC
+            OFFSET :offset
+            LIMIT :limit
+        """
+
         results = self.execute_query(query, params).fetchall()
-        return [
+        print('results = ', results)
+        documents = [
             DocumentInfo(
                 id=row[0],
                 group_ids=row[1],
@@ -110,15 +120,12 @@ class DocumentMixin(DatabaseMixin):
             for row in results
         ]
 
-    def get_document_groups(self, document_id: str) -> list[str]:
-        query = f"""
-            SELECT group_ids
+        # Get total count for pagination metadata
+        count_query = f"""
+            SELECT COUNT(*)
             FROM {self._get_table_name('document_info')}
-            WHERE document_id = :document_id
         """
-        params = {"document_id": document_id}
-        result = self.execute_query(query, params).fetchone()
+        if conditions:
+            count_query += " WHERE " + " AND ".join(conditions)
 
-        if result and result[0]:
-            return [str(group_id) for group_id in result[0]]
-        return []
+        return documents

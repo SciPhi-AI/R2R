@@ -105,17 +105,34 @@ class GroupMixin(DatabaseMixin):
             created_at=result[3],
             updated_at=result[4],
         )
-
+    
     def delete_group(self, group_id: UUID) -> None:
-        query = f"""
+        # Remove group_id from users
+        user_update_query = f"""
+            UPDATE {self._get_table_name('users')}
+            SET group_ids = array_remove(group_ids, :group_id)
+            WHERE :group_id = ANY(group_ids)
+        """
+        self.execute_query(user_update_query, {"group_id": group_id})
+
+        # Remove group_id from documents in the relational database
+        doc_update_query = f"""
+            UPDATE {self._get_table_name('document_info')}
+            SET group_ids = array_remove(group_ids, :group_id)
+            WHERE :group_id = ANY(group_ids)
+        """
+        self.execute_query(doc_update_query, {"group_id": group_id})
+
+        # Delete the group
+        delete_query = f"""
             DELETE FROM {self._get_table_name('groups')}
             WHERE group_id = :group_id
             RETURNING group_id
         """
-        result = self.execute_query(query, {"group_id": group_id}).fetchone()
+        result = self.execute_query(delete_query, {"group_id": group_id}).fetchone()
+
         if not result:
             raise R2RException(status_code=404, message="Group not found")
-        return None
 
     def list_groups(
         self, offset: int = 0, limit: int = 100
@@ -258,7 +275,7 @@ class GroupMixin(DatabaseMixin):
             for row in results
         ]
 
-    def get_documents_in_group(
+    def documents_in_group(
         self, group_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[DocumentInfo]:
         """
@@ -376,3 +393,116 @@ class GroupMixin(DatabaseMixin):
             )
             for row in results
         ]
+    
+    def assign_document_to_group(self, document_id: UUID, group_id: UUID) -> None:
+        """
+        Assign a document to a group.
+
+        Args:
+            document_id (UUID): The ID of the document to assign.
+            group_id (UUID): The ID of the group to assign the document to.
+
+        Raises:
+            R2RException: If the group doesn't exist, if the document is not found,
+                        or if there's a database error.
+        """
+        try:
+            if not self.group_exists(group_id):
+                raise R2RException(status_code=404, message="Group not found")
+
+            # First, check if the document exists
+            document_check_query = f"""
+                SELECT 1 FROM {self._get_table_name('document_info')}
+                WHERE document_id = :document_id
+            """
+            document_exists = self.execute_query(
+                document_check_query, {"document_id": document_id}
+            ).fetchone()
+
+            if not document_exists:
+                raise R2RException(status_code=404, message="Document not found")
+
+            # If document exists, proceed with the assignment
+            assign_query = f"""
+                UPDATE {self._get_table_name('document_info')}
+                SET group_ids = array_append(group_ids, :group_id)
+                WHERE document_id = :document_id AND NOT (:group_id = ANY(group_ids))
+                RETURNING document_id
+            """
+            result = self.execute_query(
+                assign_query, {"document_id": document_id, "group_id": group_id}
+            ).fetchone()
+
+            if not result:
+                # Document exists but was already assigned to the group
+                raise R2RException(
+                    status_code=409,
+                    message="Document is already assigned to the group"
+                )
+
+        except R2RException:
+            # Re-raise R2RExceptions as they are already handled
+            raise
+        except Exception as e:
+            raise R2RException(
+                status_code=500,
+                message="An error occurred while assigning the document to the group"
+            )
+        
+    def document_groups(self, document_id: UUID, offset: int = 0, limit: int = 100) -> list[GroupResponse]:
+        query = f"""
+            SELECT g.group_id, g.name, g.description, g.created_at, g.updated_at
+            FROM {self._get_table_name('groups')} g
+            JOIN {self._get_table_name('document_info')} d ON g.group_id = ANY(d.group_ids)
+            WHERE d.document_id = :document_id
+            ORDER BY g.name
+            OFFSET :offset
+            LIMIT :limit
+        """
+        params = {
+            "document_id": document_id,
+            "offset": offset,
+            "limit": limit
+        }
+        results = self.execute_query(query, params).fetchall()
+
+        return [
+            GroupResponse(
+                group_id=row[0],
+                name=row[1],
+                description=row[2],
+                created_at=row[3],
+                updated_at=row[4],
+            )
+            for row in results
+        ]
+        
+    def remove_document_from_group(self, document_id: UUID, group_id: UUID) -> None:
+        """
+        Remove a document from a group.
+
+        Args:
+            document_id (UUID): The ID of the document to remove.
+            group_id (UUID): The ID of the group to remove the document from.
+
+        Raises:
+            R2RException: If the group doesn't exist or if the document is not in the group.
+        """
+        if not self.group_exists(group_id):
+            raise R2RException(status_code=404, message="Group not found")
+
+        query = f"""
+            UPDATE {self._get_table_name('document_info')}
+            SET group_ids = array_remove(group_ids, :group_id)
+            WHERE document_id = :document_id AND :group_id = ANY(group_ids)
+            RETURNING document_id
+        """
+        result = self.execute_query(
+            query, {"document_id": document_id, "group_id": group_id}
+        ).fetchone()
+
+        if not result:
+            raise R2RException(
+                status_code=404,
+                message="Document not found in the specified group"
+            )            

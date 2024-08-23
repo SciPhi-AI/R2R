@@ -76,7 +76,7 @@ class R2RAsyncClient:
     def __init__(
         self,
         base_url: str = "http://localhost:8000",
-        prefix: str = "/v1",
+        prefix: str = "/v2",
         custom_client=None,
         timeout: float = 300.0,
     ):

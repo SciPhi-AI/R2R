@@ -171,21 +171,3 @@ class AuthMethods:
         """
         data = {"reset_token": reset_token, "new_password": new_password}
         return await client._make_request("POST", "reset_password", json=data)
-
-    @staticmethod
-    async def delete_user(client, user_id: str, password: str = None) -> dict:
-        """
-        Deletes the user with the given user ID.
-
-        Args:
-            user_id (str): The ID of the user to delete.
-            password (str, optional): The password of the user to delete.
-
-        Returns:
-            dict: The response from the server.
-        """
-        data = {"user_id": user_id, "password": password}
-        response = await client._make_request("DELETE", "user", json=data)
-        client.access_token = None
-        client._refresh_token = None
-        return response
