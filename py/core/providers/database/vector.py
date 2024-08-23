@@ -131,7 +131,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         self.collection = self.vx.get_or_create_collection(
             name=self.collection_name, dimension=dimension
         )
-        
+
     def upsert(self, entry: VectorEntry) -> None:
         if self.collection is None:
             raise ValueError(

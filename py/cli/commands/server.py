@@ -217,7 +217,7 @@ def serve(
             ).replace(":", "")
 
     if docker:
-        
+
         run_docker_serve(
             client,
             host,
