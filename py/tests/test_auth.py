@@ -227,7 +227,7 @@ async def test_verify_email_with_expired_code(auth_service, auth_provider):
         )
 
         with pytest.raises(R2RException) as exc_info:
-            await auth_service.verify_email("123456")
+            await auth_service.verify_email("verify_expired@example.com", "123456")
         assert "Invalid or expired verification code" in str(exc_info.value)
 
 
@@ -243,7 +243,7 @@ async def test_refresh_token_flow(auth_service, auth_provider):
             email="refresh@example.com", password="password123"
         )
 
-    await auth_service.verify_email("123456")
+    await auth_service.verify_email("refresh@example.com", "123456")
 
     # Login to get initial tokens
     tokens = await auth_service.login("refresh@example.com", "password123")
@@ -252,44 +252,10 @@ async def test_refresh_token_flow(auth_service, auth_provider):
 
     # Use refresh token to get new access token
     new_tokens = await auth_service.refresh_access_token(
-        "refresh@example.com", refresh_token.token
+        refresh_token.token
     )
     assert "access_token" in new_tokens
     assert new_tokens["access_token"].token != initial_access_token.token
-
-
-@pytest.mark.asyncio
-async def test_refresh_token_with_wrong_user(auth_service, auth_provider):
-    with patch.object(
-        auth_provider.crypto_provider,
-        "generate_verification_code",
-        return_value="123456",
-    ):
-        new_user1 = await auth_service.register(
-            email="user1@example.com", password="password123"
-        )
-    with patch.object(
-        auth_provider.crypto_provider,
-        "generate_verification_code",
-        return_value="1234567",
-    ):
-        new_user2 = await auth_service.register(
-            email="user2@example.com", password="password123"
-        )
-
-    await auth_service.verify_email("123456")
-    await auth_service.verify_email("1234567")
-
-    # Login as user1
-    tokens = await auth_service.login("user1@example.com", "password123")
-    refresh_token = tokens["refresh_token"]
-
-    # Try to use user1's refresh token for user2
-    with pytest.raises(R2RException) as exc_info:
-        await auth_service.refresh_access_token(
-            "user2@example.com", refresh_token.token
-        )
-    assert "Invalid email address attached to token" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -305,7 +271,7 @@ async def test_get_current_user_with_expired_token(
             email="expired_token@example.com", password="password123"
         )
 
-    await auth_service.verify_email("123456")
+    await auth_service.verify_email("expired_token@example.com", "123456")
 
     # Manually expire the token
     auth_provider.access_token_lifetime_in_minutes = (
@@ -339,7 +305,7 @@ async def test_change_password(auth_service, auth_provider):
         new_user = await auth_service.register(
             email="change_password@example.com", password="old_password"
         )
-    await auth_service.verify_email("123456")
+    await auth_service.verify_email("change_password@example.com", "123456")
 
     # Change password
     await auth_service.change_password(
@@ -370,7 +336,7 @@ async def test_reset_password_flow(
         new_user = await auth_service.register(
             email="reset_password@example.com", password="old_password"
         )
-    await auth_service.verify_email("123456")
+    await auth_service.verify_email("reset_password@example.com", "123456")
 
     # Request password reset
     await auth_service.request_password_reset("reset_password@example.com")
@@ -411,7 +377,7 @@ async def test_logout(auth_service, auth_provider):
         new_user = await auth_service.register(
             email="logout@example.com", password="password123"
         )
-    await auth_service.verify_email("123456")
+    await auth_service.verify_email("logout@example.com", "123456")
 
     # Login to get tokens
     tokens = await auth_service.login("logout@example.com", "password123")
@@ -437,7 +403,7 @@ async def test_update_user_profile(auth_service, auth_provider):
         new_user = await auth_service.register(
             email="update_profile@example.com", password="password123"
         )
-    await auth_service.verify_email("123456")
+    await auth_service.verify_email("update_profile@example.com", "123456")
 
     # Update user profile
     updated_profile = await auth_service.update_user(
@@ -462,7 +428,7 @@ async def test_delete_user_account(auth_service, auth_provider):
         new_user = await auth_service.register(
             email="delete_user@example.com", password="password123"
         )
-    await auth_service.verify_email("123456")
+    await auth_service.verify_email("delete_user@example.com", "123456")
 
     # Delete user account
     await auth_service.delete_user(new_user.id, "password123")
@@ -491,7 +457,7 @@ async def test_token_blacklist_cleanup(auth_service, auth_provider):
         await auth_service.register(
             email="cleanup@example.com", password="password123"
         )
-    await auth_service.verify_email("123456")
+    await auth_service.verify_email("cleanup@example.com", "123456")
 
     # Login and logout to create a blacklisted token
     tokens = await auth_service.login("cleanup@example.com", "password123")
@@ -539,7 +505,7 @@ async def test_register_and_verify(auth_service, auth_provider):
         assert new_user.email == "newuser@example.com"
         assert not new_user.is_verified
 
-        await auth_service.verify_email("123456")
+        await auth_service.verify_email("newuser@example.com", "123456")
 
     new_user = auth_provider.db_provider.relational.get_user_by_email(
         "newuser@example.com"
@@ -559,7 +525,7 @@ async def test_login_logout(auth_service, auth_provider):
         await auth_service.register(
             email="loginuser@example.com", password="password123"
         )
-        await auth_service.verify_email("123456")
+        await auth_service.verify_email("loginuser@example.com", "123456")
 
     tokens = await auth_service.login("loginuser@example.com", "password123")
     assert "access_token" in tokens
@@ -580,11 +546,11 @@ async def test_refresh_token(auth_service, auth_provider):
         await auth_service.register(
             email="refreshuser@example.com", password="password123"
         )
-        await auth_service.verify_email("123456")
+        await auth_service.verify_email("refreshuser@example.com", "123456")
 
     tokens = await auth_service.login("refreshuser@example.com", "password123")
     new_tokens = await auth_service.refresh_access_token(
-        "refreshuser@example.com", tokens["refresh_token"].token
+        tokens["refresh_token"].token
     )
     assert new_tokens["access_token"].token != tokens["access_token"].token
 
@@ -599,7 +565,7 @@ async def test_change_password(auth_service, auth_provider):
         new_user = await auth_service.register(
             email="changepass@example.com", password="oldpassword"
         )
-    await auth_service.verify_email("123456")
+    await auth_service.verify_email("changepass@example.com", "123456")
 
     result = await auth_service.change_password(
         new_user, "oldpassword", "newpassword"
@@ -636,7 +602,7 @@ async def test_confirm_reset_password(auth_service, auth_provider):
         await auth_service.register(
             email="confirmreset@example.com", password="oldpassword"
         )
-        await auth_service.verify_email("123456")
+        await auth_service.verify_email("confirmreset@example.com", "123456")
         await auth_service.request_password_reset("confirmreset@example.com")
         result = await auth_service.confirm_password_reset(
             "123456", "newpassword"
