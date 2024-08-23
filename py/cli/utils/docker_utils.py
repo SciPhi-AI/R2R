@@ -11,7 +11,6 @@ import click
 import requests
 from requests.exceptions import RequestException
 
-from core.main import R2RBuilder, R2RConfig
 from sdk import R2RClient
 
 
@@ -102,7 +101,6 @@ def run_local_serve(
 
 
 def run_docker_serve(
-    client: R2RClient,
     host: str,
     port: int,
     exclude_neo4j: bool,
@@ -118,35 +116,6 @@ def run_docker_serve(
 
     if config_path and config_name:
         raise ValueError("Cannot specify both config_path and config_name")
-
-    if config_path:
-        config = R2RConfig.from_toml(config_path)
-    else:
-        if not config_name:
-            config_name = "default"
-        config = R2RConfig.from_toml(R2RBuilder.CONFIG_OPTIONS[config_name])
-
-    if "unstructured" in config.parsing.provider and not image:
-        image = "emrgntcmplxty/r2r-unstructured"
-
-    completion_provider = config.completion.provider
-    completion_model = config.completion.generation_config.model
-    completion_model_provider = completion_model.split("/")[0]
-
-    check_llm_reqs(
-        completion_provider,
-        completion_model_provider,
-        include_ollama=exclude_ollama,
-    )
-
-    embedding_provider = config.embedding.provider
-    embedding_model = config.embedding.base_model
-    embedding_model_provider = embedding_model.split("/")[0]
-    check_llm_reqs(
-        embedding_provider,
-        embedding_model_provider,
-        include_ollama=exclude_ollama,
-    )
 
     no_conflict, message = check_subnet_conflict()
     if not no_conflict:
