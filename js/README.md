@@ -1,6 +1,6 @@
 # R2R JavaScript SDK Documentation
 
-For the complete R2R JavaScript Documentation, visit here:
+For the complete look at the R2R JavaScript SDK, [visit our documentation.](https://r2r-docs.sciphi.ai/documentation/js-sdk/introduction)
 
 ## Installation
 
@@ -40,12 +40,3 @@ const healthResponse = await client.health();
 client.login("me@email.com", "my_password")
 ```
 When using authentication the commands below automatically restrict the scope to a user's available documents.
-
-## Additional Documentation
-
-For more detailed information on specific functionalities of R2R, please refer to the following documentation:
-
-- [Document Ingestion](/documentation/python-sdk/ingestion): Learn how to add, retrieve, and manage documents in R2R.
-- [Search & RAG](/documentation/python-sdk/retrieval): Explore various querying techniques and Retrieval-Augmented Generation capabilities.
-- [Authentication](/documentation/python-sdk/auth): Understand how to manage users and implement authentication in R2R.
-- [Observability](/documentation/python-sdk/observability): Learn about analytics and monitoring tools for your R2R system.
