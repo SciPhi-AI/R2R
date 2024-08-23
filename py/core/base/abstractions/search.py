@@ -115,7 +115,7 @@ class AggregateSearchResult(BaseModel):
                 if self.vector_search_results
                 else []
             ),
-            "kg_search_results": self.kg_search_results or [],
+            "kg_search_results": self.kg_search_results or None,
         }
 
 

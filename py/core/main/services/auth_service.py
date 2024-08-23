@@ -35,7 +35,7 @@ class AuthService(Service):
         return self.providers.auth.register(email, password)
 
     @telemetry_event("VerifyEmail")
-    async def verify_email(self, verification_code: str) -> bool:
+    async def verify_email(self, email: str, verification_code: str) -> bool:
 
         if not self.config.auth.require_email_verification:
             raise R2RException(
@@ -46,6 +46,12 @@ class AuthService(Service):
             verification_code
         )
         if not user_id:
+            raise R2RException(
+                status_code=400, message="Invalid or expired verification code"
+            )
+        
+        user = self.providers.database.relational.get_user_by_id(user_id)
+        if not user or user.email != email:
             raise R2RException(
                 status_code=400, message="Invalid or expired verification code"
             )

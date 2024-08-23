@@ -45,6 +45,7 @@ class AuthRouter(BaseRouter):
         )
         @self.base_endpoint
         async def verify_email_app(
+            email: EmailStr = Body(..., description="User's email address"),
             verification_code: str = Body(
                 ..., description="Email verification code"
             )
@@ -55,7 +56,7 @@ class AuthRouter(BaseRouter):
             This endpoint is used to confirm a user's email address using the verification code
             sent to their email after registration.
             """
-            result = await self.engine.averify_email(verification_code)
+            result = await self.engine.averify_email(email, verification_code)
             return GenericMessageResponse(message=result["message"])
 
         @self.router.post("/login", response_model=WrappedTokenResponse)

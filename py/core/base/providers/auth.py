@@ -82,7 +82,7 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def verify_email(self, verification_code: str) -> Dict[str, str]:
+    def verify_email(self, email: str, verification_code: str) -> Dict[str, str]:
         pass
 
     @abstractmethod
