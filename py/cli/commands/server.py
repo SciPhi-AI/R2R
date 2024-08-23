@@ -228,6 +228,8 @@ def serve(
             exclude_postgres,
             project_name,
             image,
+            config_name,
+            config_path,
         )
         if (
             "pytest" in sys.modules
