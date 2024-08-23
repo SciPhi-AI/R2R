@@ -244,23 +244,13 @@ class KGSearchResult(BaseModel):
                     "query": "What is the capital of France?",
                     "entities": [
                         {
-                            "name": "Paris",
-                            "type": "City",
-                            "properties": {"isCapitalOf": "France"}
+                            "Paris": {
+                                "name": "Paris",
+                                "description": "Paris is the capital of France."
+                            }
                         },
-                        {
-                            "name": "France",
-                            "type": "Country",
-                            "properties": {"capital": "Paris"}
-                        }
                     ],
-                    "relationships": [
-                        {
-                            "type": "CAPITAL_OF",
-                            "from": "Paris",
-                            "to": "France"
-                        }
-                    ],
+                    "relationships": [],
                     "communities": []
                 },
                 "global_result": {
