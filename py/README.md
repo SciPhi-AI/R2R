@@ -12,7 +12,7 @@ Build, scale, and manage user-facing Retrieval-Augmented Generation applications
 </h3>
 
 # About
-R2R was designed to bridge the gap between local LLM experimentation and scalable, production-ready Retrieval-Augmented Generation (RAG) applications. R2R provides a the latest techniques in RAG and is built around a RESTful API for ease of use.
+R2R (RAG to Riches), the Supabase for RAG, bridges the gap between experimenting with and deploying production-ready Retrieval-Augmented Generation (RAG) applications. It's a complete platform that helps you quickly build and launch scalable RAG solutions. R2R is built around a simple [RESTful API](https://r2r-docs.sciphi.ai/api-reference/introduction), making it easy to use and fast to implement.
 
 For a more complete view of R2R, check out the [full documentation](https://r2r-docs.sciphi.ai/).
 
@@ -25,6 +25,12 @@ For a more complete view of R2R, check out the [full documentation](https://r2r-
 - **🧩 Configurable**: Provision your application using intuitive configuration files.
 - **🔌 Extensibility**: Develop your application further with easy builder + factory pattern.
 - **🖥️ Dashboard**: Use the [R2R Dashboard](https://github.com/SciPhi-AI/R2R-Dashboard), an open-source React+Next.js app with optional authentication, to interact with R2R via GUI.
+
+
+## Getting Started
+
+- [Installation](https://r2r-docs.sciphi.ai/documentation/installation): Quick installation of R2R using Docker or pip
+- [Quickstart](https://r2r-docs.sciphi.ai/documentation/quickstart): A quick introduction to R2R's core features
 
 
 ## Install with pip
@@ -50,36 +56,34 @@ r2r --config-name=default serve
 ```
 
 
-## Quickstart
-After [installing](https://r2r-docs.sciphi.ai/installation), the [R2R Quickstart](https://r2r-docs.sciphi.ai/quickstart) is your go to for a step-by-step guide to get up and running with R2R in minutes. The guide demonstrates R2R's Retrieval-Augmented Generation (RAG) system by ingesting sample documents and then showcasing features for search, RAG, logging, analytics, and document management.
+
 ## Getting Started
 
-To get started with R2R, we recommend starting with the quickstart and then moving on to specific cookbooks.
+- [Installation](https://r2r-docs.sciphi.ai/documentation/installation): Quick installation of R2R using Docker or pip
+- [Quickstart](https://r2r-docs.sciphi.ai/documentation/quickstart): A quick introduction to R2R's core features
 
-- [Installation](https://r2r-docs.sciphi.ai/installation): Quick setup using Docker or `pip`
-- [R2R Quickstart](https://r2r-docs.sciphi.ai/quickstart): A quickstart guide designed to get you familiarized with R2R.
+## API & SDKs
 
+- [SDK](https://r2r-docs.sciphi.ai/documentation/python-sdk): API reference and Python/JS SDKs for interacting with R2R
+- [API](https://r2r-docs.sciphi.ai/api-reference/introduction): API reference and Python/JS SDKs for interacting with R2R
+- [Configuration](/documentation/configuration): A guide on how to configure your R2R system
 
-### API & SDKs
-- [Pyhon SDK](https://r2r-docs.sciphi.ai/python-sdk)
-- [JS SDK](https://r2r-docs.sciphi.ai/js-sdk)
-- [API Reference](https://r2r-docs.sciphi.ai/api-reference/introduction)
+## Cookbooks
 
+- Advanced RAG Pipelines 
+  - [RAG Agent](https://r2r-docs.sciphi.ai/cookbooks/agent): R2R's powerful RAG agent
+  - [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): Introduction to hybrid search
+  - [Advanced RAG](https://r2r-docs.sciphi.ai/cookbooks/advanced-rag): Advanced RAG features
 
-### Auth & Admin Features
-- [User Auth](https://r2r-docs.sciphi.ai/cookbooks/user-auth): A cookbook showing how to authenticate users using R2R.
-- [Analytics & Observability](https://r2r-docs.sciphi.ai/cookbooks/observability): A cookbook showing R2Rs end to end logging and analytics.
-- [Dashboard](https://r2r-docs.sciphi.ai/cookbooks/dashboard): A how-to guide on connecting with the R2R Admin/User Dashboard.
+- Knowledge Graphs
+  - [GraphRAG](https://r2r-docs.sciphi.ai/cookbooks/graphrag): Walkthrough of GraphRAG
+  - [Knowledge Graphs](https://r2r-docs.sciphi.ai/cookbooks/knowledge-graph): Automatic knowledge graph generation
 
-### RAG Cookbooks
-
-- [Multiple LLMs](https://r2r-docs.sciphi.ai/cookbooks/multiple-llms): A simple cookbook showing how R2R supports multiple LLMs.
-- [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): A brief introduction to running hybrid search with R2R.
-- [Multimodal RAG](https://r2r-docs.sciphi.ai/cookbooks/multimodal): A cookbook on multimodal RAG with R2R.
-- [Knowledge Graphs](https://r2r-docs.sciphi.ai/cookbooks/knowledge-graph): A walkthrough of automatic knowledge graph generation with R2R.
-- [Advanced Graphs](https://r2r-docs.sciphi.ai/cookbooks/advanced-rag): A walkthrough of R2Rs advanced RAG features.
-- [Local RAG](https://r2r-docs.sciphi.ai/cookbooks/local-rag): A quick cookbook demonstration of how to run R2R with local LLMs.
-- [Reranking](https://r2r-docs.sciphi.ai/cookbooks/rerank-search): A short guide on how to apply reranking to R2R results.
+- Auth & Admin Features
+  - [Web Development](https://r2r-docs.sciphi.ai/cookbooks/web-dev): Building webapps using R2R
+  - [User Auth](https://r2r-docs.sciphi.ai/cookbooks/user-auth): Authenticating users
+  - [Analytics & Observability](https://r2r-docs.sciphi.ai/cookbooks/observability): End-to-end logging and analytics
+  - [Web Application](https://r2r-docs.sciphi.ai/cookbooks/application): Connecting with the R2R Application
 
 ## Community
 
