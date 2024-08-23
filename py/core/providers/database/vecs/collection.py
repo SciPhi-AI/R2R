@@ -801,7 +801,7 @@ class Collection:
                 # Handle JSON-based filters
                 json_col = self.table.c.metadata
                 if key.startswith("metadata."):
-                    key = key.split("metadata.")[1]
+                    key.split("metadata.")[1]
                 if isinstance(value, dict):
                     if len(value) > 1:
                         raise FilterError("only one operator permitted")

@@ -321,7 +321,7 @@ class IngestionService(Service):
             logger.error("All provided documents already exist.")
             raise R2RException(
                 status_code=409,
-                message="All provided documents already exist. Use the `update_documents` endpoint instead to update these documents.",
+                message="All provided documents already exist. Use the `update_files` endpoint instead to update these documents.",
             )
 
         # Insert pending document info

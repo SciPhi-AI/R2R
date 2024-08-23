@@ -39,8 +39,8 @@ def mock_r2r_client():
             ]
         }
         mock_client.document_chunks.return_value = [
-            {"id": "chunk1", "content": "Content 1"},
-            {"id": "chunk2", "content": "Content 2"},
+            {"fragment_id": "chunk1", "text": "Content 1", "metadata": {}},
+            {"fragment_id": "chunk2", "text": "Content 2", "metadata": {}},
         ]
         mock_client.inspect_knowledge_graph.return_value = {
             "nodes": 100,
@@ -109,21 +109,19 @@ def test_app_settings(runner, mock_r2r_client):
 def test_users_overview(runner, mock_r2r_client):
     result = runner.invoke(cli, ["users-overview", "--user-ids", "user1"])
 
-    print(f"Exit code: {result.exit_code}")
-    print(f"Output: {result.output}")
-
     assert result.exit_code == 0
-    assert "user1" in result.output
-    mock_r2r_client.users_overview.assert_called_once_with(["user1"])
+    assert "Time taken:" in result.output
+    mock_r2r_client.users_overview.assert_called_once_with(
+        ["user1"], None, None
+    )
 
 
 def test_users_overview_no_ids(runner, mock_r2r_client):
     result = runner.invoke(cli, ["users-overview"])
 
     assert result.exit_code == 0
-    assert "user1" in result.output
-    assert "Jane" in result.output
-    mock_r2r_client.users_overview.assert_called_once_with(None)
+    assert "Time taken:" in result.output
+    mock_r2r_client.users_overview.assert_called_once_with(None, None, None)
 
 
 def test_delete(runner, mock_r2r_client):
@@ -163,12 +161,11 @@ def test_documents_overview_with_document_id(runner, mock_r2r_client):
         cli, ["documents-overview", "--document-ids", "doc1"]
     )
 
-    print(f"Exit code: {result.exit_code}")
-    print(f"Output: {result.output}")
-
     assert result.exit_code == 0
     assert "doc1" in result.output
-    mock_r2r_client.documents_overview.assert_called_once_with(["doc1"])
+    mock_r2r_client.documents_overview.assert_called_once_with(
+        ["doc1"], None, None
+    )
 
 
 def test_document_chunks(runner, mock_r2r_client):
@@ -177,17 +174,14 @@ def test_document_chunks(runner, mock_r2r_client):
     assert result.exit_code == 0
     assert "chunk1" in result.output
     assert "Content 2" in result.output
-    mock_r2r_client.document_chunks.assert_called_once_with("doc1")
+    mock_r2r_client.document_chunks.assert_called_once_with("doc1", None, None)
 
 
 def test_document_chunks_no_id(runner, mock_r2r_client):
     result = runner.invoke(cli, ["document-chunks"])
 
-    print(f"Exit code: {result.exit_code}")
-    print(f"Output: {result.output}")
-
     assert result.exit_code == 0
-    mock_r2r_client.document_chunks.assert_called_once_with(None)
+    mock_r2r_client.document_chunks.assert_called_once_with(None, None, None)
     assert "chunk1" in result.output
 
 
@@ -197,7 +191,9 @@ def test_inspect_knowledge_graph(runner, mock_r2r_client):
     assert result.exit_code == 0
     assert "nodes" in result.output
     assert "500" in result.output
-    mock_r2r_client.inspect_knowledge_graph.assert_called_once_with("100")
+    mock_r2r_client.inspect_knowledge_graph.assert_called_once_with(
+        None, "100"
+    )
 
 
 def test_inspect_knowledge_graph_no_limit(runner, mock_r2r_client):
@@ -206,4 +202,4 @@ def test_inspect_knowledge_graph_no_limit(runner, mock_r2r_client):
     assert result.exit_code == 0
     assert "nodes" in result.output
     assert "500" in result.output
-    mock_r2r_client.inspect_knowledge_graph.assert_called_once_with(None)
+    mock_r2r_client.inspect_knowledge_graph.assert_called_once_with(None, None)

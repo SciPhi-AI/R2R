@@ -321,6 +321,18 @@ class ManagementService(Service):
             document_id, offset=offset, limit=limit
         )
 
+    @telemetry_event("UpdatePrompt")
+    async def update_prompt(
+        self,
+        name: str,
+        template: Optional[str] = None,
+        input_types: Optional[dict[str, str]] = None,
+    ):
+        if input_types is None:
+            input_types = {}
+        self.providers.prompt.update_prompt(name, template, input_types)
+        return {"message": f"Prompt '{name}' updated successfully."}
+
     @telemetry_event("UsersOverview")
     async def users_overview(
         self,

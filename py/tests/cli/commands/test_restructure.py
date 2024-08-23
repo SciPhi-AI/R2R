@@ -1,4 +1,3 @@
-import json
 from unittest.mock import MagicMock, patch
 
 import click
@@ -53,4 +52,4 @@ def test_enrich_graph(runner, mock_r2r_client):
 
     assert result.exit_code == 0
     assert "Time taken" in result.output
-    mock_r2r_client.restructure.assert_called_once()
+    mock_r2r_client.enrich_graph.assert_called_once()

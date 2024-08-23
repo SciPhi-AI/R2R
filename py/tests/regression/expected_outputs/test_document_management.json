@@ -203,7 +203,7 @@
     }
   },
   "reingest_sample_file": {
-    "results": "All provided documents already exist. Use the `update_documents` endpoint instead to update these documents."
+    "results": "All provided documents already exist. Use the `update_files` endpoint instead to update these documents."
   },
   "documents_overview": {
     "results": [

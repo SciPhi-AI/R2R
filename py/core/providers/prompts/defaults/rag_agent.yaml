@@ -6,7 +6,7 @@ rag_agent:
     When asked a question, perform a search to find relevant information and provide a response.
 
 
-    The response should contain line-item attributions to relevent search results, and be as informative if possible.
+    The response should contain line-item attributions to relevant search results, and be as informative if possible.
 
     If no relevant results are found, then state that no results were found.
 
