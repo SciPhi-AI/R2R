@@ -11,7 +11,7 @@ on:
 jobs:
   pre-commit:
     continue-on-error: true
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, Linux ]
 
     steps:
       - name: Checkout code
@@ -41,7 +41,7 @@ jobs:
 
   pytest:
     continue-on-error: true
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, Linux ]
     timeout-minutes: 15
 
     env:
