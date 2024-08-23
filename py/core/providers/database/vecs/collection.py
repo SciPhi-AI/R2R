@@ -378,7 +378,7 @@ class Collection:
                 tsvector_update_trigger(fts, 'pg_catalog.english', text);
             """
                 )
-        )
+            )
         return self
 
     def _drop(self):
@@ -1174,6 +1174,8 @@ def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
         table.c.fts,
         table.c.text,
         postgresql_using="gin",
-        postgresql_ops={"text": "gin_trgm_ops"},  # alternative,  gin_tsvector_ops
+        postgresql_ops={
+            "text": "gin_trgm_ops"
+        },  # alternative,  gin_tsvector_ops
     )
     return table

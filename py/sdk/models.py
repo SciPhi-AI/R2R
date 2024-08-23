@@ -187,6 +187,7 @@ class ChunkingConfig(ProviderConfig):
             },
         }
 
+
 class KGLocalSearchResult(BaseModel):
     query: str
     entities: list[dict[str, Any]]
@@ -195,14 +196,15 @@ class KGLocalSearchResult(BaseModel):
 
     def __str__(self) -> str:
         return f"KGLocalSearchResult(query={self.query}, entities={self.entities}, relationships={self.relationships}, communities={self.communities})"
-    
+
     def dict(self) -> dict:
         return {
             "query": self.query,
             "entities": self.entities,
             "relationships": self.relationships,
-            "communities": self.communities
+            "communities": self.communities,
         }
+
 
 class KGGlobalSearchResult(BaseModel):
     query: str
@@ -213,12 +215,9 @@ class KGGlobalSearchResult(BaseModel):
 
     def __repr__(self) -> str:
         return self.__str__()
-    
+
     def dict(self) -> dict:
-        return {
-            "query": self.query,
-            "search_result": self.search_result
-        }
+        return {"query": self.query, "search_result": self.search_result}
 
 
 class KGSearchResult(BaseModel):
@@ -230,11 +229,15 @@ class KGSearchResult(BaseModel):
 
     def __repr__(self) -> str:
         return self.__str__()
-    
+
     def dict(self) -> dict:
         return {
-            "local_result": self.local_result.dict() if self.local_result else None,
-            "global_result": self.global_result.dict() if self.global_result else None
+            "local_result": (
+                self.local_result.dict() if self.local_result else None
+            ),
+            "global_result": (
+                self.global_result.dict() if self.global_result else None
+            ),
         }
 
     class Config:
@@ -245,7 +248,7 @@ class KGSearchResult(BaseModel):
                     "entities": {
                         "Paris": {
                             "name": "Paris",
-                            "description": "Paris is the capital of France."
+                            "description": "Paris is the capital of France.",
                         }
                     },
                     "relationships": {},
@@ -255,10 +258,11 @@ class KGSearchResult(BaseModel):
                     "query": "What is the capital of France?",
                     "search_result": [
                         "Paris is the capital and most populous city of France."
-                    ]
-                }
+                    ],
+                },
             }
         }
+
 
 class R2RException(Exception):
     def __init__(

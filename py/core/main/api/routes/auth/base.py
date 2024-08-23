@@ -48,7 +48,7 @@ class AuthRouter(BaseRouter):
             email: EmailStr = Body(..., description="User's email address"),
             verification_code: str = Body(
                 ..., description="Email verification code"
-            )
+            ),
         ):
             """
             Verify a user's email address.

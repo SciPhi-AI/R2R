@@ -49,7 +49,7 @@ class AuthService(Service):
             raise R2RException(
                 status_code=400, message="Invalid or expired verification code"
             )
-        
+
         user = self.providers.database.relational.get_user_by_id(user_id)
         if not user or user.email != email:
             raise R2RException(
