@@ -47,7 +47,7 @@ class R2RPromptProvider(PromptProvider):
                 logger.error(error_msg)
                 raise ValueError(error_msg)
             except KeyError as e:
-                error_msg = f"Missing key in TOML file {toml_file}: {e}"
+                error_msg = f"Missing key in TOML file {yaml_file}: {e}"
                 logger.error(error_msg)
                 raise ValueError(error_msg)
 
