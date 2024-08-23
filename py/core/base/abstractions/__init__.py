@@ -31,8 +31,8 @@ from .prompt import Prompt
 from .restructure import KGEnrichmentSettings
 from .search import (
     AggregateSearchResult,
-    KGLocalSearchResult,
     KGGlobalSearchResult,
+    KGLocalSearchResult,
     KGSearchResult,
     KGSearchSettings,
     VectorSearchResult,

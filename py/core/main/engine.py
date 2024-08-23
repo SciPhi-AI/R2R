@@ -82,10 +82,6 @@ class R2REngine(metaclass=AsyncSyncMeta):
         return await self.ingestion_service.ingest_documents(*args, **kwargs)
 
     @syncable
-    async def aupdate_documents(self, *args, **kwargs):
-        return await self.ingestion_service.update_documents(*args, **kwargs)
-
-    @syncable
     async def aingest_files(self, *args, **kwargs):
         return await self.ingestion_service.ingest_files(*args, **kwargs)
 
@@ -108,10 +104,6 @@ class R2REngine(metaclass=AsyncSyncMeta):
     @syncable
     async def arag_agent(self, *args, **kwargs):
         return await self.retrieval_service.agent(*args, **kwargs)
-
-    @syncable
-    async def aevaluate(self, *args, **kwargs):
-        return await self.retrieval_service.evaluate(*args, **kwargs)
 
     @syncable
     async def aupdate_prompt(self, *args, **kwargs):

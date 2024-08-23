@@ -1156,7 +1156,7 @@ export class r2rClient {
     rag_generation_config?: GenerationConfig | Record<string, any>,
     task_prompt_override?: string,
     include_title_if_available?: boolean,
-  ): Promise<any> {
+  ): Promise<any | AsyncGenerator<string, void, unknown>> {
     this._ensureAuthenticated();
 
     const json_data: Record<string, any> = {
@@ -1180,38 +1180,19 @@ export class r2rClient {
   }
 
   // TODO: can we remove this and pull this into rag?
-  @featureGenerator("streamingRag")
-  private async *streamRag(
+  @feature("streamingRag")
+  private async streamRag(
     rag_data: Record<string, any>,
-  ): AsyncGenerator<string, void, unknown> {
+  ): Promise<ReadableStream<Uint8Array>> {
     this._ensureAuthenticated();
 
-    const response = await this._makeRequest<Response>("POST", "rag", {
+    return this._makeRequest<ReadableStream<Uint8Array>>("POST", "rag", {
       data: rag_data,
       headers: {
         "Content-Type": "application/json",
       },
       responseType: "stream",
     });
-
-    if (!response.body) {
-      throw new Error("Response body is null");
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          break;
-        }
-        yield decoder.decode(value);
-      }
-    } finally {
-      reader.releaseLock();
-    }
   }
 
   /**
@@ -1232,7 +1213,7 @@ export class r2rClient {
     rag_generation_config?: GenerationConfig | Record<string, any>,
     task_prompt_override?: string,
     include_title_if_available?: boolean,
-  ): Promise<any> {
+  ): Promise<any | AsyncGenerator<string, void, unknown>> {
     this._ensureAuthenticated();
 
     const json_data: Record<string, any> = {
@@ -1256,38 +1237,19 @@ export class r2rClient {
   }
 
   // TODO: can we remove this and pull this into agent?
-  @featureGenerator("streamingAgent")
-  private async *streamAgent(
+  @feature("streamingAgent")
+  private async streamAgent(
     agent_data: Record<string, any>,
-  ): AsyncGenerator<string, void, unknown> {
+  ): Promise<ReadableStream<Uint8Array>> {
     this._ensureAuthenticated();
 
-    const response = await this._makeRequest<Response>("POST", "agent", {
+    return this._makeRequest<ReadableStream<Uint8Array>>("POST", "agent", {
       data: agent_data,
       headers: {
         "Content-Type": "application/json",
       },
       responseType: "stream",
     });
-
-    if (!response.body) {
-      throw new Error("Response body is null");
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          break;
-        }
-        yield decoder.decode(value);
-      }
-    } finally {
-      reader.releaseLock();
-    }
   }
 }
 

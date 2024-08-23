@@ -12,8 +12,8 @@ from core.base import (
     KGSearchSettings,
     PipeType,
     PromptProvider,
+    R2RException,
     RunLoggingSingleton,
-    R2RException
 )
 from core.base.abstractions.search import (
     KGGlobalSearchResult,
@@ -24,6 +24,7 @@ from core.base.abstractions.search import (
 from ..abstractions.generator_pipe import GeneratorPipe
 
 logger = logging.getLogger(__name__)
+
 
 class KGSearchSearchPipe(GeneratorPipe):
     """
@@ -132,11 +133,18 @@ class KGSearchSearchPipe(GeneratorPipe):
                 )
                 all_search_results.append(search_result)
 
-            
-            if len(all_search_results[0])==0:
-                raise R2RException("No search results found. Please make sure you have run the KG enrichment step before running the search: r2r enrich-graph", 400)
+            if len(all_search_results[0]) == 0:
+                raise R2RException(
+                    "No search results found. Please make sure you have run the KG enrichment step before running the search: r2r enrich-graph",
+                    400,
+                )
 
-            yield KGLocalSearchResult(query=message, entities=all_search_results[0], relationships=all_search_results[1], communities=all_search_results[2])
+            yield KGLocalSearchResult(
+                query=message,
+                entities=all_search_results[0],
+                relationships=all_search_results[1],
+                communities=all_search_results[2],
+            )
 
     async def global_search(
         self,
