@@ -15,10 +15,10 @@ from core.base import (
     RunLoggingSingleton,
 )
 
+from core.base.abstractions.search import KGLocalSearchResult, KGGlobalSearchResult, KGSearchResult
 from ..abstractions.generator_pipe import GeneratorPipe
 
 logger = logging.getLogger(__name__)
-
 
 class KGSearchSearchPipe(GeneratorPipe):
     """
@@ -102,7 +102,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> KGLocalSearchResult:
         # search over communities and
         # do 3 searches. One over entities, one over relationships, one over communities
 
@@ -127,7 +127,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                 )
                 all_search_results.append(search_result)
 
-            yield message, all_search_results
+            yield KGLocalSearchResult(query=message, entities=all_search_results[0], relationships=all_search_results[1], communities=all_search_results[2])
 
     async def global_search(
         self,
@@ -137,7 +137,7 @@ class KGSearchSearchPipe(GeneratorPipe):
         kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> KGGlobalSearchResult:
         # map reduce
         async for message in input.message:
             map_responses = []
@@ -209,7 +209,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             output = output.choices[0].message.content
 
-            yield message, [{"output": output}]
+            yield KGGlobalSearchResult(query=message, search_result=output, citations=None)
 
     async def _run_logic(
         self,
@@ -219,19 +219,19 @@ class KGSearchSearchPipe(GeneratorPipe):
         kg_search_settings: KGSearchSettings,
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> KGSearchResult:
 
         logger.info("Performing global search")
         kg_search_type = kg_search_settings.kg_search_type
 
         if kg_search_type == "local":
-            async for query, result in self.local_search(
+            async for result in self.local_search(
                 input, state, run_id, kg_search_settings
             ):
-                yield (query, result)
+                yield KGSearchResult(local_result=result)
 
         else:
-            async for query, result in self.global_search(
+            async for result in self.global_search(
                 input, state, run_id, kg_search_settings
             ):
-                yield (query, result)
+                yield KGSearchResult(global_result=result)

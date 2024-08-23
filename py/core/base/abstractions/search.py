@@ -54,8 +54,42 @@ class VectorSearchResult(BaseModel):
             },
         }
 
+class KGLocalSearchResult(BaseModel):
+    """Result of a local knowledge graph search operation."""
+    query: str
+    entities: list[dict[str, Any]]
+    relationships: list[dict[str, Any]]
+    communities: list[dict[str, Any]]
 
-KGSearchResult = list[Tuple[str, list[Dict[str, Any]]]]
+    def __str__(self) -> str:
+        return f"LocalSearchResult(query={self.query}, search_result={self.search_result})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class KGGlobalSearchResult(BaseModel):
+    """Result of a global knowledge graph search operation."""
+    query: str
+    search_result: list[Dict[str, Any]]
+
+    def __str__(self) -> str:
+        return f"GlobalSearchResult(query={self.query}, search_result={self.search_result})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class KGSearchResult(BaseModel):
+    """Result of a knowledge graph search operation."""
+    local_result: Optional[KGLocalSearchResult] = None
+    global_result: Optional[KGGlobalSearchResult] = None
+
+    def __str__(self) -> str:
+        return f"KGSearchResult(local_result={self.local_result}, global_result={self.global_result})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 class AggregateSearchResult(BaseModel):

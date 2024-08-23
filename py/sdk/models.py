@@ -188,8 +188,24 @@ class ChunkingConfig(ProviderConfig):
         }
 
 
-KGSearchResult = list[Tuple[str, list[Dict[str, Any]]]]
+class KGSearchResult(BaseModel):
+    query: str
+    results: list[Dict[str, Any]]
 
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "query": "What is the capital of France?",
+                "results": [
+                    {
+                        "Paris": {
+                            "name": "Paris",
+                            "description": "Paris is the capital of France."
+                        }
+                    }
+                ]
+            }
+        }
 
 class R2RException(Exception):
     def __init__(
