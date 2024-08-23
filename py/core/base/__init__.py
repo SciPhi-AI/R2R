@@ -35,7 +35,7 @@ __all__ = [
     "KGExtraction",
     "Triple",
     # LLM abstractions
-    "GenerationConfig"
+    "GenerationConfig",
     "LLMChatCompletion",
     "LLMChatCompletionChunk",
     "RAGCompletion",

@@ -107,9 +107,8 @@ class Triple(BaseModel):
         if isinstance(self.attributes, str):
             try:
                 self.attributes = json.loads(self.attributes)
-            except Exception:
+            except json.JSONDecodeError:
                 self.attributes = self.attributes
-                pass
 
     @classmethod
     def from_dict(
