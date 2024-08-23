@@ -21,7 +21,7 @@ networks:
 
 services:
   r2r:
-    image: ${R2R_IMAGE:-emrgntcmplxty/r2r:main}
+    image: ${R2R_IMAGE:-ragtoriches/prod:latest}
     build:
       context: .
       args:
@@ -40,8 +40,8 @@ services:
       # Postgres
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_DBNAME=${POSTGRES_DBNAME:-postgres}
       - POSTGRES_VECS_COLLECTION=${POSTGRES_VECS_COLLECTION:-${CONFIG_NAME:-vecs}}
       # Neo4j
@@ -83,10 +83,15 @@ services:
 
       # Ollama
       - OLLAMA_API_BASE=${OLLAMA_API_BASE:-http://host.docker.internal:11434}
+
+      # Unstructured
+      - UNSTRUCTURED_API_KEY=${UNSTRUCTURED_API_KEY:-}
+      - UNSTRUCTURED_API_URL=${UNSTRUCTURED_API_URL:-https://api.unstructured.io/general/v0/general}
+
     networks:
       - r2r-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-8000}/v1/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-8000}/v2/health"]
       interval: 10s
       timeout: 5s
       retries: 5
