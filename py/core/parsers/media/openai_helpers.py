@@ -6,7 +6,7 @@ import requests
 def process_frame_with_openai(
     data: bytes,
     api_key: str,
-    model: str = "gpt-4o",
+    model: str = "gpt-4o-mini",
     max_tokens: int = 2_048,
     api_base: str = "https://api.openai.com/v2/chat/completions",
 ) -> str:
@@ -35,8 +35,15 @@ def process_frame_with_openai(
         "max_tokens": max_tokens,
     }
 
+    print(f"getting response...., {api_base}, {headers}, {payload}")
     response = requests.post(api_base, headers=headers, json=payload)
+    print(f"response: {response}")
+    import pdb
+
+    pdb.set_trace()
     response_json = response.json()
+    print(f"response_json: {response_json}")
+    print(f"content:", response_json["choices"][0]["message"]["content"])
     return response_json["choices"][0]["message"]["content"]
 
 

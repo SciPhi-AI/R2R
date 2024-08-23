@@ -425,7 +425,10 @@ class IngestionService(Service):
                 if document.id in successful_ids
             ],
             "failed_documents": [
-                {"document_id": document_id, "result": results[document_id]}
+                {
+                    "document_id": document_id,
+                    "result": str(results[document_id]),
+                }
                 for document_id in failed_ids
             ],
             "skipped_documents": skipped_ids,
