@@ -5,7 +5,6 @@ import axios, {
   AxiosRequestConfig,
 } from "axios";
 import FormData from "form-data";
-import { URLSearchParams } from "url";
 
 let fs: any;
 if (typeof window === "undefined") {
@@ -57,7 +56,7 @@ export class r2rClient {
   private accessToken: string | null;
   private refreshToken: string | null;
 
-  constructor(baseURL: string, prefix: string = "/v1") {
+  constructor(baseURL: string, prefix: string = "/v2") {
     this.baseUrl = `${baseURL}${prefix}`;
     this.accessToken = null;
     this.refreshToken = null;
@@ -112,19 +111,24 @@ export class r2rClient {
       if (typeof FormData !== "undefined" && options.data instanceof FormData) {
         config.data = options.data;
         delete config.headers["Content-Type"];
-      } else if (
-        typeof URLSearchParams !== "undefined" &&
-        options.data instanceof URLSearchParams
-      ) {
-        config.data = options.data.toString();
-        config.headers["Content-Type"] = "application/x-www-form-urlencoded";
       } else if (typeof options.data === "object") {
-        config.data = JSON.stringify(options.data);
-        if (method !== "DELETE") {
-          config.headers["Content-Type"] = "application/json";
+        if (
+          config.headers["Content-Type"] === "application/x-www-form-urlencoded"
+        ) {
+          config.data = Object.keys(options.data)
+            .map(
+              (key) =>
+                `${encodeURIComponent(key)}=${encodeURIComponent(options.data[key])}`,
+            )
+            .join("&");
         } else {
-          config.headers["Content-Type"] = "application/json";
           config.data = JSON.stringify(options.data);
+          if (method !== "DELETE") {
+            config.headers["Content-Type"] = "application/json";
+          } else {
+            config.headers["Content-Type"] = "application/json";
+            config.data = JSON.stringify(options.data);
+          }
         }
       } else {
         config.data = options.data;
@@ -223,12 +227,13 @@ export class r2rClient {
     email: string,
     password: string,
   ): Promise<{ access_token: TokenInfo; refresh_token: TokenInfo }> {
-    const formData = new URLSearchParams();
-    formData.append("username", email);
-    formData.append("password", password);
+    const data = {
+      username: email,
+      password: password,
+    };
 
     const response = await this._makeRequest<LoginResponse>("POST", "login", {
-      data: formData,
+      data: data,
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },

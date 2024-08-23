@@ -75,7 +75,7 @@ var healthCmd = &cobra.Command{
 	Use:   "health",
 	Short: "Check the health of the server",
 	Run: withTimer(func(cmd *cobra.Command, args []string) {
-		client := sdk.NewClient("http://localhost:8000/v1", sdk.LogConfig{Verbose: true})
+		client := sdk.NewClient("http://localhost:8000/v2", sdk.LogConfig{Verbose: true})
 		response, err := client.Health()
 		if err != nil {
 			fmt.Printf("Error checking health: %v\n", err)

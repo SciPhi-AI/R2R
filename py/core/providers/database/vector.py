@@ -131,9 +131,6 @@ class PostgresVectorDBProvider(VectorDBProvider):
         self.collection = self.vx.get_or_create_collection(
             name=self.collection_name, dimension=dimension
         )
-        self.collection.create_index(measure="cosine_distance")
-        self.collection.create_index(measure="l2_distance")
-        self.collection.create_index(measure="max_inner_product")
 
     def upsert(self, entry: VectorEntry) -> None:
         if self.collection is None:

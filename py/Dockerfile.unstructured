@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 WORKDIR /app
+COPY scripts /app/py/scripts
 
 RUN pip install --no-cache-dir poetry
 
@@ -24,7 +25,8 @@ RUN poetry config virtualenvs.create false \
     && poetry install --extras "core" --no-dev --no-root \
     && poetry add "unstructured[all-docs]" \
     && poetry add "unstructured_client" \
-    && pip install --no-cache-dir gunicorn uvicorn
+    && pip install --no-cache-dir gunicorn uvicorn \
+    && poetry run python scripts/download_nltk_data.py
 
 # Create the final image
 FROM python:3.10-slim
@@ -41,6 +43,7 @@ WORKDIR /app
 # Copy the installed packages from the builder
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /root/nltk_data /root/nltk_data
 
 # Copy the application and config
 COPY core /app/core

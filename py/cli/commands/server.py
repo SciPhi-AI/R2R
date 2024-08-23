@@ -73,7 +73,6 @@ def logs(client, run_type_filter, max_runs):
     help="Remove containers for services not defined in the Compose file",
 )
 @click.option("--project-name", default="r2r", help="Project name for Docker")
-@click.pass_context
 def docker_down(volumes, remove_orphans, project_name):
     """Bring down the Docker Compose setup and attempt to remove the network if necessary."""
     result = bring_down_docker_compose(project_name, volumes, remove_orphans)
@@ -218,7 +217,7 @@ def serve(
             ).replace(":", "")
 
     if docker:
-        
+
         run_docker_serve(
             client,
             host,

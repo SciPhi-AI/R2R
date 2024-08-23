@@ -70,7 +70,7 @@ class PostgresDBProvider(DatabaseProvider):
         ) or os.getenv("POSTGRES_VECS_COLLECTION")
         if not collection_name:
             raise ValueError(
-                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'collection' in the 'database' settings of your `r2r.toml`."
+                "Error, please set a valid POSTGRES_VECS_COLLECTION environment variable or set a 'vecs_collection' in the 'database' settings of your `r2r.toml`."
             )
 
         if not all([user, password, host, port, db_name, collection_name]):

@@ -197,7 +197,7 @@ class R2RAuthProvider(AuthProvider):
             raise R2RException(status_code=401, message="Email not verified")
 
         access_token = self.create_access_token(data={"sub": user.email})
-        refresh_token = self.create_refresh_token()
+        refresh_token = self.create_refresh_token(data={"sub": user.email})
         return {
             "access_token": Token(token=access_token, token_type="access"),
             "refresh_token": Token(token=refresh_token, token_type="refresh"),

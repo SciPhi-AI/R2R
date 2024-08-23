@@ -80,10 +80,8 @@ class KGGlobalSearchResult(BaseModel):
         return self.__str__()
 
     def dict(self) -> dict:
-        return {
-            "query": self.query,
-            "search_result": self.search_result
-        }
+        return {"query": self.query, "search_result": self.search_result}
+
 
 class KGSearchResult(BaseModel):
     """Result of a knowledge graph search operation."""
@@ -95,11 +93,15 @@ class KGSearchResult(BaseModel):
 
     def __repr__(self) -> str:
         return self.__str__()
-    
+
     def dict(self) -> dict:
         return {
-            "local_result": self.local_result.dict() if self.local_result else None,
-            "global_result": self.global_result.dict() if self.global_result else None
+            "local_result": (
+                self.local_result.dict() if self.local_result else None
+            ),
+            "global_result": (
+                self.global_result.dict() if self.global_result else None
+            ),
         }
 
 
@@ -122,7 +124,7 @@ class AggregateSearchResult(BaseModel):
                 if self.vector_search_results
                 else []
             ),
-            "kg_search_results": self.kg_search_results or [],
+            "kg_search_results": self.kg_search_results or None,
         }
 
 
