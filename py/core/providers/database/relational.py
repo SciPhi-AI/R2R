@@ -30,14 +30,12 @@ class PostgresRelationalDBProvider(
     def _initialize_relational_db(self):
         with self.vx.Session() as sess:
             with sess.begin():
-                try:
-                    sess.execute(
-                        text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
-                    )
-                except exc.ProgrammingError as e:
-                    logger.error(f"Error enabling uuid-ossp extension: {e}")
-                    raise
+                sess.execute(
+                    text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
+                )
+                sess.commit()
 
+            with sess.begin():
                 # Call create_table for each mixin
                 for base_class in self.__class__.__bases__:
                     if issubclass(base_class, DatabaseMixin):

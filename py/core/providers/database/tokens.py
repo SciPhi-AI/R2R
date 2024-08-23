@@ -8,7 +8,7 @@ class BlacklistedTokensMixin(DatabaseMixin):
     def create_table(self):
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('blacklisted_tokens')} (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            id UUID PRIMARY KEY DEFAULT public.uuid_generate_v4(),
             token TEXT NOT NULL,
             blacklisted_at TIMESTAMPTZ DEFAULT NOW()
         );

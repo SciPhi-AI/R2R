@@ -15,7 +15,7 @@ class UserMixin(DatabaseMixin):
     def create_table(self):
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('users')} (
-            user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            user_id UUID PRIMARY KEY DEFAULT public.uuid_generate_v4(),
             email TEXT UNIQUE NOT NULL,
             hashed_password TEXT NOT NULL,
             is_superuser BOOLEAN DEFAULT FALSE,

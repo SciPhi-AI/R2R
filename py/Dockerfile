@@ -17,11 +17,15 @@ COPY . /app
 
 # Ensure that the working directory is set to /app/py
 WORKDIR /app/py
+COPY scripts /app/py/scripts
 
 # Install dependencies
 RUN poetry config virtualenvs.create false \
     && poetry install --extras "core" --no-dev --no-root \
-    && pip install --no-cache-dir gunicorn uvicorn
+    && pip install --no-cache-dir gunicorn uvicorn \
+    && poetry run python scripts/download_nltk_data.py
+
+
 
 # Final stage to keep the image small
 FROM python:3.10-slim
@@ -36,6 +40,7 @@ WORKDIR /app
 # Copy the installed packages from the builder
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /root/nltk_data /root/nltk_data
 
 # Copy the necessary application files
 COPY core /app/core
