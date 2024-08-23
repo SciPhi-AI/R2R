@@ -15,7 +15,7 @@ class UserMixin(DatabaseMixin):
     def create_table(self):
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('users')} (
-            user_id UUID PRIMARY KEY DEFAULT public.uuid_generate_v4(),
+            user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             email TEXT UNIQUE NOT NULL,
             hashed_password TEXT NOT NULL,
             is_superuser BOOLEAN DEFAULT FALSE,
@@ -208,18 +208,6 @@ class UserMixin(DatabaseMixin):
             raise R2RException(status_code=404, message="User not found")
 
         user_groups = group_result[0]
-
-        # Remove user from all groups they belong to
-        if user_groups:
-            group_update_query = f"""
-                UPDATE {self._get_table_name('groups')}
-                SET user_ids = array_remove(user_ids, :user_id)
-                WHERE group_id = ANY(:group_ids)
-            """
-            self.execute_query(
-                group_update_query,
-                {"user_id": user_id, "group_ids": user_groups},
-            )
 
         # Remove user from documents
         doc_update_query = f"""

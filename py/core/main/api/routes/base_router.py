@@ -5,7 +5,7 @@ from abc import abstractmethod
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from core.base import R2RException, manage_run
+from core.base import R2RDocumentProcessingError, R2RException, manage_run
 from core.base.logging.base import RunType
 
 logger = logging.getLogger(__name__)
@@ -48,6 +48,8 @@ class BaseRouter:
                         },
                     )
                 except Exception as e:
+                    print("cc")
+
                     await self.engine.logging_connection.log(
                         run_id=run_id,
                         key="error",

@@ -216,7 +216,9 @@ class R2RAuthProvider(AuthProvider):
         new_access_token = self.create_access_token(
             data={"sub": token_data.email}
         )
-        new_refresh_token = self.create_refresh_token()
+        new_refresh_token = self.create_refresh_token(
+            data={"sub": token_data.email}
+        )
         return {
             "access_token": Token(token=new_access_token, token_type="access"),
             "refresh_token": Token(
