@@ -17,7 +17,7 @@ class GroupMixin(DatabaseMixin):
     def create_table(self) -> None:
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name('groups')} (
-            group_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            group_id UUID PRIMARY KEY DEFAULT public.uuid_generate_v4(),
             name TEXT NOT NULL,
             description TEXT,
             created_at TIMESTAMPTZ DEFAULT NOW(),
