@@ -141,7 +141,6 @@ class AuthRouter(BaseRouter):
             This endpoint allows users to obtain a new access token using their refresh token.
             """
             refresh_result = await self.engine.arefresh_access_token(
-                user_email=auth_user.email,
                 refresh_token=refresh_token,
             )
             return refresh_result

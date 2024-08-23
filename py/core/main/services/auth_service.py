@@ -74,11 +74,9 @@ class AuthService(Service):
 
     @telemetry_event("RefreshToken")
     async def refresh_access_token(
-        self, user_email: str, refresh_token: str
+        self, refresh_token: str
     ) -> dict[str, Token]:
-        return self.providers.auth.refresh_access_token(
-            user_email, refresh_token
-        )
+        return self.providers.auth.refresh_access_token(refresh_token)
 
     @telemetry_event("ChangePassword")
     async def change_password(

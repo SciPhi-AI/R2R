@@ -6,7 +6,7 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-purple.svg" alt="License: MIT"></a>
 </p>
 
-<img src="./assets/r2r.png" alt="R2R Answer Engine">
+<img src="https://raw.githubusercontent.com/SciPhi-AI/R2R/dev/assets/r2r.png" alt="R2R Answer Engine">
 <h3 align="center">
 Build, scale, and manage user-facing Retrieval-Augmented Generation applications in production.
 </h3>
