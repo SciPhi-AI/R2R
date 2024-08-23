@@ -240,11 +240,13 @@ class ManagementService(Service):
     async def ausers_overview(
         self,
         user_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = 100,
         *args,
         **kwargs,
     ):
         return self.providers.database.relational.get_users_overview(
-            [str(ele) for ele in user_ids] if user_ids else None
+            [str(ele) for ele in user_ids] if user_ids else None, offset=offset, limit=limit
         )
 
     @telemetry_event("Delete")
@@ -290,6 +292,8 @@ class ManagementService(Service):
         user_ids: Optional[list[UUID]] = None,
         group_ids: Optional[list[UUID]] = None,
         document_ids: Optional[list[UUID]] = None,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
         *args: Any,
         **kwargs: Any,
     ):
@@ -297,32 +301,39 @@ class ManagementService(Service):
             filter_document_ids=document_ids,
             filter_user_ids=user_ids,
             filter_group_ids=group_ids,
+            offset=offset,
+            limit=limit,
         )
 
     @telemetry_event("DocumentChunks")
     async def document_chunks(
         self,
         document_id: UUID,
+        offset: int = 0,
+        limit: int = 100,
         *args,
         **kwargs,
     ):
-        return self.providers.database.vector.get_document_chunks(document_id)
+        return self.providers.database.vector.get_document_chunks(document_id, offset=offset, limit=limit)
 
     @telemetry_event("UsersOverview")
     async def users_overview(
         self,
         user_ids: Optional[list[UUID]],
+        offset: int = 0,
+        limit: int = 100,
         *args,
         **kwargs,
     ):
         return self.providers.database.relational.get_users_overview(
-            [str(ele) for ele in user_ids]
+            [str(ele) for ele in user_ids], offset=offset, limit=limit
         )
 
     @telemetry_event("InspectKnowledgeGraph")
     async def inspect_knowledge_graph(
         self,
-        limit=10000,
+        offset: int = 0,
+        limit=1000,
         print_descriptions: bool = False,
         *args: Any,
         **kwargs: Any,
@@ -335,6 +346,7 @@ class ManagementService(Service):
         rel_query = f"""
         MATCH (n1)-[r]->(n2)
         return n1.name AS subject, n1.description AS subject_description, n2.name AS object, n2.description AS object_description, type(r) AS relation, r.description AS relation_description
+        SKIP {offset}
         LIMIT {limit}
         """
 
@@ -429,9 +441,9 @@ class ManagementService(Service):
         return {"message": "Document removed from group successfully"}
 
     @telemetry_event("DocumentGroups")
-    async def adocument_groups(self, document_id: str):
+    async def adocument_groups(self, document_id: str, offset: int = 0, limit: int = 100):
         group_ids = self.providers.database.relational.document_groups(
-            document_id
+            document_id, offset=offset, limit=limit
         )
         return {"group_ids": [str(group_id) for group_id in group_ids]}
 
@@ -554,8 +566,10 @@ class ManagementService(Service):
 
     @telemetry_event("DeleteGroup")
     async def adelete_group(self, group_id: UUID) -> bool:
-        return self.providers.database.relational.delete_group(group_id)
-
+        self.providers.database.relational.delete_group(group_id)
+        self.providers.database.vector.delete_group(group_id)
+        return True
+    
     @telemetry_event("ListGroups")
     async def alist_groups(
         self, offset: int = 0, limit: int = 100
@@ -583,12 +597,12 @@ class ManagementService(Service):
         self, group_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
         return self.providers.database.relational.get_users_in_group(
-            group_id, offset, limit
+            group_id, offset=offset, limit=limit
         )
 
     @telemetry_event("GetGroupsForUser")
-    async def aget_groups_for_user(self, user_id: UUID) -> list[dict]:
-        return self.providers.database.relational.get_groups_for_user(user_id)
+    async def aget_groups_for_user(self, user_id: UUID, offset: int = 0, limit: int = 100) -> list[dict]:
+        return self.providers.database.relational.get_groups_for_user(user_id, offset, limit)
 
     @telemetry_event("GroupsOverview")
     async def agroups_overview(
@@ -601,18 +615,18 @@ class ManagementService(Service):
     ):
         return self.providers.database.relational.get_groups_overview(
             [str(ele) for ele in group_ids] if group_ids else None,
-            offset,
-            limit,
+            offset=offset,
+            limit=limit,
         )
 
     @telemetry_event("GetDocumentsInGroup")
-    async def aget_documents_in_group(
+    async def adocuments_in_group(
         self, group_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
-        return self.providers.database.relational.get_documents_in_group(
-            group_id, offset, limit
+        return self.providers.database.relational.documents_in_group(
+            group_id, offset=offset, limit=limit
         )
 
     @telemetry_event("DocumentGroups")
-    async def adocument_groups(self, document_id: str) -> list[str]:
-        return self.providers.database.relational.document_groups(document_id)
+    async def adocument_groups(self, document_id: str, offset: int = 0, limit: int = 100) -> list[str]:
+        return self.providers.database.relational.document_groups(document_id, offset, limit)

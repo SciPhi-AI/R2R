@@ -70,9 +70,11 @@ class DocumentMixin(DatabaseMixin):
         filter_user_ids: Optional[list[UUID]] = None,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_group_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = 100,
     ):
         conditions = []
-        params = {}
+        params = {"offset": offset, "limit": limit}
 
         if filter_document_ids:
             conditions.append("document_id = ANY(:document_ids)")
@@ -93,8 +95,15 @@ class DocumentMixin(DatabaseMixin):
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
 
+        query += """
+            ORDER BY created_at DESC
+            OFFSET :offset
+            LIMIT :limit
+        """
+
         results = self.execute_query(query, params).fetchall()
-        return [
+        print('results = ', results)
+        documents = [
             DocumentInfo(
                 id=row[0],
                 group_ids=row[1],
@@ -110,54 +119,13 @@ class DocumentMixin(DatabaseMixin):
             )
             for row in results
         ]
-    
-    def document_groups(self, document_id: UUID) -> list[GroupResponse]:
-        query = f"""
-            SELECT g.group_id, g.name, g.description, g.created_at, g.updated_at
-            FROM {self._get_table_name('groups')} g
-            JOIN {self._get_table_name('document_info')} d ON g.group_id = ANY(d.group_ids)
-            WHERE d.document_id = :document_id
+
+        # Get total count for pagination metadata
+        count_query = f"""
+            SELECT COUNT(*)
+            FROM {self._get_table_name('document_info')}
         """
-        params = {"document_id": document_id}
-        results = self.execute_query(query, params).fetchall()
+        if conditions:
+            count_query += " WHERE " + " AND ".join(conditions)
 
-        return [
-            GroupResponse(
-                group_id=row[0],
-                name=row[1],
-                description=row[2],
-                created_at=row[3],
-                updated_at=row[4],
-            )
-            for row in results
-        ]
-        
-    def remove_document_from_group(self, document_id: UUID, group_id: UUID) -> None:
-        """
-        Remove a document from a group.
-
-        Args:
-            document_id (UUID): The ID of the document to remove.
-            group_id (UUID): The ID of the group to remove the document from.
-
-        Raises:
-            R2RException: If the group doesn't exist or if the document is not in the group.
-        """
-        if not self.group_exists(group_id):
-            raise R2RException(status_code=404, message="Group not found")
-
-        query = f"""
-            UPDATE {self._get_table_name('document_info')}
-            SET group_ids = array_remove(group_ids, :group_id)
-            WHERE document_id = :document_id AND :group_id = ANY(group_ids)
-            RETURNING document_id
-        """
-        result = self.execute_query(
-            query, {"document_id": document_id, "group_id": group_id}
-        ).fetchone()
-
-        if not result:
-            raise R2RException(
-                status_code=404,
-                message="Document not found in the specified group"
-            )    
+        return documents

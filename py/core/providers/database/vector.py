@@ -1,3 +1,4 @@
+from uuid import UUID
 import logging
 import os
 from typing import Any, Optional
@@ -390,7 +391,70 @@ class PostgresVectorDBProvider(VectorDBProvider):
         if result.rowcount == 0:
             logger.warning(f"Document {document_id} not found in group {group_id} or already removed")
 
-    def get_document_chunks(self, document_id: str) -> list[dict]:
+    def remove_group_from_documents(self, group_id: str) -> None:
+        if self.collection is None:
+            raise ValueError("Collection is not initialized.")
+
+        table_name = self.collection.table.name
+        query = text(
+            f"""
+            UPDATE vecs."{table_name}"
+            SET group_ids = array_remove(group_ids, :group_id)
+            WHERE :group_id = ANY(group_ids)
+            """
+        )
+
+        with self.vx.Session() as sess:
+            sess.execute(query, {"group_id": group_id})
+            sess.commit()
+            
+    def delete_user(self, user_id: str) -> None:
+        if self.collection is None:
+            raise ValueError("Collection is not initialized.")
+
+        table_name = self.collection.table.name
+        query = text(
+            f"""
+            UPDATE vecs."{table_name}"
+            SET user_id = NULL
+            WHERE user_id = :user_id
+            """
+        )
+
+        with self.vx.Session() as sess:
+            sess.execute(query, {"user_id": user_id})
+            sess.commit()            
+
+    def delete_group(self, group_id: str) -> None:
+        """
+        Remove the specified group ID from all documents in the vector database.
+
+        Args:
+            group_id (str): The ID of the group to remove from all documents.
+
+        Raises:
+            ValueError: If the collection is not initialized.
+        """
+        if self.collection is None:
+            raise ValueError("Collection is not initialized.")
+
+        table_name = self.collection.table.name
+        query = text(
+            f"""
+            UPDATE vecs."{table_name}"
+            SET group_ids = array_remove(group_ids, :group_id)
+            WHERE :group_id = ANY(group_ids)
+            """
+        )
+
+        with self.vx.Session() as sess:
+            result = sess.execute(query, {"group_id": group_id})
+            sess.commit()
+
+        affected_rows = result.rowcount
+        logger.info(f"Removed group {group_id} from {affected_rows} documents.")
+
+    def get_document_chunks(self, document_id: str, offset: int = 0, limit: int = 100) -> dict:
         if not self.collection:
             raise ValueError("Collection is not initialized.")
 
@@ -401,22 +465,33 @@ class PostgresVectorDBProvider(VectorDBProvider):
             FROM vecs."{table_name}"
             WHERE document_id = :document_id
             ORDER BY CAST(metadata->>'chunk_order' AS INTEGER)
+            LIMIT :limit OFFSET :offset
         """
         )
 
-        params = {"document_id": document_id}
+        count_query = text(
+            f"""
+            SELECT COUNT(*)
+            FROM vecs."{table_name}"
+            WHERE document_id = :document_id
+        """
+        )
+
+        params = {"document_id": document_id, "limit": limit, "offset": offset}
 
         with self.vx.Session() as sess:
             results = sess.execute(query, params).fetchall()
-            return [
-                {
-                    "fragment_id": result[0],
-                    "extraction_id": result[1],
-                    "document_id": result[2],
-                    "user_id": result[3],
-                    "group_ids": result[4],
-                    "text": result[5],
-                    "metadata": result[6],
-                }
-                for result in results
-            ]
+            total_count = sess.execute(count_query, {"document_id": document_id}).scalar()
+
+        return [
+            {
+                "fragment_id": result[0],
+                "extraction_id": result[1],
+                "document_id": result[2],
+                "user_id": result[3],
+                "group_ids": result[4],
+                "text": result[5],
+                "metadata": result[6],
+            }
+            for result in results
+        ]

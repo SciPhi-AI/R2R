@@ -262,8 +262,8 @@ class R2REngine(metaclass=AsyncSyncMeta):
         return await self.management_service.agroups_overview(*args, **kwargs)
 
     @syncable
-    async def aget_documents_in_group(self, *args, **kwargs):
-        return await self.management_service.aget_documents_in_group(
+    async def adocuments_in_group(self, *args, **kwargs):
+        return await self.management_service.adocuments_in_group(
             *args, **kwargs
         )
 
