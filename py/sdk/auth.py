@@ -102,7 +102,6 @@ class AuthMethods:
             "profile_picture": profile_picture,
         }
         data = {k: v for k, v in data.items() if v is not None}
-        print("data = ", data)
         return await client._make_request("PUT", "user", json=data)
 
     @staticmethod
