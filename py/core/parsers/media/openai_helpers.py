@@ -35,15 +35,8 @@ def process_frame_with_openai(
         "max_tokens": max_tokens,
     }
 
-    print(f"getting response...., {api_base}, {headers}, {payload}")
     response = requests.post(api_base, headers=headers, json=payload)
-    print(f"response: {response}")
-    import pdb
-
-    pdb.set_trace()
     response_json = response.json()
-    print(f"response_json: {response_json}")
-    print(f"content:", response_json["choices"][0]["message"]["content"])
     return response_json["choices"][0]["message"]["content"]
 
 
