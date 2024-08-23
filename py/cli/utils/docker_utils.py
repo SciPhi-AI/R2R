@@ -311,7 +311,7 @@ def set_ollama_api_base(exclude_ollama):
 
 def get_compose_files():
     package_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."
+        os.path.dirname(os.path.abspath(__file__)), "..", "..",
     )
     compose_files = {
         "base": os.path.join(package_dir, "compose.yaml"),

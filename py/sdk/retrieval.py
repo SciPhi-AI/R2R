@@ -19,8 +19,6 @@ class RetrievalMethods:
             Union[dict, VectorSearchSettings]
         ] = None,
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
-        *args,
-        **kwargs,
     ) -> SearchResponse:
         """
         Conduct a vector and/or KG search.
@@ -56,8 +54,8 @@ class RetrievalMethods:
             Union[dict, VectorSearchSettings]
         ] = None,
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
-        *args,
-        **kwargs,
+        task_prompt_override: Optional[str] = None,
+        include_title_if_available: Optional[bool] = False,
     ) -> Union[RAGResponse, AsyncGenerator[RAGResponse, None]]:
         """
         Conducts a Retrieval Augmented Generation (RAG) search with the given query.
@@ -67,6 +65,8 @@ class RetrievalMethods:
             rag_generation_config (Optional[Union[dict, GenerationConfig]]): RAG generation configuration.
             vector_search_settings (Optional[Union[dict, VectorSearchSettings]]): Vector search settings.
             kg_search_settings (Optional[Union[dict, KGSearchSettings]]): KG search settings.
+            task_prompt_override (Optional[str]): Task prompt override.
+            include_title_if_available (Optional[bool]): Include the title if available.
 
         Returns:
             Union[RAGResponse, AsyncGenerator[RAGResponse, None]]: The RAG response
@@ -87,6 +87,8 @@ class RetrievalMethods:
             "rag_generation_config": rag_generation_config,
             "vector_search_settings": vector_search_settings,
             "kg_search_settings": kg_search_settings,
+            "task_prompt_override": task_prompt_override,
+            "include_title_if_available": include_title_if_available,
         }
 
         if rag_generation_config and rag_generation_config.get(
@@ -107,8 +109,6 @@ class RetrievalMethods:
         kg_search_settings: Optional[Union[dict, KGSearchSettings]] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
-        *args,
-        **kwargs,
     ) -> Union[list[Message], AsyncGenerator[Message, None]]:
         """
         Performs a single turn in a conversation with a RAG agent.
