@@ -73,6 +73,17 @@ class RetrievalRouter(BaseRouter):
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
 
             """
+<<<<<<< HEAD
+=======
+            print("auth_user = ", auth_user)
+            print("initial vector_search_settings = ", vector_search_settings)
+
+            print(f"Received query: {query}")
+            print(f"Received vector_search_settings: {vector_search_settings}")
+            print(f"Received kg_search_settings: {kg_search_settings}")
+            print(f"Auth user: {auth_user}")
+
+>>>>>>> 274c32b88835c975254d44272782428177e66178
             user_groups = set(auth_user.group_ids)
             selected_groups = set(vector_search_settings.selected_group_ids)
             allowed_groups = user_groups.intersection(selected_groups)
@@ -81,6 +92,13 @@ class RetrievalRouter(BaseRouter):
                     "User does not have access to the specified group(s): "
                     f"{selected_groups - allowed_groups}"
                 )
+<<<<<<< HEAD
+=======
+            print(
+                "initial vector_search_settings filters = ",
+                vector_search_settings.filters,
+            )
+>>>>>>> 274c32b88835c975254d44272782428177e66178
 
             filters = {
                 "$or": [
@@ -93,6 +111,14 @@ class RetrievalRouter(BaseRouter):
                 filters = {"$and": [filters, vector_search_settings.filters]}
 
             vector_search_settings.filters = filters
+<<<<<<< HEAD
+=======
+            print("final vector_search_settings = ", vector_search_settings)
+            print(
+                "final vector_search_settings filters = ",
+                vector_search_settings.filters,
+            )
+>>>>>>> 274c32b88835c975254d44272782428177e66178
             results = await self.engine.asearch(
                 query=query,
                 vector_search_settings=vector_search_settings,
