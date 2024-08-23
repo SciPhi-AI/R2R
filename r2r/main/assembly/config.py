@@ -1,7 +1,8 @@
 import logging
 import os
 from enum import Enum
-from typing import Any
+from pathlib import Path
+from typing import Any, Optional
 
 import toml
 from pydantic import BaseModel
@@ -62,7 +63,11 @@ class R2RConfig:
     prompt: PromptConfig
     agent: AgentConfig
 
-    def __init__(self, config_data: dict[str, Any]):
+    def __init__(self, config_data: dict[str, Any], base_path: Optional[Path] = None):
+        """
+        :param config_data: dictionary of configuration parameters
+        :param base_path: base path when a relative path is specified for the prompts directory
+        """
         # Load the default configuration
         default_config = self.load_default_config()
 
@@ -83,6 +88,12 @@ class R2RConfig:
                 and default_config[section]["provider"] != "null"
             ):
                 self._validate_config_section(default_config, section, keys)
+                if (section == "prompt"
+                        and "file_path" in default_config[section]
+                        and not Path(default_config[section]["file_path"]).is_absolute()
+                        and base_path):
+                    # Make file_path absolute and relative to the base path
+                    default_config[section]["file_path"] = str(base_path / default_config[section]["file_path"])
             setattr(self, section, default_config[section])
         self.completion = CompletionConfig.create(**self.completion)
         # override GenerationConfig defaults
@@ -121,7 +132,7 @@ class R2RConfig:
         with open(config_path) as f:
             config_data = toml.load(f)
 
-        return cls(config_data)
+        return cls(config_data, base_path=Path(config_path).parent)
 
     def to_toml(self):
         config_data = {
