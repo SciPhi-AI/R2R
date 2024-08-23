@@ -38,6 +38,7 @@ def remove_empty_values(input_dict):
     # Create a new dictionary excluding empty values
     return {key: value for key, value in input_dict.items() if value}
 
+
 EXHAUSTIVE_SEARCH_LIMIT = 10000
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
@@ -73,54 +74,22 @@ RETURN
 
 
 # TODO(@antejavor): Implement the Neo4jKGProvider
-class Neo4jKGProvider(PropertyGraphStore, KGProvider):
+class MemgraphKGProvider(PropertyGraphStore, KGProvider):
     r"""
-    Neo4j Property Graph Store.
+    Memgraph Property Graph Store.
 
-    This class implements a Neo4j property graph store.
-
-    If you are using local Neo4j instead of aura, here's a helpful
-    command for launching the docker container:
+    This class implements support for Memgraph as a property graph store.
+    Full details on the Github repository: https://github.com/memgraph/memgraph or website: https://memgraph.com/
 
     ```bash
-    docker run \
-        -p 7474:7474 -p 7687:7687 \
-        -v $PWD/data:/data -v $PWD/plugins:/plugins \
-        --name neo4j-apoc \
-        -e NEO4J_apoc_export_file_enabled=true \
-        -e NEO4J_apoc_import_file_enabled=true \
-        -e NEO4J_apoc_import_file_use__neo4j__config=true \
-        -e NEO4JLABS_PLUGINS=\\[\"apoc\"\\] \
-        neo4j:latest
+    docker run -p 7687:7687 -p 3000:3000 memgraph/memgraph-mage:latest
     ```
 
     Args:
-        username (str): The username for the Neo4j database.
-        password (str): The password for the Neo4j database.
-        url (str): The URL for the Neo4j database.
-        database (Optional[str]): The name of the database to connect to. Defaults to "neo4j".
-
-    Examples:
-        `pip install llama-index-graph-stores-neo4j`
-
-        ```python
-        from llama_index.core.indices.property_graph import PropertyGraphIndex
-        from llama_index.graph_stores.neo4j import Neo4jKGProvider
-
-        # Create a Neo4jKGProvider instance
-        graph_store = Neo4jKGProvider(
-            username="neo4j",
-            password="neo4j",
-            url="bolt://localhost:7687",
-            database="neo4j"
-        )
-
-        # create the index
-        index = PropertyGraphIndex.from_documents(
-            documents,
-            property_graph_store=graph_store,
-        )
-        ```
+        username (str): The username for the Memgraph database.
+        password (str): The password for the Memgraph database.
+        url (str): The endpoint for the Memgraph database.
+        database (Optional[str]): The name of the database to connect to. Defaults to "memgraph".
     """
 
     supports_structured_queries: bool = True
@@ -135,9 +104,9 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        if config.provider != "neo4j":
+        if config.provider != "memgraph":
             raise ValueError(
-                "Neo4jKGProvider must be initialized with config with `neo4j` provider."
+                "MemgraphKGProvider must be initialized with config with `neo4j` provider."
             )
 
         try:
@@ -190,13 +159,13 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
         )
 
         rels_query_result = self.structured_query(
-            rel_properties_query, 
+            rel_properties_query,
         )
 
         rel_objs_query_result = self.structured_query(
             rel_query,
         )
-        
+
         # Get constraints & indexes
         try:
             constraint = self.structured_query("SHOW CONSTRAINT INFO")
@@ -207,24 +176,40 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
             constraint = []
             index = []
 
-        self.structured_schema = {"node_props": {}, "rel_props": {}, "relationships": {}, "metadata": {}}
-        
-        # memgraph sends labels as a list, if we have multiple labels on a node we need to iterate over them 
+        self.structured_schema = {
+            "node_props": {},
+            "rel_props": {},
+            "relationships": {},
+            "metadata": {},
+        }
+
+        # memgraph sends labels as a list, if we have multiple labels on a node we need to iterate over them
         for el in node_query_results:
             for label in el["labels"]:
                 if not self.structured_schema["node_props"].get(label):
-                    self.structured_schema["node_props"][label] = set() # set of dictionaries
+                    self.structured_schema["node_props"][
+                        label
+                    ] = set()  # set of dictionaries
                 for prop in el["properties"]:
-                    self.structured_schema["node_props"][label].add(frozenset(prop.items()))
-        
-        self.structured_schema["rel_props"] = {el["type"]: el["properties"] for el in rels_query_result} # same as neo4j
-        
+                    self.structured_schema["node_props"][label].add(
+                        frozenset(prop.items())
+                    )
+
+        self.structured_schema["rel_props"] = {
+            el["type"]: el["properties"] for el in rels_query_result
+        }  # same as neo4j
+
         self.structured_schema["relationships"] = []
         for el in rel_objs_query_result:
-            rel_objs_query_result.append({"start": el["start"], "type": el["type"], "end": el["end"]})
-        
-        self.structured_schema["metadata"] = {"constraint": constraint, "index": index}
-        
+            rel_objs_query_result.append(
+                {"start": el["start"], "type": el["type"], "end": el["end"]}
+            )
+
+        self.structured_schema["metadata"] = {
+            "constraint": constraint,
+            "index": index,
+        }
+
         # schema_counts = self.structured_query(
         #     "CALL apoc.meta.graphSample() YIELD nodes, relationships "
         #     "RETURN nodes, [rel in relationships | {name:apoc.any.property"
@@ -245,8 +230,7 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
         #     for prop in node_props:
         #         if prop["property"] in enhanced_info:
         #             prop.update(enhanced_info[prop["property"]])
-        
-        
+
         # # Update rel info
         # for rel in schema_counts[0].get("relationships", []):
         #     rel_props = self.structured_schema["rel_props"].get(rel["name"])
@@ -268,22 +252,24 @@ class Neo4jKGProvider(PropertyGraphStore, KGProvider):
         #     except self.neo4j.exceptions.ClientError:
         #         # Sometimes the types are not consistent in the db
         #         pass
-        
+
         for label, props in self.structured_schema["node_props"].items():
             if not props:
                 continue
             list_of_props = [dict(prop) for prop in props]
             enhanced_cypher = self._enhanced_schema_cypher(
-                label, list_of_props, len(list_of_props) < EXHAUSTIVE_SEARCH_LIMIT
+                label,
+                list_of_props,
+                len(list_of_props) < EXHAUSTIVE_SEARCH_LIMIT,
             )
             enhanced_info = self.structured_query(enhanced_cypher)[0]["output"]
             for prop in list_of_props:
                 if prop["property"] in enhanced_info:
                     prop.update(enhanced_info[prop["property"]])
-            self.structured_schema["node_props"][label] = list_of_props # not the best way to do this, but it works for now
+            self.structured_schema["node_props"][
+                label
+            ] = list_of_props  # not the best way to do this, but it works for now
 
-        
-                   
     # TODO(@antejavor): Implement the upsert_nodes
     def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
         # Lists to hold separated types
