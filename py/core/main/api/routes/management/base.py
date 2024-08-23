@@ -367,10 +367,9 @@ class ManagementRouter(BaseRouter):
                 )
             user_uuid = UUID(user_id)
             group_uuid = UUID(group_id)
-            result = await self.engine.aadd_user_to_group(
+            return await self.engine.aadd_user_to_group(
                 user_uuid, group_uuid
             )
-            return {"result": result}
 
         @self.router.post("/remove_user_from_group")
         @self.base_endpoint
