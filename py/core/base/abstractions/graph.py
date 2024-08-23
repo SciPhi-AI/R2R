@@ -67,7 +67,7 @@ class Entity(BaseModel):
         if isinstance(self.attributes, str):
             try:
                 self.attributes = json.loads(self.attributes)
-            except Exception as e:
+            except json.JSONDecodeError:
                 self.attributes = self.attributes
                 pass
 
@@ -107,7 +107,7 @@ class Triple(BaseModel):
         if isinstance(self.attributes, str):
             try:
                 self.attributes = json.loads(self.attributes)
-            except Exception as e:
+            except Exception:
                 self.attributes = self.attributes
                 pass
 

@@ -17,7 +17,6 @@ from core.base import (
     Community,
     CompletionProvider,
     EmbeddingProvider,
-    GenerationConfig,
     KGEnrichmentSettings,
     KGProvider,
     PipeType,
@@ -206,7 +205,7 @@ class KGClusteringPipe(AsyncPipe):
         for i, completed_task in enumerate(asyncio.as_completed(tasks), 1):
             result = await completed_task
             logger.info(
-                f"Progress: {i}/{total_tasks} communities completed ({i/total_tasks*100:.2f}%)"
+                f"Progress: {i}/{total_tasks} communities completed ({i / total_tasks * 100:.2f}%)"
             )
             yield result
 

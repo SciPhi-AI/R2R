@@ -14,7 +14,6 @@ from core.base import (
     PromptProvider,
     R2RException,
     RunLoggingSingleton,
-    R2RException
 )
 from core.base.abstractions.search import (
     KGGlobalSearchResult,
@@ -25,6 +24,7 @@ from core.base.abstractions.search import (
 from ..abstractions.generator_pipe import GeneratorPipe
 
 logger = logging.getLogger(__name__)
+
 
 class KGSearchSearchPipe(GeneratorPipe):
     """

@@ -1,7 +1,7 @@
 """Abstractions for search functionality."""
 
 from enum import Enum
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -54,8 +54,10 @@ class VectorSearchResult(BaseModel):
             },
         }
 
+
 class KGLocalSearchResult(BaseModel):
     """Result of a local knowledge graph search operation."""
+
     query: str
     entities: dict[str, Any]
     relationships: dict[str, Any]
@@ -70,6 +72,7 @@ class KGLocalSearchResult(BaseModel):
 
 class KGGlobalSearchResult(BaseModel):
     """Result of a global knowledge graph search operation."""
+
     query: str
     search_result: list[str]
 
@@ -85,9 +88,10 @@ class KGGlobalSearchResult(BaseModel):
 
 class KGSearchResult(BaseModel):
     """Result of a knowledge graph search operation."""
+
     local_result: Optional[KGLocalSearchResult] = None
     global_result: Optional[KGGlobalSearchResult] = None
-    
+
     def __str__(self) -> str:
         return f"KGSearchResult(local_result={self.local_result}, global_result={self.global_result})"
 
