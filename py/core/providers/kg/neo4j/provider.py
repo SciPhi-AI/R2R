@@ -1,17 +1,11 @@
 import json
 import os
-import time
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from core.base import (
-    KGConfig,
-    KGProvider,
-    format_entity_types,
-    format_relations,
-)
+from core.base import KGConfig, KGProvider
 from core.base.abstractions.document import DocumentFragment
 from core.base.abstractions.graph import (
     Community,
@@ -24,15 +18,11 @@ from core.base.abstractions.graph import (
 from .graph_queries import (
     GET_CHUNKS_QUERY,
     GET_COMMUNITIES_QUERY,
-    GET_COMMUNITIES_REPORT_QUERY,
-    GET_COVARIATES_QUERY,
     GET_ENTITIES_QUERY,
     GET_TRIPLES_BY_SUBJECT_AND_OBJECT_QUERY,
     GET_TRIPLES_QUERY,
     PUT_CHUNKS_QUERY,
     PUT_COMMUNITIES_QUERY,
-    PUT_COMMUNITIES_REPORT_QUERY,
-    PUT_COVARIATES_QUERY,
     PUT_ENTITIES_EMBEDDINGS_QUERY,
     PUT_ENTITIES_QUERY,
     PUT_TRIPLES_QUERY,
@@ -141,7 +131,7 @@ class Neo4jKGProvider(KGProvider):
         Parameters: statement is the Cypher query to execute, df is the dataframe to import, and batch_size is the number of rows to import in each batch.
         """
         total = len(df)
-        start_s = time.time()
+        results = []
         for start in range(0, total, batch_size):
             batch = df[start : min(start + batch_size, total)]
             batch = self.convert_model_list_to_neo4j_compatible(batch)
@@ -150,7 +140,8 @@ class Neo4jKGProvider(KGProvider):
                 rows=batch,
                 database_=self._database,
             )
-        return total
+            results.append(result)
+        return results
 
     def get_chunks(
         self, chunk_ids: List[str] = None
@@ -189,7 +180,7 @@ class Neo4jKGProvider(KGProvider):
         """
         Upsert communities into the graph.
         """
-        self.batched_import(PUT_COMMUNITIES_QUERY, communities)
+        return self.batched_import(PUT_COMMUNITIES_QUERY, communities)
 
     def get_entities(self, entity_ids: List[str] = []) -> List[Entity]:
         """
@@ -316,9 +307,6 @@ class Neo4jKGProvider(KGProvider):
     ) -> List[Triple]:
         pass
 
-    def client(self):
-        return self._driver
-
     def create_vector_index(
         self, node_type: str, node_property: str, dimension: int
     ) -> None:
@@ -330,15 +318,6 @@ class Neo4jKGProvider(KGProvider):
         OPTIONS {{indexConfig: {{`vector.similarity_function`: 'cosine', `vector.dimensions`:{dimension}}}}}"""
 
         self.structured_query(query)
-
-    def get_rel_map(
-        self,
-        graph_nodes: Any,
-        depth: int = 2,
-        limit: int = 30,
-        ignore_rels: Optional[List[str]] = None,
-    ) -> List[Triple]:
-        pass
 
     def get_schema(self, refresh: bool = False) -> str:
         return super().get_schema(refresh)

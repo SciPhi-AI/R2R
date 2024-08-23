@@ -103,9 +103,6 @@ class UnstructuredParsingProvider(ParsingProvider):
 
         for iteration, element in enumerate(elements):
 
-            if isinstance(element, dict):
-                element_dict = element
-
             for key, value in element.items():
                 if key != "text":
                     if key == "metadata":

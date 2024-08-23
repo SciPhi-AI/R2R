@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from core.base import R2RException, RunLoggingSingleton, RunManager
 from core.base.abstractions import KGEnrichmentSettings
