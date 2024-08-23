@@ -52,7 +52,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile
+        file: ./py/Dockerfile
         push: true
         tags: ragtoriches/dev:latest
         platforms: linux/amd64
@@ -60,6 +60,7 @@ jobs:
         pull: true
 
     - name: Run cloud LLM integration tests in Docker
+      working-directory: ./py
       run: |
         python3 -m venv venv
         source venv/bin/activate
@@ -90,13 +91,13 @@ jobs:
         r2r search --query="What was Uber'\''s profit in 2020?"
 
         echo "Hybrid Search"
-        r2r search --query="What is a fierce nerd?" --do-hybrid-search
+        r2r search --query="What is a fierce nerd?" --use-hybrid-search
 
         echo "Basic RAG"
         r2r rag --query="What was Uber'\''s profit in 2020?"
 
         echo "RAG with Hybrid Search"
-        r2r rag --query="Who is John Snow?" --do-hybrid-search
+        r2r rag --query="Who is John Snow?" --use-hybrid-search
 
         echo "Streaming RAG"
         r2r rag --query="What was Lyft'\''s profit in 2020?" --stream

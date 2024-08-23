@@ -1,0 +1,61 @@
+ingest_files:
+  openapi_extra:
+    x-codeSamples:
+      - lang: Python
+        source: |
+          from r2r import R2RClient
+
+          client = R2RClient("http://localhost:8000")
+          # when using auth, do client.login(...)
+
+          result = client.ingest_files(
+              files=["pg_essay_1.html", "got.txt"],
+              metadatas=[{"metadata_1":"some random metadata"}, {"metadata_2": "some other random metadata"}],
+              document_ids=None,
+              versions=None
+          )
+      - lang: Shell
+        source: |
+          curl -X POST "https://api.example.com/ingest_files" \
+            -H "Content-Type: multipart/form-data" \
+            -H "Authorization: Bearer YOUR_API_KEY" \
+            -F "file=@pg_essay_1.html;type=text/html" \
+            -F "file=@got.txt;type=text/plain" \
+            -F 'metadatas=[{},{}]' \
+            -F 'document_ids=null' \
+            -F 'versions=null'
+
+  input_descriptions:
+    files: "The list of paths of input files to ingest into the system."
+    metadatas: "An optional list of JSON metadata to affix to each file"
+    document_ids: "An optional list of document ids for each file. If not provided, the system will generate a unique document id via the `generate_user_document_id` method."
+    versions: "An optional list of versions for each file. If not provided, the system will default to the tag `v1`."
+    chunking_settings: "An optional dictionary to override the default chunking configuration for the ingestion process. If not provided, the system will use the default server-side chunking configuration."
+
+update_files:
+  openapi_extra:
+    x-codeSamples:
+      - lang: Python
+        source: |
+          from r2r import R2RClient
+
+          client = R2RClient("http://localhost:8000")
+          # when using auth, do client.login(...)
+
+          result = client.update_files(
+              files=["pg_essay_1_v2.txt"],
+              document_ids=["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"]
+          )
+      - lang: Shell
+        source: |
+          curl -X POST "https://api.example.com/update_files" \
+            -H "Content-Type: multipart/form-data" \
+            -H "Authorization: Bearer YOUR_API_KEY" \
+            -F "file=@pg_essay_1_v2.txt;type=text/plain" \
+            -F 'document_ids=["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"]'
+
+  input_descriptions:
+    files: "The list of paths of input files to update in the system."
+    document_ids: "An optional list of document ids for each file. If not provided, the system will attempt to generate the corresponding unique from the `generate_user_document_id` method."
+    metadatas: "An optional list of JSON metadata to affix to each file"
+    chunking_settings: "JSON string for chunking configuration override"

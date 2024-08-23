@@ -1,0 +1,32 @@
+[completion]
+provider = "litellm"
+concurrent_request_limit = 1
+
+  [completion.generation_config]
+  model = "ollama/llama3.1"
+  temperature = 0.1
+  top_p = 1
+  max_tokens_to_sample = 1_024
+  stream = false
+  add_generation_kwargs = { }
+
+[database]
+provider = "postgres"
+
+[embedding]
+provider = "ollama"
+base_model = "mxbai-embed-large"
+base_dimension = 1_024
+batch_size = 128
+add_title_as_prefix = true
+concurrent_request_limit = 2
+
+[parsing]
+excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
+
+[agent]
+system_instruction_name = "rag_agent"
+tool_names = ["search"]
+
+  [agent.generation_config]
+  model = "ollama/llama3.1"
