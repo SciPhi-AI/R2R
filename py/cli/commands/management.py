@@ -130,9 +130,8 @@ def documents_overview(client, document_ids, offset, limit):
 def document_chunks(client, document_id, offset, limit):
     """Get chunks of a specific document."""
     with timer():
-        response = client.document_chunks(document_id, offset, limit)
+        chunks = client.document_chunks(document_id, offset, limit)
 
-    chunks = response.get("results", [])
     click.echo(f"\nNumber of chunks: {len(chunks)}")
     for index, chunk in enumerate(chunks, 1):
         click.echo(f"\nChunk {index}:")

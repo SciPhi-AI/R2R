@@ -63,7 +63,7 @@ def test_ingest_files(runner, mock_r2r_client, temp_file):
     assert result.exit_code == 0
     assert '"status": "success"' in result.output
     mock_r2r_client.ingest_files.assert_called_once_with(
-        [temp_file], None, None, None
+        [temp_file], None, None
     )
 
 
@@ -77,15 +77,13 @@ def test_ingest_files_with_options(runner, mock_r2r_client, temp_file):
             "doc1",
             "--metadatas",
             '{"key": "value"}',
-            "--versions",
-            "v1",
         ],
     )
     assert result.exit_code == 0
     assert '"status": "success"' in result.output
     assert mock_r2r_client.ingest_files.called, "ingest_files was not called"
     mock_r2r_client.ingest_files.assert_called_once_with(
-        [temp_file], {"key": "value"}, ["doc1"], ["v1"]
+        [temp_file], {"key": "value"}, ["doc1"]
     )
 
 
@@ -128,25 +126,6 @@ def test_ingest_sample_files(mock_ingest, runner, mock_r2r_client):
     assert "aristotle.txt" in result.output
     assert "got.txt" in result.output
     mock_ingest.assert_called_once()
-
-
-@patch("cli.commands.ingestion.requests.get")
-@patch("cli.commands.ingestion.tempfile.NamedTemporaryFile")
-def test_ingest_files_from_urls(mock_temp_file, mock_get, mock_r2r_client):
-    mock_get.return_value.text = "File content"
-    mock_temp_file.return_value.__enter__.return_value.name = "/tmp/test_file"
-    mock_r2r_client.ingest_files.return_value = {"status": "success"}
-
-    with patch("cli.commands.ingestion.os.unlink") as mock_unlink:
-        from cli.commands.ingestion import ingest_files_from_urls
-
-        result = ingest_files_from_urls(
-            mock_r2r_client, ["http://example.com/file.txt"]
-        )
-
-    assert result == ["file.txt"]
-    mock_r2r_client.ingest_files.assert_called_once_with(["/tmp/test_file"])
-    mock_unlink.assert_called_once_with("/tmp/test_file")
 
 
 def test_ingest_files_with_invalid_file(runner, mock_r2r_client):

@@ -141,5 +141,5 @@ def ingest_sample_files(client):
         response = ingest_files_from_urls(client, urls)
 
     click.echo(
-        f"Sample file ingestion completed. Ingest files response:\n\n{response}"
+        f"Sample files ingestion completed. Ingest files response:\n\n{response}"
     )
