@@ -219,7 +219,6 @@ def serve(
     if docker:
 
         run_docker_serve(
-            client,
             host,
             port,
             exclude_neo4j,
