@@ -256,7 +256,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
         return await self.management_service.aassign_document_to_group(
             *args, **kwargs
         )
-    
+
     @syncable
     async def agroups_overview(self, *args, **kwargs):
         return await self.management_service.agroups_overview(*args, **kwargs)
@@ -269,9 +269,7 @@ class R2REngine(metaclass=AsyncSyncMeta):
 
     @syncable
     async def adocument_groups(self, *args, **kwargs):
-        return await self.management_service.adocument_groups(
-            *args, **kwargs
-        )
+        return await self.management_service.adocument_groups(*args, **kwargs)
 
     @syncable
     async def aremove_document_from_group(self, *args, **kwargs):

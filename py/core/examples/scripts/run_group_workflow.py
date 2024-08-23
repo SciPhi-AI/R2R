@@ -1,10 +1,12 @@
 import os
-from r2r import R2RClient
 
+from r2r import R2RClient
 
 if __name__ == "__main__":
     # Initialize the R2R client
-    client = R2RClient("http://localhost:8000")  # Replace with your R2R deployment URL
+    client = R2RClient(
+        "http://localhost:8000"
+    )  # Replace with your R2R deployment URL
 
     # Admin login
     print("Logging in as admin...")
@@ -13,12 +15,14 @@ if __name__ == "__main__":
 
     # Create two groups
     print("\nCreating two groups...")
-    group1_result = client.create_group("TestGroup1", "A test group for document access")
+    group1_result = client.create_group(
+        "TestGroup1", "A test group for document access"
+    )
     group2_result = client.create_group("TestGroup2", "Another test group")
     print("Group1 creation result:", group1_result)
     print("Group2 creation result:", group2_result)
-    group1_id = group1_result['results']['group_id']
-    group2_id = group2_result['results']['group_id']
+    group1_id = group1_result["results"]["group_id"]
+    group2_id = group2_result["results"]["group_id"]
 
     # Get groups overview
     print("\nGetting groups overview...")
@@ -37,20 +41,26 @@ if __name__ == "__main__":
 
     # Update a group
     print("\nUpdating Group1...")
-    update_result = client.update_group(group1_id, name="UpdatedTestGroup1", description="Updated description")
+    update_result = client.update_group(
+        group1_id, name="UpdatedTestGroup1", description="Updated description"
+    )
     print("Group update result:", update_result)
 
     # Ingest two documents
     print("\nIngesting two documents...")
     script_path = os.path.dirname(__file__)
-    sample_file1 = os.path.join(script_path, "core", "examples", "data", "aristotle_v2.txt")
-    sample_file2 = os.path.join(script_path, "core", "examples", "data", "aristotle.txt")
+    sample_file1 = os.path.join(
+        script_path, "core", "examples", "data", "aristotle_v2.txt"
+    )
+    sample_file2 = os.path.join(
+        script_path, "core", "examples", "data", "aristotle.txt"
+    )
     ingestion_result1 = client.ingest_files([sample_file1])
     ingestion_result2 = client.ingest_files([sample_file2])
     print("Document1 ingestion result:", ingestion_result1)
     print("Document2 ingestion result:", ingestion_result2)
-    document1_id = ingestion_result1['results']['processed_documents'][0]['id']
-    document2_id = ingestion_result2['results']['processed_documents'][0]['id']
+    document1_id = ingestion_result1["results"]["processed_documents"][0]["id"]
+    document2_id = ingestion_result2["results"]["processed_documents"][0]["id"]
 
     # Assign documents to groups
     print("\nAssigning documents to groups...")
@@ -76,10 +86,18 @@ if __name__ == "__main__":
 
     # Add users to groups
     print("\nAdding users to groups...")
-    add_user1_result = client.add_user_to_group(user1_result['results']['id'], group1_id)
-    add_user2_result = client.add_user_to_group(user2_result['results']['id'], group2_id)
-    add_user3_result1 = client.add_user_to_group(user3_result['results']['id'], group1_id)
-    add_user3_result2 = client.add_user_to_group(user3_result['results']['id'], group2_id)
+    add_user1_result = client.add_user_to_group(
+        user1_result["results"]["id"], group1_id
+    )
+    add_user2_result = client.add_user_to_group(
+        user2_result["results"]["id"], group2_id
+    )
+    add_user3_result1 = client.add_user_to_group(
+        user3_result["results"]["id"], group1_id
+    )
+    add_user3_result2 = client.add_user_to_group(
+        user3_result["results"]["id"], group2_id
+    )
     print("Add user1 to group1 result:", add_user1_result)
     print("Add user2 to group2 result:", add_user2_result)
     print("Add user3 to group1 result:", add_user3_result1)
@@ -92,7 +110,7 @@ if __name__ == "__main__":
 
     # Get groups for a user
     print("\nGetting groups for User3...")
-    user3_groups = client.user_groups(user3_result['results']['id'])
+    user3_groups = client.user_groups(user3_result["results"]["id"])
     print("User3 groups:", user3_groups)
 
     # Get documents in a group
@@ -102,12 +120,16 @@ if __name__ == "__main__":
 
     # Remove user from group
     print("\nRemoving User3 from Group1...")
-    remove_user_result = client.remove_user_from_group(user3_result['results']['id'], group1_id)
+    remove_user_result = client.remove_user_from_group(
+        user3_result["results"]["id"], group1_id
+    )
     print("Remove user result:", remove_user_result)
 
     # Remove document from group
     print("\nRemoving Document1 from Group1...")
-    remove_doc_result = client.remove_document_from_group(document1_id, group1_id)
+    remove_doc_result = client.remove_document_from_group(
+        document1_id, group1_id
+    )
     print("Remove document result:", remove_doc_result)
 
     # Logout admin
@@ -120,7 +142,9 @@ if __name__ == "__main__":
 
     # Search for documents (should see document1 but not document2)
     print("\nUser1 searching for documents...")
-    search_result_user1 = client.search("philosophy", {"selected_group_ids": [group1_id]})
+    search_result_user1 = client.search(
+        "philosophy", {"selected_group_ids": [group1_id]}
+    )
     print("User1 search result:", search_result_user1)
 
     # Logout user1
@@ -134,10 +158,14 @@ if __name__ == "__main__":
     # Search for documents (should see only document2 after removal from Group1)
     print("\nUser3 searching for documents...")
     try:
-        search_result_user3 = client.search("philosophy", {"selected_group_ids": [group1_id, group2_id]})
+        search_result_user3 = client.search(
+            "philosophy", {"selected_group_ids": [group1_id, group2_id]}
+        )
     except Exception as e:
         print("User3 search result error:", e)
-        search_result_user3 = client.search("philosophy", {"selected_group_ids": [group2_id]})
+        search_result_user3 = client.search(
+            "philosophy", {"selected_group_ids": [group2_id]}
+        )
 
     print("User3 search result:", search_result_user3)
 
@@ -160,5 +188,3 @@ if __name__ == "__main__":
     client.logout()
 
     print("\nWorkflow completed.")
-    
-    

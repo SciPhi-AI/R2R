@@ -2,10 +2,11 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
+from sqlalchemy import text
+
 from core.base.abstractions import R2RException, UserStats
 from core.base.api.models.auth.responses import UserResponse
 from core.base.utils import generate_id_from_label
-from sqlalchemy import text
 
 from .base import DatabaseMixin, QueryBuilder
 
@@ -193,7 +194,6 @@ class UserMixin(DatabaseMixin):
             group_ids=result[10],
         )
 
-
     def delete_user(self, user_id: UUID) -> None:
         print("A")
         # Get the groups the user belongs to
@@ -201,12 +201,14 @@ class UserMixin(DatabaseMixin):
             SELECT group_ids FROM {self._get_table_name('users')}
             WHERE user_id = :user_id
         """
-        group_result = self.execute_query(group_query, {"user_id": user_id}).fetchone()
+        group_result = self.execute_query(
+            group_query, {"user_id": user_id}
+        ).fetchone()
 
         print("B")
         if not group_result:
             raise R2RException(status_code=404, message="User not found")
-        
+
         user_groups = group_result[0]
 
         print("C")
@@ -217,7 +219,10 @@ class UserMixin(DatabaseMixin):
                 SET user_ids = array_remove(user_ids, :user_id)
                 WHERE group_id = ANY(:group_ids)
             """
-            self.execute_query(group_update_query, {"user_id": user_id, "group_ids": user_groups})
+            self.execute_query(
+                group_update_query,
+                {"user_id": user_id, "group_ids": user_groups},
+            )
 
         print("D")
         # Remove user from documents
@@ -237,7 +242,9 @@ class UserMixin(DatabaseMixin):
         """
 
         print("F")
-        result = self.execute_query(delete_query, {"user_id": user_id}).fetchone()
+        result = self.execute_query(
+            delete_query, {"user_id": user_id}
+        ).fetchone()
 
         if not result:
             raise R2RException(status_code=404, message="User not found")

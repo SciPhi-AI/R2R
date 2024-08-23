@@ -1,6 +1,7 @@
 from typing import Any, Dict
 
 import click
+
 from cli.command_group import cli
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
@@ -53,11 +54,15 @@ def users_overview(client, user_ids, offset, limit):
     with timer():
         response = client.users_overview(user_ids, offset, limit)
 
-    if 'results' in response:
+    if "results" in response:
         click.echo("\nUser Overview:")
-        click.echo(f"{'User ID':<40} {'Num Files':<10} {'Total Size (bytes)':<20} Document IDs")
-        for user in response['results']:
-            click.echo(f"{user['user_id']:<40} {user['num_files']:<10} {user['total_size_in_bytes']:<20} {', '.join(user['document_ids'][:3]) + ('...' if len(user['document_ids']) > 3 else '')}")
+        click.echo(
+            f"{'User ID':<40} {'Num Files':<10} {'Total Size (bytes)':<20} Document IDs"
+        )
+        for user in response["results"]:
+            click.echo(
+                f"{user['user_id']:<40} {user['num_files']:<10} {user['total_size_in_bytes']:<20} {', '.join(user['document_ids'][:3]) + ('...' if len(user['document_ids']) > 3 else '')}"
+            )
     else:
         click.echo("No users found.")
 

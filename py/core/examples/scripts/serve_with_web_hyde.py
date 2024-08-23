@@ -1,4 +1,5 @@
 import fire
+
 from core import R2RBuilder, SerperClient, WebSearchPipe
 from core.base.abstractions.llm import GenerationConfig
 from core.main.assembly.factory_extensions import R2RPipeFactoryWithMultiSearch
@@ -38,6 +39,7 @@ def run_rag_pipeline():
             query_generation_template_override=synthetic_query_generation_template,
         )
     ).serve()
+
 
 if __name__ == "__main__":
     fire.Fire(run_rag_pipeline)

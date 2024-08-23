@@ -2,13 +2,14 @@ import json
 from abc import ABC, abstractmethod
 from typing import Any, AsyncGenerator, Dict, List, Optional, Type, Union
 
+from pydantic import BaseModel
+
 from core.base.abstractions import (
     GenerationConfig,
     LLMChatCompletion,
     MessageType,
 )
 from core.base.providers import CompletionProvider, PromptProvider
-from pydantic import BaseModel
 
 from .base import Message, Tool, ToolResult
 

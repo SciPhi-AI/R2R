@@ -1,5 +1,6 @@
-from r2r import R2RBuilder, R2RConfig, R2RPipeFactoryWithMultiSearch
 import fire
+
+from r2r import R2RBuilder, R2RConfig, R2RPipeFactoryWithMultiSearch
 
 
 def main(task_prompt_name="hyde"):
@@ -15,6 +16,7 @@ def main(task_prompt_name="hyde"):
         )
     )
     app.serve()
+
 
 if __name__ == "__main__":
     fire.Fire(main)

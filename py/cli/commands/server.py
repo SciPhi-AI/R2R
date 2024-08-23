@@ -5,6 +5,8 @@ import subprocess
 import sys
 
 import click
+from dotenv import load_dotenv
+
 from cli.command_group import cli
 from cli.utils.docker_utils import (
     bring_down_docker_compose,
@@ -13,7 +15,6 @@ from cli.utils.docker_utils import (
     run_local_serve,
 )
 from cli.utils.timer import timer
-from dotenv import load_dotenv
 
 
 @cli.command()

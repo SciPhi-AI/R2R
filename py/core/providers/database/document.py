@@ -102,7 +102,7 @@ class DocumentMixin(DatabaseMixin):
         """
 
         results = self.execute_query(query, params).fetchall()
-        print('results = ', results)
+        print("results = ", results)
         documents = [
             DocumentInfo(
                 id=row[0],

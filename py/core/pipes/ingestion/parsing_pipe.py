@@ -76,5 +76,7 @@ class ParsingPipe(AsyncPipe):
         **kwargs,
     ) -> AsyncGenerator[DocumentExtraction, None]:
         async for document in input.message:
-            async for result in self._parse(document, run_id, document.metadata.get("version", "1.0")):
+            async for result in self._parse(
+                document, run_id, document.metadata.get("version", "1.0")
+            ):
                 yield result

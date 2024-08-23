@@ -3,6 +3,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from core.parsers.media.docx_parser import DOCXParser
 from core.parsers.media.pdf_parser import PDFParser
 from core.parsers.media.ppt_parser import PPTParser

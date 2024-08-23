@@ -1,9 +1,10 @@
 from typing import Union
 
+from fastapi import Body, Depends
+
 from core.base import KGEnrichmentSettings
 from core.main.api.routes.base_router import BaseRouter, RunType
 from core.main.engine import R2REngine
-from fastapi import Body, Depends
 
 
 class RestructureRouter(BaseRouter):

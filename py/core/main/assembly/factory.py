@@ -215,6 +215,7 @@ class R2RProviderFactory:
         prompt_provider = None
         if prompt_config.provider == "r2r":
             from core.providers import R2RPromptProvider
+
             prompt_provider = R2RPromptProvider(prompt_config)
         else:
             raise ValueError(

@@ -4,6 +4,9 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict
 
 import jwt
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
+
 from core.base import (
     AuthConfig,
     AuthProvider,
@@ -14,8 +17,6 @@ from core.base import (
     TokenData,
 )
 from core.base.api.models.auth.responses import UserResponse
-from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer
 
 logger = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

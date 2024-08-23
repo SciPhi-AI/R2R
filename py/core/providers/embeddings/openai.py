@@ -2,14 +2,15 @@ import logging
 import os
 from typing import Any, List
 
+from openai import AsyncOpenAI, AuthenticationError, OpenAI
+from openai._types import NOT_GIVEN
+
 from core.base import (
     EmbeddingConfig,
     EmbeddingProvider,
     EmbeddingPurpose,
     VectorSearchResult,
 )
-from openai import AsyncOpenAI, AuthenticationError, OpenAI
-from openai._types import NOT_GIVEN
 
 logger = logging.getLogger(__name__)
 
