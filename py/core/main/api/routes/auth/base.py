@@ -1,15 +1,16 @@
 import uuid
 from typing import TYPE_CHECKING, Optional
 
+from fastapi import Body, Depends, Path
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from pydantic import EmailStr
+
 from core.base.api.models.auth.responses import (
     GenericMessageResponse,
     WrappedGenericMessageResponse,
     WrappedTokenResponse,
     WrappedUserResponse,
 )
-from fastapi import Path, Body, Depends
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import EmailStr
 
 from ..base_router import BaseRouter, RunType
 
@@ -225,5 +226,7 @@ class AuthRouter(BaseRouter):
             if not auth_user.is_superuser and not password:
                 raise Exception("Password is required for non-superusers")
             user_uuid = uuid.UUID(user_id)
-            result = await self.engine.adelete_user(user_uuid, password, delete_vector_data)
+            result = await self.engine.adelete_user(
+                user_uuid, password, delete_vector_data
+            )
             return GenericMessageResponse(message=result["message"])

@@ -220,7 +220,6 @@ class IndexMeasure(str, Enum):
     max_inner_product = "max_inner_product"
 
 
-
 class HybridSearchSettings(BaseModel):
     full_text_weight: float = Field(
         default=1.0, description="Weight to apply to full text search"
@@ -235,6 +234,7 @@ class HybridSearchSettings(BaseModel):
     rrf_k: int = Field(
         default=50, description="K-value for RRF (Rank Reciprocal Fusion)"
     )
+
 
 class VectorSearchSettings(BaseModel):
     use_vector_search: bool = Field(

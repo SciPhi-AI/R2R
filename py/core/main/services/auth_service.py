@@ -147,7 +147,7 @@ class AuthService(Service):
         ):
             raise R2RException(status_code=400, message="Incorrect password")
         self.providers.database.relational.delete_user(user_id)
-        if (delete_vector_data):
+        if delete_vector_data:
             self.providers.database.vector.delete_user(user_id)
 
         return {"message": f"User account {user_id} deleted successfully."}

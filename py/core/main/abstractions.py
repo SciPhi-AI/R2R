@@ -1,5 +1,7 @@
 from typing import Optional
 
+from pydantic import BaseModel
+
 from core.agent import R2RRAGAgent, R2RStreamingRAGAgent
 from core.base.pipes import AsyncPipe
 from core.base.providers import (
@@ -18,7 +20,6 @@ from core.pipelines import (
     RAGPipeline,
     SearchPipeline,
 )
-from pydantic import BaseModel
 
 
 class R2RProviders(BaseModel):

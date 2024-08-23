@@ -9,8 +9,9 @@ from typing import Optional
 
 import click
 import requests
-from core.main import R2RBuilder, R2RConfig
 from requests.exceptions import RequestException
+
+from core.main import R2RBuilder, R2RConfig
 from sdk import R2RClient
 
 
@@ -311,7 +312,9 @@ def set_ollama_api_base(exclude_ollama):
 
 def get_compose_files():
     package_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "..",
+        os.path.dirname(os.path.abspath(__file__)),
+        "..",
+        "..",
     )
     compose_files = {
         "base": os.path.join(package_dir, "compose.yaml"),

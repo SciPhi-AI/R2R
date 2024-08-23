@@ -3,6 +3,7 @@ import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from core import CompletionConfig, GenerationConfig
 from core.base.abstractions.llm import (
     LLMChatCompletion,

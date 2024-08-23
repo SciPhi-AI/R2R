@@ -1,7 +1,7 @@
 import json
 import logging
-from typing import Any, AsyncGenerator, Optional
 import uuid
+from typing import Any, AsyncGenerator, Optional
 
 from core.base import (
     AsyncPipe,
@@ -58,8 +58,12 @@ class WebSearchPipe(SearchPipe):
             text = result.pop("snippet")
             search_result = VectorSearchResult(
                 fragment_id=generate_id_from_label(str(result)),
-                extraction_id=uuid.uuid5(uuid.NAMESPACE_DNS, str(uuid.uuid4())),  # Generate a new UUID for extraction_id
-                document_id=uuid.uuid5(uuid.NAMESPACE_DNS, str(uuid.uuid4())),  # Generate a new UUID for document_id
+                extraction_id=uuid.uuid5(
+                    uuid.NAMESPACE_DNS, str(uuid.uuid4())
+                ),  # Generate a new UUID for extraction_id
+                document_id=uuid.uuid5(
+                    uuid.NAMESPACE_DNS, str(uuid.uuid4())
+                ),  # Generate a new UUID for document_id
                 user_id=None,  # Web search results don't have a user_id
                 group_ids=[],  # Web search results don't belong to any group
                 score=result.get(

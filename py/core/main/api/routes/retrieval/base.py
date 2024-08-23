@@ -2,6 +2,9 @@ from pathlib import Path
 from typing import Optional
 
 import yaml
+from fastapi import Body, Depends
+from fastapi.responses import StreamingResponse
+
 from core.base import (
     GenerationConfig,
     KGSearchSettings,
@@ -15,8 +18,6 @@ from core.base.api.models import (
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
-from fastapi import Body, Depends
-from fastapi.responses import StreamingResponse
 
 from ....engine import R2REngine
 from ..base_router import BaseRouter
@@ -72,8 +73,8 @@ class RetrievalRouter(BaseRouter):
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
 
             """
-            print('auth_user = ', auth_user)
-            print('initial vector_search_settings = ', vector_search_settings)
+            print("auth_user = ", auth_user)
+            print("initial vector_search_settings = ", vector_search_settings)
 
             print(f"Received query: {query}")
             print(f"Received vector_search_settings: {vector_search_settings}")
@@ -88,7 +89,10 @@ class RetrievalRouter(BaseRouter):
                     "User does not have access to the specified group(s): "
                     f"{selected_groups - allowed_groups}"
                 )
-            print('initial vector_search_settings filters = ', vector_search_settings.filters)
+            print(
+                "initial vector_search_settings filters = ",
+                vector_search_settings.filters,
+            )
 
             filters = {
                 "$or": [
@@ -101,8 +105,11 @@ class RetrievalRouter(BaseRouter):
                 filters = {"$and": [filters, vector_search_settings.filters]}
 
             vector_search_settings.filters = filters
-            print('final vector_search_settings = ', vector_search_settings)
-            print('final vector_search_settings filters = ', vector_search_settings.filters)
+            print("final vector_search_settings = ", vector_search_settings)
+            print(
+                "final vector_search_settings filters = ",
+                vector_search_settings.filters,
+            )
             results = await self.engine.asearch(
                 query=query,
                 vector_search_settings=vector_search_settings,

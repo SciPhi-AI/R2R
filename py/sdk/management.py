@@ -331,7 +331,6 @@ class ManagementMethods:
         """
         return await client._make_request("DELETE", f"delete_group/{group_id}")
 
-
     @staticmethod
     async def delete_user(
         client,
@@ -356,8 +355,9 @@ class ManagementMethods:
         if params == {}:
             return await client._make_request("DELETE", f"user/{user_id}")
         else:
-            return await client._make_request("DELETE", f"user/{user_id}", json=params)
-
+            return await client._make_request(
+                "DELETE", f"user/{user_id}", json=params
+            )
 
     @staticmethod
     async def list_groups(
@@ -479,9 +479,7 @@ class ManagementMethods:
         if limit is not None:
             params["limit"] = limit
         if params:
-            return await client._make_request(
-                "GET", f"user_groups/{user_id}"
-            )
+            return await client._make_request("GET", f"user_groups/{user_id}")
         else:
             return await client._make_request(
                 "GET", f"user_groups/{user_id}", params=params
@@ -541,7 +539,7 @@ class ManagementMethods:
         client,
         document_id: str,
         offset: Optional[int] = None,
-        limit: Optional[int] = None
+        limit: Optional[int] = None,
     ) -> dict:
         """
         Get all groups that a document is assigned to.

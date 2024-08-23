@@ -5,6 +5,9 @@ from typing import Optional
 from uuid import UUID
 
 import psutil
+from fastapi import Body, Depends, Path, Query
+from pydantic import Json
+
 from core.base import R2RException
 from core.base.api.models.management.responses import (
     WrappedAddUserResponse,
@@ -23,8 +26,6 @@ from core.base.api.models.management.responses import (
     WrappedUserOverviewResponse,
 )
 from core.base.logging import AnalysisTypes, LogFilterCriteria
-from fastapi import Body, Depends, Path, Query
-from pydantic import Json
 
 from ....engine import R2REngine
 from ..base_router import BaseRouter, RunType
@@ -176,7 +177,9 @@ class ManagementRouter(BaseRouter):
                 [UUID(user_id) for user_id in user_ids] if user_ids else None
             )
 
-            return await self.engine.ausers_overview(user_ids=user_uuids, offset=offset, limit=limit)
+            return await self.engine.ausers_overview(
+                user_ids=user_uuids, offset=offset, limit=limit
+            )
 
         @self.router.delete("/delete", status_code=204)
         @self.base_endpoint
@@ -219,7 +222,9 @@ class ManagementRouter(BaseRouter):
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
         ) -> WrappedDocumentChunkResponse:
             document_uuid = UUID(document_id)
-            chunks = await self.engine.adocument_chunks(document_uuid, offset, limit)
+            chunks = await self.engine.adocument_chunks(
+                document_uuid, offset, limit
+            )
 
             if not chunks:
                 raise R2RException(
@@ -251,7 +256,9 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
             return await self.engine.ainspect_knowledge_graph(
-                offset=offset, limit=limit, print_descriptions=print_descriptions
+                offset=offset,
+                limit=limit,
+                print_descriptions=print_descriptions,
             )
 
         @self.router.get("/groups_overview")
@@ -378,9 +385,7 @@ class ManagementRouter(BaseRouter):
                 )
             user_uuid = UUID(user_id)
             group_uuid = UUID(group_id)
-            await self.engine.aremove_user_from_group(
-                user_uuid, group_uuid
-            )
+            await self.engine.aremove_user_from_group(user_uuid, group_uuid)
             return None
 
         # TODO - Proivde response model
@@ -420,7 +425,9 @@ class ManagementRouter(BaseRouter):
                     "Only a superuser can get groups for a user.", 403
                 )
             user_uuid = UUID(user_id)
-            return await self.engine.aget_groups_for_user(user_uuid, offset, limit)
+            return await self.engine.aget_groups_for_user(
+                user_uuid, offset, limit
+            )
 
         @self.router.post("/assign_document_to_group")
         @self.base_endpoint
@@ -467,9 +474,12 @@ class ManagementRouter(BaseRouter):
         ) -> WrappedGroupListResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can get the groups belonging to a document.", 403
+                    "Only a superuser can get the groups belonging to a document.",
+                    403,
                 )
-            return await self.engine.adocument_groups(document_id, offset, limit)
+            return await self.engine.adocument_groups(
+                document_id, offset, limit
+            )
 
         @self.router.get("/group/{group_id}/documents")
         @self.base_endpoint

@@ -3,8 +3,9 @@ from unittest.mock import MagicMock, patch
 
 import click
 import pytest
-from cli.cli import cli
 from click.testing import CliRunner
+
+from cli.cli import cli
 
 
 @pytest.fixture

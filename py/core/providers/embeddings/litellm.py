@@ -2,6 +2,8 @@ import asyncio
 import logging
 from typing import Any, List
 
+from litellm import aembedding, embedding
+
 from core.base import (
     EmbeddingConfig,
     EmbeddingProvider,
@@ -9,7 +11,6 @@ from core.base import (
     R2RException,
     VectorSearchResult,
 )
-from litellm import aembedding, embedding
 
 logger = logging.getLogger(__name__)
 

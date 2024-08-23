@@ -28,7 +28,7 @@ RUN poetry config virtualenvs.create false \
 # Create the final image
 FROM python:3.10-slim
 
-# Install runtime dependencies 
+# Install runtime dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     curl tesseract-ocr poppler-utils libmagic1 \

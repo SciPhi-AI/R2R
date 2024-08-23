@@ -105,7 +105,7 @@ class GroupMixin(DatabaseMixin):
             created_at=result[3],
             updated_at=result[4],
         )
-    
+
     def delete_group(self, group_id: UUID) -> None:
         # Remove group_id from users
         user_update_query = f"""
@@ -129,7 +129,9 @@ class GroupMixin(DatabaseMixin):
             WHERE group_id = :group_id
             RETURNING group_id
         """
-        result = self.execute_query(delete_query, {"group_id": group_id}).fetchone()
+        result = self.execute_query(
+            delete_query, {"group_id": group_id}
+        ).fetchone()
 
         if not result:
             raise R2RException(status_code=404, message="Group not found")
@@ -393,8 +395,10 @@ class GroupMixin(DatabaseMixin):
             )
             for row in results
         ]
-    
-    def assign_document_to_group(self, document_id: UUID, group_id: UUID) -> None:
+
+    def assign_document_to_group(
+        self, document_id: UUID, group_id: UUID
+    ) -> None:
         """
         Assign a document to a group.
 
@@ -420,7 +424,9 @@ class GroupMixin(DatabaseMixin):
             ).fetchone()
 
             if not document_exists:
-                raise R2RException(status_code=404, message="Document not found")
+                raise R2RException(
+                    status_code=404, message="Document not found"
+                )
 
             # If document exists, proceed with the assignment
             assign_query = f"""
@@ -430,14 +436,15 @@ class GroupMixin(DatabaseMixin):
                 RETURNING document_id
             """
             result = self.execute_query(
-                assign_query, {"document_id": document_id, "group_id": group_id}
+                assign_query,
+                {"document_id": document_id, "group_id": group_id},
             ).fetchone()
 
             if not result:
                 # Document exists but was already assigned to the group
                 raise R2RException(
                     status_code=409,
-                    message="Document is already assigned to the group"
+                    message="Document is already assigned to the group",
                 )
 
         except R2RException:
@@ -446,10 +453,12 @@ class GroupMixin(DatabaseMixin):
         except Exception as e:
             raise R2RException(
                 status_code=500,
-                message="An error occurred while assigning the document to the group"
+                message="An error occurred while assigning the document to the group",
             )
-        
-    def document_groups(self, document_id: UUID, offset: int = 0, limit: int = 100) -> list[GroupResponse]:
+
+    def document_groups(
+        self, document_id: UUID, offset: int = 0, limit: int = 100
+    ) -> list[GroupResponse]:
         query = f"""
             SELECT g.group_id, g.name, g.description, g.created_at, g.updated_at
             FROM {self._get_table_name('groups')} g
@@ -459,11 +468,7 @@ class GroupMixin(DatabaseMixin):
             OFFSET :offset
             LIMIT :limit
         """
-        params = {
-            "document_id": document_id,
-            "offset": offset,
-            "limit": limit
-        }
+        params = {"document_id": document_id, "offset": offset, "limit": limit}
         results = self.execute_query(query, params).fetchall()
 
         return [
@@ -476,8 +481,10 @@ class GroupMixin(DatabaseMixin):
             )
             for row in results
         ]
-        
-    def remove_document_from_group(self, document_id: UUID, group_id: UUID) -> None:
+
+    def remove_document_from_group(
+        self, document_id: UUID, group_id: UUID
+    ) -> None:
         """
         Remove a document from a group.
 
@@ -504,5 +511,5 @@ class GroupMixin(DatabaseMixin):
         if not result:
             raise R2RException(
                 status_code=404,
-                message="Document not found in the specified group"
-            )            
+                message="Document not found in the specified group",
+            )

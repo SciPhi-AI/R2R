@@ -5,9 +5,10 @@ from enum import Enum
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
+from pydantic import BaseModel
+
 from core.base.logging.run_logger import RunLoggingSingleton
 from core.base.logging.run_manager import RunManager, manage_run
-from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
