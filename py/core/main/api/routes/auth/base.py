@@ -132,8 +132,7 @@ class AuthRouter(BaseRouter):
         )
         @self.base_endpoint
         async def refresh_access_token_app(
-            refresh_token: str = Body(..., description="Refresh token"),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            refresh_token: str = Body(..., description="Refresh token")
         ):
             """
             Refresh the access token using a refresh token.
