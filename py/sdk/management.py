@@ -276,7 +276,7 @@ class ManagementMethods:
     @staticmethod
     async def get_group(
         client,
-        group_id: str,
+        group_id: Union[str, UUID],
     ) -> dict:
         """
         Get a group by its ID.
@@ -287,12 +287,12 @@ class ManagementMethods:
         Returns:
             dict: The group data.
         """
-        return await client._make_request("GET", f"get_group/{group_id}")
+        return await client._make_request("GET", f"get_group/{str(group_id)}")
 
     @staticmethod
     async def update_group(
         client,
-        group_id: str,
+        group_id: Union[str, UUID],
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> dict:
@@ -307,7 +307,7 @@ class ManagementMethods:
         Returns:
             dict: The response from the server.
         """
-        data = {"group_id": group_id}
+        data = {"group_id": str(group_id)}
         if name is not None:
             data["name"] = name
         if description is not None:
@@ -318,7 +318,7 @@ class ManagementMethods:
     @staticmethod
     async def delete_group(
         client,
-        group_id: str,
+        group_id: Union[str, UUID],
     ) -> dict:
         """
         Delete a group by its ID.
@@ -329,7 +329,9 @@ class ManagementMethods:
         Returns:
             dict: The response from the server.
         """
-        return await client._make_request("DELETE", f"delete_group/{group_id}")
+        return await client._make_request(
+            "DELETE", f"delete_group/{str(group_id)}"
+        )
 
     @staticmethod
     async def delete_user(
@@ -385,8 +387,8 @@ class ManagementMethods:
     @staticmethod
     async def add_user_to_group(
         client,
-        user_id: str,
-        group_id: str,
+        user_id: Union[str, UUID],
+        group_id: Union[str, UUID],
     ) -> dict:
         """
         Add a user to a group.
@@ -399,8 +401,8 @@ class ManagementMethods:
             dict: The response from the server.
         """
         data = {
-            "user_id": user_id,
-            "group_id": group_id,
+            "user_id": str(user_id),
+            "group_id": str(group_id),
         }
         return await client._make_request(
             "POST", "add_user_to_group", json=data
@@ -409,8 +411,8 @@ class ManagementMethods:
     @staticmethod
     async def remove_user_from_group(
         client,
-        user_id: str,
-        group_id: str,
+        user_id: Union[str, UUID],
+        group_id: Union[str, UUID],
     ) -> dict:
         """
         Remove a user from a group.
@@ -423,8 +425,8 @@ class ManagementMethods:
             dict: The response from the server.
         """
         data = {
-            "user_id": user_id,
-            "group_id": group_id,
+            "user_id": str(user_id),
+            "group_id": str(group_id),
         }
         return await client._make_request(
             "POST", "remove_user_from_group", json=data
@@ -433,7 +435,7 @@ class ManagementMethods:
     @staticmethod
     async def get_users_in_group(
         client,
-        group_id: str,
+        group_id: Union[str, UUID],
         offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> dict:
@@ -454,13 +456,13 @@ class ManagementMethods:
         if limit is not None:
             params["limit"] = limit
         return await client._make_request(
-            "GET", f"get_users_in_group/{group_id}", params=params
+            "GET", f"get_users_in_group/{str(group_id)}", params=params
         )
 
     @staticmethod
     async def user_groups(
         client,
-        user_id: str,
+        user_id: Union[str, UUID],
         offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> dict:
@@ -479,17 +481,19 @@ class ManagementMethods:
         if limit is not None:
             params["limit"] = limit
         if params:
-            return await client._make_request("GET", f"user_groups/{user_id}")
+            return await client._make_request(
+                "GET", f"user_groups/{str(user_id)}"
+            )
         else:
             return await client._make_request(
-                "GET", f"user_groups/{user_id}", params=params
+                "GET", f"user_groups/{str(user_id)}", params=params
             )
 
     @staticmethod
     async def assign_document_to_group(
         client,
-        document_id: str,
-        group_id: str,
+        document_id: Union[str, UUID],
+        group_id: Union[str, UUID],
     ) -> dict:
         """
         Assign a document to a group.
@@ -502,8 +506,8 @@ class ManagementMethods:
             dict: The response from the server.
         """
         data = {
-            "document_id": document_id,
-            "group_id": group_id,
+            "document_id": str(document_id),
+            "group_id": str(group_id),
         }
         return await client._make_request(
             "POST", "assign_document_to_group", json=data
@@ -513,8 +517,8 @@ class ManagementMethods:
     @staticmethod
     async def remove_document_from_group(
         client,
-        document_id: str,
-        group_id: str,
+        document_id: Union[str, UUID],
+        group_id: Union[str, UUID],
     ) -> dict:
         """
         Remove a document from a group.
@@ -527,8 +531,8 @@ class ManagementMethods:
             dict: The response from the server.
         """
         data = {
-            "document_id": document_id,
-            "group_id": group_id,
+            "document_id": str(document_id),
+            "group_id": str(group_id),
         }
         return await client._make_request(
             "POST", "remove_document_from_group", json=data
@@ -537,7 +541,7 @@ class ManagementMethods:
     @staticmethod
     async def document_groups(
         client,
-        document_id: str,
+        document_id: Union[str, UUID],
         offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> dict:
@@ -557,17 +561,17 @@ class ManagementMethods:
             params["limit"] = limit
         if params:
             return await client._make_request(
-                "GET", f"document_groups/{document_id}", params=params
+                "GET", f"document_groups/{str(document_id)}", params=params
             )
         else:
             return await client._make_request(
-                "GET", f"document_groups/{document_id}"
+                "GET", f"document_groups/{str(document_id)}"
             )
 
     @staticmethod
     async def documents_in_group(
         client,
-        group_id: str,
+        group_id: Union[str, UUID],
         offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> dict:
@@ -588,5 +592,5 @@ class ManagementMethods:
         if limit is not None:
             params["limit"] = limit
         return await client._make_request(
-            "GET", f"group/{group_id}/documents", params=params
+            "GET", f"group/{str(group_id)}/documents", params=params
         )

@@ -227,7 +227,9 @@ async def test_verify_email_with_expired_code(auth_service, auth_provider):
         )
 
         with pytest.raises(R2RException) as exc_info:
-            await auth_service.verify_email("verify_expired@example.com", "123456")
+            await auth_service.verify_email(
+                "verify_expired@example.com", "123456"
+            )
         assert "Invalid or expired verification code" in str(exc_info.value)
 
 
@@ -251,9 +253,7 @@ async def test_refresh_token_flow(auth_service, auth_provider):
     refresh_token = tokens["refresh_token"]
 
     # Use refresh token to get new access token
-    new_tokens = await auth_service.refresh_access_token(
-        refresh_token.token
-    )
+    new_tokens = await auth_service.refresh_access_token(refresh_token.token)
     assert "access_token" in new_tokens
     assert new_tokens["access_token"].token != initial_access_token.token
 

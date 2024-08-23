@@ -130,7 +130,7 @@ async def test_ingest_txt_file(app, user):
                 os.path.join(
                     os.path.dirname(__file__),
                     "..",
-                    "r2r",
+                    "core",
                     "examples",
                     "data",
                     "test.txt",
@@ -163,7 +163,7 @@ async def test_ingest_search_txt_file(app, user, logging_connection):
                 os.path.join(
                     os.path.dirname(__file__),
                     "..",
-                    "r2r",
+                    "core",
                     "examples",
                     "data",
                     "aristotle.txt",
