@@ -31,6 +31,8 @@ from .prompt import Prompt
 from .restructure import KGEnrichmentSettings
 from .search import (
     AggregateSearchResult,
+    KGLocalSearchResult,
+    KGGlobalSearchResult,
     KGSearchResult,
     KGSearchSettings,
     VectorSearchResult,
@@ -78,6 +80,8 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
+    "KGLocalSearchResult",
+    "KGGlobalSearchResult",
     "KGSearchResult",
     "KGSearchSettings",
     "VectorSearchResult",

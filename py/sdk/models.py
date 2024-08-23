@@ -187,26 +187,78 @@ class ChunkingConfig(ProviderConfig):
             },
         }
 
+class KGLocalSearchResult(BaseModel):
+    query: str
+    entities: list[dict[str, Any]]
+    relationships: list[dict[str, Any]]
+    communities: list[dict[str, Any]]
+
+    def __str__(self) -> str:
+        return f"KGLocalSearchResult(query={self.query}, entities={self.entities}, relationships={self.relationships}, communities={self.communities})"
+    
+    def dict(self) -> dict:
+        return {
+            "query": self.query,
+            "entities": self.entities,
+            "relationships": self.relationships,
+            "communities": self.communities
+        }
+
+class KGGlobalSearchResult(BaseModel):
+    query: str
+    search_result: list[str]
+
+    def __str__(self) -> str:
+        return f"KGGlobalSearchResult(query={self.query}, search_result={self.search_result})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def dict(self) -> dict:
+        return {
+            "query": self.query,
+            "search_result": self.search_result
+        }
+
 
 class KGSearchResult(BaseModel):
-    query: str
-    results: list[Dict[str, Any]]
+    local_result: Optional[KGLocalSearchResult] = None
+    global_result: Optional[KGGlobalSearchResult] = None
+
+    def __str__(self) -> str:
+        return f"KGSearchResult(local_result={self.local_result}, global_result={self.global_result})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def dict(self) -> dict:
+        return {
+            "local_result": self.local_result.dict() if self.local_result else None,
+            "global_result": self.global_result.dict() if self.global_result else None
+        }
 
     class Config:
         json_schema_extra = {
             "example": {
-                "query": "What is the capital of France?",
-                "results": [
-                    {
+                "local_result": {
+                    "query": "What is the capital of France?",
+                    "entities": {
                         "Paris": {
                             "name": "Paris",
-                            "description": "Paris is the capital of France.",
+                            "description": "Paris is the capital of France."
                         }
-                    }
-                ],
+                    },
+                    "relationships": {},
+                    "communities": {},
+                },
+                "global_result": {
+                    "query": "What is the capital of France?",
+                    "search_result": [
+                        "Paris is the capital and most populous city of France."
+                    ]
+                }
             }
         }
-
 
 class R2RException(Exception):
     def __init__(
@@ -419,7 +471,7 @@ class SearchResponse(BaseModel):
         ...,
         description="List of vector search results",
     )
-    kg_search_results: Optional[KGSearchResult] = Field(
+    kg_search_results: Optional[list[KGSearchResult]] = Field(
         None,
         description="Knowledge graph search results, if applicable",
     )

@@ -110,19 +110,20 @@ def run_docker_serve(
     exclude_postgres: bool,
     project_name: str,
     image: str,
+    config_name: Optional[str] = None,
     config_path: Optional[str] = None,
 ):
     check_set_docker_env_vars(exclude_neo4j, exclude_postgres)
     set_ollama_api_base(exclude_ollama)
 
+    if config_path and config_name:
+        raise ValueError("Cannot specify both config_path and config_name")
+
     if config_path:
         config = R2RConfig.from_toml(config_path)
     else:
-        if hasattr(client, "config_name"):
-            config_name = client.config_name
-        else:
+        if not config_name:
             config_name = "default"
-
         config = R2RConfig.from_toml(R2RBuilder.CONFIG_OPTIONS[config_name])
 
     if config.parsing.provider == "unstructured" and not image:

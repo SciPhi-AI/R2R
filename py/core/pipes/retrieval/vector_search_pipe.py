@@ -91,6 +91,7 @@ class VectorSearchPipe(SearchPipe):
             result.metadata["associatedQuery"] = message
             results.append(result)
             yield result
+
         await self.enqueue_log(
             run_id=run_id,
             key="search_results",

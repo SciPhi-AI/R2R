@@ -11,7 +11,7 @@ class SearchResponse(BaseModel):
         ...,
         description="List of vector search results",
     )
-    kg_search_results: Optional[KGSearchResult] = Field(
+    kg_search_results: Optional[list[KGSearchResult]] = Field(
         None,
         description="Knowledge graph search results, if applicable",
     )

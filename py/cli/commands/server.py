@@ -217,6 +217,7 @@ def serve(
             ).replace(":", "")
 
     if docker:
+        
         run_docker_serve(
             client,
             host,
@@ -226,6 +227,8 @@ def serve(
             exclude_postgres,
             project_name,
             image,
+            config_name,
+            config_path,
         )
         if (
             "pytest" in sys.modules
