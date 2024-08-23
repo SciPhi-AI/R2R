@@ -74,11 +74,9 @@ class AuthService(Service):
 
     @telemetry_event("RefreshToken")
     async def refresh_access_token(
-        self, user_email: str, refresh_token: str
+        self, refresh_token: str
     ) -> dict[str, Token]:
-        return self.providers.auth.refresh_access_token(
-            user_email, refresh_token
-        )
+        return self.providers.auth.refresh_access_token(refresh_token)
 
     @telemetry_event("ChangePassword")
     async def change_password(
@@ -133,6 +131,7 @@ class AuthService(Service):
         self,
         user_id: UUID,
         password: Optional[str] = None,
+        delete_vector_data: bool = False,
         is_superuser: bool = False,
     ) -> dict[str, str]:
         user = self.providers.database.relational.get_user_by_id(user_id)
@@ -146,6 +145,9 @@ class AuthService(Service):
         ):
             raise R2RException(status_code=400, message="Incorrect password")
         self.providers.database.relational.delete_user(user_id)
+        if delete_vector_data:
+            self.providers.database.vector.delete_user(user_id)
+
         return {"message": f"User account {user_id} deleted successfully."}
 
     @telemetry_event("CleanExpiredBlacklistedTokens")

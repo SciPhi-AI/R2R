@@ -30,6 +30,7 @@ class DocumentType(str, Enum):
     CSV = "csv"
     DOCX = "docx"
     HTML = "html"
+    HTM = "htm"
     JSON = "json"
     MD = "md"
     PDF = "pdf"

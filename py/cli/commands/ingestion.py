@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 import click
 import requests
+
 from cli.command_group import cli
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
@@ -28,9 +29,7 @@ def ingest_files(client, file_paths, document_ids, metadatas):
         file_paths = list(file_paths)
         document_ids = list(document_ids) if document_ids else None
 
-        response = client.ingest_files(
-            file_paths, metadatas, document_ids
-        )
+        response = client.ingest_files(file_paths, metadatas, document_ids)
     click.echo(json.dumps(response, indent=2))
 
 

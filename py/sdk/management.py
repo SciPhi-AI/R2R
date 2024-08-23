@@ -95,6 +95,8 @@ class ManagementMethods:
     async def users_overview(
         client,
         user_ids: Optional[list[str]] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> dict:
         """
         An overview of users in the R2R deployment.
@@ -108,6 +110,10 @@ class ManagementMethods:
         params = {}
         if user_ids is not None:
             params["user_ids"] = [str(uid) for uid in user_ids]
+        if offset is not None:
+            params["offset"] = offset
+        if limit is not None:
+            params["limit"] = limit
         return await client._make_request(
             "GET", "users_overview", params=params
         )
@@ -136,6 +142,8 @@ class ManagementMethods:
     async def documents_overview(
         client,
         document_ids: Optional[list[Union[UUID, str]]] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> dict:
         """
         Get an overview of documents in the R2R deployment.
@@ -152,7 +160,10 @@ class ManagementMethods:
         )
         if document_ids:
             params["document_ids"] = document_ids
-
+        if offset is not None:
+            params["offset"] = offset
+        if limit is not None:
+            params["limit"] = limit
         return await client._make_request(
             "GET", "documents_overview", params=params
         )
@@ -161,6 +172,8 @@ class ManagementMethods:
     async def document_chunks(
         client,
         document_id: str,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> dict:
         """
         Get the chunks for a document.
@@ -171,13 +184,24 @@ class ManagementMethods:
         Returns:
             dict: The chunks for the document.
         """
-        return await client._make_request(
-            "GET", f"document_chunks/{document_id}"
-        )
+        params = {}
+        if offset is not None:
+            params["offset"] = offset
+        if limit is not None:
+            params["limit"] = limit
+        if params:
+            return await client._make_request(
+                "GET", f"document_chunks/{document_id}"
+            )
+        else:
+            return await client._make_request(
+                "GET", f"document_chunks/{document_id}", params=params
+            )
 
     @staticmethod
     async def inspect_knowledge_graph(
         client,
+        offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> dict:
         """
@@ -190,6 +214,8 @@ class ManagementMethods:
             dict: The knowledge graph inspection results.
         """
         params = {}
+        if offset is not None:
+            params["offset"] = offset
         if limit is not None:
             params["limit"] = limit
         return await client._make_request(
@@ -200,8 +226,8 @@ class ManagementMethods:
     async def groups_overview(
         client,
         group_ids: Optional[list[str]] = None,
-        limit: Optional[int] = None,
         offset: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> dict:
         """
         Get an overview of existing groups.
@@ -217,10 +243,10 @@ class ManagementMethods:
         params = {}
         if group_ids:
             params["group_ids"] = group_ids
-        if limit:
-            params["limit"] = limit
         if offset:
             params["offset"] = offset
+        if limit:
+            params["limit"] = limit
         return await client._make_request(
             "GET", "groups_overview", params=params
         )
@@ -304,6 +330,34 @@ class ManagementMethods:
             dict: The response from the server.
         """
         return await client._make_request("DELETE", f"delete_group/{group_id}")
+
+    @staticmethod
+    async def delete_user(
+        client,
+        user_id: str,
+        password: Optional[str] = None,
+        delete_vector_data: bool = False,
+    ) -> dict:
+        """
+        Delete a group by its ID.
+
+        Args:
+            group_id (str): The ID of the group to delete.
+
+        Returns:
+            dict: The response from the server.
+        """
+        params = {}
+        if password is not None:
+            params["password"] = password
+        if delete_vector_data:
+            params["delete_vector_data"] = delete_vector_data
+        if params == {}:
+            return await client._make_request("DELETE", f"user/{user_id}")
+        else:
+            return await client._make_request(
+                "DELETE", f"user/{user_id}", json=params
+            )
 
     @staticmethod
     async def list_groups(
@@ -404,9 +458,11 @@ class ManagementMethods:
         )
 
     @staticmethod
-    async def get_groups_for_user(
+    async def user_groups(
         client,
         user_id: str,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> dict:
         """
         Get all groups that a user is a member of.
@@ -417,9 +473,17 @@ class ManagementMethods:
         Returns:
             dict: The list of groups that the user is a member of.
         """
-        return await client._make_request(
-            "GET", f"get_groups_for_user/{user_id}"
-        )
+        params = {}
+        if offset is not None:
+            params["offset"] = offset
+        if limit is not None:
+            params["limit"] = limit
+        if params:
+            return await client._make_request("GET", f"user_groups/{user_id}")
+        else:
+            return await client._make_request(
+                "GET", f"user_groups/{user_id}", params=params
+            )
 
     @staticmethod
     async def assign_document_to_group(
@@ -471,9 +535,11 @@ class ManagementMethods:
         )
 
     @staticmethod
-    async def get_document_groups(
+    async def document_groups(
         client,
         document_id: str,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> dict:
         """
         Get all groups that a document is assigned to.
@@ -484,12 +550,22 @@ class ManagementMethods:
         Returns:
             dict: The list of groups that the document is assigned to.
         """
-        return await client._make_request(
-            "GET", f"get_document_groups/{document_id}"
-        )
+        params = {}
+        if offset is not None:
+            params["offset"] = offset
+        if limit is not None:
+            params["limit"] = limit
+        if params:
+            return await client._make_request(
+                "GET", f"document_groups/{document_id}", params=params
+            )
+        else:
+            return await client._make_request(
+                "GET", f"document_groups/{document_id}"
+            )
 
     @staticmethod
-    async def get_documents_in_group(
+    async def documents_in_group(
         client,
         group_id: str,
         offset: Optional[int] = None,

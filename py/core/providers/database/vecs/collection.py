@@ -25,8 +25,6 @@ from uuid import UUID, uuid4
 
 import psycopg2
 import sqlalchemy as sa
-from core.base import VectorSearchResult
-from core.base.abstractions import VectorSearchSettings
 from flupy import flu
 from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer
@@ -48,6 +46,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.types import Float, UserDefinedType
+
+from core.base import VectorSearchResult
+from core.base.abstractions import VectorSearchSettings
 
 from .adapter import Adapter, AdapterContext, NoOp, Record
 from .exc import (
@@ -703,20 +704,24 @@ class Collection:
                 combined_rank,
             )
             .where(
-                sa.or_(
-                    self.table.c.fts.op("@@")(ts_query),
-                    sa.func.similarity(self.table.c.text, query_text) > 0.1,
-                    self.table.c.fts.op("@@")(
-                        sa.func.phraseto_tsquery("english", query_text)
+                sa.and_(
+                    sa.or_(
+                        self.table.c.fts.op("@@")(ts_query),
+                        sa.func.similarity(self.table.c.text, query_text)
+                        > 0.1,
+                        self.table.c.fts.op("@@")(
+                            sa.func.phraseto_tsquery("english", query_text)
+                        ),
+                        self.table.c.fts.op("@@")(
+                            sa.func.to_tsquery(
+                                "english",
+                                " & ".join(
+                                    f"{word}:*" for word in query_text.split()
+                                ),
+                            )
+                        ),
                     ),
-                    self.table.c.fts.op("@@")(
-                        sa.func.to_tsquery(
-                            "english",
-                            " & ".join(
-                                f"{word}:*" for word in query_text.split()
-                            ),
-                        )
-                    ),
+                    self.build_filters(search_settings.filters),
                 )
             )
             .order_by(sa.desc("rank"))
@@ -776,6 +781,16 @@ class Collection:
                         return ~column.in_(clause)
                     elif op == "$overlap":
                         return column.overlap(clause)
+                    elif op == "$contains":
+                        return column.contains(clause)
+                    elif op == "$any":
+                        if key == "group_ids":
+                            # Use ANY for UUID array comparison
+                            return func.array_to_string(column, ",").like(
+                                f"%{clause}%"
+                            )
+                        # New operator for checking if any element in the array matches
+                        return column.any(clause)
                     else:
                         raise FilterError(
                             f"Unsupported operator for column {key}: {op}"
@@ -785,6 +800,11 @@ class Collection:
             else:
                 # Handle JSON-based filters
                 json_col = self.table.c.metadata
+                if not key.startswith("metadata."):
+                    raise FilterError(
+                        "metadata key must start with 'metadata.'"
+                    )
+                key = key.split("metadata.")[1]
                 if isinstance(value, dict):
                     if len(value) > 1:
                         raise FilterError("only one operator permitted")

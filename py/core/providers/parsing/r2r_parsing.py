@@ -21,6 +21,7 @@ class R2RParsingProvider(ParsingProvider):
         DocumentType.CSV: [parsers.CSVParser, parsers.CSVParserAdvanced],
         DocumentType.DOCX: [parsers.DOCXParser],
         DocumentType.HTML: [parsers.HTMLParser],
+        DocumentType.HTM: [parsers.HTMLParser],
         DocumentType.JSON: [parsers.JSONParser],
         DocumentType.MD: [parsers.MDParser],
         DocumentType.PDF: [parsers.PDFParser, parsers.PDFParserUnstructured],

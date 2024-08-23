@@ -54,7 +54,6 @@ class RetrievalService(Service):
         query: str,
         vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
-        user: Optional[UserResponse] = None,
         *args,
         **kwargs,
     ) -> SearchResponse:

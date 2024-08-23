@@ -3,6 +3,7 @@ import os
 import fire
 import requests
 from bs4 import BeautifulSoup, Comment
+
 from r2r import EntityType, R2RClient, R2RPromptProvider, RelationshipType
 
 
@@ -155,7 +156,7 @@ def main(
 
     print("Inspecting Knowledge Graph")
     print(
-        client.inspect_knowledge_graph(1000, print_descriptions=True)[
+        client.inspect_knowledge_graph(0, 1000, print_descriptions=True)[
             "results"
         ]
     )

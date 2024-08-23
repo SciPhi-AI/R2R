@@ -15,8 +15,12 @@ from core.base import (
     RunLoggingSingleton,
     R2RException
 )
+from core.base.abstractions.search import (
+    KGGlobalSearchResult,
+    KGLocalSearchResult,
+    KGSearchResult,
+)
 
-from core.base.abstractions.search import KGLocalSearchResult, KGGlobalSearchResult, KGSearchResult
 from ..abstractions.generator_pipe import GeneratorPipe
 
 logger = logging.getLogger(__name__)

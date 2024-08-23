@@ -6,6 +6,8 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
+from fastapi import UploadFile
+
 from core import R2RAgents
 from core.base import (
     Document,
@@ -18,7 +20,6 @@ from core.base import (
 )
 from core.main import R2RPipelines, R2RProviders
 from core.main.services.ingestion_service import IngestionService
-from fastapi import UploadFile
 
 logger = logging.getLogger(__name__)
 

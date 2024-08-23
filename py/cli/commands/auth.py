@@ -1,6 +1,7 @@
 import secrets
 
 import click
+
 from cli.command_group import cli
 
 

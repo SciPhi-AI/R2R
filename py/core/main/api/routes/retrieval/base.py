@@ -2,6 +2,9 @@ from pathlib import Path
 from typing import Optional
 
 import yaml
+from fastapi import Body, Depends
+from fastapi.responses import StreamingResponse
+
 from core.base import (
     GenerationConfig,
     KGSearchSettings,
@@ -15,8 +18,6 @@ from core.base.api.models import (
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
-from fastapi import Body, Depends
-from fastapi.responses import StreamingResponse
 
 from ....engine import R2REngine
 from ..base_router import BaseRouter
@@ -72,7 +73,6 @@ class RetrievalRouter(BaseRouter):
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
 
             """
-
             user_groups = set(auth_user.group_ids)
             selected_groups = set(vector_search_settings.selected_group_ids)
             allowed_groups = user_groups.intersection(selected_groups)
@@ -84,7 +84,8 @@ class RetrievalRouter(BaseRouter):
 
             filters = {
                 "$or": [
-                    {"user_id": str(auth_user.id)},
+                    {"user_id": {"$eq": str(auth_user.id)}},
+                    # {"group_ids": {"$any": list([str(ele) for ele in allowed_groups])}},
                     {"group_ids": {"$overlap": list(allowed_groups)}},
                 ]
             }
@@ -92,7 +93,6 @@ class RetrievalRouter(BaseRouter):
                 filters = {"$and": [filters, vector_search_settings.filters]}
 
             vector_search_settings.filters = filters
-
             results = await self.engine.asearch(
                 query=query,
                 vector_search_settings=vector_search_settings,

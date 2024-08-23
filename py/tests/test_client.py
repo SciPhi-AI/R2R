@@ -3,6 +3,10 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
+from fastapi import Body, Depends
+from fastapi.security import OAuth2PasswordBearer
+from fastapi.testclient import TestClient
+
 from core import (
     DocumentInfo,
     R2RApp,
@@ -12,9 +16,6 @@ from core import (
     Token,
     UserResponse,
 )
-from fastapi import Body, Depends
-from fastapi.security import OAuth2PasswordBearer
-from fastapi.testclient import TestClient
 
 # TODO: need to import this from the package, not from the local directory
 from r2r import R2RClient
@@ -100,7 +101,7 @@ def mock_db():
         return updated_user
 
     db.relational.update_user.side_effect = update_user
-    db.relational.get_documents_in_group.return_value = [
+    db.relational.documents_in_group.return_value = [
         DocumentInfo(
             user_id=uuid.uuid4(),
             id=uuid.uuid4(),
@@ -357,7 +358,7 @@ async def test_user_profile(r2r_client, mock_db):
 
 
 @pytest.mark.asyncio
-async def test_get_documents_in_group(r2r_client, mock_db):
+async def test_documents_in_group(r2r_client, mock_db):
     # Register and login as a superuser
     user_data = {"email": "superuser@example.com", "password": "password123"}
     r2r_client.register(**user_data)
@@ -369,7 +370,7 @@ async def test_get_documents_in_group(r2r_client, mock_db):
 
     # Get documents in group
     group_id = uuid.uuid4()
-    response = r2r_client.get_documents_in_group(group_id)
+    response = r2r_client.documents_in_group(group_id)
 
     assert "results" in response
     assert len(response["results"]) == 100  # Default limit

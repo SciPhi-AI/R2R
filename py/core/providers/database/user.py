@@ -2,10 +2,11 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
+from sqlalchemy import text
+
 from core.base.abstractions import R2RException, UserStats
 from core.base.api.models.auth.responses import UserResponse
 from core.base.utils import generate_id_from_label
-from sqlalchemy import text
 
 from .base import DatabaseMixin, QueryBuilder
 
@@ -193,13 +194,53 @@ class UserMixin(DatabaseMixin):
             group_ids=result[10],
         )
 
-    def delete_user(self, user_id: UUID):
-        query = f"""
-            DELETE FROM {self._get_table_name('users')}
+    def delete_user(self, user_id: UUID) -> None:
+        # Get the groups the user belongs to
+        group_query = f"""
+            SELECT group_ids FROM {self._get_table_name('users')}
             WHERE user_id = :user_id
         """
-        result = self.execute_query(query, {"user_id": user_id})
-        if result.rowcount == 0:
+        group_result = self.execute_query(
+            group_query, {"user_id": user_id}
+        ).fetchone()
+
+        if not group_result:
+            raise R2RException(status_code=404, message="User not found")
+
+        user_groups = group_result[0]
+
+        # Remove user from all groups they belong to
+        if user_groups:
+            group_update_query = f"""
+                UPDATE {self._get_table_name('groups')}
+                SET user_ids = array_remove(user_ids, :user_id)
+                WHERE group_id = ANY(:group_ids)
+            """
+            self.execute_query(
+                group_update_query,
+                {"user_id": user_id, "group_ids": user_groups},
+            )
+
+        # Remove user from documents
+        doc_update_query = f"""
+            UPDATE {self._get_table_name('document_info')}
+            SET user_id = NULL
+            WHERE user_id = :user_id
+        """
+        self.execute_query(doc_update_query, {"user_id": user_id})
+
+        # Delete the user
+        delete_query = f"""
+            DELETE FROM {self._get_table_name('users')}
+            WHERE user_id = :user_id
+            RETURNING user_id
+        """
+
+        result = self.execute_query(
+            delete_query, {"user_id": user_id}
+        ).fetchone()
+
+        if not result:
             raise R2RException(status_code=404, message="User not found")
 
     def update_user_password(self, user_id: UUID, new_hashed_password: str):

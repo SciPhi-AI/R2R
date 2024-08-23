@@ -1,8 +1,9 @@
 from typing import Any, List, TypeVar
 from uuid import UUID
 
-from core.base.api.models.base import ResultsWrapper
 from pydantic import BaseModel, Field
+
+from core.base.api.models.base import ResultsWrapper
 
 T = TypeVar("T")
 

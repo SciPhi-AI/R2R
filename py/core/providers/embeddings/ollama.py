@@ -2,6 +2,8 @@ import logging
 import os
 from typing import Any, List
 
+from ollama import AsyncClient, Client
+
 from core.base import (
     EmbeddingConfig,
     EmbeddingProvider,
@@ -9,7 +11,6 @@ from core.base import (
     R2RException,
     VectorSearchResult,
 )
-from ollama import AsyncClient, Client
 
 logger = logging.getLogger(__name__)
 

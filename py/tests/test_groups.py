@@ -3,6 +3,7 @@ from datetime import datetime
 from uuid import UUID
 
 import pytest
+
 from core import DatabaseConfig, R2RException
 from core.base.abstractions import DocumentInfo, DocumentStatus, DocumentType
 from core.providers import BCryptConfig, BCryptProvider, PostgresDBProvider
@@ -362,21 +363,21 @@ def test_get_groups_for_user_with_pagination(pg_db, test_user):
         pg_db.relational.delete_group(group.group_id)
 
 
-def test_get_documents_in_group(pg_db, test_group, test_documents):
+def test_documents_in_group(pg_db, test_group, test_documents):
     # Test getting all documents
-    all_docs = pg_db.relational.get_documents_in_group(test_group.group_id)
+    all_docs = pg_db.relational.documents_in_group(test_group.group_id)
     assert len(all_docs) == 5
     assert all(isinstance(doc, DocumentInfo) for doc in all_docs)
     assert all(test_group.group_id in doc.group_ids for doc in all_docs)
 
     # Test pagination - first page
-    first_page = pg_db.relational.get_documents_in_group(
+    first_page = pg_db.relational.documents_in_group(
         test_group.group_id, offset=0, limit=3
     )
     assert len(first_page) == 3
 
     # Test pagination - second page
-    second_page = pg_db.relational.get_documents_in_group(
+    second_page = pg_db.relational.documents_in_group(
         test_group.group_id, offset=3, limit=3
     )
     assert len(second_page) == 2
@@ -394,11 +395,11 @@ def test_get_documents_in_group(pg_db, test_group, test_documents):
     # Test with non-existent group
     non_existent_id = UUID("00000000-0000-0000-0000-000000000000")
     with pytest.raises(R2RException):
-        pg_db.relational.get_documents_in_group(non_existent_id)
+        pg_db.relational.documents_in_group(non_existent_id)
 
     # Test with empty group
     empty_group = pg_db.relational.create_group("Empty Group", "No documents")
-    empty_docs = pg_db.relational.get_documents_in_group(empty_group.group_id)
+    empty_docs = pg_db.relational.documents_in_group(empty_group.group_id)
     assert len(empty_docs) == 0
 
     # Clean up

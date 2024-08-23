@@ -17,27 +17,36 @@ export interface RefreshTokenResponse {
 }
 
 export interface GenerationConfig {
+  model?: string;
   temperature?: number;
   top_p?: number;
-  top_k?: number;
   max_tokens_to_sample?: number;
-  model?: string;
   stream?: boolean;
   functions?: Array<Record<string, any>>;
-  skip_special_tokens?: boolean;
-  stop_token?: string;
-  num_beams?: number;
-  do_sample?: boolean;
-  generate_with_chat?: boolean;
+  tools?: Array<Record<string, any>>;
   add_generation_kwargs?: Record<string, any>;
   api_base?: string;
 }
 
+export interface HybridSearchSettings {
+  full_text_weight: number;
+  semantic_weight: number;
+  full_text_limit: number;
+  rrf_k: number;
+}
+
 export interface VectorSearchSettings {
   use_vector_search?: boolean;
+  use_hybrid_search?: boolean;
   filters?: Record<string, any>;
   search_limit?: number;
-  use_hybrid_search?: boolean;
+  selected_group_ids?: string[];
+  index_measure: IndexMeasure;
+  include_values?: boolean;
+  include_metadatas?: boolean;
+  probes?: number;
+  ef_search?: number;
+  hybrid_search_settings?: HybridSearchSettings;
 }
 
 export interface KGSearchSettings {
@@ -78,4 +87,10 @@ export interface Message {
 
 export interface R2RDocumentChunksRequest {
   document_id: string;
+}
+
+export enum IndexMeasure {
+  COSINE_DISTANCE = "cosine_distance",
+  L2_DISTANCE = "l2_distance",
+  MAX_INNER_PRODUCT = "max_inner_product",
 }

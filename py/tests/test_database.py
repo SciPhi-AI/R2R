@@ -2,6 +2,8 @@ import random
 import uuid
 
 import pytest
+from dotenv import load_dotenv
+
 from core import (
     DatabaseConfig,
     DatabaseProvider,
@@ -11,7 +13,6 @@ from core import (
     generate_id_from_label,
 )
 from core.providers import PostgresDBProvider
-from dotenv import load_dotenv
 
 load_dotenv()
 

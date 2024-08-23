@@ -3,6 +3,8 @@ import socket
 from unittest.mock import MagicMock, patch
 
 import pytest
+from click.testing import CliRunner
+
 from cli.utils.docker_utils import (
     bring_down_docker_compose,
     build_docker_command,
@@ -12,7 +14,6 @@ from cli.utils.docker_utils import (
     find_available_port,
     remove_r2r_network,
 )
-from click.testing import CliRunner
 
 
 @pytest.fixture

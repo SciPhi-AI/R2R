@@ -1,0 +1,60 @@
+[auth]
+provider = "r2r"
+access_token_lifetime_in_minutes = 60
+refresh_token_lifetime_in_days = 7
+require_authentication = false
+require_email_verification = false
+default_admin_email = "admin@example.com"
+default_admin_password = "change_me_immediately"
+
+[chunking]
+provider = "r2r"
+method = "recursive"
+chunk_size = 512
+chunk_overlap = 50
+
+[completion]
+provider = "litellm"
+concurrent_request_limit = 16
+
+  [completion.generation_config]
+  model = "openai/gpt-4o"
+  temperature = 0.1
+  top_p = 1
+  max_tokens_to_sample = 1_024
+  stream = false
+  add_generation_kwargs = { }
+
+[crypto]
+provider = "bcrypt"
+
+[database]
+provider = "postgres"
+
+[embedding]
+provider = "litellm"
+base_model = "openai/text-embedding-3-small"
+base_dimension = 512
+batch_size = 128
+add_title_as_prefix = false
+rerank_model = "None"
+concurrent_request_limit = 256
+
+[kg]
+provider = "None"
+
+[logging]
+provider = "local"
+log_table = "logs"
+log_info_table = "log_info"
+
+[parsing]
+provider = "r2r"
+excluded_parsers = ["mp4"]
+
+[prompt]
+provider = "r2r"
+
+[agent]
+system_instruction_name = "rag_agent"
+tool_names = ["search"]

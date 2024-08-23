@@ -9,8 +9,9 @@ from typing import Optional
 
 import click
 import requests
-from core.main import R2RBuilder, R2RConfig
 from requests.exceptions import RequestException
+
+from core.main import R2RBuilder, R2RConfig
 from sdk import R2RClient
 
 
@@ -123,6 +124,9 @@ def run_docker_serve(
             config_name = "default"
 
         config = R2RConfig.from_toml(R2RBuilder.CONFIG_OPTIONS[config_name])
+
+    if config.parsing.provider == "unstructured" and not image:
+        image = "ragtoriches/prod_unstructured"
 
     completion_provider = config.completion.provider
     completion_model = config.completion.generation_config.model
@@ -308,7 +312,9 @@ def set_ollama_api_base(exclude_ollama):
 
 def get_compose_files():
     package_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."
+        os.path.dirname(os.path.abspath(__file__)),
+        "..",
+        "..",
     )
     compose_files = {
         "base": os.path.join(package_dir, "compose.yaml"),

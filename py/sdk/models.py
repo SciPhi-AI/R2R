@@ -195,9 +195,6 @@ class KGLocalSearchResult(BaseModel):
 
     def __str__(self) -> str:
         return f"KGLocalSearchResult(query={self.query}, entities={self.entities}, relationships={self.relationships}, communities={self.communities})"
-
-    def __repr__(self) -> str:
-        return self.__str__()
     
     def dict(self) -> dict:
         return {
@@ -222,7 +219,6 @@ class KGGlobalSearchResult(BaseModel):
             "query": self.query,
             "search_result": self.search_result
         }
-
 
 
 class KGSearchResult(BaseModel):
@@ -305,7 +301,6 @@ class IndexMeasure(str, Enum):
     max_inner_product = "max_inner_product"
 
 
-
 class HybridSearchSettings(BaseModel):
     full_text_weight: float = Field(
         default=1.0, description="Weight to apply to full text search"
@@ -320,6 +315,7 @@ class HybridSearchSettings(BaseModel):
     rrf_k: int = Field(
         default=50, description="K-value for RRF (Rank Reciprocal Fusion)"
     )
+
 
 class VectorSearchSettings(BaseModel):
     use_vector_search: bool = Field(
