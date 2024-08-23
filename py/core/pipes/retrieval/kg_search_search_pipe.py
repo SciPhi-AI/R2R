@@ -14,11 +14,16 @@ from core.base import (
     PromptProvider,
     RunLoggingSingleton,
 )
+from core.base.abstractions.search import (
+    KGGlobalSearchResult,
+    KGLocalSearchResult,
+    KGSearchResult,
+)
 
-from core.base.abstractions.search import KGLocalSearchResult, KGGlobalSearchResult, KGSearchResult
 from ..abstractions.generator_pipe import GeneratorPipe
 
 logger = logging.getLogger(__name__)
+
 
 class KGSearchSearchPipe(GeneratorPipe):
     """
@@ -127,7 +132,12 @@ class KGSearchSearchPipe(GeneratorPipe):
                 )
                 all_search_results.append(search_result)
 
-            yield KGLocalSearchResult(query=message, entities=all_search_results[0], relationships=all_search_results[1], communities=all_search_results[2])
+            yield KGLocalSearchResult(
+                query=message,
+                entities=all_search_results[0],
+                relationships=all_search_results[1],
+                communities=all_search_results[2],
+            )
 
     async def global_search(
         self,
@@ -209,7 +219,9 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             output = output.choices[0].message.content
 
-            yield KGGlobalSearchResult(query=message, search_result=output, citations=None)
+            yield KGGlobalSearchResult(
+                query=message, search_result=output, citations=None
+            )
 
     async def _run_logic(
         self,

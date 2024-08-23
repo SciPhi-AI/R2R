@@ -200,12 +200,13 @@ class KGSearchResult(BaseModel):
                     {
                         "Paris": {
                             "name": "Paris",
-                            "description": "Paris is the capital of France."
+                            "description": "Paris is the capital of France.",
                         }
                     }
-                ]
+                ],
             }
         }
+
 
 class R2RException(Exception):
     def __init__(

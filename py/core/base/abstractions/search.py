@@ -54,8 +54,10 @@ class VectorSearchResult(BaseModel):
             },
         }
 
+
 class KGLocalSearchResult(BaseModel):
     """Result of a local knowledge graph search operation."""
+
     query: str
     entities: list[dict[str, Any]]
     relationships: list[dict[str, Any]]
@@ -70,6 +72,7 @@ class KGLocalSearchResult(BaseModel):
 
 class KGGlobalSearchResult(BaseModel):
     """Result of a global knowledge graph search operation."""
+
     query: str
     search_result: list[Dict[str, Any]]
 
@@ -82,6 +85,7 @@ class KGGlobalSearchResult(BaseModel):
 
 class KGSearchResult(BaseModel):
     """Result of a knowledge graph search operation."""
+
     local_result: Optional[KGLocalSearchResult] = None
     global_result: Optional[KGGlobalSearchResult] = None
 
