@@ -2,6 +2,9 @@ from pathlib import Path
 from typing import Optional
 
 import yaml
+from fastapi import Body, Depends
+from fastapi.responses import StreamingResponse
+
 from core.base import (
     GenerationConfig,
     KGSearchSettings,
@@ -15,8 +18,6 @@ from core.base.api.models import (
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
-from fastapi import Body, Depends
-from fastapi.responses import StreamingResponse
 
 from ....engine import R2REngine
 from ..base_router import BaseRouter

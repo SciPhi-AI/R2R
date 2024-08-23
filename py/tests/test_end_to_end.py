@@ -3,6 +3,8 @@ import os
 import uuid
 
 import pytest
+from fastapi.datastructures import UploadFile
+
 from core import (
     Document,
     DocumentInfo,
@@ -19,7 +21,6 @@ from core import (
     VectorSearchSettings,
     generate_id_from_label,
 )
-from fastapi.datastructures import UploadFile
 
 
 @pytest.fixture(scope="session", autouse=True)

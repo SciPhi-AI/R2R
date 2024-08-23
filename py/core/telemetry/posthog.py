@@ -2,6 +2,7 @@ import logging
 import os
 
 import posthog
+
 from core.telemetry.events import BaseTelemetryEvent
 
 logger = logging.getLogger(__name__)

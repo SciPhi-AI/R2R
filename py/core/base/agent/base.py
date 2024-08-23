@@ -1,7 +1,8 @@
 from typing import Any, Callable, Dict, Optional, Union
 
-from core.base.abstractions import MessageType
 from pydantic import BaseModel
+
+from core.base.abstractions import MessageType
 
 
 class Tool(BaseModel):

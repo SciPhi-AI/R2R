@@ -2,9 +2,10 @@ import logging
 import os
 from typing import Any
 
+from openai import AsyncOpenAI, OpenAI
+
 from core.base.abstractions.llm import GenerationConfig
 from core.base.providers.llm import CompletionConfig, CompletionProvider
-from openai import AsyncOpenAI, OpenAI
 
 logger = logging.getLogger(__name__)
 

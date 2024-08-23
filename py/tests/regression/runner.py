@@ -4,10 +4,10 @@ import os
 from typing import List
 
 from colorama import Fore, Style, init
+from test_cases.base import BaseTest, RegressionTest
 
 # TODO: need to import this from the package, not from the local directory
 from r2r import R2RClient
-from test_cases.base import BaseTest, RegressionTest
 
 
 class RegressionTestRunner:

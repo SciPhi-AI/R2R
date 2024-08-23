@@ -2,9 +2,10 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
+from pydantic import BaseModel
+
 from core.base.abstractions import Token
 from core.base.api.models.base import ResultsWrapper
-from pydantic import BaseModel
 
 
 class TokenResponse(BaseModel):

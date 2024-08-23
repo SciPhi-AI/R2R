@@ -1,4 +1,5 @@
 import click
+
 from cli.command_group import cli
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer

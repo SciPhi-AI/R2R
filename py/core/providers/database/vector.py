@@ -1,7 +1,10 @@
-from uuid import UUID
 import logging
 import os
 from typing import Any, Optional
+from uuid import UUID
+
+from sqlalchemy import text
+from sqlalchemy.engine.url import make_url
 
 from core.base import (
     DatabaseConfig,
@@ -10,8 +13,6 @@ from core.base import (
     VectorSearchResult,
 )
 from core.base.abstractions import VectorSearchSettings
-from sqlalchemy import text
-from sqlalchemy.engine.url import make_url
 
 from .vecs import Client, Collection, create_client
 
@@ -325,7 +326,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         return self.collection.delete(filters=filters)
 
-    def assign_document_to_group(self, document_id: str, group_id: str) -> None:
+    def assign_document_to_group(
+        self, document_id: str, group_id: str
+    ) -> None:
         """
         Assign a document to a group in the vector database.
 
@@ -352,13 +355,19 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
 
         with self.vx.Session() as sess:
-            result = sess.execute(query, {"document_id": document_id, "group_id": group_id})
+            result = sess.execute(
+                query, {"document_id": document_id, "group_id": group_id}
+            )
             sess.commit()
 
         if result.rowcount == 0:
-            logger.warning(f"Document {document_id} not found or already assigned to group {group_id}")
+            logger.warning(
+                f"Document {document_id} not found or already assigned to group {group_id}"
+            )
 
-    def remove_document_from_group(self, document_id: str, group_id: str) -> None:
+    def remove_document_from_group(
+        self, document_id: str, group_id: str
+    ) -> None:
         """
         Remove a document from a group in the vector database.
 
@@ -385,11 +394,15 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
 
         with self.vx.Session() as sess:
-            result = sess.execute(query, {"document_id": document_id, "group_id": group_id})
+            result = sess.execute(
+                query, {"document_id": document_id, "group_id": group_id}
+            )
             sess.commit()
 
         if result.rowcount == 0:
-            logger.warning(f"Document {document_id} not found in group {group_id} or already removed")
+            logger.warning(
+                f"Document {document_id} not found in group {group_id} or already removed"
+            )
 
     def remove_group_from_documents(self, group_id: str) -> None:
         if self.collection is None:
@@ -407,7 +420,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
         with self.vx.Session() as sess:
             sess.execute(query, {"group_id": group_id})
             sess.commit()
-            
+
     def delete_user(self, user_id: str) -> None:
         if self.collection is None:
             raise ValueError("Collection is not initialized.")
@@ -423,7 +436,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         with self.vx.Session() as sess:
             sess.execute(query, {"user_id": user_id})
-            sess.commit()            
+            sess.commit()
 
     def delete_group(self, group_id: str) -> None:
         """
@@ -452,9 +465,13 @@ class PostgresVectorDBProvider(VectorDBProvider):
             sess.commit()
 
         affected_rows = result.rowcount
-        logger.info(f"Removed group {group_id} from {affected_rows} documents.")
+        logger.info(
+            f"Removed group {group_id} from {affected_rows} documents."
+        )
 
-    def get_document_chunks(self, document_id: str, offset: int = 0, limit: int = 100) -> dict:
+    def get_document_chunks(
+        self, document_id: str, offset: int = 0, limit: int = 100
+    ) -> dict:
         if not self.collection:
             raise ValueError("Collection is not initialized.")
 
@@ -481,7 +498,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
 
         with self.vx.Session() as sess:
             results = sess.execute(query, params).fetchall()
-            total_count = sess.execute(count_query, {"document_id": document_id}).scalar()
+            total_count = sess.execute(
+                count_query, {"document_id": document_id}
+            ).scalar()
 
         return [
             {

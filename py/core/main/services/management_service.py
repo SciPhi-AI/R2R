@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 import toml
+
 from core.base import (
     AnalysisTypes,
     LogFilterCriteria,
@@ -246,7 +247,9 @@ class ManagementService(Service):
         **kwargs,
     ):
         return self.providers.database.relational.get_users_overview(
-            [str(ele) for ele in user_ids] if user_ids else None, offset=offset, limit=limit
+            [str(ele) for ele in user_ids] if user_ids else None,
+            offset=offset,
+            limit=limit,
         )
 
     @telemetry_event("Delete")
@@ -314,7 +317,9 @@ class ManagementService(Service):
         *args,
         **kwargs,
     ):
-        return self.providers.database.vector.get_document_chunks(document_id, offset=offset, limit=limit)
+        return self.providers.database.vector.get_document_chunks(
+            document_id, offset=offset, limit=limit
+        )
 
     @telemetry_event("UsersOverview")
     async def users_overview(
@@ -441,7 +446,9 @@ class ManagementService(Service):
         return {"message": "Document removed from group successfully"}
 
     @telemetry_event("DocumentGroups")
-    async def adocument_groups(self, document_id: str, offset: int = 0, limit: int = 100):
+    async def adocument_groups(
+        self, document_id: str, offset: int = 0, limit: int = 100
+    ):
         group_ids = self.providers.database.relational.document_groups(
             document_id, offset=offset, limit=limit
         )
@@ -569,7 +576,7 @@ class ManagementService(Service):
         self.providers.database.relational.delete_group(group_id)
         self.providers.database.vector.delete_group(group_id)
         return True
-    
+
     @telemetry_event("ListGroups")
     async def alist_groups(
         self, offset: int = 0, limit: int = 100
@@ -601,8 +608,12 @@ class ManagementService(Service):
         )
 
     @telemetry_event("GetGroupsForUser")
-    async def aget_groups_for_user(self, user_id: UUID, offset: int = 0, limit: int = 100) -> list[dict]:
-        return self.providers.database.relational.get_groups_for_user(user_id, offset, limit)
+    async def aget_groups_for_user(
+        self, user_id: UUID, offset: int = 0, limit: int = 100
+    ) -> list[dict]:
+        return self.providers.database.relational.get_groups_for_user(
+            user_id, offset, limit
+        )
 
     @telemetry_event("GroupsOverview")
     async def agroups_overview(
@@ -628,5 +639,9 @@ class ManagementService(Service):
         )
 
     @telemetry_event("DocumentGroups")
-    async def adocument_groups(self, document_id: str, offset: int = 0, limit: int = 100) -> list[str]:
-        return self.providers.database.relational.document_groups(document_id, offset, limit)
+    async def adocument_groups(
+        self, document_id: str, offset: int = 0, limit: int = 100
+    ) -> list[str]:
+        return self.providers.database.relational.document_groups(
+            document_id, offset, limit
+        )

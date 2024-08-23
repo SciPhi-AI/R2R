@@ -4,6 +4,8 @@ from datetime import datetime
 from typing import Any, Optional
 from uuid import UUID
 
+from fastapi import UploadFile
+
 from core.base import (
     Document,
     DocumentInfo,
@@ -19,7 +21,6 @@ from core.base import (
 from core.base.api.models import IngestionResponse
 from core.base.providers import ChunkingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
-from fastapi import UploadFile
 
 from ...base.api.models.auth.responses import UserResponse
 from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
@@ -29,6 +30,7 @@ from .base import Service
 logger = logging.getLogger(__name__)
 MB_CONVERSION_FACTOR = 1024 * 1024
 STARTING_VERSION = "v0"
+
 
 class IngestionService(Service):
     def __init__(
@@ -176,7 +178,6 @@ class IngestionService(Service):
                 )
                 documents.append(document)
 
-
             ingestion_results = await self.ingest_documents(
                 documents,
                 chunking_provider=chunking_provider,
@@ -307,7 +308,6 @@ class IngestionService(Service):
             )
             # Add version to metadata to propagate through pipeline
             document.metadata["version"] = version
-
 
         if duplicate_documents:
             duplicate_details = [

@@ -1,6 +1,7 @@
 import pytest
-from cli.commands.auth import generate_private_key
 from click.testing import CliRunner
+
+from cli.commands.auth import generate_private_key
 
 
 @pytest.fixture

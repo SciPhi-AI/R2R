@@ -2,6 +2,7 @@ import time
 from unittest.mock import patch
 
 import pytest
+
 from cli.utils.timer import timer
 
 
