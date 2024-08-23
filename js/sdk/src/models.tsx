@@ -63,9 +63,9 @@ export interface KGSearchSettings {
 
 export interface KGLocalSearchResult {
   query: string;
-  entities: any[];
-  relationships: any[];
-  communities: any[];
+  entities: Record<string, any>;
+  relationships: Record<string, any>;
+  communities: Record<string, any>;
 }
 
 export interface KGGlobalSearchResult {

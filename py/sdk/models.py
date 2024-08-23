@@ -242,16 +242,14 @@ class KGSearchResult(BaseModel):
             "example": {
                 "local_result": {
                     "query": "What is the capital of France?",
-                    "entities": [
-                        {
-                            "Paris": {
-                                "name": "Paris",
-                                "description": "Paris is the capital of France."
-                            }
-                        },
-                    ],
-                    "relationships": [],
-                    "communities": []
+                    "entities": {
+                        "Paris": {
+                            "name": "Paris",
+                            "description": "Paris is the capital of France."
+                        }
+                    },
+                    "relationships": {},
+                    "communities": {},
                 },
                 "global_result": {
                     "query": "What is the capital of France?",
@@ -473,7 +471,7 @@ class SearchResponse(BaseModel):
         ...,
         description="List of vector search results",
     )
-    kg_search_results: Optional[KGSearchResult] = Field(
+    kg_search_results: Optional[list[KGSearchResult]] = Field(
         None,
         description="Knowledge graph search results, if applicable",
     )

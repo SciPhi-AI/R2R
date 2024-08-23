@@ -133,8 +133,8 @@ class KGSearchSearchPipe(GeneratorPipe):
                 all_search_results.append(search_result)
 
             
-            if len(all_search_results[2])==0:
-                raise R2RException("No communities found. Please make sure you have run the KG enrichment step before running the search: r2r enrich-graph", 400)
+            if len(all_search_results[0])==0:
+                raise R2RException("No search results found. Please make sure you have run the KG enrichment step before running the search: r2r enrich-graph", 400)
 
             yield KGLocalSearchResult(query=message, entities=all_search_results[0], relationships=all_search_results[1], communities=all_search_results[2])
 

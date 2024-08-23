@@ -57,9 +57,9 @@ class VectorSearchResult(BaseModel):
 class KGLocalSearchResult(BaseModel):
     """Result of a local knowledge graph search operation."""
     query: str
-    entities: list[dict[str, Any]]
-    relationships: list[dict[str, Any]]
-    communities: list[dict[str, Any]]
+    entities: dict[str, Any]
+    relationships: dict[str, Any]
+    communities: dict[str, Any]
 
     def __str__(self) -> str:
         return f"LocalSearchResult(query={self.query}, search_result={self.search_result})"
@@ -107,7 +107,7 @@ class AggregateSearchResult(BaseModel):
     """Result of an aggregate search operation."""
 
     vector_search_results: Optional[list[VectorSearchResult]]
-    kg_search_results: Optional[KGSearchResult] = None
+    kg_search_results: Optional[list[KGSearchResult]] = None
 
     def __str__(self) -> str:
         return f"AggregateSearchResult(vector_search_results={self.vector_search_results}, kg_search_results={self.kg_search_results})"
