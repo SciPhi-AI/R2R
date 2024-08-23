@@ -6,7 +6,7 @@ import requests
 def process_frame_with_openai(
     data: bytes,
     api_key: str,
-    model: str = "gpt-4o-mini",
+    model: str = "gpt-4o",
     max_tokens: int = 2_048,
     api_base: str = "https://api.openai.com/v2/chat/completions",
 ) -> str:
