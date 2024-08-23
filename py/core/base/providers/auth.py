@@ -90,9 +90,7 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def refresh_access_token(
-        self, user_email: str, refresh_token: str
-    ) -> Dict[str, str]:
+    def refresh_access_token(self, refresh_token: str) -> Dict[str, str]:
         pass
 
     async def auth_wrapper(

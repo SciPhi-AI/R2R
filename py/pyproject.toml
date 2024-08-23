@@ -106,6 +106,10 @@ extend-exclude = '''
 )/
 '''
 
+[tool.isort]
+line_length = 79
+profile = "black"
+
 [tool.mypy]
 ignore_missing_imports = true
 exclude = 'playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*'
@@ -128,4 +132,3 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
-
