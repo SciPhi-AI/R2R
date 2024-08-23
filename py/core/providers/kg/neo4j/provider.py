@@ -131,6 +131,7 @@ class Neo4jKGProvider(KGProvider):
         Parameters: statement is the Cypher query to execute, df is the dataframe to import, and batch_size is the number of rows to import in each batch.
         """
         total = len(df)
+        results = []
         for start in range(0, total, batch_size):
             batch = df[start : min(start + batch_size, total)]
             batch = self.convert_model_list_to_neo4j_compatible(batch)
@@ -139,7 +140,8 @@ class Neo4jKGProvider(KGProvider):
                 rows=batch,
                 database_=self._database,
             )
-        return result
+            results.append(result)
+        return results
 
     def get_chunks(
         self, chunk_ids: List[str] = None
@@ -178,7 +180,7 @@ class Neo4jKGProvider(KGProvider):
         """
         Upsert communities into the graph.
         """
-        self.batched_import(PUT_COMMUNITIES_QUERY, communities)
+        return self.batched_import(PUT_COMMUNITIES_QUERY, communities)
 
     def get_entities(self, entity_ids: List[str] = []) -> List[Entity]:
         """
