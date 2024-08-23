@@ -21,7 +21,7 @@ networks:
 
 services:
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/r2r:prod}
+    image: ${R2R_IMAGE:-emrgntcmplxty/r2r:prod}
     build:
       context: .
       args:

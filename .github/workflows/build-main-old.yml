@@ -67,8 +67,18 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: ./py/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./py/Dockerfile.unstructured
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}-unstructured
+          labels: ${{ steps.meta.outputs.labels }}-unstructured
           platforms: linux/amd64,linux/arm64
