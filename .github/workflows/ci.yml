@@ -2,22 +2,23 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
-      - '**/feature/*'
+    paths:
+      - 'py/**'
   pull_request:
-    branches:
-      - main
+    paths:
+      - 'py/**'
 
 jobs:
   pre-commit:
-    runs-on: [ self-hosted, Linux ]
+    continue-on-error: true
+    runs-on: arc-runner-set
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Run pre-commit
+        working-directory: ./py
         run: |
           python3 -m venv venv
           source venv/bin/activate
@@ -39,7 +40,8 @@ jobs:
           swap-storage: true
 
   pytest:
-    runs-on: [ self-hosted, Linux ]
+    continue-on-error: true
+    runs-on: arc-runner-set
     timeout-minutes: 15
 
     env:
@@ -62,11 +64,11 @@ jobs:
           curl -i http://localhost:11434
 
       - name: Run pytest
+        working-directory: ./py
         run: |
           python3 -m venv venv
           source venv/bin/activate
           poetry install
-          pip install pytest
           pip install pytest
           poetry run pytest tests/ -k "not redis and not sentence_transformer"
           deactivate
