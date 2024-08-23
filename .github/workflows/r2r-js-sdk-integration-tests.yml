@@ -4,11 +4,11 @@ on:
   push:
     branches: [main]
     paths:
-      - 'r2r_js_sdk/**'
+      - 'js/sdk/**'
   pull_request:
     branches: [main]
     paths:
-      - 'r2r_js_sdk/**'
+      - 'js/sdk/**'
 
 jobs:
   test:
@@ -16,7 +16,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: r2r_js_sdk
+        working-directory: ./js/sdk
 
     steps:
       - uses: actions/checkout@v2
@@ -54,7 +54,7 @@ jobs:
 
       - name: Check if R2R server is running
         run: |
-          curl http://localhost:8000/health || echo "Server not responding"
+          curl http://localhost:8000/v2/health || echo "Server not responding"
 
       - name: Display R2R server logs if server not responding
         if: failure()
