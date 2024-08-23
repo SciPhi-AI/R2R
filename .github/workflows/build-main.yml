@@ -11,6 +11,9 @@ on:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: py
     permissions:
       packages: write
       contents: read
@@ -67,7 +70,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./py/Dockerfile
+          file: Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -77,7 +80,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./py/Dockerfile.unstructured
+          file: Dockerfile.unstructured
           push: true
           tags: ${{ steps.meta.outputs.tags }}-unstructured
           labels: ${{ steps.meta.outputs.labels }}-unstructured
