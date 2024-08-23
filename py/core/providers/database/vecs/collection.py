@@ -378,7 +378,7 @@ class Collection:
                 tsvector_update_trigger(fts, 'pg_catalog.english', text);
             """
                 )
-            )
+        )
         return self
 
     def _drop(self):
@@ -1168,12 +1168,12 @@ def _build_table(name: str, meta: MetaData, dimension: int) -> Table:
         extend_existing=True,
     )
 
-    # Add GIN index for full-text search and trigram similarity
+    # # Add GIN index for full-text search and trigram similarity
     Index(
         f"idx_{name}_fts_trgm",
         table.c.fts,
         table.c.text,
         postgresql_using="gin",
-        postgresql_ops={"text": "gin_trgm_ops"},  # Remove gin_tsvector_ops
+        postgresql_ops={"text": "gin_trgm_ops"},  # alternative,  gin_tsvector_ops
     )
     return table

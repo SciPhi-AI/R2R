@@ -62,7 +62,7 @@ class RetrievalRouter(BaseRouter):
                 description=search_descriptions.get("kg_search_settings"),
             ),
             auth_user=Depends(self.engine.providers.auth.auth_wrapper),
-        ) -> WrappedSearchResponse:
+        )  -> WrappedSearchResponse:
             """
             Perform a search query on the vector database and knowledge graph.
 
