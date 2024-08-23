@@ -57,7 +57,6 @@ describe("r2rClient Integration Tests", () => {
     await expect(
       client.updateFiles(updated_file, {
         document_ids: ["0b80081e-a37a-579f-a06d-7d2032435d65"],
-        metadatas: [{ title: "updated_karamozov.txt" }],
       }),
     ).resolves.not.toThrow();
   });

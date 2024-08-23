@@ -1,6 +1,6 @@
 {
   "name": "r2r-js",
-  "version": "1.2.15",
+  "version": "0.3.0",
   "description": "",
   "main": "dist/index.js",
   "browser": "dist/index.browser.js",
@@ -32,7 +32,6 @@
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
-    "@types/mocha": "^10.0.7",
     "@types/node": "^20.14.15",
     "@types/uuid": "^10.0.0",
     "jest": "^29.7.0",
