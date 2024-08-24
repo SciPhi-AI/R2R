@@ -10,7 +10,7 @@ on:
 
 jobs:
   build-and-publish:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, Linux ]
     permissions:
       packages: write
       contents: read
@@ -66,7 +66,7 @@ jobs:
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./py
           file: ./py/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -76,7 +76,7 @@ jobs:
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./py
           file: ./py/Dockerfile.unstructured
           push: true
           tags: ${{ steps.meta.outputs.tags }}-unstructured
