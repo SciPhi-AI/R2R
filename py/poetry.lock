@@ -4800,10 +4800,10 @@ doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linke
 test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-itertools", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy", "pytest-ruff (>=0.2.1)"]
 
 [extras]
-core = ["aiosqlite", "asyncpg", "bcrypt", "beautifulsoup4", "deepdiff", "fire", "fsspec", "graspologic", "gunicorn", "litellm", "markdown", "neo4j", "ollama", "openai", "openpyxl", "passlib", "poppler-utils", "posthog", "psutil", "pydantic", "pyjwt", "pypdf", "python-docx", "python-multipart", "python-pptx", "pyyaml", "redis", "requests", "sqlalchemy", "toml", "types-requests", "uvicorn", "vecs"]
+core = ["aiosqlite", "asyncpg", "bcrypt", "beautifulsoup4", "deepdiff", "fire", "fsspec", "graspologic", "gunicorn", "litellm", "markdown", "neo4j", "ollama", "openai", "openpyxl", "passlib", "poppler-utils", "posthog", "psutil", "pydantic", "pyjwt", "pypdf", "python-docx", "python-multipart", "python-pptx", "pyyaml", "redis", "sqlalchemy", "toml", "uvicorn", "vecs"]
 core-ingest-movies = ["moviepy", "opencv-python"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "19d1e6384a89590032e306ed01ae065cd74754148a0415faa75d87227b8bdb22"
+content-hash = "b3e67269db9e3a1e612958a8fc80933db0449cc2e270355e5034dd6cd07e495d"
