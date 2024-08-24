@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-version = "0.3.4"
+version = "0.3.5"
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
@@ -27,6 +27,8 @@ fastapi = "^0.109.2"
 requests = "^2.31.0"
 types-requests = "^2.31.0"
 click = "^8.0.0"
+python-dotenv = "^1.0.1"
+nltk = "^3.9.1"
 
 # Core dependencies (optional)
 openai = { version = "^1.11.1", optional = true }
@@ -62,8 +64,6 @@ poppler-utils = { version = "^0.1.0", optional = true }
 psutil = { version = "^6.0.0", optional = true }
 deepdiff = { version = "^7.0.1", optional = true }
 graspologic = { version = "^3.4.1", optional = true }
-nltk = "^3.9.1"
-python-dotenv = "^1.0.1"
 
 [tool.poetry.extras]
 core = [
