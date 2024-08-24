@@ -47,11 +47,12 @@ Then, after installing R2R, it is recommended to launch with Docker, if possible
 r2r serve --docker
 ```
 
-Alternatively, you may run R2R directly from the python package, but additional dependencies like Postgres+pgvector must be configured:
+Alternatively, you may run R2R directly from the python package, but additional dependencies like Postgres+pgvector must be configured and the full R2R core is required:
 
 ```bash
 # export OPENAI_API_KEY=sk-...
 # export POSTGRES...
+pip install 'r2r[core]'
 r2r --config-name=default serve
 ```
 
