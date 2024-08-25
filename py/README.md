@@ -71,7 +71,7 @@ r2r --config-name=default serve
 
 ## Cookbooks
 
-- Advanced RAG Pipelines 
+- Advanced RAG Pipelines
   - [RAG Agent](https://r2r-docs.sciphi.ai/cookbooks/agent): R2R's powerful RAG agent
   - [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): Introduction to hybrid search
   - [Advanced RAG](https://r2r-docs.sciphi.ai/cookbooks/advanced-rag): Advanced RAG features
