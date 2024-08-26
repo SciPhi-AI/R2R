@@ -32,6 +32,8 @@ MB_CONVERSION_FACTOR = 1024 * 1024
 STARTING_VERSION = "v0"
 MAX_FILES_PER_INGESTION = 100
 OVERVIEW_FETCH_PAGE_SIZE = 1_000
+
+
 class IngestionService(Service):
     def __init__(
         self,
@@ -78,7 +80,6 @@ class IngestionService(Service):
                     raise R2RException(
                         status_code=400, message="File name not provided."
                     )
-
 
                 document_metadata = metadatas[iteration] if metadatas else {}
 
@@ -149,9 +150,11 @@ class IngestionService(Service):
                 documents_overview_page = (
                     self.providers.database.relational.get_documents_overview(
                         filter_document_ids=document_ids,
-                        filter_user_ids=[user.id] if not user.is_superuser else None,
+                        filter_user_ids=(
+                            [user.id] if not user.is_superuser else None
+                        ),
                         offset=offset,
-                        limit=OVERVIEW_FETCH_PAGE_SIZE
+                        limit=OVERVIEW_FETCH_PAGE_SIZE,
                     )
                 )
                 documents_overview.extend(documents_overview_page)
