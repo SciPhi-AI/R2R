@@ -66,7 +66,7 @@ class RAGAgentMixin:
     ) -> str:
         formatted_results = ""
         for i, result in enumerate(results):
-            text = result.metadata.get("text", "N/A")
+            text = result.text
             formatted_results += f"{i+1}. {text}\n"
         return formatted_results
 
