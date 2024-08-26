@@ -10,7 +10,6 @@ from core.base import (
 )
 from core.base.abstractions.document import DocumentExtraction
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -31,7 +30,7 @@ class R2RChunkingProvider(ChunkingProvider):
                 chunk_size=self.config.chunk_size,
                 chunk_overlap=self.config.chunk_overlap,
             )
-        elif self.config.method == "character":
+        elif self.config.method == Method.CHARACTER:
             from core.base.utils.splitter.text import CharacterTextSplitter
             separator = CharacterTextSplitter.DEFAULT_SEPARATOR
             if self.config.extra_fields:
