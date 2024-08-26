@@ -3,25 +3,35 @@ import json
 import os
 from typing import Any, Dict, List, Optional, Tuple
 
-from r2r.base import (
-    EntityType,
-    KGConfig,
-    KGProvider,
-    PromptProvider,
-    format_entity_types,
-    format_relations,
+import json
+import os
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Any, Dict, List, Optional
+from uuid import UUID
+
+from core.base import KGConfig, KGProvider
+from core.base.abstractions.document import DocumentFragment
+from core.base.abstractions.graph import (
+    Community,
+    Entity,
+    KGExtraction,
+    RelationshipType,
+    Triple,
 )
-from r2r.base.abstractions.llama_abstractions import (
-    LIST_LIMIT,
-    ChunkNode,
-    EntityNode,
-    LabelledNode,
-    PropertyGraphStore,
-    Relation,
-    Triplet,
-    VectorStoreQuery,
-    clean_string_values,
-    value_sanitize,
+
+from .graph_queries import (
+    GET_CHUNKS_QUERY,
+    GET_COMMUNITIES_QUERY,
+    GET_ENTITIES_QUERY,
+    GET_TRIPLES_BY_SUBJECT_AND_OBJECT_QUERY,
+    GET_TRIPLES_QUERY,
+    PUT_CHUNKS_QUERY,
+    PUT_COMMUNITIES_QUERY,
+    PUT_ENTITIES_EMBEDDINGS_QUERY,
+    PUT_ENTITIES_QUERY,
+    PUT_TRIPLES_QUERY,
+    UNIQUE_CONSTRAINTS,
 )
 
 
@@ -43,7 +53,7 @@ EXHAUSTIVE_SEARCH_LIMIT = 10000
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
 
-# TODO(@DavIvek): Figure out alternative to APOC
+# TODO(@DavIvek): Figure out alternative to APOC -> done
 node_properties_query = """
 CALL schema.node_type_properties()
 YIELD nodeType, nodeLabels, mandatory, propertyName, propertyTypes
@@ -51,7 +61,7 @@ WITH nodeLabels, collect({property: propertyName, type: propertyTypes}) AS prope
 RETURN {labels: nodeLabels, properties: properties} AS output;
 """
 
-# TODO(@DavIvek): Figure out alternative to APOC
+# TODO(@DavIvek): Figure out alternative to APOC -> done
 rel_properties_query = """
 CALL schema.rel_type_properties()
 YIELD relType, mandatory, propertyName, propertyTypes
@@ -59,7 +69,7 @@ WITH relType, collect({property: propertyName, type: propertyTypes}) AS properti
 RETURN {type: relType, properties: properties} AS output;
 """
 
-# TODO(@DavIvek): Figure out alternative to APOC
+# TODO(@DavIvek): Figure out alternative to APOC -> done
 rel_query = """
 MATCH (startNode)-[rel]->(endNode)
 WITH DISTINCT
@@ -74,7 +84,7 @@ RETURN
 
 
 # TODO(@antejavor): Implement the Neo4jKGProvider
-class MemgraphKGProvider(PropertyGraphStore, KGProvider):
+class MemgraphKGProvider(KGProvider):
     r"""
     Memgraph Property Graph Store.
 
@@ -151,7 +161,7 @@ class MemgraphKGProvider(PropertyGraphStore, KGProvider):
     def client(self):
         return self._driver
 
-    # TODO(@DavIvek): Implement schema -> Do we have to return data in a specific format?
+    # TODO(@DavIvek): Implement schema -> Do we have to return data in a specific format? -> done
     def refresh_schema(self) -> None:
         """Refresh the schema."""
         node_query_results = self.structured_query(
@@ -210,49 +220,6 @@ class MemgraphKGProvider(PropertyGraphStore, KGProvider):
             "index": index,
         }
 
-        # schema_counts = self.structured_query(
-        #     "CALL apoc.meta.graphSample() YIELD nodes, relationships "
-        #     "RETURN nodes, [rel in relationships | {name:apoc.any.property"
-        #     "(rel, 'type'), count: apoc.any.property(rel, 'count')}]"
-        #     " AS relationships"
-        # )
-        # # Update node info
-        # for node in schema_counts[0].get("nodes", []):
-        #     node_props = self.structured_schema["node_props"].get(node["name"])
-        #     if not node_props:  # The node has no properties
-        #         continue
-        #     enhanced_cypher = self._enhanced_schema_cypher(
-        #         node["name"],
-        #         node_props,
-        #         node["count"] < EXHAUSTIVE_SEARCH_LIMIT,
-        #     )
-        #     enhanced_info = self.structured_query(enhanced_cypher)[0]["output"]
-        #     for prop in node_props:
-        #         if prop["property"] in enhanced_info:
-        #             prop.update(enhanced_info[prop["property"]])
-
-        # # Update rel info
-        # for rel in schema_counts[0].get("relationships", []):
-        #     rel_props = self.structured_schema["rel_props"].get(rel["name"])
-        #     if not rel_props:  # The rel has no properties
-        #         continue
-        #     enhanced_cypher = self._enhanced_schema_cypher(
-        #         rel["name"],
-        #         rel_props,
-        #         rel["count"] < EXHAUSTIVE_SEARCH_LIMIT,
-        #         is_relationship=True,
-        #     )
-        #     try:
-        #         enhanced_info = self.structured_query(enhanced_cypher)[0][
-        #             "output"
-        #         ]
-        #         for prop in rel_props:
-        #             if prop["property"] in enhanced_info:
-        #                 prop.update(enhanced_info[prop["property"]])
-        #     except self.neo4j.exceptions.ClientError:
-        #         # Sometimes the types are not consistent in the db
-        #         pass
-
         for label, props in self.structured_schema["node_props"].items():
             if not props:
                 continue
@@ -269,6 +236,25 @@ class MemgraphKGProvider(PropertyGraphStore, KGProvider):
             self.structured_schema["node_props"][
                 label
             ] = list_of_props  # not the best way to do this, but it works for now
+            
+        for rel_type in self.structured_schema["rel_props"]:
+            list_of_props = self.structured_schema["rel_props"][rel_type]
+            enhanced_cypher = self._enhanced_schema_cypher(
+                rel_type,
+                list_of_props,
+                len(list_of_props) < EXHAUSTIVE_SEARCH_LIMIT,
+                is_relationship=True,
+            )
+            try:
+                enhanced_info = self.structured_query(enhanced_cypher)[0][
+                    "output"
+                ]
+                for prop in list_of_props:
+                    if prop["property"] in enhanced_info:
+                        prop.update(enhanced_info[prop["property"]])
+            except self.neo4j.exceptions.ClientError:
+                # Sometimes the types are not consistent in the db
+                pass
 
     # TODO(@antejavor): Implement the upsert_nodes
     def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
@@ -328,81 +314,66 @@ class MemgraphKGProvider(PropertyGraphStore, KGProvider):
                 param_map={"data": entity_dicts},
             )
 
-    # TODO(@DavIvek): Implement the upsert_relations
+    # TODO(@DavIvek): Implement the upsert_relations -> done
     def upsert_relations(self, relations: List[Relation]) -> None:
         """Add relations."""
         params = [r.dict() for r in relations]
 
+        # memgraph does not support write procedures in queries that contains any updates, so we have to split the query
         self.structured_query(
             """
             UNWIND $data AS row
             MERGE (source {id: row.source_id})
             MERGE (target {id: row.target_id})
+            """,
+            param_map={"data": params},
+        )
+        
+        self.structured_query(
+            """
+            UNWIND $data AS row
+            MATCH (source {id: row.source_id})
+            MATCH (target {id: row.target_id})
             WITH source, target, row
-            CALL apoc.merge.relationship(source, row.label, {}, row.properties, target) YIELD rel
+            CALL merge.relationship(source, row.label, {}, row.properties, target) YIELD rel
             RETURN count(*)
             """,
             param_map={"data": params},
         )
 
     # TODO(@DavIvek): Implement the get
-    def get(
-        self,
-        properties: Optional[dict] = None,
-        ids: Optional[List[str]] = None,
-    ) -> List[LabelledNode]:
-        """Get nodes."""
-        cypher_statement = "MATCH (e) "
-
-        params = {}
-        if properties or ids:
-            cypher_statement += "WHERE "
-
-        if ids:
-            cypher_statement += "e.id in $ids "
-            params["ids"] = ids
-
-        if properties:
-            prop_list = []
-            for i, prop in enumerate(properties):
-                prop_list.append(f"e.`{prop}` = $property_{i}")
-                params[f"property_{i}"] = properties[prop]
-            cypher_statement += " AND ".join(prop_list)
-
-        return_statement = """
-        WITH e
-        RETURN e.id AS name,
-               [l in labels(e) WHERE l <> '__Entity__' | l][0] AS type,
-               e{.* , embedding: Null, id: Null} AS properties
+    def get_entities(self, entity_ids: List[str] = []) -> List[Entity]:
         """
-        cypher_statement += return_statement
-
-        response = self.structured_query(cypher_statement, param_map=params)
-        response = response if response else []
-
-        nodes = []
-        for record in response:
-            # text indicates a chunk node
-            # none on the type indicates an implicit node, likely a chunk node
-            if "text" in record["properties"] or record["type"] is None:
-                text = record["properties"].pop("text", "")
-                nodes.append(
-                    ChunkNode(
-                        id_=record["name"],
-                        text=text,
-                        properties=remove_empty_values(record["properties"]),
-                    )
-                )
-            else:
-                nodes.append(
-                    EntityNode(
-                        name=record["name"],
-                        label=record["type"],
-                        properties=remove_empty_values(record["properties"]),
-                    )
-                )
-
-        return nodes
+        Get entities from the graph.
+        """
+        neo4j_records = self.structured_query(
+            GET_ENTITIES_QUERY, {"entity_ids": entity_ids}
+        )
+        entities = [
+            Entity(
+                category=", ".join(list(record["e"]._labels)[1:]),
+                **record["e"]._properties,
+            )
+            for record in neo4j_records.records
+        ]
+        return entities
+    
+    def get_chunks(
+        self, chunk_ids: List[str] = None
+    ) -> List[DocumentFragment]:
+        """
+        Get chunks from the graph.
+        """
+        return self.structured_query(GET_CHUNKS_QUERY, chunk_ids)
+    
+    def get(self, entity_name: str = None) -> Entity:
+        """
+        Get entities from the graph.
+        """
+        if entity_name is None:
+            return self.get_entities()
+        else:
+            return self.get_entities(entity_ids=[entity_name])
 
     # TODO(@antejavor): Implement the get_triplets
     def get_triplets(
@@ -461,32 +432,28 @@ class MemgraphKGProvider(PropertyGraphStore, KGProvider):
 
         triples = []
         for record in data:
-            source = EntityNode(
+            source = Entity(
                 name=record["source_id"],
                 label=record["source_type"],
                 properties=remove_empty_values(record["source_properties"]),
             )
-            target = EntityNode(
+            target = Entity(
                 name=record["target_id"],
                 label=record["target_type"],
                 properties=remove_empty_values(record["target_properties"]),
             )
-            rel = Relation(
-                source_id=record["source_id"],
-                target_id=record["target_id"],
-                label=record["type"],
-            )
+            rel = RelationshipType(label=record["type"])
             triples.append([source, rel, target])
         return triples
 
     # TODO(@DavIvek): Implement the get_rel_map
     def get_rel_map(
         self,
-        graph_nodes: List[LabelledNode],
+        graph_nodes: Any,
         depth: int = 2,
         limit: int = 30,
         ignore_rels: Optional[List[str]] = None,
-    ) -> List[Triplet]:
+    ) -> List[Triple]:
         """Get depth-aware rel map."""
         triples = []
 
@@ -519,26 +486,22 @@ class MemgraphKGProvider(PropertyGraphStore, KGProvider):
             if record["type"] in ignore_rels:
                 continue
 
-            source = EntityNode(
+            source = Entity(
                 name=record["source_id"],
                 label=record["source_type"],
                 properties=remove_empty_values(record["source_properties"]),
             )
-            target = EntityNode(
+            target = Entity(
                 name=record["target_id"],
                 label=record["target_type"],
                 properties=remove_empty_values(record["target_properties"]),
             )
-            rel = Relation(
-                source_id=record["source_id"],
-                target_id=record["target_id"],
-                label=record["type"],
-            )
+            rel = RelationshipType(label=record["type"])
             triples.append([source, rel, target])
 
         return triples
 
-    # TODO(@DavIvek): Implement the structured_query - I believe that we can use this one
+    # TODO(@DavIvek): Implement the structured_query - I believe that we can use this one -> done
     def structured_query(
         self, query: str, param_map: Optional[Dict[str, Any]] = None
     ) -> Any:
