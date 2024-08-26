@@ -12,14 +12,14 @@ repos:
     hooks:
       - id: isort
         name: isort
-        entry: poetry run isort
+        entry: bash -c 'cd py && poetry run isort $(git diff --cached --name-only --diff-filter=ACM | grep ".py$" | xargs -I {} echo ../{}) || true'
         language: system
         types: [python]
-        args: ["--check", "--diff"]
+        pass_filenames: false
 
       - id: black
         name: black
-        entry: poetry run black
+        entry: bash -c 'cd py && poetry run black .'
         language: system
         types: [python]
-        args: ["--check", "--diff"]
+        pass_filenames: false

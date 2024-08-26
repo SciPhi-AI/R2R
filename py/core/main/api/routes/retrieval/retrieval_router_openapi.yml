@@ -1,0 +1,151 @@
+search:
+  openapi_extra:
+    x-codeSamples:
+      - lang: Python
+        source: |
+          from r2r import R2RClient
+
+          client = R2RClient("http://localhost:8000")
+          # when using auth, do client.login(...)
+
+          result = client.search(
+              query="What is the capital of France?",
+              vector_search_settings={
+                  "use_vector_search": True,
+                  "filters": {"document_id": {"eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                  "search_limit": 20,
+                  "use_hybrid_search": True
+              }
+          )
+      - lang: Shell
+        source: |
+          curl -X POST "https://api.example.com/search" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer YOUR_API_KEY" \
+            -d '{
+              "query": "What is the capital of France?",
+              "vector_search_settings": {
+                "use_vector_search": true,
+                "filters": {"document_id": {"eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                "search_limit": 20,
+                "use_hybrid_search": true
+              }
+            }'
+
+  input_descriptions:
+    query: "Search query"
+    vector_search_settings: "Vector search settings"
+    kg_search_settings: "Knowledge graph search settings"
+
+rag:
+  openapi_extra:
+    x-codeSamples:
+      - lang: Python
+        source: |
+          from r2r import R2RClient
+
+          client = R2RClient("http://localhost:8000")
+          # when using auth, do client.login(...)
+
+          result = client.rag(
+              query="What is the capital of France?",
+              vector_search_settings={
+                  "use_vector_search": True,
+                  "filters": {"document_id": {"eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                  "search_limit": 20,
+                  "use_hybrid_search": True
+              },
+              rag_generation_config={
+                  "stream": False,
+                  "temperature": 0.7,
+                  "max_tokens": 150
+              }
+          )
+      - lang: Shell
+        source: |
+          curl -X POST "https://api.example.com/rag" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer YOUR_API_KEY" \
+            -d '{
+              "query": "What is the capital of France?",
+              "vector_search_settings": {
+                "use_vector_search": true,
+                "filters": {"document_id": {"eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                "search_limit": 20,
+                "use_hybrid_search": true
+              },
+              "rag_generation_config": {
+                "stream": false,
+                "temperature": 0.7,
+                "max_tokens": 150
+              }
+            }'
+
+  input_descriptions:
+    query: "RAG query"
+    vector_search_settings: "Vector search settings"
+    kg_search_settings: "Knowledge graph search settings"
+    rag_generation_config: "RAG generation configuration"
+    task_prompt_override: "Task prompt override"
+
+agent:
+  openapi_extra:
+    x-codeSamples:
+      - lang: Python
+        source: |
+          from r2r import R2RClient
+
+          client = R2RClient("http://localhost:8000")
+          # when using auth, do client.login(...)
+
+          result = client.agent(
+              messages=[
+                  {"role": "user", "content": "Who is the greatest philospher of all time?"},
+                  {"role": "assistant", "content": "Aristotle is widely considered the greatest philospher of all time."},
+                  {"role": "user", "content": "Can you tell me more about him?"}
+              ],
+              vector_search_settings={
+                  "use_vector_search": True,
+                  "filters": {"document_id": {"eq": "5e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                  "search_limit": 20,
+                  "use_hybrid_search": True
+              },
+              rag_generation_config={
+                  "stream": False,
+                  "temperature": 0.7,
+                  "max_tokens": 200
+              },
+              include_title_if_available=True
+          )
+      - lang: Shell
+        source: |
+          curl -X POST "https://api.example.com/agent" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer YOUR_API_KEY" \
+            -d '{
+              "messages": [
+                {"role": "user", "content": "Who is the greatest philospher of all time?"},
+                {"role": "assistant", "content": "Aristotle is widely considered the greatest philospher of all time."},
+                {"role": "user", "content": "Can you tell me more about him?"}
+              ],
+              "vector_search_settings": {
+                "use_vector_search": true,
+                "filters": {"document_id": {"eq": "5e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                "search_limit": 20,
+                "use_hybrid_search": true
+              },
+              "rag_generation_config": {
+                "stream": false,
+                "temperature": 0.7,
+                "max_tokens": 200
+              },
+              "include_title_if_available": true
+            }'
+
+  input_descriptions:
+    messages: "List of message objects"
+    vector_search_settings: "Vector search settings"
+    kg_search_settings: "Knowledge graph search settings"
+    rag_generation_config: "RAG generation configuration"
+    task_prompt_override: "Task prompt override"
+    include_title_if_available: "Include title if available"
