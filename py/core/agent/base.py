@@ -141,7 +141,7 @@ class R2RStreamingAgent(Agent):
         )
 
     async def process_llm_response(
-        self, stream: LLMChatCompletionChunk, user, *args, **kwargs
+        self, stream: LLMChatCompletionChunk, *args, **kwargs
     ) -> AsyncGenerator[str, None]:
         function_name = None
         function_arguments = ""
@@ -193,7 +193,7 @@ class R2RStreamingAgent(Agent):
                 function_name = None
                 function_arguments = ""
 
-                self.arun(user=user, *args, **kwargs)
+                self.arun(*args, **kwargs)
 
             elif chunk.choices[0].finish_reason == "stop":
                 if content_buffer:
