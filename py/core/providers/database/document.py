@@ -71,7 +71,7 @@ class DocumentMixin(DatabaseMixin):
         filter_document_ids: Optional[list[UUID]] = None,
         filter_group_ids: Optional[list[UUID]] = None,
         offset: int = 0,
-        limit: int = -1,
+        limit: int = 100,
     ):
         conditions = []
         params = {"offset": offset}
