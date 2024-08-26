@@ -413,6 +413,7 @@ class R2RPipeFactory:
         return KGTriplesExtractionPipe(
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
+            database_provider=self.providers.database,
             prompt_provider=self.providers.prompt,
             chunking_provider=self.providers.chunking,
             kg_batch_size=self.config.kg.batch_size,
