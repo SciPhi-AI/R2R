@@ -74,6 +74,9 @@ class KGTriplesExtractionPipe(AsyncPipe):
         """
         Extracts NER triples from a fragment with retries.
         """
+
+        logger.info(f"Extracting triples for fragment: {fragment.id}")
+
         messages = self.prompt_provider._get_message_payload(
             task_prompt_name=self.kg_provider.config.kg_extraction_prompt,
             task_inputs={"input": fragment},

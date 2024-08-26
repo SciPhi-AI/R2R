@@ -121,7 +121,7 @@ def run_docker_serve(
     if not no_conflict:
         click.secho(f"Warning: {message}", fg="red", bold=True)
         click.echo("This may cause issues when starting the Docker setup.")
-        if not click.confirm("Do you want to continue?", default=False):
+        if not click.confirm("Do you want to continue?", default=True):
             click.echo("Aborting Docker setup.")
             return
 

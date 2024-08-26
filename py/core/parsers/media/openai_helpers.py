@@ -8,7 +8,7 @@ def process_frame_with_openai(
     api_key: str,
     model: str = "gpt-4o",
     max_tokens: int = 2_048,
-    api_base: str = "https://api.openai.com/v2/chat/completions",
+    api_base: str = "https://api.openai.com/v1/chat/completions",
 ) -> str:
     headers = {
         "Content-Type": "application/json",
@@ -43,7 +43,7 @@ def process_frame_with_openai(
 def process_audio_with_openai(
     audio_file,
     api_key: str,
-    audio_api_base: str = "https://api.openai.com/v2/audio/transcriptions",
+    audio_api_base: str = "https://api.openai.com/v1/audio/transcriptions",
 ) -> str:
     headers = {"Authorization": f"Bearer {api_key}"}
 

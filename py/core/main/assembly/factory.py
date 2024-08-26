@@ -413,6 +413,7 @@ class R2RPipeFactory:
         return KGTriplesExtractionPipe(
             kg_provider=self.providers.kg,
             llm_provider=self.providers.llm,
+            database_provider=self.providers.database,
             prompt_provider=self.providers.prompt,
             chunking_provider=self.providers.chunking,
             kg_batch_size=self.config.kg.batch_size,
@@ -516,11 +517,11 @@ class R2RPipelineFactory:
                 self.pipes.vector_storage_pipe, embedding_pipe=True
             )
         # Add KG pipes if provider is set
-        if self.config.kg.provider is not None:
-            ingestion_pipeline.add_pipe(self.pipes.kg_pipe, kg_pipe=True)
-            ingestion_pipeline.add_pipe(
-                self.pipes.kg_storage_pipe, kg_pipe=True
-            )
+        # if self.config.kg.provider is not None:
+        #     ingestion_pipeline.add_pipe(self.pipes.kg_pipe, kg_pipe=True)
+        #     ingestion_pipeline.add_pipe(
+        #         self.pipes.kg_storage_pipe, kg_pipe=True
+        #     )
 
         return ingestion_pipeline
 
@@ -565,10 +566,11 @@ class R2RPipelineFactory:
         self, *args, **kwargs
     ) -> KGEnrichmentPipeline:
         kg_enrichment_pipeline = KGEnrichmentPipeline()
+        kg_enrichment_pipeline.add_pipe(self.pipes.kg_pipe)
+        kg_enrichment_pipeline.add_pipe(self.pipes.kg_storage_pipe)
         kg_enrichment_pipeline.add_pipe(self.pipes.kg_node_extraction_pipe)
         kg_enrichment_pipeline.add_pipe(self.pipes.kg_node_description_pipe)
         kg_enrichment_pipeline.add_pipe(self.pipes.kg_clustering_pipe)
-
         return kg_enrichment_pipeline
 
     def create_pipelines(
