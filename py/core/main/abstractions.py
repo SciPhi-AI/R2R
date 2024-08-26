@@ -61,7 +61,7 @@ class R2RPipelines(BaseModel):
     search_pipeline: SearchPipeline
     rag_pipeline: RAGPipeline
     streaming_rag_pipeline: RAGPipeline
-    kg_enrichment_pipeline: KGEnrichmentPipeline
+    kg_enrichment_pipeline: Optional[KGEnrichmentPipeline]
 
     class Config:
         arbitrary_types_allowed = True

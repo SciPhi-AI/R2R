@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 MB_CONVERSION_FACTOR = 1024 * 1024
 STARTING_VERSION = "v0"
 MAX_FILES_PER_INGESTION = 100
-
+OVERVIEW_FETCH_PAGE_SIZE = 1_000
 class IngestionService(Service):
     def __init__(
         self,
@@ -66,7 +66,11 @@ class IngestionService(Service):
             raise R2RException(
                 status_code=400, message="No files provided for ingestion."
             )
-
+        if len(files) > MAX_FILES_PER_INGESTION:
+            raise R2RException(
+                status_code=400,
+                message=f"Exceeded maximum number of files per ingestion: {MAX_FILES_PER_INGESTION}.",
+            )
         try:
             documents = []
             for iteration, file in enumerate(files):
@@ -75,11 +79,6 @@ class IngestionService(Service):
                         status_code=400, message="File name not provided."
                     )
 
-                if len(files) > MAX_FILES_PER_INGESTION:
-                    raise R2RException(
-                        status_code=400,
-                        message=f"Exceeded maximum number of files per ingestion: {MAX_FILES_PER_INGESTION}.",
-                    )
 
                 document_metadata = metadatas[iteration] if metadatas else {}
 
@@ -145,20 +144,20 @@ class IngestionService(Service):
 
             documents_overview = []
 
-            page = 1
+            offset = 0
             while True:
                 documents_overview_page = (
                     self.providers.database.relational.get_documents_overview(
                         filter_document_ids=document_ids,
                         filter_user_ids=[user.id] if not user.is_superuser else None,
-                        page=page,
-                        page_size=100  # Adjust this value as needed
+                        offset=offset,
+                        limit=OVERVIEW_FETCH_PAGE_SIZE
                     )
                 )
                 documents_overview.extend(documents_overview_page)
-                if len(documents_overview_page) < 100:  # If we've reached the last page
+                if len(documents_overview_page) < OVERVIEW_FETCH_PAGE_SIZE:
                     break
-                page += 1
+                offset += 1
 
             documents = []
             new_versions = []
