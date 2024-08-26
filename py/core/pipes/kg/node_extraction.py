@@ -59,6 +59,12 @@ class KGNodeExtractionPipe(AsyncPipe):
         **kwargs,
     ) -> AsyncGenerator[Any, None]:
 
+        len_input = 0
+        async for message in input.message:
+            len_input += len(message)
+
+        logger.info(f"Processing {len_input} chunks")
+
         nodes = self.kg_provider.get_entity_map()
 
         for node_value, node_info in nodes.items():
@@ -108,38 +114,6 @@ class KGNodeDescriptionPipe(AsyncPipe):
         """
         Extracts description from the input.
         """
-
-        # summarization_content  = """
-
-        #     You are given the following entity and its associated triples:
-        #     Entity: {entity_info}
-        #     Triples: {triples_txt}
-        #     Your tasks:
-
-        #     Entity Description:
-        #     Provide a concise description of the entity based on the given information and triples.
-
-        #     Entity Analysis:
-        #     a) Determine if this entity represents a single concept or a combination of multiple entities.
-        #     b) If it's a combination, list the separate entities that make up this composite entity.
-        #     c) Map each separate entity to the relationship(s) it came from in the original triples.
-        #     d) Suggest more appropriate names for each separate entity if applicable.
-
-        #     Formatted Output:
-        #     For each entity (original or separate), provide the following formatted output:
-        #     ("entity"$$$$<entity_name>$$$$<entity_type>$$$$<entity_description>$$$$<associated_triples>)
-
-        #     Where:
-        #     <entity_name>: The name of the entity (original or improved)
-        #     <entity_type>: The type or category of the entity
-        #     <entity_description>: A concise description of the entity
-        #     <associated_triples>: List of triples associated with this specific entity
-
-        #     Explanation:
-        #     Briefly explain your reasoning for separating entities (if applicable) and any name changes you suggested.
-
-        #     Please ensure your response is clear, concise, and follows the requested format.
-        # """
 
         summarization_content = """
             Provide a comprehensive yet concise summary of the given entity, incorporating its description and associated triples:

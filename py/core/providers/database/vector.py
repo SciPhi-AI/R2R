@@ -467,11 +467,12 @@ class PostgresVectorDBProvider(VectorDBProvider):
         )
 
     def get_document_chunks(
-        self, document_id: str, offset: int = 0, limit: int = 100
+        self, document_id: str, offset: int = 0, limit: int = -1
     ) -> dict:
         if not self.collection:
             raise ValueError("Collection is not initialized.")
 
+        limit_clause = f"LIMIT {limit}" if limit != -1 else ""
         table_name = self.collection.table.name
         query = text(
             f"""
@@ -479,7 +480,7 @@ class PostgresVectorDBProvider(VectorDBProvider):
             FROM vecs."{table_name}"
             WHERE document_id = :document_id
             ORDER BY CAST(metadata->>'chunk_order' AS INTEGER)
-            LIMIT :limit OFFSET :offset
+            {limit_clause} OFFSET :offset
         """
         )
 
@@ -491,7 +492,9 @@ class PostgresVectorDBProvider(VectorDBProvider):
         """
         )
 
-        params = {"document_id": document_id, "limit": limit, "offset": offset}
+        params = {"document_id": document_id, "offset": offset}
+        if limit != -1:
+            params["limit"] = limit
 
         with self.vx.Session() as sess:
             results = sess.execute(query, params).fetchall()
