@@ -80,9 +80,9 @@ def run_local_serve(
 ) -> None:
     try:
         from r2r import R2R
-    except ImportError:
+    except ImportError as e:
         click.echo(
-            "You must install the `r2r core` package to run the R2R server locally."
+            f"You must install the `r2r core` package to run the R2R server locally, {e}"
         )
         sys.exit(1)
 

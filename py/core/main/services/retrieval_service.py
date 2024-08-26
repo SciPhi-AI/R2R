@@ -19,7 +19,6 @@ from core.base import (
     to_async_generator,
 )
 from core.base.api.models import RAGResponse, SearchResponse
-from core.base.api.models.auth.responses import UserResponse
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
@@ -97,7 +96,6 @@ class RetrievalService(Service):
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
                 run_manager=self.run_manager,
-                user=user,
                 *args,
                 **kwargs,
             )
@@ -280,7 +278,6 @@ class RetrievalService(Service):
                                 kg_search_settings=kg_search_settings,
                                 rag_generation_config=rag_generation_config,
                                 include_title_if_available=include_title_if_available,
-                                user=user,
                                 *args,
                                 **kwargs,
                             ):
@@ -295,7 +292,6 @@ class RetrievalService(Service):
                     kg_search_settings=kg_search_settings,
                     rag_generation_config=rag_generation_config,
                     include_title_if_available=include_title_if_available,
-                    user=user,
                     *args,
                     **kwargs,
                 )

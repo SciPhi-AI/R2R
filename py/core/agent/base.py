@@ -104,7 +104,6 @@ class R2RStreamingAgent(Agent):
         self,
         system_instruction: Optional[str] = None,
         messages: Optional[list[Message]] = None,
-        user: Optional[User] = None,
         *args,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
@@ -127,7 +126,7 @@ class R2RStreamingAgent(Agent):
                     generation_config,
                 )
                 async for chunk in self.process_llm_response(
-                    stream, user=user, *args, **kwargs
+                    stream, *args, **kwargs
                 ):
                     yield chunk
         finally:
