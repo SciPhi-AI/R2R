@@ -4,7 +4,7 @@ import fire
 import requests
 from bs4 import BeautifulSoup, Comment
 
-from r2r import EntityType, R2RClient, R2RPromptProvider, RelationshipType
+from r2r import R2RClient, R2RPromptProvider
 
 
 def escape_braces(text):
@@ -88,47 +88,52 @@ def main(
 
     # Specify the entity types for the KG extraction prompt
     entity_types = [
-        EntityType("COMPANY"),
-        EntityType("SCHOOL"),
-        EntityType("LOCATION"),
-        EntityType("PERSON"),
-        EntityType("DATE"),
-        EntityType("OTHER"),
-        EntityType("QUANTITY"),
-        EntityType("EVENT"),
-        EntityType("INDUSTRY"),
-        EntityType("MEDIA"),
+        "COMPANY",
+        "SCHOOL",
+        "LOCATION",
+        "PERSON",
+        "DATE",
+        "OTHER",
+        "QUANTITY",
+        "EVENT",
+        "INDUSTRY",
+        "MEDIA",
     ]
 
     # Specify the relations for the KG construction
     relations = [
         # Founder Relations
-        RelationshipType("EDUCATED_AT"),
-        RelationshipType("WORKED_AT"),
-        RelationshipType("FOUNDED"),
+        "EDUCATED_AT",
+        "WORKED_AT",
+        "FOUNDED",
         # Company relations
-        RelationshipType("RAISED"),
-        RelationshipType("REVENUE"),
-        RelationshipType("TEAM_SIZE"),
-        RelationshipType("LOCATION"),
-        RelationshipType("ACQUIRED_BY"),
-        RelationshipType("ANNOUNCED"),
-        RelationshipType("INDUSTRY"),
+        "RAISED",
+        "REVENUE",
+        "TEAM_SIZE",
+        "LOCATION",
+        "ACQUIRED_BY",
+        "ANNOUNCED",
+        "INDUSTRY",
         # Product relations
-        RelationshipType("PRODUCT"),
-        RelationshipType("FEATURES"),
-        RelationshipType("TECHNOLOGY"),
+        "PRODUCT",
+        "FEATURES",
+        "TECHNOLOGY",
         # Additional relations
-        RelationshipType("HAS"),
-        RelationshipType("AS_OF"),
-        RelationshipType("PARTICIPATED"),
-        RelationshipType("ASSOCIATED"),
+        "HAS",
+        "AS_OF",
+        "PARTICIPATED",
+        "ASSOCIATED",
     ]
 
     client = R2RClient(base_url=base_url)
     r2r_prompts = R2RPromptProvider()
 
     prompt = "graphrag_triplet_extraction_few_shot"
+
+    r2r_prompts.update_prompt(
+        prompt,
+        input_types={"entity_types": entity_types, "relations": relations},
+    )
 
     url_map = get_all_yc_co_directory_urls()
 

@@ -9,6 +9,7 @@ from core.base import (
     AsyncState,
     ChunkingProvider,
     CompletionProvider,
+    DatabaseProvider,
     DocumentExtraction,
     DocumentFragment,
     Entity,
@@ -44,6 +45,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
     def __init__(
         self,
         kg_provider: KGProvider,
+        db_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         chunking_provider: ChunkingProvider,
@@ -64,6 +66,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
         )
         self.kg_provider = kg_provider
         self.prompt_provider = prompt_provider
+        self.db_provider = db_provider
         self.llm_provider = llm_provider
         self.chunking_provider = chunking_provider
         self.kg_batch_size = kg_batch_size
@@ -188,10 +191,16 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
         async def process_extraction(extraction):
             return await self.extract_kg(extraction)
+    
+        document_ids = [extraction for extraction in input.message]
 
-        extractions = []
-        async for extraction in input.message:
-            extractions.append(extraction)
+        if document_ids == []:
+            document_ids = [doc.id for doc in self.db_provider.get_documents_overview()]
+
+        for document_id in document_ids:
+            extractions = [DocumentFragment(**extraction) for extraction in self.db_provider.get_document_chunks(
+                document_id=document_id 
+            )]
 
         kg_extractions = await asyncio.gather(
             *[process_extraction(extraction) for extraction in extractions]
