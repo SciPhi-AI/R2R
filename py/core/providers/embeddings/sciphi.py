@@ -3,7 +3,7 @@ import logging
 from typing import Any, List
 
 from .litellm import LiteLLMEmbeddingProvider
-from base import (
+from core import (
     EmbeddingConfig,
     EmbeddingProvider,
     EmbeddingPurpose,

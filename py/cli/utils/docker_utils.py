@@ -78,13 +78,13 @@ def run_local_serve(
     config_name: Optional[str] = None,
     config_path: Optional[str] = None,
 ) -> None:
-    try:
-        from r2r import R2R
-    except ImportError as e:
-        click.echo(
-            f"You must install the `r2r core` package to run the R2R server locally, {e}"
-        )
-        sys.exit(1)
+    # try:
+    from r2r import R2R
+    # except ImportError as e:
+    #     click.echo(
+    #         f"You must install the `r2r core` package to run the R2R server locally, {e}"
+    #     )
+    #     sys.exit(1)
 
     r2r_instance = R2R(config_name=config_name, config_path=config_path)
 

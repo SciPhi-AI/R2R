@@ -173,7 +173,7 @@ class R2RProviderFactory:
             embedding_provider = LiteLLMEmbeddingProvider(embedding)
 
         elif embedding.provider == "sciphi":
-            from r2r.providers.embeddings import SciPhiEmbeddingProvider
+            from core.providers.embeddings import SciPhiEmbeddingProvider
 
             embedding_provider = SciPhiEmbeddingProvider(embedding)
 
