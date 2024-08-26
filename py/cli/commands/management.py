@@ -129,14 +129,18 @@ def documents_overview(client, document_ids, offset, limit):
 @click.pass_obj
 def document_chunks(client, document_id, offset, limit):
     """Get chunks of a specific document."""
-    with timer():
-        chunks = client.document_chunks(document_id, offset, limit)
-
-    if not isinstance(chunks, dict) or "results" not in chunks:
-        click.echo("Unexpected data structure returned from document_chunks")
+    if not document_id:
+        click.echo("Error: Document ID is required.")
         return
 
-    chunks = chunks["results"]
+    with timer():
+        chunks_data = client.document_chunks(document_id, offset, limit)
+
+    chunks = chunks_data["results"]
+    if not chunks:
+        click.echo("No chunks found for the given document ID.")
+        return
+
     click.echo(f"\nNumber of chunks: {len(chunks)}")
 
     for index, chunk in enumerate(chunks, 1):

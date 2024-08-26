@@ -38,10 +38,20 @@ def mock_r2r_client():
                 {"id": "doc2", "title": "Document 2"},
             ]
         }
-        mock_client.document_chunks.return_value = [
-            {"fragment_id": "chunk1", "text": "Content 1", "metadata": {}},
-            {"fragment_id": "chunk2", "text": "Content 2", "metadata": {}},
-        ]
+        mock_client.document_chunks.return_value = {
+            "results": [
+                {
+                    "fragment_id": "chunk1",
+                    "text": "Content 1" * 50,
+                    "metadata": {},
+                },
+                {
+                    "fragment_id": "chunk2",
+                    "text": "Content 2" * 50,
+                    "metadata": {},
+                },
+            ]
+        }
         mock_client.inspect_knowledge_graph.return_value = {
             "nodes": 100,
             "edges": 500,
@@ -172,8 +182,13 @@ def test_document_chunks(runner, mock_r2r_client):
     result = runner.invoke(cli, ["document-chunks", "--document-id", "doc1"])
 
     assert result.exit_code == 0
-    assert "chunk1" in result.output
-    assert "Content 2" in result.output
+    assert "Number of chunks: 2" in result.output
+    assert "Fragment ID: chunk1" in result.output
+    assert "Text: Content 1" in result.output
+    assert "Content 1" * 5 in result.output
+    assert "..." in result.output
+    assert "Fragment ID: chunk2" in result.output
+    assert "Text: Content 2" in result.output
     mock_r2r_client.document_chunks.assert_called_once_with("doc1", None, None)
 
 
@@ -181,8 +196,7 @@ def test_document_chunks_no_id(runner, mock_r2r_client):
     result = runner.invoke(cli, ["document-chunks"])
 
     assert result.exit_code == 0
-    mock_r2r_client.document_chunks.assert_called_once_with(None, None, None)
-    assert "chunk1" in result.output
+    assert "Error: Document ID is required." in result.output
 
 
 def test_inspect_knowledge_graph(runner, mock_r2r_client):
