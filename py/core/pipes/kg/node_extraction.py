@@ -132,7 +132,6 @@ class KGNodeDescriptionPipe(AsyncPipe):
             Ensure the summary is coherent, informative, and captures the essence of the entity within the context of the provided information.
         """
 
-
         async def process_entity(entity, triples):
 
             # if embedding is present in the entity, just return it

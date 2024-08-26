@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Optional, Tuple
 from uuid import UUID
 
 from core.base import (
@@ -12,7 +12,7 @@ from core.base import (
 )
 from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers import KGProvider
-from typing import Tuple
+
 logger = logging.getLogger(__name__)
 
 
@@ -57,7 +57,9 @@ class KGStoragePipe(AsyncPipe):
         Stores a batch of knowledge graph extractions in the graph database.
         """
         try:
-            return self.kg_provider.upsert_nodes_and_relationships(kg_extractions)
+            return self.kg_provider.upsert_nodes_and_relationships(
+                kg_extractions
+            )
         except Exception as e:
             error_message = f"Failed to store knowledge graph extractions in the database: {e}"
             logger.error(error_message)
