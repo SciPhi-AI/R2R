@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - 'py/**'
+
+jobs:
+  pre-commit:
+    continue-on-error: true
+    runs-on: [ self-hosted, Linux ]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run pre-commit
+        working-directory: ./py
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          poetry install
+          pip install pre-commit
+          poetry run pre-commit install
+          poetry run pre-commit run --all-files
+          deactivate
+          rm -rf venv
+
+      - name: Clean up disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
+  pytest:
+    continue-on-error: true
+    runs-on: [ self-hosted, Linux ]
+    timeout-minutes: 15
+
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      POSTGRES_DBNAME: ${{ secrets.POSTGRES_DBNAME }}
+      POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+      POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_VECS_COLLECTION: ${{ secrets.POSTGRES_VECS_COLLECTION }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Start Ollama server
+        run: |
+          ollama serve &
+          sleep 5
+          curl -i http://localhost:11434
+
+      - name: Run pytest
+        working-directory: ./py
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          poetry install -E core
+          pip install pytest
+          poetry run pytest tests/ -k "not redis and not sentence_transformer"
+          deactivate
+          rm -rf venv
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Clean up disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          pkill -f ollama || true
+          echo "Cleaned up Ollama server"

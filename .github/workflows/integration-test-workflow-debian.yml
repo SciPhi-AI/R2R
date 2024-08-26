@@ -51,8 +51,8 @@ jobs:
     - name: Build and Push Docker Image
       uses: docker/build-push-action@v5
       with:
-        context: .
-        file: ./Dockerfile
+        context: ./py
+        file: ./py/Dockerfile
         push: true
         tags: ragtoriches/dev:latest
         platforms: linux/amd64
@@ -60,6 +60,7 @@ jobs:
         pull: true
 
     - name: Run cloud LLM integration tests in Docker
+      working-directory: ./py
       run: |
         python3 -m venv venv
         source venv/bin/activate
@@ -81,22 +82,22 @@ jobs:
         r2r documents-overview
 
         echo "Get Document Chunks"
-        r2r document-chunks 93123a68-d668-51de-8291-92162730dc87
+        r2r document-chunks --document-id=77f67c65-6406-5076-8176-3844f3ef3688
 
         echo "Delete Documents"
-        r2r delete --keys=document_id --values=b736292c-11e6-5453-9686-055da3edb866
+        r2r delete --filter="document_id:eq:f25fd516-5cac-5c09-b120-0fc841270c7e"
 
         echo "Vector Search"
         r2r search --query="What was Uber'\''s profit in 2020?"
 
         echo "Hybrid Search"
-        r2r search --query="What is a fierce nerd?" --do-hybrid-search
+        r2r search --query="What is a fierce nerd?" --use-hybrid-search
 
         echo "Basic RAG"
         r2r rag --query="What was Uber'\''s profit in 2020?"
 
         echo "RAG with Hybrid Search"
-        r2r rag --query="Who is John Snow?" --do-hybrid-search
+        r2r rag --query="Who is John Snow?" --use-hybrid-search
 
         echo "Streaming RAG"
         r2r rag --query="What was Lyft'\''s profit in 2020?" --stream
@@ -113,10 +114,18 @@ jobs:
         echo "Docker Down"
         r2r docker-down
 
-        echo "Clean up Virtual Environment"
-        deactivate
-        rm -rf venv
-        docker stop $(docker ps -a -q)
+  cleanup:
+    needs: build-and-test
+    runs-on: [ self-hosted, Linux ]
+    if: always()
+    steps:
+    - name: Clean up Virtual Environment
+      run: |
+        if [ -d "venv" ]; then
+          deactivate || true
+          rm -rf venv
+        fi
+        docker stop $(docker ps -a -q) || true
         docker system prune -af --volumes
         docker network prune --force
-        docker volume rm $(docker volume ls -qf dangling=true)
+        docker volume rm $(docker volume ls -qf dangling=true) || true
