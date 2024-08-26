@@ -132,12 +132,21 @@ def document_chunks(client, document_id, offset, limit):
     with timer():
         chunks = client.document_chunks(document_id, offset, limit)
 
+    if not isinstance(chunks, dict) or "results" not in chunks:
+        click.echo("Unexpected data structure returned from document_chunks")
+        return
+
+    chunks = chunks["results"]
     click.echo(f"\nNumber of chunks: {len(chunks)}")
+
     for index, chunk in enumerate(chunks, 1):
         click.echo(f"\nChunk {index}:")
-        click.echo(f"Fragment ID: {chunk['fragment_id']}")
-        click.echo(f"Text: {chunk['text'][:100]}...")
-        click.echo(f"Metadata: {chunk['metadata']}")
+        if isinstance(chunk, dict):
+            click.echo(f"Fragment ID: {chunk.get('fragment_id', 'N/A')}")
+            click.echo(f"Text: {chunk.get('text', '')[:100]}...")
+            click.echo(f"Metadata: {chunk.get('metadata', {})}")
+        else:
+            click.echo(f"Unexpected chunk format: {chunk}")
 
 
 @cli.command()

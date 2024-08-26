@@ -51,7 +51,7 @@ jobs:
     - name: Build and Push Docker Image
       uses: docker/build-push-action@v5
       with:
-        context: .
+        context: ./py
         file: ./py/Dockerfile
         push: true
         tags: ragtoriches/dev:latest
@@ -82,10 +82,10 @@ jobs:
         r2r documents-overview
 
         echo "Get Document Chunks"
-        r2r document-chunks 93123a68-d668-51de-8291-92162730dc87
+        r2r document-chunks --document-id=77f67c65-6406-5076-8176-3844f3ef3688
 
         echo "Delete Documents"
-        r2r delete --keys=document_id --values=b736292c-11e6-5453-9686-055da3edb866
+        r2r delete --filter="document_id:eq:f25fd516-5cac-5c09-b120-0fc841270c7e"
 
         echo "Vector Search"
         r2r search --query="What was Uber'\''s profit in 2020?"
