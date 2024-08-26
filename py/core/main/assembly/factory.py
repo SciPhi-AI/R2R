@@ -571,7 +571,6 @@ class R2RPipelineFactory:
         kg_enrichment_pipeline.add_pipe(self.pipes.kg_node_extraction_pipe)
         kg_enrichment_pipeline.add_pipe(self.pipes.kg_node_description_pipe)
         kg_enrichment_pipeline.add_pipe(self.pipes.kg_clustering_pipe)
-
         return kg_enrichment_pipeline
 
     def create_pipelines(

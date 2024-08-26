@@ -2,7 +2,7 @@ import json
 import os
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 from core.base import KGConfig, KGProvider
@@ -200,7 +200,7 @@ class Neo4jKGProvider(KGProvider):
 
     def upsert_nodes_and_relationships(
         self, kg_extractions: list[KGExtraction]
-    ) -> None:
+    ) -> Tuple[int, int]:
 
         all_entities = []
         all_relationships = []
@@ -211,7 +211,7 @@ class Neo4jKGProvider(KGProvider):
         nodes_upserted = self.upsert_entities(all_entities)
         relationships_upserted = self.upsert_triples(all_relationships)
 
-        return nodes_upserted, relationships_upserted
+        return (len(nodes_upserted), len(relationships_upserted))
 
     def get(self, entity_name: str = None) -> Entity:
         """

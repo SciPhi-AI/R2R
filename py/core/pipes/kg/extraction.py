@@ -189,18 +189,34 @@ class KGTriplesExtractionPipe(AsyncPipe):
         **kwargs: Any,
     ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
 
+        logger.info("Running KG Extraction Pipe")
+    
         async def process_extraction(extraction):
             return await self.extract_kg(extraction)
     
-        document_ids = [extraction for extraction in input.message]
+        document_ids = []
+        async for extraction in input.message:
+            document_ids.append(extraction)
 
         if document_ids == []:
-            document_ids = [doc.id for doc in self.database_provider.get_documents_overview()]
+            document_ids = [doc.id for doc in self.database_provider.relational.get_documents_overview()]
 
         for document_id in document_ids:
-            extractions = [DocumentFragment(**extraction) for extraction in self.database_provider.get_document_chunks(
-                document_id=document_id 
-            )]
+            logger.info(f"Extracting KG for document: {document_id}")
+            extractions = [
+                DocumentFragment(
+                    id=extraction['fragment_id'],
+                    extraction_id=extraction['extraction_id'],
+                    document_id=extraction['document_id'],
+                    user_id=extraction['user_id'],
+                    group_ids=extraction['group_ids'],
+                    data=extraction['text'],
+                    metadata=extraction['metadata']
+                )
+                for extraction in self.database_provider.vector.get_document_chunks(
+                    document_id=document_id 
+                )
+            ]
 
         kg_extractions = await asyncio.gather(
             *[process_extraction(extraction) for extraction in extractions]

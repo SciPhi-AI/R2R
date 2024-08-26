@@ -43,8 +43,14 @@ class RestructureService(Service):
         """
         try:
             # Assuming there's a graph enrichment pipeline
+
+            async def input_generator():
+                input = []
+                for doc in input:
+                    yield doc
+
             return await self.pipelines.kg_enrichment_pipeline.run(
-                input=[],
+                input=input_generator(),
                 run_manager=self.run_manager,
             )
 
