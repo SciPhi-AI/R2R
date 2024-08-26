@@ -206,7 +206,7 @@ class R2RProviderFactory:
 
             llm_provider = LiteCompletionProvider(llm_config)
         elif llm_config.provider == "sciphi":
-            from r2r.providers.llm import SciPhiCompletionProvider
+            from core.providers.llm import SciPhiCompletionProvider
 
             llm_provider = SciPhiCompletionProvider(llm_config)
         else:
