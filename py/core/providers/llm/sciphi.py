@@ -2,8 +2,8 @@ import os
 import logging
 from typing import Any
 
-from base.abstractions.llm import GenerationConfig
-from base.providers.llm import CompletionConfig
+from core.base.abstractions.llm import GenerationConfig
+from core.base.providers.llm import CompletionConfig
 from .litellm import LiteCompletionProvider
 
 logger = logging.getLogger(__name__)
