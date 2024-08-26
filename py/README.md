@@ -47,11 +47,12 @@ Then, after installing R2R, it is recommended to launch with Docker, if possible
 r2r serve --docker
 ```
 
-Alternatively, you may run R2R directly from the python package, but additional dependencies like Postgres+pgvector must be configured:
+Alternatively, you may run R2R directly from the python package, but additional dependencies like Postgres+pgvector must be configured and the full R2R core is required:
 
 ```bash
 # export OPENAI_API_KEY=sk-...
 # export POSTGRES...
+pip install 'r2r[core]'
 r2r --config-name=default serve
 ```
 
@@ -70,7 +71,7 @@ r2r --config-name=default serve
 
 ## Cookbooks
 
-- Advanced RAG Pipelines 
+- Advanced RAG Pipelines
   - [RAG Agent](https://r2r-docs.sciphi.ai/cookbooks/agent): R2R's powerful RAG agent
   - [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): Introduction to hybrid search
   - [Advanced RAG](https://r2r-docs.sciphi.ai/cookbooks/advanced-rag): Advanced RAG features

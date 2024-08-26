@@ -1,9 +1,6 @@
 name: CI
 
 on:
-  push:
-    paths:
-      - 'py/**'
   pull_request:
     paths:
       - 'py/**'
@@ -68,7 +65,7 @@ jobs:
         run: |
           python3 -m venv venv
           source venv/bin/activate
-          poetry install
+          poetry install -E core
           pip install pytest
           poetry run pytest tests/ -k "not redis and not sentence_transformer"
           deactivate
