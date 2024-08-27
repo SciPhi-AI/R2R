@@ -53,7 +53,7 @@ async def test_extract_kg_success(kg_extraction_pipe, document_fragment):
     assert isinstance(result, KGExtraction)
     assert len(result.entities) == 1
     assert len(result.triples) == 1
-    assert result.entities['Entity1'].name == "Entity1"
+    assert result.entities["Entity1"].name == "Entity1"
     assert result.triples[0].subject == "Entity1"
     assert result.triples[0].object == "Entity2"
 
@@ -71,7 +71,7 @@ async def test_run_logic(kg_extraction_pipe, document_fragment):
         return_value=KGExtraction(
             fragment_id=document_fragment.id,
             document_id=document_fragment.document_id,
-            entities={  
+            entities={
                 "TestEntity": Entity(
                     name="TestEntity",
                     category="TestCategory",
