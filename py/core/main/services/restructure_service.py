@@ -33,7 +33,7 @@ class RestructureService(Service):
 
     async def enrich_graph(
         self,
-        kg_enrichment_settings: Union[dict, KGEnrichmentSettings] = None,
+        kg_enrichment_settings: Union[dict, KGEnrichmentSettings] = {},
     ) -> Dict[str, Any]:
         """
         Perform graph enrichment.
@@ -49,7 +49,7 @@ class RestructureService(Service):
                 for doc in input:
                     yield doc
 
-            if kg_enrichment_settings is None:
+            if kg_enrichment_settings == {}:
                 kg_enrichment_settings = KGEnrichmentSettings()
 
             return await self.pipelines.kg_enrichment_pipeline.run(
