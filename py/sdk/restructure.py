@@ -1,4 +1,5 @@
 from typing import Union
+
 from .models import KGEnrichmentResponse, KGEnrichmentSettings
 
 
@@ -17,7 +18,9 @@ class RestructureMethods:
         Returns:
             KGEnrichmentResponse: Results of the graph enrichment process.
         """
-        if kg_enrichment_settings is not None and not isinstance(kg_enrichment_settings, dict):
+        if kg_enrichment_settings is not None and not isinstance(
+            kg_enrichment_settings, dict
+        ):
             kg_enrichment_settings = kg_enrichment_settings.model_dump()
 
         data = {

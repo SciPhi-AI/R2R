@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class CompletionConfig(ProviderConfig):
     provider: Optional[str] = None
     generation_config: Optional[GenerationConfig] = None
-    concurrency_limit: int = 64
+    concurrency_limit: int = 16
     max_retries: int = 2
     initial_backoff: float = 1.0
     max_backoff: float = 60.0

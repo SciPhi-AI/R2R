@@ -3,18 +3,19 @@ import json
 import logging
 import re
 import uuid
-from tqdm.asyncio import tqdm_asyncio
-from typing import Any, AsyncGenerator, Optional, Union
 from collections import Counter
+from typing import Any, AsyncGenerator, Optional, Union
+
+from tqdm.asyncio import tqdm_asyncio
 
 from core.base import (
     AsyncState,
     ChunkingProvider,
     CompletionProvider,
-    DocumentStatus,
     DatabaseProvider,
     DocumentExtraction,
     DocumentFragment,
+    DocumentStatus,
     Entity,
     KGExtraction,
     KGProvider,
@@ -106,7 +107,8 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
             try:
                 response = await self.llm_provider.aget_completion(
-                    messages, self.kg_provider.config.kg_enrichment_settings.generation_config_triplet
+                    messages,
+                    self.kg_provider.config.kg_enrichment_settings.generation_config_triplet,
                 )
 
                 kg_extraction = response.choices[0].message.content
@@ -165,7 +167,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
                     fragment_id=fragment.id,
                     document_id=fragment.document_id,
                     entities=entities,
-                    triples=triples
+                    triples=triples,
                 )
 
             except (
@@ -182,7 +184,12 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
         # add metadata to entities and triples
 
-        return KGExtraction(fragment_id=fragment.id, document_id=fragment.document_id, entities={}, triples=[])
+        return KGExtraction(
+            fragment_id=fragment.id,
+            document_id=fragment.document_id,
+            entities={},
+            triples=[],
+        )
 
     async def _run_logic(
         self,
@@ -229,10 +236,19 @@ class KGTriplesExtractionPipe(AsyncPipe):
                 )
             ]
 
-            tasks.extend([asyncio.create_task(self.extract_kg(extraction)) for extraction in extractions])
+            tasks.extend(
+                [
+                    asyncio.create_task(self.extract_kg(extraction))
+                    for extraction in extractions
+                ]
+            )
 
             logger.info(f"Processing {len(tasks)} tasks")
-            for completed_task in tqdm_asyncio.as_completed(tasks, desc="Extracting and updating KG Triples", total=len(tasks)):
+            for completed_task in tqdm_asyncio.as_completed(
+                tasks,
+                desc="Extracting and updating KG Triples",
+                total=len(tasks),
+            ):
                 kg_extraction = await completed_task
                 yield kg_extraction
 
@@ -240,6 +256,10 @@ class KGTriplesExtractionPipe(AsyncPipe):
                 self.database_provider.relational.execute_query(
                     f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET kg_status = 'success' WHERE document_id = '{kg_extraction.document_id}'"
                 )
-                logger.info(f"Updated document {kg_extraction.document_id} to SUCCESS")
+                logger.info(
+                    f"Updated document {kg_extraction.document_id} to SUCCESS"
+                )
             except Exception as e:
-                logger.error(f"Error updating document {kg_extraction.document_id} to SUCCESS: {e}")
+                logger.error(
+                    f"Error updating document {kg_extraction.document_id} to SUCCESS: {e}"
+                )

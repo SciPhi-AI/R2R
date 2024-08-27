@@ -23,6 +23,7 @@ class DocumentStatus(str, Enum):
     FAILURE = "failure"
     SUCCESS = "success"
 
+
 class DocumentType(str, Enum):
     """Types of documents that can be stored."""
 

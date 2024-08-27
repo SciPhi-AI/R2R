@@ -9,9 +9,8 @@ import logging
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
-from tqdm.asyncio import tqdm_asyncio
-
 import networkx as nx
+from tqdm.asyncio import tqdm_asyncio
 
 from core.base import (
     AsyncPipe,
@@ -205,7 +204,9 @@ class KGClusteringPipe(AsyncPipe):
                 )
             )
 
-        results = await tqdm_asyncio.gather(*tasks, desc="Processing communities")
+        results = await tqdm_asyncio.gather(
+            *tasks, desc="Processing communities"
+        )
         for result in results:
             yield result
 
