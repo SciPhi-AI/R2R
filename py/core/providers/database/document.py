@@ -74,7 +74,9 @@ class DocumentMixin(DatabaseMixin):
         limit: int = 100,
     ):
         conditions = []
-        params = {"offset": offset, "limit": limit}
+        params = {"offset": offset}
+        if limit != -1:
+            params["limit"] = limit
 
         if filter_document_ids:
             conditions.append("document_id = ANY(:document_ids)")
@@ -95,10 +97,11 @@ class DocumentMixin(DatabaseMixin):
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
 
-        query += """
+        limit_clause = "" if limit == -1 else f"LIMIT {limit}"
+        query += f"""
             ORDER BY created_at DESC
             OFFSET :offset
-            LIMIT :limit
+            {limit_clause}
         """
 
         results = self.execute_query(query, params).fetchall()

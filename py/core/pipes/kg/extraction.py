@@ -9,6 +9,7 @@ from core.base import (
     AsyncState,
     ChunkingProvider,
     CompletionProvider,
+    DatabaseProvider,
     DocumentExtraction,
     DocumentFragment,
     Entity,
@@ -44,6 +45,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
     def __init__(
         self,
         kg_provider: KGProvider,
+        database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         chunking_provider: ChunkingProvider,
@@ -64,6 +66,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
         )
         self.kg_provider = kg_provider
         self.prompt_provider = prompt_provider
+        self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.chunking_provider = chunking_provider
         self.kg_batch_size = kg_batch_size
@@ -186,12 +189,37 @@ class KGTriplesExtractionPipe(AsyncPipe):
         **kwargs: Any,
     ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
 
+        logger.info("Running KG Extraction Pipe")
+
         async def process_extraction(extraction):
             return await self.extract_kg(extraction)
 
-        extractions = []
+        document_ids = []
         async for extraction in input.message:
-            extractions.append(extraction)
+            document_ids.append(extraction)
+
+        if document_ids == []:
+            document_ids = [
+                doc.id
+                for doc in self.database_provider.relational.get_documents_overview()
+            ]
+
+        for document_id in document_ids:
+            logger.info(f"Extracting KG for document: {document_id}")
+            extractions = [
+                DocumentFragment(
+                    id=extraction["fragment_id"],
+                    extraction_id=extraction["extraction_id"],
+                    document_id=extraction["document_id"],
+                    user_id=extraction["user_id"],
+                    group_ids=extraction["group_ids"],
+                    data=extraction["text"],
+                    metadata=extraction["metadata"],
+                )
+                for extraction in self.database_provider.vector.get_document_chunks(
+                    document_id=document_id
+                )
+            ]
 
         kg_extractions = await asyncio.gather(
             *[process_extraction(extraction) for extraction in extractions]

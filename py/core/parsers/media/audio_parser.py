@@ -9,7 +9,7 @@ class AudioParser(AsyncParser[bytes]):
     """A parser for audio data."""
 
     def __init__(
-        self, api_base: str = "https://api.openai.com/v2/audio/transcriptions"
+        self, api_base: str = "https://api.openai.com/v1/audio/transcriptions"
     ):
         self.api_base = api_base
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")

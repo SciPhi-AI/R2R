@@ -30,6 +30,21 @@ class R2RChunkingProvider(ChunkingProvider):
                 chunk_size=self.config.chunk_size,
                 chunk_overlap=self.config.chunk_overlap,
             )
+        elif self.config.method == Method.CHARACTER:
+            from core.base.utils.splitter.text import CharacterTextSplitter
+
+            separator = CharacterTextSplitter.DEFAULT_SEPARATOR
+            if self.config.extra_fields:
+                separator = self.config.extra_fields.get(
+                    "separator", CharacterTextSplitter.DEFAULT_SEPARATOR
+                )
+            return CharacterTextSplitter(
+                chunk_size=self.config.chunk_size,
+                chunk_overlap=self.config.chunk_overlap,
+                separator=separator,
+                keep_separator=False,
+                strip_whitespace=True,
+            )
         elif self.config.method == Method.BASIC:
             raise NotImplementedError(
                 "Basic chunking method not implemented. Please use Recursive."

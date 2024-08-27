@@ -30,6 +30,8 @@ from .base import Service
 logger = logging.getLogger(__name__)
 MB_CONVERSION_FACTOR = 1024 * 1024
 STARTING_VERSION = "v0"
+MAX_FILES_PER_INGESTION = 100
+OVERVIEW_FETCH_PAGE_SIZE = 1_000
 
 
 class IngestionService(Service):
@@ -66,7 +68,11 @@ class IngestionService(Service):
             raise R2RException(
                 status_code=400, message="No files provided for ingestion."
             )
-
+        if len(files) > MAX_FILES_PER_INGESTION:
+            raise R2RException(
+                status_code=400,
+                message=f"Exceeded maximum number of files per ingestion: {MAX_FILES_PER_INGESTION}.",
+            )
         try:
             documents = []
             for iteration, file in enumerate(files):
@@ -131,24 +137,30 @@ class IngestionService(Service):
                     generate_user_document_id(file.filename, user.id)
                     for file in files
                 ]
-            # Only superusers can modify arbitrary document ids, which this gate guarantees in conjuction with the check that follows
-            documents_overview = (
-                (
+            if len(files) > MAX_FILES_PER_INGESTION:
+                raise R2RException(
+                    status_code=400,
+                    message=f"Exceeded maximum number of files per ingestion: {MAX_FILES_PER_INGESTION}.",
+                )
+
+            documents_overview = []
+
+            offset = 0
+            while True:
+                documents_overview_page = (
                     self.providers.database.relational.get_documents_overview(
                         filter_document_ids=document_ids,
+                        filter_user_ids=(
+                            [user.id] if not user.is_superuser else None
+                        ),
+                        offset=offset,
+                        limit=OVERVIEW_FETCH_PAGE_SIZE,
                     )
                 )
-                if user.is_superuser
-                else self.providers.database.relational.get_documents_overview(
-                    filter_document_ids=document_ids, filter_user_ids=[user.id]
-                )
-            )
-
-            if len(documents_overview) != len(files):
-                raise R2RException(
-                    status_code=404,
-                    message="One or more documents was not found.",
-                )
+                documents_overview.extend(documents_overview_page)
+                if len(documents_overview_page) < OVERVIEW_FETCH_PAGE_SIZE:
+                    break
+                offset += 1
 
             documents = []
             new_versions = []
