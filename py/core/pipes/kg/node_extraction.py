@@ -166,7 +166,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 logger.info(f"Hit cache for entity {entity.name}")
             else:
                 completion = await self.llm_provider.aget_completion(
-                    messages, GenerationConfig(model="gpt-4o-mini")
+                    messages, self.kg_provider.config.kg_enrichment_settings.generation_config_enrichment
                 )
                 entity.description = completion.choices[0].message.content
 

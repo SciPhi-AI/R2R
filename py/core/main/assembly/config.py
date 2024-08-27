@@ -37,7 +37,7 @@ class R2RConfig:
         "kg": [
             "provider",
             "batch_size",
-            "kg_extraction_config",
+            "kg_enrichment_settings",
         ],
         "parsing": ["provider", "excluded_parsers"],
         "chunking": ["provider", "method"],

@@ -20,7 +20,6 @@ class KGConfig(ProviderConfig):
     batch_size: Optional[int] = 1
     kg_extraction_prompt: Optional[str] = "few_shot_ner_kg_extraction"
     kg_search_prompt: Optional[str] = "kg_search"
-    kg_extraction_config: Optional[GenerationConfig] = None
     kg_search_config: Optional[GenerationConfig] = None
     kg_store_path: Optional[str] = None
     kg_enrichment_settings: Optional[KGEnrichmentSettings] = (

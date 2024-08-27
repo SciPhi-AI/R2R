@@ -1,3 +1,10 @@
+[chunking] # use larger chunk sizes for kg extraction
+provider = "r2r"
+method = "recursive"
+chunk_size = 4096
+chunk_overlap = 200
+
+
 [completion]
 provider = "litellm"
 concurrent_request_limit = 256
@@ -17,11 +24,9 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
 
   [kg.kg_enrichment_settings]
     max_knowledge_triples = 123
-    generation_config = { model = "gpt-4o-mini" } # and other params
+    generation_config_triplet = { model = "gpt-4o-mini", temperature = 0.02 } # and other params, model used for triplet extraction
+    generation_config_enrichment = { model = "gpt-4o-mini", temperature = 0.52 } # and other params, model used for node description and graph clustering
     leiden_params = { max_cluster_size = 1000 } # more params in graspologic/partition/leiden.py
 
   [kg.kg_search_config]
-    model = "gpt-4o-mini"
-
-  [kg.kg_extraction_config]
     model = "gpt-4o-mini"

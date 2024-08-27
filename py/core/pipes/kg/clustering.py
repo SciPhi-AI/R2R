@@ -85,10 +85,12 @@ class KGClusteringPipe(AsyncPipe):
         self,
         triples: list[Triple],
         settings: KGEnrichmentSettings = KGEnrichmentSettings(),
-    ) -> list[Community]:
+    ) -> AsyncGenerator[Community, None]:
         """
         Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm.
         """
+
+        logger.info(f"Clustering with settings: {str(settings)}")
 
         G = nx.Graph()
         for triple in triples:
@@ -175,7 +177,7 @@ class KGClusteringPipe(AsyncPipe):
                         "input_text": input_text,
                     },
                 ),
-                generation_config=settings.generation_config,
+                generation_config=settings.generation_config_enrichment,
             )
 
             description = description.choices[0].message.content
