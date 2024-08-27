@@ -125,7 +125,7 @@ class MemgraphKGProvider(KGProvider):
             for item in model_list
         ]
 
-    # TODO(@DavIvek)
+    #TODO(@DavIvek) -> done
     def get_entity_map(
         self, entity_names: list[str] | None = None
     ) -> dict[str, list[Any]]:
@@ -144,7 +144,7 @@ class MemgraphKGProvider(KGProvider):
                 entity_map[triple.object]["triples"].append(triple)
         return entity_map
 
-    # TODO(@DavIvek)
+    #TODO(@DavIvek) -> depends on convert_model_list_to_neo4j_compatible function
     def batched_import(self, statement, df, batch_size=1000):
         """
         Import a dataframe into Neo4j using a batched approach.
@@ -181,7 +181,7 @@ class MemgraphKGProvider(KGProvider):
 
         # create constraints, idempotent operation
 
-    # TODO(@DavIvek)
+    #TODO(@DavIvek) -> done
     def upsert_entities(
         self, entities: List[Entity], with_embeddings: bool = False
     ):
@@ -200,7 +200,7 @@ class MemgraphKGProvider(KGProvider):
         """
         return self.batched_import(PUT_TRIPLES_QUERY, triples)
 
-    # TODO(@DavIvek)
+    #TODO(@DavIvek) -> done
     def upsert_communities(self, communities: List[Community]):
         """
         Upsert communities into the graph.
@@ -224,7 +224,7 @@ class MemgraphKGProvider(KGProvider):
         ]
         return entities
 
-    # TODO(@DavIvek)
+    #TODO(@DavIvek) -> depends on upsert_triples
     def upsert_nodes_and_relationships(
         self, kg_extractions: list[KGExtraction]
     ) -> None:
@@ -301,8 +301,8 @@ class MemgraphKGProvider(KGProvider):
         relations: list[RelationshipType],
     ) -> None:
         pass
-
-    # TODO(@DavIvek)
+    
+    #TODO(@DavIvek) -> done
     def get_communities(self, level: str = None) -> List[Community]:
         """
         Get communities from the graph.
@@ -322,7 +322,7 @@ class MemgraphKGProvider(KGProvider):
         self._driver.execute_query("MATCH (a)-[r]->(b) DELETE a, r, b")
         self._driver.execute_query("MATCH (a) DELETE a")
 
-    # TODO(@DavIvek)
+    #TODO(@DavIvek) -> done
     def delete(
         self,
         entity_names: Optional[List[str]] = None,
@@ -355,11 +355,11 @@ class MemgraphKGProvider(KGProvider):
 
         self.structured_query(query)
 
-    # TODO(@DavIvek)
+    #TODO(@DavIvek) -> done
     def get_schema(self, refresh: bool = False) -> str:
         return super().get_schema(refresh)
 
-    # TODO(@DavIvek)
+    #TODO(@DavIvek) -> done
     def retrieve_cache(self, cache_type: str, cache_id: str) -> bool:
         return False
 

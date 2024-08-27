@@ -39,12 +39,12 @@ RETURN e
 """
 
 PUT_ENTITIES_QUERY = """
-WITH value, apoc.text.capitalize(value.category) AS upperCamelCategory
+WITH value, toUpper(substring(value.category, 0, 1)) + substring(value.category, 1) AS upperCamelCategory
 MERGE (e:__Entity__ {name: value.name})
 ON CREATE SET e:__Entity__
 ON MATCH SET e:__Entity__
 WITH e, upperCamelCategory, value
-CALL apoc.create.addLabels(e, [upperCamelCategory]) YIELD node
+SET e:upperCamelCategory  WITH e AS node, value
 SET node.description = CASE
     WHEN node.description IS NULL THEN value.description
     ELSE node.description + '\n\n' + value.description
@@ -76,8 +76,8 @@ PUT_ENTITIES_EMBEDDINGS_QUERY = """
 MATCH (e:__Entity__ {name: value.name})
 SET e += value {.description}
 WITH e, value
-CALL db.create.setNodeVectorProperty(e, "name_embedding", value.name_embedding)
-CALL db.create.setNodeVectorProperty(e, "description_embedding", value.description_embedding)
+SET e.name_embedding = value.name_embedding
+SET e.description_embedding = value.description_embedding
 """
 
 ## get triples by subject and object
@@ -135,7 +135,7 @@ PUT_COMMUNITIES_QUERY = """
 MERGE (c:__Community__ {community:value.id})
 SET c += value {.level, .rank, .summary}
 WITH c, value
-CALL db.create.setNodeVectorProperty(c, "summary_embedding", value.summary_embedding)
+SET c.summary_embedding = value.summary_embedding
 RETURN count(*) as createdCommunities
 """
 
