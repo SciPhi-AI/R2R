@@ -10,6 +10,7 @@ from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
 import networkx as nx
+from tqdm.asyncio import tqdm_asyncio
 
 from core.base import (
     AsyncPipe,
@@ -83,10 +84,12 @@ class KGClusteringPipe(AsyncPipe):
         self,
         triples: list[Triple],
         settings: KGEnrichmentSettings = KGEnrichmentSettings(),
-    ) -> list[Community]:
+    ) -> AsyncGenerator[Community, None]:
         """
         Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm.
         """
+
+        logger.info(f"Clustering with settings: {str(settings)}")
 
         G = nx.Graph()
         for triple in triples:
@@ -173,7 +176,7 @@ class KGClusteringPipe(AsyncPipe):
                         "input_text": input_text,
                     },
                 ),
-                generation_config=settings.generation_config,
+                generation_config=settings.generation_config_enrichment,
             )
 
             description = description.choices[0].message.content
@@ -201,12 +204,10 @@ class KGClusteringPipe(AsyncPipe):
                 )
             )
 
-        total_tasks = len(tasks)
-        for i, completed_task in enumerate(asyncio.as_completed(tasks), 1):
-            result = await completed_task
-            logger.info(
-                f"Progress: {i}/{total_tasks} communities completed ({i / total_tasks * 100:.2f}%)"
-            )
+        results = await tqdm_asyncio.gather(
+            *tasks, desc="Processing communities"
+        )
+        for result in results:
             yield result
 
     async def _run_logic(
@@ -214,6 +215,7 @@ class KGClusteringPipe(AsyncPipe):
         input: AsyncPipe.Input,
         state: AsyncState,
         run_id: UUID,
+        kg_enrichment_settings: KGEnrichmentSettings,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Community, None]:
@@ -235,6 +237,6 @@ class KGClusteringPipe(AsyncPipe):
         triples = self.kg_provider.get_triples()
 
         async for community in self.cluster_kg(
-            triples, self.kg_provider.config.kg_enrichment_settings
+            triples, kg_enrichment_settings
         ):
             yield community

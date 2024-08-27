@@ -115,7 +115,7 @@ async def test_ingest_txt_document(app, logging_connection):
     assert docs_overview[0].user_id == user_id
     assert docs_overview[0].type == DocumentType.TXT
     assert docs_overview[0].metadata["author"] == "John Doe"
-    assert docs_overview[0].status == DocumentStatus.SUCCESS
+    assert docs_overview[0].ingestion_status == DocumentStatus.SUCCESS
 
 
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)

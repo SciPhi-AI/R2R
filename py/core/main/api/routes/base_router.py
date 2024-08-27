@@ -65,7 +65,8 @@ class BaseRouter:
                         value=str(e),
                     )
                     logger.error(
-                        f"Error in base endpoint {func.__name__}() - \n\n{str(e)})"
+                        f"Error in base endpoint {func.__name__}() - \n\n{str(e)}",
+                        exc_info=True,
                     )
                     raise HTTPException(
                         status_code=500,

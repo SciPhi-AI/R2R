@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
@@ -10,10 +8,6 @@ from .api.routes.management.base import ManagementRouter
 from .api.routes.restructure.base import RestructureRouter
 from .api.routes.retrieval.base import RetrievalRouter
 from .config import R2RConfig
-
-if TYPE_CHECKING:
-    pass  # Add any type checking imports if needed
-
 
 class R2RApp:
     def __init__(

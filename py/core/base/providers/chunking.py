@@ -10,6 +10,7 @@ class Method(str, Enum):
     BY_TITLE = "by_title"
     BASIC = "basic"
     RECURSIVE = "recursive"
+    CHARACTER = "character"
 
 
 class ChunkingConfig(ProviderConfig):

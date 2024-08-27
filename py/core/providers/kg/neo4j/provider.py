@@ -68,7 +68,6 @@ class Neo4jKGProvider(KGProvider):
         self.config = config
 
         self.create_constraints()
-
         super().__init__(config, *args, **kwargs)
 
     @property
@@ -205,7 +204,7 @@ class Neo4jKGProvider(KGProvider):
         all_entities = []
         all_relationships = []
         for extraction in kg_extractions:
-            all_entities.extend(extraction.entities)
+            all_entities.extend(list(extraction.entities.values()))
             all_relationships.extend(extraction.triples)
 
         nodes_upserted = self.upsert_entities(all_entities)

@@ -226,6 +226,7 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ):
+
         if len(documents) == 0:
             raise R2RException(
                 status_code=400, message="No documents provided for ingestion."
@@ -277,7 +278,8 @@ class IngestionService(Service):
                 document.id in existing_document_info
                 # apply `geq` check to prevent re-ingestion of updated documents
                 and (existing_document_info[document.id].version >= version)
-                and existing_document_info[document.id].status == "success"
+                and existing_document_info[document.id].ingestion_status
+                == "success"
             ):
                 logger.error(
                     f"Document with ID {document.id} was already successfully processed."
@@ -309,7 +311,7 @@ class IngestionService(Service):
                     title=title,
                     version=version,
                     size_in_bytes=len(document.data),
-                    status="processing",
+                    ingestion_status="processing",
                     created_at=now,
                     updated_at=now,
                 )
@@ -417,9 +419,9 @@ class IngestionService(Service):
         for document_info in document_infos:
             if document_info.id not in skipped_ids:
                 if document_info.id in failed_ids:
-                    document_info.status = "failure"
+                    document_info.ingestion_status = "failure"
                 elif document_info.id in successful_ids:
-                    document_info.status = "success"
+                    document_info.ingestion_status = "success"
                 documents_to_upsert.append(document_info)
 
         if documents_to_upsert:
