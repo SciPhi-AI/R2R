@@ -75,7 +75,7 @@ class Neo4jKGProvider(KGProvider):
     def client(self):
         return self._driver
 
-    #TODO(@DavIvek)
+    #TODO(@DavIvek) -> done
     def create_constraints(self):
         for statement in UNIQUE_CONSTRAINTS:
             self._driver.execute_query(statement)
@@ -192,7 +192,7 @@ class Neo4jKGProvider(KGProvider):
         """
         return self.batched_import(PUT_COMMUNITIES_QUERY, communities)
 
-    #TODO(@DavIvek)
+    #TODO(@DavIvek) -> done
     def get_entities(self, entity_ids: List[str] = []) -> List[Entity]:
         """
         Get entities from the graph.
@@ -225,7 +225,7 @@ class Neo4jKGProvider(KGProvider):
 
         return nodes_upserted, relationships_upserted
 
-    #TODO(@DavIvek)
+    #TODO(@DavIvek) -> done
     def get(self, entity_name: str = None) -> Entity:
         """
         Get entities from the graph.
@@ -235,14 +235,14 @@ class Neo4jKGProvider(KGProvider):
         else:
             return self.get_entities(entity_ids=[entity_name])
 
-    #TODO(@antejavor)
+    #TODO(@DavIvek) -> done
     def get_triples(self, triple_ids: list[str] | None = None) -> list[Triple]:
         """
         Get triples from the graph.
         """
 
         if triple_ids is None:
-            neo4j_records = self.structured_query(GET_TRIPLES_QUERY)
+            memgraph_records = self.structured_query(GET_TRIPLES_QUERY)
         else:
             triple_ids = [triple_id.split("->") for triple_id in triple_ids]
             triple_ids = [
@@ -253,7 +253,7 @@ class Neo4jKGProvider(KGProvider):
                 }
                 for triple_id in triple_ids
             ]
-            neo4j_records = self.structured_query(
+            memgraph_records = self.structured_query(
                 GET_TRIPLES_BY_SUBJECT_AND_OBJECT_QUERY,
                 {"triples": triple_ids},
             )
@@ -265,11 +265,11 @@ class Neo4jKGProvider(KGProvider):
                 object=record["e2"]._properties["name"],
                 **record["rel"]._properties,
             )
-            for record in neo4j_records.records
+            for record in memgraph_records.records
         ]
         return triples
 
-    #TODO(@DavIvek)
+    #TODO(@DavIvek) -> done
     def update_extraction_prompt(
         self,
         prompt_provider: Any,

@@ -1,11 +1,11 @@
 UNIQUE_CONSTRAINTS = [
-    # "create constraint chunk_id if not exists for (c:__Chunk__) require c.id is unique;",
-    # "create constraint document_id if not exists for (d:__Document__) require d.id is unique;",
-    # "create constraint entity_id if not exists for (c:__Community__) require c.community is unique;",
-    # "create constraint entity_id if not exists for (e:__Entity__) require e.id is unique;",
-    # "create constraint entity_title if not exists for (e:__Entity__) require e.name is unique;",
-    # "create constraint entity_title if not exists for (e:__Covariate__) require e.title is unique;",
-    # "create constraint related_id if not exists for ()-[rel:RELATED]->() require rel.id is unique;"
+    # "create constraint on (c:__Chunk__) assert c.id is unique;",
+    # "create constraint on (d:__Document__) assert d.id is unique;",
+    # "create constraint on (c:__Community__) assert c.community is unique;",
+    # "create constraint on (e:__Entity__) assert e.id is unique;",
+    # "create constraint on (e:__Entity__) assert e.name is unique;",
+    # "create constraint on (e:__Covariate__) assert e.title is unique;",
+    # "create constraint on ()-[rel:RELATED]->() assert rel.id is unique;" # memgraph does not support this
 ]
 
 GET_CHUNKS_QUERY = """
