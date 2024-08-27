@@ -21,7 +21,7 @@ class DocumentMixin(DatabaseMixin):
             version TEXT,
             size_in_bytes INT,
             ingestion_status TEXT DEFAULT 'processing',
-            kg_status TEXT DEFAULT 'processing',
+            restructuring_status TEXT DEFAULT 'processing',
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
@@ -36,8 +36,8 @@ class DocumentMixin(DatabaseMixin):
         for document_info in documents_overview:
             query = f"""
             INSERT INTO {self._get_table_name('document_info')}
-            (document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, ingestion_status, kg_status, created_at, updated_at)
-            VALUES (:document_id, :group_ids, :user_id, :type, :metadata, :title, :version, :size_in_bytes, :ingestion_status, :kg_status, :created_at, :updated_at)
+            (document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, ingestion_status, restructuring_status, created_at, updated_at)
+            VALUES (:document_id, :group_ids, :user_id, :type, :metadata, :title, :version, :size_in_bytes, :ingestion_status, :restructuring_status, :created_at, :updated_at)
             ON CONFLICT (document_id) DO UPDATE SET
                 group_ids = EXCLUDED.group_ids,
                 user_id = EXCLUDED.user_id,
@@ -47,7 +47,7 @@ class DocumentMixin(DatabaseMixin):
                 version = EXCLUDED.version,
                 size_in_bytes = EXCLUDED.size_in_bytes,
                 ingestion_status = EXCLUDED.ingestion_status,
-                kg_status = EXCLUDED.kg_status,
+                restructuring_status = EXCLUDED.restructuring_status,
                 updated_at = EXCLUDED.updated_at;
             """
             self.execute_query(query, document_info.convert_to_db_entry())
@@ -93,7 +93,7 @@ class DocumentMixin(DatabaseMixin):
             params["group_ids"] = filter_group_ids
 
         query = f"""
-            SELECT document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, ingestion_status, created_at, updated_at, kg_status
+            SELECT document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, ingestion_status, created_at, updated_at, restructuring_status
             FROM {self._get_table_name('document_info')}
         """
         if conditions:
@@ -120,7 +120,7 @@ class DocumentMixin(DatabaseMixin):
                 ingestion_status=DocumentStatus(row[8]),
                 created_at=row[9],
                 updated_at=row[10],
-                kg_status=row[11],
+                restructuring_status=row[11],
             )
             for row in results
         ]

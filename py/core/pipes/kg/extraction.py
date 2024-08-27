@@ -210,7 +210,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
             document_ids = [
                 doc.id
                 for doc in self.database_provider.relational.get_documents_overview()
-                if doc.kg_status != DocumentStatus.SUCCESS
+                if doc.restructuring_status != DocumentStatus.SUCCESS
             ]
 
         logger.info(f"Extracting KG for {len(document_ids)} documents")
@@ -255,7 +255,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
             try:
                 self.database_provider.relational.execute_query(
-                    f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET kg_status = 'success' WHERE document_id = '{document_id}'"
+                    f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET restructuring_status = 'success' WHERE document_id = '{document_id}'"
                 )
                 logger.info(f"Updated document {document_id} to SUCCESS")
             except Exception as e:
