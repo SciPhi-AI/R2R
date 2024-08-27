@@ -516,12 +516,6 @@ class R2RPipelineFactory:
             ingestion_pipeline.add_pipe(
                 self.pipes.vector_storage_pipe, embedding_pipe=True
             )
-        # Add KG pipes if provider is set
-        # if self.config.kg.provider is not None:
-        #     ingestion_pipeline.add_pipe(self.pipes.kg_pipe, kg_pipe=True)
-        #     ingestion_pipeline.add_pipe(
-        #         self.pipes.kg_storage_pipe, kg_pipe=True
-        #     )
 
         return ingestion_pipeline
 
@@ -564,14 +558,19 @@ class R2RPipelineFactory:
 
     def create_kg_enrichment_pipeline(
         self, *args, **kwargs
-    ) -> KGEnrichmentPipeline:
-        kg_enrichment_pipeline = KGEnrichmentPipeline()
-        kg_enrichment_pipeline.add_pipe(self.pipes.kg_pipe)
-        kg_enrichment_pipeline.add_pipe(self.pipes.kg_storage_pipe)
-        kg_enrichment_pipeline.add_pipe(self.pipes.kg_node_extraction_pipe)
-        kg_enrichment_pipeline.add_pipe(self.pipes.kg_node_description_pipe)
-        kg_enrichment_pipeline.add_pipe(self.pipes.kg_clustering_pipe)
-        return kg_enrichment_pipeline
+    ) -> Optional[KGEnrichmentPipeline]:
+        if self.config.kg.provider is not None:
+            kg_enrichment_pipeline = KGEnrichmentPipeline()
+            kg_enrichment_pipeline.add_pipe(self.pipes.kg_pipe)
+            kg_enrichment_pipeline.add_pipe(self.pipes.kg_storage_pipe)
+            kg_enrichment_pipeline.add_pipe(self.pipes.kg_node_extraction_pipe)
+            kg_enrichment_pipeline.add_pipe(
+                self.pipes.kg_node_description_pipe
+            )
+            kg_enrichment_pipeline.add_pipe(self.pipes.kg_clustering_pipe)
+            return kg_enrichment_pipeline
+        else:
+            return None
 
     def create_pipelines(
         self,

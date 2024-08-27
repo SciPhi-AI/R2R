@@ -49,6 +49,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
         self,
         kg_provider: KGProvider,
         database_provider: DatabaseProvider,
+        database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
         prompt_provider: PromptProvider,
         chunking_provider: ChunkingProvider,
@@ -195,6 +196,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
         logger.info("Running KG Extraction Pipe")
 
+        document_ids = []
         document_ids = []
         async for extraction in input.message:
             document_ids.append(extraction)

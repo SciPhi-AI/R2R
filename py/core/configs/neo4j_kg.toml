@@ -23,6 +23,5 @@ kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
   [kg.kg_search_config]
     model = "gpt-4o-mini"
 
-
   [kg.kg_extraction_config]
     model = "gpt-4o-mini"
