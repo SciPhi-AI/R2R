@@ -128,7 +128,7 @@ async def test_ingest_duplicate_document(ingestion_service, mock_vector_db):
             type="txt",
             created_at=datetime.now(),
             updated_at=datetime.now(),
-            status="success",
+            ingestion_status="success",
         )
     ]
 
@@ -221,9 +221,9 @@ async def test_ingest_mixed_success_and_failure(
     )
     assert len(upserted_docs) == 2
     assert upserted_docs[0].id == documents[0].id
-    assert upserted_docs[0].status == "success"
+    assert upserted_docs[0].ingestion_status == "success"
     assert upserted_docs[1].id == documents[1].id
-    assert upserted_docs[1].status == "failure"
+    assert upserted_docs[1].ingestion_status == "failure"
 
 
 @pytest.mark.asyncio
@@ -322,7 +322,7 @@ async def test_version_increment(ingestion_service, mock_vector_db):
             user_id=generate_id_from_label("user_1"),
             type="txt",
             version="v2",
-            status="success",
+            ingestion_status="success",
             size_in_bytes=0,
             metadata={},
         )
@@ -349,7 +349,7 @@ async def test_process_ingestion_results_error_handling(ingestion_service):
             user_id=generate_id_from_label("user_1"),
             type="txt",
             version="v0",
-            status="processing",
+            ingestion_status="processing",
             size_in_bytes=0,
             metadata={},
         )
@@ -409,4 +409,4 @@ async def test_document_status_update_after_ingestion(
     )
     assert len(second_call_args) == 1
     assert second_call_args[0].id == document.id
-    assert second_call_args[0].status == "success"
+    assert second_call_args[0].ingestion_status == "success"

@@ -60,7 +60,8 @@ class DocumentOverviewResponse(BaseModel):
     type: str
     created_at: datetime
     updated_at: datetime
-    status: str
+    ingestion_status: str
+    restructuring_status: str
     version: str
     group_ids: list[UUID]
     metadata: Dict[str, Any]

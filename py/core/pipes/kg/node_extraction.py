@@ -5,6 +5,8 @@ import logging
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
+from tqdm.asyncio import tqdm_asyncio
+
 from core.base import (
     AsyncState,
     CompletionProvider,
@@ -165,7 +167,8 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 logger.info(f"Hit cache for entity {entity.name}")
             else:
                 completion = await self.llm_provider.aget_completion(
-                    messages, GenerationConfig(model="gpt-4o-mini")
+                    messages,
+                    self.kg_provider.config.kg_enrichment_settings.generation_config_enrichment,
                 )
                 entity.description = completion.choices[0].message.content
 
@@ -194,10 +197,12 @@ class KGNodeDescriptionPipe(AsyncPipe):
         async for entity, triples in input.message:
             tasks.append(asyncio.create_task(process_entity(entity, triples)))
             count += 1
-            if count == 4:
-                break
 
-        processed_entities = await asyncio.gather(*tasks)
+        logger.info(f"KG Node Description pipe: Created {count} tasks")
+        # do gather because we need to wait for all descriptions before kicking off the next step
+        processed_entities = await tqdm_asyncio.gather(
+            *tasks, desc="Processing entities", total=count
+        )
 
         # upsert to the database
         self.kg_provider.upsert_entities(

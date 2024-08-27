@@ -294,7 +294,7 @@ class GroupMixin(DatabaseMixin):
         if not self.group_exists(group_id):
             raise R2RException(status_code=404, message="Group not found")
         query = f"""
-            SELECT d.document_id, d.user_id, d.type, d.metadata, d.title, d.version, d.size_in_bytes, d.status, d.created_at, d.updated_at
+            SELECT d.document_id, d.user_id, d.type, d.metadata, d.title, d.version, d.size_in_bytes, d.ingestion_status, d.created_at, d.updated_at
             FROM {self._get_table_name('document_info')} d
             WHERE :group_id = ANY(d.group_ids)
             ORDER BY d.created_at DESC
@@ -313,7 +313,7 @@ class GroupMixin(DatabaseMixin):
                 title=row[4],
                 version=row[5],
                 size_in_bytes=row[6],
-                status=DocumentStatus(row[7]),
+                ingestion_status=DocumentStatus(row[7]),
                 created_at=row[8],
                 updated_at=row[9],
                 group_ids=[group_id],
