@@ -9,9 +9,8 @@ import logging
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
-from tqdm.asyncio import tqdm_asyncio
-
 import networkx as nx
+from tqdm.asyncio import tqdm_asyncio
 
 from core.base import (
     AsyncPipe,

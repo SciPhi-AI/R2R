@@ -226,7 +226,7 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ):
-        
+
         if len(documents) == 0:
             raise R2RException(
                 status_code=400, message="No documents provided for ingestion."
@@ -278,7 +278,8 @@ class IngestionService(Service):
                 document.id in existing_document_info
                 # apply `geq` check to prevent re-ingestion of updated documents
                 and (existing_document_info[document.id].version >= version)
-                and existing_document_info[document.id].ingestion_status == "success"
+                and existing_document_info[document.id].ingestion_status
+                == "success"
             ):
                 logger.error(
                     f"Document with ID {document.id} was already successfully processed."
