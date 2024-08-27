@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Type
+from typing import TYPE_CHECKING, Optional, Type
 
 from core.agent import R2RRAGAgent
 from core.base import (
@@ -11,6 +11,8 @@ from core.base import (
     EmbeddingProvider,
     KGProvider,
     PromptProvider,
+    RunLoggingSingleton,
+    RunManager,
 )
 from core.pipelines import (
     IngestionPipeline,
@@ -19,10 +21,18 @@ from core.pipelines import (
     SearchPipeline,
 )
 
+from ..api.routes.auth.base import AuthRouter
+from ..api.routes.ingestion.base import IngestionRouter
+from ..api.routes.management.base import ManagementRouter
+from ..api.routes.restructure.base import RestructureRouter
+from ..api.routes.retrieval.base import RetrievalRouter
 from ..app import R2RApp
-from ..engine import R2REngine
-from ..r2r import R2R
-from .config import R2RConfig
+from ..config import R2RConfig
+from ..services.auth_service import AuthService
+from ..services.ingestion_service import IngestionService
+from ..services.management_service import ManagementService
+from ..services.restructure_service import RestructureService
+from ..services.retrieval_service import RetrievalService
 from .factory import (
     R2RAgentFactory,
     R2RPipeFactory,
@@ -32,41 +42,11 @@ from .factory import (
 
 
 class R2RBuilder:
-    current_file_path = os.path.dirname(__file__)
-    config_root = os.path.join(current_file_path, "..", "..", "configs")
-
-    CONFIG_OPTIONS = {}
-    for file in os.listdir(config_root):
-        if file.endswith(".toml"):
-            CONFIG_OPTIONS[file.removesuffix(".toml")] = os.path.join(
-                config_root, file
-            )
-    CONFIG_OPTIONS["default"] = None
-
-    @staticmethod
-    def _get_config(config_name, config_path=None):
-        if config_path:
-            return R2RConfig.from_toml(config_path)
-        if config_name is None:
-            return R2RConfig.from_toml()
-        if config_name in R2RBuilder.CONFIG_OPTIONS:
-            return R2RConfig.from_toml(R2RBuilder.CONFIG_OPTIONS[config_name])
-        raise ValueError(f"Invalid config name: {config_name}")
-
     def __init__(
         self,
-        config: Optional[R2RConfig] = None,
-        config_name: Optional[str] = None,
-        config_path: Optional[str] = None,
+        config: R2RConfig,
     ):
-        if sum(x is not None for x in [config, config_name, config_path]) > 1:
-            raise ValueError(
-                "Specify only one of config, config_name, or config_path"
-            )
-        self.config = config or R2RBuilder._get_config(
-            config_name, config_path
-        )
-        self.r2r_app_override: Optional[Type[R2REngine]] = None
+        self.config = config
         self.provider_factory_override: Optional[Type[R2RProviderFactory]] = (
             None
         )
@@ -108,9 +88,14 @@ class R2RBuilder:
         self.assistant_factory_override: Optional[R2RAgentFactory] = None
         self.rag_agent_override: Optional[R2RRAGAgent] = None
 
-    def with_app(self, app: Type[R2REngine]):
-        self.r2r_app_override = app
-        return self
+        # Service overrides
+        self.auth_service_override: Optional["AuthService"] = None
+        self.ingestion_service_override: Optional["IngestionService"] = None
+        self.management_service_override: Optional["ManagementService"] = None
+        self.retrieval_service_override: Optional["RetrievalService"] = None
+        self.restructure_service_override: Optional["RestructureService"] = (
+            None
+        )
 
     def with_provider_factory(self, factory: Type[R2RProviderFactory]):
         self.provider_factory_override = factory
@@ -231,7 +216,28 @@ class R2RBuilder:
         self.rag_agent_override = agent
         return self
 
-    def build(self, *args, **kwargs) -> R2R:
+    def with_auth_service(self, service: "AuthService"):
+        self.auth_service_override = service
+        return self
+
+    def with_ingestion_service(self, service: "IngestionService"):
+        self.ingestion_service_override = service
+        return self
+
+    def with_management_service(self, service: "ManagementService"):
+        self.management_service_override = service
+        return self
+
+    def with_retrieval_service(self, service: "RetrievalService"):
+        self.retrieval_service_override = service
+        return self
+
+    def with_restructure_service(self, service: "RestructureService"):
+        self.restructure_service_override = service
+        return self
+
+    def build(self, *args, **kwargs) -> R2RApp:
+
         provider_factory = self.provider_factory_override or R2RProviderFactory
         pipe_factory = self.pipe_factory_override or R2RPipeFactory
         pipeline_factory = self.pipeline_factory_override or R2RPipelineFactory
@@ -282,9 +288,60 @@ class R2RBuilder:
             *args,
             **kwargs,
         )
+        run_singleton = RunLoggingSingleton()
+        run_manager = RunManager(run_singleton)
 
-        engine = (self.r2r_app_override or R2REngine)(
-            self.config, providers, pipelines, agents
+        service_params = {
+            "config": self.config,
+            "providers": providers,
+            "pipelines": pipelines,
+            "agents": agents,
+            "run_manager": run_manager,
+            "logging_connection": run_singleton,
+        }
+
+        service_params = {
+            "config": self.config,
+            "providers": providers,
+            "pipelines": pipelines,
+            "agents": agents,
+            "run_manager": run_manager,
+            "logging_connection": run_singleton,
+        }
+
+        auth_service = self.auth_service_override or AuthService(
+            **service_params
         )
-        r2r_app = R2RApp(engine)
-        return R2R(engine=engine, app=r2r_app)
+        ingestion_service = (
+            self.ingestion_service_override
+            or IngestionService(**service_params)
+        )
+        management_service = (
+            self.management_service_override
+            or ManagementService(**service_params)
+        )
+        retrieval_service = (
+            self.retrieval_service_override
+            or RetrievalService(**service_params)
+        )
+        restructure_service = (
+            self.restructure_service_override
+            or RestructureService(**service_params)
+        )
+
+        auth_router = AuthRouter(auth_service).get_router()
+        ingestion_router = IngestionRouter(ingestion_service).get_router()
+        management_router = ManagementRouter(management_service).get_router()
+        retrieval_router = RetrievalRouter(retrieval_service).get_router()
+        restructure_router = RestructureRouter(
+            restructure_service
+        ).get_router()
+
+        return R2RApp(
+            config=self.config,
+            auth_router=auth_router,
+            ingestion_router=ingestion_router,
+            management_router=management_router,
+            retrieval_router=retrieval_router,
+            restructure_router=restructure_router,
+        )

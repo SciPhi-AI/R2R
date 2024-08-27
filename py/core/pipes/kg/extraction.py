@@ -3,7 +3,6 @@ import json
 import logging
 import re
 import uuid
-from collections import Counter
 from typing import Any, AsyncGenerator, Optional, Union
 
 from tqdm.asyncio import tqdm_asyncio

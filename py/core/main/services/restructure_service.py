@@ -5,7 +5,7 @@ from core.base import R2RException, RunLoggingSingleton, RunManager
 from core.base.abstractions import KGEnrichmentSettings
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
-from ..assembly.config import R2RConfig
+from ..config import R2RConfig
 from .base import Service
 
 logger = logging.getLogger(__name__)

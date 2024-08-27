@@ -1,21 +1,30 @@
 import functools
 import logging
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from core.base import R2RDocumentProcessingError, R2RException, manage_run
+from core.base import R2RException, manage_run
 from core.base.logging.base import RunType
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from ...services.base import Service
+
 
 class BaseRouter:
-    def __init__(self, engine, run_type: RunType = RunType.UNSPECIFIED):
-        self.engine = engine
+    def __init__(
+        self, service: "Service", run_type: RunType = RunType.UNSPECIFIED
+    ):
+        self.service = service
         self.run_type = run_type
         self.router = APIRouter()
+
+    def get_router(self):
+        return self.router
 
     @abstractmethod
     def load_openapi_extras(self):
@@ -25,11 +34,11 @@ class BaseRouter:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             async with manage_run(
-                self.engine.run_manager, func.__name__
+                self.service.run_manager, func.__name__
             ) as run_id:
                 auth_user = kwargs.get("auth_user")
                 if auth_user:
-                    await self.engine.run_manager.log_run_info(
+                    await self.service.run_manager.log_run_info(
                         run_type=self.run_type,
                         user=auth_user,
                     )
@@ -50,7 +59,7 @@ class BaseRouter:
                 except Exception as e:
                     print("cc")
 
-                    await self.engine.logging_connection.log(
+                    await self.service.logging_connection.log(
                         run_id=run_id,
                         key="error",
                         value=str(e),
