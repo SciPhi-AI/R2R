@@ -30,29 +30,44 @@ from .graph_queries import (
 )
 
 
-class Neo4jKGProvider(KGProvider):
+# TODO(@antejavor): Implement -> Done
+class MemgraphKGProvider(KGProvider):
+    """
+    Memgraph Property Graph Store.
+
+    This class implements support for Memgraph as a property graph store.
+    Full details on the Github repository: https://github.com/memgraph/memgraph or website: https://memgraph.com/
+
+    ```bash
+    docker run -p 7687:7687 -p 3000:3000 memgraph/memgraph-mage:latest
+    ```
+    """
 
     def __init__(self, config: KGConfig, *args: Any, **kwargs: Any) -> None:
 
         try:
+            # We could also use a pymgclient or GQLAlchemy
             import neo4j
+
         except ImportError:
-            raise ImportError("Please install neo4j: pip install neo4j")
+            raise ImportError(
+                "Please install a client that can connect to Memgraph client via: pip install neo4j"
+            )
 
         username = config.extra_fields.get("user", None) or os.getenv(
-            "NEO4J_USER"
+            "MEMGRAPH_USER"
         )
         password = config.extra_fields.get("password", None) or os.getenv(
-            "NEO4J_PASSWORD"
+            "MEMGRAPH_PASSWORD"
         )
-        url = config.extra_fields.get("url", None) or os.getenv("NEO4J_URL")
+        url = config.extra_fields.get("url", None) or os.getenv("MEMGRAPH_URL")
         database = config.extra_fields.get("database", None) or os.getenv(
-            "NEO4J_DATABASE", "neo4j"
+            "MEMGRAPH_DATABASE", "neo4j"
         )
 
         if not username or not password or not url:
             raise ValueError(
-                "Neo4j configuration values are missing. Please set NEO4J_USER, NEO4J_PASSWORD, and NEO4J_URL environment variables."
+                "Memgraph configuration values are missing. Please set MEMGRAPH_USER, MEMGRAPH_PASSWORD, and MEMGRAPH_URL environment variables."
             )
 
         self._driver = neo4j.GraphDatabase.driver(
@@ -75,7 +90,7 @@ class Neo4jKGProvider(KGProvider):
     def client(self):
         return self._driver
 
-    #TODO(@DavIvek) -> done
+    # TODO(@DavIvek) -> done
     def create_constraints(self):
         for statement in UNIQUE_CONSTRAINTS:
             self._driver.execute_query(statement)
@@ -83,7 +98,7 @@ class Neo4jKGProvider(KGProvider):
     def structured_query(self, query: str, param_map: Dict[str, Any] = {}):
         return self._driver.execute_query(query, parameters_=param_map)
 
-    #TODO(@antejavor)
+    # TODO(@antejavor) -> Done, change of types, looks like it does not require changes
     def convert_to_neo4j_compatible(self, value):
         if isinstance(value, (str, int, float, bool)):
             return value
@@ -100,7 +115,7 @@ class Neo4jKGProvider(KGProvider):
         else:
             return str(value)
 
-    #TODO(@antejavor)
+    # TODO(@antejavor) -> No changes ATM
     def convert_model_list_to_neo4j_compatible(self, model_list):
         return [
             {
@@ -110,7 +125,7 @@ class Neo4jKGProvider(KGProvider):
             for item in model_list
         ]
 
-    #TODO(@DavIvek)
+    # TODO(@DavIvek)
     def get_entity_map(
         self, entity_names: list[str] | None = None
     ) -> dict[str, list[Any]]:
@@ -129,7 +144,7 @@ class Neo4jKGProvider(KGProvider):
                 entity_map[triple.object]["triples"].append(triple)
         return entity_map
 
-    #TODO(@DavIvek)
+    # TODO(@DavIvek)
     def batched_import(self, statement, df, batch_size=1000):
         """
         Import a dataframe into Neo4j using a batched approach.
@@ -148,7 +163,7 @@ class Neo4jKGProvider(KGProvider):
             results.append(result)
         return results
 
-    #TODO(@antejavor)
+    # TODO(@antejavor)
     def get_chunks(
         self, chunk_ids: List[str] = None
     ) -> List[DocumentFragment]:
@@ -157,7 +172,7 @@ class Neo4jKGProvider(KGProvider):
         """
         return self.structured_query(GET_CHUNKS_QUERY, chunk_ids)
 
-    #TODO(@antejavor)
+    # TODO(@antejavor)
     def upsert_chunks(self, chunks: List[DocumentFragment]):
         """
         Upsert chunks into the graph.
@@ -166,7 +181,7 @@ class Neo4jKGProvider(KGProvider):
 
         # create constraints, idempotent operation
 
-    #TODO(@DavIvek)
+    # TODO(@DavIvek)
     def upsert_entities(
         self, entities: List[Entity], with_embeddings: bool = False
     ):
@@ -178,21 +193,21 @@ class Neo4jKGProvider(KGProvider):
         else:
             return self.batched_import(PUT_ENTITIES_QUERY, entities)
 
-    #TODO(@antejavor)
+    # TODO(@antejavor)
     def upsert_triples(self, triples: List[Triple]):
         """
         Upsert relations into the graph.
         """
         return self.batched_import(PUT_TRIPLES_QUERY, triples)
 
-    #TODO(@DavIvek)
+    # TODO(@DavIvek)
     def upsert_communities(self, communities: List[Community]):
         """
         Upsert communities into the graph.
         """
         return self.batched_import(PUT_COMMUNITIES_QUERY, communities)
 
-    #TODO(@DavIvek) -> done
+    # TODO(@DavIvek) -> done
     def get_entities(self, entity_ids: List[str] = []) -> List[Entity]:
         """
         Get entities from the graph.
@@ -209,7 +224,7 @@ class Neo4jKGProvider(KGProvider):
         ]
         return entities
 
-    #TODO(@DavIvek)
+    # TODO(@DavIvek)
     def upsert_nodes_and_relationships(
         self, kg_extractions: list[KGExtraction]
     ) -> None:
@@ -225,7 +240,7 @@ class Neo4jKGProvider(KGProvider):
 
         return nodes_upserted, relationships_upserted
 
-    #TODO(@DavIvek) -> done
+    # TODO(@DavIvek) -> done
     def get(self, entity_name: str = None) -> Entity:
         """
         Get entities from the graph.
@@ -235,7 +250,7 @@ class Neo4jKGProvider(KGProvider):
         else:
             return self.get_entities(entity_ids=[entity_name])
 
-    #TODO(@DavIvek) -> done
+    # TODO(@DavIvek) -> done
     def get_triples(self, triple_ids: list[str] | None = None) -> list[Triple]:
         """
         Get triples from the graph.
@@ -269,7 +284,7 @@ class Neo4jKGProvider(KGProvider):
         ]
         return triples
 
-    #TODO(@DavIvek) -> done
+    # TODO(@DavIvek) -> done
     def update_extraction_prompt(
         self,
         prompt_provider: Any,
@@ -277,8 +292,8 @@ class Neo4jKGProvider(KGProvider):
         relations: list[RelationshipType],
     ) -> None:
         pass
-    
-    #TODO(@antejavor)
+
+    # TODO(@antejavor)
     def update_kg_search_prompt(
         self,
         prompt_provider: Any,
@@ -286,8 +301,8 @@ class Neo4jKGProvider(KGProvider):
         relations: list[RelationshipType],
     ) -> None:
         pass
-    
-    #TODO(@DavIvek)
+
+    # TODO(@DavIvek)
     def get_communities(self, level: str = None) -> List[Community]:
         """
         Get communities from the graph.
@@ -302,12 +317,12 @@ class Neo4jKGProvider(KGProvider):
         ]
         return communities
 
-    #TODO(@antejavor)
+    # TODO(@antejavor)
     def delete_all_nodes(self):
         self._driver.execute_query("MATCH (a)-[r]->(b) DELETE a, r, b")
         self._driver.execute_query("MATCH (a) DELETE a")
 
-    #TODO(@DavIvek)
+    # TODO(@DavIvek)
     def delete(
         self,
         entity_names: Optional[List[str]] = None,
@@ -317,7 +332,7 @@ class Neo4jKGProvider(KGProvider):
     ) -> None:
         pass
 
-    #TODO(@antejavor)
+    # TODO(@antejavor)
     def get_rel_map(
         self,
         graph_nodes: Any,
@@ -326,8 +341,8 @@ class Neo4jKGProvider(KGProvider):
         ignore_rels: Optional[List[str]] = None,
     ) -> List[Triple]:
         pass
-    
-    #TODO(@antejavor)
+
+    # TODO(@antejavor)
     def create_vector_index(
         self, node_type: str, node_property: str, dimension: int
     ) -> None:
@@ -340,15 +355,15 @@ class Neo4jKGProvider(KGProvider):
 
         self.structured_query(query)
 
-    #TODO(@DavIvek)
+    # TODO(@DavIvek)
     def get_schema(self, refresh: bool = False) -> str:
         return super().get_schema(refresh)
 
-    #TODO(@DavIvek)
+    # TODO(@DavIvek)
     def retrieve_cache(self, cache_type: str, cache_id: str) -> bool:
         return False
 
-    #TODO(@antejavor)
+    # TODO(@antejavor)
     def vector_query(self, query, **kwargs: Any) -> Dict[str, Any]:
 
         query_embedding = kwargs.get("query_embedding", None)
@@ -647,7 +662,7 @@ class Neo4jKGProvider(KGProvider):
 #             self.structured_schema["node_props"][
 #                 label
 #             ] = list_of_props  # not the best way to do this, but it works for now
-            
+
 #         for rel_type in self.structured_schema["rel_props"]:
 #             list_of_props = self.structured_schema["rel_props"][rel_type]
 #             enhanced_cypher = self._enhanced_schema_cypher(
@@ -739,7 +754,7 @@ class Neo4jKGProvider(KGProvider):
 #             """,
 #             param_map={"data": params},
 #         )
-        
+
 #         self.structured_query(
 #             """
 #             UNWIND $data AS row
@@ -768,7 +783,7 @@ class Neo4jKGProvider(KGProvider):
 #             for record in neo4j_records.records
 #         ]
 #         return entities
-    
+
 #     def get_chunks(
 #         self, chunk_ids: List[str] = None
 #     ) -> List[DocumentFragment]:
@@ -776,7 +791,7 @@ class Neo4jKGProvider(KGProvider):
 #         Get chunks from the graph.
 #         """
 #         return self.structured_query(GET_CHUNKS_QUERY, chunk_ids)
-    
+
 #     def get(self, entity_name: str = None) -> Entity:
 #         """
 #         Get entities from the graph.
