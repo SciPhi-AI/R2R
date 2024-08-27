@@ -93,7 +93,7 @@ class DocumentMixin(DatabaseMixin):
             params["group_ids"] = filter_group_ids
 
         query = f"""
-            SELECT document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, status, created_at, updated_at
+            SELECT document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, status, created_at, updated_at, kg_status
             FROM {self._get_table_name('document_info')}
         """
         if conditions:
@@ -120,6 +120,7 @@ class DocumentMixin(DatabaseMixin):
                 status=DocumentStatus(row[8]),
                 created_at=row[9],
                 updated_at=row[10],
+                kg_status=row[11],
             )
             for row in results
         ]

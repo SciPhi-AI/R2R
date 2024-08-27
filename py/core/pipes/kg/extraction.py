@@ -162,8 +162,10 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
                 entities, triples = parse_fn(kg_extraction)
                 return KGExtraction(
-                    id=fragment.id, document_id=fragment.document_id,
-                    entities=entities, triples=triples
+                    fragment_id=fragment.id,
+                    document_id=fragment.document_id,
+                    entities=entities,
+                    triples=triples
                 )
 
             except (
@@ -180,7 +182,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
         # add metadata to entities and triples
 
-        return KGExtraction(id=fragment.id, document_id=fragment.document_id, entities={}, triples=[])
+        return KGExtraction(fragment_id=fragment.id, document_id=fragment.document_id, entities={}, triples=[])
 
     async def _run_logic(
         self,
@@ -228,16 +230,20 @@ class KGTriplesExtractionPipe(AsyncPipe):
                     document_id=document_id
                 )
             ]
-            tasks.extend([asyncio.create_task(extract_kg_with_id(extraction)) for extraction in extractions])
+            tasks.extend([asyncio.create_task(self.extract_kg(extraction)) for extraction in extractions])
             task_counts[document_id] = len(extractions)
 
         logger.info(f"Processing {len(tasks)} tasks")
-        async for completed_task in tqdm_asyncio.as_completed(*tasks, desc="Extracting and updating KG Triples", total=len(tasks)):
-            document_id, kg_extraction = await completed_task
-            yield kg_extraction
+        for completed_task in tqdm_asyncio.as_completed(tasks, desc="Extracting and updating KG Triples", total=len(tasks)):
+            kg_extraction = await completed_task
 
-            task_counts[document_id] -= 1
-            if task_counts[document_id] <= 0:
-                self.database_provider.relational.execute_query(
-                    f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET kg_status = '{DocumentStatus.SUCCESS}' WHERE document_id = '{document_id}'"
-                )
+            task_counts[kg_extraction.document_id] -= 1
+            if task_counts[kg_extraction.document_id] <= 0:
+                try:
+                    self.database_provider.relational.execute_query(
+                        f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET kg_status = 'success' WHERE document_id = '{kg_extraction.document_id}'"
+                    )
+                    logger.info(f"Updated document {kg_extraction.document_id} to SUCCESS")
+                except Exception as e:
+                    logger.error(f"Error updating document {kg_extraction.document_id} to SUCCESS: {e}")
+            yield kg_extraction
