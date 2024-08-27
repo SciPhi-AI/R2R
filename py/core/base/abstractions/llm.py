@@ -29,7 +29,7 @@ class RAGCompletion:
 
 class GenerationConfig(BaseModel):
     _defaults: ClassVar[dict] = {
-        "model": "openai/gpt-4o-mini",
+        "model": "openai/gpt-4o",
         "temperature": 0.1,
         "top_p": 1.0,
         "max_tokens_to_sample": 1024,
