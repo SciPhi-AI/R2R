@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 from core.base import R2RException, RunLoggingSingleton, RunManager
 from core.base.abstractions import KGEnrichmentSettings
@@ -33,7 +33,9 @@ class RestructureService(Service):
 
     async def enrich_graph(
         self,
-        kg_enrichment_settings: Union[dict, KGEnrichmentSettings] = {},
+        kg_enrichment_settings: Optional[
+            Union[dict, KGEnrichmentSettings]
+        ] = None,
     ) -> Dict[str, Any]:
         """
         Perform graph enrichment.
@@ -49,7 +51,7 @@ class RestructureService(Service):
                 for doc in input:
                     yield doc
 
-            if kg_enrichment_settings == {}:
+            if not kg_enrichment_settings or kg_enrichment_settings == {}:
                 kg_enrichment_settings = self.config.kg.kg_enrichment_settings
 
             return await self.pipelines.kg_enrichment_pipeline.run(

@@ -20,7 +20,7 @@ class DocumentMixin(DatabaseMixin):
             title TEXT,
             version TEXT,
             size_in_bytes INT,
-            status TEXT DEFAULT 'processing',
+            ingestion_status TEXT DEFAULT 'processing',
             kg_status TEXT DEFAULT 'processing',
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -36,8 +36,8 @@ class DocumentMixin(DatabaseMixin):
         for document_info in documents_overview:
             query = f"""
             INSERT INTO {self._get_table_name('document_info')}
-            (document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, status, kg_status, created_at, updated_at)
-            VALUES (:document_id, :group_ids, :user_id, :type, :metadata, :title, :version, :size_in_bytes, :status, :kg_status, :created_at, :updated_at)
+            (document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, ingestion_status, kg_status, created_at, updated_at)
+            VALUES (:document_id, :group_ids, :user_id, :type, :metadata, :title, :version, :size_in_bytes, :ingestion_status, :kg_status, :created_at, :updated_at)
             ON CONFLICT (document_id) DO UPDATE SET
                 group_ids = EXCLUDED.group_ids,
                 user_id = EXCLUDED.user_id,
@@ -46,7 +46,7 @@ class DocumentMixin(DatabaseMixin):
                 title = EXCLUDED.title,
                 version = EXCLUDED.version,
                 size_in_bytes = EXCLUDED.size_in_bytes,
-                status = EXCLUDED.status,
+                ingestion_status = EXCLUDED.ingestion_status,
                 kg_status = EXCLUDED.kg_status,
                 updated_at = EXCLUDED.updated_at;
             """
@@ -73,7 +73,7 @@ class DocumentMixin(DatabaseMixin):
         filter_document_ids: Optional[list[UUID]] = None,
         filter_group_ids: Optional[list[UUID]] = None,
         offset: int = 0,
-        limit: int = -1,
+        limit: int = 100,
     ):
         conditions = []
         params = {"offset": offset}
@@ -93,7 +93,7 @@ class DocumentMixin(DatabaseMixin):
             params["group_ids"] = filter_group_ids
 
         query = f"""
-            SELECT document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, status, created_at, updated_at, kg_status
+            SELECT document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, ingestion_status, created_at, updated_at, kg_status
             FROM {self._get_table_name('document_info')}
         """
         if conditions:
@@ -117,7 +117,7 @@ class DocumentMixin(DatabaseMixin):
                 title=row[5],
                 version=row[6],
                 size_in_bytes=row[7],
-                status=DocumentStatus(row[8]),
+                ingestion_status=DocumentStatus(row[8]),
                 created_at=row[9],
                 updated_at=row[10],
                 kg_status=row[11],

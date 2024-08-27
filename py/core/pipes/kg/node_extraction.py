@@ -5,8 +5,6 @@ import logging
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
-from tqdm.asyncio import tqdm_asyncio
-
 from core.base import (
     AsyncState,
     CompletionProvider,
@@ -19,6 +17,7 @@ from core.base import (
 from core.base.abstractions.graph import Entity, Triple
 from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers.llm import GenerationConfig
+from tqdm.asyncio import tqdm_asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -167,8 +166,7 @@ class KGNodeDescriptionPipe(AsyncPipe):
                 logger.info(f"Hit cache for entity {entity.name}")
             else:
                 completion = await self.llm_provider.aget_completion(
-                    messages,
-                    self.kg_provider.config.kg_enrichment_settings.generation_config_enrichment,
+                    messages, self.kg_provider.config.kg_enrichment_settings.generation_config_enrichment
                 )
                 entity.description = completion.choices[0].message.content
 
@@ -199,9 +197,8 @@ class KGNodeDescriptionPipe(AsyncPipe):
             count += 1
 
         logger.info(f"KG Node Description pipe: Created {count} tasks")
-        processed_entities = await tqdm_asyncio.gather(
-            *tasks, desc="Processing entities", total=count
-        )
+        # do gather because we need to wait for all descriptions before kicking off the next step
+        processed_entities = await tqdm_asyncio.gather(*tasks, desc="Processing entities", total=count)
 
         # upsert to the database
         self.kg_provider.upsert_entities(

@@ -91,7 +91,7 @@ class DocumentInfo(BaseModel):
     title: Optional[str] = None
     version: str
     size_in_bytes: int
-    status: DocumentStatus = DocumentStatus.PROCESSING
+    ingestion_status: DocumentStatus = DocumentStatus.PROCESSING
     kg_status: Optional[DocumentStatus] = DocumentStatus.PROCESSING
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -109,7 +109,7 @@ class DocumentInfo(BaseModel):
             "title": self.title or "N/A",
             "version": self.version,
             "size_in_bytes": self.size_in_bytes,
-            "status": self.status,
+            "ingestion_status": self.ingestion_status,
             "kg_status": self.kg_status,
             "created_at": self.created_at or now,
             "updated_at": self.updated_at or now,

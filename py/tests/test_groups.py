@@ -23,7 +23,7 @@ def test_documents(pg_db, test_group):
             title=f"Test Document {i}",
             version="1.0",
             size_in_bytes=1000,
-            status=DocumentStatus.PROCESSING,
+            ingestion_status=DocumentStatus.PROCESSING,
         )
         pg_db.relational.upsert_documents_overview([doc])
         documents.append(doc)

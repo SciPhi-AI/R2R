@@ -203,7 +203,6 @@ class KGTriplesExtractionPipe(AsyncPipe):
         logger.info("Running KG Extraction Pipe")
 
         document_ids = []
-        document_ids = []
         async for extraction in input.message:
             document_ids.append(extraction)
 
@@ -243,7 +242,9 @@ class KGTriplesExtractionPipe(AsyncPipe):
                 ]
             )
 
-            logger.info(f"Processing {len(tasks)} tasks")
+            logger.info(
+                f"Processing {len(tasks)} tasks for document {document_id}"
+            )
             for completed_task in tqdm_asyncio.as_completed(
                 tasks,
                 desc="Extracting and updating KG Triples",
@@ -254,12 +255,10 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
             try:
                 self.database_provider.relational.execute_query(
-                    f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET kg_status = 'success' WHERE document_id = '{kg_extraction.document_id}'"
+                    f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET kg_status = 'success' WHERE document_id = '{document_id}'"
                 )
-                logger.info(
-                    f"Updated document {kg_extraction.document_id} to SUCCESS"
-                )
+                logger.info(f"Updated document {document_id} to SUCCESS")
             except Exception as e:
                 logger.error(
-                    f"Error updating document {kg_extraction.document_id} to SUCCESS: {e}"
+                    f"Error updating document {document_id} to SUCCESS: {e}"
                 )
