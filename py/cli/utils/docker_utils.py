@@ -112,7 +112,6 @@ def run_docker_serve(
     config_path: Optional[str] = None,
 ):
     check_set_docker_env_vars(exclude_neo4j, exclude_postgres)
-    set_ollama_api_base(exclude_ollama)
 
     if config_path and config_name:
         raise ValueError("Cannot specify both config_path and config_name")
@@ -270,15 +269,6 @@ def set_config_env_vars(obj):
         os.environ["CONFIG_PATH"] = config_path
     else:
         os.environ["CONFIG_NAME"] = obj.get("config_name") or "default"
-
-
-def set_ollama_api_base(exclude_ollama):
-    os.environ["OLLAMA_API_BASE"] = (
-        "http://host.docker.internal:11434"
-        if exclude_ollama
-        else "http://ollama:11434"
-    )
-
 
 def get_compose_files():
     package_dir = os.path.join(
