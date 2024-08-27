@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import yaml
 from fastapi import Body, Depends
@@ -19,15 +19,16 @@ from core.base.api.models import (
     WrappedSearchResponse,
 )
 
-from ....engine import R2REngine
+from ....services.retrieval_service import RetrievalService
 from ..base_router import BaseRouter
 
 
 class RetrievalRouter(BaseRouter):
     def __init__(
-        self, engine: R2REngine, run_type: RunType = RunType.RETRIEVAL
+        self, service: RetrievalService, run_type: RunType = RunType.RETRIEVAL
     ):
-        super().__init__(engine, run_type)
+        super().__init__(service, run_type)
+        self.service: RetrievalService = service  # for type hinting
         self.openapi_extras = self.load_openapi_extras()
         self.setup_routes()
 
@@ -61,7 +62,7 @@ class RetrievalRouter(BaseRouter):
                 default_factory=KGSearchSettings,
                 description=search_descriptions.get("kg_search_settings"),
             ),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedSearchResponse:
             """
             Perform a search query on the vector database and knowledge graph.
@@ -85,7 +86,6 @@ class RetrievalRouter(BaseRouter):
             filters = {
                 "$or": [
                     {"user_id": {"$eq": str(auth_user.id)}},
-                    # {"group_ids": {"$any": list([str(ele) for ele in allowed_groups])}},
                     {"group_ids": {"$overlap": list(allowed_groups)}},
                 ]
             }
@@ -93,7 +93,7 @@ class RetrievalRouter(BaseRouter):
                 filters = {"$and": [filters, vector_search_settings.filters]}
 
             vector_search_settings.filters = filters
-            results = await self.engine.asearch(
+            results = await self.service.search(
                 query=query,
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
@@ -125,7 +125,7 @@ class RetrievalRouter(BaseRouter):
             task_prompt_override: Optional[str] = Body(
                 None, description=rag_descriptions.get("task_prompt_override")
             ),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedRAGResponse:
             """
             Execute a RAG (Retrieval-Augmented Generation) query.
@@ -148,7 +148,7 @@ class RetrievalRouter(BaseRouter):
 
             vector_search_settings.filters = filters
 
-            response = await self.engine.arag(
+            response = await self.service.arag(
                 query=query,
                 vector_search_settings=vector_search_settings,
                 kg_search_settings=kg_search_settings,
@@ -202,7 +202,7 @@ class RetrievalRouter(BaseRouter):
                     "include_title_if_available"
                 ),
             ),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedRAGAgentResponse:
             """
             Implement an agent-based interaction for complex query processing.
@@ -228,7 +228,7 @@ class RetrievalRouter(BaseRouter):
             vector_search_settings.filters = filters
 
             try:
-                response = await self.engine.arag_agent(
+                response = await self.service.arag_agent(
                     messages=messages,
                     vector_search_settings=vector_search_settings,
                     kg_search_settings=kg_search_settings,

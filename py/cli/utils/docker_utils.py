@@ -11,8 +11,6 @@ import click
 import requests
 from requests.exceptions import RequestException
 
-from sdk import R2RClient
-
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
@@ -79,14 +77,21 @@ def run_local_serve(
     config_path: Optional[str] = None,
 ) -> None:
     try:
-        from r2r import R2R
-    except ImportError:
+        from r2r import R2RBuilder, R2RConfig
+    except ImportError as e:
         click.echo(
-            "You must install the `r2r core` package to run the R2R server locally."
+            f"Error: {e}\n\nNote, you must install the `r2r core` package to run the R2R server locally."
         )
         sys.exit(1)
 
-    r2r_instance = R2R(config_name=config_name, config_path=config_path)
+    if config_path and config_name:
+        raise ValueError("Cannot specify both config_path and config_name")
+    if not config_path and not config_name:
+        config_name = "default"
+
+    r2r_instance = R2RBuilder(
+        config=R2RConfig.load(config_name, config_path)
+    ).build()
 
     if config_name or config_path:
         completion_config = r2r_instance.config.completion
@@ -112,7 +117,6 @@ def run_docker_serve(
     config_path: Optional[str] = None,
 ):
     check_set_docker_env_vars(exclude_neo4j, exclude_postgres)
-    set_ollama_api_base(exclude_ollama)
 
     if config_path and config_name:
         raise ValueError("Cannot specify both config_path and config_name")
@@ -270,14 +274,6 @@ def set_config_env_vars(obj):
         os.environ["CONFIG_PATH"] = config_path
     else:
         os.environ["CONFIG_NAME"] = obj.get("config_name") or "default"
-
-
-def set_ollama_api_base(exclude_ollama):
-    os.environ["OLLAMA_API_BASE"] = (
-        "http://host.docker.internal:11434"
-        if exclude_ollama
-        else "http://ollama:11434"
-    )
 
 
 def get_compose_files():

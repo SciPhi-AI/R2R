@@ -32,7 +32,7 @@ from core.pipelines import (
 )
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
-from .config import R2RConfig
+from ..config import R2RConfig
 
 logger = logging.getLogger(__name__)
 

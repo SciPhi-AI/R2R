@@ -144,7 +144,7 @@ async def test_ingest_txt_file(app, user):
         file.file.seek(0, 2)  # Move to the end of the file
         file.size = file.file.tell()  # Get the file size
         file.file.seek(0)  # Move back to the start of the file
-    await app.aingest_files(metadatas=[metadata], files=files, user=user)
+    await app.ingest_files(metadatas=[metadata], files=files, user=user)
 
 
 @pytest.mark.parametrize("app", ["postgres"], indirect=True)
@@ -182,7 +182,7 @@ async def test_ingest_search_txt_file(app, user, logging_connection):
     # Convert metadata to JSON string
     run_info = await logging_connection.get_info_logs(run_type_filter="search")
 
-    ingestion_result = await app.aingest_files(
+    ingestion_result = await app.ingest_files(
         files=files, user=user, metadatas=[metadata]
     )
 

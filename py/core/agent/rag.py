@@ -30,7 +30,7 @@ class RAGAgentMixin:
         return Tool(
             name="search",
             description="Search for information using the R2R framework",
-            results_function=self.asearch,
+            results_function=self.search,
             llm_format_function=RAGAgentMixin.format_search_results_for_llm,
             stream_function=RAGAgentMixin.format_search_results_for_stream,
             parameters={
@@ -45,7 +45,7 @@ class RAGAgentMixin:
             },
         )
 
-    async def asearch(
+    async def search(
         self,
         query: str,
         vector_search_settings: VectorSearchSettings,

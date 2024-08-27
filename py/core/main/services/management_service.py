@@ -17,7 +17,7 @@ from core.base import (
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RProviders
-from ..assembly.config import R2RConfig
+from ..config import R2RConfig
 from .base import Service
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ class ManagementService(Service):
         )
 
     @telemetry_event("Logs")
-    async def alogs(
+    async def logs(
         self, run_type_filter: Optional[str] = None, max_runs: int = 100
     ):
         if self.logging_connection is None:
@@ -92,7 +92,7 @@ class ManagementService(Service):
         return aggregated_logs
 
     @telemetry_event("Analytics")
-    async def aanalytics(
+    async def analytics(
         self,
         filter_criteria: LogFilterCriteria,
         analysis_types: AnalysisTypes,
@@ -177,7 +177,7 @@ class ManagementService(Service):
         }
 
     @telemetry_event("AppSettings")
-    async def aapp_settings(self, *args: Any, **kwargs: Any):
+    async def app_settings(self, *args: Any, **kwargs: Any):
         prompts = self.providers.prompt.get_all_prompts()
         config_toml = self.config.to_toml()
         config_dict = toml.loads(config_toml)
@@ -189,7 +189,7 @@ class ManagementService(Service):
         }
 
     @telemetry_event("ScoreCompletion")
-    async def ascore_completion(
+    async def score_completion(
         self,
         message_id: UUID,
         score: float = 0.0,
@@ -238,7 +238,7 @@ class ManagementService(Service):
         return {"message": "Completion scored successfully"}
 
     @telemetry_event("UsersOverview")
-    async def ausers_overview(
+    async def users_overview(
         self,
         user_ids: Optional[list[UUID]] = None,
         offset: int = 0,
@@ -290,7 +290,7 @@ class ManagementService(Service):
         return None
 
     @telemetry_event("DocumentsOverview")
-    async def adocuments_overview(
+    async def documents_overview(
         self,
         user_ids: Optional[list[UUID]] = None,
         group_ids: Optional[list[UUID]] = None,
@@ -411,7 +411,7 @@ class ManagementService(Service):
                 )
 
             # Create graph representation and group relationships
-            graph, grouped_relationships = self.process_relationships(
+            graph, grouped_relationships = self._process_relationships(
                 relationships
             )
 
@@ -433,9 +433,7 @@ class ManagementService(Service):
             )
 
     @telemetry_event("AssignDocumentToGroup")
-    async def aassign_document_to_group(
-        self, document_id: str, group_id: UUID
-    ):
+    async def assign_document_to_group(self, document_id: str, group_id: UUID):
 
         self.providers.database.relational.assign_document_to_group(
             document_id, group_id
@@ -446,7 +444,7 @@ class ManagementService(Service):
         return {"message": "Document assigned to group successfully"}
 
     @telemetry_event("RemoveDocumentFromGroup")
-    async def aremove_document_from_group(
+    async def remove_document_from_group(
         self, document_id: str, group_id: UUID
     ):
         self.providers.database.relational.remove_document_from_group(
@@ -458,7 +456,7 @@ class ManagementService(Service):
         return {"message": "Document removed from group successfully"}
 
     @telemetry_event("DocumentGroups")
-    async def adocument_groups(
+    async def document_groups(
         self, document_id: str, offset: int = 0, limit: int = 100
     ):
         group_ids = self.providers.database.relational.document_groups(
@@ -466,7 +464,7 @@ class ManagementService(Service):
         )
         return {"group_ids": [str(group_id) for group_id in group_ids]}
 
-    def process_relationships(
+    def _process_relationships(
         self, relationships: List[Tuple[str, str, str]]
     ) -> Tuple[Dict[str, List[str]], Dict[str, Dict[str, List[str]]]]:
         graph = defaultdict(list)
@@ -506,12 +504,12 @@ class ManagementService(Service):
                 "\n== Graph Statistics ==",
                 f"Number of nodes: {len(graph)}",
                 f"Number of edges: {sum(len(neighbors) for neighbors in graph.values())}",
-                f"Number of connected components: {self.count_connected_components(graph)}",
+                f"Number of connected components: {self._count_connected_components(graph)}",
             ]
         )
 
         # Find central nodes
-        central_nodes = self.get_central_nodes(graph)
+        central_nodes = self._get_central_nodes(graph)
         output.extend(
             [
                 "\n== Most Central Nodes ==",
@@ -524,7 +522,7 @@ class ManagementService(Service):
 
         return output
 
-    def count_connected_components(self, graph: Dict[str, List[str]]) -> int:
+    def _count_connected_components(self, graph: Dict[str, List[str]]) -> int:
         visited = set()
         components = 0
 
@@ -541,7 +539,7 @@ class ManagementService(Service):
 
         return components
 
-    def get_central_nodes(
+    def _get_central_nodes(
         self, graph: Dict[str, List[str]]
     ) -> List[Tuple[str, float]]:
         degree = {node: len(neighbors) for node, neighbors in graph.items()}
@@ -566,17 +564,17 @@ class ManagementService(Service):
         }
 
     @telemetry_event("CreateGroup")
-    async def acreate_group(self, name: str, description: str = "") -> UUID:
+    async def create_group(self, name: str, description: str = "") -> UUID:
         return self.providers.database.relational.create_group(
             name, description
         )
 
     @telemetry_event("GetGroup")
-    async def aget_group(self, group_id: UUID) -> Optional[dict]:
+    async def get_group(self, group_id: UUID) -> Optional[dict]:
         return self.providers.database.relational.get_group(group_id)
 
     @telemetry_event("UpdateGroup")
-    async def aupdate_group(
+    async def update_group(
         self, group_id: UUID, name: str = None, description: str = None
     ) -> bool:
         return self.providers.database.relational.update_group(
@@ -584,13 +582,13 @@ class ManagementService(Service):
         )
 
     @telemetry_event("DeleteGroup")
-    async def adelete_group(self, group_id: UUID) -> bool:
+    async def delete_group(self, group_id: UUID) -> bool:
         self.providers.database.relational.delete_group(group_id)
         self.providers.database.vector.delete_group(group_id)
         return True
 
     @telemetry_event("ListGroups")
-    async def alist_groups(
+    async def list_groups(
         self, offset: int = 0, limit: int = 100
     ) -> list[dict]:
         return self.providers.database.relational.list_groups(
@@ -598,13 +596,13 @@ class ManagementService(Service):
         )
 
     @telemetry_event("AddUserToGroup")
-    async def aadd_user_to_group(self, user_id: UUID, group_id: UUID) -> bool:
+    async def add_user_to_group(self, user_id: UUID, group_id: UUID) -> bool:
         return self.providers.database.relational.add_user_to_group(
             user_id, group_id
         )
 
     @telemetry_event("RemoveUserFromGroup")
-    async def aremove_user_from_group(
+    async def remove_user_from_group(
         self, user_id: UUID, group_id: UUID
     ) -> bool:
         return self.providers.database.relational.remove_user_from_group(
@@ -612,7 +610,7 @@ class ManagementService(Service):
         )
 
     @telemetry_event("GetUsersInGroup")
-    async def aget_users_in_group(
+    async def get_users_in_group(
         self, group_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
         return self.providers.database.relational.get_users_in_group(
@@ -620,7 +618,7 @@ class ManagementService(Service):
         )
 
     @telemetry_event("GetGroupsForUser")
-    async def aget_groups_for_user(
+    async def get_groups_for_user(
         self, user_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
         return self.providers.database.relational.get_groups_for_user(
@@ -628,7 +626,7 @@ class ManagementService(Service):
         )
 
     @telemetry_event("GroupsOverview")
-    async def agroups_overview(
+    async def groups_overview(
         self,
         group_ids: Optional[list[UUID]] = None,
         offset: int = 0,
@@ -643,7 +641,7 @@ class ManagementService(Service):
         )
 
     @telemetry_event("GetDocumentsInGroup")
-    async def adocuments_in_group(
+    async def documents_in_group(
         self, group_id: UUID, offset: int = 0, limit: int = 100
     ) -> list[dict]:
         return self.providers.database.relational.documents_in_group(
@@ -651,7 +649,7 @@ class ManagementService(Service):
         )
 
     @telemetry_event("DocumentGroups")
-    async def adocument_groups(
+    async def document_groups(
         self, document_id: str, offset: int = 0, limit: int = 100
     ) -> list[str]:
         return self.providers.database.relational.document_groups(

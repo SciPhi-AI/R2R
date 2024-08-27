@@ -1,7 +1,6 @@
-import json
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID
 
 import yaml
@@ -12,8 +11,7 @@ from core.base import ChunkingConfig, R2RException
 from core.base.api.models.ingestion.responses import WrappedIngestionResponse
 from core.base.utils import generate_user_document_id
 
-from ....assembly.factory import R2RProviderFactory
-from ....engine import R2REngine
+from ....services.ingestion_service import IngestionService
 from ..base_router import BaseRouter, RunType
 
 logger = logging.getLogger(__name__)
@@ -21,9 +19,10 @@ logger = logging.getLogger(__name__)
 
 class IngestionRouter(BaseRouter):
     def __init__(
-        self, engine: R2REngine, run_type: RunType = RunType.INGESTION
+        self, service: IngestionService, run_type: RunType = RunType.INGESTION
     ):
-        super().__init__(engine, run_type)
+        super().__init__(service, run_type)
+        self.service: IngestionService = service
         self.openapi_extras = self.load_openapi_extras()
         self.setup_routes()
 
@@ -61,7 +60,7 @@ class IngestionRouter(BaseRouter):
                 None,
                 description=ingest_files_descriptions.get("chunking_settings"),
             ),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedIngestionResponse:
             """
             Ingest files into the system.
@@ -70,6 +69,8 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access. More expansive group permissioning is under development.
             """
+            from ....assembly.factory import R2RProviderFactory
+
             chunking_provider = None
             if chunking_settings:
                 chunking_settings.validate()
@@ -101,7 +102,7 @@ class IngestionRouter(BaseRouter):
                 # If user is not a superuser, set user_id in metadata
                 metadata["user_id"] = str(auth_user.id)
 
-            ingestion_result = await self.engine.aingest_files(
+            ingestion_result = await self.service.ingest_files(
                 files=files,
                 metadatas=metadatas,
                 document_ids=document_ids,
@@ -117,7 +118,7 @@ class IngestionRouter(BaseRouter):
                             idx
                         ]
                         for group_id in metadata["group_ids"]:
-                            await self.engine.management_service.aassign_document_to_group(
+                            await self.service.management_service.aassign_document_to_group(
                                 document_id, group_id
                             )
 
@@ -148,7 +149,7 @@ class IngestionRouter(BaseRouter):
                 None,
                 description=ingest_files_descriptions.get("chunking_settings"),
             ),
-            auth_user=Depends(self.engine.providers.auth.auth_wrapper),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedIngestionResponse:
             """
             Update existing files in the system.
@@ -160,6 +161,7 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive group permissioning is under development.
             """
+            from ....assembly.factory import R2RProviderFactory
 
             chunking_provider = None
             if chunking_settings:
@@ -168,7 +170,7 @@ class IngestionRouter(BaseRouter):
                     R2RProviderFactory.create_chunking_provider(config)
                 )
 
-            return await self.engine.aupdate_files(
+            return await self.service.update_files(
                 files=files,
                 metadatas=metadatas,
                 document_ids=document_ids,
