@@ -21,6 +21,7 @@ class DocumentMixin(DatabaseMixin):
             version TEXT,
             size_in_bytes INT,
             status TEXT DEFAULT 'processing',
+            kg_status TEXT DEFAULT 'processing',
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
@@ -35,8 +36,8 @@ class DocumentMixin(DatabaseMixin):
         for document_info in documents_overview:
             query = f"""
             INSERT INTO {self._get_table_name('document_info')}
-            (document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, status, created_at, updated_at)
-            VALUES (:document_id, :group_ids, :user_id, :type, :metadata, :title, :version, :size_in_bytes, :status, :created_at, :updated_at)
+            (document_id, group_ids, user_id, type, metadata, title, version, size_in_bytes, status, kg_status, created_at, updated_at)
+            VALUES (:document_id, :group_ids, :user_id, :type, :metadata, :title, :version, :size_in_bytes, :status, :kg_status, :created_at, :updated_at)
             ON CONFLICT (document_id) DO UPDATE SET
                 group_ids = EXCLUDED.group_ids,
                 user_id = EXCLUDED.user_id,
@@ -46,6 +47,7 @@ class DocumentMixin(DatabaseMixin):
                 version = EXCLUDED.version,
                 size_in_bytes = EXCLUDED.size_in_bytes,
                 status = EXCLUDED.status,
+                kg_status = EXCLUDED.kg_status,
                 updated_at = EXCLUDED.updated_at;
             """
             self.execute_query(query, document_info.convert_to_db_entry())

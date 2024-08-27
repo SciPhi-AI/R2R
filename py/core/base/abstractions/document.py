@@ -23,7 +23,6 @@ class DocumentStatus(str, Enum):
     FAILURE = "failure"
     SUCCESS = "success"
 
-
 class DocumentType(str, Enum):
     """Types of documents that can be stored."""
 
@@ -92,6 +91,7 @@ class DocumentInfo(BaseModel):
     version: str
     size_in_bytes: int
     status: DocumentStatus = DocumentStatus.PROCESSING
+    kg_status: Optional[DocumentStatus] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -109,6 +109,7 @@ class DocumentInfo(BaseModel):
             "version": self.version,
             "size_in_bytes": self.size_in_bytes,
             "status": self.status,
+            "kg_status": self.kg_status,
             "created_at": self.created_at or now,
             "updated_at": self.updated_at or now,
         }

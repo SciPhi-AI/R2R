@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Optional, Union
@@ -397,5 +398,7 @@ TextEmbedder = Callable[[str], list[float]]
 class KGExtraction(BaseModel):
     """An extraction from a document that is part of a knowledge graph."""
 
-    entities: Union[list[Entity], dict[str, Entity]]
+    fragment_id: uuid.UUID
+    document_id: uuid.UUID
+    entities: dict[str, Entity]
     triples: list[Triple]

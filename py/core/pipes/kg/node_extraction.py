@@ -17,6 +17,7 @@ from core.base import (
 from core.base.abstractions.graph import Entity, Triple
 from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers.llm import GenerationConfig
+from tqdm.asyncio import tqdm_asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -194,10 +195,9 @@ class KGNodeDescriptionPipe(AsyncPipe):
         async for entity, triples in input.message:
             tasks.append(asyncio.create_task(process_entity(entity, triples)))
             count += 1
-            if count == 4:
-                break
 
-        processed_entities = await asyncio.gather(*tasks)
+        logger.info(f"KG Node Description pipe: Created {count} tasks")
+        processed_entities = await tqdm_asyncio.gather(*tasks, desc="Processing entities", total=count)
 
         # upsert to the database
         self.kg_provider.upsert_entities(

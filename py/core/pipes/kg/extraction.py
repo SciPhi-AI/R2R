@@ -3,12 +3,15 @@ import json
 import logging
 import re
 import uuid
+from tqdm.asyncio import tqdm_asyncio
 from typing import Any, AsyncGenerator, Optional, Union
+from collections import Counter
 
 from core.base import (
     AsyncState,
     ChunkingProvider,
     CompletionProvider,
+    DocumentStatus,
     DatabaseProvider,
     DocumentExtraction,
     DocumentFragment,
@@ -120,7 +123,6 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
                     entities_dict = {}
                     for entity in entities:
-                        logger.info(f"Entity: {entity}")
                         entity_value = entity[0]
                         entity_category = entity[1]
                         entity_description = entity[2]
@@ -135,7 +137,6 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
                     relations_arr = []
                     for relationship in relationships:
-                        logger.info(f"Relationship: {relationship}")
                         subject = relationship[0]
                         object = relationship[1]
                         predicate = relationship[2]
@@ -161,7 +162,8 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
                 entities, triples = parse_fn(kg_extraction)
                 return KGExtraction(
-                    entities=list(entities.values()), triples=triples
+                    id=fragment.id, document_id=fragment.document_id,
+                    entities=entities, triples=triples
                 )
 
             except (
@@ -178,7 +180,7 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
         # add metadata to entities and triples
 
-        return KGExtraction(entities={}, triples=[])
+        return KGExtraction(id=fragment.id, document_id=fragment.document_id, entities={}, triples=[])
 
     async def _run_logic(
         self,
@@ -191,9 +193,6 @@ class KGTriplesExtractionPipe(AsyncPipe):
 
         logger.info("Running KG Extraction Pipe")
 
-        async def process_extraction(extraction):
-            return await self.extract_kg(extraction)
-
         document_ids = []
         async for extraction in input.message:
             document_ids.append(extraction)
@@ -202,9 +201,18 @@ class KGTriplesExtractionPipe(AsyncPipe):
             document_ids = [
                 doc.id
                 for doc in self.database_provider.relational.get_documents_overview()
+                if doc.kg_status != DocumentStatus.SUCCESS
             ]
 
-        for document_id in document_ids:
+        logger.info(f"Extracting KG for {len(document_ids)} documents")
+
+        async def document_ids_generator():
+            for document_id in document_ids:
+                yield document_id
+
+        tasks = []
+        task_counts = Counter()
+        async for document_id in document_ids_generator():
             logger.info(f"Extracting KG for document: {document_id}")
             extractions = [
                 DocumentFragment(
@@ -220,10 +228,16 @@ class KGTriplesExtractionPipe(AsyncPipe):
                     document_id=document_id
                 )
             ]
+            tasks.extend([asyncio.create_task(extract_kg_with_id(extraction)) for extraction in extractions])
+            task_counts[document_id] = len(extractions)
 
-        kg_extractions = await asyncio.gather(
-            *[process_extraction(extraction) for extraction in extractions]
-        )
-
-        for kg_extraction in kg_extractions:
+        logger.info(f"Processing {len(tasks)} tasks")
+        async for completed_task in tqdm_asyncio.as_completed(*tasks, desc="Extracting and updating KG Triples", total=len(tasks)):
+            document_id, kg_extraction = await completed_task
             yield kg_extraction
+
+            task_counts[document_id] -= 1
+            if task_counts[document_id] <= 0:
+                self.database_provider.relational.execute_query(
+                    f"UPDATE {self.database_provider.relational._get_table_name('document_info')} SET kg_status = '{DocumentStatus.SUCCESS}' WHERE document_id = '{document_id}'"
+                )

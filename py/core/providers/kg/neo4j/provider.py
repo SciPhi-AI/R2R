@@ -68,7 +68,6 @@ class Neo4jKGProvider(KGProvider):
         self.config = config
 
         self.create_constraints()
-
         super().__init__(config, *args, **kwargs)
 
     @property
