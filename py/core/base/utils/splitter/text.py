@@ -628,9 +628,11 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 class CharacterTextSplitter(TextSplitter):
     """Splitting text that looks at characters."""
 
+    DEFAULT_SEPARATOR: str = "\n\n"
+
     def __init__(
         self,
-        separator: str = "\n\n",
+        separator: str = DEFAULT_SEPARATOR,
         is_separator_regex: bool = False,
         **kwargs: Any,
     ) -> None:
