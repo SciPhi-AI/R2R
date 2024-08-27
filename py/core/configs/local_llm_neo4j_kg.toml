@@ -22,18 +22,25 @@ excluded_parsers = [ "gif", "jpeg", "jpg", "png", "svg", "mp3", "mp4" ]
 
 [kg]
 provider = "neo4j"
-batch_size = 1
-max_entities = 10
-max_relations = 20
-kg_extraction_prompt = "zero_shot_ner_kg_extraction"
+kg_extraction_prompt = "graphrag_triplet_extraction_zero_shot"
 
   [kg.kg_extraction_config]
-  model = "ollama/sciphi/triplex"
+  model = "ollama/llama3.1"
   temperature = 1
   top_p = 1
   max_tokens_to_sample = 1_024
   stream = false
   add_generation_kwargs = { }
+
+
+  [kg.kg_enrichment_settings]
+    max_knowledge_triples = 100
+    generation_config_triplet = { model = "ollama/llama3.1" } # and other params, model used for triplet extraction
+    generation_config_enrichment = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
+    leiden_params = { max_cluster_size = 1000 } # more params in graspologic/partition/leiden.py
+
+  [kg.kg_search_config]
+    model = "ollama/llama3.1"
 
 [database]
 provider = "postgres"
