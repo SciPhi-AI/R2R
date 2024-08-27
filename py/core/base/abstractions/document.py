@@ -92,7 +92,7 @@ class DocumentInfo(BaseModel):
     version: str
     size_in_bytes: int
     status: DocumentStatus = DocumentStatus.PROCESSING
-    kg_status: Optional[DocumentStatus] = DocumentStatus.PROCESSING
+    kg_status: DocumentStatus = DocumentStatus.PROCESSING
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
