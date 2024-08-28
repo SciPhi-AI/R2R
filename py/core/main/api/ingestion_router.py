@@ -11,6 +11,7 @@ from core.base import ChunkingConfig, R2RException
 from core.base.api.models.ingestion.responses import WrappedIngestionResponse
 from core.base.utils import generate_user_document_id
 
+from ...main.hatchet import r2r_hatchet
 from .base_router import BaseRouter, RunType
 
 logger = logging.getLogger(__name__)
@@ -65,7 +66,7 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only ingest files for their own access. More expansive group permissioning is under development.
             """
-            from ...assembly.factory import R2RProviderFactory
+            from ..assembly.factory import R2RProviderFactory
 
             if chunking_config:
                 chunking_config.validate()
@@ -115,23 +116,18 @@ class IngestionRouter(BaseRouter):
                 "file_data": file_data,
                 "document_ids": document_ids,
                 "metadatas": metadatas,
-                # "chunking_config": chunking_config,
                 "chunking_config": (
                     chunking_config.json() if chunking_config else None
                 ),
-                # "user": auth_user.dict(),  # Serialize user object
                 "user": auth_user.json(),
             }
 
-            from core.main import r2r_hatchet
 
-            messageId = r2r_hatchet.client.admin.run_workflow(
+            task_id = r2r_hatchet.client.admin.run_workflow(
                 "ingestion-workflow", {"request": workflow_input}
             )
-            print("messageId = ", messageId)
-            # r2r_hatchet.trigger("file:ingest", workflow_input)
 
-            return {"message": "Ingestion task queued successfully"}
+            return {"message": f"Ingestion task '{task_id}' queued successfully"}
 
         update_files_extras = self.openapi_extras.get("update_files", {})
         update_files_descriptions = update_files_extras.get(
@@ -170,7 +166,7 @@ class IngestionRouter(BaseRouter):
 
             A valid user authentication token is required to access this endpoint, as regular users can only update their own files. More expansive group permissioning is under development.
             """
-            from ...assembly.factory import R2RProviderFactory
+            from ..assembly.factory import R2RProviderFactory
 
             chunking_provider = None
             if chunking_config:
