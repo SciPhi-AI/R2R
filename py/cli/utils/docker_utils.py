@@ -16,7 +16,7 @@ from sdk import R2RClient
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
-    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f {compose_files['ollama']} -f {compose_files['postgres']}"
+    docker_command = f"docker compose pull && docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f {compose_files['ollama']} -f {compose_files['postgres']}"
     docker_command += f" --project-name {project_name}"
 
     if volumes:
@@ -133,8 +133,9 @@ def run_docker_serve(
         exclude_ollama,
         exclude_postgres,
         project_name,
-        config_path,
         image,
+        config_name,
+        config_path,
     )
 
     click.echo("Starting Docker Compose setup...")
@@ -270,6 +271,7 @@ def set_config_env_vars(obj):
     else:
         os.environ["CONFIG_NAME"] = obj.get("config_name") or "default"
 
+
 def get_compose_files():
     package_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -316,8 +318,9 @@ def build_docker_command(
     exclude_ollama,
     exclude_postgres,
     project_name,
-    config_path,
     image,
+    config_name,
+    config_path,
 ):
     available_port = find_available_port(port)
 
@@ -334,12 +337,14 @@ def build_docker_command(
     os.environ["PORT"] = str(available_port)
     os.environ["HOST"] = host
     os.environ["TRAEFIK_PORT"] = str(available_port + 1)
-
-    os.environ["CONFIG_PATH"] = (
-        os.path.abspath(config_path) if config_path else ""
-    )
-
     os.environ["R2R_IMAGE"] = image or ""
+
+    if config_name is not None:
+        os.environ["CONFIG_NAME"] = config_name
+    elif config_path:
+        os.environ["CONFIG_PATH"] = (
+            os.path.abspath(config_path) if config_path else ""
+        )
 
     command += " up -d"
     return command
