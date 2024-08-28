@@ -27,8 +27,8 @@ from core.base.api.models.management.responses import (
 )
 from core.base.logging import AnalysisTypes, LogFilterCriteria
 
-from ....services.management_service import ManagementService
-from ..base_router import BaseRouter, RunType
+from ..services.management_service import ManagementService
+from .base_router import BaseRouter, RunType
 
 
 class ManagementRouter(BaseRouter):

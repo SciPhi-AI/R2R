@@ -2,15 +2,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
-from .api.routes.auth.base import AuthRouter
+from .api.auth_router import AuthRouter
 from .services.ingestion_service import IngestionService
-from .api.routes.ingestion.base import IngestionRouter
-from .api.routes.management.base import ManagementRouter
-from .api.routes.restructure.base import RestructureRouter
-from .api.routes.retrieval.base import RetrievalRouter
+from .api.ingestion_router import IngestionRouter
+from .api.management_router import ManagementRouter
+from .api.restructure_router import RestructureRouter
+from .api.retrieval_router import RetrievalRouter
 from .config import R2RConfig
 
-from .hatchet.base import IngestionWorkflow, r2r_hatchet
+from .hatchet import IngestionWorkflow, r2r_hatchet
+
 
 class R2RApp:
     def __init__(
@@ -52,8 +53,10 @@ class R2RApp:
                 routes=self.app.routes,
             )
 
-    def _setup_hatchet_worker(self, ):
-        self.r2r_worker = r2r_hatchet.worker('r2r-worker')
+    def _setup_hatchet_worker(
+        self,
+    ):
+        self.r2r_worker = r2r_hatchet.worker("r2r-worker")
 
         ingestion_workflow = IngestionWorkflow(self.ingestion_service)
         self.r2r_worker.register_workflow(ingestion_workflow)
@@ -68,16 +71,19 @@ class R2RApp:
             allow_headers=["*"],
         )
 
-
-    def serve(self, host: str = "0.0.0.0", port: int = 8000, max_threads: int = 1):
+    def serve(
+        self, host: str = "0.0.0.0", port: int = 8000, max_threads: int = 1
+    ):
         import uvicorn
         import asyncio
 
         # Start the Hatchet worker in a separate thread
         import threading
-        r2r_worker_thread = threading.Thread(target=self.r2r_worker.start, daemon=True)
+
+        r2r_worker_thread = threading.Thread(
+            target=self.r2r_worker.start, daemon=True
+        )
         r2r_worker_thread.start()
 
         # Run the FastAPI app
         uvicorn.run(self.app, host=host, port=port)
-        

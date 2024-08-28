@@ -6,8 +6,9 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Union
 from uuid import NAMESPACE_DNS, UUID, uuid4
-
 from pydantic import BaseModel, Field
+
+from .base import R2RSerializable
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ class DocumentType(str, Enum):
     MP4 = "mp4"
 
 
-class Document(BaseModel):
+class Document(R2RSerializable):
     id: UUID = Field(default_factory=uuid4)
     group_ids: list[UUID]
     user_id: UUID
@@ -80,7 +81,7 @@ class Document(BaseModel):
         }
 
 
-class DocumentInfo(BaseModel):
+class DocumentInfo(R2RSerializable):
     """Base class for document information handling."""
 
     id: UUID

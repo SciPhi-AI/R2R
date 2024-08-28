@@ -60,14 +60,14 @@ class Client:
         max_retries: int = 3,
         retry_delay: int = 1,
     ):
-        self.service = create_engine(
+        self.engine = create_engine(
             connection_string,
             pool_size=pool_size,
             poolclass=QueuePool,
             pool_recycle=300,  # Recycle connections after 5 min
         )
         self.meta = MetaData(schema="vecs")
-        self.Session = sessionmaker(self.service)
+        self.Session = sessionmaker(self.engine)
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.vector_version: Optional[str] = None
@@ -283,7 +283,7 @@ class Client:
         Returns:
             None
         """
-        self.service.dispose()
+        self.engine.dispose()
         logger.info("Disconnected from the database.")
         return
 

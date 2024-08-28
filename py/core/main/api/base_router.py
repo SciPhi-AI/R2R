@@ -12,7 +12,7 @@ from core.base.logging.base import RunType
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from ...services.base import Service
+    from ..services.base import Service
 
 
 class BaseRouter:

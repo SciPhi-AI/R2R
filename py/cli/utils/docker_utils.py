@@ -277,6 +277,7 @@ def set_config_env_vars(obj):
     else:
         os.environ["CONFIG_NAME"] = obj.get("config_name") or "default"
 
+
 def get_compose_files():
     package_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),

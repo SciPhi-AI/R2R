@@ -10,8 +10,10 @@ from hatchet.base import worker
 
 logger = logging.getLogger(__name__)
 
+
 def start_hatchet_worker():
     worker.start()
+
 
 def r2r_app(
     config_name: Optional[str] = "default",
@@ -35,6 +37,7 @@ def r2r_app(
     worker_thread.start()
 
     return app
+
 
 logging.basicConfig(level=logging.INFO)
 

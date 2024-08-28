@@ -12,8 +12,8 @@ from core.base.api.models.auth.responses import (
     WrappedUserResponse,
 )
 
-from ....services.auth_service import AuthService
-from ..base_router import BaseRouter, RunType
+from ..services.auth_service import AuthService
+from .base_router import BaseRouter, RunType
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 

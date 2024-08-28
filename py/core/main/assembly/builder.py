@@ -21,11 +21,11 @@ from core.pipelines import (
     SearchPipeline,
 )
 
-from ..api.routes.auth.base import AuthRouter
-from ..api.routes.ingestion.base import IngestionRouter
-from ..api.routes.management.base import ManagementRouter
-from ..api.routes.restructure.base import RestructureRouter
-from ..api.routes.retrieval.base import RetrievalRouter
+from ..api.auth_router import AuthRouter
+from ..api.ingestion_router import IngestionRouter
+from ..api.management_router import ManagementRouter
+from ..api.restructure_router import RestructureRouter
+from ..api.retrieval_router import RetrievalRouter
 from ..app import R2RApp
 from ..config import R2RConfig
 from ..services.auth_service import AuthService
