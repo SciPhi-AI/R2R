@@ -19,7 +19,7 @@ packages = [
 
 [tool.poetry.dependencies]
 # Python Versions
-python = ">=3.9,<3.13"
+python = ">=3.10,<3.13"
 
 httpx = "^0.27.0"
 nest-asyncio = "^1.6.0"
@@ -66,6 +66,7 @@ deepdiff = { version = "^7.0.1", optional = true }
 graspologic = { version = "^3.4.1", optional = true }
 google-cloud-tasks = "^2.16.5"
 google-auth = "^2.34.0"
+hatchet-sdk = "^0.36.10"
 
 [tool.poetry.extras]
 core = [

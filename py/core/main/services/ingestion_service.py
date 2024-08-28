@@ -53,170 +53,247 @@ class IngestionService(Service):
             logging_connection,
         )
 
-    @telemetry_event("IngestFiles")
-    async def ingest_files(
-        self,
-        files: list[UploadFile],
-        user: UserResponse,
-        metadatas: Optional[list[dict]] = None,
-        document_ids: Optional[list[UUID]] = None,
-        chunking_provider: Optional[ChunkingProvider] = None,
-        *args: Any,
-        **kwargs: Any,
-    ) -> IngestionResponse:
-        if not files:
-            raise R2RException(
-                status_code=400, message="No files provided for ingestion."
-            )
-        if len(files) > MAX_FILES_PER_INGESTION:
-            raise R2RException(
-                status_code=400,
-                message=f"Exceeded maximum number of files per ingestion: {MAX_FILES_PER_INGESTION}.",
-            )
-        try:
-            documents = []
-            for iteration, file in enumerate(files):
-                if not file.filename:
-                    raise R2RException(
-                        status_code=400, message="File name not provided."
-                    )
-
-                document_metadata = metadatas[iteration] if metadatas else {}
-
-                # document id is dynamically generated from the filename and user id, unless explicitly provided
-                document_id = (
-                    document_ids[iteration]
-                    if document_ids
-                    else generate_user_document_id(file.filename, user.id)
+        @telemetry_event("IngestFiles")
+        async def ingest_files(
+            self,
+            file_data: list[dict],  # Changed from list[UploadFile] to list[dict]
+            user: UserResponse,
+            metadatas: Optional[list[dict]] = None,
+            document_ids: Optional[list[UUID]] = None,
+            chunking_provider: Optional[ChunkingProvider] = None,
+            *args: Any,
+            **kwargs: Any,
+        ) -> IngestionResponse:
+            if not file_data:
+                raise R2RException(
+                    status_code=400, message="No files provided for ingestion."
                 )
-                document = self._file_to_document(
-                    file, user, document_id, document_metadata
-                )
-                documents.append(document)
-            # ingests all documents in parallel
-            return await self.ingest_documents(
-                documents,
-                chunking_provider=chunking_provider,
-                *args,
-                **kwargs,
-            )
-
-        finally:
-            for file in files:
-                file.file.close()
-
-    @telemetry_event("UpdateFiles")
-    async def update_files(
-        self,
-        files: list[UploadFile],
-        user: UserResponse,
-        document_ids: Optional[list[UUID]],
-        metadatas: Optional[list[dict]] = None,
-        chunking_provider: Optional[ChunkingProvider] = None,
-        *args: Any,
-        **kwargs: Any,
-    ) -> IngestionResponse:
-        if not files:
-            raise R2RException(
-                status_code=400, message="No files provided for update."
-            )
-        if not self.providers.database:
-            raise R2RException(
-                status_code=501,
-                message="Database provider is not available for updating documents.",
-            )
-        try:
-            if document_ids:
-                if len(document_ids) != len(files):
-                    raise R2RException(
-                        status_code=400,
-                        message="Number of ids does not match number of files.",
-                    )
-            else:
-                document_ids = [
-                    generate_user_document_id(file.filename, user.id)
-                    for file in files
-                ]
-            if len(files) > MAX_FILES_PER_INGESTION:
+            if len(file_data) > MAX_FILES_PER_INGESTION:
                 raise R2RException(
                     status_code=400,
                     message=f"Exceeded maximum number of files per ingestion: {MAX_FILES_PER_INGESTION}.",
                 )
+            try:
+                documents = []
+                for iteration, file_info in enumerate(file_data):
+                    if not file_info.get('filename'):
+                        raise R2RException(
+                            status_code=400, message="File name not provided."
+                        )
 
-            documents_overview = []
+                    document_metadata = metadatas[iteration] if metadatas else {}
 
-            offset = 0
-            while True:
-                documents_overview_page = (
-                    self.providers.database.relational.get_documents_overview(
-                        filter_document_ids=document_ids,
-                        filter_user_ids=(
-                            [user.id] if not user.is_superuser else None
-                        ),
-                        offset=offset,
-                        limit=OVERVIEW_FETCH_PAGE_SIZE,
+                    # document id is dynamically generated from the filename and user id, unless explicitly provided
+                    document_id = (
+                        document_ids[iteration]
+                        if document_ids
+                        else generate_user_document_id(file_info['filename'], user.id)
                     )
-                )
-                documents_overview.extend(documents_overview_page)
-                if len(documents_overview_page) < OVERVIEW_FETCH_PAGE_SIZE:
-                    break
-                offset += 1
-
-            documents = []
-            new_versions = []
-
-            for it, (file, doc_id, doc_info) in enumerate(
-                zip(files, document_ids, documents_overview)
-            ):
-                if not doc_info:
-                    raise R2RException(
-                        status_code=404,
-                        message=f"Document with id {doc_id} not found.",
+                    document = self._file_data_to_document(
+                        file_info, user, document_id, document_metadata
                     )
-
-                new_version = increment_version(doc_info.version)
-                new_versions.append(new_version)
-
-                updated_metadata = (
-                    metadatas[it] if metadatas else doc_info.metadata
-                )
-                updated_metadata["title"] = (
-                    updated_metadata.get("title", None)
-                    or file.filename.split("/")[-1]
+                    documents.append(document)
+                # ingests all documents in parallel
+                return await self.ingest_documents(
+                    documents,
+                    chunking_provider=chunking_provider,
+                    *args,
+                    **kwargs,
                 )
 
-                document = self._file_to_document(
-                    file, user, doc_id, updated_metadata
-                )
-                documents.append(document)
+            finally:
+                # No need to close files here as we're not dealing with file objects directly
+                pass
 
-            ingestion_results = await self.ingest_documents(
-                documents,
-                chunking_provider=chunking_provider,
-                versions=new_versions,
-                *args,
-                **kwargs,
+        def _file_data_to_document(
+            self,
+            file_info: dict,
+            user: UserResponse,
+            document_id: UUID,
+            metadata: dict,
+        ) -> Document:
+            file_extension = file_info['filename'].split(".")[-1].lower()
+            if file_extension.upper() not in DocumentType.__members__:
+                raise R2RException(
+                    status_code=415,
+                    message=f"'{file_extension}' is not a valid DocumentType.",
+                )
+
+            document_title = metadata.get("title") or file_info['filename'].split("/")[-1]
+            metadata["title"] = document_title
+
+            return Document(
+                id=document_id,
+                group_ids=metadata.get("group_ids", []),
+                user_id=user.id,
+                type=DocumentType[file_extension.upper()],
+                data=file_info['content'],  # Assuming the file content is passed as base64 or similar
+                metadata=metadata,
             )
+    # @telemetry_event("IngestFiles")
+    # async def ingest_files(
+    #     self,
+    #     files: list[UploadFile],
+    #     user: UserResponse,
+    #     metadatas: Optional[list[dict]] = None,
+    #     document_ids: Optional[list[UUID]] = None,
+    #     chunking_provider: Optional[ChunkingProvider] = None,
+    #     *args: Any,
+    #     **kwargs: Any,
+    # ) -> IngestionResponse:
+    #     if not files:
+    #         raise R2RException(
+    #             status_code=400, message="No files provided for ingestion."
+    #         )
+    #     if len(files) > MAX_FILES_PER_INGESTION:
+    #         raise R2RException(
+    #             status_code=400,
+    #             message=f"Exceeded maximum number of files per ingestion: {MAX_FILES_PER_INGESTION}.",
+    #         )
+    #     try:
+    #         documents = []
+    #         for iteration, file in enumerate(files):
+    #             if not file.filename:
+    #                 raise R2RException(
+    #                     status_code=400, message="File name not provided."
+    #                 )
 
-            for doc_id, old_version in zip(
-                document_ids,
-                [doc_info.version for doc_info in documents_overview],
-            ):
-                self.providers.database.vector.delete(
-                    filters={
-                        "document_id": {"$eq": doc_id},
-                        "version": {"$eq": old_version},
-                    }
-                )
-                self.providers.database.relational.delete_from_documents_overview(
-                    doc_id, old_version
-                )
+    #             document_metadata = metadatas[iteration] if metadatas else {}
 
-            return ingestion_results
+    #             # document id is dynamically generated from the filename and user id, unless explicitly provided
+    #             document_id = (
+    #                 document_ids[iteration]
+    #                 if document_ids
+    #                 else generate_user_document_id(file.filename, user.id)
+    #             )
+    #             document = self._file_to_document(
+    #                 file, user, document_id, document_metadata
+    #             )
+    #             documents.append(document)
+    #         # ingests all documents in parallel
+    #         return await self.ingest_documents(
+    #             documents,
+    #             chunking_provider=chunking_provider,
+    #             *args,
+    #             **kwargs,
+    #         )
 
-        finally:
-            for file in files:
-                file.file.close()
+    #     finally:
+    #         for file in files:
+    #             file.file.close()
+
+    # @telemetry_event("UpdateFiles")
+    # async def update_files(
+    #     self,
+    #     files: list[UploadFile],
+    #     user: UserResponse,
+    #     document_ids: Optional[list[UUID]],
+    #     metadatas: Optional[list[dict]] = None,
+    #     chunking_provider: Optional[ChunkingProvider] = None,
+    #     *args: Any,
+    #     **kwargs: Any,
+    # ) -> IngestionResponse:
+    #     if not files:
+    #         raise R2RException(
+    #             status_code=400, message="No files provided for update."
+    #         )
+    #     if not self.providers.database:
+    #         raise R2RException(
+    #             status_code=501,
+    #             message="Database provider is not available for updating documents.",
+    #         )
+    #     try:
+    #         if document_ids:
+    #             if len(document_ids) != len(files):
+    #                 raise R2RException(
+    #                     status_code=400,
+    #                     message="Number of ids does not match number of files.",
+    #                 )
+    #         else:
+    #             document_ids = [
+    #                 generate_user_document_id(file.filename, user.id)
+    #                 for file in files
+    #             ]
+    #         if len(files) > MAX_FILES_PER_INGESTION:
+    #             raise R2RException(
+    #                 status_code=400,
+    #                 message=f"Exceeded maximum number of files per ingestion: {MAX_FILES_PER_INGESTION}.",
+    #             )
+
+    #         documents_overview = []
+
+    #         offset = 0
+    #         while True:
+    #             documents_overview_page = (
+    #                 self.providers.database.relational.get_documents_overview(
+    #                     filter_document_ids=document_ids,
+    #                     filter_user_ids=(
+    #                         [user.id] if not user.is_superuser else None
+    #                     ),
+    #                     offset=offset,
+    #                     limit=OVERVIEW_FETCH_PAGE_SIZE,
+    #                 )
+    #             )
+    #             documents_overview.extend(documents_overview_page)
+    #             if len(documents_overview_page) < OVERVIEW_FETCH_PAGE_SIZE:
+    #                 break
+    #             offset += 1
+
+    #         documents = []
+    #         new_versions = []
+
+    #         for it, (file, doc_id, doc_info) in enumerate(
+    #             zip(files, document_ids, documents_overview)
+    #         ):
+    #             if not doc_info:
+    #                 raise R2RException(
+    #                     status_code=404,
+    #                     message=f"Document with id {doc_id} not found.",
+    #                 )
+
+    #             new_version = increment_version(doc_info.version)
+    #             new_versions.append(new_version)
+
+    #             updated_metadata = (
+    #                 metadatas[it] if metadatas else doc_info.metadata
+    #             )
+    #             updated_metadata["title"] = (
+    #                 updated_metadata.get("title", None)
+    #                 or file.filename.split("/")[-1]
+    #             )
+
+    #             document = self._file_to_document(
+    #                 file, user, doc_id, updated_metadata
+    #             )
+    #             documents.append(document)
+
+    #         ingestion_results = await self.ingest_documents(
+    #             documents,
+    #             chunking_provider=chunking_provider,
+    #             versions=new_versions,
+    #             *args,
+    #             **kwargs,
+    #         )
+
+    #         for doc_id, old_version in zip(
+    #             document_ids,
+    #             [doc_info.version for doc_info in documents_overview],
+    #         ):
+    #             self.providers.database.vector.delete(
+    #                 filters={
+    #                     "document_id": {"$eq": doc_id},
+    #                     "version": {"$eq": old_version},
+    #                 }
+    #             )
+    #             self.providers.database.relational.delete_from_documents_overview(
+    #                 doc_id, old_version
+    #             )
+
+    #         return ingestion_results
+
+    #     finally:
+    #         for file in files:
+    #             file.file.close()
 
     async def ingest_documents(
         self,

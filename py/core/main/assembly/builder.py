@@ -340,6 +340,7 @@ class R2RBuilder:
         return R2RApp(
             config=self.config,
             auth_router=auth_router,
+            ingestion_service=ingestion_service,
             ingestion_router=ingestion_router,
             management_router=management_router,
             retrieval_router=retrieval_router,

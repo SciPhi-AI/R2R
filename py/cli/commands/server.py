@@ -180,6 +180,11 @@ def generate_report():
     default=False,
     help="Exclude Postgres from Docker setup",
 )
+@click.option(
+    "--exclude-hatchet",
+    default=False,
+    help="Exclude Hatchet from Docker setup",
+)
 @click.option("--project-name", default="r2r", help="Project name for Docker")
 @click.option("--image", help="Docker image to use")
 @click.option(
@@ -199,6 +204,7 @@ def serve(
     exclude_neo4j,
     exclude_ollama,
     exclude_postgres,
+    exclude_hatchet,
     project_name,
     image,
     config_name,
@@ -224,6 +230,7 @@ def serve(
             exclude_neo4j,
             exclude_ollama,
             exclude_postgres,
+            exclude_hatchet,
             project_name,
             image,
             config_name,

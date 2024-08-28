@@ -11,7 +11,6 @@ from core.base import ChunkingConfig, R2RException
 from core.base.api.models.ingestion.responses import WrappedIngestionResponse
 from core.base.utils import generate_user_document_id
 
-from ....services.ingestion_service import IngestionService
 from ..base_router import BaseRouter, RunType
 
 logger = logging.getLogger(__name__)
@@ -19,10 +18,9 @@ logger = logging.getLogger(__name__)
 
 class IngestionRouter(BaseRouter):
     def __init__(
-        self, service: IngestionService, run_type: RunType = RunType.INGESTION
+        self, service, run_type: RunType = RunType.INGESTION
     ):
         super().__init__(service, run_type)
-        self.service: IngestionService = service
         self.openapi_extras = self.load_openapi_extras()
         self.setup_routes()
 
@@ -102,28 +100,67 @@ class IngestionRouter(BaseRouter):
                 # If user is not a superuser, set user_id in metadata
                 metadata["user_id"] = str(auth_user.id)
 
-            ingestion_result = await self.service.ingest_files(
-                files=files,
-                metadatas=metadatas,
-                document_ids=document_ids,
-                user=auth_user,
-                chunking_provider=chunking_provider,
-            )
+            # ingestion_result = await self.service.ingest_files(
+            #     files=files,
+            #     metadatas=metadatas,
+            #     document_ids=document_ids,
+            #     user=auth_user,
+            #     chunking_provider=chunking_provider,
+            # )
 
-            # If superuser, assign documents to groups
-            if is_superuser:
-                for idx, metadata in enumerate(metadatas or []):
-                    if "group_ids" in metadata:
-                        document_id = ingestion_result["processed_documents"][
-                            idx
-                        ]
-                        for group_id in metadata["group_ids"]:
-                            await self.service.management_service.aassign_document_to_group(
-                                document_id, group_id
-                            )
+            # # If superuser, assign documents to groups
+            # if is_superuser:
+            #     for idx, metadata in enumerate(metadatas or []):
+            #         if "group_ids" in metadata:
+            #             document_id = ingestion_result["processed_documents"][
+            #                 idx
+            #             ]
+            #             for group_id in metadata["group_ids"]:
+            #                 await self.service.management_service.aassign_document_to_group(
+            #                     document_id, group_id
+            #                 )
 
-            return ingestion_result
+            # # return ingestion_result
+            # workflow_input = {
+            #     "files": files,
+            #     "document_ids": document_ids,
+            #     "metadatas": metadatas,
+            #     "chunking_settings": chunking_settings,
+            #     "user": auth_user,
+            # }
+            # Process uploaded files into serializable format
+            import base64
+            file_data = []
+            for file in files:
+                content = await file.read()
+                file_data.append({
+                    'filename': file.filename,
+                    'content': base64.b64encode(content).decode('utf-8'),
+                    'content_type': file.content_type
+                })
+            if document_ids:
+                document_ids = [str(doc_id) for doc_id in document_ids]
 
+            workflow_input = {
+                "file_data": file_data,  # Changed from "files" to "file_data"
+                "document_ids": document_ids,
+                "metadatas": metadatas,
+                # "chunking_settings": chunking_settings,
+                "chunking_settings": chunking_settings.json() if chunking_settings else None,
+                # "user": auth_user.dict(),  # Serialize user object
+                "user": auth_user.json(),
+            }
+            print('workflow_input = ', workflow_input)
+
+            from core.main import r2r_hatchet
+            messageId = r2r_hatchet.client.admin.run_workflow("ingestion-workflow", {
+                "request": workflow_input
+            })
+            print('messageId = ', messageId)
+            # r2r_hatchet.trigger("file:ingest", workflow_input)
+
+            return {"message": "Ingestion task queued successfully"}
+        
         update_files_extras = self.openapi_extras.get("update_files", {})
         update_files_descriptions = update_files_extras.get(
             "input_descriptions", {}

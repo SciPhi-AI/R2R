@@ -14,7 +14,7 @@ from requests.exceptions import RequestException
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
-    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f {compose_files['ollama']} -f {compose_files['postgres']}"
+    docker_command = f"docker compose -f {compose_files['base']} -f {compose_files['neo4j']} -f {compose_files['ollama']} -f {compose_files['postgres']} -f {compose_files['hatchet']}"
     docker_command += f" --project-name {project_name}"
 
     if volumes:
@@ -111,6 +111,7 @@ def run_docker_serve(
     exclude_neo4j: bool,
     exclude_ollama: bool,
     exclude_postgres: bool,
+    exclude_hatchet: bool,
     project_name: str,
     image: str,
     config_name: Optional[str] = None,
@@ -137,6 +138,7 @@ def run_docker_serve(
         exclude_neo4j,
         exclude_ollama,
         exclude_postgres,
+        exclude_hatchet,
         project_name,
         config_path,
         image,
@@ -286,6 +288,7 @@ def get_compose_files():
         "neo4j": os.path.join(package_dir, "compose.neo4j.yaml"),
         "ollama": os.path.join(package_dir, "compose.ollama.yaml"),
         "postgres": os.path.join(package_dir, "compose.postgres.yaml"),
+        "hatchet": os.path.join(package_dir, "compose.hatchet.yaml"),
     }
 
     for name, path in compose_files.items():
@@ -320,6 +323,7 @@ def build_docker_command(
     exclude_neo4j,
     exclude_ollama,
     exclude_postgres,
+    exclude_hatchet,
     project_name,
     config_path,
     image,
@@ -333,6 +337,8 @@ def build_docker_command(
         command += f" -f {compose_files['ollama']}"
     if not exclude_postgres:
         command += f" -f {compose_files['postgres']}"
+    if not exclude_hatchet:
+        command += f" -f {compose_files['hatchet']}"
 
     command += f" --project-name {project_name}"
 

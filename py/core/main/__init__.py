@@ -1,7 +1,7 @@
 from .abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from .api import *
 from .app import *
-
+from .hatchet import *
 # from .app_entry import r2r_app
 from .assembly import *
 from .services import *
@@ -23,6 +23,8 @@ __all__ = [
     "R2RApp",
     ## R2R APP ENTRY
     # "r2r_app",
+    ## R2R HATCHET
+    "r2r_hatchet",
     ## R2R ASSEMBLY
     # Builder
     "R2RBuilder",

@@ -1,20 +1,22 @@
 import logging
 import os
-from enum import Enum
 from typing import Optional
+import threading
 
 from fastapi import FastAPI
 
 from .assembly import R2RBuilder, R2RConfig
+from hatchet.base import worker
 
 logger = logging.getLogger(__name__)
 
+def start_hatchet_worker():
+    worker.start()
 
 def r2r_app(
     config_name: Optional[str] = "default",
     config_path: Optional[str] = None,
 ) -> FastAPI:
-
     config = R2RConfig.load(config_name, config_path)
 
     if (
@@ -25,9 +27,14 @@ def r2r_app(
             "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
         )
 
-    # Return the FastAPI app
-    return R2RBuilder(config=config).build().app
+    # Build the FastAPI app
+    app = R2RBuilder(config=config).build().app
 
+    # Start the Hatchet worker in a separate thread
+    worker_thread = threading.Thread(target=start_hatchet_worker, daemon=True)
+    worker_thread.start()
+
+    return app
 
 logging.basicConfig(level=logging.INFO)
 

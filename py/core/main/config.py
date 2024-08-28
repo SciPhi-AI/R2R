@@ -126,9 +126,9 @@ class R2RConfig:
         self.embedding = EmbeddingConfig.create(**self.embedding)
         self.kg = KGConfig.create(**self.kg)
         self.logging = LoggingConfig.create(**self.logging)
-        self.parsing = ParsingConfig.create(
-            chunking_config=self.chunking, **self.parsing
-        )
+        if not "chunking_config" in self.parsing:
+            self.parsing["chunking_config"] = self.chunking
+        self.parsing = ParsingConfig.create(**self.parsing)
         self.prompt = PromptConfig.create(**self.prompt)
         self.agent = AgentConfig.create(**self.agent)
 
